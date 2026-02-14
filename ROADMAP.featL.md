@@ -62,3 +62,10 @@ Transform compaction into a clear conversation boundary that reduces cognitive l
 - Manual and automatic compaction both create the same visible boundary behavior.
 - Older bubbles are collapsed by default with consistent nested collapse UX.
 - Collapsed historical content is lazily built and low cost in render/memory terms.
+
+## Delivery Notes
+
+- [x] Added a compaction boundary timeline entry that collapses all pre-compaction messages by default.
+- [x] Kept the compaction response and all post-compaction messages visible.
+- [x] Added expand/collapse toggle with session-scoped reset so old history can be inspected on demand.
+- [x] Added widget tests for default collapsed state, expand/re-collapse behavior, and expansion reset after session switch.

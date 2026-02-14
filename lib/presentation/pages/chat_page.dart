@@ -161,6 +161,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   _ComposerStatusPresentation? _queuedComposerStatusTarget;
   _ComposerStatusPresentation? _lastComposerStatusTarget;
   bool _composerStatusTargetInitialized = false;
+  String? _expandedCollapsedHistoryGroupId;
 
   @override
   void initState() {
@@ -495,6 +496,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     if (sessionId != _trackedSessionId) {
       _trackedSessionId = sessionId;
       _pendingInitialScrollSessionId = sessionId;
+      _expandedCollapsedHistoryGroupId = null;
       if (!_autoFollowToLatest ||
           _showScrollToLatestFab ||
           _hasUnreadMessagesBelow ||
@@ -520,6 +522,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       _pendingInitialScrollSessionId = null;
       _autoFollowToLatest = true;
       _showScrollToFirstFab = false;
+      _expandedCollapsedHistoryGroupId = null;
       return;
     }
 
@@ -6115,6 +6118,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                       _handleMessageBackgroundLongPressEnd(message),
                 );
               }
+              if (entry is _TimelineCollapsedHistoryEntry) {
+                return _buildCollapsedHistoryEntry(entry);
+              }
               return _buildRetryingMessageIndicator();
             },
             childCount: timelineEntries.length,
@@ -6142,17 +6148,164 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     return null;
   }
 
+  void _setCollapsedHistoryGroupExpanded({
+    required String groupId,
+    required bool expanded,
+  }) {
+    final nextGroupId = expanded ? groupId : null;
+    if (_expandedCollapsedHistoryGroupId == nextGroupId) {
+      return;
+    }
+    setState(() {
+      _expandedCollapsedHistoryGroupId = nextGroupId;
+    });
+  }
+
+  Widget _buildCollapsedHistoryEntry(_TimelineCollapsedHistoryEntry entry) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final group = entry.group;
+    final actionLabel = entry.expanded
+        ? 'Hide earlier messages'
+        : 'Show earlier messages';
+    final actionIcon = entry.expanded
+        ? Icons.unfold_less_rounded
+        : Icons.unfold_more_rounded;
+
+    return Padding(
+      key: ValueKey<String>(entry.key),
+      padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 760),
+          child: Container(
+            key: const ValueKey<String>('timeline_collapsed_history_header'),
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.45,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.history_toggle_off_rounded,
+                      size: 18,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Previous history is collapsed',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      key: const ValueKey<String>(
+                        'timeline_collapsed_history_toggle',
+                      ),
+                      onPressed: () => _setCollapsedHistoryGroupExpanded(
+                        groupId: group.id,
+                        expanded: !entry.expanded,
+                      ),
+                      icon: Icon(actionIcon, size: 16),
+                      label: Text(actionLabel),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${group.messageCount} messages hidden before ${group.compactionLabel} compaction',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   List<_TimelineEntry> _buildMessageTimelineEntries({
     required List<ChatMessage> messages,
     required bool showRetryIndicator,
   }) {
-    final entries = messages
-        .map<_TimelineEntry>((message) => _TimelineMessageEntry(message))
-        .toList(growable: true);
+    final entries = <_TimelineEntry>[];
+
+    // Use the latest compaction marker as the visible history boundary.
+    final boundaryIndex = _findLatestCompactionBoundaryIndex(messages);
+    if (boundaryIndex != null && boundaryIndex > 0) {
+      final boundaryMessage = messages[boundaryIndex];
+      final compactionPart = _findCompactionPart(boundaryMessage);
+      if (compactionPart != null) {
+        final group = _CollapsedHistoryGroup(
+          startMessageId: messages.first.id,
+          endMessageId: messages[boundaryIndex - 1].id,
+          messageCount: boundaryIndex,
+          createdAt: boundaryMessage.time,
+          compactionId: compactionPart.id,
+          compactionLabel: compactionPart.auto ? 'automatic' : 'manual',
+        );
+        final expanded = _expandedCollapsedHistoryGroupId == group.id;
+        entries.add(
+          _TimelineCollapsedHistoryEntry(group: group, expanded: expanded),
+        );
+        // Build pre-boundary messages only when user expands the group.
+        if (expanded) {
+          for (var index = 0; index < boundaryIndex; index += 1) {
+            entries.add(_TimelineMessageEntry(messages[index]));
+          }
+        }
+        for (var index = boundaryIndex; index < messages.length; index += 1) {
+          entries.add(_TimelineMessageEntry(messages[index]));
+        }
+      }
+    }
+
+    if (entries.isEmpty) {
+      entries.addAll(
+        messages.map<_TimelineEntry>(
+          (message) => _TimelineMessageEntry(message),
+        ),
+      );
+    }
+
     if (showRetryIndicator) {
       entries.add(const _TimelineRetryIndicatorEntry());
     }
     return entries;
+  }
+
+  int? _findLatestCompactionBoundaryIndex(List<ChatMessage> messages) {
+    for (var index = messages.length - 1; index >= 0; index -= 1) {
+      if (_findCompactionPart(messages[index]) != null) {
+        return index;
+      }
+    }
+    return null;
+  }
+
+  CompactionPart? _findCompactionPart(ChatMessage message) {
+    for (final part in message.parts) {
+      if (part is CompactionPart) {
+        return part;
+      }
+    }
+    return null;
   }
 
   Widget _buildRetryingMessageIndicator() {
@@ -6598,6 +6751,40 @@ class _TimelineMessageEntry extends _TimelineEntry {
 
   @override
   String get key => 'timeline_msg_${message.id}';
+}
+
+class _TimelineCollapsedHistoryEntry extends _TimelineEntry {
+  const _TimelineCollapsedHistoryEntry({
+    required this.group,
+    required this.expanded,
+  });
+
+  final _CollapsedHistoryGroup group;
+  final bool expanded;
+
+  @override
+  String get key => 'timeline_collapsed_history_${group.id}';
+}
+
+class _CollapsedHistoryGroup {
+  const _CollapsedHistoryGroup({
+    required this.startMessageId,
+    required this.endMessageId,
+    required this.messageCount,
+    required this.createdAt,
+    required this.compactionId,
+    required this.compactionLabel,
+  });
+
+  final String startMessageId;
+  final String endMessageId;
+  final int messageCount;
+  final DateTime createdAt;
+  final String compactionId;
+  final String compactionLabel;
+
+  String get id =>
+      '${compactionId}_${startMessageId}_${endMessageId}_${createdAt.millisecondsSinceEpoch}';
 }
 
 class _TimelineRetryIndicatorEntry extends _TimelineEntry {

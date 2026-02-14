@@ -65,9 +65,9 @@ Notes:
 
 ### Backlog Pack Execution Checklist
 
-- [ ] `featA` - `ROADMAP.featA.md` (sync hardening baseline)
-- [ ] `featB` - `ROADMAP.featB.md` (realtime read/render foundation)
-- [ ] `featL` - `ROADMAP.featL.md` (compaction boundary + pre-boundary collapse)
+- [x] `featA` - `ROADMAP.featA.md` (sync hardening baseline)
+- [x] `featB` - `ROADMAP.featB.md` (realtime read/render foundation)
+- [x] `featL` - `ROADMAP.featL.md` (compaction boundary + pre-boundary collapse)
 - [ ] `featD` - `ROADMAP.featD.md` (thinking/tool UX controls)
 - [ ] `featH` - `ROADMAP.featH.md` (startup/settings/tool-surface polish)
 - [ ] `featE` - `ROADMAP.featE.md` (composer popover/local server/shortcuts reliability)
@@ -157,4 +157,4 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 
 #### `featL` Compaction boundary and low-cost nested history
 
-- [ ] Ao ocorrer compactação manual ou automática, colapsar tudo que veio antes da compactação, mantendo visível apenas a resposta da compactação e o que vier depois; adotar padrão de aninhamento para colapsos internos e garantir custo de renderização/memória mínimo para conteúdo encolhido
+- [x] Ao ocorrer compactação manual ou automática, colapsar tudo que veio antes da compactação, mantendo visível apenas a resposta da compactação e o que vier depois; adotar padrão de aninhamento para colapsos internos e garantir custo de renderização/memória mínimo para conteúdo encolhido

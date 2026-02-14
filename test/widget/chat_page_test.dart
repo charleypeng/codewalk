@@ -2909,6 +2909,260 @@ void main() {
     expect(find.byIcon(Icons.mark_chat_unread_outlined), findsNothing);
   });
 
+  testWidgets(
+    'collapses pre-compaction history by default and toggles older messages',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_compaction_timeline',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Compaction Timeline',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_compaction_timeline'] = <ChatMessage>[
+        UserMessage(
+          id: 'msg_old_1',
+          sessionId: 'ses_compaction_timeline',
+          time: DateTime.fromMillisecondsSinceEpoch(1100),
+          parts: <MessagePart>[
+            TextPart(
+              id: 'part_old_1',
+              messageId: 'msg_old_1',
+              sessionId: 'ses_compaction_timeline',
+              text: 'old message one',
+            ),
+          ],
+        ),
+        AssistantMessage(
+          id: 'msg_old_2',
+          sessionId: 'ses_compaction_timeline',
+          time: DateTime.fromMillisecondsSinceEpoch(1200),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1210),
+          parts: <MessagePart>[
+            TextPart(
+              id: 'part_old_2',
+              messageId: 'msg_old_2',
+              sessionId: 'ses_compaction_timeline',
+              text: 'old message two',
+            ),
+          ],
+        ),
+        UserMessage(
+          id: 'msg_old_3',
+          sessionId: 'ses_compaction_timeline',
+          time: DateTime.fromMillisecondsSinceEpoch(1300),
+          parts: <MessagePart>[
+            TextPart(
+              id: 'part_old_3',
+              messageId: 'msg_old_3',
+              sessionId: 'ses_compaction_timeline',
+              text: 'old message three',
+            ),
+          ],
+        ),
+        AssistantMessage(
+          id: 'msg_compaction_boundary',
+          sessionId: 'ses_compaction_timeline',
+          time: DateTime.fromMillisecondsSinceEpoch(2000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(2100),
+          parts: <MessagePart>[
+            CompactionPart(
+              id: 'part_compaction_marker',
+              messageId: 'msg_compaction_boundary',
+              sessionId: 'ses_compaction_timeline',
+              auto: false,
+            ),
+            TextPart(
+              id: 'part_compaction_summary',
+              messageId: 'msg_compaction_boundary',
+              sessionId: 'ses_compaction_timeline',
+              text: 'compaction summary response',
+            ),
+          ],
+        ),
+        AssistantMessage(
+          id: 'msg_after_compaction',
+          sessionId: 'ses_compaction_timeline',
+          time: DateTime.fromMillisecondsSinceEpoch(2200),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(2210),
+          parts: <MessagePart>[
+            TextPart(
+              id: 'part_after_compaction',
+              messageId: 'msg_after_compaction',
+              sessionId: 'ses_compaction_timeline',
+              text: 'message after compaction',
+            ),
+          ],
+        ),
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('timeline_collapsed_history_header')),
+        findsOneWidget,
+      );
+      expect(find.text('Show earlier messages'), findsOneWidget);
+      expect(find.text('old message one'), findsNothing);
+      expect(find.text('old message two'), findsNothing);
+      expect(find.text('old message three'), findsNothing);
+      expect(find.text('compaction summary response'), findsOneWidget);
+      expect(find.text('message after compaction'), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('timeline_collapsed_history_toggle')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Hide earlier messages'), findsOneWidget);
+      expect(find.text('old message one'), findsOneWidget);
+      expect(find.text('old message two'), findsOneWidget);
+      expect(find.text('old message three'), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('timeline_collapsed_history_toggle')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Show earlier messages'), findsOneWidget);
+      expect(find.text('old message one'), findsNothing);
+      expect(find.text('old message two'), findsNothing);
+      expect(find.text('old message three'), findsNothing);
+    },
+  );
+
+  testWidgets('resets collapsed history expansion when switching sessions', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_compaction_reset_a',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Compaction Reset A',
+        ),
+        ChatSession(
+          id: 'ses_compaction_reset_b',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(2000),
+          title: 'Compaction Reset B',
+        ),
+      ],
+    );
+
+    repository.messagesBySession['ses_compaction_reset_a'] = <ChatMessage>[
+      UserMessage(
+        id: 'msg_reset_old_a',
+        sessionId: 'ses_compaction_reset_a',
+        time: DateTime.fromMillisecondsSinceEpoch(1100),
+        parts: <MessagePart>[
+          TextPart(
+            id: 'part_reset_old_a',
+            messageId: 'msg_reset_old_a',
+            sessionId: 'ses_compaction_reset_a',
+            text: 'reset old message a',
+          ),
+        ],
+      ),
+      AssistantMessage(
+        id: 'msg_reset_compaction_a',
+        sessionId: 'ses_compaction_reset_a',
+        time: DateTime.fromMillisecondsSinceEpoch(2100),
+        completedTime: DateTime.fromMillisecondsSinceEpoch(2110),
+        parts: <MessagePart>[
+          CompactionPart(
+            id: 'part_reset_compaction_a',
+            messageId: 'msg_reset_compaction_a',
+            sessionId: 'ses_compaction_reset_a',
+            auto: true,
+          ),
+          TextPart(
+            id: 'part_reset_summary_a',
+            messageId: 'msg_reset_compaction_a',
+            sessionId: 'ses_compaction_reset_a',
+            text: 'reset summary a',
+          ),
+        ],
+      ),
+    ];
+
+    repository.messagesBySession['ses_compaction_reset_b'] = <ChatMessage>[
+      AssistantMessage(
+        id: 'msg_reset_b',
+        sessionId: 'ses_compaction_reset_b',
+        time: DateTime.fromMillisecondsSinceEpoch(2200),
+        completedTime: DateTime.fromMillisecondsSinceEpoch(2210),
+        parts: <MessagePart>[
+          TextPart(
+            id: 'part_reset_b',
+            messageId: 'msg_reset_b',
+            sessionId: 'ses_compaction_reset_b',
+            text: 'another session message',
+          ),
+        ],
+      ),
+    ];
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    final sessionA = provider.sessions
+        .where((session) => session.id == 'ses_compaction_reset_a')
+        .first;
+    final sessionB = provider.sessions
+        .where((session) => session.id == 'ses_compaction_reset_b')
+        .first;
+    await provider.selectSession(sessionA);
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('timeline_collapsed_history_toggle')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('reset old message a'), findsOneWidget);
+
+    await provider.selectSession(sessionB);
+    await tester.pumpAndSettle();
+
+    await provider.selectSession(sessionA);
+    await tester.pumpAndSettle();
+
+    expect(find.text('reset old message a'), findsNothing);
+    expect(find.text('Show earlier messages'), findsOneWidget);
+  });
+
   testWidgets('shows delayed thinking then receiving status in composer line', (
     WidgetTester tester,
   ) async {

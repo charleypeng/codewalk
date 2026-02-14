@@ -30,6 +30,50 @@ This document tracks technical decisions for CodeWalk.
 - ADR-024: Desktop Composer/Pane Interaction and Active-Response Abort Semantics (2026-02-11) [Accepted]
 - ADR-025: Automatic Session Title Generation via ch.at API (2026-02-12) [Accepted]
 - ADR-026: Namespaced Selection Sync Transaction and Reasoning Status Rendering (2026-02-14) [Accepted]
+- ADR-027: Compaction Boundary Timeline Collapse and Lazy Historical Expansion (2026-02-14) [Accepted]
+
+---
+
+## ADR-027: Compaction Boundary Timeline Collapse and Lazy Historical Expansion
+
+**Status**: Accepted
+**Date**: 2026-02-14
+
+### Context
+
+Long sessions accumulated many pre-compaction bubbles, which kept cluttering the visible timeline and increased render/memory work even after context compaction. The UX goal for compaction is to establish a clear "before/after" boundary and keep active conversation flow focused on the post-compaction segment.
+
+### Decision
+
+1. Treat the latest `CompactionPart` as a timeline boundary.
+2. Insert a dedicated collapsed-history entry before the compaction response.
+3. Keep pre-boundary messages hidden by default and instantiate them only when user expands the group.
+4. Reset expanded state when switching sessions to avoid leaking expanded-heavy state across conversations.
+
+### Rationale
+
+- Boundary-based collapsing maps directly to user mental model of "old context was compacted".
+- Lazy construction of pre-boundary entries avoids unnecessary widget trees when history is collapsed.
+- Session-scoped expansion state keeps behavior predictable and prevents accidental memory growth after navigation.
+
+### Consequences
+
+- ✅ Positive: compacted sessions open with cleaner post-boundary focus.
+- ✅ Positive: reduced initial timeline build work for sessions with long pre-compaction history.
+- ✅ Positive: explicit toggle still allows auditing older context when needed.
+- ⚠️ Trade-off: pre-boundary entries are rebuilt when expanded again (acceptable for low-cost hidden mode by default).
+
+### Key Files
+
+- `lib/presentation/pages/chat_page.dart`
+- `test/widget/chat_page_test.dart`
+- `ROADMAP.featL.md`
+
+### References
+
+- ROADMAP.md (`featL`)
+- ROADMAP.featL.md
+- CODEBASE.md (Delta Update 2026-02-14)
 
 ---
 

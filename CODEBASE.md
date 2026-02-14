@@ -10,6 +10,8 @@
 - Remote selection persistence now goes through `agent.__codewalk.options.codewalk.selection` and `variantByAgentAndModel`, keeping compatibility reads while avoiding project-directory scoped config writes.
 - Reasoning status parsing was centralized in `lib/presentation/utils/reasoning_status_parser.dart`; reasoning blocks with first-line `**...**` are treated as status labels and rendered in the in-progress indicator instead of the thinking bubble.
 - Coverage was expanded in `test/unit/providers/chat_provider_test.dart`, `test/widget/chat_message_widget_test.dart`, and `test/widget/chat_page_test.dart` for deferred sync flush semantics and status-label rendering.
+- Chat timeline now creates a compaction boundary entry that collapses pre-compaction history by default and lazily builds that segment only when explicitly expanded (`lib/presentation/pages/chat_page.dart`).
+- Widget coverage now validates collapsed pre-compaction visibility, expand/re-collapse interaction, and expansion reset after session switching (`test/widget/chat_page_test.dart`).
 
 ## Project Structure
 
