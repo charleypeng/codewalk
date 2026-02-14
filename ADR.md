@@ -31,6 +31,7 @@ This document tracks technical decisions for CodeWalk.
 - ADR-025: Automatic Session Title Generation via ch.at API (2026-02-12) [Accepted]
 - ADR-026: Namespaced Selection Sync Transaction and Reasoning Status Rendering (2026-02-14) [Accepted]
 - ADR-027: Compaction Boundary Timeline Collapse and Lazy Historical Expansion (2026-02-14) [Accepted]
+- ADR-028: Timeline Navigation Architecture and Session Hierarchy Tree Model (2026-02-14) [Accepted]
 
 ---
 
@@ -63,10 +64,23 @@ Long sessions accumulated many pre-compaction bubbles, which kept cluttering the
 - ✅ Positive: explicit toggle still allows auditing older context when needed.
 - ⚠️ Trade-off: pre-boundary entries are rebuilt when expanded again (acceptable for low-cost hidden mode by default).
 
+### Post-Decision Update (2026-02-14)
+
+Extended compaction boundary detection to handle sessions where `CompactionPart` markers may be absent:
+
+- **Fallback boundary detection**: Summary assistant messages (`summary: true`) are now treated as compaction boundaries when `CompactionPart` markers are absent.
+- **Boundary resolution**: Added `_resolveCompactionBoundary()` which checks for both `CompactionPart` and summary messages, using synthetic compaction IDs (`summary_<messageId>`) and label `"context"` for summary-based boundaries.
+- **Selection neutrality**: Both `CompactionPart` messages and summary messages are excluded from provider/model selection adoption to prevent internal compaction flows from overriding user-selected agents/models.
+- **Implementation**: Added `_isSelectionNeutralAssistantMessage()` guard in `ChatProvider.adoptSelectionFrom()`.
+
+**Related commits**: fd3ce04 (original feature), 4af9f01 (robustness enhancement)
+
 ### Key Files
 
-- `lib/presentation/pages/chat_page.dart`
-- `test/widget/chat_page_test.dart`
+- `lib/presentation/pages/chat_page.dart` - compaction boundary resolution logic
+- `lib/presentation/providers/chat_provider.dart` - selection neutrality guard
+- `test/unit/providers/chat_provider_test.dart` - selection adoption tests
+- `test/widget/chat_page_test.dart` - summary boundary collapse tests
 - `ROADMAP.featL.md`
 
 ### References
@@ -74,6 +88,102 @@ Long sessions accumulated many pre-compaction bubbles, which kept cluttering the
 - ROADMAP.md (`featL`)
 - ROADMAP.featL.md
 - CODEBASE.md (Delta Update 2026-02-14)
+
+---
+
+## ADR-028: Timeline Navigation Architecture and Session Hierarchy Tree Model
+
+**Status**: Accepted
+**Date**: 2026-02-14
+
+### Context
+
+Chat timeline navigation suffered from three core UX problems:
+
+1. **Scroll reliability**: Single-pass `scrollToBottom()` failed to reach the true end in conversations with dynamic message heights (thinking blocks, tool outputs, nested expansions), forcing users to tap multiple times.
+2. **Navigation limitations**: Users browsing long conversation histories lacked quick access to conversation boundaries (oldest vs newest messages), requiring tedious manual scrolling.
+3. **Session hierarchy**: Session lists displayed all conversations as a flat list, obscuring parent/child relationships (main conversation vs subagent tasks) and preventing logical grouping.
+4. **Error handling**: Remote abort events (user stops generation on another device) appeared as full-screen blocking errors instead of transient notices, disrupting workflow.
+
+### Decision
+
+#### 1. Multi-Pass Scroll-to-Bottom with Dynamic Height Compensation
+
+Implement iterative scrolling algorithm to handle dynamic message heights reliably:
+
+- Use configurable maximum passes (default: 6) with epsilon threshold (1 pixel) to detect "true bottom reached".
+- Execute incremental scroll-to-end operations with short delays between passes (50ms) to allow widget tree height recalculation.
+- Stop early when scroll position delta falls within epsilon tolerance.
+- Constants: `_scrollToBottomEpsilon = 1`, `_maxScrollToBottomPasses = 6`.
+
+#### 2. Dual FAB Navigation System
+
+Introduce two floating action buttons for instant timeline navigation:
+
+- **Jump-to-latest FAB**: Appears when user scrolls away from bottom (threshold: 400 pixels), enables one-tap return to newest messages.
+- **Jump-to-first FAB**: Appears above jump-to-latest when user scrolls far from top (composite threshold), enables instant navigation to conversation start.
+- Both FABs use multi-pass scroll algorithm for reliable positioning.
+
+#### 3. Hierarchical Session List with Parent/Child Relationships
+
+Restructure session rendering to expose conversation hierarchy:
+
+- Model sessions as tree with collapsible parent/child nodes (main conversation → subagent sub-conversations).
+- Add expand/collapse affordances for session groups.
+- Preserve session selection and navigation semantics within hierarchy.
+- Update session list widget (`ChatSessionList`) to support nested rendering.
+
+#### 4. Route-Aware Auto-Follow Behavior
+
+Implement scroll position memory with intelligent auto-follow:
+
+- Track chat route activity state (`_wasChatRouteCurrent`) to detect returns to chat view.
+- On app resume or route navigation to chat:
+  - If `_autoFollowToLatest` is true (user was at bottom): scroll to latest.
+  - If user had manually scrolled up: preserve position.
+- Reset auto-follow flag when user manually scrolls away from bottom.
+
+#### 5. Remote Abort as Non-Blocking Notice
+
+Reclassify remote abort events from fatal errors to retryable notices:
+
+- Display remote abort as dismissible snackbar (4 second duration) with retry action.
+- Keep conversation timeline interactive and accessible.
+- Treat abort as expected user-initiated action (stopped on another device), not system failure.
+- Preserve error handling for true failures (network errors, API errors).
+
+### Rationale
+
+- **Multi-pass scrolling**: Dynamic heights require layout settle time; iterative approach ensures reliability without hardcoded delays that would slow down simple cases.
+- **Dual FAB navigation**: Long conversations benefit from boundary navigation; dual FABs provide instant access without complex gesture controls.
+- **Session hierarchy**: Parent/child relationships reflect actual conversation structure (main task → subtasks); collapsible tree reduces cognitive load in session lists.
+- **Route-aware auto-follow**: Preserves user scroll intent while providing sensible defaults for common navigation patterns.
+- **Abort as notice**: Remote aborts are user-initiated coordination events, not errors; non-blocking treatment maintains conversation flow continuity.
+
+### Consequences
+
+- ✅ Positive: jump-to-latest reaches true bottom reliably in one tap, even with complex dynamic layouts.
+- ✅ Positive: jump-to-first enables instant access to conversation history start.
+- ✅ Positive: session hierarchy exposes conversation structure and reduces session list clutter.
+- ✅ Positive: auto-follow respects user scroll intent while providing sensible navigation defaults.
+- ✅ Positive: remote abort UX is lightweight and non-disruptive.
+- ⚠️ Trade-off: multi-pass scrolling introduces small delays (6 passes × 50ms = ~300ms worst case) for complex layouts, but this is acceptable for improved reliability.
+- ⚠️ Trade-off: dual FAB adds visual complexity to chat interface, but contextual visibility (only when scrolled) minimizes clutter.
+
+### Key Files
+
+- `lib/presentation/pages/chat_page.dart` - multi-pass scroll logic, dual FAB rendering, route-aware auto-follow
+- `lib/presentation/widgets/chat_session_list.dart` - hierarchical session tree rendering
+- `lib/presentation/providers/chat_provider.dart` - session hierarchy state management
+- `test/widget/chat_page_test.dart` - scroll reliability, FAB visibility, auto-follow behavior tests
+- `test/widget/chat_session_list_test.dart` - session hierarchy tests
+- `test/unit/providers/chat_provider_test.dart` - provider hierarchy coverage
+
+### References
+
+- ROADMAP.md (`featB`)
+- ROADMAP.featB.md
+- Related commits: a5b4b9d (timeline jump reliability and hierarchy), 73f3f26 (jump-to-first FAB)
 
 ---
 
