@@ -692,8 +692,89 @@ void main() {
     await tester.tap(find.text('Show more'));
     await tester.pumpAndSettle();
 
-    // RichText deve estar presente (colorizado)
-    expect(find.byType(RichText), findsAtLeastNWidgets(1));
+    // Linhas de diff colorizadas devem estar presentes
+    expect(
+      find.byKey(const ValueKey<String>('diff_line_container_0')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('tool_output_diff_container_0')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('applies diff foreground and background styles', (tester) async {
+    const diffOutput = '''--- file.dart
++++ file.dart
+@@ -1,2 +1,3 @@
+ context
+-old line
++new line''';
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: AssistantMessage(
+              id: 'msg_diff_styled_1',
+              sessionId: 'ses_diff',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: <MessagePart>[
+                ToolPart(
+                  id: 'tool_diff_styled_1',
+                  messageId: 'msg_diff_styled_1',
+                  sessionId: 'ses_diff',
+                  callId: 'call_diff_styled_1',
+                  tool: 'apply_patch',
+                  state: ToolStateCompleted(
+                    input: const <String, dynamic>{},
+                    output: diffOutput,
+                    time: ToolTime(
+                      start: DateTime.fromMillisecondsSinceEpoch(1000),
+                      end: DateTime.fromMillisecondsSinceEpoch(1100),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Show more'));
+    await tester.pumpAndSettle();
+
+    final addContainer = tester.widget<Container>(
+      find.byKey(const ValueKey<String>('tool_output_diff_container_5')),
+    );
+    final removeContainer = tester.widget<Container>(
+      find.byKey(const ValueKey<String>('tool_output_diff_container_4')),
+    );
+    final hunkContainer = tester.widget<Container>(
+      find.byKey(const ValueKey<String>('tool_output_diff_container_2')),
+    );
+
+    final addText = tester.widget<Text>(
+      find.byKey(const ValueKey<String>('tool_output_diff_text_5')),
+    );
+    final removeText = tester.widget<Text>(
+      find.byKey(const ValueKey<String>('tool_output_diff_text_4')),
+    );
+    final hunkText = tester.widget<Text>(
+      find.byKey(const ValueKey<String>('tool_output_diff_text_2')),
+    );
+    final metadataText = tester.widget<Text>(
+      find.byKey(const ValueKey<String>('tool_output_diff_text_0')),
+    );
+
+    expect(addText.style?.color, isNotNull);
+    expect(addContainer.color, isNotNull);
+    expect(removeText.style?.color, isNotNull);
+    expect(removeContainer.color, isNotNull);
+    expect(hunkText.style?.color, isNotNull);
+    expect(hunkContainer.color, isNotNull);
+    expect(metadataText.style?.color, isNotNull);
   });
 
   testWidgets(
@@ -737,14 +818,85 @@ void main() {
         ),
       );
 
-      await tester.tap(find.text('Show more'));
+      await tester.tap(find.text('Show more').first);
       await tester.pumpAndSettle();
 
-      expect(find.byType(RichText), findsAtLeastNWidgets(1));
+      expect(
+        find.byKey(const ValueKey<String>('diff_line_container_0')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('tool_output_diff_container_0')),
+        findsOneWidget,
+      );
     },
   );
 
-  testWidgets('uses MediaQuery textScaler in expanded colorized diff', (
+  testWidgets('colorizes apply_patch input section when output is success', (
+    tester,
+  ) async {
+    const patchInput = '''*** Begin Patch
+*** Update File: lib/main.dart
+@@
+-old line
++new line
+*** End Patch''';
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: AssistantMessage(
+              id: 'msg_diff_input_success_1',
+              sessionId: 'ses_diff',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: <MessagePart>[
+                ToolPart(
+                  id: 'tool_diff_input_success_1',
+                  messageId: 'msg_diff_input_success_1',
+                  sessionId: 'ses_diff',
+                  callId: 'call_diff_input_success_1',
+                  tool: 'apply_patch',
+                  state: ToolStateCompleted(
+                    input: const <String, dynamic>{'patchText': patchInput},
+                    output: 'Success. Updated the following files:\nM file.txt',
+                    time: ToolTime(
+                      start: DateTime.fromMillisecondsSinceEpoch(1000),
+                      end: DateTime.fromMillisecondsSinceEpoch(1100),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Show more').first);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('tool_input_diff_container_0')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('tool_input_diff_text_3')),
+      findsOneWidget,
+    );
+
+    final removeLineContainer = tester.widget<Container>(
+      find.byKey(const ValueKey<String>('tool_input_diff_container_3')),
+    );
+    final addLineContainer = tester.widget<Container>(
+      find.byKey(const ValueKey<String>('tool_input_diff_container_4')),
+    );
+
+    expect(removeLineContainer.color, isNotNull);
+    expect(addLineContainer.color, isNotNull);
+  });
+
+  testWidgets('uses MediaQuery textScaler in expanded diff lines', (
     tester,
   ) async {
     const diffOutput = '''--- file.dart
@@ -796,16 +948,61 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Show more'));
-    await tester.pumpAndSettle();
+    Future<void> expandIfNeeded() async {
+      final showMore = find.text('Show more');
+      if (showMore.evaluate().isNotEmpty) {
+        await tester.tap(showMore);
+        await tester.pumpAndSettle();
+      }
+    }
 
-    final richTexts = tester.widgetList<RichText>(find.byType(RichText));
-    final diffRichText = richTexts.firstWhere(
-      (richText) => richText.text.toPlainText().contains('+new line'),
+    await expandIfNeeded();
+
+    final scaledHeight = tester
+        .getSize(
+          find.byKey(const ValueKey<String>('tool_output_diff_container_5')),
+        )
+        .height;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: AssistantMessage(
+              id: 'msg_diff_scaler',
+              sessionId: 'ses_diff',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: <MessagePart>[
+                ToolPart(
+                  id: 'tool_diff_scaler',
+                  messageId: 'msg_diff_scaler',
+                  sessionId: 'ses_diff',
+                  callId: 'call_diff_scaler',
+                  tool: 'apply_patch',
+                  state: ToolStateCompleted(
+                    input: const <String, dynamic>{},
+                    output: diffOutput,
+                    time: ToolTime(
+                      start: DateTime.fromMillisecondsSinceEpoch(1000),
+                      end: DateTime.fromMillisecondsSinceEpoch(1100),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
+    await expandIfNeeded();
 
-    expect(diffRichText.textScaler, isNotNull);
-    expect(diffRichText.textScaler!.scale(10), expectedScaler.scale(10));
+    final defaultHeight = tester
+        .getSize(
+          find.byKey(const ValueKey<String>('tool_output_diff_container_5')),
+        )
+        .height;
+
+    expect(scaledHeight, greaterThan(defaultHeight));
   });
 
   testWidgets('detects diff in bash git diff via heuristic', (tester) async {
@@ -851,7 +1048,14 @@ void main() {
     await tester.pumpAndSettle();
 
     // Deve colorizar mesmo sendo bash
-    expect(find.byType(RichText), findsAtLeastNWidgets(1));
+    expect(
+      find.byKey(const ValueKey<String>('diff_line_container_0')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('tool_output_diff_container_0')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('does not colorize normal bash output', (tester) async {
@@ -986,8 +1190,15 @@ index abc123..def456 100644
     await tester.tap(find.text('Show more'));
     await tester.pumpAndSettle();
 
-    // RichText colorizado deve estar presente
-    expect(find.byType(RichText), findsAtLeastNWidgets(1));
+    // Diff por linha deve estar presente
+    expect(
+      find.byKey(const ValueKey<String>('diff_line_container_0')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('tool_output_diff_container_0')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('builds synthetic diff for edit tool when output is empty', (
@@ -1031,6 +1242,13 @@ index abc123..def456 100644
     await tester.tap(find.text('Show more'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(RichText), findsAtLeastNWidgets(1));
+    expect(
+      find.byKey(const ValueKey<String>('diff_line_container_0')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('tool_output_diff_container_0')),
+      findsOneWidget,
+    );
   });
 }

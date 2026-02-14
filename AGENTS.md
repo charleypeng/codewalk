@@ -8,6 +8,7 @@ CodeWalk é um projeto que visa permitir acessar agents de código de qualquer l
 
 - **Toda implementação deve ser pensada para mobile e desktop**. Preferencialmente de maneira unificada e responsiva. **Prioridade para UX no mobile**.
 - Ao concluir uma mudança, verificar se ela exige novo teste ou atualização de teste existente.
+- Em ajustes visuais, confirmar com o usuário o bloco/tela exato citado antes de alterar; evitar suposições.
 
 ## 🚀 Fluxo Específico: Build Android
 

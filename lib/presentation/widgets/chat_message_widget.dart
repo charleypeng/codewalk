@@ -713,13 +713,11 @@ class ChatMessageWidget extends StatelessWidget {
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: _CollapsibleToolContent(
+                child: _buildToolBodyContent(
+                  context,
                   text: resolvedOutput,
-                  collapsedMaxLines: _collapsedToolDetailMaxLines,
                   toolName: toolName,
-                  textStyle: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+                  lineKeyPrefix: 'tool_output_diff',
                 ),
               ),
           ],
@@ -742,17 +740,13 @@ class ChatMessageWidget extends StatelessWidget {
                   command: command,
                   inErrorContainer: true,
                 ),
-              _CollapsibleToolContent(
+              _buildToolBodyContent(
+                context,
                 text: errorState.error,
-                collapsedMaxLines: _collapsedToolDetailMaxLines,
                 toolName: toolName,
-                textStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onErrorContainer,
-                ),
-                toggleTextStyle: Theme.of(context).textTheme.labelSmall
-                    ?.copyWith(
-                      color: Theme.of(context).colorScheme.onErrorContainer,
-                    ),
+                lineKeyPrefix: 'tool_error_diff',
+                textColor: Theme.of(context).colorScheme.onErrorContainer,
+                toggleColor: Theme.of(context).colorScheme.onErrorContainer,
               ),
             ],
           ),
@@ -760,6 +754,31 @@ class ChatMessageWidget extends StatelessWidget {
       default:
         return const SizedBox.shrink();
     }
+  }
+
+  Widget _buildToolBodyContent(
+    BuildContext context, {
+    required String text,
+    required String toolName,
+    required String lineKeyPrefix,
+    Color? textColor,
+    Color? toggleColor,
+  }) {
+    return _CollapsibleToolContent(
+      text: text,
+      collapsedMaxLines: _collapsedToolDetailMaxLines,
+      toolName: toolName,
+      lineKeyPrefix: lineKeyPrefix,
+      textStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: textColor,
+        fontFamily: 'monospace',
+      ),
+      toggleTextStyle: toggleColor == null
+          ? null
+          : Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: toggleColor),
+    );
   }
 
   Widget _buildToolCommandSection(
@@ -781,6 +800,44 @@ class ChatMessageWidget extends StatelessWidget {
     final prefix = toolName.trim().toLowerCase() == 'bash'
         ? 'Command'
         : 'Input';
+
+    final shouldColorizeInput =
+        prefix == 'Input' && _isDiffLikeToolInput(toolName, command);
+
+    if (shouldColorizeInput) {
+      final normalizedInput = _normalizeToolInputDiff(command);
+      return Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '$prefix:',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: labelColor,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'monospace',
+              ),
+            ),
+            const SizedBox(height: 4),
+            _buildToolBodyContent(
+              context,
+              text: normalizedInput,
+              toolName: toolName,
+              lineKeyPrefix: 'tool_input_diff',
+              textColor: valueColor,
+              toggleColor: labelColor,
+            ),
+          ],
+        ),
+      );
+    }
 
     return Container(
       width: double.infinity,
@@ -810,6 +867,38 @@ class ChatMessageWidget extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  bool _isDiffLikeToolInput(String toolName, String command) {
+    final toolLower = toolName.trim().toLowerCase();
+
+    if (toolLower.contains('apply_patch') ||
+        toolLower.contains('patch') ||
+        toolLower == 'edit') {
+      return command.contains('*** Begin Patch') ||
+          command.contains('\n+') ||
+          command.contains('\n-') ||
+          command.contains('\n@@') ||
+          command.contains('\ndiff --git');
+    }
+
+    return isDiffFormat(command);
+  }
+
+  String _normalizeToolInputDiff(String command) {
+    const markers = <String>['*** Begin Patch', 'diff --git', '--- ', '@@'];
+
+    for (final marker in markers) {
+      final index = command.indexOf(marker);
+      if (index > 0) {
+        return command.substring(index).trimRight();
+      }
+      if (index == 0) {
+        return command;
+      }
+    }
+
+    return command;
   }
 
   String? _extractToolCommand(ToolState state) {
@@ -1036,6 +1125,7 @@ class _CollapsibleToolContent extends StatefulWidget {
     required this.text,
     required this.collapsedMaxLines,
     required this.toolName,
+    this.lineKeyPrefix = 'tool_diff_line',
     this.textStyle,
     this.toggleTextStyle,
   });
@@ -1043,12 +1133,20 @@ class _CollapsibleToolContent extends StatefulWidget {
   final String text;
   final int collapsedMaxLines;
   final String toolName;
+  final String lineKeyPrefix;
   final TextStyle? textStyle;
   final TextStyle? toggleTextStyle;
 
   @override
   State<_CollapsibleToolContent> createState() =>
       _CollapsibleToolContentState();
+}
+
+class _DiffLineVisualStyle {
+  const _DiffLineVisualStyle({this.textColor, this.backgroundColor});
+
+  final Color? textColor;
+  final Color? backgroundColor;
 }
 
 class _CollapsibleToolContentState extends State<_CollapsibleToolContent> {
@@ -1075,67 +1173,102 @@ class _CollapsibleToolContentState extends State<_CollapsibleToolContent> {
     return isDiffFormat(text);
   }
 
-  /// Cores adaptativas ao tema (dark/light)
-  Color _getDiffAddColor(BuildContext context) {
+  DiffLineType _resolveDiffLineType(String line) {
+    if (line.isEmpty) {
+      return DiffLineType.context;
+    }
+    return parseDiffLines(line).first.type;
+  }
+
+  _DiffLineVisualStyle _resolveDiffVisualStyle(
+    BuildContext context,
+    DiffLineType lineType,
+  ) {
     final brightness = Theme.of(context).brightness;
-    return brightness == Brightness.dark
-        ? Colors.green.shade400
-        : Colors.green.shade700;
+    switch (lineType) {
+      case DiffLineType.add:
+        return _DiffLineVisualStyle(
+          textColor: brightness == Brightness.dark
+              ? Colors.green.shade400
+              : Colors.green.shade700,
+          backgroundColor: brightness == Brightness.dark
+              ? Colors.green.shade800.withValues(alpha: 0.45)
+              : Colors.green.shade100,
+        );
+      case DiffLineType.remove:
+        return _DiffLineVisualStyle(
+          textColor: brightness == Brightness.dark
+              ? Colors.red.shade400
+              : Colors.red.shade700,
+          backgroundColor: brightness == Brightness.dark
+              ? Colors.red.shade800.withValues(alpha: 0.42)
+              : Colors.red.shade100,
+        );
+      case DiffLineType.hunk:
+        return _DiffLineVisualStyle(
+          textColor: brightness == Brightness.dark
+              ? Colors.amber.shade300
+              : Colors.orange.shade800,
+          backgroundColor: brightness == Brightness.dark
+              ? Colors.amber.shade800.withValues(alpha: 0.38)
+              : Colors.orange.shade100,
+        );
+      case DiffLineType.metadata:
+        return _DiffLineVisualStyle(
+          textColor: Theme.of(context).colorScheme.onSurfaceVariant,
+        );
+      case DiffLineType.context:
+        return const _DiffLineVisualStyle();
+    }
   }
 
-  Color _getDiffRemoveColor(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    return brightness == Brightness.dark
-        ? Colors.red.shade400
-        : Colors.red.shade700;
+  Widget _buildDiffLine(
+    BuildContext context, {
+    required int index,
+    required String line,
+  }) {
+    final lineType = _resolveDiffLineType(line);
+    final visualStyle = _resolveDiffVisualStyle(context, lineType);
+
+    return Container(
+      key: ValueKey<String>('${widget.lineKeyPrefix}_container_$index'),
+      width: double.infinity,
+      color: visualStyle.backgroundColor,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      child: Text(
+        line,
+        key: ValueKey<String>('${widget.lineKeyPrefix}_text_$index'),
+        style:
+            widget.textStyle?.copyWith(color: visualStyle.textColor) ??
+            TextStyle(color: visualStyle.textColor, fontFamily: 'monospace'),
+      ),
+    );
   }
 
-  Color _getDiffHunkColor(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    return brightness == Brightness.dark
-        ? Colors.blue.shade300
-        : Colors.blue.shade700;
-  }
-
-  Color _getDiffMetadataColor(BuildContext context) {
-    return Theme.of(context).colorScheme.onSurfaceVariant;
-  }
-
-  /// Renderização colorizada (só quando expandido)
+  /// Renderização de diff por linha para garantir fundo visível.
   Widget _buildColorizedDiffContent(BuildContext context, String text) {
     final lines = text.split('\n');
-    final spans = <TextSpan>[];
+    final maxVisibleLines = _expanded ? lines.length : widget.collapsedMaxLines;
+    final visibleLines = lines.take(maxVisibleLines).toList(growable: false);
+    final hasHiddenLines = lines.length > visibleLines.length;
 
-    for (final line in lines) {
-      Color? color;
-
-      if (line.startsWith('+') && !line.startsWith('+++')) {
-        color = _getDiffAddColor(context);
-      } else if (line.startsWith('-') && !line.startsWith('---')) {
-        color = _getDiffRemoveColor(context);
-      } else if (line.startsWith('@@')) {
-        color = _getDiffHunkColor(context);
-      } else if (line.startsWith('diff --git') ||
-          line.startsWith('index ') ||
-          line.startsWith('--- ') ||
-          line.startsWith('+++ ')) {
-        color = _getDiffMetadataColor(context);
-      }
-
-      spans.add(
-        TextSpan(
-          text: line,
-          style: color != null ? TextStyle(color: color) : null,
-        ),
-      );
-      spans.add(const TextSpan(text: '\n'));
-    }
-
-    if (spans.isNotEmpty) spans.removeLast(); // Remove trailing \n
-
-    return RichText(
-      textScaler: MediaQuery.textScalerOf(context),
-      text: TextSpan(style: widget.textStyle, children: spans),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < visibleLines.length; i++)
+          _buildDiffLine(context, index: i, line: visibleLines[i]),
+        if (!_expanded && hasHiddenLines)
+          Padding(
+            padding: const EdgeInsets.only(left: 6, top: 2),
+            child: Text(
+              '...',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontFamily: 'monospace',
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -1145,18 +1278,9 @@ class _CollapsibleToolContentState extends State<_CollapsibleToolContent> {
 
     Widget contentWidget;
 
-    if (isDiff && _expanded) {
-      // Expandido + diff → RichText colorizado
+    if (isDiff) {
+      // Diff deve manter semântica visual tanto colapsado quanto expandido.
       contentWidget = _buildColorizedDiffContent(context, widget.text);
-    } else if (isDiff && !_expanded) {
-      // Colapsado + diff → Text plano (performance)
-      contentWidget = Text(
-        widget.text,
-        key: const ValueKey<String>('tool_content_text'),
-        maxLines: widget.collapsedMaxLines,
-        overflow: TextOverflow.ellipsis,
-        style: widget.textStyle,
-      );
     } else {
       // Não é diff → comportamento original
       contentWidget = Text(
