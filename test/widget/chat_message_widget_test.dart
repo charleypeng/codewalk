@@ -1362,6 +1362,37 @@ index abc123..def456 100644
       find.byKey(const ValueKey<String>('tool_command_text')),
       findsNothing,
     );
+    expect(find.text('Assistant'), findsNothing);
+  });
+
+  testWidgets('hides patch bubbles when tool call toggle is disabled', (
+    WidgetTester tester,
+  ) async {
+    final message = AssistantMessage(
+      id: 'msg_hide_patch',
+      sessionId: 'ses_hide_patch',
+      time: DateTime.fromMillisecondsSinceEpoch(1000),
+      parts: const <MessagePart>[
+        PatchPart(
+          id: 'part_patch_hide',
+          messageId: 'msg_hide_patch',
+          sessionId: 'ses_hide_patch',
+          files: <String>['lib/main.dart'],
+          hash: 'abc123',
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(message: message, showToolCallBubbles: false),
+        ),
+      ),
+    );
+
+    expect(find.text('Patch'), findsNothing);
+    expect(find.text('Assistant'), findsNothing);
   });
 
   testWidgets('expanded tool output caps content viewport height', (

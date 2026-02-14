@@ -3100,6 +3100,47 @@ void main() {
       },
     );
 
+    test(
+      'does not treat stale in-progress assistant as active response without busy status',
+      () async {
+        final draft = AssistantMessage(
+          id: 'msg_ai_stale_draft',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'prt_stale_draft',
+              messageId: 'msg_ai_stale_draft',
+              sessionId: 'ses_1',
+              text: 'draft still open',
+            ),
+          ],
+        );
+
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[draft];
+        chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+          'ses_1': SessionStatusInfo(type: SessionStatusType.idle),
+        };
+
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.loadSessionInsights('ses_1');
+
+        expect(provider.currentSessionStatus?.type, SessionStatusType.idle);
+        expect(provider.isCurrentSessionActivelyResponding, isFalse);
+        expect(provider.canAbortActiveResponse, isFalse);
+
+        chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+          'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
+        };
+        await provider.loadSessionInsights('ses_1');
+
+        expect(provider.currentSessionStatus?.type, SessionStatusType.busy);
+        expect(provider.isCurrentSessionActivelyResponding, isTrue);
+        expect(provider.canAbortActiveResponse, isTrue);
+      },
+    );
+
     test('refreshes active session when realtime stream reconnects', () async {
       final draft = AssistantMessage(
         id: 'msg_ai_live',

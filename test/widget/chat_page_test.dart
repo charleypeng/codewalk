@@ -3582,6 +3582,123 @@ void main() {
   );
 
   testWidgets(
+    'keeps composer status and stop hidden for background-only sync status',
+    (WidgetTester tester) async {
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_bg_sync_status',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Background Sync Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_bg_sync_status'] =
+          const <ChatMessage>[];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
+        findsNothing,
+      );
+      expect(find.byIcon(Icons.stop_rounded), findsNothing);
+      expect(find.byIcon(Icons.send_rounded), findsOneWidget);
+
+      repository.emitEvent(
+        const ChatEvent(
+          type: 'session.status',
+          properties: <String, dynamic>{
+            'sessionID': 'ses_bg_sync_status',
+            'status': <String, dynamic>{'type': 'busy'},
+          },
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 3));
+
+      expect(
+        find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
+        findsNothing,
+      );
+      expect(find.byIcon(Icons.stop_rounded), findsNothing);
+      expect(find.byIcon(Icons.send_rounded), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'keeps composer status and stop hidden for stale in-progress draft without busy status',
+    (WidgetTester tester) async {
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_stale_draft',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Stale Draft Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_stale_draft'] = <ChatMessage>[
+        AssistantMessage(
+          id: 'msg_stale_draft',
+          sessionId: 'ses_stale_draft',
+          time: DateTime.fromMillisecondsSinceEpoch(1100),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_stale_draft',
+              messageId: 'msg_stale_draft',
+              sessionId: 'ses_stale_draft',
+              text: 'draft token',
+            ),
+          ],
+        ),
+      ];
+      repository.sessionStatusById = const <String, SessionStatusInfo>{
+        'ses_stale_draft': SessionStatusInfo(type: SessionStatusType.idle),
+      };
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.loadSessionInsights('ses_stale_draft');
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
+        findsNothing,
+      );
+      expect(find.byIcon(Icons.stop_rounded), findsNothing);
+      expect(find.byIcon(Icons.send_rounded), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'shows soft retry snackbar for remote abort without blocking chat',
     (WidgetTester tester) async {
       final repository = FakeChatRepository(

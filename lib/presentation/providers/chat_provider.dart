@@ -310,6 +310,7 @@ class ChatProvider extends ChangeNotifier {
   ChatUiNotice? _pendingUiNotice;
   int _nextUiNoticeId = 0;
   int _messageStreamGeneration = 0;
+  String? _activeMessageStreamSessionId;
 
   // Project and provider-related state
   String? _currentProjectId;
@@ -413,6 +414,26 @@ class ChatProvider extends ChangeNotifier {
       Map<String, int>.unmodifiable(_modelUsageCounts);
   String get activeServerId => _activeServerId;
   bool get isRespondingInteraction => _isRespondingInteraction;
+  bool get isCurrentSessionActivelyResponding {
+    final sessionId = _currentSession?.id;
+    if (sessionId == null) {
+      return false;
+    }
+    final status = currentSessionStatus?.type;
+    final hasBusyStatus =
+        status == SessionStatusType.busy || status == SessionStatusType.retry;
+    final hasInProgressAssistant = _messages.whereType<AssistantMessage>().any(
+      (message) => !message.isCompleted,
+    );
+    final hasActiveStreamForCurrentSession =
+        _messageSubscription != null &&
+        _activeMessageStreamSessionId == sessionId;
+    if (hasActiveStreamForCurrentSession) {
+      return true;
+    }
+    return hasInProgressAssistant && hasBusyStatus;
+  }
+
   ChatSyncState get syncState => _syncState;
   bool get isInDegradedMode => _degradedMode;
   bool get refreshlessRealtimeEnabled => _refreshlessRealtimeEnabled;
@@ -425,15 +446,7 @@ class ChatProvider extends ChangeNotifier {
     if (_isAbortingResponse || _currentSession == null) {
       return false;
     }
-    final status = currentSessionStatus?.type;
-    final hasBusyStatus =
-        status == SessionStatusType.busy || status == SessionStatusType.retry;
-    final hasInProgressAssistant = _messages.whereType<AssistantMessage>().any(
-      (message) => !message.isCompleted,
-    );
-    return _state == ChatState.sending ||
-        hasBusyStatus ||
-        hasInProgressAssistant;
+    return isCurrentSessionActivelyResponding;
   }
 
   bool get _hasLocalActiveSelectionSyncWork {
@@ -2235,6 +2248,7 @@ class ChatProvider extends ChangeNotifier {
     }
     final active = _messageSubscription;
     _messageSubscription = null;
+    _activeMessageStreamSessionId = null;
     await _cancelSubscriptionSafely(active, label: 'message stream ($reason)');
   }
 
@@ -4985,6 +4999,7 @@ class ChatProvider extends ChangeNotifier {
         invalidateGeneration: true,
       );
       final streamGeneration = _messageStreamGeneration;
+      _activeMessageStreamSessionId = _currentSession?.id;
 
       AppLogger.info(
         'Provider send subscribing stream session=${_currentSession!.id} directory=${projectProvider.currentDirectory ?? "-"}',
@@ -5036,6 +5051,7 @@ class ChatProvider extends ChangeNotifier {
                 return;
               }
               _messageSubscription = null;
+              _activeMessageStreamSessionId = null;
               AppLogger.error('Provider send stream error', error: error);
               _setError('Failed to send message: $error');
             },
@@ -5047,6 +5063,7 @@ class ChatProvider extends ChangeNotifier {
                 return;
               }
               _messageSubscription = null;
+              _activeMessageStreamSessionId = null;
               AppLogger.info('Provider send stream finished');
               _setState(ChatState.loaded);
               unawaited(_persistLastSessionSnapshotBestEffort());
@@ -5058,6 +5075,7 @@ class ChatProvider extends ChangeNotifier {
           );
       AppLogger.info('Provider send stream subscription attached');
     } catch (error, stackTrace) {
+      _activeMessageStreamSessionId = null;
       AppLogger.error(
         'Provider send setup failed',
         error: error,

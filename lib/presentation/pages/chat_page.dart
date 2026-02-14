@@ -6523,27 +6523,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     ChatProvider chatProvider,
   ) {
     final statusType = chatProvider.currentSessionStatus?.type;
-    final latestMessage = chatProvider.messages.isEmpty
-        ? null
-        : chatProvider.messages.last;
-    final latestMessageIsCompletedAssistant =
-        latestMessage is AssistantMessage && latestMessage.isCompleted;
-    final hasInProgressAssistant = chatProvider.messages
-        .whereType<AssistantMessage>()
-        .any((message) => !message.isCompleted);
+    final hasCurrentSessionActiveResponse =
+        chatProvider.isCurrentSessionActivelyResponding;
     final hasStreamingAssistantParts = chatProvider.messages
         .whereType<AssistantMessage>()
         .any((message) => !message.isCompleted && message.parts.isNotEmpty);
-    final hasBusyOrRetryStatus =
-        statusType == SessionStatusType.busy ||
-        statusType == SessionStatusType.retry;
 
-    final shouldShowIndicator =
-        (chatProvider.state == ChatState.sending &&
-            !latestMessageIsCompletedAssistant) ||
-        hasBusyOrRetryStatus ||
-        hasInProgressAssistant;
-    if (!shouldShowIndicator) {
+    if (!hasCurrentSessionActiveResponse) {
       return null;
     }
 

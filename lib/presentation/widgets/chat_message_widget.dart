@@ -184,7 +184,8 @@ class ChatMessageWidget extends StatelessWidget {
     if (part.type == PartType.reasoning && !showThinkingBubbles) {
       return false;
     }
-    if (part.type == PartType.tool && !showToolCallBubbles) {
+    if ((part.type == PartType.tool || part.type == PartType.patch) &&
+        !showToolCallBubbles) {
       return false;
     }
     return true;
@@ -319,6 +320,9 @@ class ChatMessageWidget extends StatelessWidget {
       case PartType.snapshot:
         return _buildSnapshotPart(context, part as SnapshotPart);
       case PartType.patch:
+        if (!showToolCallBubbles) {
+          return const SizedBox.shrink();
+        }
         return _buildPatchPart(context, part as PatchPart);
       case PartType.subtask:
         return _buildSubtaskPart(context, part as SubtaskPart);
