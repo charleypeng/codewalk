@@ -93,6 +93,55 @@ Color microphoneButtonForegroundColor({
   return isListening ? colorScheme.onError : colorScheme.onSecondaryContainer;
 }
 
+ButtonStyle composerAttachButtonStyle({required ColorScheme colorScheme}) {
+  return IconButton.styleFrom(
+    foregroundColor: colorScheme.onSurfaceVariant.withValues(alpha: 0.82),
+    disabledForegroundColor: colorScheme.onSurfaceVariant.withValues(
+      alpha: 0.38,
+    ),
+    backgroundColor: Colors.transparent,
+    disabledBackgroundColor: Colors.transparent,
+    overlayColor: Colors.transparent,
+    hoverColor: Colors.transparent,
+    highlightColor: Colors.transparent,
+    minimumSize: const Size(36, 36),
+    maximumSize: const Size(36, 36),
+    padding: EdgeInsets.zero,
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    visualDensity: VisualDensity.compact,
+  );
+}
+
+@visibleForTesting
+Color resolveComposerBubbleColor({
+  required Color preferredColor,
+  required Color surfaceColor,
+  required Color fallbackOverlayColor,
+  required double minLuminanceDelta,
+}) {
+  final preferredLuminanceDelta =
+      (preferredColor.computeLuminance() - surfaceColor.computeLuminance())
+          .abs();
+  if (preferredLuminanceDelta >= minLuminanceDelta) {
+    return preferredColor;
+  }
+
+  final fallbackColor = Color.alphaBlend(fallbackOverlayColor, surfaceColor);
+  final fallbackLuminanceDelta =
+      (fallbackColor.computeLuminance() - surfaceColor.computeLuminance())
+          .abs();
+  if (fallbackLuminanceDelta >= minLuminanceDelta) {
+    return fallbackColor;
+  }
+
+  final fallbackAlpha = fallbackOverlayColor.a;
+  final boostedFallbackAlpha = (fallbackAlpha * 1.5).clamp(0.0, 1.0).toDouble();
+  return Color.alphaBlend(
+    fallbackOverlayColor.withValues(alpha: boostedFallbackAlpha),
+    surfaceColor,
+  );
+}
+
 /// Chat input widget
 class ChatInputWidget extends StatefulWidget {
   const ChatInputWidget({
@@ -793,6 +842,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final attachButtonStyle = composerAttachButtonStyle(
+      colorScheme: colorScheme,
+    );
     final mentionTokens = _extractMentionTokens(_controller.text);
     final showAttachments =
         _attachments.isNotEmpty && _mode == ChatComposerMode.normal;
@@ -803,25 +855,41 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
         !_isSending &&
         !widget.isResponding;
     final showPopover = _popoverType != ChatComposerPopoverType.none;
-    final composerBackgroundColor = Color.alphaBlend(
-      colorScheme.primary.withValues(alpha: isDark ? 0.18 : 0.08),
+    const composerBackgroundColor = Colors.transparent;
+    final normalBubblePreferredColor = Color.alphaBlend(
+      colorScheme.surfaceContainerHighest.withValues(
+        alpha: isDark ? 0.94 : 0.96,
+      ),
       colorScheme.surface,
     );
+    final normalBubbleFallbackOverlayColor = colorScheme.onSurface.withValues(
+      alpha: isDark ? 0.12 : 0.035,
+    );
+    final normalBubbleColor = resolveComposerBubbleColor(
+      preferredColor: normalBubblePreferredColor,
+      surfaceColor: colorScheme.surface,
+      fallbackOverlayColor: normalBubbleFallbackOverlayColor,
+      minLuminanceDelta: isDark ? 0.03 : 0.015,
+    );
+    final shellBubblePreferredColor = Color.alphaBlend(
+      colorScheme.tertiaryContainer.withValues(alpha: isDark ? 0.6 : 0.84),
+      colorScheme.surface,
+    );
+    final shellBubbleColor = resolveComposerBubbleColor(
+      preferredColor: shellBubblePreferredColor,
+      surfaceColor: colorScheme.surface,
+      fallbackOverlayColor: colorScheme.tertiary.withValues(
+        alpha: isDark ? 0.24 : 0.16,
+      ),
+      minLuminanceDelta: isDark ? 0.03 : 0.015,
+    );
     final inputBubbleColor = _mode == ChatComposerMode.shell
-        ? colorScheme.tertiaryContainer.withValues(alpha: 0.5)
-        : Color.alphaBlend(
-            (isDark
-                    ? colorScheme.surfaceContainerHigh
-                    : colorScheme.surfaceContainerLowest)
-                .withValues(alpha: isDark ? 0.82 : 0.95),
-            composerBackgroundColor,
-          );
-    final inputBubbleBorderColor = _mode == ChatComposerMode.shell
-        ? colorScheme.tertiary.withValues(alpha: 0.25)
-        : colorScheme.outlineVariant.withValues(alpha: isDark ? 0.45 : 0.28);
+        ? shellBubbleColor
+        : normalBubbleColor;
     final inputBubbleBorderRadius = BorderRadius.circular(28);
 
     return Container(
+      key: const ValueKey<String>('composer_root_container'),
       decoration: BoxDecoration(color: composerBackgroundColor),
       child: SafeArea(
         top: false,
@@ -942,9 +1010,10 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                   if (widget.showAttachmentButton &&
                       widget.showInlineAttachmentButton &&
                       _mode == ChatComposerMode.normal) ...[
-                    IconButton.filledTonal(
+                    IconButton(
                       onPressed: widget.enabled ? _showAttachmentOptions : null,
                       tooltip: 'Add attachment',
+                      style: attachButtonStyle,
                       icon: const Icon(Icons.attach_file_rounded),
                     ),
                     const SizedBox(width: 8),
@@ -955,16 +1024,13 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                         minHeight: _composerActionButtonSize,
                       ),
                       child: DecoratedBox(
+                        key: const ValueKey<String>('composer_input_bubble'),
                         decoration: BoxDecoration(
                           color: inputBubbleColor,
                           borderRadius: inputBubbleBorderRadius,
-                          border: Border.all(
-                            color: inputBubbleBorderColor,
-                            width: 1,
-                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
+                              color: Colors.black.withValues(alpha: 0.07),
                               blurRadius: 12,
                               offset: const Offset(0, 2),
                             ),
@@ -1008,6 +1074,10 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                                                       .withValues(alpha: 0.88),
                                           ),
                                       isDense: true,
+                                      filled: false,
+                                      fillColor: Colors.transparent,
+                                      hoverColor: Colors.transparent,
+                                      focusColor: Colors.transparent,
                                       border: InputBorder.none,
                                       enabledBorder: InputBorder.none,
                                       focusedBorder: InputBorder.none,

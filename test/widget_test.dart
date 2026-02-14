@@ -294,6 +294,76 @@ void main() {
     expect(stopCount, 1);
   });
 
+  testWidgets('composer keeps outer background transparent', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      _buildChatInputHarness(child: ChatInputWidget(onSendMessage: (_) {})),
+    );
+
+    final rootContainer = tester.widget<Container>(
+      find.byKey(const ValueKey<String>('composer_root_container')),
+    );
+    final rootDecoration = rootContainer.decoration as BoxDecoration;
+    expect(rootDecoration.color, Colors.transparent);
+
+    final inputBubble = tester.widget<DecoratedBox>(
+      find.byKey(const ValueKey<String>('composer_input_bubble')),
+    );
+    final inputBubbleDecoration = inputBubble.decoration as BoxDecoration;
+    expect(inputBubbleDecoration.color, isNot(Colors.transparent));
+    expect(inputBubbleDecoration.border, isNull);
+  });
+
+  testWidgets('inline attachment button uses subtle transparent style', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (_) {},
+          showAttachmentButton: true,
+          showInlineAttachmentButton: true,
+        ),
+      ),
+    );
+
+    final attachButton = tester.widget<IconButton>(
+      find.ancestor(
+        of: find.byTooltip('Add attachment'),
+        matching: find.byType(IconButton),
+      ),
+    );
+    final style = attachButton.style;
+
+    expect(style, isNotNull);
+    expect(
+      style!.backgroundColor?.resolve(const <WidgetState>{}),
+      Colors.transparent,
+    );
+    expect(
+      style.backgroundColor?.resolve(const <WidgetState>{WidgetState.hovered}),
+      Colors.transparent,
+    );
+  });
+
+  testWidgets('composer text field disables inherited hover fill', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      _buildChatInputHarness(child: ChatInputWidget(onSendMessage: (_) {})),
+    );
+
+    final textField = tester.widget<TextField>(find.byType(TextField));
+    final decoration = textField.decoration;
+
+    expect(decoration, isNotNull);
+    expect(decoration!.filled, isFalse);
+    expect(decoration.fillColor, Colors.transparent);
+    expect(decoration.hoverColor, Colors.transparent);
+    expect(decoration.focusColor, Colors.transparent);
+  });
+
   testWidgets('slash popover inserts selected command prefix', (
     WidgetTester tester,
   ) async {
@@ -520,5 +590,53 @@ void main() {
       ),
       colorScheme.onError,
     );
+  });
+
+  test('composer attachment style keeps transparent backgrounds', () {
+    final style = composerAttachButtonStyle(
+      colorScheme: const ColorScheme.light(),
+    );
+
+    expect(
+      style.backgroundColor?.resolve(const <WidgetState>{}),
+      Colors.transparent,
+    );
+    expect(
+      style.backgroundColor?.resolve(const <WidgetState>{WidgetState.hovered}),
+      Colors.transparent,
+    );
+    expect(
+      style.backgroundColor?.resolve(const <WidgetState>{WidgetState.pressed}),
+      Colors.transparent,
+    );
+  });
+
+  test('composer bubble color falls back when preferred is too close', () {
+    const surface = Color(0xFF101010);
+    const preferred = Color(0xFF101010);
+    const fallbackOverlay = Color(0x1FFFFFFF);
+
+    final resolved = resolveComposerBubbleColor(
+      preferredColor: preferred,
+      surfaceColor: surface,
+      fallbackOverlayColor: fallbackOverlay,
+      minLuminanceDelta: 0.03,
+    );
+
+    expect(resolved, isNot(surface));
+  });
+
+  test('composer bubble color keeps preferred when already distinct', () {
+    const surface = Color(0xFF101010);
+    const preferred = Color(0xFF2A2A2A);
+
+    final resolved = resolveComposerBubbleColor(
+      preferredColor: preferred,
+      surfaceColor: surface,
+      fallbackOverlayColor: Color(0x1FFFFFFF),
+      minLuminanceDelta: 0.01,
+    );
+
+    expect(resolved, preferred);
   });
 }
