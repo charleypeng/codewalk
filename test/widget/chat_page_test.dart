@@ -2651,7 +2651,9 @@ void main() {
 
     final streamController = StreamController<Either<Failure, ChatMessage>>();
     addTearDown(() async {
-      await streamController.close();
+      if (!streamController.isClosed) {
+        await streamController.close();
+      }
     });
     repository.sendMessageHandler = (_, __, ___, ____) =>
         streamController.stream;
@@ -2827,75 +2829,109 @@ void main() {
     expect(find.byIcon(Icons.mark_chat_unread_outlined), findsNothing);
   });
 
-  testWidgets(
-    'shows thinking then receiving indicators while reply is in progress',
-    (WidgetTester tester) async {
-      await tester.binding.setSurfaceSize(const Size(1000, 900));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
+  testWidgets('shows delayed thinking then receiving status in composer line', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
 
-      final repository = FakeChatRepository(
-        sessions: <ChatSession>[
-          ChatSession(
-            id: 'ses_progress',
-            workspaceId: 'default',
-            time: DateTime.fromMillisecondsSinceEpoch(1000),
-            title: 'Progress Session',
-          ),
-        ],
-      );
-      repository.messagesBySession['ses_progress'] = const <ChatMessage>[];
-
-      final streamController = StreamController<Either<Failure, ChatMessage>>();
-      addTearDown(() async {
-        await streamController.close();
-      });
-      repository.sendMessageHandler = (_, __, ___, ____) =>
-          streamController.stream;
-
-      final localDataSource = InMemoryAppLocalDataSource()
-        ..activeServerId = 'srv_test';
-      final provider = _buildChatProvider(
-        chatRepository: repository,
-        localDataSource: localDataSource,
-      );
-      final appProvider = _buildAppProvider(localDataSource: localDataSource);
-
-      await tester.pumpWidget(_testApp(provider, appProvider));
-      await tester.pumpAndSettle();
-
-      await provider.loadSessions();
-      await provider.selectSession(provider.sessions.first);
-      await provider.initializeProviders();
-      await tester.pumpAndSettle();
-
-      await provider.sendMessage('status progress');
-      await tester.pump();
-
-      expect(find.text('Thinking...'), findsOneWidget);
-
-      streamController.add(
-        Right(
-          AssistantMessage(
-            id: 'msg_assistant_progress',
-            sessionId: 'ses_progress',
-            time: DateTime.fromMillisecondsSinceEpoch(2000),
-            parts: const <MessagePart>[
-              TextPart(
-                id: 'part_assistant_progress',
-                messageId: 'msg_assistant_progress',
-                sessionId: 'ses_progress',
-                text: 'partial token',
-              ),
-            ],
-          ),
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_progress',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Progress Session',
         ),
-      );
-      await tester.pump();
+      ],
+    );
+    repository.messagesBySession['ses_progress'] = const <ChatMessage>[];
 
-      expect(find.text('Receiving response...'), findsOneWidget);
-      expect(find.text('Thinking...'), findsNothing);
-    },
-  );
+    final streamController = StreamController<Either<Failure, ChatMessage>>();
+    addTearDown(() async {
+      await streamController.close();
+    });
+    repository.sendMessageHandler = (_, __, ___, ____) =>
+        streamController.stream;
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await provider.initializeProviders();
+    await tester.pumpAndSettle();
+
+    await provider.sendMessage('status progress');
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
+      findsNothing,
+    );
+
+    await tester.pump(const Duration(milliseconds: 900));
+    expect(
+      find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
+      findsNothing,
+    );
+
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(
+      find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('composer_reasoning_status_spinner')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(
+        const ValueKey<String>('composer_reasoning_status_type_thinking'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Thinking...'), findsOneWidget);
+
+    streamController.add(
+      Right(
+        AssistantMessage(
+          id: 'msg_assistant_progress',
+          sessionId: 'ses_progress',
+          time: DateTime.fromMillisecondsSinceEpoch(2000),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_assistant_progress',
+              messageId: 'msg_assistant_progress',
+              sessionId: 'ses_progress',
+              text: 'partial token',
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey<String>('composer_reasoning_status_icon')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('composer_reasoning_status_spinner')),
+      findsNothing,
+    );
+    expect(find.text('Receiving response...'), findsOneWidget);
+    expect(find.text('Thinking...'), findsNothing);
+  });
 
   testWidgets(
     'shows transient reasoning status above composer and hides it after completion',
@@ -2914,7 +2950,9 @@ void main() {
 
       final streamController = StreamController<Either<Failure, ChatMessage>>();
       addTearDown(() async {
-        await streamController.close();
+        if (!streamController.isClosed) {
+          await streamController.close();
+        }
       });
       repository.sendMessageHandler = (_, __, ___, ____) =>
           streamController.stream;
@@ -2956,13 +2994,29 @@ void main() {
         ),
       );
       await tester.pump();
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
+        findsNothing,
+      );
+
+      await tester.pump(const Duration(seconds: 1));
 
       expect(
         find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
         findsOneWidget,
       );
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'composer_reasoning_status_type_dynamicReasoning',
+          ),
+        ),
+        findsOneWidget,
+      );
       expect(find.text('Reading project tree'), findsOneWidget);
-      expect(find.text('Receiving response...'), findsOneWidget);
+      expect(find.text('Receiving response...'), findsNothing);
       expect(find.text('Thinking Process'), findsNothing);
 
       streamController.add(
@@ -2983,6 +3037,26 @@ void main() {
           ),
         ),
       );
+      await tester.pump();
+      repository.emitEvent(
+        const ChatEvent(
+          type: 'session.status',
+          properties: <String, dynamic>{
+            'sessionID': 'ses_status',
+            'status': <String, dynamic>{'type': 'idle'},
+          },
+        ),
+      );
+      await tester.pump();
+      await streamController.close();
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
+        findsOneWidget,
+      );
+
+      await tester.pump(const Duration(seconds: 1));
       await tester.pump();
 
       expect(

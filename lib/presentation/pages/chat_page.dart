@@ -111,6 +111,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   static const double _nearBottomThreshold = 200;
   static const String _rootTreeCacheKey = '__root__';
   static const Duration _serverAlertGracePeriod = Duration(seconds: 10);
+  static const Duration _composerStatusShowDelay = Duration(seconds: 1);
+  static const Duration _composerStatusHideDelay = Duration(seconds: 1);
 
   final ScrollController _scrollController = ScrollController();
   final FocusNode _inputFocusNode = FocusNode(debugLabel: 'chat_input');
@@ -139,6 +141,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   final Map<String, String> _fileDiffSignaturesByContext = <String, String>{};
   DateTime? _serverAlertIssueStartedAt;
   Timer? _serverAlertRevealTimer;
+  Timer? _composerStatusShowTimer;
+  Timer? _composerStatusHideTimer;
+  _ComposerStatusPresentation? _visibleComposerStatus;
+  _ComposerStatusPresentation? _pendingComposerStatus;
+  _ComposerStatusPresentation? _queuedComposerStatusTarget;
+  _ComposerStatusPresentation? _lastComposerStatusTarget;
+  bool _composerStatusTargetInitialized = false;
 
   @override
   void initState() {
@@ -189,6 +198,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     _appProvider?.removeListener(_handleAppProviderChange);
     _notificationTapSubscription?.cancel();
     _serverAlertRevealTimer?.cancel();
+    _composerStatusShowTimer?.cancel();
+    _composerStatusHideTimer?.cancel();
     _scrollController.removeListener(_handleScrollChanged);
     WidgetsBinding.instance.removeObserver(this);
 
@@ -4487,13 +4498,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final supportsImages = _supportsImageAttachments(selectedModel);
     final supportsPdf = _supportsPdfAttachments(selectedModel);
     final attachmentsEnabled = supportsImages || supportsPdf;
-    final progressStage = _resolveAssistantProgressStage(chatProvider);
-    final latestReasoningStatusLabel = _resolveLatestReasoningStatusLabel(
-      chatProvider.messages,
-    );
-    final composerReasoningStatusLabel = progressStage == null
-        ? null
-        : latestReasoningStatusLabel;
+    final composerStatusTarget = _resolveComposerStatusTarget(chatProvider);
+    _queueComposerStatusSync(composerStatusTarget);
+    final composerStatus = _visibleComposerStatus;
 
     return Padding(
       padding: EdgeInsets.symmetric(
@@ -4563,8 +4570,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
               _buildInteractionPrompts(chatProvider),
 
-              if (composerReasoningStatusLabel != null)
-                _buildComposerReasoningStatusLine(composerReasoningStatusLabel),
+              if (composerStatus != null)
+                _buildComposerReasoningStatusLine(composerStatus),
 
               _buildModelControls(
                 chatProvider,
@@ -4630,7 +4637,109 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildComposerReasoningStatusLine(String label) {
+  void _queueComposerStatusSync(_ComposerStatusPresentation? target) {
+    if (_composerStatusTargetInitialized &&
+        _lastComposerStatusTarget == target) {
+      return;
+    }
+    _composerStatusTargetInitialized = true;
+    _lastComposerStatusTarget = target;
+    _queuedComposerStatusTarget = target;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      final queuedTarget = _queuedComposerStatusTarget;
+      _queuedComposerStatusTarget = null;
+      _applyComposerStatusTarget(queuedTarget);
+    });
+  }
+
+  void _applyComposerStatusTarget(_ComposerStatusPresentation? target) {
+    if (target == null) {
+      _composerStatusShowTimer?.cancel();
+      _composerStatusShowTimer = null;
+      _pendingComposerStatus = null;
+      if (_visibleComposerStatus == null) {
+        return;
+      }
+      if (_composerStatusHideTimer != null) {
+        return;
+      }
+      _composerStatusHideTimer = Timer(_composerStatusHideDelay, () {
+        if (!mounted) {
+          return;
+        }
+        _composerStatusHideTimer = null;
+        if (_visibleComposerStatus == null) {
+          return;
+        }
+        setState(() {
+          _visibleComposerStatus = null;
+        });
+      });
+      return;
+    }
+
+    _composerStatusHideTimer?.cancel();
+    _composerStatusHideTimer = null;
+
+    if (_visibleComposerStatus != null) {
+      _composerStatusShowTimer?.cancel();
+      _composerStatusShowTimer = null;
+      _pendingComposerStatus = null;
+      if (_visibleComposerStatus == target) {
+        return;
+      }
+      setState(() {
+        _visibleComposerStatus = target;
+      });
+      return;
+    }
+
+    if (_pendingComposerStatus == target && _composerStatusShowTimer != null) {
+      return;
+    }
+
+    _pendingComposerStatus = target;
+    _composerStatusShowTimer?.cancel();
+    _composerStatusShowTimer = Timer(_composerStatusShowDelay, () {
+      if (!mounted) {
+        return;
+      }
+      final pendingStatus = _pendingComposerStatus;
+      _composerStatusShowTimer = null;
+      _pendingComposerStatus = null;
+      if (pendingStatus == null) {
+        return;
+      }
+      setState(() {
+        _visibleComposerStatus = pendingStatus;
+      });
+    });
+  }
+
+  Widget _buildComposerReasoningStatusLine(_ComposerStatusPresentation status) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final leading = switch (status.type) {
+      _ComposerStatusType.thinking => const SizedBox(
+        key: ValueKey<String>('composer_reasoning_status_spinner'),
+        width: 14,
+        height: 14,
+        child: TickerMode(
+          enabled: false,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+      _ComposerStatusType.receiving ||
+      _ComposerStatusType.dynamicReasoning => Icon(
+        Icons.auto_awesome,
+        key: const ValueKey<String>('composer_reasoning_status_icon'),
+        size: 16,
+        color: colorScheme.primary,
+      ),
+    };
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
       child: Align(
@@ -4639,19 +4748,20 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           key: const ValueKey<String>('composer_reasoning_status_line'),
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.auto_awesome,
-              size: 16,
-              color: Theme.of(context).colorScheme.primary,
+            KeyedSubtree(
+              key: ValueKey<String>(
+                'composer_reasoning_status_type_${status.type.name}',
+              ),
+              child: leading,
             ),
             const SizedBox(width: 8),
             Text(
-              label,
+              status.label,
               key: const ValueKey<String>('composer_reasoning_status_text'),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -5740,12 +5850,15 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final latestReasoningPartKey = _resolveLatestReasoningPartKey(
       chatProvider.messages,
     );
+    final showMessageProgressIndicator =
+        progressStage == _AssistantProgressStage.retrying;
 
     return ListView.builder(
       key: const ValueKey<String>('chat_message_list'),
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(vertical: 0),
-      itemCount: chatProvider.messages.length + (progressStage == null ? 0 : 1),
+      itemCount:
+          chatProvider.messages.length + (showMessageProgressIndicator ? 1 : 0),
       itemBuilder: (context, index) {
         if (index < chatProvider.messages.length) {
           final message = chatProvider.messages[index];
@@ -5760,23 +5873,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           );
         }
 
-        final indicator = switch (progressStage) {
-          _AssistantProgressStage.receiving => (
-            text: 'Receiving response...',
-            icon: Icons.auto_awesome,
-            showSpinner: false,
-          ),
-          _AssistantProgressStage.retrying => (
-            text: 'Retrying model request...',
-            icon: Icons.refresh_rounded,
-            showSpinner: true,
-          ),
-          _AssistantProgressStage.thinking || null => (
-            text: 'Thinking...',
-            icon: Icons.hourglass_top_rounded,
-            showSpinner: true,
-          ),
-        };
+        const indicator = (
+          text: 'Retrying model request...',
+          icon: Icons.refresh_rounded,
+          showSpinner: true,
+        );
 
         return Container(
           padding: const EdgeInsets.all(16),
@@ -5859,10 +5960,46 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     return null;
   }
 
+  _ComposerStatusPresentation? _resolveComposerStatusTarget(
+    ChatProvider chatProvider,
+  ) {
+    final latestMessage = chatProvider.messages.isEmpty
+        ? null
+        : chatProvider.messages.last;
+    if (latestMessage is AssistantMessage && latestMessage.isCompleted) {
+      return null;
+    }
+
+    final progressStage = _resolveAssistantProgressStage(chatProvider);
+    if (progressStage == null) {
+      return null;
+    }
+
+    final reasoningStatusLabel = _resolveLatestReasoningStatusLabel(
+      chatProvider.messages,
+    );
+    if (reasoningStatusLabel != null) {
+      return _ComposerStatusPresentation.dynamicReasoning(reasoningStatusLabel);
+    }
+
+    return switch (progressStage) {
+      _AssistantProgressStage.receiving =>
+        const _ComposerStatusPresentation.receiving(),
+      _AssistantProgressStage.thinking =>
+        const _ComposerStatusPresentation.thinking(),
+      _AssistantProgressStage.retrying => null,
+    };
+  }
+
   _AssistantProgressStage? _resolveAssistantProgressStage(
     ChatProvider chatProvider,
   ) {
     final statusType = chatProvider.currentSessionStatus?.type;
+    final latestMessage = chatProvider.messages.isEmpty
+        ? null
+        : chatProvider.messages.last;
+    final latestMessageIsCompletedAssistant =
+        latestMessage is AssistantMessage && latestMessage.isCompleted;
     final hasInProgressAssistant = chatProvider.messages
         .whereType<AssistantMessage>()
         .any((message) => !message.isCompleted);
@@ -5874,7 +6011,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         statusType == SessionStatusType.retry;
 
     final shouldShowIndicator =
-        chatProvider.state == ChatState.sending ||
+        (chatProvider.state == ChatState.sending &&
+            !latestMessageIsCompletedAssistant) ||
         hasBusyOrRetryStatus ||
         hasInProgressAssistant;
     if (!shouldShowIndicator) {
@@ -6179,6 +6317,43 @@ class _FileTabViewState {
 }
 
 enum _AssistantProgressStage { thinking, receiving, retrying }
+
+enum _ComposerStatusType { dynamicReasoning, receiving, thinking }
+
+class _ComposerStatusPresentation {
+  const _ComposerStatusPresentation._({
+    required this.type,
+    required this.label,
+  });
+
+  const _ComposerStatusPresentation.dynamicReasoning(String label)
+    : this._(type: _ComposerStatusType.dynamicReasoning, label: label);
+
+  const _ComposerStatusPresentation.receiving()
+    : this._(
+        type: _ComposerStatusType.receiving,
+        label: 'Receiving response...',
+      );
+
+  const _ComposerStatusPresentation.thinking()
+    : this._(type: _ComposerStatusType.thinking, label: 'Thinking...');
+
+  final _ComposerStatusType type;
+  final String label;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    return other is _ComposerStatusPresentation &&
+        other.type == type &&
+        other.label == label;
+  }
+
+  @override
+  int get hashCode => Object.hash(type, label);
+}
 
 class _DirectoryPickerSheet extends StatefulWidget {
   const _DirectoryPickerSheet({required this.initialDirectory});
