@@ -106,4 +106,44 @@ void main() {
     await tester.pumpAndSettle();
     expect(deleteCalls, 1);
   });
+
+  testWidgets('renders child sessions as collapsed sub-conversations', (
+    tester,
+  ) async {
+    final parent = ChatSession(
+      id: 'ses_parent',
+      workspaceId: 'default',
+      time: DateTime.fromMillisecondsSinceEpoch(2000),
+      title: 'Parent Session',
+    );
+    final child = ChatSession(
+      id: 'ses_child',
+      workspaceId: 'default',
+      time: DateTime.fromMillisecondsSinceEpoch(3000),
+      title: 'Child Session',
+      parentId: 'ses_parent',
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatSessionList(sessions: <ChatSession>[parent, child]),
+        ),
+      ),
+    );
+
+    expect(find.text('Child Session'), findsNothing);
+    expect(find.text('1 sub-conversation'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('chat_session_toggle_ses_parent')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('chat_session_tile_ses_child')),
+      findsOneWidget,
+    );
+    expect(find.text('Child Session'), findsOneWidget);
+  });
 }
