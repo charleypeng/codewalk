@@ -12,6 +12,10 @@
 - Coverage was expanded in `test/unit/providers/chat_provider_test.dart`, `test/widget/chat_message_widget_test.dart`, and `test/widget/chat_page_test.dart` for deferred sync flush semantics and status-label rendering.
 - Chat timeline now creates a compaction boundary entry that collapses pre-compaction history by default and lazily builds that segment only when explicitly expanded (`lib/presentation/pages/chat_page.dart`).
 - Widget coverage now validates collapsed pre-compaction visibility, expand/re-collapse interaction, and expansion reset after session switching (`test/widget/chat_page_test.dart`).
+- Added `warmupProvidersRefresh(reason: 'chat-startup')` to trigger async provider initialization on startup without blocking UI (`lib/presentation/providers/chat_provider.dart`, called from `lib/presentation/pages/chat_page.dart`).
+- Added `isSessionActivelyResponding(sessionId)` method to check if session has active stream or busy status, guarding session refresh operations to prevent concurrent refreshes (`_activeSessionRefreshInFlight` flag).
+- Added active session indicator in Conversations list: `ChatSessionList` now displays `Icons.sync_rounded` via `AnimatedSwitcher` when a session is actively responding (`isSessionActive` callback prop), providing visual feedback for streaming sessions.
+- Added provider refresh state UI: shows "Loading models" chip with spinner or "Retry models" action chip in composer area based on `providersRefreshState` and `isProvidersRefreshInProgress`.
 
 ## Project Structure
 

@@ -135,7 +135,7 @@ Implemented multi-pass scroll-to-bottom algorithm (up to 6 passes with 1px epsil
 
 #### `featH` Settings/onboarding/operation polish
 
-- [ ] Refresh providers/model em background de forma assíncrona ao abrir o app
+- [x] Refresh providers/model em background de forma assíncrona ao abrir o app (hash: a definir após commit)
 - [ ] Adicionar instruções básicas de como instalar e executar um servidor OpenCode na tela de adicionar servidor
 - [ ] Condensar as chamas de tool calls em um collapsable quando a resposta final do assistente chegar
 - [ ] Tornar bolha de thinking em uma caixa de no máximo 4 linhas, o texto vai subindo suavemente assim que chega, somente se clicar em show more expande um pouco mais mas com altura limitada ativando barra de rolagem interna se necessário
@@ -151,6 +151,7 @@ Implemented multi-pass scroll-to-bottom algorithm (up to 6 passes with 1px epsil
 - [ ] Mudar o ícone do botão 'Files' para algo mais intuitivo, talvez ícone de tree
 - [ ] Aumentar o espaço/largura do select no topo para o projeto atual quando no desktop. A largura atual está colocando ellipsis muito rápido com o espaço todo de uma tela grande (desktop)
 - [ ] Criar lista de dicas de uma frase para mostrar enquanto aguarda respostas do servidor mas nada chegou ainda
+- [x] Na lista de Conversations, trocar o ícone padrão da sessão por um estado visual de loading suave enquanto aquela sessão/conversa estiver recebendo dados/resposta (mobile + desktop) (hash: a definir após commit)
 
 #### `featJ` Speech-to-text platform matrix
 

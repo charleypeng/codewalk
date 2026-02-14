@@ -107,6 +107,24 @@ void main() {
     expect(deleteCalls, 1);
   });
 
+  testWidgets('renders loading indicator for active session rows', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatSessionList(
+            sessions: <ChatSession>[session()],
+            isSessionActive: (sessionId) => sessionId == 'ses_1',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byIcon(Icons.sync_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.chat), findsNothing);
+  });
+
   testWidgets('renders child sessions as collapsed sub-conversations', (
     tester,
   ) async {

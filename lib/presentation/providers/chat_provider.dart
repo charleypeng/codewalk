@@ -49,6 +49,8 @@ enum ChatState { initial, loading, loaded, error, sending }
 
 enum ChatSyncState { connected, reconnecting, delayed }
 
+enum ChatProvidersRefreshState { idle, loading, ready, failed }
+
 enum _SelectionSyncTransactionPhase {
   idle,
   pendingRemote,
@@ -317,6 +319,10 @@ class ChatProvider extends ChangeNotifier {
   List<Provider> _providers = [];
   Map<String, String> _defaultModels = {};
   List<Agent> _agents = <Agent>[];
+  ChatProvidersRefreshState _providersRefreshState =
+      ChatProvidersRefreshState.idle;
+  String? _providersRefreshErrorMessage;
+  Future<void>? _providersRefreshTask;
   String? _selectedProviderId;
   String? _selectedModelId;
   String? _selectedAgentName;
@@ -414,24 +420,44 @@ class ChatProvider extends ChangeNotifier {
       Map<String, int>.unmodifiable(_modelUsageCounts);
   String get activeServerId => _activeServerId;
   bool get isRespondingInteraction => _isRespondingInteraction;
+  ChatProvidersRefreshState get providersRefreshState => _providersRefreshState;
+  String? get providersRefreshErrorMessage => _providersRefreshErrorMessage;
+  bool get isProvidersRefreshInProgress =>
+      _providersRefreshState == ChatProvidersRefreshState.loading;
+
+  bool isSessionActivelyResponding(String sessionId) {
+    final normalizedSessionId = sessionId.trim();
+    if (normalizedSessionId.isEmpty) {
+      return false;
+    }
+    final status = _sessionStatusById[normalizedSessionId]?.type;
+    final hasBusyStatus =
+        status == SessionStatusType.busy || status == SessionStatusType.retry;
+    final hasActiveStream =
+        _messageSubscription != null &&
+        _activeMessageStreamSessionId == normalizedSessionId;
+    if (hasActiveStream) {
+      return true;
+    }
+    if (!hasBusyStatus) {
+      return false;
+    }
+    if (_currentSession?.id != normalizedSessionId) {
+      return true;
+    }
+    final hasInProgressAssistant = _messages.whereType<AssistantMessage>().any(
+      (message) =>
+          message.sessionId == normalizedSessionId && !message.isCompleted,
+    );
+    return hasInProgressAssistant || _state == ChatState.sending;
+  }
+
   bool get isCurrentSessionActivelyResponding {
     final sessionId = _currentSession?.id;
     if (sessionId == null) {
       return false;
     }
-    final status = currentSessionStatus?.type;
-    final hasBusyStatus =
-        status == SessionStatusType.busy || status == SessionStatusType.retry;
-    final hasInProgressAssistant = _messages.whereType<AssistantMessage>().any(
-      (message) => !message.isCompleted,
-    );
-    final hasActiveStreamForCurrentSession =
-        _messageSubscription != null &&
-        _activeMessageStreamSessionId == sessionId;
-    if (hasActiveStreamForCurrentSession) {
-      return true;
-    }
-    return hasInProgressAssistant && hasBusyStatus;
+    return isSessionActivelyResponding(sessionId);
   }
 
   ChatSyncState get syncState => _syncState;
@@ -656,6 +682,21 @@ class ChatProvider extends ChangeNotifier {
     _state = newState;
     notifyListeners();
     _attemptPendingRemoteSelectionSync(reason: 'state-$newState');
+  }
+
+  void _setProvidersRefreshState(
+    ChatProvidersRefreshState state, {
+    String? errorMessage,
+    bool notify = true,
+  }) {
+    final changed =
+        _providersRefreshState != state ||
+        _providersRefreshErrorMessage != errorMessage;
+    _providersRefreshState = state;
+    _providersRefreshErrorMessage = errorMessage;
+    if (changed && notify) {
+      notifyListeners();
+    }
   }
 
   /// Set error
@@ -3723,14 +3764,46 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void warmupProvidersRefresh({String reason = 'startup'}) {
+    AppLogger.info('providers_refresh_warmup reason=$reason');
+    unawaited(initializeProviders());
+  }
+
+  Future<void> retryProvidersRefresh() async {
+    AppLogger.info('providers_refresh_retry');
+    await initializeProviders();
+  }
+
   /// Initialize providers
   Future<void> initializeProviders() async {
+    final inFlight = _providersRefreshTask;
+    if (inFlight != null) {
+      await inFlight;
+      return;
+    }
+
+    final task = _initializeProvidersInternal();
+    _providersRefreshTask = task;
+    try {
+      await task;
+    } finally {
+      if (identical(_providersRefreshTask, task)) {
+        _providersRefreshTask = null;
+      }
+    }
+  }
+
+  Future<void> _initializeProvidersInternal() async {
     if (!_featureFlagLogged) {
       _featureFlagLogged = true;
       AppLogger.info(
         'refreshless_feature_enabled=$_refreshlessRealtimeEnabled',
       );
     }
+    _setProvidersRefreshState(
+      ChatProvidersRefreshState.loading,
+      errorMessage: null,
+    );
     final fetchId = ++_providersFetchId;
     final serverId = await _resolveServerScopeId();
     final scopeId = _resolveContextScopeId();
@@ -3747,6 +3820,13 @@ class ChatProvider extends ChangeNotifier {
         (failure) {
           failed = true;
           AppLogger.warn('Failed to load providers: ${failure.toString()}');
+          final message = failure.message.trim();
+          _setProvidersRefreshState(
+            ChatProvidersRefreshState.failed,
+            errorMessage: message.isEmpty
+                ? 'Failed to refresh providers and models'
+                : message,
+          );
         },
         (providersResponse) {
           _providers = providersResponse.providers;
@@ -3978,6 +4058,10 @@ class ChatProvider extends ChangeNotifier {
         error: e,
         stackTrace: stackTrace,
       );
+      _setProvidersRefreshState(
+        ChatProvidersRefreshState.failed,
+        errorMessage: 'Failed to refresh providers and models',
+      );
     }
     if (fetchId == _providersFetchId) {
       if (_refreshlessRealtimeEnabled && !_isForegroundActive) {
@@ -3987,6 +4071,11 @@ class ChatProvider extends ChangeNotifier {
       }
       await _loadPendingInteractions();
       await refreshSessionStatusSnapshot();
+      _setProvidersRefreshState(
+        ChatProvidersRefreshState.ready,
+        errorMessage: null,
+        notify: false,
+      );
       notifyListeners();
     }
   }
@@ -4067,6 +4156,9 @@ class ChatProvider extends ChangeNotifier {
     _providers = <Provider>[];
     _defaultModels = <String, String>{};
     _agents = <Agent>[];
+    _providersRefreshTask = null;
+    _providersRefreshState = ChatProvidersRefreshState.idle;
+    _providersRefreshErrorMessage = null;
     _selectedAgentName = null;
     _selectedProviderId = null;
     _selectedModelId = null;
@@ -4805,6 +4897,11 @@ class ChatProvider extends ChangeNotifier {
       return;
     }
 
+    await _cancelActiveMessageSubscription(
+      reason: 'session-switch',
+      invalidateGeneration: true,
+    );
+
     // Clear current message list
     _messages.clear();
     _pendingLocalUserMessageIds.clear();
@@ -5253,6 +5350,15 @@ class ChatProvider extends ChangeNotifier {
 
   /// Update or add message
   void _updateOrAddMessage(ChatMessage message) {
+    final currentSessionId = _currentSession?.id;
+    if (currentSessionId == null || message.sessionId != currentSessionId) {
+      AppLogger.debug(
+        'Ignoring off-session message update session=${message.sessionId} current=${currentSessionId ?? "-"}',
+      );
+      _scheduleAutoTitleRefresh(message.sessionId);
+      return;
+    }
+
     if (message is UserMessage) {
       final pendingLocalIndex = _findPendingLocalUserMessageIndex(message);
       if (pendingLocalIndex != -1) {

@@ -32,6 +32,9 @@ This document tracks technical decisions for CodeWalk.
 - ADR-026: Namespaced Selection Sync Transaction and Reasoning Status Rendering (2026-02-14) [Accepted]
 - ADR-027: Compaction Boundary Timeline Collapse and Lazy Historical Expansion (2026-02-14) [Accepted]
 - ADR-028: Timeline Navigation Architecture and Session Hierarchy Tree Model (2026-02-14) [Accepted]
+- ADR-029: Session-Scoped Stream Isolation and Composer Response Gating (2026-02-14) [Accepted]
+- ADR-030: Session Activity Visual Feedback with Loading State Indicators (2026-02-14) [Accepted]
+- ADR-031: Asynchronous Provider Initialization and Background Refresh on Startup (2026-02-14) [Accepted]
 
 ---
 
@@ -184,6 +187,144 @@ Reclassify remote abort events from fatal errors to retryable notices:
 - ROADMAP.md (`featB`)
 - ROADMAP.featB.md
 - Related commits: a5b4b9d (timeline jump reliability and hierarchy), 73f3f26 (jump-to-first FAB)
+
+---
+
+## ADR-029: Session-Scoped Stream Isolation and Composer Response Gating
+
+**Status**: Accepted
+**Date**: 2026-02-14
+
+### Context
+
+When multiple sessions receive realtime updates simultaneously, the app experienced UI flickering and state confusion. The stop button and composer status would activate for background sessions during config sync or stream events, even when the user was viewing a different conversation. This created confusion and broke user mental model of "what session is active right now".
+
+### Decision
+
+1. Gate composer response UI state by active stream evidence from the **visible session only**.
+2. Require both: active stream subscription for current session OR in-progress assistant message with busy/retry status.
+3. Prevent background session stream events from triggering response UI in the currently viewed session.
+4. Hide patch bubbles when tool call bubbles are disabled and collapse fully empty assistant containers.
+5. Add provider and widget test coverage for stale draft and background sync regressions.
+
+### Rationale
+
+- Session-scoped gating ensures that UI state reflects only what's happening in the conversation the user is looking at.
+- Requiring both stream subscription OR busy/retry status covers all response lifecycle states.
+- Background sync events should not interfere with the active user experience.
+- Patch bubble filtering keeps the timeline clean when tool display is disabled.
+
+### Consequences
+
+- ✅ Positive: stop button and composer status only show for the session being viewed.
+- ✅ Positive: no more flickering from background session events.
+- ✅ Positive: clearer user feedback about which session is actively responding.
+- ⚠️ Trade-off: need to maintain session visibility state across navigation.
+
+### Key Files
+
+- `lib/presentation/pages/chat_page.dart` - session-scoped response gating
+- `lib/presentation/providers/chat_provider.dart` - `isSessionActivelyResponding()` method
+- `lib/presentation/widgets/chat_message_widget.dart` - patch bubble visibility logic
+- `test/unit/providers/chat_provider_test.dart` - session isolation tests
+- `test/widget/chat_message_widget_test.dart` - bubble visibility tests
+- `test/widget/chat_page_test.dart` - UI gating tests
+
+### References
+
+- Commit: fb6e118
+- ADR-028: Timeline Navigation (session hierarchy context)
+- ROADMAP.md (featI - session loading feedback)
+
+---
+
+## ADR-030: Session Activity Visual Feedback with Loading State Indicators
+
+**Status**: Accepted
+**Date**: 2026-02-14
+
+### Context
+
+Users could not easily identify which session was actively receiving data or generating a response in the session list. Without visual indicators, users had to tap each session to know its current state, creating friction when switching between active conversations or identifying which background session was still processing.
+
+### Decision
+
+1. Add visual loading indicator to session list rows for active sessions.
+2. Use AnimatedSwitcher with sync icon (`Icons.sync_rounded`) replacing the default chat icon when session is actively responding.
+3. Gate active state via `isSessionActivelyResponding(sessionId)` callback from provider.
+4. Provide session key-based animation stability to prevent icon flicker during rapid state changes.
+5. Support both mobile and desktop session list views.
+
+### Rationale
+
+- Visual feedback in the session list lets users identify active sessions at a glance.
+- AnimatedSwitcher provides smooth transition between idle and active states.
+- Per-session animation keys prevent cross-session state leakage.
+- Consistent with realtime event system and session-scoped stream isolation (ADR-029).
+
+### Consequences
+
+- ✅ Positive: users can see which sessions are loading/responding without tapping.
+- ✅ Positive: reduces friction when managing multiple active conversations.
+- ✅ Positive: consistent with modern chat app UX patterns.
+- ⚠️ Trade-off: additional widget rebuilds for animated icons (minimal impact).
+
+### Key Files
+
+- `lib/presentation/widgets/chat_session_list.dart` - loading indicator rendering
+- `lib/presentation/providers/chat_provider.dart` - `isSessionActivelyResponding()` provider
+- `test/widget/chat_session_list_test.dart` - loading indicator tests
+
+### References
+
+- Commit: fb6e118 (same delivery)
+- ADR-029: Session-Scoped Stream Isolation (provides the activity detection)
+- ROADMAP.md (featI task: session loading visual feedback)
+
+---
+
+## ADR-031: Asynchronous Provider Initialization and Background Refresh on Startup
+
+**Status**: Accepted
+**Date**: 2026-02-14
+
+### Context
+
+When the app starts or user navigates to chat, providers and models need to be loaded from the server. Previously, this was done synchronously during initialization, blocking the UI and creating perceived latency. Users benefit from seeing the UI immediately while provider data loads in the background.
+
+### Decision
+
+1. Introduce `ChatProvidersRefreshState` enum: `idle`, `loading`, `ready`, `failed`.
+2. Add `warmupProvidersRefresh({String reason = 'startup'})` method that calls `initializeProviders()` with `unawaited` to prevent blocking.
+3. Call `warmupProvidersRefresh(reason: 'chat-startup')` during chat page initialization after project and connection checks.
+4. Add state getters: `providersRefreshState`, `providersRefreshErrorMessage`, `isProvidersRefreshInProgress`.
+5. Implement task deduplication in `initializeProviders()` to avoid duplicate refresh calls.
+6. Add `retryProvidersRefresh()` for manual retry on failure.
+
+### Rationale
+
+- Background refresh allows UI to become interactive immediately while provider data loads asynchronously.
+- State enum enables UI to reflect loading/error states and provide feedback to users.
+- Deduplication prevents multiple simultaneous refresh calls when called from different code paths.
+- Reason parameter in warmup helps debug why refresh was triggered.
+
+### Consequences
+
+- ✅ Positive: UI becomes interactive faster on startup.
+- ✅ Positive: Users see loading state for providers if refresh takes time.
+- ✅ Positive: Manual retry available on failure.
+- ⚠️ Trade-off: Providers may not be available immediately on first interaction (handled by loading state).
+
+### Key Files
+
+- `lib/presentation/providers/chat_provider.dart` - `warmupProvidersRefresh()`, `initializeProviders()`, state management
+- `lib/presentation/pages/chat_page.dart` - calls `warmupProvidersRefresh()` on initialization
+- `test/unit/providers/chat_provider_test.dart` - provider refresh state tests
+
+### References
+
+- ROADMAP.md (featH task: refresh providers/model em background de forma assíncrona ao abrir o app)
+- ADR-029: Session-Scoped Stream Isolation (uses provider refresh state for session activity detection)
 
 ---
 

@@ -10,6 +10,7 @@
 - Task 25: Remove redundant pencil beside title; keep click-to-rename path.
 - Task 26: Use clearer Files button icon (tree-like).
 - Task 37: One-line tips while waiting for first server tokens.
+- Task 39: Add soft loading state visual to conversation list item icon while session is receiving data/response.
 - Backlog follow-up: Increase desktop project selector width to reduce early ellipsis in top header.
 
 ## Goal

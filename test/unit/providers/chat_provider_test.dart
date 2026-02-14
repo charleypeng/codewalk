@@ -1958,6 +1958,110 @@ void main() {
       },
     );
 
+    test(
+      'switching sessions ignores in-flight stream updates from previous session',
+      () async {
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_2',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1500),
+            title: 'Session 2',
+          ),
+        );
+
+        final streamController =
+            StreamController<Either<Failure, ChatMessage>>();
+        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+          return streamController.stream;
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+
+        final session1 = provider.sessions
+            .where((item) => item.id == 'ses_1')
+            .first;
+        final session2 = provider.sessions
+            .where((item) => item.id == 'ses_2')
+            .first;
+
+        await provider.selectSession(session1);
+        await provider.sendMessage('first session prompt');
+        expect(provider.currentSession?.id, 'ses_1');
+
+        await provider.selectSession(session2);
+        expect(provider.currentSession?.id, 'ses_2');
+        expect(provider.messages, isEmpty);
+
+        streamController.add(
+          Right(
+            AssistantMessage(
+              id: 'msg_assistant_old_session',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(3000),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'prt_assistant_old_session',
+                  messageId: 'msg_assistant_old_session',
+                  sessionId: 'ses_1',
+                  text: 'stale update',
+                ),
+              ],
+            ),
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(provider.currentSession?.id, 'ses_2');
+        expect(provider.messages, isEmpty);
+
+        await streamController.close();
+      },
+    );
+
+    test(
+      'providers refresh exposes failed state and recovers on retry',
+      () async {
+        appRepository.providersResult = const Left(
+          NetworkFailure('providers down'),
+        );
+
+        await provider.initializeProviders();
+
+        expect(
+          provider.providersRefreshState,
+          ChatProvidersRefreshState.failed,
+        );
+        expect(
+          provider.providersRefreshErrorMessage,
+          contains('providers down'),
+        );
+
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'model_a': _model('model_a')},
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a'],
+          ),
+        );
+
+        await provider.retryProvidersRefresh();
+
+        expect(provider.providersRefreshState, ChatProvidersRefreshState.ready);
+        expect(provider.providersRefreshErrorMessage, isNull);
+        expect(provider.selectedProviderId, 'provider_a');
+        expect(provider.selectedModelId, 'model_a');
+      },
+    );
+
     test('sendMessage sends shell mode payload when requested', () async {
       final assistantCompleted = AssistantMessage(
         id: 'msg_shell_done',

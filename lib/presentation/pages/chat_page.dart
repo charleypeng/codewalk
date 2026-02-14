@@ -259,8 +259,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       await appProvider.checkConnection(
         directory: projectProvider.currentDirectory,
       );
-      // Technical comment translated to English.
-      await chatProvider.initializeProviders();
+      chatProvider.warmupProvidersRefresh(reason: 'chat-startup');
 
       // Technical comment translated to English.
       await chatProvider.loadSessions();
@@ -2804,6 +2803,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     child: ChatSessionList(
                       sessions: chatProvider.visibleSessions,
                       currentSession: chatProvider.currentSession,
+                      isSessionActive: chatProvider.isSessionActivelyResponding,
                       onSessionSelected: (session) async {
                         await chatProvider.selectSession(session);
                         if (closeOnSelect && context.mounted) {
@@ -5105,6 +5105,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final selectedAgentEntry = _selectedAgentEntry(chatProvider);
     final selectedAgentColor = _parseAgentColor(selectedAgentEntry?.color);
     final variants = chatProvider.availableVariants;
+    final showProvidersLoadingHint =
+        chatProvider.isProvidersRefreshInProgress &&
+        chatProvider.providers.isEmpty;
+    final showProvidersRetryHint =
+        chatProvider.providersRefreshState == ChatProvidersRefreshState.failed;
     final attachButtonStyle = composerAttachButtonStyle(
       colorScheme: colorScheme,
       visualDensity: Theme.of(context).visualDensity,
@@ -5157,6 +5162,35 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                   : () => unawaited(_openModelSelector(chatProvider)),
             ),
           ),
+          if (showProvidersLoadingHint)
+            Chip(
+              avatar: SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: colorScheme.primary,
+                ),
+              ),
+              label: const Text('Loading models'),
+              side: BorderSide.none,
+              backgroundColor: colorScheme.surfaceContainerHighest,
+            )
+          else if (showProvidersRetryHint)
+            Tooltip(
+              message:
+                  chatProvider.providersRefreshErrorMessage ??
+                  'Failed to refresh providers and models',
+              child: ActionChip(
+                key: const ValueKey<String>('model_selector_retry_button'),
+                avatar: const Icon(Icons.refresh_rounded, size: 16),
+                side: BorderSide.none,
+                shape: const StadiumBorder(),
+                label: const Text('Retry models'),
+                onPressed: () =>
+                    unawaited(chatProvider.retryProvidersRefresh()),
+              ),
+            ),
           if (variants.isNotEmpty)
             Tooltip(
               message: 'Choose effort',

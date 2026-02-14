@@ -10,6 +10,7 @@ class ChatSessionList extends StatefulWidget {
     super.key,
     required this.sessions,
     this.currentSession,
+    this.isSessionActive,
     this.onSessionSelected,
     this.onSessionDeleted,
     this.onSessionRenamed,
@@ -20,6 +21,7 @@ class ChatSessionList extends StatefulWidget {
 
   final List<ChatSession> sessions;
   final ChatSession? currentSession;
+  final bool Function(String sessionId)? isSessionActive;
   final Future<void> Function(ChatSession session)? onSessionSelected;
   final Future<void> Function(ChatSession session)? onSessionDeleted;
   final Future<bool> Function(ChatSession session, String title)?
@@ -185,6 +187,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
     required bool expanded,
   }) {
     final isSelected = widget.currentSession?.id == session.id;
+    final isSessionActive = widget.isSessionActive?.call(session.id) ?? false;
     final colorScheme = Theme.of(context).colorScheme;
     final childLabel = childCount == 1
         ? '1 sub-conversation'
@@ -208,12 +211,29 @@ class _ChatSessionListState extends State<ChatSessionList> {
             backgroundColor: isSelected
                 ? colorScheme.primary
                 : colorScheme.surfaceContainerHighest,
-            child: Icon(
-              session.archived ? Icons.archive_outlined : Icons.chat,
-              color: isSelected
-                  ? colorScheme.onPrimary
-                  : colorScheme.onSurfaceVariant,
-              size: 20,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              child: isSessionActive
+                  ? Icon(
+                      Icons.sync_rounded,
+                      key: ValueKey<String>(
+                        'chat_session_loading_${session.id}',
+                      ),
+                      color: isSelected
+                          ? colorScheme.onPrimary
+                          : colorScheme.primary,
+                      size: 20,
+                    )
+                  : Icon(
+                      session.archived ? Icons.archive_outlined : Icons.chat,
+                      key: ValueKey<String>('chat_session_idle_${session.id}'),
+                      color: isSelected
+                          ? colorScheme.onPrimary
+                          : colorScheme.onSurfaceVariant,
+                      size: 20,
+                    ),
             ),
           ),
           title: Row(
