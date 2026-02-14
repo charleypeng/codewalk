@@ -92,6 +92,84 @@ class _RecordingDioClient extends DioClient {
   }
 }
 
+Map<String, dynamic>? _codewalkSyncPayloadFromPatch(dynamic body) {
+  if (body is! Map) {
+    return null;
+  }
+  final agent = body['agent'];
+  if (agent is! Map) {
+    return null;
+  }
+  final syncAgent = agent['__codewalk'];
+  if (syncAgent is! Map) {
+    return null;
+  }
+  final options = syncAgent['options'];
+  if (options is! Map) {
+    return null;
+  }
+  final codewalk = options['codewalk'];
+  if (codewalk is! Map) {
+    return null;
+  }
+  return Map<String, dynamic>.from(codewalk);
+}
+
+Map<String, dynamic>? _selectionPayloadFromPatch(dynamic body) {
+  final codewalk = _codewalkSyncPayloadFromPatch(body);
+  final selection = codewalk?['selection'];
+  if (selection is! Map) {
+    return null;
+  }
+  return Map<String, dynamic>.from(selection);
+}
+
+String? _variantPayloadValueFromPatch(
+  dynamic body, {
+  required String agentName,
+  required String modelKey,
+}) {
+  final codewalk = _codewalkSyncPayloadFromPatch(body);
+  if (codewalk != null) {
+    final byAgent = codewalk['variantByAgentAndModel'];
+    if (byAgent is Map) {
+      final agentMap = byAgent[agentName];
+      if (agentMap is Map) {
+        final value = agentMap[modelKey];
+        if (value != null) {
+          return value.toString();
+        }
+      }
+    }
+  }
+
+  if (body is! Map) {
+    return null;
+  }
+  final agent = body['agent'];
+  if (agent is! Map) {
+    return null;
+  }
+  final legacyAgent = agent[agentName];
+  if (legacyAgent is! Map) {
+    return null;
+  }
+  final options = legacyAgent['options'];
+  if (options is! Map) {
+    return null;
+  }
+  final legacyCodewalk = options['codewalk'];
+  if (legacyCodewalk is! Map) {
+    return null;
+  }
+  final variantByModel = legacyCodewalk['variantByModel'];
+  if (variantByModel is! Map) {
+    return null;
+  }
+  final value = variantByModel[modelKey];
+  return value?.toString();
+}
+
 void main() {
   group('ChatProvider', () {
     late FakeChatRepository chatRepository;
@@ -236,6 +314,64 @@ void main() {
     );
 
     test(
+      'initializeProviders prioritizes __codewalk namespaced selection over legacy root keys',
+      () async {
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'model_a': _model('model_a')},
+              ),
+              Provider(
+                id: 'provider_b',
+                name: 'Provider B',
+                env: const <String>[],
+                models: <String, Model>{'model_b': _model('model_b')},
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a', 'provider_b'],
+          ),
+        );
+        appRepository.agentsResult = const Right(<Agent>[
+          Agent(name: 'build', mode: 'primary', hidden: false, native: false),
+          Agent(name: 'plan', mode: 'primary', hidden: false, native: false),
+        ]);
+
+        final dioClient = _RecordingDioClient(
+          configResponse: <String, dynamic>{
+            'model': 'provider_a/model_a',
+            'default_agent': 'build',
+            'agent': <String, dynamic>{
+              '__codewalk': <String, dynamic>{
+                'options': <String, dynamic>{
+                  'codewalk': <String, dynamic>{
+                    'selection': <String, dynamic>{
+                      'providerId': 'provider_b',
+                      'modelId': 'model_b',
+                      'agentName': 'plan',
+                    },
+                  },
+                },
+              },
+            },
+          },
+        );
+        provider = buildProvider(dioClient: dioClient);
+
+        await provider.initializeProviders();
+
+        expect(provider.selectedProviderId, 'provider_b');
+        expect(provider.selectedModelId, 'model_b');
+        expect(provider.selectedAgentName, 'plan');
+        expect(dioClient.getQueries.every((query) => query == null), isTrue);
+      },
+    );
+
+    test(
       'setSelectedModelByProvider syncs model selection to server config',
       () async {
         appRepository.providersResult = Right(
@@ -272,10 +408,13 @@ void main() {
           modelId: 'model_b',
         );
 
-        final hasModelPatch = dioClient.patchBodies.whereType<Map>().any(
-          (body) => body['model'] == 'provider_b/model_b',
-        );
+        final hasModelPatch = dioClient.patchBodies.any((body) {
+          final selection = _selectionPayloadFromPatch(body);
+          return selection?['providerId'] == 'provider_b' &&
+              selection?['modelId'] == 'model_b';
+        });
         expect(hasModelPatch, isTrue);
+        expect(dioClient.patchQueries.every((query) => query == null), isTrue);
       },
     );
 
@@ -354,10 +493,12 @@ void main() {
 
       await provider.setSelectedAgent('plan');
 
-      final hasAgentPatch = dioClient.patchBodies.whereType<Map>().any(
-        (body) => body['default_agent'] == 'plan',
-      );
+      final hasAgentPatch = dioClient.patchBodies.any((body) {
+        final selection = _selectionPayloadFromPatch(body);
+        return selection?['agentName'] == 'plan';
+      });
       expect(hasAgentPatch, isTrue);
+      expect(dioClient.patchQueries.every((query) => query == null), isTrue);
     });
 
     test(
@@ -588,18 +729,18 @@ void main() {
           .where((body) => body.containsKey('agent'))
           .cast<Map<String, dynamic>>()
           .first;
-      final agentMap =
-          (variantPatch['agent'] as Map<String, dynamic>)['build']
-              as Map<String, dynamic>;
-      final options = agentMap['options'] as Map<String, dynamic>;
-      final codewalk = options['codewalk'] as Map<String, dynamic>;
-      final variantByModel = codewalk['variantByModel'] as Map<String, dynamic>;
+      final variantValue = _variantPayloadValueFromPatch(
+        variantPatch,
+        agentName: 'build',
+        modelKey: 'provider_a/model_reasoning',
+      );
 
-      expect(variantByModel['provider_a/model_reasoning'], 'high');
+      expect(variantValue, 'high');
+      expect(dioClient.patchQueries.every((query) => query == null), isTrue);
     });
 
     test(
-      'deferred variant sync flushes on health tick when local work is idle',
+      'deferred variant sync stays queued while session is busy and flushes on idle',
       () async {
         appRepository.providersResult = Right(
           ProvidersResponse(
@@ -660,55 +801,55 @@ void main() {
 
         final hasImmediateVariantPatch = dioClient.patchBodies
             .whereType<Map<String, dynamic>>()
-            .any((body) {
-              final agent = body['agent'];
-              if (agent is! Map<String, dynamic>) {
-                return false;
-              }
-              final build = agent['build'];
-              if (build is! Map<String, dynamic>) {
-                return false;
-              }
-              final options = build['options'];
-              if (options is! Map<String, dynamic>) {
-                return false;
-              }
-              final codewalk = options['codewalk'];
-              if (codewalk is! Map<String, dynamic>) {
-                return false;
-              }
-              final variantByModel = codewalk['variantByModel'];
-              return variantByModel is Map<String, dynamic> &&
-                  variantByModel['provider_a/model_reasoning'] == 'high';
-            });
+            .any(
+              (body) =>
+                  _variantPayloadValueFromPatch(
+                    body,
+                    agentName: 'build',
+                    modelKey: 'provider_a/model_reasoning',
+                  ) ==
+                  'high',
+            );
         expect(hasImmediateVariantPatch, isFalse);
 
         await Future<void>.delayed(const Duration(milliseconds: 180));
 
         final hasFlushedVariantPatch = dioClient.patchBodies
             .whereType<Map<String, dynamic>>()
-            .any((body) {
-              final agent = body['agent'];
-              if (agent is! Map<String, dynamic>) {
-                return false;
-              }
-              final build = agent['build'];
-              if (build is! Map<String, dynamic>) {
-                return false;
-              }
-              final options = build['options'];
-              if (options is! Map<String, dynamic>) {
-                return false;
-              }
-              final codewalk = options['codewalk'];
-              if (codewalk is! Map<String, dynamic>) {
-                return false;
-              }
-              final variantByModel = codewalk['variantByModel'];
-              return variantByModel is Map<String, dynamic> &&
-                  variantByModel['provider_a/model_reasoning'] == 'high';
-            });
-        expect(hasFlushedVariantPatch, isTrue);
+            .any(
+              (body) =>
+                  _variantPayloadValueFromPatch(
+                    body,
+                    agentName: 'build',
+                    modelKey: 'provider_a/model_reasoning',
+                  ) ==
+                  'high',
+            );
+        expect(hasFlushedVariantPatch, isFalse);
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.status',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_1',
+              'status': <String, dynamic>{'type': 'idle'},
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+
+        final hasFlushedVariantPatchOnIdle = dioClient.patchBodies
+            .whereType<Map<String, dynamic>>()
+            .any(
+              (body) =>
+                  _variantPayloadValueFromPatch(
+                    body,
+                    agentName: 'build',
+                    modelKey: 'provider_a/model_reasoning',
+                  ) ==
+                  'high',
+            );
+        expect(hasFlushedVariantPatchOnIdle, isTrue);
       },
     );
 
@@ -765,27 +906,15 @@ void main() {
 
       final hasVariantPatch = dioClient.patchBodies
           .whereType<Map<String, dynamic>>()
-          .any((body) {
-            final agent = body['agent'];
-            if (agent is! Map<String, dynamic>) {
-              return false;
-            }
-            final build = agent['build'];
-            if (build is! Map<String, dynamic>) {
-              return false;
-            }
-            final options = build['options'];
-            if (options is! Map<String, dynamic>) {
-              return false;
-            }
-            final codewalk = options['codewalk'];
-            if (codewalk is! Map<String, dynamic>) {
-              return false;
-            }
-            final variantByModel = codewalk['variantByModel'];
-            return variantByModel is Map<String, dynamic> &&
-                variantByModel['provider_a/model_reasoning'] == 'high';
-          });
+          .any(
+            (body) =>
+                _variantPayloadValueFromPatch(
+                  body,
+                  agentName: 'build',
+                  modelKey: 'provider_a/model_reasoning',
+                ) ==
+                'high',
+          );
       expect(hasVariantPatch, isTrue);
     });
 
@@ -841,7 +970,11 @@ void main() {
 
         final hasImmediateModelPatch = dioClient.patchBodies
             .whereType<Map>()
-            .any((body) => body['model'] == 'provider_b/model_b');
+            .any((body) {
+              final selection = _selectionPayloadFromPatch(body);
+              return selection?['providerId'] == 'provider_b' &&
+                  selection?['modelId'] == 'model_b';
+            });
         expect(hasImmediateModelPatch, isFalse);
 
         chatRepository.emitEvent(
@@ -856,7 +989,11 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 40));
 
         final hasFlushedModelPatch = dioClient.patchBodies.whereType<Map>().any(
-          (body) => body['model'] == 'provider_b/model_b',
+          (body) {
+            final selection = _selectionPayloadFromPatch(body);
+            return selection?['providerId'] == 'provider_b' &&
+                selection?['modelId'] == 'model_b';
+          },
         );
         expect(hasFlushedModelPatch, isTrue);
       },

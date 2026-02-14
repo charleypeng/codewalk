@@ -23,6 +23,7 @@ import '../providers/settings_provider.dart';
 import '../services/notification_service.dart';
 import '../utils/session_title_formatter.dart';
 import '../utils/file_explorer_logic.dart';
+import '../utils/reasoning_status_parser.dart';
 import '../utils/shortcut_binding_codec.dart';
 
 import '../widgets/chat_message_widget.dart';
@@ -4623,12 +4624,16 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     ChatProvider chatProvider, {
     required bool attachmentsEnabled,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     final selectedModel = chatProvider.selectedModel;
     final selectedAgent = chatProvider.selectedAgentName;
     final selectableAgents = chatProvider.selectableAgents;
     final selectedAgentEntry = _selectedAgentEntry(chatProvider);
     final selectedAgentColor = _parseAgentColor(selectedAgentEntry?.color);
     final variants = chatProvider.availableVariants;
+    final attachButtonStyle = composerAttachButtonStyle(
+      colorScheme: colorScheme,
+    );
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 0, 8, 2),
@@ -4698,10 +4703,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           if (attachmentsEnabled)
             Tooltip(
               message: 'Add attachment',
-              child: IconButton.filledTonal(
+              child: IconButton(
                 onPressed: chatProvider.currentSession == null
                     ? null
                     : _chatInputController.openAttachmentOptions,
+                style: attachButtonStyle,
                 icon: const Icon(Icons.attach_file_rounded),
               ),
             ),
@@ -5694,6 +5700,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final latestReasoningPartKey = _resolveLatestReasoningPartKey(
       chatProvider.messages,
     );
+    final latestReasoningStatusLabel = _resolveLatestReasoningStatusLabel(
+      chatProvider.messages,
+    );
 
     return ListView.builder(
       key: const ValueKey<String>('chat_message_list'),
@@ -5716,7 +5725,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
         final indicator = switch (progressStage) {
           _AssistantProgressStage.receiving => (
-            text: 'Receiving response...',
+            text: latestReasoningStatusLabel ?? 'Receiving response...',
             icon: Icons.auto_awesome,
             showSpinner: false,
           ),
@@ -5726,9 +5735,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             showSpinner: true,
           ),
           _AssistantProgressStage.thinking || null => (
-            text: 'Thinking...',
-            icon: Icons.hourglass_top_rounded,
-            showSpinner: true,
+            text: latestReasoningStatusLabel ?? 'Thinking...',
+            icon: latestReasoningStatusLabel == null
+                ? Icons.hourglass_top_rounded
+                : Icons.auto_awesome,
+            showSpinner: latestReasoningStatusLabel == null,
           ),
         };
 
@@ -5779,6 +5790,31 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         final part = message.parts[partIndex];
         if (part is ReasoningPart) {
           return '${part.messageId}::${part.id}';
+        }
+      }
+    }
+    return null;
+  }
+
+  String? _resolveLatestReasoningStatusLabel(List<ChatMessage> messages) {
+    for (
+      var messageIndex = messages.length - 1;
+      messageIndex >= 0;
+      messageIndex -= 1
+    ) {
+      final message = messages[messageIndex];
+      for (
+        var partIndex = message.parts.length - 1;
+        partIndex >= 0;
+        partIndex -= 1
+      ) {
+        final part = message.parts[partIndex];
+        if (part is! ReasoningPart) {
+          continue;
+        }
+        final label = parseReasoningStatusLabel(part.text);
+        if (label != null) {
+          return label;
         }
       }
     }

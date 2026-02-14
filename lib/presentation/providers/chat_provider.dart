@@ -49,6 +49,13 @@ enum ChatState { initial, loading, loaded, error, sending }
 
 enum ChatSyncState { connected, reconnecting, delayed }
 
+enum _SelectionSyncTransactionPhase {
+  idle,
+  pendingRemote,
+  appliedRemote,
+  failed,
+}
+
 enum SessionListFilter { active, archived, all }
 
 enum SessionListSort { recent, oldest, title }
@@ -308,6 +315,8 @@ class ChatProvider extends ChangeNotifier {
   DateTime? _pendingRemoteSelectionSyncSince;
   DateTime? _lastRemoteSelectionSyncAt;
   bool _remoteSelectionSyncInFlight = false;
+  _SelectionSyncTransactionPhase _selectionSyncTransactionPhase =
+      _SelectionSyncTransactionPhase.idle;
   String _activeContextKey = 'legacy::default';
   final Map<String, _ChatContextSnapshot> _contextSnapshots =
       <String, _ChatContextSnapshot>{};
@@ -344,6 +353,9 @@ class ChatProvider extends ChangeNotifier {
   static const Duration _abortSuppressionWindow = Duration(seconds: 8);
   static const Duration _remoteSelectionSyncThrottle = Duration(seconds: 2);
   static const String _configCodewalkNamespace = 'codewalk';
+  static const String _configSelectionKey = 'selection';
+  static const String _configVariantByAgentAndModelKey =
+      'variantByAgentAndModel';
   static const String _configVariantByModelKey = 'variantByModel';
   static const String _configSessionSelectionsKey = 'sessionSelections';
   static const String _configSyncAgentName = '__codewalk';
@@ -425,10 +437,7 @@ class ChatProvider extends ChangeNotifier {
   }
 
   bool get _canFlushPendingRemoteSelectionSync {
-    if (_currentSession == null) {
-      return true;
-    }
-    return !_hasLocalActiveSelectionSyncWork;
+    return !_shouldDeferRemoteSelectionSync;
   }
 
   List<ChatSession> get visibleSessions {
@@ -698,16 +707,69 @@ class ChatProvider extends ChangeNotifier {
   }
 
   Map<String, dynamic>? _configQueryParameters() {
-    final directory = projectProvider.currentDirectory;
-    if (directory == null || directory.trim().isEmpty) {
+    return null;
+  }
+
+  Map<String, dynamic>? _codewalkSyncConfig(Map<String, dynamic> config) {
+    final rawAgentConfig = config['agent'] ?? config['mode'];
+    if (rawAgentConfig is! Map) {
       return null;
     }
-    return <String, dynamic>{'directory': directory};
+
+    final agents = Map<String, dynamic>.from(rawAgentConfig);
+    final syncAgentRaw = agents[_configSyncAgentName];
+    if (syncAgentRaw is! Map) {
+      return null;
+    }
+
+    final syncAgent = Map<String, dynamic>.from(syncAgentRaw);
+    final optionsRaw = syncAgent['options'];
+    if (optionsRaw is! Map) {
+      return null;
+    }
+
+    final options = Map<String, dynamic>.from(optionsRaw);
+    final codewalkRaw = options[_configCodewalkNamespace];
+    if (codewalkRaw is! Map) {
+      return null;
+    }
+
+    return Map<String, dynamic>.from(codewalkRaw);
   }
 
   Map<String, Map<String, String>> _parseRemoteVariantByAgent(
     Map<String, dynamic> config,
   ) {
+    final namespacedConfig = _codewalkSyncConfig(config);
+    if (namespacedConfig != null) {
+      final namespacedRaw = namespacedConfig[_configVariantByAgentAndModelKey];
+      if (namespacedRaw is Map) {
+        final parsedFromNamespace = <String, Map<String, String>>{};
+        for (final agentEntry in namespacedRaw.entries) {
+          final agentName = agentEntry.key.toString().trim();
+          if (agentName.isEmpty || agentEntry.value is! Map) {
+            continue;
+          }
+          final byModelRaw = Map<String, dynamic>.from(agentEntry.value as Map);
+          final byModel = <String, String>{};
+          for (final modelEntry in byModelRaw.entries) {
+            final modelKey = modelEntry.key.toString().trim();
+            final value = modelEntry.value?.toString().trim();
+            if (modelKey.isEmpty || value == null || value.isEmpty) {
+              continue;
+            }
+            byModel[modelKey] = value;
+          }
+          if (byModel.isNotEmpty) {
+            parsedFromNamespace[agentName] = byModel;
+          }
+        }
+        if (parsedFromNamespace.isNotEmpty) {
+          return parsedFromNamespace;
+        }
+      }
+    }
+
     final rawAgentConfig = config['agent'] ?? config['mode'];
     if (rawAgentConfig is! Map) {
       return const <String, Map<String, String>>{};
@@ -762,17 +824,54 @@ class ChatProvider extends ChangeNotifier {
     final config = Map<String, dynamic>.from(rawConfig);
     String? providerId;
     String? modelId;
-    final model = config['model'];
+    String? remoteAgent;
 
-    if (model is String) {
-      providerId = _providerFromModelKey(model.trim());
-      modelId = _modelFromModelKey(model.trim());
-    } else if (model is Map) {
-      providerId =
-          (model['providerID'] ?? model['providerId'] ?? model['provider'])
-              as String?;
-      modelId =
-          (model['modelID'] ?? model['modelId'] ?? model['id']) as String?;
+    final namespacedConfig = _codewalkSyncConfig(config);
+    if (namespacedConfig != null) {
+      final selectionRaw = namespacedConfig[_configSelectionKey];
+      if (selectionRaw is Map) {
+        final selection = Map<String, dynamic>.from(selectionRaw);
+        final namespacedModel = selection['model'];
+        if (namespacedModel is String) {
+          providerId = _providerFromModelKey(namespacedModel.trim());
+          modelId = _modelFromModelKey(namespacedModel.trim());
+        } else if (namespacedModel is Map) {
+          providerId =
+              (namespacedModel['providerID'] ??
+                      namespacedModel['providerId'] ??
+                      namespacedModel['provider'])
+                  as String?;
+          modelId =
+              (namespacedModel['modelID'] ??
+                      namespacedModel['modelId'] ??
+                      namespacedModel['id'])
+                  as String?;
+        }
+
+        providerId ??=
+            (selection['providerID'] ??
+                    selection['providerId'] ??
+                    selection['provider'])
+                as String?;
+        modelId ??=
+            (selection['modelID'] ?? selection['modelId'] ?? selection['id'])
+                as String?;
+        remoteAgent = (selection['agentName'] ?? selection['agent']) as String?;
+      }
+    }
+
+    if (providerId == null || modelId == null) {
+      final model = config['model'];
+      if (model is String) {
+        providerId ??= _providerFromModelKey(model.trim());
+        modelId ??= _modelFromModelKey(model.trim());
+      } else if (model is Map) {
+        providerId ??=
+            (model['providerID'] ?? model['providerId'] ?? model['provider'])
+                as String?;
+        modelId ??=
+            (model['modelID'] ?? model['modelId'] ?? model['id']) as String?;
+      }
     }
 
     providerId = providerId?.trim();
@@ -784,7 +883,7 @@ class ChatProvider extends ChangeNotifier {
       modelId = null;
     }
 
-    final remoteAgent =
+    remoteAgent ??=
         (config['default_agent'] ?? config['defaultAgent']) as String?;
     final normalizedAgent = remoteAgent?.trim();
     final variantByAgentAndModel = _parseRemoteVariantByAgent(config);
@@ -1000,32 +1099,110 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _syncSelectedModelToRemoteConfig() async {
+  Map<String, dynamic> _buildSelectionSyncPayload({
+    required int updatedAtEpochMs,
+    bool includeVariantSnapshot = false,
+    bool includeSessionSelections = false,
+  }) {
+    final payload = <String, dynamic>{};
+
+    final selection = <String, dynamic>{'updatedAt': updatedAtEpochMs};
+    final providerId = _selectedProviderId;
+    final modelId = _selectedModelId;
+    if (providerId != null && modelId != null) {
+      selection['providerId'] = providerId;
+      selection['modelId'] = modelId;
+      selection['model'] = _modelKey(providerId, modelId);
+    }
+    final agentName = _selectedAgentName?.trim();
+    if (agentName != null && agentName.isNotEmpty) {
+      selection['agentName'] = agentName;
+    }
+    if (selection.length > 1) {
+      payload[_configSelectionKey] = selection;
+    }
+
+    if (includeVariantSnapshot) {
+      final normalizedAgent = _selectedAgentName?.trim();
+      final modelKey = _currentModelKey();
+      if (normalizedAgent != null &&
+          normalizedAgent.isNotEmpty &&
+          modelKey != null) {
+        final variantByModelPayload = <String, String>{};
+        for (final entry in _selectedVariantByModel.entries) {
+          final key = entry.key.trim();
+          final value = entry.value.trim();
+          if (key.isEmpty || value.isEmpty) {
+            continue;
+          }
+          variantByModelPayload[key] = value;
+        }
+        final selectedVariant = _selectedVariantId?.trim();
+        variantByModelPayload[modelKey] =
+            (selectedVariant == null || selectedVariant.isEmpty)
+            ? _remoteAutoVariantValue
+            : selectedVariant;
+
+        payload[_configVariantByAgentAndModelKey] = <String, dynamic>{
+          normalizedAgent: variantByModelPayload,
+        };
+      }
+    }
+
+    if (includeSessionSelections) {
+      final sessionSelections = <String, dynamic>{};
+      final overrides = _sessionOverridesForContext(_activeContextKey);
+      for (final entry in overrides.entries) {
+        sessionSelections[entry.key] = _sessionOverrideToJson(entry.value);
+      }
+      payload[_configSessionSelectionsKey] = sessionSelections;
+    }
+
+    payload['updatedAt'] = updatedAtEpochMs;
+    return payload;
+  }
+
+  Future<bool> _syncSelectedModelToRemoteConfig() async {
     final client = dioClient;
     final providerId = _selectedProviderId;
     final modelId = _selectedModelId;
     if (client == null || providerId == null || modelId == null) {
-      return;
+      return true;
     }
 
     final modelKey = _modelKey(providerId, modelId);
     if (_lastSyncedRemoteModelKey == modelKey) {
-      return;
+      return true;
     }
 
     try {
+      final updatedAtEpochMs = DateTime.now().millisecondsSinceEpoch;
       await client.patch<void>(
         '/config',
-        data: <String, dynamic>{'model': modelKey},
+        data: <String, dynamic>{
+          'agent': <String, dynamic>{
+            _configSyncAgentName: <String, dynamic>{
+              'options': <String, dynamic>{
+                _configCodewalkNamespace: _buildSelectionSyncPayload(
+                  updatedAtEpochMs: updatedAtEpochMs,
+                  includeVariantSnapshot: true,
+                  includeSessionSelections: true,
+                ),
+              },
+            },
+          },
+        },
         queryParameters: _configQueryParameters(),
       );
       _lastSyncedRemoteModelKey = modelKey;
+      return true;
     } catch (_) {
       // Remote sync is best-effort; local state remains source of truth.
+      return false;
     }
   }
 
-  Future<void> _syncSelectedVariantToRemoteConfig() async {
+  Future<bool> _syncSelectedVariantToRemoteConfig() async {
     final client = dioClient;
     final agentName = _selectedAgentName?.trim();
     final modelKey = _currentModelKey();
@@ -1033,7 +1210,7 @@ class ChatProvider extends ChangeNotifier {
         agentName == null ||
         agentName.isEmpty ||
         modelKey == null) {
-      return;
+      return true;
     }
 
     final variantValue =
@@ -1046,31 +1223,22 @@ class ChatProvider extends ChangeNotifier {
       variantValue: variantValue,
     );
     if (_lastSyncedRemoteVariantKey == syncKey) {
-      return;
+      return true;
     }
-
-    final variantByModelPayload = <String, String>{};
-    for (final entry in _selectedVariantByModel.entries) {
-      final key = entry.key.trim();
-      final value = entry.value.trim();
-      if (key.isEmpty || value.isEmpty) {
-        continue;
-      }
-      variantByModelPayload[key] = value;
-    }
-    variantByModelPayload[modelKey] = variantValue;
 
     try {
+      final updatedAtEpochMs = DateTime.now().millisecondsSinceEpoch;
       await client.patch<void>(
         '/config',
         data: <String, dynamic>{
           'agent': <String, dynamic>{
-            agentName: <String, dynamic>{
+            _configSyncAgentName: <String, dynamic>{
               'options': <String, dynamic>{
-                _configCodewalkNamespace: <String, dynamic>{
-                  _configVariantByModelKey: variantByModelPayload,
-                  'updatedAt': DateTime.now().millisecondsSinceEpoch,
-                },
+                _configCodewalkNamespace: _buildSelectionSyncPayload(
+                  updatedAtEpochMs: updatedAtEpochMs,
+                  includeVariantSnapshot: true,
+                  includeSessionSelections: true,
+                ),
               },
             },
           },
@@ -1078,61 +1246,75 @@ class ChatProvider extends ChangeNotifier {
         queryParameters: _configQueryParameters(),
       );
       _lastSyncedRemoteVariantKey = syncKey;
+      return true;
     } catch (_) {
       // Remote sync is best-effort; local state remains source of truth.
+      return false;
     }
   }
 
-  Future<void> _syncSelectedAgentToRemoteConfig() async {
+  Future<bool> _syncSelectedAgentToRemoteConfig() async {
     final client = dioClient;
     final agentName = _selectedAgentName?.trim();
     if (client == null || agentName == null || agentName.isEmpty) {
-      return;
+      return true;
     }
     if (_lastSyncedRemoteAgentName == agentName) {
-      return;
+      return true;
     }
 
     try {
-      await client.patch<void>(
-        '/config',
-        data: <String, dynamic>{'default_agent': agentName},
-        queryParameters: _configQueryParameters(),
-      );
-      _lastSyncedRemoteAgentName = agentName;
-    } catch (_) {
-      // Remote sync is best-effort; local state remains source of truth.
-    }
-  }
-
-  Future<void> _syncSessionSelectionOverridesToRemoteConfig() async {
-    final client = dioClient;
-    if (client == null) {
-      return;
-    }
-
-    final overrides = _sessionOverridesForContext(_activeContextKey);
-    final signature = _sessionOverridesSignature(overrides);
-    if (_lastSyncedRemoteSessionOverridesSignature == signature) {
-      return;
-    }
-
-    final payload = <String, dynamic>{};
-    for (final entry in overrides.entries) {
-      payload[entry.key] = _sessionOverrideToJson(entry.value);
-    }
-
-    try {
+      final updatedAtEpochMs = DateTime.now().millisecondsSinceEpoch;
       await client.patch<void>(
         '/config',
         data: <String, dynamic>{
           'agent': <String, dynamic>{
             _configSyncAgentName: <String, dynamic>{
               'options': <String, dynamic>{
-                _configCodewalkNamespace: <String, dynamic>{
-                  _configSessionSelectionsKey: payload,
-                  'updatedAt': DateTime.now().millisecondsSinceEpoch,
-                },
+                _configCodewalkNamespace: _buildSelectionSyncPayload(
+                  updatedAtEpochMs: updatedAtEpochMs,
+                  includeVariantSnapshot: true,
+                  includeSessionSelections: true,
+                ),
+              },
+            },
+          },
+        },
+        queryParameters: _configQueryParameters(),
+      );
+      _lastSyncedRemoteAgentName = agentName;
+      return true;
+    } catch (_) {
+      // Remote sync is best-effort; local state remains source of truth.
+      return false;
+    }
+  }
+
+  Future<bool> _syncSessionSelectionOverridesToRemoteConfig() async {
+    final client = dioClient;
+    if (client == null) {
+      return true;
+    }
+
+    final overrides = _sessionOverridesForContext(_activeContextKey);
+    final signature = _sessionOverridesSignature(overrides);
+    if (_lastSyncedRemoteSessionOverridesSignature == signature) {
+      return true;
+    }
+
+    try {
+      final updatedAtEpochMs = DateTime.now().millisecondsSinceEpoch;
+      await client.patch<void>(
+        '/config',
+        data: <String, dynamic>{
+          'agent': <String, dynamic>{
+            _configSyncAgentName: <String, dynamic>{
+              'options': <String, dynamic>{
+                _configCodewalkNamespace: _buildSelectionSyncPayload(
+                  updatedAtEpochMs: updatedAtEpochMs,
+                  includeVariantSnapshot: true,
+                  includeSessionSelections: true,
+                ),
               },
             },
           },
@@ -1140,16 +1322,54 @@ class ChatProvider extends ChangeNotifier {
         queryParameters: _configQueryParameters(),
       );
       _lastSyncedRemoteSessionOverridesSignature = signature;
+      return true;
     } catch (_) {
       // Remote sync is best-effort; local state remains source of truth.
+      return false;
     }
   }
 
-  Future<void> _syncSelectionToRemoteConfig() async {
-    await _syncSelectedModelToRemoteConfig();
-    await _syncSelectedAgentToRemoteConfig();
-    await _syncSelectedVariantToRemoteConfig();
-    await _syncSessionSelectionOverridesToRemoteConfig();
+  Future<bool> _syncSelectionToRemoteConfig() async {
+    final modelSynced = await _syncSelectedModelToRemoteConfig();
+    final agentSynced = await _syncSelectedAgentToRemoteConfig();
+    final variantSynced = await _syncSelectedVariantToRemoteConfig();
+    final sessionOverridesSynced =
+        await _syncSessionSelectionOverridesToRemoteConfig();
+    return modelSynced &&
+        agentSynced &&
+        variantSynced &&
+        sessionOverridesSynced;
+  }
+
+  void _setSelectionSyncTransactionPhase(
+    _SelectionSyncTransactionPhase phase, {
+    required String reason,
+  }) {
+    if (_selectionSyncTransactionPhase == phase) {
+      return;
+    }
+    _selectionSyncTransactionPhase = phase;
+    AppLogger.info('Selection sync phase=$phase reason=$reason');
+  }
+
+  Future<void> _runSelectionSyncTransaction({required String reason}) async {
+    final success = await _syncSelectionToRemoteConfig();
+    if (success) {
+      _setSelectionSyncTransactionPhase(
+        _SelectionSyncTransactionPhase.appliedRemote,
+        reason: reason,
+      );
+      _setSelectionSyncTransactionPhase(
+        _SelectionSyncTransactionPhase.idle,
+        reason: '$reason-applied',
+      );
+      return;
+    }
+
+    _setSelectionSyncTransactionPhase(
+      _SelectionSyncTransactionPhase.failed,
+      reason: reason,
+    );
   }
 
   void _markPendingRemoteSelectionSync({required String reason}) {
@@ -1158,6 +1378,10 @@ class ChatProvider extends ChangeNotifier {
     }
     _pendingRemoteSelectionSync = true;
     _pendingRemoteSelectionSyncSince = DateTime.now();
+    _setSelectionSyncTransactionPhase(
+      _SelectionSyncTransactionPhase.pendingRemote,
+      reason: reason,
+    );
     AppLogger.info('Deferring remote selection sync reason=$reason');
   }
 
@@ -1177,7 +1401,7 @@ class ChatProvider extends ChangeNotifier {
     AppLogger.info(
       'Flushing deferred remote selection sync reason=$reason wait_ms=$waitMs',
     );
-    unawaited(_syncSelectionToRemoteConfig());
+    unawaited(_runSelectionSyncTransaction(reason: reason));
   }
 
   bool _isSelectableAgent(Agent agent) {
@@ -3663,6 +3887,7 @@ class ChatProvider extends ChangeNotifier {
         _lastSyncedRemoteSessionOverridesSignature = null;
         _pendingRemoteSelectionSync = false;
         _pendingRemoteSelectionSyncSince = null;
+        _selectionSyncTransactionPhase = _SelectionSyncTransactionPhase.idle;
       }
     } catch (e, stackTrace) {
       AppLogger.error(
@@ -3774,6 +3999,7 @@ class ChatProvider extends ChangeNotifier {
     _pendingRemoteSelectionSyncSince = null;
     _lastRemoteSelectionSyncAt = null;
     _remoteSelectionSyncInFlight = false;
+    _selectionSyncTransactionPhase = _SelectionSyncTransactionPhase.idle;
     _autoTitleConsolidatedSessionIds.clear();
     _autoTitleLastSignatureBySessionId.clear();
     _autoTitleInFlightSessionIds.clear();
@@ -3828,7 +4054,11 @@ class ChatProvider extends ChangeNotifier {
       } else {
         _pendingRemoteSelectionSync = false;
         _pendingRemoteSelectionSyncSince = null;
-        await _syncSelectionToRemoteConfig();
+        _setSelectionSyncTransactionPhase(
+          _SelectionSyncTransactionPhase.pendingRemote,
+          reason: 'immediate-sync',
+        );
+        await _runSelectionSyncTransaction(reason: 'immediate-sync');
       }
     }
   }

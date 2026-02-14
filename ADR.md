@@ -29,6 +29,54 @@ This document tracks technical decisions for CodeWalk.
 - ADR-023: Deprecated API Modernization and Web Interop Migration (2026-02-11) [Accepted]
 - ADR-024: Desktop Composer/Pane Interaction and Active-Response Abort Semantics (2026-02-11) [Accepted]
 - ADR-025: Automatic Session Title Generation via ch.at API (2026-02-12) [Accepted]
+- ADR-026: Namespaced Selection Sync Transaction and Reasoning Status Rendering (2026-02-14) [Accepted]
+
+---
+
+## ADR-026: Namespaced Selection Sync Transaction and Reasoning Status Rendering
+
+**Status**: Accepted
+**Date**: 2026-02-14
+
+### Context
+
+Cross-device selection sync (agent/model/variant) still had race windows while a response was active. In busy/retry intervals, remote flush could happen too early and interfere with the current run. At the same time, sync payloads tied to directory-scoped `/config` operations risked workspace-side config artifacts. UX also mixed true reasoning with status-like reasoning lines (`**...**`) and showed generic progress labels.
+
+### Decision
+
+1. Introduce explicit selection sync transaction phases: `idle -> pendingRemote -> appliedRemote -> failed`.
+2. Defer remote selection flush while session remains busy/retry, not only while local stream subscription exists.
+3. Persist sync payloads under app namespace (`agent.__codewalk.options.codewalk.selection` + `variantByAgentAndModel`) and keep compatibility reads for legacy keys.
+4. Parse reasoning first-line `**...**` as transient status label, hide that reasoning block, and surface the latest status in the in-flight progress indicator.
+
+### Rationale
+
+- Explicit sync phase state improves determinism and observability of deferred/flush behavior.
+- Busy/retry-aware gating matches real session lifecycle and removes premature remote writes.
+- App-namespaced payloads isolate client synchronization metadata from user project configuration space.
+- Status extraction keeps UI concise and avoids showing duplicated technical bubbles for ephemeral status messages.
+
+### Consequences
+
+- ✅ Positive: selection changes no longer interfere with active response lifecycle.
+- ✅ Positive: sync transport is app-scoped and no longer depends on project directory query for config patches.
+- ✅ Positive: progress UI reflects latest status text when backend emits status-style reasoning.
+- ⚠️ Trade-off: sync payload schema is richer and requires backward-compatible parsing paths.
+
+### Key Files
+
+- `lib/presentation/providers/chat_provider.dart`
+- `lib/presentation/pages/chat_page.dart`
+- `lib/presentation/widgets/chat_message_widget.dart`
+- `lib/presentation/utils/reasoning_status_parser.dart`
+- `test/unit/providers/chat_provider_test.dart`
+- `test/widget/chat_page_test.dart`
+- `test/widget/chat_message_widget_test.dart`
+
+### References
+
+- ROADMAP.featA.md
+- CODEBASE.md (Delta Update 2026-02-14)
 
 ---
 

@@ -594,6 +594,41 @@ void main() {
   );
 
   testWidgets(
+    'hides reasoning block when first line is a markdown status marker',
+    (WidgetTester tester) async {
+      final message = AssistantMessage(
+        id: 'msg_status_reasoning',
+        sessionId: 'ses_status_reasoning',
+        time: DateTime.fromMillisecondsSinceEpoch(1000),
+        parts: const <MessagePart>[
+          ReasoningPart(
+            id: 'reasoning_status',
+            messageId: 'msg_status_reasoning',
+            sessionId: 'ses_status_reasoning',
+            text: '**Indexing workspace**\ncollecting files...',
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: ChatMessageWidget(message: message)),
+        ),
+      );
+
+      expect(find.text('Thinking Process'), findsNothing);
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'thinking_content_text_msg_status_reasoning::reasoning_status',
+          ),
+        ),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
     'thinking auto-collapses when latest reasoning moves to another message',
     (WidgetTester tester) async {
       final message = AssistantMessage(

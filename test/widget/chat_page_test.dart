@@ -2897,6 +2897,72 @@ void main() {
     },
   );
 
+  testWidgets(
+    'shows latest reasoning status instead of generic receiving text',
+    (WidgetTester tester) async {
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_status',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Status Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_status'] = const <ChatMessage>[];
+
+      final streamController = StreamController<Either<Failure, ChatMessage>>();
+      addTearDown(() async {
+        await streamController.close();
+      });
+      repository.sendMessageHandler = (_, __, ___, ____) =>
+          streamController.stream;
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      await provider.sendMessage('status label');
+      await tester.pump();
+
+      streamController.add(
+        Right(
+          AssistantMessage(
+            id: 'msg_assistant_status',
+            sessionId: 'ses_status',
+            time: DateTime.fromMillisecondsSinceEpoch(2000),
+            parts: const <MessagePart>[
+              ReasoningPart(
+                id: 'part_assistant_status',
+                messageId: 'msg_assistant_status',
+                sessionId: 'ses_status',
+                text: '**Reading project tree**\nloading nodes...',
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Reading project tree'), findsOneWidget);
+      expect(find.text('Receiving response...'), findsNothing);
+      expect(find.text('Thinking Process'), findsNothing);
+    },
+  );
+
   testWidgets('keeps input editable while responding and stop aborts session', (
     WidgetTester tester,
   ) async {

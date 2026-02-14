@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import '../../domain/entities/chat_message.dart';
+import '../utils/reasoning_status_parser.dart';
 import '../utils/diff_parser.dart';
 
 /// Chat message widget
@@ -447,6 +448,10 @@ class ChatMessageWidget extends StatelessWidget {
     required String partKey,
     required bool isLatestReasoningPart,
   }) {
+    if (parseReasoningStatusLabel(part.text) != null) {
+      return const SizedBox.shrink();
+    }
+
     // Don't display if reasoning text is empty or only whitespace
     if (part.text.trim().isEmpty) {
       return const SizedBox.shrink();

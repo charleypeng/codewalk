@@ -4,6 +4,13 @@
 > Git baseline: `a3ba190 docs(agents): skip precommit for static-only commits` (main)
 > Flutter: 3.41.0 (stable)
 
+## Delta Update (2026-02-14)
+
+- `ChatProvider` sync now uses a namespaced transaction flow (`idle -> pendingRemote -> appliedRemote -> failed`) to defer remote selection flush while session status is busy/retry.
+- Remote selection persistence now goes through `agent.__codewalk.options.codewalk.selection` and `variantByAgentAndModel`, keeping compatibility reads while avoiding project-directory scoped config writes.
+- Reasoning status parsing was centralized in `lib/presentation/utils/reasoning_status_parser.dart`; reasoning blocks with first-line `**...**` are treated as status labels and rendered in the in-progress indicator instead of the thinking bubble.
+- Coverage was expanded in `test/unit/providers/chat_provider_test.dart`, `test/widget/chat_message_widget_test.dart`, and `test/widget/chat_page_test.dart` for deferred sync flush semantics and status-label rendering.
+
 ## Project Structure
 
 ```
