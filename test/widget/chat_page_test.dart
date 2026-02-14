@@ -2638,6 +2638,69 @@ void main() {
     expect(find.text('message 39'), findsOneWidget);
   });
 
+  testWidgets('shows jump-to-first FAB after scrolling up and jumps to top', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_scroll_top',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Scrollable Top Session',
+        ),
+      ],
+    );
+    repository.messagesBySession['ses_scroll_top'] = _threadMessages(
+      'ses_scroll_top',
+      60,
+    );
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await tester.pumpAndSettle();
+
+    final listFinder = find.byKey(const ValueKey<String>('chat_message_list'));
+    final scrollableFinder = find.descendant(
+      of: listFinder,
+      matching: find.byType(Scrollable),
+    );
+
+    await tester.drag(listFinder, const Offset(0, 700));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('jump_to_first_fab')),
+      findsOneWidget,
+    );
+    expect(find.byTooltip('Go to first message'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Go to first message'));
+    await tester.pumpAndSettle();
+
+    final scrollableAfterTap = tester.state<ScrollableState>(scrollableFinder);
+    expect(scrollableAfterTap.position.pixels, lessThanOrEqualTo(1));
+    expect(find.text('message 0'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('jump_to_first_fab')),
+      findsNothing,
+    );
+  });
+
   testWidgets('auto-follows incoming messages while user stays at latest', (
     WidgetTester tester,
   ) async {

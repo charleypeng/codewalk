@@ -109,6 +109,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   static const double _desktopFilePaneWidth = 280;
   static const double _largeDesktopUtilityPaneWidth = 280;
   static const double _nearBottomThreshold = 200;
+  static const double _jumpToFirstFabThreshold = 360;
   static const double _scrollToBottomEpsilon = 1;
   static const int _maxScrollToBottomPasses = 6;
   static const Duration _scrollToBottomFirstPassDuration = Duration(
@@ -141,6 +142,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   bool _autoFollowToLatest = true;
   bool _showScrollToLatestFab = false;
   bool _hasUnreadMessagesBelow = false;
+  bool _showScrollToFirstFab = false;
   bool _isAppInForeground = true;
   bool _wasChatRouteCurrent = true;
   bool _isProgrammaticScrollInFlight = false;
@@ -373,6 +375,17 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         requestToken == _scrollToBottomRequestToken;
   }
 
+  bool _shouldShowJumpToFirstFab() {
+    if (!_scrollController.hasClients) {
+      return false;
+    }
+    final position = _scrollController.position;
+    if (position.pixels <= _nearBottomThreshold) {
+      return false;
+    }
+    return _distanceToBottom() >= _jumpToFirstFabThreshold;
+  }
+
   void _handleScrollChanged() {
     if (!_scrollController.hasClients) {
       return;
@@ -382,11 +395,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     if (nearBottom) {
       if (!_autoFollowToLatest ||
           _showScrollToLatestFab ||
-          _hasUnreadMessagesBelow) {
+          _hasUnreadMessagesBelow ||
+          _showScrollToFirstFab) {
         setState(() {
           _autoFollowToLatest = true;
           _showScrollToLatestFab = false;
           _hasUnreadMessagesBelow = false;
+          _showScrollToFirstFab = false;
         });
       }
       return;
@@ -396,11 +411,15 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       return;
     }
 
-    if (_autoFollowToLatest || !_showScrollToLatestFab) {
+    final shouldShowJumpToFirst = _shouldShowJumpToFirstFab();
+    if (_autoFollowToLatest ||
+        !_showScrollToLatestFab ||
+        _showScrollToFirstFab != shouldShowJumpToFirst) {
       setState(() {
         _autoFollowToLatest = false;
         _showScrollToLatestFab = true;
         _hasUnreadMessagesBelow = false;
+        _showScrollToFirstFab = shouldShowJumpToFirst;
       });
     }
   }
@@ -478,7 +497,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       _pendingInitialScrollSessionId = sessionId;
       if (!_autoFollowToLatest ||
           _showScrollToLatestFab ||
-          _hasUnreadMessagesBelow) {
+          _hasUnreadMessagesBelow ||
+          _showScrollToFirstFab) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) {
             return;
@@ -487,16 +507,19 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             _autoFollowToLatest = true;
             _showScrollToLatestFab = false;
             _hasUnreadMessagesBelow = false;
+            _showScrollToFirstFab = false;
           });
         });
       } else {
         _autoFollowToLatest = true;
+        _showScrollToFirstFab = false;
       }
     }
 
     if (sessionId == null) {
       _pendingInitialScrollSessionId = null;
       _autoFollowToLatest = true;
+      _showScrollToFirstFab = false;
       return;
     }
 
@@ -516,13 +539,41 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   void _markUnreadMessagesBelow() {
     if (!_autoFollowToLatest &&
         _showScrollToLatestFab &&
-        _hasUnreadMessagesBelow) {
+        _hasUnreadMessagesBelow &&
+        _showScrollToFirstFab == _shouldShowJumpToFirstFab()) {
       return;
     }
     setState(() {
       _autoFollowToLatest = false;
       _showScrollToLatestFab = true;
       _hasUnreadMessagesBelow = true;
+      _showScrollToFirstFab = _shouldShowJumpToFirstFab();
+    });
+  }
+
+  void _scrollToFirstMessage() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+      _isProgrammaticScrollInFlight = true;
+      _scrollController
+          .animateTo(
+            _scrollController.position.minScrollExtent,
+            duration: const Duration(milliseconds: 320),
+            curve: Curves.easeOut,
+          )
+          .whenComplete(() {
+            if (!mounted) {
+              return;
+            }
+            _isProgrammaticScrollInFlight = false;
+            if (_showScrollToFirstFab) {
+              setState(() {
+                _showScrollToFirstFab = false;
+              });
+            }
+          });
     });
   }
 
@@ -595,11 +646,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
     if (!_autoFollowToLatest ||
         _showScrollToLatestFab ||
-        _hasUnreadMessagesBelow) {
+        _hasUnreadMessagesBelow ||
+        _showScrollToFirstFab) {
       setState(() {
         _autoFollowToLatest = true;
         _showScrollToLatestFab = false;
         _hasUnreadMessagesBelow = false;
+        _showScrollToFirstFab = false;
       });
     }
   }
@@ -5867,6 +5920,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         _showScrollToLatestFab &&
         chatProvider.currentSession != null &&
         chatProvider.messages.isNotEmpty;
+    final showJumpToFirstFab = showFab && _showScrollToFirstFab;
     final colorScheme = Theme.of(context).colorScheme;
 
     return Stack(
@@ -5880,22 +5934,55 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             switchInCurve: Curves.easeOut,
             switchOutCurve: Curves.easeIn,
             child: showFab
-                ? FloatingActionButton.small(
-                    key: const ValueKey<String>('jump_to_latest_fab'),
-                    heroTag: 'jump_to_latest_fab',
-                    tooltip: 'Go to latest message',
-                    onPressed: () => _scrollToBottom(force: true),
-                    backgroundColor: _hasUnreadMessagesBelow
-                        ? colorScheme.primary
-                        : colorScheme.surfaceContainerHigh,
-                    foregroundColor: _hasUnreadMessagesBelow
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurfaceVariant,
-                    child: Icon(
-                      _hasUnreadMessagesBelow
-                          ? Icons.mark_chat_unread_outlined
-                          : Icons.arrow_downward_rounded,
-                    ),
+                ? Column(
+                    key: const ValueKey<String>('message_jump_fabs_visible'),
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 180),
+                        switchInCurve: Curves.easeOut,
+                        switchOutCurve: Curves.easeIn,
+                        child: showJumpToFirstFab
+                            ? Padding(
+                                key: const ValueKey<String>(
+                                  'jump_to_first_fab',
+                                ),
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: FloatingActionButton.small(
+                                  heroTag: 'jump_to_first_fab',
+                                  tooltip: 'Go to first message',
+                                  onPressed: _scrollToFirstMessage,
+                                  backgroundColor:
+                                      colorScheme.surfaceContainerHigh,
+                                  foregroundColor: colorScheme.onSurfaceVariant,
+                                  child: const Icon(Icons.arrow_upward_rounded),
+                                ),
+                              )
+                            : const SizedBox(
+                                key: ValueKey<String>(
+                                  'jump_to_first_fab_hidden',
+                                ),
+                              ),
+                      ),
+                      FloatingActionButton.small(
+                        key: const ValueKey<String>('jump_to_latest_fab'),
+                        heroTag: 'jump_to_latest_fab',
+                        tooltip: 'Go to latest message',
+                        onPressed: () => _scrollToBottom(force: true),
+                        backgroundColor: _hasUnreadMessagesBelow
+                            ? colorScheme.primary
+                            : colorScheme.surfaceContainerHigh,
+                        foregroundColor: _hasUnreadMessagesBelow
+                            ? colorScheme.onPrimary
+                            : colorScheme.onSurfaceVariant,
+                        child: Icon(
+                          _hasUnreadMessagesBelow
+                              ? Icons.mark_chat_unread_outlined
+                              : Icons.arrow_downward_rounded,
+                        ),
+                      ),
+                    ],
                   )
                 : const SizedBox(
                     key: ValueKey<String>('jump_to_latest_fab_hidden'),
