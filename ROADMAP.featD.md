@@ -12,6 +12,14 @@
 
 Give users direct control over verbosity and density while keeping message/tool surfaces readable and stable on mobile and desktop.
 
+## Execution Update (2026-02-14)
+
+- Completed.
+- Implemented global top-bar display toggles (all devices) with popover entries for `Thinking bubbles` and `Tool call bubbles`.
+- Added app-wide density preference (`dense`, `normal`, `spacious`) in Settings > Appearance and wired it to theme visual density.
+- Applied product-friendly tool-call titles/status labels and capped expanded tool output with internal scroll (`min(300px, 40vh)` behavior, capped at `300px`).
+- Removed header status icon near session title and applied a transient lantern/shimmer animation to composer status text (`Thinking`, `Receiving`, dynamic status labels).
+
 ## Research Notes
 
 - Material 3 density/theming:

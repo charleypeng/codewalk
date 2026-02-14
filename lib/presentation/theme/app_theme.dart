@@ -1,26 +1,56 @@
 import 'package:flutter/material.dart';
 
+import '../../domain/entities/experience_settings.dart';
+
 class AppTheme {
   AppTheme._();
 
   static const Color seedColor = Color(0xFF3A6EA5);
 
-  static ThemeData lightFrom(ColorScheme colorScheme) {
-    return _buildTheme(colorScheme: colorScheme, brightness: Brightness.light);
+  static ThemeData lightFrom(
+    ColorScheme colorScheme, {
+    AppDensity appDensity = AppDensity.normal,
+  }) {
+    return _buildTheme(
+      colorScheme: colorScheme,
+      brightness: Brightness.light,
+      appDensity: appDensity,
+    );
   }
 
-  static ThemeData darkFrom(ColorScheme colorScheme) {
-    return _buildTheme(colorScheme: colorScheme, brightness: Brightness.dark);
+  static ThemeData darkFrom(
+    ColorScheme colorScheme, {
+    AppDensity appDensity = AppDensity.normal,
+  }) {
+    return _buildTheme(
+      colorScheme: colorScheme,
+      brightness: Brightness.dark,
+      appDensity: appDensity,
+    );
+  }
+
+  static VisualDensity visualDensityFor(AppDensity density) {
+    return switch (density) {
+      AppDensity.dense => VisualDensity.compact,
+      AppDensity.normal => VisualDensity.standard,
+      AppDensity.spacious => VisualDensity.comfortable,
+    };
+  }
+
+  static bool usesCompactLayout(AppDensity density) {
+    return density == AppDensity.dense;
   }
 
   static ThemeData _buildTheme({
     required ColorScheme colorScheme,
     required Brightness brightness,
+    required AppDensity appDensity,
   }) {
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
       brightness: brightness,
+      visualDensity: visualDensityFor(appDensity),
     );
 
     final textTheme = Typography.material2021(

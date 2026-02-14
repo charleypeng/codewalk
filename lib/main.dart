@@ -44,6 +44,7 @@ class MyApp extends StatelessWidget {
           },
         ),
         ChangeNotifierProvider(create: (_) => di.sl<ProjectProvider>()),
+        ChangeNotifierProvider(create: (_) => di.sl<ChatProvider>()),
         ChangeNotifierProvider(
           create: (_) {
             final provider = di.sl<SettingsProvider>();
@@ -62,16 +63,24 @@ class MyApp extends StatelessWidget {
             seedColor: AppTheme.seedColor,
             brightness: Brightness.dark,
           );
-          return MaterialApp(
-            title: AppConstants.appName,
-            theme: AppTheme.lightFrom(lightDynamic ?? fallbackLight),
-            darkTheme: AppTheme.darkFrom(darkDynamic ?? fallbackDark),
-            themeMode: ThemeMode.system,
-            home: ChangeNotifierProvider(
-              create: (_) => di.sl<ChatProvider>(),
-              child: const AppShellPage(),
-            ),
-            debugShowCheckedModeBanner: false,
+          return Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, _) {
+              final appDensity = settingsProvider.appDensity;
+              return MaterialApp(
+                title: AppConstants.appName,
+                theme: AppTheme.lightFrom(
+                  lightDynamic ?? fallbackLight,
+                  appDensity: appDensity,
+                ),
+                darkTheme: AppTheme.darkFrom(
+                  darkDynamic ?? fallbackDark,
+                  appDensity: appDensity,
+                ),
+                themeMode: ThemeMode.system,
+                home: const AppShellPage(),
+                debugShowCheckedModeBanner: false,
+              );
+            },
           );
         },
       ),

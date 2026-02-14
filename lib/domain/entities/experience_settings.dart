@@ -16,6 +16,8 @@ enum ShortcutAction {
 
 enum DesktopPane { conversations, files, utility }
 
+enum AppDensity { dense, normal, spacious }
+
 class ShortcutDefinition {
   const ShortcutDefinition({
     required this.action,
@@ -176,18 +178,40 @@ DesktopPane? desktopPaneFromKey(String value) {
   };
 }
 
+String appDensityKey(AppDensity density) {
+  return switch (density) {
+    AppDensity.dense => 'dense',
+    AppDensity.normal => 'normal',
+    AppDensity.spacious => 'spacious',
+  };
+}
+
+AppDensity appDensityFromKey(String value) {
+  return switch (value) {
+    'dense' => AppDensity.dense,
+    'spacious' => AppDensity.spacious,
+    _ => AppDensity.normal,
+  };
+}
+
 class ExperienceSettings {
   const ExperienceSettings({
     required this.notifications,
     required this.sounds,
     required this.shortcuts,
     required this.desktopPanes,
+    required this.appDensity,
+    required this.showThinkingBubbles,
+    required this.showToolCallBubbles,
   });
 
   final Map<NotificationCategory, bool> notifications;
   final Map<SoundCategory, SoundOption> sounds;
   final Map<ShortcutAction, String> shortcuts;
   final Map<DesktopPane, bool> desktopPanes;
+  final AppDensity appDensity;
+  final bool showThinkingBubbles;
+  final bool showToolCallBubbles;
 
   factory ExperienceSettings.defaults() {
     final shortcuts = <ShortcutAction, String>{
@@ -211,6 +235,9 @@ class ExperienceSettings {
         DesktopPane.files: true,
         DesktopPane.utility: true,
       },
+      appDensity: AppDensity.normal,
+      showThinkingBubbles: true,
+      showToolCallBubbles: true,
     );
   }
 
@@ -219,12 +246,18 @@ class ExperienceSettings {
     Map<SoundCategory, SoundOption>? sounds,
     Map<ShortcutAction, String>? shortcuts,
     Map<DesktopPane, bool>? desktopPanes,
+    AppDensity? appDensity,
+    bool? showThinkingBubbles,
+    bool? showToolCallBubbles,
   }) {
     return ExperienceSettings(
       notifications: notifications ?? this.notifications,
       sounds: sounds ?? this.sounds,
       shortcuts: shortcuts ?? this.shortcuts,
       desktopPanes: desktopPanes ?? this.desktopPanes,
+      appDensity: appDensity ?? this.appDensity,
+      showThinkingBubbles: showThinkingBubbles ?? this.showThinkingBubbles,
+      showToolCallBubbles: showToolCallBubbles ?? this.showToolCallBubbles,
     );
   }
 
@@ -246,6 +279,9 @@ class ExperienceSettings {
         for (final entry in desktopPanes.entries)
           desktopPaneKey(entry.key): entry.value,
       },
+      'appDensity': appDensityKey(appDensity),
+      'showThinkingBubbles': showThinkingBubbles,
+      'showToolCallBubbles': showToolCallBubbles,
     };
   }
 
@@ -258,6 +294,9 @@ class ExperienceSettings {
     final sounds = Map<SoundCategory, SoundOption>.from(defaults.sounds);
     final shortcuts = Map<ShortcutAction, String>.from(defaults.shortcuts);
     final desktopPanes = Map<DesktopPane, bool>.from(defaults.desktopPanes);
+    var appDensity = defaults.appDensity;
+    var showThinkingBubbles = defaults.showThinkingBubbles;
+    var showToolCallBubbles = defaults.showToolCallBubbles;
 
     final notificationsJson = json['notifications'];
     if (notificationsJson is Map) {
@@ -306,11 +345,29 @@ class ExperienceSettings {
       }
     }
 
+    final appDensityJson = json['appDensity'];
+    if (appDensityJson is String && appDensityJson.trim().isNotEmpty) {
+      appDensity = appDensityFromKey(appDensityJson.trim().toLowerCase());
+    }
+
+    final showThinkingBubblesJson = json['showThinkingBubbles'];
+    if (showThinkingBubblesJson is bool) {
+      showThinkingBubbles = showThinkingBubblesJson;
+    }
+
+    final showToolCallBubblesJson = json['showToolCallBubbles'];
+    if (showToolCallBubblesJson is bool) {
+      showToolCallBubbles = showToolCallBubblesJson;
+    }
+
     return ExperienceSettings(
       notifications: notifications,
       sounds: sounds,
       shortcuts: shortcuts,
       desktopPanes: desktopPanes,
+      appDensity: appDensity,
+      showThinkingBubbles: showThinkingBubbles,
+      showToolCallBubbles: showToolCallBubbles,
     );
   }
 }

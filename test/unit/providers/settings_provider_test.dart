@@ -145,5 +145,29 @@ void main() {
       expect(second.isDesktopPaneVisible(DesktopPane.conversations), isTrue);
       expect(second.isDesktopPaneVisible(DesktopPane.utility), isTrue);
     });
+
+    test('persists app density and bubble visibility toggles', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+      await first.setAppDensity(AppDensity.spacious);
+      await first.setShowThinkingBubbles(false);
+      await first.setShowToolCallBubbles(false);
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(second.appDensity, AppDensity.spacious);
+      expect(second.showThinkingBubbles, isFalse);
+      expect(second.showToolCallBubbles, isFalse);
+    });
   });
 }

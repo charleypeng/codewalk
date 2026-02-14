@@ -76,6 +76,8 @@ class _ModelSelectorEntry {
 
 enum _ContextUsageAction { compactNow }
 
+enum _DisplayToggleAction { thinkingBubbles, toolCallBubbles }
+
 class _SessionContextUsageSnapshot {
   const _SessionContextUsageSnapshot({
     required this.usagePercent,
@@ -1256,13 +1258,39 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     };
   }
 
+  String _displayToggleLabel(_DisplayToggleAction action) {
+    return switch (action) {
+      _DisplayToggleAction.thinkingBubbles => 'Thinking bubbles',
+      _DisplayToggleAction.toolCallBubbles => 'Tool call bubbles',
+    };
+  }
+
+  double _toolbarHeightForDensity({
+    required bool isMobile,
+    required AppDensity density,
+  }) {
+    final base = isMobile ? 46.0 : 44.0;
+    return switch (density) {
+      AppDensity.dense => base - 2,
+      AppDensity.normal => base,
+      AppDensity.spacious => base + 4,
+    };
+  }
+
+  bool _useDenseListTiles(BuildContext context) {
+    return Theme.of(context).visualDensity.vertical < 0;
+  }
+
   AppBar _buildAppBar({
     required bool isMobile,
     required SettingsProvider settingsProvider,
   }) {
     final refreshlessEnabled = FeatureFlags.refreshlessRealtime;
     return AppBar(
-      toolbarHeight: isMobile ? 46 : 44,
+      toolbarHeight: _toolbarHeightForDensity(
+        isMobile: isMobile,
+        density: settingsProvider.appDensity,
+      ),
       leadingWidth: isMobile ? 42 : null,
       leading: isMobile
           ? Builder(
@@ -1354,6 +1382,61 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             },
             icon: const Icon(Icons.view_sidebar_outlined),
           ),
+        PopupMenuButton<_DisplayToggleAction>(
+          key: const ValueKey<String>('appbar_display_toggles_button'),
+          tooltip: 'Display toggles',
+          onSelected: (action) {
+            switch (action) {
+              case _DisplayToggleAction.thinkingBubbles:
+                unawaited(
+                  settingsProvider.setShowThinkingBubbles(
+                    !settingsProvider.showThinkingBubbles,
+                  ),
+                );
+                break;
+              case _DisplayToggleAction.toolCallBubbles:
+                unawaited(
+                  settingsProvider.setShowToolCallBubbles(
+                    !settingsProvider.showToolCallBubbles,
+                  ),
+                );
+                break;
+            }
+          },
+          itemBuilder: (context) {
+            return [
+              PopupMenuItem<_DisplayToggleAction>(
+                enabled: false,
+                child: Text(
+                  'Message bubbles',
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+              ),
+              CheckedPopupMenuItem<_DisplayToggleAction>(
+                key: const ValueKey<String>('display_toggle_item_thinking'),
+                value: _DisplayToggleAction.thinkingBubbles,
+                checked: settingsProvider.showThinkingBubbles,
+                child: Text(
+                  _displayToggleLabel(_DisplayToggleAction.thinkingBubbles),
+                ),
+              ),
+              CheckedPopupMenuItem<_DisplayToggleAction>(
+                key: const ValueKey<String>('display_toggle_item_tool_calls'),
+                value: _DisplayToggleAction.toolCallBubbles,
+                checked: settingsProvider.showToolCallBubbles,
+                child: Text(
+                  _displayToggleLabel(_DisplayToggleAction.toolCallBubbles),
+                ),
+              ),
+              const PopupMenuDivider(height: 0),
+              const PopupMenuItem<_DisplayToggleAction>(
+                enabled: false,
+                child: Text('More toggles coming soon'),
+              ),
+            ];
+          },
+          icon: const Icon(Icons.tune_rounded),
+        ),
         if (refreshlessEnabled && !isMobile)
           Consumer2<ChatProvider, AppProvider>(
             builder: (context, chatProvider, appProvider, child) {
@@ -2288,7 +2371,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                       builder: (_) {
                         final displayName = _projectDisplayLabel(project);
                         return ListTile(
-                          dense: true,
+                          dense: _useDenseListTiles(dialogContext),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 8,
                           ),
@@ -2332,7 +2415,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                   _buildSelectorSectionHeader(dialogContext, 'Workspaces'),
                   for (final worktree in projectProvider.worktrees)
                     ListTile(
-                      dense: true,
+                      dense: _useDenseListTiles(dialogContext),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                       leading: Icon(
                         worktree.active
@@ -2405,7 +2488,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final displayName = _projectDisplayLabel(project);
 
     return ListTile(
-      dense: true,
+      dense: _useDenseListTiles(dialogContext),
       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
       leading: Icon(
         selected ? Icons.radio_button_checked : Icons.folder_open_outlined,
@@ -3543,7 +3626,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                   key: ValueKey<String>(
                                     'quick_open_result_$normalizedPath',
                                   ),
-                                  dense: true,
+                                  dense: _useDenseListTiles(context),
                                   leading: Icon(
                                     _fileIconForNode(node),
                                     size: 18,
@@ -3876,7 +3959,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                           'file_tree_open_files_button',
                         ),
                         style: TextButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
+                          visualDensity: Theme.of(context).visualDensity,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           minimumSize: const Size(0, 32),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -3900,7 +3983,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                   IconButton(
                     key: const ValueKey<String>('file_tree_quick_open_button'),
                     tooltip: 'Quick Open',
-                    visualDensity: VisualDensity.compact,
+                    visualDensity: Theme.of(context).visualDensity,
                     constraints: const BoxConstraints(
                       minWidth: 36,
                       minHeight: 36,
@@ -3921,7 +4004,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                   IconButton(
                     key: const ValueKey<String>('file_tree_refresh_button'),
                     tooltip: 'Refresh files',
-                    visualDensity: VisualDensity.compact,
+                    visualDensity: Theme.of(context).visualDensity,
                     constraints: const BoxConstraints(
                       minWidth: 36,
                       minHeight: 36,
@@ -3941,7 +4024,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     IconButton(
                       key: const ValueKey<String>('hide_files_sidebar_button'),
                       tooltip: 'Hide Files sidebar',
-                      visualDensity: VisualDensity.compact,
+                      visualDensity: Theme.of(context).visualDensity,
                       constraints: const BoxConstraints(
                         minWidth: 36,
                         minHeight: 36,
@@ -4568,7 +4651,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                               key: ValueKey<String>(
                                 'file_viewer_tab_close_${_normalizeFilePath(path)}',
                               ),
-                              visualDensity: VisualDensity.compact,
+                              visualDensity: Theme.of(context).visualDensity,
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(
                                 minWidth: 22,
@@ -4763,10 +4846,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                       .renameSession(currentSession, title),
                                 ),
                               ),
-                              if (chatProvider.currentSessionStatus != null)
-                                _buildSessionStatusBadge(
-                                  chatProvider.currentSessionStatus!,
-                                ),
                             ],
                           ),
                         ),
@@ -4964,8 +5043,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               child: leading,
             ),
             const SizedBox(width: 8),
-            Text(
-              status.label,
+            _ComposerStatusLanternText(
+              text: status.label,
               key: const ValueKey<String>('composer_reasoning_status_text'),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -4992,6 +5071,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final variants = chatProvider.availableVariants;
     final attachButtonStyle = composerAttachButtonStyle(
       colorScheme: colorScheme,
+      visualDensity: Theme.of(context).visualDensity,
     );
 
     return Padding(
@@ -5859,50 +5939,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
   }
 
-  Widget _buildSessionStatusBadge(SessionStatusInfo status) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final color = _sessionStatusColorForBadge(status, colorScheme);
-    final icon = _sessionStatusIcon(status);
-    return Container(
-      key: const ValueKey<String>('chat_header_session_status_badge'),
-      margin: const EdgeInsets.only(left: 8),
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Tooltip(
-        message: _sessionStatusLabel(status),
-        child: Icon(icon, size: 14, color: color),
-      ),
-    );
-  }
-
-  Color _sessionStatusColorForBadge(
-    SessionStatusInfo status,
-    ColorScheme colorScheme,
-  ) {
-    switch (status.type) {
-      case SessionStatusType.busy:
-        return colorScheme.primary;
-      case SessionStatusType.retry:
-        return colorScheme.error;
-      case SessionStatusType.idle:
-        return colorScheme.tertiary;
-    }
-  }
-
-  IconData _sessionStatusIcon(SessionStatusInfo status) {
-    switch (status.type) {
-      case SessionStatusType.busy:
-        return Icons.hourglass_top_rounded;
-      case SessionStatusType.retry:
-        return Icons.refresh_rounded;
-      case SessionStatusType.idle:
-        return Icons.check_circle_outline_rounded;
-    }
-  }
-
   String _sessionDisplayTitle(ChatSession session) {
     return SessionTitleFormatter.displayTitle(
       time: session.time,
@@ -5997,6 +6033,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   Widget _buildMessageList(ChatProvider chatProvider) {
+    final settingsProvider = context.watch<SettingsProvider>();
     if (chatProvider.state == ChatState.loading &&
         chatProvider.messages.isEmpty) {
       return const Center(child: CircularProgressIndicator());
@@ -6112,6 +6149,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                   key: ValueKey<String>(entry.key),
                   message: message,
                   activeReasoningPartKey: latestReasoningPartKey,
+                  showThinkingBubbles: settingsProvider.showThinkingBubbles,
+                  showToolCallBubbles: settingsProvider.showToolCallBubbles,
                   onBackgroundLongPress: () =>
                       _handleMessageBackgroundLongPress(message),
                   onBackgroundLongPressEnd: () =>
@@ -6859,6 +6898,120 @@ class _ComposerStatusPresentation {
 
   @override
   int get hashCode => Object.hash(type, label);
+}
+
+class _ComposerStatusLanternText extends StatefulWidget {
+  const _ComposerStatusLanternText({
+    super.key,
+    required this.text,
+    this.style,
+    this.maxLines,
+    this.overflow,
+  });
+
+  final String text;
+  final TextStyle? style;
+  final int? maxLines;
+  final TextOverflow? overflow;
+
+  @override
+  State<_ComposerStatusLanternText> createState() =>
+      _ComposerStatusLanternTextState();
+}
+
+class _ComposerStatusLanternTextState extends State<_ComposerStatusLanternText>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1700),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  bool _animationsEnabled(BuildContext context) {
+    final mediaQuery = MediaQuery.maybeOf(context);
+    if (mediaQuery?.disableAnimations ?? false) {
+      return false;
+    }
+    return !WidgetsBinding
+        .instance
+        .platformDispatcher
+        .accessibilityFeatures
+        .disableAnimations;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textStyle = widget.style;
+    final textWidget = Text(
+      widget.text,
+      maxLines: widget.maxLines,
+      overflow: widget.overflow,
+      style: textStyle,
+    );
+
+    if (!_animationsEnabled(context)) {
+      if (_controller.isAnimating) {
+        _controller.stop();
+      }
+      return textWidget;
+    }
+
+    if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
+
+    final colorScheme = Theme.of(context).colorScheme;
+    final baseColor = textStyle?.color ?? colorScheme.onSurfaceVariant;
+    final dimColor = baseColor.withValues(alpha: 0.72);
+    final highlightColor = Color.alphaBlend(
+      colorScheme.primary.withValues(alpha: 0.35),
+      baseColor,
+    );
+
+    return AnimatedBuilder(
+      animation: _controller,
+      child: textWidget,
+      builder: (context, child) {
+        final center = ((_controller.value * 1.8) - 0.4).clamp(0.0, 1.0);
+        final left = (center - 0.16).clamp(0.0, 1.0);
+        final innerLeft = (center - 0.06).clamp(0.0, 1.0);
+        final innerRight = (center + 0.06).clamp(0.0, 1.0);
+        final right = (center + 0.16).clamp(0.0, 1.0);
+
+        return ShaderMask(
+          blendMode: BlendMode.srcIn,
+          shaderCallback: (bounds) {
+            return LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                dimColor,
+                dimColor,
+                baseColor,
+                highlightColor,
+                baseColor,
+                dimColor,
+                dimColor,
+              ],
+              stops: [0.0, left, innerLeft, center, innerRight, right, 1.0],
+            ).createShader(bounds);
+          },
+          child: child,
+        );
+      },
+    );
+  }
 }
 
 class _DirectoryPickerSheet extends StatefulWidget {

@@ -37,6 +37,9 @@ class SettingsProvider extends ChangeNotifier {
 
   bool get initialized => _initialized;
   ExperienceSettings get settings => _settings;
+  AppDensity get appDensity => _settings.appDensity;
+  bool get showThinkingBubbles => _settings.showThinkingBubbles;
+  bool get showToolCallBubbles => _settings.showToolCallBubbles;
   bool get hasAnyServerBackedNotificationCategory =>
       _serverBackedNotifications.values.any((value) => value);
 
@@ -100,6 +103,33 @@ class SettingsProvider extends ChangeNotifier {
 
   bool isDesktopPaneVisible(DesktopPane pane) {
     return _settings.desktopPanes[pane] ?? true;
+  }
+
+  Future<void> setAppDensity(AppDensity density) async {
+    if (_settings.appDensity == density) {
+      return;
+    }
+    _settings = _settings.copyWith(appDensity: density);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setShowThinkingBubbles(bool visible) async {
+    if (_settings.showThinkingBubbles == visible) {
+      return;
+    }
+    _settings = _settings.copyWith(showThinkingBubbles: visible);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setShowToolCallBubbles(bool visible) async {
+    if (_settings.showToolCallBubbles == visible) {
+      return;
+    }
+    _settings = _settings.copyWith(showToolCallBubbles: visible);
+    notifyListeners();
+    await _persist();
   }
 
   Future<void> setDesktopPaneVisible(DesktopPane pane, bool visible) async {

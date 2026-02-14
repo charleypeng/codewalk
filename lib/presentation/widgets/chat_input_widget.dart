@@ -93,7 +93,10 @@ Color microphoneButtonForegroundColor({
   return isListening ? colorScheme.onError : colorScheme.onSecondaryContainer;
 }
 
-ButtonStyle composerAttachButtonStyle({required ColorScheme colorScheme}) {
+ButtonStyle composerAttachButtonStyle({
+  required ColorScheme colorScheme,
+  VisualDensity visualDensity = VisualDensity.standard,
+}) {
   return IconButton.styleFrom(
     foregroundColor: colorScheme.onSurfaceVariant.withValues(alpha: 0.82),
     disabledForegroundColor: colorScheme.onSurfaceVariant.withValues(
@@ -108,7 +111,7 @@ ButtonStyle composerAttachButtonStyle({required ColorScheme colorScheme}) {
     maximumSize: const Size(36, 36),
     padding: EdgeInsets.zero,
     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-    visualDensity: VisualDensity.compact,
+    visualDensity: visualDensity,
   );
 }
 
@@ -1108,7 +1111,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                                       padding: EdgeInsets.zero,
                                       tapTargetSize:
                                           MaterialTapTargetSize.shrinkWrap,
-                                      visualDensity: VisualDensity.compact,
+                                      visualDensity: Theme.of(
+                                        context,
+                                      ).visualDensity,
                                       backgroundColor:
                                           microphoneButtonBackgroundColor(
                                             isListening: _isListening,
@@ -1185,7 +1190,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                             alpha: 0.3,
                           ),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
+                          visualDensity: Theme.of(context).visualDensity,
                         ),
                         child: _isSending
                             ? const SizedBox(
@@ -1282,6 +1287,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     required ColorScheme colorScheme,
     required double maxHeight,
   }) {
+    final useDenseListTiles = Theme.of(context).visualDensity.vertical < 0;
     final isMention = _popoverType == ChatComposerPopoverType.mention;
     final suggestions = isMention
         ? _mentionSuggestions
@@ -1350,7 +1356,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                     final item = suggestions[index];
                     final selected = index == _activeSuggestionIndex;
                     return ListTile(
-                      dense: true,
+                      dense: useDenseListTiles,
                       selected: selected,
                       leading: Icon(item.icon, size: 18),
                       title: Text(item.title),

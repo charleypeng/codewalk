@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../core/constants/app_constants.dart';
+import 'settings/sections/appearance_settings_section.dart';
 import 'settings/sections/logs_settings_section.dart';
 import 'settings/sections/notifications_settings_section.dart';
 import 'settings/sections/servers_settings_section.dart';
@@ -36,6 +37,13 @@ class _SettingsPageState extends State<SettingsPage> {
   static const double _splitBreakpoint = 980;
 
   late final List<_SettingsSection> _sections = <_SettingsSection>[
+    _SettingsSection(
+      id: 'appearance',
+      title: 'Appearance',
+      description: 'Density and timeline bubble visibility',
+      icon: Icons.tune_rounded,
+      builder: (_) => const AppearanceSettingsSection(),
+    ),
     _SettingsSection(
       id: 'notifications',
       title: 'Notifications',

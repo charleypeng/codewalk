@@ -51,7 +51,7 @@ class PermissionRequestCard extends StatelessWidget {
               children: request.patterns
                   .map(
                     (pattern) => Chip(
-                      visualDensity: VisualDensity.compact,
+                      visualDensity: Theme.of(context).visualDensity,
                       label: Text(pattern),
                     ),
                   )

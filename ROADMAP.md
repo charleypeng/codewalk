@@ -68,7 +68,7 @@ Notes:
 - [x] `featA` - `ROADMAP.featA.md` (sync hardening baseline)
 - [x] `featB` - `ROADMAP.featB.md` (realtime read/render foundation)
 - [x] `featL` - `ROADMAP.featL.md` (compaction boundary + pre-boundary collapse)
-- [ ] `featD` - `ROADMAP.featD.md` (thinking/tool UX controls)
+- [x] `featD` - `ROADMAP.featD.md` (thinking/tool UX controls)
 - [ ] `featH` - `ROADMAP.featH.md` (startup/settings/tool-surface polish)
 - [ ] `featE` - `ROADMAP.featE.md` (composer popover/local server/shortcuts reliability)
 - [ ] `featI` - `ROADMAP.featI.md` (agent/shortcut/productivity parity)
@@ -84,18 +84,23 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 
 ### Open Backlog by Pack
 
-#### `featA` Sync hardening and remote config safety
+#### `featA` Sync hardening and remote config safety ✅
 
-- [ ] Mudar agent/model/variant está causando abort na requisição em andamento, parece ser um bug do sistema de sync que criamos recentemente
-- [ ] Mudar agent/model/variant está criando um arquivo config.json no workspace em uso, o que é um problema porque não faz parte do trabalho do usuario, parece ser um efeito colateral do sistema de sync que criamos recentemente
-- [ ] Muitas das bolhas tem uma bolha interna chamada "Thinking Process" que dentro mostra o thinking mas as vezes é o status do que esta sendo feito naquele momento. Se o backend não informa isso de forma clara basta identificar o padrão: quando é uma mensagem de status a primeira linha desse thinking é envolvida por **, exemplo: **Pesquisando melhores formas** ou **Editando arquivo README.md**, etc. Neste caso, ocultar a bolha de thinking process e mostrar no lugar do texto fixo 'Receiving response...', sempre o ultimo recebido desse tipo.
+**Status**: Completed (2026-02-14)
 
-#### `featB` Realtime read flow and session rendering
+Implemented namespaced selection sync transaction system with explicit state phases (`idle -> pendingRemote -> appliedRemote -> failed`) to prevent abort during active requests. Deferred remote flush until session lifecycle reaches safe idle/busy state. Migrated sync persistence to app-namespaced storage (`agent.__codewalk.options.codewalk.selection`) eliminating workspace `config.json` side effects. Added reasoning status parser to extract `**...**` status lines, hide thinking bubbles, and display latest status in progress indicator. Extended composer status with unified lifecycle model featuring 1s delayed show/hide behavior to prevent UI flashing.
 
-- [ ] Tratar exibição de agents/subagents, atualmente é exibido como se fosse uma sessão/conversa extra, mas deveria ser agrupado como subconversa, talvez um collapsable na conversa atual
-- [ ] Ao retomar uma conversa ou voltar pra tela, se o usuario nao subiu a barra de rolagem manualmente, deve avancar pra ultima mensagem recebida automaticamente
-- [ ] Quando a conversa fica muito longa acaba deixando o app lento, pesquisar sobre virtual scrolling
-- [ ] Quando um aparelho manda abort, outro aparelho conectado mostra um erro que cobre toda a conversa com um botão Retry, quando na verdade deveria ser apenas um toast de 4 segundos com botão Retry. Mas só nos casos de erros reais, abort geralmente significa que o usuário parou para informar algo diferente do pedido original, atualmente existe uma bolha que mostra mas é bem vermelha e agressiva precisa ser um pouco mais suave com uma mensagem um pouco mais amigável algo como 'O que gostaria de fazer diferente'
+**Commits**: f7c6d0d, 1d5f0be, 6a7ea2a
+**ADR**: ADR-026
+
+#### `featB` Realtime read flow and session rendering ✅
+
+**Status**: Completed (2026-02-14)
+
+Implemented multi-pass scroll-to-bottom algorithm (up to 6 passes with 1px epsilon threshold) to reliably reach conversation end with dynamic message heights. Added dual FAB navigation system (jump-to-latest + jump-to-first) for instant boundary navigation in long conversations. Restructured session list into hierarchical parent/child tree with collapsible sub-conversations for agent/subagent grouping. Implemented route-aware auto-follow behavior that preserves user scroll intent while auto-scrolling to latest on app resume. Reclassified remote abort events from blocking full-screen errors to non-blocking dismissible snackbar with retry action.
+
+**Commits**: a5b4b9d, 73f3f26
+**ADR**: ADR-028
 
 #### `featC` Focus/visibility gate and Files planning
 
@@ -105,11 +110,11 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 
 #### `featD` Thinking and tool UX polish
 
-- [ ] Inserir botão de fácil acesso para exibir/ocultar o Thinking (toggle rápido no header da mensagem ou área do composer)
-- [ ] Adicionar opção em Settings para escolher densidade de todos os elementos do app (denso, normal, espaçoso)
-- [ ] Limitar altura ao expandir conteúdo de uma tool call
-- [ ] Personalizar título das tool calls mais comuns, e tratar respostas para aparência mais suave visando UX
-- [ ] Remover o ícone ao lado do título da sessão (ao lado do lápis), o ícone que mostra o status atual, recebendo resposta etc. Mudar para algo mais elegante como transformar o botão knob de contexto em um loading girando enquanto vem resposta
+- [x] Inserir botão de fácil acesso para exibir/ocultar Thinking/Tool bubbles (toggle global no topo com popover)
+- [x] Adicionar opção em Settings para escolher densidade de todos os elementos do app (denso, normal, espaçoso)
+- [x] Limitar altura ao expandir conteúdo de uma tool call (max-height responsivo com teto de 300px)
+- [x] Personalizar título das tool calls mais comuns, e tratar respostas para aparência mais suave visando UX
+- [x] Substituir destaque visual do status ao lado do título por efeito transitório na linha de status do composer (mantendo knob de contexto atual)
 
 #### `featE` Session header/context controls
 
@@ -155,6 +160,11 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 
 - [ ] Wizard/onboarding quando abrir o app pela primeira vez: dialog central perguntando qual servidor cadastrar/usar e toggle do serviço do ch.at
 
-#### `featL` Compaction boundary and low-cost nested history
+#### `featL` Compaction boundary and low-cost nested history ✅
 
-- [x] Ao ocorrer compactação manual ou automática, colapsar tudo que veio antes da compactação, mantendo visível apenas a resposta da compactação e o que vier depois; adotar padrão de aninhamento para colapsos internos e garantir custo de renderização/memória mínimo para conteúdo encolhido
+**Status**: Completed (2026-02-14)
+
+Implemented compaction boundary timeline entry that collapses all pre-compaction messages by default, keeping only compaction response and post-compaction messages visible. Added lazy pre-boundary rendering with session-scoped expansion reset to minimize memory/render cost. Extended boundary detection to handle summary assistant messages as fallback when `CompactionPart` markers are absent. Added selection neutrality guard to prevent compaction-related messages from overriding user-selected agents/models during sync adoption.
+
+**Commits**: fd3ce04, 4af9f01
+**ADR**: ADR-027

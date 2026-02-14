@@ -347,7 +347,7 @@ void main() {
 
     expect(find.text('Tool Call: bash'), findsNothing);
     expect(find.text('bash'), findsOneWidget);
-    expect(find.text('Completed'), findsOneWidget);
+    expect(find.text('Done'), findsOneWidget);
     expect(
       find.byWidgetPredicate(
         (widget) =>
@@ -416,7 +416,7 @@ void main() {
 
     expect(find.text('Tool Call: bash'), findsNothing);
     expect(find.text('bash'), findsOneWidget);
-    expect(find.text('Error'), findsOneWidget);
+    expect(find.text('Needs attention'), findsOneWidget);
     expect(
       find.byWidgetPredicate(
         (widget) =>
@@ -483,8 +483,8 @@ void main() {
       ),
     );
 
-    expect(find.text('Completed'), findsNothing);
-    expect(find.byIcon(Icons.check), findsOneWidget);
+    expect(find.text('Done'), findsNothing);
+    expect(find.byIcon(Icons.check_circle_outline_rounded), findsOneWidget);
     expect(
       find.byWidgetPredicate(
         (widget) =>
@@ -1285,5 +1285,136 @@ index abc123..def456 100644
       find.byKey(const ValueKey<String>('tool_output_diff_container_0')),
       findsOneWidget,
     );
+  });
+
+  testWidgets('hides thinking bubbles when toggle is disabled', (
+    WidgetTester tester,
+  ) async {
+    final message = AssistantMessage(
+      id: 'msg_hide_thinking',
+      sessionId: 'ses_hide_thinking',
+      time: DateTime.fromMillisecondsSinceEpoch(1000),
+      parts: const <MessagePart>[
+        ReasoningPart(
+          id: 'part_reasoning_hide',
+          messageId: 'msg_hide_thinking',
+          sessionId: 'ses_hide_thinking',
+          text: 'line 1\nline 2\nline 3',
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(message: message, showThinkingBubbles: false),
+        ),
+      ),
+    );
+
+    expect(find.text('Thinking Process'), findsNothing);
+    expect(
+      find.byKey(
+        const ValueKey<String>(
+          'thinking_content_text_msg_hide_thinking::part_reasoning_hide',
+        ),
+      ),
+      findsNothing,
+    );
+  });
+
+  testWidgets('hides tool call bubbles when toggle is disabled', (
+    WidgetTester tester,
+  ) async {
+    final message = AssistantMessage(
+      id: 'msg_hide_tool',
+      sessionId: 'ses_hide_tool',
+      time: DateTime.fromMillisecondsSinceEpoch(1000),
+      parts: <MessagePart>[
+        ToolPart(
+          id: 'part_tool_hide',
+          messageId: 'msg_hide_tool',
+          sessionId: 'ses_hide_tool',
+          callId: 'call_hide_tool',
+          tool: 'bash',
+          state: ToolStateCompleted(
+            input: const <String, dynamic>{'cmd': 'pwd'},
+            output: '/tmp',
+            time: ToolTime(
+              start: DateTime.fromMillisecondsSinceEpoch(1000),
+              end: DateTime.fromMillisecondsSinceEpoch(1200),
+            ),
+          ),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(message: message, showToolCallBubbles: false),
+        ),
+      ),
+    );
+
+    expect(find.text('Running command'), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('tool_command_text')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('expanded tool output caps content viewport height', (
+    WidgetTester tester,
+  ) async {
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(1280, 900);
+    addTearDown(tester.view.reset);
+
+    final longOutput = List<String>.generate(
+      120,
+      (index) => 'output line $index',
+    ).join('\n');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: AssistantMessage(
+              id: 'msg_tool_height_cap',
+              sessionId: 'ses_tool_height_cap',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: <MessagePart>[
+                ToolPart(
+                  id: 'part_tool_height_cap',
+                  messageId: 'msg_tool_height_cap',
+                  sessionId: 'ses_tool_height_cap',
+                  callId: 'call_tool_height_cap',
+                  tool: 'bash',
+                  state: ToolStateCompleted(
+                    input: const <String, dynamic>{'command': 'cat big.log'},
+                    output: longOutput,
+                    time: ToolTime(
+                      start: DateTime.fromMillisecondsSinceEpoch(1000),
+                      end: DateTime.fromMillisecondsSinceEpoch(1200),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('tool_content_toggle_button')),
+    );
+    await tester.pumpAndSettle();
+
+    final viewportSize = tester.getSize(
+      find.byKey(const ValueKey<String>('tool_content_expanded_scroll')),
+    );
+    expect(viewportSize.height, lessThanOrEqualTo(300));
   });
 }

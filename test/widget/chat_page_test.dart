@@ -188,6 +188,97 @@ void main() {
       expect(find.text('Conversations'), findsOneWidget);
     });
 
+    testWidgets(
+      'app bar display toggles menu controls thinking and tool bubbles',
+      (WidgetTester tester) async {
+        await tester.binding.setSurfaceSize(const Size(1000, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final repository = FakeChatRepository(
+          sessions: <ChatSession>[
+            ChatSession(
+              id: 'ses_display_toggles',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              title: 'Display Toggles Session',
+            ),
+          ],
+        );
+        repository.messagesBySession['ses_display_toggles'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_display_toggles',
+            sessionId: 'ses_display_toggles',
+            time: DateTime.fromMillisecondsSinceEpoch(1100),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+            parts: <MessagePart>[
+              const ReasoningPart(
+                id: 'part_display_reasoning',
+                messageId: 'msg_display_toggles',
+                sessionId: 'ses_display_toggles',
+                text: 'Investigating component state',
+              ),
+              ToolPart(
+                id: 'part_display_tool',
+                messageId: 'msg_display_toggles',
+                sessionId: 'ses_display_toggles',
+                callId: 'call_display_tool',
+                tool: 'bash',
+                state: ToolStateCompleted(
+                  input: const <String, dynamic>{'command': 'pwd'},
+                  output: '/tmp',
+                  time: ToolTime(
+                    start: DateTime.fromMillisecondsSinceEpoch(1100),
+                    end: DateTime.fromMillisecondsSinceEpoch(1200),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ];
+
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test';
+        final provider = _buildChatProvider(
+          chatRepository: repository,
+          localDataSource: localDataSource,
+        );
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+        await tester.pumpWidget(_testApp(provider, appProvider));
+        await tester.pumpAndSettle();
+
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Thinking Process'), findsOneWidget);
+        expect(find.text('Running command'), findsOneWidget);
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('appbar_display_toggles_button')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey<String>('display_toggle_item_thinking')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Thinking Process'), findsNothing);
+        expect(find.text('Running command'), findsOneWidget);
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('appbar_display_toggles_button')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey<String>('display_toggle_item_tool_calls')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Running command'), findsNothing);
+      },
+    );
+
     testWidgets('mobile app bar opens files dialog in fullscreen', (
       WidgetTester tester,
     ) async {

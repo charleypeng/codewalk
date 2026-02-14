@@ -31,6 +31,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('Appearance'), findsOneWidget);
     expect(find.text('Notifications'), findsOneWidget);
     expect(find.text('Logs'), findsOneWidget);
     expect(find.text('Sounds'), findsNothing);

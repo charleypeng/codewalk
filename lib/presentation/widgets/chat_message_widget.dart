@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,12 +17,16 @@ class ChatMessageWidget extends StatelessWidget {
     super.key,
     required this.message,
     this.activeReasoningPartKey,
+    this.showThinkingBubbles = true,
+    this.showToolCallBubbles = true,
     this.onBackgroundLongPress,
     this.onBackgroundLongPressEnd,
   });
 
   final ChatMessage message;
   final String? activeReasoningPartKey;
+  final bool showThinkingBubbles;
+  final bool showToolCallBubbles;
   final VoidCallback? onBackgroundLongPress;
   final VoidCallback? onBackgroundLongPressEnd;
 
@@ -250,10 +255,16 @@ class ChatMessageWidget extends StatelessWidget {
       case PartType.file:
         return _buildFilePart(context, part as FilePart);
       case PartType.tool:
+        if (!showToolCallBubbles) {
+          return const SizedBox.shrink();
+        }
         return _buildToolPart(context, part as ToolPart);
       case PartType.agent:
         return _buildAgentPart(context, part as AgentPart);
       case PartType.reasoning:
+        if (!showThinkingBubbles) {
+          return const SizedBox.shrink();
+        }
         final reasoningPart = part as ReasoningPart;
         final reasoningPartKey = _reasoningPartKey(
           messageId: reasoningPart.messageId,
@@ -391,8 +402,114 @@ class ChatMessageWidget extends StatelessWidget {
     );
   }
 
+  _ToolPresentation _toolPresentation(String rawToolName) {
+    final normalized = _normalizeToolName(rawToolName);
+    switch (normalized) {
+      case 'bash':
+      case 'shell':
+        return _ToolPresentation(
+          title: 'Running command',
+          subtitle: rawToolName,
+          icon: Icons.terminal_rounded,
+        );
+      case 'read':
+        return _ToolPresentation(
+          title: 'Reading file',
+          subtitle: rawToolName,
+          icon: Icons.description_outlined,
+        );
+      case 'write':
+        return _ToolPresentation(
+          title: 'Writing file',
+          subtitle: rawToolName,
+          icon: Icons.edit_note_rounded,
+        );
+      case 'edit':
+      case 'apply_patch':
+      case 'patch':
+        return _ToolPresentation(
+          title: 'Editing files',
+          subtitle: rawToolName,
+          icon: Icons.auto_fix_high_rounded,
+        );
+      case 'glob':
+      case 'find':
+        return _ToolPresentation(
+          title: 'Finding files',
+          subtitle: rawToolName,
+          icon: Icons.folder_open_outlined,
+        );
+      case 'grep':
+        return _ToolPresentation(
+          title: 'Searching code',
+          subtitle: rawToolName,
+          icon: Icons.search_rounded,
+        );
+      case 'webfetch':
+      case 'google_search':
+      case 'brave_web_search':
+      case 'brave_news_search':
+      case 'brave_video_search':
+      case 'brave_image_search':
+      case 'brave_local_search':
+        return _ToolPresentation(
+          title: 'Searching the web',
+          subtitle: rawToolName,
+          icon: Icons.travel_explore_rounded,
+        );
+      case 'question':
+        return _ToolPresentation(
+          title: 'Waiting for your input',
+          subtitle: rawToolName,
+          icon: Icons.help_outline_rounded,
+        );
+      case 'todowrite':
+      case 'todoread':
+        return _ToolPresentation(
+          title: 'Updating task list',
+          subtitle: rawToolName,
+          icon: Icons.checklist_rounded,
+        );
+      default:
+        return _ToolPresentation(
+          title: 'Running ${_humanizeToolName(normalized)}',
+          subtitle: rawToolName,
+          icon: Icons.extension_outlined,
+        );
+    }
+  }
+
+  String _normalizeToolName(String rawToolName) {
+    final normalized = rawToolName.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return 'tool';
+    }
+    final separatorIndex = normalized.lastIndexOf('.');
+    final compactName = separatorIndex >= 0
+        ? normalized.substring(separatorIndex + 1)
+        : normalized;
+    return compactName.replaceAll('-', '_');
+  }
+
+  String _humanizeToolName(String normalizedToolName) {
+    final words = normalizedToolName
+        .split('_')
+        .where((segment) => segment.trim().isNotEmpty)
+        .map((segment) {
+          final trimmed = segment.trim();
+          return '${trimmed[0].toUpperCase()}${trimmed.substring(1)}';
+        })
+        .toList(growable: false);
+    if (words.isEmpty) {
+      return 'Tool';
+    }
+    return words.join(' ');
+  }
+
   Widget _buildToolPart(BuildContext context, ToolPart part) {
     final isCompactToolStatus = MediaQuery.sizeOf(context).width < 600;
+    final colorScheme = Theme.of(context).colorScheme;
+    final presentation = _toolPresentation(part.tool);
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -409,20 +526,30 @@ class ChatMessageWidget extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.build,
-                size: 16,
-                color: Theme.of(context).colorScheme.primary,
-              ),
+              Icon(presentation.icon, size: 16, color: colorScheme.primary),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  part.tool,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      presentation.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      presentation.subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 8),
@@ -613,30 +740,31 @@ class ChatMessageWidget extends StatelessWidget {
     ToolStatus status, {
     required bool showLabel,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     Color color;
     String label;
     IconData icon;
 
     switch (status) {
       case ToolStatus.pending:
-        color = Colors.grey;
-        label = 'Waiting';
+        color = colorScheme.secondary;
+        label = 'Queued';
         icon = Icons.schedule;
         break;
       case ToolStatus.running:
-        color = Colors.blue;
-        label = 'Running';
+        color = colorScheme.primary;
+        label = 'In progress';
         icon = Icons.play_arrow;
         break;
       case ToolStatus.completed:
-        color = Colors.green;
-        label = 'Completed';
-        icon = Icons.check;
+        color = colorScheme.tertiary;
+        label = 'Done';
+        icon = Icons.check_circle_outline_rounded;
         break;
       case ToolStatus.error:
-        color = Colors.red;
-        label = 'Error';
-        icon = Icons.error;
+        color = colorScheme.error;
+        label = 'Needs attention';
+        icon = Icons.warning_amber_rounded;
         break;
     }
 
@@ -658,7 +786,7 @@ class ChatMessageWidget extends StatelessWidget {
       backgroundColor: color.withValues(alpha: 0.1),
       side: BorderSide(color: color.withValues(alpha: 0.3)),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      visualDensity: VisualDensity.compact,
+      visualDensity: Theme.of(context).visualDensity,
     );
   }
 
@@ -1147,6 +1275,18 @@ class _CollapsibleToolContent extends StatefulWidget {
       _CollapsibleToolContentState();
 }
 
+class _ToolPresentation {
+  const _ToolPresentation({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+  });
+
+  final String title;
+  final String subtitle;
+  final IconData icon;
+}
+
 class _DiffLineVisualStyle {
   const _DiffLineVisualStyle({this.textColor, this.backgroundColor});
 
@@ -1156,6 +1296,12 @@ class _DiffLineVisualStyle {
 
 class _CollapsibleToolContentState extends State<_CollapsibleToolContent> {
   bool _expanded = false;
+
+  double _expandedToolViewportHeight(BuildContext context) {
+    final viewportHeight = MediaQuery.sizeOf(context).height;
+    final responsiveCap = viewportHeight * 0.4;
+    return math.min(300.0, responsiveCap.clamp(180.0, 300.0));
+  }
 
   bool get _canExpand {
     if (widget.text.trim().isEmpty) {
@@ -1301,10 +1447,23 @@ class _CollapsibleToolContentState extends State<_CollapsibleToolContent> {
       return contentWidget;
     }
 
+    final contentViewport = _expanded
+        ? ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: _expandedToolViewportHeight(context),
+            ),
+            child: SingleChildScrollView(
+              key: const ValueKey<String>('tool_content_expanded_scroll'),
+              primary: false,
+              child: contentWidget,
+            ),
+          )
+        : contentWidget;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        contentWidget,
+        contentViewport,
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(

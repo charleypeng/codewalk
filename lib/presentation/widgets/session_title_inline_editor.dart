@@ -144,7 +144,7 @@ class _SessionTitleInlineEditorState extends State<SessionTitleInlineEditor> {
             tooltip: 'Rename conversation',
             onPressed: widget.enabled ? _startEditing : null,
             icon: const Icon(Icons.edit_outlined, size: 18),
-            visualDensity: VisualDensity.compact,
+            visualDensity: Theme.of(context).visualDensity,
           ),
         ],
       );
@@ -195,14 +195,14 @@ class _SessionTitleInlineEditorState extends State<SessionTitleInlineEditor> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.check, size: 18),
-                  visualDensity: VisualDensity.compact,
+                  visualDensity: Theme.of(context).visualDensity,
                 ),
                 IconButton(
                   key: const ValueKey<String>('session_title_cancel_button'),
                   tooltip: 'Cancel rename',
                   onPressed: _saving ? null : _cancelEditing,
                   icon: const Icon(Icons.close, size: 18),
-                  visualDensity: VisualDensity.compact,
+                  visualDensity: Theme.of(context).visualDensity,
                 ),
               ],
             ),
