@@ -3050,6 +3050,93 @@ void main() {
     },
   );
 
+  testWidgets(
+    'collapses pre-summary history when compaction marker part is absent',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_compaction_summary_boundary',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Compaction Summary Boundary',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_compaction_summary_boundary'] =
+          <ChatMessage>[
+            UserMessage(
+              id: 'msg_summary_old_1',
+              sessionId: 'ses_compaction_summary_boundary',
+              time: DateTime.fromMillisecondsSinceEpoch(1100),
+              parts: <MessagePart>[
+                TextPart(
+                  id: 'part_summary_old_1',
+                  messageId: 'msg_summary_old_1',
+                  sessionId: 'ses_compaction_summary_boundary',
+                  text: 'summary old message one',
+                ),
+              ],
+            ),
+            AssistantMessage(
+              id: 'msg_summary_boundary',
+              sessionId: 'ses_compaction_summary_boundary',
+              time: DateTime.fromMillisecondsSinceEpoch(2000),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(2100),
+              summary: true,
+              parts: <MessagePart>[
+                TextPart(
+                  id: 'part_summary_boundary_text',
+                  messageId: 'msg_summary_boundary',
+                  sessionId: 'ses_compaction_summary_boundary',
+                  text: 'summary boundary response',
+                ),
+              ],
+            ),
+            AssistantMessage(
+              id: 'msg_summary_after',
+              sessionId: 'ses_compaction_summary_boundary',
+              time: DateTime.fromMillisecondsSinceEpoch(2200),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(2210),
+              parts: <MessagePart>[
+                TextPart(
+                  id: 'part_summary_after_text',
+                  messageId: 'msg_summary_after',
+                  sessionId: 'ses_compaction_summary_boundary',
+                  text: 'summary message after boundary',
+                ),
+              ],
+            ),
+          ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('timeline_collapsed_history_header')),
+        findsOneWidget,
+      );
+      expect(find.text('summary old message one'), findsNothing);
+      expect(find.text('summary boundary response'), findsOneWidget);
+      expect(find.text('summary message after boundary'), findsOneWidget);
+    },
+  );
+
   testWidgets('resets collapsed history expansion when switching sessions', (
     WidgetTester tester,
   ) async {

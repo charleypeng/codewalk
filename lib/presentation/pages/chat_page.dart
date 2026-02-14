@@ -6250,15 +6250,15 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final boundaryIndex = _findLatestCompactionBoundaryIndex(messages);
     if (boundaryIndex != null && boundaryIndex > 0) {
       final boundaryMessage = messages[boundaryIndex];
-      final compactionPart = _findCompactionPart(boundaryMessage);
-      if (compactionPart != null) {
+      final boundary = _resolveCompactionBoundary(boundaryMessage);
+      if (boundary != null) {
         final group = _CollapsedHistoryGroup(
           startMessageId: messages.first.id,
           endMessageId: messages[boundaryIndex - 1].id,
           messageCount: boundaryIndex,
           createdAt: boundaryMessage.time,
-          compactionId: compactionPart.id,
-          compactionLabel: compactionPart.auto ? 'automatic' : 'manual',
+          compactionId: boundary.compactionId,
+          compactionLabel: boundary.compactionLabel,
         );
         final expanded = _expandedCollapsedHistoryGroupId == group.id;
         entries.add(
@@ -6292,9 +6292,37 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   int? _findLatestCompactionBoundaryIndex(List<ChatMessage> messages) {
     for (var index = messages.length - 1; index >= 0; index -= 1) {
-      if (_findCompactionPart(messages[index]) != null) {
+      if (_isCompactionBoundaryMessage(messages[index])) {
         return index;
       }
+    }
+    return null;
+  }
+
+  bool _isCompactionBoundaryMessage(ChatMessage message) {
+    return _findCompactionPart(message) != null ||
+        _isCompactionSummaryMessage(message);
+  }
+
+  bool _isCompactionSummaryMessage(ChatMessage message) {
+    return message is AssistantMessage && message.summary == true;
+  }
+
+  ({String compactionId, String compactionLabel})? _resolveCompactionBoundary(
+    ChatMessage message,
+  ) {
+    final compactionPart = _findCompactionPart(message);
+    if (compactionPart != null) {
+      return (
+        compactionId: compactionPart.id,
+        compactionLabel: compactionPart.auto ? 'automatic' : 'manual',
+      );
+    }
+    if (_isCompactionSummaryMessage(message)) {
+      return (
+        compactionId: 'summary_${message.id}',
+        compactionLabel: 'context',
+      );
     }
     return null;
   }

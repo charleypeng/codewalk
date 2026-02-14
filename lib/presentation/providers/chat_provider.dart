@@ -5289,6 +5289,10 @@ class ChatProvider extends ChangeNotifier {
     AssistantMessage message, {
     required String reason,
   }) {
+    if (_isSelectionNeutralAssistantMessage(message)) {
+      return;
+    }
+
     var changed = false;
 
     final providerId = message.providerId?.trim();
@@ -5332,6 +5336,18 @@ class ChatProvider extends ChangeNotifier {
     );
     _storeCurrentSessionSelectionOverride();
     unawaited(_persistSelection(syncRemote: false));
+  }
+
+  bool _isSelectionNeutralAssistantMessage(AssistantMessage message) {
+    if (message.summary == true) {
+      return true;
+    }
+    for (final part in message.parts) {
+      if (part is CompactionPart) {
+        return true;
+      }
+    }
+    return false;
   }
 
   String _normalizedUserMessageSignature(UserMessage message) {

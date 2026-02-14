@@ -1504,6 +1504,68 @@ void main() {
     );
 
     test(
+      'ignores compaction summary messages when adopting selection',
+      () async {
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'model_a': _model('model_a')},
+              ),
+              Provider(
+                id: 'provider_b',
+                name: 'Provider B',
+                env: const <String>[],
+                models: <String, Model>{'model_b': _model('model_b')},
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a', 'provider_b'],
+          ),
+        );
+
+        await provider.initializeProviders();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        expect(provider.selectedProviderId, 'provider_a');
+        expect(provider.selectedModelId, 'model_a');
+
+        final compactionSummaryMessage = AssistantMessage(
+          id: 'msg_compaction_summary',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(2000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(2100),
+          providerId: 'provider_b',
+          modelId: 'model_b',
+          summary: true,
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_compaction_summary_text',
+              messageId: 'msg_compaction_summary',
+              sessionId: 'ses_1',
+              text: 'compact summary',
+            ),
+          ],
+        );
+        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+          return Stream<Either<Failure, ChatMessage>>.value(
+            Right(compactionSummaryMessage),
+          );
+        };
+
+        await provider.sendMessage('trigger compact flow');
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(provider.selectedProviderId, 'provider_a');
+        expect(provider.selectedModelId, 'model_a');
+      },
+    );
+
+    test(
       'onServerScopeChanged restores model selection per server scope',
       () async {
         appRepository.providersResult = Right(
