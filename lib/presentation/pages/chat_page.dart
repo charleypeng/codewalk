@@ -4487,6 +4487,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final supportsImages = _supportsImageAttachments(selectedModel);
     final supportsPdf = _supportsPdfAttachments(selectedModel);
     final attachmentsEnabled = supportsImages || supportsPdf;
+    final progressStage = _resolveAssistantProgressStage(chatProvider);
+    final latestReasoningStatusLabel = _resolveLatestReasoningStatusLabel(
+      chatProvider.messages,
+    );
+    final composerReasoningStatusLabel = progressStage == null
+        ? null
+        : latestReasoningStatusLabel;
 
     return Padding(
       padding: EdgeInsets.symmetric(
@@ -4556,6 +4563,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
               _buildInteractionPrompts(chatProvider),
 
+              if (composerReasoningStatusLabel != null)
+                _buildComposerReasoningStatusLine(composerReasoningStatusLabel),
+
               _buildModelControls(
                 chatProvider,
                 attachmentsEnabled: attachmentsEnabled,
@@ -4615,6 +4625,36 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildComposerReasoningStatusLine(String label) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Row(
+          key: const ValueKey<String>('composer_reasoning_status_line'),
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.auto_awesome,
+              size: 16,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              key: const ValueKey<String>('composer_reasoning_status_text'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -5700,9 +5740,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final latestReasoningPartKey = _resolveLatestReasoningPartKey(
       chatProvider.messages,
     );
-    final latestReasoningStatusLabel = _resolveLatestReasoningStatusLabel(
-      chatProvider.messages,
-    );
 
     return ListView.builder(
       key: const ValueKey<String>('chat_message_list'),
@@ -5725,7 +5762,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
         final indicator = switch (progressStage) {
           _AssistantProgressStage.receiving => (
-            text: latestReasoningStatusLabel ?? 'Receiving response...',
+            text: 'Receiving response...',
             icon: Icons.auto_awesome,
             showSpinner: false,
           ),
@@ -5735,11 +5772,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             showSpinner: true,
           ),
           _AssistantProgressStage.thinking || null => (
-            text: latestReasoningStatusLabel ?? 'Thinking...',
-            icon: latestReasoningStatusLabel == null
-                ? Icons.hourglass_top_rounded
-                : Icons.auto_awesome,
-            showSpinner: latestReasoningStatusLabel == null,
+            text: 'Thinking...',
+            icon: Icons.hourglass_top_rounded,
+            showSpinner: true,
           ),
         };
 
@@ -5803,6 +5838,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       messageIndex -= 1
     ) {
       final message = messages[messageIndex];
+      if (message is! AssistantMessage || message.isCompleted) {
+        continue;
+      }
       for (
         var partIndex = message.parts.length - 1;
         partIndex >= 0;

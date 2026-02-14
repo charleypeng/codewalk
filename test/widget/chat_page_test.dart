@@ -2898,7 +2898,7 @@ void main() {
   );
 
   testWidgets(
-    'shows latest reasoning status instead of generic receiving text',
+    'shows transient reasoning status above composer and hides it after completion',
     (WidgetTester tester) async {
       final repository = FakeChatRepository(
         sessions: <ChatSession>[
@@ -2957,9 +2957,40 @@ void main() {
       );
       await tester.pump();
 
+      expect(
+        find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
+        findsOneWidget,
+      );
       expect(find.text('Reading project tree'), findsOneWidget);
-      expect(find.text('Receiving response...'), findsNothing);
+      expect(find.text('Receiving response...'), findsOneWidget);
       expect(find.text('Thinking Process'), findsNothing);
+
+      streamController.add(
+        Right(
+          AssistantMessage(
+            id: 'msg_assistant_status',
+            sessionId: 'ses_status',
+            time: DateTime.fromMillisecondsSinceEpoch(2300),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(2300),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_assistant_status_final',
+                messageId: 'msg_assistant_status',
+                sessionId: 'ses_status',
+                text: 'done',
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
+        findsNothing,
+      );
+      expect(find.text('Reading project tree'), findsNothing);
+      expect(find.text('Receiving response...'), findsNothing);
     },
   );
 
