@@ -2610,19 +2610,29 @@ void main() {
     await provider.selectSession(provider.sessions.first);
     await tester.pumpAndSettle();
 
+    final listFinder = find.byKey(const ValueKey<String>('chat_message_list'));
+    final scrollableFinder = find.descendant(
+      of: listFinder,
+      matching: find.byType(Scrollable),
+    );
+
     expect(find.text('message 39'), findsOneWidget);
     expect(find.byTooltip('Go to latest message'), findsNothing);
 
-    await tester.drag(
-      find.byKey(const ValueKey<String>('chat_message_list')),
-      const Offset(0, 420),
-    );
+    await tester.drag(listFinder, const Offset(0, 420));
     await tester.pumpAndSettle();
 
     expect(find.byTooltip('Go to latest message'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Go to latest message'));
     await tester.pumpAndSettle();
+
+    final scrollableAfterTap = tester.state<ScrollableState>(scrollableFinder);
+    expect(
+      scrollableAfterTap.position.maxScrollExtent -
+          scrollableAfterTap.position.pixels,
+      lessThanOrEqualTo(1),
+    );
 
     expect(find.byTooltip('Go to latest message'), findsNothing);
     expect(find.text('message 39'), findsOneWidget);
@@ -2825,6 +2835,13 @@ void main() {
 
     await tester.tap(find.byTooltip('Go to latest message'));
     await tester.pumpAndSettle();
+
+    final scrollableAfterTap = tester.state<ScrollableState>(scrollableFinder);
+    expect(
+      scrollableAfterTap.position.maxScrollExtent -
+          scrollableAfterTap.position.pixels,
+      lessThanOrEqualTo(1),
+    );
 
     expect(find.byIcon(Icons.mark_chat_unread_outlined), findsNothing);
   });
@@ -3065,6 +3082,77 @@ void main() {
       );
       expect(find.text('Reading project tree'), findsNothing);
       expect(find.text('Receiving response...'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'shows soft retry snackbar for remote abort without blocking chat',
+    (WidgetTester tester) async {
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_remote_abort',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Remote Abort Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_remote_abort'] = <ChatMessage>[
+        UserMessage(
+          id: 'msg_remote_abort_user',
+          sessionId: 'ses_remote_abort',
+          time: DateTime.fromMillisecondsSinceEpoch(1100),
+          parts: <MessagePart>[
+            TextPart(
+              id: 'part_remote_abort_user',
+              messageId: 'msg_remote_abort_user',
+              sessionId: 'ses_remote_abort',
+              text: 'keep chat visible',
+            ),
+          ],
+        ),
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      repository.emitEvent(
+        const ChatEvent(
+          type: 'session.error',
+          properties: <String, dynamic>{
+            'sessionID': 'ses_remote_abort',
+            'error': <String, dynamic>{
+              'message': 'The operation was aborted by user',
+            },
+          },
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump();
+
+      expect(find.byType(SnackBar), findsOneWidget);
+      expect(find.text('O que gostaria de fazer diferente?'), findsOneWidget);
+      expect(find.text('Retry'), findsOneWidget);
+      expect(find.byIcon(Icons.error_outline), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('chat_message_list')),
+        findsOneWidget,
+      );
     },
   );
 

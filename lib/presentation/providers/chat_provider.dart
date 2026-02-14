@@ -60,6 +60,24 @@ enum SessionListFilter { active, archived, all }
 
 enum SessionListSort { recent, oldest, title }
 
+enum ChatUiNoticeType { remoteAbort }
+
+class ChatUiNotice {
+  const ChatUiNotice({
+    required this.id,
+    required this.type,
+    required this.message,
+    this.actionLabel,
+  });
+
+  final int id;
+  final ChatUiNoticeType type;
+  final String message;
+  final String? actionLabel;
+
+  bool get hasAction => actionLabel != null && actionLabel!.trim().isNotEmpty;
+}
+
 class _ChatContextSnapshot {
   const _ChatContextSnapshot({
     required this.sessions,
@@ -289,6 +307,8 @@ class ChatProvider extends ChangeNotifier {
   bool _isCompactingContext = false;
   String? _abortSuppressionSessionId;
   DateTime? _abortSuppressionStartedAt;
+  ChatUiNotice? _pendingUiNotice;
+  int _nextUiNoticeId = 0;
   int _messageStreamGeneration = 0;
 
   // Project and provider-related state
@@ -360,6 +380,8 @@ class ChatProvider extends ChangeNotifier {
   static const String _configSessionSelectionsKey = 'sessionSelections';
   static const String _configSyncAgentName = '__codewalk';
   static const String _remoteAutoVariantValue = '__auto__';
+  static const String _remoteAbortNoticeMessage =
+      'O que gostaria de fazer diferente?';
 
   // Getters
   ChatState get state => _state;
@@ -372,6 +394,7 @@ class ChatProvider extends ChangeNotifier {
   ChatSession? get currentSession => _currentSession;
   List<ChatMessage> get messages => _messages;
   String? get errorMessage => _errorMessage;
+  ChatUiNotice? get pendingUiNotice => _pendingUiNotice;
   String? get currentProjectId => _currentProjectId;
   List<Provider> get providers => _providers;
   Map<String, String> get defaultModels => _defaultModels;
@@ -640,6 +663,26 @@ class ChatProvider extends ChangeNotifier {
     _setState(ChatState.error);
   }
 
+  ChatUiNotice? consumePendingUiNotice() {
+    final notice = _pendingUiNotice;
+    _pendingUiNotice = null;
+    return notice;
+  }
+
+  void _queueUiNotice({
+    required ChatUiNoticeType type,
+    required String message,
+    String? actionLabel,
+  }) {
+    _nextUiNoticeId += 1;
+    _pendingUiNotice = ChatUiNotice(
+      id: _nextUiNoticeId,
+      type: type,
+      message: message,
+      actionLabel: actionLabel,
+    );
+  }
+
   bool _isAbortSuppressionActiveForSession(String? sessionId) {
     if (sessionId == null ||
         _abortSuppressionSessionId == null ||
@@ -664,6 +707,18 @@ class ChatProvider extends ChangeNotifier {
         normalized.contains('canceled') ||
         normalized.contains('cancelled by user') ||
         normalized.contains('canceled by user');
+  }
+
+  bool _isRemoteAbortError({required String message, String? code}) {
+    final normalizedMessage = message.trim().toLowerCase();
+    final normalizedCode = code?.trim().toLowerCase() ?? '';
+    if (normalizedCode.contains('abort') || normalizedCode.contains('cancel')) {
+      return true;
+    }
+    return normalizedMessage.contains('aborted') ||
+        normalizedMessage.contains('abort') ||
+        normalizedMessage.contains('cancelled') ||
+        normalizedMessage.contains('canceled');
   }
 
   bool _shouldSuppressAbortError({
@@ -2657,6 +2712,7 @@ class ChatProvider extends ChangeNotifier {
               data['message'] as String? ??
               error?['message'] as String? ??
               'Session error';
+          final code = data['code']?.toString() ?? error?['code']?.toString();
           if (_shouldSuppressAbortError(
             sessionId: sessionId,
             message: message,
@@ -2665,6 +2721,19 @@ class ChatProvider extends ChangeNotifier {
               type: SessionStatusType.idle,
             );
             _errorMessage = null;
+            _setState(ChatState.loaded);
+            break;
+          }
+          if (_isRemoteAbortError(message: message, code: code)) {
+            _sessionStatusById[sessionId] = const SessionStatusInfo(
+              type: SessionStatusType.idle,
+            );
+            _errorMessage = null;
+            _queueUiNotice(
+              type: ChatUiNoticeType.remoteAbort,
+              message: _remoteAbortNoticeMessage,
+              actionLabel: 'Retry',
+            );
             _setState(ChatState.loaded);
             break;
           }

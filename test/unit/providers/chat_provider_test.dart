@@ -2430,6 +2430,36 @@ void main() {
       },
     );
 
+    test('session.error remote abort emits transient UI notice', () async {
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+
+      chatRepository.emitEvent(
+        const ChatEvent(
+          type: 'session.error',
+          properties: <String, dynamic>{
+            'sessionID': 'ses_1',
+            'error': <String, dynamic>{
+              'message': 'The operation was aborted by user',
+            },
+          },
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+
+      expect(provider.state, ChatState.loaded);
+      expect(provider.errorMessage, isNull);
+
+      final notice = provider.consumePendingUiNotice();
+      expect(notice, isNotNull);
+      expect(notice!.type, ChatUiNoticeType.remoteAbort);
+      expect(notice.message, 'O que gostaria de fazer diferente?');
+      expect(notice.actionLabel, 'Retry');
+      expect(provider.consumePendingUiNotice(), isNull);
+    });
+
     test(
       'sending again immediately after stop keeps provider stable and delivers next reply',
       () async {

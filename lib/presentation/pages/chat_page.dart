@@ -109,6 +109,14 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   static const double _desktopFilePaneWidth = 280;
   static const double _largeDesktopUtilityPaneWidth = 280;
   static const double _nearBottomThreshold = 200;
+  static const double _scrollToBottomEpsilon = 1;
+  static const int _maxScrollToBottomPasses = 6;
+  static const Duration _scrollToBottomFirstPassDuration = Duration(
+    milliseconds: 260,
+  );
+  static const Duration _scrollToBottomNextPassDuration = Duration(
+    milliseconds: 140,
+  );
   static const String _rootTreeCacheKey = '__root__';
   static const Duration _serverAlertGracePeriod = Duration(seconds: 10);
   static const Duration _composerStatusShowDelay = Duration(seconds: 1);
@@ -134,6 +142,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   bool _showScrollToLatestFab = false;
   bool _hasUnreadMessagesBelow = false;
   bool _isAppInForeground = true;
+  bool _wasChatRouteCurrent = true;
+  bool _isProgrammaticScrollInFlight = false;
+  int _scrollToBottomRequestToken = 0;
   String? _composerPrefilledText;
   int _composerPrefilledTextVersion = 0;
   final Map<String, _FileExplorerContextState> _fileContextStates =
@@ -195,6 +206,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     // Clean up scroll callback using saved reference
     _chatProvider?.setScrollToBottomCallback(null);
     unawaited(_chatProvider?.setForegroundActive(false));
+    _scrollToBottomRequestToken += 1;
     _appProvider?.removeListener(_handleAppProviderChange);
     _notificationTapSubscription?.cancel();
     _serverAlertRevealTimer?.cancel();
@@ -215,6 +227,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final provider = _chatProvider;
     if (provider != null) {
       unawaited(provider.setForegroundActive(_isAppInForeground));
+      if (_isAppInForeground) {
+        _handleReturnToChat(provider, reason: 'app-resumed');
+      }
     }
   }
 
@@ -337,8 +352,25 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     if (!_scrollController.hasClients) {
       return true;
     }
+    return _distanceToBottom() <= _nearBottomThreshold;
+  }
+
+  double _distanceToBottom() {
+    if (!_scrollController.hasClients) {
+      return 0;
+    }
     final position = _scrollController.position;
-    return (position.maxScrollExtent - position.pixels) <= _nearBottomThreshold;
+    final distance = position.maxScrollExtent - position.pixels;
+    if (distance < 0) {
+      return 0;
+    }
+    return distance;
+  }
+
+  bool _canContinueScrollToBottomRequest(int requestToken) {
+    return mounted &&
+        _scrollController.hasClients &&
+        requestToken == _scrollToBottomRequestToken;
   }
 
   void _handleScrollChanged() {
@@ -360,12 +392,83 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       return;
     }
 
+    if (_isProgrammaticScrollInFlight) {
+      return;
+    }
+
     if (_autoFollowToLatest || !_showScrollToLatestFab) {
       setState(() {
         _autoFollowToLatest = false;
         _showScrollToLatestFab = true;
+        _hasUnreadMessagesBelow = false;
       });
     }
+  }
+
+  void _syncChatRouteActivity(ChatProvider chatProvider) {
+    final isCurrent = _isChatScreenActive();
+    if (_wasChatRouteCurrent == isCurrent) {
+      return;
+    }
+    _wasChatRouteCurrent = isCurrent;
+    if (isCurrent) {
+      _handleReturnToChat(chatProvider, reason: 'route-return');
+    }
+  }
+
+  void _handleReturnToChat(
+    ChatProvider chatProvider, {
+    required String reason,
+  }) {
+    if (!_autoFollowToLatest || chatProvider.currentSession == null) {
+      return;
+    }
+    if (chatProvider.messages.isEmpty ||
+        chatProvider.state == ChatState.loading) {
+      return;
+    }
+    AppLogger.debug(
+      'Auto-following latest messages after $reason for session=${chatProvider.currentSession!.id}',
+    );
+    _scrollToBottom(force: true);
+  }
+
+  void _consumePendingUiNotice(ChatProvider chatProvider) {
+    final notice = chatProvider.consumePendingUiNotice();
+    if (notice == null) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      if (messenger == null) {
+        return;
+      }
+      messenger.hideCurrentSnackBar();
+      final hasRetryAction =
+          notice.type == ChatUiNoticeType.remoteAbort && notice.hasAction;
+      messenger.showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 4),
+          behavior: SnackBarBehavior.floating,
+          content: Text(notice.message),
+          action: hasRetryAction
+              ? SnackBarAction(
+                  label: notice.actionLabel!,
+                  onPressed: () {
+                    unawaited(
+                      chatProvider.refreshActiveSessionView(
+                        reason: 'ui-notice-remote-abort-retry',
+                      ),
+                    );
+                  },
+                )
+              : null,
+        ),
+      );
+    });
   }
 
   void _syncSessionScrollState(ChatProvider chatProvider) {
@@ -424,33 +527,81 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   void _scrollToBottom({bool force = false}) {
+    final requestToken = ++_scrollToBottomRequestToken;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scrollController.hasClients) {
-        return;
-      }
-
-      final shouldScroll = force || _autoFollowToLatest;
-      if (!shouldScroll) {
-        _markUnreadMessagesBelow();
-        return;
-      }
-
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-
-      if (!_autoFollowToLatest ||
-          _showScrollToLatestFab ||
-          _hasUnreadMessagesBelow) {
-        setState(() {
-          _autoFollowToLatest = true;
-          _showScrollToLatestFab = false;
-          _hasUnreadMessagesBelow = false;
-        });
-      }
+      unawaited(_runScrollToBottom(requestToken: requestToken, force: force));
     });
+  }
+
+  Future<void> _runScrollToBottom({
+    required int requestToken,
+    required bool force,
+  }) async {
+    if (!_canContinueScrollToBottomRequest(requestToken)) {
+      return;
+    }
+
+    final shouldScroll = force || _autoFollowToLatest;
+    if (!shouldScroll) {
+      _markUnreadMessagesBelow();
+      return;
+    }
+
+    _isProgrammaticScrollInFlight = true;
+    try {
+      for (var pass = 0; pass < _maxScrollToBottomPasses; pass += 1) {
+        if (!_canContinueScrollToBottomRequest(requestToken)) {
+          return;
+        }
+
+        final distance = _distanceToBottom();
+        if (distance <= _scrollToBottomEpsilon) {
+          break;
+        }
+
+        await _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: pass == 0
+              ? _scrollToBottomFirstPassDuration
+              : _scrollToBottomNextPassDuration,
+          curve: Curves.easeOut,
+        );
+
+        if (!_canContinueScrollToBottomRequest(requestToken)) {
+          return;
+        }
+        await WidgetsBinding.instance.endOfFrame;
+      }
+
+      if (_canContinueScrollToBottomRequest(requestToken) &&
+          _distanceToBottom() > _scrollToBottomEpsilon) {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
+    } catch (error, stackTrace) {
+      AppLogger.debug(
+        'Scroll-to-bottom interrupted for request=$requestToken',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    } finally {
+      if (requestToken == _scrollToBottomRequestToken) {
+        _isProgrammaticScrollInFlight = false;
+      }
+    }
+
+    if (!_canContinueScrollToBottomRequest(requestToken)) {
+      return;
+    }
+
+    if (!_autoFollowToLatest ||
+        _showScrollToLatestFab ||
+        _hasUnreadMessagesBelow) {
+      setState(() {
+        _autoFollowToLatest = true;
+        _showScrollToLatestFab = false;
+        _hasUnreadMessagesBelow = false;
+      });
+    }
   }
 
   Future<void> _refreshData() async {
@@ -947,6 +1098,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                 body: Consumer<ChatProvider>(
                   builder: (context, chatProvider, child) {
                     _syncSessionScrollState(chatProvider);
+                    _syncChatRouteActivity(chatProvider);
+                    _consumePendingUiNotice(chatProvider);
                     if (isMobile) {
                       return _buildChatContent(
                         chatProvider: chatProvider,
@@ -5003,9 +5156,6 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final normalizedModel = '${modelId ?? ''} ${modelName ?? ''}'
         .trim()
         .toLowerCase();
-    final normalizedProvider = '${providerId ?? ''} ${providerName ?? ''}'
-        .trim()
-        .toLowerCase();
 
     // Model-aware matching first to avoid ambiguous provider IDs.
     if (_containsAnyBrandToken(normalizedModel, const [
@@ -5853,61 +6003,93 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final showMessageProgressIndicator =
         progressStage == _AssistantProgressStage.retrying;
 
-    return ListView.builder(
+    final timelineEntries = _buildMessageTimelineEntries(
+      messages: chatProvider.messages,
+      showRetryIndicator: showMessageProgressIndicator,
+    );
+
+    return CustomScrollView(
       key: const ValueKey<String>('chat_message_list'),
       controller: _scrollController,
-      padding: const EdgeInsets.symmetric(vertical: 0),
-      itemCount:
-          chatProvider.messages.length + (showMessageProgressIndicator ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index < chatProvider.messages.length) {
-          final message = chatProvider.messages[index];
-          return ChatMessageWidget(
-            key: ValueKey(message.id),
-            message: message,
-            activeReasoningPartKey: latestReasoningPartKey,
-            onBackgroundLongPress: () =>
-                _handleMessageBackgroundLongPress(message),
-            onBackgroundLongPressEnd: () =>
-                _handleMessageBackgroundLongPressEnd(message),
-          );
-        }
-
-        const indicator = (
-          text: 'Retrying model request...',
-          icon: Icons.refresh_rounded,
-          showSpinner: true,
-        );
-
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              const SizedBox(width: 40), // Avatar placeholder
-              const SizedBox(width: 12),
-              if (indicator.showSpinner)
-                const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              else
-                Icon(
-                  indicator.icon,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              const SizedBox(width: 8),
-              Text(
-                indicator.text,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
+      slivers: [
+        SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              final entry = timelineEntries[index];
+              if (entry is _TimelineMessageEntry) {
+                final message = entry.message;
+                return ChatMessageWidget(
+                  key: ValueKey<String>(entry.key),
+                  message: message,
+                  activeReasoningPartKey: latestReasoningPartKey,
+                  onBackgroundLongPress: () =>
+                      _handleMessageBackgroundLongPress(message),
+                  onBackgroundLongPressEnd: () =>
+                      _handleMessageBackgroundLongPressEnd(message),
+                );
+              }
+              return _buildRetryingMessageIndicator();
+            },
+            childCount: timelineEntries.length,
+            addAutomaticKeepAlives: false,
+            addRepaintBoundaries: true,
+            addSemanticIndexes: false,
+            findChildIndexCallback: (key) =>
+                _findTimelineEntryIndexByKey(key, timelineEntries),
           ),
-        );
-      },
+        ),
+      ],
+    );
+  }
+
+  int? _findTimelineEntryIndexByKey(Key key, List<_TimelineEntry> entries) {
+    if (key is! ValueKey<String>) {
+      return null;
+    }
+    final targetKey = key.value;
+    for (var index = 0; index < entries.length; index += 1) {
+      if (entries[index].key == targetKey) {
+        return index;
+      }
+    }
+    return null;
+  }
+
+  List<_TimelineEntry> _buildMessageTimelineEntries({
+    required List<ChatMessage> messages,
+    required bool showRetryIndicator,
+  }) {
+    final entries = messages
+        .map<_TimelineEntry>((message) => _TimelineMessageEntry(message))
+        .toList(growable: true);
+    if (showRetryIndicator) {
+      entries.add(const _TimelineRetryIndicatorEntry());
+    }
+    return entries;
+  }
+
+  Widget _buildRetryingMessageIndicator() {
+    return Container(
+      key: const ValueKey<String>('timeline_retry_indicator'),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          const SizedBox(width: 40),
+          const SizedBox(width: 12),
+          const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Retrying model request...',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -6314,6 +6496,28 @@ class _FileTabViewState {
   final String content;
   final String? errorMessage;
   final String? mimeType;
+}
+
+abstract class _TimelineEntry {
+  const _TimelineEntry();
+
+  String get key;
+}
+
+class _TimelineMessageEntry extends _TimelineEntry {
+  const _TimelineMessageEntry(this.message);
+
+  final ChatMessage message;
+
+  @override
+  String get key => 'timeline_msg_${message.id}';
+}
+
+class _TimelineRetryIndicatorEntry extends _TimelineEntry {
+  const _TimelineRetryIndicatorEntry();
+
+  @override
+  String get key => 'timeline_retry_indicator';
 }
 
 enum _AssistantProgressStage { thinking, receiving, retrying }

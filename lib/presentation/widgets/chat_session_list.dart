@@ -5,7 +5,7 @@ import '../../domain/entities/chat_session.dart';
 import '../utils/session_title_formatter.dart';
 
 /// Chat session list widget
-class ChatSessionList extends StatelessWidget {
+class ChatSessionList extends StatefulWidget {
   const ChatSessionList({
     super.key,
     required this.sessions,
@@ -30,8 +30,22 @@ class ChatSessionList extends StatelessWidget {
   final Future<void> Function(ChatSession session)? onSessionForked;
 
   @override
+  State<ChatSessionList> createState() => _ChatSessionListState();
+}
+
+class _ChatSessionListState extends State<ChatSessionList> {
+  final Set<String> _expandedParentIds = <String>{};
+
+  @override
+  void didUpdateWidget(covariant ChatSessionList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final sessionIds = widget.sessions.map((session) => session.id).toSet();
+    _expandedParentIds.removeWhere((id) => !sessionIds.contains(id));
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (sessions.isEmpty) {
+    if (widget.sessions.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -60,215 +74,368 @@ class ChatSessionList extends StatelessWidget {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-      itemCount: sessions.length,
-      itemBuilder: (context, index) {
-        final session = sessions[index];
-        final isSelected = currentSession?.id == session.id;
-        final colorScheme = Theme.of(context).colorScheme;
+    final sessionById = <String, ChatSession>{
+      for (final session in widget.sessions) session.id: session,
+    };
+    final childrenByParent = <String, List<ChatSession>>{};
+    final roots = <ChatSession>[];
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 3),
-          child: Material(
-            color: isSelected
-                ? colorScheme.secondaryContainer
-                : colorScheme.surfaceContainerLow,
+    for (final session in widget.sessions) {
+      final parentId = session.parentId;
+      if (parentId == null ||
+          parentId.isEmpty ||
+          !sessionById.containsKey(parentId) ||
+          parentId == session.id) {
+        roots.add(session);
+        continue;
+      }
+      childrenByParent
+          .putIfAbsent(parentId, () => <ChatSession>[])
+          .add(session);
+    }
+
+    _expandCurrentSessionAncestors(sessionById);
+
+    final rows = <Widget>[];
+    final visited = <String>{};
+    for (final root in roots) {
+      rows.addAll(
+        _buildSessionRows(
+          context,
+          session: root,
+          childrenByParent: childrenByParent,
+          depth: 0,
+          visited: visited,
+        ),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+      children: rows,
+    );
+  }
+
+  void _expandCurrentSessionAncestors(Map<String, ChatSession> sessionById) {
+    final current = widget.currentSession;
+    if (current == null) {
+      return;
+    }
+    var parentId = current.parentId;
+    while (parentId != null && parentId.isNotEmpty) {
+      _expandedParentIds.add(parentId);
+      final parent = sessionById[parentId];
+      if (parent == null || parent.parentId == parentId) {
+        break;
+      }
+      parentId = parent.parentId;
+    }
+  }
+
+  List<Widget> _buildSessionRows(
+    BuildContext context, {
+    required ChatSession session,
+    required Map<String, List<ChatSession>> childrenByParent,
+    required int depth,
+    required Set<String> visited,
+  }) {
+    if (!visited.add(session.id)) {
+      return const <Widget>[];
+    }
+
+    final children = childrenByParent[session.id] ?? const <ChatSession>[];
+    final hasChildren = children.isNotEmpty;
+    final expanded = hasChildren && _expandedParentIds.contains(session.id);
+    final rows = <Widget>[
+      _buildSessionTile(
+        context,
+        session: session,
+        depth: depth,
+        hasChildren: hasChildren,
+        childCount: children.length,
+        expanded: expanded,
+      ),
+    ];
+
+    if (!expanded) {
+      return rows;
+    }
+
+    for (final child in children) {
+      rows.addAll(
+        _buildSessionRows(
+          context,
+          session: child,
+          childrenByParent: childrenByParent,
+          depth: depth + 1,
+          visited: visited,
+        ),
+      );
+    }
+
+    return rows;
+  }
+
+  Widget _buildSessionTile(
+    BuildContext context, {
+    required ChatSession session,
+    required int depth,
+    required bool hasChildren,
+    required int childCount,
+    required bool expanded,
+  }) {
+    final isSelected = widget.currentSession?.id == session.id;
+    final colorScheme = Theme.of(context).colorScheme;
+    final childLabel = childCount == 1
+        ? '1 sub-conversation'
+        : '$childCount sub-conversations';
+
+    return Padding(
+      key: ValueKey<String>('chat_session_tile_${session.id}'),
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Material(
+        color: isSelected
+            ? colorScheme.secondaryContainer
+            : colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(18),
+        child: ListTile(
+          mouseCursor: SystemMouseCursors.click,
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
-            child: ListTile(
-              mouseCursor: SystemMouseCursors.click,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-              leading: CircleAvatar(
-                backgroundColor: isSelected
-                    ? colorScheme.primary
-                    : colorScheme.surfaceContainerHighest,
-                child: Icon(
-                  session.archived ? Icons.archive_outlined : Icons.chat,
-                  color: isSelected
-                      ? colorScheme.onPrimary
-                      : colorScheme.onSurfaceVariant,
-                  size: 20,
+          ),
+          contentPadding: EdgeInsets.fromLTRB(10 + (depth * 16.0), 0, 4, 0),
+          leading: CircleAvatar(
+            backgroundColor: isSelected
+                ? colorScheme.primary
+                : colorScheme.surfaceContainerHighest,
+            child: Icon(
+              session.archived ? Icons.archive_outlined : Icons.chat,
+              color: isSelected
+                  ? colorScheme.onPrimary
+                  : colorScheme.onSurfaceVariant,
+              size: 20,
+            ),
+          ),
+          title: Row(
+            children: [
+              if (hasChildren)
+                InkWell(
+                  key: ValueKey<String>('chat_session_toggle_${session.id}'),
+                  onTap: () {
+                    setState(() {
+                      if (expanded) {
+                        _expandedParentIds.remove(session.id);
+                      } else {
+                        _expandedParentIds.add(session.id);
+                      }
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(10),
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: Icon(
+                      expanded ? Icons.expand_more : Icons.chevron_right,
+                      size: 18,
+                      color: isSelected
+                          ? colorScheme.onSecondaryContainer.withValues(
+                              alpha: 0.9,
+                            )
+                          : colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                )
+              else if (depth > 0)
+                const SizedBox(width: 22),
+              Expanded(
+                child: Text(
+                  SessionTitleFormatter.displayTitle(
+                    time: session.time,
+                    title: session.title,
+                  ),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: isSelected ? colorScheme.onSecondaryContainer : null,
+                    decoration: session.archived
+                        ? TextDecoration.lineThrough
+                        : TextDecoration.none,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              title: Text(
-                SessionTitleFormatter.displayTitle(
-                  time: session.time,
-                  title: session.title,
+            ],
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (session.summary != null && session.summary!.isNotEmpty)
+                Text(
+                  session.summary!,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: isSelected
+                        ? colorScheme.onSecondaryContainer.withValues(
+                            alpha: 0.8,
+                          )
+                        : colorScheme.onSurfaceVariant,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: isSelected ? colorScheme.onSecondaryContainer : null,
-                  decoration: session.archived
-                      ? TextDecoration.lineThrough
-                      : TextDecoration.none,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  if (session.summary != null && session.summary!.isNotEmpty)
+                  Text(
+                    _formatTime(session.time),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: isSelected
+                          ? colorScheme.onSecondaryContainer.withValues(
+                              alpha: 0.7,
+                            )
+                          : colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  if (hasChildren)
                     Text(
-                      session.summary!,
+                      childLabel,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: isSelected
                             ? colorScheme.onSecondaryContainer.withValues(
-                                alpha: 0.8,
+                                alpha: 0.7,
                               )
                             : colorScheme.onSurfaceVariant,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  const SizedBox(height: 4),
-                  Wrap(
-                    spacing: 8,
-                    crossAxisAlignment: WrapCrossAlignment.center,
+                  if (session.shared)
+                    Icon(
+                      Icons.share,
+                      size: 12,
+                      color: isSelected
+                          ? colorScheme.onSecondaryContainer.withValues(
+                              alpha: 0.7,
+                            )
+                          : colorScheme.onSurfaceVariant,
+                    ),
+                  if (session.archived)
+                    Icon(
+                      Icons.archive,
+                      size: 12,
+                      color: isSelected
+                          ? colorScheme.onSecondaryContainer.withValues(
+                              alpha: 0.7,
+                            )
+                          : colorScheme.onSurfaceVariant,
+                    ),
+                ],
+              ),
+            ],
+          ),
+          trailing: PopupMenuButton<String>(
+            icon: Icon(
+              Icons.more_vert,
+              color: isSelected
+                  ? colorScheme.onSecondaryContainer
+                  : colorScheme.onSurfaceVariant,
+            ),
+            onSelected: (value) {
+              switch (value) {
+                case 'rename':
+                  _showRenameDialog(context, session);
+                  break;
+                case 'share':
+                  _toggleShare(context, session);
+                  break;
+                case 'copy-link':
+                  _copyShareLink(context, session);
+                  break;
+                case 'archive':
+                  _toggleArchive(context, session);
+                  break;
+                case 'fork':
+                  _forkSession(context, session);
+                  break;
+                case 'delete':
+                  _showDeleteDialog(context, session);
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'rename',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit),
+                    SizedBox(width: 8),
+                    Text('Rename'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'share',
+                child: Row(
+                  children: [
+                    Icon(session.shared ? Icons.link_off : Icons.link),
+                    const SizedBox(width: 8),
+                    Text(session.shared ? 'Unshare' : 'Share'),
+                  ],
+                ),
+              ),
+              if (session.shareUrl != null && session.shareUrl!.isNotEmpty)
+                const PopupMenuItem(
+                  value: 'copy-link',
+                  child: Row(
                     children: [
-                      Text(
-                        _formatTime(session.time),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: isSelected
-                              ? colorScheme.onSecondaryContainer.withValues(
-                                  alpha: 0.7,
-                                )
-                              : colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      if (session.shared)
-                        Icon(
-                          Icons.share,
-                          size: 12,
-                          color: isSelected
-                              ? colorScheme.onSecondaryContainer.withValues(
-                                  alpha: 0.7,
-                                )
-                              : colorScheme.onSurfaceVariant,
-                        ),
-                      if (session.archived)
-                        Icon(
-                          Icons.archive,
-                          size: 12,
-                          color: isSelected
-                              ? colorScheme.onSecondaryContainer.withValues(
-                                  alpha: 0.7,
-                                )
-                              : colorScheme.onSurfaceVariant,
-                        ),
+                      Icon(Icons.copy),
+                      SizedBox(width: 8),
+                      Text('Copy Link'),
                     ],
                   ),
-                ],
-              ),
-              trailing: PopupMenuButton<String>(
-                icon: Icon(
-                  Icons.more_vert,
-                  color: isSelected
-                      ? colorScheme.onSecondaryContainer
-                      : colorScheme.onSurfaceVariant,
                 ),
-                onSelected: (value) {
-                  switch (value) {
-                    case 'rename':
-                      _showRenameDialog(context, session);
-                      break;
-                    case 'share':
-                      _toggleShare(context, session);
-                      break;
-                    case 'copy-link':
-                      _copyShareLink(context, session);
-                      break;
-                    case 'archive':
-                      _toggleArchive(context, session);
-                      break;
-                    case 'fork':
-                      _forkSession(context, session);
-                      break;
-                    case 'delete':
-                      _showDeleteDialog(context, session);
-                      break;
-                  }
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'rename',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit),
-                        SizedBox(width: 8),
-                        Text('Rename'),
-                      ],
+              PopupMenuItem(
+                value: 'archive',
+                child: Row(
+                  children: [
+                    Icon(
+                      session.archived
+                          ? Icons.unarchive_outlined
+                          : Icons.archive_outlined,
                     ),
-                  ),
-                  PopupMenuItem(
-                    value: 'share',
-                    child: Row(
-                      children: [
-                        Icon(session.shared ? Icons.link_off : Icons.link),
-                        const SizedBox(width: 8),
-                        Text(session.shared ? 'Unshare' : 'Share'),
-                      ],
-                    ),
-                  ),
-                  if (session.shareUrl != null && session.shareUrl!.isNotEmpty)
-                    const PopupMenuItem(
-                      value: 'copy-link',
-                      child: Row(
-                        children: [
-                          Icon(Icons.copy),
-                          SizedBox(width: 8),
-                          Text('Copy Link'),
-                        ],
-                      ),
-                    ),
-                  PopupMenuItem(
-                    value: 'archive',
-                    child: Row(
-                      children: [
-                        Icon(
-                          session.archived
-                              ? Icons.unarchive_outlined
-                              : Icons.archive_outlined,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(session.archived ? 'Unarchive' : 'Archive'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'fork',
-                    child: Row(
-                      children: [
-                        Icon(Icons.call_split),
-                        SizedBox(width: 8),
-                        Text('Fork'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(Icons.delete, color: Colors.red),
-                        SizedBox(width: 8),
-                        Text('Delete', style: TextStyle(color: Colors.red)),
-                      ],
-                    ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    Text(session.archived ? 'Unarchive' : 'Archive'),
+                  ],
+                ),
               ),
-              onTap: () {
-                final callback = onSessionSelected;
-                if (callback != null) {
-                  callback(session);
-                }
-              },
-            ),
+              const PopupMenuItem(
+                value: 'fork',
+                child: Row(
+                  children: [
+                    Icon(Icons.call_split),
+                    SizedBox(width: 8),
+                    Text('Fork'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Delete', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ],
           ),
-        );
-      },
+          onTap: () {
+            final callback = widget.onSessionSelected;
+            if (callback != null) {
+              callback(session);
+            }
+          },
+        ),
+      ),
     );
   }
 
@@ -292,7 +459,7 @@ class ChatSessionList extends StatelessWidget {
   }
 
   void _showRenameDialog(BuildContext context, ChatSession session) {
-    final callback = onSessionRenamed;
+    final callback = widget.onSessionRenamed;
     if (callback == null) {
       return;
     }
@@ -340,7 +507,7 @@ class ChatSessionList extends StatelessWidget {
   }
 
   Future<void> _toggleShare(BuildContext context, ChatSession session) async {
-    final callback = onSessionShareToggled;
+    final callback = widget.onSessionShareToggled;
     if (callback == null) {
       return;
     }
@@ -377,7 +544,7 @@ class ChatSessionList extends StatelessWidget {
   }
 
   Future<void> _toggleArchive(BuildContext context, ChatSession session) async {
-    final callback = onSessionArchiveToggled;
+    final callback = widget.onSessionArchiveToggled;
     if (callback == null) {
       return;
     }
@@ -404,7 +571,7 @@ class ChatSessionList extends StatelessWidget {
   }
 
   Future<void> _forkSession(BuildContext context, ChatSession session) async {
-    final callback = onSessionForked;
+    final callback = widget.onSessionForked;
     if (callback == null) {
       return;
     }
@@ -427,7 +594,7 @@ class ChatSessionList extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              final callback = onSessionDeleted;
+              final callback = widget.onSessionDeleted;
               if (callback != null) {
                 callback(session);
               }
