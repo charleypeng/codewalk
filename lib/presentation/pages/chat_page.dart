@@ -122,8 +122,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   );
   static const String _rootTreeCacheKey = '__root__';
   static const Duration _serverAlertGracePeriod = Duration(seconds: 10);
-  static const Duration _composerStatusShowDelay = Duration(seconds: 1);
+  static const Duration _composerStatusShowDelay = Duration(seconds: 2);
   static const Duration _composerStatusHideDelay = Duration(seconds: 1);
+  static const double _composerStatusReservedHeight = 26;
 
   final ScrollController _scrollController = ScrollController();
   final FocusNode _inputFocusNode = FocusNode(debugLabel: 'chat_input');
@@ -1271,9 +1272,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }) {
     final base = isMobile ? 46.0 : 44.0;
     return switch (density) {
+      AppDensity.extraDense => base - 4,
       AppDensity.dense => base - 2,
       AppDensity.normal => base,
       AppDensity.spacious => base + 4,
+      AppDensity.extraSpacious => base + 8,
     };
   }
 
@@ -4858,8 +4861,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
               _buildInteractionPrompts(chatProvider),
 
-              if (composerStatus != null)
-                _buildComposerReasoningStatusLine(composerStatus),
+              _buildComposerReasoningStatusSlot(composerStatus),
 
               _buildModelControls(
                 chatProvider,
@@ -4972,7 +4974,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     _composerStatusHideTimer?.cancel();
     _composerStatusHideTimer = null;
 
-    if (_visibleComposerStatus != null) {
+    if (target.type == _ComposerStatusType.dynamicReasoning) {
       _composerStatusShowTimer?.cancel();
       _composerStatusShowTimer = null;
       _pendingComposerStatus = null;
@@ -4985,51 +4987,84 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       return;
     }
 
-    if (_pendingComposerStatus == target && _composerStatusShowTimer != null) {
+    final shouldDebounceFallback =
+        _visibleComposerStatus == null ||
+        _visibleComposerStatus?.type == _ComposerStatusType.dynamicReasoning;
+
+    if (shouldDebounceFallback) {
+      if (_pendingComposerStatus == target &&
+          _composerStatusShowTimer != null) {
+        return;
+      }
+      _pendingComposerStatus = target;
+      _composerStatusShowTimer?.cancel();
+      _composerStatusShowTimer = Timer(_composerStatusShowDelay, () {
+        if (!mounted) {
+          return;
+        }
+        final pendingStatus = _pendingComposerStatus;
+        _composerStatusShowTimer = null;
+        _pendingComposerStatus = null;
+        if (pendingStatus == null) {
+          return;
+        }
+        setState(() {
+          _visibleComposerStatus = pendingStatus;
+        });
+      });
       return;
     }
 
-    _pendingComposerStatus = target;
-    _composerStatusShowTimer?.cancel();
-    _composerStatusShowTimer = Timer(_composerStatusShowDelay, () {
-      if (!mounted) {
-        return;
-      }
-      final pendingStatus = _pendingComposerStatus;
+    if (_visibleComposerStatus != null) {
+      _composerStatusShowTimer?.cancel();
       _composerStatusShowTimer = null;
       _pendingComposerStatus = null;
-      if (pendingStatus == null) {
+      if (_visibleComposerStatus == target) {
         return;
       }
       setState(() {
-        _visibleComposerStatus = pendingStatus;
+        _visibleComposerStatus = target;
       });
-    });
+      return;
+    }
+  }
+
+  Widget _buildComposerReasoningStatusSlot(
+    _ComposerStatusPresentation? status,
+  ) {
+    return SizedBox(
+      key: const ValueKey<String>('composer_reasoning_status_slot'),
+      height: _composerStatusReservedHeight,
+      child: status == null
+          ? const SizedBox.expand()
+          : _buildComposerReasoningStatusLine(status),
+    );
   }
 
   Widget _buildComposerReasoningStatusLine(_ComposerStatusPresentation status) {
     final colorScheme = Theme.of(context).colorScheme;
     final leading = switch (status.type) {
-      _ComposerStatusType.thinking => const SizedBox(
-        key: ValueKey<String>('composer_reasoning_status_spinner'),
-        width: 14,
-        height: 14,
-        child: TickerMode(
-          enabled: false,
-          child: CircularProgressIndicator(strokeWidth: 2),
+      _ComposerStatusType.thinking => SizedBox(
+        key: const ValueKey<String>('composer_reasoning_status_spinner'),
+        width: 16,
+        height: 16,
+        child: CircularProgressIndicator.adaptive(
+          strokeWidth: 2.4,
+          strokeCap: StrokeCap.round,
+          valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
         ),
       ),
       _ComposerStatusType.receiving ||
       _ComposerStatusType.dynamicReasoning => Icon(
         Icons.auto_awesome,
         key: const ValueKey<String>('composer_reasoning_status_icon'),
-        size: 16,
+        size: 15,
         color: colorScheme.primary,
       ),
     };
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+      padding: const EdgeInsets.fromLTRB(12, 2, 12, 4),
       child: Align(
         alignment: Alignment.centerLeft,
         child: Row(
@@ -5050,6 +5085,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
@@ -6139,35 +6175,38 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       key: const ValueKey<String>('chat_message_list'),
       controller: _scrollController,
       slivers: [
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final entry = timelineEntries[index];
-              if (entry is _TimelineMessageEntry) {
-                final message = entry.message;
-                return ChatMessageWidget(
-                  key: ValueKey<String>(entry.key),
-                  message: message,
-                  activeReasoningPartKey: latestReasoningPartKey,
-                  showThinkingBubbles: settingsProvider.showThinkingBubbles,
-                  showToolCallBubbles: settingsProvider.showToolCallBubbles,
-                  onBackgroundLongPress: () =>
-                      _handleMessageBackgroundLongPress(message),
-                  onBackgroundLongPressEnd: () =>
-                      _handleMessageBackgroundLongPressEnd(message),
-                );
-              }
-              if (entry is _TimelineCollapsedHistoryEntry) {
-                return _buildCollapsedHistoryEntry(entry);
-              }
-              return _buildRetryingMessageIndicator();
-            },
-            childCount: timelineEntries.length,
-            addAutomaticKeepAlives: false,
-            addRepaintBoundaries: true,
-            addSemanticIndexes: false,
-            findChildIndexCallback: (key) =>
-                _findTimelineEntryIndexByKey(key, timelineEntries),
+        SliverPadding(
+          padding: const EdgeInsets.only(bottom: 8),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final entry = timelineEntries[index];
+                if (entry is _TimelineMessageEntry) {
+                  final message = entry.message;
+                  return ChatMessageWidget(
+                    key: ValueKey<String>(entry.key),
+                    message: message,
+                    activeReasoningPartKey: latestReasoningPartKey,
+                    showThinkingBubbles: settingsProvider.showThinkingBubbles,
+                    showToolCallBubbles: settingsProvider.showToolCallBubbles,
+                    onBackgroundLongPress: () =>
+                        _handleMessageBackgroundLongPress(message),
+                    onBackgroundLongPressEnd: () =>
+                        _handleMessageBackgroundLongPressEnd(message),
+                  );
+                }
+                if (entry is _TimelineCollapsedHistoryEntry) {
+                  return _buildCollapsedHistoryEntry(entry);
+                }
+                return _buildRetryingMessageIndicator();
+              },
+              childCount: timelineEntries.length,
+              addAutomaticKeepAlives: false,
+              addRepaintBoundaries: true,
+              addSemanticIndexes: false,
+              findChildIndexCallback: (key) =>
+                  _findTimelineEntryIndexByKey(key, timelineEntries),
+            ),
           ),
         ),
       ],

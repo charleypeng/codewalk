@@ -39,20 +39,16 @@ class ChatMessageWidget extends StatelessWidget {
       bottomLeft: !isUser ? const Radius.circular(6) : null,
     );
 
-    // Check if message has valid content
-    final hasValidContent = message.parts.any((part) {
-      if (part is TextPart) {
-        return part.text.trim().isNotEmpty;
-      }
-      return true; // Non-text parts are considered valid by default
-    });
+    final hasVisibleContent = _messageHasVisibleContent(message);
+    final hasVisibleError =
+        message is AssistantMessage &&
+        (message as AssistantMessage).error != null;
     final latestReasoningPartId = message.parts
         .whereType<ReasoningPart>()
         .lastOrNull
         ?.id;
 
-    // Don't display message if no valid content
-    if (!hasValidContent) {
+    if (!hasVisibleContent && !hasVisibleError) {
       return const SizedBox.shrink();
     }
 
@@ -170,6 +166,44 @@ class ChatMessageWidget extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  bool _messageHasVisibleContent(ChatMessage message) {
+    for (final part in message.parts) {
+      if (!_shouldRenderPart(part)) {
+        continue;
+      }
+      if (_partHasVisiblePayload(part)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _shouldRenderPart(MessagePart part) {
+    if (part.type == PartType.reasoning && !showThinkingBubbles) {
+      return false;
+    }
+    if (part.type == PartType.tool && !showToolCallBubbles) {
+      return false;
+    }
+    return true;
+  }
+
+  bool _partHasVisiblePayload(MessagePart part) {
+    switch (part.type) {
+      case PartType.text:
+        return (part as TextPart).text.trim().isNotEmpty;
+      case PartType.reasoning:
+        final reasoningPart = part as ReasoningPart;
+        return parseReasoningStatusLabel(reasoningPart.text) == null &&
+            reasoningPart.text.trim().isNotEmpty;
+      case PartType.stepStart:
+      case PartType.stepFinish:
+        return false;
+      default:
+        return true;
+    }
   }
 
   Widget _buildAssistantInfo(BuildContext context, AssistantMessage message) {

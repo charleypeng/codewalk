@@ -31,14 +31,22 @@ class AppTheme {
 
   static VisualDensity visualDensityFor(AppDensity density) {
     return switch (density) {
+      AppDensity.extraDense => const VisualDensity(
+        horizontal: -2,
+        vertical: -2,
+      ),
       AppDensity.dense => VisualDensity.compact,
       AppDensity.normal => VisualDensity.standard,
       AppDensity.spacious => VisualDensity.comfortable,
+      AppDensity.extraSpacious => const VisualDensity(
+        horizontal: 2,
+        vertical: 2,
+      ),
     };
   }
 
   static bool usesCompactLayout(AppDensity density) {
-    return density == AppDensity.dense;
+    return density == AppDensity.extraDense || density == AppDensity.dense;
   }
 
   static ThemeData _buildTheme({

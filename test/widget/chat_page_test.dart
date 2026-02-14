@@ -3386,11 +3386,15 @@ void main() {
     await tester.pump();
 
     expect(
+      find.byKey(const ValueKey<String>('composer_reasoning_status_slot')),
+      findsOneWidget,
+    );
+    expect(
       find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
       findsNothing,
     );
 
-    await tester.pump(const Duration(milliseconds: 900));
+    await tester.pump(const Duration(milliseconds: 1900));
     expect(
       find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
       findsNothing,
@@ -3510,13 +3514,6 @@ void main() {
 
       expect(
         find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
-        findsNothing,
-      );
-
-      await tester.pump(const Duration(seconds: 1));
-
-      expect(
-        find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
         findsOneWidget,
       );
       expect(
@@ -3574,6 +3571,10 @@ void main() {
       expect(
         find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
         findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('composer_reasoning_status_slot')),
+        findsOneWidget,
       );
       expect(find.text('Reading project tree'), findsNothing);
       expect(find.text('Receiving response...'), findsNothing);

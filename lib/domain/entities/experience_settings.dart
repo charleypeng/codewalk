@@ -16,7 +16,7 @@ enum ShortcutAction {
 
 enum DesktopPane { conversations, files, utility }
 
-enum AppDensity { dense, normal, spacious }
+enum AppDensity { extraDense, dense, normal, spacious, extraSpacious }
 
 class ShortcutDefinition {
   const ShortcutDefinition({
@@ -180,16 +180,20 @@ DesktopPane? desktopPaneFromKey(String value) {
 
 String appDensityKey(AppDensity density) {
   return switch (density) {
+    AppDensity.extraDense => 'extra_dense',
     AppDensity.dense => 'dense',
     AppDensity.normal => 'normal',
     AppDensity.spacious => 'spacious',
+    AppDensity.extraSpacious => 'extra_spacious',
   };
 }
 
 AppDensity appDensityFromKey(String value) {
   return switch (value) {
+    'extra_dense' => AppDensity.extraDense,
     'dense' => AppDensity.dense,
     'spacious' => AppDensity.spacious,
+    'extra_spacious' => AppDensity.extraSpacious,
     _ => AppDensity.normal,
   };
 }

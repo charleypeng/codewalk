@@ -154,7 +154,7 @@ void main() {
         soundService: _FakeSoundService(),
       );
       await first.initialize();
-      await first.setAppDensity(AppDensity.spacious);
+      await first.setAppDensity(AppDensity.extraSpacious);
       await first.setShowThinkingBubbles(false);
       await first.setShowToolCallBubbles(false);
 
@@ -165,9 +165,20 @@ void main() {
       );
       await second.initialize();
 
-      expect(second.appDensity, AppDensity.spacious);
+      expect(second.appDensity, AppDensity.extraSpacious);
       expect(second.showThinkingBubbles, isFalse);
       expect(second.showToolCallBubbles, isFalse);
+
+      await second.setAppDensity(AppDensity.extraDense);
+
+      final third = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await third.initialize();
+
+      expect(third.appDensity, AppDensity.extraDense);
     });
   });
 }

@@ -38,6 +38,18 @@ void main() {
     expect(find.text('Shortcuts'), findsNothing);
     expect(find.text('Servers'), findsOneWidget);
 
+    await tester.tap(find.text('Appearance').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Extra Dense'), findsOneWidget);
+    expect(find.text('Dense'), findsOneWidget);
+    expect(find.text('Normal'), findsOneWidget);
+    expect(find.text('Spacious'), findsOneWidget);
+    expect(find.text('Extra Spacious'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+
     await tester.tap(find.text('Notifications').first);
     await tester.pumpAndSettle();
 

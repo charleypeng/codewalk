@@ -15,6 +15,13 @@ class AppearanceSettingsSection extends StatelessWidget {
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, _) {
         final selectedDensity = settingsProvider.appDensity;
+        const densityOptions = <({AppDensity value, String label})>[
+          (value: AppDensity.extraDense, label: 'Extra Dense'),
+          (value: AppDensity.dense, label: 'Dense'),
+          (value: AppDensity.normal, label: 'Normal'),
+          (value: AppDensity.spacious, label: 'Spacious'),
+          (value: AppDensity.extraSpacious, label: 'Extra Spacious'),
+        ];
         return ListView(
           padding: const EdgeInsets.all(AppConstants.defaultPadding),
           children: [
@@ -44,30 +51,26 @@ class AppearanceSettingsSection extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 12),
-                    SegmentedButton<AppDensity>(
-                      key: const ValueKey<String>('settings_density_segmented'),
-                      segments: const <ButtonSegment<AppDensity>>[
-                        ButtonSegment<AppDensity>(
-                          value: AppDensity.dense,
-                          label: Text('Dense'),
-                        ),
-                        ButtonSegment<AppDensity>(
-                          value: AppDensity.normal,
-                          label: Text('Normal'),
-                        ),
-                        ButtonSegment<AppDensity>(
-                          value: AppDensity.spacious,
-                          label: Text('Spacious'),
-                        ),
-                      ],
-                      selected: <AppDensity>{selectedDensity},
-                      onSelectionChanged: (selection) {
-                        final next = selection.firstOrNull;
-                        if (next == null) {
-                          return;
-                        }
-                        unawaited(settingsProvider.setAppDensity(next));
-                      },
+                    Wrap(
+                      key: const ValueKey<String>(
+                        'settings_density_choice_wrap',
+                      ),
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: densityOptions
+                          .map(
+                            (option) => ChoiceChip(
+                              key: ValueKey<String>(
+                                'settings_density_choice_${option.value.name}',
+                              ),
+                              label: Text(option.label),
+                              selected: selectedDensity == option.value,
+                              onSelected: (_) => unawaited(
+                                settingsProvider.setAppDensity(option.value),
+                              ),
+                            ),
+                          )
+                          .toList(growable: false),
                     ),
                   ],
                 ),
