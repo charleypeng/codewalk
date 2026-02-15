@@ -13,10 +13,14 @@ import '../../domain/entities/app_info.dart';
 import '../../domain/entities/server_profile.dart';
 import '../../domain/usecases/check_connection.dart';
 import '../../domain/usecases/get_app_info.dart';
+import '../services/local_opencode_server_runtime.dart';
+import '../services/local_opencode_server_runtime_types.dart';
 
 enum AppStatus { initial, loading, loaded, error, disconnected }
 
 enum ServerHealthStatus { unknown, healthy, unhealthy }
+
+enum LocalServerRuntimeStatus { stopped, starting, running, stopping, failed }
 
 class AppProvider extends ChangeNotifier {
   AppProvider({
@@ -24,17 +28,25 @@ class AppProvider extends ChangeNotifier {
     required CheckConnection checkConnection,
     required AppLocalDataSource localDataSource,
     required DioClient dioClient,
+    LocalOpencodeServerRuntime? localServerRuntime,
+    Future<ServerHealthStatus> Function(String url)? localServerHealthProbe,
     bool enableHealthPolling = true,
   }) : _getAppInfo = getAppInfo,
        _checkConnection = checkConnection,
        _localDataSource = localDataSource,
        _dioClient = dioClient,
+       _localServerRuntime =
+           localServerRuntime ?? createLocalOpencodeServerRuntime(),
+       _localServerHealthProbe = localServerHealthProbe,
        _enableHealthPolling = enableHealthPolling;
 
   final GetAppInfo _getAppInfo;
   final CheckConnection _checkConnection;
   final AppLocalDataSource _localDataSource;
   final DioClient _dioClient;
+  final LocalOpencodeServerRuntime _localServerRuntime;
+  final Future<ServerHealthStatus> Function(String url)?
+  _localServerHealthProbe;
   final bool _enableHealthPolling;
 
   AppStatus _status = AppStatus.initial;
@@ -46,6 +58,23 @@ class AppProvider extends ChangeNotifier {
   bool _initialized = false;
   Future<void>? _initFuture;
   Timer? _healthTimer;
+  bool _localServerRuntimeBound = false;
+  StreamSubscription<String>? _localServerStdoutSubscription;
+  StreamSubscription<String>? _localServerStderrSubscription;
+  StreamSubscription<int>? _localServerExitSubscription;
+  LocalServerRuntimeStatus _localServerStatus =
+      LocalServerRuntimeStatus.stopped;
+  String _localServerStatusMessage = 'Local server is stopped.';
+  String _localServerLastOutput = '';
+  String _localServerCommandPath = '';
+  LocalOpencodeEnvironmentReport? _localEnvironmentReport;
+  bool _localSetupInProgress = false;
+  String _localSetupMessage =
+      'Run diagnostics to verify local OpenCode requirements.';
+  List<String> _localSetupLogs = <String>[];
+  final String _localServerHost = ApiConstants.defaultHost;
+  final int _localServerPort = ApiConstants.defaultPort;
+  bool _localServerStoppingByRequest = false;
 
   List<ServerProfile> _serverProfiles = <ServerProfile>[];
   String? _activeServerId;
@@ -61,6 +90,17 @@ class AppProvider extends ChangeNotifier {
   bool get isConnected => _isConnected;
   bool get initialized => _initialized;
   String get serverUrl => 'http://$_serverHost:$_serverPort';
+  bool get localServerSupported => _localServerRuntime.isSupported;
+  LocalServerRuntimeStatus get localServerStatus => _localServerStatus;
+  String get localServerStatusMessage => _localServerStatusMessage;
+  String get localServerLastOutput => _localServerLastOutput;
+  String get localServerUrl => 'http://$_localServerHost:$_localServerPort';
+  String get localServerCommandPath => _localServerCommandPath;
+  LocalOpencodeEnvironmentReport? get localEnvironmentReport =>
+      _localEnvironmentReport;
+  bool get localSetupInProgress => _localSetupInProgress;
+  String get localSetupMessage => _localSetupMessage;
+  List<String> get localSetupLogs => List<String>.unmodifiable(_localSetupLogs);
   List<ServerProfile> get serverProfiles =>
       List<ServerProfile>.unmodifiable(_serverProfiles);
   String? get activeServerId => _activeServerId;
@@ -108,9 +148,12 @@ class AppProvider extends ChangeNotifier {
   Future<void> _initializeInternal() async {
     await _loadServerProfiles();
     await _ensureActiveSelection();
+    await _loadLocalServerCommandConfig();
     _applyActiveServerToClient();
+    _bindLocalServerRuntimeEvents();
     _initialized = true;
     unawaited(refreshServerHealth());
+    unawaited(runLocalServerDiagnostics(notify: false));
     if (_enableHealthPolling) {
       _startHealthPolling();
     }
@@ -453,6 +496,324 @@ class AppProvider extends ChangeNotifier {
     return true;
   }
 
+  Future<void> _loadLocalServerCommandConfig() async {
+    final stored = await _localDataSource.getLocalOpencodeCommand();
+    _localServerCommandPath = stored?.trim() ?? '';
+  }
+
+  Future<LocalOpencodeEnvironmentReport> runLocalServerDiagnostics({
+    bool notify = true,
+  }) async {
+    final report = await _localServerRuntime.diagnose(
+      commandPath: _localServerCommandPath.trim().isEmpty
+          ? null
+          : _localServerCommandPath,
+    );
+    _localEnvironmentReport = report;
+
+    if (report.opencode.available &&
+        _localServerCommandPath.trim().isEmpty &&
+        report.opencode.path.trim().isNotEmpty) {
+      await _setLocalServerCommandPath(report.opencode.path.trim());
+    }
+
+    if (!_localSetupInProgress) {
+      _localSetupMessage = report.recommendation;
+    }
+    if (notify) {
+      notifyListeners();
+    }
+    return report;
+  }
+
+  Future<bool> useDetectedLocalServerCommand() async {
+    await initialize();
+    _localSetupInProgress = true;
+    _localSetupLogs = <String>[];
+    _localSetupMessage = 'Detecting OpenCode command...';
+    _errorMessage = '';
+    notifyListeners();
+
+    final report = await _localServerRuntime.diagnose(
+      commandPath: _localServerCommandPath.trim().isEmpty
+          ? null
+          : _localServerCommandPath,
+    );
+    _localEnvironmentReport = report;
+
+    if (!report.opencode.available || report.opencode.path.trim().isEmpty) {
+      const message =
+          'OpenCode command was not detected. Run installation from the wizard.';
+      _localSetupInProgress = false;
+      _localSetupMessage = message;
+      _setError(message);
+      return false;
+    }
+
+    await _setLocalServerCommandPath(report.opencode.path.trim());
+    _localSetupInProgress = false;
+    _localSetupMessage = 'Using OpenCode command at ${report.opencode.path}';
+    _errorMessage = '';
+    notifyListeners();
+    return true;
+  }
+
+  Future<bool> installLocalServerRequirements(
+    LocalOpencodeInstallMethod method,
+  ) async {
+    await initialize();
+    if (!_localServerRuntime.isSupported) {
+      _setError('Managed local server is available only on desktop.');
+      return false;
+    }
+
+    _localSetupInProgress = true;
+    _localSetupLogs = <String>[];
+    _localSetupMessage = 'Installing OpenCode requirements...';
+    _errorMessage = '';
+    notifyListeners();
+
+    final result = await _localServerRuntime.install(
+      method: method,
+      onLog: _appendLocalSetupLog,
+    );
+    if (!result.ok) {
+      final message = result.errorMessage?.trim().isNotEmpty == true
+          ? result.errorMessage!.trim()
+          : 'OpenCode installation failed.';
+      _localSetupInProgress = false;
+      _localSetupMessage = message;
+      _setError(message);
+      return false;
+    }
+
+    if (result.commandPath?.trim().isNotEmpty == true) {
+      await _setLocalServerCommandPath(result.commandPath!.trim());
+    }
+
+    await runLocalServerDiagnostics(notify: false);
+    _localSetupInProgress = false;
+    _localSetupMessage = 'OpenCode requirements installed successfully.';
+    _errorMessage = '';
+    notifyListeners();
+    return true;
+  }
+
+  void clearLocalSetupLogs() {
+    _localSetupLogs = <String>[];
+    notifyListeners();
+  }
+
+  void _appendLocalSetupLog(String line) {
+    final value = line.trim();
+    if (value.isEmpty) {
+      return;
+    }
+    const maxLines = 120;
+    _localSetupLogs = <String>[..._localSetupLogs, value];
+    if (_localSetupLogs.length > maxLines) {
+      _localSetupLogs = _localSetupLogs.sublist(
+        _localSetupLogs.length - maxLines,
+      );
+    }
+    notifyListeners();
+  }
+
+  Future<void> _setLocalServerCommandPath(String? path) async {
+    final normalized = path?.trim() ?? '';
+    _localServerCommandPath = normalized;
+    await _localDataSource.saveLocalOpencodeCommand(
+      normalized.isEmpty ? null : normalized,
+    );
+  }
+
+  Future<bool> startLocalServer() async {
+    await initialize();
+    if (!_localServerRuntime.isSupported) {
+      _setError('Managed local server is available only on desktop.');
+      return false;
+    }
+    if (_localServerStatus == LocalServerRuntimeStatus.running ||
+        _localServerStatus == LocalServerRuntimeStatus.starting) {
+      return true;
+    }
+
+    _localServerStoppingByRequest = false;
+    _localServerStatus = LocalServerRuntimeStatus.starting;
+    _localServerStatusMessage = 'Starting local server...';
+    _localServerLastOutput = '';
+    _errorMessage = '';
+    notifyListeners();
+
+    if (_localServerCommandPath.trim().isEmpty) {
+      await runLocalServerDiagnostics(notify: false);
+    }
+
+    final startResult = await _localServerRuntime.start(
+      host: _localServerHost,
+      port: _localServerPort,
+      commandPath: _localServerCommandPath.trim().isEmpty
+          ? null
+          : _localServerCommandPath,
+    );
+    if (!startResult.ok) {
+      final details = startResult.errorMessage?.trim();
+      final message = details != null && details.isNotEmpty
+          ? details
+          : 'Failed to start local OpenCode server.';
+      _localServerStatus = LocalServerRuntimeStatus.failed;
+      _localServerStatusMessage = message;
+      _setError(message);
+      return false;
+    }
+
+    final healthy = await _waitForLocalServerHealth();
+    if (!healthy) {
+      const message = 'Local server started but health check did not pass.';
+      _localServerStatus = LocalServerRuntimeStatus.failed;
+      _localServerStatusMessage = message;
+      await _localServerRuntime.stop();
+      _setError(message);
+      return false;
+    }
+
+    await _ensureLocalServerProfileActive();
+
+    _localServerStatus = LocalServerRuntimeStatus.running;
+    _localServerStatusMessage = 'Running at $localServerUrl';
+    _errorMessage = '';
+    notifyListeners();
+    return true;
+  }
+
+  Future<bool> stopLocalServer() async {
+    await initialize();
+    if (_localServerStatus == LocalServerRuntimeStatus.stopped) {
+      return true;
+    }
+
+    _localServerStoppingByRequest = true;
+    _localServerStatus = LocalServerRuntimeStatus.stopping;
+    _localServerStatusMessage = 'Stopping local server...';
+    _errorMessage = '';
+    notifyListeners();
+
+    await _localServerRuntime.stop();
+    if (_localServerStatus == LocalServerRuntimeStatus.stopping) {
+      _localServerStatus = LocalServerRuntimeStatus.stopped;
+      _localServerStatusMessage = 'Local server is stopped.';
+      _localServerStoppingByRequest = false;
+      notifyListeners();
+    }
+
+    unawaited(refreshServerHealth());
+    return true;
+  }
+
+  void _bindLocalServerRuntimeEvents() {
+    if (_localServerRuntimeBound) {
+      return;
+    }
+    _localServerRuntimeBound = true;
+    _localServerStdoutSubscription = _localServerRuntime.stdoutLines.listen(
+      _handleLocalServerOutput,
+    );
+    _localServerStderrSubscription = _localServerRuntime.stderrLines.listen(
+      _handleLocalServerOutput,
+    );
+    _localServerExitSubscription = _localServerRuntime.exitCodes.listen(
+      _handleLocalServerExit,
+    );
+  }
+
+  void _handleLocalServerOutput(String line) {
+    final trimmed = line.trim();
+    if (trimmed.isEmpty) {
+      return;
+    }
+    _localServerLastOutput = trimmed;
+    notifyListeners();
+  }
+
+  void _handleLocalServerExit(int code) {
+    if (_localServerStoppingByRequest) {
+      _localServerStoppingByRequest = false;
+      _localServerStatus = LocalServerRuntimeStatus.stopped;
+      _localServerStatusMessage = 'Local server is stopped.';
+      notifyListeners();
+      unawaited(refreshServerHealth());
+      return;
+    }
+    if (_localServerStatus == LocalServerRuntimeStatus.stopped) {
+      return;
+    }
+
+    _localServerStatus = LocalServerRuntimeStatus.failed;
+    _localServerStatusMessage = 'Local server exited with code $code.';
+    notifyListeners();
+    unawaited(refreshServerHealth());
+  }
+
+  Future<bool> _waitForLocalServerHealth({
+    Duration timeout = const Duration(seconds: 12),
+  }) async {
+    final startedAt = DateTime.now();
+    while (DateTime.now().difference(startedAt) < timeout) {
+      final health = await _probeLocalServerHealth();
+      if (health == ServerHealthStatus.healthy) {
+        return true;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+    }
+    return false;
+  }
+
+  Future<ServerHealthStatus> _probeLocalServerHealth() async {
+    final normalizedUrl = normalizeServerUrl(
+      '$_localServerHost:$_localServerPort',
+      fallbackPort: _localServerPort,
+    );
+    final localServerHealthProbe = _localServerHealthProbe;
+    if (localServerHealthProbe != null) {
+      return localServerHealthProbe(normalizedUrl);
+    }
+
+    final probeProfile = ServerProfile(
+      id: '_local_server_probe',
+      url: normalizedUrl,
+      createdAt: 0,
+      updatedAt: 0,
+    );
+    return _checkServerHealth(probeProfile);
+  }
+
+  Future<void> _ensureLocalServerProfileActive() async {
+    final normalizedUrl = normalizeServerUrl(
+      '$_localServerHost:$_localServerPort',
+      fallbackPort: _localServerPort,
+    );
+
+    ServerProfile? existing;
+    for (final profile in _serverProfiles) {
+      if (profile.url == normalizedUrl) {
+        existing = profile;
+        break;
+      }
+    }
+
+    if (existing == null) {
+      await addServerProfile(
+        url: normalizedUrl,
+        label: 'Local OpenCode (Managed)',
+        setAsActive: true,
+      );
+      return;
+    }
+
+    await refreshServerHealth(serverId: existing.id);
+    await setActiveServer(existing.id, blockUnhealthy: false);
+  }
+
   Future<void> refreshServerHealth({String? serverId}) async {
     await initialize();
     final targets = serverId == null
@@ -606,6 +967,10 @@ class AppProvider extends ChangeNotifier {
   @override
   void dispose() {
     _healthTimer?.cancel();
+    _localServerStdoutSubscription?.cancel();
+    _localServerStderrSubscription?.cancel();
+    _localServerExitSubscription?.cancel();
+    unawaited(_localServerRuntime.dispose());
     super.dispose();
   }
 

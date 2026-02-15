@@ -53,9 +53,11 @@ void main() {
 
     expect(find.text('Servers'), findsOneWidget);
     expect(find.text('Alpha'), findsWidgets);
-    expect(find.text('Beta'), findsOneWidget);
     expect(find.text('Active'), findsWidgets);
     expect(find.text('Default'), findsWidgets);
+
+    await _scrollToServer(tester, 'Beta');
+    expect(find.text('Beta'), findsOneWidget);
   });
 
   testWidgets('blocks activating unhealthy server from action menu', (
@@ -63,6 +65,7 @@ void main() {
   ) async {
     await tester.pumpWidget(_testApp(appProvider));
     await tester.pumpAndSettle();
+    await _scrollToServer(tester, 'Beta');
 
     final betaTile = find.ancestor(
       of: find.text('Beta'),
@@ -130,4 +133,15 @@ Widget _testApp(AppProvider appProvider) {
     value: appProvider,
     child: const MaterialApp(home: ServerSettingsPage()),
   );
+}
+
+Future<void> _scrollToServer(WidgetTester tester, String label) async {
+  final target = find.text(label);
+  if (target.evaluate().isNotEmpty) {
+    return;
+  }
+
+  final scrollable = find.byType(Scrollable).last;
+  await tester.scrollUntilVisible(target, 200, scrollable: scrollable);
+  await tester.pumpAndSettle();
 }

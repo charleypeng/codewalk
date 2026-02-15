@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../domain/entities/server_profile.dart';
 import '../../../providers/app_provider.dart';
+import '../../../services/local_opencode_server_runtime_types.dart';
 
 class ServersSettingsSection extends StatefulWidget {
   const ServersSettingsSection({super.key});
@@ -73,6 +74,8 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
               ),
               const SizedBox(height: AppConstants.defaultPadding),
               _buildActiveServerCard(appProvider),
+              const SizedBox(height: AppConstants.defaultPadding),
+              _buildLocalServerCard(appProvider),
               const SizedBox(height: AppConstants.defaultPadding),
               Expanded(
                 child: profiles.isEmpty
@@ -154,6 +157,132 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
               const SizedBox(height: 10),
               Text(
                 activeServer.url,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLocalServerCard(AppProvider appProvider) {
+    final status = appProvider.localServerStatus;
+    final supported = appProvider.localServerSupported;
+    final isBusy =
+        status == LocalServerRuntimeStatus.starting ||
+        status == LocalServerRuntimeStatus.stopping;
+    final isRunning = status == LocalServerRuntimeStatus.running;
+    final setupBusy = appProvider.localSetupInProgress;
+
+    final (statusColor, statusLabel) = switch (status) {
+      LocalServerRuntimeStatus.running => (Colors.green, 'Running'),
+      LocalServerRuntimeStatus.starting => (Colors.orange, 'Starting'),
+      LocalServerRuntimeStatus.stopping => (Colors.orange, 'Stopping'),
+      LocalServerRuntimeStatus.failed => (Colors.red, 'Failed'),
+      LocalServerRuntimeStatus.stopped => (Colors.grey, 'Stopped'),
+    };
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.defaultPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Local OpenCode Server',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Desktop mode can launch and manage `opencode serve` directly from CodeWalk.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: statusColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(statusLabel),
+                const Spacer(),
+                Text(
+                  appProvider.localServerUrl,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              appProvider.localServerStatusMessage,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            if (appProvider.localServerCommandPath.trim().isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                'Command: ${appProvider.localServerCommandPath}',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+            if (appProvider.localServerLastOutput.trim().isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                'Latest output: ${appProvider.localServerLastOutput}',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+            const SizedBox(height: 10),
+            if (!supported)
+              Text(
+                'This managed mode is available only on desktop builds (Linux/macOS/Windows).',
+                style: Theme.of(context).textTheme.bodySmall,
+              )
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  FilledButton.icon(
+                    onPressed: (isBusy || isRunning)
+                        ? null
+                        : () => _startLocalServer(appProvider),
+                    icon: const Icon(Icons.play_arrow_rounded),
+                    label: const Text('Start'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: (isBusy || !isRunning)
+                        ? null
+                        : () => _stopLocalServer(appProvider),
+                    icon: const Icon(Icons.stop_rounded),
+                    label: const Text('Stop'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: setupBusy
+                        ? null
+                        : () => _openLocalServerWizard(appProvider),
+                    icon: const Icon(Icons.auto_fix_high_rounded),
+                    label: const Text('Setup Wizard'),
+                  ),
+                ],
+              ),
+            if (appProvider.localSetupInProgress) ...[
+              const SizedBox(height: 10),
+              const LinearProgressIndicator(minHeight: 3),
+            ],
+            if (appProvider.localSetupMessage.trim().isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                appProvider.localSetupMessage,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -284,6 +413,291 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
         await appProvider.refreshServerHealth(serverId: profile.id);
         break;
     }
+  }
+
+  Future<void> _startLocalServer(AppProvider appProvider) async {
+    final ok = await appProvider.startLocalServer();
+    if (!ok) {
+      _showMessage(appProvider.errorMessage);
+    }
+  }
+
+  Future<void> _stopLocalServer(AppProvider appProvider) async {
+    final ok = await appProvider.stopLocalServer();
+    if (!ok) {
+      _showMessage(appProvider.errorMessage);
+    }
+  }
+
+  Future<void> _openLocalServerWizard(AppProvider appProvider) async {
+    await appProvider.runLocalServerDiagnostics();
+    if (!mounted) {
+      return;
+    }
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return Consumer<AppProvider>(
+          builder: (context, provider, _) {
+            final report = provider.localEnvironmentReport;
+            final setupBusy = provider.localSetupInProgress;
+
+            return AlertDialog(
+              title: const Text('Local Server Setup Wizard'),
+              content: SizedBox(
+                width: 640,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'This wizard checks required runtimes and installs OpenCode for desktop local mode.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 10),
+                      if (report == null)
+                        const Center(child: CircularProgressIndicator())
+                      else ...[
+                        _buildDiagnosticRow('Platform', report.platform),
+                        _buildToolStatusRow('OpenCode', report.opencode),
+                        _buildToolStatusRow('Node.js', report.node),
+                        _buildToolStatusRow('npm', report.npm),
+                        _buildToolStatusRow('Bun', report.bun),
+                        _buildToolStatusRow('WSL', report.wsl),
+                        _buildDiagnosticRow(
+                          'Network',
+                          report.hasNetworkAccess ? 'reachable' : 'unreachable',
+                        ),
+                        _buildDiagnosticRow(
+                          'Install directory',
+                          report.installDirectoryWritable
+                              ? 'writable'
+                              : 'not writable',
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          report.recommendation,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: setupBusy
+                                ? null
+                                : () async {
+                                    await provider.runLocalServerDiagnostics();
+                                  },
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: const Text('Refresh Checks'),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed:
+                                setupBusy ||
+                                    !(report?.opencode.available ?? false)
+                                ? null
+                                : () async {
+                                    final ok = await provider
+                                        .useDetectedLocalServerCommand();
+                                    if (!ok) {
+                                      _showMessage(provider.errorMessage);
+                                      return;
+                                    }
+                                    _showMessage(
+                                      'Using detected OpenCode command.',
+                                    );
+                                  },
+                            icon: const Icon(Icons.check_circle_outline),
+                            label: const Text('Use Existing'),
+                          ),
+                          FilledButton.icon(
+                            onPressed: setupBusy
+                                ? null
+                                : () async {
+                                    final ok = await provider
+                                        .installLocalServerRequirements(
+                                          LocalOpencodeInstallMethod
+                                              .bunBootstrapThenInstall,
+                                        );
+                                    if (!ok) {
+                                      _showMessage(provider.errorMessage);
+                                    }
+                                  },
+                            icon: const Icon(Icons.rocket_launch_outlined),
+                            label: const Text('Install Bun + OpenCode'),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: setupBusy
+                                ? null
+                                : () async {
+                                    final ok = await provider
+                                        .installLocalServerRequirements(
+                                          LocalOpencodeInstallMethod.bunGlobal,
+                                        );
+                                    if (!ok) {
+                                      _showMessage(provider.errorMessage);
+                                    }
+                                  },
+                            icon: const Icon(Icons.bolt_outlined),
+                            label: const Text('Install via Bun'),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: setupBusy
+                                ? null
+                                : () async {
+                                    final ok = await provider
+                                        .installLocalServerRequirements(
+                                          LocalOpencodeInstallMethod.npmGlobal,
+                                        );
+                                    if (!ok) {
+                                      _showMessage(provider.errorMessage);
+                                    }
+                                  },
+                            icon: const Icon(Icons.inventory_2_outlined),
+                            label: const Text('Install via npm'),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: setupBusy
+                                ? null
+                                : () async {
+                                    final ok = await provider
+                                        .installLocalServerRequirements(
+                                          LocalOpencodeInstallMethod
+                                              .downloadBinary,
+                                        );
+                                    if (!ok) {
+                                      _showMessage(provider.errorMessage);
+                                    }
+                                  },
+                            icon: const Icon(
+                              Icons.download_for_offline_outlined,
+                            ),
+                            label: const Text('Install Binary'),
+                          ),
+                        ],
+                      ),
+                      if (provider.localSetupInProgress) ...[
+                        const SizedBox(height: 10),
+                        const LinearProgressIndicator(minHeight: 3),
+                      ],
+                      if (provider.localSetupMessage.trim().isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          provider.localSetupMessage,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                      if (provider.localSetupLogs.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Text(
+                              'Logs',
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
+                            const Spacer(),
+                            TextButton(
+                              onPressed: setupBusy
+                                  ? null
+                                  : provider.clearLocalSetupLogs,
+                              child: const Text('Clear'),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          width: double.infinity,
+                          constraints: const BoxConstraints(maxHeight: 220),
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surface,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.outlineVariant,
+                            ),
+                          ),
+                          child: SingleChildScrollView(
+                            child: SelectableText(
+                              provider.localSetupLogs.join('\n'),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(fontFamily: 'monospace'),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Close'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildDiagnosticRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: 130, child: Text(label)),
+          Expanded(child: Text(value)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToolStatusRow(String label, LocalToolStatus status) {
+    final icon = status.available
+        ? const Icon(Icons.check_circle, color: Colors.green, size: 16)
+        : const Icon(Icons.cancel, color: Colors.red, size: 16);
+
+    final details = <String>[];
+    if (status.version.trim().isNotEmpty) {
+      details.add(status.version.trim());
+    }
+    if (status.path.trim().isNotEmpty) {
+      details.add(status.path.trim());
+    }
+    if (status.note.trim().isNotEmpty) {
+      details.add(status.note.trim());
+    }
+
+    final value = details.isEmpty
+        ? (status.available ? 'available' : 'not available')
+        : details.join('  |  ');
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 130,
+            child: Row(
+              children: [
+                icon,
+                const SizedBox(width: 6),
+                Expanded(child: Text(label)),
+              ],
+            ),
+          ),
+          Expanded(child: Text(value)),
+        ],
+      ),
+    );
   }
 
   Future<void> _openCreateDialog() async {

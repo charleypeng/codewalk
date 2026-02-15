@@ -34,6 +34,12 @@ abstract class AppLocalDataSource {
   Future<void> saveDefaultServerId(String? serverId);
 
   /// Technical comment translated to English.
+  Future<String?> getLocalOpencodeCommand();
+
+  /// Technical comment translated to English.
+  Future<void> saveLocalOpencodeCommand(String? commandPath);
+
+  /// Technical comment translated to English.
   Future<String?> getApiKey({String? serverId});
 
   /// Technical comment translated to English.
@@ -319,6 +325,24 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
     await sharedPreferences.setString(
       AppConstants.defaultServerIdKey,
       serverId,
+    );
+  }
+
+  @override
+  Future<String?> getLocalOpencodeCommand() async {
+    return sharedPreferences.getString(AppConstants.localOpencodeCommandKey);
+  }
+
+  @override
+  Future<void> saveLocalOpencodeCommand(String? commandPath) async {
+    final normalized = commandPath?.trim() ?? '';
+    if (normalized.isEmpty) {
+      await sharedPreferences.remove(AppConstants.localOpencodeCommandKey);
+      return;
+    }
+    await sharedPreferences.setString(
+      AppConstants.localOpencodeCommandKey,
+      normalized,
     );
   }
 

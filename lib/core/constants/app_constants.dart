@@ -41,6 +41,7 @@ class AppConstants {
   static const String basicAuthEnabledKey = 'basic_auth_enabled';
   static const String basicAuthUsernameKey = 'basic_auth_username';
   static const String basicAuthPasswordKey = 'basic_auth_password';
+  static const String localOpencodeCommandKey = 'local_opencode_command';
 
   // Default configuration
   static const String defaultTheme = 'system';

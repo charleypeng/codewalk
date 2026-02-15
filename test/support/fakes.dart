@@ -17,6 +17,121 @@ import 'package:codewalk/domain/entities/worktree.dart';
 import 'package:codewalk/domain/repositories/app_repository.dart';
 import 'package:codewalk/domain/repositories/chat_repository.dart';
 import 'package:codewalk/domain/repositories/project_repository.dart';
+import 'package:codewalk/presentation/services/local_opencode_server_runtime_types.dart';
+
+class FakeLocalOpencodeServerRuntime implements LocalOpencodeServerRuntime {
+  FakeLocalOpencodeServerRuntime({
+    this.supported = false,
+    this.startResult = const LocalOpencodeServerStartResult(ok: true),
+    this.diagnoseResult = const LocalOpencodeEnvironmentReport(
+      supported: true,
+      platform: 'test',
+      opencode: LocalToolStatus(available: false),
+      node: LocalToolStatus(available: false),
+      npm: LocalToolStatus(available: false),
+      bun: LocalToolStatus(available: false),
+      wsl: LocalToolStatus(available: false),
+      hasNetworkAccess: true,
+      installDirectoryWritable: true,
+      recommendation: 'test',
+    ),
+    this.installResult = const LocalOpencodeInstallResult(ok: true),
+  });
+
+  bool supported;
+  bool running = false;
+  LocalOpencodeServerStartResult startResult;
+  LocalOpencodeEnvironmentReport diagnoseResult;
+  LocalOpencodeInstallResult installResult;
+  int startCallCount = 0;
+  int stopCallCount = 0;
+  int installCallCount = 0;
+  int diagnoseCallCount = 0;
+  String? lastHost;
+  int? lastPort;
+  String? lastCommandPath;
+  LocalOpencodeInstallMethod? lastInstallMethod;
+
+  final StreamController<String> _stdoutController =
+      StreamController<String>.broadcast();
+  final StreamController<String> _stderrController =
+      StreamController<String>.broadcast();
+  final StreamController<int> _exitCodeController =
+      StreamController<int>.broadcast();
+
+  @override
+  bool get isSupported => supported;
+
+  @override
+  bool get isRunning => running;
+
+  @override
+  Stream<String> get stdoutLines => _stdoutController.stream;
+
+  @override
+  Stream<String> get stderrLines => _stderrController.stream;
+
+  @override
+  Stream<int> get exitCodes => _exitCodeController.stream;
+
+  @override
+  Future<LocalOpencodeServerStartResult> start({
+    required String host,
+    required int port,
+    String? commandPath,
+  }) async {
+    startCallCount += 1;
+    lastHost = host;
+    lastPort = port;
+    lastCommandPath = commandPath;
+    if (startResult.ok) {
+      running = true;
+    }
+    return startResult;
+  }
+
+  @override
+  Future<LocalOpencodeEnvironmentReport> diagnose({String? commandPath}) async {
+    diagnoseCallCount += 1;
+    return diagnoseResult;
+  }
+
+  @override
+  Future<LocalOpencodeInstallResult> install({
+    required LocalOpencodeInstallMethod method,
+    void Function(String line)? onLog,
+  }) async {
+    installCallCount += 1;
+    lastInstallMethod = method;
+    return installResult;
+  }
+
+  @override
+  Future<void> stop() async {
+    stopCallCount += 1;
+    running = false;
+  }
+
+  void emitStdout(String line) {
+    _stdoutController.add(line);
+  }
+
+  void emitStderr(String line) {
+    _stderrController.add(line);
+  }
+
+  void emitExit(int code) {
+    running = false;
+    _exitCodeController.add(code);
+  }
+
+  @override
+  Future<void> dispose() async {
+    await _stdoutController.close();
+    await _stderrController.close();
+    await _exitCodeController.close();
+  }
+}
 
 class InMemoryAppLocalDataSource implements AppLocalDataSource {
   String? serverHost;
@@ -24,6 +139,7 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
   String? serverProfilesJson;
   String? activeServerId;
   String? defaultServerId;
+  String? localOpencodeCommand;
   String? apiKey;
   String? selectedProvider;
   String? selectedModel;
@@ -67,6 +183,7 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
     serverProfilesJson = null;
     activeServerId = null;
     defaultServerId = null;
+    localOpencodeCommand = null;
     apiKey = null;
     selectedProvider = null;
     selectedModel = null;
@@ -205,6 +322,9 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
 
   @override
   Future<String?> getDefaultServerId() async => defaultServerId;
+
+  @override
+  Future<String?> getLocalOpencodeCommand() async => localOpencodeCommand;
 
   @override
   Future<String?> getLastSessionId() async => lastSessionId;
@@ -489,6 +609,11 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
   @override
   Future<void> saveDefaultServerId(String? serverId) async {
     defaultServerId = serverId;
+  }
+
+  @override
+  Future<void> saveLocalOpencodeCommand(String? commandPath) async {
+    localOpencodeCommand = commandPath;
   }
 
   @override

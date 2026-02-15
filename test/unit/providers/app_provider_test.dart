@@ -6,6 +6,7 @@ import 'package:codewalk/domain/usecases/check_connection.dart';
 import 'package:codewalk/domain/usecases/get_app_info.dart';
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/presentation/providers/app_provider.dart';
+import 'package:codewalk/presentation/services/local_opencode_server_runtime_types.dart';
 
 import '../../support/fakes.dart';
 
@@ -13,16 +14,19 @@ void main() {
   group('AppProvider', () {
     late FakeAppRepository repository;
     late InMemoryAppLocalDataSource localDataSource;
+    late FakeLocalOpencodeServerRuntime localServerRuntime;
     late AppProvider provider;
 
     setUp(() {
       repository = FakeAppRepository();
       localDataSource = InMemoryAppLocalDataSource();
+      localServerRuntime = FakeLocalOpencodeServerRuntime();
       provider = AppProvider(
         getAppInfo: GetAppInfo(repository),
         checkConnection: CheckConnection(repository),
         localDataSource: localDataSource,
         dioClient: DioClient(),
+        localServerRuntime: localServerRuntime,
         enableHealthPolling: false,
       );
     });
@@ -147,6 +151,145 @@ void main() {
           .where((item) => item.id == profile.id)
           .first;
       expect(refreshed.aiGeneratedTitlesEnabled, isFalse);
+    });
+
+    test(
+      'startLocalServer creates and activates managed local profile',
+      () async {
+        localServerRuntime.supported = true;
+        provider = AppProvider(
+          getAppInfo: GetAppInfo(repository),
+          checkConnection: CheckConnection(repository),
+          localDataSource: localDataSource,
+          dioClient: DioClient(),
+          localServerRuntime: localServerRuntime,
+          localServerHealthProbe: (_) async => ServerHealthStatus.healthy,
+          enableHealthPolling: false,
+        );
+
+        await provider.initialize();
+        final ok = await provider.startLocalServer();
+
+        expect(ok, isTrue);
+        expect(provider.localServerStatus, LocalServerRuntimeStatus.running);
+        expect(provider.activeServer?.url, 'http://127.0.0.1:4096');
+        expect(
+          provider.serverProfiles
+              .where((profile) => profile.url == 'http://127.0.0.1:4096')
+              .isNotEmpty,
+          isTrue,
+        );
+      },
+    );
+
+    test('stopLocalServer moves status back to stopped', () async {
+      localServerRuntime.supported = true;
+      provider = AppProvider(
+        getAppInfo: GetAppInfo(repository),
+        checkConnection: CheckConnection(repository),
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        localServerRuntime: localServerRuntime,
+        localServerHealthProbe: (_) async => ServerHealthStatus.healthy,
+        enableHealthPolling: false,
+      );
+
+      await provider.initialize();
+      await provider.startLocalServer();
+      final ok = await provider.stopLocalServer();
+
+      expect(ok, isTrue);
+      expect(provider.localServerStatus, LocalServerRuntimeStatus.stopped);
+    });
+
+    test('startLocalServer reports launch failures', () async {
+      localServerRuntime = FakeLocalOpencodeServerRuntime(
+        supported: true,
+        startResult: const LocalOpencodeServerStartResult(
+          ok: false,
+          errorMessage: 'opencode command was not found',
+        ),
+      );
+      provider = AppProvider(
+        getAppInfo: GetAppInfo(repository),
+        checkConnection: CheckConnection(repository),
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        localServerRuntime: localServerRuntime,
+        enableHealthPolling: false,
+      );
+
+      await provider.initialize();
+      final ok = await provider.startLocalServer();
+
+      expect(ok, isFalse);
+      expect(provider.localServerStatus, LocalServerRuntimeStatus.failed);
+      expect(provider.errorMessage, 'opencode command was not found');
+    });
+
+    test('runLocalServerDiagnostics stores detected command path', () async {
+      localServerRuntime.supported = true;
+      localServerRuntime.diagnoseResult = const LocalOpencodeEnvironmentReport(
+        supported: true,
+        platform: 'linux',
+        opencode: LocalToolStatus(
+          available: true,
+          path: '/tmp/opencode',
+          version: '1.2.4',
+        ),
+        node: LocalToolStatus(available: true),
+        npm: LocalToolStatus(available: true),
+        bun: LocalToolStatus(available: true),
+        wsl: LocalToolStatus(available: false),
+        hasNetworkAccess: true,
+        installDirectoryWritable: true,
+        recommendation: 'Use existing OpenCode',
+      );
+
+      await provider.initialize();
+      await provider.runLocalServerDiagnostics();
+
+      expect(provider.localEnvironmentReport, isNotNull);
+      expect(provider.localServerCommandPath, '/tmp/opencode');
+      expect(localDataSource.localOpencodeCommand, '/tmp/opencode');
+    });
+
+    test('installLocalServerRequirements persists installer command', () async {
+      localServerRuntime.supported = true;
+      localServerRuntime.installResult = const LocalOpencodeInstallResult(
+        ok: true,
+        commandPath: '/opt/codewalk/opencode',
+      );
+      localServerRuntime.diagnoseResult = const LocalOpencodeEnvironmentReport(
+        supported: true,
+        platform: 'linux',
+        opencode: LocalToolStatus(
+          available: true,
+          path: '/opt/codewalk/opencode',
+          version: '1.2.4',
+        ),
+        node: LocalToolStatus(available: true),
+        npm: LocalToolStatus(available: true),
+        bun: LocalToolStatus(available: true),
+        wsl: LocalToolStatus(available: false),
+        hasNetworkAccess: true,
+        installDirectoryWritable: true,
+        recommendation: 'Ready',
+      );
+
+      await provider.initialize();
+      final ok = await provider.installLocalServerRequirements(
+        LocalOpencodeInstallMethod.downloadBinary,
+      );
+
+      expect(ok, isTrue);
+      expect(provider.localSetupInProgress, isFalse);
+      expect(provider.localServerCommandPath, '/opt/codewalk/opencode');
+      expect(localDataSource.localOpencodeCommand, '/opt/codewalk/opencode');
+      expect(
+        localServerRuntime.lastInstallMethod,
+        LocalOpencodeInstallMethod.downloadBinary,
+      );
     });
   });
 }
