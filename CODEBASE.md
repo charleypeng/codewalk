@@ -1,26 +1,14 @@
 # CodeWalk - Codebase Baseline Snapshot
 
-> Captured: 2026-02-13
+> Captured: 2026-02-15
 > Git baseline: `a3ba190 docs(agents): skip precommit for static-only commits` (main)
 > Flutter: 3.41.0 (stable)
 
-## Delta Update (2026-02-14)
+## Delta Update (2026-02-15)
 
-- `ChatProvider` sync now uses a namespaced transaction flow (`idle -> pendingRemote -> appliedRemote -> failed`) to defer remote selection flush while session status is busy/retry.
-- Remote selection persistence now goes through `agent.__codewalk.options.codewalk.selection` and `variantByAgentAndModel`, keeping compatibility reads while avoiding project-directory scoped config writes.
-- Reasoning status parsing was centralized in `lib/presentation/utils/reasoning_status_parser.dart`; reasoning blocks with first-line `**...**` are treated as status labels and rendered in the in-progress indicator instead of the thinking bubble.
-- Coverage was expanded in `test/unit/providers/chat_provider_test.dart`, `test/widget/chat_message_widget_test.dart`, and `test/widget/chat_page_test.dart` for deferred sync flush semantics and status-label rendering.
-- Chat timeline now creates a compaction boundary entry that collapses pre-compaction history by default and lazily builds that segment only when explicitly expanded (`lib/presentation/pages/chat_page.dart`).
-- Widget coverage now validates collapsed pre-compaction visibility, expand/re-collapse interaction, and expansion reset after session switching (`test/widget/chat_page_test.dart`).
-- Added `warmupProvidersRefresh(reason: 'chat-startup')` to trigger async provider initialization on startup without blocking UI (`lib/presentation/providers/chat_provider.dart`, called from `lib/presentation/pages/chat_page.dart`).
-- Added `isSessionActivelyResponding(sessionId)` method to check if session has active stream or busy status, guarding session refresh operations to prevent concurrent refreshes (`_activeSessionRefreshInFlight` flag).
-- Added active session indicator in Conversations list: `ChatSessionList` now displays `Icons.sync_rounded` via `AnimatedSwitcher` when a session is actively responding (`isSessionActive` callback prop), providing visual feedback for streaming sessions.
-- Added provider refresh state UI: shows "Loading models" chip with spinner or "Retry models" action chip in composer area based on `providersRefreshState` and `isProvidersRefreshInProgress`.
-- Added server onboarding quick guide in Add Server dialog (`_buildServerSetupQuickGuide`) with CLI install instructions, command to run, and URL/verification steps.
-- Added thinking bubble display controls: 4-line default collapse (`_collapsedReasoningMaxLines`), expandable with "Show more/Show less" toggle, internal scroll with `SingleChildScrollView` and `Scrollbar`, and reduce motion support via `disableAnimations` system check.
-- Added tool call bubble display controls: 2-line default collapse (`_collapsedToolDetailMaxLines`), expandable with "Show more/Show less" toggle, toggle visibility via `showToolCallBubbles` in ExperienceSettings.
-- Added automatic tool-call chain collapse after final assistant response: completed tool chains are collapsed by default and can be expanded on demand (`lib/presentation/widgets/chat_message_widget.dart`, tested in `test/widget/chat_message_widget_test.dart`).
-- Added AppBar display popover and Appearance settings section for global thinking/tool bubbles and density preferences with persistence.
+- Added desktop local OpenCode setup wizard in Server Settings section (`servers_settings_section.dart`) with environment diagnostics (platform, OpenCode/Node/npm/Bun/WSL availability, network access, install directory writability), installation recommendations, and one-click install/upgrade via multiple methods.
+- Added runtime installer services for local OpenCode server management: `local_opencode_server_runtime.dart` (abstract interface), `local_opencode_server_runtime_types.dart` (types/models), `local_opencode_server_runtime_io.dart` (desktop implementation), `local_opencode_server_runtime_stub.dart` (non-desktop stub). Supports install methods: download binary, npm global, bun global, bun bootstrap then install.
+- Added `opencode-smoke` CI job (lines 188-251 in ci.yml) validating OpenCode CLI installation across 5 matrix combinations: ubuntu/npm, ubuntu/bun, macos/npm, macos/bun, windows/npm.
 
 ## Project Structure
 
@@ -52,7 +40,7 @@ codewalk/
 │   ├── presentation/
 │   │   ├── pages/       # App Shell, Chat, Home, Logs, Server Settings
 │   │   ├── providers/   # State management (Provider, ChatProvider, SettingsProvider, etc.)
-│   │   ├── services/    # UI services (ChatTitleGenerator, SoundService, EventFeedbackDispatcher)
+│   │   ├── services/    # UI services (ChatTitleGenerator, SoundService, EventFeedbackDispatcher, LocalOpenCodeServerRuntime)
 │   │   ├── theme/       # App theme configuration
 │   │   ├── utils/       # UI utilities (SessionTitleFormatter, FileExplorerLogic, ShortcutBindingCodec)
 │   │   └── widgets/     # Chat input, message, session list, interaction cards
@@ -95,10 +83,10 @@ codewalk/
 
 | Type | Count | Notes |
 |------|-------|-------|
-| `.dart` (source) | 105 | Under `lib/` (excluding generated) |
+| `.dart` (source) | 110 | Under `lib/` (excluding generated) |
 | `.g.dart` (generated) | 4 | JSON serialization models |
 | `.dart` (tests) | 27 | Test files (unit, widget, integration, support) |
-| `.dart` (total) | 136 | Repository files excluding build artifacts |
+| `.dart` (total) | 141 | Repository files excluding build artifacts |
 | `.md` (markdown) | 9 | Docs + roadmap + release artifacts |
 | `.sh` (scripts) | 2 | Unix installer/uninstaller scripts |
 | `.ps1` (scripts) | 2 | Windows PowerShell installer/uninstaller scripts |
@@ -347,10 +335,10 @@ Deferred/optional after parity wave:
 
 ### flutter analyze
 
-- **Total issues: 83**
+- **Total issues: 91**
   - Errors: 0
   - Warnings: 1 (`unnecessary_non_null_assertion`)
-  - Info: 82 (mostly `unnecessary_underscores` in test parameter naming)
+  - Info: 90 (mostly `unnecessary_underscores` in test parameter naming)
 - **Top issue categories:**
   - `unnecessary_underscores` (majority): test parameter naming conventions
   - `unnecessary_non_null_assertion` (1): test assertion cleanup opportunity
@@ -383,6 +371,7 @@ Deferred/optional after parity wave:
 | **build-linux** | ubuntu-latest | 25min | Linux desktop release build |
 | **build-web** | ubuntu-latest | 20min | Web release build |
 | **build-android** | ubuntu-latest | 30min | APK arm64 release build with signing |
+| **opencode-smoke** | ubuntu-latest/macos-15/windows-latest | 20min | OpenCode CLI install validation (npm/bun matrix) |
 | **ci-status** | ubuntu-latest | 5min | Aggregate status reporter |
 
 `release.yml` publishes installable artifacts and a GitHub Release with parallel matrix jobs:
@@ -482,7 +471,9 @@ Deferred/optional after parity wave:
 | dynamic_color | ^1.8.1 | Material You dynamic color schemes |
 | flutter_local_notifications | ^20.0.0 | Cross-platform local notifications |
 | audioplayers | ^6.5.1 | Sound playback for notification audio |
+| material_symbols_icons | ^4.2906.0 | Material Symbols icon set |
 | simple_icons | git (381d0cb) | Simple Icons brand icons |
+| crypto | ^3.0.3 | SHA256 checksum verification for runtime installer |
 
 ### Dev
 

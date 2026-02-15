@@ -185,19 +185,61 @@ jobs:
           name: codewalk-android
           path: codewalk-android-arm64.apk
 
+  opencode-smoke:
+    name: OpenCode smoke (${{ matrix.os }} / ${{ matrix.install }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            install: npm
+          - os: ubuntu-latest
+            install: bun
+          - os: macos-15
+            install: npm
+          - os: macos-15
+            install: bun
+          - os: windows-latest
+            install: npm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        if: matrix.install == 'bun'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install OpenCode with npm
+        if: matrix.install == 'npm'
+        run: npm install -g opencode-ai
+
+      - name: Install OpenCode with Bun
+        if: matrix.install == 'bun'
+        run: bun install -g opencode-ai
+
+      - name: Validate OpenCode CLI
+        run: |
+          opencode --version
+          opencode serve --help
+
   ci-status:
     runs-on: ubuntu-latest
     if: always()
-    needs: [quality, build-linux, build-web, build-android]
+    needs: [quality, build-linux, build-web, build-android, opencode-smoke]
     steps:
       - name: Validate all jobs
         run: |
-          jobs=(quality build-linux build-web build-android)
+          jobs=(quality build-linux build-web build-android opencode-smoke)
           results=(
             "${{ needs.quality.result }}"
             "${{ needs.build-linux.result }}"
             "${{ needs.build-web.result }}"
             "${{ needs.build-android.result }}"
+            "${{ needs.opencode-smoke.result }}"
           )
           for i in "${!jobs[@]}"; do
             if [ "${results[$i]}" != "success" ]; then

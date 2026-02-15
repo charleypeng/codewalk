@@ -122,11 +122,13 @@ Implemented multi-pass scroll-to-bottom algorithm (up to 6 passes with 1px epsil
 - [x] Personalizar título das tool calls mais comuns, e tratar respostas para aparência mais suave visando UX
 - [x] Substituir destaque visual do status ao lado do título por efeito transitório na linha de status do composer (mantendo knob de contexto atual)
 
-#### `featE` Session header/context controls
+#### `featE` Session header/context controls ✅
 
-- [ ] Ajustar popover de sugestões no Android para nunca cobrir o input com teclado aberto em todos os teclades/dispositivos (validar em device real com Gboard e Samsung Keyboard)
-- [ ] Emular `opencode serve` internamente como opção de servidor local (permitir ao CodeWalk iniciar e gerenciar um servidor OpenCode embutido sem depender de instância externa)
-- [ ] Fazer atalhos de teclado funcionarem de verdade
+**Status**: Completed (2026-02-15)
+
+Implemented desktop local-server wizard with runtime checks for `opencode serve` availability, installer path detection (binary/npm/bun), and CI multi-OS OpenCode smoke test coverage via GitHub Actions.
+
+**Commits**: (pending)
 
 #### `featF` Files navigation and drafting UX
 
@@ -141,7 +143,7 @@ Implemented multi-pass scroll-to-bottom algorithm (up to 6 passes with 1px epsil
 
 #### `featH` Settings/onboarding/operation polish
 
-- [x] Refresh providers/model em background de forma assíncrona ao abrir o app (revalidada nesta entrega - hash pendente até commit)
+- [x] Refresh providers/model em background de forma assíncrona ao abrir o app - Commits: 4a037f9, 3b931c5
 - [x] Adicionar instruções básicas de como instalar e executar um servidor OpenCode na tela de adicionar servidor
 - [x] Condensar as chamas de tool calls em um collapsable quando a resposta final do assistente chegar
 - [x] Tornar bolha de thinking em uma caixa de no máximo 4 linhas, o texto vai subindo suavemente assim que chega, somente se clicar em show more expande um pouco mais mas com altura limitada ativando barra de rolagem interna se necessário
@@ -157,7 +159,7 @@ Implemented multi-pass scroll-to-bottom algorithm (up to 6 passes with 1px epsil
 - [ ] Mudar o ícone do botão 'Files' para algo mais intuitivo, talvez ícone de tree
 - [ ] Aumentar o espaço/largura do select no topo para o projeto atual quando no desktop. A largura atual está colocando ellipsis muito rápido com o espaço todo de uma tela grande (desktop)
 - [ ] Criar lista de dicas de uma frase para mostrar enquanto aguarda respostas do servidor mas nada chegou ainda
-- [x] Na lista de Conversations, trocar o ícone padrão da sessão por um estado visual de loading suave enquanto aquela sessão/conversa estiver recebendo dados/resposta (mobile + desktop) (hash: a definir após commit)
+- [x] Na lista de Conversations, trocar o ícone padrão da sessão por um estado visual de loading suave enquanto aquela sessão/conversa estiver recebendo dados/resposta (mobile + desktop) - Commit: fb6e118
 - [ ] Substituir serviço ch.at de títulos por agent nativo OpenCode 'title', mantendo cadência de 6 mensagens
 
 #### `featJ` Speech-to-text platform matrix

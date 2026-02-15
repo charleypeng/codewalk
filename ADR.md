@@ -36,6 +36,7 @@ This document tracks technical decisions for CodeWalk.
 - ADR-030: Session Activity Visual Feedback with Loading State Indicators (2026-02-14) [Accepted]
 - ADR-031: Asynchronous Provider Initialization and Background Refresh on Startup (2026-02-14) [Accepted]
 - ADR-032: Thinking Bubble Compact Mode and Accessibility-Aware Animations (2026-02-14) [Accepted]
+- ADR-033: Desktop-Only Managed Local OpenCode Server Wizard (2026-02-15) [Accepted]
 
 ---
 
@@ -1554,6 +1555,81 @@ The thinking bubble and tool call output displays were causing UX issues:
 - ROADMAP.featH.md (task 22: Collapse tool-call chain once final assistant response arrives)
 - ROADMAP.featH.md (task 20: Limit tool-call expanded height)
 - Related: ADR-026 (Reasoning Status Rendering)
+
+---
+
+## ADR-033: Desktop-Only Managed Local OpenCode Server Wizard (2026-02-15)
+
+**Status**: Accepted
+
+**Date**: 2026-02-15
+
+### Context
+
+Users need a streamlined way to run a local OpenCode server for development/testing without manual setup. The wizard must:
+1. Diagnose local environment (platform, tools, network, permissions)
+2. Provide multiple install methods (binary download, npm global, bun global, bun bootstrap)
+3. Start/stop the managed local server
+4. Be desktop-only (mobile platforms cannot host local servers)
+
+### Decision
+
+Introduce `LocalOpencodeServerRuntime` service with:
+
+1. **Diagnostics** (`diagnose()` method):
+   - Platform detection (Linux, macOS, Windows, WSL)
+   - Tool availability: OpenCode, Node.js, npm, Bun
+   - Network access check
+   - Install directory writability check
+   - Returns `LocalOpencodeEnvironmentReport` with recommendation
+
+2. **Install Methods** (`install()` method with `LocalOpencodeInstallMethod` enum):
+   - `downloadBinary`: Direct binary download
+   - `npmGlobal`: `npm install -g opencode`
+   - `bunGlobal`: `bun add -g opencode`
+   - `bunBootstrapThenInstall`: Bun bootstrap then install
+
+3. **Server Lifecycle**:
+   - `start(host, port, commandPath)`: Launch managed server
+   - `stop()`: Terminate server
+   - Streams for stdout/stderr logging
+   - Exit code tracking
+
+4. **Platform Constraint**:
+   - Runtime check: `isSupported` returns false on non-desktop platforms
+   - Stub implementation for mobile/web with clear error messages
+   - Desktop-only feature flag in settings UI
+
+### Rationale
+
+- Managed local server wizard reduces onboarding friction for developers wanting to test against a local OpenCode instance.
+- Diagnostic report helps users understand missing dependencies before attempting install.
+- Multiple install methods accommodate different user environments (some users prefer npm, others prefer bun).
+- Desktop-only constraint is fundamental (mobile cannot host servers); stub pattern provides consistent API across platforms with graceful degradation.
+- Aligns with ADR-010 server orchestration by extending server management capabilities.
+
+### Consequences
+
+- ✅ Positive: Users can set up a local OpenCode server with guided diagnostics and automated install.
+- ✅ Positive: Clear error messages on mobile explain why the feature is unavailable.
+- ✅ Positive: Multiple install methods increase compatibility across developer environments.
+- ✅ Positive: Diagnostic output helps troubleshoot setup issues.
+- ⚠️ Warning: Desktop-only feature increases platform-specific code paths (stub implementations needed).
+- ⚠️ Warning: Install methods depend on external package managers (npm, bun) which may not be available.
+
+### Key Files
+
+- `lib/presentation/services/local_opencode_server_runtime.dart` - Platform dispatcher
+- `lib/presentation/services/local_opencode_server_runtime_io.dart` - Desktop implementation
+- `lib/presentation/services/local_opencode_server_runtime_stub.dart` - Mobile/web stub
+- `lib/presentation/services/local_opencode_server_runtime_types.dart` - Type contracts
+- `lib/presentation/providers/app_provider.dart` - Integration with app lifecycle
+
+### References
+
+- ADR-010: Multi-Server Profile Orchestration (server management foundation)
+- ADR-022: Modular Settings Hub (settings integration point)
+- `make smoke` - CI smoke test for server compatibility
 
 
 ---

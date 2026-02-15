@@ -2,9 +2,9 @@
 
 ## Scope
 
-- Task 11: Android suggestion popover must not cover input with keyboard open.
-- Task 12: Embed/local-manage `opencode serve` as optional local server mode.
-- Task 13: Make keyboard shortcuts truly reliable.
+- [x] Task 11: Android suggestion popover must not cover input with keyboard open (validado manualmente/reportado pelo usuário)
+- [x] Task 12: Embed/local-manage `opencode serve` as optional local server mode.
+- [ ] Task 13: Make keyboard shortcuts truly reliable.
 
 ## Goal
 
