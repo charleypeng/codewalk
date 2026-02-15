@@ -1,7 +1,7 @@
 # CodeWalk - Codebase Baseline Snapshot
 
 > Captured: 2026-02-15
-> Git baseline: `a3ba190 docs(agents): skip precommit for static-only commits` (main)
+> Git baseline: `0f29bd8 release: cut v1.6.0` (main)
 > Flutter: 3.41.0 (stable)
 
 ## Delta Update (2026-02-15)
@@ -9,6 +9,8 @@
 - Added desktop local OpenCode setup wizard in Server Settings section (`servers_settings_section.dart`) with environment diagnostics (platform, OpenCode/Node/npm/Bun/WSL availability, network access, install directory writability), installation recommendations, and one-click install/upgrade via multiple methods.
 - Added runtime installer services for local OpenCode server management: `local_opencode_server_runtime.dart` (abstract interface), `local_opencode_server_runtime_types.dart` (types/models), `local_opencode_server_runtime_io.dart` (desktop implementation), `local_opencode_server_runtime_stub.dart` (non-desktop stub). Supports install methods: download binary, npm global, bun global, bun bootstrap then install.
 - Added `opencode-smoke` CI job (lines 188-251 in ci.yml) validating OpenCode CLI installation across 5 matrix combinations: ubuntu/npm, ubuntu/bun, macos/npm, macos/bun, windows/npm.
+- Separated CI and Release workflows (ADR-034): CI runs on push/PR, Release triggers on version tags (`v*`) or manual dispatch. Added `make release V=patch|minor|major` target for automated version bump, commit, tag, and push.
+- Hardened compaction UX: frozen pre-compaction boundary during active compaction, post-compaction `ChatState.error` reset, incomplete assistant message cleanup, and auto-scroll suppression during compaction streaming.
 
 ## Project Structure
 
@@ -83,11 +85,11 @@ codewalk/
 
 | Type | Count | Notes |
 |------|-------|-------|
-| `.dart` (source) | 110 | Under `lib/` (excluding generated) |
+| `.dart` (source) | 111 | Under `lib/` (excluding generated) |
 | `.g.dart` (generated) | 4 | JSON serialization models |
 | `.dart` (tests) | 27 | Test files (unit, widget, integration, support) |
-| `.dart` (total) | 141 | Repository files excluding build artifacts |
-| `.md` (markdown) | 9 | Docs + roadmap + release artifacts |
+| `.dart` (total) | 142 | Repository files excluding build artifacts |
+| `.md` (markdown) | 20 | Docs + roadmap + release artifacts |
 | `.sh` (scripts) | 2 | Unix installer/uninstaller scripts |
 | `.ps1` (scripts) | 2 | Windows PowerShell installer/uninstaller scripts |
 
@@ -346,7 +348,7 @@ Deferred/optional after parity wave:
 
 ### flutter test
 
-- **Result: 218 tests, all passed** (latest full run with coverage)
+- **Result: 274 tests, all passed** (latest full run with coverage)
 - **Coverage: 35% minimum** (enforced via `tool/ci/check_coverage.sh`)
 - **Test structure:**
   - Unit: providers/usecases/models with migration, server/context-scope assertions, lifecycle optimistic-rollback, and project/worktree orchestration
@@ -411,7 +413,7 @@ Deferred/optional after parity wave:
 
 ### Makefile Automation
 
-181-line Makefile with 13 targets:
+213-line Makefile with 15 targets:
 
 | Target | Description |
 |--------|-------------|
@@ -423,10 +425,12 @@ Deferred/optional after parity wave:
 | `analyze` | Static analysis with budget check (186 max) |
 | `test` | Run all tests |
 | `coverage` | Generate coverage report with threshold check (35% min) |
+| `smoke` | Run integration smoke test against live OpenCode server |
 | `check` | Full validation chain: deps → gen → analyze → test |
 | `desktop` | Build desktop binary for current host OS |
 | `android` | Build APK + optional Telegram upload (tdl) |
 | `precommit` | Complete pre-commit validation: check + android |
+| `release` | Bump version (patch/minor/major), commit, tag, and push |
 | `clean` | Clean build artifacts and reinstall dependencies |
 
 **Telegram Integration:**
@@ -694,9 +698,9 @@ lcov_branch_coverage=0  # Disable branch coverage, focus on line coverage
 
 ## Version and Release
 
-**Current version:** `1.1.0+3` (defined in pubspec.yaml)
+**Current version:** `1.6.0+14` (defined in pubspec.yaml)
 - Version format: `MAJOR.MINOR.PATCH+BUILD`
-- Android: versionName = 1.1.0, versionCode = 3
+- Android: versionName = 1.6.0, versionCode = 14
 - Build artifacts uploaded via CI on successful builds
 - Release artifacts published via automated GitHub Release workflow on version tags
 
@@ -718,7 +722,7 @@ lcov_branch_coverage=0  # Disable branch coverage, focus on line coverage
 | `.lcovrc` | LCOV coverage options (branch coverage disabled) |
 | `codecov.yml` | Codecov integration (35% project, 30% patch) |
 | `pubspec.yaml` | Dependency and version management |
-| `Makefile` | Build automation (13 targets, 158 lines) |
+| `Makefile` | Build automation (15 targets, 213 lines) |
 | `.github/workflows/ci.yml` | CI/CD pipeline (5 jobs) |
 | `.github/workflows/release.yml` | GitHub Release automation (5 jobs: Linux/Windows/macOS/Android builds + release creation) |
 | `CONTRIBUTING.md` | Contribution guidelines and standards |
