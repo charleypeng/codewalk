@@ -4,15 +4,13 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+
 import '../../domain/entities/chat_message.dart';
-import '../utils/reasoning_status_parser.dart';
 import '../utils/diff_parser.dart';
+import '../utils/reasoning_status_parser.dart';
 
 /// Chat message widget
 class ChatMessageWidget extends StatelessWidget {
-  static const int _collapsedToolDetailMaxLines = 2;
-  static const int _collapsedReasoningMaxLines = 4;
-  static const int _expandedReasoningMaxLines = 12;
 
   const ChatMessageWidget({
     super.key,
@@ -24,6 +22,9 @@ class ChatMessageWidget extends StatelessWidget {
     this.onBackgroundLongPress,
     this.onBackgroundLongPressEnd,
   });
+  static const int _collapsedToolDetailMaxLines = 2;
+  static const int _collapsedReasoningMaxLines = 4;
+  static const int _expandedReasoningMaxLines = 12;
 
   final ChatMessage message;
   final String? activeReasoningPartKey;

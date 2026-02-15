@@ -9,9 +9,9 @@ import '../datasources/project_remote_datasource.dart';
 
 /// Technical comment translated to English.
 class ProjectRepositoryImpl implements ProjectRepository {
-  final ProjectRemoteDataSource remoteDataSource;
 
   ProjectRepositoryImpl({required this.remoteDataSource});
+  final ProjectRemoteDataSource remoteDataSource;
 
   @override
   Future<Either<Failure, List<Project>>> getProjects() async {

@@ -6,6 +6,16 @@ ANALYZE_LOG = /tmp/flutter_analyze.log
 TDL_CHANNEL = VerselesBot
 TDL_TARGET = 6
 
+# TTY detection: suppress verbose output in non-interactive mode (CI/agents)
+ifneq ($(shell test -t 1 && echo yes),yes)
+    LOG = /tmp/codewalk-make.log
+    QUIET = > $(LOG) 2>&1 || (cat $(LOG) && exit 1)
+else ifdef VERBOSE
+    QUIET =
+else
+    QUIET =
+endif
+
 help:
 	@echo "CodeWalk Make Targets"
 	@echo ""
@@ -25,10 +35,10 @@ help:
 	@echo "  make clean      Clean and restore dependencies"
 
 deps:
-	flutter pub get
+	flutter pub get $(QUIET)
 
 gen:
-	dart run build_runner build --delete-conflicting-outputs
+	dart run build_runner build --delete-conflicting-outputs $(QUIET)
 
 icons:
 	@if [ ! -f "assets/images/original.png" ]; then \
@@ -124,14 +134,14 @@ icons-check:
 	@echo "Icon checks passed."
 
 analyze:
-	flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee $(ANALYZE_LOG)
+	flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee $(ANALYZE_LOG) $(QUIET)
 	bash tool/ci/check_analyze_budget.sh $(ANALYZE_LOG) 186
 
 test:
-	flutter test
+	flutter test $(QUIET)
 
 coverage:
-	flutter test --coverage
+	flutter test --coverage $(QUIET)
 	bash tool/ci/check_coverage.sh coverage/lcov.info 35
 
 smoke:
@@ -159,7 +169,7 @@ desktop:
 	fi
 
 android:
-	flutter build apk --release --target-platform android-arm64
+	flutter build apk --release --target-platform android-arm64 $(QUIET)
 	@if [ -f "$(APK_DIR)/app-release.apk" ]; then \
 		mv -f "$(APK_DIR)/app-release.apk" "$(APK_PATH)"; \
 		echo "APK ready: $(APK_PATH)"; \

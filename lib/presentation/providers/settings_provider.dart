@@ -3,8 +3,8 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
-import '../../core/network/dio_client.dart';
 import '../../core/logging/app_logger.dart';
+import '../../core/network/dio_client.dart';
 import '../../data/datasources/app_local_datasource.dart';
 import '../../domain/entities/experience_settings.dart';
 import '../services/sound_service.dart';

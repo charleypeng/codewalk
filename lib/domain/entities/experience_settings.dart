@@ -90,8 +90,8 @@ const List<ShortcutDefinition> kShortcutDefinitions = <ShortcutDefinition>[
   ShortcutDefinition(
     action: ShortcutAction.escape,
     group: 'Navigation',
-    label: 'Close/unfocus',
-    description: 'Close drawer or unfocus input',
+    label: 'Focus/close drawer',
+    description: 'Focus composer by default, or close drawer when open',
     defaultBinding: 'escape',
   ),
   ShortcutDefinition(
@@ -229,23 +229,6 @@ AppDensity appDensityFromKey(String value) {
 }
 
 class ExperienceSettings {
-  const ExperienceSettings({
-    required this.notifications,
-    required this.sounds,
-    required this.shortcuts,
-    required this.desktopPanes,
-    required this.appDensity,
-    required this.showThinkingBubbles,
-    required this.showToolCallBubbles,
-  });
-
-  final Map<NotificationCategory, bool> notifications;
-  final Map<SoundCategory, SoundOption> sounds;
-  final Map<ShortcutAction, String> shortcuts;
-  final Map<DesktopPane, bool> desktopPanes;
-  final AppDensity appDensity;
-  final bool showThinkingBubbles;
-  final bool showToolCallBubbles;
 
   factory ExperienceSettings.defaults() {
     final shortcuts = <ShortcutAction, String>{
@@ -274,6 +257,23 @@ class ExperienceSettings {
       showToolCallBubbles: true,
     );
   }
+  const ExperienceSettings({
+    required this.notifications,
+    required this.sounds,
+    required this.shortcuts,
+    required this.desktopPanes,
+    required this.appDensity,
+    required this.showThinkingBubbles,
+    required this.showToolCallBubbles,
+  });
+
+  final Map<NotificationCategory, bool> notifications;
+  final Map<SoundCategory, SoundOption> sounds;
+  final Map<ShortcutAction, String> shortcuts;
+  final Map<DesktopPane, bool> desktopPanes;
+  final AppDensity appDensity;
+  final bool showThinkingBubbles;
+  final bool showToolCallBubbles;
 
   ExperienceSettings copyWith({
     Map<NotificationCategory, bool>? notifications,

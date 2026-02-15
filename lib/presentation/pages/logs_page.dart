@@ -19,10 +19,10 @@ class LogsPage extends StatelessWidget {
             tooltip: 'Copy logs',
             onPressed: () => _copyLogs(context),
           ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
+          const IconButton(
+            icon: Icon(Icons.delete_outline),
             tooltip: 'Clear logs',
-            onPressed: () => AppLogger.clearEntries(),
+            onPressed: AppLogger.clearEntries,
           ),
         ],
       ),
@@ -68,9 +68,9 @@ class LogsPage extends StatelessWidget {
 }
 
 class _LogTile extends StatelessWidget {
-  final LogEntry entry;
 
   const _LogTile({required this.entry});
+  final LogEntry entry;
 
   @override
   Widget build(BuildContext context) {

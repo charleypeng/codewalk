@@ -2,13 +2,6 @@ import 'package:equatable/equatable.dart';
 
 /// Technical comment translated to English.
 class Session extends Equatable {
-  final String id;
-  final String? parentId;
-  final String title;
-  final String version;
-  final SessionTime time;
-  final SessionShare? share;
-  final SessionRevert? revert;
 
   const Session({
     required this.id,
@@ -19,6 +12,13 @@ class Session extends Equatable {
     this.share,
     this.revert,
   });
+  final String id;
+  final String? parentId;
+  final String title;
+  final String version;
+  final SessionTime time;
+  final SessionShare? share;
+  final SessionRevert? revert;
 
   @override
   List<Object?> get props => [
@@ -34,10 +34,10 @@ class Session extends Equatable {
 
 /// Technical comment translated to English.
 class SessionTime extends Equatable {
-  final int created;
-  final int updated;
 
   const SessionTime({required this.created, required this.updated});
+  final int created;
+  final int updated;
 
   @override
   List<Object> get props => [created, updated];
@@ -45,9 +45,9 @@ class SessionTime extends Equatable {
 
 /// Technical comment translated to English.
 class SessionShare extends Equatable {
-  final String url;
 
   const SessionShare({required this.url});
+  final String url;
 
   @override
   List<Object> get props => [url];
@@ -55,10 +55,6 @@ class SessionShare extends Equatable {
 
 /// Technical comment translated to English.
 class SessionRevert extends Equatable {
-  final String messageId;
-  final String? partId;
-  final String? snapshot;
-  final String? diff;
 
   const SessionRevert({
     required this.messageId,
@@ -66,6 +62,10 @@ class SessionRevert extends Equatable {
     this.snapshot,
     this.diff,
   });
+  final String messageId;
+  final String? partId;
+  final String? snapshot;
+  final String? diff;
 
   @override
   List<Object?> get props => [messageId, partId, snapshot, diff];

@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/constants/app_constants.dart';
 import 'settings/sections/appearance_settings_section.dart';
@@ -35,6 +36,11 @@ class _SettingsSection {
 
 class _SettingsPageState extends State<SettingsPage> {
   static const double _splitBreakpoint = 980;
+  static const Duration _doubleEscapeCloseThreshold = Duration(
+    milliseconds: 500,
+  );
+
+  DateTime? _lastEscapeAt;
 
   late final List<_SettingsSection> _sections = <_SettingsSection>[
     _SettingsSection(
@@ -101,6 +107,7 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void initState() {
     super.initState();
+    HardwareKeyboard.instance.addHandler(_handleGlobalKeyEvent);
     final visibleSections = _visibleSections;
     _selectedSectionId = visibleSections
         .where((section) => section.id == widget.initialSectionId)
@@ -108,6 +115,47 @@ class _SettingsPageState extends State<SettingsPage> {
         ?.id;
     _selectedSectionId ??= visibleSections.first.id;
     _showMobileDetail = widget.initialSectionId.isNotEmpty;
+  }
+
+  @override
+  void dispose() {
+    HardwareKeyboard.instance.removeHandler(_handleGlobalKeyEvent);
+    super.dispose();
+  }
+
+  bool _handleGlobalKeyEvent(KeyEvent event) {
+    if (!mounted || event is! KeyDownEvent) {
+      return false;
+    }
+    if (event.logicalKey != LogicalKeyboardKey.escape) {
+      return false;
+    }
+    if (HardwareKeyboard.instance.isMetaPressed ||
+        HardwareKeyboard.instance.isControlPressed ||
+        HardwareKeyboard.instance.isAltPressed ||
+        HardwareKeyboard.instance.isShiftPressed) {
+      return false;
+    }
+
+    final route = ModalRoute.of(context);
+    if (route == null || !route.isCurrent) {
+      return false;
+    }
+
+    final now = DateTime.now();
+    final shouldClose =
+        _lastEscapeAt != null &&
+        now.difference(_lastEscapeAt!) <= _doubleEscapeCloseThreshold;
+    _lastEscapeAt = now;
+    if (!shouldClose) {
+      return true;
+    }
+
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+    }
+    return true;
   }
 
   @override

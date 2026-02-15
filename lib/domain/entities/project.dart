@@ -1,10 +1,5 @@
 /// Technical comment translated to English.
 class Project {
-  final String id;
-  final String name;
-  final String path;
-  final DateTime createdAt;
-  final DateTime? updatedAt;
 
   const Project({
     required this.id,
@@ -13,6 +8,11 @@ class Project {
     required this.createdAt,
     this.updatedAt,
   });
+  final String id;
+  final String name;
+  final String path;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
 
   @override
   bool operator ==(Object other) {

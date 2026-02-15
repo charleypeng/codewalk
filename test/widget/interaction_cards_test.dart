@@ -1,16 +1,15 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:codewalk/domain/entities/chat_realtime.dart';
 import 'package:codewalk/presentation/widgets/permission_request_card.dart';
 import 'package:codewalk/presentation/widgets/question_request_card.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets('PermissionRequestCard dispatches selected decision', (
     WidgetTester tester,
   ) async {
     String? decided;
-    final request = const ChatPermissionRequest(
+    const request = ChatPermissionRequest(
       id: 'perm_1',
       sessionId: 'ses_1',
       permission: 'edit',
@@ -42,7 +41,7 @@ void main() {
   ) async {
     List<List<String>>? submitted;
     var rejected = false;
-    final request = const ChatQuestionRequest(
+    const request = ChatQuestionRequest(
       id: 'q_1',
       sessionId: 'ses_1',
       questions: <ChatQuestionInfo>[

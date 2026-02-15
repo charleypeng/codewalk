@@ -1,7 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:codewalk/data/models/chat_message_model.dart';
 import 'package:codewalk/domain/entities/chat_message.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('ChatMessageModel', () {

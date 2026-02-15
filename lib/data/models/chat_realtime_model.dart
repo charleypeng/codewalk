@@ -11,10 +11,6 @@ Map<String, dynamic> _toStringDynamicMap(dynamic value) {
 }
 
 class ChatEventModel {
-  const ChatEventModel({required this.type, required this.properties});
-
-  final String type;
-  final Map<String, dynamic> properties;
 
   factory ChatEventModel.fromJson(Map<String, dynamic> json) {
     final payload = json['payload'];
@@ -30,6 +26,10 @@ class ChatEventModel {
       properties: _toStringDynamicMap(json['properties']),
     );
   }
+  const ChatEventModel({required this.type, required this.properties});
+
+  final String type;
+  final Map<String, dynamic> properties;
 
   ChatEvent toDomain() {
     return ChatEvent(type: type, properties: properties);
@@ -37,6 +37,15 @@ class ChatEventModel {
 }
 
 class SessionStatusModel {
+
+  factory SessionStatusModel.fromJson(Map<String, dynamic> json) {
+    return SessionStatusModel(
+      type: json['type'] as String? ?? 'idle',
+      attempt: (json['attempt'] as num?)?.toInt(),
+      message: json['message'] as String?,
+      nextEpochMs: (json['next'] as num?)?.toInt(),
+    );
+  }
   const SessionStatusModel({
     required this.type,
     this.attempt,
@@ -48,15 +57,6 @@ class SessionStatusModel {
   final int? attempt;
   final String? message;
   final int? nextEpochMs;
-
-  factory SessionStatusModel.fromJson(Map<String, dynamic> json) {
-    return SessionStatusModel(
-      type: json['type'] as String? ?? 'idle',
-      attempt: (json['attempt'] as num?)?.toInt(),
-      message: json['message'] as String?,
-      nextEpochMs: (json['next'] as num?)?.toInt(),
-    );
-  }
 
   SessionStatusInfo toDomain() {
     final mappedType = switch (type) {
@@ -75,6 +75,13 @@ class SessionStatusModel {
 }
 
 class ChatToolRequestRefModel {
+
+  factory ChatToolRequestRefModel.fromJson(Map<String, dynamic> json) {
+    return ChatToolRequestRefModel(
+      messageId: json['messageID'] as String? ?? '',
+      callId: json['callID'] as String? ?? '',
+    );
+  }
   const ChatToolRequestRefModel({
     required this.messageId,
     required this.callId,
@@ -83,36 +90,12 @@ class ChatToolRequestRefModel {
   final String messageId;
   final String callId;
 
-  factory ChatToolRequestRefModel.fromJson(Map<String, dynamic> json) {
-    return ChatToolRequestRefModel(
-      messageId: json['messageID'] as String? ?? '',
-      callId: json['callID'] as String? ?? '',
-    );
-  }
-
   ChatToolRequestRef toDomain() {
     return ChatToolRequestRef(messageId: messageId, callId: callId);
   }
 }
 
 class ChatPermissionRequestModel {
-  const ChatPermissionRequestModel({
-    required this.id,
-    required this.sessionId,
-    required this.permission,
-    required this.patterns,
-    required this.always,
-    required this.metadata,
-    this.tool,
-  });
-
-  final String id;
-  final String sessionId;
-  final String permission;
-  final List<String> patterns;
-  final List<String> always;
-  final Map<String, dynamic> metadata;
-  final ChatToolRequestRefModel? tool;
 
   factory ChatPermissionRequestModel.fromJson(Map<String, dynamic> json) {
     return ChatPermissionRequestModel(
@@ -137,6 +120,23 @@ class ChatPermissionRequestModel {
           : null,
     );
   }
+  const ChatPermissionRequestModel({
+    required this.id,
+    required this.sessionId,
+    required this.permission,
+    required this.patterns,
+    required this.always,
+    required this.metadata,
+    this.tool,
+  });
+
+  final String id;
+  final String sessionId;
+  final String permission;
+  final List<String> patterns;
+  final List<String> always;
+  final Map<String, dynamic> metadata;
+  final ChatToolRequestRefModel? tool;
 
   ChatPermissionRequest toDomain() {
     return ChatPermissionRequest(
@@ -152,6 +152,13 @@ class ChatPermissionRequestModel {
 }
 
 class ChatQuestionOptionModel {
+
+  factory ChatQuestionOptionModel.fromJson(Map<String, dynamic> json) {
+    return ChatQuestionOptionModel(
+      label: json['label'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+    );
+  }
   const ChatQuestionOptionModel({
     required this.label,
     required this.description,
@@ -160,32 +167,12 @@ class ChatQuestionOptionModel {
   final String label;
   final String description;
 
-  factory ChatQuestionOptionModel.fromJson(Map<String, dynamic> json) {
-    return ChatQuestionOptionModel(
-      label: json['label'] as String? ?? '',
-      description: json['description'] as String? ?? '',
-    );
-  }
-
   ChatQuestionOption toDomain() {
     return ChatQuestionOption(label: label, description: description);
   }
 }
 
 class ChatQuestionInfoModel {
-  const ChatQuestionInfoModel({
-    required this.question,
-    required this.header,
-    required this.options,
-    required this.multiple,
-    required this.custom,
-  });
-
-  final String question;
-  final String header;
-  final List<ChatQuestionOptionModel> options;
-  final bool multiple;
-  final bool custom;
 
   factory ChatQuestionInfoModel.fromJson(Map<String, dynamic> json) {
     return ChatQuestionInfoModel(
@@ -201,6 +188,19 @@ class ChatQuestionInfoModel {
       custom: json['custom'] as bool? ?? true,
     );
   }
+  const ChatQuestionInfoModel({
+    required this.question,
+    required this.header,
+    required this.options,
+    required this.multiple,
+    required this.custom,
+  });
+
+  final String question;
+  final String header;
+  final List<ChatQuestionOptionModel> options;
+  final bool multiple;
+  final bool custom;
 
   ChatQuestionInfo toDomain() {
     return ChatQuestionInfo(
@@ -214,17 +214,6 @@ class ChatQuestionInfoModel {
 }
 
 class ChatQuestionRequestModel {
-  const ChatQuestionRequestModel({
-    required this.id,
-    required this.sessionId,
-    required this.questions,
-    this.tool,
-  });
-
-  final String id;
-  final String sessionId;
-  final List<ChatQuestionInfoModel> questions;
-  final ChatToolRequestRefModel? tool;
 
   factory ChatQuestionRequestModel.fromJson(Map<String, dynamic> json) {
     return ChatQuestionRequestModel(
@@ -243,6 +232,17 @@ class ChatQuestionRequestModel {
           : null,
     );
   }
+  const ChatQuestionRequestModel({
+    required this.id,
+    required this.sessionId,
+    required this.questions,
+    this.tool,
+  });
+
+  final String id;
+  final String sessionId;
+  final List<ChatQuestionInfoModel> questions;
+  final ChatToolRequestRefModel? tool;
 
   ChatQuestionRequest toDomain() {
     return ChatQuestionRequest(

@@ -1,20 +1,15 @@
 import 'dart:async';
 
-import 'package:dartz/dartz.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart' hide Provider;
-
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/domain/entities/provider.dart';
 import 'package:codewalk/domain/usecases/check_connection.dart';
 import 'package:codewalk/domain/usecases/create_chat_session.dart';
 import 'package:codewalk/domain/usecases/delete_chat_session.dart';
 import 'package:codewalk/domain/usecases/fork_chat_session.dart';
+import 'package:codewalk/domain/usecases/get_agents.dart';
 import 'package:codewalk/domain/usecases/get_app_info.dart';
 import 'package:codewalk/domain/usecases/get_chat_message.dart';
 import 'package:codewalk/domain/usecases/get_chat_messages.dart';
-import 'package:codewalk/domain/usecases/get_agents.dart';
 import 'package:codewalk/domain/usecases/get_chat_sessions.dart';
 import 'package:codewalk/domain/usecases/get_providers.dart';
 import 'package:codewalk/domain/usecases/get_session_children.dart';
@@ -38,6 +33,10 @@ import 'package:codewalk/presentation/providers/chat_provider.dart';
 import 'package:codewalk/presentation/providers/project_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
+import 'package:dartz/dartz.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart' hide Provider;
 
 import '../support/fakes.dart';
 
@@ -156,7 +155,7 @@ Widget _testApp(ChatProvider chatProvider, AppProvider appProvider) {
       ),
       ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
     ],
-    child: MaterialApp(home: const AppShellPage()),
+    child: const MaterialApp(home: AppShellPage()),
   );
 }
 

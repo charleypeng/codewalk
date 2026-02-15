@@ -1,54 +1,55 @@
-import 'package:get_it/get_it.dart';
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../network/dio_client.dart';
 
-import '../../data/datasources/app_remote_datasource.dart';
+import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../data/datasources/app_local_datasource.dart';
+import '../../data/datasources/app_remote_datasource.dart';
+import '../../data/datasources/chat_remote_datasource.dart';
+import '../../data/datasources/project_remote_datasource.dart';
 import '../../data/repositories/app_repository_impl.dart';
+import '../../data/repositories/chat_repository_impl.dart';
+import '../../data/repositories/project_repository_impl.dart';
 import '../../domain/repositories/app_repository.dart';
-import '../../domain/usecases/get_app_info.dart';
-import '../../domain/usecases/check_connection.dart';
-import '../../domain/usecases/update_server_config.dart';
+import '../../domain/repositories/chat_repository.dart';
+import '../../domain/repositories/project_repository.dart';
 import '../../domain/usecases/abort_chat_session.dart';
-import '../../domain/usecases/summarize_chat_session.dart';
-import '../../domain/usecases/send_chat_message.dart';
-import '../../domain/usecases/get_chat_sessions.dart';
+import '../../domain/usecases/check_connection.dart';
 import '../../domain/usecases/create_chat_session.dart';
-import '../../domain/usecases/get_chat_messages.dart';
-import '../../domain/usecases/get_chat_message.dart';
-import '../../domain/usecases/get_agents.dart';
-import '../../domain/usecases/get_providers.dart';
 import '../../domain/usecases/delete_chat_session.dart';
 import '../../domain/usecases/fork_chat_session.dart';
+import '../../domain/usecases/get_agents.dart';
+import '../../domain/usecases/get_app_info.dart';
+import '../../domain/usecases/get_chat_message.dart';
+import '../../domain/usecases/get_chat_messages.dart';
+import '../../domain/usecases/get_chat_sessions.dart';
+import '../../domain/usecases/get_providers.dart';
 import '../../domain/usecases/get_session_children.dart';
 import '../../domain/usecases/get_session_diff.dart';
 import '../../domain/usecases/get_session_status.dart';
 import '../../domain/usecases/get_session_todo.dart';
-import '../../domain/usecases/watch_chat_events.dart';
-import '../../domain/usecases/watch_global_chat_events.dart';
 import '../../domain/usecases/list_pending_permissions.dart';
-import '../../domain/usecases/reply_permission.dart';
 import '../../domain/usecases/list_pending_questions.dart';
-import '../../domain/usecases/reply_question.dart';
 import '../../domain/usecases/reject_question.dart';
+import '../../domain/usecases/reply_permission.dart';
+import '../../domain/usecases/reply_question.dart';
+import '../../domain/usecases/send_chat_message.dart';
 import '../../domain/usecases/share_chat_session.dart';
+import '../../domain/usecases/summarize_chat_session.dart';
 import '../../domain/usecases/unshare_chat_session.dart';
 import '../../domain/usecases/update_chat_session.dart';
-import '../../data/datasources/chat_remote_datasource.dart';
-import '../../data/repositories/chat_repository_impl.dart';
-import '../../domain/repositories/chat_repository.dart';
-import '../../data/datasources/project_remote_datasource.dart';
-import '../../data/repositories/project_repository_impl.dart';
-import '../../domain/repositories/project_repository.dart';
+import '../../domain/usecases/update_server_config.dart';
+import '../../domain/usecases/watch_chat_events.dart';
+import '../../domain/usecases/watch_global_chat_events.dart';
 import '../../presentation/providers/app_provider.dart';
 import '../../presentation/providers/chat_provider.dart';
 import '../../presentation/providers/project_provider.dart';
 import '../../presentation/providers/settings_provider.dart';
-import '../../presentation/services/event_feedback_dispatcher.dart';
 import '../../presentation/services/chat_title_generator.dart';
+import '../../presentation/services/event_feedback_dispatcher.dart';
 import '../../presentation/services/notification_service.dart';
 import '../../presentation/services/sound_service.dart';
+import '../network/dio_client.dart';
 
 final sl = GetIt.instance;
 
@@ -59,7 +60,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => sharedPreferences);
 
   // Network
-  sl.registerLazySingleton(() => DioClient());
+  sl.registerLazySingleton(DioClient.new);
 
   // Data sources
   sl.registerLazySingleton<AppRemoteDataSource>(
@@ -78,9 +79,9 @@ Future<void> init() async {
     () => ProjectRemoteDataSourceImpl(dio: sl<DioClient>().dio),
   );
 
-  sl.registerLazySingleton(() => NotificationService());
-  sl.registerLazySingleton(() => SoundService());
-  sl.registerLazySingleton<ChatTitleGenerator>(() => ChatAtTitleGenerator());
+  sl.registerLazySingleton(NotificationService.new);
+  sl.registerLazySingleton(SoundService.new);
+  sl.registerLazySingleton<ChatTitleGenerator>(ChatAtTitleGenerator.new);
 
   // Repositories
   sl.registerLazySingleton<AppRepository>(

@@ -2,11 +2,6 @@ import '../../domain/entities/project.dart';
 
 /// Technical comment translated to English.
 class ProjectModel {
-  final String id;
-  final String name;
-  final String path;
-  final String createdAt;
-  final String? updatedAt;
 
   const ProjectModel({
     required this.id,
@@ -109,6 +104,22 @@ class ProjectModel {
   }
 
   /// Technical comment translated to English.
+  factory ProjectModel.fromDomain(Project project) {
+    return ProjectModel(
+      id: project.id,
+      name: project.name,
+      path: project.path,
+      createdAt: project.createdAt.toIso8601String(),
+      updatedAt: project.updatedAt?.toIso8601String(),
+    );
+  }
+  final String id;
+  final String name;
+  final String path;
+  final String createdAt;
+  final String? updatedAt;
+
+  /// Technical comment translated to English.
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -127,17 +138,6 @@ class ProjectModel {
       path: path,
       createdAt: DateTime.parse(createdAt),
       updatedAt: updatedAt != null ? DateTime.parse(updatedAt!) : null,
-    );
-  }
-
-  /// Technical comment translated to English.
-  factory ProjectModel.fromDomain(Project project) {
-    return ProjectModel(
-      id: project.id,
-      name: project.name,
-      path: project.path,
-      createdAt: project.createdAt.toIso8601String(),
-      updatedAt: project.updatedAt?.toIso8601String(),
     );
   }
 
@@ -169,7 +169,6 @@ class ProjectModel {
 
 /// Technical comment translated to English.
 class ProjectsResponseModel {
-  final List<ProjectModel> projects;
 
   const ProjectsResponseModel({required this.projects});
 
@@ -188,9 +187,10 @@ class ProjectsResponseModel {
             .toList(),
       );
     } else {
-      throw FormatException('Invalid JSON format for ProjectsResponseModel');
+      throw const FormatException('Invalid JSON format for ProjectsResponseModel');
     }
   }
+  final List<ProjectModel> projects;
 
   /// Technical comment translated to English.
   dynamic toJson() {

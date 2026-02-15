@@ -1,25 +1,26 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+
 import '../../core/errors/failures.dart';
+import '../../core/network/dio_client.dart';
 import '../../domain/entities/agent.dart';
 import '../../domain/entities/app_info.dart';
 import '../../domain/entities/provider.dart';
 import '../../domain/repositories/app_repository.dart';
-import '../datasources/app_remote_datasource.dart';
 import '../datasources/app_local_datasource.dart';
-import '../../core/network/dio_client.dart';
+import '../datasources/app_remote_datasource.dart';
 
 /// Technical comment translated to English.
 class AppRepositoryImpl implements AppRepository {
-  final AppRemoteDataSource remoteDataSource;
-  final AppLocalDataSource localDataSource;
-  final DioClient dioClient;
 
   AppRepositoryImpl({
     required this.remoteDataSource,
     required this.localDataSource,
     required this.dioClient,
   });
+  final AppRemoteDataSource remoteDataSource;
+  final AppLocalDataSource localDataSource;
+  final DioClient dioClient;
 
   @override
   Future<Either<Failure, AppInfo>> getAppInfo({String? directory}) async {

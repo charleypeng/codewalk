@@ -1,5 +1,5 @@
-import 'dart:developer' as developer;
 import 'dart:collection';
+import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
 
@@ -124,11 +124,6 @@ class AppLogger {
 enum LogLevel { debug, info, warn, error }
 
 class LogEntry {
-  final DateTime timestamp;
-  final LogLevel level;
-  final String message;
-  final String? error;
-  final String? stackTrace;
 
   const LogEntry({
     required this.timestamp,
@@ -137,4 +132,9 @@ class LogEntry {
     this.error,
     this.stackTrace,
   });
+  final DateTime timestamp;
+  final LogLevel level;
+  final String message;
+  final String? error;
+  final String? stackTrace;
 }

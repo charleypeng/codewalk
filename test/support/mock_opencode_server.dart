@@ -134,11 +134,11 @@ class MockOpenCodeServer {
       'id': id,
       'workspaceId': 'default',
       'directory': '/workspace/project',
-      if (parentId != null) 'parentID': parentId,
+      'parentID': ?parentId,
       'time': <String, dynamic>{
         'created': 1739079900000,
         'updated': 1739079900000,
-        if (archivedAt != null) 'archived': archivedAt,
+        'archived': ?archivedAt,
       },
       'title': title,
       if (shareUrl != null) 'share': <String, dynamic>{'url': shareUrl},

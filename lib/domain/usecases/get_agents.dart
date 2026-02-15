@@ -5,9 +5,9 @@ import '../repositories/app_repository.dart';
 
 /// Technical comment translated to English.
 class GetAgents {
-  final AppRepository repository;
 
   GetAgents(this.repository);
+  final AppRepository repository;
 
   Future<Either<Failure, List<Agent>>> call({String? directory}) async {
     return await repository.getAgents(directory: directory);

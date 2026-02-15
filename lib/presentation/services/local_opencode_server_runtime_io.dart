@@ -89,15 +89,11 @@ class _IoLocalOpencodeServerRuntime implements LocalOpencodeServerRuntime {
       _stdoutSubscription = process.stdout
           .transform(utf8.decoder)
           .transform(const LineSplitter())
-          .listen((line) {
-            _stdoutController.add(line);
-          });
+          .listen(_stdoutController.add);
       _stderrSubscription = process.stderr
           .transform(utf8.decoder)
           .transform(const LineSplitter())
-          .listen((line) {
-            _stderrController.add(line);
-          });
+          .listen(_stderrController.add);
 
       unawaited(
         process.exitCode.then((code) {
@@ -153,7 +149,7 @@ class _IoLocalOpencodeServerRuntime implements LocalOpencodeServerRuntime {
         final fallback = await _probeCommand('opencode');
         opencodeStatus = fallback.available
             ? fallback
-            : LocalToolStatus(
+            : const LocalToolStatus(
                 available: false,
                 note:
                     'Configured command was not found and opencode is not in PATH.',

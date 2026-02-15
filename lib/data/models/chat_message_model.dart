@@ -8,6 +8,77 @@ part 'chat_message_model.g.dart';
 /// Chat message model
 @JsonSerializable()
 class ChatMessageModel {
+
+  factory ChatMessageModel.fromJson(Map<String, dynamic> json) {
+    final model = _$ChatMessageModelFromJson(json);
+
+    // Manually handle completedTime
+    final completedTime = _completedTimeFromJson(json['time']);
+
+    // Prepare parts and synthesize text from summary if needed
+    final computedParts = List<MessagePartModel>.from(
+      model.parts,
+    );
+
+    // For UserMessage: server may provide `summary` object without `parts`
+    // We synthesize a text part so UI can display meaningful content.
+    final dynamic summary = json['summary'];
+    if (computedParts.isEmpty && summary is Map<String, dynamic>) {
+      final title = (summary['title'] as String?)?.trim();
+      final body = (summary['body'] as String?)?.trim();
+      final diffs = summary['diffs'] as List<dynamic>?;
+
+      final buffer = StringBuffer();
+      if (title != null && title.isNotEmpty) buffer.writeln(title);
+      if (body != null && body.isNotEmpty) buffer.writeln(body);
+      if (diffs != null && diffs.isNotEmpty) {
+        for (final d in diffs) {
+          if (d is Map<String, dynamic>) {
+            final file = (d['file'] as String?) ?? '';
+            final after = (d['after'] as String?) ?? '';
+            if (file.isNotEmpty) buffer.writeln('File: $file');
+            if (after.isNotEmpty) buffer.writeln(after);
+          }
+        }
+      }
+
+      final synthesizedText = buffer.toString().trim();
+      if (synthesizedText.isNotEmpty) {
+        computedParts.add(
+          MessagePartModel(
+            id: 'prt_${DateTime.now().millisecondsSinceEpoch}_summary',
+            messageId: model.id,
+            sessionId: model.sessionId,
+            type: 'text',
+            text: synthesizedText,
+          ),
+        );
+      }
+    }
+
+    // Parse summary as bool for AssistantMessage
+    final isSummary = json['summary'] is bool
+        ? json['summary'] as bool
+        : null;
+
+    return ChatMessageModel(
+      id: model.id,
+      sessionId: model.sessionId,
+      role: model.role,
+      time: model.time,
+      completedTime: completedTime,
+      parts: computedParts,
+      providerId: model.providerId,
+      modelId: model.modelId,
+      cost: model.cost,
+      tokens: model.tokens,
+      error: model.error,
+      mode: model.mode,
+      system: model.system,
+      path: model.path,
+      isSummary: isSummary,
+    );
+  }
   const ChatMessageModel({
     required this.id,
     required this.sessionId,
@@ -103,77 +174,6 @@ class ChatMessageModel {
     return null;
   }
 
-  factory ChatMessageModel.fromJson(Map<String, dynamic> json) {
-    final model = _$ChatMessageModelFromJson(json);
-
-    // Manually handle completedTime
-    final completedTime = _completedTimeFromJson(json['time']);
-
-    // Prepare parts and synthesize text from summary if needed
-    final List<MessagePartModel> computedParts = List<MessagePartModel>.from(
-      model.parts,
-    );
-
-    // For UserMessage: server may provide `summary` object without `parts`
-    // We synthesize a text part so UI can display meaningful content.
-    final dynamic summary = json['summary'];
-    if (computedParts.isEmpty && summary is Map<String, dynamic>) {
-      final title = (summary['title'] as String?)?.trim();
-      final body = (summary['body'] as String?)?.trim();
-      final diffs = summary['diffs'] as List<dynamic>?;
-
-      final buffer = StringBuffer();
-      if (title != null && title.isNotEmpty) buffer.writeln(title);
-      if (body != null && body.isNotEmpty) buffer.writeln(body);
-      if (diffs != null && diffs.isNotEmpty) {
-        for (final d in diffs) {
-          if (d is Map<String, dynamic>) {
-            final file = (d['file'] as String?) ?? '';
-            final after = (d['after'] as String?) ?? '';
-            if (file.isNotEmpty) buffer.writeln('File: $file');
-            if (after.isNotEmpty) buffer.writeln(after);
-          }
-        }
-      }
-
-      final synthesizedText = buffer.toString().trim();
-      if (synthesizedText.isNotEmpty) {
-        computedParts.add(
-          MessagePartModel(
-            id: 'prt_${DateTime.now().millisecondsSinceEpoch}_summary',
-            messageId: model.id,
-            sessionId: model.sessionId,
-            type: 'text',
-            text: synthesizedText,
-          ),
-        );
-      }
-    }
-
-    // Parse summary as bool for AssistantMessage
-    final bool? isSummary = json['summary'] is bool
-        ? json['summary'] as bool
-        : null;
-
-    return ChatMessageModel(
-      id: model.id,
-      sessionId: model.sessionId,
-      role: model.role,
-      time: model.time,
-      completedTime: completedTime,
-      parts: computedParts,
-      providerId: model.providerId,
-      modelId: model.modelId,
-      cost: model.cost,
-      tokens: model.tokens,
-      error: model.error,
-      mode: model.mode,
-      system: model.system,
-      path: model.path,
-      isSummary: isSummary,
-    );
-  }
-
   Map<String, dynamic> toJson() => _$ChatMessageModelToJson(this);
 
   /// Convert to domain entity
@@ -211,7 +211,7 @@ class ChatMessageModel {
   /// Create from domain entity
   static ChatMessageModel fromDomain(ChatMessage message) {
     final parts = message.parts
-        .map((p) => MessagePartModel.fromDomain(p))
+        .map(MessagePartModel.fromDomain)
         .toList();
 
     if (message is AssistantMessage) {
@@ -249,6 +249,34 @@ class ChatMessageModel {
 /// Message part model
 @JsonSerializable()
 class MessagePartModel {
+
+  factory MessagePartModel.fromJson(Map<String, dynamic> json) {
+    final type = (json['type'] as String?) ?? 'text';
+    final synthesizedState = _buildSyntheticState(type, json);
+    final rawState = json['state'] as Map<String, dynamic>?;
+    final mergedState = <String, dynamic>{
+      if (rawState != null) ...rawState,
+      if (synthesizedState != null) ...synthesizedState,
+    };
+
+    return MessagePartModel(
+      id: (json['id'] as String?) ?? '',
+      messageId: (json['messageID'] as String?) ?? '',
+      sessionId: (json['sessionID'] as String?) ?? '',
+      type: type,
+      text: json['text'] as String?,
+      url: json['url'] as String?,
+      mime: json['mime'] as String?,
+      filename: json['filename'] as String?,
+      source: json['source'] as Map<String, dynamic>?,
+      callId: json['callID'] as String?,
+      tool: json['tool'] as String?,
+      state: mergedState.isEmpty ? null : mergedState,
+      time: _partTimeFromJson(json['time']),
+      files: (json['files'] as List<dynamic>?)?.map((e) => '$e').toList(),
+      hash: json['hash'] as String?,
+    );
+  }
   const MessagePartModel({
     required this.id,
     required this.messageId,
@@ -302,34 +330,6 @@ class MessagePartModel {
       return DateTime.parse(value);
     }
     return null;
-  }
-
-  factory MessagePartModel.fromJson(Map<String, dynamic> json) {
-    final type = (json['type'] as String?) ?? 'text';
-    final synthesizedState = _buildSyntheticState(type, json);
-    final rawState = json['state'] as Map<String, dynamic>?;
-    final mergedState = <String, dynamic>{
-      if (rawState != null) ...rawState,
-      if (synthesizedState != null) ...synthesizedState,
-    };
-
-    return MessagePartModel(
-      id: (json['id'] as String?) ?? '',
-      messageId: (json['messageID'] as String?) ?? '',
-      sessionId: (json['sessionID'] as String?) ?? '',
-      type: type,
-      text: json['text'] as String?,
-      url: json['url'] as String?,
-      mime: json['mime'] as String?,
-      filename: json['filename'] as String?,
-      source: json['source'] as Map<String, dynamic>?,
-      callId: json['callID'] as String?,
-      tool: json['tool'] as String?,
-      state: mergedState.isEmpty ? null : mergedState,
-      time: _partTimeFromJson(json['time']),
-      files: (json['files'] as List<dynamic>?)?.map((e) => '$e').toList(),
-      hash: json['hash'] as String?,
-    );
   }
 
   Map<String, dynamic> toJson() => _$MessagePartModelToJson(this);
@@ -718,7 +718,7 @@ class MessagePartModel {
         return {
           'attempt': json['attempt'],
           'error': json['error'],
-          if (time != null) 'time': time,
+          'time': ?time,
           if (time?['created'] != null) 'created': time?['created'],
         };
       case 'compaction':
@@ -934,6 +934,17 @@ class MessagePartModel {
 
 /// Message token model
 class MessageTokensModel {
+
+  factory MessageTokensModel.fromJson(Map<String, dynamic> json) {
+    final cache = json['cache'] as Map<String, dynamic>?;
+    return MessageTokensModel(
+      input: _intFromJson(json['input']),
+      output: _intFromJson(json['output']),
+      reasoning: _intFromJson(json['reasoning']),
+      cacheRead: _intFromJson(cache?['read']),
+      cacheWrite: _intFromJson(cache?['write']),
+    );
+  }
   const MessageTokensModel({
     required this.input,
     required this.output,
@@ -957,17 +968,6 @@ class MessageTokensModel {
       if (parsed != null) return parsed;
     }
     return 0;
-  }
-
-  factory MessageTokensModel.fromJson(Map<String, dynamic> json) {
-    final cache = json['cache'] as Map<String, dynamic>?;
-    return MessageTokensModel(
-      input: _intFromJson(json['input']),
-      output: _intFromJson(json['output']),
-      reasoning: _intFromJson(json['reasoning']),
-      cacheRead: _intFromJson(cache?['read']),
-      cacheWrite: _intFromJson(cache?['write']),
-    );
   }
 
   Map<String, dynamic> toJson() => {
@@ -1000,10 +1000,6 @@ class MessageTokensModel {
 
 /// Message error model - supports both `{name, message}` and `{name, data}` formats.
 class MessageErrorModel {
-  const MessageErrorModel({required this.name, required this.message});
-
-  final String name;
-  final String message;
 
   factory MessageErrorModel.fromJson(Map<String, dynamic> json) {
     final name = json['name'] as String? ?? 'UnknownError';
@@ -1019,6 +1015,10 @@ class MessageErrorModel {
     }
     return MessageErrorModel(name: name, message: message);
   }
+  const MessageErrorModel({required this.name, required this.message});
+
+  final String name;
+  final String message;
 
   Map<String, dynamic> toJson() => {'name': name, 'message': message};
 

@@ -1,9 +1,8 @@
 import 'dart:convert';
 
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:codewalk/data/models/chat_session_model.dart';
 import 'package:codewalk/domain/entities/chat_session.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('ChatSessionModel', () {
@@ -105,10 +104,10 @@ void main() {
     });
 
     test('serializes file parts with mime and url fields', () {
-      final input = ChatInput(
+      const input = ChatInput(
         providerId: 'google',
         modelId: 'gemini-2.5-flash',
-        parts: const <ChatInputPart>[
+        parts: <ChatInputPart>[
           TextInputPart(text: 'look at this'),
           FileInputPart(
             mime: 'application/pdf',

@@ -5,9 +5,9 @@ import '../repositories/app_repository.dart';
 
 /// Technical comment translated to English.
 class GetAppInfo {
-  final AppRepository repository;
 
   GetAppInfo(this.repository);
+  final AppRepository repository;
 
   Future<Either<Failure, AppInfo>> call({String? directory}) async {
     return await repository.getAppInfo(directory: directory);

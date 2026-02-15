@@ -32,21 +32,6 @@ String _lastPathSegment(String path) {
 }
 
 class WorktreeModel {
-  const WorktreeModel({
-    required this.id,
-    required this.name,
-    required this.directory,
-    this.projectId,
-    this.active = false,
-    this.createdAt,
-  });
-
-  final String id;
-  final String name;
-  final String directory;
-  final String? projectId;
-  final bool active;
-  final DateTime? createdAt;
 
   factory WorktreeModel.fromJson(Map<String, dynamic> json) {
     final directory =
@@ -71,6 +56,21 @@ class WorktreeModel {
       createdAt: _parseDate(json['createdAt']),
     );
   }
+  const WorktreeModel({
+    required this.id,
+    required this.name,
+    required this.directory,
+    this.projectId,
+    this.active = false,
+    this.createdAt,
+  });
+
+  final String id;
+  final String name;
+  final String directory;
+  final String? projectId;
+  final bool active;
+  final DateTime? createdAt;
 
   Worktree toDomain() {
     return Worktree(

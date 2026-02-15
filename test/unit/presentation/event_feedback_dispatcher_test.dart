@@ -1,5 +1,3 @@
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/domain/entities/chat_realtime.dart';
 import 'package:codewalk/domain/entities/experience_settings.dart';
@@ -7,6 +5,7 @@ import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/event_feedback_dispatcher.dart';
 import 'package:codewalk/presentation/services/notification_service.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fakes.dart';
 

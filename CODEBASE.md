@@ -79,6 +79,7 @@ codewalk/
 ├── install.ps1        # Windows installer script
 ├── uninstall.sh       # Unix uninstaller script
 ├── uninstall.ps1      # Windows uninstaller script
+├── SECURITY.md        # Security policy and responsible disclosure
 └── Makefile           # Build automation and packaging gates
 ```
 
@@ -90,7 +91,7 @@ codewalk/
 | `.g.dart` (generated) | 4 | JSON serialization models |
 | `.dart` (tests) | 27 | Test files (unit, widget, integration, support) |
 | `.dart` (total) | 142 | Repository files excluding build artifacts |
-| `.md` (markdown) | 20 | Docs + roadmap + release artifacts |
+| `.md` (markdown) | 21 | Docs + roadmap + release artifacts + SECURITY.md |
 | `.sh` (scripts) | 2 | Unix installer/uninstaller scripts |
 | `.ps1` (scripts) | 2 | Windows PowerShell installer/uninstaller scripts |
 
@@ -338,14 +339,12 @@ Deferred/optional after parity wave:
 
 ### flutter analyze
 
-- **Total issues: 91**
+- **Total issues: ~83** (28 lint rules active)
   - Errors: 0
   - Warnings: 1 (`unnecessary_non_null_assertion`)
-  - Info: 90 (mostly `unnecessary_underscores` in test parameter naming)
-- **Top issue categories:**
-  - `unnecessary_underscores` (majority): test parameter naming conventions
-  - `unnecessary_non_null_assertion` (1): test assertion cleanup opportunity
-- **CI Budget:** 186 issues maximum (enforced via `tool/ci/check_analyze_budget.sh`)
+  - Info: ~82 (mostly `unnecessary_underscores` in test parameter naming, plus a few `unawaited_futures` and `cancel_subscriptions` false positives)
+- **Lint rules:** 28 rules in 3 categories (error prevention, code quality, consistency) beyond `flutter_lints` defaults
+- **CI Budget:** 186 issues maximum (enforced via `tool/ci/check_analyze_budget.sh` with separate error-first detection)
 
 ### flutter test
 
@@ -398,7 +397,8 @@ Deferred/optional after parity wave:
 ### Quality Gates
 
 **Static Analysis (check_analyze_budget.sh):**
-- Maximum 186 issues allowed
+- Fails immediately on any `error •` lines regardless of budget (with `::error::` GitHub Actions annotations)
+- Maximum 186 info/warning issues allowed
 - Parses `flutter analyze` output
 - Fails build if budget exceeded
 
@@ -414,7 +414,7 @@ Deferred/optional after parity wave:
 
 ### Makefile Automation
 
-213-line Makefile with 15 targets:
+Makefile with 15 targets and TTY-aware output suppression (verbose output redirected to log in non-interactive mode, shown on failure only):
 
 | Target | Description |
 |--------|-------------|
@@ -723,17 +723,18 @@ lcov_branch_coverage=0  # Disable branch coverage, focus on line coverage
 
 | File | Purpose |
 |------|---------|
-| `analysis_options.yaml` | Flutter/Dart linter configuration |
+| `analysis_options.yaml` | Flutter/Dart linter configuration (28 rules in 3 categories) |
 | `dart_test.yaml` | Test tags (requires_server, hardware) |
 | `.lcovrc` | LCOV coverage options (branch coverage disabled) |
 | `codecov.yml` | Codecov integration (35% project, 30% patch) |
 | `pubspec.yaml` | Dependency and version management |
-| `Makefile` | Build automation (15 targets, 213 lines) |
+| `Makefile` | Build automation (15 targets, TTY-aware output suppression) |
 | `.github/workflows/ci.yml` | CI/CD pipeline (5 jobs) |
 | `.github/workflows/release.yml` | GitHub Release automation (5 jobs: Linux/Windows/macOS/Android builds + release creation) |
 | `CONTRIBUTING.md` | Contribution guidelines and standards |
 | `QA.feat016.release-readiness.md` | Feature 016 QA matrix, platform smoke, and defect triage |
 | `RELEASE_NOTES.md` | Release signoff checklist and known limitations |
+| `SECURITY.md` | Security policy and responsible disclosure guidelines |
 
 ## Recent Changes Since Previous Baseline
 

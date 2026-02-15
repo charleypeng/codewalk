@@ -1,8 +1,7 @@
+import 'package:codewalk/presentation/widgets/session_title_inline_editor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:codewalk/presentation/widgets/session_title_inline_editor.dart';
 
 void main() {
   testWidgets('edits and saves title inline', (tester) async {

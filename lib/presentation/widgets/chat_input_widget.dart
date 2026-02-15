@@ -283,9 +283,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
       _historyDraftValue = null;
     }
     if (!widget.showAttachmentButton && _attachments.isNotEmpty) {
-      setState(() {
-        _attachments.clear();
-      });
+      setState(_attachments.clear);
       return;
     }
 
@@ -928,7 +926,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
 
     return Container(
       key: const ValueKey<String>('composer_root_container'),
-      decoration: BoxDecoration(color: composerBackgroundColor),
+      decoration: const BoxDecoration(color: composerBackgroundColor),
       child: SafeArea(
         top: false,
         left: false,
@@ -1310,7 +1308,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     final visibleHeight = media.size.height - media.viewInsets.bottom;
     final reservedInputSpace = _inputRowHeight + 18 + media.viewPadding.bottom;
     final availableForPopover = visibleHeight - reservedInputSpace;
-    final maxByInput = _inputRowHeight * _popoverInputHeightMultiplier;
+    const maxByInput = _inputRowHeight * _popoverInputHeightMultiplier;
     return math.max(0, math.min(maxByInput, availableForPopover));
   }
 

@@ -1,6 +1,6 @@
-import '../models/project_model.dart';
 import '../models/file_content_model.dart';
 import '../models/file_node_model.dart';
+import '../models/project_model.dart';
 import '../models/worktree_model.dart';
 
 /// Technical comment translated to English.
@@ -54,9 +54,9 @@ abstract class ProjectRemoteDataSource {
 
 /// Technical comment translated to English.
 class ProjectRemoteDataSourceImpl implements ProjectRemoteDataSource {
-  final dynamic dio;
 
   ProjectRemoteDataSourceImpl({required this.dio});
+  final dynamic dio;
 
   @override
   Future<ProjectsResponseModel> getProjects() async {
@@ -106,7 +106,7 @@ class ProjectRemoteDataSourceImpl implements ProjectRemoteDataSource {
     if (data is List) {
       return data
           .whereType<Map>()
-          .map((item) => Map<String, dynamic>.from(item))
+          .map(Map<String, dynamic>.from)
           .map(WorktreeModel.fromJson)
           .toList(growable: false);
     }
@@ -115,7 +115,7 @@ class ProjectRemoteDataSourceImpl implements ProjectRemoteDataSource {
       if (list is List) {
         return list
             .whereType<Map>()
-            .map((item) => Map<String, dynamic>.from(item))
+            .map(Map<String, dynamic>.from)
             .map(WorktreeModel.fromJson)
             .toList(growable: false);
       }
@@ -227,7 +227,7 @@ class ProjectRemoteDataSourceImpl implements ProjectRemoteDataSource {
         : normalizedPath;
     return data
         .whereType<Map>()
-        .map((item) => Map<String, dynamic>.from(item))
+        .map(Map<String, dynamic>.from)
         .map((item) => FileNodeModel.fromJson(item, parentPath: parentPath))
         .toList(growable: false);
   }

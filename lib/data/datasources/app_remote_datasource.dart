@@ -1,7 +1,7 @@
-import '../models/agent_model.dart';
-import '../models/provider_model.dart';
-import '../models/app_info_model.dart';
 import '../../core/logging/app_logger.dart';
+import '../models/agent_model.dart';
+import '../models/app_info_model.dart';
+import '../models/provider_model.dart';
 
 /// Technical comment translated to English.
 abstract class AppRemoteDataSource {
@@ -23,9 +23,9 @@ abstract class AppRemoteDataSource {
 
 /// Technical comment translated to English.
 class AppRemoteDataSourceImpl implements AppRemoteDataSource {
-  final dynamic dio;
 
   AppRemoteDataSourceImpl({required this.dio});
+  final dynamic dio;
 
   @override
   Future<AppInfoModel> getAppInfo({String? directory}) async {

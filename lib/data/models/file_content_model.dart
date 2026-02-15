@@ -3,17 +3,6 @@ import 'dart:convert';
 import '../../domain/entities/file_node.dart';
 
 class FileContentModel {
-  const FileContentModel({
-    required this.path,
-    required this.content,
-    required this.isBinary,
-    this.mimeType,
-  });
-
-  final String path;
-  final String content;
-  final bool isBinary;
-  final String? mimeType;
 
   factory FileContentModel.fromResponse(
     dynamic responseData, {
@@ -83,6 +72,17 @@ class FileContentModel {
       mimeType: mimeType,
     );
   }
+  const FileContentModel({
+    required this.path,
+    required this.content,
+    required this.isBinary,
+    this.mimeType,
+  });
+
+  final String path;
+  final String content;
+  final bool isBinary;
+  final String? mimeType;
 
   FileContent toDomain() {
     return FileContent(

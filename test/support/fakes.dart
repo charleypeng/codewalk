@@ -1,8 +1,5 @@
 import 'dart:async';
 
-import 'package:dartz/dartz.dart';
-import 'package:dio/dio.dart';
-
 import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/data/datasources/app_local_datasource.dart';
 import 'package:codewalk/domain/entities/agent.dart';
@@ -18,6 +15,8 @@ import 'package:codewalk/domain/repositories/app_repository.dart';
 import 'package:codewalk/domain/repositories/chat_repository.dart';
 import 'package:codewalk/domain/repositories/project_repository.dart';
 import 'package:codewalk/presentation/services/local_opencode_server_runtime_types.dart';
+import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
 
 class FakeLocalOpencodeServerRuntime implements LocalOpencodeServerRuntime {
   FakeLocalOpencodeServerRuntime({
@@ -1292,7 +1291,7 @@ class FakeChatRepository implements ChatRepository {
     );
     sessions.insert(0, forked);
     sessionChildrenById.putIfAbsent(parent.id, () => <ChatSession>[])
-      ..add(forked);
+      .add(forked);
     return Right(forked);
   }
 
@@ -1329,18 +1328,18 @@ class FakeChatRepository implements ChatRepository {
 }
 
 class FakeAppRepository implements AppRepository {
-  Either<Failure, AppInfo> appInfoResult = Right(
+  Either<Failure, AppInfo> appInfoResult = const Right(
     AppInfo(
       hostname: 'localhost',
       git: true,
-      path: const AppPath(
+      path: AppPath(
         config: '/tmp/config',
         data: '/tmp/data',
         root: '/tmp/root',
         cwd: '/tmp/cwd',
         state: '/tmp/state',
       ),
-      time: const AppTime(initialized: 1),
+      time: AppTime(initialized: 1),
     ),
   );
   Either<Failure, bool> checkConnectionResult = const Right(true);
@@ -1422,7 +1421,7 @@ class FakeProjectRepository implements ProjectRepository {
            ],
        _worktrees = List<Worktree>.from(worktrees ?? <Worktree>[]);
 
-  Project _currentProject;
+  final Project _currentProject;
   final List<Project> _projects;
   final List<Worktree> _worktrees;
   Failure? worktreeFailure;

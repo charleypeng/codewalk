@@ -1,9 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:codewalk/presentation/widgets/chat_input_widget.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:codewalk/presentation/widgets/chat_input_widget.dart';
 
 Widget _buildChatInputHarness({
   required ChatInputWidget child,
@@ -702,7 +701,7 @@ void main() {
     final resolved = resolveComposerBubbleColor(
       preferredColor: preferred,
       surfaceColor: surface,
-      fallbackOverlayColor: Color(0x1FFFFFFF),
+      fallbackOverlayColor: const Color(0x1FFFFFFF),
       minLuminanceDelta: 0.01,
     );
 

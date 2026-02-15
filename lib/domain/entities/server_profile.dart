@@ -1,6 +1,21 @@
 import 'package:equatable/equatable.dart';
 
 class ServerProfile extends Equatable {
+
+  factory ServerProfile.fromJson(Map<String, dynamic> json) {
+    return ServerProfile(
+      id: json['id'] as String? ?? '',
+      url: json['url'] as String? ?? '',
+      label: json['label'] as String?,
+      basicAuthEnabled: json['basicAuthEnabled'] as bool? ?? false,
+      basicAuthUsername: json['basicAuthUsername'] as String? ?? '',
+      basicAuthPassword: json['basicAuthPassword'] as String? ?? '',
+      aiGeneratedTitlesEnabled:
+          json['aiGeneratedTitlesEnabled'] as bool? ?? false,
+      createdAt: json['createdAt'] as int? ?? 0,
+      updatedAt: json['updatedAt'] as int? ?? 0,
+    );
+  }
   const ServerProfile({
     required this.id,
     required this.url,
@@ -43,21 +58,6 @@ class ServerProfile extends Equatable {
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };
-  }
-
-  factory ServerProfile.fromJson(Map<String, dynamic> json) {
-    return ServerProfile(
-      id: json['id'] as String? ?? '',
-      url: json['url'] as String? ?? '',
-      label: json['label'] as String?,
-      basicAuthEnabled: json['basicAuthEnabled'] as bool? ?? false,
-      basicAuthUsername: json['basicAuthUsername'] as String? ?? '',
-      basicAuthPassword: json['basicAuthPassword'] as String? ?? '',
-      aiGeneratedTitlesEnabled:
-          json['aiGeneratedTitlesEnabled'] as bool? ?? false,
-      createdAt: json['createdAt'] as int? ?? 0,
-      updatedAt: json['updatedAt'] as int? ?? 0,
-    );
   }
 
   ServerProfile copyWith({

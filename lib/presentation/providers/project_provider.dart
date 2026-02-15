@@ -55,7 +55,7 @@ class ProjectProvider extends ChangeNotifier {
 
   String get currentScopeId => currentDirectory ?? currentProjectId;
 
-  String get contextKey => '${_activeServerId}::$currentScopeId';
+  String get contextKey => '$_activeServerId::$currentScopeId';
 
   List<Project> get openProjects {
     final byId = <String, Project>{for (final item in _projects) item.id: item};
@@ -168,7 +168,7 @@ class ProjectProvider extends ChangeNotifier {
       return false;
     }
 
-    Project? project = _projects
+    var project = _projects
         .where((item) => item.path.trim() == normalized)
         .firstOrNull;
     if (project == null) {

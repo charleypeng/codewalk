@@ -250,9 +250,9 @@ abstract class AppLocalDataSource {
 
 /// Technical comment translated to English.
 class AppLocalDataSourceImpl implements AppLocalDataSource {
-  final SharedPreferences sharedPreferences;
 
   AppLocalDataSourceImpl({required this.sharedPreferences});
+  final SharedPreferences sharedPreferences;
 
   String _scopedKey(String base, {String? serverId, String? scopeId}) {
     final scopedServer = serverId?.trim();

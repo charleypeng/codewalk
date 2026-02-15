@@ -4,9 +4,9 @@ import '../repositories/app_repository.dart';
 
 /// Technical comment translated to English.
 class CheckConnection {
-  final AppRepository repository;
 
   CheckConnection(this.repository);
+  final AppRepository repository;
 
   Future<Either<Failure, bool>> call({String? directory}) async {
     return await repository.checkConnection(directory: directory);

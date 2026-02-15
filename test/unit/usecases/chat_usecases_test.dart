@@ -1,6 +1,3 @@
-import 'package:dartz/dartz.dart';
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/domain/entities/chat_message.dart';
 import 'package:codewalk/domain/entities/chat_session.dart';
@@ -8,6 +5,8 @@ import 'package:codewalk/domain/usecases/create_chat_session.dart';
 import 'package:codewalk/domain/usecases/delete_chat_session.dart';
 import 'package:codewalk/domain/usecases/get_chat_sessions.dart';
 import 'package:codewalk/domain/usecases/send_chat_message.dart';
+import 'package:dartz/dartz.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fakes.dart';
 
@@ -80,15 +79,15 @@ void main() {
         };
 
         final useCase = SendChatMessage(repository);
-        final input = ChatInput(
+        const input = ChatInput(
           messageId: 'msg_user_1',
           providerId: 'anthropic',
           modelId: 'claude',
-          parts: const <ChatInputPart>[TextInputPart(text: 'hello')],
+          parts: <ChatInputPart>[TextInputPart(text: 'hello')],
         );
 
         final values = await useCase(
-          SendChatMessageParams(
+          const SendChatMessageParams(
             projectId: 'default',
             sessionId: 'ses_1',
             input: input,

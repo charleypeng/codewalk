@@ -1,13 +1,13 @@
-import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
-import '../logging/app_logger.dart';
-import '../constants/api_constants.dart';
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+
+import '../constants/api_constants.dart';
+import '../logging/app_logger.dart';
+
 /// Dio HTTP client configuration
-class DioClient {
-  late final Dio _dio;
-  String? _basicAuthHeader; // cached Authorization header
+class DioClient { // cached Authorization header
 
   DioClient({String? baseUrl}) {
     _dio = Dio(
@@ -22,6 +22,8 @@ class DioClient {
 
     _setupInterceptors();
   }
+  late final Dio _dio;
+  String? _basicAuthHeader;
 
   Dio get dio => _dio;
 

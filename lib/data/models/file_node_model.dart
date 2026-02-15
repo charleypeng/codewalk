@@ -73,15 +73,6 @@ String _coercePath(
 }
 
 class FileNodeModel {
-  const FileNodeModel({
-    required this.path,
-    required this.name,
-    required this.type,
-  });
-
-  final String path;
-  final String name;
-  final FileNodeType type;
 
   factory FileNodeModel.fromJson(
     Map<String, dynamic> json, {
@@ -107,6 +98,15 @@ class FileNodeModel {
       type: parsedType == FileNodeType.unknown ? fallbackType : parsedType,
     );
   }
+  const FileNodeModel({
+    required this.path,
+    required this.name,
+    required this.type,
+  });
+
+  final String path;
+  final String name;
+  final FileNodeType type;
 
   FileNode toDomain() => FileNode(path: path, name: name, type: type);
 }

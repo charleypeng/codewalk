@@ -2,15 +2,6 @@ import '../../domain/entities/provider.dart';
 
 /// Technical comment translated to English.
 class ProvidersResponseModel {
-  const ProvidersResponseModel({
-    required this.providers,
-    required this.defaultModels,
-    this.connected = const [],
-  });
-
-  final List<ProviderModel> providers;
-  final Map<String, String> defaultModels;
-  final List<String> connected;
 
   /// Parse both old (`{providers, default}`) and new (`{all, default, connected}`) schemas.
   factory ProvidersResponseModel.fromJson(Map<String, dynamic> json) {
@@ -40,6 +31,15 @@ class ProvidersResponseModel {
       connected: connected,
     );
   }
+  const ProvidersResponseModel({
+    required this.providers,
+    required this.defaultModels,
+    this.connected = const [],
+  });
+
+  final List<ProviderModel> providers;
+  final Map<String, String> defaultModels;
+  final List<String> connected;
 
   Map<String, dynamic> toJson() => {
     'providers': providers.map((p) => p.toJson()).toList(),
@@ -58,21 +58,6 @@ class ProvidersResponseModel {
 
 /// Provider model - supports both old and new API formats.
 class ProviderModel {
-  const ProviderModel({
-    required this.id,
-    required this.name,
-    required this.env,
-    this.api,
-    this.npm,
-    required this.models,
-  });
-
-  final String id;
-  final String name;
-  final List<String> env;
-  final String? api;
-  final String? npm;
-  final Map<String, ModelModel> models;
 
   factory ProviderModel.fromJson(Map<String, dynamic> json) {
     // Parse env: may be List<String> or absent
@@ -104,6 +89,21 @@ class ProviderModel {
       models: modelsMap,
     );
   }
+  const ProviderModel({
+    required this.id,
+    required this.name,
+    required this.env,
+    this.api,
+    this.npm,
+    required this.models,
+  });
+
+  final String id;
+  final String name;
+  final List<String> env;
+  final String? api;
+  final String? npm;
+  final Map<String, ModelModel> models;
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -128,6 +128,60 @@ class ProviderModel {
 
 /// Model - supports both flat fields and nested capabilities format.
 class ModelModel {
+
+  /// Parse model from JSON, supporting both flat and capabilities-nested formats.
+  factory ModelModel.fromJson(Map<String, dynamic> json) {
+    final capabilities = json['capabilities'] as Map<String, dynamic>?;
+    final variantsJson = json['variants'] as Map<String, dynamic>?;
+    final variants = <String, ModelVariantModel>{};
+    if (variantsJson != null) {
+      for (final entry in variantsJson.entries) {
+        variants[entry.key] = ModelVariantModel.fromJson(
+          entry.key,
+          entry.value,
+        );
+      }
+    }
+
+    // Extract booleans from capabilities or flat fields
+    final attachment =
+        capabilities?['attachment'] as bool? ??
+        json['attachment'] as bool? ??
+        false;
+    final reasoning =
+        capabilities?['reasoning'] as bool? ??
+        json['reasoning'] as bool? ??
+        false;
+    final temperature =
+        capabilities?['temperature'] as bool? ??
+        json['temperature'] as bool? ??
+        false;
+    final toolCall =
+        capabilities?['toolcall'] as bool? ??
+        json['tool_call'] as bool? ??
+        false;
+    final modalities =
+        json['modalities'] as Map<String, dynamic>? ??
+        _modalitiesFromCapabilities(capabilities);
+
+    return ModelModel(
+      id: json['id'] as String,
+      name: json['name'] as String? ?? json['id'] as String,
+      releaseDate: json['release_date'] as String? ?? '',
+      attachment: attachment,
+      reasoning: reasoning,
+      temperature: temperature,
+      toolCall: toolCall,
+      cost: ModelCostModel.fromJson(json['cost'] as Map<String, dynamic>),
+      limit: ModelLimitModel.fromJson(json['limit'] as Map<String, dynamic>),
+      options: json['options'] as Map<String, dynamic>?,
+      variants: variants,
+      knowledge: json['knowledge'] as String?,
+      lastUpdated: json['last_updated'] as String?,
+      modalities: modalities,
+      openWeights: json['open_weights'] as bool?,
+    );
+  }
   const ModelModel({
     required this.id,
     required this.name,
@@ -199,60 +253,6 @@ class ModelModel {
     return result;
   }
 
-  /// Parse model from JSON, supporting both flat and capabilities-nested formats.
-  factory ModelModel.fromJson(Map<String, dynamic> json) {
-    final capabilities = json['capabilities'] as Map<String, dynamic>?;
-    final variantsJson = json['variants'] as Map<String, dynamic>?;
-    final variants = <String, ModelVariantModel>{};
-    if (variantsJson != null) {
-      for (final entry in variantsJson.entries) {
-        variants[entry.key] = ModelVariantModel.fromJson(
-          entry.key,
-          entry.value,
-        );
-      }
-    }
-
-    // Extract booleans from capabilities or flat fields
-    final attachment =
-        capabilities?['attachment'] as bool? ??
-        json['attachment'] as bool? ??
-        false;
-    final reasoning =
-        capabilities?['reasoning'] as bool? ??
-        json['reasoning'] as bool? ??
-        false;
-    final temperature =
-        capabilities?['temperature'] as bool? ??
-        json['temperature'] as bool? ??
-        false;
-    final toolCall =
-        capabilities?['toolcall'] as bool? ??
-        json['tool_call'] as bool? ??
-        false;
-    final modalities =
-        json['modalities'] as Map<String, dynamic>? ??
-        _modalitiesFromCapabilities(capabilities);
-
-    return ModelModel(
-      id: json['id'] as String,
-      name: json['name'] as String? ?? json['id'] as String,
-      releaseDate: json['release_date'] as String? ?? '',
-      attachment: attachment,
-      reasoning: reasoning,
-      temperature: temperature,
-      toolCall: toolCall,
-      cost: ModelCostModel.fromJson(json['cost'] as Map<String, dynamic>),
-      limit: ModelLimitModel.fromJson(json['limit'] as Map<String, dynamic>),
-      options: json['options'] as Map<String, dynamic>?,
-      variants: variants,
-      knowledge: json['knowledge'] as String?,
-      lastUpdated: json['last_updated'] as String?,
-      modalities: modalities,
-      openWeights: json['open_weights'] as bool?,
-    );
-  }
-
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
@@ -294,17 +294,6 @@ class ModelModel {
 
 /// Model variant metadata.
 class ModelVariantModel {
-  const ModelVariantModel({
-    required this.id,
-    required this.name,
-    this.description,
-    this.metadata = const <String, dynamic>{},
-  });
-
-  final String id;
-  final String name;
-  final String? description;
-  final Map<String, dynamic> metadata;
 
   factory ModelVariantModel.fromJson(String id, dynamic rawJson) {
     if (rawJson is String) {
@@ -324,6 +313,17 @@ class ModelVariantModel {
     }
     return ModelVariantModel(id: id, name: id);
   }
+  const ModelVariantModel({
+    required this.id,
+    required this.name,
+    this.description,
+    this.metadata = const <String, dynamic>{},
+  });
+
+  final String id;
+  final String name;
+  final String? description;
+  final Map<String, dynamic> metadata;
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{...metadata};
@@ -346,6 +346,19 @@ class ModelVariantModel {
 
 /// Model cost - supports both flat fields and nested cache format.
 class ModelCostModel {
+
+  /// Parse cost from JSON, supporting both `{cache_read, cache_write}` and `{cache: {read, write}}`.
+  factory ModelCostModel.fromJson(Map<String, dynamic> json) {
+    final cache = json['cache'] as Map<String, dynamic>?;
+    return ModelCostModel(
+      input: _doubleFromJson(json['input']),
+      output: _doubleFromJson(json['output']),
+      cacheRead: _nullableDoubleFromJson(cache?['read'] ?? json['cache_read']),
+      cacheWrite: _nullableDoubleFromJson(
+        cache?['write'] ?? json['cache_write'],
+      ),
+    );
+  }
   const ModelCostModel({
     required this.input,
     required this.output,
@@ -370,19 +383,6 @@ class ModelCostModel {
     return _doubleFromJson(value);
   }
 
-  /// Parse cost from JSON, supporting both `{cache_read, cache_write}` and `{cache: {read, write}}`.
-  factory ModelCostModel.fromJson(Map<String, dynamic> json) {
-    final cache = json['cache'] as Map<String, dynamic>?;
-    return ModelCostModel(
-      input: _doubleFromJson(json['input']),
-      output: _doubleFromJson(json['output']),
-      cacheRead: _nullableDoubleFromJson(cache?['read'] ?? json['cache_read']),
-      cacheWrite: _nullableDoubleFromJson(
-        cache?['write'] ?? json['cache_write'],
-      ),
-    );
-  }
-
   Map<String, dynamic> toJson() => {
     'input': input,
     'output': output,
@@ -402,10 +402,6 @@ class ModelCostModel {
 
 /// Model limits.
 class ModelLimitModel {
-  const ModelLimitModel({required this.context, required this.output});
-
-  final int context;
-  final int output;
 
   factory ModelLimitModel.fromJson(Map<String, dynamic> json) {
     return ModelLimitModel(
@@ -413,6 +409,10 @@ class ModelLimitModel {
       output: (json['output'] as num?)?.toInt() ?? 0,
     );
   }
+  const ModelLimitModel({required this.context, required this.output});
+
+  final int context;
+  final int output;
 
   Map<String, dynamic> toJson() => {'context': context, 'output': output};
 

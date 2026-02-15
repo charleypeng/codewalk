@@ -1,24 +1,28 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
-import '../../core/network/dio_client.dart';
+
 import '../../core/config/feature_flags.dart';
+import '../../core/errors/failures.dart';
 import '../../core/logging/app_logger.dart';
+import '../../core/network/dio_client.dart';
 import '../../data/datasources/app_local_datasource.dart';
 import '../../data/models/chat_message_model.dart';
 import '../../data/models/chat_realtime_model.dart';
 import '../../data/models/chat_session_model.dart';
+import '../../domain/entities/agent.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/chat_realtime.dart';
 import '../../domain/entities/chat_session.dart';
-import '../../domain/entities/agent.dart';
 import '../../domain/entities/provider.dart';
+import '../../domain/usecases/abort_chat_session.dart';
 import '../../domain/usecases/create_chat_session.dart';
 import '../../domain/usecases/delete_chat_session.dart';
 import '../../domain/usecases/fork_chat_session.dart';
+import '../../domain/usecases/get_agents.dart';
 import '../../domain/usecases/get_chat_message.dart';
 import '../../domain/usecases/get_chat_messages.dart';
-import '../../domain/usecases/get_agents.dart';
 import '../../domain/usecases/get_chat_sessions.dart';
 import '../../domain/usecases/get_providers.dart';
 import '../../domain/usecases/get_session_children.dart';
@@ -30,17 +34,15 @@ import '../../domain/usecases/list_pending_questions.dart';
 import '../../domain/usecases/reject_question.dart';
 import '../../domain/usecases/reply_permission.dart';
 import '../../domain/usecases/reply_question.dart';
-import '../../domain/usecases/abort_chat_session.dart';
-import '../../domain/usecases/summarize_chat_session.dart';
 import '../../domain/usecases/send_chat_message.dart';
 import '../../domain/usecases/share_chat_session.dart';
+import '../../domain/usecases/summarize_chat_session.dart';
 import '../../domain/usecases/unshare_chat_session.dart';
 import '../../domain/usecases/update_chat_session.dart';
 import '../../domain/usecases/watch_chat_events.dart';
 import '../../domain/usecases/watch_global_chat_events.dart';
-import '../../core/errors/failures.dart';
-import '../services/event_feedback_dispatcher.dart';
 import '../services/chat_title_generator.dart';
+import '../services/event_feedback_dispatcher.dart';
 import '../utils/session_title_formatter.dart';
 import 'project_provider.dart';
 
@@ -1931,7 +1933,7 @@ class ChatProvider extends ChangeNotifier {
     }
 
     final model = provider.models[override.modelId];
-    String? nextVariantId = override.variantId;
+    var nextVariantId = override.variantId;
     if (nextVariantId != null &&
         (model == null || !model.variants.containsKey(nextVariantId))) {
       nextVariantId = null;
@@ -2564,7 +2566,7 @@ class ChatProvider extends ChangeNotifier {
         final grouped = <String, List<ChatPermissionRequest>>{};
         for (final item in permissions) {
           grouped.putIfAbsent(item.sessionId, () => <ChatPermissionRequest>[])
-            ..add(item);
+            .add(item);
         }
         _pendingPermissionsBySession = grouped;
       },
@@ -2579,7 +2581,7 @@ class ChatProvider extends ChangeNotifier {
         final grouped = <String, List<ChatQuestionRequest>>{};
         for (final item in questions) {
           grouped.putIfAbsent(item.sessionId, () => <ChatQuestionRequest>[])
-            ..add(item);
+            .add(item);
         }
         _pendingQuestionsBySession = grouped;
       },
@@ -5136,10 +5138,7 @@ class ChatProvider extends ChangeNotifier {
                   }
                   _handleFailure(failure);
                 },
-                (message) {
-                  // Update or add assistant message
-                  _updateOrAddMessage(message);
-                },
+                _updateOrAddMessage,
               );
             },
             onError: (error) {
@@ -5324,8 +5323,8 @@ class ChatProvider extends ChangeNotifier {
       _markIncompleteAssistantMessagesAsCompleted();
       unawaited(loadSessionInsights(session.id, silent: true));
       unawaited(_persistLastSessionSnapshotBestEffort());
-    } else if (_errorMessage == null) {
-      _errorMessage = previousError ?? 'Failed to compact session context';
+    } else {
+      _errorMessage ??= previousError ?? 'Failed to compact session context';
     }
     notifyListeners();
     return success;

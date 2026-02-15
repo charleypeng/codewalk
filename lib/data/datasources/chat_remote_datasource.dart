@@ -2,13 +2,15 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
+
+import '../../core/errors/exceptions.dart';
+import '../../core/logging/app_logger.dart';
 import '../models/chat_message_model.dart';
 import '../models/chat_realtime_model.dart';
 import '../models/chat_session_model.dart';
 import '../models/session_lifecycle_model.dart';
-import '../../core/logging/app_logger.dart';
-import '../../core/errors/exceptions.dart';
 
 /// Chat remote data source
 abstract class ChatRemoteDataSource {
@@ -809,8 +811,8 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       }
 
       // Start SSE listener for message update events
-      bool messageCompleted = false;
-      bool eventStreamEnded = false;
+      var messageCompleted = false;
+      var eventStreamEnded = false;
       var pendingMessageFetches = 0;
       String? activeAssistantMessageId;
       var fallbackCompletionWatchStarted = false;
@@ -963,7 +965,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
             return;
           }
 
-          String? fallbackMessageId = activeAssistantMessageId;
+          var fallbackMessageId = activeAssistantMessageId;
           for (
             var attempt = 0;
             (fallbackMessageId == null || fallbackMessageId.isEmpty) &&
@@ -1504,7 +1506,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       final data = response.data as List<dynamic>? ?? const <dynamic>[];
       return data
           .whereType<Map>()
-          .map((item) => Map<String, dynamic>.from(item))
+          .map(Map<String, dynamic>.from)
           .map(ChatPermissionRequestModel.fromJson)
           .toList(growable: false);
     } on DioException catch (e) {
@@ -1575,7 +1577,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       final data = response.data as List<dynamic>? ?? const <dynamic>[];
       return data
           .whereType<Map>()
-          .map((item) => Map<String, dynamic>.from(item))
+          .map(Map<String, dynamic>.from)
           .map(ChatQuestionRequestModel.fromJson)
           .toList(growable: false);
     } on DioException catch (e) {

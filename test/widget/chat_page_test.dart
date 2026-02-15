@@ -1,14 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:dartz/dartz.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart' hide Provider;
-import 'package:simple_icons/simple_icons.dart';
-
 import 'package:codewalk/core/errors/failures.dart';
+import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/domain/entities/agent.dart';
 import 'package:codewalk/domain/entities/chat_message.dart';
 import 'package:codewalk/domain/entities/chat_realtime.dart';
@@ -16,15 +10,15 @@ import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/domain/entities/file_node.dart';
 import 'package:codewalk/domain/entities/project.dart';
 import 'package:codewalk/domain/entities/provider.dart';
+import 'package:codewalk/domain/usecases/abort_chat_session.dart';
 import 'package:codewalk/domain/usecases/check_connection.dart';
 import 'package:codewalk/domain/usecases/create_chat_session.dart';
 import 'package:codewalk/domain/usecases/delete_chat_session.dart';
 import 'package:codewalk/domain/usecases/fork_chat_session.dart';
-import 'package:codewalk/domain/usecases/abort_chat_session.dart';
+import 'package:codewalk/domain/usecases/get_agents.dart';
 import 'package:codewalk/domain/usecases/get_app_info.dart';
 import 'package:codewalk/domain/usecases/get_chat_message.dart';
 import 'package:codewalk/domain/usecases/get_chat_messages.dart';
-import 'package:codewalk/domain/usecases/get_agents.dart';
 import 'package:codewalk/domain/usecases/get_chat_sessions.dart';
 import 'package:codewalk/domain/usecases/get_providers.dart';
 import 'package:codewalk/domain/usecases/get_session_children.dart';
@@ -42,7 +36,6 @@ import 'package:codewalk/domain/usecases/unshare_chat_session.dart';
 import 'package:codewalk/domain/usecases/update_chat_session.dart';
 import 'package:codewalk/domain/usecases/watch_chat_events.dart';
 import 'package:codewalk/domain/usecases/watch_global_chat_events.dart';
-import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/presentation/pages/chat_page.dart';
 import 'package:codewalk/presentation/providers/app_provider.dart';
 import 'package:codewalk/presentation/providers/chat_provider.dart';
@@ -50,6 +43,12 @@ import 'package:codewalk/presentation/providers/project_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:codewalk/presentation/utils/session_title_formatter.dart';
+import 'package:dartz/dartz.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart' hide Provider;
+import 'package:simple_icons/simple_icons.dart';
 
 import '../support/fakes.dart';
 
@@ -153,6 +152,7 @@ void main() {
       expect(find.text('Ctrl+,'), findsOneWidget);
       expect(find.text('Ctrl+M'), findsOneWidget);
       expect(find.text('Ctrl+T'), findsOneWidget);
+      expect(find.text('Esc, Esc'), findsOneWidget);
       expect(find.text('Conversations'), findsOneWidget);
     });
 
@@ -2581,6 +2581,134 @@ void main() {
     expect(find.text('Density and timeline bubble visibility'), findsOneWidget);
   });
 
+  testWidgets('desktop shortcut focuses composer with mod+l', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_focus_shortcut',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Focus Shortcut Session',
+        ),
+      ],
+    );
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await tester.pumpAndSettle();
+
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.keyL);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.keyL);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+
+    final chatInputFieldFinder = find.descendant(
+      of: find.byKey(const ValueKey<String>('composer_input_row')),
+      matching: find.byType(TextField),
+    );
+    final input = tester.widget<TextField>(chatInputFieldFinder);
+    expect(input.focusNode?.hasFocus, isTrue);
+  });
+
+  testWidgets('desktop ESC focuses composer input when unfocused', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_escape_focus',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'ESC Focus Session',
+        ),
+      ],
+    );
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await tester.pumpAndSettle();
+
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+
+    final chatInputFieldFinder = find.descendant(
+      of: find.byKey(const ValueKey<String>('composer_input_row')),
+      matching: find.byType(TextField),
+    );
+    final input = tester.widget<TextField>(chatInputFieldFinder);
+    expect(input.focusNode?.hasFocus, isTrue);
+  });
+
+  testWidgets('double ESC closes settings page', (WidgetTester tester) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(localDataSource: localDataSource);
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.comma);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.comma);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Density and timeline bubble visibility'), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+    expect(find.text('Density and timeline bubble visibility'), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Density and timeline bubble visibility'), findsNothing);
+    expect(find.text('Conversations'), findsOneWidget);
+  });
+
   testWidgets('desktop shortcuts cycle recent model and variant', (
     WidgetTester tester,
   ) async {
@@ -3148,7 +3276,7 @@ void main() {
           id: 'msg_old_1',
           sessionId: 'ses_compaction_timeline',
           time: DateTime.fromMillisecondsSinceEpoch(1100),
-          parts: <MessagePart>[
+          parts: const <MessagePart>[
             TextPart(
               id: 'part_old_1',
               messageId: 'msg_old_1',
@@ -3162,7 +3290,7 @@ void main() {
           sessionId: 'ses_compaction_timeline',
           time: DateTime.fromMillisecondsSinceEpoch(1200),
           completedTime: DateTime.fromMillisecondsSinceEpoch(1210),
-          parts: <MessagePart>[
+          parts: const <MessagePart>[
             TextPart(
               id: 'part_old_2',
               messageId: 'msg_old_2',
@@ -3175,7 +3303,7 @@ void main() {
           id: 'msg_old_3',
           sessionId: 'ses_compaction_timeline',
           time: DateTime.fromMillisecondsSinceEpoch(1300),
-          parts: <MessagePart>[
+          parts: const <MessagePart>[
             TextPart(
               id: 'part_old_3',
               messageId: 'msg_old_3',
@@ -3189,7 +3317,7 @@ void main() {
           sessionId: 'ses_compaction_timeline',
           time: DateTime.fromMillisecondsSinceEpoch(2000),
           completedTime: DateTime.fromMillisecondsSinceEpoch(2100),
-          parts: <MessagePart>[
+          parts: const <MessagePart>[
             CompactionPart(
               id: 'part_compaction_marker',
               messageId: 'msg_compaction_boundary',
@@ -3209,7 +3337,7 @@ void main() {
           sessionId: 'ses_compaction_timeline',
           time: DateTime.fromMillisecondsSinceEpoch(2200),
           completedTime: DateTime.fromMillisecondsSinceEpoch(2210),
-          parts: <MessagePart>[
+          parts: const <MessagePart>[
             TextPart(
               id: 'part_after_compaction',
               messageId: 'msg_after_compaction',
@@ -3290,7 +3418,7 @@ void main() {
               id: 'msg_summary_old_1',
               sessionId: 'ses_compaction_summary_boundary',
               time: DateTime.fromMillisecondsSinceEpoch(1100),
-              parts: <MessagePart>[
+              parts: const <MessagePart>[
                 TextPart(
                   id: 'part_summary_old_1',
                   messageId: 'msg_summary_old_1',
@@ -3305,7 +3433,7 @@ void main() {
               time: DateTime.fromMillisecondsSinceEpoch(2000),
               completedTime: DateTime.fromMillisecondsSinceEpoch(2100),
               summary: true,
-              parts: <MessagePart>[
+              parts: const <MessagePart>[
                 TextPart(
                   id: 'part_summary_boundary_text',
                   messageId: 'msg_summary_boundary',
@@ -3319,7 +3447,7 @@ void main() {
               sessionId: 'ses_compaction_summary_boundary',
               time: DateTime.fromMillisecondsSinceEpoch(2200),
               completedTime: DateTime.fromMillisecondsSinceEpoch(2210),
-              parts: <MessagePart>[
+              parts: const <MessagePart>[
                 TextPart(
                   id: 'part_summary_after_text',
                   messageId: 'msg_summary_after',
@@ -3383,7 +3511,7 @@ void main() {
         id: 'msg_reset_old_a',
         sessionId: 'ses_compaction_reset_a',
         time: DateTime.fromMillisecondsSinceEpoch(1100),
-        parts: <MessagePart>[
+        parts: const <MessagePart>[
           TextPart(
             id: 'part_reset_old_a',
             messageId: 'msg_reset_old_a',
@@ -3397,7 +3525,7 @@ void main() {
         sessionId: 'ses_compaction_reset_a',
         time: DateTime.fromMillisecondsSinceEpoch(2100),
         completedTime: DateTime.fromMillisecondsSinceEpoch(2110),
-        parts: <MessagePart>[
+        parts: const <MessagePart>[
           CompactionPart(
             id: 'part_reset_compaction_a',
             messageId: 'msg_reset_compaction_a',
@@ -3420,7 +3548,7 @@ void main() {
         sessionId: 'ses_compaction_reset_b',
         time: DateTime.fromMillisecondsSinceEpoch(2200),
         completedTime: DateTime.fromMillisecondsSinceEpoch(2210),
-        parts: <MessagePart>[
+        parts: const <MessagePart>[
           TextPart(
             id: 'part_reset_b',
             messageId: 'msg_reset_b',
@@ -3843,7 +3971,7 @@ void main() {
           id: 'msg_remote_abort_user',
           sessionId: 'ses_remote_abort',
           time: DateTime.fromMillisecondsSinceEpoch(1100),
-          parts: <MessagePart>[
+          parts: const <MessagePart>[
             TextPart(
               id: 'part_remote_abort_user',
               messageId: 'msg_remote_abort_user',
@@ -4033,6 +4161,65 @@ void main() {
     await tester.pump();
 
     expect(find.text('Double ESC to stop'), findsNothing);
+  });
+
+  testWidgets('double ESC aborts active response with unfocused composer', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_stop_double_esc_unfocused',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Stop Double ESC Unfocused Session',
+        ),
+      ],
+    );
+    final streamController = StreamController<Either<Failure, ChatMessage>>();
+    addTearDown(() async {
+      await streamController.close();
+    });
+    repository.sendMessageHandler = (_, __, ___, ____) =>
+        streamController.stream;
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await provider.initializeProviders();
+    await tester.pumpAndSettle();
+
+    await provider.sendMessage('trigger stop with global esc');
+    await tester.pump();
+
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+
+    expect(repository.abortSessionCallCount, 0);
+    expect(find.text('Double ESC to stop'), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+
+    expect(repository.abortSessionCallCount, 1);
+    expect(repository.lastAbortSessionId, 'ses_stop_double_esc_unfocused');
   });
 
   testWidgets('shows snackbar when stop request fails', (

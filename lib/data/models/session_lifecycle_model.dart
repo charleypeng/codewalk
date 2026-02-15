@@ -1,6 +1,15 @@
 import '../../domain/entities/chat_session.dart';
 
 class SessionTodoModel {
+
+  factory SessionTodoModel.fromJson(Map<String, dynamic> json) {
+    return SessionTodoModel(
+      id: json['id'] as String? ?? '',
+      content: json['content'] as String? ?? '',
+      status: json['status'] as String? ?? 'pending',
+      priority: json['priority'] as String? ?? 'medium',
+    );
+  }
   const SessionTodoModel({
     required this.id,
     required this.content,
@@ -13,15 +22,6 @@ class SessionTodoModel {
   final String status;
   final String priority;
 
-  factory SessionTodoModel.fromJson(Map<String, dynamic> json) {
-    return SessionTodoModel(
-      id: json['id'] as String? ?? '',
-      content: json['content'] as String? ?? '',
-      status: json['status'] as String? ?? 'pending',
-      priority: json['priority'] as String? ?? 'medium',
-    );
-  }
-
   SessionTodo toDomain() {
     return SessionTodo(
       id: id,
@@ -33,6 +33,17 @@ class SessionTodoModel {
 }
 
 class SessionDiffModel {
+
+  factory SessionDiffModel.fromJson(Map<String, dynamic> json) {
+    return SessionDiffModel(
+      file: json['file'] as String? ?? '',
+      before: json['before'] as String? ?? '',
+      after: json['after'] as String? ?? '',
+      additions: (json['additions'] as num?)?.toInt() ?? 0,
+      deletions: (json['deletions'] as num?)?.toInt() ?? 0,
+      status: json['status'] as String?,
+    );
+  }
   const SessionDiffModel({
     required this.file,
     required this.before,
@@ -48,17 +59,6 @@ class SessionDiffModel {
   final int additions;
   final int deletions;
   final String? status;
-
-  factory SessionDiffModel.fromJson(Map<String, dynamic> json) {
-    return SessionDiffModel(
-      file: json['file'] as String? ?? '',
-      before: json['before'] as String? ?? '',
-      after: json['after'] as String? ?? '',
-      additions: (json['additions'] as num?)?.toInt() ?? 0,
-      deletions: (json['deletions'] as num?)?.toInt() ?? 0,
-      status: json['status'] as String?,
-    );
-  }
 
   SessionDiff toDomain() {
     return SessionDiff(

@@ -1,10 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:dartz/dartz.dart';
-import 'package:dio/dio.dart';
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/data/models/chat_message_model.dart';
@@ -15,13 +11,13 @@ import 'package:codewalk/domain/entities/chat_realtime.dart';
 import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/domain/entities/project.dart';
 import 'package:codewalk/domain/entities/provider.dart';
+import 'package:codewalk/domain/usecases/abort_chat_session.dart';
 import 'package:codewalk/domain/usecases/create_chat_session.dart';
 import 'package:codewalk/domain/usecases/delete_chat_session.dart';
 import 'package:codewalk/domain/usecases/fork_chat_session.dart';
-import 'package:codewalk/domain/usecases/abort_chat_session.dart';
+import 'package:codewalk/domain/usecases/get_agents.dart';
 import 'package:codewalk/domain/usecases/get_chat_message.dart';
 import 'package:codewalk/domain/usecases/get_chat_messages.dart';
-import 'package:codewalk/domain/usecases/get_agents.dart';
 import 'package:codewalk/domain/usecases/get_chat_sessions.dart';
 import 'package:codewalk/domain/usecases/get_providers.dart';
 import 'package:codewalk/domain/usecases/get_session_children.dart';
@@ -42,6 +38,9 @@ import 'package:codewalk/domain/usecases/watch_global_chat_events.dart';
 import 'package:codewalk/presentation/providers/chat_provider.dart';
 import 'package:codewalk/presentation/providers/project_provider.dart';
 import 'package:codewalk/presentation/services/chat_title_generator.dart';
+import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fakes.dart';
 
@@ -3455,8 +3454,8 @@ void main() {
           ChatEvent(
             type: 'session.updated',
             properties: <String, dynamic>{
-              if (activeDirectory != null) 'directory': activeDirectory,
-              'info': <String, dynamic>{
+              'directory': ?activeDirectory,
+              'info': const <String, dynamic>{
                 'id': 'ses_1',
                 'workspaceId': 'default',
                 'title': 'Session 1 renamed',
@@ -3508,7 +3507,7 @@ void main() {
           ChatEvent(
             type: 'session.updated',
             properties: <String, dynamic>{
-              if (activeDirectory != null) 'directory': activeDirectory,
+              'directory': ?activeDirectory,
               'info': <String, dynamic>{
                 'id': session.id,
                 'workspaceId': session.workspaceId,

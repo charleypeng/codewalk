@@ -46,7 +46,7 @@ List<DiffLine> parseDiffLines(String text) {
 /// Checks first 20 lines for diff markers
 bool isDiffFormat(String text) {
   final lines = text.split('\n');
-  int markerCount = 0;
+  var markerCount = 0;
 
   for (final line in lines.take(20)) {
     if (line.startsWith('diff --git') ||

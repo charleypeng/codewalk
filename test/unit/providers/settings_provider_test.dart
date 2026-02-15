@@ -1,11 +1,10 @@
 import 'dart:convert';
 
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fakes.dart';
 

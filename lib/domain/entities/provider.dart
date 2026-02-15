@@ -2,12 +2,6 @@ import 'package:equatable/equatable.dart';
 
 /// Technical comment translated to English.
 class Provider extends Equatable {
-  final String id;
-  final String name;
-  final List<String> env;
-  final String? api;
-  final String? npm;
-  final Map<String, Model> models;
 
   const Provider({
     required this.id,
@@ -17,6 +11,12 @@ class Provider extends Equatable {
     this.npm,
     required this.models,
   });
+  final String id;
+  final String name;
+  final List<String> env;
+  final String? api;
+  final String? npm;
+  final Map<String, Model> models;
 
   @override
   List<Object?> get props => [id, name, env, api, npm, models];
@@ -24,21 +24,6 @@ class Provider extends Equatable {
 
 /// Technical comment translated to English.
 class Model extends Equatable {
-  final String id;
-  final String name;
-  final String releaseDate;
-  final bool attachment;
-  final bool reasoning;
-  final bool temperature;
-  final bool toolCall;
-  final ModelCost cost;
-  final ModelLimit limit;
-  final Map<String, dynamic> options;
-  final Map<String, ModelVariant> variants;
-  final String? knowledge;
-  final String? lastUpdated;
-  final Map<String, dynamic>? modalities;
-  final bool? openWeights;
 
   const Model({
     required this.id,
@@ -57,6 +42,21 @@ class Model extends Equatable {
     this.modalities,
     this.openWeights,
   });
+  final String id;
+  final String name;
+  final String releaseDate;
+  final bool attachment;
+  final bool reasoning;
+  final bool temperature;
+  final bool toolCall;
+  final ModelCost cost;
+  final ModelLimit limit;
+  final Map<String, dynamic> options;
+  final Map<String, ModelVariant> variants;
+  final String? knowledge;
+  final String? lastUpdated;
+  final Map<String, dynamic>? modalities;
+  final bool? openWeights;
 
   @override
   List<Object?> get props => [
@@ -98,10 +98,6 @@ class ModelVariant extends Equatable {
 
 /// Technical comment translated to English.
 class ModelCost extends Equatable {
-  final double input;
-  final double output;
-  final double? cacheRead;
-  final double? cacheWrite;
 
   const ModelCost({
     required this.input,
@@ -109,6 +105,10 @@ class ModelCost extends Equatable {
     this.cacheRead,
     this.cacheWrite,
   });
+  final double input;
+  final double output;
+  final double? cacheRead;
+  final double? cacheWrite;
 
   @override
   List<Object?> get props => [input, output, cacheRead, cacheWrite];
@@ -116,10 +116,10 @@ class ModelCost extends Equatable {
 
 /// Technical comment translated to English.
 class ModelLimit extends Equatable {
-  final int context;
-  final int output;
 
   const ModelLimit({required this.context, required this.output});
+  final int context;
+  final int output;
 
   @override
   List<Object> get props => [context, output];
@@ -127,15 +127,15 @@ class ModelLimit extends Equatable {
 
 /// Technical comment translated to English.
 class ProvidersResponse extends Equatable {
-  final List<Provider> providers;
-  final Map<String, String> defaultModels;
-  final List<String> connected;
 
   const ProvidersResponse({
     required this.providers,
     required this.defaultModels,
     this.connected = const [],
   });
+  final List<Provider> providers;
+  final Map<String, String> defaultModels;
+  final List<String> connected;
 
   @override
   List<Object> get props => [providers, defaultModels, connected];

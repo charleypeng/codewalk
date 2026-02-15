@@ -5,13 +5,6 @@ part 'app_info_model.g.dart';
 
 @JsonSerializable(explicitToJson: true)
 class AppInfoModel extends AppInfo {
-  @override
-  @JsonKey(name: 'path')
-  final AppPathModel path;
-
-  @override
-  @JsonKey(name: 'time')
-  final AppTimeModel? time;
 
   const AppInfoModel({
     required super.hostname,
@@ -22,6 +15,13 @@ class AppInfoModel extends AppInfo {
 
   factory AppInfoModel.fromJson(Map<String, dynamic> json) =>
       _$AppInfoModelFromJson(json);
+  @override
+  @JsonKey(name: 'path')
+  final AppPathModel path;
+
+  @override
+  @JsonKey(name: 'time')
+  final AppTimeModel? time;
 
   Map<String, dynamic> toJson() => _$AppInfoModelToJson(this);
 

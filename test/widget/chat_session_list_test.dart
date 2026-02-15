@@ -1,8 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/presentation/widgets/chat_session_list.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   ChatSession session({bool shared = false, DateTime? archivedAt}) {

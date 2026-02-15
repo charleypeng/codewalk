@@ -6,33 +6,6 @@ part 'chat_session_model.g.dart';
 /// Technical comment translated to English.
 @JsonSerializable()
 class ChatSessionModel {
-  const ChatSessionModel({
-    required this.id,
-    required this.time,
-    this.workspaceId,
-    this.title,
-    this.parentId,
-    this.directory,
-    this.version,
-    this.shared = false,
-    this.summary,
-    this.path,
-    this.share,
-  });
-
-  final String id;
-  final String? workspaceId;
-  final SessionTimeModel time;
-  final String? title;
-  @JsonKey(name: 'parentID')
-  final String? parentId;
-  final String? directory;
-  final String? version;
-  final bool shared;
-  @JsonKey(fromJson: _summaryFromJson)
-  final String? summary;
-  final SessionPathModel? path;
-  final SessionShareModel? share;
 
   factory ChatSessionModel.fromJson(Map<String, dynamic> json) {
     final rawShare = json['share'];
@@ -76,6 +49,33 @@ class ChatSessionModel {
       share: share,
     );
   }
+  const ChatSessionModel({
+    required this.id,
+    required this.time,
+    this.workspaceId,
+    this.title,
+    this.parentId,
+    this.directory,
+    this.version,
+    this.shared = false,
+    this.summary,
+    this.path,
+    this.share,
+  });
+
+  final String id;
+  final String? workspaceId;
+  final SessionTimeModel time;
+  final String? title;
+  @JsonKey(name: 'parentID')
+  final String? parentId;
+  final String? directory;
+  final String? version;
+  final bool shared;
+  @JsonKey(fromJson: _summaryFromJson)
+  final String? summary;
+  final SessionPathModel? path;
+  final SessionShareModel? share;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{'id': id, 'time': time.toJson()};
@@ -168,6 +168,14 @@ class ChatSessionModel {
 /// Technical comment translated to English.
 @JsonSerializable()
 class SessionTimeModel {
+
+  factory SessionTimeModel.fromJson(Map<String, dynamic> json) {
+    return SessionTimeModel(
+      created: (json['created'] as num?)?.toInt() ?? 0,
+      updated: (json['updated'] as num?)?.toInt() ?? 0,
+      archived: (json['archived'] as num?)?.toInt(),
+    );
+  }
   const SessionTimeModel({
     required this.created,
     required this.updated,
@@ -177,14 +185,6 @@ class SessionTimeModel {
   final int created;
   final int updated;
   final int? archived;
-
-  factory SessionTimeModel.fromJson(Map<String, dynamic> json) {
-    return SessionTimeModel(
-      created: (json['created'] as num?)?.toInt() ?? 0,
-      updated: (json['updated'] as num?)?.toInt() ?? 0,
-      archived: (json['archived'] as num?)?.toInt(),
-    );
-  }
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{'created': created, 'updated': updated};
@@ -208,12 +208,12 @@ class SessionTimeModel {
 /// Technical comment translated to English.
 @JsonSerializable()
 class SessionShareModel {
-  const SessionShareModel({required this.url});
-
-  final String url;
 
   factory SessionShareModel.fromJson(Map<String, dynamic> json) =>
       _$SessionShareModelFromJson(json);
+  const SessionShareModel({required this.url});
+
+  final String url;
 
   Map<String, dynamic> toJson() => _$SessionShareModelToJson(this);
 }
@@ -221,13 +221,13 @@ class SessionShareModel {
 /// Technical comment translated to English.
 @JsonSerializable()
 class SessionPathModel {
+
+  factory SessionPathModel.fromJson(Map<String, dynamic> json) =>
+      _$SessionPathModelFromJson(json);
   const SessionPathModel({required this.root, required this.workspace});
 
   final String root;
   final String workspace;
-
-  factory SessionPathModel.fromJson(Map<String, dynamic> json) =>
-      _$SessionPathModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$SessionPathModelToJson(this);
 
@@ -243,28 +243,6 @@ class SessionPathModel {
 /// Technical comment translated to English.
 @JsonSerializable()
 class ChatInputModel {
-  const ChatInputModel({
-    this.messageId,
-    required this.parts,
-    required this.providerId,
-    required this.modelId,
-    this.variant,
-    this.mode,
-    this.system,
-    this.tools,
-  });
-
-  @JsonKey(name: 'messageID')
-  final String? messageId;
-  @JsonKey(name: 'providerID')
-  final String providerId;
-  @JsonKey(name: 'modelID')
-  final String modelId;
-  final String? variant;
-  final String? mode;
-  final String? system;
-  final Map<String, bool>? tools;
-  final List<ChatInputPartModel> parts;
 
   /// Supports both legacy flat (`providerID`/`modelID` + `mode`) and
   /// current nested (`model` + `agent`) request schemas.
@@ -291,6 +269,28 @@ class ChatInputModel {
           .toList(),
     );
   }
+  const ChatInputModel({
+    this.messageId,
+    required this.parts,
+    required this.providerId,
+    required this.modelId,
+    this.variant,
+    this.mode,
+    this.system,
+    this.tools,
+  });
+
+  @JsonKey(name: 'messageID')
+  final String? messageId;
+  @JsonKey(name: 'providerID')
+  final String providerId;
+  @JsonKey(name: 'modelID')
+  final String modelId;
+  final String? variant;
+  final String? mode;
+  final String? system;
+  final Map<String, bool>? tools;
+  final List<ChatInputPartModel> parts;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{
@@ -326,7 +326,7 @@ class ChatInputModel {
       mode: input.mode,
       system: input.system,
       tools: input.tools,
-      parts: input.parts.map((p) => ChatInputPartModel.fromDomain(p)).toList(),
+      parts: input.parts.map(ChatInputPartModel.fromDomain).toList(),
     );
   }
 }
@@ -334,6 +334,19 @@ class ChatInputModel {
 /// Technical comment translated to English.
 @JsonSerializable()
 class ChatInputPartModel {
+
+  factory ChatInputPartModel.fromJson(Map<String, dynamic> json) {
+    return ChatInputPartModel(
+      type: json['type'] as String,
+      text: json['text'] as String?,
+      mime: json['mime'] as String?,
+      url: json['url'] as String?,
+      source: json['source'] as Map<String, dynamic>?,
+      filename: json['filename'] as String?,
+      name: json['name'] as String?,
+      id: json['id'] as String?,
+    );
+  }
   const ChatInputPartModel({
     required this.type,
     this.text,
@@ -353,19 +366,6 @@ class ChatInputPartModel {
   final String? filename;
   final String? name;
   final String? id;
-
-  factory ChatInputPartModel.fromJson(Map<String, dynamic> json) {
-    return ChatInputPartModel(
-      type: json['type'] as String,
-      text: json['text'] as String?,
-      mime: json['mime'] as String?,
-      url: json['url'] as String?,
-      source: json['source'] as Map<String, dynamic>?,
-      filename: json['filename'] as String?,
-      name: json['name'] as String?,
-      id: json['id'] as String?,
-    );
-  }
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{'type': type};
@@ -430,15 +430,15 @@ class ChatInputPartModel {
 /// Technical comment translated to English.
 @JsonSerializable()
 class SessionCreateInputModel {
+
+  factory SessionCreateInputModel.fromJson(Map<String, dynamic> json) =>
+      _$SessionCreateInputModelFromJson(json);
   const SessionCreateInputModel({this.parentId, this.title});
 
   @JsonKey(name: 'parentID', includeIfNull: false)
   final String? parentId;
   @JsonKey(includeIfNull: false)
   final String? title;
-
-  factory SessionCreateInputModel.fromJson(Map<String, dynamic> json) =>
-      _$SessionCreateInputModelFromJson(json);
 
   // Technical comment translated to English.
   Map<String, dynamic> toJson() {
@@ -463,13 +463,13 @@ class SessionCreateInputModel {
 /// Technical comment translated to English.
 @JsonSerializable()
 class SessionUpdateInputModel {
+
+  factory SessionUpdateInputModel.fromJson(Map<String, dynamic> json) =>
+      _$SessionUpdateInputModelFromJson(json);
   const SessionUpdateInputModel({this.title, this.archivedAtEpochMs});
 
   final String? title;
   final int? archivedAtEpochMs;
-
-  factory SessionUpdateInputModel.fromJson(Map<String, dynamic> json) =>
-      _$SessionUpdateInputModelFromJson(json);
 
   // Technical comment translated to English.
   Map<String, dynamic> toJson() {

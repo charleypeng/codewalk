@@ -5,30 +5,30 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart' hide Provider;
 import 'package:simple_icons/simple_icons.dart';
+
 import '../../core/config/feature_flags.dart';
+import '../../core/di/injection_container.dart' as di;
 import '../../core/logging/app_logger.dart';
 import '../../core/network/dio_client.dart';
-import '../../core/di/injection_container.dart' as di;
+import '../../domain/entities/agent.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/chat_realtime.dart';
 import '../../domain/entities/chat_session.dart';
-import '../../domain/entities/agent.dart';
+import '../../domain/entities/experience_settings.dart';
 import '../../domain/entities/file_node.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/entities/provider.dart';
-import '../../domain/entities/experience_settings.dart';
 import '../providers/app_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/project_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/notification_service.dart';
-import '../utils/session_title_formatter.dart';
 import '../utils/file_explorer_logic.dart';
 import '../utils/reasoning_status_parser.dart';
+import '../utils/session_title_formatter.dart';
 import '../utils/shortcut_binding_codec.dart';
-
-import '../widgets/chat_message_widget.dart';
 import '../widgets/chat_input_widget.dart';
+import '../widgets/chat_message_widget.dart';
 import '../widgets/chat_session_list.dart';
 import '../widgets/permission_request_card.dart';
 import '../widgets/question_request_card.dart';
@@ -107,9 +107,8 @@ class _SessionContextUsageSnapshot {
 
 /// Chat page
 class ChatPage extends StatefulWidget {
-  final String? projectId;
-
   const ChatPage({super.key, this.projectId});
+  final String? projectId;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -138,6 +137,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   static const Duration _composerStatusShowDelay = Duration(seconds: 2);
   static const Duration _composerStatusHideDelay = Duration(seconds: 1);
   static const Duration _composerStopHintDuration = Duration(seconds: 1);
+  static const Duration _doubleEscapeStopThreshold = Duration(
+    milliseconds: 500,
+  );
   static const double _composerStatusReservedHeight = 26;
 
   final ScrollController _scrollController = ScrollController();
@@ -174,6 +176,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   Timer? _composerStatusShowTimer;
   Timer? _composerStatusHideTimer;
   Timer? _composerStopHintTimer;
+  DateTime? _lastGlobalEscapeAt;
   _ComposerStatusPresentation? _visibleComposerStatus;
   _ComposerStatusPresentation? _priorityComposerStatus;
   _ComposerStatusPresentation? _pendingComposerStatus;
@@ -1103,6 +1106,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       if (!activator.accepts(event, HardwareKeyboard.instance)) {
         continue;
       }
+      if (action == ShortcutAction.escape && _inputFocusNode.hasFocus) {
+        // Keep composer-level escape behavior (popover close, shell exit,
+        // focused double-Esc stop) when the input already owns focus.
+        return false;
+      }
       _invokeShortcutAction(action);
       return true;
     }
@@ -1151,9 +1159,43 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   void _handleEscape() {
     final scaffoldState = Scaffold.maybeOf(context);
     if (scaffoldState?.isDrawerOpen ?? false) {
+      _lastGlobalEscapeAt = null;
       Navigator.of(context).pop();
       return;
     }
+
+    final chatProvider = _chatProvider ?? context.read<ChatProvider>();
+    if (chatProvider.canAbortActiveResponse) {
+      final now = DateTime.now();
+      final shouldStop =
+          _lastGlobalEscapeAt != null &&
+          now.difference(_lastGlobalEscapeAt!) <= _doubleEscapeStopThreshold;
+      _lastGlobalEscapeAt = now;
+      _showComposerStopHint();
+      if (shouldStop) {
+        _lastGlobalEscapeAt = null;
+        unawaited(_requestStopActiveResponse(chatProvider));
+      }
+      return;
+    }
+
+    _lastGlobalEscapeAt = null;
+    _focusInput();
+  }
+
+  Future<void> _requestStopActiveResponse(ChatProvider chatProvider) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final stopped = await chatProvider.abortActiveResponse();
+    if (stopped || !mounted) {
+      return;
+    }
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          chatProvider.errorMessage ?? 'Failed to stop current response',
+        ),
+      ),
+    );
   }
 
   bool _supportsInputModality(Model? model, String modality) {
@@ -1270,7 +1312,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             ? _largeDesktopSessionPaneWidth
             : _desktopSessionPaneWidth;
         final mainContentWidth = isLargeDesktop ? 960.0 : double.infinity;
-        final refreshlessEnabled = FeatureFlags.refreshlessRealtime;
+        const refreshlessEnabled = FeatureFlags.refreshlessRealtime;
         final shortcutMap = <ShortcutActivator, Intent>{};
         void addShortcut(ShortcutAction action, Intent intent) {
           final binding = settingsProvider.bindingFor(action);
@@ -1508,7 +1550,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     required bool isMobile,
     required SettingsProvider settingsProvider,
   }) {
-    final refreshlessEnabled = FeatureFlags.refreshlessRealtime;
+    const refreshlessEnabled = FeatureFlags.refreshlessRealtime;
     return AppBar(
       toolbarHeight: _toolbarHeightForDensity(
         isMobile: isMobile,
@@ -1529,7 +1571,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                       chatProvider: chatProvider,
                       appProvider: appProvider,
                     );
-                    final menuIcon = const Icon(Icons.menu);
+                    const menuIcon = Icon(Icons.menu);
                     final alertIcon = SizedBox(
                       width: 24,
                       height: 24,
@@ -4987,10 +5029,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         action: ShortcutAction.cycleAgentBackward,
         description: 'Previous agent',
       ),
-      (action: ShortcutAction.escape, description: 'Close drawer when open'),
+      (
+        action: ShortcutAction.escape,
+        description: 'Focus input (or close drawer when open)',
+      ),
     ];
 
-    return entries
+    final hints = entries
         .map(
           (entry) => (
             shortcut: ShortcutBindingCodec.formatForDisplay(
@@ -4999,7 +5044,16 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             description: entry.description,
           ),
         )
-        .toList(growable: false);
+        .toList();
+
+    final escapeShortcut = ShortcutBindingCodec.formatForDisplay(
+      settingsProvider.bindingFor(ShortcutAction.escape),
+    );
+    hints.add((
+      shortcut: '$escapeShortcut, $escapeShortcut',
+      description: 'Stop active response (while responding)',
+    ));
+    return hints;
   }
 
   Widget _buildShortcutHint(String shortcut, String description) {
@@ -5135,19 +5189,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                       _scrollToBottom(force: true);
                     },
                     onStopRequested: () async {
-                      final messenger = ScaffoldMessenger.of(context);
-                      final stopped = await chatProvider.abortActiveResponse();
-                      if (stopped || !context.mounted) {
-                        return;
-                      }
-                      messenger.showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            chatProvider.errorMessage ??
-                                'Failed to stop current response',
-                          ),
-                        ),
-                      );
+                      await _requestStopActiveResponse(chatProvider);
                     },
                     onStopHintRequested: _showComposerStopHint,
                     onMentionQuery: _queryMentionSuggestions,
@@ -5736,7 +5778,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   String _agentKey(String name) {
-    return name.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+    return name.trim().toLowerCase().replaceAll(RegExp('[^a-z0-9]+'), '_');
   }
 
   Future<void> _openAgentQuickSelector(
@@ -6705,11 +6747,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
 
     if (entries.isEmpty) {
-      entries.addAll(
-        messages.map<_TimelineEntry>(
-          (message) => _TimelineMessageEntry(message),
-        ),
-      );
+      entries.addAll(messages.map<_TimelineEntry>(_TimelineMessageEntry.new));
     }
 
     if (showRetryIndicator) {

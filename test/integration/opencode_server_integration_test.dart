@@ -1,6 +1,3 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:dio/dio.dart';
-
 import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/data/datasources/app_remote_datasource.dart';
@@ -9,16 +6,16 @@ import 'package:codewalk/data/datasources/project_remote_datasource.dart';
 import 'package:codewalk/data/models/chat_session_model.dart';
 import 'package:codewalk/data/repositories/app_repository_impl.dart';
 import 'package:codewalk/data/repositories/chat_repository_impl.dart';
-import 'package:codewalk/domain/entities/project.dart';
 import 'package:codewalk/domain/entities/chat_session.dart';
+import 'package:codewalk/domain/entities/project.dart';
 import 'package:codewalk/domain/usecases/check_connection.dart';
 import 'package:codewalk/domain/usecases/create_chat_session.dart';
 import 'package:codewalk/domain/usecases/delete_chat_session.dart';
 import 'package:codewalk/domain/usecases/fork_chat_session.dart';
+import 'package:codewalk/domain/usecases/get_agents.dart';
 import 'package:codewalk/domain/usecases/get_app_info.dart';
 import 'package:codewalk/domain/usecases/get_chat_message.dart';
 import 'package:codewalk/domain/usecases/get_chat_messages.dart';
-import 'package:codewalk/domain/usecases/get_agents.dart';
 import 'package:codewalk/domain/usecases/get_chat_sessions.dart';
 import 'package:codewalk/domain/usecases/get_providers.dart';
 import 'package:codewalk/domain/usecases/get_session_children.dart';
@@ -39,6 +36,8 @@ import 'package:codewalk/domain/usecases/watch_global_chat_events.dart';
 import 'package:codewalk/presentation/providers/app_provider.dart';
 import 'package:codewalk/presentation/providers/chat_provider.dart';
 import 'package:codewalk/presentation/providers/project_provider.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 import '../support/fakes.dart';
 import '../support/mock_opencode_server.dart';
@@ -539,7 +538,7 @@ void main() {
           initialSessionTitle: 'Second Server Session',
         );
         await serverB.start();
-        addTearDown(() => serverB.close());
+        addTearDown(serverB.close);
 
         final localDataSource = InMemoryAppLocalDataSource();
         final dioClient = DioClient();

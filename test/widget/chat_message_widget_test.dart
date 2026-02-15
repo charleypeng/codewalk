@@ -1,8 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:codewalk/domain/entities/chat_message.dart';
 import 'package:codewalk/presentation/widgets/chat_message_widget.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets('hides step blocks from assistant message body', (
@@ -358,7 +357,7 @@ void main() {
       findsOneWidget,
     );
 
-    Text outputText = tester.widget<Text>(
+    var outputText = tester.widget<Text>(
       find.byKey(const ValueKey<String>('tool_content_text')),
     );
     expect(outputText.maxLines, 2);
@@ -427,7 +426,7 @@ void main() {
       findsOneWidget,
     );
 
-    Text outputText = tester.widget<Text>(
+    var outputText = tester.widget<Text>(
       find.byKey(const ValueKey<String>('tool_content_text')),
     );
     expect(outputText.maxLines, 2);

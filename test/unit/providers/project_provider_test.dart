@@ -1,12 +1,11 @@
 import 'dart:convert';
 
-import 'package:flutter_test/flutter_test.dart';
-
 import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/core/logging/app_logger.dart';
 import 'package:codewalk/domain/entities/project.dart';
 import 'package:codewalk/domain/entities/worktree.dart';
 import 'package:codewalk/presentation/providers/project_provider.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fakes.dart';
 
@@ -56,9 +55,7 @@ void main() {
       );
     });
 
-    tearDown(() {
-      AppLogger.clearEntries();
-    });
+    tearDown(AppLogger.clearEntries);
 
     test('initializeProject restores scoped current project id', () async {
       await localDataSource.saveCurrentProjectId(

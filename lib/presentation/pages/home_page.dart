@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import '../../core/constants/app_constants.dart';
+import '../../core/di/injection_container.dart';
 import '../providers/app_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/project_provider.dart';
-import 'settings_page.dart';
 import 'chat_page.dart';
-import '../../core/constants/app_constants.dart';
-import '../../core/di/injection_container.dart';
+import 'settings_page.dart';
 
 /// Home page
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();

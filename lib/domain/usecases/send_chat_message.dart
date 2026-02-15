@@ -1,8 +1,9 @@
 import 'package:dartz/dartz.dart';
+
+import '../../core/errors/failures.dart';
 import '../entities/chat_message.dart';
 import '../entities/chat_session.dart';
 import '../repositories/chat_repository.dart';
-import '../../core/errors/failures.dart';
 
 /// Technical comment translated to English.
 class SendChatMessage {

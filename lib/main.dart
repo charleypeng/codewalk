@@ -1,16 +1,18 @@
+import 'dart:async';
+
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:async';
-import 'package:dynamic_color/dynamic_color.dart';
 import 'package:provider/provider.dart';
-import 'core/di/injection_container.dart' as di;
-import 'presentation/theme/app_theme.dart';
-import 'presentation/providers/app_provider.dart';
-import 'presentation/providers/project_provider.dart';
-import 'presentation/providers/chat_provider.dart';
-import 'presentation/providers/settings_provider.dart';
-import 'presentation/pages/app_shell_page.dart';
+
 import 'core/constants/app_constants.dart';
+import 'core/di/injection_container.dart' as di;
+import 'presentation/pages/app_shell_page.dart';
+import 'presentation/providers/app_provider.dart';
+import 'presentation/providers/chat_provider.dart';
+import 'presentation/providers/project_provider.dart';
+import 'presentation/providers/settings_provider.dart';
+import 'presentation/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
