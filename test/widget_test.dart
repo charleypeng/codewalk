@@ -157,6 +157,75 @@ void main() {
     }
   });
 
+  testWidgets('desktop ESC in normal mode keeps composer focus', (
+    WidgetTester tester,
+  ) async {
+    final previousPlatform = debugDefaultTargetPlatformOverride;
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    try {
+      await tester.pumpWidget(
+        _buildChatInputHarness(child: ChatInputWidget(onSendMessage: (_) {})),
+      );
+
+      await tester.showKeyboard(find.byType(TextField));
+      await tester.pumpAndSettle();
+
+      final focusedBeforeEsc = tester.widget<TextField>(find.byType(TextField));
+      expect(focusedBeforeEsc.focusNode?.hasFocus, isTrue);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      final focusedAfterEsc = tester.widget<TextField>(find.byType(TextField));
+      expect(focusedAfterEsc.focusNode?.hasFocus, isTrue);
+    } finally {
+      debugDefaultTargetPlatformOverride = previousPlatform;
+    }
+  });
+
+  testWidgets('double ESC within 500ms requests stop while responding', (
+    WidgetTester tester,
+  ) async {
+    var stopCount = 0;
+    var hintCount = 0;
+    final previousPlatform = debugDefaultTargetPlatformOverride;
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    try {
+      await tester.pumpWidget(
+        _buildChatInputHarness(
+          child: ChatInputWidget(
+            onSendMessage: (_) {},
+            isResponding: true,
+            onStopRequested: () {
+              stopCount += 1;
+            },
+            onStopHintRequested: () {
+              hintCount += 1;
+            },
+          ),
+        ),
+      );
+
+      await tester.showKeyboard(find.byType(TextField));
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+
+      expect(stopCount, 0);
+      expect(hintCount, 1);
+
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+
+      expect(stopCount, 1);
+      expect(hintCount, 2);
+    } finally {
+      debugDefaultTargetPlatformOverride = previousPlatform;
+    }
+  });
+
   testWidgets('mobile Enter action sends and hides keyboard focus', (
     WidgetTester tester,
   ) async {

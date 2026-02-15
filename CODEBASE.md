@@ -6,6 +6,7 @@
 
 ## Delta Update (2026-02-15)
 
+- Added keyboard shortcut system: 3 new shortcut actions (`openSettings` with default `mod+,`, `cycleRecentModels` with default `mod+m`, `cycleVariant` with default `mod+t`), global shortcut handler in ChatPage using `HardwareKeyboard`, and comma key (`,`) support in `ShortcutBindingCodec`.
 - Added desktop local OpenCode setup wizard in Server Settings section (`servers_settings_section.dart`) with environment diagnostics (platform, OpenCode/Node/npm/Bun/WSL availability, network access, install directory writability), installation recommendations, and one-click install/upgrade via multiple methods.
 - Added runtime installer services for local OpenCode server management: `local_opencode_server_runtime.dart` (abstract interface), `local_opencode_server_runtime_types.dart` (types/models), `local_opencode_server_runtime_io.dart` (desktop implementation), `local_opencode_server_runtime_stub.dart` (non-desktop stub). Supports install methods: download binary, npm global, bun global, bun bootstrap then install.
 - Added `opencode-smoke` CI job (lines 188-251 in ci.yml) validating OpenCode CLI installation across 5 matrix combinations: ubuntu/npm, ubuntu/bun, macos/npm, macos/bun, windows/npm.
@@ -506,6 +507,11 @@ Centralized structured logging via `AppLogger` with severity levels and token re
 📋 **Decisão**: Ver [ADR-005: Centralized Structured Logging](#adr-005-centralized-structured-logging)
 📁 **Localização**: `lib/core/logging/app_logger.dart`
 
+### Keyboard Shortcuts
+- **ShortcutBindingCodec** (`lib/presentation/utils/shortcut_binding_codec.dart`): Parses keyboard shortcut bindings from string format (e.g., `mod+n`, `ctrl+shift+j`) to `SingleActivator`. Supports `mod` platform-aware modifier (Ctrl on desktop, Cmd on macOS), comma key (`,`), and bidirectional parsing (key event to binding string).
+- **Global shortcuts in ChatPage**: Uses `HardwareKeyboard.instance.addHandler` to intercept global key events when chat screen is active. Matches against user-configured bindings from `ExperienceSettings` and invokes corresponding actions (newChat, focusInput, quickOpen, openSettings, cycleRecentModels, cycleVariant, cycleAgent, escape).
+📁 **Localização**: `lib/presentation/pages/chat_page.dart` (lines 1090-1148)
+
 ### Authentication and Server Config
 - Multi-server profile management (`ServerProfile`) with active/default selection
 - Per-server basic auth configuration and URL normalization
@@ -528,13 +534,13 @@ SSE-first realtime sync with event reducer, composer power triggers (@/!/), mult
   - [ADR-019: Prompt Power Composer](#adr-019-prompt-power-composer-triggers)
   - [ADR-024: Stop/Abort Flow](#adr-024-desktop-composerpane-interaction-and-active-response-abort-semantics)
 🔧 **Componentes**: `ChatProvider` (reducer + optimistic updates), tool diff rendering, thinking/output collapse
-🎯 **UX**: responsive shell, chat-first navigation, desktop shortcuts (Enter/Shift+Enter), mobile auto-scroll, collapsible panes
+🎯 **UX**: responsive shell, chat-first navigation, desktop shortcuts (Enter/Shift+Enter), global keyboard shortcuts for chat navigation (newChat/focusInput/quickOpen/settings/model cycling), mobile auto-scroll, collapsible panes
 
 ### Settings Module
 Modular settings hub with responsive navigation (mobile list-to-detail, desktop split layout), notification/sound/shortcut preferences, and server management.
 📋 **Arquitetura**: Ver [ADR-022: Modular Settings Hub](#adr-022-modular-settings-hub-and-experience-preference-orchestration)
 🔧 **Componentes**: `SettingsPage`, `SettingsProvider`, `ExperienceSettings`
-🔔 **Features**: per-category notifications/sounds (agent/permissions/errors), shortcut bindings (desktop/web), desktop pane visibility, server config sync (`/config`)
+🔔 **Features**: per-category notifications/sounds (agent/permissions/errors), 11 shortcut bindings (desktop/web): newChat/mod+n, refresh/mod+r, focusInput/mod+l, quickOpen/mod+p, openSettings/mod+,, cycleRecentModels/mod+m, cycleVariant/mod+t, cycleAgentForward/mod+j, cycleAgentBackward/mod+shift+j, escape, desktop pane visibility, server config sync (`/config`)
 📱 **Adapters**: `flutter_local_notifications` (Android/Linux/macOS/Windows), browser Notification API (Web)
 
 ## Chat System Details

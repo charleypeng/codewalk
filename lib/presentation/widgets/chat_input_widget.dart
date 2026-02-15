@@ -159,6 +159,7 @@ class ChatInputWidget extends StatefulWidget {
     this.enabled = true,
     this.isResponding = false,
     this.onStopRequested,
+    this.onStopHintRequested,
     this.focusNode,
     this.showAttachmentButton = false,
     this.showInlineAttachmentButton = true,
@@ -179,6 +180,7 @@ class ChatInputWidget extends StatefulWidget {
   final bool enabled;
   final bool isResponding;
   final FutureOr<void> Function()? onStopRequested;
+  final VoidCallback? onStopHintRequested;
   final FocusNode? focusNode;
   final bool showAttachmentButton;
   final bool showInlineAttachmentButton;
@@ -195,6 +197,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   static const double _popoverInputHeightMultiplier = 3;
   static const int _composerMaxLines = 6;
   static const double _composerActionButtonSize = 42;
+  static const Duration _doubleEscapeStopThreshold = Duration(
+    milliseconds: 500,
+  );
   final TextEditingController _controller = TextEditingController();
   final FocusNode _internalFocusNode = FocusNode();
   final List<FileInputPart> _attachments = <FileInputPart>[];
@@ -226,6 +231,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   TextEditingValue? _historyDraftValue;
   bool _isApplyingHistoryValue = false;
   bool _suppressEnsureInputFocus = false;
+  DateTime? _lastNormalModeEscapeAt;
 
   FocusNode get _effectiveFocusNode => widget.focusNode ?? _internalFocusNode;
 
@@ -583,6 +589,24 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
         });
         return KeyEventResult.handled;
       }
+      if (_mode == ChatComposerMode.normal) {
+        if (widget.isResponding && widget.onStopRequested != null) {
+          final now = DateTime.now();
+          // Require two quick Esc presses to mirror explicit stop-button intent.
+          final shouldStop =
+              _lastNormalModeEscapeAt != null &&
+              now.difference(_lastNormalModeEscapeAt!) <=
+                  _doubleEscapeStopThreshold;
+          _lastNormalModeEscapeAt = now;
+          widget.onStopHintRequested?.call();
+          if (shouldStop) {
+            unawaited(_requestStopResponse());
+          }
+          return KeyEventResult.handled;
+        }
+        _lastNormalModeEscapeAt = null;
+        return KeyEventResult.handled;
+      }
     }
 
     if (logicalKey == LogicalKeyboardKey.backspace &&
@@ -624,6 +648,17 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     }
 
     return KeyEventResult.ignored;
+  }
+
+  Future<void> _requestStopResponse() async {
+    if (!widget.enabled || _isSending || !widget.isResponding) {
+      return;
+    }
+    final stopRequested = widget.onStopRequested;
+    if (stopRequested == null) {
+      return;
+    }
+    await Future<void>.sync(stopRequested);
   }
 
   bool _navigateHistoryUp() {
@@ -1153,11 +1188,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                             ? (widget.enabled &&
                                       !_isSending &&
                                       widget.onStopRequested != null
-                                  ? () => unawaited(
-                                      Future<void>.sync(
-                                        widget.onStopRequested!,
-                                      ),
-                                    )
+                                  ? () => unawaited(_requestStopResponse())
                                   : null)
                             : (canSend ? _handleSendButtonTap : null),
                         style: FilledButton.styleFrom(

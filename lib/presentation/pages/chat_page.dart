@@ -51,6 +51,18 @@ class _QuickOpenIntent extends Intent {
   const _QuickOpenIntent();
 }
 
+class _OpenSettingsIntent extends Intent {
+  const _OpenSettingsIntent();
+}
+
+class _CycleRecentModelsIntent extends Intent {
+  const _CycleRecentModelsIntent();
+}
+
+class _CycleVariantIntent extends Intent {
+  const _CycleVariantIntent();
+}
+
 class _EscapeIntent extends Intent {
   const _EscapeIntent();
 }
@@ -125,6 +137,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   static const Duration _serverAlertGracePeriod = Duration(seconds: 10);
   static const Duration _composerStatusShowDelay = Duration(seconds: 2);
   static const Duration _composerStatusHideDelay = Duration(seconds: 1);
+  static const Duration _composerStopHintDuration = Duration(seconds: 1);
   static const double _composerStatusReservedHeight = 26;
 
   final ScrollController _scrollController = ScrollController();
@@ -160,7 +173,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   Timer? _serverAlertRevealTimer;
   Timer? _composerStatusShowTimer;
   Timer? _composerStatusHideTimer;
+  Timer? _composerStopHintTimer;
   _ComposerStatusPresentation? _visibleComposerStatus;
+  _ComposerStatusPresentation? _priorityComposerStatus;
   _ComposerStatusPresentation? _pendingComposerStatus;
   _ComposerStatusPresentation? _queuedComposerStatusTarget;
   _ComposerStatusPresentation? _lastComposerStatusTarget;
@@ -173,6 +188,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    HardwareKeyboard.instance.addHandler(_handleGlobalShortcutKeyEvent);
     _scrollController.addListener(_handleScrollChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadInitialData();
@@ -221,7 +237,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     _serverAlertRevealTimer?.cancel();
     _composerStatusShowTimer?.cancel();
     _composerStatusHideTimer?.cancel();
+    _composerStopHintTimer?.cancel();
     _scrollController.removeListener(_handleScrollChanged);
+    HardwareKeyboard.instance.removeHandler(_handleGlobalShortcutKeyEvent);
     WidgetsBinding.instance.removeObserver(this);
 
     _scrollController.dispose();
@@ -649,9 +667,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         // animation conflicts from rapid content updates that cancel/restart
         // the 260ms animateTo every frame, causing visible jumps.
         if (!force && distance <= _nearBottomThreshold) {
-          _scrollController.jumpTo(
-            _scrollController.position.maxScrollExtent,
-          );
+          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
           break;
         }
 
@@ -1053,14 +1069,91 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
   }
 
+  List<ShortcutAction> _activeShortcutActions() {
+    final actions = <ShortcutAction>[
+      ShortcutAction.newChat,
+      ShortcutAction.focusInput,
+      ShortcutAction.quickOpen,
+      ShortcutAction.openSettings,
+      ShortcutAction.cycleRecentModels,
+      ShortcutAction.cycleVariant,
+      ShortcutAction.escape,
+      ShortcutAction.cycleAgentForward,
+      ShortcutAction.cycleAgentBackward,
+    ];
+    if (!FeatureFlags.refreshlessRealtime) {
+      actions.insert(1, ShortcutAction.refresh);
+    }
+    return actions;
+  }
+
+  bool _handleGlobalShortcutKeyEvent(KeyEvent event) {
+    if (event is! KeyDownEvent || !mounted || !_isChatScreenActive()) {
+      return false;
+    }
+
+    final settingsProvider = context.read<SettingsProvider>();
+    for (final action in _activeShortcutActions()) {
+      final activator = ShortcutBindingCodec.parse(
+        settingsProvider.bindingFor(action),
+      );
+      if (activator == null) {
+        continue;
+      }
+      if (!activator.accepts(event, HardwareKeyboard.instance)) {
+        continue;
+      }
+      _invokeShortcutAction(action);
+      return true;
+    }
+
+    return false;
+  }
+
+  void _invokeShortcutAction(ShortcutAction action) {
+    final chatProvider = _chatProvider ?? context.read<ChatProvider>();
+    switch (action) {
+      case ShortcutAction.newChat:
+        _createNewSession();
+        return;
+      case ShortcutAction.refresh:
+        if (!FeatureFlags.refreshlessRealtime) {
+          _refreshData();
+        }
+        return;
+      case ShortcutAction.focusInput:
+        _focusInput();
+        return;
+      case ShortcutAction.quickOpen:
+        _openQuickFileDialogFromCurrentContext();
+        return;
+      case ShortcutAction.openSettings:
+        unawaited(_openSettingsPage(closeOnSelect: false));
+        return;
+      case ShortcutAction.cycleRecentModels:
+        unawaited(_cycleRecentModel(chatProvider));
+        return;
+      case ShortcutAction.cycleVariant:
+        unawaited(chatProvider.cycleVariant());
+        return;
+      case ShortcutAction.escape:
+        _handleEscape();
+        return;
+      case ShortcutAction.cycleAgentForward:
+        unawaited(chatProvider.cycleAgent());
+        return;
+      case ShortcutAction.cycleAgentBackward:
+        unawaited(chatProvider.cycleAgent(reverse: true));
+        return;
+    }
+  }
+
   void _handleEscape() {
     final scaffoldState = Scaffold.maybeOf(context);
     if (scaffoldState?.isDrawerOpen ?? false) {
       Navigator.of(context).pop();
       return;
     }
-
-    FocusManager.instance.primaryFocus?.unfocus();
   }
 
   bool _supportsInputModality(Model? model, String modality) {
@@ -1090,6 +1183,69 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   bool _supportsPdfAttachments(Model? model) {
     return _supportsInputModality(model, 'pdf');
+  }
+
+  Future<void> _cycleRecentModel(ChatProvider chatProvider) async {
+    final available = <({String providerId, String modelId})>[];
+    final seen = <String>{};
+
+    for (final recentModelKey in chatProvider.recentModelKeys) {
+      final providerId = _providerIdFromSelectorKey(recentModelKey);
+      final modelId = _modelIdFromSelectorKey(recentModelKey);
+      if (providerId == null || modelId == null) {
+        continue;
+      }
+      final provider = chatProvider.providers
+          .where((entry) => entry.id == providerId)
+          .firstOrNull;
+      if (provider == null || !provider.models.containsKey(modelId)) {
+        continue;
+      }
+      final selectorKey = _selectorEntryKey(providerId, modelId);
+      if (!seen.add(selectorKey)) {
+        continue;
+      }
+      available.add((providerId: providerId, modelId: modelId));
+    }
+
+    if (available.length < 2) {
+      final selectedProvider = chatProvider.selectedProvider;
+      if (selectedProvider != null) {
+        final modelIds = selectedProvider.models.keys.toList(growable: false)
+          ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+        for (final modelId in modelIds) {
+          final selectorKey = _selectorEntryKey(selectedProvider.id, modelId);
+          if (!seen.add(selectorKey)) {
+            continue;
+          }
+          available.add((providerId: selectedProvider.id, modelId: modelId));
+        }
+      }
+    }
+
+    if (available.isEmpty) {
+      return;
+    }
+
+    final selectedProviderId = chatProvider.selectedProviderId;
+    final selectedModelId = chatProvider.selectedModelId;
+    final currentKey = selectedProviderId == null || selectedModelId == null
+        ? null
+        : _selectorEntryKey(selectedProviderId, selectedModelId);
+    final currentIndex = currentKey == null
+        ? -1
+        : available.indexWhere(
+            (entry) =>
+                _selectorEntryKey(entry.providerId, entry.modelId) ==
+                currentKey,
+          );
+    final next = currentIndex == -1
+        ? available.first
+        : available[(currentIndex + 1) % available.length];
+    await chatProvider.setSelectedModelByProvider(
+      providerId: next.providerId,
+      modelId: next.modelId,
+    );
   }
 
   @override
@@ -1127,6 +1283,12 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         addShortcut(ShortcutAction.newChat, const _NewSessionIntent());
         addShortcut(ShortcutAction.focusInput, const _FocusInputIntent());
         addShortcut(ShortcutAction.quickOpen, const _QuickOpenIntent());
+        addShortcut(ShortcutAction.openSettings, const _OpenSettingsIntent());
+        addShortcut(
+          ShortcutAction.cycleRecentModels,
+          const _CycleRecentModelsIntent(),
+        );
+        addShortcut(ShortcutAction.cycleVariant, const _CycleVariantIntent());
         addShortcut(ShortcutAction.escape, const _EscapeIntent());
         addShortcut(
           ShortcutAction.cycleAgentForward,
@@ -1151,7 +1313,25 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           ),
           _QuickOpenIntent: CallbackAction<_QuickOpenIntent>(
             onInvoke: (_) {
-              _openQuickFileDialogFromCurrentContext();
+              _invokeShortcutAction(ShortcutAction.quickOpen);
+              return null;
+            },
+          ),
+          _OpenSettingsIntent: CallbackAction<_OpenSettingsIntent>(
+            onInvoke: (_) {
+              _invokeShortcutAction(ShortcutAction.openSettings);
+              return null;
+            },
+          ),
+          _CycleRecentModelsIntent: CallbackAction<_CycleRecentModelsIntent>(
+            onInvoke: (_) {
+              _invokeShortcutAction(ShortcutAction.cycleRecentModels);
+              return null;
+            },
+          ),
+          _CycleVariantIntent: CallbackAction<_CycleVariantIntent>(
+            onInvoke: (_) {
+              _invokeShortcutAction(ShortcutAction.cycleVariant);
               return null;
             },
           ),
@@ -1256,6 +1436,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                           width: _largeDesktopUtilityPaneWidth,
                           child: _buildDesktopUtilityPane(
                             chatProvider,
+                            settingsProvider: settingsProvider,
                             onCollapseRequested: () {
                               unawaited(
                                 settingsProvider.setDesktopPaneVisible(
@@ -2929,6 +3110,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   Widget _buildDesktopUtilityPane(
     ChatProvider chatProvider, {
+    required SettingsProvider settingsProvider,
     VoidCallback? onCollapseRequested,
   }) {
     return SafeArea(
@@ -2958,15 +3140,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _buildShortcutHint('Ctrl/Cmd + N', 'New conversation'),
-                  if (!FeatureFlags.refreshlessRealtime)
-                    _buildShortcutHint('Ctrl/Cmd + R', 'Refresh chat data'),
-                  _buildShortcutHint('Ctrl/Cmd + L', 'Focus message input'),
-                  _buildShortcutHint(
-                    'Ctrl/Cmd + J',
-                    'Cycle selected agent (Shift reverses)',
-                  ),
-                  _buildShortcutHint('Esc', 'Close drawer or unfocus input'),
+                  for (final hint in _desktopShortcutHints(settingsProvider))
+                    _buildShortcutHint(hint.shortcut, hint.description),
                 ],
               ),
             ),
@@ -4792,6 +4967,41 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     );
   }
 
+  List<({String shortcut, String description})> _desktopShortcutHints(
+    SettingsProvider settingsProvider,
+  ) {
+    final entries = <({ShortcutAction action, String description})>[
+      (action: ShortcutAction.newChat, description: 'New conversation'),
+      if (!FeatureFlags.refreshlessRealtime)
+        (action: ShortcutAction.refresh, description: 'Refresh chat data'),
+      (action: ShortcutAction.focusInput, description: 'Focus message input'),
+      (action: ShortcutAction.quickOpen, description: 'Quick open files'),
+      (action: ShortcutAction.openSettings, description: 'Open settings'),
+      (
+        action: ShortcutAction.cycleRecentModels,
+        description: 'Cycle recent models',
+      ),
+      (action: ShortcutAction.cycleVariant, description: 'Cycle model variant'),
+      (action: ShortcutAction.cycleAgentForward, description: 'Next agent'),
+      (
+        action: ShortcutAction.cycleAgentBackward,
+        description: 'Previous agent',
+      ),
+      (action: ShortcutAction.escape, description: 'Close drawer when open'),
+    ];
+
+    return entries
+        .map(
+          (entry) => (
+            shortcut: ShortcutBindingCodec.formatForDisplay(
+              settingsProvider.bindingFor(entry.action),
+            ),
+            description: entry.description,
+          ),
+        )
+        .toList(growable: false);
+  }
+
   Widget _buildShortcutHint(String shortcut, String description) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -4835,7 +5045,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final attachmentsEnabled = supportsImages || supportsPdf;
     final composerStatusTarget = _resolveComposerStatusTarget(chatProvider);
     _queueComposerStatusSync(composerStatusTarget);
-    final composerStatus = _visibleComposerStatus;
+    final composerStatus = _priorityComposerStatus ?? _visibleComposerStatus;
 
     return Padding(
       padding: EdgeInsets.symmetric(
@@ -4939,6 +5149,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                         ),
                       );
                     },
+                    onStopHintRequested: _showComposerStopHint,
                     onMentionQuery: _queryMentionSuggestions,
                     onSlashQuery: _querySlashSuggestions,
                     onBuiltinSlashCommand: (commandName) =>
@@ -4982,6 +5193,25 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       final queuedTarget = _queuedComposerStatusTarget;
       _queuedComposerStatusTarget = null;
       _applyComposerStatusTarget(queuedTarget);
+    });
+  }
+
+  void _showComposerStopHint() {
+    _composerStopHintTimer?.cancel();
+    setState(() {
+      _priorityComposerStatus = const _ComposerStatusPresentation.stopHint();
+    });
+    _composerStopHintTimer = Timer(_composerStopHintDuration, () {
+      if (!mounted) {
+        return;
+      }
+      _composerStopHintTimer = null;
+      if (_priorityComposerStatus?.type != _ComposerStatusType.stopHint) {
+        return;
+      }
+      setState(() {
+        _priorityComposerStatus = null;
+      });
     });
   }
 
@@ -5101,7 +5331,17 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         size: 15,
         color: colorScheme.primary,
       ),
+      _ComposerStatusType.stopHint => const SizedBox.shrink(),
     };
+    final textStyle = status.type == _ComposerStatusType.stopHint
+        ? Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: colorScheme.error,
+            fontWeight: FontWeight.w400,
+          )
+        : Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w700,
+          );
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 2, 12, 4),
@@ -5117,16 +5357,14 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               ),
               child: leading,
             ),
-            const SizedBox(width: 8),
+            if (status.type != _ComposerStatusType.stopHint)
+              const SizedBox(width: 8),
             _ComposerStatusLanternText(
               text: status.label,
               key: const ValueKey<String>('composer_reasoning_status_text'),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w700,
-              ),
+              style: textStyle,
             ),
           ],
         ),
@@ -6415,8 +6653,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         messages,
         allowInProgressBoundary: true,
       );
-      _frozenCompactionBoundaryId =
-          currentIdx != null ? messages[currentIdx].id : null;
+      _frozenCompactionBoundaryId = currentIdx != null
+          ? messages[currentIdx].id
+          : null;
     } else if (!isCompactingContext && _wasCompactingContext) {
       // Compaction finished: unfreeze so the new boundary takes effect.
       _frozenCompactionBoundaryId = null;
@@ -7019,7 +7258,7 @@ class _TimelineRetryIndicatorEntry extends _TimelineEntry {
 
 enum _AssistantProgressStage { thinking, receiving, retrying }
 
-enum _ComposerStatusType { dynamicReasoning, receiving, thinking }
+enum _ComposerStatusType { dynamicReasoning, receiving, thinking, stopHint }
 
 class _ComposerStatusPresentation {
   const _ComposerStatusPresentation._({
@@ -7038,6 +7277,9 @@ class _ComposerStatusPresentation {
 
   const _ComposerStatusPresentation.thinking()
     : this._(type: _ComposerStatusType.thinking, label: 'Thinking...');
+
+  const _ComposerStatusPresentation.stopHint()
+    : this._(type: _ComposerStatusType.stopHint, label: 'Double ESC to stop');
 
   final _ComposerStatusType type;
   final String label;

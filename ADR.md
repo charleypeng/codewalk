@@ -1295,6 +1295,23 @@ Feature 022 required parity with OpenCode settings behaviors across:
 - ADR-021: Responsive Dialog Sizing (settings uses responsive layout)
 - `CODEBASE.md`
 
+### Post-Decision Update (2026-02-15)
+
+The keyboard shortcut system was expanded with additional shortcuts and behavior changes:
+
+1. **Global shortcuts without composer focus**: Shortcuts are registered at the `ChatPage` level using `HardwareKeyboard.instance.addHandler`, allowing them to work even when the composer input is not focused. This enables users to trigger actions (new chat, open settings, cycle models) from anywhere on the chat screen.
+
+2. **Additional shortcuts added**:
+   - `openSettings`: `mod+,` (Ctrl+Comma / Cmd+Comma)
+   - `cycleRecentModels`: `mod+m` (Ctrl+M / Cmd+M)
+   - `cycleVariant`: `mod+t` (Ctrl+T / Cmd+T)
+   - `cycleAgentForward`: `mod+j` (Ctrl+J / Cmd+J)
+   - `cycleAgentBackward`: `mod+shift+j` (Ctrl+Shift+J / Cmd+Shift+J)
+
+3. **OS-specific shortcut labels**: The `ShortcutBindingCodec.formatForDisplay` method formats shortcuts with platform-appropriate labels:
+   - macOS: shows "Cmd" for the `mod` modifier
+   - Windows/Linux: shows "Ctrl" for the `mod` modifier
+
 ### Implementation Reference
 
 See CODEBASE.md for current module structure, file locations, and operational details:

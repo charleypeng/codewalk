@@ -147,6 +147,12 @@ void main() {
 
       expect(find.byIcon(Icons.menu), findsNothing);
       expect(find.text('Keyboard shortcuts'), findsOneWidget);
+      expect(find.textContaining('Ctrl/Cmd'), findsNothing);
+      expect(find.text('Ctrl+N'), findsOneWidget);
+      expect(find.text('Ctrl+P'), findsOneWidget);
+      expect(find.text('Ctrl+,'), findsOneWidget);
+      expect(find.text('Ctrl+M'), findsOneWidget);
+      expect(find.text('Ctrl+T'), findsOneWidget);
       expect(find.text('Conversations'), findsOneWidget);
     });
 
@@ -2536,6 +2542,9 @@ void main() {
 
     expect(provider.selectedAgentName, 'build');
 
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+
     await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
     await tester.sendKeyDownEvent(LogicalKeyboardKey.keyJ);
     await tester.sendKeyUpEvent(LogicalKeyboardKey.keyJ);
@@ -2543,6 +2552,124 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(provider.selectedAgentName, 'plan');
+  });
+
+  testWidgets('desktop shortcut opens settings without composer focus', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(localDataSource: localDataSource);
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.comma);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.comma);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Settings'), findsWidgets);
+    expect(find.text('Density and timeline bubble visibility'), findsOneWidget);
+  });
+
+  testWidgets('desktop shortcuts cycle recent model and variant', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_1',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Session 1',
+        ),
+      ],
+    );
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+      providersResponse: ProvidersResponse(
+        providers: <Provider>[
+          Provider(
+            id: 'provider_1',
+            name: 'Provider 1',
+            env: const <String>[],
+            models: <String, Model>{
+              'model_1': _model(
+                'model_1',
+                variants: const <String, ModelVariant>{
+                  'low': ModelVariant(id: 'low', name: 'Low'),
+                  'high': ModelVariant(id: 'high', name: 'High'),
+                },
+              ),
+              'model_2': _model(
+                'model_2',
+                variants: const <String, ModelVariant>{
+                  'low': ModelVariant(id: 'low', name: 'Low'),
+                  'high': ModelVariant(id: 'high', name: 'High'),
+                },
+              ),
+            },
+          ),
+        ],
+        defaultModels: const <String, String>{'provider_1': 'model_1'},
+        connected: const <String>['provider_1'],
+      ),
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await provider.initializeProviders();
+    await provider.setSelectedModelByProvider(
+      providerId: 'provider_1',
+      modelId: 'model_2',
+    );
+    await provider.setSelectedModelByProvider(
+      providerId: 'provider_1',
+      modelId: 'model_1',
+    );
+    await tester.pumpAndSettle();
+
+    expect(provider.selectedModelId, 'model_1');
+    expect(provider.selectedVariantId, isNull);
+
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.keyM);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.keyM);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+
+    expect(provider.selectedModelId, 'model_2');
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.keyT);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.keyT);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+
+    expect(provider.selectedVariantId, 'low');
   });
 
   testWidgets(
@@ -3829,6 +3956,83 @@ void main() {
 
     expect(repository.abortSessionCallCount, 1);
     expect(repository.lastAbortSessionId, 'ses_stop');
+  });
+
+  testWidgets('double ESC shows stop hint and aborts active response', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_stop_double_esc',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Stop Double ESC Session',
+        ),
+      ],
+    );
+    final streamController = StreamController<Either<Failure, ChatMessage>>();
+    addTearDown(() async {
+      await streamController.close();
+    });
+    repository.sendMessageHandler = (_, __, ___, ____) =>
+        streamController.stream;
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await provider.initializeProviders();
+    await tester.pumpAndSettle();
+
+    await provider.sendMessage('trigger stop with esc');
+    await tester.pump();
+
+    final chatInputFieldFinder = find.descendant(
+      of: find.byKey(const ValueKey<String>('composer_input_row')),
+      matching: find.byType(TextField),
+    );
+    await tester.tap(chatInputFieldFinder);
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+
+    expect(repository.abortSessionCallCount, 0);
+    expect(find.text('Double ESC to stop'), findsOneWidget);
+
+    final hintFinder = find.text('Double ESC to stop');
+    final hintText = tester.widget<Text>(hintFinder);
+    final hintContext = tester.element(hintFinder);
+    expect(hintText.style?.fontWeight, FontWeight.w400);
+    expect(hintText.style?.color, Theme.of(hintContext).colorScheme.error);
+
+    final inputAfterFirstEsc = tester.widget<TextField>(chatInputFieldFinder);
+    expect(inputAfterFirstEsc.focusNode?.hasFocus, isTrue);
+
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+
+    expect(repository.abortSessionCallCount, 1);
+    expect(repository.lastAbortSessionId, 'ses_stop_double_esc');
+
+    await tester.pump(const Duration(milliseconds: 1100));
+    await tester.pump();
+
+    expect(find.text('Double ESC to stop'), findsNothing);
   });
 
   testWidgets('shows snackbar when stop request fails', (

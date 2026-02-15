@@ -192,6 +192,7 @@ class ShortcutBindingCodec {
       'enter' => LogicalKeyboardKey.enter,
       'tab' => LogicalKeyboardKey.tab,
       'space' => LogicalKeyboardKey.space,
+      ',' || 'comma' => LogicalKeyboardKey.comma,
       _ => null,
     };
   }
@@ -217,6 +218,9 @@ class ShortcutBindingCodec {
     }
     if (key == LogicalKeyboardKey.space) {
       return 'space';
+    }
+    if (key == LogicalKeyboardKey.comma) {
+      return ',';
     }
 
     return null;
