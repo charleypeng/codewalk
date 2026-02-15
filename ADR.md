@@ -6,7 +6,8 @@ This document tracks technical decisions for CodeWalk.
 
 - ADR-001: Branch Strategy and Rollback Checkpoints (2026-02-09) [Accepted]
 - ADR-002: Makefile as Development and Pre-Commit Gatekeeper (2026-02-09) [Accepted]
-- ADR-003: CI Parallel Quality/Build Matrix with Final Aggregator (2026-02-09) [Accepted]
+- ADR-003: CI Parallel Quality/Build Matrix with Final Aggregator (2026-02-09) [Superseded by ADR-034]
+- ADR-034: CI/Release Workflow Separation and Automated Release Pipeline (2026-02-15) [Accepted]
 - ADR-004: Coverage Gate with Generated-Code Filtering (2026-02-09) [Accepted]
 - ADR-005: Centralized Structured Logging (2026-02-09) [Accepted]
 - ADR-006: Session SWR Cache and Async Race Guards (2026-02-09) [Accepted]
@@ -37,6 +38,7 @@ This document tracks technical decisions for CodeWalk.
 - ADR-031: Asynchronous Provider Initialization and Background Refresh on Startup (2026-02-14) [Accepted]
 - ADR-032: Thinking Bubble Compact Mode and Accessibility-Aware Animations (2026-02-14) [Accepted]
 - ADR-033: Desktop-Only Managed Local OpenCode Server Wizard (2026-02-15) [Accepted]
+- ADR-034: CI/Release Workflow Separation and Automated Release Pipeline (2026-02-15) [Accepted]
 
 ---
 
@@ -129,7 +131,7 @@ Adopt a standardized Makefile workflow:
 
 ## ADR-003: CI Parallel Quality/Build Matrix with Final Aggregator
 
-**Status**: Accepted
+**Status**: Superseded by ADR-034
 **Date**: 2026-02-09
 
 ### Context
@@ -1631,5 +1633,57 @@ Introduce `LocalOpencodeServerRuntime` service with:
 - ADR-022: Modular Settings Hub (settings integration point)
 - `make smoke` - CI smoke test for server compatibility
 
+---
+
+## ADR-034: CI/Release Workflow Separation and Automated Release Pipeline
+
+**Status**: Accepted
+**Date**: 2026-02-15
+
+### Context
+
+The original CI workflow (ADR-003) ran quality checks and platform builds (Linux, Web, Android) in parallel on every push to any branch, with a `ci-status` aggregator job. This caused:
+1. Slow CI (~9-12min) dominated by Android build on every push, even for documentation-only changes.
+2. Redundant builds: CI built artifacts that were never used (no release on push), while `release.yml` rebuilt everything on tags.
+3. OpenCode smoke tests (5 matrix runners) ran on every push, consuming runner minutes for a validation that only matters before releases.
+4. No automated version bumping — releases required manual pubspec edits, commits, tags, and pushes.
+
+### Decision
+
+1. **Separate CI from builds**: `ci.yml` runs only quality checks (analyze, tests, coverage) on every push/PR. No build jobs.
+2. **Release-only builds**: `release.yml` runs platform builds (Linux, Windows, macOS, Android) only on `v*` tags, with `fail-fast: true` to cancel all builds if any platform fails.
+3. **Isolated smoke tests**: `opencode-smoke.yml` runs OpenCode CLI validation only on minor version tags (`v[0-9]+.[0-9]+.0`), reducing runner usage for patch releases.
+4. **Automated release target**: `make release V=patch|minor|major` calculates next version, updates `pubspec.yaml` (version + build number), commits, creates annotated tag, and pushes — triggering the full release pipeline.
+5. **Cache strategy**: Flutter SDK + pub cache via `flutter-action cache: true` (all jobs), Gradle cache via `setup-java cache: gradle` (Android build only). No redundant manual cache steps.
+
+### Rationale
+
+- CI should validate code quality, not produce artifacts. Builds belong in the release pipeline where artifacts are actually consumed.
+- `fail-fast: true` on release builds prevents publishing incomplete releases (e.g., Linux succeeds but Android fails).
+- Smoke tests on minor-only tags balance validation coverage with runner cost (patches don't change OpenCode compatibility).
+- `make release` eliminates manual version bumping errors and enforces consistent commit/tag format.
+- Delegating caching to action-native features (`flutter-action cache`, `setup-java cache`) is simpler and avoids redundant manual cache configuration.
+
+### Consequences
+
+- ✅ Positive: CI runs in ~3min (quality only) vs ~12min (quality + builds).
+- ✅ Positive: release pipeline is self-contained and only runs when needed (tags).
+- ✅ Positive: smoke tests don't consume runners on patch releases.
+- ✅ Positive: `make release V=patch` automates the entire release flow in one command.
+- ✅ Positive: `fail-fast` prevents incomplete releases with missing platform artifacts.
+- ⚠️ Trade-off: build failures are only detected at release time, not on every push. Mitigated by `flutter analyze` catching most compilation errors in CI.
+- ⚠️ Trade-off: CI and Release workflows are independent (no `needs` dependency). A tag can trigger a release even if CI failed on the same commit.
+
+### Key Files
+
+- `.github/workflows/ci.yml` — quality-only checks
+- `.github/workflows/release.yml` — platform builds + GitHub Release creation
+- `.github/workflows/opencode-smoke.yml` — OpenCode CLI smoke tests (minor tags only)
+- `Makefile` — `release` target for automated version bumping
+
+### References
+
+- ADR-003: CI Parallel Quality/Build Matrix (superseded by this ADR)
+- ADR-002: Makefile as Development and Pre-Commit Gatekeeper (extended with `release` target)
 
 ---

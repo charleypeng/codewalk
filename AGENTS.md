@@ -29,8 +29,13 @@ CodeWalk é um projeto que visa permitir acessar agents de código de qualquer l
 
 ## 📦 Liberação de Nova Tag / Release
 
-- Fluxo de versionamento/changelog/push/tag já está definido no AGENTS global.
-- Complemento local: após push/tag, fazer watch da pipeline `@.github/workflows/release.yml` a cada 60s e atualizar o usuário a cada status.
+- **Usar `make release V=<tipo>`** para liberar novas versões:
+  - `make release V=patch` — bump patch (ex: 1.5.4 → 1.5.5)
+  - `make release V=minor` — bump minor (ex: 1.5.4 → 1.6.0)
+  - `make release V=major` — bump major (ex: 1.5.4 → 2.0.0)
+- O comando atualiza `pubspec.yaml` (versão + build number), commita, cria tag e faz push automaticamente.
+- **Antes de rodar**: garantir que todas as mudanças de código estejam commitadas. O `make release` só commita o bump de versão.
+- Após o push/tag, fazer watch da pipeline `@.github/workflows/release.yml` a cada 60s e atualizar o usuário a cada status.
 - Se qualquer etapa falhar, cancelar a pipeline por completo, analisar os erros e decidir entre:
   - corrigir e repetir o fluxo;
   - avisar o usuário e aguardar instruções.
