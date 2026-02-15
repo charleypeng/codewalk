@@ -1,4 +1,4 @@
-.PHONY: help deps gen icons icons-check analyze test coverage smoke check desktop android precommit clean
+.PHONY: help deps gen icons icons-check analyze test coverage smoke check desktop android precommit clean release
 
 APK_DIR = build/app/outputs/flutter-apk
 APK_PATH = $(APK_DIR)/codewalk.apk
@@ -21,6 +21,7 @@ help:
 	@echo "  make desktop    Build desktop app for current host OS"
 	@echo "  make android    Build Android APK (arm64)"
 	@echo "  make precommit  check + android"
+	@echo "  make release V=patch|minor|major  Bump version, commit, tag, push"
 	@echo "  make clean      Clean and restore dependencies"
 
 deps:
@@ -182,6 +183,30 @@ android:
 	fi
 
 precommit: check icons-check android
+
+release:
+	@if [ -z "$(V)" ]; then echo "Usage: make release V=patch|minor|major"; exit 1; fi
+	@# Parse current version from pubspec.yaml
+	$(eval CUR_VER := $(shell grep '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//'))
+	$(eval CUR_BUILD := $(shell grep '^version:' pubspec.yaml | sed 's/.*+//'))
+	$(eval MAJOR := $(shell echo $(CUR_VER) | cut -d. -f1))
+	$(eval MINOR := $(shell echo $(CUR_VER) | cut -d. -f2))
+	$(eval PATCH := $(shell echo $(CUR_VER) | cut -d. -f3))
+	$(eval NEW_BUILD := $(shell echo $$(($(CUR_BUILD) + 1))))
+	@# Calculate new version
+	$(eval NEW_VER := $(if $(filter major,$(V)),$(shell echo $$(($(MAJOR) + 1))).0.0,\
+		$(if $(filter minor,$(V)),$(MAJOR).$(shell echo $$(($(MINOR) + 1))).0,\
+		$(if $(filter patch,$(V)),$(MAJOR).$(MINOR).$(shell echo $$(($(PATCH) + 1))),\
+		$(error V must be patch, minor, or major)))))
+	@echo "$(CUR_VER)+$(CUR_BUILD) -> $(NEW_VER)+$(NEW_BUILD)"
+	@# Update pubspec.yaml
+	@sed -i 's/^version: .*/version: $(NEW_VER)+$(NEW_BUILD)/' pubspec.yaml
+	@# Commit, tag, push
+	@git add pubspec.yaml
+	@git commit -m "release: cut v$(NEW_VER)"
+	@git tag -a "v$(NEW_VER)" -m "v$(NEW_VER)"
+	@git push --follow-tags
+	@echo "Released v$(NEW_VER) — CI and Release workflows triggered."
 
 clean:
 	flutter clean
