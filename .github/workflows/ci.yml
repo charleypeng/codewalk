@@ -33,7 +33,7 @@ jobs:
           restore-keys: pub-${{ runner.os }}-
 
       - name: Install dependencies
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Generate code
         run: dart run build_runner build --delete-conflicting-outputs
