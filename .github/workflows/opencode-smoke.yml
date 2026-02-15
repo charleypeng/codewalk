@@ -1,0 +1,52 @@
+name: OpenCode Smoke
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.0"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: OpenCode smoke (${{ matrix.os }} / ${{ matrix.install }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - os: ubuntu-latest
+            install: npm
+          - os: ubuntu-latest
+            install: bun
+          - os: macos-15
+            install: npm
+          - os: macos-15
+            install: bun
+          - os: windows-latest
+            install: npm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        if: matrix.install == 'bun'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install OpenCode with npm
+        if: matrix.install == 'npm'
+        run: npm install -g opencode-ai
+
+      - name: Install OpenCode with Bun
+        if: matrix.install == 'bun'
+        run: bun install -g opencode-ai
+
+      - name: Validate OpenCode CLI
+        run: |
+          opencode --version
+          opencode serve --help

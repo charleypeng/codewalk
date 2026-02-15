@@ -19,7 +19,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
           - runner: ubuntu-latest
@@ -38,6 +38,15 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           architecture: ${{ matrix.flutter_arch }}
           cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
 
       - name: Install Linux dependencies
         run: |
@@ -65,7 +74,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 35
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
           - runner: windows-latest
@@ -84,6 +93,15 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           architecture: ${{ matrix.flutter_arch }}
           cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
 
       - name: Install dependencies
         run: flutter pub get
@@ -107,7 +125,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 35
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         include:
           - runner: macos-15
@@ -129,6 +147,15 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           architecture: ${{ matrix.flutter_arch }}
           cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
 
       - name: Install dependencies
         run: flutter pub get
@@ -165,6 +192,24 @@ jobs:
           channel: stable
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: pub-${{ runner.os }}-
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('android/build.gradle', 'android/app/build.gradle', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-
 
       - name: Setup Android signing
         env:
