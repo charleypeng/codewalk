@@ -75,6 +75,7 @@ dependencies:
   audioplayers: ^6.5.1
   flutter_markdown_plus: ^1.0.7
   web: ^1.1.1
+  material_symbols_icons: ^4.2906.0
   simple_icons:
     git:
       url: https://github.com/jlnrrg/simple_icons.git
