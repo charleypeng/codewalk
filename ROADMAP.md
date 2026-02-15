@@ -177,6 +177,7 @@ Implemented desktop local-server wizard with runtime checks for `opencode serve`
 Implemented compaction boundary timeline entry that collapses all pre-compaction messages by default, keeping only compaction response and post-compaction messages visible. Added lazy pre-boundary rendering with session-scoped expansion reset to minimize memory/render cost. Extended boundary detection to handle summary assistant messages as fallback when `CompactionPart` markers are absent. Added selection neutrality guard to prevent compaction-related messages from overriding user-selected agents/models during sync adoption.
 
 **Commits**: fd3ce04, 4af9f01
+**Post-completion fixes**: Frozen boundary during active compaction (prevents premature collapse), post-compaction `ChatState.error` reset and incomplete-message cleanup, auto-scroll suppression during compaction streaming.
 **ADR**: ADR-027
 
 #### `featM` Icons to Material Symbols migration

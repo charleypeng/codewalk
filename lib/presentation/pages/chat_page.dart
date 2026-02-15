@@ -166,6 +166,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   _ComposerStatusPresentation? _lastComposerStatusTarget;
   bool _composerStatusTargetInitialized = false;
   String? _expandedCollapsedHistoryGroupId;
+  String? _frozenCompactionBoundaryId;
+  bool _wasCompactingContext = false;
 
   @override
   void initState() {
@@ -523,6 +525,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       _trackedSessionId = sessionId;
       _pendingInitialScrollSessionId = sessionId;
       _expandedCollapsedHistoryGroupId = null;
+      _frozenCompactionBoundaryId = null;
+      _wasCompactingContext = false;
       if (!_autoFollowToLatest ||
           _showScrollToLatestFab ||
           _hasUnreadMessagesBelow ||
@@ -549,6 +553,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       _autoFollowToLatest = true;
       _showScrollToFirstFab = false;
       _expandedCollapsedHistoryGroupId = null;
+      _frozenCompactionBoundaryId = null;
+      _wasCompactingContext = false;
       return;
     }
 
@@ -6239,6 +6245,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       showRetryIndicator: showMessageProgressIndicator,
       isSessionActivelyResponding:
           chatProvider.isCurrentSessionActivelyResponding,
+      isCompactingContext: chatProvider.isCompactingContext,
     );
 
     return NotificationListener<ScrollMetricsNotification>(
@@ -6397,14 +6404,39 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     required List<ChatMessage> messages,
     required bool showRetryIndicator,
     required bool isSessionActivelyResponding,
+    required bool isCompactingContext,
   }) {
     final entries = <_TimelineEntry>[];
 
+    // Freeze boundary during compaction to prevent premature collapse.
+    if (isCompactingContext && !_wasCompactingContext) {
+      // Compaction just started: freeze the current boundary by message ID.
+      final currentIdx = _findLatestCompactionBoundaryIndex(
+        messages,
+        allowInProgressBoundary: true,
+      );
+      _frozenCompactionBoundaryId =
+          currentIdx != null ? messages[currentIdx].id : null;
+    } else if (!isCompactingContext && _wasCompactingContext) {
+      // Compaction finished: unfreeze so the new boundary takes effect.
+      _frozenCompactionBoundaryId = null;
+    }
+    _wasCompactingContext = isCompactingContext;
+
     // Use the latest compaction marker as the visible history boundary.
-    final boundaryIndex = _findLatestCompactionBoundaryIndex(
-      messages,
-      allowInProgressBoundary: !isSessionActivelyResponding,
-    );
+    int? boundaryIndex;
+    if (isCompactingContext && _frozenCompactionBoundaryId != null) {
+      // During compaction, resolve the frozen boundary by message ID.
+      final frozenIdx = messages.indexWhere(
+        (m) => m.id == _frozenCompactionBoundaryId,
+      );
+      boundaryIndex = frozenIdx >= 0 ? frozenIdx : null;
+    } else {
+      boundaryIndex = _findLatestCompactionBoundaryIndex(
+        messages,
+        allowInProgressBoundary: !isSessionActivelyResponding,
+      );
+    }
     if (boundaryIndex != null && boundaryIndex > 0) {
       final boundaryMessage = messages[boundaryIndex];
       final boundary = _resolveCompactionBoundary(boundaryMessage);

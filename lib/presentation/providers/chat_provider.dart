@@ -2839,7 +2839,9 @@ class ChatProvider extends ChangeNotifier {
         }
         _messages[partIndex] = _copyMessageWithParts(message, nextParts);
         notifyListeners();
-        _scrollToBottomCallback?.call();
+        if (!_isCompactingContext) {
+          _scrollToBottomCallback?.call();
+        }
         break;
       case 'message.part.removed':
         final sessionId = properties['sessionID'] as String?;
@@ -5314,6 +5316,12 @@ class ChatProvider extends ChangeNotifier {
     _isCompactingContext = false;
     if (success) {
       _errorMessage = null;
+      // Reset state to loaded in case SSE events set it to error during the
+      // async compaction window.
+      if (_state == ChatState.error) {
+        _state = ChatState.loaded;
+      }
+      _markIncompleteAssistantMessagesAsCompleted();
       unawaited(loadSessionInsights(session.id, silent: true));
       unawaited(_persistLastSessionSnapshotBestEffort());
     } else if (_errorMessage == null) {
@@ -5410,8 +5418,10 @@ class ChatProvider extends ChangeNotifier {
     _attemptPendingRemoteSelectionSync(reason: 'message-update');
     _scheduleAutoTitleRefresh(message.sessionId);
 
-    // Trigger auto-scroll
-    _scrollToBottomCallback?.call();
+    // Trigger auto-scroll (suppressed during compaction to avoid visual jumps).
+    if (!_isCompactingContext) {
+      _scrollToBottomCallback?.call();
+    }
   }
 
   void _adoptSelectionFromAssistantMessage(

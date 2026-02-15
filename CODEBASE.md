@@ -852,6 +852,9 @@ lcov_branch_coverage=0  # Disable branch coverage, focus on line coverage
 - Popover shows detailed metrics: usage %, tokens, cost, and context limit.
 - Manual `Compact now` action available with collapse icon for explicit context summarization.
 - Integrated with current provider/model selection for summarization request.
+- Compaction boundary freeze: during active compaction the pre-compaction boundary is frozen by message ID so the timeline does not collapse prematurely while the summary streams in; the new boundary only takes effect after `isCompactingContext` returns to `false`.
+- Post-compaction state cleanup: `ChatState.error` set by SSE events during the async compaction window is reset to `loaded` on success, and incomplete assistant messages are marked completed to prevent stale in-progress guards.
+- Auto-scroll suppression: `_scrollToBottomCallback` is skipped on `message.part.updated` and `_updateOrAddMessage` while compacting to avoid visual scroll jumps from rapid part streaming.
 
 **Tool diff rendering hardening (2026-02-13, commits b6f8d7f..082ea92):**
 - `ToolState` parsing now normalizes non-string `output` payloads (map/list/scalar) into displayable text and extracts common diff keys (`diff`, `patch`, `unified_diff`).
