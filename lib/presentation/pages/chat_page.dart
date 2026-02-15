@@ -428,6 +428,29 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
   }
 
+  double _lastKnownMaxScrollExtent = 0;
+
+  bool _handleScrollMetricsChanged(ScrollMetricsNotification notification) {
+    // When content shrinks (e.g. bubbles collapse, tool chains hide) and we
+    // should be following the latest message, snap to the bottom immediately
+    // to prevent void space below the last message.
+    if (!_scrollController.hasClients) {
+      return false;
+    }
+    final currentMax = _scrollController.position.maxScrollExtent;
+    final contentShrank = currentMax < _lastKnownMaxScrollExtent;
+    _lastKnownMaxScrollExtent = currentMax;
+    if (_autoFollowToLatest &&
+        !_isProgrammaticScrollInFlight &&
+        contentShrank) {
+      final gap = _distanceToBottom();
+      if (gap > _scrollToBottomEpsilon) {
+        _scrollController.jumpTo(currentMax);
+      }
+    }
+    return false;
+  }
+
   void _syncChatRouteActivity(ChatProvider chatProvider) {
     final isCurrent = _isChatScreenActive();
     if (_wasChatRouteCurrent == isCurrent) {
@@ -613,6 +636,16 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
         final distance = _distanceToBottom();
         if (distance <= _scrollToBottomEpsilon) {
+          break;
+        }
+
+        // During auto-follow (streaming), snap small gaps instantly to avoid
+        // animation conflicts from rapid content updates that cancel/restart
+        // the 260ms animateTo every frame, causing visible jumps.
+        if (!force && distance <= _nearBottomThreshold) {
+          _scrollController.jumpTo(
+            _scrollController.position.maxScrollExtent,
+          );
           break;
         }
 
@@ -6208,47 +6241,50 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           chatProvider.isCurrentSessionActivelyResponding,
     );
 
-    return CustomScrollView(
-      key: const ValueKey<String>('chat_message_list'),
-      controller: _scrollController,
-      slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.only(bottom: 8),
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final entry = timelineEntries[index];
-                if (entry is _TimelineMessageEntry) {
-                  final message = entry.message;
-                  return ChatMessageWidget(
-                    key: ValueKey<String>(entry.key),
-                    message: message,
-                    activeReasoningPartKey: latestReasoningPartKey,
-                    showThinkingBubbles: settingsProvider.showThinkingBubbles,
-                    showToolCallBubbles: settingsProvider.showToolCallBubbles,
-                    isSessionActivelyResponding:
-                        chatProvider.isCurrentSessionActivelyResponding,
-                    onBackgroundLongPress: () =>
-                        _handleMessageBackgroundLongPress(message),
-                    onBackgroundLongPressEnd: () =>
-                        _handleMessageBackgroundLongPressEnd(message),
-                  );
-                }
-                if (entry is _TimelineCollapsedHistoryEntry) {
-                  return _buildCollapsedHistoryEntry(entry);
-                }
-                return _buildRetryingMessageIndicator();
-              },
-              childCount: timelineEntries.length,
-              addAutomaticKeepAlives: false,
-              addRepaintBoundaries: true,
-              addSemanticIndexes: false,
-              findChildIndexCallback: (key) =>
-                  _findTimelineEntryIndexByKey(key, timelineEntries),
+    return NotificationListener<ScrollMetricsNotification>(
+      onNotification: _handleScrollMetricsChanged,
+      child: CustomScrollView(
+        key: const ValueKey<String>('chat_message_list'),
+        controller: _scrollController,
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.only(bottom: 8),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final entry = timelineEntries[index];
+                  if (entry is _TimelineMessageEntry) {
+                    final message = entry.message;
+                    return ChatMessageWidget(
+                      key: ValueKey<String>(entry.key),
+                      message: message,
+                      activeReasoningPartKey: latestReasoningPartKey,
+                      showThinkingBubbles: settingsProvider.showThinkingBubbles,
+                      showToolCallBubbles: settingsProvider.showToolCallBubbles,
+                      isSessionActivelyResponding:
+                          chatProvider.isCurrentSessionActivelyResponding,
+                      onBackgroundLongPress: () =>
+                          _handleMessageBackgroundLongPress(message),
+                      onBackgroundLongPressEnd: () =>
+                          _handleMessageBackgroundLongPressEnd(message),
+                    );
+                  }
+                  if (entry is _TimelineCollapsedHistoryEntry) {
+                    return _buildCollapsedHistoryEntry(entry);
+                  }
+                  return _buildRetryingMessageIndicator();
+                },
+                childCount: timelineEntries.length,
+                addAutomaticKeepAlives: false,
+                addRepaintBoundaries: true,
+                addSemanticIndexes: false,
+                findChildIndexCallback: (key) =>
+                    _findTimelineEntryIndexByKey(key, timelineEntries),
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
