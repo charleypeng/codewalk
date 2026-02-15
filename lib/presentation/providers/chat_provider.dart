@@ -5162,9 +5162,14 @@ class ChatProvider extends ChangeNotifier {
               _messageSubscription = null;
               _activeMessageStreamSessionId = null;
               AppLogger.info('Provider send stream finished');
+              final sessionId = _currentSession?.id;
+              if (sessionId != null) {
+                _sessionStatusById[sessionId] = const SessionStatusInfo(
+                  type: SessionStatusType.idle,
+                );
+              }
               _setState(ChatState.loaded);
               unawaited(_persistLastSessionSnapshotBestEffort());
-              final sessionId = _currentSession?.id;
               if (sessionId != null) {
                 unawaited(loadSessionInsights(sessionId, silent: true));
               }
