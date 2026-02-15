@@ -162,6 +162,7 @@ Implemented desktop local-server wizard with runtime checks for `opencode serve`
 - [x] Na lista de Conversations, trocar o ícone padrão da sessão por um estado visual de loading suave enquanto aquela sessão/conversa estiver recebendo dados/resposta (mobile + desktop) - Commit: fb6e118
 - [ ] Substituir serviço ch.at de títulos por agent nativo OpenCode 'title', mantendo cadência de 6 mensagens
 
+- [x] Implement global desktop keyboard shortcuts (mod+m recent models, mod+t variants, mod+, open settings, OS-specific Ctrl/Cmd labels, mod+j global behavior) - Commit: 7e2732c
 #### `featJ` Speech-to-text platform matrix
 
 - [ ] No desktop, pesquisar como usar microfone speech-to-text no linux. Pesquisar também se a API atual já funciona no mac/windows/iOS
