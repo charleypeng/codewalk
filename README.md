@@ -18,7 +18,7 @@ A native (really fast!!) cross-platform client for [OpenCode](https://github.com
 - Chat-first layout with responsive sidebar (mobile drawer, desktop split view)
 - Desktop keyboard shortcuts (`Ctrl/Cmd + N`, `Ctrl/Cmd + R`, `Ctrl/Cmd + L`, `Esc`)
 - Markdown rendering with syntax highlighting and text selection
-- Dark theme with Material Design 3
+- Material Design 3 theming
 - Cross-platform: Linux, Windows, macOS, Web, Android
 
 ## Install in One Command
@@ -106,10 +106,10 @@ make precommit  # check + android
 ### Server Configuration
 
 1. Launch the app and open **Settings** from the sidebar
-2. Add a server profile with host and port (e.g., `127.0.0.1:4096`)
-3. Configure authentication if required (API key or basic auth)
-4. Use **Test Connection** to verify connectivity
-5. Multiple server profiles can be added and switched at any time
+2. Tap **Add Server** and run the Quick setup command in your terminal
+3. Keep the default `Server URL` (`http://127.0.0.1:4096`) or set your server URL
+4. Configure Basic Auth only if your server requires it
+5. Save and switch active/default profiles as needed
 
 ## Architecture
 
