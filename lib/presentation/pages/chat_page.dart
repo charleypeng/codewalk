@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart' hide Provider;
 import 'package:simple_icons/simple_icons.dart';
 import '../../core/config/feature_flags.dart';
@@ -1437,7 +1438,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               ),
             ];
           },
-          icon: const Icon(Icons.tune_rounded),
+          icon: const Icon(Symbols.bottom_panel_close),
         ),
         if (refreshlessEnabled && !isMobile)
           Consumer2<ChatProvider, AppProvider>(
@@ -6203,6 +6204,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final timelineEntries = _buildMessageTimelineEntries(
       messages: chatProvider.messages,
       showRetryIndicator: showMessageProgressIndicator,
+      isSessionActivelyResponding:
+          chatProvider.isCurrentSessionActivelyResponding,
     );
 
     return CustomScrollView(
@@ -6223,6 +6226,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     activeReasoningPartKey: latestReasoningPartKey,
                     showThinkingBubbles: settingsProvider.showThinkingBubbles,
                     showToolCallBubbles: settingsProvider.showToolCallBubbles,
+                    isSessionActivelyResponding:
+                        chatProvider.isCurrentSessionActivelyResponding,
                     onBackgroundLongPress: () =>
                         _handleMessageBackgroundLongPress(message),
                     onBackgroundLongPressEnd: () =>
@@ -6355,11 +6360,15 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   List<_TimelineEntry> _buildMessageTimelineEntries({
     required List<ChatMessage> messages,
     required bool showRetryIndicator,
+    required bool isSessionActivelyResponding,
   }) {
     final entries = <_TimelineEntry>[];
 
     // Use the latest compaction marker as the visible history boundary.
-    final boundaryIndex = _findLatestCompactionBoundaryIndex(messages);
+    final boundaryIndex = _findLatestCompactionBoundaryIndex(
+      messages,
+      allowInProgressBoundary: !isSessionActivelyResponding,
+    );
     if (boundaryIndex != null && boundaryIndex > 0) {
       final boundaryMessage = messages[boundaryIndex];
       final boundary = _resolveCompactionBoundary(boundaryMessage);
@@ -6402,18 +6411,38 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     return entries;
   }
 
-  int? _findLatestCompactionBoundaryIndex(List<ChatMessage> messages) {
+  int? _findLatestCompactionBoundaryIndex(
+    List<ChatMessage> messages, {
+    required bool allowInProgressBoundary,
+  }) {
     for (var index = messages.length - 1; index >= 0; index -= 1) {
-      if (_isCompactionBoundaryMessage(messages[index])) {
+      if (_isCompactionBoundaryMessage(
+        messages[index],
+        allowInProgressBoundary: allowInProgressBoundary,
+      )) {
         return index;
       }
     }
     return null;
   }
 
-  bool _isCompactionBoundaryMessage(ChatMessage message) {
-    return _findCompactionPart(message) != null ||
+  bool _isCompactionBoundaryMessage(
+    ChatMessage message, {
+    required bool allowInProgressBoundary,
+  }) {
+    final isBoundary =
+        _findCompactionPart(message) != null ||
         _isCompactionSummaryMessage(message);
+    if (!isBoundary) {
+      return false;
+    }
+    if (allowInProgressBoundary) {
+      return true;
+    }
+    if (message is AssistantMessage) {
+      return message.isCompleted;
+    }
+    return true;
   }
 
   bool _isCompactionSummaryMessage(ChatMessage message) {
@@ -6987,7 +7016,7 @@ class _ComposerStatusLanternTextState extends State<_ComposerStatusLanternText>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1700),
+      duration: const Duration(milliseconds: 2100),
     )..repeat();
   }
 

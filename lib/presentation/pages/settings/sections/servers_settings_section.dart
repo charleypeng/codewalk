@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_constants.dart';
@@ -293,8 +294,106 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
     await _openProfileDialog(initial: profile);
   }
 
+  static const String _suggestedServerUrl = 'http://127.0.0.1:4096';
+
+  Widget _buildServerSetupQuickGuide(BuildContext context) {
+    final locale = Localizations.maybeLocaleOf(context);
+    final isPortuguese =
+        locale?.languageCode.toLowerCase().startsWith('pt') ?? false;
+
+    final title = isPortuguese ? 'Configuracao rapida' : 'Quick setup';
+    final firstStep = isPortuguese
+        ? '1. Instale o OpenCode CLI.'
+        : '1. Install OpenCode CLI.';
+    final commandLabel = isPortuguese
+        ? '2. Execute no terminal:'
+        : '2. Run in your terminal:';
+    const command = 'opencode serve --hostname 127.0.0.1 --port 4096';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 16,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                title,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(firstStep, style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  commandLabel,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () => _copyTextToClipboard(command),
+                icon: const Icon(Icons.copy_rounded, size: 14),
+                label: const Text('Copy'),
+                style: TextButton.styleFrom(
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
+            ),
+            child: SelectableText(
+              command,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _copyTextToClipboard(String text) {
+    Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Command copied')));
+  }
+
   Future<void> _openProfileDialog({ServerProfile? initial}) async {
-    final urlController = TextEditingController(text: initial?.url ?? '');
+    final urlController = TextEditingController(
+      text: initial?.url ?? _suggestedServerUrl,
+    );
     final labelController = TextEditingController(text: initial?.label ?? '');
     final usernameController = TextEditingController(
       text: initial?.basicAuthUsername ?? '',
@@ -319,11 +418,25 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      _buildServerSetupQuickGuide(context),
                       TextFormField(
                         controller: urlController,
-                        decoration: const InputDecoration(
+                        onChanged: (_) {
+                          setState(() {});
+                        },
+                        decoration: InputDecoration(
                           labelText: 'Server URL',
-                          hintText: 'http://127.0.0.1:4096',
+                          hintText: _suggestedServerUrl,
+                          suffixIcon: urlController.text.trim().isEmpty
+                              ? null
+                              : IconButton(
+                                  tooltip: 'Clear server URL',
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    urlController.clear();
+                                    setState(() {});
+                                  },
+                                ),
                         ),
                         validator: (value) {
                           final raw = value?.trim() ?? '';

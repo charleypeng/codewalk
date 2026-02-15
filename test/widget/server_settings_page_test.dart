@@ -92,6 +92,31 @@ void main() {
     await tester.tap(find.text('Add Server'));
     await tester.pumpAndSettle();
 
+    expect(find.text('Quick setup'), findsOneWidget);
+    expect(
+      find.textContaining('opencode serve --hostname 127.0.0.1 --port 4096'),
+      findsOneWidget,
+    );
+    expect(find.text('Copy'), findsOneWidget);
+    expect(find.byIcon(Icons.copy_rounded), findsOneWidget);
+    expect(find.text('1. Install OpenCode CLI.'), findsOneWidget);
+    expect(find.textContaining('opencode.ai/docs/server'), findsNothing);
+    expect(find.textContaining('Use this URL in the app'), findsNothing);
+    expect(find.text('4. Verify with /global/health or /doc.'), findsNothing);
+
+    final urlField = tester.widget<TextFormField>(
+      find.byType(TextFormField).first,
+    );
+    expect(urlField.controller?.text, 'http://127.0.0.1:4096');
+
+    expect(find.byTooltip('Clear server URL'), findsOneWidget);
+    await tester.tap(find.byTooltip('Clear server URL'));
+    await tester.pumpAndSettle();
+
+    final clearedUrlField = tester.widget<TextFormField>(
+      find.byType(TextFormField).first,
+    );
+    expect(clearedUrlField.controller?.text, isEmpty);
     expect(find.text('Enable AI generated titles'), findsOneWidget);
     expect(
       find.textContaining('This is a free service powered by https://ch.at'),

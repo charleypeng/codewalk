@@ -43,6 +43,8 @@ Concluded historical features were archived to `ROADMAP.archive.done.md` to keep
 - `ROADMAP.featJ.md` - Speech-to-text platform matrix and Linux strategy (task 1)
 - `ROADMAP.featK.md` - First-run onboarding wizard (task 36)
 - `ROADMAP.featL.md` - Post-compaction historical bubbles collapse and lazy nested rendering (new task)
+- `ROADMAP.featM.md` - Icons to Material Symbols migration (technical debt)
+- `ROADMAP.featN.md` - Material You design system revamp (responsive, adaptive, modern UX)
 
 ### Backlog Pack Dependency Order
 
@@ -58,10 +60,12 @@ Concluded historical features were archived to `ROADMAP.archive.done.md` to keep
 10. `ROADMAP.featC.md` (focus/visibility render gate + files planning)
 11. `ROADMAP.featJ.md` (speech-to-text platform matrix)
 12. `ROADMAP.featK.md` (first-run onboarding wizard)
+13. `ROADMAP.featM.md` (Icons to Material Symbols migration - isolated track, can run anytime)
+14. `ROADMAP.featN.md` (Material You design system revamp - isolated track, can run anytime)
 
 Notes:
 - Prefer this order by default to reduce regression risk in timeline/sync behavior.
-- If needed, `featJ` and `featK` can run earlier as mostly isolated tracks.
+- If needed, `featJ`, `featK`, `featM`, and `featN` can run earlier as mostly isolated tracks.
 
 ### Backlog Pack Execution Checklist
 
@@ -69,7 +73,7 @@ Notes:
 - [x] `featB` - `ROADMAP.featB.md` (realtime read/render foundation)
 - [x] `featL` - `ROADMAP.featL.md` (compaction boundary + pre-boundary collapse)
 - [x] `featD` - `ROADMAP.featD.md` (thinking/tool UX controls)
-- [ ] `featH` - `ROADMAP.featH.md` (startup/settings/tool-surface polish)
+- [x] `featH` - `ROADMAP.featH.md` (startup/settings/tool-surface polish)
 - [ ] `featE` - `ROADMAP.featE.md` (composer popover/local server/shortcuts reliability)
 - [ ] `featI` - `ROADMAP.featI.md` (agent/shortcut/productivity parity)
 - [ ] `featF` - `ROADMAP.featF.md` (files drafting UX + duplicate/copy interaction fixes)
@@ -77,6 +81,8 @@ Notes:
 - [ ] `featC` - `ROADMAP.featC.md` (focus/visibility render gate + files planning)
 - [ ] `featJ` - `ROADMAP.featJ.md` (speech-to-text platform matrix)
 - [ ] `featK` - `ROADMAP.featK.md` (first-run onboarding wizard)
+- [ ] `featM` - `ROADMAP.featM.md` (Icons to Material Symbols migration)
+- [ ] `featN` - `ROADMAP.featN.md` (Material You design system revamp)
 
 Use the same status convention from Legend for active execution updates (`[~]`, `[x]`, `[/]`).
 
@@ -135,10 +141,10 @@ Implemented multi-pass scroll-to-bottom algorithm (up to 6 passes with 1px epsil
 
 #### `featH` Settings/onboarding/operation polish
 
-- [x] Refresh providers/model em background de forma assíncrona ao abrir o app (hash: a definir após commit)
-- [ ] Adicionar instruções básicas de como instalar e executar um servidor OpenCode na tela de adicionar servidor
-- [ ] Condensar as chamas de tool calls em um collapsable quando a resposta final do assistente chegar
-- [ ] Tornar bolha de thinking em uma caixa de no máximo 4 linhas, o texto vai subindo suavemente assim que chega, somente se clicar em show more expande um pouco mais mas com altura limitada ativando barra de rolagem interna se necessário
+- [x] Refresh providers/model em background de forma assíncrona ao abrir o app (revalidada nesta entrega - hash pendente até commit)
+- [x] Adicionar instruções básicas de como instalar e executar um servidor OpenCode na tela de adicionar servidor
+- [x] Condensar as chamas de tool calls em um collapsable quando a resposta final do assistente chegar
+- [x] Tornar bolha de thinking em uma caixa de no máximo 4 linhas, o texto vai subindo suavemente assim que chega, somente se clicar em show more expande um pouco mais mas com altura limitada ativando barra de rolagem interna se necessário
 
 #### `featI` Agent/shortcut/productivity parity
 
@@ -152,6 +158,7 @@ Implemented multi-pass scroll-to-bottom algorithm (up to 6 passes with 1px epsil
 - [ ] Aumentar o espaço/largura do select no topo para o projeto atual quando no desktop. A largura atual está colocando ellipsis muito rápido com o espaço todo de uma tela grande (desktop)
 - [ ] Criar lista de dicas de uma frase para mostrar enquanto aguarda respostas do servidor mas nada chegou ainda
 - [x] Na lista de Conversations, trocar o ícone padrão da sessão por um estado visual de loading suave enquanto aquela sessão/conversa estiver recebendo dados/resposta (mobile + desktop) (hash: a definir após commit)
+- [ ] Substituir serviço ch.at de títulos por agent nativo OpenCode 'title', mantendo cadência de 6 mensagens
 
 #### `featJ` Speech-to-text platform matrix
 
@@ -169,3 +176,15 @@ Implemented compaction boundary timeline entry that collapses all pre-compaction
 
 **Commits**: fd3ce04, 4af9f01
 **ADR**: ADR-027
+
+#### `featM` Icons to Material Symbols migration
+
+- [ ] Migrar todos os usos de `Icons.*` para `Symbols.*` do pacote `material_symbols_icons`
+
+#### `featN` Material You design system revamp
+
+- [ ] Implementar dynamic color system com suporte a wallpaper extrapolation em Android 12+
+- [ ] Expandir palette de cores com temas brand/custom no Settings
+- [ ] Refine spacing/layout para melhor uso de espaço em múltiplos tamanhos de tela
+- [ ] Implementar adaptive layout patterns (responsive breakpoints, orientation-aware)
+- [ ] Polish componentes para estar 100% alinhado com Material Design 3 specs

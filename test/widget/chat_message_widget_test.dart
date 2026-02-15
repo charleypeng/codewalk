@@ -496,8 +496,149 @@ void main() {
     );
   });
 
+  testWidgets('collapses completed tool chains and reveals them on demand', (
+    WidgetTester tester,
+  ) async {
+    final message = AssistantMessage(
+      id: 'msg_tool_chain',
+      sessionId: 'ses_tool_chain',
+      time: DateTime.fromMillisecondsSinceEpoch(1000),
+      completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+      parts: <MessagePart>[
+        ToolPart(
+          id: 'part_tool_chain_1',
+          messageId: 'msg_tool_chain',
+          sessionId: 'ses_tool_chain',
+          callId: 'call_chain_1',
+          tool: 'bash',
+          state: ToolStateCompleted(
+            input: const <String, dynamic>{'command': 'pwd'},
+            output: '/tmp/project',
+            time: ToolTime(
+              start: DateTime.fromMillisecondsSinceEpoch(1000),
+              end: DateTime.fromMillisecondsSinceEpoch(1050),
+            ),
+          ),
+        ),
+        ToolPart(
+          id: 'part_tool_chain_2',
+          messageId: 'msg_tool_chain',
+          sessionId: 'ses_tool_chain',
+          callId: 'call_chain_2',
+          tool: 'read',
+          state: ToolStateCompleted(
+            input: const <String, dynamic>{'filePath': 'lib/main.dart'},
+            output: 'line 1\nline 2',
+            time: ToolTime(
+              start: DateTime.fromMillisecondsSinceEpoch(1060),
+              end: DateTime.fromMillisecondsSinceEpoch(1100),
+            ),
+          ),
+        ),
+        const TextPart(
+          id: 'part_tool_chain_text',
+          messageId: 'msg_tool_chain',
+          sessionId: 'ses_tool_chain',
+          text: 'Final answer',
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: ChatMessageWidget(message: message)),
+      ),
+    );
+
+    expect(find.text('Tool calls collapsed'), findsOneWidget);
+    expect(find.text('Show tool calls'), findsOneWidget);
+    expect(find.text('Running command'), findsNothing);
+    expect(find.text('Reading file'), findsNothing);
+
+    await tester.tap(find.text('Show tool calls'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Hide tool calls'), findsOneWidget);
+    expect(find.text('Running command'), findsOneWidget);
+    expect(find.text('Reading file'), findsOneWidget);
+  });
+
+  testWidgets('defers tool-chain collapse while session is still responding', (
+    WidgetTester tester,
+  ) async {
+    final message = AssistantMessage(
+      id: 'msg_tool_chain_streaming',
+      sessionId: 'ses_tool_chain_streaming',
+      time: DateTime.fromMillisecondsSinceEpoch(1000),
+      completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+      parts: <MessagePart>[
+        ToolPart(
+          id: 'part_tool_chain_streaming_1',
+          messageId: 'msg_tool_chain_streaming',
+          sessionId: 'ses_tool_chain_streaming',
+          callId: 'call_chain_streaming_1',
+          tool: 'bash',
+          state: ToolStateCompleted(
+            input: const <String, dynamic>{'command': 'pwd'},
+            output: '/tmp/project',
+            time: ToolTime(
+              start: DateTime.fromMillisecondsSinceEpoch(1000),
+              end: DateTime.fromMillisecondsSinceEpoch(1050),
+            ),
+          ),
+        ),
+        ToolPart(
+          id: 'part_tool_chain_streaming_2',
+          messageId: 'msg_tool_chain_streaming',
+          sessionId: 'ses_tool_chain_streaming',
+          callId: 'call_chain_streaming_2',
+          tool: 'read',
+          state: ToolStateCompleted(
+            input: const <String, dynamic>{'filePath': 'lib/main.dart'},
+            output: 'line 1\nline 2',
+            time: ToolTime(
+              start: DateTime.fromMillisecondsSinceEpoch(1060),
+              end: DateTime.fromMillisecondsSinceEpoch(1100),
+            ),
+          ),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: message,
+            isSessionActivelyResponding: true,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Tool calls collapsed'), findsNothing);
+    expect(find.text('Running command'), findsOneWidget);
+    expect(find.text('Reading file'), findsOneWidget);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: message,
+            isSessionActivelyResponding: false,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tool calls collapsed'), findsOneWidget);
+    expect(find.text('Running command'), findsNothing);
+    expect(find.text('Reading file'), findsNothing);
+  });
+
   testWidgets(
-    'latest thinking stays expanded and previous thinking collapses on new block',
+    'thinking starts compact, expands with bounded viewport, and previous block collapses',
     (WidgetTester tester) async {
       AssistantMessage buildMessage(List<MessagePart> parts) {
         return AssistantMessage(
@@ -518,31 +659,58 @@ void main() {
         id: 'thinking_1',
         messageId: 'msg_thinking',
         sessionId: 'ses_thinking',
-        text: 'line 1\nline 2\nline 3\nline 4',
+        text:
+            'line 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\nline 10',
       );
       const reasoningTwo = ReasoningPart(
         id: 'thinking_2',
         messageId: 'msg_thinking',
         sessionId: 'ses_thinking',
-        text: 'step 1\nstep 2\nstep 3\nstep 4',
+        text: 'step 1\nstep 2\nstep 3\nstep 4\nstep 5\nstep 6',
       );
 
       await tester.pumpWidget(
         buildWidget(buildMessage(const <MessagePart>[reasoningOne])),
       );
 
-      Text firstThinking = tester.widget<Text>(
-        find.byKey(
-          const ValueKey<String>(
-            'thinking_content_text_msg_thinking::thinking_1',
-          ),
+      final firstViewportFinder = find.byKey(
+        const ValueKey<String>(
+          'thinking_content_viewport_msg_thinking::thinking_1',
         ),
       );
-      expect(firstThinking.maxLines, isNull);
+      final collapsedHeight = tester.getSize(firstViewportFinder).height;
       expect(
         find.byKey(
           const ValueKey<String>(
             'thinking_content_toggle_msg_thinking::thinking_1',
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'thinking_content_scrollbar_msg_thinking::thinking_1',
+          ),
+        ),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>(
+            'thinking_content_toggle_msg_thinking::thinking_1',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final expandedHeight = tester.getSize(firstViewportFinder).height;
+      expect(expandedHeight, greaterThan(collapsedHeight));
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'thinking_content_scrollbar_msg_thinking::thinking_1',
           ),
         ),
         findsOneWidget,
@@ -555,41 +723,22 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      firstThinking = tester.widget<Text>(
+      expect(
         find.byKey(
           const ValueKey<String>(
-            'thinking_content_text_msg_thinking::thinking_1',
+            'thinking_content_scrollbar_msg_thinking::thinking_1',
           ),
         ),
+        findsNothing,
       );
-      final secondThinking = tester.widget<Text>(
+      expect(
         find.byKey(
           const ValueKey<String>(
-            'thinking_content_text_msg_thinking::thinking_2',
+            'thinking_content_viewport_msg_thinking::thinking_2',
           ),
         ),
+        findsOneWidget,
       );
-
-      expect(firstThinking.maxLines, 2);
-      expect(secondThinking.maxLines, isNull);
-
-      await tester.tap(
-        find.byKey(
-          const ValueKey<String>(
-            'thinking_content_toggle_msg_thinking::thinking_1',
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      firstThinking = tester.widget<Text>(
-        find.byKey(
-          const ValueKey<String>(
-            'thinking_content_text_msg_thinking::thinking_1',
-          ),
-        ),
-      );
-      expect(firstThinking.maxLines, isNull);
     },
   );
 
@@ -640,7 +789,7 @@ void main() {
             id: 'thinking_a',
             messageId: 'msg_a',
             sessionId: 'ses_thinking',
-            text: 'line 1\nline 2\nline 3\nline 4',
+            text: 'line 1\nline 2\nline 3\nline 4\nline 5\nline 6',
           ),
         ],
       );
@@ -656,12 +805,21 @@ void main() {
         ),
       );
 
-      Text thinkingText = tester.widget<Text>(
+      await tester.tap(
         find.byKey(
-          const ValueKey<String>('thinking_content_text_msg_a::thinking_a'),
+          const ValueKey<String>('thinking_content_toggle_msg_a::thinking_a'),
         ),
       );
-      expect(thinkingText.maxLines, isNull);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'thinking_content_scrollbar_msg_a::thinking_a',
+          ),
+        ),
+        findsOneWidget,
+      );
 
       await tester.pumpWidget(
         MaterialApp(
@@ -675,12 +833,14 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      thinkingText = tester.widget<Text>(
+      expect(
         find.byKey(
-          const ValueKey<String>('thinking_content_text_msg_a::thinking_a'),
+          const ValueKey<String>(
+            'thinking_content_scrollbar_msg_a::thinking_a',
+          ),
         ),
+        findsNothing,
       );
-      expect(thinkingText.maxLines, 2);
     },
   );
 

@@ -16,6 +16,11 @@
 - Added `isSessionActivelyResponding(sessionId)` method to check if session has active stream or busy status, guarding session refresh operations to prevent concurrent refreshes (`_activeSessionRefreshInFlight` flag).
 - Added active session indicator in Conversations list: `ChatSessionList` now displays `Icons.sync_rounded` via `AnimatedSwitcher` when a session is actively responding (`isSessionActive` callback prop), providing visual feedback for streaming sessions.
 - Added provider refresh state UI: shows "Loading models" chip with spinner or "Retry models" action chip in composer area based on `providersRefreshState` and `isProvidersRefreshInProgress`.
+- Added server onboarding quick guide in Add Server dialog (`_buildServerSetupQuickGuide`) with CLI install instructions, command to run, and URL/verification steps.
+- Added thinking bubble display controls: 4-line default collapse (`_collapsedReasoningMaxLines`), expandable with "Show more/Show less" toggle, internal scroll with `SingleChildScrollView` and `Scrollbar`, and reduce motion support via `disableAnimations` system check.
+- Added tool call bubble display controls: 2-line default collapse (`_collapsedToolDetailMaxLines`), expandable with "Show more/Show less" toggle, toggle visibility via `showToolCallBubbles` in ExperienceSettings.
+- Added automatic tool-call chain collapse after final assistant response: completed tool chains are collapsed by default and can be expanded on demand (`lib/presentation/widgets/chat_message_widget.dart`, tested in `test/widget/chat_message_widget_test.dart`).
+- Added AppBar display popover and Appearance settings section for global thinking/tool bubbles and density preferences with persistence.
 
 ## Project Structure
 

@@ -11,7 +11,8 @@ import '../utils/diff_parser.dart';
 /// Chat message widget
 class ChatMessageWidget extends StatelessWidget {
   static const int _collapsedToolDetailMaxLines = 2;
-  static const int _collapsedReasoningMaxLines = 2;
+  static const int _collapsedReasoningMaxLines = 4;
+  static const int _expandedReasoningMaxLines = 12;
 
   const ChatMessageWidget({
     super.key,
@@ -19,6 +20,7 @@ class ChatMessageWidget extends StatelessWidget {
     this.activeReasoningPartKey,
     this.showThinkingBubbles = true,
     this.showToolCallBubbles = true,
+    this.isSessionActivelyResponding = false,
     this.onBackgroundLongPress,
     this.onBackgroundLongPressEnd,
   });
@@ -27,6 +29,7 @@ class ChatMessageWidget extends StatelessWidget {
   final String? activeReasoningPartKey;
   final bool showThinkingBubbles;
   final bool showToolCallBubbles;
+  final bool isSessionActivelyResponding;
   final VoidCallback? onBackgroundLongPress;
   final VoidCallback? onBackgroundLongPressEnd;
 
@@ -51,6 +54,12 @@ class ChatMessageWidget extends StatelessWidget {
     if (!hasVisibleContent && !hasVisibleError) {
       return const SizedBox.shrink();
     }
+
+    final renderedParts = _buildMessagePartWidgets(
+      context,
+      latestReasoningPartId: latestReasoningPartId,
+      activeReasoningPartKey: activeReasoningPartKey,
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -123,32 +132,13 @@ class ChatMessageWidget extends StatelessWidget {
                       if (isUser)
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ...message.parts.map(
-                              (part) => _buildMessagePart(
-                                context,
-                                part,
-                                latestReasoningPartId: latestReasoningPartId,
-                                activeReasoningPartKey: activeReasoningPartKey,
-                              ),
-                            ),
-                          ],
+                          children: renderedParts,
                         )
                       else
                         SelectionArea(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ...message.parts.map(
-                                (part) => _buildMessagePart(
-                                  context,
-                                  part,
-                                  latestReasoningPartId: latestReasoningPartId,
-                                  activeReasoningPartKey:
-                                      activeReasoningPartKey,
-                                ),
-                              ),
-                            ],
+                            children: renderedParts,
                           ),
                         ),
                       if (message is AssistantMessage &&
@@ -331,6 +321,95 @@ class ChatMessageWidget extends StatelessWidget {
       case PartType.compaction:
         return _buildCompactionPart(context, part as CompactionPart);
     }
+  }
+
+  List<Widget> _buildMessagePartWidgets(
+    BuildContext context, {
+    required String? latestReasoningPartId,
+    required String? activeReasoningPartKey,
+  }) {
+    final assistantMessage = message is AssistantMessage
+        ? message as AssistantMessage
+        : null;
+    final shouldAutoCollapseToolChains =
+        assistantMessage != null &&
+        assistantMessage.isCompleted &&
+        !isSessionActivelyResponding;
+    if (assistantMessage == null ||
+        !shouldAutoCollapseToolChains ||
+        !showToolCallBubbles) {
+      return message.parts
+          .map<Widget>(
+            (part) => _buildMessagePart(
+              context,
+              part,
+              latestReasoningPartId: latestReasoningPartId,
+              activeReasoningPartKey: activeReasoningPartKey,
+            ),
+          )
+          .toList(growable: false);
+    }
+
+    final rendered = <Widget>[];
+    var index = 0;
+    while (index < message.parts.length) {
+      final part = message.parts[index];
+      if (!_isToolSurfacePart(part)) {
+        rendered.add(
+          _buildMessagePart(
+            context,
+            part,
+            latestReasoningPartId: latestReasoningPartId,
+            activeReasoningPartKey: activeReasoningPartKey,
+          ),
+        );
+        index += 1;
+        continue;
+      }
+
+      final chainParts = <MessagePart>[];
+      while (index < message.parts.length &&
+          _isToolSurfacePart(message.parts[index])) {
+        chainParts.add(message.parts[index]);
+        index += 1;
+      }
+
+      if (chainParts.length <= 1) {
+        rendered.add(
+          _buildMessagePart(
+            context,
+            chainParts.first,
+            latestReasoningPartId: latestReasoningPartId,
+            activeReasoningPartKey: activeReasoningPartKey,
+          ),
+        );
+        continue;
+      }
+
+      rendered.add(
+        _CollapsibleToolChain(
+          key: ValueKey<String>(
+            'tool_chain_${message.id}_${chainParts.first.id}',
+          ),
+          messageId: message.id,
+          startPartId: chainParts.first.id,
+          autoCollapsed: shouldAutoCollapseToolChains,
+          parts: chainParts,
+          partBuilder: (toolPart) => _buildMessagePart(
+            context,
+            toolPart,
+            latestReasoningPartId: latestReasoningPartId,
+            activeReasoningPartKey: activeReasoningPartKey,
+          ),
+        ),
+      );
+    }
+
+    return rendered;
+  }
+
+  bool _isToolSurfacePart(MessagePart part) {
+    return part.type == PartType.tool || part.type == PartType.patch;
   }
 
   Widget _buildTextPart(BuildContext context, TextPart part) {
@@ -659,6 +738,7 @@ class ChatMessageWidget extends StatelessWidget {
             partKey: partKey,
             text: part.text,
             collapsedMaxLines: _collapsedReasoningMaxLines,
+            expandedMaxLines: _expandedReasoningMaxLines,
             isLatestReasoningPart: isLatestReasoningPart,
             textStyle: Theme.of(
               context,
@@ -1291,6 +1371,181 @@ class ChatMessageWidget extends StatelessWidget {
   }
 }
 
+class _CollapsibleToolChain extends StatefulWidget {
+  const _CollapsibleToolChain({
+    super.key,
+    required this.messageId,
+    required this.startPartId,
+    required this.autoCollapsed,
+    required this.parts,
+    required this.partBuilder,
+  });
+
+  final String messageId;
+  final String startPartId;
+  final bool autoCollapsed;
+  final List<MessagePart> parts;
+  final Widget Function(MessagePart part) partBuilder;
+
+  @override
+  State<_CollapsibleToolChain> createState() => _CollapsibleToolChainState();
+}
+
+class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
+  late bool _expanded;
+
+  @override
+  void initState() {
+    super.initState();
+    _expanded = !widget.autoCollapsed;
+  }
+
+  @override
+  void didUpdateWidget(covariant _CollapsibleToolChain oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.autoCollapsed && widget.autoCollapsed && _expanded) {
+      setState(() {
+        _expanded = false;
+      });
+      return;
+    }
+
+    if (oldWidget.autoCollapsed && !widget.autoCollapsed && !_expanded) {
+      setState(() {
+        _expanded = true;
+      });
+    }
+  }
+
+  String _buildSummaryLabel() {
+    final toolParts = widget.parts.whereType<ToolPart>().toList(
+      growable: false,
+    );
+    final patchCount = widget.parts.whereType<PatchPart>().length;
+    if (toolParts.isEmpty) {
+      return patchCount == 1 ? '1 patch' : '$patchCount patches';
+    }
+
+    final pending = toolParts
+        .where((part) => part.state.status == ToolStatus.pending)
+        .length;
+    final running = toolParts
+        .where((part) => part.state.status == ToolStatus.running)
+        .length;
+    final completed = toolParts
+        .where((part) => part.state.status == ToolStatus.completed)
+        .length;
+    final failed = toolParts
+        .where((part) => part.state.status == ToolStatus.error)
+        .length;
+
+    final summaryParts = <String>[
+      toolParts.length == 1 ? '1 call' : '${toolParts.length} calls',
+      if (completed > 0) '$completed done',
+      if (running > 0) '$running running',
+      if (pending > 0) '$pending queued',
+      if (failed > 0) '$failed needs attention',
+      if (patchCount > 0) patchCount == 1 ? '1 patch' : '$patchCount patches',
+    ];
+    return summaryParts.join(' • ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final disableAnimations =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+
+    return Container(
+      key: ValueKey<String>(
+        'tool_chain_container_${widget.messageId}_${widget.startPartId}',
+      ),
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.36),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.account_tree_outlined,
+                size: 16,
+                color: colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _expanded ? 'Tool calls' : 'Tool calls collapsed',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _buildSummaryLabel(),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton(
+                key: ValueKey<String>(
+                  'tool_chain_toggle_${widget.messageId}_${widget.startPartId}',
+                ),
+                onPressed: () {
+                  setState(() {
+                    _expanded = !_expanded;
+                  });
+                },
+                style: TextButton.styleFrom(
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 2,
+                  ),
+                ),
+                child: Text(_expanded ? 'Hide tool calls' : 'Show tool calls'),
+              ),
+            ],
+          ),
+          AnimatedSize(
+            duration: disableAnimations
+                ? Duration.zero
+                : const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: !_expanded
+                ? const SizedBox.shrink()
+                : Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: widget.parts
+                          .map<Widget>(widget.partBuilder)
+                          .toList(growable: false),
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CollapsibleToolContent extends StatefulWidget {
   const _CollapsibleToolContent({
     required this.text,
@@ -1532,6 +1787,7 @@ class _CollapsibleReasoningContent extends StatefulWidget {
     required this.partKey,
     required this.text,
     required this.collapsedMaxLines,
+    required this.expandedMaxLines,
     required this.isLatestReasoningPart,
     this.textStyle,
   });
@@ -1539,6 +1795,7 @@ class _CollapsibleReasoningContent extends StatefulWidget {
   final String partKey;
   final String text;
   final int collapsedMaxLines;
+  final int expandedMaxLines;
   final bool isLatestReasoningPart;
   final TextStyle? textStyle;
 
@@ -1550,19 +1807,37 @@ class _CollapsibleReasoningContent extends StatefulWidget {
 class _CollapsibleReasoningContentState
     extends State<_CollapsibleReasoningContent> {
   late bool _expanded;
+  late final ScrollController _scrollController;
+  late bool _canExpandSticky;
+
+  bool _computeCanExpand(String text) {
+    if (text.trim().isEmpty) {
+      return false;
+    }
+    final lineCount = '\n'.allMatches(text).length + 1;
+    return lineCount > widget.collapsedMaxLines || text.length > 160;
+  }
 
   bool get _canExpand {
     if (widget.text.trim().isEmpty) {
       return false;
     }
-    final lineCount = '\n'.allMatches(widget.text).length + 1;
-    return lineCount > widget.collapsedMaxLines || widget.text.length > 160;
+    return _canExpandSticky || _computeCanExpand(widget.text);
   }
 
   @override
   void initState() {
     super.initState();
-    _expanded = widget.isLatestReasoningPart;
+    _expanded = false;
+    _scrollController = ScrollController();
+    _canExpandSticky = _computeCanExpand(widget.text);
+    _scheduleLatestReasoningAutoScroll(forceJump: true);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -1576,13 +1851,62 @@ class _CollapsibleReasoningContentState
       }
       return;
     }
-    if (!oldWidget.isLatestReasoningPart && widget.isLatestReasoningPart) {
-      if (!_expanded) {
-        setState(() {
-          _expanded = true;
-        });
-      }
+
+    if (!_canExpandSticky && _computeCanExpand(widget.text)) {
+      _canExpandSticky = true;
     }
+
+    if (oldWidget.text != widget.text ||
+        oldWidget.isLatestReasoningPart != widget.isLatestReasoningPart) {
+      _scheduleLatestReasoningAutoScroll(forceJump: false);
+    }
+  }
+
+  double _resolveViewportHeight(BuildContext context) {
+    final fallbackStyle = Theme.of(context).textTheme.bodyMedium;
+    final resolvedStyle = widget.textStyle ?? fallbackStyle;
+    final fontSize = resolvedStyle?.fontSize ?? 14;
+    final lineHeightFactor = resolvedStyle?.height ?? 1.4;
+    final textScaler = MediaQuery.textScalerOf(context);
+    final lineHeight = textScaler.scale(fontSize) * lineHeightFactor;
+    final lineTarget = _expanded
+        ? widget.expandedMaxLines
+        : widget.collapsedMaxLines;
+    return math.max(1, lineTarget) * lineHeight;
+  }
+
+  void _scheduleLatestReasoningAutoScroll({required bool forceJump}) {
+    if (!widget.isLatestReasoningPart) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+      final maxScrollExtent = _scrollController.position.maxScrollExtent;
+      if (maxScrollExtent <= 0) {
+        return;
+      }
+      final currentOffset = _scrollController.position.pixels;
+      if ((maxScrollExtent - currentOffset).abs() < 1.0) {
+        return;
+      }
+      final disableAnimations =
+          MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+      if (forceJump || disableAnimations) {
+        _scrollController.jumpTo(maxScrollExtent);
+        return;
+      }
+      unawaited(
+        _scrollController
+            .animateTo(
+              maxScrollExtent,
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+            )
+            .catchError((_) {}),
+      );
+    });
   }
 
   @override
@@ -1590,18 +1914,40 @@ class _CollapsibleReasoningContentState
     final textWidget = Text(
       widget.text,
       key: ValueKey<String>('thinking_content_text_${widget.partKey}'),
-      maxLines: _expanded ? null : widget.collapsedMaxLines,
-      overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
       style: widget.textStyle,
     );
     if (!_canExpand) {
       return textWidget;
     }
 
+    final scrollView = SingleChildScrollView(
+      key: ValueKey<String>('thinking_content_scroll_${widget.partKey}'),
+      controller: _scrollController,
+      primary: false,
+      child: textWidget,
+    );
+
+    final scrollableContent = _expanded
+        ? Scrollbar(
+            key: ValueKey<String>(
+              'thinking_content_scrollbar_${widget.partKey}',
+            ),
+            controller: _scrollController,
+            thumbVisibility: true,
+            child: scrollView,
+          )
+        : scrollView;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        textWidget,
+        ConstrainedBox(
+          key: ValueKey<String>('thinking_content_viewport_${widget.partKey}'),
+          constraints: BoxConstraints(
+            maxHeight: _resolveViewportHeight(context),
+          ),
+          child: scrollableContent,
+        ),
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(
@@ -1610,6 +1956,7 @@ class _CollapsibleReasoningContentState
               setState(() {
                 _expanded = !_expanded;
               });
+              _scheduleLatestReasoningAutoScroll(forceJump: true);
             },
             style: TextButton.styleFrom(
               minimumSize: Size.zero,

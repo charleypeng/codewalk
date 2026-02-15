@@ -35,343 +35,7 @@ This document tracks technical decisions for CodeWalk.
 - ADR-029: Session-Scoped Stream Isolation and Composer Response Gating (2026-02-14) [Accepted]
 - ADR-030: Session Activity Visual Feedback with Loading State Indicators (2026-02-14) [Accepted]
 - ADR-031: Asynchronous Provider Initialization and Background Refresh on Startup (2026-02-14) [Accepted]
-
----
-
-## ADR-027: Compaction Boundary Timeline Collapse and Lazy Historical Expansion
-
-**Status**: Accepted
-**Date**: 2026-02-14
-
-### Context
-
-Long sessions accumulated many pre-compaction bubbles, which kept cluttering the visible timeline and increased render/memory work even after context compaction. The UX goal for compaction is to establish a clear "before/after" boundary and keep active conversation flow focused on the post-compaction segment.
-
-### Decision
-
-1. Treat the latest `CompactionPart` as a timeline boundary.
-2. Insert a dedicated collapsed-history entry before the compaction response.
-3. Keep pre-boundary messages hidden by default and instantiate them only when user expands the group.
-4. Reset expanded state when switching sessions to avoid leaking expanded-heavy state across conversations.
-
-### Rationale
-
-- Boundary-based collapsing maps directly to user mental model of "old context was compacted".
-- Lazy construction of pre-boundary entries avoids unnecessary widget trees when history is collapsed.
-- Session-scoped expansion state keeps behavior predictable and prevents accidental memory growth after navigation.
-
-### Consequences
-
-- ✅ Positive: compacted sessions open with cleaner post-boundary focus.
-- ✅ Positive: reduced initial timeline build work for sessions with long pre-compaction history.
-- ✅ Positive: explicit toggle still allows auditing older context when needed.
-- ⚠️ Trade-off: pre-boundary entries are rebuilt when expanded again (acceptable for low-cost hidden mode by default).
-
-### Post-Decision Update (2026-02-14)
-
-Extended compaction boundary detection to handle sessions where `CompactionPart` markers may be absent:
-
-- **Fallback boundary detection**: Summary assistant messages (`summary: true`) are now treated as compaction boundaries when `CompactionPart` markers are absent.
-- **Boundary resolution**: Added `_resolveCompactionBoundary()` which checks for both `CompactionPart` and summary messages, using synthetic compaction IDs (`summary_<messageId>`) and label `"context"` for summary-based boundaries.
-- **Selection neutrality**: Both `CompactionPart` messages and summary messages are excluded from provider/model selection adoption to prevent internal compaction flows from overriding user-selected agents/models.
-- **Implementation**: Added `_isSelectionNeutralAssistantMessage()` guard in `ChatProvider.adoptSelectionFrom()`.
-
-**Related commits**: fd3ce04 (original feature), 4af9f01 (robustness enhancement)
-
-### Key Files
-
-- `lib/presentation/pages/chat_page.dart` - compaction boundary resolution logic
-- `lib/presentation/providers/chat_provider.dart` - selection neutrality guard
-- `test/unit/providers/chat_provider_test.dart` - selection adoption tests
-- `test/widget/chat_page_test.dart` - summary boundary collapse tests
-- `ROADMAP.featL.md`
-
-### References
-
-- ROADMAP.md (`featL`)
-- ROADMAP.featL.md
-- CODEBASE.md (Delta Update 2026-02-14)
-
----
-
-## ADR-028: Timeline Navigation Architecture and Session Hierarchy Tree Model
-
-**Status**: Accepted
-**Date**: 2026-02-14
-
-### Context
-
-Chat timeline navigation suffered from three core UX problems:
-
-1. **Scroll reliability**: Single-pass `scrollToBottom()` failed to reach the true end in conversations with dynamic message heights (thinking blocks, tool outputs, nested expansions), forcing users to tap multiple times.
-2. **Navigation limitations**: Users browsing long conversation histories lacked quick access to conversation boundaries (oldest vs newest messages), requiring tedious manual scrolling.
-3. **Session hierarchy**: Session lists displayed all conversations as a flat list, obscuring parent/child relationships (main conversation vs subagent tasks) and preventing logical grouping.
-4. **Error handling**: Remote abort events (user stops generation on another device) appeared as full-screen blocking errors instead of transient notices, disrupting workflow.
-
-### Decision
-
-#### 1. Multi-Pass Scroll-to-Bottom with Dynamic Height Compensation
-
-Implement iterative scrolling algorithm to handle dynamic message heights reliably:
-
-- Use configurable maximum passes (default: 6) with epsilon threshold (1 pixel) to detect "true bottom reached".
-- Execute incremental scroll-to-end operations with short delays between passes (50ms) to allow widget tree height recalculation.
-- Stop early when scroll position delta falls within epsilon tolerance.
-- Constants: `_scrollToBottomEpsilon = 1`, `_maxScrollToBottomPasses = 6`.
-
-#### 2. Dual FAB Navigation System
-
-Introduce two floating action buttons for instant timeline navigation:
-
-- **Jump-to-latest FAB**: Appears when user scrolls away from bottom (threshold: 400 pixels), enables one-tap return to newest messages.
-- **Jump-to-first FAB**: Appears above jump-to-latest when user scrolls far from top (composite threshold), enables instant navigation to conversation start.
-- Both FABs use multi-pass scroll algorithm for reliable positioning.
-
-#### 3. Hierarchical Session List with Parent/Child Relationships
-
-Restructure session rendering to expose conversation hierarchy:
-
-- Model sessions as tree with collapsible parent/child nodes (main conversation → subagent sub-conversations).
-- Add expand/collapse affordances for session groups.
-- Preserve session selection and navigation semantics within hierarchy.
-- Update session list widget (`ChatSessionList`) to support nested rendering.
-
-#### 4. Route-Aware Auto-Follow Behavior
-
-Implement scroll position memory with intelligent auto-follow:
-
-- Track chat route activity state (`_wasChatRouteCurrent`) to detect returns to chat view.
-- On app resume or route navigation to chat:
-  - If `_autoFollowToLatest` is true (user was at bottom): scroll to latest.
-  - If user had manually scrolled up: preserve position.
-- Reset auto-follow flag when user manually scrolls away from bottom.
-
-#### 5. Remote Abort as Non-Blocking Notice
-
-Reclassify remote abort events from fatal errors to retryable notices:
-
-- Display remote abort as dismissible snackbar (4 second duration) with retry action.
-- Keep conversation timeline interactive and accessible.
-- Treat abort as expected user-initiated action (stopped on another device), not system failure.
-- Preserve error handling for true failures (network errors, API errors).
-
-### Rationale
-
-- **Multi-pass scrolling**: Dynamic heights require layout settle time; iterative approach ensures reliability without hardcoded delays that would slow down simple cases.
-- **Dual FAB navigation**: Long conversations benefit from boundary navigation; dual FABs provide instant access without complex gesture controls.
-- **Session hierarchy**: Parent/child relationships reflect actual conversation structure (main task → subtasks); collapsible tree reduces cognitive load in session lists.
-- **Route-aware auto-follow**: Preserves user scroll intent while providing sensible defaults for common navigation patterns.
-- **Abort as notice**: Remote aborts are user-initiated coordination events, not errors; non-blocking treatment maintains conversation flow continuity.
-
-### Consequences
-
-- ✅ Positive: jump-to-latest reaches true bottom reliably in one tap, even with complex dynamic layouts.
-- ✅ Positive: jump-to-first enables instant access to conversation history start.
-- ✅ Positive: session hierarchy exposes conversation structure and reduces session list clutter.
-- ✅ Positive: auto-follow respects user scroll intent while providing sensible navigation defaults.
-- ✅ Positive: remote abort UX is lightweight and non-disruptive.
-- ⚠️ Trade-off: multi-pass scrolling introduces small delays (6 passes × 50ms = ~300ms worst case) for complex layouts, but this is acceptable for improved reliability.
-- ⚠️ Trade-off: dual FAB adds visual complexity to chat interface, but contextual visibility (only when scrolled) minimizes clutter.
-
-### Key Files
-
-- `lib/presentation/pages/chat_page.dart` - multi-pass scroll logic, dual FAB rendering, route-aware auto-follow
-- `lib/presentation/widgets/chat_session_list.dart` - hierarchical session tree rendering
-- `lib/presentation/providers/chat_provider.dart` - session hierarchy state management
-- `test/widget/chat_page_test.dart` - scroll reliability, FAB visibility, auto-follow behavior tests
-- `test/widget/chat_session_list_test.dart` - session hierarchy tests
-- `test/unit/providers/chat_provider_test.dart` - provider hierarchy coverage
-
-### References
-
-- ROADMAP.md (`featB`)
-- ROADMAP.featB.md
-- Related commits: a5b4b9d (timeline jump reliability and hierarchy), 73f3f26 (jump-to-first FAB)
-
----
-
-## ADR-029: Session-Scoped Stream Isolation and Composer Response Gating
-
-**Status**: Accepted
-**Date**: 2026-02-14
-
-### Context
-
-When multiple sessions receive realtime updates simultaneously, the app experienced UI flickering and state confusion. The stop button and composer status would activate for background sessions during config sync or stream events, even when the user was viewing a different conversation. This created confusion and broke user mental model of "what session is active right now".
-
-### Decision
-
-1. Gate composer response UI state by active stream evidence from the **visible session only**.
-2. Require both: active stream subscription for current session OR in-progress assistant message with busy/retry status.
-3. Prevent background session stream events from triggering response UI in the currently viewed session.
-4. Hide patch bubbles when tool call bubbles are disabled and collapse fully empty assistant containers.
-5. Add provider and widget test coverage for stale draft and background sync regressions.
-
-### Rationale
-
-- Session-scoped gating ensures that UI state reflects only what's happening in the conversation the user is looking at.
-- Requiring both stream subscription OR busy/retry status covers all response lifecycle states.
-- Background sync events should not interfere with the active user experience.
-- Patch bubble filtering keeps the timeline clean when tool display is disabled.
-
-### Consequences
-
-- ✅ Positive: stop button and composer status only show for the session being viewed.
-- ✅ Positive: no more flickering from background session events.
-- ✅ Positive: clearer user feedback about which session is actively responding.
-- ⚠️ Trade-off: need to maintain session visibility state across navigation.
-
-### Key Files
-
-- `lib/presentation/pages/chat_page.dart` - session-scoped response gating
-- `lib/presentation/providers/chat_provider.dart` - `isSessionActivelyResponding()` method
-- `lib/presentation/widgets/chat_message_widget.dart` - patch bubble visibility logic
-- `test/unit/providers/chat_provider_test.dart` - session isolation tests
-- `test/widget/chat_message_widget_test.dart` - bubble visibility tests
-- `test/widget/chat_page_test.dart` - UI gating tests
-
-### References
-
-- Commit: fb6e118
-- ADR-028: Timeline Navigation (session hierarchy context)
-- ROADMAP.md (featI - session loading feedback)
-
----
-
-## ADR-030: Session Activity Visual Feedback with Loading State Indicators
-
-**Status**: Accepted
-**Date**: 2026-02-14
-
-### Context
-
-Users could not easily identify which session was actively receiving data or generating a response in the session list. Without visual indicators, users had to tap each session to know its current state, creating friction when switching between active conversations or identifying which background session was still processing.
-
-### Decision
-
-1. Add visual loading indicator to session list rows for active sessions.
-2. Use AnimatedSwitcher with sync icon (`Icons.sync_rounded`) replacing the default chat icon when session is actively responding.
-3. Gate active state via `isSessionActivelyResponding(sessionId)` callback from provider.
-4. Provide session key-based animation stability to prevent icon flicker during rapid state changes.
-5. Support both mobile and desktop session list views.
-
-### Rationale
-
-- Visual feedback in the session list lets users identify active sessions at a glance.
-- AnimatedSwitcher provides smooth transition between idle and active states.
-- Per-session animation keys prevent cross-session state leakage.
-- Consistent with realtime event system and session-scoped stream isolation (ADR-029).
-
-### Consequences
-
-- ✅ Positive: users can see which sessions are loading/responding without tapping.
-- ✅ Positive: reduces friction when managing multiple active conversations.
-- ✅ Positive: consistent with modern chat app UX patterns.
-- ⚠️ Trade-off: additional widget rebuilds for animated icons (minimal impact).
-
-### Key Files
-
-- `lib/presentation/widgets/chat_session_list.dart` - loading indicator rendering
-- `lib/presentation/providers/chat_provider.dart` - `isSessionActivelyResponding()` provider
-- `test/widget/chat_session_list_test.dart` - loading indicator tests
-
-### References
-
-- Commit: fb6e118 (same delivery)
-- ADR-029: Session-Scoped Stream Isolation (provides the activity detection)
-- ROADMAP.md (featI task: session loading visual feedback)
-
----
-
-## ADR-031: Asynchronous Provider Initialization and Background Refresh on Startup
-
-**Status**: Accepted
-**Date**: 2026-02-14
-
-### Context
-
-When the app starts or user navigates to chat, providers and models need to be loaded from the server. Previously, this was done synchronously during initialization, blocking the UI and creating perceived latency. Users benefit from seeing the UI immediately while provider data loads in the background.
-
-### Decision
-
-1. Introduce `ChatProvidersRefreshState` enum: `idle`, `loading`, `ready`, `failed`.
-2. Add `warmupProvidersRefresh({String reason = 'startup'})` method that calls `initializeProviders()` with `unawaited` to prevent blocking.
-3. Call `warmupProvidersRefresh(reason: 'chat-startup')` during chat page initialization after project and connection checks.
-4. Add state getters: `providersRefreshState`, `providersRefreshErrorMessage`, `isProvidersRefreshInProgress`.
-5. Implement task deduplication in `initializeProviders()` to avoid duplicate refresh calls.
-6. Add `retryProvidersRefresh()` for manual retry on failure.
-
-### Rationale
-
-- Background refresh allows UI to become interactive immediately while provider data loads asynchronously.
-- State enum enables UI to reflect loading/error states and provide feedback to users.
-- Deduplication prevents multiple simultaneous refresh calls when called from different code paths.
-- Reason parameter in warmup helps debug why refresh was triggered.
-
-### Consequences
-
-- ✅ Positive: UI becomes interactive faster on startup.
-- ✅ Positive: Users see loading state for providers if refresh takes time.
-- ✅ Positive: Manual retry available on failure.
-- ⚠️ Trade-off: Providers may not be available immediately on first interaction (handled by loading state).
-
-### Key Files
-
-- `lib/presentation/providers/chat_provider.dart` - `warmupProvidersRefresh()`, `initializeProviders()`, state management
-- `lib/presentation/pages/chat_page.dart` - calls `warmupProvidersRefresh()` on initialization
-- `test/unit/providers/chat_provider_test.dart` - provider refresh state tests
-
-### References
-
-- ROADMAP.md (featH task: refresh providers/model em background de forma assíncrona ao abrir o app)
-- ADR-029: Session-Scoped Stream Isolation (uses provider refresh state for session activity detection)
-
----
-
-## ADR-026: Namespaced Selection Sync Transaction and Reasoning Status Rendering
-
-**Status**: Accepted
-**Date**: 2026-02-14
-
-### Context
-
-Cross-device selection sync (agent/model/variant) still had race windows while a response was active. In busy/retry intervals, remote flush could happen too early and interfere with the current run. At the same time, sync payloads tied to directory-scoped `/config` operations risked workspace-side config artifacts. UX also mixed true reasoning with status-like reasoning lines (`**...**`) and showed generic progress labels.
-
-### Decision
-
-1. Introduce explicit selection sync transaction phases: `idle -> pendingRemote -> appliedRemote -> failed`.
-2. Defer remote selection flush while session remains busy/retry, not only while local stream subscription exists.
-3. Persist sync payloads under app namespace (`agent.__codewalk.options.codewalk.selection` + `variantByAgentAndModel`) and keep compatibility reads for legacy keys.
-4. Parse reasoning first-line `**...**` as transient status label, hide that reasoning block, and surface the latest status in the in-flight progress indicator.
-
-### Rationale
-
-- Explicit sync phase state improves determinism and observability of deferred/flush behavior.
-- Busy/retry-aware gating matches real session lifecycle and removes premature remote writes.
-- App-namespaced payloads isolate client synchronization metadata from user project configuration space.
-- Status extraction keeps UI concise and avoids showing duplicated technical bubbles for ephemeral status messages.
-
-### Consequences
-
-- ✅ Positive: selection changes no longer interfere with active response lifecycle.
-- ✅ Positive: sync transport is app-scoped and no longer depends on project directory query for config patches.
-- ✅ Positive: progress UI reflects latest status text when backend emits status-style reasoning.
-- ⚠️ Trade-off: sync payload schema is richer and requires backward-compatible parsing paths.
-
-### Key Files
-
-- `lib/presentation/providers/chat_provider.dart`
-- `lib/presentation/pages/chat_page.dart`
-- `lib/presentation/widgets/chat_message_widget.dart`
-- `lib/presentation/utils/reasoning_status_parser.dart`
-- `test/unit/providers/chat_provider_test.dart`
-- `test/widget/chat_page_test.dart`
-- `test/widget/chat_message_widget_test.dart`
-
-### References
-
-- ROADMAP.featA.md
-- CODEBASE.md (Delta Update 2026-02-14)
+- ADR-032: Thinking Bubble Compact Mode and Accessibility-Aware Animations (2026-02-14) [Accepted]
 
 ---
 
@@ -1827,5 +1491,69 @@ Sessions created without explicit titles fell back to timestamp-only labels (e.g
 - Commit: 8c49591
 - CODEBASE.md: Session Module (auto-title generation)
 - ADR-013: Session Lifecycle Orchestration
+
+---
+
+## ADR-032: Thinking Bubble Compact Mode and Accessibility-Aware Animations (2026-02-14)
+
+**Status**: Accepted
+
+**Date**: 2026-02-14
+
+### Context
+
+The thinking bubble and tool call output displays were causing UX issues:
+1. Thinking bubbles could grow unbounded, consuming excessive vertical space and hiding the actual response.
+2. Users with motion sensitivity needed reduced animations (reduce motion accessibility setting).
+3. Tool call outputs needed consistent height limits for predictability.
+
+### Decision
+
+1. Implement compact thinking bubble with bounded expansion:
+   - Default collapsed state: 4 lines maximum (`_collapsedReasoningMaxLines = 4`).
+   - Expanded state: 12 lines maximum (`_expandedReasoningMaxLines = 12`).
+   - Auto-scroll to bottom for latest reasoning content during streaming.
+   - "Show more" / "Show less" toggle to expand/collapse.
+
+2. Implement tool call output height limits:
+   - Default collapsed: 2 lines maximum (`_collapsedToolDetailMaxLines = 2`).
+   - Full expansion via scroll when expanded.
+
+3. Collapse tool call chain when assistant message is complete:
+   - `_CollapsibleToolChain` widget wraps the entire tool call sequence.
+   - When the assistant message reaches its final state, the tool chain automatically collapses to a compact summary.
+   - Users can toggle show/hide to expand and inspect individual tool call details.
+
+4. Respect accessibility reduce motion setting:
+   - Check `MediaQuery.maybeOf(context)?.disableAnimations` before applying scroll animations.
+   - Use direct `jumpTo()` instead of `animateTo()` when reduce motion is enabled.
+
+### Rationale
+
+- Bounded thinking bubbles keep the conversation visible while allowing users to inspect full reasoning when needed.
+- Fixed line limits provide predictable layout behavior across different screen sizes.
+- Reduce motion respect aligns with platform accessibility guidelines and improves usability for users with vestibular disorders.
+
+### Consequences
+
+- ✅ Positive: Thinking bubbles stay compact by default, revealing more of the actual conversation.
+- ✅ Positive: Users can expand reasoning when they need full context.
+- ✅ Positive: Tool call chains auto-collapse when the assistant message completes, keeping the UI clean.
+- ✅ Positive: Users can toggle show/hide to inspect individual tool call details.
+- ✅ Positive: Accessibility-compliant animations reduce discomfort for sensitive users.
+- ✅ Positive: Tool call outputs are consistent and predictable.
+- ⚠️ Trade-off: Auto-scroll behavior requires careful state management to avoid scroll jank during streaming.
+
+### Key Files
+
+- `lib/presentation/widgets/chat_message_widget.dart` - `_CollapsibleReasoningContent`, `_CollapsibleToolChain`, and `_CollapsibleToolContent` widgets with bounded expansion and auto-collapse behavior
+
+### References
+
+- ROADMAP.featH.md (task 38: Thinking bubble max 4 lines with smooth vertical motion and bounded expansion)
+- ROADMAP.featH.md (task 22: Collapse tool-call chain once final assistant response arrives)
+- ROADMAP.featH.md (task 20: Limit tool-call expanded height)
+- Related: ADR-026 (Reasoning Status Rendering)
+
 
 ---
