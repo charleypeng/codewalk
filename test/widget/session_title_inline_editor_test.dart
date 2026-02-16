@@ -23,7 +23,7 @@ void main() {
     );
 
     await tester.tap(
-      find.byKey(const ValueKey<String>('session_title_edit_button')),
+      find.byKey(const ValueKey<String>('session_title_display')),
     );
     await tester.pumpAndSettle();
 
@@ -57,7 +57,7 @@ void main() {
     );
 
     await tester.tap(
-      find.byKey(const ValueKey<String>('session_title_edit_button')),
+      find.byKey(const ValueKey<String>('session_title_display')),
     );
     await tester.pumpAndSettle();
 

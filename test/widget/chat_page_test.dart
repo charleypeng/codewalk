@@ -1567,12 +1567,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final newChatX = tester.getCenter(find.byTooltip('New Chat').first).dx;
-    final compactX = tester
-        .getCenter(find.byTooltip('Compact Context').first)
-        .dx;
     final openFilesX = tester.getCenter(find.byTooltip('Open Files')).dx;
-    expect(compactX, greaterThan(openFilesX));
-    expect(newChatX, greaterThan(compactX));
     expect(newChatX, greaterThan(openFilesX));
 
     final refreshFinder = find.byTooltip('Refresh');
@@ -4385,7 +4380,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(
-      find.byKey(const ValueKey<String>('session_title_edit_button')).first,
+      find.byKey(const ValueKey<String>('session_title_display')).first,
     );
     await tester.pumpAndSettle();
 

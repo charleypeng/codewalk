@@ -1412,6 +1412,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                 resizeToAvoidBottomInset: true,
                 appBar: _buildAppBar(
                   isMobile: isMobile,
+                  isLargeDesktop: isLargeDesktop,
                   settingsProvider: settingsProvider,
                 ),
                 drawer: isMobile ? _buildSessionDrawer() : null,
@@ -1548,6 +1549,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   AppBar _buildAppBar({
     required bool isMobile,
+    required bool isLargeDesktop,
     required SettingsProvider settingsProvider,
   }) {
     const refreshlessEnabled = FeatureFlags.refreshlessRealtime;
@@ -1611,7 +1613,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             )
           : null,
       titleSpacing: isMobile ? 0 : 4,
-      title: _buildProjectSelectorTitle(isMobile: isMobile),
+      title: _buildProjectSelectorTitle(
+        isMobile: isMobile,
+        isLargeDesktop: isLargeDesktop,
+      ),
       actions: [
         if (!isMobile)
           PopupMenuButton<DesktopPane>(
@@ -1735,74 +1740,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         if (isMobile)
           IconButton(
             key: const ValueKey<String>('appbar_quick_open_button'),
-            icon: const Icon(Icons.folder_open_outlined),
+            icon: const Icon(Icons.account_tree_outlined),
             tooltip: 'Open Files',
             onPressed: () => unawaited(_openMobileFilesDialog()),
           ),
-        Consumer<ChatProvider>(
-          builder: (context, chatProvider, _) {
-            final usage = _resolveSessionContextUsage(chatProvider);
-            final canOpenMenu = chatProvider.currentSession != null;
-            final canCompact =
-                canOpenMenu &&
-                !chatProvider.isCompactingContext &&
-                !chatProvider.canAbortActiveResponse;
-
-            return PopupMenuButton<_ContextUsageAction>(
-              key: const ValueKey<String>('appbar_context_usage_button'),
-              tooltip: 'Compact Context',
-              enabled: canOpenMenu,
-              onSelected: (action) {
-                if (action == _ContextUsageAction.compactNow) {
-                  unawaited(_compactCurrentSession(chatProvider));
-                }
-              },
-              itemBuilder: (context) {
-                return [
-                  PopupMenuItem<_ContextUsageAction>(
-                    enabled: false,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    child: _buildContextUsagePopover(
-                      context,
-                      usage: usage,
-                      isCompacting: chatProvider.isCompactingContext,
-                    ),
-                  ),
-                  const PopupMenuDivider(height: 0),
-                  PopupMenuItem<_ContextUsageAction>(
-                    value: _ContextUsageAction.compactNow,
-                    enabled: canCompact,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.compress_outlined,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          chatProvider.isCompactingContext
-                              ? 'Compacting...'
-                              : 'Compact now',
-                        ),
-                      ],
-                    ),
-                  ),
-                ];
-              },
-              child: _buildContextUsageControl(
-                context,
-                usage: usage,
-                isCompacting: chatProvider.isCompactingContext,
-                enabled: canOpenMenu,
-              ),
-            );
-          },
-        ),
         if (!isMobile)
           IconButton(
             icon: const Icon(Icons.add_comment_outlined),
@@ -2421,7 +2362,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildProjectSelectorTitle({required bool isMobile}) {
+  Widget _buildProjectSelectorTitle({
+    required bool isMobile,
+    required bool isLargeDesktop,
+  }) {
     return Consumer<ProjectProvider>(
       builder: (context, projectProvider, child) {
         final currentDirectoryFull = _directoryLabel(
@@ -2449,7 +2393,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                   children: [
                     ConstrainedBox(
                       constraints: BoxConstraints(
-                        maxWidth: isMobile ? 100 : 240,
+                        maxWidth: isMobile ? 100 : (isLargeDesktop ? 400 : 300),
                       ),
                       child: Text(
                         currentDirectoryChip,
@@ -5152,6 +5096,78 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                   onRename: (title) => chatProvider
                                       .renameSession(currentSession, title),
                                 ),
+                              ),
+                              Builder(
+                                builder: (context) {
+                                  final usage =
+                                      _resolveSessionContextUsage(chatProvider);
+                                  final canCompact =
+                                      !chatProvider.isCompactingContext &&
+                                      !chatProvider.canAbortActiveResponse;
+
+                                  return PopupMenuButton<_ContextUsageAction>(
+                                    key: const ValueKey<String>(
+                                      'appbar_context_usage_button',
+                                    ),
+                                    tooltip: 'Compact Context',
+                                    onSelected: (action) {
+                                      if (action ==
+                                          _ContextUsageAction.compactNow) {
+                                        unawaited(
+                                          _compactCurrentSession(chatProvider),
+                                        );
+                                      }
+                                    },
+                                    itemBuilder: (context) {
+                                      return [
+                                        PopupMenuItem<_ContextUsageAction>(
+                                          enabled: false,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 8,
+                                          ),
+                                          child: _buildContextUsagePopover(
+                                            context,
+                                            usage: usage,
+                                            isCompacting: chatProvider
+                                                .isCompactingContext,
+                                          ),
+                                        ),
+                                        const PopupMenuDivider(height: 0),
+                                        PopupMenuItem<_ContextUsageAction>(
+                                          value: _ContextUsageAction.compactNow,
+                                          enabled: canCompact,
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.compress_outlined,
+                                                size: 16,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .primary,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                chatProvider
+                                                        .isCompactingContext
+                                                    ? 'Compacting...'
+                                                    : 'Compact now',
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ];
+                                    },
+                                    child: _buildContextUsageControl(
+                                      context,
+                                      usage: usage,
+                                      isCompacting:
+                                          chatProvider.isCompactingContext,
+                                      enabled: true,
+                                    ),
+                                  );
+                                },
                               ),
                             ],
                           ),

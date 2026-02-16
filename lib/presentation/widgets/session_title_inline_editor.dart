@@ -122,31 +122,18 @@ class _SessionTitleInlineEditorState extends State<SessionTitleInlineEditor> {
   @override
   Widget build(BuildContext context) {
     if (!_editing) {
-      return Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onDoubleTap: widget.enabled ? _startEditing : null,
-              child: Tooltip(
-                message: widget.title,
-                child: Text(
-                  widget.title,
-                  key: const ValueKey<String>('session_title_display'),
-                  style: widget.textStyle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
+      return GestureDetector(
+        onTap: widget.enabled ? _startEditing : null,
+        child: Tooltip(
+          message: widget.title,
+          child: Text(
+            widget.title,
+            key: const ValueKey<String>('session_title_display'),
+            style: widget.textStyle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          IconButton(
-            key: const ValueKey<String>('session_title_edit_button'),
-            tooltip: 'Rename conversation',
-            onPressed: widget.enabled ? _startEditing : null,
-            icon: const Icon(Icons.edit_outlined, size: 18),
-            visualDensity: Theme.of(context).visualDensity,
-          ),
-        ],
+        ),
       );
     }
 

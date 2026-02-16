@@ -74,8 +74,8 @@ Notes:
 - [x] `featL` - `ROADMAP.featL.md` (compaction boundary + pre-boundary collapse)
 - [x] `featD` - `ROADMAP.featD.md` (thinking/tool UX controls)
 - [x] `featH` - `ROADMAP.featH.md` (startup/settings/tool-surface polish)
-- [ ] `featE` - `ROADMAP.featE.md` (composer popover/local server/shortcuts reliability)
-- [ ] `featI` - `ROADMAP.featI.md` (agent/shortcut/productivity parity)
+- [x] `featE` - `ROADMAP.featE.md` (composer popover/local server/shortcuts reliability)
+- [~] `featI` - `ROADMAP.featI.md` (agent/shortcut/productivity parity)
 - [ ] `featF` - `ROADMAP.featF.md` (files drafting UX + duplicate/copy interaction fixes)
 - [ ] `featG` - `ROADMAP.featG.md` (favorites and variant selector ergonomics)
 - [ ] `featC` - `ROADMAP.featC.md` (focus/visibility render gate + files planning)
@@ -150,18 +150,26 @@ Implemented desktop local-server wizard with runtime checks for `opencode serve`
 
 #### `featI` Agent/shortcut/productivity parity
 
-- [ ] Opções em Settings para decidir se app fica em background. Mobile: persistente notification, desktop: tray
-- [ ] Exibir seção `Shortcuts` no mobile quando houver teclado físico conectado
-- [ ] Verificar atualizações baseadas nos releases do GitHub usando a API pública do GitHub
-- [ ] Adicionar suporte a todowrite, todoread e tudo relacionado a to-do
-- [ ] Mudar botão de contexto para o lado do título da sessão
-- [ ] Remover botão lápis do lado do título da sessão, deixando apenas em outros lugares e clica no título (já é assim)
-- [ ] Mudar o ícone do botão 'Files' para algo mais intuitivo, talvez ícone de tree
-- [ ] Aumentar o espaço/largura do select no topo para o projeto atual quando no desktop. A largura atual está colocando ellipsis muito rápido com o espaço todo de uma tela grande (desktop)
-- [ ] Criar lista de dicas de uma frase para mostrar enquanto aguarda respostas do servidor mas nada chegou ainda
-- [x] Na lista de Conversations, trocar o ícone padrão da sessão por um estado visual de loading suave enquanto aquela sessão/conversa estiver recebendo dados/resposta (mobile + desktop) - Commit: fb6e118
-- [ ] Substituir serviço ch.at de títulos por agent nativo OpenCode 'title', mantendo cadência de 6 mensagens
+**Group 1 — Header/toolbar layout** `[x]`
+- [x] Mudar botão de contexto para o lado do título da sessão
+- [x] Remover botão lápis do lado do título da sessão, single-tap para editar
+- [x] Mudar o ícone do botão 'Files' para `account_tree_outlined`
+- [x] Aumentar largura do select de projeto no desktop (300px normal, 400px large desktop)
 
+**Group 2 — UX/content features**
+- [ ] Exibir seção `Shortcuts` no mobile quando houver teclado físico conectado
+- [ ] Adicionar suporte a todowrite, todoread e tudo relacionado a to-do
+- [ ] Criar lista de dicas de uma frase para mostrar enquanto aguarda respostas do servidor mas nada chegou ainda
+
+**Group 3 — External integrations**
+- [ ] Substituir serviço ch.at de títulos por agent nativo OpenCode 'title', mantendo cadência de 6 mensagens
+- [ ] Verificar atualizações baseadas nos releases do GitHub usando a API pública do GitHub
+
+**Group 4 — Platform**
+- [ ] Opções em Settings para decidir se app fica em background. Mobile: persistente notification, desktop: tray
+
+**Done**
+- [x] Na lista de Conversations, trocar o ícone padrão da sessão por um estado visual de loading suave enquanto aquela sessão/conversa estiver recebendo dados/resposta (mobile + desktop) - Commit: fb6e118
 - [x] Implement global desktop keyboard shortcuts (mod+m recent models, mod+t variants, mod+, open settings, OS-specific Ctrl/Cmd labels, mod+j global behavior) - Commit: 7e2732c
 #### `featJ` Speech-to-text platform matrix
 

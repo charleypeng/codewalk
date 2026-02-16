@@ -2,17 +2,26 @@
 
 ## Scope
 
-- Task 10: Background behavior settings (mobile persistent notification, desktop tray).
+### Group 1 — Header/toolbar layout `[x]`
+- [x] Task 24: Move context button to session title card (from AppBar actions to compact session header Row).
+- [x] Task 25: Remove pencil button; single-tap on title text to edit (was double-tap + pencil icon).
+- [x] Task 26: Files button icon changed to `account_tree_outlined`.
+- [x] Backlog follow-up: Desktop project selector width increased (300px normal, 400px large desktop; was 240px fixed).
+
+### Group 2 — UX/content features
 - Task 14: Show `Shortcuts` section on mobile when physical keyboard is connected.
-- Task 15: Check updates via public GitHub Releases API.
 - Task 23: Add todo tooling support (`todowrite`, `todoread`, related flows).
-- Task 24: Move context button to session title side.
-- Task 25: Remove redundant pencil beside title; keep click-to-rename path.
-- Task 26: Use clearer Files button icon (tree-like).
 - Task 37: One-line tips while waiting for first server tokens.
-- Task 39: Add soft loading state visual to conversation list item icon while session is receiving data/response.
-- Backlog follow-up: Increase desktop project selector width to reduce early ellipsis in top header.
+
+### Group 3 — External integrations
 - Task 40: Replace ch.at title service with native OpenCode 'title' agent, maintaining 6-message cadence.
+- Task 15: Check updates via public GitHub Releases API.
+
+### Group 4 — Platform
+- Task 10: Background behavior settings (mobile persistent notification, desktop tray).
+
+### Done
+- Task 39: Add soft loading state visual to conversation list item icon while session is receiving data/response. - Commit: fb6e118
 
 ## Goal
 
@@ -34,13 +43,13 @@ Increase productivity and discoverability with stronger keyboard/background beha
 
 ## Implementation Plan
 
-1. Add background execution policy setting by platform capabilities.
+1. Refactor session header controls (context button position, pencil cleanup, better Files icon, desktop selector width).
 2. Detect physical keyboard and conditionally expose shortcuts section on mobile.
-3. Poll GitHub latest release in settings/about with semver compare and dismissible update banner.
-4. Define todo domain models + UI surface integration for todo read/write actions.
-5. Refactor session header controls (context button position, pencil cleanup, better Files icon).
-6. Add waiting-state rotating tip line before first token arrives.
-7. Widen desktop project selector and tune responsive min/max widths to reduce premature ellipsis.
+3. Define todo domain models + UI surface integration for todo read/write actions.
+4. Add waiting-state rotating tip line before first token arrives.
+5. Replace ch.at title service with native OpenCode 'title' agent.
+6. Poll GitHub latest release in settings/about with semver compare and dismissible update banner.
+7. Add background execution policy setting by platform capabilities.
 
 ## Backend/Contract Considerations
 
