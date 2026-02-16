@@ -128,7 +128,7 @@ Implemented multi-pass scroll-to-bottom algorithm (up to 6 passes with 1px epsil
 
 Implemented desktop local-server wizard with runtime checks for `opencode serve` availability, installer path detection (binary/npm/bun), and CI multi-OS OpenCode smoke test coverage via GitHub Actions.
 
-**Commits**: (pending)
+**Commits**: 5dc1f31, 01f91bf, 7e2732c, 074dcd2
 
 #### `featF` Files navigation and drafting UX
 
