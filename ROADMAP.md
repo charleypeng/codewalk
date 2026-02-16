@@ -45,6 +45,7 @@ Concluded historical features were archived to `ROADMAP.archive.done.md` to keep
 - `ROADMAP.featL.md` - Post-compaction historical bubbles collapse and lazy nested rendering (new task)
 - `ROADMAP.featM.md` - Icons to Material Symbols migration (technical debt)
 - `ROADMAP.featN.md` - Material You design system revamp (responsive, adaptive, modern UX)
+- `ROADMAP.featO.md` - Code health & technical debt (bugs, security, performance, cleanup, architecture, tests)
 
 ### Backlog Pack Dependency Order
 
@@ -62,10 +63,12 @@ Concluded historical features were archived to `ROADMAP.archive.done.md` to keep
 12. `ROADMAP.featK.md` (first-run onboarding wizard)
 13. `ROADMAP.featM.md` (Icons to Material Symbols migration - isolated track, can run anytime)
 14. `ROADMAP.featN.md` (Material You design system revamp - isolated track, can run anytime)
+15. `ROADMAP.featO.md` (Code health & technical debt - isolated track, Groups 1-3 recommended before featF)
 
 Notes:
 - Prefer this order by default to reduce regression risk in timeline/sync behavior.
-- If needed, `featJ`, `featK`, `featM`, and `featN` can run earlier as mostly isolated tracks.
+- If needed, `featJ`, `featK`, `featM`, `featN`, and `featO` can run earlier as mostly isolated tracks.
+- `featO` Groups 1-3 (bugs, security, performance) are recommended before `featF` to stabilize the codebase.
 
 ### Backlog Pack Execution Checklist
 
@@ -83,6 +86,7 @@ Notes:
 - [ ] `featK` - `ROADMAP.featK.md` (first-run onboarding wizard)
 - [ ] `featM` - `ROADMAP.featM.md` (Icons to Material Symbols migration)
 - [ ] `featN` - `ROADMAP.featN.md` (Material You design system revamp)
+- [ ] `featO` - `ROADMAP.featO.md` (Code health & technical debt)
 
 Use the same status convention from Legend for active execution updates (`[~]`, `[x]`, `[/]`).
 
@@ -161,9 +165,9 @@ Implemented desktop local-server wizard with runtime checks for `opencode serve`
 - [x] Adicionar suporte a todowrite, todoread e tudo relacionado a to-do
 - [x] Criar lista de dicas de uma frase para mostrar enquanto aguarda respostas do servidor mas nada chegou ainda
 
-**Group 3 — Chat attachments and media**
-- [ ] Adicionar ações de download/abertura de anexos em mensagens de chat
-- [ ] Implementar pré-visualização de imagens inline nas bolhas de mensagem
+**Group 3 — Chat attachments and media** `[x]`
+- [x] Adicionar ações de download/abertura de anexos em mensagens de chat - Commit: d2fd909
+- [x] Implementar pré-visualização de imagens inline nas bolhas de mensagem - Commit: d2fd909
 
 **Group 4 — External integrations**
 - [ ] Substituir serviço ch.at de títulos por agent nativo OpenCode 'title', mantendo cadência de 6 mensagens
@@ -204,3 +208,12 @@ Implemented compaction boundary timeline entry that collapses all pre-compaction
 - [ ] Refine spacing/layout para melhor uso de espaço em múltiplos tamanhos de tela
 - [ ] Implementar adaptive layout patterns (responsive breakpoints, orientation-aware)
 - [ ] Polish componentes para estar 100% alinhado com Material Design 3 specs
+
+#### `featO` Code health & technical debt
+
+- [ ] Group 1: Bug fixes — DI resource leak, state mutation in build(), dispose guard, health polling race condition, markdown link tap, dead SessionRepository
+- [ ] Group 2: Security — credentials in flutter_secure_storage, streaming SHA-256
+- [ ] Group 3: Performance — cached shortcut maps, memoized message history, Dio lifecycle, ListView.builder for sessions
+- [ ] Group 4: Cleanup — dead constants, hardcoded values, error handling dedup, queryParams dedup
+- [ ] Group 5: Architecture — provider/data boundary, Dio in widget, domain serialization, DI duplication
+- [ ] Group 6: Tests — ShortcutBindingCodec, reasoningStatusParser, repository impls, shared fakes
