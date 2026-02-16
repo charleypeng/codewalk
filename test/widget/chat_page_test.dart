@@ -3591,7 +3591,7 @@ void main() {
     expect(find.text('Show earlier messages'), findsOneWidget);
   });
 
-  testWidgets('shows delayed thinking then receiving status in composer line', (
+  testWidgets('shows delayed tip in composer for both thinking and receiving stages', (
     WidgetTester tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1000, 900));
@@ -3635,6 +3635,7 @@ void main() {
     await provider.sendMessage('status progress');
     await tester.pump();
 
+    // Status slot exists but line not yet visible (debounce delay).
     expect(
       find.byKey(const ValueKey<String>('composer_reasoning_status_slot')),
       findsOneWidget,
@@ -3650,6 +3651,7 @@ void main() {
       findsNothing,
     );
 
+    // After 2s debounce, thinking stage shows a tip (not "Thinking...").
     await tester.pump(const Duration(milliseconds: 100));
     expect(
       find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
@@ -3657,16 +3659,23 @@ void main() {
     );
     expect(
       find.byKey(const ValueKey<String>('composer_reasoning_status_spinner')),
-      findsOneWidget,
+      findsNothing,
     );
     expect(
       find.byKey(
-        const ValueKey<String>('composer_reasoning_status_type_thinking'),
+        const ValueKey<String>('composer_reasoning_status_type_tip'),
       ),
       findsOneWidget,
     );
-    expect(find.text('Thinking...'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Text && (w.data?.startsWith('Tip:') ?? false),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Thinking...'), findsNothing);
 
+    // Transition to receiving stage — tip continues without interruption.
     streamController.add(
       Right(
         AssistantMessage(
@@ -3687,13 +3696,10 @@ void main() {
     await tester.pump();
     await tester.pump();
 
+    // Same tip icon and text persist across the stage transition.
     expect(
-      find.byKey(const ValueKey<String>('composer_reasoning_status_icon')),
+      find.byKey(const ValueKey<String>('composer_reasoning_status_icon_tip')),
       findsOneWidget,
-    );
-    expect(
-      find.byKey(const ValueKey<String>('composer_reasoning_status_spinner')),
-      findsNothing,
     );
     expect(
       find.byWidgetPredicate(
@@ -3701,7 +3707,6 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.text('Thinking...'), findsNothing);
   });
 
   testWidgets(

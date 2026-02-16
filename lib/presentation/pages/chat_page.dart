@@ -91,7 +91,7 @@ class _ModelSelectorEntry {
 
 enum _ContextUsageAction { compactNow }
 
-enum _DisplayToggleAction { thinkingBubbles, toolCallBubbles, taskList }
+enum _DisplayToggleAction { thinkingBubbles, toolCallBubbles, taskList, composerTips }
 
 class _SessionContextUsageSnapshot {
   const _SessionContextUsageSnapshot({
@@ -1535,6 +1535,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       _DisplayToggleAction.thinkingBubbles => 'Thinking bubbles',
       _DisplayToggleAction.toolCallBubbles => 'Tool call bubbles',
       _DisplayToggleAction.taskList => 'Task list',
+      _DisplayToggleAction.composerTips => 'Composer tips',
     };
   }
 
@@ -1687,6 +1688,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                   ),
                 );
                 break;
+              case _DisplayToggleAction.composerTips:
+                unawaited(
+                  settingsProvider.setShowComposerTips(
+                    !settingsProvider.showComposerTips,
+                  ),
+                );
+                break;
             }
           },
           itemBuilder: (context) {
@@ -1720,6 +1728,14 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                 checked: settingsProvider.showTaskList,
                 child: Text(
                   _displayToggleLabel(_DisplayToggleAction.taskList),
+                ),
+              ),
+              CheckedPopupMenuItem<_DisplayToggleAction>(
+                key: const ValueKey<String>('display_toggle_item_composer_tips'),
+                value: _DisplayToggleAction.composerTips,
+                checked: settingsProvider.showComposerTips,
+                child: Text(
+                  _displayToggleLabel(_DisplayToggleAction.composerTips),
                 ),
               ),
             ];
@@ -5391,7 +5407,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
     if (target.type == _ComposerStatusType.tip && _tipRotationTimer == null) {
       _tipRotationTimer = Timer.periodic(
-        const Duration(seconds: 8),
+        const Duration(seconds: 15),
         (_) {
           if (!mounted) {
             return;
@@ -5477,8 +5493,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
         ),
       ),
+      _ComposerStatusType.tip => Icon(
+        Icons.lightbulb_outline,
+        key: const ValueKey<String>('composer_reasoning_status_icon_tip'),
+        size: 15,
+        color: colorScheme.primary,
+      ),
       _ComposerStatusType.receiving ||
-      _ComposerStatusType.tip ||
       _ComposerStatusType.dynamicReasoning => Icon(
         Icons.auto_awesome,
         key: const ValueKey<String>('composer_reasoning_status_icon'),
@@ -7032,13 +7053,19 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       return _ComposerStatusPresentation.dynamicReasoning(reasoningStatusLabel);
     }
 
+    // Both thinking and receiving stages show the same visual output:
+    // - Tips enabled: rotating tips with lightbulb icon
+    // - Tips disabled: static "Reasoning..." fallback
+    // Internally they remain separate stages so the progress detection
+    // logic is preserved, but visually the user sees no transition.
     return switch (progressStage) {
-      _AssistantProgressStage.receiving =>
-        _ComposerStatusPresentation.tip(
-          _ComposerStatusPresentation._receivingTips[_currentTipIndex],
-        ),
+      _AssistantProgressStage.receiving ||
       _AssistantProgressStage.thinking =>
-        const _ComposerStatusPresentation.thinking(),
+        context.read<SettingsProvider>().showComposerTips
+            ? _ComposerStatusPresentation.tip(
+                _ComposerStatusPresentation._receivingTips[_currentTipIndex],
+              )
+            : const _ComposerStatusPresentation.receiving(),
       _AssistantProgressStage.retrying => null,
     };
   }
@@ -7426,7 +7453,7 @@ class _ComposerStatusPresentation {
   const _ComposerStatusPresentation.receiving()
     : this._(
         type: _ComposerStatusType.receiving,
-        label: 'Receiving response...',
+        label: 'Reasoning...',
       );
 
   const _ComposerStatusPresentation.thinking()

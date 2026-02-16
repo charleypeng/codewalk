@@ -257,6 +257,7 @@ class ExperienceSettings {
       showToolCallBubbles: true,
       showTaskList: true,
       taskListCollapsed: false,
+      showComposerTips: true,
     );
   }
   const ExperienceSettings({
@@ -269,6 +270,7 @@ class ExperienceSettings {
     required this.showToolCallBubbles,
     required this.showTaskList,
     required this.taskListCollapsed,
+    required this.showComposerTips,
   });
 
   final Map<NotificationCategory, bool> notifications;
@@ -280,6 +282,7 @@ class ExperienceSettings {
   final bool showToolCallBubbles;
   final bool showTaskList;
   final bool taskListCollapsed;
+  final bool showComposerTips;
 
   ExperienceSettings copyWith({
     Map<NotificationCategory, bool>? notifications,
@@ -291,6 +294,7 @@ class ExperienceSettings {
     bool? showToolCallBubbles,
     bool? showTaskList,
     bool? taskListCollapsed,
+    bool? showComposerTips,
   }) {
     return ExperienceSettings(
       notifications: notifications ?? this.notifications,
@@ -302,6 +306,7 @@ class ExperienceSettings {
       showToolCallBubbles: showToolCallBubbles ?? this.showToolCallBubbles,
       showTaskList: showTaskList ?? this.showTaskList,
       taskListCollapsed: taskListCollapsed ?? this.taskListCollapsed,
+      showComposerTips: showComposerTips ?? this.showComposerTips,
     );
   }
 
@@ -328,6 +333,7 @@ class ExperienceSettings {
       'showToolCallBubbles': showToolCallBubbles,
       'showTaskList': showTaskList,
       'taskListCollapsed': taskListCollapsed,
+      'showComposerTips': showComposerTips,
     };
   }
 
@@ -345,6 +351,7 @@ class ExperienceSettings {
     var showToolCallBubbles = defaults.showToolCallBubbles;
     var showTaskList = defaults.showTaskList;
     var taskListCollapsed = defaults.taskListCollapsed;
+    var showComposerTips = defaults.showComposerTips;
 
     final notificationsJson = json['notifications'];
     if (notificationsJson is Map) {
@@ -418,6 +425,11 @@ class ExperienceSettings {
       taskListCollapsed = taskListCollapsedJson;
     }
 
+    final showComposerTipsJson = json['showComposerTips'];
+    if (showComposerTipsJson is bool) {
+      showComposerTips = showComposerTipsJson;
+    }
+
     return ExperienceSettings(
       notifications: notifications,
       sounds: sounds,
@@ -428,6 +440,7 @@ class ExperienceSettings {
       showToolCallBubbles: showToolCallBubbles,
       showTaskList: showTaskList,
       taskListCollapsed: taskListCollapsed,
+      showComposerTips: showComposerTips,
     );
   }
 }

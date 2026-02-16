@@ -42,6 +42,7 @@ class SettingsProvider extends ChangeNotifier {
   bool get showToolCallBubbles => _settings.showToolCallBubbles;
   bool get showTaskList => _settings.showTaskList;
   bool get taskListCollapsed => _settings.taskListCollapsed;
+  bool get showComposerTips => _settings.showComposerTips;
   bool get hasAnyServerBackedNotificationCategory =>
       _serverBackedNotifications.values.any((value) => value);
 
@@ -148,6 +149,15 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(taskListCollapsed: collapsed);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setShowComposerTips(bool enabled) async {
+    if (_settings.showComposerTips == enabled) {
+      return;
+    }
+    _settings = _settings.copyWith(showComposerTips: enabled);
     notifyListeners();
     await _persist();
   }
