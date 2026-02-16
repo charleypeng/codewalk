@@ -10,63 +10,93 @@ class ChatTitleGeneratorMessage {
 }
 
 abstract class ChatTitleGenerator {
+  /// Session IDs of ephemeral title-generation sessions.
+  /// Event handlers should ignore events from these sessions.
+  static final Set<String> ephemeralSessionIds = <String>{};
+
+  /// Title used for ephemeral title-generation sessions.
+  /// Used as fallback filter when session ID is not yet known.
+  static const String ephemeralSessionTitle = '_title_gen';
+
   Future<String?> generateTitle(
     List<ChatTitleGeneratorMessage> messages, {
     int maxWords,
   });
 }
 
-class ChatAtTitleGenerator implements ChatTitleGenerator {
-  ChatAtTitleGenerator({Dio? dio})
-    : _dio = dio ?? Dio(BaseOptions(baseUrl: 'https://ch.at'));
+class OpenCodeTitleGenerator implements ChatTitleGenerator {
+  OpenCodeTitleGenerator({required Dio dio}) : _dio = dio;
 
   final Dio _dio;
 
   static const int _maxTitleLength = 80;
   static const int _defaultMaxWords = 6;
+  static const Duration _pollInterval = Duration(milliseconds: 500);
+  static const int _maxPollAttempts = 30; // 15s max wait
 
   @override
   Future<String?> generateTitle(
     List<ChatTitleGeneratorMessage> messages, {
     int maxWords = _defaultMaxWords,
   }) async {
-    if (messages.isEmpty) {
-      return null;
-    }
+    if (messages.isEmpty) return null;
 
-    final effectiveMaxWords = maxWords.clamp(1, 12).toInt();
-    final prompt = _buildPrompt(messages, maxWords: effectiveMaxWords);
+    String? sessionId;
     try {
-      final response = await _dio.post<dynamic>(
-        '/v1/chat/completions',
+      // 1. Create ephemeral session
+      final createResp = await _dio.post<dynamic>(
+        '/session',
+        data: <String, dynamic>{'title': '_title_gen'},
+      );
+      sessionId =
+          (createResp.data as Map<String, dynamic>)['id'] as String?;
+      if (sessionId == null) return null;
+      ChatTitleGenerator.ephemeralSessionIds.add(sessionId);
+
+      // 2. Send prompt with agent: "title" (no model → server uses agent default)
+      final effectiveMaxWords = maxWords.clamp(1, 12).toInt();
+      final prompt = _buildPrompt(messages, maxWords: effectiveMaxWords);
+      await _dio.post<dynamic>(
+        '/session/$sessionId/message',
         data: <String, dynamic>{
-          'messages': <Map<String, String>>[
-            const <String, String>{
-              'role': 'system',
-              'content':
-                  'You generate concise conversation titles. Return only the final title text.',
-            },
-            <String, String>{'role': 'user', 'content': prompt},
+          'agent': 'title',
+          'parts': <Map<String, String>>[
+            <String, String>{'type': 'text', 'text': prompt},
           ],
+          'noReply': false,
         },
-        options: Options(
-          sendTimeout: const Duration(seconds: 6),
-          receiveTimeout: const Duration(seconds: 10),
-        ),
       );
 
-      final title = _extractTitle(response.data);
-      if (title == null || title.isEmpty) {
-        return null;
+      // 3. Poll for completed assistant message
+      for (var i = 0; i < _maxPollAttempts; i++) {
+        await Future<void>.delayed(_pollInterval);
+        final msgResp = await _dio.get<dynamic>(
+          '/session/$sessionId/message',
+        );
+        final list = msgResp.data as List<dynamic>? ?? <dynamic>[];
+        final title = _extractAssistantTitle(list);
+        if (title != null) return _normalizeTitle(title);
       }
-      return _normalizeTitle(title);
+      return null;
     } catch (error, stackTrace) {
       AppLogger.warn(
-        'AI title generation failed',
+        'Native title generation failed',
         error: error,
         stackTrace: stackTrace,
       );
       return null;
+    } finally {
+      if (sessionId != null) {
+        try {
+          await _dio.delete<dynamic>('/session/$sessionId');
+        } catch (_) {}
+        // Keep ID in filter set briefly so trailing SSE events
+        // (session.idle, session.deleted) are still filtered out.
+        final id = sessionId;
+        Future<void>.delayed(const Duration(seconds: 5), () {
+          ChatTitleGenerator.ephemeralSessionIds.remove(id);
+        });
+      }
     }
   }
 
@@ -90,36 +120,43 @@ class ChatAtTitleGenerator implements ChatTitleGenerator {
     ].join('\n\n');
   }
 
-  String? _extractTitle(dynamic raw) {
-    if (raw is! Map<String, dynamic>) {
-      return null;
-    }
-    final choices = raw['choices'];
-    if (choices is! List || choices.isEmpty) {
-      return null;
-    }
-    final first = choices.first;
-    if (first is! Map<String, dynamic>) {
-      return null;
-    }
-    final message = first['message'];
-    if (message is! Map<String, dynamic>) {
-      return null;
-    }
-    final content = message['content'];
-    if (content is String) {
-      return content;
-    }
-    if (content is List) {
-      final parts = content
-          .whereType<Map>()
-          .map((item) => item['text'])
-          .whereType<String>()
-          .map((item) => item.trim())
-          .where((item) => item.isNotEmpty)
-          .toList(growable: false);
-      if (parts.isNotEmpty) {
-        return parts.join(' ');
+  /// Extracts assistant title from message list.
+  ///
+  /// The API returns messages in envelope format:
+  /// `[{ "info": { "role": "assistant", "time": { "completed": ms } }, "parts": [...] }]`
+  String? _extractAssistantTitle(List<dynamic> messages) {
+    for (final raw in messages.reversed) {
+      if (raw is! Map<String, dynamic>) continue;
+
+      // Envelope format: { info: {...}, parts: [...] }
+      final info = raw['info'] as Map<String, dynamic>?;
+      final role = info?['role'] as String? ?? raw['role'] as String?;
+      if (role != 'assistant') continue;
+
+      // Check completion: info.time.completed or legacy completedTime
+      final time = info?['time'];
+      final bool isCompleted;
+      if (time is Map<String, dynamic>) {
+        isCompleted = time['completed'] != null;
+      } else {
+        isCompleted = raw['completedTime'] != null;
+      }
+      if (!isCompleted) continue;
+
+      // Parts can be at top level or inside envelope
+      final parts = raw['parts'];
+      if (parts is! List) continue;
+      final textParts = <String>[];
+      for (final part in parts) {
+        if (part is! Map<String, dynamic>) continue;
+        if (part['type'] != 'text') continue;
+        final text = part['text'];
+        if (text is String && text.trim().isNotEmpty) {
+          textParts.add(text.trim());
+        }
+      }
+      if (textParts.isNotEmpty) {
+        return textParts.join(' ');
       }
     }
     return null;
@@ -133,9 +170,7 @@ class ChatAtTitleGenerator implements ChatTitleGenerator {
       normalized = normalized.substring(1, normalized.length - 1).trim();
     }
     normalized = normalized.replaceAll(RegExp(r'\s+'), ' ');
-    if (normalized.isEmpty) {
-      return null;
-    }
+    if (normalized.isEmpty) return null;
     if (normalized.length > _maxTitleLength) {
       normalized = normalized.substring(0, _maxTitleLength).trimRight();
     }

@@ -49,6 +49,7 @@ import '../../presentation/services/chat_title_generator.dart';
 import '../../presentation/services/event_feedback_dispatcher.dart';
 import '../../presentation/services/notification_service.dart';
 import '../../presentation/services/sound_service.dart';
+import '../../presentation/services/update_check_service.dart';
 import '../network/dio_client.dart';
 
 final sl = GetIt.instance;
@@ -81,7 +82,10 @@ Future<void> init() async {
 
   sl.registerLazySingleton(NotificationService.new);
   sl.registerLazySingleton(SoundService.new);
-  sl.registerLazySingleton<ChatTitleGenerator>(ChatAtTitleGenerator.new);
+  sl.registerLazySingleton<ChatTitleGenerator>(
+    () => OpenCodeTitleGenerator(dio: sl<DioClient>().dio),
+  );
+  sl.registerLazySingleton(UpdateCheckService.new);
 
   // Repositories
   sl.registerLazySingleton<AppRepository>(
@@ -184,6 +188,7 @@ Future<void> init() async {
       localDataSource: sl(),
       dioClient: sl(),
       soundService: sl(),
+      updateCheckService: sl(),
     ),
   );
 

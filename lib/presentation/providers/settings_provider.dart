@@ -3,11 +3,14 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+import 'package:package_info_plus/package_info_plus.dart';
+
 import '../../core/logging/app_logger.dart';
 import '../../core/network/dio_client.dart';
 import '../../data/datasources/app_local_datasource.dart';
 import '../../domain/entities/experience_settings.dart';
 import '../services/sound_service.dart';
+import '../services/update_check_service.dart';
 import '../utils/shortcut_binding_codec.dart';
 
 class SettingsProvider extends ChangeNotifier {
@@ -15,13 +18,16 @@ class SettingsProvider extends ChangeNotifier {
     required AppLocalDataSource localDataSource,
     required DioClient dioClient,
     required SoundService soundService,
+    UpdateCheckService? updateCheckService,
   }) : _localDataSource = localDataSource,
        _dioClient = dioClient,
-       _soundService = soundService;
+       _soundService = soundService,
+       _updateCheckService = updateCheckService ?? UpdateCheckService();
 
   final AppLocalDataSource _localDataSource;
   final DioClient _dioClient;
   final SoundService _soundService;
+  final UpdateCheckService _updateCheckService;
 
   ExperienceSettings _settings = ExperienceSettings.defaults();
   final Map<NotificationCategory, bool> _serverBackedNotifications =
@@ -32,11 +38,18 @@ class SettingsProvider extends ChangeNotifier {
       };
   final Map<NotificationCategory, String> _serverConfigKeyByCategory =
       <NotificationCategory, String>{};
+  UpdateCheckResult? _updateCheckResult;
+  String? _dismissedUpdateVersion;
+  bool _checkingForUpdate = false;
+  bool _lastCheckFoundNoUpdate = false;
   bool _initialized = false;
   Future<void>? _initFuture;
 
   bool get initialized => _initialized;
   ExperienceSettings get settings => _settings;
+  UpdateCheckResult? get updateCheckResult => _updateCheckResult;
+  bool get checkingForUpdate => _checkingForUpdate;
+  bool get lastCheckFoundNoUpdate => _lastCheckFoundNoUpdate;
   AppDensity get appDensity => _settings.appDensity;
   bool get showThinkingBubbles => _settings.showThinkingBubbles;
   bool get showToolCallBubbles => _settings.showToolCallBubbles;
@@ -71,6 +84,8 @@ class SettingsProvider extends ChangeNotifier {
         );
       }
     }
+    _dismissedUpdateVersion =
+        await _localDataSource.getDismissedUpdateVersion();
     unawaited(syncNotificationsFromServerConfig());
     _initialized = true;
     notifyListeners();
@@ -283,6 +298,42 @@ class SettingsProvider extends ChangeNotifier {
     _settings = _settings.copyWith(shortcuts: defaults);
     notifyListeners();
     await _persist();
+  }
+
+  Future<void> checkForUpdate() async {
+    _checkingForUpdate = true;
+    _lastCheckFoundNoUpdate = false;
+    notifyListeners();
+    try {
+      final info = await PackageInfo.fromPlatform();
+      _updateCheckService.clearCache();
+      final result = await _updateCheckService.check(info.version);
+      if (result != null &&
+          result.isNewer &&
+          result.latestVersion != _dismissedUpdateVersion) {
+        _updateCheckResult = result;
+        _lastCheckFoundNoUpdate = false;
+      } else {
+        _updateCheckResult = null;
+        _lastCheckFoundNoUpdate = result != null;
+      }
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Update check failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    } finally {
+      _checkingForUpdate = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> dismissUpdate(String version) async {
+    _dismissedUpdateVersion = version;
+    _updateCheckResult = null;
+    await _localDataSource.saveDismissedUpdateVersion(version);
+    notifyListeners();
   }
 
   Future<void> _persist() async {

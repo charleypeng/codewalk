@@ -244,6 +244,10 @@ abstract class AppLocalDataSource {
   /// Technical comment translated to English.
   Future<void> saveBasicAuthPassword(String password, {String? serverId});
 
+  Future<String?> getDismissedUpdateVersion();
+
+  Future<void> saveDismissedUpdateVersion(String version);
+
   /// Technical comment translated to English.
   Future<void> clearAll();
 }
@@ -879,6 +883,21 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
     for (final key in keys) {
       await sharedPreferences.remove(key);
     }
+  }
+
+  @override
+  Future<String?> getDismissedUpdateVersion() async {
+    return sharedPreferences.getString(
+      AppConstants.dismissedUpdateVersionKey,
+    );
+  }
+
+  @override
+  Future<void> saveDismissedUpdateVersion(String version) async {
+    await sharedPreferences.setString(
+      AppConstants.dismissedUpdateVersionKey,
+      version,
+    );
   }
 
   @override

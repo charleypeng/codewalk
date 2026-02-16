@@ -13,13 +13,13 @@
 - [x] Task 23: Add todo tooling support (`todowrite`, `todoread`, related flows).
 - [x] Task 37: One-line tips while waiting for first server tokens.
 
-### Group 3 — Chat attachments and media
-- [ ] Add attachment download/open actions in chat messages (handle data://, http://, file://, and local paths)
-- [ ] Implement image preview inline in chat message bubbles (support data URLs and network images)
+### Group 3 — Chat attachments and media `[x]`
+- [x] Add attachment download/open actions in chat messages (handle data://, http://, file://, and local paths) - Commit: d2fd909
+- [x] Implement image preview inline in chat message bubbles (support data URLs and network images) - Commit: d2fd909
 
 ### Group 4 — External integrations
-- Task 40: Replace ch.at title service with native OpenCode 'title' agent, maintaining 6-message cadence.
-- Task 15: Check updates via public GitHub Releases API.
+- [~] Task 40: Replace ch.at title service with native OpenCode 'title' agent, maintaining 6-message cadence. Note: Migrated title generator from ch.at to native OpenCode title agent via ephemeral session + polling.
+- [~] Task 15: Check updates via GitHub Releases API with About settings section, semver comparison, dismissible update banner, and 1h cooldown.
 
 ### Group 5 — Platform
 - Task 10: Background behavior settings (mobile persistent notification, desktop tray).

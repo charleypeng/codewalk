@@ -816,7 +816,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
       text: initial?.basicAuthPassword ?? '',
     );
     var basicAuthEnabled = initial?.basicAuthEnabled ?? false;
-    var aiGeneratedTitlesEnabled = initial?.aiGeneratedTitlesEnabled ?? false;
+    var aiGeneratedTitlesEnabled = initial?.aiGeneratedTitlesEnabled ?? true;
     final formKey = GlobalKey<FormState>();
 
     final shouldSave = await showDialog<bool>(
@@ -921,13 +921,9 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                           });
                         },
                         contentPadding: EdgeInsets.zero,
-                        title: const Text('Enable AI generated titles'),
-                      ),
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'This is a free service powered by https://ch.at. Disable if you mind about your privacy.',
-                          style: TextStyle(fontSize: 12),
+                        title: const Text('AI generated titles'),
+                        subtitle: const Text(
+                          'Uses your server\'s title agent to name conversations',
                         ),
                       ),
                     ],

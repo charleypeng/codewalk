@@ -226,7 +226,7 @@ class AppProvider extends ChangeNotifier {
       basicAuthEnabled: oldBasicEnabled ?? false,
       basicAuthUsername: oldBasicUser ?? '',
       basicAuthPassword: oldBasicPassword ?? '',
-      aiGeneratedTitlesEnabled: false,
+      aiGeneratedTitlesEnabled: true,
       createdAt: now,
       updatedAt: now,
     );
@@ -314,7 +314,7 @@ class AppProvider extends ChangeNotifier {
     bool basicAuthEnabled = false,
     String basicAuthUsername = '',
     String basicAuthPassword = '',
-    bool aiGeneratedTitlesEnabled = false,
+    bool aiGeneratedTitlesEnabled = true,
     bool setAsActive = false,
   }) async {
     await initialize();

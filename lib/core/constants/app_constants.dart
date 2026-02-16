@@ -37,6 +37,9 @@ class AppConstants {
   static const String archivedProjectIdsKey = 'archived_project_ids';
   static const String experienceSettingsKey = 'experience_settings';
 
+  // Update check keys
+  static const String dismissedUpdateVersionKey = 'dismissed_update_version';
+
   // Basic auth storage keys
   static const String basicAuthEnabledKey = 'basic_auth_enabled';
   static const String basicAuthUsernameKey = 'basic_auth_username';

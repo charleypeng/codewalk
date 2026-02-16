@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/constants/app_constants.dart';
+import 'settings/sections/about_settings_section.dart';
 import 'settings/sections/appearance_settings_section.dart';
 import 'settings/sections/logs_settings_section.dart';
 import 'settings/sections/notifications_settings_section.dart';
@@ -78,6 +79,13 @@ class _SettingsPageState extends State<SettingsPage> {
       description: 'OpenCode servers and health routing',
       icon: Icons.dns_outlined,
       builder: (_) => const ServersSettingsSection(),
+    ),
+    _SettingsSection(
+      id: 'about',
+      title: 'About',
+      description: 'Version, updates and links',
+      icon: Icons.info_outline,
+      builder: (_) => const AboutSettingsSection(),
     ),
   ];
 

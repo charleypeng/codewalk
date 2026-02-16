@@ -119,11 +119,7 @@ void main() {
       find.byType(TextFormField).first,
     );
     expect(clearedUrlField.controller?.text, isEmpty);
-    expect(find.text('Enable AI generated titles'), findsOneWidget);
-    expect(
-      find.textContaining('This is a free service powered by https://ch.at'),
-      findsOneWidget,
-    );
+    expect(find.text('AI generated titles'), findsOneWidget);
   });
 }
 

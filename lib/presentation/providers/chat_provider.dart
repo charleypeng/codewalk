@@ -2628,14 +2628,23 @@ class ChatProvider extends ChangeNotifier {
   }
 
   void _applyChatEvent(ChatEvent event) {
+    if (_isEphemeralTitleEvent(event)) return;
     final eventSessionId = _extractEventSessionId(event.properties);
-    final sessionTitleHint = _sessionTitleForNotification(eventSessionId);
-    unawaited(
-      eventFeedbackDispatcher?.handle(
-        event,
-        sessionTitleHint: sessionTitleHint,
-      ),
-    );
+    // Only dispatch sound/notification feedback for session lifecycle events
+    // (idle, error) when the event belongs to the current session.
+    // Sub-agent child sessions should not trigger user-facing sounds.
+    final isSessionLifecycle =
+        event.type == 'session.idle' || event.type == 'session.error';
+    if (!isSessionLifecycle ||
+        eventSessionId == _currentSession?.id) {
+      final sessionTitleHint = _sessionTitleForNotification(eventSessionId);
+      unawaited(
+        eventFeedbackDispatcher?.handle(
+          event,
+          sessionTitleHint: sessionTitleHint,
+        ),
+      );
+    }
     final properties = event.properties;
     if (event.type != 'server.connected' &&
         (event.type == 'session.status' ||
@@ -2969,6 +2978,28 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
+  /// Returns true if [event] belongs to an ephemeral title-generation session.
+  /// Checks both the session ID set and the session title as fallback
+  /// (the title is known before the POST /session response arrives,
+  /// but SSE events may arrive before the ID is added to the set).
+  bool _isEphemeralTitleEvent(ChatEvent event) {
+    final props = event.properties;
+    final sessionId = _extractEventSessionId(props);
+    if (sessionId != null &&
+        ChatTitleGenerator.ephemeralSessionIds.contains(sessionId)) {
+      return true;
+    }
+    // Fallback: check session title in event payload (covers race condition).
+    final info = props['info'];
+    if (info is Map<String, dynamic>) {
+      final title = info['title'] as String?;
+      if (title == ChatTitleGenerator.ephemeralSessionTitle) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   String? _extractEventSessionId(Map<String, dynamic> properties) {
     final direct = properties['sessionID']?.toString().trim();
     if (direct != null && direct.isNotEmpty) {
@@ -3003,6 +3034,8 @@ class ChatProvider extends ChangeNotifier {
   }
 
   void _handleGlobalEvent(ChatEvent event) {
+    if (_isEphemeralTitleEvent(event)) return;
+
     final type = event.type;
     final affectsContext =
         type.startsWith('session.') ||
@@ -3311,7 +3344,7 @@ class ChatProvider extends ChangeNotifier {
         if (id != activeServerId) {
           continue;
         }
-        return map['aiGeneratedTitlesEnabled'] as bool? ?? false;
+        return map['aiGeneratedTitlesEnabled'] as bool? ?? true;
       }
     } catch (error, stackTrace) {
       AppLogger.warn(
@@ -3583,6 +3616,10 @@ class ChatProvider extends ChangeNotifier {
         AppLogger.warn('Failed to load session status snapshot: $failure');
       },
       (statusMap) {
+        // Remove ephemeral title-generation sessions from the status map.
+        statusMap.removeWhere(
+          (id, _) => ChatTitleGenerator.ephemeralSessionIds.contains(id),
+        );
         _sessionStatusById = statusMap;
         if (!silent) {
           _sessionInsightsError = null;
@@ -3668,6 +3705,9 @@ class ChatProvider extends ChangeNotifier {
         }
       },
       (statusMap) {
+        statusMap.removeWhere(
+          (id, _) => ChatTitleGenerator.ephemeralSessionIds.contains(id),
+        );
         _sessionStatusById = statusMap;
       },
     );

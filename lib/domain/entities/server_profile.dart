@@ -11,7 +11,7 @@ class ServerProfile extends Equatable {
       basicAuthUsername: json['basicAuthUsername'] as String? ?? '',
       basicAuthPassword: json['basicAuthPassword'] as String? ?? '',
       aiGeneratedTitlesEnabled:
-          json['aiGeneratedTitlesEnabled'] as bool? ?? false,
+          json['aiGeneratedTitlesEnabled'] as bool? ?? true,
       createdAt: json['createdAt'] as int? ?? 0,
       updatedAt: json['updatedAt'] as int? ?? 0,
     );
@@ -23,7 +23,7 @@ class ServerProfile extends Equatable {
     this.basicAuthEnabled = false,
     this.basicAuthUsername = '',
     this.basicAuthPassword = '',
-    this.aiGeneratedTitlesEnabled = false,
+    this.aiGeneratedTitlesEnabled = true,
     required this.createdAt,
     required this.updatedAt,
   });
