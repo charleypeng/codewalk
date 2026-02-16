@@ -107,6 +107,20 @@ class AppearanceSettingsSection extends StatelessWidget {
                       settingsProvider.setShowToolCallBubbles(value),
                     ),
                   ),
+                  const Divider(height: 1),
+                  SwitchListTile.adaptive(
+                    key: const ValueKey<String>(
+                      'settings_toggle_task_list',
+                    ),
+                    title: const Text('Task list'),
+                    subtitle: const Text(
+                      'Show or hide the session task list widget.',
+                    ),
+                    value: settingsProvider.showTaskList,
+                    onChanged: (value) => unawaited(
+                      settingsProvider.setShowTaskList(value),
+                    ),
+                  ),
                 ],
               ),
             ),

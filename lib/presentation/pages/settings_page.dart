@@ -41,6 +41,7 @@ class _SettingsPageState extends State<SettingsPage> {
   );
 
   DateTime? _lastEscapeAt;
+  bool _hasPhysicalKeyboard = false;
 
   late final List<_SettingsSection> _sections = <_SettingsSection>[
     _SettingsSection(
@@ -88,7 +89,7 @@ class _SettingsPageState extends State<SettingsPage> {
       TargetPlatform.linux ||
       TargetPlatform.macOS ||
       TargetPlatform.windows => true,
-      _ => false,
+      _ => _hasPhysicalKeyboard,
     };
   }
 
@@ -124,7 +125,15 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   bool _handleGlobalKeyEvent(KeyEvent event) {
-    if (!mounted || event is! KeyDownEvent) {
+    if (!mounted) {
+      return false;
+    }
+    if (!_hasPhysicalKeyboard && event is KeyDownEvent) {
+      setState(() {
+        _hasPhysicalKeyboard = true;
+      });
+    }
+    if (event is! KeyDownEvent) {
       return false;
     }
     if (event.logicalKey != LogicalKeyboardKey.escape) {

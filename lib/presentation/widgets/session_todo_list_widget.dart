@@ -1,0 +1,257 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+
+import '../../domain/entities/chat_session.dart';
+
+class SessionTodoListWidget extends StatefulWidget {
+  const SessionTodoListWidget({
+    super.key,
+    required this.todos,
+    required this.collapsed,
+    required this.onToggleCollapsed,
+    this.maxVisibleItems = 5,
+  });
+
+  final List<SessionTodo> todos;
+  final bool collapsed;
+  final VoidCallback onToggleCollapsed;
+  final int maxVisibleItems;
+
+  @override
+  State<SessionTodoListWidget> createState() => _SessionTodoListWidgetState();
+}
+
+class _SessionTodoListWidgetState extends State<SessionTodoListWidget> {
+  static const Duration _allCompletedHideDelay = Duration(seconds: 3);
+  static const double _itemHeight = 24;
+
+  final ScrollController _scrollController = ScrollController();
+  Timer? _hideTimer;
+  bool _hidden = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _syncHideTimer();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToInProgress();
+    });
+  }
+
+  @override
+  void didUpdateWidget(SessionTodoListWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncHideTimer();
+    if (!widget.collapsed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToInProgress();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _hideTimer?.cancel();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  bool get _allCompleted {
+    return widget.todos.isNotEmpty &&
+        widget.todos.every((t) => t.status == 'completed');
+  }
+
+  void _syncHideTimer() {
+    if (_allCompleted) {
+      if (_hideTimer == null) {
+        _hideTimer = Timer(_allCompletedHideDelay, () {
+          if (!mounted) return;
+          setState(() => _hidden = true);
+        });
+      }
+    } else {
+      _hideTimer?.cancel();
+      _hideTimer = null;
+      if (_hidden) {
+        setState(() => _hidden = false);
+      }
+    }
+  }
+
+  void _scrollToInProgress() {
+    if (!_scrollController.hasClients) return;
+    final index = widget.todos.indexWhere((t) => t.status == 'in_progress');
+    if (index < 0) return;
+    final target = index * _itemHeight;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    if (target <= maxScroll) {
+      _scrollController.animateTo(
+        target,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  String _collapsedSummary() {
+    final todos = widget.todos;
+    final inProgressIndex = todos.indexWhere((t) => t.status == 'in_progress');
+    if (inProgressIndex >= 0) {
+      final task = todos[inProgressIndex];
+      return 'Task ${inProgressIndex + 1}/${todos.length} ${task.content}';
+    }
+    final completedCount = todos.where((t) => t.status == 'completed').length;
+    return 'Tasks $completedCount/${todos.length} completed';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.todos.isEmpty || _hidden) {
+      return const SizedBox.shrink();
+    }
+
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final needsScroll = widget.todos.length > widget.maxVisibleItems;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          borderRadius: BorderRadius.circular(6),
+          onTap: widget.onToggleCollapsed,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  widget.collapsed
+                      ? Icons.expand_more_rounded
+                      : Icons.expand_less_rounded,
+                  size: 18,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    widget.collapsed
+                        ? _collapsedSummary()
+                        : 'Tasks (${widget.todos.length})',
+                    style: textTheme.labelMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (!widget.collapsed)
+          Padding(
+            padding: const EdgeInsets.only(left: 4, top: 2),
+            child: needsScroll
+                ? ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: widget.maxVisibleItems * _itemHeight,
+                    ),
+                    child: Scrollbar(
+                      controller: _scrollController,
+                      thumbVisibility: true,
+                      child: ListView.builder(
+                        controller: _scrollController,
+                        itemCount: widget.todos.length,
+                        itemExtent: _itemHeight,
+                        padding: EdgeInsets.zero,
+                        itemBuilder: (context, index) {
+                          return _buildTodoItem(context, widget.todos[index]);
+                        },
+                      ),
+                    ),
+                  )
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: widget.todos.map((todo) {
+                      return _buildTodoItem(context, todo);
+                    }).toList(growable: false),
+                  ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildTodoItem(BuildContext context, SessionTodo todo) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final isCompleted = todo.status == 'completed';
+    final isInProgress = todo.status == 'in_progress';
+
+    final statusIcon = isCompleted
+        ? Icon(
+            Icons.check_box_outlined,
+            size: 16,
+            color: colorScheme.primary,
+          )
+        : isInProgress
+            ? SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    colorScheme.primary,
+                  ),
+                ),
+              )
+            : Icon(
+                Icons.check_box_outline_blank,
+                size: 16,
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+              );
+
+    final priorityColor = switch (todo.priority) {
+      'high' => colorScheme.error,
+      'medium' => colorScheme.primary,
+      _ => colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+    };
+
+    return SizedBox(
+      height: _itemHeight,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          statusIcon,
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              todo.content,
+              style: textTheme.bodySmall?.copyWith(
+                decoration:
+                    isCompleted ? TextDecoration.lineThrough : null,
+                color: isCompleted
+                    ? colorScheme.onSurfaceVariant.withValues(alpha: 0.5)
+                    : null,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: priorityColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

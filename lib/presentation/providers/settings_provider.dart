@@ -40,6 +40,8 @@ class SettingsProvider extends ChangeNotifier {
   AppDensity get appDensity => _settings.appDensity;
   bool get showThinkingBubbles => _settings.showThinkingBubbles;
   bool get showToolCallBubbles => _settings.showToolCallBubbles;
+  bool get showTaskList => _settings.showTaskList;
+  bool get taskListCollapsed => _settings.taskListCollapsed;
   bool get hasAnyServerBackedNotificationCategory =>
       _serverBackedNotifications.values.any((value) => value);
 
@@ -128,6 +130,24 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(showToolCallBubbles: visible);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setShowTaskList(bool visible) async {
+    if (_settings.showTaskList == visible) {
+      return;
+    }
+    _settings = _settings.copyWith(showTaskList: visible);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setTaskListCollapsed(bool collapsed) async {
+    if (_settings.taskListCollapsed == collapsed) {
+      return;
+    }
+    _settings = _settings.copyWith(taskListCollapsed: collapsed);
     notifyListeners();
     await _persist();
   }

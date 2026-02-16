@@ -179,5 +179,31 @@ void main() {
 
       expect(third.appDensity, AppDensity.extraDense);
     });
+
+    test('persists task list visibility and collapsed state', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+
+      expect(first.showTaskList, isTrue);
+      expect(first.taskListCollapsed, isFalse);
+
+      await first.setShowTaskList(false);
+      await first.setTaskListCollapsed(true);
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(second.showTaskList, isFalse);
+      expect(second.taskListCollapsed, isTrue);
+    });
   });
 }

@@ -1,10 +1,30 @@
 # CodeWalk - Codebase Baseline Snapshot
 
-> Captured: 2026-02-15
-> Git baseline: `0f29bd8 release: cut v1.6.0` (main)
+> Captured: 2026-02-16
+> Git baseline: `20d4fd4 release: cut v1.8.0` (main)
 > Flutter: 3.41.0 (stable)
 
-## Delta Update (2026-02-15)
+## Delta Update (2026-02-16)
+
+- **Physical keyboard detection on mobile** (`settings_page.dart`): Settings page now detects physical keyboard events via `HardwareKeyboard` handler and dynamically shows the Shortcuts section on Android/iOS when a physical keyboard is connected (desktop/web always show shortcuts, no regression).
+- **Rotating tips in composer status** (`chat_page.dart`): "Receiving response..." replaced by rotating tips (10 app/productivity hints) during response reception. Tips rotate every 8 seconds with `auto_awesome` icon and lantern shimmer animation. Dynamic reasoning status retains priority over tips. Added `tip` type to `_ComposerStatusType` enum. Wrapped `_ComposerStatusLanternText` in `Flexible` to prevent overflow with longer tip text.
+- **Session todo list widget** (new `session_todo_list_widget.dart`): Visual todo list showing tasks from `todowrite`/`todoread` tool calls with status icons (checkbox for completed, spinner for in-progress, blank for pending), strikethrough for completed items, and priority dots (red/primary/muted). Auto-hides 3s after all tasks complete. Supports collapsed summary line ("Task 2/6 Write API endpoints" or "Tasks 3/5 completed"). Scrollbar with auto-scroll to in-progress item when exceeding `maxVisibleItems` (5 mobile, 10 desktop). Collapse state persisted globally via `ExperienceSettings.taskListCollapsed`.
+- **Todo tool call hiding** (`chat_message_widget.dart`): `todowrite` and `todoread` tool calls are filtered from conversation rendering at three levels: chain grouping exclusion, individual part skip, and empty assistant bubble suppression via `_shouldRenderPart`.
+- **Display toggle menu** (`chat_page.dart`): Renamed "Message Bubbles" header to "Display". Added "Task list" toggle to show/hide the session todo widget entirely. Persisted via `ExperienceSettings.showTaskList`.
+- **Foreground resume todo refresh** (`chat_provider.dart`): Added `loadSessionInsights` call in `_resumeRealtimeAfterForeground` to refresh todo list when app returns from background.
+- **Desktop todo placement**: Todo widget appears in utility sidebar (max 10 items); when sidebar is hidden, falls back to inline card below session header (max 5 items, same as mobile).
+- **Gradle build optimization** (`android/gradle.properties`): Added `org.gradle.caching=true` and `org.gradle.parallel=true` for faster Android builds.
+- **New test files**: `test/widget/session_todo_list_widget_test.dart` (9 tests), updated `chat_message_widget_test.dart` (todo hiding), `chat_page_test.dart` (tip assertion), `settings_provider_test.dart` (task list persistence).
+
+## Previous Delta (2026-02-16)
+
+- Moved context usage knob from AppBar actions to compact session header card (alongside title), reduced knob size to 20px with 1.5px stroke for visual alignment with title text.
+- Removed pencil edit button from session title inline editor; title rename now activates on single-tap (was double-tap + pencil icon).
+- Changed mobile Files button icon from `folder_open_outlined` to `account_tree_outlined` for clearer tree-navigation semantics.
+- Increased desktop project selector width from fixed 240px to responsive 300px (normal) / 400px (large desktop) to reduce premature ellipsis truncation.
+- Updated tests for removed edit button key, relocated context control, and new Files icon.
+
+## Previous Delta 2 (2026-02-15)
 
 - Added keyboard shortcut system: 3 new shortcut actions (`openSettings` with default `mod+,`, `cycleRecentModels` with default `mod+m`, `cycleVariant` with default `mod+t`), global shortcut handler in ChatPage using `HardwareKeyboard`, and comma key (`,`) support in `ShortcutBindingCodec`.
 - Added desktop local OpenCode setup wizard in Server Settings section (`servers_settings_section.dart`) with environment diagnostics (platform, OpenCode/Node/npm/Bun/WSL availability, network access, install directory writability), installation recommendations, and one-click install/upgrade via multiple methods.
@@ -348,7 +368,7 @@ Deferred/optional after parity wave:
 
 ### flutter test
 
-- **Result: 274 tests, all passed** (latest full run with coverage)
+- **Result: 283 tests, all passed** (latest full run with coverage)
 - **Coverage: 35% minimum** (enforced via `tool/ci/check_coverage.sh`)
 - **Test structure:**
   - Unit: providers/usecases/models with migration, server/context-scope assertions, lifecycle optimistic-rollback, and project/worktree orchestration
@@ -704,9 +724,9 @@ lcov_branch_coverage=0  # Disable branch coverage, focus on line coverage
 
 ## Version and Release
 
-**Current version:** `1.6.0+14` (defined in pubspec.yaml)
+**Current version:** `1.8.0+16` (defined in pubspec.yaml)
 - Version format: `MAJOR.MINOR.PATCH+BUILD`
-- Android: versionName = 1.6.0, versionCode = 14
+- Android: versionName = 1.8.0, versionCode = 16
 - Build artifacts uploaded via CI on successful builds
 - Release artifacts published via automated GitHub Release workflow on version tags
 
@@ -815,17 +835,10 @@ lcov_branch_coverage=0  # Disable branch coverage, focus on line coverage
 **Feature 021 (completed):**
 - Added a shared session-title formatting contract (`SessionTitleFormatter`) to unify explicit title/fallback rendering across list and active-session surfaces.
 - Replaced ambiguous relative-only fallback titles with relative + absolute date format (e.g. `Today HH:mm (M/D/YYYY)`), and reused the same strategy when creating new sessions.
-- Added inline rename UX in active conversation headers (mobile + desktop) with keyboard support (`Enter` save, `Esc` cancel), touch-friendly edit controls, save/loading feedback, and inline validation/error state.
+- Added inline rename UX in active conversation headers (mobile + desktop) with single-tap activation, keyboard support (`Enter` save, `Esc` cancel), save/loading feedback, and inline validation/error state.
 - Hardened rename synchronization in `ChatProvider`: no-op rename now succeeds without error noise, optimistic rename tracks pending local intent, stale/conflicting `session.updated` events are ignored while rename is pending, and rollback remains intact on API failure.
 - Expanded tests with new unit/widget coverage for formatter behavior, inline editor interactions, header fallback rendering, inline rename flow, and pending-rename conflict handling in provider realtime events.
 - Validation executed: targeted feature test matrix (`flutter test` on formatter/editor/provider/chat_page), full regression suite (`flutter test`), and static analysis (`flutter analyze --no-fatal-infos --no-fatal-warnings`).
-
-**Feature 021 (completed):**
-- Added shared session-title formatting contract (`SessionTitleFormatter`) to unify explicit title/fallback rendering across list and active-session surfaces.
-- Replaced ambiguous relative-only fallback titles with relative + absolute date format (e.g. `Today HH:mm (M/D/YYYY)`), and reused the same strategy when creating new sessions.
-- Added inline rename UX in active conversation headers (mobile + desktop) with keyboard support (`Enter` save, `Esc` cancel), touch-friendly edit controls, save/loading feedback, and inline validation/error state.
-- Hardened rename synchronization in `ChatProvider`: no-op rename now succeeds without error noise, optimistic rename tracks pending local intent, stale/conflicting `session.updated` events are ignored while rename is pending, and rollback remains intact on API failure.
-- Expanded tests with new unit/widget coverage for formatter behavior, inline editor interactions, header fallback rendering, inline rename flow, and pending-rename conflict handling in provider realtime events.
 
 **Feature 022 (completed):**
 - Added modular settings hub with responsive navigation (mobile list-to-detail, desktop split layout).
@@ -859,7 +872,7 @@ lcov_branch_coverage=0  # Disable branch coverage, focus on line coverage
 
 **Context compaction restoration (2026-02-13, commit 98cf446):**
 - Restored context compaction UX with dedicated `SummarizeChatSession` use case wired to `/session/{id}/summarize`.
-- Knob control in app bar displays usage percentage inside circle (mirrors OpenCode usage semantics).
+- Knob control in compact session header card displays usage percentage inside circle (mirrors OpenCode usage semantics).
 - Popover shows detailed metrics: usage %, tokens, cost, and context limit.
 - Manual `Compact now` action available with collapse icon for explicit context summarization.
 - Integrated with current provider/model selection for summarization request.
@@ -872,7 +885,7 @@ lcov_branch_coverage=0  # Disable branch coverage, focus on line coverage
 - Tool output UI now falls back to structured tool `input` when `output` is empty, including direct `patch/diff` extraction for `apply_patch`.
 - `edit` tool calls with `old_string`/`new_string` now generate a synthetic unified diff when upstream does not return textual output.
 - Tool call status chip is now responsive: desktop keeps icon + text (`Completed`, `Running`, etc.), while compact/mobile layouts render icon-only status at the right edge.
-- Chat app bar compact control now mirrors OpenCode usage semantics as a single knob (percentage rendered inside the circle) with popover metrics (usage %, tokens, cost, limit), retaining manual `Compact now` action with collapse icon.
+- Chat session header compact control now mirrors OpenCode usage semantics as a single knob (percentage rendered inside the circle) with popover metrics (usage %, tokens, cost, limit), retaining manual `Compact now` action with collapse icon.
 - Added regression coverage for parser normalization and input-fallback diff rendering in widget/unit tests.
 - Fixed missing `color` field in Agent entity and model (commit 63d6155).
 - Added colorized diff rendering in tool outputs with accessible text scaling (commit 52c6e8b).

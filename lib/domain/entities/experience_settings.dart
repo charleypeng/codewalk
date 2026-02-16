@@ -255,6 +255,8 @@ class ExperienceSettings {
       appDensity: AppDensity.normal,
       showThinkingBubbles: true,
       showToolCallBubbles: true,
+      showTaskList: true,
+      taskListCollapsed: false,
     );
   }
   const ExperienceSettings({
@@ -265,6 +267,8 @@ class ExperienceSettings {
     required this.appDensity,
     required this.showThinkingBubbles,
     required this.showToolCallBubbles,
+    required this.showTaskList,
+    required this.taskListCollapsed,
   });
 
   final Map<NotificationCategory, bool> notifications;
@@ -274,6 +278,8 @@ class ExperienceSettings {
   final AppDensity appDensity;
   final bool showThinkingBubbles;
   final bool showToolCallBubbles;
+  final bool showTaskList;
+  final bool taskListCollapsed;
 
   ExperienceSettings copyWith({
     Map<NotificationCategory, bool>? notifications,
@@ -283,6 +289,8 @@ class ExperienceSettings {
     AppDensity? appDensity,
     bool? showThinkingBubbles,
     bool? showToolCallBubbles,
+    bool? showTaskList,
+    bool? taskListCollapsed,
   }) {
     return ExperienceSettings(
       notifications: notifications ?? this.notifications,
@@ -292,6 +300,8 @@ class ExperienceSettings {
       appDensity: appDensity ?? this.appDensity,
       showThinkingBubbles: showThinkingBubbles ?? this.showThinkingBubbles,
       showToolCallBubbles: showToolCallBubbles ?? this.showToolCallBubbles,
+      showTaskList: showTaskList ?? this.showTaskList,
+      taskListCollapsed: taskListCollapsed ?? this.taskListCollapsed,
     );
   }
 
@@ -316,6 +326,8 @@ class ExperienceSettings {
       'appDensity': appDensityKey(appDensity),
       'showThinkingBubbles': showThinkingBubbles,
       'showToolCallBubbles': showToolCallBubbles,
+      'showTaskList': showTaskList,
+      'taskListCollapsed': taskListCollapsed,
     };
   }
 
@@ -331,6 +343,8 @@ class ExperienceSettings {
     var appDensity = defaults.appDensity;
     var showThinkingBubbles = defaults.showThinkingBubbles;
     var showToolCallBubbles = defaults.showToolCallBubbles;
+    var showTaskList = defaults.showTaskList;
+    var taskListCollapsed = defaults.taskListCollapsed;
 
     final notificationsJson = json['notifications'];
     if (notificationsJson is Map) {
@@ -394,6 +408,16 @@ class ExperienceSettings {
       showToolCallBubbles = showToolCallBubblesJson;
     }
 
+    final showTaskListJson = json['showTaskList'];
+    if (showTaskListJson is bool) {
+      showTaskList = showTaskListJson;
+    }
+
+    final taskListCollapsedJson = json['taskListCollapsed'];
+    if (taskListCollapsedJson is bool) {
+      taskListCollapsed = taskListCollapsedJson;
+    }
+
     return ExperienceSettings(
       notifications: notifications,
       sounds: sounds,
@@ -402,6 +426,8 @@ class ExperienceSettings {
       appDensity: appDensity,
       showThinkingBubbles: showThinkingBubbles,
       showToolCallBubbles: showToolCallBubbles,
+      showTaskList: showTaskList,
+      taskListCollapsed: taskListCollapsed,
     );
   }
 }

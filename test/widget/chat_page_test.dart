@@ -3695,7 +3695,12 @@ void main() {
       find.byKey(const ValueKey<String>('composer_reasoning_status_spinner')),
       findsNothing,
     );
-    expect(find.text('Receiving response...'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Text && (w.data?.startsWith('Tip:') ?? false),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Thinking...'), findsNothing);
   });
 

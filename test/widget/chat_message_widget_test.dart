@@ -1554,6 +1554,59 @@ index abc123..def456 100644
     expect(find.text('Assistant'), findsNothing);
   });
 
+  testWidgets('hides todowrite and todoread tool calls and empty bubble', (
+    WidgetTester tester,
+  ) async {
+    final message = AssistantMessage(
+      id: 'msg_hide_todo',
+      sessionId: 'ses_hide_todo',
+      time: DateTime.fromMillisecondsSinceEpoch(1000),
+      parts: <MessagePart>[
+        ToolPart(
+          id: 'part_todo_write',
+          messageId: 'msg_hide_todo',
+          sessionId: 'ses_hide_todo',
+          callId: 'call_todo_write',
+          tool: 'todowrite',
+          state: ToolStateCompleted(
+            input: const <String, dynamic>{'tasks': []},
+            output: 'ok',
+            time: ToolTime(
+              start: DateTime.fromMillisecondsSinceEpoch(1000),
+              end: DateTime.fromMillisecondsSinceEpoch(1200),
+            ),
+          ),
+        ),
+        ToolPart(
+          id: 'part_todo_read',
+          messageId: 'msg_hide_todo',
+          sessionId: 'ses_hide_todo',
+          callId: 'call_todo_read',
+          tool: 'todoread',
+          state: ToolStateCompleted(
+            input: const <String, dynamic>{},
+            output: '[]',
+            time: ToolTime(
+              start: DateTime.fromMillisecondsSinceEpoch(1200),
+              end: DateTime.fromMillisecondsSinceEpoch(1400),
+            ),
+          ),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(message: message),
+        ),
+      ),
+    );
+
+    expect(find.text('Updating task list'), findsNothing);
+    expect(find.text('Assistant'), findsNothing);
+  });
+
   testWidgets('expanded tool output caps content viewport height', (
     WidgetTester tester,
   ) async {

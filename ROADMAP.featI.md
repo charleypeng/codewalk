@@ -8,10 +8,10 @@
 - [x] Task 26: Files button icon changed to `account_tree_outlined`.
 - [x] Backlog follow-up: Desktop project selector width increased (300px normal, 400px large desktop; was 240px fixed).
 
-### Group 2 — UX/content features
-- Task 14: Show `Shortcuts` section on mobile when physical keyboard is connected.
-- Task 23: Add todo tooling support (`todowrite`, `todoread`, related flows).
-- Task 37: One-line tips while waiting for first server tokens.
+### Group 2 — UX/content features `[x]`
+- [x] Task 14: Show `Shortcuts` section on mobile when physical keyboard is connected.
+- [x] Task 23: Add todo tooling support (`todowrite`, `todoread`, related flows).
+- [x] Task 37: One-line tips while waiting for first server tokens.
 
 ### Group 3 — External integrations
 - Task 40: Replace ch.at title service with native OpenCode 'title' agent, maintaining 6-message cadence.

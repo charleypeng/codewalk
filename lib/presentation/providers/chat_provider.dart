@@ -2446,6 +2446,10 @@ class ChatProvider extends ChangeNotifier {
     await _loadPendingInteractions();
     await loadSessions();
     await refreshActiveSessionView(reason: 'foreground-resume');
+    final currentSessionId = _currentSession?.id;
+    if (currentSessionId != null) {
+      await loadSessionInsights(currentSessionId, silent: true);
+    }
     await _syncSelectionFromRemote(reason: 'foreground-resume', force: true);
     AppLogger.info('sync_resume_reconcile_complete');
   }

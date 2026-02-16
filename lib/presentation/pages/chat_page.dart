@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -33,6 +34,7 @@ import '../widgets/chat_session_list.dart';
 import '../widgets/permission_request_card.dart';
 import '../widgets/question_request_card.dart';
 import '../widgets/session_title_inline_editor.dart';
+import '../widgets/session_todo_list_widget.dart';
 import 'settings_page.dart';
 
 class _NewSessionIntent extends Intent {
@@ -89,7 +91,7 @@ class _ModelSelectorEntry {
 
 enum _ContextUsageAction { compactNow }
 
-enum _DisplayToggleAction { thinkingBubbles, toolCallBubbles }
+enum _DisplayToggleAction { thinkingBubbles, toolCallBubbles, taskList }
 
 class _SessionContextUsageSnapshot {
   const _SessionContextUsageSnapshot({
@@ -176,6 +178,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   Timer? _composerStatusShowTimer;
   Timer? _composerStatusHideTimer;
   Timer? _composerStopHintTimer;
+  Timer? _tipRotationTimer;
+  int _currentTipIndex = 0;
   DateTime? _lastGlobalEscapeAt;
   _ComposerStatusPresentation? _visibleComposerStatus;
   _ComposerStatusPresentation? _priorityComposerStatus;
@@ -190,6 +194,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    _currentTipIndex = Random().nextInt(
+      _ComposerStatusPresentation._receivingTips.length,
+    );
     WidgetsBinding.instance.addObserver(this);
     HardwareKeyboard.instance.addHandler(_handleGlobalShortcutKeyEvent);
     _scrollController.addListener(_handleScrollChanged);
@@ -241,6 +248,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     _composerStatusShowTimer?.cancel();
     _composerStatusHideTimer?.cancel();
     _composerStopHintTimer?.cancel();
+    _tipRotationTimer?.cancel();
     _scrollController.removeListener(_handleScrollChanged);
     HardwareKeyboard.instance.removeHandler(_handleGlobalShortcutKeyEvent);
     WidgetsBinding.instance.removeObserver(this);
@@ -1526,6 +1534,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     return switch (action) {
       _DisplayToggleAction.thinkingBubbles => 'Thinking bubbles',
       _DisplayToggleAction.toolCallBubbles => 'Tool call bubbles',
+      _DisplayToggleAction.taskList => 'Task list',
     };
   }
 
@@ -1671,6 +1680,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                   ),
                 );
                 break;
+              case _DisplayToggleAction.taskList:
+                unawaited(
+                  settingsProvider.setShowTaskList(
+                    !settingsProvider.showTaskList,
+                  ),
+                );
+                break;
             }
           },
           itemBuilder: (context) {
@@ -1678,7 +1694,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               PopupMenuItem<_DisplayToggleAction>(
                 enabled: false,
                 child: Text(
-                  'Message bubbles',
+                  'Display',
                   style: Theme.of(context).textTheme.labelLarge,
                 ),
               ),
@@ -1698,10 +1714,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                   _displayToggleLabel(_DisplayToggleAction.toolCallBubbles),
                 ),
               ),
-              const PopupMenuDivider(height: 0),
-              const PopupMenuItem<_DisplayToggleAction>(
-                enabled: false,
-                child: Text('More toggles coming soon'),
+              CheckedPopupMenuItem<_DisplayToggleAction>(
+                key: const ValueKey<String>('display_toggle_item_task_list'),
+                value: _DisplayToggleAction.taskList,
+                checked: settingsProvider.showTaskList,
+                child: Text(
+                  _displayToggleLabel(_DisplayToggleAction.taskList),
+                ),
               ),
             ];
           },
@@ -3211,9 +3230,15 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                       'Children: ${chatProvider.currentSessionChildren.length}',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
-                    Text(
-                      'Todos: ${chatProvider.currentSessionTodo.length}',
-                      style: Theme.of(context).textTheme.bodySmall,
+                    SessionTodoListWidget(
+                      todos: chatProvider.currentSessionTodo,
+                      collapsed: settingsProvider.taskListCollapsed,
+                      onToggleCollapsed: () => unawaited(
+                        settingsProvider.setTaskListCollapsed(
+                          !settingsProvider.taskListCollapsed,
+                        ),
+                      ),
+                      maxVisibleItems: 10,
                     ),
                     Text(
                       'Diff files: ${chatProvider.currentSessionDiff.length}',
@@ -5031,6 +5056,32 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     );
   }
 
+  Widget _buildInlineTodoCard(
+    BuildContext context,
+    ChatProvider chatProvider,
+    SettingsProvider sp,
+  ) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+      child: Card(
+        margin: EdgeInsets.zero,
+        elevation: 0,
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          child: SessionTodoListWidget(
+            todos: chatProvider.currentSessionTodo,
+            collapsed: sp.taskListCollapsed,
+            onToggleCollapsed: () => unawaited(
+              sp.setTaskListCollapsed(!sp.taskListCollapsed),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildChatContent({
     required ChatProvider chatProvider,
     required double maxContentWidth,
@@ -5178,6 +5229,23 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     );
                   },
                 ),
+              // Session todo list (mobile or desktop fallback when utility pane hidden)
+              Builder(
+                builder: (context) {
+                  final sp = context.watch<SettingsProvider>();
+                  final width = MediaQuery.sizeOf(context).width;
+                  final isMobile = width < _mobileBreakpoint;
+                  final utilityPaneVisible =
+                      width >= _largeDesktopBreakpoint &&
+                      sp.isDesktopPaneVisible(DesktopPane.utility);
+                  if (chatProvider.currentSessionTodo.isEmpty ||
+                      !sp.showTaskList ||
+                      (!isMobile && utilityPaneVisible)) {
+                    return const SizedBox.shrink();
+                  }
+                  return _buildInlineTodoCard(context, chatProvider, sp);
+                },
+              ),
               // Message list
               Expanded(child: _buildMessageViewport(chatProvider)),
 
@@ -5277,6 +5345,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
   void _applyComposerStatusTarget(_ComposerStatusPresentation? target) {
     if (target == null) {
+      _tipRotationTimer?.cancel();
+      _tipRotationTimer = null;
       _composerStatusShowTimer?.cancel();
       _composerStatusShowTimer = null;
       _pendingComposerStatus = null;
@@ -5305,6 +5375,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     _composerStatusHideTimer = null;
 
     if (target.type == _ComposerStatusType.dynamicReasoning) {
+      _tipRotationTimer?.cancel();
+      _tipRotationTimer = null;
       _composerStatusShowTimer?.cancel();
       _composerStatusShowTimer = null;
       _pendingComposerStatus = null;
@@ -5315,6 +5387,27 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         _visibleComposerStatus = target;
       });
       return;
+    }
+
+    if (target.type == _ComposerStatusType.tip && _tipRotationTimer == null) {
+      _tipRotationTimer = Timer.periodic(
+        const Duration(seconds: 8),
+        (_) {
+          if (!mounted) {
+            return;
+          }
+          final tips = _ComposerStatusPresentation._receivingTips;
+          _currentTipIndex = (_currentTipIndex + 1) % tips.length;
+          setState(() {
+            _visibleComposerStatus = _ComposerStatusPresentation.tip(
+              tips[_currentTipIndex],
+            );
+          });
+        },
+      );
+    } else if (target.type != _ComposerStatusType.tip) {
+      _tipRotationTimer?.cancel();
+      _tipRotationTimer = null;
     }
 
     final shouldDebounceFallback =
@@ -5385,6 +5478,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         ),
       ),
       _ComposerStatusType.receiving ||
+      _ComposerStatusType.tip ||
       _ComposerStatusType.dynamicReasoning => Icon(
         Icons.auto_awesome,
         key: const ValueKey<String>('composer_reasoning_status_icon'),
@@ -5419,12 +5513,14 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
             ),
             if (status.type != _ComposerStatusType.stopHint)
               const SizedBox(width: 8),
-            _ComposerStatusLanternText(
-              text: status.label,
-              key: const ValueKey<String>('composer_reasoning_status_text'),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: textStyle,
+            Flexible(
+              child: _ComposerStatusLanternText(
+                text: status.label,
+                key: const ValueKey<String>('composer_reasoning_status_text'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textStyle,
+              ),
             ),
           ],
         ),
@@ -6938,7 +7034,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
     return switch (progressStage) {
       _AssistantProgressStage.receiving =>
-        const _ComposerStatusPresentation.receiving(),
+        _ComposerStatusPresentation.tip(
+          _ComposerStatusPresentation._receivingTips[_currentTipIndex],
+        ),
       _AssistantProgressStage.thinking =>
         const _ComposerStatusPresentation.thinking(),
       _AssistantProgressStage.retrying => null,
@@ -7314,7 +7412,7 @@ class _TimelineRetryIndicatorEntry extends _TimelineEntry {
 
 enum _AssistantProgressStage { thinking, receiving, retrying }
 
-enum _ComposerStatusType { dynamicReasoning, receiving, thinking, stopHint }
+enum _ComposerStatusType { dynamicReasoning, receiving, thinking, stopHint, tip }
 
 class _ComposerStatusPresentation {
   const _ComposerStatusPresentation._({
@@ -7336,6 +7434,22 @@ class _ComposerStatusPresentation {
 
   const _ComposerStatusPresentation.stopHint()
     : this._(type: _ComposerStatusType.stopHint, label: 'Double ESC to stop');
+
+  const _ComposerStatusPresentation.tip(String label)
+    : this._(type: _ComposerStatusType.tip, label: label);
+
+  static const List<String> _receivingTips = [
+    'Tip: Use @ to mention files in your prompt',
+    'Tip: Tap the title to rename a conversation',
+    'Tip: Use ! at the start to run shell commands',
+    'Tip: Use / to access slash commands',
+    'Tip: Long-press Send to insert a newline',
+    'Tip: Tap the context knob to see usage details',
+    'Tip: Be specific — shorter prompts get faster answers',
+    'Tip: Ask for step-by-step when debugging complex issues',
+    'Tip: Provide context — paste error messages and logs',
+    'Tip: Break large tasks into smaller prompts',
+  ];
 
   final _ComposerStatusType type;
   final String label;

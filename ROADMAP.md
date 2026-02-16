@@ -156,10 +156,10 @@ Implemented desktop local-server wizard with runtime checks for `opencode serve`
 - [x] Mudar o ícone do botão 'Files' para `account_tree_outlined`
 - [x] Aumentar largura do select de projeto no desktop (300px normal, 400px large desktop)
 
-**Group 2 — UX/content features**
-- [ ] Exibir seção `Shortcuts` no mobile quando houver teclado físico conectado
-- [ ] Adicionar suporte a todowrite, todoread e tudo relacionado a to-do
-- [ ] Criar lista de dicas de uma frase para mostrar enquanto aguarda respostas do servidor mas nada chegou ainda
+**Group 2 — UX/content features** `[x]`
+- [x] Exibir seção `Shortcuts` no mobile quando houver teclado físico conectado
+- [x] Adicionar suporte a todowrite, todoread e tudo relacionado a to-do
+- [x] Criar lista de dicas de uma frase para mostrar enquanto aguarda respostas do servidor mas nada chegou ainda
 
 **Group 3 — External integrations**
 - [ ] Substituir serviço ch.at de títulos por agent nativo OpenCode 'title', mantendo cadência de 6 mensagens

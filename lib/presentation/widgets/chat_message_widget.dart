@@ -179,6 +179,9 @@ class ChatMessageWidget extends StatelessWidget {
         !showToolCallBubbles) {
       return false;
     }
+    if (part.type == PartType.tool && _isTodoToolPart(part as ToolPart)) {
+      return false;
+    }
     return true;
   }
 
@@ -284,7 +287,10 @@ class ChatMessageWidget extends StatelessWidget {
         if (!showToolCallBubbles) {
           return const SizedBox.shrink();
         }
-        return _buildToolPart(context, part as ToolPart);
+        if (_isTodoToolPart(part as ToolPart)) {
+          return const SizedBox.shrink();
+        }
+        return _buildToolPart(context, part);
       case PartType.agent:
         return _buildAgentPart(context, part as AgentPart);
       case PartType.reasoning:
@@ -410,7 +416,15 @@ class ChatMessageWidget extends StatelessWidget {
   }
 
   bool _isToolSurfacePart(MessagePart part) {
+    if (part.type == PartType.tool && _isTodoToolPart(part as ToolPart)) {
+      return false;
+    }
     return part.type == PartType.tool || part.type == PartType.patch;
+  }
+
+  bool _isTodoToolPart(ToolPart part) {
+    final normalized = _normalizeToolName(part.tool);
+    return normalized == 'todowrite' || normalized == 'todoread';
   }
 
   Widget _buildTextPart(BuildContext context, TextPart part) {
