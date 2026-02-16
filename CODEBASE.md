@@ -63,7 +63,7 @@ codewalk/
 │   ├── presentation/
 │   │   ├── pages/       # App Shell, Chat, Home, Logs, Server Settings
 │   │   ├── providers/   # State management (Provider, ChatProvider, SettingsProvider, etc.)
-│   │   ├── services/    # UI services (ChatTitleGenerator, SoundService, EventFeedbackDispatcher, LocalOpenCodeServerRuntime)
+│   │   ├── services/    # UI services (ChatTitleGenerator, SoundService, EventFeedbackDispatcher, LocalOpenCodeServerRuntime, FilePartActionService)
 │   │   ├── theme/       # App theme configuration
 │   │   ├── utils/       # UI utilities (SessionTitleFormatter, FileExplorerLogic, ShortcutBindingCodec)
 │   │   └── widgets/     # Chat input, message, session list, interaction cards
@@ -485,6 +485,7 @@ Makefile with 15 targets and TTY-aware output suppression (verbose output redire
 | flutter_markdown_plus | ^1.0.7 | Markdown rendering |
 | flutter_highlight | ^0.7.0 | Code syntax highlighting |
 | file_picker | ^10.3.10 | File picker |
+| path_provider | ^2.1.5 | File system paths for attachment saving |
 | speech_to_text | ^7.3.0 | Voice input dictation |
 | url_launcher | ^6.2.2 | URL launcher |
 | package_info_plus | ^9.0.0 | App version info |

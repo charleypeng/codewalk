@@ -161,11 +161,15 @@ Implemented desktop local-server wizard with runtime checks for `opencode serve`
 - [x] Adicionar suporte a todowrite, todoread e tudo relacionado a to-do
 - [x] Criar lista de dicas de uma frase para mostrar enquanto aguarda respostas do servidor mas nada chegou ainda
 
-**Group 3 — External integrations**
+**Group 3 — Chat attachments and media**
+- [ ] Adicionar ações de download/abertura de anexos em mensagens de chat
+- [ ] Implementar pré-visualização de imagens inline nas bolhas de mensagem
+
+**Group 4 — External integrations**
 - [ ] Substituir serviço ch.at de títulos por agent nativo OpenCode 'title', mantendo cadência de 6 mensagens
 - [ ] Verificar atualizações baseadas nos releases do GitHub usando a API pública do GitHub
 
-**Group 4 — Platform**
+**Group 5 — Platform**
 - [ ] Opções em Settings para decidir se app fica em background. Mobile: persistente notification, desktop: tray
 
 **Done**

@@ -187,6 +187,84 @@ void main() {
     expect(find.byTooltip('Copy'), findsNothing);
   });
 
+  testWidgets('file part with inline payload renders save action', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: UserMessage(
+              id: 'msg_file_data',
+              sessionId: 'ses_file_data',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: const <MessagePart>[
+                FilePart(
+                  id: 'part_file_data',
+                  messageId: 'msg_file_data',
+                  sessionId: 'ses_file_data',
+                  url:
+                      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX7sAAAAASUVORK5CYII=',
+                  mime: 'image/png',
+                  filename: 'preview.png',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byTooltip('Save File'), findsOneWidget);
+    expect(find.byIcon(Icons.download_rounded), findsOneWidget);
+    expect(find.text('preview.png'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('file_image_preview_part_file_data')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('file part with source path renders open action', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: UserMessage(
+              id: 'msg_file_source',
+              sessionId: 'ses_file_source',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: const <MessagePart>[
+                FilePart(
+                  id: 'part_file_source',
+                  messageId: 'msg_file_source',
+                  sessionId: 'ses_file_source',
+                  url: 'file:///tmp/report.pdf',
+                  mime: 'application/pdf',
+                  filename: 'report.pdf',
+                  fileSource: FileSource(
+                    path: '/tmp/report.pdf',
+                    text: FilePartSourceText(value: '', start: 0, end: 0),
+                    type: 'file',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byTooltip('Open File'), findsOneWidget);
+    expect(find.byIcon(Icons.open_in_new_rounded), findsOneWidget);
+    expect(find.text('/tmp/report.pdf'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('file_image_preview_part_file_source')),
+      findsNothing,
+    );
+  });
+
   testWidgets('background copy handler shows feedback on non-android', (
     WidgetTester tester,
   ) async {
@@ -1597,9 +1675,7 @@ index abc123..def456 100644
 
     await tester.pumpWidget(
       MaterialApp(
-        home: Scaffold(
-          body: ChatMessageWidget(message: message),
-        ),
+        home: Scaffold(body: ChatMessageWidget(message: message)),
       ),
     );
 

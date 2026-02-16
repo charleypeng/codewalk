@@ -13,11 +13,15 @@
 - [x] Task 23: Add todo tooling support (`todowrite`, `todoread`, related flows).
 - [x] Task 37: One-line tips while waiting for first server tokens.
 
-### Group 3 — External integrations
+### Group 3 — Chat attachments and media
+- [ ] Add attachment download/open actions in chat messages (handle data://, http://, file://, and local paths)
+- [ ] Implement image preview inline in chat message bubbles (support data URLs and network images)
+
+### Group 4 — External integrations
 - Task 40: Replace ch.at title service with native OpenCode 'title' agent, maintaining 6-message cadence.
 - Task 15: Check updates via public GitHub Releases API.
 
-### Group 4 — Platform
+### Group 5 — Platform
 - Task 10: Background behavior settings (mobile persistent notification, desktop tray).
 
 ### Done

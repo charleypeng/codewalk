@@ -57,6 +57,9 @@ dependencies:
   
   # App info
   package_info_plus: ^9.0.0
+
+  # Filesystem locations
+  path_provider: ^2.1.5
   
   # JSON serialization
   json_annotation: ^4.8.1
