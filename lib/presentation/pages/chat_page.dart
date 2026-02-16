@@ -1945,27 +1945,27 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38);
 
     return SizedBox(
-      width: 28,
-      height: 28,
+      width: 20,
+      height: 20,
       child: Stack(
         alignment: Alignment.center,
         children: [
           CircularProgressIndicator(
             value: 1,
-            strokeWidth: 2,
+            strokeWidth: 1.5,
             valueColor: AlwaysStoppedAnimation<Color>(
               color.withValues(alpha: 0.22),
             ),
           ),
           CircularProgressIndicator(
             value: isCompacting ? null : progress,
-            strokeWidth: 2,
+            strokeWidth: 1.5,
             valueColor: AlwaysStoppedAnimation<Color>(color),
           ),
           Text(
             '$usagePercent%',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              fontSize: usagePercent >= 100 ? 7 : 8,
+              fontSize: usagePercent >= 100 ? 7.5 : 8.5,
               fontWeight: FontWeight.w700,
               color: knobTextColor,
               height: 1,
@@ -5079,6 +5079,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                             vertical: 4,
                           ),
                           child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Expanded(
                                 child: SessionTitleInlineEditor(
@@ -5110,6 +5111,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                       'appbar_context_usage_button',
                                     ),
                                     tooltip: 'Compact Context',
+                                    padding: EdgeInsets.zero,
                                     onSelected: (action) {
                                       if (action ==
                                           _ContextUsageAction.compactNow) {
