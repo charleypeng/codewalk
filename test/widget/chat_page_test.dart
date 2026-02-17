@@ -3591,123 +3591,126 @@ void main() {
     expect(find.text('Show earlier messages'), findsOneWidget);
   });
 
-  testWidgets('shows delayed tip in composer for both thinking and receiving stages', (
-    WidgetTester tester,
-  ) async {
-    await tester.binding.setSurfaceSize(const Size(1000, 900));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+  testWidgets(
+    'shows delayed tip in composer for both thinking and receiving stages',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
-    final repository = FakeChatRepository(
-      sessions: <ChatSession>[
-        ChatSession(
-          id: 'ses_progress',
-          workspaceId: 'default',
-          time: DateTime.fromMillisecondsSinceEpoch(1000),
-          title: 'Progress Session',
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_progress',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Progress Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_progress'] = const <ChatMessage>[];
+
+      final streamController = StreamController<Either<Failure, ChatMessage>>();
+      addTearDown(() async {
+        await streamController.close();
+      });
+      repository.sendMessageHandler = (_, __, ___, ____) =>
+          streamController.stream;
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      await provider.sendMessage('status progress');
+      await tester.pump();
+
+      // Status slot exists but line not yet visible (debounce delay).
+      expect(
+        find.byKey(const ValueKey<String>('composer_reasoning_status_slot')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
+        findsNothing,
+      );
+
+      await tester.pump(const Duration(milliseconds: 1900));
+      expect(
+        find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
+        findsNothing,
+      );
+
+      // After 2s debounce, thinking stage shows a tip (not "Thinking...").
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(
+        find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('composer_reasoning_status_spinner')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>('composer_reasoning_status_type_tip'),
         ),
-      ],
-    );
-    repository.messagesBySession['ses_progress'] = const <ChatMessage>[];
-
-    final streamController = StreamController<Either<Failure, ChatMessage>>();
-    addTearDown(() async {
-      await streamController.close();
-    });
-    repository.sendMessageHandler = (_, __, ___, ____) =>
-        streamController.stream;
-
-    final localDataSource = InMemoryAppLocalDataSource()
-      ..activeServerId = 'srv_test';
-    final provider = _buildChatProvider(
-      chatRepository: repository,
-      localDataSource: localDataSource,
-    );
-    final appProvider = _buildAppProvider(localDataSource: localDataSource);
-
-    await tester.pumpWidget(_testApp(provider, appProvider));
-    await tester.pumpAndSettle();
-
-    await provider.loadSessions();
-    await provider.selectSession(provider.sessions.first);
-    await provider.initializeProviders();
-    await tester.pumpAndSettle();
-
-    await provider.sendMessage('status progress');
-    await tester.pump();
-
-    // Status slot exists but line not yet visible (debounce delay).
-    expect(
-      find.byKey(const ValueKey<String>('composer_reasoning_status_slot')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
-      findsNothing,
-    );
-
-    await tester.pump(const Duration(milliseconds: 1900));
-    expect(
-      find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
-      findsNothing,
-    );
-
-    // After 2s debounce, thinking stage shows a tip (not "Thinking...").
-    await tester.pump(const Duration(milliseconds: 100));
-    expect(
-      find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const ValueKey<String>('composer_reasoning_status_spinner')),
-      findsNothing,
-    );
-    expect(
-      find.byKey(
-        const ValueKey<String>('composer_reasoning_status_type_tip'),
-      ),
-      findsOneWidget,
-    );
-    expect(
-      find.byWidgetPredicate(
-        (w) => w is Text && (w.data?.startsWith('Tip:') ?? false),
-      ),
-      findsOneWidget,
-    );
-    expect(find.text('Thinking...'), findsNothing);
-
-    // Transition to receiving stage — tip continues without interruption.
-    streamController.add(
-      Right(
-        AssistantMessage(
-          id: 'msg_assistant_progress',
-          sessionId: 'ses_progress',
-          time: DateTime.fromMillisecondsSinceEpoch(2000),
-          parts: const <MessagePart>[
-            TextPart(
-              id: 'part_assistant_progress',
-              messageId: 'msg_assistant_progress',
-              sessionId: 'ses_progress',
-              text: 'partial token',
-            ),
-          ],
+        findsOneWidget,
+      );
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is Text && (w.data?.startsWith('Tip:') ?? false),
         ),
-      ),
-    );
-    await tester.pump();
-    await tester.pump();
+        findsOneWidget,
+      );
+      expect(find.text('Thinking...'), findsNothing);
 
-    // Same tip icon and text persist across the stage transition.
-    expect(
-      find.byKey(const ValueKey<String>('composer_reasoning_status_icon_tip')),
-      findsOneWidget,
-    );
-    expect(
-      find.byWidgetPredicate(
-        (w) => w is Text && (w.data?.startsWith('Tip:') ?? false),
-      ),
-      findsOneWidget,
-    );
-  });
+      // Transition to receiving stage — tip continues without interruption.
+      streamController.add(
+        Right(
+          AssistantMessage(
+            id: 'msg_assistant_progress',
+            sessionId: 'ses_progress',
+            time: DateTime.fromMillisecondsSinceEpoch(2000),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_assistant_progress',
+                messageId: 'msg_assistant_progress',
+                sessionId: 'ses_progress',
+                text: 'partial token',
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      // Same tip icon and text persist across the stage transition.
+      expect(
+        find.byKey(
+          const ValueKey<String>('composer_reasoning_status_icon_tip'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is Text && (w.data?.startsWith('Tip:') ?? false),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets(
     'shows transient reasoning status above composer and hides it after completion',
@@ -4089,6 +4092,61 @@ void main() {
 
     expect(repository.abortSessionCallCount, 1);
     expect(repository.lastAbortSessionId, 'ses_stop');
+  });
+
+  testWidgets('restores composer draft automatically when send is rejected', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_retry_draft',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Retry Draft Session',
+        ),
+      ],
+    );
+    final sendStream = StreamController<Either<Failure, ChatMessage>>();
+    addTearDown(() async {
+      await sendStream.close();
+    });
+    repository.sendMessageHandler = (_, __, ___, ____) => sendStream.stream;
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await provider.initializeProviders();
+    await tester.pumpAndSettle();
+
+    final chatInputFieldFinder = find.descendant(
+      of: find.byKey(const ValueKey<String>('composer_input_row')),
+      matching: find.byType(TextField),
+    );
+
+    await tester.enterText(chatInputFieldFinder, 'keep this draft');
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.send_rounded));
+    await tester.pump();
+
+    sendStream.add(const Left(ServerFailure('temporary send rejection')));
+    await tester.pumpAndSettle();
+
+    final inputAfterFailure = tester.widget<TextField>(chatInputFieldFinder);
+    expect(inputAfterFailure.controller?.text, 'keep this draft');
   });
 
   testWidgets('double ESC shows stop hint and aborts active response', (

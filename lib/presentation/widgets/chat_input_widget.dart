@@ -24,6 +24,8 @@ class ChatInputController {
   bool get canOpenAttachmentOptions =>
       _state?._canOpenAttachmentOptions ?? false;
 
+  bool get hasDraftContent => _state?._hasDraftContent ?? false;
+
   void openAttachmentOptions() {
     _state?._openAttachmentOptionsFromExternal();
   }
@@ -235,6 +237,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
 
   FocusNode get _effectiveFocusNode => widget.focusNode ?? _internalFocusNode;
 
+  bool get _hasDraftContent =>
+      _controller.text.trim().isNotEmpty || _attachments.isNotEmpty;
+
   bool get _isDesktopPlatform {
     return kIsWeb ||
         defaultTargetPlatform == TargetPlatform.macOS ||
@@ -356,9 +361,12 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to attach files: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to send message. Draft kept for retry.'),
+        ),
+      );
+      _ensureInputFocus();
     } finally {
       if (mounted) {
         setState(() {

@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart' hide Provider;
@@ -558,13 +559,27 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
 
     final shouldShowJumpToFirst = _shouldShowJumpToFirstFab();
-    if (_autoFollowToLatest ||
-        !_showScrollToLatestFab ||
-        _showScrollToFirstFab != shouldShowJumpToFirst) {
+    final userScrollDirection = _scrollController.position.userScrollDirection;
+    if (_autoFollowToLatest) {
+      // Keep auto-follow enabled for content-size changes (new messages,
+      // collapsed/expanded bubbles). We only opt out when the user actually
+      // scrolls away from the latest position.
+      if (userScrollDirection == ScrollDirection.idle) {
+        return;
+      }
       setState(() {
         _autoFollowToLatest = false;
         _showScrollToLatestFab = true;
         _hasUnreadMessagesBelow = false;
+        _showScrollToFirstFab = shouldShowJumpToFirst;
+      });
+      return;
+    }
+
+    if (!_showScrollToLatestFab ||
+        _showScrollToFirstFab != shouldShowJumpToFirst) {
+      setState(() {
+        _showScrollToLatestFab = true;
         _showScrollToFirstFab = shouldShowJumpToFirst;
       });
     }
@@ -656,6 +671,28 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
               : null,
         ),
       );
+    });
+  }
+
+  void _consumeRejectedDraft(ChatProvider chatProvider) {
+    final rejectedDraft = chatProvider.consumeRejectedDraftText();
+    if (rejectedDraft == null || rejectedDraft.trim().isEmpty) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _chatInputController.hasDraftContent) {
+        return;
+      }
+      setState(() {
+        _composerPrefilledText = rejectedDraft;
+        _composerPrefilledTextVersion += 1;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        _inputFocusNode.requestFocus();
+      });
     });
   }
 
@@ -1545,6 +1582,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                     _syncSessionScrollState(chatProvider);
                     _syncChatRouteActivity(chatProvider);
                     _consumePendingUiNotice(chatProvider);
+                    _consumeRejectedDraft(chatProvider);
                     if (isMobile) {
                       return _buildChatContent(
                         chatProvider: chatProvider,

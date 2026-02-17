@@ -3244,6 +3244,38 @@ void main() {
       },
     );
 
+    test(
+      'session.idle clears stale active stream activity for current session',
+      () async {
+        final sendStream = StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          await sendStream.close();
+        });
+        chatRepository.sendMessageHandler = (_, __, ___, ____) =>
+            sendStream.stream;
+
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.initializeProviders();
+
+        await provider.sendMessage('pending stream');
+        expect(provider.isCurrentSessionActivelyResponding, isTrue);
+        expect(provider.canAbortActiveResponse, isTrue);
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.idle',
+            properties: <String, dynamic>{'sessionID': 'ses_1'},
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        expect(provider.currentSessionStatus?.type, SessionStatusType.idle);
+        expect(provider.isCurrentSessionActivelyResponding, isFalse);
+        expect(provider.canAbortActiveResponse, isFalse);
+      },
+    );
+
     test('refreshes active session when realtime stream reconnects', () async {
       final draft = AssistantMessage(
         id: 'msg_ai_live',
@@ -3318,6 +3350,40 @@ void main() {
       expect((message.parts.single as TextPart).text, 'done after reconnect');
       expect(provider.currentSessionStatus?.type, SessionStatusType.busy);
     });
+
+    test(
+      'refreshActiveSessionView requests scroll-to-bottom callback',
+      () async {
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        var scrollRequests = 0;
+        provider.setScrollToBottomCallback(() {
+          scrollRequests += 1;
+        });
+
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_refresh_scroll',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(2000),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(2100),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_refresh_scroll',
+                messageId: 'msg_refresh_scroll',
+                sessionId: 'ses_1',
+                text: 'fresh message from refresh',
+              ),
+            ],
+          ),
+        ];
+
+        await provider.refreshActiveSessionView(includeStatus: false);
+
+        expect(scrollRequests, 1);
+      },
+    );
 
     test(
       'enters degraded mode after repeated stream failures and recovers on signal',

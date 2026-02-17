@@ -316,6 +316,8 @@ class ChatProvider extends ChangeNotifier {
   int _nextUiNoticeId = 0;
   int _messageStreamGeneration = 0;
   String? _activeMessageStreamSessionId;
+  String? _activeSendDraftText;
+  String? _rejectedDraftText;
 
   // Project and provider-related state
   String? _currentProjectId;
@@ -433,26 +435,28 @@ class ChatProvider extends ChangeNotifier {
     if (normalizedSessionId.isEmpty) {
       return false;
     }
-    final status = _sessionStatusById[normalizedSessionId]?.type;
-    final hasBusyStatus =
-        status == SessionStatusType.busy || status == SessionStatusType.retry;
-    final hasActiveStream =
-        _messageSubscription != null &&
-        _activeMessageStreamSessionId == normalizedSessionId;
-    if (hasActiveStream) {
-      return true;
-    }
-    if (!hasBusyStatus) {
-      return false;
-    }
-    if (_currentSession?.id != normalizedSessionId) {
-      return true;
-    }
+    final isCurrentSession = _currentSession?.id == normalizedSessionId;
     final hasInProgressAssistant = _messages.whereType<AssistantMessage>().any(
       (message) =>
           message.sessionId == normalizedSessionId && !message.isCompleted,
     );
-    return hasInProgressAssistant || _state == ChatState.sending;
+    if (isCurrentSession && _state == ChatState.sending) {
+      return true;
+    }
+
+    final status = _sessionStatusById[normalizedSessionId]?.type;
+    final hasBusyStatus =
+        status == SessionStatusType.busy || status == SessionStatusType.retry;
+    if (!hasBusyStatus) {
+      return isCurrentSession && _state == ChatState.sending;
+    }
+    if (!isCurrentSession) {
+      return true;
+    }
+    final hasActiveStream =
+        _messageSubscription != null &&
+        _activeMessageStreamSessionId == normalizedSessionId;
+    return hasInProgressAssistant || hasActiveStream;
   }
 
   bool get isCurrentSessionActivelyResponding {
@@ -726,6 +730,12 @@ class ChatProvider extends ChangeNotifier {
     return notice;
   }
 
+  String? consumeRejectedDraftText() {
+    final draftText = _rejectedDraftText;
+    _rejectedDraftText = null;
+    return draftText;
+  }
+
   void _queueUiNotice({
     required ChatUiNoticeType type,
     required String message,
@@ -796,6 +806,28 @@ class ChatProvider extends ChangeNotifier {
   void _clearAbortSuppression() {
     _abortSuppressionSessionId = null;
     _abortSuppressionStartedAt = null;
+  }
+
+  void _setActiveSendDraftText(String draftText, {required bool shellMode}) {
+    final normalizedDraft = draftText.trim();
+    if (normalizedDraft.isEmpty) {
+      _activeSendDraftText = null;
+      return;
+    }
+    _activeSendDraftText = shellMode ? '!$normalizedDraft' : normalizedDraft;
+  }
+
+  void _clearActiveSendDraftText() {
+    _activeSendDraftText = null;
+  }
+
+  void _stashRejectedDraftTextForRetry() {
+    final draftText = _activeSendDraftText?.trim();
+    _activeSendDraftText = null;
+    if (draftText == null || draftText.isEmpty) {
+      return;
+    }
+    _rejectedDraftText = draftText;
   }
 
   String _modelKey(String providerId, String modelId) {
@@ -2777,7 +2809,18 @@ class ChatProvider extends ChangeNotifier {
           _sessionStatusById[sessionId] = const SessionStatusInfo(
             type: SessionStatusType.idle,
           );
-          notifyListeners();
+          if (sessionId == _currentSession?.id) {
+            _activeMessageStreamSessionId = null;
+            _clearActiveSendDraftText();
+            _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
+            if (_state == ChatState.sending) {
+              _setState(ChatState.loaded);
+            } else {
+              notifyListeners();
+            }
+          } else {
+            notifyListeners();
+          }
           _attemptPendingRemoteSelectionSync(reason: 'event-session.idle');
         }
         break;
@@ -3600,6 +3643,9 @@ class ChatProvider extends ChangeNotifier {
           _messages = _mergeServerMessagesWithPendingLocalUsers(messages);
           notifyListeners();
           _scheduleAutoTitleRefresh(session.id);
+          if (!_isCompactingContext) {
+            _scrollToBottomCallback?.call();
+          }
         },
       );
 
@@ -5054,6 +5100,7 @@ class ChatProvider extends ChangeNotifier {
     AppLogger.info(
       'Provider send start session=${_currentSession!.id} agent=${_selectedAgentName ?? "-"} provider=${_selectedProviderId ?? "-"} model=${_selectedModelId ?? "-"} variant=${_selectedVariantId ?? "auto"}',
     );
+    _setActiveSendDraftText(trimmedText, shellMode: shellMode);
     _setState(ChatState.sending);
 
     try {
@@ -5183,10 +5230,12 @@ class ChatProvider extends ChangeNotifier {
                   AppLogger.info(
                     'Suppressing expected abort failure session=${_currentSession?.id ?? "-"}',
                   );
+                  _clearActiveSendDraftText();
                   _errorMessage = null;
                   _setState(ChatState.loaded);
                   return;
                 }
+                _stashRejectedDraftTextForRetry();
                 _handleFailure(failure);
               }, _updateOrAddMessage);
             },
@@ -5199,6 +5248,7 @@ class ChatProvider extends ChangeNotifier {
               }
               _messageSubscription = null;
               _activeMessageStreamSessionId = null;
+              _stashRejectedDraftTextForRetry();
               AppLogger.error('Provider send stream error', error: error);
               _setError('Failed to send message: $error');
             },
@@ -5211,11 +5261,15 @@ class ChatProvider extends ChangeNotifier {
               }
               _messageSubscription = null;
               _activeMessageStreamSessionId = null;
+              _clearActiveSendDraftText();
               AppLogger.info('Provider send stream finished');
               final sessionId = _currentSession?.id;
               if (sessionId != null) {
                 _sessionStatusById[sessionId] = const SessionStatusInfo(
                   type: SessionStatusType.idle,
+                );
+                _markIncompleteAssistantMessagesAsCompleted(
+                  sessionId: sessionId,
                 );
               }
               _setState(ChatState.loaded);
@@ -5228,6 +5282,7 @@ class ChatProvider extends ChangeNotifier {
       AppLogger.info('Provider send stream subscription attached');
     } catch (error, stackTrace) {
       _activeMessageStreamSessionId = null;
+      _stashRejectedDraftTextForRetry();
       AppLogger.error(
         'Provider send setup failed',
         error: error,
@@ -5237,6 +5292,7 @@ class ChatProvider extends ChangeNotifier {
         sessionId: _currentSession?.id,
         message: error.toString(),
       )) {
+        _clearActiveSendDraftText();
         _errorMessage = null;
         _setState(ChatState.loaded);
         return;
@@ -5288,6 +5344,7 @@ class ChatProvider extends ChangeNotifier {
       _sessionStatusById[session.id] = const SessionStatusInfo(
         type: SessionStatusType.idle,
       );
+      _clearActiveSendDraftText();
       _errorMessage = null;
       success = true;
     }
@@ -5379,12 +5436,15 @@ class ChatProvider extends ChangeNotifier {
     return success;
   }
 
-  void _markIncompleteAssistantMessagesAsCompleted() {
+  void _markIncompleteAssistantMessagesAsCompleted({String? sessionId}) {
     final now = DateTime.now();
     var changed = false;
     _messages = _messages
         .map((message) {
           if (message is! AssistantMessage || message.isCompleted) {
+            return message;
+          }
+          if (sessionId != null && message.sessionId != sessionId) {
             return message;
           }
           changed = true;
@@ -5458,6 +5518,7 @@ class ChatProvider extends ChangeNotifier {
       );
       if (message.isCompleted && _state == ChatState.sending) {
         AppLogger.debug('Message completed, setting state to loaded');
+        _clearActiveSendDraftText();
         _setState(ChatState.loaded);
       }
     }
