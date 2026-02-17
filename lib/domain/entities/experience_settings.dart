@@ -2,7 +2,7 @@ enum NotificationCategory { agent, permissions, errors }
 
 enum SoundCategory { agent, permissions, errors }
 
-enum SoundOption { off, click, alert }
+enum SoundOption { off, click, alert, systemDefault, systemChoice, customFile }
 
 enum ShortcutAction {
   newChat,
@@ -149,6 +149,9 @@ String soundOptionKey(SoundOption option) {
     SoundOption.off => 'off',
     SoundOption.click => 'click',
     SoundOption.alert => 'alert',
+    SoundOption.systemDefault => 'system_default',
+    SoundOption.systemChoice => 'system_choice',
+    SoundOption.customFile => 'custom_file',
   };
 }
 
@@ -156,6 +159,9 @@ SoundOption soundOptionFromKey(String value) {
   return switch (value) {
     'click' => SoundOption.click,
     'alert' => SoundOption.alert,
+    'system_default' => SoundOption.systemDefault,
+    'system_choice' => SoundOption.systemChoice,
+    'custom_file' => SoundOption.customFile,
     _ => SoundOption.off,
   };
 }
@@ -229,7 +235,6 @@ AppDensity appDensityFromKey(String value) {
 }
 
 class ExperienceSettings {
-
   factory ExperienceSettings.defaults() {
     final shortcuts = <ShortcutAction, String>{
       for (final definition in kShortcutDefinitions)
@@ -242,10 +247,32 @@ class ExperienceSettings {
         NotificationCategory.errors: true,
       },
       sounds: const <SoundCategory, SoundOption>{
-        SoundCategory.agent: SoundOption.alert,
-        SoundCategory.permissions: SoundOption.click,
-        SoundCategory.errors: SoundOption.alert,
+        SoundCategory.agent: SoundOption.systemDefault,
+        SoundCategory.permissions: SoundOption.systemDefault,
+        SoundCategory.errors: SoundOption.systemDefault,
       },
+      notifyOnlyWhenBackground: const <NotificationCategory, bool>{
+        NotificationCategory.agent: false,
+        NotificationCategory.permissions: false,
+        NotificationCategory.errors: false,
+      },
+      notifyOnlyWhenAnotherSession: const <NotificationCategory, bool>{
+        NotificationCategory.agent: false,
+        NotificationCategory.permissions: false,
+        NotificationCategory.errors: false,
+      },
+      soundOnlyWhenBackground: const <NotificationCategory, bool>{
+        NotificationCategory.agent: false,
+        NotificationCategory.permissions: false,
+        NotificationCategory.errors: false,
+      },
+      soundOnlyWhenAnotherSession: const <NotificationCategory, bool>{
+        NotificationCategory.agent: false,
+        NotificationCategory.permissions: false,
+        NotificationCategory.errors: false,
+      },
+      soundSources: const <SoundCategory, String>{},
+      soundLabels: const <SoundCategory, String>{},
       shortcuts: shortcuts,
       desktopPanes: const <DesktopPane, bool>{
         DesktopPane.conversations: true,
@@ -258,11 +285,19 @@ class ExperienceSettings {
       showTaskList: true,
       taskListCollapsed: false,
       showComposerTips: true,
+      keepDesktopRunningInTray: true,
+      keepMobileRealtimeForShortPeriod: true,
     );
   }
   const ExperienceSettings({
     required this.notifications,
     required this.sounds,
+    required this.notifyOnlyWhenBackground,
+    required this.notifyOnlyWhenAnotherSession,
+    required this.soundOnlyWhenBackground,
+    required this.soundOnlyWhenAnotherSession,
+    required this.soundSources,
+    required this.soundLabels,
     required this.shortcuts,
     required this.desktopPanes,
     required this.appDensity,
@@ -271,10 +306,18 @@ class ExperienceSettings {
     required this.showTaskList,
     required this.taskListCollapsed,
     required this.showComposerTips,
+    required this.keepDesktopRunningInTray,
+    required this.keepMobileRealtimeForShortPeriod,
   });
 
   final Map<NotificationCategory, bool> notifications;
   final Map<SoundCategory, SoundOption> sounds;
+  final Map<NotificationCategory, bool> notifyOnlyWhenBackground;
+  final Map<NotificationCategory, bool> notifyOnlyWhenAnotherSession;
+  final Map<NotificationCategory, bool> soundOnlyWhenBackground;
+  final Map<NotificationCategory, bool> soundOnlyWhenAnotherSession;
+  final Map<SoundCategory, String> soundSources;
+  final Map<SoundCategory, String> soundLabels;
   final Map<ShortcutAction, String> shortcuts;
   final Map<DesktopPane, bool> desktopPanes;
   final AppDensity appDensity;
@@ -283,10 +326,18 @@ class ExperienceSettings {
   final bool showTaskList;
   final bool taskListCollapsed;
   final bool showComposerTips;
+  final bool keepDesktopRunningInTray;
+  final bool keepMobileRealtimeForShortPeriod;
 
   ExperienceSettings copyWith({
     Map<NotificationCategory, bool>? notifications,
     Map<SoundCategory, SoundOption>? sounds,
+    Map<NotificationCategory, bool>? notifyOnlyWhenBackground,
+    Map<NotificationCategory, bool>? notifyOnlyWhenAnotherSession,
+    Map<NotificationCategory, bool>? soundOnlyWhenBackground,
+    Map<NotificationCategory, bool>? soundOnlyWhenAnotherSession,
+    Map<SoundCategory, String>? soundSources,
+    Map<SoundCategory, String>? soundLabels,
     Map<ShortcutAction, String>? shortcuts,
     Map<DesktopPane, bool>? desktopPanes,
     AppDensity? appDensity,
@@ -295,10 +346,22 @@ class ExperienceSettings {
     bool? showTaskList,
     bool? taskListCollapsed,
     bool? showComposerTips,
+    bool? keepDesktopRunningInTray,
+    bool? keepMobileRealtimeForShortPeriod,
   }) {
     return ExperienceSettings(
       notifications: notifications ?? this.notifications,
       sounds: sounds ?? this.sounds,
+      notifyOnlyWhenBackground:
+          notifyOnlyWhenBackground ?? this.notifyOnlyWhenBackground,
+      notifyOnlyWhenAnotherSession:
+          notifyOnlyWhenAnotherSession ?? this.notifyOnlyWhenAnotherSession,
+      soundOnlyWhenBackground:
+          soundOnlyWhenBackground ?? this.soundOnlyWhenBackground,
+      soundOnlyWhenAnotherSession:
+          soundOnlyWhenAnotherSession ?? this.soundOnlyWhenAnotherSession,
+      soundSources: soundSources ?? this.soundSources,
+      soundLabels: soundLabels ?? this.soundLabels,
       shortcuts: shortcuts ?? this.shortcuts,
       desktopPanes: desktopPanes ?? this.desktopPanes,
       appDensity: appDensity ?? this.appDensity,
@@ -307,6 +370,11 @@ class ExperienceSettings {
       showTaskList: showTaskList ?? this.showTaskList,
       taskListCollapsed: taskListCollapsed ?? this.taskListCollapsed,
       showComposerTips: showComposerTips ?? this.showComposerTips,
+      keepDesktopRunningInTray:
+          keepDesktopRunningInTray ?? this.keepDesktopRunningInTray,
+      keepMobileRealtimeForShortPeriod:
+          keepMobileRealtimeForShortPeriod ??
+          this.keepMobileRealtimeForShortPeriod,
     );
   }
 
@@ -319,6 +387,30 @@ class ExperienceSettings {
       'sounds': <String, String>{
         for (final entry in sounds.entries)
           soundCategoryKey(entry.key): soundOptionKey(entry.value),
+      },
+      'notifyOnlyWhenBackground': <String, bool>{
+        for (final entry in notifyOnlyWhenBackground.entries)
+          notificationCategoryKey(entry.key): entry.value,
+      },
+      'notifyOnlyWhenAnotherSession': <String, bool>{
+        for (final entry in notifyOnlyWhenAnotherSession.entries)
+          notificationCategoryKey(entry.key): entry.value,
+      },
+      'soundOnlyWhenBackground': <String, bool>{
+        for (final entry in soundOnlyWhenBackground.entries)
+          notificationCategoryKey(entry.key): entry.value,
+      },
+      'soundOnlyWhenAnotherSession': <String, bool>{
+        for (final entry in soundOnlyWhenAnotherSession.entries)
+          notificationCategoryKey(entry.key): entry.value,
+      },
+      'soundSources': <String, String>{
+        for (final entry in soundSources.entries)
+          soundCategoryKey(entry.key): entry.value,
+      },
+      'soundLabels': <String, String>{
+        for (final entry in soundLabels.entries)
+          soundCategoryKey(entry.key): entry.value,
       },
       'shortcuts': <String, String>{
         for (final entry in shortcuts.entries)
@@ -334,6 +426,8 @@ class ExperienceSettings {
       'showTaskList': showTaskList,
       'taskListCollapsed': taskListCollapsed,
       'showComposerTips': showComposerTips,
+      'keepDesktopRunningInTray': keepDesktopRunningInTray,
+      'keepMobileRealtimeForShortPeriod': keepMobileRealtimeForShortPeriod,
     };
   }
 
@@ -344,6 +438,20 @@ class ExperienceSettings {
       defaults.notifications,
     );
     final sounds = Map<SoundCategory, SoundOption>.from(defaults.sounds);
+    final notifyOnlyWhenBackground = Map<NotificationCategory, bool>.from(
+      defaults.notifyOnlyWhenBackground,
+    );
+    final notifyOnlyWhenAnotherSession = Map<NotificationCategory, bool>.from(
+      defaults.notifyOnlyWhenAnotherSession,
+    );
+    final soundOnlyWhenBackground = Map<NotificationCategory, bool>.from(
+      defaults.soundOnlyWhenBackground,
+    );
+    final soundOnlyWhenAnotherSession = Map<NotificationCategory, bool>.from(
+      defaults.soundOnlyWhenAnotherSession,
+    );
+    final soundSources = Map<SoundCategory, String>.from(defaults.soundSources);
+    final soundLabels = Map<SoundCategory, String>.from(defaults.soundLabels);
     final shortcuts = Map<ShortcutAction, String>.from(defaults.shortcuts);
     final desktopPanes = Map<DesktopPane, bool>.from(defaults.desktopPanes);
     var appDensity = defaults.appDensity;
@@ -352,6 +460,9 @@ class ExperienceSettings {
     var showTaskList = defaults.showTaskList;
     var taskListCollapsed = defaults.taskListCollapsed;
     var showComposerTips = defaults.showComposerTips;
+    var keepDesktopRunningInTray = defaults.keepDesktopRunningInTray;
+    var keepMobileRealtimeForShortPeriod =
+        defaults.keepMobileRealtimeForShortPeriod;
 
     final notificationsJson = json['notifications'];
     if (notificationsJson is Map) {
@@ -374,6 +485,55 @@ class ExperienceSettings {
         sounds[category] = soundOptionFromKey(entry.value.toString());
       }
     }
+
+    void parseNotificationRule(
+      String jsonKey,
+      Map<NotificationCategory, bool> target,
+    ) {
+      final value = json[jsonKey];
+      if (value is! Map) {
+        return;
+      }
+      for (final entry in value.entries) {
+        final category = notificationCategoryFromKey(entry.key.toString());
+        if (category == null) {
+          continue;
+        }
+        target[category] = entry.value == true;
+      }
+    }
+
+    parseNotificationRule('notifyOnlyWhenBackground', notifyOnlyWhenBackground);
+    parseNotificationRule(
+      'notifyOnlyWhenAnotherSession',
+      notifyOnlyWhenAnotherSession,
+    );
+    parseNotificationRule('soundOnlyWhenBackground', soundOnlyWhenBackground);
+    parseNotificationRule(
+      'soundOnlyWhenAnotherSession',
+      soundOnlyWhenAnotherSession,
+    );
+
+    void parseSoundStringMap(
+      String jsonKey,
+      Map<SoundCategory, String> target,
+    ) {
+      final value = json[jsonKey];
+      if (value is! Map) {
+        return;
+      }
+      for (final entry in value.entries) {
+        final category = soundCategoryFromKey(entry.key.toString());
+        final mapped = entry.value.toString().trim();
+        if (category == null || mapped.isEmpty) {
+          continue;
+        }
+        target[category] = mapped;
+      }
+    }
+
+    parseSoundStringMap('soundSources', soundSources);
+    parseSoundStringMap('soundLabels', soundLabels);
 
     final shortcutsJson = json['shortcuts'];
     if (shortcutsJson is Map) {
@@ -430,9 +590,26 @@ class ExperienceSettings {
       showComposerTips = showComposerTipsJson;
     }
 
+    final keepDesktopRunningInTrayJson = json['keepDesktopRunningInTray'];
+    if (keepDesktopRunningInTrayJson is bool) {
+      keepDesktopRunningInTray = keepDesktopRunningInTrayJson;
+    }
+
+    final keepMobileRealtimeForShortPeriodJson =
+        json['keepMobileRealtimeForShortPeriod'];
+    if (keepMobileRealtimeForShortPeriodJson is bool) {
+      keepMobileRealtimeForShortPeriod = keepMobileRealtimeForShortPeriodJson;
+    }
+
     return ExperienceSettings(
       notifications: notifications,
       sounds: sounds,
+      notifyOnlyWhenBackground: notifyOnlyWhenBackground,
+      notifyOnlyWhenAnotherSession: notifyOnlyWhenAnotherSession,
+      soundOnlyWhenBackground: soundOnlyWhenBackground,
+      soundOnlyWhenAnotherSession: soundOnlyWhenAnotherSession,
+      soundSources: soundSources,
+      soundLabels: soundLabels,
       shortcuts: shortcuts,
       desktopPanes: desktopPanes,
       appDensity: appDensity,
@@ -441,6 +618,8 @@ class ExperienceSettings {
       showTaskList: showTaskList,
       taskListCollapsed: taskListCollapsed,
       showComposerTips: showComposerTips,
+      keepDesktopRunningInTray: keepDesktopRunningInTray,
+      keepMobileRealtimeForShortPeriod: keepMobileRealtimeForShortPeriod,
     );
   }
 }

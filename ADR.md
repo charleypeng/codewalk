@@ -39,6 +39,101 @@ This document tracks technical decisions for CodeWalk.
 - ADR-032: Thinking Bubble Compact Mode and Accessibility-Aware Animations (2026-02-14) [Accepted]
 - ADR-033: Desktop-Only Managed Local OpenCode Server Wizard (2026-02-15) [Accepted]
 - ADR-034: CI/Release Workflow Separation and Automated Release Pipeline (2026-02-15) [Accepted]
+- ADR-035: Platform-Aware Background Behavior Architecture (2026-02-16) [Accepted]
+
+---
+
+## ADR-035: Platform-Aware Background Behavior Architecture
+
+**Status**: Accepted
+**Date**: 2026-02-16
+
+### Context
+
+CodeWalk needs consistent yet platform-appropriate background behavior to balance:
+1. **Desktop**: Users expect the app to remain running when closing the window (close-to-tray), with realtime events continuing to flow for notifications.
+2. **Mobile**: Continuous background services drain battery and iOS/Android have aggressive app termination policies. However, users still need reliable alerts when responses complete during active conversations.
+
+The existing architecture (ADR-018) handles realtime stream lifecycle during foreground/background transitions, but does not address:
+- Close-to-tray behavior on desktop platforms
+- Short realtime hold windows during active responses on mobile
+- User-configurable background behavior preferences
+
+### Decision
+
+1. **Desktop Platform Behavior (close-to-tray)**:
+   - Implement window close action to minimize to system tray instead of terminating.
+   - Keep realtime SSE subscriptions active while minimized to tray.
+   - Continue receiving and processing realtime events (session updates, permission requests, completion notifications) while in tray.
+   - Show system notifications for important events (response complete, permission requests) when in tray.
+
+2. **Mobile Platform Behavior (realtime hold window + WorkManager fallback)**:
+   - Avoid continuous background service that would drain battery.
+   - Implement a short realtime hold window (3 minutes) that activates when:
+     - A response is being streamed (sending/busy state)
+     - The app enters background during an active response
+   - During the hold window: maintain SSE connection briefly to capture final response completion.
+   - After hold window expires: gracefully disconnect SSE and rely on WorkManager fallback:
+     - **Periodic fallback (15 min)**: Use WorkManager to periodically probe for pending responses when app is backgrounded for extended periods.
+     - **One-off probe on background**: When app enters background, schedule a short one-off probe to check response status before periodic schedule takes over.
+   - **Actionable alerts on first snapshot**: On first background snapshot, immediately emit actionable alerts (retry prompts, permission requests, questions) if detected. Completion alerts still depend on observable state transition (SSE event or WorkManager probe result).
+   - On return to foreground: reconnect SSE and reconcile state.
+
+3. **Settings-Controlled Behavior via ExperienceSettings/SettingsProvider**:
+   - Add flat settings fields to `ExperienceSettings`:
+     - `keepDesktopRunningInTray`: boolean (default: true) - keep app running in tray on desktop
+     - `keepMobileRealtimeForShortPeriod`: boolean (default: true) - enable brief realtime hold on mobile during active response
+   - Wire settings through `SettingsProvider` with persistence.
+   - UI controls in Settings > Notifications section.
+
+4. **Platform Detection and Routing**:
+   - Use `kIsWeb` check for web platform and `defaultTargetPlatform` from `flutter/foundation.dart` for native platforms (iOS, Android, macOS, Windows, Linux).
+   - Dispatch to appropriate background strategy based on detected platform.
+
+5. **Integration with Lifecycle Management**:
+   - Use `WidgetsBindingObserver` mixin with `didChangeAppLifecycleState` callback in `ChatPage` to detect foreground/background transitions.
+   - Coordinate with ADR-018 realtime sync state machine (don't duplicate stream lifecycle, but coordinate hold windows).
+
+### Rationale
+
+- **Desktop close-to-tray**: Matches user expectations from native desktop applications (Slack, Discord, VS Code). Realtime must stay active to provide the notification functionality users rely on.
+- **Mobile hold window + WorkManager fallback**: Balances three competing needs: (1) reliable completion notifications during active conversations, (2) actionable alerts on first background snapshot, (3) battery life and OS policy compliance. The 3-minute window captures most response completions; WorkManager periodic (15 min) + one-off probe handles long-running responses and provides actionable alerts (retry/permission/question) even on first background entry.
+- **Actionable alerts on first snapshot**: Users benefit from immediate feedback when backgrounding during active sessions - retry prompts, permission requests, and questions can be shown immediately without waiting for periodic probes.
+- **Settings control**: Users have varying preferences - some want aggressive notifications, others prefer minimal disturbance. Settings allow customization while providing sensible defaults.
+- **Platform dispatch**: Avoids complex conditional logic by isolating platform-specific implementations, making it easier to test and maintain.
+
+### Consequences
+
+- ✅ Positive: Desktop users get consistent tray behavior with uninterrupted realtime notifications.
+- ✅ Positive: Mobile users receive completion alerts without continuous background drain.
+- ✅ Positive: WorkManager fallback (periodic 15 min + one-off probe) ensures reliable alerts for long-running responses.
+- ✅ Positive: Actionable alerts (retry/permission/question) available immediately on first background snapshot.
+- ✅ Positive: Short realtime hold window on mobile captures most response completions in active sessions.
+- ✅ Positive: Settings-based control allows users to customize behavior to their workflow.
+- ✅ Positive: Platform-specific code is isolated and testable.
+- ⚠️ Trade-off: Desktop tray behavior requires platform-specific implementation (system tray integration).
+- ⚠️ Trade-off: Mobile hold window may miss very long-running responses (>3 minutes after backgrounding); mitigated by WorkManager fallback.
+- ⚠️ Trade-off: Additional complexity in lifecycle coordination between platform strategies and realtime sync.
+
+### Key Files
+
+- `lib/domain/entities/experience_settings.dart` - background behavior settings schema (`keepDesktopRunningInTray`, `keepMobileRealtimeForShortPeriod`)
+- `lib/presentation/providers/settings_provider.dart` - settings persistence and provider integration
+- `lib/presentation/pages/app_shell_page.dart` - desktop tray lifecycle integration
+- `lib/presentation/services/desktop_tray_service.dart` - desktop tray implementation (`.io.dart`, `.stub.dart`, `_types.dart`)
+- `lib/presentation/services/desktop_tray_service_io.dart` - desktop tray IO implementation
+- `lib/presentation/services/desktop_tray_service_stub.dart` - desktop tray stub for unsupported platforms
+- `lib/presentation/services/desktop_tray_service_types.dart` - desktop tray types
+- `lib/presentation/services/android_background_alert_worker.dart` - WorkManager worker for Android background probes (periodic 15 min + one-off)
+- `lib/presentation/services/android_background_alert_logic.dart` - Background alert logic shared between worker and app
+- `lib/presentation/pages/chat_page.dart` - foreground policy handling and response state coordination
+- `lib/presentation/pages/settings/sections/notifications_settings_section.dart` - UI controls
+
+### References
+
+- ADR-018: Refreshless Realtime Sync with Lifecycle and Degraded Fallback (coordinates with stream lifecycle)
+- ADR-022: Modular Settings Hub and Experience Preference Orchestration (settings infrastructure)
+- ROADMAP.md - featI Group 5 background behavior
 
 ---
 

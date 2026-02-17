@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
+import '../../core/logging/app_logger.dart';
 import '../../domain/entities/chat_message.dart';
 import '../services/file_part_action_service.dart' as file_part_action;
 import '../utils/diff_parser.dart';
@@ -26,6 +27,10 @@ class ChatMessageWidget extends StatelessWidget {
   static const int _collapsedToolDetailMaxLines = 2;
   static const int _collapsedReasoningMaxLines = 4;
   static const int _expandedReasoningMaxLines = 12;
+  static const int _maxMarkdownCharsForRichRender = 64000;
+  static const int _maxToolOutputPreviewChars = 50000;
+  static const int _maxToolCommandPreviewChars = 6000;
+  static const int _maxSyntheticDiffChars = 20000;
 
   final ChatMessage message;
   final String? activeReasoningPartKey;
@@ -331,6 +336,34 @@ class ChatMessageWidget extends StatelessWidget {
     }
   }
 
+  Widget _buildMessagePartSafely(
+    BuildContext context,
+    MessagePart part, {
+    required String? latestReasoningPartId,
+    required String? activeReasoningPartKey,
+  }) {
+    try {
+      return _buildMessagePart(
+        context,
+        part,
+        latestReasoningPartId: latestReasoningPartId,
+        activeReasoningPartKey: activeReasoningPartKey,
+      );
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to render message part safely',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return _buildInfoContainer(
+        context,
+        icon: Icons.warning_amber_rounded,
+        title: 'Message part unavailable',
+        subtitle: 'Large or malformed content was skipped for stability.',
+      );
+    }
+  }
+
   List<Widget> _buildMessagePartWidgets(
     BuildContext context, {
     required String? latestReasoningPartId,
@@ -348,7 +381,7 @@ class ChatMessageWidget extends StatelessWidget {
         !showToolCallBubbles) {
       return message.parts
           .map<Widget>(
-            (part) => _buildMessagePart(
+            (part) => _buildMessagePartSafely(
               context,
               part,
               latestReasoningPartId: latestReasoningPartId,
@@ -364,7 +397,7 @@ class ChatMessageWidget extends StatelessWidget {
       final part = message.parts[index];
       if (!_isToolSurfacePart(part)) {
         rendered.add(
-          _buildMessagePart(
+          _buildMessagePartSafely(
             context,
             part,
             latestReasoningPartId: latestReasoningPartId,
@@ -384,7 +417,7 @@ class ChatMessageWidget extends StatelessWidget {
 
       if (chainParts.length <= 1) {
         rendered.add(
-          _buildMessagePart(
+          _buildMessagePartSafely(
             context,
             chainParts.first,
             latestReasoningPartId: latestReasoningPartId,
@@ -434,33 +467,42 @@ class ChatMessageWidget extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    final textForRender = _truncatePreview(
+      part.text,
+      maxChars: _maxMarkdownCharsForRichRender,
+      reason: 'Large message preview truncated for app stability.',
+    );
+    final usePlainText = textForRender != part.text;
+
     return SizedBox(
       width: double.infinity,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Render text using Markdown
-          MarkdownBody(
-            data: part.text,
-            styleSheet: MarkdownStyleSheet(
-              p: Theme.of(context).textTheme.bodyMedium,
-              code: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontFamily: 'monospace',
-                backgroundColor: Theme.of(
-                  context,
-                ).colorScheme.surfaceContainerHighest,
+          if (usePlainText)
+            Text(textForRender, style: Theme.of(context).textTheme.bodyMedium)
+          else
+            MarkdownBody(
+              data: textForRender,
+              styleSheet: MarkdownStyleSheet(
+                p: Theme.of(context).textTheme.bodyMedium,
+                code: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontFamily: 'monospace',
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
+                ),
+                codeblockDecoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
-              codeblockDecoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-              ),
+              onTapLink: (text, href, title) {
+                if (href != null) {
+                  // TODO: Implement link navigation
+                }
+              },
             ),
-            onTapLink: (text, href, title) {
-              if (href != null) {
-                // TODO: Implement link navigation
-              }
-            },
-          ),
           const SizedBox(height: 8),
         ],
       ),
@@ -1145,8 +1187,13 @@ class ChatMessageWidget extends StatelessWidget {
     Color? textColor,
     Color? toggleColor,
   }) {
+    final textForRender = _truncatePreview(
+      text,
+      maxChars: _maxToolOutputPreviewChars,
+      reason: 'Large tool output preview truncated for app stability.',
+    );
     return _CollapsibleToolContent(
-      text: text,
+      text: textForRender,
       collapsedMaxLines: _collapsedToolDetailMaxLines,
       toolName: toolName,
       lineKeyPrefix: lineKeyPrefix,
@@ -1323,7 +1370,11 @@ class ChatMessageWidget extends StatelessWidget {
 
     final command = readString(input['command']) ?? readString(input['cmd']);
     if (command != null) {
-      return command;
+      return _truncatePreview(
+        command,
+        maxChars: _maxToolCommandPreviewChars,
+        reason: 'Command preview truncated for stability.',
+      );
     }
 
     final nestedInput = readMap(input['input']);
@@ -1339,7 +1390,14 @@ class ChatMessageWidget extends StatelessWidget {
         .map((entry) => '${entry.key}: ${entry.value}')
         .join(' | ')
         .trim();
-    return fallback.isEmpty ? null : fallback;
+    if (fallback.isEmpty) {
+      return null;
+    }
+    return _truncatePreview(
+      fallback,
+      maxChars: _maxToolCommandPreviewChars,
+      reason: 'Input preview truncated for stability.',
+    );
   }
 
   String _resolveToolOutput({
@@ -1348,7 +1406,11 @@ class ChatMessageWidget extends StatelessWidget {
   }) {
     final output = state.output.trim();
     if (output.isNotEmpty) {
-      return state.output;
+      return _truncatePreview(
+        state.output,
+        maxChars: _maxToolOutputPreviewChars,
+        reason: 'Tool output preview truncated for app stability.',
+      );
     }
 
     final input = state.input;
@@ -1362,7 +1424,11 @@ class ChatMessageWidget extends StatelessWidget {
       'text',
     ]);
     if (directDiff != null && directDiff.trim().isNotEmpty) {
-      return directDiff;
+      return _truncatePreview(
+        directDiff,
+        maxChars: _maxToolOutputPreviewChars,
+        reason: 'Diff preview truncated for app stability.',
+      );
     }
 
     if (tool == 'edit' || tool.contains('edit') || tool.contains('patch')) {
@@ -1402,6 +1468,10 @@ class ChatMessageWidget extends StatelessWidget {
       return null;
     }
 
+    if (before.length + after.length > _maxSyntheticDiffChars) {
+      return 'Diff preview omitted: edit payload is too large to render safely on mobile.';
+    }
+
     final path =
         _firstInputString(input, const [
           'file_path',
@@ -1414,6 +1484,19 @@ class ChatMessageWidget extends StatelessWidget {
     final beforeLines = before.split('\n').map((line) => '-$line').join('\n');
     final afterLines = after.split('\n').map((line) => '+$line').join('\n');
     return '--- $path\n+++ $path\n@@\n$beforeLines\n$afterLines';
+  }
+
+  String _truncatePreview(
+    String text, {
+    required int maxChars,
+    required String reason,
+  }) {
+    if (text.length <= maxChars) {
+      return text;
+    }
+    final head = text.substring(0, maxChars);
+    final remaining = text.length - maxChars;
+    return '$head\n\n[truncated $remaining chars] $reason';
   }
 
   Widget _buildErrorInfo(BuildContext context, MessageError error) {

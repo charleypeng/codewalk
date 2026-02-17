@@ -78,7 +78,7 @@ Notes:
 - [x] `featD` - `ROADMAP.featD.md` (thinking/tool UX controls)
 - [x] `featH` - `ROADMAP.featH.md` (startup/settings/tool-surface polish)
 - [x] `featE` - `ROADMAP.featE.md` (composer popover/local server/shortcuts reliability)
-- [~] `featI` - `ROADMAP.featI.md` (agent/shortcut/productivity parity)
+- [x] `featI` - `ROADMAP.featI.md` (agent/shortcut/productivity parity)
 - [ ] `featF` - `ROADMAP.featF.md` (files drafting UX + duplicate/copy interaction fixes)
 - [ ] `featG` - `ROADMAP.featG.md` (favorites and variant selector ergonomics)
 - [ ] `featC` - `ROADMAP.featC.md` (focus/visibility render gate + files planning)
@@ -169,12 +169,18 @@ Implemented desktop local-server wizard with runtime checks for `opencode serve`
 - [x] Adicionar ações de download/abertura de anexos em mensagens de chat - Commit: d2fd909
 - [x] Implementar pré-visualização de imagens inline nas bolhas de mensagem - Commit: d2fd909
 
-**Group 4 — External integrations**
-- [ ] Substituir serviço ch.at de títulos por agent nativo OpenCode 'title', mantendo cadência de 6 mensagens
-- [ ] Verificar atualizações baseadas nos releases do GitHub usando a API pública do GitHub
+**Group 4 — External integrations** `[x]`
+- [x] Substituir serviço ch.at de títulos por agent nativo OpenCode 'title', mantendo cadência de 6 mensagens - Commit: 51d6195
+- [x] Verificar atualizações baseadas nos releases do GitHub usando a API pública do GitHub - Commit: 51d6195
 
-**Group 5 — Platform**
-- [ ] Opções em Settings para decidir se app fica em background. Mobile: persistente notification, desktop: tray
+**Group 5 — Platform** `[x]`
+- [x] Opções em Settings para decidir se app fica em background. Mobile: persistente notification, desktop: tray. Padrão: tray habilitado no desktop, mobile mostra janela de alerta curta na área de notificação. **Nota**: Adicionado fallback Android com WorkManager periódico (15 min) para alertas de conclusão/erro/pergunta com app fechado + agendamento one-off de sonda curta ao ir para background + baseline que já alerta itens acionáveis (retry/permission/question) na primeira execução.
+
+**Refinamento pós-Task 10 — Notifications/Sound** `[~]`
+- [~] Implementar regras "only when" para notificações (only when app minimized, only when not responding, only for errors, etc.)
+- [~] Adicionar picker de som do sistema + possibilidade de selecionar arquivo de som customizado
+- [~] Agrupar notificações por sessão (evitar spam de múltiplas notificações da mesma conversa)
+- [~] Melhoria visual da tela de configurações de notificações (UI mais intuitiva e organizada)
 
 **Done**
 - [x] Na lista de Conversations, trocar o ícone padrão da sessão por um estado visual de loading suave enquanto aquela sessão/conversa estiver recebendo dados/resposta (mobile + desktop) - Commit: fb6e118

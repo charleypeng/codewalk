@@ -12,7 +12,7 @@ class _FakeSoundService extends SoundService {
   int playCount = 0;
 
   @override
-  Future<bool> play(SoundOption option) async {
+  Future<bool> play({required SoundOption option, String? source}) async {
     playCount += 1;
     return true;
   }
@@ -204,6 +204,121 @@ void main() {
 
       expect(second.showTaskList, isFalse);
       expect(second.taskListCollapsed, isTrue);
+    });
+
+    test('persists background behavior preferences', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+
+      expect(first.keepDesktopRunningInTray, isTrue);
+      expect(first.keepMobileRealtimeForShortPeriod, isTrue);
+
+      await first.setKeepDesktopRunningInTray(false);
+      await first.setKeepMobileRealtimeForShortPeriod(false);
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(second.keepDesktopRunningInTray, isFalse);
+      expect(second.keepMobileRealtimeForShortPeriod, isFalse);
+    });
+
+    test('persists only-when notification and sound rules', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+
+      await first.setNotifyOnlyWhenBackground(NotificationCategory.agent, true);
+      await first.setNotifyOnlyWhenAnotherSession(
+        NotificationCategory.agent,
+        true,
+      );
+      await first.setSoundOnlyWhenBackground(NotificationCategory.agent, true);
+      await first.setSoundOnlyWhenAnotherSession(
+        NotificationCategory.agent,
+        false,
+      );
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(
+        second.notifyOnlyWhenBackground(NotificationCategory.agent),
+        isTrue,
+      );
+      expect(
+        second.notifyOnlyWhenAnotherSession(NotificationCategory.agent),
+        isTrue,
+      );
+      expect(
+        second.soundOnlyWhenBackground(NotificationCategory.agent),
+        isTrue,
+      );
+      expect(
+        second.soundOnlyWhenAnotherSession(NotificationCategory.agent),
+        isFalse,
+      );
+    });
+
+    test('persists selected system and file sound sources', () async {
+      final local = InMemoryAppLocalDataSource();
+      final provider = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await provider.initialize();
+
+      await provider.setSoundOption(
+        SoundCategory.permissions,
+        SoundOption.systemChoice,
+        source: 'content://ringtone/42',
+        label: 'Android Bell',
+      );
+
+      expect(
+        provider.soundSourceFor(SoundCategory.permissions),
+        'content://ringtone/42',
+      );
+      expect(provider.soundLabelFor(SoundCategory.permissions), 'Android Bell');
+
+      await provider.setSoundOption(
+        SoundCategory.permissions,
+        SoundOption.customFile,
+        source: '/tmp/custom-tone.ogg',
+        label: 'Custom Tone',
+      );
+
+      expect(
+        provider.soundSourceFor(SoundCategory.permissions),
+        '/tmp/custom-tone.ogg',
+      );
+      expect(provider.soundLabelFor(SoundCategory.permissions), 'Custom Tone');
+
+      await provider.setSoundOption(
+        SoundCategory.permissions,
+        SoundOption.systemDefault,
+      );
+
+      expect(provider.soundSourceFor(SoundCategory.permissions), isNull);
+      expect(provider.soundLabelFor(SoundCategory.permissions), isNull);
     });
   });
 }

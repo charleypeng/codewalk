@@ -309,6 +309,7 @@ class ChatProvider extends ChangeNotifier {
   bool _activeSessionRefreshInFlight = false;
   bool _isAbortingResponse = false;
   bool _isCompactingContext = false;
+  bool _isAppInForeground = true;
   String? _abortSuppressionSessionId;
   DateTime? _abortSuppressionStartedAt;
   ChatUiNotice? _pendingUiNotice;
@@ -2426,6 +2427,10 @@ class ChatProvider extends ChangeNotifier {
     await _resumeRealtimeAfterForeground();
   }
 
+  void setAppInForeground(bool isForeground) {
+    _isAppInForeground = isForeground;
+  }
+
   Future<void> _pauseRealtimeSubscriptions() async {
     _eventStreamGeneration += 1;
     await _cancelSubscriptionSafely(
@@ -2569,8 +2574,9 @@ class ChatProvider extends ChangeNotifier {
       (permissions) {
         final grouped = <String, List<ChatPermissionRequest>>{};
         for (final item in permissions) {
-          grouped.putIfAbsent(item.sessionId, () => <ChatPermissionRequest>[])
-            .add(item);
+          grouped
+              .putIfAbsent(item.sessionId, () => <ChatPermissionRequest>[])
+              .add(item);
         }
         _pendingPermissionsBySession = grouped;
       },
@@ -2584,8 +2590,9 @@ class ChatProvider extends ChangeNotifier {
       (questions) {
         final grouped = <String, List<ChatQuestionRequest>>{};
         for (final item in questions) {
-          grouped.putIfAbsent(item.sessionId, () => <ChatQuestionRequest>[])
-            .add(item);
+          grouped
+              .putIfAbsent(item.sessionId, () => <ChatQuestionRequest>[])
+              .add(item);
         }
         _pendingQuestionsBySession = grouped;
       },
@@ -2635,13 +2642,14 @@ class ChatProvider extends ChangeNotifier {
     // Sub-agent child sessions should not trigger user-facing sounds.
     final isSessionLifecycle =
         event.type == 'session.idle' || event.type == 'session.error';
-    if (!isSessionLifecycle ||
-        eventSessionId == _currentSession?.id) {
+    if (!isSessionLifecycle || eventSessionId == _currentSession?.id) {
       final sessionTitleHint = _sessionTitleForNotification(eventSessionId);
       unawaited(
         eventFeedbackDispatcher?.handle(
           event,
           sessionTitleHint: sessionTitleHint,
+          isAppInForeground: _isAppInForeground,
+          currentSessionId: _currentSession?.id,
         ),
       );
     }
@@ -5167,23 +5175,20 @@ class ChatProvider extends ChangeNotifier {
                 );
                 return;
               }
-              result.fold(
-                (failure) {
-                  if (_shouldSuppressAbortError(
-                    sessionId: _currentSession?.id,
-                    message: failure.message,
-                  )) {
-                    AppLogger.info(
-                      'Suppressing expected abort failure session=${_currentSession?.id ?? "-"}',
-                    );
-                    _errorMessage = null;
-                    _setState(ChatState.loaded);
-                    return;
-                  }
-                  _handleFailure(failure);
-                },
-                _updateOrAddMessage,
-              );
+              result.fold((failure) {
+                if (_shouldSuppressAbortError(
+                  sessionId: _currentSession?.id,
+                  message: failure.message,
+                )) {
+                  AppLogger.info(
+                    'Suppressing expected abort failure session=${_currentSession?.id ?? "-"}',
+                  );
+                  _errorMessage = null;
+                  _setState(ChatState.loaded);
+                  return;
+                }
+                _handleFailure(failure);
+              }, _updateOrAddMessage);
             },
             onError: (error) {
               if (streamGeneration != _messageStreamGeneration) {

@@ -21,9 +21,33 @@ class EventFeedbackDispatcher {
   final SoundService _soundService;
   final Map<String, DateTime> _lastDispatchByCategory = <String, DateTime>{};
 
-  Future<void> handle(ChatEvent event, {String? sessionTitleHint}) async {
+  Future<void> handle(
+    ChatEvent event, {
+    String? sessionTitleHint,
+    bool isAppInForeground = true,
+    String? currentSessionId,
+  }) async {
     final signal = _signalForEvent(event, sessionTitleHint: sessionTitleHint);
     if (signal == null) {
+      return;
+    }
+
+    final isAnotherSession = _resolveIsAnotherSession(
+      eventSessionId: signal.sessionId,
+      currentSessionId: currentSessionId,
+    );
+
+    final shouldNotify = _settingsProvider.shouldDispatchNotification(
+      signal.notificationCategory,
+      isAppInForeground: isAppInForeground,
+      isAnotherSession: isAnotherSession,
+    );
+    final shouldSound = _settingsProvider.shouldDispatchSound(
+      signal.notificationCategory,
+      isAppInForeground: isAppInForeground,
+      isAnotherSession: isAnotherSession,
+    );
+    if (!shouldNotify && !shouldSound) {
       return;
     }
 
@@ -34,22 +58,49 @@ class EventFeedbackDispatcher {
     }
     _lastDispatchByCategory[signal.categoryKey] = now;
 
-    if (_settingsProvider.isNotificationEnabled(signal.notificationCategory)) {
+    final soundOption = _settingsProvider.soundFor(signal.soundCategory);
+    final soundSource = _settingsProvider.soundSourceFor(signal.soundCategory);
+
+    if (shouldNotify) {
       unawaited(
         _notificationService.notify(
           title: signal.title,
           body: signal.body,
           category: signal.categoryKey,
           sessionId: signal.sessionId,
+          playSound: shouldSound && !isAppInForeground,
+          soundOption: soundOption,
+          soundSource: soundSource,
         ),
       );
     }
 
-    final sound = _settingsProvider.soundFor(signal.soundCategory);
-    final played = await _soundService.play(sound);
-    if (!played && sound != SoundOption.off) {
+    if (!shouldSound || !isAppInForeground) {
+      return;
+    }
+
+    final played = await _soundService.play(
+      option: soundOption,
+      source: soundSource,
+    );
+    if (!played && soundOption != SoundOption.off) {
       AppLogger.info('Sound fallback active for ${signal.categoryKey}');
     }
+  }
+
+  bool _resolveIsAnotherSession({
+    required String? eventSessionId,
+    required String? currentSessionId,
+  }) {
+    final eventId = eventSessionId?.trim();
+    final currentId = currentSessionId?.trim();
+    if (eventId == null || eventId.isEmpty) {
+      return true;
+    }
+    if (currentId == null || currentId.isEmpty) {
+      return true;
+    }
+    return eventId != currentId;
   }
 
   _FeedbackSignal? _signalForEvent(

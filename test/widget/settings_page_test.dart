@@ -53,6 +53,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Agent updates'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Permissions and questions'),
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
     expect(find.text('Permissions and questions'), findsOneWidget);
   });
 }

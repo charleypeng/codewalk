@@ -1,0 +1,375 @@
+import '../../domain/entities/experience_settings.dart';
+
+class BackgroundInteractionRequest {
+  const BackgroundInteractionRequest({
+    required this.id,
+    required this.sessionId,
+  });
+
+  final String id;
+  final String sessionId;
+}
+
+class BackgroundPollingState {
+  const BackgroundPollingState({
+    required this.sessionStatusById,
+    required this.sessionUpdatedAtById,
+    required this.sessionTitleById,
+    required this.permissionRequests,
+    required this.questionRequests,
+  });
+
+  final Map<String, String> sessionStatusById;
+  final Map<String, int> sessionUpdatedAtById;
+  final Map<String, String> sessionTitleById;
+  final List<BackgroundInteractionRequest> permissionRequests;
+  final List<BackgroundInteractionRequest> questionRequests;
+}
+
+class BackgroundAlertSnapshot {
+  const BackgroundAlertSnapshot({
+    required this.sessionStatusById,
+    required this.sessionUpdatedAtById,
+    required this.notifiedPermissionRequestIds,
+    required this.notifiedQuestionRequestIds,
+    required this.lastPolledAtEpochMs,
+  });
+
+  factory BackgroundAlertSnapshot.empty() {
+    return const BackgroundAlertSnapshot(
+      sessionStatusById: <String, String>{},
+      sessionUpdatedAtById: <String, int>{},
+      notifiedPermissionRequestIds: <String>[],
+      notifiedQuestionRequestIds: <String>[],
+      lastPolledAtEpochMs: 0,
+    );
+  }
+
+  factory BackgroundAlertSnapshot.fromJson(Map<String, dynamic> json) {
+    final statusRaw = json['sessionStatusById'];
+    final updatedRaw = json['sessionUpdatedAtById'];
+    final permissionRaw = json['notifiedPermissionRequestIds'];
+    final questionRaw = json['notifiedQuestionRequestIds'];
+    final polledRaw = json['lastPolledAtEpochMs'];
+
+    final statusMap = <String, String>{};
+    if (statusRaw is Map) {
+      statusRaw.forEach((key, value) {
+        final sessionId = key.toString().trim();
+        final status = value.toString().trim().toLowerCase();
+        if (sessionId.isNotEmpty && status.isNotEmpty) {
+          statusMap[sessionId] = status;
+        }
+      });
+    }
+
+    final updatedMap = <String, int>{};
+    if (updatedRaw is Map) {
+      updatedRaw.forEach((key, value) {
+        final sessionId = key.toString().trim();
+        final epoch = value is num ? value.toInt() : null;
+        if (sessionId.isNotEmpty && epoch != null && epoch > 0) {
+          updatedMap[sessionId] = epoch;
+        }
+      });
+    }
+
+    List<String> parseIds(dynamic raw) {
+      if (raw is! List) {
+        return const <String>[];
+      }
+      return raw
+          .map((item) => item.toString().trim())
+          .where((id) => id.isNotEmpty)
+          .toSet()
+          .toList(growable: false);
+    }
+
+    return BackgroundAlertSnapshot(
+      sessionStatusById: statusMap,
+      sessionUpdatedAtById: updatedMap,
+      notifiedPermissionRequestIds: parseIds(permissionRaw),
+      notifiedQuestionRequestIds: parseIds(questionRaw),
+      lastPolledAtEpochMs: polledRaw is num ? polledRaw.toInt() : 0,
+    );
+  }
+
+  final Map<String, String> sessionStatusById;
+  final Map<String, int> sessionUpdatedAtById;
+  final List<String> notifiedPermissionRequestIds;
+  final List<String> notifiedQuestionRequestIds;
+  final int lastPolledAtEpochMs;
+
+  bool get hasHistory {
+    return sessionStatusById.isNotEmpty ||
+        notifiedPermissionRequestIds.isNotEmpty ||
+        notifiedQuestionRequestIds.isNotEmpty ||
+        lastPolledAtEpochMs > 0;
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'sessionStatusById': sessionStatusById,
+      'sessionUpdatedAtById': sessionUpdatedAtById,
+      'notifiedPermissionRequestIds': notifiedPermissionRequestIds,
+      'notifiedQuestionRequestIds': notifiedQuestionRequestIds,
+      'lastPolledAtEpochMs': lastPolledAtEpochMs,
+    };
+  }
+}
+
+enum BackgroundAlertKind { completion, error, permission, question }
+
+class BackgroundAlertSignal {
+  const BackgroundAlertSignal({
+    required this.kind,
+    required this.categoryKey,
+    required this.title,
+    required this.body,
+    required this.sessionId,
+  });
+
+  final BackgroundAlertKind kind;
+  final String categoryKey;
+  final String title;
+  final String body;
+  final String sessionId;
+}
+
+class BackgroundAlertPlan {
+  const BackgroundAlertPlan({
+    required this.signals,
+    required this.nextSnapshot,
+    required this.baselineOnly,
+  });
+
+  final List<BackgroundAlertSignal> signals;
+  final BackgroundAlertSnapshot nextSnapshot;
+  final bool baselineOnly;
+}
+
+class BackgroundAlertPlanner {
+  const BackgroundAlertPlanner();
+
+  static const int _maxSeenRequestIds = 300;
+
+  BackgroundAlertPlan plan({
+    required BackgroundAlertSnapshot previous,
+    required BackgroundPollingState current,
+    required ExperienceSettings settings,
+    required int nowEpochMs,
+  }) {
+    final normalizedStatuses = <String, String>{
+      for (final entry in current.sessionStatusById.entries)
+        if (entry.key.trim().isNotEmpty)
+          entry.key.trim(): _normalizeStatus(entry.value),
+    };
+
+    final permissionIds = current.permissionRequests
+        .map((item) => item.id.trim())
+        .where((id) => id.isNotEmpty)
+        .toSet();
+    final questionIds = current.questionRequests
+        .map((item) => item.id.trim())
+        .where((id) => id.isNotEmpty)
+        .toSet();
+
+    final nextSnapshot = BackgroundAlertSnapshot(
+      sessionStatusById: normalizedStatuses,
+      sessionUpdatedAtById: Map<String, int>.from(current.sessionUpdatedAtById),
+      notifiedPermissionRequestIds: _mergeSeenIds(
+        previous.notifiedPermissionRequestIds,
+        permissionIds,
+      ),
+      notifiedQuestionRequestIds: _mergeSeenIds(
+        previous.notifiedQuestionRequestIds,
+        questionIds,
+      ),
+      lastPolledAtEpochMs: nowEpochMs,
+    );
+
+    final agentEnabled =
+        settings.notifications[NotificationCategory.agent] ?? true;
+    final permissionEnabled =
+        settings.notifications[NotificationCategory.permissions] ?? true;
+    final errorEnabled =
+        settings.notifications[NotificationCategory.errors] ?? true;
+
+    if (!previous.hasHistory) {
+      final initialSignals = <BackgroundAlertSignal>[];
+
+      if (errorEnabled) {
+        for (final entry in normalizedStatuses.entries) {
+          if (entry.value != 'retry') {
+            continue;
+          }
+          initialSignals.add(
+            BackgroundAlertSignal(
+              kind: BackgroundAlertKind.error,
+              categoryKey: 'errors',
+              title:
+                  'Error: ${_sessionTitleFor(current.sessionTitleById[entry.key])}',
+              body: 'A session reported an error.',
+              sessionId: entry.key,
+            ),
+          );
+        }
+      }
+
+      if (permissionEnabled) {
+        for (final request in current.permissionRequests) {
+          final requestId = request.id.trim();
+          if (requestId.isEmpty) {
+            continue;
+          }
+          initialSignals.add(
+            BackgroundAlertSignal(
+              kind: BackgroundAlertKind.permission,
+              categoryKey: 'permissions',
+              title: 'Action required',
+              body: 'A tool permission needs your input.',
+              sessionId: request.sessionId,
+            ),
+          );
+        }
+
+        for (final request in current.questionRequests) {
+          final requestId = request.id.trim();
+          if (requestId.isEmpty) {
+            continue;
+          }
+          initialSignals.add(
+            BackgroundAlertSignal(
+              kind: BackgroundAlertKind.question,
+              categoryKey: 'permissions',
+              title: 'Action required',
+              body: 'A tool question needs your input.',
+              sessionId: request.sessionId,
+            ),
+          );
+        }
+      }
+
+      return BackgroundAlertPlan(
+        signals: initialSignals,
+        nextSnapshot: nextSnapshot,
+        baselineOnly: initialSignals.isEmpty,
+      );
+    }
+
+    final signals = <BackgroundAlertSignal>[];
+
+    if (agentEnabled || errorEnabled) {
+      for (final entry in normalizedStatuses.entries) {
+        final sessionId = entry.key;
+        final currentStatus = entry.value;
+        final previousStatus = previous.sessionStatusById[sessionId];
+        if (previousStatus == null || previousStatus.isEmpty) {
+          continue;
+        }
+
+        final title = _sessionTitleFor(current.sessionTitleById[sessionId]);
+        if (agentEnabled &&
+            previousStatus == 'busy' &&
+            currentStatus == 'idle') {
+          signals.add(
+            BackgroundAlertSignal(
+              kind: BackgroundAlertKind.completion,
+              categoryKey: 'agent',
+              title: 'Finished: $title',
+              body: 'Agent finished the current response.',
+              sessionId: sessionId,
+            ),
+          );
+        }
+
+        if (errorEnabled &&
+            previousStatus != 'retry' &&
+            currentStatus == 'retry') {
+          signals.add(
+            BackgroundAlertSignal(
+              kind: BackgroundAlertKind.error,
+              categoryKey: 'errors',
+              title: 'Error: $title',
+              body: 'A session reported an error.',
+              sessionId: sessionId,
+            ),
+          );
+        }
+      }
+    }
+
+    if (permissionEnabled) {
+      final seenPermission = previous.notifiedPermissionRequestIds.toSet();
+      final seenQuestion = previous.notifiedQuestionRequestIds.toSet();
+
+      for (final request in current.permissionRequests) {
+        final requestId = request.id.trim();
+        if (requestId.isEmpty || seenPermission.contains(requestId)) {
+          continue;
+        }
+        signals.add(
+          BackgroundAlertSignal(
+            kind: BackgroundAlertKind.permission,
+            categoryKey: 'permissions',
+            title: 'Action required',
+            body: 'A tool permission needs your input.',
+            sessionId: request.sessionId,
+          ),
+        );
+      }
+
+      for (final request in current.questionRequests) {
+        final requestId = request.id.trim();
+        if (requestId.isEmpty || seenQuestion.contains(requestId)) {
+          continue;
+        }
+        signals.add(
+          BackgroundAlertSignal(
+            kind: BackgroundAlertKind.question,
+            categoryKey: 'permissions',
+            title: 'Action required',
+            body: 'A tool question needs your input.',
+            sessionId: request.sessionId,
+          ),
+        );
+      }
+    }
+
+    return BackgroundAlertPlan(
+      signals: signals,
+      nextSnapshot: nextSnapshot,
+      baselineOnly: false,
+    );
+  }
+
+  List<String> _mergeSeenIds(List<String> previous, Set<String> currentIds) {
+    final queue = List<String>.from(previous);
+    final seen = queue.toSet();
+    for (final id in currentIds) {
+      if (seen.add(id)) {
+        queue.add(id);
+      }
+    }
+    if (queue.length <= _maxSeenRequestIds) {
+      return queue;
+    }
+    return queue.sublist(queue.length - _maxSeenRequestIds);
+  }
+
+  String _normalizeStatus(String raw) {
+    final normalized = raw.trim().toLowerCase();
+    if (normalized == 'busy' || normalized == 'retry' || normalized == 'idle') {
+      return normalized;
+    }
+    return 'idle';
+  }
+
+  String _sessionTitleFor(String? raw) {
+    final title = raw?.trim();
+    if (title == null || title.isEmpty) {
+      return 'Session';
+    }
+    return title;
+  }
+}

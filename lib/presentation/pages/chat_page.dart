@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -23,6 +24,7 @@ import '../providers/app_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/project_provider.dart';
 import '../providers/settings_provider.dart';
+import '../services/android_background_alert_worker.dart';
 import '../services/notification_service.dart';
 import '../utils/file_explorer_logic.dart';
 import '../utils/reasoning_status_parser.dart';
@@ -91,7 +93,12 @@ class _ModelSelectorEntry {
 
 enum _ContextUsageAction { compactNow }
 
-enum _DisplayToggleAction { thinkingBubbles, toolCallBubbles, taskList, composerTips }
+enum _DisplayToggleAction {
+  thinkingBubbles,
+  toolCallBubbles,
+  taskList,
+  composerTips,
+}
 
 class _SessionContextUsageSnapshot {
   const _SessionContextUsageSnapshot({
@@ -139,6 +146,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   static const Duration _composerStatusShowDelay = Duration(seconds: 2);
   static const Duration _composerStatusHideDelay = Duration(seconds: 1);
   static const Duration _composerStopHintDuration = Duration(seconds: 1);
+  static const Duration _mobileBackgroundRealtimeHoldDuration = Duration(
+    minutes: 3,
+  );
   static const Duration _doubleEscapeStopThreshold = Duration(
     milliseconds: 500,
   );
@@ -156,6 +166,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   StreamSubscription<NotificationTapPayload>? _notificationTapSubscription;
   ChatProvider? _chatProvider;
   AppProvider? _appProvider;
+  SettingsProvider? _settingsProvider;
   String? _lastServerId;
   bool? _lastServerConnectionState;
   String? _trackedSessionId;
@@ -178,6 +189,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   Timer? _composerStatusShowTimer;
   Timer? _composerStatusHideTimer;
   Timer? _composerStopHintTimer;
+  Timer? _backgroundRealtimeHoldTimer;
   Timer? _tipRotationTimer;
   int _currentTipIndex = 0;
   DateTime? _lastGlobalEscapeAt;
@@ -210,6 +222,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     super.didChangeDependencies();
     // Safely get ChatProvider reference here
     _chatProvider ??= context.read<ChatProvider>();
+    _chatProvider?.setAppInForeground(_isAppInForeground);
     final nextAppProvider = context.read<AppProvider>();
     if (!identical(_appProvider, nextAppProvider)) {
       _appProvider?.removeListener(_handleAppProviderChange);
@@ -234,6 +247,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         }
       }
     }
+    final nextSettingsProvider = context.read<SettingsProvider>();
+    if (!identical(_settingsProvider, nextSettingsProvider)) {
+      _settingsProvider?.removeListener(_handleSettingsChanged);
+      _settingsProvider = nextSettingsProvider;
+      _settingsProvider?.addListener(_handleSettingsChanged);
+      _applyForegroundPolicy(reason: 'settings-provider-attached');
+    }
   }
 
   @override
@@ -244,10 +264,12 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     _scrollToBottomRequestToken += 1;
     _appProvider?.removeListener(_handleAppProviderChange);
     _notificationTapSubscription?.cancel();
+    _settingsProvider?.removeListener(_handleSettingsChanged);
     _serverAlertRevealTimer?.cancel();
     _composerStatusShowTimer?.cancel();
     _composerStatusHideTimer?.cancel();
     _composerStopHintTimer?.cancel();
+    _backgroundRealtimeHoldTimer?.cancel();
     _tipRotationTimer?.cancel();
     _scrollController.removeListener(_handleScrollChanged);
     HardwareKeyboard.instance.removeHandler(_handleGlobalShortcutKeyEvent);
@@ -264,11 +286,100 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     _isAppInForeground = state == AppLifecycleState.resumed;
     final provider = _chatProvider;
     if (provider != null) {
-      unawaited(provider.setForegroundActive(_isAppInForeground));
+      provider.setAppInForeground(_isAppInForeground);
+      _applyForegroundPolicy(reason: 'app-lifecycle-${state.name}');
       if (_isAppInForeground) {
         _handleReturnToChat(provider, reason: 'app-resumed');
       }
     }
+  }
+
+  bool get _isDesktopRuntime {
+    if (kIsWeb) {
+      return false;
+    }
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.linux ||
+      TargetPlatform.macOS ||
+      TargetPlatform.windows => true,
+      _ => false,
+    };
+  }
+
+  bool get _isMobileRuntime {
+    if (kIsWeb) {
+      return false;
+    }
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.android || TargetPlatform.iOS => true,
+      _ => false,
+    };
+  }
+
+  void _handleSettingsChanged() {
+    _applyForegroundPolicy(reason: 'settings-changed');
+  }
+
+  void _applyForegroundPolicy({required String reason}) {
+    final provider = _chatProvider;
+    if (provider == null) {
+      return;
+    }
+
+    void scheduleAndroidProbe(Duration delay) {
+      if (!_isMobileRuntime) {
+        return;
+      }
+      unawaited(
+        AndroidBackgroundAlertWorker.scheduleProbe(initialDelay: delay),
+      );
+    }
+
+    _backgroundRealtimeHoldTimer?.cancel();
+    _backgroundRealtimeHoldTimer = null;
+
+    if (_isAppInForeground) {
+      AppLogger.debug('foreground_policy reason=$reason mode=active');
+      unawaited(provider.setForegroundActive(true));
+      return;
+    }
+
+    final settingsProvider = _settingsProvider;
+    final keepDesktopRealtime =
+        _isDesktopRuntime &&
+        (settingsProvider?.keepDesktopRunningInTray ?? true);
+    if (keepDesktopRealtime) {
+      AppLogger.debug('foreground_policy reason=$reason mode=desktop-tray');
+      unawaited(provider.setForegroundActive(true));
+      return;
+    }
+
+    final keepMobileRealtimeTemporarily =
+        _isMobileRuntime &&
+        (settingsProvider?.keepMobileRealtimeForShortPeriod ?? true) &&
+        provider.isCurrentSessionActivelyResponding;
+    if (keepMobileRealtimeTemporarily) {
+      AppLogger.debug('foreground_policy reason=$reason mode=mobile-hold');
+      unawaited(provider.setForegroundActive(true));
+      scheduleAndroidProbe(
+        _mobileBackgroundRealtimeHoldDuration + const Duration(minutes: 1),
+      );
+      _backgroundRealtimeHoldTimer = Timer(
+        _mobileBackgroundRealtimeHoldDuration,
+        () {
+          if (!mounted || _isAppInForeground) {
+            return;
+          }
+          AppLogger.debug('foreground_policy mode=mobile-hold-expired');
+          unawaited(provider.setForegroundActive(false));
+        },
+      );
+      return;
+    }
+
+    AppLogger.debug('foreground_policy reason=$reason mode=paused');
+    unawaited(provider.setForegroundActive(false));
+    scheduleAndroidProbe(const Duration(minutes: 1));
   }
 
   void _loadInitialData() {
@@ -276,7 +387,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
 
     // Set scroll to bottom callback
     chatProvider.setScrollToBottomCallback(_scrollToBottom);
-    unawaited(chatProvider.setForegroundActive(_isAppInForeground));
+    _applyForegroundPolicy(reason: 'chat-load-initial-data');
 
     // Technical comment translated to English.
     _initializeChatProvider(chatProvider);
@@ -552,6 +663,11 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     final sessionId = chatProvider.currentSession?.id;
     if (sessionId != _trackedSessionId) {
       _trackedSessionId = sessionId;
+      if (sessionId != null) {
+        unawaited(
+          _notificationService?.clearNotificationsForSession(sessionId),
+        );
+      }
       _pendingInitialScrollSessionId = sessionId;
       _expandedCollapsedHistoryGroupId = null;
       _frozenCompactionBoundaryId = null;
@@ -1726,12 +1842,12 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                 key: const ValueKey<String>('display_toggle_item_task_list'),
                 value: _DisplayToggleAction.taskList,
                 checked: settingsProvider.showTaskList,
-                child: Text(
-                  _displayToggleLabel(_DisplayToggleAction.taskList),
-                ),
+                child: Text(_displayToggleLabel(_DisplayToggleAction.taskList)),
               ),
               CheckedPopupMenuItem<_DisplayToggleAction>(
-                key: const ValueKey<String>('display_toggle_item_composer_tips'),
+                key: const ValueKey<String>(
+                  'display_toggle_item_composer_tips',
+                ),
                 value: _DisplayToggleAction.composerTips,
                 checked: settingsProvider.showComposerTips,
                 child: Text(
@@ -5089,9 +5205,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
           child: SessionTodoListWidget(
             todos: chatProvider.currentSessionTodo,
             collapsed: sp.taskListCollapsed,
-            onToggleCollapsed: () => unawaited(
-              sp.setTaskListCollapsed(!sp.taskListCollapsed),
-            ),
+            onToggleCollapsed: () =>
+                unawaited(sp.setTaskListCollapsed(!sp.taskListCollapsed)),
           ),
         ),
       ),
@@ -5167,8 +5282,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                               ),
                               Builder(
                                 builder: (context) {
-                                  final usage =
-                                      _resolveSessionContextUsage(chatProvider);
+                                  final usage = _resolveSessionContextUsage(
+                                    chatProvider,
+                                  );
                                   final canCompact =
                                       !chatProvider.isCompactingContext &&
                                       !chatProvider.canAbortActiveResponse;
@@ -5212,14 +5328,13 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                                               Icon(
                                                 Icons.compress_outlined,
                                                 size: 16,
-                                                color: Theme.of(context)
-                                                    .colorScheme
-                                                    .primary,
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.primary,
                                               ),
                                               const SizedBox(width: 8),
                                               Text(
-                                                chatProvider
-                                                        .isCompactingContext
+                                                chatProvider.isCompactingContext
                                                     ? 'Compacting...'
                                                     : 'Compact now',
                                               ),
@@ -5406,21 +5521,18 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     }
 
     if (target.type == _ComposerStatusType.tip && _tipRotationTimer == null) {
-      _tipRotationTimer = Timer.periodic(
-        const Duration(seconds: 15),
-        (_) {
-          if (!mounted) {
-            return;
-          }
-          final tips = _ComposerStatusPresentation._receivingTips;
-          _currentTipIndex = (_currentTipIndex + 1) % tips.length;
-          setState(() {
-            _visibleComposerStatus = _ComposerStatusPresentation.tip(
-              tips[_currentTipIndex],
-            );
-          });
-        },
-      );
+      _tipRotationTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+        if (!mounted) {
+          return;
+        }
+        final tips = _ComposerStatusPresentation._receivingTips;
+        _currentTipIndex = (_currentTipIndex + 1) % tips.length;
+        setState(() {
+          _visibleComposerStatus = _ComposerStatusPresentation.tip(
+            tips[_currentTipIndex],
+          );
+        });
+      });
     } else if (target.type != _ComposerStatusType.tip) {
       _tipRotationTimer?.cancel();
       _tipRotationTimer = null;
@@ -7059,8 +7171,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     // Internally they remain separate stages so the progress detection
     // logic is preserved, but visually the user sees no transition.
     return switch (progressStage) {
-      _AssistantProgressStage.receiving ||
-      _AssistantProgressStage.thinking =>
+      _AssistantProgressStage.receiving || _AssistantProgressStage.thinking =>
         context.read<SettingsProvider>().showComposerTips
             ? _ComposerStatusPresentation.tip(
                 _ComposerStatusPresentation._receivingTips[_currentTipIndex],
@@ -7439,7 +7550,13 @@ class _TimelineRetryIndicatorEntry extends _TimelineEntry {
 
 enum _AssistantProgressStage { thinking, receiving, retrying }
 
-enum _ComposerStatusType { dynamicReasoning, receiving, thinking, stopHint, tip }
+enum _ComposerStatusType {
+  dynamicReasoning,
+  receiving,
+  thinking,
+  stopHint,
+  tip,
+}
 
 class _ComposerStatusPresentation {
   const _ComposerStatusPresentation._({
@@ -7451,10 +7568,7 @@ class _ComposerStatusPresentation {
     : this._(type: _ComposerStatusType.dynamicReasoning, label: label);
 
   const _ComposerStatusPresentation.receiving()
-    : this._(
-        type: _ComposerStatusType.receiving,
-        label: 'Reasoning...',
-      );
+    : this._(type: _ComposerStatusType.receiving, label: 'Reasoning...');
 
   const _ComposerStatusPresentation.thinking()
     : this._(type: _ComposerStatusType.thinking, label: 'Thinking...');

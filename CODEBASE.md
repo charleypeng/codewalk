@@ -1,8 +1,24 @@
 # CodeWalk - Codebase Baseline Snapshot
 
-> Captured: 2026-02-16
+> Captured: 2026-02-17
 > Git baseline: `20d4fd4 release: cut v1.8.0` (main)
 > Flutter: 3.41.0 (stable)
+
+## Delta Update (2026-02-17) - Android Background Alert Fallback
+
+- **Android background alert worker** (new `android_background_alert_worker.dart` + logic): Background polling service for Android that detects actionable events (session completion, errors, permission requests, questions) when app is in background. Uses `workmanager` for periodic (15min) + one-off task scheduling.
+  - `android_background_alert_worker.dart`: Main worker entry point, Workmanager registration, task execution runner
+  - `android_background_alert_logic.dart`: Planner that computes alert signals from polling state diffs, handles snapshot persistence
+- **`scheduleProbe` scheduling** (`android_background_alert_worker.dart` lines 78-109): Dual-schedule strategy combining:
+  - Periodic task (15min interval, `ExistingPeriodicWorkPolicy.keep`)
+  - One-off probe (configurable `initialDelay`, default 1min) scheduled on app background to catch imminent events quickly
+- **ChatPage background integration** (`chat_page.dart` lines 327-334): When mobile app enters background with active response and `keepMobileRealtimeForShortPeriod` enabled, schedules Android probe to run after hold duration + 1min buffer to ensure continuity
+- **Baseline-first alert emission** (`android_background_alert_logic.dart` lines 198-258): First poll run (`!previous.hasHistory`) emits actionable alerts immediately for:
+  - Retry/error status sessions
+  - Pending permission requests
+  - Pending question requests
+  - Subsequent runs only emit on state transitions (busy→idle for completion, new permission/question ids)
+- **New test file**: `test/unit/presentation/android_background_alert_logic_test.dart` (7 tests covering baseline emission, transition detection, notification category filtering)
 
 ## Delta Update (2026-02-16)
 
@@ -15,6 +31,28 @@
 - **Desktop todo placement**: Todo widget appears in utility sidebar (max 10 items); when sidebar is hidden, falls back to inline card below session header (max 5 items, same as mobile).
 - **Gradle build optimization** (`android/gradle.properties`): Added `org.gradle.caching=true` and `org.gradle.parallel=true` for faster Android builds.
 - **New test files**: `test/widget/session_todo_list_widget_test.dart` (9 tests), updated `chat_message_widget_test.dart` (todo hiding), `chat_page_test.dart` (tip assertion), `settings_provider_test.dart` (task list persistence).
+
+## Delta Update 2 (2026-02-16) - Desktop Tray & Background Behavior
+
+- **Desktop tray service** (new `desktop_tray_service.dart` + implementations): Platform-aware desktop tray integration using `tray_manager` and `window_manager` packages. Provides system tray icon, context menu (Open/Quit), and window close-to-tray behavior.
+  - `desktop_tray_service.dart`: Platform-aware factory (exports IO on desktop, stub on mobile/web)
+  - `desktop_tray_service_types.dart`: Abstract `DesktopTrayService` interface
+  - `desktop_tray_service_io.dart`: Desktop implementation (Linux/macOS/Windows)
+  - `desktop_tray_service_stub.dart`: Non-desktop stub (mobile/web)
+- **Background preference fields** (`ExperienceSettings`): Two new boolean fields:
+  - `keepDesktopRunningInTray`: Keep app running in system tray on desktop when window closes (default: `true`)
+  - `keepMobileRealtimeForShortPeriod`: Keep realtime active briefly on mobile after backgrounding during active response (default: `true`)
+- **Chat foreground policy** (`chat_page.dart`): New `_applyForegroundPolicy()` method implementing platform-specific background behavior:
+  - **Desktop**: If `keepDesktopRunningInTray` is enabled, keeps realtime active when app is in background (tray mode)
+  - **Mobile**: If `keepMobileRealtimeForShortPeriod` is enabled and session is actively responding, temporarily holds realtime for a short duration before pausing (avoids persistent background service, better battery)
+  - Logs policy decisions at debug level with mode indicators: `active`, `desktop-tray`, `mobile-hold`, `mobile-hold-expired`, `paused`
+- **Settings UI** (`notifications_settings_section.dart`): Two new platform-specific toggles:
+  - Desktop: "Close to tray" switch to hide to system tray on window close
+  - Mobile: "Keep alerts live for X min" switch to keep realtime briefly after leaving app
+- **New dependencies** (`pubspec.yaml`):
+  - `tray_manager: ^0.5.1` - System tray integration
+  - `window_manager: ^0.5.1` - Desktop window control
+- **AppShellPage integration** (`app_shell_page.dart`): Initializes and configures `DesktopTrayService` based on `keepDesktopRunningInTray` setting, with listener for setting changes.
 
 ## Previous Delta (2026-02-16)
 
@@ -63,7 +101,7 @@ codewalk/
 │   ├── presentation/
 │   │   ├── pages/       # App Shell, Chat, Home, Logs, Server Settings
 │   │   ├── providers/   # State management (Provider, ChatProvider, SettingsProvider, etc.)
-│   │   ├── services/    # UI services (ChatTitleGenerator, SoundService, EventFeedbackDispatcher, LocalOpenCodeServerRuntime, FilePartActionService)
+│   │   ├── services/    # UI services (ChatTitleGenerator, SoundService, EventFeedbackDispatcher, LocalOpenCodeServerRuntime, FilePartActionService, DesktopTrayService)
 │   │   ├── theme/       # App theme configuration
 │   │   ├── utils/       # UI utilities (SessionTitleFormatter, FileExplorerLogic, ShortcutBindingCodec)
 │   │   └── widgets/     # Chat input, message, session list, interaction cards
@@ -500,6 +538,9 @@ Makefile with 15 targets and TTY-aware output suppression (verbose output redire
 | material_symbols_icons | ^4.2906.0 | Material Symbols icon set |
 | simple_icons | git (381d0cb) | Simple Icons brand icons |
 | crypto | ^3.0.3 | SHA256 checksum verification for runtime installer |
+| tray_manager | ^0.5.1 | Desktop system tray integration |
+| window_manager | ^0.5.1 | Desktop window control (close-to-tray) |
+| workmanager | ^0.9.0+3 | Android background periodic task for alerts |
 
 ### Dev
 
@@ -533,6 +574,37 @@ Centralized structured logging via `AppLogger` with severity levels and token re
 - **Global shortcuts in ChatPage**: Uses `HardwareKeyboard.instance.addHandler` to intercept global key events when chat screen is active. Matches against user-configured bindings from `ExperienceSettings` and invokes corresponding actions (newChat, focusInput, quickOpen, openSettings, cycleRecentModels, cycleVariant, cycleAgent, escape).
 📁 **Localização**: `lib/presentation/pages/chat_page.dart` (lines 1090-1148)
 
+### Desktop Tray Service
+Platform-aware desktop system tray integration for Linux/macOS/Windows using `tray_manager` and `window_manager` packages.
+📁 **Localização**: `lib/presentation/services/desktop_tray_service.dart` (platform factory), `desktop_tray_service_types.dart` (interface), `desktop_tray_service_io.dart` (desktop impl), `desktop_tray_service_stub.dart` (mobile/web stub)
+🔧 **Features**: System tray icon with context menu (Open/Quit), close-to-tray behavior controlled by `ExperienceSettings.keepDesktopRunningInTray`, window show/hide/focus management
+🔔 **Integration**: Initialized in `AppShellPage` based on user preference; listens for setting changes to update tray behavior dynamically
+
+### Chat Foreground Policy
+Platform-specific background behavior controlling when realtime sync stays active vs pauses.
+📁 **Localização**: `lib/presentation/pages/chat_page.dart` (`_applyForegroundPolicy()` method)
+🔧 **Policy modes**:
+- **Desktop tray**: If `keepDesktopRunningInTray` enabled, keeps SSE realtime active when window is hidden (tray mode)
+- **Mobile hold**: If `keepMobileRealtimeForShortPeriod` enabled and session is actively responding, temporarily holds realtime for short duration before pausing (battery-friendly alternative to persistent background service)
+- **Paused**: Default behavior, realtime pauses when app goes to background
+🎯 **UX**: Debug logging shows policy decisions with mode indicators (`active`, `desktop-tray`, `mobile-hold`, `mobile-hold-expired`, `paused`)
+
+### Android Background Alert Worker
+Android background polling service for detecting actionable events when app is not in foreground.
+📁 **Localização**: `lib/presentation/services/android_background_alert_worker.dart` (main worker), `android_background_alert_logic.dart` (planning logic)
+🔧 **Scheduling**: Dual strategy using `workmanager`:
+  - Periodic task: 15min interval, keeps running persistently
+  - One-off probe: Short delay (default 1min) scheduled on app background for quick catch-up
+📡 **Polling endpoints**: `/session/status`, `/permission`, `/question`, `/session` (for titles)
+🔔 **Alert categories**:
+  - **Completion**: Session transitions from busy→idle (agent finished)
+  - **Error**: Session enters retry state
+  - **Permission**: New pending tool permission request
+  - **Question**: New pending tool question request
+🎯 **Baseline behavior**: First poll run emits actionable alerts immediately for existing retry status/permission/question items (no need to wait for transition). Subsequent runs emit only on state transitions.
+💾 **Persistence**: Snapshot stored per-server in SharedPreferences (`codewalk.android.background.alert.snapshot.v1::<serverId>`)
+🔔 **Integration**: ChatPage calls `scheduleProbe()` when mobile background with active response + hold duration + 1min buffer
+
 ### Authentication and Server Config
 - Multi-server profile management (`ServerProfile`) with active/default selection
 - Per-server basic auth configuration and URL normalization
@@ -562,6 +634,7 @@ Modular settings hub with responsive navigation (mobile list-to-detail, desktop 
 📋 **Arquitetura**: Ver [ADR-022: Modular Settings Hub](#adr-022-modular-settings-hub-and-experience-preference-orchestration)
 🔧 **Componentes**: `SettingsPage`, `SettingsProvider`, `ExperienceSettings`
 🔔 **Features**: per-category notifications/sounds (agent/permissions/errors), 11 shortcut bindings (desktop/web): newChat/mod+n, refresh/mod+r, focusInput/mod+l, quickOpen/mod+p, openSettings/mod+,, cycleRecentModels/mod+m, cycleVariant/mod+t, cycleAgentForward/mod+j, cycleAgentBackward/mod+shift+j, escape, desktop pane visibility, server config sync (`/config`)
+📱 **Background preferences**: `keepDesktopRunningInTray` (desktop close-to-tray), `keepMobileRealtimeForShortPeriod` (mobile temporary hold during active response)
 📱 **Adapters**: `flutter_local_notifications` (Android/Linux/macOS/Windows), browser Notification API (Web)
 
 ## Chat System Details
@@ -615,8 +688,10 @@ test/
 │   │   ├── chat_provider_test.dart           # ChatProvider state + server/context-scoped cache behavior
 │   │   ├── project_provider_test.dart        # ProjectProvider context/worktree orchestration
 │   │   └── settings_provider_test.dart       # Experience settings persistence + shortcut conflict logic
-│   ├── utils/
-│   │   └── file_explorer_logic_test.dart     # Quick-open ranking and file-tab reducer behavior
+│   │   ├── utils/
+│   │   │   └── file_explorer_logic_test.dart     # Quick-open ranking and file-tab reducer behavior
+│   │   └── presentation/
+│   │       └── android_background_alert_logic_test.dart # Background alert planner baseline/transition logic
 │   └── usecases/
 │       └── chat_usecases_test.dart           # ChatUseCases domain logic
 ├── widget/

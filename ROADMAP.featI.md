@@ -17,12 +17,18 @@
 - [x] Add attachment download/open actions in chat messages (handle data://, http://, file://, and local paths) - Commit: d2fd909
 - [x] Implement image preview inline in chat message bubbles (support data URLs and network images) - Commit: d2fd909
 
-### Group 4 — External integrations
-- [~] Task 40: Replace ch.at title service with native OpenCode 'title' agent, maintaining 6-message cadence. Note: Migrated title generator from ch.at to native OpenCode title agent via ephemeral session + polling.
-- [~] Task 15: Check updates via GitHub Releases API with About settings section, semver comparison, dismissible update banner, and 1h cooldown.
+### Group 4 — External integrations `[x]`
+- [x] Task 40: Replace ch.at title service with native OpenCode 'title' agent, maintaining 6-message cadence. Replaced ch.at with native OpenCode title agent via ephemeral session + polling. Removed model field, added ephemeral event filtering, limited feedback dispatch to current session. - Commit: 51d6195
+- [x] Task 15: Check updates via GitHub Releases API. Added UpdateCheckService with semver comparison, 1h cooldown, About settings section with version display and dismissible update banner. - Commit: 51d6195
 
-### Group 5 — Platform
-- Task 10: Background behavior settings (mobile persistent notification, desktop tray).
+### Group 5 — Platform `[x]`
+- [x] Task 10: Background behavior settings (mobile persistent notification, desktop tray). Default: desktop tray enabled, mobile shows short alert window in notification area. **Note**: Added Android fallback with periodic WorkManager (15 min) for completion/error/question alerts when app is closed + one-off short probe scheduling when app goes to background + baseline that already alerts actionable items (retry/permission/question) on first run.
+
+### Post Task 10 Refinements — Notifications/Sound `[~]`
+- [~] Implementar regras "only when" para notificações (only when app minimized, only when not responding, only for errors, etc.)
+- [~] Adicionar picker de som do sistema + possibilidade de selecionar arquivo de som customizado
+- [~] Agrupar notificações por sessão (evitar spam de múltiplas notificações da mesma conversa)
+- [~] Melhoria visual da tela de configurações de notificações (UI mais intuitiva e organizada)
 
 ### Done
 - Task 39: Add soft loading state visual to conversation list item icon while session is receiving data/response. - Commit: fb6e118

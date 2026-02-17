@@ -56,8 +56,27 @@ class SettingsProvider extends ChangeNotifier {
   bool get showTaskList => _settings.showTaskList;
   bool get taskListCollapsed => _settings.taskListCollapsed;
   bool get showComposerTips => _settings.showComposerTips;
+  bool get keepDesktopRunningInTray => _settings.keepDesktopRunningInTray;
+  bool get keepMobileRealtimeForShortPeriod =>
+      _settings.keepMobileRealtimeForShortPeriod;
   bool get hasAnyServerBackedNotificationCategory =>
       _serverBackedNotifications.values.any((value) => value);
+
+  bool notifyOnlyWhenBackground(NotificationCategory category) {
+    return _settings.notifyOnlyWhenBackground[category] ?? false;
+  }
+
+  bool notifyOnlyWhenAnotherSession(NotificationCategory category) {
+    return _settings.notifyOnlyWhenAnotherSession[category] ?? false;
+  }
+
+  bool soundOnlyWhenBackground(NotificationCategory category) {
+    return _settings.soundOnlyWhenBackground[category] ?? false;
+  }
+
+  bool soundOnlyWhenAnotherSession(NotificationCategory category) {
+    return _settings.soundOnlyWhenAnotherSession[category] ?? false;
+  }
 
   bool isServerBackedNotification(NotificationCategory category) {
     return _serverBackedNotifications[category] ?? false;
@@ -84,8 +103,8 @@ class SettingsProvider extends ChangeNotifier {
         );
       }
     }
-    _dismissedUpdateVersion =
-        await _localDataSource.getDismissedUpdateVersion();
+    _dismissedUpdateVersion = await _localDataSource
+        .getDismissedUpdateVersion();
     unawaited(syncNotificationsFromServerConfig());
     _initialized = true;
     notifyListeners();
@@ -109,6 +128,22 @@ class SettingsProvider extends ChangeNotifier {
 
   SoundOption soundFor(SoundCategory category) {
     return _settings.sounds[category] ?? SoundOption.off;
+  }
+
+  String? soundSourceFor(SoundCategory category) {
+    final value = _settings.soundSources[category]?.trim();
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+    return value;
+  }
+
+  String? soundLabelFor(SoundCategory category) {
+    final value = _settings.soundLabels[category]?.trim();
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+    return value;
   }
 
   String bindingFor(ShortcutAction action) {
@@ -177,6 +212,24 @@ class SettingsProvider extends ChangeNotifier {
     await _persist();
   }
 
+  Future<void> setKeepDesktopRunningInTray(bool enabled) async {
+    if (_settings.keepDesktopRunningInTray == enabled) {
+      return;
+    }
+    _settings = _settings.copyWith(keepDesktopRunningInTray: enabled);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setKeepMobileRealtimeForShortPeriod(bool enabled) async {
+    if (_settings.keepMobileRealtimeForShortPeriod == enabled) {
+      return;
+    }
+    _settings = _settings.copyWith(keepMobileRealtimeForShortPeriod: enabled);
+    notifyListeners();
+    await _persist();
+  }
+
   Future<void> setDesktopPaneVisible(DesktopPane pane, bool visible) async {
     final next = Map<DesktopPane, bool>.from(_settings.desktopPanes);
     next[pane] = visible;
@@ -197,13 +250,94 @@ class SettingsProvider extends ChangeNotifier {
     await _syncNotificationToServer(category, value);
   }
 
+  Future<void> setNotifyOnlyWhenBackground(
+    NotificationCategory category,
+    bool value,
+  ) async {
+    final next = Map<NotificationCategory, bool>.from(
+      _settings.notifyOnlyWhenBackground,
+    );
+    next[category] = value;
+    _settings = _settings.copyWith(notifyOnlyWhenBackground: next);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setNotifyOnlyWhenAnotherSession(
+    NotificationCategory category,
+    bool value,
+  ) async {
+    final next = Map<NotificationCategory, bool>.from(
+      _settings.notifyOnlyWhenAnotherSession,
+    );
+    next[category] = value;
+    _settings = _settings.copyWith(notifyOnlyWhenAnotherSession: next);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setSoundOnlyWhenBackground(
+    NotificationCategory category,
+    bool value,
+  ) async {
+    final next = Map<NotificationCategory, bool>.from(
+      _settings.soundOnlyWhenBackground,
+    );
+    next[category] = value;
+    _settings = _settings.copyWith(soundOnlyWhenBackground: next);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setSoundOnlyWhenAnotherSession(
+    NotificationCategory category,
+    bool value,
+  ) async {
+    final next = Map<NotificationCategory, bool>.from(
+      _settings.soundOnlyWhenAnotherSession,
+    );
+    next[category] = value;
+    _settings = _settings.copyWith(soundOnlyWhenAnotherSession: next);
+    notifyListeners();
+    await _persist();
+  }
+
   Future<void> setSoundOption(
     SoundCategory category,
-    SoundOption option,
-  ) async {
+    SoundOption option, {
+    String? source,
+    String? label,
+  }) async {
     final next = Map<SoundCategory, SoundOption>.from(_settings.sounds);
+    final nextSources = Map<SoundCategory, String>.from(_settings.soundSources);
+    final nextLabels = Map<SoundCategory, String>.from(_settings.soundLabels);
     next[category] = option;
-    _settings = _settings.copyWith(sounds: next);
+
+    final normalizedSource = source?.trim();
+    final normalizedLabel = label?.trim();
+    if (option == SoundOption.systemChoice ||
+        option == SoundOption.customFile) {
+      if (normalizedSource != null && normalizedSource.isNotEmpty) {
+        nextSources[category] = normalizedSource;
+      }
+      if (normalizedLabel != null && normalizedLabel.isNotEmpty) {
+        nextLabels[category] = normalizedLabel;
+      }
+    }
+
+    if (option == SoundOption.click ||
+        option == SoundOption.alert ||
+        option == SoundOption.systemDefault ||
+        option == SoundOption.off) {
+      nextSources.remove(category);
+      nextLabels.remove(category);
+    }
+
+    _settings = _settings.copyWith(
+      sounds: next,
+      soundSources: nextSources,
+      soundLabels: nextLabels,
+    );
     notifyListeners();
     await _persist();
   }
@@ -231,7 +365,57 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> previewSound(SoundCategory category) async {
-    await _soundService.play(soundFor(category));
+    await _soundService.play(
+      option: soundFor(category),
+      source: soundSourceFor(category),
+    );
+  }
+
+  bool shouldDispatchNotification(
+    NotificationCategory category, {
+    required bool isAppInForeground,
+    required bool isAnotherSession,
+  }) {
+    if (!isNotificationEnabled(category)) {
+      return false;
+    }
+    return _matchesOnlyWhenRule(
+      onlyWhenBackground: notifyOnlyWhenBackground(category),
+      onlyWhenAnotherSession: notifyOnlyWhenAnotherSession(category),
+      isAppInForeground: isAppInForeground,
+      isAnotherSession: isAnotherSession,
+    );
+  }
+
+  bool shouldDispatchSound(
+    NotificationCategory category, {
+    required bool isAppInForeground,
+    required bool isAnotherSession,
+  }) {
+    final soundCategory = soundCategoryForNotification(category);
+    if (soundFor(soundCategory) == SoundOption.off) {
+      return false;
+    }
+    return _matchesOnlyWhenRule(
+      onlyWhenBackground: soundOnlyWhenBackground(category),
+      onlyWhenAnotherSession: soundOnlyWhenAnotherSession(category),
+      isAppInForeground: isAppInForeground,
+      isAnotherSession: isAnotherSession,
+    );
+  }
+
+  bool _matchesOnlyWhenRule({
+    required bool onlyWhenBackground,
+    required bool onlyWhenAnotherSession,
+    required bool isAppInForeground,
+    required bool isAnotherSession,
+  }) {
+    if (!onlyWhenBackground && !onlyWhenAnotherSession) {
+      return true;
+    }
+    final backgroundMatch = onlyWhenBackground && !isAppInForeground;
+    final anotherSessionMatch = onlyWhenAnotherSession && isAnotherSession;
+    return backgroundMatch || anotherSessionMatch;
   }
 
   String? findShortcutConflict(ShortcutAction action, String binding) {

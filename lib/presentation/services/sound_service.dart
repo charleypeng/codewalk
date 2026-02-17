@@ -3,17 +3,37 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/logging/app_logger.dart';
 import '../../domain/entities/experience_settings.dart';
 
 class SoundService {
-  Future<bool> play(SoundOption option) async {
+  Future<bool> play({required SoundOption option, String? source}) async {
     if (option == SoundOption.off) {
       return true;
     }
 
     try {
+      if (option == SoundOption.systemDefault) {
+        await SystemSound.play(SystemSoundType.alert);
+        return true;
+      }
+
+      if (option == SoundOption.systemChoice ||
+          option == SoundOption.customFile) {
+        final normalizedSource = _normalizeSource(source);
+        if (normalizedSource == null) {
+          return false;
+        }
+        final player = AudioPlayer();
+        await player.play(UrlSource(normalizedSource), volume: 1.0);
+        player.onPlayerComplete.listen((_) {
+          unawaited(player.dispose());
+        });
+        return true;
+      }
+
       final bytes = _buildToneWav(
         frequencyHz: option == SoundOption.click ? 950 : 550,
         durationMs: option == SoundOption.click ? 85 : 220,
@@ -33,6 +53,23 @@ class SoundService {
       );
       return false;
     }
+  }
+
+  String? _normalizeSource(String? source) {
+    final value = source?.trim();
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+    if (value.startsWith('file://') ||
+        value.startsWith('content://') ||
+        value.startsWith('http://') ||
+        value.startsWith('https://')) {
+      return value;
+    }
+    if (value.startsWith('/')) {
+      return Uri.file(value).toString();
+    }
+    return value;
   }
 
   Uint8List _buildToneWav({

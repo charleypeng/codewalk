@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../../core/logging/app_logger.dart';
+import '../../domain/entities/experience_settings.dart';
 import 'web_notification_bridge.dart';
 
 class NotificationTapPayload {
@@ -51,6 +52,7 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _plugin;
   final StreamController<NotificationTapPayload> _tapController =
       StreamController<NotificationTapPayload>.broadcast();
+  final Map<String, Set<int>> _notificationIdsBySession = <String, Set<int>>{};
   bool _initialized = false;
   NotificationTapPayload? _pendingTap;
   StreamSubscription<String>? _webTapSubscription;
@@ -134,10 +136,14 @@ class NotificationService {
     required String body,
     required String category,
     String? sessionId,
+    bool playSound = true,
+    SoundOption soundOption = SoundOption.systemDefault,
+    String? soundSource,
   }) async {
+    final normalizedSessionId = _normalizeSessionId(sessionId);
     final payload = NotificationTapPayload(
       category: category,
-      sessionId: sessionId,
+      sessionId: normalizedSessionId,
     ).toRaw();
 
     if (kIsWeb) {
@@ -157,24 +163,34 @@ class NotificationService {
     }
 
     try {
-      final details = NotificationDetails(
-        android: AndroidNotificationDetails(
-          'codewalk_$category',
-          'CodeWalk $category',
-          channelDescription: 'CodeWalk $category notifications',
-          importance: Importance.defaultImportance,
-          priority: Priority.defaultPriority,
-        ),
-        macOS: const DarwinNotificationDetails(),
+      final notificationId = _nextNotificationId();
+      final details = _buildDetails(
+        category: category,
+        sessionId: normalizedSessionId,
+        playSound: playSound,
+        soundOption: soundOption,
+        soundSource: soundSource,
       );
 
       await _plugin.show(
-        id: DateTime.now().microsecondsSinceEpoch % 100000,
+        id: notificationId,
         title: title,
         body: body,
         notificationDetails: details,
         payload: payload,
       );
+
+      if (normalizedSessionId != null) {
+        _notificationIdsBySession
+            .putIfAbsent(normalizedSessionId, () => <int>{})
+            .add(notificationId);
+        await _showAndroidGroupSummary(
+          category: category,
+          sessionId: normalizedSessionId,
+          payload: payload,
+        );
+      }
+
       return true;
     } catch (error, stackTrace) {
       AppLogger.warn(
@@ -184,6 +200,288 @@ class NotificationService {
       );
       return false;
     }
+  }
+
+  Future<void> clearNotificationsForSession(String sessionId) async {
+    final normalizedSessionId = _normalizeSessionId(sessionId);
+    if (normalizedSessionId == null) {
+      return;
+    }
+
+    await initialize();
+    if (!_initialized) {
+      return;
+    }
+
+    final targets = <_CancelTarget>[];
+    final knownIds = _notificationIdsBySession.remove(normalizedSessionId);
+    if (knownIds != null) {
+      for (final id in knownIds) {
+        targets.add(
+          _CancelTarget(id: id, tag: _sessionTag(normalizedSessionId)),
+        );
+      }
+    }
+
+    try {
+      final active = await _plugin.getActiveNotifications();
+      final expectedGroupKey = _sessionGroupKey(normalizedSessionId);
+      final expectedTag = _sessionTag(normalizedSessionId);
+      final expectedSummaryTag = _sessionSummaryTag(normalizedSessionId);
+      for (final notification in active) {
+        final id = notification.id;
+        if (id == null) {
+          continue;
+        }
+        final payloadSession = NotificationTapPayload.fromRaw(
+          notification.payload,
+        )?.sessionId;
+        final matches =
+            payloadSession == normalizedSessionId ||
+            notification.groupKey == expectedGroupKey ||
+            notification.tag == expectedTag ||
+            notification.tag == expectedSummaryTag;
+        if (!matches) {
+          continue;
+        }
+        targets.add(_CancelTarget(id: id, tag: notification.tag));
+      }
+    } catch (_) {
+      // Some platforms may not expose active notifications.
+    }
+
+    targets.add(
+      _CancelTarget(
+        id: _summaryNotificationId(normalizedSessionId),
+        tag: _sessionSummaryTag(normalizedSessionId),
+      ),
+    );
+
+    final dedupe = <String>{};
+    for (final target in targets) {
+      final key = '${target.id}|${target.tag ?? ''}';
+      if (!dedupe.add(key)) {
+        continue;
+      }
+      try {
+        await _plugin.cancel(id: target.id, tag: target.tag);
+      } catch (_) {
+        // Best effort cleanup.
+      }
+    }
+  }
+
+  NotificationDetails _buildDetails({
+    required String category,
+    required String? sessionId,
+    required bool playSound,
+    required SoundOption soundOption,
+    required String? soundSource,
+  }) {
+    final channelId = _androidChannelId(
+      category: category,
+      playSound: playSound,
+      soundOption: soundOption,
+      soundSource: soundSource,
+    );
+    final groupKey = sessionId == null ? null : _sessionGroupKey(sessionId);
+    final tag = sessionId == null ? null : _sessionTag(sessionId);
+
+    return NotificationDetails(
+      android: AndroidNotificationDetails(
+        channelId,
+        'CodeWalk $category',
+        channelDescription: 'CodeWalk $category notifications',
+        importance: _androidImportanceForCategory(category),
+        priority: _androidPriorityForCategory(category),
+        playSound: playSound,
+        sound: _resolveAndroidSound(
+          playSound: playSound,
+          soundOption: soundOption,
+          soundSource: soundSource,
+        ),
+        groupKey: groupKey,
+        tag: tag,
+      ),
+      macOS: DarwinNotificationDetails(
+        presentSound: playSound,
+        threadIdentifier: sessionId,
+      ),
+      linux: LinuxNotificationDetails(
+        sound: _resolveLinuxThemeSound(
+          playSound: playSound,
+          soundOption: soundOption,
+          soundSource: soundSource,
+        ),
+        suppressSound: !playSound,
+      ),
+      windows: playSound
+          ? WindowsNotificationDetails(
+              audio: WindowsNotificationAudio.preset(
+                sound: WindowsNotificationSound.defaultSound,
+              ),
+            )
+          : WindowsNotificationDetails(
+              audio: WindowsNotificationAudio.silent(),
+            ),
+    );
+  }
+
+  Future<void> _showAndroidGroupSummary({
+    required String category,
+    required String sessionId,
+    required String payload,
+  }) async {
+    if (!_isAndroidRuntime) {
+      return;
+    }
+
+    final summaryDetails = NotificationDetails(
+      android: AndroidNotificationDetails(
+        _androidChannelId(
+          category: category,
+          playSound: false,
+          soundOption: SoundOption.off,
+          soundSource: null,
+        ),
+        'CodeWalk $category',
+        channelDescription: 'CodeWalk $category notifications',
+        importance: _androidImportanceForCategory(category),
+        priority: _androidPriorityForCategory(category),
+        playSound: false,
+        groupKey: _sessionGroupKey(sessionId),
+        setAsGroupSummary: true,
+        groupAlertBehavior: GroupAlertBehavior.summary,
+        tag: _sessionSummaryTag(sessionId),
+      ),
+    );
+
+    await _plugin.show(
+      id: _summaryNotificationId(sessionId),
+      title: 'Conversation updates',
+      body: 'Open this conversation to clear related notifications.',
+      notificationDetails: summaryDetails,
+      payload: payload,
+    );
+  }
+
+  Importance _androidImportanceForCategory(String category) {
+    return switch (category) {
+      'errors' || 'permissions' => Importance.high,
+      _ => Importance.defaultImportance,
+    };
+  }
+
+  Priority _androidPriorityForCategory(String category) {
+    return switch (category) {
+      'errors' || 'permissions' => Priority.high,
+      _ => Priority.defaultPriority,
+    };
+  }
+
+  AndroidNotificationSound? _resolveAndroidSound({
+    required bool playSound,
+    required SoundOption soundOption,
+    required String? soundSource,
+  }) {
+    if (!playSound) {
+      return null;
+    }
+
+    if (soundOption != SoundOption.systemChoice &&
+        soundOption != SoundOption.customFile) {
+      return null;
+    }
+
+    final normalized = _normalizeAndroidSoundSource(soundSource);
+    if (normalized == null) {
+      return null;
+    }
+    return UriAndroidNotificationSound(normalized);
+  }
+
+  LinuxNotificationSound? _resolveLinuxThemeSound({
+    required bool playSound,
+    required SoundOption soundOption,
+    required String? soundSource,
+  }) {
+    if (!playSound || soundOption != SoundOption.systemChoice) {
+      return null;
+    }
+    final trimmed = soundSource?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return null;
+    }
+    final slashIndex = trimmed.lastIndexOf('/');
+    final fileName = slashIndex >= 0
+        ? trimmed.substring(slashIndex + 1)
+        : trimmed;
+    final dotIndex = fileName.lastIndexOf('.');
+    final themeName = dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
+    if (themeName.isEmpty) {
+      return null;
+    }
+    return ThemeLinuxSound(themeName);
+  }
+
+  String _androidChannelId({
+    required String category,
+    required bool playSound,
+    required SoundOption soundOption,
+    required String? soundSource,
+  }) {
+    final fingerprint = playSound
+        ? '${soundOptionKey(soundOption)}:${soundSource ?? ''}'
+        : 'silent';
+    final hash = fingerprint.hashCode.abs().toRadixString(16);
+    return 'codewalk_${category}_$hash';
+  }
+
+  String? _normalizeAndroidSoundSource(String? source) {
+    final trimmed = source?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return null;
+    }
+    if (trimmed.startsWith('content://') ||
+        trimmed.startsWith('file://') ||
+        trimmed.startsWith('android.resource://')) {
+      return trimmed;
+    }
+    if (trimmed.startsWith('/')) {
+      return Uri.file(trimmed).toString();
+    }
+    final uri = Uri.tryParse(trimmed);
+    if (uri != null && uri.hasScheme) {
+      return trimmed;
+    }
+    return null;
+  }
+
+  String? _normalizeSessionId(String? sessionId) {
+    final trimmed = sessionId?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return null;
+    }
+    return trimmed;
+  }
+
+  int _nextNotificationId() {
+    return DateTime.now().microsecondsSinceEpoch & 0x7fffffff;
+  }
+
+  int _summaryNotificationId(String sessionId) {
+    return ('summary:$sessionId').hashCode & 0x7fffffff;
+  }
+
+  String _sessionGroupKey(String sessionId) => 'codewalk.session.$sessionId';
+  String _sessionTag(String sessionId) => 'session:$sessionId';
+  String _sessionSummaryTag(String sessionId) => 'session-summary:$sessionId';
+
+  bool get _isAndroidRuntime {
+    if (kIsWeb) {
+      return false;
+    }
+    return defaultTargetPlatform == TargetPlatform.android;
   }
 
   void _handleRawTap(String? rawPayload) {
@@ -196,4 +494,11 @@ class NotificationService {
       _tapController.add(payload);
     }
   }
+}
+
+class _CancelTarget {
+  const _CancelTarget({required this.id, this.tag});
+
+  final int id;
+  final String? tag;
 }

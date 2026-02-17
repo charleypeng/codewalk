@@ -1,34 +1,55 @@
 import 'dart:async';
 
 import 'package:dynamic_color/dynamic_color.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:window_manager/window_manager.dart';
 
 import 'core/constants/app_constants.dart';
 import 'core/di/injection_container.dart' as di;
+import 'core/logging/app_logger.dart';
 import 'presentation/pages/app_shell_page.dart';
 import 'presentation/providers/app_provider.dart';
 import 'presentation/providers/chat_provider.dart';
 import 'presentation/providers/project_provider.dart';
 import 'presentation/providers/settings_provider.dart';
+import 'presentation/services/android_background_alert_worker.dart';
 import 'presentation/theme/app_theme.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarDividerColor: Colors.transparent,
-    ),
+void main() {
+  runZonedGuarded(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      AppLogger.installGlobalHandlers();
+
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      SystemChrome.setSystemUIOverlayStyle(
+        const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          systemNavigationBarColor: Colors.transparent,
+          systemNavigationBarDividerColor: Colors.transparent,
+        ),
+      );
+
+      if (_isDesktopRuntime()) {
+        await windowManager.ensureInitialized();
+      }
+
+      if (_isAndroidRuntime()) {
+        await AndroidBackgroundAlertWorker.ensureRegistered();
+      }
+
+      // Initialize dependency injection
+      await di.init();
+
+      runApp(const MyApp());
+    },
+    (error, stackTrace) {
+      AppLogger.recordZoneError(error, stackTrace);
+    },
   );
-
-  // Initialize dependency injection
-  await di.init();
-
-  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -88,4 +109,23 @@ class MyApp extends StatelessWidget {
       ),
     );
   }
+}
+
+bool _isDesktopRuntime() {
+  if (kIsWeb) {
+    return false;
+  }
+  return switch (defaultTargetPlatform) {
+    TargetPlatform.linux ||
+    TargetPlatform.macOS ||
+    TargetPlatform.windows => true,
+    _ => false,
+  };
+}
+
+bool _isAndroidRuntime() {
+  if (kIsWeb) {
+    return false;
+  }
+  return defaultTargetPlatform == TargetPlatform.android;
 }

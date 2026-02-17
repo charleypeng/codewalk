@@ -1736,4 +1736,48 @@ index abc123..def456 100644
     );
     expect(viewportSize.height, lessThanOrEqualTo(300));
   });
+
+  testWidgets('truncates oversized tool payload to keep UI responsive', (
+    WidgetTester tester,
+  ) async {
+    final hugeOutput = List<String>.filled(12000, 'line payload').join('\n');
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: AssistantMessage(
+              id: 'msg_huge_tool',
+              sessionId: 'ses_huge_tool',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: <MessagePart>[
+                ToolPart(
+                  id: 'part_huge_tool',
+                  messageId: 'msg_huge_tool',
+                  sessionId: 'ses_huge_tool',
+                  callId: 'call_huge',
+                  tool: 'bash',
+                  state: ToolStateCompleted(
+                    input: const <String, dynamic>{'command': 'cat huge.log'},
+                    output: hugeOutput,
+                    time: ToolTime(
+                      start: DateTime.fromMillisecondsSinceEpoch(1000),
+                      end: DateTime.fromMillisecondsSinceEpoch(1200),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('Large tool output preview truncated'),
+      findsOneWidget,
+    );
+  });
 }
