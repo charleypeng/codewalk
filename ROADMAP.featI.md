@@ -24,11 +24,11 @@
 ### Group 5 — Platform `[x]`
 - [x] Task 10: Background behavior settings (mobile persistent notification, desktop tray). Default: desktop tray enabled, mobile shows short alert window in notification area. **Note**: Added Android fallback with periodic WorkManager (15 min) for completion/error/question alerts when app is closed + one-off short probe scheduling when app goes to background + baseline that already alerts actionable items (retry/permission/question) on first run.
 
-### Post Task 10 Refinements — Notifications/Sound `[~]`
-- [~] Implementar regras "only when" para notificações (only when app minimized, only when not responding, only for errors, etc.)
-- [~] Adicionar picker de som do sistema + possibilidade de selecionar arquivo de som customizado
-- [~] Agrupar notificações por sessão (evitar spam de múltiplas notificações da mesma conversa)
-- [~] Melhoria visual da tela de configurações de notificações (UI mais intuitiva e organizada)
+### Post Task 10 Refinements — Notifications/Sound `[x]` - Commit: 20c5dc6
+- [x] Implementar regras "only when" para notificações (only when app minimized, only when not responding, only for errors, etc.)
+- [x] Adicionar picker de som do sistema + possibilidade de selecionar arquivo de som customizado
+- [x] Agrupar notificações por sessão (evitar spam de múltiplas notificações da mesma conversa)
+- [x] Melhoria visual da tela de configurações de notificações (UI mais intuitiva e organizada)
 
 ### Done
 - Task 39: Add soft loading state visual to conversation list item icon while session is receiving data/response. - Commit: fb6e118

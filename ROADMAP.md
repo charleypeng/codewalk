@@ -176,11 +176,11 @@ Implemented desktop local-server wizard with runtime checks for `opencode serve`
 **Group 5 — Platform** `[x]`
 - [x] Opções em Settings para decidir se app fica em background. Mobile: persistente notification, desktop: tray. Padrão: tray habilitado no desktop, mobile mostra janela de alerta curta na área de notificação. **Nota**: Adicionado fallback Android com WorkManager periódico (15 min) para alertas de conclusão/erro/pergunta com app fechado + agendamento one-off de sonda curta ao ir para background + baseline que já alerta itens acionáveis (retry/permission/question) na primeira execução.
 
-**Refinamento pós-Task 10 — Notifications/Sound** `[~]`
-- [~] Implementar regras "only when" para notificações (only when app minimized, only when not responding, only for errors, etc.)
-- [~] Adicionar picker de som do sistema + possibilidade de selecionar arquivo de som customizado
-- [~] Agrupar notificações por sessão (evitar spam de múltiplas notificações da mesma conversa)
-- [~] Melhoria visual da tela de configurações de notificações (UI mais intuitiva e organizada)
+**Refinamento pós-Task 10 — Notifications/Sound** `[x]` - Commit: 20c5dc6
+- [x] Implementar regras "only when" para notificações (only when app minimized, only when not responding, only for errors, etc.)
+- [x] Adicionar picker de som do sistema + possibilidade de selecionar arquivo de som customizado
+- [x] Agrupar notificações por sessão (evitar spam de múltiplas notificações da mesma conversa)
+- [x] Melhoria visual da tela de configurações de notificações (UI mais intuitiva e organizada)
 
 **Done**
 - [x] Na lista de Conversations, trocar o ícone padrão da sessão por um estado visual de loading suave enquanto aquela sessão/conversa estiver recebendo dados/resposta (mobile + desktop) - Commit: fb6e118
