@@ -103,7 +103,7 @@ Sources:
 
 **Previous plan:** use `record` package for audio capture + send chunks to a backend STT service.
 
-**Updated plan: use `sherpa_onnx` directly on-device.**
+**Updated plan: use `sherpa_onnx` directly on-device with Banafo Kroko streaming models.**
 
 Justification:
 - `sherpa_onnx` is fully offline and proven by Flutter desktop developers as the best solution for Linux STT
@@ -113,11 +113,70 @@ Justification:
 - Package `sherpa_onnx: ^1.12.25` available on pub.dev with Linux x64/arm64 support
 - Uses `OnlineRecognizer` for streaming ASR with partial results
 
+**Model choice: Banafo Kroko `kroko_64l`** (from `hudaiapa88/sherpa-stt-onnx` on HuggingFace)
+- True streaming transducer model (real-time partial results)
+- INT8 quantized, ~147MB per language
+- 3 files per model: `encoder.int8.onnx`, `decoder.int8.onnx`, `joiner.int8.onnx` + `tokens.txt`
+- Apache 2.0 license
+
+**Available languages (7):**
+
+| Language | Code | HuggingFace path |
+|---|---|---|
+| German | `de` | `hudaiapa88/sherpa-stt-onnx/de/kroko_64l` |
+| English | `en` | `hudaiapa88/sherpa-stt-onnx/en/kroko_64l` |
+| Spanish | `es` | `hudaiapa88/sherpa-stt-onnx/es/kroko_64l` |
+| French | `fr` | `hudaiapa88/sherpa-stt-onnx/fr/kroko_64l` |
+| Italian | `it` | `hudaiapa88/sherpa-stt-onnx/it/kroko_64l` |
+| Portuguese | `pt` | `hudaiapa88/sherpa-stt-onnx/pt/kroko_64l` |
+| Turkish | `tr` | `hudaiapa88/sherpa-stt-onnx/tr/kroko_64l` |
+
+**Model download is NOT automatic.** Must be implemented as a download manager with language selection.
+
 Sources:
 - https://pub.dev/packages/sherpa_onnx
 - https://pub.dev/packages/sherpa_onnx_linux
 - https://github.com/k2-fsa/sherpa-onnx
+- https://huggingface.co/hudaiapa88/sherpa-stt-onnx
 - https://medium.com/@khlebobul/voice-control-in-flutter-how-to-add-local-speech-recognition-to-your-app-4bcd96bfd896
+
+### 5.1. Model Download Manager UX
+
+**First-time flow (mic button pressed with no model installed):**
+
+1. Detect system locale via `Platform.localeName` (e.g. `pt_BR.UTF-8` → `pt`)
+2. Show dialog with:
+   - Title: "Voice Input Setup"
+   - Dropdown of available languages (from JSON manifest), pre-selected to system locale
+   - Model size info (~147MB)
+   - Download button + progress bar
+3. Download model files from HuggingFace to `getApplicationSupportDirectory()/sherpa_models/{lang}/`
+4. On completion, initialize `OnlineRecognizer` and start listening
+5. Subsequent uses skip the dialog — model already on disk
+
+**Language manifest (bundled JSON asset):**
+
+```json
+{
+  "models": [
+    {"code": "de", "label": "Deutsch",     "size_mb": 147, "repo": "hudaiapa88/sherpa-stt-onnx", "path": "de/kroko_64l"},
+    {"code": "en", "label": "English",     "size_mb": 147, "repo": "hudaiapa88/sherpa-stt-onnx", "path": "en/kroko_64l"},
+    {"code": "es", "label": "Español",     "size_mb": 147, "repo": "hudaiapa88/sherpa-stt-onnx", "path": "es/kroko_64l"},
+    {"code": "fr", "label": "Français",    "size_mb": 147, "repo": "hudaiapa88/sherpa-stt-onnx", "path": "fr/kroko_64l"},
+    {"code": "it", "label": "Italiano",    "size_mb": 147, "repo": "hudaiapa88/sherpa-stt-onnx", "path": "it/kroko_64l"},
+    {"code": "pt", "label": "Português",   "size_mb": 147, "repo": "hudaiapa88/sherpa-stt-onnx", "path": "pt/kroko_64l"},
+    {"code": "tr", "label": "Türkçe",      "size_mb": 147, "repo": "hudaiapa88/sherpa-stt-onnx", "path": "tr/kroko_64l"}
+  ],
+  "files": ["encoder.int8.onnx", "decoder.int8.onnx", "joiner.int8.onnx", "tokens.txt"]
+}
+```
+
+**Design decisions:**
+- JSON bundled as Flutter asset (not fetched remotely) — avoids bootstrapping problem
+- User can change language later via Settings (re-download different model)
+- If system locale has no match (e.g. `ja`), default to English and let user pick
+- Delete old model when switching languages to save disk space
+- Model path stored in SharedPreferences for fast lookup on next launch
 
 ### 6. macOS Permissions Gap (discovered during planning)
 
@@ -141,11 +200,18 @@ Without these, speech recognition will silently fail in sandboxed macOS builds.
 ### File Structure
 
 ```
+assets/
+└── sherpa_models.json                      # Language manifest (bundled, 7 Kroko models)
+
 lib/presentation/services/
 ├── speech_input_service.dart               # Abstract interface
 ├── speech_input_service_stt.dart           # speech_to_text (iOS/macOS/Web/Windows)
 ├── speech_input_service_android.dart       # Custom platform channel (Android)
-└── speech_input_service_sherpa.dart        # sherpa_onnx (Linux)
+├── speech_input_service_sherpa.dart        # sherpa_onnx (Linux)
+└── sherpa_model_manager.dart               # Model download, storage, locale detection
+
+lib/presentation/widgets/
+└── sherpa_model_download_dialog.dart       # First-use language picker + download UI
 ```
 
 ### Interface Contract
@@ -258,11 +324,24 @@ class AndroidSpeechInputService implements SpeechInputService {
 
 ### Step 6 — Integrate `sherpa_onnx` for Linux
 - **Edit** `pubspec.yaml` — add `sherpa_onnx: ^1.12.25`
-- **Create** `lib/presentation/services/speech_input_service_sherpa.dart`
-- Use `OnlineRecognizer` for streaming ASR on-device
-- Handle model download on first use (streaming multilingual model)
-- Audio capture via system microphone
-- **Verify**: Linux build runs, STT transcribes speech with model downloaded
+- **Create** `assets/sherpa_models.json` — language manifest with available Kroko models
+- **Create** `lib/presentation/services/speech_input_service_sherpa.dart`:
+  - Implement `SpeechInputService` using `OnlineRecognizer`
+  - On `initialize()`: check if model exists on disk; if not, return `isAvailable = false`
+  - On `startListening()`: if model missing, trigger download dialog (emit status event)
+  - Audio capture via system microphone
+- **Create** `lib/presentation/services/sherpa_model_manager.dart`:
+  - `hasModel(String langCode)` — checks `getApplicationSupportDirectory()/sherpa_models/{lang}/`
+  - `downloadModel(String langCode, {void Function(double)? onProgress})` — downloads 4 files from HuggingFace
+  - `deleteModel(String langCode)` — cleanup when switching languages
+  - `getModelPath(String langCode)` — returns local path for `OnlineRecognizer` config
+  - `detectSystemLanguage()` — parses `Platform.localeName`, maps to available model codes, falls back to `en`
+- **Create** `lib/presentation/widgets/sherpa_model_download_dialog.dart`:
+  - Dialog with language dropdown (pre-selected from system locale)
+  - Shows model size (~147MB)
+  - Download button → progress bar → "Ready" state
+  - Called from `chat_input_widget.dart` when Linux + no model installed
+- **Verify**: Linux build runs, dialog appears on first mic press, model downloads, STT transcribes
 
 ### Step 7 — Tests
 - **Edit** `test/widget_test.dart` — ensure existing mic button tests pass
@@ -294,6 +373,9 @@ class AndroidSpeechInputService implements SpeechInputService {
 | `lib/presentation/services/speech_input_service_stt.dart` | **Create** — impl iOS/macOS/Web/Windows |
 | `lib/presentation/services/speech_input_service_android.dart` | **Create** — impl Android channel |
 | `lib/presentation/services/speech_input_service_sherpa.dart` | **Create** — impl Linux sherpa_onnx |
+| `lib/presentation/services/sherpa_model_manager.dart` | **Create** — model download, storage, locale detection |
+| `lib/presentation/widgets/sherpa_model_download_dialog.dart` | **Create** — first-use language picker + download progress |
+| `assets/sherpa_models.json` | **Create** — language manifest (7 Kroko models) |
 | `lib/presentation/widgets/chat_input_widget.dart` | **Edit** — refactor to use service |
 | `lib/core/di/injection_container.dart` | **Edit** — register SpeechInputService |
 | `android/app/src/main/kotlin/com/verseles/codewalk/MainActivity.kt` | **Edit** — add Kotlin channels (~120 lines) |
@@ -329,7 +411,8 @@ class AndroidSpeechInputService implements SpeechInputService {
 
 - `SpeechInputService` abstraction in place with 3 implementations registered via get_it.
 - Android auto-punctuation working via custom channel on Google Play Services devices.
-- Linux STT working via `sherpa_onnx` on-device (model downloaded on first use).
+- Linux STT working via `sherpa_onnx` on-device with Kroko model downloaded via language picker dialog.
+- Model download manager with locale detection, language selection, progress bar, and disk storage.
 - macOS permissions configured — dialog appears on first mic use in sandboxed build.
 - All existing tests passing + new unit tests for service implementations.
 - UX fallback behavior (snackbar on unsupported platforms) remains in place.
