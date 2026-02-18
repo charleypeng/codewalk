@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -50,6 +51,7 @@ import '../../presentation/services/event_feedback_dispatcher.dart';
 import '../../presentation/services/notification_service.dart';
 import '../../presentation/services/sound_service.dart';
 import '../../presentation/services/speech_input_service.dart';
+import '../../presentation/services/speech_input_service_android.dart';
 import '../../presentation/services/speech_input_service_stt.dart';
 import '../../presentation/services/update_check_service.dart';
 import '../network/dio_client.dart';
@@ -85,9 +87,13 @@ Future<void> init() async {
   sl.registerLazySingleton(NotificationService.new);
   sl.registerLazySingleton(SoundService.new);
   // Speech input service — platform-specific backend selected at registration time.
-  // Android: updated to AndroidSpeechInputService in J.02.
+  // Android: custom channel with EXTRA_ENABLE_PUNCTUATION (J.02).
   // Linux: updated to SherpaSpeechInputService in J.03.
-  sl.registerLazySingleton<SpeechInputService>(() => SttSpeechInputService());
+  sl.registerLazySingleton<SpeechInputService>(
+    () => defaultTargetPlatform == TargetPlatform.android
+        ? AndroidSpeechInputService()
+        : SttSpeechInputService(),
+  );
   sl.registerLazySingleton<ChatTitleGenerator>(
     () => OpenCodeTitleGenerator(dio: sl<DioClient>().dio),
   );
