@@ -28,5 +28,9 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Voice input uses speech recognition to convert your spoken words to text.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Microphone access is needed for voice input in the message composer.</string>
 </dict>
 </plist>
