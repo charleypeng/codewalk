@@ -115,6 +115,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
   Widget _buildEngineCard(SettingsProvider settingsProvider) {
     final selectedEngine = settingsProvider.speechToTextEngine;
     final sherpaEnabled = _supportsSherpa;
+    final nativeEnabled = !_isLinux;
 
     return Card(
       child: Padding(
@@ -133,12 +134,18 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
               contentPadding: EdgeInsets.zero,
               value: SpeechToTextEngine.native,
               groupValue: selectedEngine,
-              onChanged: (value) {
-                if (value == null) return;
-                unawaited(settingsProvider.setSpeechToTextEngine(value));
-              },
+              onChanged: nativeEnabled
+                  ? (value) {
+                      if (value == null) return;
+                      unawaited(settingsProvider.setSpeechToTextEngine(value));
+                    }
+                  : null,
               title: const Text('Native'),
-              subtitle: const Text('Simpler and faster startup.'),
+              subtitle: Text(
+                nativeEnabled
+                    ? 'Simpler and faster startup.'
+                    : 'Unavailable on Linux. Use Sherpa for speech input.',
+              ),
             ),
             const Divider(height: 1),
             RadioListTile<SpeechToTextEngine>(

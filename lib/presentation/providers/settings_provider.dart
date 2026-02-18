@@ -106,6 +106,17 @@ class SettingsProvider extends ChangeNotifier {
         );
       }
     }
+
+    // Native speech engine is intentionally disabled on Linux. Migrate any
+    // persisted value to Sherpa so Settings and runtime behavior stay aligned.
+    final isLinux = !kIsWeb && defaultTargetPlatform == TargetPlatform.linux;
+    if (isLinux && _settings.speechToTextEngine == SpeechToTextEngine.native) {
+      _settings = _settings.copyWith(
+        speechToTextEngine: SpeechToTextEngine.sherpa,
+      );
+      unawaited(_persist());
+    }
+
     _dismissedUpdateVersion = await _localDataSource
         .getDismissedUpdateVersion();
     unawaited(syncNotificationsFromServerConfig());

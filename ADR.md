@@ -57,11 +57,12 @@ The Android custom STT channel introduced an additional maintenance surface and 
 
 1. **Remove Android custom STT backend** (`MethodChannel/EventChannel`) and standardize Android Native mode on `speech_to_text`.
 2. **Add runtime STT engine selection** in Settings with two options:
-   - `Native` (default): simpler and faster startup.
+   - `Native` (default on non-Linux): simpler and faster startup.
    - `Sherpa`: heavier, experimental, and bug-prone, but with deeper on-device model control.
+   - Linux policy: default to `Sherpa` and keep `Native` disabled in Settings UI.
 3. **Add global STT silence timeout setting** (default 5s) consumed by active backend.
 4. **Add Linux Sherpa model management in Settings** (language select, download, remove, status), shown when Sherpa engine is selected.
-5. **Improve mic UX for startup latency** with an inline loading state until listening actually starts.
+5. **Improve mic UX for startup latency** with an inline loading state and a short event-loop yield (~10ms) before STT initialization.
 
 ### Rationale
 
@@ -75,6 +76,7 @@ The Android custom STT channel introduced an additional maintenance surface and 
 - ✅ Positive: fewer Android regressions from custom speech channel lifecycle.
 - ✅ Positive: clearer STT controls in a dedicated Settings section.
 - ✅ Positive: Linux users can self-manage Sherpa language models.
+- ✅ Positive: mic feedback appears instantly before backend initialization begins.
 - ⚠️ Trade-off: enabling Sherpa on Android increases APK size due to native libs.
 - ⚠️ Trade-off: Sherpa remains explicitly experimental and may be unstable on some devices.
 

@@ -270,6 +270,13 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
         defaultTargetPlatform == TargetPlatform.linux;
   }
 
+  bool get _isNativeEngineSupported {
+    if (kIsWeb) {
+      return true;
+    }
+    return defaultTargetPlatform != TargetPlatform.linux;
+  }
+
   bool get _shouldHideKeyboardAfterSend => !_isDesktopPlatform;
 
   SpeechInputService get _nativeSpeechService =>
@@ -1753,7 +1760,8 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
 
   SpeechInputService? _serviceForEngine(SpeechToTextEngine engine) {
     return switch (engine) {
-      SpeechToTextEngine.native => _nativeSpeechService,
+      SpeechToTextEngine.native =>
+        _isNativeEngineSupported ? _nativeSpeechService : null,
       SpeechToTextEngine.sherpa => _sherpaSpeechService,
     };
   }
@@ -1814,7 +1822,10 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     if (!mounted) {
       return;
     }
+
     _startListeningLoading();
+    // Let Flutter paint the loading state before potentially heavy STT init.
+    await Future<void>.delayed(const Duration(milliseconds: 10));
 
     final settingsProvider = context.read<SettingsProvider>();
     final resolution = await _resolveSpeechServiceForStart(settingsProvider);

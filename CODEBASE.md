@@ -9,9 +9,10 @@
 - **SpeechInputService abstraction** (`lib/presentation/services/speech_input_service.dart`): Abstract interface decoupling voice input from any single STT backend. Platform implementations selected via engine preference.
 - **Speech Engine Selection**: STT backend is now runtime-configurable via `ExperienceSettings.speechToTextEngine` (`native` vs `sherpa`).
 - **SttSpeechInputService** (`speech_input_service_stt.dart`): Unified implementation for iOS/macOS/Web/Windows and Android (fallback) via `speech_to_text` package.
-- **SherpaSpeechInputService** (`speech_input_service_sherpa_io.dart`): Offline STT via `sherpa_onnx` + `record` packages, now available as an optional engine on supported IO platforms (Linux and Android/iOS/macOS/Windows where `sherpa_onnx` can be bundled).
+- **SherpaSpeechInputService** (`speech_input_service_sherpa_io.dart`): Offline STT via `sherpa_onnx` + `record`. It is the **default engine for Linux**, where Native STT is disabled in the UI. Available on other supported IO platforms as an optional engine.
+- **Speech Input Interaction**: Chat input microphone has an immediate loading state (`_isStartingListening`) and a delayed start yield (~10ms) to ensure UI responsiveness during heavy initialization (`ChatInputWidget._startListening`).
 - **SherpaModelManager** (`sherpa_model_manager_io.dart`): HuggingFace model download and local cache management for Kroko Sherpa ONNX models.
-- **Settings: Speech to text**: New dedicated settings section for engine selection, silence timeout (2-10s), and Sherpa language/model management.
+- **Settings: Speech to text**: New dedicated settings section for engine selection, silence timeout (2-10s), and Sherpa language/model management. Native engine is hidden/disabled for Linux.
 - **Android native bridge cleanup**: Removed custom Android speech channel/backend in favor of unified `SpeechInputService` pattern with `SttSpeechInputService` (native) and `SherpaSpeechInputService` (offline) runtime selection.
 - **Kroko model manifest** (`assets/sherpa_models.json`): 7 multilingual model definitions (de/en/es/fr/it/pt/tr).
 - **DI registration** (`lib/core/di/injection_container.dart`): `SttSpeechInputService` and `SherpaSpeechInputService` registered as lazy singletons.
@@ -637,12 +638,13 @@ Android background polling service for detecting actionable events when app is n
 Cross-platform speech-to-text input via a unified `SpeechInputService` interface with runtime engine selection (`native` vs `sherpa`).
 📁 **Localização**: `lib/presentation/services/speech_input_service*.dart`
 🔧 **Implementations**:
-- **SttSpeechInputService** (`speech_input_service_stt.dart`): iOS/macOS/Web/Windows/Android via `speech_to_text` package
-- **SherpaSpeechInputService** (`speech_input_service_sherpa_io.dart`): Offline STT via `sherpa_onnx` + `record`; available on Linux and other supported IO platforms
+- **SttSpeechInputService** (`speech_input_service_stt.dart`): iOS/macOS/Web/Windows/Android via `speech_to_text` package. Native engine is hidden/disabled on Linux.
+- **SherpaSpeechInputService** (`speech_input_service_sherpa_io.dart`): Offline STT via `sherpa_onnx` + `record`. It is the **default engine for Linux**, where Native STT is disabled in the UI.
+- **Speech Input Interaction**: Chat input microphone has an immediate loading state (`_isStartingListening`) and a delayed start yield (~10ms) to ensure UI responsiveness during heavy initialization (`ChatInputWidget._startListening`).
 📦 **Model management**: `SherpaModelManager` (`sherpa_model_manager_io.dart`) downloads and caches Kroko ONNX models from HuggingFace
 🗂️ **Model manifest**: `assets/sherpa_models.json` — 7 multilingual Kroko model definitions (de/en/es/fr/it/pt/tr)
 🔌 **DI**: `SttSpeechInputService` and `SherpaSpeechInputService` registered in `injection_container.dart`; `ChatInputWidget` resolves engine from settings and consumes it via DI
-⚙️ **Settings**: Engine selection, silence timeout, and language/model management in dedicated settings section.
+⚙️ **Settings**: Engine selection, silence timeout, and language/model management in dedicated settings section. Native engine is hidden/disabled on Linux.
 
 ### Authentication and Server Config
 - Multi-server profile management (`ServerProfile`) with active/default selection
@@ -672,7 +674,7 @@ SSE-first realtime sync with event reducer, composer power triggers (@/!/), mult
 Modular settings hub with responsive navigation (mobile list-to-detail, desktop split layout), notification/sound/shortcut preferences, and server management.
 📋 **Arquitetura**: Ver [ADR-022: Modular Settings Hub](#adr-022-modular-settings-hub-and-experience-preference-orchestration)
 🔧 **Componentes**: `SettingsPage`, `SettingsProvider`, `ExperienceSettings`
-🔔 **Features**: per-category notifications/sounds (agent/permissions/errors), Speech to text (engine selection, 2-10s silence timeout, Sherpa model management on Linux/supported IO), 11 shortcut bindings (desktop/web): newChat/mod+n, refresh/mod+r, focusInput/mod+l, quickOpen/mod+p, openSettings/mod+,, cycleRecentModels/mod+m, cycleVariant/mod+t, cycleAgentForward/mod+j, cycleAgentBackward/mod+shift+j, escape, desktop pane visibility, server config sync (`/config`)
+🔔 **Features**: per-category notifications/sounds (agent/permissions/errors), Speech to text (engine selection, 2-10s silence timeout, Sherpa model management on Linux/supported IO, Native engine disabled on Linux), 11 shortcut bindings (desktop/web): newChat/mod+n, refresh/mod+r, focusInput/mod+l, quickOpen/mod+p, openSettings/mod+,, cycleRecentModels/mod+m, cycleVariant/mod+t, cycleAgentForward/mod+j, cycleAgentBackward/mod+shift+j, escape, desktop pane visibility, server config sync (`/config`)
 📱 **Background preferences**: `keepDesktopRunningInTray` (desktop close-to-tray), `keepMobileRealtimeForShortPeriod` (mobile temporary hold during active response)
 📱 **Adapters**: `flutter_local_notifications` (Android/Linux/macOS/Windows), browser Notification API (Web)
 

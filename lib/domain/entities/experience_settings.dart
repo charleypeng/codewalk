@@ -256,6 +256,10 @@ AppDensity appDensityFromKey(String value) {
 
 class ExperienceSettings {
   factory ExperienceSettings.defaults() {
+    final defaultSpeechEngine =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.linux
+        ? SpeechToTextEngine.sherpa
+        : SpeechToTextEngine.native;
     final shortcuts = <ShortcutAction, String>{
       for (final definition in kShortcutDefinitions)
         definition.action: definition.defaultBinding,
@@ -307,7 +311,7 @@ class ExperienceSettings {
       showComposerTips: true,
       keepDesktopRunningInTray: true,
       keepMobileRealtimeForShortPeriod: true,
-      speechToTextEngine: SpeechToTextEngine.native,
+      speechToTextEngine: defaultSpeechEngine,
       speechSilenceTimeoutSeconds: 5,
       sherpaLanguageCode: kSherpaLanguageSystem,
     );
