@@ -49,6 +49,8 @@ import '../../presentation/services/chat_title_generator.dart';
 import '../../presentation/services/event_feedback_dispatcher.dart';
 import '../../presentation/services/notification_service.dart';
 import '../../presentation/services/sound_service.dart';
+import '../../presentation/services/speech_input_service.dart';
+import '../../presentation/services/speech_input_service_stt.dart';
 import '../../presentation/services/update_check_service.dart';
 import '../network/dio_client.dart';
 
@@ -82,6 +84,10 @@ Future<void> init() async {
 
   sl.registerLazySingleton(NotificationService.new);
   sl.registerLazySingleton(SoundService.new);
+  // Speech input service — platform-specific backend selected at registration time.
+  // Android: updated to AndroidSpeechInputService in J.02.
+  // Linux: updated to SherpaSpeechInputService in J.03.
+  sl.registerLazySingleton<SpeechInputService>(() => SttSpeechInputService());
   sl.registerLazySingleton<ChatTitleGenerator>(
     () => OpenCodeTitleGenerator(dio: sl<DioClient>().dio),
   );

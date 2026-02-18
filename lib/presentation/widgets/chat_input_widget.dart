@@ -6,11 +6,10 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:speech_to_text/speech_recognition_error.dart';
-import 'package:speech_to_text/speech_recognition_result.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
 
+import '../../core/di/injection_container.dart' as di;
 import '../../domain/entities/chat_session.dart';
+import '../services/speech_input_service.dart';
 
 enum ChatComposerMode { normal, shell }
 
@@ -205,15 +204,17 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _internalFocusNode = FocusNode();
   final List<FileInputPart> _attachments = <FileInputPart>[];
-  final stt.SpeechToText _speechToText = stt.SpeechToText();
   final RegExp _mentionTriggerPattern = RegExp(r'(^|\s)@([^\s@]*)$');
   final RegExp _slashTriggerPattern = RegExp(r'^/(\S*)$');
   final RegExp _mentionTokenPattern = RegExp(r'@([^\s@]+)');
+  // Speech service is lazily resolved from DI on first mic tap to avoid
+  // GetIt lookup before DI is initialized (e.g., in test environments).
+  SpeechInputService? _speechServiceInstance;
+  SpeechInputService get _speechService =>
+      _speechServiceInstance ??= di.sl<SpeechInputService>();
   bool _isComposing = false;
   bool _isSending = false;
   bool _isListening = false;
-  bool _isInitializingSpeech = false;
-  bool _isSpeechEnabled = false;
   bool _isLoadingSuggestions = false;
   ChatComposerMode _mode = ChatComposerMode.normal;
   ChatComposerPopoverType _popoverType = ChatComposerPopoverType.none;
@@ -253,7 +254,6 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   void initState() {
     super.initState();
     widget.controller?._attach(this);
-    unawaited(_initializeSpeech());
   }
 
   @override
@@ -261,7 +261,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     widget.controller?._detach(this);
     _sendHoldTimer?.cancel();
     _suggestionDebounce?.cancel();
-    unawaited(_speechToText.stop());
+    unawaited(_speechServiceInstance?.stopListening() ?? Future.value());
     _controller.dispose();
     _internalFocusNode.dispose();
     super.dispose();
@@ -1661,30 +1661,19 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   }
 
   Future<void> _toggleVoiceInput() async {
-    if (_isInitializingSpeech) {
-      return;
-    }
-
     if (_isListening) {
       await _stopListening();
       return;
     }
-
     await _startListening();
   }
 
   Future<void> _startListening() async {
-    if (!widget.enabled || _isSending) {
-      return;
-    }
+    if (!widget.enabled || _isSending) return;
 
-    if (!_isSpeechEnabled) {
-      await _initializeSpeech();
-    }
-    if (!_isSpeechEnabled) {
-      if (!mounted) {
-        return;
-      }
+    final available = await _speechService.initialize();
+    if (!available) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Voice input is unavailable on this device'),
@@ -1695,35 +1684,18 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
 
     _speechPrefix = _controller.text;
     try {
-      // Enable auto-punctuation (question marks, periods, etc.) on platforms
-      // that support it via native APIs (iOS and macOS only).
-      final supportsAutoPunctuation =
-          defaultTargetPlatform == TargetPlatform.iOS ||
-          defaultTargetPlatform == TargetPlatform.macOS;
-
-      await _speechToText.listen(
+      await _speechService.startListening(
         onResult: _onSpeechResult,
-        // Wait 5s of silence before auto-stopping, giving the user time to
-        // pause mid-thought without losing the session. Android enforces a
-        // system minimum of ~1-3s regardless of this value.
+        onStatus: _onSpeechStatus,
+        onError: _onSpeechError,
         pauseFor: const Duration(seconds: 5),
-        listenOptions: stt.SpeechListenOptions(
-          partialResults: true,
-          cancelOnError: true,
-          listenMode: stt.ListenMode.dictation,
-          autoPunctuation: supportsAutoPunctuation,
-        ),
       );
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       setState(() {
-        _isListening = _speechToText.isListening;
+        _isListening = _speechService.isListening;
       });
     } catch (_) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       setState(() {
         _isListening = false;
       });
@@ -1735,7 +1707,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
 
   Future<void> _stopListening() async {
     try {
-      await _speechToText.stop();
+      await _speechService.stopListening();
     } catch (_) {
       // Ignore platform stop errors to keep compose flow resilient.
     } finally {
@@ -1747,52 +1719,23 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     }
   }
 
-  Future<void> _initializeSpeech() async {
-    if (_isInitializingSpeech) {
-      return;
-    }
+  // Updates the composer text with new recognized speech, appending to any
+  // existing text that was in the field before listening started.
+  void _onSpeechResult(String recognized, bool isFinal) {
+    if (!mounted) return;
 
-    _isInitializingSpeech = true;
-    try {
-      final enabled = await _speechToText.initialize(
-        onStatus: _onSpeechStatus,
-        onError: _onSpeechError,
-      );
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _isSpeechEnabled = enabled;
-      });
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _isSpeechEnabled = false;
-      });
-    } finally {
-      _isInitializingSpeech = false;
-    }
-  }
-
-  void _onSpeechResult(SpeechRecognitionResult result) {
-    if (!mounted) {
-      return;
-    }
-
-    final recognized = result.recognizedWords.trim();
+    final text = recognized.trim();
     final prefix = _speechPrefix;
     final shouldAddSpace =
         prefix.isNotEmpty &&
-        recognized.isNotEmpty &&
+        text.isNotEmpty &&
         !prefix.endsWith(' ') &&
         !prefix.endsWith('\n');
-    final nextText = recognized.isEmpty
+    final nextText = text.isEmpty
         ? prefix
         : shouldAddSpace
-        ? '$prefix $recognized'
-        : '$prefix$recognized';
+        ? '$prefix $text'
+        : '$prefix$text';
 
     _controller.value = TextEditingValue(
       text: nextText,
@@ -1805,25 +1748,45 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   }
 
   void _onSpeechStatus(String status) {
-    if (!mounted) {
+    if (!mounted) return;
+
+    // 'model_required' is emitted by SherpaSpeechInputService on Linux when
+    // no model is installed yet — show the download dialog.
+    if (status == 'model_required') {
+      _showSherpaDownloadDialog();
       return;
     }
 
-    final listening = status == 'listening' || _speechToText.isListening;
-    if (_isListening == listening) {
-      return;
-    }
+    final listening = status == 'listening' || _speechService.isListening;
+    if (_isListening == listening) return;
     setState(() {
       _isListening = listening;
     });
   }
 
-  void _onSpeechError(SpeechRecognitionError error) {
-    if (!mounted) {
-      return;
-    }
+  void _onSpeechError() {
+    if (!mounted) return;
     setState(() {
       _isListening = false;
     });
+  }
+
+  // Shows the Sherpa model download dialog (Linux only) when no on-device
+  // model is installed. Re-starts listening after a successful download.
+  // This path is only reachable when SherpaSpeechInputService emits
+  // 'model_required', which happens exclusively on Linux.
+  Future<void> _showSherpaDownloadDialog() async {
+    if (!mounted) return;
+    setState(() {
+      _isListening = false;
+    });
+    // TODO(J.03): import and show SherpaModelDownloadDialog here once
+    // the sherpa_onnx integration is added in the J.03 commit.
+    // final downloaded = await showDialog<bool>(
+    //   context: context,
+    //   barrierDismissible: false,
+    //   builder: (_) => const SherpaModelDownloadDialog(),
+    // );
+    // if (downloaded == true && mounted) await _startListening();
   }
 }
