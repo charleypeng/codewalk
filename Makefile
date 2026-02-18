@@ -169,12 +169,15 @@ desktop:
 	fi
 
 android:
-	flutter build apk --release --target-platform android-arm64 $(QUIET)
-	@if [ -f "$(APK_DIR)/app-release.apk" ]; then \
+	flutter build apk --release --target-platform android-arm64 --split-per-abi $(QUIET)
+	@if [ -f "$(APK_DIR)/app-arm64-v8a-release.apk" ]; then \
+		mv -f "$(APK_DIR)/app-arm64-v8a-release.apk" "$(APK_PATH)"; \
+		echo "APK ready (arm64-only): $(APK_PATH)"; \
+	elif [ -f "$(APK_DIR)/app-release.apk" ]; then \
 		mv -f "$(APK_DIR)/app-release.apk" "$(APK_PATH)"; \
-		echo "APK ready: $(APK_PATH)"; \
+		echo "APK ready (arm64-only): $(APK_PATH)"; \
 	else \
-		echo "APK output not found at $(APK_DIR)/app-release.apk"; \
+		echo "APK output not found (expected arm64 build in $(APK_DIR))"; \
 		exit 1; \
 	fi
 	@if command -v tdl >/dev/null 2>&1; then \

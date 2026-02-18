@@ -60,9 +60,11 @@ The Android custom STT channel introduced an additional maintenance surface and 
    - `Native` (default on non-Linux): simpler and faster startup.
    - `Sherpa`: heavier, experimental, and bug-prone, but with deeper on-device model control.
    - Linux policy: default to `Sherpa` and keep `Native` disabled in Settings UI.
+   - Android policy: keep `Sherpa` disabled in size-optimized builds and force `Native` (including migration of persisted Android Sherpa selections).
 3. **Add global STT silence timeout setting** (default 5s) consumed by active backend.
 4. **Add Linux Sherpa model management in Settings** (language select, download, remove, status), shown when Sherpa engine is selected.
-5. **Improve mic UX for startup latency** with an inline loading state and a short event-loop yield (~10ms) before STT initialization.
+5. **Improve mic UX for startup latency** with an inline static hourglass loading state and a short event-loop yield (~10ms) before STT initialization.
+6. **Keep Android APK slim** by excluding Sherpa/ONNX native libs (`libonnxruntime.so`, `libsherpa-onnx-c-api.so`, `libsherpa-onnx-cxx-api.so`) and building `arm64` split APK in `make android`.
 
 ### Rationale
 
@@ -77,7 +79,8 @@ The Android custom STT channel introduced an additional maintenance surface and 
 - ✅ Positive: clearer STT controls in a dedicated Settings section.
 - ✅ Positive: Linux users can self-manage Sherpa language models.
 - ✅ Positive: mic feedback appears instantly before backend initialization begins.
-- ⚠️ Trade-off: enabling Sherpa on Android increases APK size due to native libs.
+- ✅ Positive: Android APK size returns to ~22MB with arm64-only + Sherpa native lib exclusion.
+- ⚠️ Trade-off: Sherpa is intentionally unavailable on Android in the slim APK profile.
 - ⚠️ Trade-off: Sherpa remains explicitly experimental and may be unstable on some devices.
 
 ### Key Files

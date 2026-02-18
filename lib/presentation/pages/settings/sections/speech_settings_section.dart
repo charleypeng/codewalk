@@ -54,7 +54,6 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
       return false;
     }
     return switch (defaultTargetPlatform) {
-      TargetPlatform.android ||
       TargetPlatform.iOS ||
       TargetPlatform.linux ||
       TargetPlatform.macOS ||
@@ -116,6 +115,10 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     final selectedEngine = settingsProvider.speechToTextEngine;
     final sherpaEnabled = _supportsSherpa;
     final nativeEnabled = !_isLinux;
+    final sherpaUnavailableHint =
+        defaultTargetPlatform == TargetPlatform.android
+        ? 'Unavailable on Android builds optimized for small APK size.'
+        : 'Not available on this platform.';
 
     return Card(
       child: Padding(
@@ -147,6 +150,27 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                     : 'Unavailable on Linux. Use Sherpa for speech input.',
               ),
             ),
+            if (!nativeEnabled)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Native STT is disabled on Linux in this app. Sherpa is the default engine.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             const Divider(height: 1),
             RadioListTile<SpeechToTextEngine>(
               contentPadding: EdgeInsets.zero,
@@ -162,7 +186,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
               subtitle: Text(
                 sherpaEnabled
                     ? 'Heavier, experimental, and bug-prone. Often more precise with downloaded models.'
-                    : 'Not available on this platform.',
+                    : sherpaUnavailableHint,
               ),
             ),
             if (sherpaEnabled) ...[

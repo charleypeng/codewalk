@@ -107,12 +107,21 @@ class SettingsProvider extends ChangeNotifier {
       }
     }
 
-    // Native speech engine is intentionally disabled on Linux. Migrate any
-    // persisted value to Sherpa so Settings and runtime behavior stay aligned.
+    // Platform STT policy migration:
+    // - Linux: Native is disabled, force Sherpa.
+    // - Android: Sherpa is disabled in slim APK builds, force Native.
     final isLinux = !kIsWeb && defaultTargetPlatform == TargetPlatform.linux;
+    final isAndroid =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
     if (isLinux && _settings.speechToTextEngine == SpeechToTextEngine.native) {
       _settings = _settings.copyWith(
         speechToTextEngine: SpeechToTextEngine.sherpa,
+      );
+      unawaited(_persist());
+    } else if (isAndroid &&
+        _settings.speechToTextEngine == SpeechToTextEngine.sherpa) {
+      _settings = _settings.copyWith(
+        speechToTextEngine: SpeechToTextEngine.native,
       );
       unawaited(_persist());
     }

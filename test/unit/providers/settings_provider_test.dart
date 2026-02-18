@@ -4,6 +4,7 @@ import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fakes.dart';
@@ -252,7 +253,11 @@ void main() {
       );
       await second.initialize();
 
-      expect(second.speechToTextEngine, SpeechToTextEngine.sherpa);
+      final expectedEngine =
+          !kIsWeb && defaultTargetPlatform == TargetPlatform.android
+          ? SpeechToTextEngine.native
+          : SpeechToTextEngine.sherpa;
+      expect(second.speechToTextEngine, expectedEngine);
       expect(second.speechSilenceTimeoutSeconds, 7);
       expect(second.sherpaLanguageCode, 'pt');
     });

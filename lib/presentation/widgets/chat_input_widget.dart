@@ -277,6 +277,13 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     return defaultTargetPlatform != TargetPlatform.linux;
   }
 
+  bool get _isSherpaEngineSupported {
+    if (kIsWeb) {
+      return false;
+    }
+    return defaultTargetPlatform != TargetPlatform.android;
+  }
+
   bool get _shouldHideKeyboardAfterSend => !_isDesktopPlatform;
 
   SpeechInputService get _nativeSpeechService =>
@@ -1217,11 +1224,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                                           ),
                                     ),
                                     icon: _isStartingListening
-                                        ? const SizedBox.square(
-                                            dimension: 18,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                            ),
+                                        ? const Icon(
+                                            Icons.hourglass_top_rounded,
+                                            size: 20,
                                           )
                                         : Icon(
                                             _isListening
@@ -1762,7 +1767,8 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     return switch (engine) {
       SpeechToTextEngine.native =>
         _isNativeEngineSupported ? _nativeSpeechService : null,
-      SpeechToTextEngine.sherpa => _sherpaSpeechService,
+      SpeechToTextEngine.sherpa =>
+        _isSherpaEngineSupported ? _sherpaSpeechService : null,
     };
   }
 
@@ -1826,6 +1832,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     _startListeningLoading();
     // Let Flutter paint the loading state before potentially heavy STT init.
     await Future<void>.delayed(const Duration(milliseconds: 10));
+    if (!mounted) {
+      return;
+    }
 
     final settingsProvider = context.read<SettingsProvider>();
     final resolution = await _resolveSpeechServiceForStart(settingsProvider);
