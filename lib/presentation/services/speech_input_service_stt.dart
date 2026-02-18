@@ -10,7 +10,7 @@ class SttSpeechInputService implements SpeechInputService {
   final stt.SpeechToText _speechToText = stt.SpeechToText();
 
   bool _isAvailable = false;
-  bool _isInitializing = false;
+  Future<bool>? _initialization;
 
   void Function(String status)? _onStatus;
   void Function()? _onError;
@@ -24,9 +24,24 @@ class SttSpeechInputService implements SpeechInputService {
   @override
   Future<bool> initialize() async {
     if (_isAvailable) return true;
-    if (_isInitializing) return false;
 
-    _isInitializing = true;
+    final inFlight = _initialization;
+    if (inFlight != null) {
+      return inFlight;
+    }
+
+    final initialization = _initializeSpeechEngine();
+    _initialization = initialization;
+    try {
+      return await initialization;
+    } finally {
+      if (identical(_initialization, initialization)) {
+        _initialization = null;
+      }
+    }
+  }
+
+  Future<bool> _initializeSpeechEngine() async {
     try {
       _isAvailable = await _speechToText.initialize(
         onStatus: _handleStatus,
@@ -36,8 +51,6 @@ class SttSpeechInputService implements SpeechInputService {
     } catch (_) {
       _isAvailable = false;
       return false;
-    } finally {
-      _isInitializing = false;
     }
   }
 
@@ -59,10 +72,8 @@ class SttSpeechInputService implements SpeechInputService {
         defaultTargetPlatform == TargetPlatform.macOS;
 
     await _speechToText.listen(
-      onResult: (result) => onResult(
-        result.recognizedWords,
-        result.finalResult,
-      ),
+      onResult: (result) =>
+          onResult(result.recognizedWords, result.finalResult),
       // Wait for the specified silence window before auto-stopping.
       // Android enforces a system minimum of ~1-3s regardless of this value.
       pauseFor: pauseFor ?? const Duration(seconds: 5),

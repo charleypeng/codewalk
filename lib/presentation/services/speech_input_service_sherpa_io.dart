@@ -1,13 +1,16 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:record/record.dart';
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa;
 
+import '../../core/logging/app_logger.dart';
 import 'sherpa_model_manager.dart';
 import 'speech_input_service.dart';
 
-// Linux STT backend using sherpa_onnx OnlineRecognizer with Kroko streaming
+// Sherpa STT backend using sherpa_onnx OnlineRecognizer with Kroko streaming
 // transducer models and the 'record' package for microphone capture.
 // Audio pipeline: AudioRecorder (PCM 16-bit 16kHz mono) → int16→float32
 // conversion → sherpa_onnx OnlineStream → partial/final text results.
@@ -15,10 +18,20 @@ class SherpaSpeechInputService implements SpeechInputService {
   SherpaSpeechInputService(this._modelManager);
 
   final SherpaModelManager _modelManager;
+  static const _defaultPauseFor = Duration(seconds: 5);
+  static const _requiredModelFiles = [
+    'encoder.int8.onnx',
+    'decoder.int8.onnx',
+    'joiner.int8.onnx',
+    'tokens.txt',
+  ];
+  static bool _bindingsInitialized = false;
 
   sherpa.OnlineRecognizer? _recognizer;
   AudioRecorder? _recorder;
   StreamSubscription<Uint8List>? _audioSub;
+  String? _activeLanguage;
+  String? _activeModelDir;
   bool _isListening = false;
   bool _isAvailable = false;
 
@@ -30,40 +43,38 @@ class SherpaSpeechInputService implements SpeechInputService {
 
   @override
   Future<bool> initialize() async {
-    final lang = _modelManager.detectSystemLanguage();
-    if (!await _modelManager.hasModel(lang)) {
+    try {
+      _ensureBindingsInitialized();
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'Sherpa bindings initialization failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
       _isAvailable = false;
       return false;
     }
 
-    final dir = await _modelManager.getModelDir(lang);
+    final preferredLang = _modelManager.getPreferredLanguage();
+    if (await _modelManager.hasModel(preferredLang)) {
+      await _setActiveLanguage(preferredLang);
+      return true;
+    }
 
-    // Free any previous recognizer before reinitializing.
+    final installedLang = await _modelManager.findInstalledLanguage();
+    if (installedLang != null) {
+      await _setActiveLanguage(installedLang);
+      return true;
+    }
+
+    _activeLanguage = null;
+    _activeModelDir = null;
     _recognizer?.free();
-    _recognizer = sherpa.OnlineRecognizer(
-      sherpa.OnlineRecognizerConfig(
-        model: sherpa.OnlineModelConfig(
-          transducer: sherpa.OnlineTransducerModelConfig(
-            encoder: '$dir/encoder.int8.onnx',
-            decoder: '$dir/decoder.int8.onnx',
-            joiner: '$dir/joiner.int8.onnx',
-          ),
-          tokens: '$dir/tokens.txt',
-          numThreads: 2,
-          provider: 'cpu',
-          debug: false,
-        ),
-        decodingMethod: 'greedy_search',
-        enableEndpoint: true,
-        // Emit endpoint after 2.4s of trailing silence (applies pauseFor intent).
-        rule1MinTrailingSilence: 2.4,
-        rule2MinTrailingSilence: 1.2,
-        rule3MinUtteranceLength: 20.0,
-        maxActivePaths: 4,
-      ),
-    );
-
-    _isAvailable = true;
+    _recognizer = null;
+    // Service is supported on this platform, but no model is installed yet.
+    // startListening() will emit `model_required` so the UI can offer download.
+    AppLogger.info('Sherpa model unavailable; waiting for user download');
+    _isAvailable = false;
     return true;
   }
 
@@ -75,10 +86,63 @@ class SherpaSpeechInputService implements SpeechInputService {
     Duration? pauseFor,
     String? localeId,
   }) async {
-    final recognizer = _recognizer;
-    if (recognizer == null || !_isAvailable) {
-      // Signal the widget to show the model download dialog.
+    if (localeId != null && localeId.trim().isNotEmpty) {
+      final requestedLang = _modelManager.normalizeLanguageCode(localeId);
+      if (requestedLang != _activeLanguage) {
+        if (await _modelManager.hasModel(requestedLang)) {
+          await _setActiveLanguage(requestedLang);
+        } else {
+          AppLogger.info(
+            'Sherpa requested language model missing: $requestedLang',
+          );
+          _modelManager.setPreferredLanguage(requestedLang);
+          _activeLanguage = null;
+          _activeModelDir = null;
+          _isAvailable = false;
+          _recognizer?.free();
+          _recognizer = null;
+          onStatus('model_required');
+          return;
+        }
+      }
+    }
+
+    final modelDir = _activeModelDir;
+    if (modelDir == null || !_isAvailable) {
+      AppLogger.info('Sherpa listening requested without installed model');
       onStatus('model_required');
+      return;
+    }
+
+    final missingFiles = _missingModelFiles(modelDir);
+    if (missingFiles.isNotEmpty) {
+      AppLogger.warn(
+        'Sherpa model files missing in $modelDir: ${missingFiles.join(', ')}',
+      );
+      _isAvailable = false;
+      onStatus('model_required');
+      return;
+    }
+
+    final silenceTimeout = _normalizePauseFor(pauseFor ?? _defaultPauseFor);
+
+    try {
+      await _recreateRecognizer(modelDir: modelDir, pauseFor: silenceTimeout);
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'Sherpa recognizer initialization failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      _isAvailable = false;
+      onError();
+      return;
+    }
+
+    final recognizer = _recognizer;
+    if (recognizer == null) {
+      _isAvailable = false;
+      onError();
       return;
     }
 
@@ -88,21 +152,85 @@ class SherpaSpeechInputService implements SpeechInputService {
     final hasPermission = await recorder.hasPermission();
     if (!hasPermission) {
       await recorder.dispose();
+      _recorder = null;
       onError();
       return;
     }
 
-    final stream = recognizer.createStream();
+    late final sherpa.OnlineStream stream;
+    try {
+      stream = recognizer.createStream();
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'Sherpa stream creation failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      _isAvailable = false;
+      onError();
+      return;
+    }
+
     _isListening = true;
     onStatus('listening');
 
-    final audioStream = await recorder.startStream(
-      const RecordConfig(
-        encoder: AudioEncoder.pcm16bits,
-        sampleRate: 16000,
-        numChannels: 1,
-      ),
-    );
+    Timer? silenceTimer;
+    var streamFreed = false;
+    var doneEmitted = false;
+
+    void freeStreamOnce() {
+      if (streamFreed) {
+        return;
+      }
+      streamFreed = true;
+      stream.free();
+    }
+
+    Future<void> completeListeningSession() async {
+      if (doneEmitted) {
+        return;
+      }
+      doneEmitted = true;
+      silenceTimer?.cancel();
+      freeStreamOnce();
+      await stopListening();
+      onStatus('done');
+    }
+
+    void armSilenceTimer() {
+      silenceTimer?.cancel();
+      silenceTimer = Timer(silenceTimeout, () {
+        if (!_isListening) {
+          return;
+        }
+        unawaited(completeListeningSession());
+      });
+    }
+
+    armSilenceTimer();
+
+    Stream<Uint8List> audioStream;
+    try {
+      audioStream = await recorder.startStream(
+        const RecordConfig(
+          encoder: AudioEncoder.pcm16bits,
+          sampleRate: 16000,
+          numChannels: 1,
+        ),
+      );
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'Sherpa recorder stream start failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      _isListening = false;
+      stream.free();
+      await recorder.dispose();
+      _recorder = null;
+      onError();
+      return;
+    }
 
     _audioSub = audioStream.listen(
       (chunk) {
@@ -120,24 +248,36 @@ class SherpaSpeechInputService implements SpeechInputService {
         final partial = recognizer.getResult(stream).text.trim();
         if (partial.isNotEmpty) {
           onResult(partial, false);
+          armSilenceTimer();
         }
 
-        // Detect utterance endpoint and emit final result.
+        // Detect utterance endpoint and stop after silence timeout.
         if (recognizer.isEndpoint(stream)) {
           final finalText = recognizer.getResult(stream).text.trim();
           if (finalText.isNotEmpty) {
             onResult(finalText, true);
           }
-          // Reset stream so the next utterance starts clean.
-          recognizer.reset(stream);
+          unawaited(completeListeningSession());
         }
       },
       onError: (_) {
-        stream.free();
+        silenceTimer?.cancel();
+        freeStreamOnce();
+        if (doneEmitted) {
+          return;
+        }
+        doneEmitted = true;
         _isListening = false;
+        AppLogger.warn('Sherpa audio stream reported an error');
+        unawaited(stopListening());
         onError();
       },
       onDone: () {
+        silenceTimer?.cancel();
+        if (doneEmitted) {
+          freeStreamOnce();
+          return;
+        }
         // Flush any remaining frames after the recorder closes.
         while (recognizer.isReady(stream)) {
           recognizer.decode(stream);
@@ -146,11 +286,72 @@ class SherpaSpeechInputService implements SpeechInputService {
         if (finalText.isNotEmpty) {
           onResult(finalText, true);
         }
-        stream.free();
+        freeStreamOnce();
+        doneEmitted = true;
         _isListening = false;
         onStatus('done');
       },
     );
+  }
+
+  Future<void> _setActiveLanguage(String lang) async {
+    _modelManager.setPreferredLanguage(lang);
+    _activeLanguage = lang;
+    _activeModelDir = await _modelManager.getModelDir(lang);
+    _isAvailable = true;
+  }
+
+  Future<void> _recreateRecognizer({
+    required String modelDir,
+    required Duration pauseFor,
+  }) async {
+    _ensureBindingsInitialized();
+    _recognizer?.free();
+
+    final pauseSeconds = pauseFor.inMilliseconds / 1000.0;
+    final rule2TrailingSilence = math.max(0.3, pauseSeconds / 2.0);
+
+    _recognizer = sherpa.OnlineRecognizer(
+      sherpa.OnlineRecognizerConfig(
+        model: sherpa.OnlineModelConfig(
+          transducer: sherpa.OnlineTransducerModelConfig(
+            encoder: '$modelDir/encoder.int8.onnx',
+            decoder: '$modelDir/decoder.int8.onnx',
+            joiner: '$modelDir/joiner.int8.onnx',
+          ),
+          tokens: '$modelDir/tokens.txt',
+          numThreads: 2,
+          provider: 'cpu',
+          debug: false,
+        ),
+        decodingMethod: 'greedy_search',
+        enableEndpoint: true,
+        rule1MinTrailingSilence: pauseSeconds,
+        rule2MinTrailingSilence: rule2TrailingSilence,
+        rule3MinUtteranceLength: 20.0,
+        maxActivePaths: 4,
+      ),
+    );
+  }
+
+  Duration _normalizePauseFor(Duration pauseFor) {
+    final ms = pauseFor.inMilliseconds.clamp(500, 10000).toInt();
+    return Duration(milliseconds: ms);
+  }
+
+  List<String> _missingModelFiles(String modelDir) {
+    return _requiredModelFiles
+        .where((file) => !File('$modelDir/$file').existsSync())
+        .toList(growable: false);
+  }
+
+  void _ensureBindingsInitialized() {
+    if (_bindingsInitialized) {
+      return;
+    }
+    sherpa.initBindings();
+    _bindingsInitialized = true;
+    AppLogger.info('Sherpa bindings initialized');
   }
 
   @override

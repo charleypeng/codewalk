@@ -59,6 +59,9 @@ class SettingsProvider extends ChangeNotifier {
   bool get keepDesktopRunningInTray => _settings.keepDesktopRunningInTray;
   bool get keepMobileRealtimeForShortPeriod =>
       _settings.keepMobileRealtimeForShortPeriod;
+  SpeechToTextEngine get speechToTextEngine => _settings.speechToTextEngine;
+  int get speechSilenceTimeoutSeconds => _settings.speechSilenceTimeoutSeconds;
+  String get sherpaLanguageCode => _settings.sherpaLanguageCode;
   bool get hasAnyServerBackedNotificationCategory =>
       _serverBackedNotifications.values.any((value) => value);
 
@@ -226,6 +229,38 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(keepMobileRealtimeForShortPeriod: enabled);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setSpeechToTextEngine(SpeechToTextEngine engine) async {
+    if (_settings.speechToTextEngine == engine) {
+      return;
+    }
+    _settings = _settings.copyWith(speechToTextEngine: engine);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setSpeechSilenceTimeoutSeconds(int seconds) async {
+    final normalized = seconds.clamp(2, 10).toInt();
+    if (_settings.speechSilenceTimeoutSeconds == normalized) {
+      return;
+    }
+    _settings = _settings.copyWith(speechSilenceTimeoutSeconds: normalized);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setSherpaLanguageCode(String languageCode) async {
+    final normalized = languageCode.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return;
+    }
+    if (_settings.sherpaLanguageCode == normalized) {
+      return;
+    }
+    _settings = _settings.copyWith(sherpaLanguageCode: normalized);
     notifyListeners();
     await _persist();
   }

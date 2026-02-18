@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 
-// Native implementation of sherpa-onnx model management for Linux desktop.
+// Native implementation of sherpa-onnx model management for IO platforms.
 // Handles on-demand download of Kroko streaming transducer models from
 // HuggingFace, local storage under getApplicationSupportDirectory(), locale
 // detection, and model lifecycle (install / check / delete).
@@ -22,7 +22,49 @@ class SherpaModelManager {
   static const _repo = 'hudaiapa88/sherpa-stt-onnx';
 
   String? _cachedBaseDir;
+  String? _preferredLanguage;
   final _dio = Dio();
+
+  // Parses language or locale (e.g. `pt-BR`, `pt_BR.UTF-8`) to a supported
+  // two-letter code, defaulting to `en` when unknown.
+  String normalizeLanguageCode(String? languageOrLocale) {
+    if (languageOrLocale == null || languageOrLocale.trim().isEmpty) {
+      return 'en';
+    }
+    final raw = languageOrLocale
+        .split(RegExp(r'[_.\-]'))
+        .first
+        .trim()
+        .toLowerCase();
+    if (_availableLangs.contains(raw)) {
+      return raw;
+    }
+    return 'en';
+  }
+
+  // Stores the preferred STT language for next recognition sessions.
+  void setPreferredLanguage(String languageOrLocale) {
+    _preferredLanguage = normalizeLanguageCode(languageOrLocale);
+  }
+
+  // Returns preferred language if set, otherwise the system locale language.
+  String getPreferredLanguage() {
+    final preferred = _preferredLanguage;
+    if (preferred != null && _availableLangs.contains(preferred)) {
+      return preferred;
+    }
+    return detectSystemLanguage();
+  }
+
+  // Returns the first installed model language, or null when none is present.
+  Future<String?> findInstalledLanguage() async {
+    for (final lang in _availableLangs) {
+      if (await hasModel(lang)) {
+        return lang;
+      }
+    }
+    return null;
+  }
 
   // Returns true when all 4 model files for [lang] exist on disk.
   Future<bool> hasModel(String lang) async {
@@ -52,7 +94,10 @@ class SherpaModelManager {
       await _dio.download(
         '$base/$file',
         localPath,
-        options: Options(followRedirects: true, receiveTimeout: const Duration(minutes: 10)),
+        options: Options(
+          followRedirects: true,
+          receiveTimeout: const Duration(minutes: 10),
+        ),
         onReceiveProgress: onProgress == null
             ? null
             : (received, total) {
@@ -84,11 +129,7 @@ class SherpaModelManager {
   // Parses the system locale (e.g. 'pt_BR.UTF-8') and returns a matching
   // language code from the available models, falling back to 'en'.
   String detectSystemLanguage() {
-    final locale = Platform.localeName;
-    // Extract the 2-letter language code (up to first '_', '.', or end).
-    final raw = locale.split(RegExp(r'[_.\-]')).first.toLowerCase();
-    if (_availableLangs.contains(raw)) return raw;
-    return 'en';
+    return normalizeLanguageCode(Platform.localeName);
   }
 
   // Returns (and caches) the application support directory path.

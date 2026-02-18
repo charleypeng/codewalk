@@ -4,18 +4,18 @@
 > Git baseline: `20d4fd4 release: cut v1.8.0` (main)
 > Flutter: 3.41.0 (stable)
 
-## Delta Update (2026-02-18) - STT Platform Abstraction (Feat J)
+## Delta Update (2026-02-18) - STT Platform Abstraction & Runtime Engine Selection (Feat J)
 
-- **SpeechInputService abstraction** (`lib/presentation/services/speech_input_service.dart`): Abstract interface decoupling voice input from any single STT backend. Platform implementations selected at DI registration time with guards.
-- **SttSpeechInputService** (`speech_input_service_stt.dart`): iOS/macOS/Web/Windows implementation via `speech_to_text` package (existing plugin-backed path).
-- **AndroidSpeechInputService** (`speech_input_service_android.dart`): Android implementation via custom `MethodChannel(codewalk/speech_control)` + `EventChannel(codewalk/speech)`, bridging native Kotlin speech recognition in `MainActivity.kt`.
-- **SherpaSpeechInputService** (`speech_input_service_sherpa.dart` + `speech_input_service_sherpa_io.dart` + `speech_input_service_sherpa_stub.dart`): Linux offline STT via `sherpa_onnx` + `record` packages; conditional export selector pattern (io / web stub).
-- **SherpaModelManager** (`sherpa_model_manager.dart` + `sherpa_model_manager_io.dart` + `sherpa_model_manager_stub.dart`): HuggingFace model download and local cache management for Kroko Sherpa ONNX models; conditional export selector pattern.
-- **SherpaModelDownloadDialog** (`lib/presentation/widgets/sherpa_model_download_dialog.dart`): Download-progress UI widget with progress bar for on-demand Kroko model downloads.
+- **SpeechInputService abstraction** (`lib/presentation/services/speech_input_service.dart`): Abstract interface decoupling voice input from any single STT backend. Platform implementations selected via engine preference.
+- **Speech Engine Selection**: STT backend is now runtime-configurable via `ExperienceSettings.speechToTextEngine` (`native` vs `sherpa`).
+- **SttSpeechInputService** (`speech_input_service_stt.dart`): Unified implementation for iOS/macOS/Web/Windows and Android (fallback) via `speech_to_text` package.
+- **SherpaSpeechInputService** (`speech_input_service_sherpa_io.dart`): Offline STT via `sherpa_onnx` + `record` packages, now available as an optional engine on supported IO platforms (Linux and Android/iOS/macOS/Windows where `sherpa_onnx` can be bundled).
+- **SherpaModelManager** (`sherpa_model_manager_io.dart`): HuggingFace model download and local cache management for Kroko Sherpa ONNX models.
+- **Settings: Speech to text**: New dedicated settings section for engine selection, silence timeout (2-10s), and Sherpa language/model management.
+- **Android native bridge cleanup**: Removed custom Android speech channel/backend in favor of unified `SpeechInputService` pattern with `SttSpeechInputService` (native) and `SherpaSpeechInputService` (offline) runtime selection.
 - **Kroko model manifest** (`assets/sherpa_models.json`): 7 multilingual model definitions (de/en/es/fr/it/pt/tr).
-- **Android native bridge** (`android/app/src/main/kotlin/com/verseles/codewalk/MainActivity.kt`): Added `EventChannel(codewalk/speech)` for streaming partial/final results and `MethodChannel(codewalk/speech_control)` for start/stop commands.
-- **DI registration** (`lib/core/di/injection_container.dart`): `SpeechInputService` registered with platform guards routing to the correct implementation per platform.
-- **ChatInputWidget refactor** (`lib/presentation/widgets/chat_input_widget.dart`): Voice input now consumed via `SpeechInputService` injected through DI instead of direct `speech_to_text` usage.
+- **DI registration** (`lib/core/di/injection_container.dart`): `SttSpeechInputService` and `SherpaSpeechInputService` registered as lazy singletons.
+- **ChatInputWidget refactor** (`lib/presentation/widgets/chat_input_widget.dart`): Voice input engine resolved at runtime based on settings; consumes `SpeechInputService` implementations via DI.
 
 ## Delta Update (2026-02-17) - Draft Restore Lifecycle Scoping
 
@@ -633,17 +633,16 @@ Android background polling service for detecting actionable events when app is n
 💾 **Persistence**: Snapshot stored per-server in SharedPreferences (`codewalk.android.background.alert.snapshot.v1::<serverId>`)
 🔔 **Integration**: ChatPage calls `scheduleProbe()` when mobile background with active response + hold duration + 1min buffer
 
-### STT Platform Abstraction (Feat J)
-Cross-platform speech-to-text input via a unified `SpeechInputService` interface with per-platform implementations.
+### STT Platform Abstraction & Runtime Engine Selection (Feat J)
+Cross-platform speech-to-text input via a unified `SpeechInputService` interface with runtime engine selection (`native` vs `sherpa`).
 📁 **Localização**: `lib/presentation/services/speech_input_service*.dart`
 🔧 **Implementations**:
-- **SttSpeechInputService** (`speech_input_service_stt.dart`): iOS/macOS/Web/Windows via `speech_to_text` package
-- **AndroidSpeechInputService** (`speech_input_service_android.dart`): Android via `MethodChannel(codewalk/speech_control)` + `EventChannel(codewalk/speech)`; native bridge in `MainActivity.kt`
-- **SherpaSpeechInputService** (`speech_input_service_sherpa_io.dart`): Linux offline STT via `sherpa_onnx` + `record`; web stub in `speech_input_service_sherpa_stub.dart`
-📦 **Model management**: `SherpaModelManager` (`sherpa_model_manager_io.dart`) downloads and caches Kroko ONNX models from HuggingFace; web stub in `sherpa_model_manager_stub.dart`
+- **SttSpeechInputService** (`speech_input_service_stt.dart`): iOS/macOS/Web/Windows/Android via `speech_to_text` package
+- **SherpaSpeechInputService** (`speech_input_service_sherpa_io.dart`): Offline STT via `sherpa_onnx` + `record`; available on Linux and other supported IO platforms
+📦 **Model management**: `SherpaModelManager` (`sherpa_model_manager_io.dart`) downloads and caches Kroko ONNX models from HuggingFace
 🗂️ **Model manifest**: `assets/sherpa_models.json` — 7 multilingual Kroko model definitions (de/en/es/fr/it/pt/tr)
-🖼️ **Download UI**: `sherpa_model_download_dialog.dart` — progress bar dialog for on-demand model download
-🔌 **DI**: `SpeechInputService` registered in `injection_container.dart` with platform guards; `ChatInputWidget` consumes it via DI
+🔌 **DI**: `SttSpeechInputService` and `SherpaSpeechInputService` registered in `injection_container.dart`; `ChatInputWidget` resolves engine from settings and consumes it via DI
+⚙️ **Settings**: Engine selection, silence timeout, and language/model management in dedicated settings section.
 
 ### Authentication and Server Config
 - Multi-server profile management (`ServerProfile`) with active/default selection
@@ -673,7 +672,7 @@ SSE-first realtime sync with event reducer, composer power triggers (@/!/), mult
 Modular settings hub with responsive navigation (mobile list-to-detail, desktop split layout), notification/sound/shortcut preferences, and server management.
 📋 **Arquitetura**: Ver [ADR-022: Modular Settings Hub](#adr-022-modular-settings-hub-and-experience-preference-orchestration)
 🔧 **Componentes**: `SettingsPage`, `SettingsProvider`, `ExperienceSettings`
-🔔 **Features**: per-category notifications/sounds (agent/permissions/errors), 11 shortcut bindings (desktop/web): newChat/mod+n, refresh/mod+r, focusInput/mod+l, quickOpen/mod+p, openSettings/mod+,, cycleRecentModels/mod+m, cycleVariant/mod+t, cycleAgentForward/mod+j, cycleAgentBackward/mod+shift+j, escape, desktop pane visibility, server config sync (`/config`)
+🔔 **Features**: per-category notifications/sounds (agent/permissions/errors), Speech to text (engine selection, 2-10s silence timeout, Sherpa model management on Linux/supported IO), 11 shortcut bindings (desktop/web): newChat/mod+n, refresh/mod+r, focusInput/mod+l, quickOpen/mod+p, openSettings/mod+,, cycleRecentModels/mod+m, cycleVariant/mod+t, cycleAgentForward/mod+j, cycleAgentBackward/mod+shift+j, escape, desktop pane visibility, server config sync (`/config`)
 📱 **Background preferences**: `keepDesktopRunningInTray` (desktop close-to-tray), `keepMobileRealtimeForShortPeriod` (mobile temporary hold during active response)
 📱 **Adapters**: `flutter_local_notifications` (Android/Linux/macOS/Windows), browser Notification API (Web)
 

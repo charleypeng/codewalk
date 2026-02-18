@@ -232,6 +232,31 @@ void main() {
       expect(second.keepMobileRealtimeForShortPeriod, isFalse);
     });
 
+    test('persists speech engine, timeout, and Sherpa language', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+
+      await first.setSpeechToTextEngine(SpeechToTextEngine.sherpa);
+      await first.setSpeechSilenceTimeoutSeconds(7);
+      await first.setSherpaLanguageCode('pt');
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(second.speechToTextEngine, SpeechToTextEngine.sherpa);
+      expect(second.speechSilenceTimeoutSeconds, 7);
+      expect(second.sherpaLanguageCode, 'pt');
+    });
+
     test('persists only-when notification and sound rules', () async {
       final local = InMemoryAppLocalDataSource();
       final first = SettingsProvider(

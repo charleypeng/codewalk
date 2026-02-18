@@ -9,6 +9,7 @@ import 'settings/sections/logs_settings_section.dart';
 import 'settings/sections/notifications_settings_section.dart';
 import 'settings/sections/servers_settings_section.dart';
 import 'settings/sections/shortcuts_settings_section.dart';
+import 'settings/sections/speech_settings_section.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key, this.initialSectionId = ''});
@@ -58,6 +59,13 @@ class _SettingsPageState extends State<SettingsPage> {
       description: 'Per-category notify and sound controls',
       icon: Icons.notifications_active_outlined,
       builder: (_) => const NotificationsSettingsSection(),
+    ),
+    _SettingsSection(
+      id: 'speech',
+      title: 'Speech to text',
+      description: 'Engine, silence timeout, and model options',
+      icon: Icons.mic_none_rounded,
+      builder: (_) => const SpeechSettingsSection(),
     ),
     _SettingsSection(
       id: 'logs',

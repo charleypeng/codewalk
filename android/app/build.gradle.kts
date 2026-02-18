@@ -38,22 +38,6 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
-
-    packaging {
-        jniLibs {
-            // sherpa_onnx is only used on Linux desktop for on-device STT.
-            // Excluding its native libraries (ONNX Runtime + sherpa C/C++ API)
-            // from the Android APK prevents a ~45 MB size increase. The Dart
-            // code path that instantiates SherpaSpeechInputService is gated by
-            // `defaultTargetPlatform == TargetPlatform.linux` in the DI, so
-            // these libraries are never loaded at runtime on Android.
-            excludes += listOf(
-                "**/libonnxruntime.so",
-                "**/libsherpa-onnx-c-api.so",
-                "**/libsherpa-onnx-cxx-api.so",
-            )
-        }
-    }
 }
 
 flutter {

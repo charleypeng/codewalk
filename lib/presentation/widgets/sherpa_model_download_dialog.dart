@@ -19,7 +19,7 @@ class _SherpaModelEntry {
   final int sizeMb;
 }
 
-// First-use dialog for Linux STT: lets the user pick a language, shows model
+// First-use dialog for Sherpa STT: lets the user pick a language, shows model
 // size, then downloads the Kroko on-device model with a progress bar.
 // Returns true via Navigator.pop() when the model is ready, null if cancelled.
 class SherpaModelDownloadDialog extends StatefulWidget {
@@ -30,8 +30,7 @@ class SherpaModelDownloadDialog extends StatefulWidget {
       _SherpaModelDownloadDialogState();
 }
 
-class _SherpaModelDownloadDialogState
-    extends State<SherpaModelDownloadDialog> {
+class _SherpaModelDownloadDialogState extends State<SherpaModelDownloadDialog> {
   final _manager = di.sl<SherpaModelManager>();
 
   List<_SherpaModelEntry> _models = [];
@@ -62,8 +61,10 @@ class _SherpaModelDownloadDialogState
       }).toList();
 
       final systemLang = _manager.detectSystemLanguage();
-      final preselect =
-          entries.any((e) => e.code == systemLang) ? systemLang : entries.first.code;
+      final preselect = entries.any((e) => e.code == systemLang)
+          ? systemLang
+          : entries.first.code;
+      _manager.setPreferredLanguage(preselect);
 
       setState(() {
         _models = entries;
@@ -89,6 +90,7 @@ class _SherpaModelDownloadDialogState
     });
 
     try {
+      _manager.setPreferredLanguage(code);
       await _manager.downloadModel(
         code,
         onProgress: (p) {
@@ -131,7 +133,9 @@ class _SherpaModelDownloadDialogState
                 child: const Text('Cancel'),
               ),
               FilledButton(
-                onPressed: _selectedCode == null || _errorMessage != null && _isDownloading
+                onPressed:
+                    _selectedCode == null ||
+                        _errorMessage != null && _isDownloading
                     ? null
                     : _startDownload,
                 child: const Text('Download'),
@@ -153,7 +157,7 @@ class _SherpaModelDownloadDialogState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Voice input on Linux requires an on-device speech model. '
+          'Sherpa voice input requires an on-device speech model. '
           'Select your language and download it once (~147 MB).',
         ),
         const SizedBox(height: 16),
@@ -169,7 +173,11 @@ class _SherpaModelDownloadDialogState
               .toList(),
           onChanged: _isDownloading
               ? null
-              : (value) => setState(() => _selectedCode = value),
+              : (value) {
+                  if (value == null) return;
+                  _manager.setPreferredLanguage(value);
+                  setState(() => _selectedCode = value);
+                },
         ),
         if (selected != null) ...[
           const SizedBox(height: 8),

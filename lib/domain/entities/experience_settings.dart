@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 enum NotificationCategory { agent, permissions, errors }
 
 enum SoundCategory { agent, permissions, errors }
@@ -20,6 +22,10 @@ enum ShortcutAction {
 enum DesktopPane { conversations, files, utility }
 
 enum AppDensity { extraDense, dense, normal, spacious, extraSpacious }
+
+enum SpeechToTextEngine { native, sherpa }
+
+const String kSherpaLanguageSystem = 'system';
 
 class ShortcutDefinition {
   const ShortcutDefinition({
@@ -224,6 +230,20 @@ String appDensityKey(AppDensity density) {
   };
 }
 
+String speechToTextEngineKey(SpeechToTextEngine engine) {
+  return switch (engine) {
+    SpeechToTextEngine.native => 'native',
+    SpeechToTextEngine.sherpa => 'sherpa',
+  };
+}
+
+SpeechToTextEngine speechToTextEngineFromKey(String value) {
+  return switch (value) {
+    'sherpa' => SpeechToTextEngine.sherpa,
+    _ => SpeechToTextEngine.native,
+  };
+}
+
 AppDensity appDensityFromKey(String value) {
   return switch (value) {
     'extra_dense' => AppDensity.extraDense,
@@ -287,6 +307,9 @@ class ExperienceSettings {
       showComposerTips: true,
       keepDesktopRunningInTray: true,
       keepMobileRealtimeForShortPeriod: true,
+      speechToTextEngine: SpeechToTextEngine.native,
+      speechSilenceTimeoutSeconds: 5,
+      sherpaLanguageCode: kSherpaLanguageSystem,
     );
   }
   const ExperienceSettings({
@@ -308,6 +331,9 @@ class ExperienceSettings {
     required this.showComposerTips,
     required this.keepDesktopRunningInTray,
     required this.keepMobileRealtimeForShortPeriod,
+    this.speechToTextEngine = SpeechToTextEngine.native,
+    this.speechSilenceTimeoutSeconds = 5,
+    this.sherpaLanguageCode = kSherpaLanguageSystem,
   });
 
   final Map<NotificationCategory, bool> notifications;
@@ -328,6 +354,9 @@ class ExperienceSettings {
   final bool showComposerTips;
   final bool keepDesktopRunningInTray;
   final bool keepMobileRealtimeForShortPeriod;
+  final SpeechToTextEngine speechToTextEngine;
+  final int speechSilenceTimeoutSeconds;
+  final String sherpaLanguageCode;
 
   ExperienceSettings copyWith({
     Map<NotificationCategory, bool>? notifications,
@@ -348,6 +377,9 @@ class ExperienceSettings {
     bool? showComposerTips,
     bool? keepDesktopRunningInTray,
     bool? keepMobileRealtimeForShortPeriod,
+    SpeechToTextEngine? speechToTextEngine,
+    int? speechSilenceTimeoutSeconds,
+    String? sherpaLanguageCode,
   }) {
     return ExperienceSettings(
       notifications: notifications ?? this.notifications,
@@ -375,6 +407,10 @@ class ExperienceSettings {
       keepMobileRealtimeForShortPeriod:
           keepMobileRealtimeForShortPeriod ??
           this.keepMobileRealtimeForShortPeriod,
+      speechToTextEngine: speechToTextEngine ?? this.speechToTextEngine,
+      speechSilenceTimeoutSeconds:
+          speechSilenceTimeoutSeconds ?? this.speechSilenceTimeoutSeconds,
+      sherpaLanguageCode: sherpaLanguageCode ?? this.sherpaLanguageCode,
     );
   }
 
@@ -428,6 +464,9 @@ class ExperienceSettings {
       'showComposerTips': showComposerTips,
       'keepDesktopRunningInTray': keepDesktopRunningInTray,
       'keepMobileRealtimeForShortPeriod': keepMobileRealtimeForShortPeriod,
+      'speechToTextEngine': speechToTextEngineKey(speechToTextEngine),
+      'speechSilenceTimeoutSeconds': speechSilenceTimeoutSeconds,
+      'sherpaLanguageCode': sherpaLanguageCode,
     };
   }
 
@@ -463,6 +502,9 @@ class ExperienceSettings {
     var keepDesktopRunningInTray = defaults.keepDesktopRunningInTray;
     var keepMobileRealtimeForShortPeriod =
         defaults.keepMobileRealtimeForShortPeriod;
+    var speechToTextEngine = defaults.speechToTextEngine;
+    var speechSilenceTimeoutSeconds = defaults.speechSilenceTimeoutSeconds;
+    var sherpaLanguageCode = defaults.sherpaLanguageCode;
 
     final notificationsJson = json['notifications'];
     if (notificationsJson is Map) {
@@ -601,6 +643,28 @@ class ExperienceSettings {
       keepMobileRealtimeForShortPeriod = keepMobileRealtimeForShortPeriodJson;
     }
 
+    final speechToTextEngineJson = json['speechToTextEngine'];
+    if (speechToTextEngineJson is String &&
+        speechToTextEngineJson.trim().isNotEmpty) {
+      speechToTextEngine = speechToTextEngineFromKey(
+        speechToTextEngineJson.trim().toLowerCase(),
+      );
+    }
+
+    final speechSilenceTimeoutSecondsJson = json['speechSilenceTimeoutSeconds'];
+    if (speechSilenceTimeoutSecondsJson is num) {
+      speechSilenceTimeoutSeconds = speechSilenceTimeoutSecondsJson
+          .toInt()
+          .clamp(2, 10)
+          .toInt();
+    }
+
+    final sherpaLanguageCodeJson = json['sherpaLanguageCode'];
+    if (sherpaLanguageCodeJson is String &&
+        sherpaLanguageCodeJson.trim().isNotEmpty) {
+      sherpaLanguageCode = sherpaLanguageCodeJson.trim().toLowerCase();
+    }
+
     return ExperienceSettings(
       notifications: notifications,
       sounds: sounds,
@@ -620,6 +684,9 @@ class ExperienceSettings {
       showComposerTips: showComposerTips,
       keepDesktopRunningInTray: keepDesktopRunningInTray,
       keepMobileRealtimeForShortPeriod: keepMobileRealtimeForShortPeriod,
+      speechToTextEngine: speechToTextEngine,
+      speechSilenceTimeoutSeconds: speechSilenceTimeoutSeconds,
+      sherpaLanguageCode: sherpaLanguageCode,
     );
   }
 }

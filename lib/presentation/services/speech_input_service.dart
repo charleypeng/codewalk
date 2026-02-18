@@ -1,11 +1,12 @@
 // Abstract interface for speech-to-text input service.
-// Platform-specific implementations are registered via get_it DI:
-//   Android → AndroidSpeechInputService (custom platform channel)
-//   Linux   → SherpaSpeechInputService (sherpa_onnx on-device)
-//   Other   → SttSpeechInputService (speech_to_text package)
+// Platform-specific implementations are resolved at runtime from user settings:
+//   Native  → SttSpeechInputService (speech_to_text package)
+//   Sherpa  → SherpaSpeechInputService (sherpa_onnx on-device)
 abstract class SpeechInputService {
   /// Initializes the speech recognition engine.
-  /// Returns true if speech recognition is available and ready.
+  /// Returns true when the backend is usable on this device.
+  /// Some backends may still require a downloadable model and can later emit
+  /// `model_required` from [startListening].
   Future<bool> initialize();
 
   /// Starts a listening session and streams results via callbacks.

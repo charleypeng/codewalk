@@ -44,6 +44,56 @@ This document tracks technical decisions for CodeWalk.
 
 ---
 
+## ADR-037: STT Engine Selection and Android Native Simplification
+
+**Status**: Accepted
+**Date**: 2026-02-18
+
+### Context
+
+The Android custom STT channel introduced an additional maintenance surface and runtime regressions while mostly duplicating behavior already provided by `speech_to_text`. At the same time, users needed explicit control over STT engine choice, silence timeout, and Sherpa model management (especially on Linux).
+
+### Decision
+
+1. **Remove Android custom STT backend** (`MethodChannel/EventChannel`) and standardize Android Native mode on `speech_to_text`.
+2. **Add runtime STT engine selection** in Settings with two options:
+   - `Native` (default): simpler and faster startup.
+   - `Sherpa`: heavier, experimental, and bug-prone, but with deeper on-device model control.
+3. **Add global STT silence timeout setting** (default 5s) consumed by active backend.
+4. **Add Linux Sherpa model management in Settings** (language select, download, remove, status), shown when Sherpa engine is selected.
+5. **Improve mic UX for startup latency** with an inline loading state until listening actually starts.
+
+### Rationale
+
+- Reduces Android-specific complexity and duplicated STT logic.
+- Keeps a stable default path while preserving advanced Sherpa option.
+- Makes STT behavior user-configurable instead of hardcoded.
+- Improves perceived responsiveness during Sherpa warm-up.
+
+### Consequences
+
+- ✅ Positive: fewer Android regressions from custom speech channel lifecycle.
+- ✅ Positive: clearer STT controls in a dedicated Settings section.
+- ✅ Positive: Linux users can self-manage Sherpa language models.
+- ⚠️ Trade-off: enabling Sherpa on Android increases APK size due to native libs.
+- ⚠️ Trade-off: Sherpa remains explicitly experimental and may be unstable on some devices.
+
+### Key Files
+
+- `lib/presentation/pages/settings/sections/speech_settings_section.dart` — engine/timeout/model UI
+- `lib/domain/entities/experience_settings.dart` — persisted STT preferences
+- `lib/presentation/providers/settings_provider.dart` — STT settings state API
+- `lib/presentation/widgets/chat_input_widget.dart` — runtime engine resolution + mic loading state
+- `lib/presentation/services/speech_input_service_sherpa_io.dart` — Sherpa auto-stop handling
+- `lib/core/di/injection_container.dart` — STT backend registrations
+- `android/app/src/main/kotlin/com/verseles/codewalk/MainActivity.kt` — Android reverted to system sounds only
+
+### References
+
+- ADR-036: SpeechInputService Platform Abstraction (superseded for Android channel decision)
+
+---
+
 ## ADR-035: Platform-Aware Background Behavior Architecture
 
 **Status**: Accepted

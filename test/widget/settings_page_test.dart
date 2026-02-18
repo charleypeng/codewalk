@@ -32,6 +32,7 @@ void main() {
 
     expect(find.text('Appearance'), findsOneWidget);
     expect(find.text('Notifications'), findsOneWidget);
+    expect(find.text('Speech to text'), findsOneWidget);
     expect(find.text('Logs'), findsOneWidget);
     expect(find.text('Sounds'), findsNothing);
     expect(find.text('Shortcuts'), findsNothing);

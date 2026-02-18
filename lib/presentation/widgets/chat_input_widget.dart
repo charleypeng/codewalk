@@ -6,10 +6,16 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/di/injection_container.dart' as di;
+import '../../core/logging/app_logger.dart';
+import '../../domain/entities/experience_settings.dart';
 import '../../domain/entities/chat_session.dart';
 import '../services/speech_input_service.dart';
+import '../services/speech_input_service_sherpa.dart';
+import '../services/speech_input_service_stt.dart';
+import '../providers/settings_provider.dart';
 import 'sherpa_model_download_dialog.dart';
 
 enum ChatComposerMode { normal, shell }
@@ -17,6 +23,18 @@ enum ChatComposerMode { normal, shell }
 enum ChatComposerSuggestionType { file, agent }
 
 enum ChatComposerPopoverType { none, mention, slash }
+
+class _SpeechServiceResolution {
+  const _SpeechServiceResolution({
+    required this.service,
+    required this.engine,
+    required this.usedFallback,
+  });
+
+  final SpeechInputService service;
+  final SpeechToTextEngine engine;
+  final bool usedFallback;
+}
 
 class ChatInputController {
   _ChatInputWidgetState? _state;
@@ -208,14 +226,15 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   final RegExp _mentionTriggerPattern = RegExp(r'(^|\s)@([^\s@]*)$');
   final RegExp _slashTriggerPattern = RegExp(r'^/(\S*)$');
   final RegExp _mentionTokenPattern = RegExp(r'@([^\s@]+)');
-  // Speech service is lazily resolved from DI on first mic tap to avoid
-  // GetIt lookup before DI is initialized (e.g., in test environments).
-  SpeechInputService? _speechServiceInstance;
-  SpeechInputService get _speechService =>
-      _speechServiceInstance ??= di.sl<SpeechInputService>();
+  // STT services are resolved lazily. The active backend is selected from
+  // settings (Native/Sherpa) and can fall back automatically when unavailable.
+  SpeechInputService? _activeSpeechService;
+  SttSpeechInputService? _nativeSpeechServiceInstance;
+  SherpaSpeechInputService? _sherpaSpeechServiceInstance;
   bool _isComposing = false;
   bool _isSending = false;
   bool _isListening = false;
+  bool _isStartingListening = false;
   bool _isLoadingSuggestions = false;
   ChatComposerMode _mode = ChatComposerMode.normal;
   ChatComposerPopoverType _popoverType = ChatComposerPopoverType.none;
@@ -227,8 +246,10 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   String _activeMentionQuery = '';
   String _activeSlashQuery = '';
   String _speechPrefix = '';
+  String _speechCommittedText = '';
   Timer? _sendHoldTimer;
   Timer? _suggestionDebounce;
+  Timer? _speechStartWatchdog;
   DateTime? _lastSecondarySendActionAt;
   bool _holdSendTriggered = false;
   int? _historyIndexFromNewest;
@@ -251,6 +272,19 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
 
   bool get _shouldHideKeyboardAfterSend => !_isDesktopPlatform;
 
+  SpeechInputService get _nativeSpeechService =>
+      _nativeSpeechServiceInstance ??= di.sl<SttSpeechInputService>();
+
+  SpeechInputService? get _sherpaSpeechService {
+    if (kIsWeb) {
+      return null;
+    }
+    return _sherpaSpeechServiceInstance ??= di.sl<SherpaSpeechInputService>();
+  }
+
+  SpeechInputService get _speechService =>
+      _activeSpeechService ?? _nativeSpeechService;
+
   @override
   void initState() {
     super.initState();
@@ -262,7 +296,8 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     widget.controller?._detach(this);
     _sendHoldTimer?.cancel();
     _suggestionDebounce?.cancel();
-    unawaited(_speechServiceInstance?.stopListening() ?? Future.value());
+    _speechStartWatchdog?.cancel();
+    unawaited(_activeSpeechService?.stopListening() ?? Future.value());
     _controller.dispose();
     _internalFocusNode.dispose();
     super.dispose();
@@ -1141,10 +1176,13 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                                     onPressed:
                                         widget.enabled &&
                                             !_isSending &&
+                                            !_isStartingListening &&
                                             !widget.isResponding
                                         ? () => unawaited(_toggleVoiceInput())
                                         : null,
-                                    tooltip: _isListening
+                                    tooltip: _isStartingListening
+                                        ? 'Starting voice input'
+                                        : _isListening
                                         ? 'Stop voice input'
                                         : 'Start voice input',
                                     style: IconButton.styleFrom(
@@ -1158,21 +1196,32 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                                       ).visualDensity,
                                       backgroundColor:
                                           microphoneButtonBackgroundColor(
-                                            isListening: _isListening,
+                                            isListening:
+                                                _isListening ||
+                                                _isStartingListening,
                                             colorScheme: colorScheme,
                                           ),
                                       foregroundColor:
                                           microphoneButtonForegroundColor(
-                                            isListening: _isListening,
+                                            isListening:
+                                                _isListening ||
+                                                _isStartingListening,
                                             colorScheme: colorScheme,
                                           ),
                                     ),
-                                    icon: Icon(
-                                      _isListening
-                                          ? Icons.mic_rounded
-                                          : Icons.mic_none_rounded,
-                                      size: 20,
-                                    ),
+                                    icon: _isStartingListening
+                                        ? const SizedBox.square(
+                                            dimension: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : Icon(
+                                            _isListening
+                                                ? Icons.mic_rounded
+                                                : Icons.mic_none_rounded,
+                                            size: 20,
+                                          ),
                                   ),
                                 ),
                               ],
@@ -1662,6 +1711,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   }
 
   Future<void> _toggleVoiceInput() async {
+    if (_isStartingListening) {
+      return;
+    }
     if (_isListening) {
       await _stopListening();
       return;
@@ -1669,11 +1721,105 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     await _startListening();
   }
 
-  Future<void> _startListening() async {
-    if (!widget.enabled || _isSending) return;
+  void _startListeningLoading() {
+    _speechStartWatchdog?.cancel();
+    _speechStartWatchdog = Timer(const Duration(seconds: 12), () {
+      if (!mounted) {
+        return;
+      }
+      if (_isStartingListening) {
+        setState(() {
+          _isStartingListening = false;
+        });
+      }
+    });
+    setState(() {
+      _isStartingListening = true;
+    });
+  }
 
-    final available = await _speechService.initialize();
-    if (!available) {
+  void _finishListeningLoading() {
+    _speechStartWatchdog?.cancel();
+    _speechStartWatchdog = null;
+    if (!mounted) {
+      return;
+    }
+    if (_isStartingListening) {
+      setState(() {
+        _isStartingListening = false;
+      });
+    }
+  }
+
+  SpeechInputService? _serviceForEngine(SpeechToTextEngine engine) {
+    return switch (engine) {
+      SpeechToTextEngine.native => _nativeSpeechService,
+      SpeechToTextEngine.sherpa => _sherpaSpeechService,
+    };
+  }
+
+  Future<_SpeechServiceResolution?> _resolveSpeechServiceForStart(
+    SettingsProvider settingsProvider,
+  ) async {
+    final primaryEngine = settingsProvider.speechToTextEngine;
+    final fallbackEngine = primaryEngine == SpeechToTextEngine.native
+        ? SpeechToTextEngine.sherpa
+        : SpeechToTextEngine.native;
+
+    final primaryService = _serviceForEngine(primaryEngine);
+    if (primaryService != null && await primaryService.initialize()) {
+      return _SpeechServiceResolution(
+        service: primaryService,
+        engine: primaryEngine,
+        usedFallback: false,
+      );
+    }
+
+    final fallbackService = _serviceForEngine(fallbackEngine);
+    if (fallbackService != null && await fallbackService.initialize()) {
+      return _SpeechServiceResolution(
+        service: fallbackService,
+        engine: fallbackEngine,
+        usedFallback: true,
+      );
+    }
+
+    return null;
+  }
+
+  String _speechEngineLabel(SpeechToTextEngine engine) {
+    return switch (engine) {
+      SpeechToTextEngine.native => 'Native',
+      SpeechToTextEngine.sherpa => 'Sherpa',
+    };
+  }
+
+  String? _localeForService(
+    SpeechInputService service,
+    SettingsProvider settingsProvider,
+  ) {
+    if (service is! SherpaSpeechInputService) {
+      return null;
+    }
+    final configured = settingsProvider.sherpaLanguageCode;
+    if (configured == kSherpaLanguageSystem) {
+      return null;
+    }
+    return configured;
+  }
+
+  Future<void> _startListening() async {
+    if (!widget.enabled || _isSending || _isStartingListening) return;
+
+    if (!mounted) {
+      return;
+    }
+    _startListeningLoading();
+
+    final settingsProvider = context.read<SettingsProvider>();
+    final resolution = await _resolveSpeechServiceForStart(settingsProvider);
+    if (resolution == null) {
+      _finishListeningLoading();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -1683,23 +1829,48 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
       return;
     }
 
+    _activeSpeechService = resolution.service;
+    if (resolution.usedFallback && mounted) {
+      final label = _speechEngineLabel(resolution.engine);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Selected STT engine unavailable. Using $label.'),
+        ),
+      );
+    }
+
+    final pauseFor = Duration(
+      seconds: settingsProvider.speechSilenceTimeoutSeconds,
+    );
+
     _speechPrefix = _controller.text;
+    _speechCommittedText = '';
     try {
       await _speechService.startListening(
         onResult: _onSpeechResult,
         onStatus: _onSpeechStatus,
         onError: _onSpeechError,
-        pauseFor: const Duration(seconds: 5),
+        pauseFor: pauseFor,
+        localeId: _localeForService(_speechService, settingsProvider),
       );
       if (!mounted) return;
       setState(() {
         _isListening = _speechService.isListening;
       });
-    } catch (_) {
+      if (_isListening) {
+        _finishListeningLoading();
+      }
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'Voice input start failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (!mounted) return;
       setState(() {
         _isListening = false;
       });
+      _finishListeningLoading();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to start voice input')),
       );
@@ -1712,6 +1883,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     } catch (_) {
       // Ignore platform stop errors to keep compose flow resilient.
     } finally {
+      _finishListeningLoading();
       if (mounted) {
         setState(() {
           _isListening = false;
@@ -1726,17 +1898,14 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     if (!mounted) return;
 
     final text = recognized.trim();
-    final prefix = _speechPrefix;
-    final shouldAddSpace =
-        prefix.isNotEmpty &&
-        text.isNotEmpty &&
-        !prefix.endsWith(' ') &&
-        !prefix.endsWith('\n');
-    final nextText = text.isEmpty
-        ? prefix
-        : shouldAddSpace
-        ? '$prefix $text'
-        : '$prefix$text';
+    if (isFinal && text.isNotEmpty) {
+      _speechCommittedText = _appendSpeechSegment(_speechCommittedText, text);
+    }
+
+    final spokenText = isFinal
+        ? _speechCommittedText
+        : _appendSpeechSegment(_speechCommittedText, text);
+    final nextText = _appendSpeechSegment(_speechPrefix, spokenText);
 
     _controller.value = TextEditingValue(
       text: nextText,
@@ -1748,14 +1917,28 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     });
   }
 
+  String _appendSpeechSegment(String base, String addition) {
+    if (addition.isEmpty) return base;
+    if (base.isEmpty) return addition;
+    if (base.endsWith(' ') || base.endsWith('\n')) {
+      return '$base$addition';
+    }
+    return '$base $addition';
+  }
+
   void _onSpeechStatus(String status) {
     if (!mounted) return;
 
-    // 'model_required' is emitted by SherpaSpeechInputService on Linux when
-    // no model is installed yet — show the download dialog.
+    // 'model_required' is emitted by Sherpa when no model is installed for the
+    // selected language. Show the download/setup dialog.
     if (status == 'model_required') {
+      _finishListeningLoading();
       _showSherpaDownloadDialog();
       return;
+    }
+
+    if (status == 'listening' || status == 'done') {
+      _finishListeningLoading();
     }
 
     final listening = status == 'listening' || _speechService.isListening;
@@ -1767,17 +1950,17 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
 
   void _onSpeechError() {
     if (!mounted) return;
+    _finishListeningLoading();
     setState(() {
       _isListening = false;
     });
   }
 
-  // Shows the Sherpa model download dialog (Linux only) when no on-device
-  // model is installed. Re-starts listening after a successful download.
-  // This path is only reachable when SherpaSpeechInputService emits
-  // 'model_required', which happens exclusively on Linux.
+  // Shows the Sherpa model download dialog when an on-device model is required,
+  // then retries listening after a successful download.
   Future<void> _showSherpaDownloadDialog() async {
     if (!mounted) return;
+    _finishListeningLoading();
     setState(() {
       _isListening = false;
     });
@@ -1788,7 +1971,8 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     );
     // Re-initialize the service (model is now on disk) and start listening.
     if (downloaded == true && mounted) {
-      _speechServiceInstance = null; // Force re-initialization with new model.
+      _sherpaSpeechServiceInstance = null;
+      _activeSpeechService = null;
       await _startListening();
     }
   }
