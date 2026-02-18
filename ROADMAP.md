@@ -201,9 +201,9 @@ Implemented desktop local-server wizard with runtime checks for `opencode serve`
 - Feat (`a8a5d96`): `AndroidSpeechInputService` now queries `SpeechRecognizer.isRecognitionAvailable(context)` via new `isAvailable` channel method before using the native channel. On AOSP devices or custom ROMs without Google Play Services, falls back transparently to `SttSpeechInputService` (speech_to_text package), which correctly honours the `pauseFor` silence timeout.
 - Aftermath (`92c8d2b`): Removed Android custom STT channel in favor of `speech_to_text` (Native) which achieved parity with recent fixes. Added "Speech to text" settings section with engine selector (Native/Sherpa) and silence timeout. Added Sherpa model management in settings for Linux (Kroko models) with "Sherpa (Experimental)" labeling.
 - [x] Polish: Set Sherpa as default engine for Linux and disabled Native engine in settings with explanatory hint. Mic button now shows loading state (static hourglass for visibility during startup freeze) immediately and yields (~10ms) before starting engine to let loading paint. - Commit hash: 317f02e
-- Fix (device test): Android policy changed to keep APK slim. Sherpa engine disabled on Android, Native forced, and build excludes Sherpa/ONNX native libs. `make android` now builds arm64-only split APK, returning size to ~21.9 MB. - (pending commit)
+- [x] Fix (device test): Android policy changed to keep APK slim. Sherpa engine disabled on Android, Native forced, and build excludes Sherpa/ONNX native libs. `make android` now builds arm64-only split APK, returning size to ~21.9 MB. - Commit hash: addc1ac
 
-Commits: e73f15e, 52a35e7, 86b8162, 0347e88, 148b650, 1f4677c, a8a5d96
+Commits: e73f15e, 52a35e7, 86b8162, 0347e88, 148b650, 1f4677c, a8a5d96, 889ea9a, 317f02e, addc1ac, f4108fe
 
 #### `featK` First-run onboarding wizard
 

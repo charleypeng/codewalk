@@ -1,7 +1,7 @@
 # CodeWalk - Codebase Baseline Snapshot
 
-> Captured: 2026-02-17
-> Git baseline: `20d4fd4 release: cut v1.8.0` (main)
+> Captured: 2026-02-18
+> Git baseline: `f4108fe release: cut v1.11.0` (main)
 > Flutter: 3.41.0 (stable)
 
 ## Delta Update (2026-02-18) - STT Platform Abstraction & Runtime Engine Selection (Feat J)
