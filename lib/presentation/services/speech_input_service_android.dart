@@ -52,6 +52,7 @@ class AndroidSpeechInputService implements SpeechInputService {
     );
     await _control.invokeMethod<void>('start', <String, dynamic>{
       if (localeId != null) 'localeId': localeId,
+      if (pauseFor != null) 'pauseForMs': pauseFor.inMilliseconds,
     });
     _isListening = true;
     onStatus('listening');

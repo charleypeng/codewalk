@@ -3,6 +3,8 @@ package com.verseles.codewalk
 import android.content.Intent
 import android.media.RingtoneManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
@@ -17,6 +19,13 @@ class MainActivity : FlutterActivity() {
     // Streams partial/final recognition results back to Flutter.
     private var speechRecognizer: SpeechRecognizer? = null
     private var speechEventSink: EventSink? = null
+
+    // Manual silence timer — Android's EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS
+    // is ignored by Google's Speech engine, so we implement silence detection via
+    // onRmsChanged: reset the handler when voice is heard, fire stopListening() otherwise.
+    private val silenceHandler = Handler(Looper.getMainLooper())
+    private var silenceRunnable: Runnable? = null
+    private val silenceThresholdDb = 1.5f // dB above which audio is considered speech
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -54,7 +63,8 @@ class MainActivity : FlutterActivity() {
             when (call.method) {
                 "start" -> {
                     val localeId = call.argument<String?>("localeId")
-                    startSpeechRecognition(localeId)
+                    val pauseForMs = call.argument<Int>("pauseForMs")?.toLong() ?: 5000L
+                    startSpeechRecognition(localeId, pauseForMs)
                     result.success(null)
                 }
                 "stop" -> {
@@ -66,21 +76,36 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    // Starts Android SpeechRecognizer with EXTRA_ENABLE_PUNCTUATION.
-    // EXTRA_ENABLE_PUNCTUATION is a proprietary Google extra — degrades silently
-    // on devices without Play Services (STT still works, just without punctuation).
-    private fun startSpeechRecognition(localeId: String?) {
+    // Starts Android SpeechRecognizer with automatic formatting and a manual silence
+    // timer. EXTRA_ENABLE_FORMATTING (API 33+) requests punctuation/capitalisation
+    // from Google's engine; silently ignored on older APIs or non-Google engines.
+    // The Android silence-length extras are ignored by Google Speech — we use
+    // onRmsChanged to detect actual silence and fire stopListening() ourselves.
+    private fun startSpeechRecognition(localeId: String?, pauseForMs: Long) {
+        cancelSilenceTimeout()
         speechRecognizer?.destroy()
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this).apply {
             setRecognitionListener(object : RecognitionListener {
                 override fun onReadyForSpeech(params: Bundle?) {}
-                override fun onBeginningOfSpeech() {}
-                override fun onRmsChanged(rmsdB: Float) {}
+
+                override fun onBeginningOfSpeech() {
+                    // Speech began — arm the silence timer from this moment.
+                    scheduleSilenceTimeout(pauseForMs)
+                }
+
+                override fun onRmsChanged(rmsdB: Float) {
+                    // Voice is still active — reset the silence countdown.
+                    if (rmsdB > silenceThresholdDb) {
+                        scheduleSilenceTimeout(pauseForMs)
+                    }
+                }
+
                 override fun onBufferReceived(buffer: ByteArray?) {}
                 override fun onEndOfSpeech() {}
                 override fun onEvent(eventType: Int, params: Bundle?) {}
 
                 override fun onResults(bundle: Bundle?) {
+                    cancelSilenceTimeout()
                     val results = bundle?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     speechEventSink?.success(
                         mapOf("text" to (results?.firstOrNull() ?: ""), "isFinal" to true),
@@ -95,6 +120,7 @@ class MainActivity : FlutterActivity() {
                 }
 
                 override fun onError(error: Int) {
+                    cancelSilenceTimeout()
                     // Emit an empty final result so the Flutter side can clean up.
                     speechEventSink?.success(mapOf("text" to "", "isFinal" to true))
                 }
@@ -106,8 +132,15 @@ class MainActivity : FlutterActivity() {
                         RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
                     )
                     putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-                    // Proprietary Google extra for automatic punctuation inference.
-                    putExtra("android.speech.extra.ENABLE_PUNCTUATION", true)
+                    // API 33+ official extra for automatic punctuation and capitalisation.
+                    // Uses string key directly so it compiles without minSdk 33 guard;
+                    // older Google Speech engines silently ignore unknown extras.
+                    putExtra(
+                        "android.speech.extra.ENABLE_FORMATTING",
+                        "android.speech.extra.FORMATTING_OPTIMIZE_QUALITY",
+                    )
+                    // Allow punctuation in partial results (API 33+, silently ignored below).
+                    putExtra("android.speech.extra.HIDE_PARTIAL_TRAILING_PUNCTUATION", false)
                     if (!localeId.isNullOrBlank()) {
                         putExtra(RecognizerIntent.EXTRA_LANGUAGE, localeId)
                     }
@@ -116,7 +149,22 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    // Arms (or re-arms) the silence timeout. Fires stopListening() after delayMs.
+    private fun scheduleSilenceTimeout(delayMs: Long) {
+        silenceRunnable?.let { silenceHandler.removeCallbacks(it) }
+        val runnable = Runnable { speechRecognizer?.stopListening() }
+        silenceRunnable = runnable
+        silenceHandler.postDelayed(runnable, delayMs)
+    }
+
+    // Cancels any pending silence-timeout callback.
+    private fun cancelSilenceTimeout() {
+        silenceRunnable?.let { silenceHandler.removeCallbacks(it) }
+        silenceRunnable = null
+    }
+
     private fun stopSpeechRecognition() {
+        cancelSilenceTimeout()
         speechRecognizer?.stopListening()
         speechRecognizer?.destroy()
         speechRecognizer = null
