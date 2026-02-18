@@ -675,7 +675,16 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   }
 
   void _consumeRejectedDraft(ChatProvider chatProvider) {
-    final rejectedDraft = chatProvider.consumeRejectedDraftText();
+    if (!_isChatScreenActive() || chatProvider.state != ChatState.error) {
+      return;
+    }
+    final currentSessionId = chatProvider.currentSession?.id;
+    if (currentSessionId == null || currentSessionId.isEmpty) {
+      return;
+    }
+    final rejectedDraft = chatProvider.consumeRejectedDraftText(
+      sessionId: currentSessionId,
+    );
     if (rejectedDraft == null || rejectedDraft.trim().isEmpty) {
       return;
     }

@@ -12,6 +12,9 @@ Systematic elimination of bugs, security gaps, performance issues, dead code, an
 - [x] 1.3: Rejected/failed send restores composer draft automatically for retry - Commit: 00583f0
 - [x] 1.4: Stop/send state no longer stays stuck on Stop after session becomes idle/stream ends - Commit: 00583f0
 
+**Follow-up after v1.10.1** (pending commit):
+- [x] 1.3.1: Rejected draft restore should NOT repopulate composer when user returns to chat later (only immediate retry within same session)
+
 - [ ] 1.5: Change `registerFactory` to `registerLazySingleton` for `AppProvider` and `ChatProvider` in `injection_container.dart` (resource leak: multiple polling timers, concurrent health checks, unmanaged state)
 - [ ] 1.6: Move state mutation out of `build()` in `chat_page.dart` (`_wasCompactingContext` and `_frozenCompactionBoundaryId` mutated during build phase via `_buildMessageTimelineEntries`)
 - [ ] 1.7: Add `_disposed` guard to `ChatProvider.dispose()` to prevent `notifyListeners()` on a disposed provider (async cancellation outlives `super.dispose()`)

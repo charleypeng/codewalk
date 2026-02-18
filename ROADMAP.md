@@ -219,6 +219,8 @@ Implemented compaction boundary timeline entry that collapses all pre-compaction
 
 **2026-02-17 Regression Fixes Batch** - Commit: 00583f0: Auto-follow only disables on real manual scroll intent; foreground resume catches up to latest when user is not browsing older history; rejected/failed send restores composer draft automatically for retry; stop/send state no longer stays stuck on Stop after session becomes idle/stream ends.
 
+**v1.10.1 Follow-up** (pending commit): Rejected draft restore should NOT repopulate composer when user returns to chat later (only immediate retry within same session).
+
 - [ ] Group 1: Bug fixes — DI resource leak, state mutation in build(), dispose guard, health polling race condition, markdown link tap, dead SessionRepository
 - [ ] Group 2: Security — credentials in flutter_secure_storage, streaming SHA-256
 - [ ] Group 3: Performance — cached shortcut maps, memoized message history, Dio lifecycle, ListView.builder for sessions

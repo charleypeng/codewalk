@@ -4,6 +4,12 @@
 > Git baseline: `20d4fd4 release: cut v1.8.0` (main)
 > Flutter: 3.41.0 (stable)
 
+## Delta Update (2026-02-17) - Draft Restore Lifecycle Scoping
+
+- **Draft restore lifecycle/session scoping** (`chat_provider.dart` + `chat_page.dart`): Rejected draft stash is now bound to current session (`_rejectedDraftSessionId`) and only created while app/provider are foreground-active. Composer restore is consumed only for the active session while the UI is in error state. Includes TTL (2 minutes) to prevent stale restores after delayed returns.
+- **Rejected draft clearance**: Draft stash clears on session switch or new successful send, preventing cross-session draft leakage.
+- **Provider unit tests**: Added tests for foreground/background restore behavior and session-binding guards in `chat_provider_test.dart`.
+
 ## Delta Update (2026-02-17) - Chat Regression Fixes
 
 - **Auto-follow scroll intent** (`chat_page.dart`): Auto-follow now disables only on real manual scroll intent (`userScrollDirection != idle`), not on content-size changes (new messages, collapsed/expanded bubbles). Prevents premature FAB appearance during streaming.

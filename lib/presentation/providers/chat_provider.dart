@@ -318,6 +318,8 @@ class ChatProvider extends ChangeNotifier {
   String? _activeMessageStreamSessionId;
   String? _activeSendDraftText;
   String? _rejectedDraftText;
+  String? _rejectedDraftSessionId;
+  DateTime? _rejectedDraftCreatedAt;
 
   // Project and provider-related state
   String? _currentProjectId;
@@ -383,6 +385,7 @@ class ChatProvider extends ChangeNotifier {
   static const Duration _lastSessionSnapshotTtl = Duration(days: 7);
   static const int _maxRecentModels = 8;
   static const Duration _abortSuppressionWindow = Duration(seconds: 8);
+  static const Duration _rejectedDraftRestoreWindow = Duration(minutes: 2);
   static const Duration _remoteSelectionSyncThrottle = Duration(seconds: 2);
   static const String _configCodewalkNamespace = 'codewalk';
   static const String _configSelectionKey = 'selection';
@@ -730,9 +733,31 @@ class ChatProvider extends ChangeNotifier {
     return notice;
   }
 
-  String? consumeRejectedDraftText() {
-    final draftText = _rejectedDraftText;
-    _rejectedDraftText = null;
+  String? consumeRejectedDraftText({String? sessionId}) {
+    final draftText = _rejectedDraftText?.trim();
+    if (draftText == null || draftText.isEmpty) {
+      _clearRejectedDraftText();
+      return null;
+    }
+
+    final expectedSessionId = sessionId?.trim();
+    final draftSessionId = _rejectedDraftSessionId?.trim();
+    if (expectedSessionId != null &&
+        expectedSessionId.isNotEmpty &&
+        draftSessionId != null &&
+        draftSessionId.isNotEmpty &&
+        expectedSessionId != draftSessionId) {
+      return null;
+    }
+
+    final createdAt = _rejectedDraftCreatedAt;
+    if (createdAt != null &&
+        DateTime.now().difference(createdAt) > _rejectedDraftRestoreWindow) {
+      _clearRejectedDraftText();
+      return null;
+    }
+
+    _clearRejectedDraftText();
     return draftText;
   }
 
@@ -809,6 +834,7 @@ class ChatProvider extends ChangeNotifier {
   }
 
   void _setActiveSendDraftText(String draftText, {required bool shellMode}) {
+    _clearRejectedDraftText();
     final normalizedDraft = draftText.trim();
     if (normalizedDraft.isEmpty) {
       _activeSendDraftText = null;
@@ -821,13 +847,29 @@ class ChatProvider extends ChangeNotifier {
     _activeSendDraftText = null;
   }
 
-  void _stashRejectedDraftTextForRetry() {
+  void _clearRejectedDraftText() {
+    _rejectedDraftText = null;
+    _rejectedDraftSessionId = null;
+    _rejectedDraftCreatedAt = null;
+  }
+
+  void _stashRejectedDraftTextForRetry({String? sessionId}) {
     final draftText = _activeSendDraftText?.trim();
     _activeSendDraftText = null;
     if (draftText == null || draftText.isEmpty) {
       return;
     }
+    final effectiveSessionId = sessionId?.trim();
+    if (!_isAppInForeground ||
+        !_isForegroundActive ||
+        effectiveSessionId == null ||
+        effectiveSessionId.isEmpty) {
+      _clearRejectedDraftText();
+      return;
+    }
     _rejectedDraftText = draftText;
+    _rejectedDraftSessionId = effectiveSessionId;
+    _rejectedDraftCreatedAt = DateTime.now();
   }
 
   String _modelKey(String providerId, String modelId) {
@@ -4966,6 +5008,7 @@ class ChatProvider extends ChangeNotifier {
     _currentSession = session;
     _messages = <ChatMessage>[];
     _pendingLocalUserMessageIds.clear();
+    _clearRejectedDraftText();
     _sessionInsightsError = null;
 
     final serverId = await _resolveServerScopeId();
@@ -5007,6 +5050,7 @@ class ChatProvider extends ChangeNotifier {
     // Clear current message list
     _messages.clear();
     _pendingLocalUserMessageIds.clear();
+    _clearRejectedDraftText();
     _currentSession = session;
     _applySelectionPriorityForCurrentSession();
     notifyListeners();
@@ -5235,7 +5279,9 @@ class ChatProvider extends ChangeNotifier {
                   _setState(ChatState.loaded);
                   return;
                 }
-                _stashRejectedDraftTextForRetry();
+                _stashRejectedDraftTextForRetry(
+                  sessionId: _activeMessageStreamSessionId,
+                );
                 _handleFailure(failure);
               }, _updateOrAddMessage);
             },
@@ -5247,8 +5293,9 @@ class ChatProvider extends ChangeNotifier {
                 return;
               }
               _messageSubscription = null;
+              final streamSessionId = _activeMessageStreamSessionId;
               _activeMessageStreamSessionId = null;
-              _stashRejectedDraftTextForRetry();
+              _stashRejectedDraftTextForRetry(sessionId: streamSessionId);
               AppLogger.error('Provider send stream error', error: error);
               _setError('Failed to send message: $error');
             },
@@ -5281,8 +5328,10 @@ class ChatProvider extends ChangeNotifier {
           );
       AppLogger.info('Provider send stream subscription attached');
     } catch (error, stackTrace) {
+      final streamSessionId =
+          _activeMessageStreamSessionId ?? _currentSession?.id;
       _activeMessageStreamSessionId = null;
-      _stashRejectedDraftTextForRetry();
+      _stashRejectedDraftTextForRetry(sessionId: streamSessionId);
       AppLogger.error(
         'Provider send setup failed',
         error: error,

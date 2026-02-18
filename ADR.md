@@ -1545,6 +1545,8 @@ The expected behavior required preserving existing mention/slash keyboard behavi
 Semantics are non-breaking bugfixes restoring intended behavior that had regressed:
 
 1. **Composer draft restore after rejected send**: When a message send fails (validation error, network error, or server rejection), the composer text is restored to its pre-send state rather than being cleared. Users can correct and retry without retyping.
+   - **Lifecycle context constraints**: Draft restoration is gated by (a) app is in foreground, (b) session is still active/current, (c) UI is currently in error state before re-injecting into composer. Restoration is skipped if the user navigated away or switched sessions.
+   - **Expiration window**: Stale drafts older than 2 minutes are discarded to prevent resurrecting old input after returning to chat later.
 
 2. **Stop/send idle-state reset**: After a successful Stop (abort) or Send completion, the session state machine correctly transitions to `idle` rather than lingering in intermediate states (`sending`, `busy`). This ensures the composer is immediately ready for new input without requiring manual recovery actions.
 

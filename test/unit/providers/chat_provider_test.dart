@@ -1957,6 +1957,50 @@ void main() {
       },
     );
 
+    test('send failure in foreground queues draft restore for retry', () async {
+      final sendStream = StreamController<Either<Failure, ChatMessage>>();
+      addTearDown(() async {
+        await sendStream.close();
+      });
+      chatRepository.sendMessageHandler = (_, __, ___, ____) =>
+          sendStream.stream;
+
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+
+      await provider.sendMessage('retry this text');
+      sendStream.add(const Left(NetworkFailure('temporary failure')));
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+
+      expect(
+        provider.consumeRejectedDraftText(sessionId: 'ses_1'),
+        'retry this text',
+      );
+    });
+
+    test('send failure in background does not queue draft restore', () async {
+      final sendStream = StreamController<Either<Failure, ChatMessage>>();
+      addTearDown(() async {
+        await sendStream.close();
+      });
+      chatRepository.sendMessageHandler = (_, __, ___, ____) =>
+          sendStream.stream;
+
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      provider.setAppInForeground(false);
+
+      await provider.sendMessage('do not resurrect this text');
+      sendStream.add(
+        const Left(NetworkFailure('stream dropped in background')),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+
+      expect(provider.consumeRejectedDraftText(sessionId: 'ses_1'), isNull);
+    });
+
     test(
       'switching sessions ignores in-flight stream updates from previous session',
       () async {
