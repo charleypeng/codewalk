@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import '../../core/di/injection_container.dart' as di;
 import '../../domain/entities/chat_session.dart';
 import '../services/speech_input_service.dart';
+import 'sherpa_model_download_dialog.dart';
 
 enum ChatComposerMode { normal, shell }
 
@@ -1780,13 +1781,15 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     setState(() {
       _isListening = false;
     });
-    // TODO(J.03): import and show SherpaModelDownloadDialog here once
-    // the sherpa_onnx integration is added in the J.03 commit.
-    // final downloaded = await showDialog<bool>(
-    //   context: context,
-    //   barrierDismissible: false,
-    //   builder: (_) => const SherpaModelDownloadDialog(),
-    // );
-    // if (downloaded == true && mounted) await _startListening();
+    final downloaded = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const SherpaModelDownloadDialog(),
+    );
+    // Re-initialize the service (model is now on disk) and start listening.
+    if (downloaded == true && mounted) {
+      _speechServiceInstance = null; // Force re-initialization with new model.
+      await _startListening();
+    }
   }
 }
