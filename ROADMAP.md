@@ -217,7 +217,7 @@ Implemented compaction boundary timeline entry that collapses all pre-compaction
 
 #### `featO` Code health & technical debt
 
-**2026-02-17 Regression Fixes Batch** (pending commit hash): Auto-follow only disables on real manual scroll intent; foreground resume catches up to latest when user is not browsing older history; rejected/failed send restores composer draft automatically for retry; stop/send state no longer stays stuck on Stop after session becomes idle/stream ends.
+**2026-02-17 Regression Fixes Batch** - Commit: 00583f0: Auto-follow only disables on real manual scroll intent; foreground resume catches up to latest when user is not browsing older history; rejected/failed send restores composer draft automatically for retry; stop/send state no longer stays stuck on Stop after session becomes idle/stream ends.
 
 - [ ] Group 1: Bug fixes — DI resource leak, state mutation in build(), dispose guard, health polling race condition, markdown link tap, dead SessionRepository
 - [ ] Group 2: Security — credentials in flutter_secure_storage, streaming SHA-256

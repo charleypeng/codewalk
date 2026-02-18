@@ -6,11 +6,11 @@ Systematic elimination of bugs, security gaps, performance issues, dead code, an
 
 ### Group 1 — Bug fixes (critical, localized changes) `[ ]`
 
-**2026-02-17 Regression Fixes Batch** (pending commit hash):
-- [x] 1.1: Auto-follow only disables on real manual scroll intent (not programmatic scrolls or momentum)
-- [x] 1.2: Foreground resume catches up to latest when user is not browsing older history
-- [x] 1.3: Rejected/failed send restores composer draft automatically for retry
-- [x] 1.4: Stop/send state no longer stays stuck on Stop after session becomes idle/stream ends
+**2026-02-17 Regression Fixes Batch** - Commit: 00583f0
+- [x] 1.1: Auto-follow only disables on real manual scroll intent (not programmatic scrolls or momentum) - Commit: 00583f0
+- [x] 1.2: Foreground resume catches up to latest when user is not browsing older history - Commit: 00583f0
+- [x] 1.3: Rejected/failed send restores composer draft automatically for retry - Commit: 00583f0
+- [x] 1.4: Stop/send state no longer stays stuck on Stop after session becomes idle/stream ends - Commit: 00583f0
 
 - [ ] 1.5: Change `registerFactory` to `registerLazySingleton` for `AppProvider` and `ChatProvider` in `injection_container.dart` (resource leak: multiple polling timers, concurrent health checks, unmanaged state)
 - [ ] 1.6: Move state mutation out of `build()` in `chat_page.dart` (`_wasCompactingContext` and `_frozenCompactionBoundaryId` mutated during build phase via `_buildMessageTimelineEntries`)
