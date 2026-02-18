@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_linux
   dynamic_color
+  record_linux
   screen_retriever_linux
   tray_manager
   url_launcher_linux
@@ -12,6 +13,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  sherpa_onnx_linux
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)

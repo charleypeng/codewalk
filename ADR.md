@@ -40,6 +40,7 @@ This document tracks technical decisions for CodeWalk.
 - ADR-033: Desktop-Only Managed Local OpenCode Server Wizard (2026-02-15) [Accepted]
 - ADR-034: CI/Release Workflow Separation and Automated Release Pipeline (2026-02-15) [Accepted]
 - ADR-035: Platform-Aware Background Behavior Architecture (2026-02-16) [Accepted]
+- ADR-036: SpeechInputService Platform Abstraction (2026-02-18) [Accepted]
 
 ---
 
@@ -1815,5 +1816,56 @@ The original CI workflow (ADR-003) ran quality checks and platform builds (Linux
 
 - ADR-003: CI Parallel Quality/Build Matrix (superseded by this ADR)
 - ADR-002: Makefile as Development and Pre-Commit Gatekeeper (extended with `release` target)
+
+---
+
+## ADR-036: SpeechInputService Platform Abstraction
+
+**Status**: Accepted
+**Date**: 2026-02-18
+
+### Context
+
+STT logic lived inline in `_ChatInputWidgetState` with no abstraction. Supporting 3 backends — `speech_to_text` for iOS/macOS/Web/Windows, an Android custom platform channel, and `sherpa_onnx` for Linux — required a clean interface so the widget stays platform-agnostic.
+
+### Decision
+
+Create abstract `SpeechInputService` interface with 3 platform-specific implementations registered via `get_it` DI:
+
+- **SttSpeechInputService** (iOS/macOS/Web/Windows): uses `speech_to_text ^7.3.0`; `autoPunctuation` enabled on iOS/macOS only; `pauseFor 5s`; `listenMode.dictation`.
+- **AndroidSpeechInputService** (Android): uses a custom `MethodChannel('codewalk/speech_control')` + `EventChannel('codewalk/speech')`; `EXTRA_ENABLE_FORMATTING` (API 33+) for punctuation; manual silence timer via `onRmsChanged` because `EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS` is ignored by the Google Speech Engine.
+- **SherpaSpeechInputService** (Linux): uses `sherpa_onnx ^1.12.25` on-device with Kroko streaming transducer models + `record ^6.0.0` for PCM capture.
+
+Conditional exports (`dart.library.io`) ensure `sherpa_onnx` is not imported on web. DI uses `kIsWeb` + `defaultTargetPlatform` guards.
+
+### Rationale
+
+- Clean separation of STT concerns; widget is platform-agnostic after refactor.
+- Android gets auto-punctuation via `EXTRA_ENABLE_FORMATTING` (API 33+, Google Voice Typing on Pixel 6+).
+- Linux gets offline STT without relying on any cloud or OS speech API.
+- Adding new platforms only requires a new implementation + DI registration.
+- Follows the established `NotificationSoundSourceService` stub/io pattern.
+
+### Consequences
+
+- ✅ Positive: Platform-agnostic chat input widget; each backend is independently testable.
+- ⚠️ Warning: `EXTRA_ENABLE_FORMATTING` requires API 33+ and Google Voice Typing; Samsung OEM engine ignores it.
+- ⚠️ Warning: `sherpa_onnx` requires ~147 MB per-language model download on first Linux use.
+- ❌ Negative: Three separate codepaths to maintain for STT functionality.
+
+### Key Files
+
+- `lib/presentation/services/speech_input_service.dart` — abstract interface
+- `lib/presentation/services/speech_input_service_stt.dart` — iOS/macOS/Web/Windows implementation
+- `lib/presentation/services/speech_input_service_android.dart` — Android implementation
+- `lib/presentation/services/speech_input_service_sherpa_io.dart` — Linux implementation
+- `lib/presentation/services/sherpa_model_manager_io.dart` — model download manager
+- `android/app/src/main/kotlin/com/verseles/codewalk/MainActivity.kt` — Kotlin platform channels
+- `lib/core/di/injection_container.dart` — DI registration
+
+### References
+
+- Related commits: e73f15e, 52a35e7, 86b8162, 0347e88, 148b650
+- Related ROADMAP: Feature J — STT Platform Matrix
 
 ---

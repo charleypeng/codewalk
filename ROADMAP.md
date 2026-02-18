@@ -82,7 +82,7 @@ Notes:
 - [ ] `featF` - `ROADMAP.featF.md` (files drafting UX + duplicate/copy interaction fixes)
 - [ ] `featG` - `ROADMAP.featG.md` (favorites and variant selector ergonomics)
 - [ ] `featC` - `ROADMAP.featC.md` (focus/visibility render gate + files planning)
-- [ ] `featJ` - `ROADMAP.featJ.md` (speech-to-text platform matrix)
+- [x] `featJ` - `ROADMAP.featJ.md` (speech-to-text platform matrix)
 - [ ] `featK` - `ROADMAP.featK.md` (first-run onboarding wizard)
 - [ ] `featM` - `ROADMAP.featM.md` (Icons to Material Symbols migration)
 - [ ] `featN` - `ROADMAP.featN.md` (Material You design system revamp)
@@ -187,7 +187,11 @@ Implemented desktop local-server wizard with runtime checks for `opencode serve`
 - [x] Implement global desktop keyboard shortcuts (mod+m recent models, mod+t variants, mod+, open settings, OS-specific Ctrl/Cmd labels, mod+j global behavior) - Commit: 7e2732c
 #### `featJ` Speech-to-text platform matrix
 
-- [ ] No desktop, pesquisar como usar microfone speech-to-text no linux. Pesquisar também se a API atual já funciona no mac/windows/iOS
+**Status**: Completed (2026-02-18)
+
+Implemented SpeechInputService abstraction (3 backends: SttSpeechInputService for iOS/macOS/Web/Windows, AndroidSpeechInputService with custom EventChannel/MethodChannel + EXTRA_ENABLE_FORMATTING punctuation + manual silence timer, SherpaSpeechInputService for Linux via sherpa_onnx on-device Kroko models + download manager dialog), macOS sandbox permissions. Unit tests for STT platform logic. Android STT fix in 148b650: invalid EXTRA_ENABLE_PUNCTUATION replaced with EXTRA_ENABLE_FORMATTING + manual silence timer.
+
+Commits: e73f15e, 52a35e7, 86b8162, 0347e88, 148b650
 
 #### `featK` First-run onboarding wizard
 

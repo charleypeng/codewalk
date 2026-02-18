@@ -4,6 +4,19 @@
 > Git baseline: `20d4fd4 release: cut v1.8.0` (main)
 > Flutter: 3.41.0 (stable)
 
+## Delta Update (2026-02-18) - STT Platform Abstraction (Feat J)
+
+- **SpeechInputService abstraction** (`lib/presentation/services/speech_input_service.dart`): Abstract interface decoupling voice input from any single STT backend. Platform implementations selected at DI registration time with guards.
+- **SttSpeechInputService** (`speech_input_service_stt.dart`): iOS/macOS/Web/Windows implementation via `speech_to_text` package (existing plugin-backed path).
+- **AndroidSpeechInputService** (`speech_input_service_android.dart`): Android implementation via custom `MethodChannel(codewalk/speech_control)` + `EventChannel(codewalk/speech)`, bridging native Kotlin speech recognition in `MainActivity.kt`.
+- **SherpaSpeechInputService** (`speech_input_service_sherpa.dart` + `speech_input_service_sherpa_io.dart` + `speech_input_service_sherpa_stub.dart`): Linux offline STT via `sherpa_onnx` + `record` packages; conditional export selector pattern (io / web stub).
+- **SherpaModelManager** (`sherpa_model_manager.dart` + `sherpa_model_manager_io.dart` + `sherpa_model_manager_stub.dart`): HuggingFace model download and local cache management for Kroko Sherpa ONNX models; conditional export selector pattern.
+- **SherpaModelDownloadDialog** (`lib/presentation/widgets/sherpa_model_download_dialog.dart`): Download-progress UI widget with progress bar for on-demand Kroko model downloads.
+- **Kroko model manifest** (`assets/sherpa_models.json`): 7 multilingual model definitions (de/en/es/fr/it/pt/tr).
+- **Android native bridge** (`android/app/src/main/kotlin/com/verseles/codewalk/MainActivity.kt`): Added `EventChannel(codewalk/speech)` for streaming partial/final results and `MethodChannel(codewalk/speech_control)` for start/stop commands.
+- **DI registration** (`lib/core/di/injection_container.dart`): `SpeechInputService` registered with platform guards routing to the correct implementation per platform.
+- **ChatInputWidget refactor** (`lib/presentation/widgets/chat_input_widget.dart`): Voice input now consumed via `SpeechInputService` injected through DI instead of direct `speech_to_text` usage.
+
 ## Delta Update (2026-02-17) - Draft Restore Lifecycle Scoping
 
 - **Draft restore lifecycle/session scoping** (`chat_provider.dart` + `chat_page.dart`): Rejected draft stash is now bound to current session (`_rejectedDraftSessionId`) and only created while app/provider are foreground-active. Composer restore is consumed only for the active session while the UI is in error state. Includes TTL (2 minutes) to prevent stale restores after delayed returns.
@@ -95,7 +108,8 @@ codewalk/
 │   ├── gradle/
 │   └── settings.gradle.kts
 ├── assets/
-│   └── images/        # App icons and images
+│   ├── images/        # App icons and images
+│   └── sherpa_models.json  # Kroko Sherpa ONNX model manifest (7 languages: de/en/es/fr/it/pt/tr)
 ├── lib/
 │   ├── core/
 │   │   ├── config/    # Feature flags and runtime rollout switches
@@ -115,7 +129,7 @@ codewalk/
 │   ├── presentation/
 │   │   ├── pages/       # App Shell, Chat, Home, Logs, Server Settings
 │   │   ├── providers/   # State management (Provider, ChatProvider, SettingsProvider, etc.)
-│   │   ├── services/    # UI services (ChatTitleGenerator, SoundService, EventFeedbackDispatcher, LocalOpenCodeServerRuntime, FilePartActionService, DesktopTrayService)
+│   │   ├── services/    # UI services (ChatTitleGenerator, SoundService, EventFeedbackDispatcher, LocalOpenCodeServerRuntime, FilePartActionService, DesktopTrayService, SpeechInputService, SherpaModelManager)
 │   │   ├── theme/       # App theme configuration
 │   │   ├── utils/       # UI utilities (SessionTitleFormatter, FileExplorerLogic, ShortcutBindingCodec)
 │   │   └── widgets/     # Chat input, message, session list, interaction cards
@@ -159,10 +173,10 @@ codewalk/
 
 | Type | Count | Notes |
 |------|-------|-------|
-| `.dart` (source) | 111 | Under `lib/` (excluding generated) |
+| `.dart` (source) | 122 | Under `lib/` (excluding generated); +11 from STT platform abstraction (Feat J) |
 | `.g.dart` (generated) | 4 | JSON serialization models |
 | `.dart` (tests) | 27 | Test files (unit, widget, integration, support) |
-| `.dart` (total) | 142 | Repository files excluding build artifacts |
+| `.dart` (total) | 153 | Repository files excluding build artifacts |
 | `.md` (markdown) | 21 | Docs + roadmap + release artifacts + SECURITY.md |
 | `.sh` (scripts) | 2 | Unix installer/uninstaller scripts |
 | `.ps1` (scripts) | 2 | Windows PowerShell installer/uninstaller scripts |
@@ -618,6 +632,18 @@ Android background polling service for detecting actionable events when app is n
 🎯 **Baseline behavior**: First poll run emits actionable alerts immediately for existing retry status/permission/question items (no need to wait for transition). Subsequent runs emit only on state transitions.
 💾 **Persistence**: Snapshot stored per-server in SharedPreferences (`codewalk.android.background.alert.snapshot.v1::<serverId>`)
 🔔 **Integration**: ChatPage calls `scheduleProbe()` when mobile background with active response + hold duration + 1min buffer
+
+### STT Platform Abstraction (Feat J)
+Cross-platform speech-to-text input via a unified `SpeechInputService` interface with per-platform implementations.
+📁 **Localização**: `lib/presentation/services/speech_input_service*.dart`
+🔧 **Implementations**:
+- **SttSpeechInputService** (`speech_input_service_stt.dart`): iOS/macOS/Web/Windows via `speech_to_text` package
+- **AndroidSpeechInputService** (`speech_input_service_android.dart`): Android via `MethodChannel(codewalk/speech_control)` + `EventChannel(codewalk/speech)`; native bridge in `MainActivity.kt`
+- **SherpaSpeechInputService** (`speech_input_service_sherpa_io.dart`): Linux offline STT via `sherpa_onnx` + `record`; web stub in `speech_input_service_sherpa_stub.dart`
+📦 **Model management**: `SherpaModelManager` (`sherpa_model_manager_io.dart`) downloads and caches Kroko ONNX models from HuggingFace; web stub in `sherpa_model_manager_stub.dart`
+🗂️ **Model manifest**: `assets/sherpa_models.json` — 7 multilingual Kroko model definitions (de/en/es/fr/it/pt/tr)
+🖼️ **Download UI**: `sherpa_model_download_dialog.dart` — progress bar dialog for on-demand model download
+🔌 **DI**: `SpeechInputService` registered in `injection_container.dart` with platform guards; `ChatInputWidget` consumes it via DI
 
 ### Authentication and Server Config
 - Multi-server profile management (`ServerProfile`) with active/default selection
