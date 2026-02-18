@@ -4,6 +4,14 @@
 > Git baseline: `20d4fd4 release: cut v1.8.0` (main)
 > Flutter: 3.41.0 (stable)
 
+## Delta Update (2026-02-17) - Chat Regression Fixes
+
+- **Auto-follow scroll intent** (`chat_page.dart`): Auto-follow now disables only on real manual scroll intent (`userScrollDirection != idle`), not on content-size changes (new messages, collapsed/expanded bubbles). Prevents premature FAB appearance during streaming.
+- **Foreground active-session refresh** (`chat_provider.dart`): `refreshActiveSessionView` now invokes `scrollToBottomCallback` after message refresh (unless compacting), ensuring scroll-to-latest when appropriate.
+- **Composer draft restore on rejection** (`chat_provider.dart` + `chat_input_widget.dart`): Draft text is stashed before send and restored to composer with focus recovery when send is rejected (no provider, rate-limited, stream error). SnackBar message updated to "Failed to send message. Draft kept for retry."
+- **Stale stop/send state reset** (`chat_provider.dart`): `_activeSendDraftText` cleared on session idle, abort completion, stream done; `isResponding`/`canAbort` correctly reset when `session.idle` event arrives during active stream.
+- **Regression tests**: Added 3 test cases — `chat_provider_test.dart` (session.idle clears stale activity, refreshActiveSessionView scroll callback), `chat_page_test.dart` (draft restore on rejected send).
+
 ## Delta Update (2026-02-17) - Android Background Alert Fallback
 
 - **Android background alert worker** (new `android_background_alert_worker.dart` + logic): Background polling service for Android that detects actionable events (session completion, errors, permission requests, questions) when app is in background. Uses `workmanager` for periodic (15min) + one-off task scheduling.

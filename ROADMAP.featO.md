@@ -5,12 +5,19 @@
 Systematic elimination of bugs, security gaps, performance issues, dead code, and architectural violations identified through deep codebase analysis. See `ROADMAP.featO.research.md` for detailed findings, code snippets, and line references.
 
 ### Group 1 — Bug fixes (critical, localized changes) `[ ]`
-- [ ] 1.1: Change `registerFactory` to `registerLazySingleton` for `AppProvider` and `ChatProvider` in `injection_container.dart` (resource leak: multiple polling timers, concurrent health checks, unmanaged state)
-- [ ] 1.2: Move state mutation out of `build()` in `chat_page.dart` (`_wasCompactingContext` and `_frozenCompactionBoundaryId` mutated during build phase via `_buildMessageTimelineEntries`)
-- [ ] 1.3: Add `_disposed` guard to `ChatProvider.dispose()` to prevent `notifyListeners()` on a disposed provider (async cancellation outlives `super.dispose()`)
-- [ ] 1.4: Add concurrency guard to health polling in `AppProvider` (timer fires every 10s but sequential health checks can exceed 10s, causing concurrent `_serverHealthById` mutation)
-- [ ] 1.5: Implement Markdown link tap handler in `chat_message_widget.dart` (currently a TODO with empty body, links silently ignored)
-- [ ] 1.6: Remove dead `SessionRepository` interface (`lib/domain/repositories/session_repository.dart` — no implementation, no import, no test, no fake)
+
+**2026-02-17 Regression Fixes Batch** (pending commit hash):
+- [x] 1.1: Auto-follow only disables on real manual scroll intent (not programmatic scrolls or momentum)
+- [x] 1.2: Foreground resume catches up to latest when user is not browsing older history
+- [x] 1.3: Rejected/failed send restores composer draft automatically for retry
+- [x] 1.4: Stop/send state no longer stays stuck on Stop after session becomes idle/stream ends
+
+- [ ] 1.5: Change `registerFactory` to `registerLazySingleton` for `AppProvider` and `ChatProvider` in `injection_container.dart` (resource leak: multiple polling timers, concurrent health checks, unmanaged state)
+- [ ] 1.6: Move state mutation out of `build()` in `chat_page.dart` (`_wasCompactingContext` and `_frozenCompactionBoundaryId` mutated during build phase via `_buildMessageTimelineEntries`)
+- [ ] 1.7: Add `_disposed` guard to `ChatProvider.dispose()` to prevent `notifyListeners()` on a disposed provider (async cancellation outlives `super.dispose()`)
+- [ ] 1.8: Add concurrency guard to health polling in `AppProvider` (timer fires every 10s but sequential health checks can exceed 10s, causing concurrent `_serverHealthById` mutation)
+- [ ] 1.9: Implement Markdown link tap handler in `chat_message_widget.dart` (currently a TODO with empty body, links silently ignored)
+- [ ] 1.10: Remove dead `SessionRepository` interface (`lib/domain/repositories/session_repository.dart` — no implementation, no import, no test, no fake)
 
 ### Group 2 — Security hardening `[ ]`
 - [ ] 2.1: Migrate credentials from `SharedPreferences` to `flutter_secure_storage` (`apiKey`, `basicAuthPassword`, `basicAuthUsername` stored as plaintext in `app_local_datasource.dart`)

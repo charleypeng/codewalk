@@ -1090,6 +1090,14 @@ Feature 017 required removing manual refresh interactions from chat/context flow
 - Selection reconcile tick runs in foreground even when refreshless feature flag is disabled, so model/agent/variant sync still converges without requiring a new outgoing message.
 - Session-level selection overrides are merged by per-session `updatedAt` timestamp to reduce cross-device overwrite conflicts and keep restart hydration deterministic.
 
+### Post-Decision Update (2026-02-17) — Bugfix/Restoration
+
+Semantics are non-breaking bugfixes restoring intended behavior that had regressed:
+
+1. **Manual-scroll auto-follow gating**: Auto-scroll to latest message now respects user scroll position — if the user has manually scrolled up (not at bottom), incoming messages do not force scroll. Auto-scroll resumes when user scrolls back to bottom.
+
+2. **Foreground latest catch-up policy**: On foreground resume, the app fetches the latest message state for the active session (not full history reload), ensuring immediate visual consistency with server state without unnecessary network chatter.
+
 ### Key Files
 
 - `lib/core/config/feature_flags.dart`
@@ -1531,6 +1539,14 @@ The expected behavior required preserving existing mention/slash keyboard behavi
 - ⚠️ Trade-off: abort-error suppression relies on a short session-scoped timing window and message pattern matching, which adds subtle provider state heuristics.
 - ⚠️ Trade-off: stream-generation guards add additional provider-side state that must stay consistent with subscription cancellation points.
 - ⚠️ Trade-off: additional persisted experience keys increase migration surface for settings serialization.
+
+### Post-Decision Update (2026-02-17) — Bugfix/Restoration
+
+Semantics are non-breaking bugfixes restoring intended behavior that had regressed:
+
+1. **Composer draft restore after rejected send**: When a message send fails (validation error, network error, or server rejection), the composer text is restored to its pre-send state rather than being cleared. Users can correct and retry without retyping.
+
+2. **Stop/send idle-state reset**: After a successful Stop (abort) or Send completion, the session state machine correctly transitions to `idle` rather than lingering in intermediate states (`sending`, `busy`). This ensures the composer is immediately ready for new input without requiring manual recovery actions.
 
 ### Key Files
 
