@@ -22,11 +22,48 @@ function Warn([string]$Message) {
   Write-Host ":: $Message" -ForegroundColor Yellow
 }
 
+function Get-WindowsArchitecture {
+  $runtimeInfoType = [Type]::GetType("System.Runtime.InteropServices.RuntimeInformation", $false)
+  if ($runtimeInfoType) {
+    $osArchitectureProperty = $runtimeInfoType.GetProperty("OSArchitecture", [System.Reflection.BindingFlags]::Public -bor [System.Reflection.BindingFlags]::Static)
+    if ($osArchitectureProperty) {
+      try {
+        $osArchitecture = $osArchitectureProperty.GetValue($null, $null)
+        if ($osArchitecture) {
+          return $osArchitecture.ToString().ToUpperInvariant()
+        }
+      }
+      catch {
+        # Ignore and use compatibility fallbacks below.
+      }
+    }
+  }
+
+  $processArchitecture = ""
+  $wow64Architecture = ""
+  if ($env:PROCESSOR_ARCHITECTURE) {
+    $processArchitecture = $env:PROCESSOR_ARCHITECTURE.ToUpperInvariant()
+  }
+  if ($env:PROCESSOR_ARCHITEW6432) {
+    $wow64Architecture = $env:PROCESSOR_ARCHITEW6432.ToUpperInvariant()
+  }
+
+  if ($processArchitecture -eq "ARM64" -or $wow64Architecture -eq "ARM64") {
+    return "ARM64"
+  }
+
+  if ([Environment]::Is64BitOperatingSystem) {
+    return "X64"
+  }
+
+  return "X86"
+}
+
 function Get-WindowsAssetCandidates {
-  $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
+  $arch = Get-WindowsArchitecture
   switch ($arch) {
     "X64" { return @("codewalk-windows-x64.zip") }
-    "Arm64" {
+    "ARM64" {
       return @("codewalk-windows-arm64.zip", "codewalk-windows-x64.zip")
     }
     default { Fail "Unsupported architecture: $arch" }
