@@ -1695,12 +1695,23 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
 
     _speechPrefix = _controller.text;
     try {
+      // Enable auto-punctuation (question marks, periods, etc.) on platforms
+      // that support it via native APIs (iOS and macOS only).
+      final supportsAutoPunctuation =
+          defaultTargetPlatform == TargetPlatform.iOS ||
+          defaultTargetPlatform == TargetPlatform.macOS;
+
       await _speechToText.listen(
         onResult: _onSpeechResult,
+        // Wait 5s of silence before auto-stopping, giving the user time to
+        // pause mid-thought without losing the session. Android enforces a
+        // system minimum of ~1-3s regardless of this value.
+        pauseFor: const Duration(seconds: 5),
         listenOptions: stt.SpeechListenOptions(
           partialResults: true,
           cancelOnError: true,
           listenMode: stt.ListenMode.dictation,
+          autoPunctuation: supportsAutoPunctuation,
         ),
       );
       if (!mounted) {
