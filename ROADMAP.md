@@ -189,9 +189,18 @@ Implemented desktop local-server wizard with runtime checks for `opencode serve`
 
 **Status**: Completed (2026-02-18)
 
-Implemented SpeechInputService abstraction (3 backends: SttSpeechInputService for iOS/macOS/Web/Windows, AndroidSpeechInputService with custom EventChannel/MethodChannel + EXTRA_ENABLE_FORMATTING punctuation + manual silence timer, SherpaSpeechInputService for Linux via sherpa_onnx on-device Kroko models + download manager dialog), macOS sandbox permissions. Unit tests for STT platform logic. Android STT fix in 148b650: invalid EXTRA_ENABLE_PUNCTUATION replaced with EXTRA_ENABLE_FORMATTING + manual silence timer.
+**Planned work (J.01–J.04):**
+- J.01 (`e73f15e`): Abstract `SpeechInputService` interface + `SttSpeechInputService` (moves speech_to_text logic out of widget; autoPunctuation on iOS/macOS; pauseFor 5s; dictation mode) + full widget refactor with lazy DI lookup
+- J.02 (`52a35e7`): `AndroidSpeechInputService` with custom `EventChannel('codewalk/speech')` + `MethodChannel('codewalk/speech_control')`; Kotlin `RecognitionListener` with `EXTRA_PARTIAL_RESULTS`; `SherpaSpeechInputService` registered for Linux in DI
+- J.03 (`0347e88`): `sherpa_onnx ^1.12.25` + `record ^6.0.0` for Linux on-device STT; `SherpaModelManager` (HuggingFace download via Dio, 4-file Kroko INT8 models, detectSystemLanguage); `SherpaModelDownloadDialog` with progress bar; `assets/sherpa_models.json` (7 languages); conditional exports (dart.library.io) to guard web
+- J.04 (`86b8162`): macOS `Info.plist` (NSSpeechRecognitionUsageDescription + NSMicrophoneUsageDescription) + sandbox entitlements (com.apple.security.device.audio-input) for Debug and Release
+- J.05 (`1f4677c`): Unit tests for autoPunctuation platform logic; ADR-036; CODEBASE.md update; ROADMAP condensation
 
-Commits: e73f15e, 52a35e7, 86b8162, 0347e88, 148b650
+**Post-release fixes (from Android device testing):**
+- Fix (`148b650`): `"android.speech.extra.ENABLE_PUNCTUATION"` is not an official Android SDK constant and was silently ignored. Replaced with `"android.speech.extra.ENABLE_FORMATTING"` + `"android.speech.extra.FORMATTING_OPTIMIZE_QUALITY"` (RecognizerIntent.EXTRA_ENABLE_FORMATTING, API 33+, works on Pixel 6+ with Google Voice Typing). Also added `HIDE_PARTIAL_TRAILING_PUNCTUATION=false` so punctuation appears in partial results. Android's `EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS` is silently ignored by Google Speech Engine — replaced with manual silence timer via `Handler` + `onRmsChanged`: resets when voice detected (rmsdB > 1.5f), fires `stopListening()` after `pauseForMs` of silence. `pauseForMs` passed from Flutter via MethodChannel `start` args.
+- Feat (`a8a5d96`): `AndroidSpeechInputService` now queries `SpeechRecognizer.isRecognitionAvailable(context)` via new `isAvailable` channel method before using the native channel. On AOSP devices or custom ROMs without Google Play Services, falls back transparently to `SttSpeechInputService` (speech_to_text package), which correctly honours the `pauseFor` silence timeout.
+
+Commits: e73f15e, 52a35e7, 86b8162, 0347e88, 148b650, 1f4677c, a8a5d96
 
 #### `featK` First-run onboarding wizard
 
