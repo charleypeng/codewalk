@@ -55,12 +55,16 @@ class MainActivity : FlutterActivity() {
             }
         })
 
-        // Speech control channel — accepts 'start' (with optional localeId arg) and 'stop'.
+        // Speech control channel — accepts 'isAvailable', 'start', and 'stop'.
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             "codewalk/speech_control",
         ).setMethodCallHandler { call, result ->
             when (call.method) {
+                // Returns true when SpeechRecognizer is backed by Google Play Services.
+                // Used by Flutter to decide whether to use the native channel or fall
+                // back to speech_to_text package (SttSpeechInputService).
+                "isAvailable" -> result.success(SpeechRecognizer.isRecognitionAvailable(this))
                 "start" -> {
                     val localeId = call.argument<String?>("localeId")
                     val pauseForMs = call.argument<Int>("pauseForMs")?.toLong() ?: 5000L
