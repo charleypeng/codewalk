@@ -50,7 +50,7 @@ Concluded historical features were archived to `ROADMAP.archive.done.md` to keep
 
 ### Next Recommended Feature
 
-- `featG` - `ROADMAP.featG.md` (NEXT: favorites and variant selector ergonomics)
+- `featC` - `ROADMAP.featC.md` (NEXT: focus/visibility render gate + files planning)
 
 ### Backlog Pack Dependency Order
 
@@ -86,7 +86,7 @@ Notes:
 - [x] `featE` - `ROADMAP.featE.md` (composer popover/local server/shortcuts reliability)
 - [x] `featI` - `ROADMAP.featI.md` (agent/shortcut/productivity parity)
 - [x] `featF` - `ROADMAP.featF.md` (files drafting UX + duplicate/copy interaction fixes)
-- [ ] `featG` - `ROADMAP.featG.md` (favorites and variant selector ergonomics)
+- [x] `featG` - `ROADMAP.featG.md` (favorites and variant selector ergonomics)
 - [ ] `featC` - `ROADMAP.featC.md` (focus/visibility render gate + files planning)
 - [x] `featJ` - `ROADMAP.featJ.md` (speech-to-text platform matrix)
 - [ ] `featK` - `ROADMAP.featK.md` (first-run onboarding wizard)
@@ -150,10 +150,13 @@ Delivered phase F focused on files/chat UX stability: replaced the original full
 **Commits**: 840bd75, 20e9d17, 0cb2854
 **Post-conclusion**: Performance overhaul eliminating freeze/lag in streaming and large conversations (microtask coalescing, event dedup buffer, timeline/highlight/style caches, build-skip widget conversion, lazy copy text) in `00b326f`. Upgraded flutter_secure_storage 9.2.4 → 10.0.0 (Java 17, linux 3.0.0) in `547da29`.
 
-#### `featG` Model favorites and variant selector ergonomics
+#### `featG` Model favorites and variant selector ergonomics ✅
 
-- [ ] Adicionar suporte a modelos favoritos
-- [ ] Reduzir a largura do popover do select de variant
+**Status**: Completed (2026-02-19)
+
+Model favorites: star toggle in model selector, persisted locally via SharedPreferences (scoped per server+project), "Favorites" section above "Recent" in selector, mod+m cycles favorites+recents. Variant popover auto-fit: replaced fixed 220px width with TextPainter-measured width + padding for compact, content-aware sizing.
+
+**Commits**: af0b5ed
 
 #### `featH` Settings/onboarding/operation polish
 

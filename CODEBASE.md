@@ -56,13 +56,13 @@ lib/core/network/dio_client.dart                  # HTTP client config, auth, an
 lib/data/datasources/app_remote_datasource.dart   # App bootstrap/config/providers/agents API access
 lib/data/datasources/chat_remote_datasource.dart  # Chat/session/message/realtime API access
 lib/data/datasources/project_remote_datasource.dart # Project/worktree/file API access
-lib/data/datasources/app_local_datasource.dart    # Persistent settings, profiles, cache, and credentials
+lib/data/datasources/app_local_datasource.dart    # Persistent settings, profiles, cache, credentials, and favorite models
 lib/data/repositories/*.dart                      # Domain repository implementations
 lib/domain/usecases/*.dart                        # Application use cases consumed by providers
 lib/presentation/providers/app_provider.dart      # Server profiles, health polling, local runtime state
 lib/presentation/providers/project_provider.dart  # Project/worktree context selection and persistence
 lib/presentation/providers/settings_provider.dart # Experience settings, sounds, and update checks
-lib/presentation/providers/chat_provider.dart     # Chat state/realtime/session facade; microtask coalescing, event dedup buffer
+lib/presentation/providers/chat_provider.dart     # Chat state/realtime/session facade; microtask coalescing, event dedup buffer, favorite models
 lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade
 lib/presentation/widgets/chat_input_widget.dart   # Composer/input orchestration facade
 lib/presentation/widgets/chat_message_widget.dart # Message bubble with build-skip cache, cached MarkdownStyleSheet
@@ -203,6 +203,26 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 - Sensitive server credentials are persisted through `flutter_secure_storage` (v10.0.0) via `AppLocalDataSource`.
 - Platform folders currently present: `android/`, `linux/`, `macos/`, `web/`, `windows/`.
 - Android build targets Java 17 (`sourceCompatibility`, `targetCompatibility`, `jvmTarget`).
+
+### Favorite Models
+
+- **Storage key**: `favoriteModelsKey` in `AppConstants` (`app_constants.dart`).
+- **Local persistence**: `AppLocalDataSource` exposes `getFavoriteModelsJson` /
+  `saveFavoriteModelsJson` (scoped by server + project, same pattern as recent models).
+- **Provider state**: `ChatProvider._favoriteModelKeys` list, getter `favoriteModelKeys`,
+  query method `isModelFavorite`, and toggle method `toggleModelFavorite` (local-only, no
+  remote sync). Loaded and persisted in `chat_provider_preference_ops.dart` alongside
+  recents, usage counts, and variant map.
+- **Model selector UI** (`chat_page_model_selector_runtime.dart`):
+  - `_buildFavoriteModelEntries` builds the "Favorites" section from provider state.
+  - `_modelSelectorTrailing` renders a star toggle + checkmark trailing widget for every
+    model row (favorites, recents, and provider sections).
+  - The bottom sheet shows Favorites > Recent > Provider sections; favorites are excluded
+    from recents and provider groups to avoid duplicates.
+  - Variant popover auto-fits width using `TextPainter` to measure the longest label.
+- **Keyboard shortcut** (`chat_page_shortcuts.dart`): `_cycleRecentModel` now cycles
+  favorites first, then recents (deduped), before falling back to the current provider's
+  model list.
 
 ### Performance Architecture
 
