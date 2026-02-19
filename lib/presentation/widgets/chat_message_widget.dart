@@ -6,6 +6,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:markdown/markdown.dart' as md;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/logging/app_logger.dart';
@@ -59,8 +60,8 @@ class ChatMessageWidget extends StatelessWidget {
         .whereType<ReasoningPart>()
         .lastOrNull
         ?.id;
-    final copyText = isUser ? '' : _composeMessageCopyText(message);
-    final allowDesktopDoubleTapCopy = copyText.isNotEmpty;
+    final copyText = _composeMessageCopyText(message);
+    final canCopyWholeMessage = copyText.isNotEmpty;
 
     if (!hasVisibleContent && !hasVisibleError) {
       return const SizedBox.shrink();
@@ -83,6 +84,9 @@ class ChatMessageWidget extends StatelessWidget {
             flashColor: colorScheme.primary.withValues(alpha: 0.16),
             onLongPress: isUser ? onBackgroundLongPress : null,
             onLongPressRelease: isUser ? onBackgroundLongPressEnd : null,
+            onDoubleTap: canCopyWholeMessage
+                ? () => _copyTextToClipboard(context, copyText)
+                : null,
             child: Container(
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
               decoration: BoxDecoration(
@@ -96,19 +100,6 @@ class ChatMessageWidget extends StatelessWidget {
               ),
               child: Stack(
                 children: [
-                  if (allowDesktopDoubleTapCopy)
-                    Positioned.fill(
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        supportedDevices: const <PointerDeviceKind>{
-                          PointerDeviceKind.mouse,
-                          PointerDeviceKind.stylus,
-                          PointerDeviceKind.invertedStylus,
-                        },
-                        onDoubleTap: () =>
-                            _copyTextToClipboard(context, copyText),
-                      ),
-                    ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -503,6 +494,14 @@ class ChatMessageWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
+              builders: <String, MarkdownElementBuilder>{
+                'pre': _MarkdownCodeBlockTapBuilder(
+                  onTapCode: (code) => _copyTextToClipboard(context, code),
+                ),
+                'code': _MarkdownInlineCodeTapBuilder(
+                  onTapCode: (code) => _copyTextToClipboard(context, code),
+                ),
+              },
               onTapLink: (text, href, title) {
                 final normalizedHref = href?.trim();
                 if (normalizedHref == null || normalizedHref.isEmpty) {
@@ -2235,6 +2234,83 @@ class _CollapsibleReasoningContentState
   }
 }
 
+class _MarkdownCodeBlockTapBuilder extends MarkdownElementBuilder {
+  _MarkdownCodeBlockTapBuilder({required this.onTapCode});
+
+  final ValueChanged<String> onTapCode;
+
+  @override
+  bool isBlockElement() => true;
+
+  @override
+  Widget? visitElementAfterWithContext(
+    BuildContext context,
+    md.Element element,
+    TextStyle? preferredStyle,
+    TextStyle? parentStyle,
+  ) {
+    final code = element.textContent;
+    if (code.trim().isEmpty) {
+      return null;
+    }
+    final style =
+        preferredStyle ??
+        parentStyle ??
+        Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace');
+    return GestureDetector(
+      key: const ValueKey<String>('markdown_pre_code_tap_target'),
+      behavior: HitTestBehavior.opaque,
+      onTap: () => onTapCode(code),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.all(8),
+        child: Text(
+          code,
+          key: const ValueKey<String>('markdown_pre_code_text'),
+          style: style,
+        ),
+      ),
+    );
+  }
+}
+
+class _MarkdownInlineCodeTapBuilder extends MarkdownElementBuilder {
+  _MarkdownInlineCodeTapBuilder({required this.onTapCode});
+
+  final ValueChanged<String> onTapCode;
+
+  @override
+  Widget? visitElementAfterWithContext(
+    BuildContext context,
+    md.Element element,
+    TextStyle? preferredStyle,
+    TextStyle? parentStyle,
+  ) {
+    final code = element.textContent;
+    if (code.trim().isEmpty) {
+      return null;
+    }
+    final style =
+        preferredStyle ??
+        parentStyle ??
+        Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace');
+    return GestureDetector(
+      key: const ValueKey<String>('markdown_inline_code_tap_target'),
+      behavior: HitTestBehavior.opaque,
+      onTap: () => onTapCode(code),
+      child: Text(
+        code,
+        key: const ValueKey<String>('markdown_inline_code_text'),
+        style: style,
+      ),
+    );
+  }
+}
+
 class _BubbleTouchHoldLayer extends StatefulWidget {
   const _BubbleTouchHoldLayer({
     required this.child,
@@ -2242,6 +2318,7 @@ class _BubbleTouchHoldLayer extends StatefulWidget {
     required this.flashColor,
     this.onLongPress,
     this.onLongPressRelease,
+    this.onDoubleTap,
   });
 
   final Widget child;
@@ -2249,6 +2326,7 @@ class _BubbleTouchHoldLayer extends StatefulWidget {
   final Color flashColor;
   final VoidCallback? onLongPress;
   final VoidCallback? onLongPressRelease;
+  final VoidCallback? onDoubleTap;
 
   @override
   State<_BubbleTouchHoldLayer> createState() => _BubbleTouchHoldLayerState();
@@ -2257,7 +2335,9 @@ class _BubbleTouchHoldLayer extends StatefulWidget {
 class _BubbleTouchHoldLayerState extends State<_BubbleTouchHoldLayer> {
   static const Duration _holdDelay = Duration(milliseconds: 260);
   static const Duration _flashDuration = Duration(milliseconds: 170);
+  static const Duration _doubleTapTimeout = Duration(milliseconds: 320);
   static const double _moveTolerance = 14;
+  static const double _doubleTapTolerance = 24;
 
   Timer? _holdTimer;
   Timer? _flashTimer;
@@ -2265,6 +2345,9 @@ class _BubbleTouchHoldLayerState extends State<_BubbleTouchHoldLayer> {
   Offset? _pointerDownPosition;
   bool _longPressTriggered = false;
   bool _isFlashing = false;
+  DateTime? _lastTapTime;
+  Offset? _lastTapPosition;
+  PointerDeviceKind? _lastTapKind;
 
   bool _isTouchLikePointer(PointerEvent event) {
     return event.kind == PointerDeviceKind.touch ||
@@ -2280,14 +2363,16 @@ class _BubbleTouchHoldLayerState extends State<_BubbleTouchHoldLayer> {
   }
 
   void _handlePointerDown(PointerDownEvent event) {
-    if (widget.onLongPress == null || !_isTouchLikePointer(event)) {
+    if (widget.onLongPress == null && widget.onDoubleTap == null) {
       return;
     }
     _holdTimer?.cancel();
     _activePointer = event.pointer;
     _pointerDownPosition = event.localPosition;
     _longPressTriggered = false;
-    _holdTimer = Timer(_holdDelay, _triggerLongPress);
+    if (widget.onLongPress != null && _isTouchLikePointer(event)) {
+      _holdTimer = Timer(_holdDelay, _triggerLongPress);
+    }
   }
 
   void _handlePointerMove(PointerMoveEvent event) {
@@ -2304,7 +2389,15 @@ class _BubbleTouchHoldLayerState extends State<_BubbleTouchHoldLayer> {
   void _handlePointerUp(PointerUpEvent event) {
     if (event.pointer == _activePointer) {
       final shouldDispatchLongPressRelease = _longPressTriggered;
+      final shouldHandleTap =
+          !_longPressTriggered &&
+          _pointerDownPosition != null &&
+          (event.localPosition - _pointerDownPosition!).distance <=
+              _moveTolerance;
       _cancelHold();
+      if (shouldHandleTap) {
+        _handlePointerTap(event);
+      }
       if (shouldDispatchLongPressRelease) {
         widget.onLongPressRelease?.call();
       }
@@ -2324,6 +2417,7 @@ class _BubbleTouchHoldLayerState extends State<_BubbleTouchHoldLayer> {
       return;
     }
     _longPressTriggered = true;
+    _clearTapTracking();
     widget.onLongPress!();
     _triggerFlash();
   }
@@ -2334,6 +2428,37 @@ class _BubbleTouchHoldLayerState extends State<_BubbleTouchHoldLayer> {
     _activePointer = null;
     _pointerDownPosition = null;
     _longPressTriggered = false;
+  }
+
+  void _clearTapTracking() {
+    _lastTapTime = null;
+    _lastTapPosition = null;
+    _lastTapKind = null;
+  }
+
+  void _handlePointerTap(PointerUpEvent event) {
+    if (widget.onDoubleTap == null) {
+      return;
+    }
+    final now = DateTime.now();
+    final previousTime = _lastTapTime;
+    final previousPosition = _lastTapPosition;
+    final previousKind = _lastTapKind;
+    final isSecondTap =
+        previousTime != null &&
+        previousPosition != null &&
+        previousKind == event.kind &&
+        now.difference(previousTime) <= _doubleTapTimeout &&
+        (event.localPosition - previousPosition).distance <=
+            _doubleTapTolerance;
+    if (isSecondTap) {
+      _clearTapTracking();
+      widget.onDoubleTap?.call();
+      return;
+    }
+    _lastTapTime = now;
+    _lastTapPosition = event.localPosition;
+    _lastTapKind = event.kind;
   }
 
   void _triggerFlash() {

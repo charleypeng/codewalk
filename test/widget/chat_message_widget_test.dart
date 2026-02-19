@@ -1,6 +1,5 @@
 import 'package:codewalk/domain/entities/chat_message.dart';
 import 'package:codewalk/presentation/widgets/chat_message_widget.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -298,16 +297,9 @@ void main() {
       ),
     );
 
-    final backgroundDetectorFinder = find.byWidgetPredicate(
-      (widget) =>
-          widget is GestureDetector &&
-          widget.behavior == HitTestBehavior.opaque &&
-          widget.onDoubleTap != null,
-    );
-    final detector = tester.widget<GestureDetector>(backgroundDetectorFinder);
-    expect(detector.supportedDevices, contains(PointerDeviceKind.mouse));
-    expect(detector.supportedDevices, isNot(contains(PointerDeviceKind.touch)));
-    detector.onDoubleTap?.call();
+    await tester.tap(find.text('First line'));
+    await tester.pump(const Duration(milliseconds: 40));
+    await tester.tap(find.text('First line'));
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Copied to clipboard'), findsOneWidget);
@@ -339,20 +331,15 @@ void main() {
       ),
     );
 
-    final backgroundDetectorFinder = find.byWidgetPredicate(
-      (widget) =>
-          widget is GestureDetector &&
-          widget.behavior == HitTestBehavior.opaque &&
-          widget.onDoubleTap != null,
-    );
-    final detector = tester.widget<GestureDetector>(backgroundDetectorFinder);
-    detector.onDoubleTap?.call();
+    await tester.tap(find.text('Android native clipboard feedback'));
+    await tester.pump(const Duration(milliseconds: 40));
+    await tester.tap(find.text('Android native clipboard feedback'));
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Copied to clipboard'), findsNothing);
   });
 
-  testWidgets('user message does not register background double tap copy', (
+  testWidgets('user message double tap copies whole message text', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
@@ -378,50 +365,82 @@ void main() {
       ),
     );
 
-    final backgroundDetectorFinder = find.byWidgetPredicate(
-      (widget) =>
-          widget is GestureDetector &&
-          widget.behavior == HitTestBehavior.opaque &&
-          widget.onDoubleTap != null,
-    );
-    expect(backgroundDetectorFinder, findsNothing);
+    await tester.tap(find.text('User text'));
+    await tester.pump(const Duration(milliseconds: 40));
+    await tester.tap(find.text('User text'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Copied to clipboard'), findsOneWidget);
   });
 
-  testWidgets(
-    'double tap on text with touch does not trigger background copy',
-    (WidgetTester tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: ThemeData(platform: TargetPlatform.windows),
-          home: Scaffold(
-            body: ChatMessageWidget(
-              message: AssistantMessage(
-                id: 'msg_8',
-                sessionId: 'ses_8',
-                time: DateTime.fromMillisecondsSinceEpoch(1000),
-                parts: const <MessagePart>[
-                  TextPart(
-                    id: 'part_text_8',
-                    messageId: 'msg_8',
-                    sessionId: 'ses_8',
-                    text: 'Word selection should win',
-                  ),
-                ],
-              ),
+  testWidgets('double tap on assistant text copies whole message', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.windows),
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: AssistantMessage(
+              id: 'msg_8',
+              sessionId: 'ses_8',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_text_8',
+                  messageId: 'msg_8',
+                  sessionId: 'ses_8',
+                  text: 'Word selection should win',
+                ),
+              ],
             ),
           ),
         ),
-      );
+      ),
+    );
 
-      final textFinder = find.text('Word selection should win');
-      await tester.tap(textFinder);
-      await tester.pump(const Duration(milliseconds: 40));
-      await tester.tap(textFinder);
-      await tester.pump(const Duration(milliseconds: 300));
+    final textFinder = find.text('Word selection should win');
+    await tester.tap(textFinder);
+    await tester.pump(const Duration(milliseconds: 40));
+    await tester.tap(textFinder);
+    await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('Copied to clipboard'), findsNothing);
-    },
-  );
+    expect(find.text('Copied to clipboard'), findsOneWidget);
+  });
+
+  testWidgets('single tap on markdown code copies code snippet', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.windows),
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: AssistantMessage(
+              id: 'msg_code_tap',
+              sessionId: 'ses_code_tap',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_code_tap',
+                  messageId: 'msg_code_tap',
+                  sessionId: 'ses_code_tap',
+                  text: '```dart\nfinal value = 42;\n```',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('markdown_pre_code_tap_target')),
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Copied to clipboard'), findsOneWidget);
+  });
 
   testWidgets('touch hold callback stays scoped to user messages', (
     WidgetTester tester,
