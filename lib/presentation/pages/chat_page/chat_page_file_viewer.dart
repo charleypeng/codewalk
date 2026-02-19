@@ -223,15 +223,23 @@ extension _ChatPageFileViewer on _ChatPageState {
   }
 
   Map<String, TextStyle> _resolveHighlightTheme(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    if (_cachedHighlightTheme != null &&
+        _cachedHighlightBrightness == brightness) {
+      return _cachedHighlightTheme!;
+    }
     final colorScheme = Theme.of(context).colorScheme;
-    final baseTheme = Theme.of(context).brightness == Brightness.dark
+    final baseTheme = brightness == Brightness.dark
         ? atomOneDarkTheme
         : githubTheme;
     final rootStyle = (baseTheme['root'] ?? const TextStyle()).copyWith(
       color: colorScheme.onSurface,
       backgroundColor: Colors.transparent,
     );
-    return <String, TextStyle>{...baseTheme, 'root': rootStyle};
+    final theme = <String, TextStyle>{...baseTheme, 'root': rootStyle};
+    _cachedHighlightBrightness = brightness;
+    _cachedHighlightTheme = theme;
+    return theme;
   }
 
   String _resolveHighlightLanguage({required String path, String? mimeType}) {

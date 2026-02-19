@@ -3547,6 +3547,8 @@ void main() {
         ];
 
         await provider.refreshActiveSessionView(includeStatus: false);
+        // Flush microtask-coalesced scroll callback.
+        await Future<void>.value();
 
         expect(scrollRequests, 1);
       },

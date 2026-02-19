@@ -462,6 +462,16 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     required bool isSessionActivelyResponding,
     required bool isCompactingContext,
   }) {
+    final lastId = messages.isNotEmpty ? messages.last.id : null;
+    if (_cachedTimelineEntries != null &&
+        messages.length == _cachedTimelineMessageCount &&
+        lastId == _cachedTimelineLastMessageId &&
+        isCompactingContext == _cachedTimelineIsCompacting &&
+        isSessionActivelyResponding == _cachedTimelineIsResponding &&
+        showRetryIndicator == _cachedTimelineShowRetry &&
+        _expandedCollapsedHistoryGroupId == _cachedTimelineExpandedGroupId) {
+      return _cachedTimelineEntries!;
+    }
     final entries = <_TimelineEntry>[];
     final previousWasCompactingContext = _wasCompactingContext;
     var nextFrozenCompactionBoundaryId = _frozenCompactionBoundaryId;
@@ -534,6 +544,15 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     if (showRetryIndicator) {
       entries.add(const _TimelineRetryIndicatorEntry());
     }
+
+    // Store in cache for subsequent rebuilds with unchanged message list.
+    _cachedTimelineMessageCount = messages.length;
+    _cachedTimelineLastMessageId = lastId;
+    _cachedTimelineIsCompacting = isCompactingContext;
+    _cachedTimelineIsResponding = isSessionActivelyResponding;
+    _cachedTimelineShowRetry = showRetryIndicator;
+    _cachedTimelineExpandedGroupId = _expandedCollapsedHistoryGroupId;
+    _cachedTimelineEntries = entries;
     return entries;
   }
 }

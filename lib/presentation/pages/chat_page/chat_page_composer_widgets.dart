@@ -291,6 +291,14 @@ extension _ChatPageComposerWidgets on _ChatPageState {
   }
 
   List<String> _collectSentMessageHistory(List<ChatMessage> messages) {
+    // Cache: skip O(N) filter when messages haven't changed.
+    final lastId = messages.isNotEmpty ? messages.last.id : null;
+    if (_cachedSentHistory != null &&
+        messages.length == _cachedSentHistoryMsgCount &&
+        lastId == _cachedSentHistoryLastMsgId) {
+      return _cachedSentHistory!;
+    }
+
     final history = <String>[];
     for (final message in messages) {
       if (message.role != MessageRole.user) {
@@ -306,7 +314,11 @@ extension _ChatPageComposerWidgets on _ChatPageState {
       }
       history.add(text);
     }
-    return List<String>.unmodifiable(history);
+    final result = List<String>.unmodifiable(history);
+    _cachedSentHistoryMsgCount = messages.length;
+    _cachedSentHistoryLastMsgId = lastId;
+    _cachedSentHistory = result;
+    return result;
   }
 
   String _extractUserMessageText(ChatMessage message) {

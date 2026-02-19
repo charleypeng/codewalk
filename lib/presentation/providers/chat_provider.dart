@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -273,6 +274,11 @@ class ChatProvider extends ChangeNotifier {
   late final int _degradedFailureThreshold;
   late final bool _refreshlessRealtimeEnabled;
 
+  // Circular buffer of recent event dedup keys to prevent the global stream
+  // from re-processing events already handled by the session stream.
+  final Queue<String> _recentEventIds = Queue<String>();
+  static const int _maxRecentEventIds = 64;
+
   static const Duration _sessionsCacheTtl = Duration(days: 3);
   static const Duration _lastSessionSnapshotTtl = Duration(days: 7);
   static const int _maxRecentModels = 8;
@@ -289,8 +295,31 @@ class ChatProvider extends ChangeNotifier {
   static const String _remoteAbortNoticeMessage =
       'O que gostaria de fazer diferente?';
 
+  // Microtask coalescing: multiple calls within the same microtask frame
+  // result in a single notifyListeners() invocation, reducing rebuild storms
+  // during streaming (where 5+ event types fire per tick).
+  bool _notifyScheduled = false;
+
   void _notifyListeners() {
-    notifyListeners();
+    if (_notifyScheduled) return;
+    _notifyScheduled = true;
+    scheduleMicrotask(() {
+      _notifyScheduled = false;
+      notifyListeners();
+    });
+  }
+
+  // Microtask coalescing for scroll-to-bottom: prevents multiple scroll jumps
+  // per frame when several events trigger scroll simultaneously.
+  bool _scrollScheduled = false;
+
+  void _scheduleScrollToBottom() {
+    if (_scrollScheduled) return;
+    _scrollScheduled = true;
+    scheduleMicrotask(() {
+      _scrollScheduled = false;
+      _scrollToBottomCallback?.call();
+    });
   }
 
   // Getters
@@ -729,7 +758,7 @@ class ChatProvider extends ChangeNotifier {
           notifyListeners();
           _scheduleAutoTitleRefresh(session.id);
           if (!_isCompactingContext) {
-            _scrollToBottomCallback?.call();
+            _scheduleScrollToBottom();
           }
         },
       );

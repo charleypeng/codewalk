@@ -255,6 +255,15 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
   }
 
   String? _resolveLatestReasoningPartKey(List<ChatMessage> messages) {
+    // Cache: skip O(N*M) backward scan when messages haven't changed.
+    final lastId = messages.isNotEmpty ? messages.last.id : null;
+    if (_cachedReasoningKeyComputed &&
+        messages.length == _cachedReasoningKeyMsgCount &&
+        lastId == _cachedReasoningKeyLastMsgId) {
+      return _cachedReasoningKeyResult;
+    }
+
+    String? result;
     for (
       var messageIndex = messages.length - 1;
       messageIndex >= 0;
@@ -268,11 +277,18 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
       ) {
         final part = message.parts[partIndex];
         if (part is ReasoningPart) {
-          return '${part.messageId}::${part.id}';
+          result = '${part.messageId}::${part.id}';
+          break;
         }
       }
+      if (result != null) break;
     }
-    return null;
+
+    _cachedReasoningKeyMsgCount = messages.length;
+    _cachedReasoningKeyLastMsgId = lastId;
+    _cachedReasoningKeyResult = result;
+    _cachedReasoningKeyComputed = true;
+    return result;
   }
 
   String? _resolveLatestReasoningStatusLabel(List<ChatMessage> messages) {
@@ -306,23 +322,39 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
   _AssistantProgressStage? _resolveAssistantProgressStage(
     ChatProvider chatProvider,
   ) {
+    final messages = chatProvider.messages;
+    final lastId = messages.isNotEmpty ? messages.last.id : null;
+    final isResponding = chatProvider.isCurrentSessionActivelyResponding;
+
+    // Cache: skip O(N) scan when messages and responding state haven't changed.
+    if (_cachedProgressStageComputed &&
+        messages.length == _cachedProgressStageMsgCount &&
+        lastId == _cachedProgressStageLastMsgId &&
+        isResponding == _cachedProgressStageResponding) {
+      return _cachedProgressStageResult;
+    }
+
     final statusType = chatProvider.currentSessionStatus?.type;
-    final hasCurrentSessionActiveResponse =
-        chatProvider.isCurrentSessionActivelyResponding;
-    final hasStreamingAssistantParts = chatProvider.messages
+    final hasStreamingAssistantParts = messages
         .whereType<AssistantMessage>()
         .any((message) => !message.isCompleted && message.parts.isNotEmpty);
 
-    if (!hasCurrentSessionActiveResponse) {
-      return null;
+    _AssistantProgressStage? result;
+    if (!isResponding) {
+      result = null;
+    } else if (statusType == SessionStatusType.retry) {
+      result = _AssistantProgressStage.retrying;
+    } else if (hasStreamingAssistantParts) {
+      result = _AssistantProgressStage.receiving;
+    } else {
+      result = _AssistantProgressStage.thinking;
     }
 
-    if (statusType == SessionStatusType.retry) {
-      return _AssistantProgressStage.retrying;
-    }
-    if (hasStreamingAssistantParts) {
-      return _AssistantProgressStage.receiving;
-    }
-    return _AssistantProgressStage.thinking;
+    _cachedProgressStageMsgCount = messages.length;
+    _cachedProgressStageLastMsgId = lastId;
+    _cachedProgressStageResponding = isResponding;
+    _cachedProgressStageResult = result;
+    _cachedProgressStageComputed = true;
+    return result;
   }
 }

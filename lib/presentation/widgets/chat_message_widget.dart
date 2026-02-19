@@ -15,8 +15,12 @@ import '../services/file_part_action_service.dart' as file_part_action;
 import '../utils/diff_parser.dart';
 import '../utils/reasoning_status_parser.dart';
 
-/// Chat message widget
-class ChatMessageWidget extends StatelessWidget {
+/// Chat message widget.
+///
+/// Uses a StatefulWidget so that completed messages can skip expensive
+/// rebuilds when only transient props (like [isSessionActivelyResponding])
+/// change during streaming — those props don't affect completed bubbles.
+class ChatMessageWidget extends StatefulWidget {
   const ChatMessageWidget({
     super.key,
     required this.message,
@@ -27,13 +31,6 @@ class ChatMessageWidget extends StatelessWidget {
     this.onBackgroundLongPress,
     this.onBackgroundLongPressEnd,
   });
-  static const int _collapsedToolDetailMaxLines = 2;
-  static const int _collapsedReasoningMaxLines = 4;
-  static const int _expandedReasoningMaxLines = 12;
-  static const int _maxMarkdownCharsForRichRender = 64000;
-  static const int _maxToolOutputPreviewChars = 50000;
-  static const int _maxToolCommandPreviewChars = 6000;
-  static const int _maxSyntheticDiffChars = 20000;
 
   final ChatMessage message;
   final String? activeReasoningPartKey;
@@ -44,7 +41,104 @@ class ChatMessageWidget extends StatelessWidget {
   final VoidCallback? onBackgroundLongPressEnd;
 
   @override
+  State<ChatMessageWidget> createState() => _ChatMessageWidgetState();
+}
+
+class _ChatMessageWidgetState extends State<ChatMessageWidget> {
+  static const int _collapsedToolDetailMaxLines = 2;
+  static const int _collapsedReasoningMaxLines = 4;
+  static const int _expandedReasoningMaxLines = 12;
+  static const int _maxMarkdownCharsForRichRender = 64000;
+  static const int _maxToolOutputPreviewChars = 50000;
+  static const int _maxToolCommandPreviewChars = 6000;
+  static const int _maxSyntheticDiffChars = 20000;
+
+  // Snapshot of the last build inputs to skip redundant rebuilds.
+  // Completed messages can skip rebuild when no visible prop changed.
+  int _lastPartCount = -1;
+  String? _lastPartId;
+  String? _lastReasoningKey;
+  bool _lastShowThinking = true;
+  bool _lastShowToolCalls = true;
+  bool _lastResponding = false;
+
+  /// Whether the current rebuild can be skipped (inputs unchanged).
+  bool _canSkipRebuild() {
+    final msg = widget.message;
+    final isCompleted = msg is AssistantMessage && msg.isCompleted;
+    if (!isCompleted) return false;
+
+    final partCount = msg.parts.length;
+    final lastPartId = msg.parts.isNotEmpty ? msg.parts.last.id : null;
+    return partCount == _lastPartCount &&
+        lastPartId == _lastPartId &&
+        widget.activeReasoningPartKey == _lastReasoningKey &&
+        widget.showThinkingBubbles == _lastShowThinking &&
+        widget.showToolCallBubbles == _lastShowToolCalls &&
+        widget.isSessionActivelyResponding == _lastResponding;
+  }
+
+  void _updateBuildSnapshot() {
+    final msg = widget.message;
+    _lastPartCount = msg.parts.length;
+    _lastPartId = msg.parts.isNotEmpty ? msg.parts.last.id : null;
+    _lastReasoningKey = widget.activeReasoningPartKey;
+    _lastShowThinking = widget.showThinkingBubbles;
+    _lastShowToolCalls = widget.showToolCallBubbles;
+    _lastResponding = widget.isSessionActivelyResponding;
+  }
+
+  // Cached build result to return when rebuild is skipped.
+  Widget? _cachedBuild;
+
+  // Cached MarkdownStyleSheet and builders to avoid re-creating objects on
+  // every build, which would force flutter_markdown_plus to re-parse.
+  MarkdownStyleSheet? _cachedMarkdownStyleSheet;
+  Brightness? _cachedMarkdownBrightness;
+
+  MarkdownStyleSheet _resolveMarkdownStyleSheet(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    if (_cachedMarkdownStyleSheet != null &&
+        _cachedMarkdownBrightness == brightness) {
+      return _cachedMarkdownStyleSheet!;
+    }
+    final sheet = MarkdownStyleSheet(
+      p: Theme.of(context).textTheme.bodyMedium,
+      code: Theme.of(context).textTheme.bodyMedium?.copyWith(
+        fontFamily: 'monospace',
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+      ),
+      codeblockDecoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+    );
+    _cachedMarkdownBrightness = brightness;
+    _cachedMarkdownStyleSheet = sheet;
+    return sheet;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_cachedBuild != null && _canSkipRebuild()) {
+      return _cachedBuild!;
+    }
+    _updateBuildSnapshot();
+    final result = _buildContent(context);
+    _cachedBuild = result;
+    return result;
+  }
+
+  // -- Accessors to shorten migration from StatelessWidget to StatefulWidget --
+  ChatMessage get message => widget.message;
+  String? get activeReasoningPartKey => widget.activeReasoningPartKey;
+  bool get showThinkingBubbles => widget.showThinkingBubbles;
+  bool get showToolCallBubbles => widget.showToolCallBubbles;
+  bool get isSessionActivelyResponding => widget.isSessionActivelyResponding;
+  VoidCallback? get onBackgroundLongPress => widget.onBackgroundLongPress;
+  VoidCallback? get onBackgroundLongPressEnd => widget.onBackgroundLongPressEnd;
+
+  Widget _buildContent(BuildContext context) {
     final isUser = message.role == MessageRole.user;
     final colorScheme = Theme.of(context).colorScheme;
     final bubbleBorderRadius = BorderRadius.circular(18).copyWith(
@@ -60,8 +154,11 @@ class ChatMessageWidget extends StatelessWidget {
         .whereType<ReasoningPart>()
         .lastOrNull
         ?.id;
-    final copyText = _composeMessageCopyText(message);
-    final canCopyWholeMessage = copyText.isNotEmpty;
+    // Lazy: only check if copyable text exists (cheap), defer the full
+    // text composition to the onDoubleTap callback to avoid O(parts) per build.
+    final canCopyWholeMessage = message.parts.whereType<TextPart>().any(
+      (part) => part.text.trim().isNotEmpty,
+    );
 
     if (!hasVisibleContent && !hasVisibleError) {
       return const SizedBox.shrink();
@@ -85,7 +182,10 @@ class ChatMessageWidget extends StatelessWidget {
             onLongPress: isUser ? onBackgroundLongPress : null,
             onLongPressRelease: isUser ? onBackgroundLongPressEnd : null,
             onDoubleTap: canCopyWholeMessage
-                ? () => _copyTextToClipboard(context, copyText)
+                ? () => _copyTextToClipboard(
+                      context,
+                      _composeMessageCopyText(message),
+                    )
                 : null,
             child: Container(
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
@@ -481,19 +581,7 @@ class ChatMessageWidget extends StatelessWidget {
           else
             MarkdownBody(
               data: textForRender,
-              styleSheet: MarkdownStyleSheet(
-                p: Theme.of(context).textTheme.bodyMedium,
-                code: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontFamily: 'monospace',
-                  backgroundColor: Theme.of(
-                    context,
-                  ).colorScheme.surfaceContainerHighest,
-                ),
-                codeblockDecoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
+              styleSheet: _resolveMarkdownStyleSheet(context),
               builders: <String, MarkdownElementBuilder>{
                 'pre': _MarkdownCodeBlockTapBuilder(
                   onTapCode: (code) => _copyTextToClipboard(context, code),

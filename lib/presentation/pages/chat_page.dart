@@ -165,6 +165,47 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   bool _nextWasCompactingContext = false;
   bool _compactionStateSyncScheduled = false;
 
+  // Cache for _buildMessageTimelineEntries to avoid O(N) recomputation on
+  // rebuilds where the message list hasn't changed (e.g. session.status events).
+  int _cachedTimelineMessageCount = -1;
+  String? _cachedTimelineLastMessageId;
+  bool _cachedTimelineIsCompacting = false;
+  bool _cachedTimelineIsResponding = false;
+  bool _cachedTimelineShowRetry = false;
+  String? _cachedTimelineExpandedGroupId;
+  List<_TimelineEntry>? _cachedTimelineEntries;
+
+  // Cache for _resolveSessionContextUsage (O(N) double-scan of messages).
+  int _cachedContextUsageMsgCount = -1;
+  String? _cachedContextUsageLastMsgId;
+  String? _cachedContextUsageProviderId;
+  String? _cachedContextUsageModelId;
+  _SessionContextUsageSnapshot? _cachedContextUsage;
+
+  // Cache for _resolveLatestReasoningPartKey (O(N*M) backward scan).
+  int _cachedReasoningKeyMsgCount = -1;
+  String? _cachedReasoningKeyLastMsgId;
+  String? _cachedReasoningKeyResult;
+  bool _cachedReasoningKeyComputed = false;
+
+  // Cache for _resolveAssistantProgressStage (O(N) scan for streaming parts).
+  int _cachedProgressStageMsgCount = -1;
+  String? _cachedProgressStageLastMsgId;
+  bool _cachedProgressStageResponding = false;
+  _AssistantProgressStage? _cachedProgressStageResult;
+  bool _cachedProgressStageComputed = false;
+
+  // Cache for _collectSentMessageHistory (O(N) filter of user messages).
+  int _cachedSentHistoryMsgCount = -1;
+  String? _cachedSentHistoryLastMsgId;
+  List<String>? _cachedSentHistory;
+
+  // Cached highlight theme to avoid re-creating the Map<String, TextStyle>
+  // spread on every _resolveHighlightTheme() call, which forces the
+  // HighlightView to re-parse when it detects a "changed" theme reference.
+  Map<String, TextStyle>? _cachedHighlightTheme;
+  Brightness? _cachedHighlightBrightness;
+
   @override
   void initState() {
     super.initState();
@@ -182,6 +223,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Invalidate highlight theme cache on dependency change (theme switch).
+    _cachedHighlightTheme = null;
     // Safely get ChatProvider reference here
     _chatProvider ??= context.read<ChatProvider>();
     _chatProvider?.setAppInForeground(_isAppInForeground);

@@ -1,8 +1,51 @@
 part of '../chat_provider.dart';
 
 extension _ChatProviderEventReducerOps on ChatProvider {
+  /// Compose a dedup key from event type + identifying properties.
+  /// Returns null for events that cannot be meaningfully deduplicated.
+  String? _composeEventDeduplicationKey(ChatEvent event) {
+    final props = event.properties;
+    final sessionId = props['sessionID'] as String? ??
+        (props['info'] is Map ? (props['info'] as Map)['sessionID'] as String? : null);
+    final messageId = props['messageID'] as String? ??
+        (props['info'] is Map ? (props['info'] as Map)['id'] as String? : null);
+    final partId = (props['part'] is Map ? (props['part'] as Map)['id'] as String? : null) ??
+        props['partID'] as String?;
+    final requestId = props['requestID'] as String?;
+    // Build composite key from available identifiers
+    final segments = <String>[event.type];
+    if (sessionId != null) segments.add(sessionId);
+    if (messageId != null) segments.add(messageId);
+    if (partId != null) segments.add(partId);
+    if (requestId != null) segments.add(requestId);
+    // Events with only type+session (e.g. session.status) change over time,
+    // so skip dedup for events without a fine-grained identifier.
+    if (messageId == null && partId == null && requestId == null) return null;
+    return segments.join(':');
+  }
+
+  /// Returns true if this event was recently processed (duplicate).
+  bool _isRecentlyProcessedEvent(ChatEvent event) {
+    final key = _composeEventDeduplicationKey(event);
+    if (key == null) return false;
+    if (_recentEventIds.contains(key)) return true;
+    _recentEventIds.addLast(key);
+    if (_recentEventIds.length > ChatProvider._maxRecentEventIds) {
+      _recentEventIds.removeFirst();
+    }
+    return false;
+  }
+
   void _applyChatEvent(ChatEvent event) {
     if (_isEphemeralTitleEvent(event)) return;
+    // Register event in dedup buffer so the global stream skips duplicates.
+    final dedupKey = _composeEventDeduplicationKey(event);
+    if (dedupKey != null && !_recentEventIds.contains(dedupKey)) {
+      _recentEventIds.addLast(dedupKey);
+      if (_recentEventIds.length > ChatProvider._maxRecentEventIds) {
+        _recentEventIds.removeFirst();
+      }
+    }
     final eventSessionId = _extractEventSessionId(event.properties);
     // Only dispatch sound/notification feedback for session lifecycle events
     // (idle, error) when the event belongs to the current session.
@@ -241,7 +284,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         _messages[partIndex] = _copyMessageWithParts(message, nextParts);
         _notifyListeners();
         if (!_isCompactingContext) {
-          _scrollToBottomCallback?.call();
+          _scheduleScrollToBottom();
         }
         break;
       case 'message.part.removed':
@@ -408,6 +451,10 @@ extension _ChatProviderEventReducerOps on ChatProvider {
   }
 
   bool _tryApplyGlobalEventIncremental(ChatEvent event) {
+    // Skip events already processed by the session stream to avoid
+    // redundant notifyListeners() calls and duplicate state mutations.
+    if (_isRecentlyProcessedEvent(event)) return true;
+
     const supportedTypes = <String>{
       'server.connected',
       'session.created',

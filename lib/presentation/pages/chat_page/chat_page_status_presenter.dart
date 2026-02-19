@@ -21,6 +21,19 @@ extension _ChatPageStatusPresenter on _ChatPageState {
   _SessionContextUsageSnapshot _resolveSessionContextUsage(
     ChatProvider chatProvider,
   ) {
+    // Cache: skip O(N) scan when messages, provider, and model haven't changed.
+    final messages = chatProvider.messages;
+    final lastId = messages.isNotEmpty ? messages.last.id : null;
+    final pid = chatProvider.selectedProviderId;
+    final mid = chatProvider.selectedModelId;
+    if (_cachedContextUsage != null &&
+        messages.length == _cachedContextUsageMsgCount &&
+        lastId == _cachedContextUsageLastMsgId &&
+        pid == _cachedContextUsageProviderId &&
+        mid == _cachedContextUsageModelId) {
+      return _cachedContextUsage!;
+    }
+
     AssistantMessage? latestAssistantWithTokens;
     var totalCost = 0.0;
 
@@ -83,12 +96,18 @@ extension _ChatPageStatusPresenter on _ChatPageState {
         ? ((totalTokens / limit) * 100).round()
         : 0;
 
-    return _SessionContextUsageSnapshot(
+    final snapshot = _SessionContextUsageSnapshot(
       usagePercent: rawUsagePercent.clamp(0, 999).toInt(),
       totalTokens: totalTokens,
       totalCost: totalCost,
       modelLimit: limit,
     );
+    _cachedContextUsageMsgCount = messages.length;
+    _cachedContextUsageLastMsgId = lastId;
+    _cachedContextUsageProviderId = pid;
+    _cachedContextUsageModelId = mid;
+    _cachedContextUsage = snapshot;
+    return snapshot;
   }
 
   Widget _buildContextUsageControl(

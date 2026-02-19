@@ -122,7 +122,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
         _notifyListeners();
         _attemptPendingRemoteSelectionSync(reason: 'message-user-replaced');
         _scheduleAutoTitleRefresh(message.sessionId);
-        _scrollToBottomCallback?.call();
+        _scheduleScrollToBottom();
         return;
       }
     }
@@ -162,7 +162,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
 
     // Trigger auto-scroll (suppressed during compaction to avoid visual jumps).
     if (!_isCompactingContext) {
-      _scrollToBottomCallback?.call();
+      _scheduleScrollToBottom();
     }
   }
 
