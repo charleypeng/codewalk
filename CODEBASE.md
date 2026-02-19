@@ -1,8 +1,16 @@
 # CodeWalk - Codebase Baseline Snapshot
 
-> Captured: 2026-02-18
-> Git baseline: `f4108fe release: cut v1.11.0` (main)
+> Captured: 2026-02-19
+> Git baseline: `70bcbc6 featO reliability/security/perf fixes` (main)
 > Flutter: 3.41.0 (stable)
+
+## Delta Update (2026-02-19) - featO Reliability/Security/Performance Follow-up
+
+- **Rejected draft restore tightened** (`chat_provider.dart` + `chat_page.dart`, commit `beb5265`): rejected drafts are session-bound (`_RejectedDraftEnvelope.sessionId`) and only restored for the active session while chat screen is active and provider state is `error`, preventing delayed cross-session repopulation.
+- **Health polling concurrency guard** (`app_provider.dart`): `refreshServerHealth()` now serializes runs with in-flight/queue control (`_healthCheckInFlight`, `_queuedHealthRefreshAll`, `_queuedHealthServerIds`) to avoid overlapping 10s timer probes.
+- **Credential persistence hardening** (`app_local_datasource.dart`, commit `70bcbc6`): API key and Basic Auth credentials moved to `flutter_secure_storage` with lazy legacy fallback migration; `server_profiles` in SharedPreferences are persisted sanitized (auth fields blank).
+- **Session list rendering performance** (`chat_session_list.dart`): tree rows are cached by signature (`_cachedTreeSignature`, `_cachedVisibleRows`) and rendered via `ListView.builder` for large conversation trees.
+- **Composer/message reliability polish** (`chat_page.dart`, `chat_message_widget.dart`): compaction boundary state sync is deferred post-frame (`_scheduleCompactionStateSync`) and markdown links now open externally with URI validation and failure feedback.
 
 ## Delta Update (2026-02-18) - STT Platform Abstraction & Runtime Engine Selection (Feat J)
 
@@ -20,7 +28,7 @@
 
 ## Delta Update (2026-02-17) - Draft Restore Lifecycle Scoping
 
-- **Draft restore lifecycle/session scoping** (`chat_provider.dart` + `chat_page.dart`): Rejected draft stash is now bound to current session (`_rejectedDraftSessionId`) and only created while app/provider are foreground-active. Composer restore is consumed only for the active session while the UI is in error state. Includes TTL (2 minutes) to prevent stale restores after delayed returns.
+- **Draft restore lifecycle/session scoping** (`chat_provider.dart` + `chat_page.dart`): Rejected draft stash is session-bound (`_RejectedDraftEnvelope.sessionId`) and created only while app/route/provider are foreground-active. Composer restore is consumed only for the active session while the UI is in error state.
 - **Rejected draft clearance**: Draft stash clears on session switch or new successful send, preventing cross-session draft leakage.
 - **Provider unit tests**: Added tests for foreground/background restore behavior and session-binding guards in `chat_provider_test.dart`.
 
@@ -549,6 +557,7 @@ Makefile with 15 targets and TTY-aware output suppression (verbose output redire
 | dio | ^5.4.0 | HTTP client |
 | provider | ^6.1.1 | State management |
 | shared_preferences | ^2.2.2 | Local storage |
+| flutter_secure_storage | ^9.2.4 | Secure credential storage (API key + Basic Auth) |
 | flutter_markdown_plus | ^1.0.7 | Markdown rendering |
 | flutter_highlight | ^0.7.0 | Code syntax highlighting |
 | file_picker | ^10.3.10 | File picker |
@@ -649,6 +658,8 @@ Cross-platform speech-to-text input via a unified `SpeechInputService` interface
 ### Authentication and Server Config
 - Multi-server profile management (`ServerProfile`) with active/default selection
 - Per-server basic auth configuration and URL normalization
+- Sensitive credentials (`apiKey`, Basic Auth username/password) persisted in `flutter_secure_storage` with lazy migration from legacy plaintext keys
+- `server_profiles` persisted sanitized in SharedPreferences (auth fields blank), then hydrated with secure values at runtime
 - Health-aware activation (`/global/health`, fallback `/path`)
 - Legacy migration creates a profile only when legacy server/auth keys exist; clean installs now keep an empty server list until the user adds one
 

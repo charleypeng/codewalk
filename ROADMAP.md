@@ -233,11 +233,11 @@ Implemented compaction boundary timeline entry that collapses all pre-compaction
 
 #### `featO` Code health & technical debt
 
-**featO progress summary**: Delivered regression fixes in `00583f0`, follow-up scope guard in `4aa38ca`, and full rejected-draft UX restoration in `beb5265`; this round implemented the 5 remaining items (`1.6`, `1.8`, `1.9`, `2.1`, `3.4`) and validated them in working tree state pending final commit.
+**featO progress summary**: Delivered regression fixes in `00583f0`, follow-up scope guard in `4aa38ca`, full rejected-draft UX restoration in `beb5265`, and finalized the remaining 5 items (`1.6`, `1.8`, `1.9`, `2.1`, `3.4`) in `70bcbc6`.
 
-- [x] Group 1: Concluded (implemented `1.6`, `1.8`, `1.9` in this round, pending commit)
-- [x] Group 2: Concluded (implemented `2.1` in this round, pending commit)
-- [x] Group 3: Concluded (implemented `3.4` in this round, pending commit)
+- [x] Group 1: Concluded (`1.6`, `1.8`, `1.9` finalized in `70bcbc6`)
+- [x] Group 2: Concluded (`2.1` finalized in `70bcbc6`)
+- [x] Group 3: Concluded (`3.4` finalized in `70bcbc6`)
 - [x] Group 4: Concluded after necessity triage
 - [x] Group 5: Concluded after necessity triage
 - [x] Group 6: Concluded after necessity triage

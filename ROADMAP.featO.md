@@ -16,21 +16,21 @@ Systematic elimination of bugs, security gaps, performance issues, dead code, an
 - [x] 1.3.1: Rejected draft restore should NOT repopulate composer when user returns to chat later (only immediate retry within same session) - Commit hash: beb5265
 
 - [x] 1.5: Change `registerFactory` to `registerLazySingleton` for `AppProvider` and `ChatProvider` in `injection_container.dart` (resource leak: multiple polling timers, concurrent health checks, unmanaged state) - Closed after necessity review.
-- [x] 1.6: Move state mutation out of `build()` in `chat_page.dart` (`_wasCompactingContext` and `_frozenCompactionBoundaryId` mutated during build phase via `_buildMessageTimelineEntries`) - Implemented (pending commit).
+- [x] 1.6: Move state mutation out of `build()` in `chat_page.dart` (`_wasCompactingContext` and `_frozenCompactionBoundaryId` mutated during build phase via `_buildMessageTimelineEntries`) - Commit hash: 70bcbc6
 - [x] 1.7: Add `_disposed` guard to `ChatProvider.dispose()` to prevent `notifyListeners()` on a disposed provider (async cancellation outlives `super.dispose()`) - Closed after necessity review.
-- [x] 1.8: Add concurrency guard to health polling in `AppProvider` (timer fires every 10s but sequential health checks can exceed 10s, causing concurrent `_serverHealthById` mutation) - Implemented (pending commit).
-- [x] 1.9: Implement Markdown link tap handler in `chat_message_widget.dart` (currently a TODO with empty body, links silently ignored) - Implemented (pending commit).
+- [x] 1.8: Add concurrency guard to health polling in `AppProvider` (timer fires every 10s but sequential health checks can exceed 10s, causing concurrent `_serverHealthById` mutation) - Commit hash: 70bcbc6
+- [x] 1.9: Implement Markdown link tap handler in `chat_message_widget.dart` (currently a TODO with empty body, links silently ignored) - Commit hash: 70bcbc6
 - [x] 1.10: Remove dead `SessionRepository` interface (`lib/domain/repositories/session_repository.dart` — no implementation, no import, no test, no fake) - Closed after necessity review.
 
 ### Group 2 — Security hardening `[x]`
-- [x] 2.1: Migrate credentials from `SharedPreferences` to `flutter_secure_storage` (`apiKey`, `basicAuthPassword`, `basicAuthUsername` stored as plaintext in `app_local_datasource.dart`) - Implemented (pending commit).
+- [x] 2.1: Migrate credentials from `SharedPreferences` to `flutter_secure_storage` (`apiKey`, `basicAuthPassword`, `basicAuthUsername` stored as plaintext in `app_local_datasource.dart`) - Commit hash: 70bcbc6
 - [x] 2.2: Use streaming SHA-256 instead of `readAsBytes()` in `local_opencode_server_runtime_io.dart` (loads entire binary release ~50-200MB into RAM before hashing) - Closed after necessity review.
 
 ### Group 3 — Performance `[x]`
 - [x] 3.1: Cache shortcut/action maps outside of `build()` in `chat_page.dart` (two maps with 8+ entries each allocated fresh on every rebuild) - Closed after necessity review.
 - [x] 3.2: Memoize `_collectSentMessageHistory` in `chat_page.dart` (iterates all messages on every rebuild, called from a `Builder` inside `build()`) - Closed after necessity review.
 - [x] 3.3: Reuse or properly close Dio instances in health check (`app_provider.dart` creates a new `Dio()` per profile per 10s timer, never closed) - Closed after necessity review.
-- [x] 3.4: Convert `ChatSessionList` to use `ListView.builder` with cached tree structure (currently builds all tiles eagerly without virtualization) - Implemented (pending commit).
+- [x] 3.4: Convert `ChatSessionList` to use `ListView.builder` with cached tree structure (currently builds all tiles eagerly without virtualization) - Commit hash: 70bcbc6
 
 ### Group 4 — Code cleanup `[x]`
 - [x] 4.1: Remove dead constants from `app_constants.dart` and `api_constants.dart` (9+ unused constants including `appVersion`, `appDescription`, `storageSchemaVersionKey`, `migrationV1ToV2CompletedKey`, error message strings, HTTP verb constants, endpoint paths) - Closed after necessity review.

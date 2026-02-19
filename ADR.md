@@ -629,6 +629,17 @@ CodeWalk previously supported only one server (`server_host` + `server_port` fla
 - ⚠️ Trade-off: provider and local-storage logic became more complex due to scoped key strategy and migration support.
 - ⚠️ Trade-off: temporary fallback handling for legacy keys must be maintained until a future cleanup window.
 
+### Post-Decision Update (2026-02-19)
+
+Security hardening from `featO` commit `70bcbc6` extended persistence behavior while keeping the same server/context-scoped contract:
+
+1. Sensitive credentials moved from plaintext `SharedPreferences` to `flutter_secure_storage`:
+   - API key
+   - Basic Auth username
+   - Basic Auth password
+2. Legacy plaintext keys are migrated lazily with fallback reads, then removed after secure write succeeds.
+3. `server_profiles` payloads persisted in SharedPreferences are now sanitized (auth fields cleared), while runtime hydration re-injects secure values for active profile usage.
+
 ### Key Files
 
 - `lib/domain/entities/server_profile.dart` - server profile entity model
@@ -1600,9 +1611,9 @@ The expected behavior required preserving existing mention/slash keyboard behavi
 
 Semantics are non-breaking bugfixes restoring intended behavior that had regressed:
 
-1. **Composer draft restore after rejected send**: When a message send fails (validation error, network error, or server rejection), the composer text is restored to its pre-send state rather than being cleared. Users can correct and retry without retyping.
-   - **Lifecycle context constraints**: Draft restoration is gated by (a) app is in foreground, (b) session is still active/current, (c) UI is currently in error state before re-injecting into composer. Restoration is skipped if the user navigated away or switched sessions.
-   - **Expiration window**: Stale drafts older than 2 minutes are discarded to prevent resurrecting old input after returning to chat later.
+1. **Composer draft restore after rejected send**: When a message send fails (validation error, network error, or server rejection), the full composer draft context is restored as a one-shot retry prefill (text, attachments, and shell mode), instead of clearing the draft.
+   - **Lifecycle context constraints**: Draft stashing is gated by foreground/chat-route activity and active session context; draft consumption requires a matching current session while chat UI remains in error state.
+   - **No time-based expiration**: Restoration is event-driven and one-shot; there is no TTL-based draft discard policy.
 
 2. **Stop/send idle-state reset**: After a successful Stop (abort) or Send completion, the session state machine correctly transitions to `idle` rather than lingering in intermediate states (`sending`, `busy`). This ensures the composer is immediately ready for new input without requiring manual recovery actions.
 
