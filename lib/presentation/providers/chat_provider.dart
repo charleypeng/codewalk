@@ -12,6 +12,7 @@ import '../../data/models/chat_message_model.dart';
 import '../../data/models/chat_realtime_model.dart';
 import '../../data/models/chat_session_model.dart';
 import '../../domain/entities/agent.dart';
+import '../../domain/entities/chat_composer_draft.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/chat_realtime.dart';
 import '../../domain/entities/chat_session.dart';
@@ -80,6 +81,13 @@ class ChatUiNotice {
   final String? actionLabel;
 
   bool get hasAction => actionLabel != null && actionLabel!.trim().isNotEmpty;
+}
+
+class _RejectedDraftEnvelope {
+  const _RejectedDraftEnvelope({required this.sessionId, required this.draft});
+
+  final String sessionId;
+  final ChatComposerDraft draft;
 }
 
 class _ChatContextSnapshot {
@@ -310,16 +318,15 @@ class ChatProvider extends ChangeNotifier {
   bool _isAbortingResponse = false;
   bool _isCompactingContext = false;
   bool _isAppInForeground = true;
+  bool _isChatRouteActive = true;
   String? _abortSuppressionSessionId;
   DateTime? _abortSuppressionStartedAt;
   ChatUiNotice? _pendingUiNotice;
   int _nextUiNoticeId = 0;
   int _messageStreamGeneration = 0;
   String? _activeMessageStreamSessionId;
-  String? _activeSendDraftText;
-  String? _rejectedDraftText;
-  String? _rejectedDraftSessionId;
-  DateTime? _rejectedDraftCreatedAt;
+  ChatComposerDraft? _activeSendDraft;
+  _RejectedDraftEnvelope? _rejectedDraft;
 
   // Project and provider-related state
   String? _currentProjectId;
@@ -385,7 +392,6 @@ class ChatProvider extends ChangeNotifier {
   static const Duration _lastSessionSnapshotTtl = Duration(days: 7);
   static const int _maxRecentModels = 8;
   static const Duration _abortSuppressionWindow = Duration(seconds: 8);
-  static const Duration _rejectedDraftRestoreWindow = Duration(minutes: 2);
   static const Duration _remoteSelectionSyncThrottle = Duration(seconds: 2);
   static const String _configCodewalkNamespace = 'codewalk';
   static const String _configSelectionKey = 'selection';
@@ -733,32 +739,23 @@ class ChatProvider extends ChangeNotifier {
     return notice;
   }
 
-  String? consumeRejectedDraftText({String? sessionId}) {
-    final draftText = _rejectedDraftText?.trim();
-    if (draftText == null || draftText.isEmpty) {
-      _clearRejectedDraftText();
+  ChatComposerDraft? consumeRejectedDraft({String? sessionId}) {
+    final rejectedDraft = _rejectedDraft;
+    if (rejectedDraft == null || !rejectedDraft.draft.hasContent) {
+      _clearRejectedDraft();
       return null;
     }
 
     final expectedSessionId = sessionId?.trim();
-    final draftSessionId = _rejectedDraftSessionId?.trim();
+    final draftSessionId = rejectedDraft.sessionId.trim();
     if (expectedSessionId != null &&
         expectedSessionId.isNotEmpty &&
-        draftSessionId != null &&
-        draftSessionId.isNotEmpty &&
         expectedSessionId != draftSessionId) {
       return null;
     }
 
-    final createdAt = _rejectedDraftCreatedAt;
-    if (createdAt != null &&
-        DateTime.now().difference(createdAt) > _rejectedDraftRestoreWindow) {
-      _clearRejectedDraftText();
-      return null;
-    }
-
-    _clearRejectedDraftText();
-    return draftText;
+    _clearRejectedDraft();
+    return rejectedDraft.draft;
   }
 
   void _queueUiNotice({
@@ -833,43 +830,59 @@ class ChatProvider extends ChangeNotifier {
     _abortSuppressionStartedAt = null;
   }
 
-  void _setActiveSendDraftText(String draftText, {required bool shellMode}) {
-    _clearRejectedDraftText();
+  void _setActiveSendDraft(
+    String draftText, {
+    required List<FileInputPart> attachments,
+    required bool shellMode,
+  }) {
+    _clearRejectedDraft();
     final normalizedDraft = draftText.trim();
-    if (normalizedDraft.isEmpty) {
-      _activeSendDraftText = null;
+    final effectiveAttachments = shellMode
+        ? const <FileInputPart>[]
+        : List<FileInputPart>.unmodifiable(attachments);
+    if (normalizedDraft.isEmpty && effectiveAttachments.isEmpty) {
+      _activeSendDraft = null;
       return;
     }
-    _activeSendDraftText = shellMode ? '!$normalizedDraft' : normalizedDraft;
+    final composerText = shellMode
+        ? normalizedDraft.isEmpty
+              ? ''
+              : '!$normalizedDraft'
+        : normalizedDraft;
+    _activeSendDraft = ChatComposerDraft(
+      text: composerText,
+      attachments: effectiveAttachments,
+      shellMode: shellMode,
+    );
   }
 
-  void _clearActiveSendDraftText() {
-    _activeSendDraftText = null;
+  void _clearActiveSendDraft() {
+    _activeSendDraft = null;
   }
 
-  void _clearRejectedDraftText() {
-    _rejectedDraftText = null;
-    _rejectedDraftSessionId = null;
-    _rejectedDraftCreatedAt = null;
+  void _clearRejectedDraft() {
+    _rejectedDraft = null;
   }
 
-  void _stashRejectedDraftTextForRetry({String? sessionId}) {
-    final draftText = _activeSendDraftText?.trim();
-    _activeSendDraftText = null;
-    if (draftText == null || draftText.isEmpty) {
+  void _stashRejectedDraftForRetry({String? sessionId}) {
+    final draft = _activeSendDraft;
+    _activeSendDraft = null;
+    if (draft == null || !draft.hasContent) {
       return;
     }
     final effectiveSessionId = sessionId?.trim();
     if (!_isAppInForeground ||
         !_isForegroundActive ||
+        !_isChatRouteActive ||
         effectiveSessionId == null ||
         effectiveSessionId.isEmpty) {
-      _clearRejectedDraftText();
+      _clearRejectedDraft();
       return;
     }
-    _rejectedDraftText = draftText;
-    _rejectedDraftSessionId = effectiveSessionId;
-    _rejectedDraftCreatedAt = DateTime.now();
+    _rejectedDraft = _RejectedDraftEnvelope(
+      sessionId: effectiveSessionId,
+      draft: draft,
+    );
   }
 
   String _modelKey(String providerId, String modelId) {
@@ -2481,6 +2494,9 @@ class ChatProvider extends ChangeNotifier {
 
   Future<void> setForegroundActive(bool isActive) async {
     _isForegroundActive = isActive;
+    if (!isActive) {
+      _clearRejectedDraft();
+    }
     if (!_refreshlessRealtimeEnabled) {
       return;
     }
@@ -2503,6 +2519,16 @@ class ChatProvider extends ChangeNotifier {
 
   void setAppInForeground(bool isForeground) {
     _isAppInForeground = isForeground;
+    if (!isForeground) {
+      _clearRejectedDraft();
+    }
+  }
+
+  void setChatRouteActive(bool isActive) {
+    _isChatRouteActive = isActive;
+    if (!isActive) {
+      _clearRejectedDraft();
+    }
   }
 
   Future<void> _pauseRealtimeSubscriptions() async {
@@ -2853,7 +2879,7 @@ class ChatProvider extends ChangeNotifier {
           );
           if (sessionId == _currentSession?.id) {
             _activeMessageStreamSessionId = null;
-            _clearActiveSendDraftText();
+            _clearActiveSendDraft();
             _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
             if (_state == ChatState.sending) {
               _setState(ChatState.loaded);
@@ -5008,7 +5034,7 @@ class ChatProvider extends ChangeNotifier {
     _currentSession = session;
     _messages = <ChatMessage>[];
     _pendingLocalUserMessageIds.clear();
-    _clearRejectedDraftText();
+    _clearRejectedDraft();
     _sessionInsightsError = null;
 
     final serverId = await _resolveServerScopeId();
@@ -5050,7 +5076,7 @@ class ChatProvider extends ChangeNotifier {
     // Clear current message list
     _messages.clear();
     _pendingLocalUserMessageIds.clear();
-    _clearRejectedDraftText();
+    _clearRejectedDraft();
     _currentSession = session;
     _applySelectionPriorityForCurrentSession();
     notifyListeners();
@@ -5144,7 +5170,11 @@ class ChatProvider extends ChangeNotifier {
     AppLogger.info(
       'Provider send start session=${_currentSession!.id} agent=${_selectedAgentName ?? "-"} provider=${_selectedProviderId ?? "-"} model=${_selectedModelId ?? "-"} variant=${_selectedVariantId ?? "auto"}',
     );
-    _setActiveSendDraftText(trimmedText, shellMode: shellMode);
+    _setActiveSendDraft(
+      trimmedText,
+      attachments: effectiveAttachments,
+      shellMode: shellMode,
+    );
     _setState(ChatState.sending);
 
     try {
@@ -5274,12 +5304,12 @@ class ChatProvider extends ChangeNotifier {
                   AppLogger.info(
                     'Suppressing expected abort failure session=${_currentSession?.id ?? "-"}',
                   );
-                  _clearActiveSendDraftText();
+                  _clearActiveSendDraft();
                   _errorMessage = null;
                   _setState(ChatState.loaded);
                   return;
                 }
-                _stashRejectedDraftTextForRetry(
+                _stashRejectedDraftForRetry(
                   sessionId: _activeMessageStreamSessionId,
                 );
                 _handleFailure(failure);
@@ -5295,7 +5325,7 @@ class ChatProvider extends ChangeNotifier {
               _messageSubscription = null;
               final streamSessionId = _activeMessageStreamSessionId;
               _activeMessageStreamSessionId = null;
-              _stashRejectedDraftTextForRetry(sessionId: streamSessionId);
+              _stashRejectedDraftForRetry(sessionId: streamSessionId);
               AppLogger.error('Provider send stream error', error: error);
               _setError('Failed to send message: $error');
             },
@@ -5308,7 +5338,7 @@ class ChatProvider extends ChangeNotifier {
               }
               _messageSubscription = null;
               _activeMessageStreamSessionId = null;
-              _clearActiveSendDraftText();
+              _clearActiveSendDraft();
               AppLogger.info('Provider send stream finished');
               final sessionId = _currentSession?.id;
               if (sessionId != null) {
@@ -5331,7 +5361,7 @@ class ChatProvider extends ChangeNotifier {
       final streamSessionId =
           _activeMessageStreamSessionId ?? _currentSession?.id;
       _activeMessageStreamSessionId = null;
-      _stashRejectedDraftTextForRetry(sessionId: streamSessionId);
+      _stashRejectedDraftForRetry(sessionId: streamSessionId);
       AppLogger.error(
         'Provider send setup failed',
         error: error,
@@ -5341,7 +5371,7 @@ class ChatProvider extends ChangeNotifier {
         sessionId: _currentSession?.id,
         message: error.toString(),
       )) {
-        _clearActiveSendDraftText();
+        _clearActiveSendDraft();
         _errorMessage = null;
         _setState(ChatState.loaded);
         return;
@@ -5393,7 +5423,7 @@ class ChatProvider extends ChangeNotifier {
       _sessionStatusById[session.id] = const SessionStatusInfo(
         type: SessionStatusType.idle,
       );
-      _clearActiveSendDraftText();
+      _clearActiveSendDraft();
       _errorMessage = null;
       success = true;
     }
@@ -5567,7 +5597,7 @@ class ChatProvider extends ChangeNotifier {
       );
       if (message.isCompleted && _state == ChatState.sending) {
         AppLogger.debug('Message completed, setting state to loaded');
-        _clearActiveSendDraftText();
+        _clearActiveSendDraft();
         _setState(ChatState.loaded);
       }
     }

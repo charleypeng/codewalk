@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import '../../core/di/injection_container.dart' as di;
 import '../../core/logging/app_logger.dart';
 import '../../domain/entities/experience_settings.dart';
+import '../../domain/entities/chat_composer_draft.dart';
 import '../../domain/entities/chat_session.dart';
 import '../services/speech_input_service.dart';
 import '../services/speech_input_service_sherpa.dart';
@@ -171,8 +172,8 @@ class ChatInputWidget extends StatefulWidget {
     super.key,
     required this.onSendMessage,
     this.sentMessageHistory = const <String>[],
-    this.prefilledText,
-    this.prefilledTextVersion = 0,
+    this.prefilledDraft,
+    this.prefilledDraftVersion = 0,
     this.onMentionQuery,
     this.onSlashQuery,
     this.onBuiltinSlashCommand,
@@ -190,8 +191,8 @@ class ChatInputWidget extends StatefulWidget {
 
   final FutureOr<void> Function(ChatInputSubmission submission) onSendMessage;
   final List<String> sentMessageHistory;
-  final String? prefilledText;
-  final int prefilledTextVersion;
+  final ChatComposerDraft? prefilledDraft;
+  final int prefilledDraftVersion;
   final Future<List<ChatComposerMentionSuggestion>> Function(String query)?
   onMentionQuery;
   final Future<List<ChatComposerSlashCommandSuggestion>> Function(String query)?
@@ -324,12 +325,35 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
       oldWidget.controller?._detach(this);
       widget.controller?._attach(this);
     }
-    if (widget.prefilledTextVersion != oldWidget.prefilledTextVersion) {
-      final prefilledText = widget.prefilledText?.trim();
-      if (prefilledText != null && prefilledText.isNotEmpty) {
+    if (widget.prefilledDraftVersion != oldWidget.prefilledDraftVersion) {
+      final prefilledDraft = widget.prefilledDraft;
+      if (prefilledDraft != null && prefilledDraft.hasContent) {
         _exitHistoryNavigation(updateDraft: false);
         _historyDraftValue = null;
         _suppressEnsureInputFocus = true;
+
+        var prefilledText = prefilledDraft.text.trim();
+        if (prefilledDraft.shellMode &&
+            prefilledText.isNotEmpty &&
+            !prefilledText.startsWith('!')) {
+          prefilledText = '!$prefilledText';
+        }
+
+        final restoredAttachments = prefilledDraft.shellMode
+            ? const <FileInputPart>[]
+            : prefilledDraft.attachments
+                  .where((attachment) => _isMimeAllowed(attachment.mime))
+                  .toList(growable: false);
+
+        setState(() {
+          _mode = prefilledDraft.shellMode && prefilledText.isNotEmpty
+              ? ChatComposerMode.shell
+              : ChatComposerMode.normal;
+          _attachments
+            ..clear()
+            ..addAll(restoredAttachments);
+        });
+
         _applyHistoryMessage(prefilledText);
       }
     }

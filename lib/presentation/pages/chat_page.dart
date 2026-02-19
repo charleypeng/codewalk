@@ -14,6 +14,7 @@ import '../../core/di/injection_container.dart' as di;
 import '../../core/logging/app_logger.dart';
 import '../../core/network/dio_client.dart';
 import '../../domain/entities/agent.dart';
+import '../../domain/entities/chat_composer_draft.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/chat_realtime.dart';
 import '../../domain/entities/chat_session.dart';
@@ -180,8 +181,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   bool _wasChatRouteCurrent = true;
   bool _isProgrammaticScrollInFlight = false;
   int _scrollToBottomRequestToken = 0;
-  String? _composerPrefilledText;
-  int _composerPrefilledTextVersion = 0;
+  ChatComposerDraft? _composerPrefilledDraft;
+  int _composerPrefilledDraftVersion = 0;
   final Map<String, _FileExplorerContextState> _fileContextStates =
       <String, _FileExplorerContextState>{};
   final Map<String, String> _fileDiffSignaturesByContext = <String, String>{};
@@ -261,6 +262,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   void dispose() {
     // Clean up scroll callback using saved reference
     _chatProvider?.setScrollToBottomCallback(null);
+    _chatProvider?.setChatRouteActive(false);
     unawaited(_chatProvider?.setForegroundActive(false));
     _scrollToBottomRequestToken += 1;
     _appProvider?.removeListener(_handleAppProviderChange);
@@ -614,6 +616,7 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       return;
     }
     _wasChatRouteCurrent = isCurrent;
+    chatProvider.setChatRouteActive(isCurrent);
     if (isCurrent) {
       _handleReturnToChat(chatProvider, reason: 'route-return');
     }
@@ -682,10 +685,10 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     if (currentSessionId == null || currentSessionId.isEmpty) {
       return;
     }
-    final rejectedDraft = chatProvider.consumeRejectedDraftText(
+    final rejectedDraft = chatProvider.consumeRejectedDraft(
       sessionId: currentSessionId,
     );
-    if (rejectedDraft == null || rejectedDraft.trim().isEmpty) {
+    if (rejectedDraft == null || !rejectedDraft.hasContent) {
       return;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -693,8 +696,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
         return;
       }
       setState(() {
-        _composerPrefilledText = rejectedDraft;
-        _composerPrefilledTextVersion += 1;
+        _composerPrefilledDraft = rejectedDraft;
+        _composerPrefilledDraftVersion += 1;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) {
@@ -5464,8 +5467,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
                           chatProvider: chatProvider,
                         ),
                     sentMessageHistory: sentMessageHistory,
-                    prefilledText: _composerPrefilledText,
-                    prefilledTextVersion: _composerPrefilledTextVersion,
+                    prefilledDraft: _composerPrefilledDraft,
+                    prefilledDraftVersion: _composerPrefilledDraftVersion,
                     enabled: chatProvider.currentSession != null,
                     isResponding: chatProvider.canAbortActiveResponse,
                     focusNode: _inputFocusNode,
@@ -6047,8 +6050,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       return;
     }
     setState(() {
-      _composerPrefilledText = text;
-      _composerPrefilledTextVersion += 1;
+      _composerPrefilledDraft = ChatComposerDraft(text: text);
+      _composerPrefilledDraftVersion += 1;
     });
     unawaited(HapticFeedback.selectionClick());
   }

@@ -1973,10 +1973,11 @@ void main() {
       sendStream.add(const Left(NetworkFailure('temporary failure')));
       await Future<void>.delayed(const Duration(milliseconds: 30));
 
-      expect(
-        provider.consumeRejectedDraftText(sessionId: 'ses_1'),
-        'retry this text',
-      );
+      final rejectedDraft = provider.consumeRejectedDraft(sessionId: 'ses_1');
+      expect(rejectedDraft, isNotNull);
+      expect(rejectedDraft?.text, 'retry this text');
+      expect(rejectedDraft?.attachments, isEmpty);
+      expect(rejectedDraft?.shellMode, isFalse);
     });
 
     test('send failure in background does not queue draft restore', () async {
@@ -1998,8 +1999,62 @@ void main() {
       );
       await Future<void>.delayed(const Duration(milliseconds: 30));
 
-      expect(provider.consumeRejectedDraftText(sessionId: 'ses_1'), isNull);
+      expect(provider.consumeRejectedDraft(sessionId: 'ses_1'), isNull);
     });
+
+    test('send failure preserves attachment-only draft for retry', () async {
+      final sendStream = StreamController<Either<Failure, ChatMessage>>();
+      addTearDown(() async {
+        await sendStream.close();
+      });
+      chatRepository.sendMessageHandler = (_, __, ___, ____) =>
+          sendStream.stream;
+
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+
+      const attachment = FileInputPart(
+        mime: 'image/png',
+        url: 'data:image/png;base64,AA==',
+        filename: 'image.png',
+      );
+      await provider.sendMessage(
+        '',
+        attachments: const <FileInputPart>[attachment],
+      );
+      sendStream.add(const Left(NetworkFailure('temporary failure')));
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+
+      final rejectedDraft = provider.consumeRejectedDraft(sessionId: 'ses_1');
+      expect(rejectedDraft, isNotNull);
+      expect(rejectedDraft?.text, '');
+      expect(rejectedDraft?.attachments, const <FileInputPart>[attachment]);
+      expect(rejectedDraft?.shellMode, isFalse);
+    });
+
+    test(
+      'send failure outside active chat route does not queue retry draft',
+      () async {
+        final sendStream = StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          await sendStream.close();
+        });
+        chatRepository.sendMessageHandler = (_, __, ___, ____) =>
+            sendStream.stream;
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        provider.setChatRouteActive(false);
+
+        await provider.sendMessage('draft from inactive route');
+        sendStream.add(const Left(NetworkFailure('temporary failure')));
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        expect(provider.consumeRejectedDraft(sessionId: 'ses_1'), isNull);
+      },
+    );
 
     test(
       'switching sessions ignores in-flight stream updates from previous session',

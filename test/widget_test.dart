@@ -1,3 +1,5 @@
+import 'package:codewalk/domain/entities/chat_composer_draft.dart';
+import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/presentation/widgets/chat_input_widget.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -109,6 +111,79 @@ void main() {
 
     expect(sentSubmission?.mode, ChatComposerMode.shell);
     expect(sentSubmission?.text, 'pwd');
+  });
+
+  testWidgets('prefilled draft restores attachment-only composer state', (
+    WidgetTester tester,
+  ) async {
+    var prefilledVersion = 0;
+    ChatComposerDraft? prefilledDraft;
+
+    Widget buildHarness() {
+      return _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (_) {},
+          showAttachmentButton: true,
+          prefilledDraft: prefilledDraft,
+          prefilledDraftVersion: prefilledVersion,
+        ),
+      );
+    }
+
+    await tester.pumpWidget(buildHarness());
+
+    prefilledDraft = const ChatComposerDraft(
+      text: '',
+      attachments: <FileInputPart>[
+        FileInputPart(
+          mime: 'image/png',
+          url: 'data:image/png;base64,AA==',
+          filename: 'image.png',
+        ),
+      ],
+    );
+    prefilledVersion = 1;
+    await tester.pumpWidget(buildHarness());
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('composer_attachments_row')),
+      findsOneWidget,
+    );
+    expect(find.text('image.png'), findsOneWidget);
+    final textField = tester.widget<TextField>(find.byType(TextField));
+    expect(textField.controller?.text, isEmpty);
+  });
+
+  testWidgets('prefilled shell draft restores shell mode with ! prefix', (
+    WidgetTester tester,
+  ) async {
+    var prefilledVersion = 0;
+    ChatComposerDraft? prefilledDraft;
+
+    Widget buildHarness() {
+      return _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (_) {},
+          prefilledDraft: prefilledDraft,
+          prefilledDraftVersion: prefilledVersion,
+        ),
+      );
+    }
+
+    await tester.pumpWidget(buildHarness());
+
+    prefilledDraft = const ChatComposerDraft(text: 'ls -la', shellMode: true);
+    prefilledVersion = 1;
+    await tester.pumpWidget(buildHarness());
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('composer_shell_mode_chip')),
+      findsOneWidget,
+    );
+    final textField = tester.widget<TextField>(find.byType(TextField));
+    expect(textField.controller?.text, '!ls -la');
   });
 
   testWidgets('desktop Enter sends and Shift+Enter inserts newline', (
