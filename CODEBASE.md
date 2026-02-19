@@ -25,6 +25,7 @@ codewalk/
 │       │   ├── chat_provider.dart      # Chat provider orchestrator/facade
 │       │   └── chat_provider/          # ChatProvider decomposed clusters (15 modules)
 │       ├── widgets/
+│       │   ├── chat_message_widget.dart # StatefulWidget with build-skip cache for messages
 │       │   ├── chat_input_widget.dart  # Chat input orchestrator/facade
 │       │   └── chat_input/             # ChatInput decomposed clusters (8 modules)
 │       ├── services/                   # Platform/runtime services (tray, notifications, STT, etc.)
@@ -61,9 +62,10 @@ lib/domain/usecases/*.dart                        # Application use cases consum
 lib/presentation/providers/app_provider.dart      # Server profiles, health polling, local runtime state
 lib/presentation/providers/project_provider.dart  # Project/worktree context selection and persistence
 lib/presentation/providers/settings_provider.dart # Experience settings, sounds, and update checks
-lib/presentation/providers/chat_provider.dart     # Chat state/realtime/session orchestration facade
+lib/presentation/providers/chat_provider.dart     # Chat state/realtime/session facade; microtask coalescing, event dedup buffer
 lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade
 lib/presentation/widgets/chat_input_widget.dart   # Composer/input orchestration facade
+lib/presentation/widgets/chat_message_widget.dart # Message bubble with build-skip cache, cached MarkdownStyleSheet
 ```
 
 ## Chat Architecture
@@ -198,5 +200,28 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 ## Notes
 
 - `make android` builds an arm64 APK and sends the artifact with `~/bin/hey`; use `HEY_CAPTION` to override the upload caption.
-- Sensitive server credentials are persisted through `flutter_secure_storage` via `AppLocalDataSource`.
+- Sensitive server credentials are persisted through `flutter_secure_storage` (v10.0.0) via `AppLocalDataSource`.
 - Platform folders currently present: `android/`, `linux/`, `macos/`, `web/`, `windows/`.
+- Android build targets Java 17 (`sourceCompatibility`, `targetCompatibility`, `jvmTarget`).
+
+### Performance Architecture
+
+- **ChatProvider microtask coalescing**: `_notifyScheduled` / `_scrollScheduled` flags gate
+  `scheduleMicrotask` so that multiple state mutations within the same frame produce only one
+  `notifyListeners()` / scroll-to-bottom call.
+- **Event dedup buffer**: `_recentEventIds` (circular `Queue<String>`) in ChatProvider stores
+  recent event keys built by `_composeEventDeduplicationKey` (in `chat_provider_event_reducer_ops.dart`).
+  `_isRecentlyProcessedEvent` and `_tryApplyGlobalEventIncremental` use this buffer to skip
+  duplicates arriving on the global SSE stream.
+- **ChatMessageWidget build-skip cache**: Converted from `StatelessWidget` to `StatefulWidget`;
+  completed messages short-circuit `build()` by returning a cached widget tree.
+  `MarkdownStyleSheet` is cached in `_cachedMarkdownStyleSheet` and invalidated only on
+  brightness change.
+- **ChatPage (_ChatPageState) derived-data caches**: The page state holds per-build caches that
+  skip recomputation when message list identity has not changed:
+  - `_cachedTimelineEntries` — timeline entry list (used by `chat_page_timeline_builder.dart`)
+  - `_cachedHighlightTheme` / `_cachedHighlightBrightness` — syntax highlight theme
+  - `_cachedContextUsage` — session context/token usage snapshot (used by `chat_page_status_presenter.dart`)
+  - `_cachedReasoningKeyResult` — reasoning effort key (used by `chat_page_timeline_runtime.dart`)
+  - `_cachedProgressStageResult` — assistant progress stage (used by `chat_page_timeline_runtime.dart`)
+  - `_cachedSentHistory` — sent message history (used by `chat_page_composer_widgets.dart`)

@@ -46,10 +46,11 @@ Concluded historical features were archived to `ROADMAP.archive.done.md` to keep
 - `ROADMAP.featM.md` - Icons to Material Symbols migration (technical debt)
 - `ROADMAP.featN.md` - Material You design system revamp (responsive, adaptive, modern UX)
 - `ROADMAP.featO.md` - Code health & technical debt (bugs, security, performance, cleanup, architecture, tests)
+- `ROADMAP.featQ.md` - Cross-platform UX and settings polish
 
 ### Next Recommended Feature
 
-- `featF` - `ROADMAP.featF.md` (NEXT: files drafting UX + duplicate/copy interaction fixes)
+- `featG` - `ROADMAP.featG.md` (NEXT: favorites and variant selector ergonomics)
 
 ### Backlog Pack Dependency Order
 
@@ -68,10 +69,11 @@ Concluded historical features were archived to `ROADMAP.archive.done.md` to keep
 13. `ROADMAP.featM.md` (Icons to Material Symbols migration - isolated track, can run anytime)
 14. `ROADMAP.featN.md` (Material You design system revamp - isolated track, can run anytime)
 15. `ROADMAP.featO.md` (Code health & technical debt - isolated track, Groups 1-3 recommended before featF)
+16. `ROADMAP.featQ.md` (Cross-platform UX and settings polish - isolated track, can run anytime)
 
 Notes:
 - Prefer this order by default to reduce regression risk in timeline/sync behavior.
-- If needed, `featJ`, `featK`, `featM`, `featN`, and `featO` can run earlier as mostly isolated tracks.
+- If needed, `featJ`, `featK`, `featM`, `featN`, `featO`, and `featQ` can run earlier as mostly isolated tracks.
 - `featO` Groups 1-3 (bugs, security, performance) are recommended before `featF` to stabilize the codebase.
 
 ### Backlog Pack Execution Checklist
@@ -83,7 +85,7 @@ Notes:
 - [x] `featH` - `ROADMAP.featH.md` (startup/settings/tool-surface polish)
 - [x] `featE` - `ROADMAP.featE.md` (composer popover/local server/shortcuts reliability)
 - [x] `featI` - `ROADMAP.featI.md` (agent/shortcut/productivity parity)
-- [ ] `featF` - `ROADMAP.featF.md` (files drafting UX + duplicate/copy interaction fixes)
+- [x] `featF` - `ROADMAP.featF.md` (files drafting UX + duplicate/copy interaction fixes)
 - [ ] `featG` - `ROADMAP.featG.md` (favorites and variant selector ergonomics)
 - [ ] `featC` - `ROADMAP.featC.md` (focus/visibility render gate + files planning)
 - [x] `featJ` - `ROADMAP.featJ.md` (speech-to-text platform matrix)
@@ -91,6 +93,7 @@ Notes:
 - [ ] `featM` - `ROADMAP.featM.md` (Icons to Material Symbols migration)
 - [ ] `featN` - `ROADMAP.featN.md` (Material You design system revamp)
 - [x] `featO` - `ROADMAP.featO.md` (Code health & technical debt)
+- [ ] `featQ` - `ROADMAP.featQ.md` (Cross-platform UX and settings polish)
 
 Use the same status convention from Legend for active execution updates (`[~]`, `[x]`, `[/]`).
 
@@ -138,11 +141,14 @@ Implemented desktop local-server wizard with runtime checks for `opencode serve`
 
 **Commits**: 5dc1f31, 01f91bf, 7e2732c, 074dcd2
 
-#### `featF` Files navigation and drafting UX
+#### `featF` Files navigation and drafting UX ✅
 
-- [ ] Planejar criar um editor dev básico para arquivos abertos de Files
-- [ ] Corrigir bug que algumas mensagens enviadas aparecem duas vezes seguidas
-- [ ] Duplo click em respostas do assistente deveria copiar tudo pra clipboard, mas com frequencia seleciona uma palavra do texto, mas isso deveria ser comportamento de tocar e segurar (apenas pra mensagens do assistente/servidor)
+**Status**: Completed (2026-02-19)
+
+Delivered phase F focused on files/chat UX stability: replaced the original full remote editor target with a Files viewer that now supports syntax highlighting (full write editor intentionally deferred due to current server Files API limitations), fixed optimistic-message deduplication for attachment messages including local-vs-remote URL mismatch reconciliation, and revised copy gestures so desktop double-click reliably copies the full assistant message while single-tap on markdown code copies only the snippet and links remain openable.
+
+**Commits**: 840bd75, 20e9d17, 0cb2854
+**Post-conclusion**: Performance overhaul eliminating freeze/lag in streaming and large conversations (microtask coalescing, event dedup buffer, timeline/highlight/style caches, build-skip widget conversion, lazy copy text) in `00b326f`. Upgraded flutter_secure_storage 9.2.4 → 10.0.0 (Java 17, linux 3.0.0) in `547da29`.
 
 #### `featG` Model favorites and variant selector ergonomics
 
