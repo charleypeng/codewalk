@@ -163,4 +163,48 @@ void main() {
     );
     expect(find.text('Child Session'), findsOneWidget);
   });
+
+  testWidgets('lazily builds long session lists', (tester) async {
+    final sessions = List<ChatSession>.generate(
+      220,
+      (index) => ChatSession(
+        id: 'ses_$index',
+        workspaceId: 'default',
+        time: DateTime.fromMillisecondsSinceEpoch(1000 + index),
+        title: 'Session $index',
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            height: 420,
+            child: ChatSessionList(sessions: sessions),
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      find.byKey(const ValueKey<String>('chat_session_tile_ses_219')),
+      findsNothing,
+    );
+
+    for (var attempt = 0; attempt < 42; attempt += 1) {
+      if (find
+          .byKey(const ValueKey<String>('chat_session_tile_ses_219'))
+          .evaluate()
+          .isNotEmpty) {
+        break;
+      }
+      await tester.drag(find.byType(ListView).first, const Offset(0, -760));
+      await tester.pumpAndSettle();
+    }
+
+    expect(
+      find.byKey(const ValueKey<String>('chat_session_tile_ses_219')),
+      findsOneWidget,
+    );
+  });
 }

@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
 
@@ -254,9 +257,91 @@ abstract class AppLocalDataSource {
 
 /// Technical comment translated to English.
 class AppLocalDataSourceImpl implements AppLocalDataSource {
+  AppLocalDataSourceImpl({
+    required this.sharedPreferences,
+    FlutterSecureStorage? secureStorage,
+  }) : _secureStorage = secureStorage ?? const FlutterSecureStorage();
 
-  AppLocalDataSourceImpl({required this.sharedPreferences});
   final SharedPreferences sharedPreferences;
+  final FlutterSecureStorage _secureStorage;
+
+  String _secureScopedKey(String base, {String? serverId, String? scopeId}) {
+    return _scopedKey(
+      '${AppConstants.secureStorageNamespace}::$base',
+      serverId: serverId,
+      scopeId: scopeId,
+    );
+  }
+
+  String _serverProfileSecureKey({
+    required String base,
+    required String serverId,
+  }) {
+    final encodedServer = Uri.encodeComponent(serverId.trim());
+    return '${AppConstants.secureStorageNamespace}::$base::$encodedServer';
+  }
+
+  Future<String?> _readSecureValue(String key) async {
+    try {
+      return await _secureStorage.read(key: key);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _writeSecureValue(String key, String value) async {
+    try {
+      await _secureStorage.write(key: key, value: value);
+    } catch (_) {
+      // Ignore secure storage write failures and keep app functional.
+    }
+  }
+
+  Future<void> _deleteSecureValue(String key) async {
+    try {
+      await _secureStorage.delete(key: key);
+    } catch (_) {
+      // Ignore secure storage delete failures and keep app functional.
+    }
+  }
+
+  Future<String?> _readSecureWithLegacyFallback({
+    required String secureKey,
+    required String legacyKey,
+  }) async {
+    final secureValue = await _readSecureValue(secureKey);
+    if (secureValue != null && secureValue.trim().isNotEmpty) {
+      return secureValue;
+    }
+    final legacyValue = sharedPreferences.getString(legacyKey);
+    if (legacyValue == null || legacyValue.trim().isEmpty) {
+      return null;
+    }
+    await _writeSecureValue(secureKey, legacyValue);
+    await sharedPreferences.remove(legacyKey);
+    return legacyValue;
+  }
+
+  Future<String?> _readProfileCredential({
+    required String serverId,
+    required String base,
+  }) async {
+    final secureKey = _serverProfileSecureKey(base: base, serverId: serverId);
+    return _readSecureValue(secureKey);
+  }
+
+  Future<void> _writeProfileCredential({
+    required String serverId,
+    required String base,
+    required String value,
+  }) async {
+    final secureKey = _serverProfileSecureKey(base: base, serverId: serverId);
+    if (value.trim().isEmpty) {
+      await _deleteSecureValue(secureKey);
+      return;
+    }
+    await _writeSecureValue(secureKey, value);
+  }
 
   String _scopedKey(String base, {String? serverId, String? scopeId}) {
     final scopedServer = serverId?.trim();
@@ -294,15 +379,146 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
 
   @override
   Future<String?> getServerProfilesJson() async {
-    return sharedPreferences.getString(AppConstants.serverProfilesKey);
+    final raw = sharedPreferences.getString(AppConstants.serverProfilesKey);
+    if (raw == null || raw.trim().isEmpty) {
+      return raw;
+    }
+
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) {
+        return raw;
+      }
+
+      final hydratedProfiles = <Map<String, dynamic>>[];
+      var shouldPersistSanitized = false;
+
+      for (final item in decoded) {
+        if (item is! Map) {
+          continue;
+        }
+        final profile = Map<String, dynamic>.from(item);
+        final serverId = profile['id']?.toString().trim() ?? '';
+        if (serverId.isEmpty) {
+          hydratedProfiles.add(profile);
+          continue;
+        }
+
+        final legacyUsername = profile['basicAuthUsername']?.toString() ?? '';
+        final legacyPassword = profile['basicAuthPassword']?.toString() ?? '';
+
+        var secureUsername = await _readProfileCredential(
+          serverId: serverId,
+          base: AppConstants.secureServerProfileBasicAuthUsernameKey,
+        );
+        var securePassword = await _readProfileCredential(
+          serverId: serverId,
+          base: AppConstants.secureServerProfileBasicAuthPasswordKey,
+        );
+
+        if ((secureUsername == null || secureUsername.isEmpty) &&
+            legacyUsername.trim().isNotEmpty) {
+          secureUsername = legacyUsername;
+          await _writeProfileCredential(
+            serverId: serverId,
+            base: AppConstants.secureServerProfileBasicAuthUsernameKey,
+            value: legacyUsername,
+          );
+          shouldPersistSanitized = true;
+        }
+        if ((securePassword == null || securePassword.isEmpty) &&
+            legacyPassword.trim().isNotEmpty) {
+          securePassword = legacyPassword;
+          await _writeProfileCredential(
+            serverId: serverId,
+            base: AppConstants.secureServerProfileBasicAuthPasswordKey,
+            value: legacyPassword,
+          );
+          shouldPersistSanitized = true;
+        }
+
+        if (legacyUsername.trim().isNotEmpty ||
+            legacyPassword.trim().isNotEmpty) {
+          shouldPersistSanitized = true;
+        }
+
+        profile['basicAuthUsername'] = secureUsername ?? '';
+        profile['basicAuthPassword'] = securePassword ?? '';
+        hydratedProfiles.add(profile);
+      }
+
+      final hydratedJson = jsonEncode(hydratedProfiles);
+      if (shouldPersistSanitized) {
+        final sanitizedProfiles = hydratedProfiles
+            .map((profile) {
+              final copy = Map<String, dynamic>.from(profile);
+              copy['basicAuthUsername'] = '';
+              copy['basicAuthPassword'] = '';
+              return copy;
+            })
+            .toList(growable: false);
+        await sharedPreferences.setString(
+          AppConstants.serverProfilesKey,
+          jsonEncode(sanitizedProfiles),
+        );
+      }
+
+      return hydratedJson;
+    } catch (_) {
+      return raw;
+    }
   }
 
   @override
   Future<void> saveServerProfilesJson(String profilesJson) async {
-    await sharedPreferences.setString(
-      AppConstants.serverProfilesKey,
-      profilesJson,
-    );
+    try {
+      final decoded = jsonDecode(profilesJson);
+      if (decoded is! List) {
+        await sharedPreferences.setString(
+          AppConstants.serverProfilesKey,
+          profilesJson,
+        );
+        return;
+      }
+
+      final sanitizedProfiles = <Map<String, dynamic>>[];
+      for (final item in decoded) {
+        if (item is! Map) {
+          continue;
+        }
+        final profile = Map<String, dynamic>.from(item);
+        final serverId = profile['id']?.toString().trim() ?? '';
+        final username = profile['basicAuthUsername']?.toString() ?? '';
+        final password = profile['basicAuthPassword']?.toString() ?? '';
+
+        if (serverId.isNotEmpty) {
+          await _writeProfileCredential(
+            serverId: serverId,
+            base: AppConstants.secureServerProfileBasicAuthUsernameKey,
+            value: username,
+          );
+          await _writeProfileCredential(
+            serverId: serverId,
+            base: AppConstants.secureServerProfileBasicAuthPasswordKey,
+            value: password,
+          );
+        }
+
+        profile['basicAuthUsername'] = '';
+        profile['basicAuthPassword'] = '';
+        sanitizedProfiles.add(profile);
+      }
+
+      await sharedPreferences.setString(
+        AppConstants.serverProfilesKey,
+        jsonEncode(sanitizedProfiles),
+      );
+    } catch (_) {
+      await sharedPreferences.setString(
+        AppConstants.serverProfilesKey,
+        profilesJson,
+      );
+    }
   }
 
   @override
@@ -352,17 +568,32 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
 
   @override
   Future<String?> getApiKey({String? serverId}) async {
-    return sharedPreferences.getString(
-      _scopedKey(AppConstants.apiKeyKey, serverId: serverId),
+    final legacyKey = _scopedKey(AppConstants.apiKeyKey, serverId: serverId);
+    final secureKey = _secureScopedKey(
+      AppConstants.apiKeyKey,
+      serverId: serverId,
+    );
+    return _readSecureWithLegacyFallback(
+      secureKey: secureKey,
+      legacyKey: legacyKey,
     );
   }
 
   @override
   Future<void> saveApiKey(String apiKey, {String? serverId}) async {
-    await sharedPreferences.setString(
-      _scopedKey(AppConstants.apiKeyKey, serverId: serverId),
-      apiKey,
+    final normalizedApiKey = apiKey.trim();
+    final legacyKey = _scopedKey(AppConstants.apiKeyKey, serverId: serverId);
+    final secureKey = _secureScopedKey(
+      AppConstants.apiKeyKey,
+      serverId: serverId,
     );
+    if (normalizedApiKey.isEmpty) {
+      await _deleteSecureValue(secureKey);
+      await sharedPreferences.remove(legacyKey);
+      return;
+    }
+    await _writeSecureValue(secureKey, normalizedApiKey);
+    await sharedPreferences.remove(legacyKey);
   }
 
   @override
@@ -887,9 +1118,7 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
 
   @override
   Future<String?> getDismissedUpdateVersion() async {
-    return sharedPreferences.getString(
-      AppConstants.dismissedUpdateVersionKey,
-    );
+    return sharedPreferences.getString(AppConstants.dismissedUpdateVersionKey);
   }
 
   @override
@@ -917,8 +1146,17 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
 
   @override
   Future<String?> getBasicAuthUsername({String? serverId}) async {
-    return sharedPreferences.getString(
-      _scopedKey(AppConstants.basicAuthUsernameKey, serverId: serverId),
+    final legacyKey = _scopedKey(
+      AppConstants.basicAuthUsernameKey,
+      serverId: serverId,
+    );
+    final secureKey = _secureScopedKey(
+      AppConstants.basicAuthUsernameKey,
+      serverId: serverId,
+    );
+    return _readSecureWithLegacyFallback(
+      secureKey: secureKey,
+      legacyKey: legacyKey,
     );
   }
 
@@ -927,16 +1165,36 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
     String username, {
     String? serverId,
   }) async {
-    await sharedPreferences.setString(
-      _scopedKey(AppConstants.basicAuthUsernameKey, serverId: serverId),
-      username,
+    final legacyKey = _scopedKey(
+      AppConstants.basicAuthUsernameKey,
+      serverId: serverId,
     );
+    final secureKey = _secureScopedKey(
+      AppConstants.basicAuthUsernameKey,
+      serverId: serverId,
+    );
+    if (username.trim().isEmpty) {
+      await _deleteSecureValue(secureKey);
+      await sharedPreferences.remove(legacyKey);
+      return;
+    }
+    await _writeSecureValue(secureKey, username);
+    await sharedPreferences.remove(legacyKey);
   }
 
   @override
   Future<String?> getBasicAuthPassword({String? serverId}) async {
-    return sharedPreferences.getString(
-      _scopedKey(AppConstants.basicAuthPasswordKey, serverId: serverId),
+    final legacyKey = _scopedKey(
+      AppConstants.basicAuthPasswordKey,
+      serverId: serverId,
+    );
+    final secureKey = _secureScopedKey(
+      AppConstants.basicAuthPasswordKey,
+      serverId: serverId,
+    );
+    return _readSecureWithLegacyFallback(
+      secureKey: secureKey,
+      legacyKey: legacyKey,
     );
   }
 
@@ -945,14 +1203,30 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
     String password, {
     String? serverId,
   }) async {
-    await sharedPreferences.setString(
-      _scopedKey(AppConstants.basicAuthPasswordKey, serverId: serverId),
-      password,
+    final legacyKey = _scopedKey(
+      AppConstants.basicAuthPasswordKey,
+      serverId: serverId,
     );
+    final secureKey = _secureScopedKey(
+      AppConstants.basicAuthPasswordKey,
+      serverId: serverId,
+    );
+    if (password.trim().isEmpty) {
+      await _deleteSecureValue(secureKey);
+      await sharedPreferences.remove(legacyKey);
+      return;
+    }
+    await _writeSecureValue(secureKey, password);
+    await sharedPreferences.remove(legacyKey);
   }
 
   @override
   Future<void> clearAll() async {
     await sharedPreferences.clear();
+    try {
+      await _secureStorage.deleteAll();
+    } catch (_) {
+      // Ignore secure storage cleanup failures and keep app functional.
+    }
   }
 }

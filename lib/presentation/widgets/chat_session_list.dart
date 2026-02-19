@@ -37,12 +37,28 @@ class ChatSessionList extends StatefulWidget {
 
 class _ChatSessionListState extends State<ChatSessionList> {
   final Set<String> _expandedParentIds = <String>{};
+  String? _cachedTreeSignature;
+  List<_SessionTreeRow> _cachedVisibleRows = const <_SessionTreeRow>[];
+
+  @override
+  void initState() {
+    super.initState();
+    final sessionById = <String, ChatSession>{
+      for (final session in widget.sessions) session.id: session,
+    };
+    _expandCurrentSessionAncestors(sessionById);
+  }
 
   @override
   void didUpdateWidget(covariant ChatSessionList oldWidget) {
     super.didUpdateWidget(oldWidget);
     final sessionIds = widget.sessions.map((session) => session.id).toSet();
     _expandedParentIds.removeWhere((id) => !sessionIds.contains(id));
+    final sessionById = <String, ChatSession>{
+      for (final session in widget.sessions) session.id: session,
+    };
+    _expandCurrentSessionAncestors(sessionById);
+    _invalidateTreeCache();
   }
 
   @override
@@ -96,61 +112,79 @@ class _ChatSessionListState extends State<ChatSessionList> {
           .add(session);
     }
 
-    _expandCurrentSessionAncestors(sessionById);
-
-    final rows = <Widget>[];
-    final visited = <String>{};
-    for (final root in roots) {
-      rows.addAll(
-        _buildSessionRows(
-          context,
-          session: root,
-          childrenByParent: childrenByParent,
-          depth: 0,
-          visited: visited,
-        ),
-      );
+    final signature = _createTreeSignature(
+      sessions: widget.sessions,
+      roots: roots,
+      expandedParentIds: _expandedParentIds,
+    );
+    if (_cachedTreeSignature != signature) {
+      _cachedTreeSignature = signature;
+      final visited = <String>{};
+      final rows = <_SessionTreeRow>[];
+      for (final root in roots) {
+        rows.addAll(
+          _buildSessionRows(
+            session: root,
+            childrenByParent: childrenByParent,
+            depth: 0,
+            visited: visited,
+          ),
+        );
+      }
+      _cachedVisibleRows = rows;
     }
 
-    return ListView(
+    return ListView.builder(
       padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-      children: rows,
+      itemCount: _cachedVisibleRows.length,
+      itemBuilder: (context, index) {
+        final row = _cachedVisibleRows[index];
+        return _buildSessionTile(
+          context,
+          session: row.session,
+          depth: row.depth,
+          hasChildren: row.hasChildren,
+          childCount: row.childCount,
+          expanded: row.expanded,
+        );
+      },
     );
   }
 
-  void _expandCurrentSessionAncestors(Map<String, ChatSession> sessionById) {
+  bool _expandCurrentSessionAncestors(Map<String, ChatSession> sessionById) {
     final current = widget.currentSession;
     if (current == null) {
-      return;
+      return false;
     }
+    var changed = false;
     var parentId = current.parentId;
     while (parentId != null && parentId.isNotEmpty) {
-      _expandedParentIds.add(parentId);
+      final inserted = _expandedParentIds.add(parentId);
+      changed = changed || inserted;
       final parent = sessionById[parentId];
       if (parent == null || parent.parentId == parentId) {
         break;
       }
       parentId = parent.parentId;
     }
+    return changed;
   }
 
-  List<Widget> _buildSessionRows(
-    BuildContext context, {
+  List<_SessionTreeRow> _buildSessionRows({
     required ChatSession session,
     required Map<String, List<ChatSession>> childrenByParent,
     required int depth,
     required Set<String> visited,
   }) {
     if (!visited.add(session.id)) {
-      return const <Widget>[];
+      return const <_SessionTreeRow>[];
     }
 
     final children = childrenByParent[session.id] ?? const <ChatSession>[];
     final hasChildren = children.isNotEmpty;
     final expanded = hasChildren && _expandedParentIds.contains(session.id);
-    final rows = <Widget>[
-      _buildSessionTile(
-        context,
+    final rows = <_SessionTreeRow>[
+      _SessionTreeRow(
         session: session,
         depth: depth,
         hasChildren: hasChildren,
@@ -166,7 +200,6 @@ class _ChatSessionListState extends State<ChatSessionList> {
     for (final child in children) {
       rows.addAll(
         _buildSessionRows(
-          context,
           session: child,
           childrenByParent: childrenByParent,
           depth: depth + 1,
@@ -176,6 +209,38 @@ class _ChatSessionListState extends State<ChatSessionList> {
     }
 
     return rows;
+  }
+
+  String _createTreeSignature({
+    required List<ChatSession> sessions,
+    required List<ChatSession> roots,
+    required Set<String> expandedParentIds,
+  }) {
+    final expanded = expandedParentIds.toList(growable: false)..sort();
+    final buffer = StringBuffer()
+      ..write('sessions:${sessions.length};')
+      ..write('roots:${roots.map((session) => session.id).join(',')};')
+      ..write('expanded:${expanded.join(',')};')
+      ..write('current:${widget.currentSession?.id ?? ''};');
+    for (final session in sessions) {
+      buffer
+        ..write(session.id)
+        ..write(':')
+        ..write(session.parentId ?? '')
+        ..write(':')
+        ..write(session.time.millisecondsSinceEpoch)
+        ..write(':')
+        ..write(session.archived)
+        ..write(':')
+        ..write(session.shared)
+        ..write(';');
+    }
+    return buffer.toString();
+  }
+
+  void _invalidateTreeCache() {
+    _cachedTreeSignature = null;
+    _cachedVisibleRows = const <_SessionTreeRow>[];
   }
 
   Widget _buildSessionTile(
@@ -248,6 +313,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
                       } else {
                         _expandedParentIds.add(session.id);
                       }
+                      _invalidateTreeCache();
                     });
                   },
                   borderRadius: BorderRadius.circular(10),
@@ -628,4 +694,20 @@ class _ChatSessionListState extends State<ChatSessionList> {
       ),
     );
   }
+}
+
+class _SessionTreeRow {
+  const _SessionTreeRow({
+    required this.session,
+    required this.depth,
+    required this.hasChildren,
+    required this.childCount,
+    required this.expanded,
+  });
+
+  final ChatSession session;
+  final int depth;
+  final bool hasChildren;
+  final int childCount;
+  final bool expanded;
 }

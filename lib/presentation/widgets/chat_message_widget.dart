@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/logging/app_logger.dart';
 import '../../domain/entities/chat_message.dart';
@@ -498,9 +499,11 @@ class ChatMessageWidget extends StatelessWidget {
                 ),
               ),
               onTapLink: (text, href, title) {
-                if (href != null) {
-                  // TODO: Implement link navigation
+                final normalizedHref = href?.trim();
+                if (normalizedHref == null || normalizedHref.isEmpty) {
+                  return;
                 }
+                unawaited(_openMarkdownLink(context, normalizedHref));
               },
             ),
           const SizedBox(height: 8),
@@ -527,6 +530,49 @@ class ChatMessageWidget extends StatelessWidget {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Copied to clipboard')));
+  }
+
+  Future<void> _openMarkdownLink(BuildContext context, String href) async {
+    Uri? uri = Uri.tryParse(href);
+    if (uri == null) {
+      _showLinkOpenFeedback(context, 'Invalid link format');
+      return;
+    }
+    if (!uri.hasScheme) {
+      uri = Uri.tryParse('https://$href');
+    }
+    if (uri == null || uri.host.trim().isEmpty) {
+      _showLinkOpenFeedback(context, 'Invalid link format');
+      return;
+    }
+
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched) {
+        _showLinkOpenFeedback(context, 'Unable to open link');
+      }
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to open markdown link',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      _showLinkOpenFeedback(context, 'Unable to open link');
+    }
+  }
+
+  void _showLinkOpenFeedback(BuildContext context, String message) {
+    if (!context.mounted) {
+      return;
+    }
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) {
+      return;
+    }
+    messenger.showSnackBar(SnackBar(content: Text(message)));
   }
 
   Widget _buildFilePart(BuildContext context, FilePart part) {

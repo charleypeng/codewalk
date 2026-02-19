@@ -1780,4 +1780,35 @@ index abc123..def456 100644
       findsOneWidget,
     );
   });
+
+  testWidgets('shows feedback for invalid markdown link format', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: AssistantMessage(
+              id: 'msg_link_open_failure',
+              sessionId: 'ses_link_open_failure',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_link_open_failure',
+                  messageId: 'msg_link_open_failure',
+                  sessionId: 'ses_link_open_failure',
+                  text: '[Broken link](://invalid)',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Broken link'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Invalid link format'), findsOneWidget);
+  });
 }

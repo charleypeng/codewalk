@@ -204,6 +204,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
   String? _expandedCollapsedHistoryGroupId;
   String? _frozenCompactionBoundaryId;
   bool _wasCompactingContext = false;
+  String? _nextFrozenCompactionBoundaryId;
+  bool _nextWasCompactingContext = false;
+  bool _compactionStateSyncScheduled = false;
 
   @override
   void initState() {
@@ -721,6 +724,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       _expandedCollapsedHistoryGroupId = null;
       _frozenCompactionBoundaryId = null;
       _wasCompactingContext = false;
+      _nextFrozenCompactionBoundaryId = null;
+      _nextWasCompactingContext = false;
       if (!_autoFollowToLatest ||
           _showScrollToLatestFab ||
           _hasUnreadMessagesBelow ||
@@ -749,6 +754,8 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       _expandedCollapsedHistoryGroupId = null;
       _frozenCompactionBoundaryId = null;
       _wasCompactingContext = false;
+      _nextFrozenCompactionBoundaryId = null;
+      _nextWasCompactingContext = false;
       return;
     }
 
@@ -6984,29 +6991,34 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     required bool isCompactingContext,
   }) {
     final entries = <_TimelineEntry>[];
+    final previousWasCompactingContext = _wasCompactingContext;
+    var nextFrozenCompactionBoundaryId = _frozenCompactionBoundaryId;
 
     // Freeze boundary during compaction to prevent premature collapse.
-    if (isCompactingContext && !_wasCompactingContext) {
+    if (isCompactingContext && !previousWasCompactingContext) {
       // Compaction just started: freeze the current boundary by message ID.
       final currentIdx = _findLatestCompactionBoundaryIndex(
         messages,
         allowInProgressBoundary: true,
       );
-      _frozenCompactionBoundaryId = currentIdx != null
+      nextFrozenCompactionBoundaryId = currentIdx != null
           ? messages[currentIdx].id
           : null;
-    } else if (!isCompactingContext && _wasCompactingContext) {
+    } else if (!isCompactingContext && previousWasCompactingContext) {
       // Compaction finished: unfreeze so the new boundary takes effect.
-      _frozenCompactionBoundaryId = null;
+      nextFrozenCompactionBoundaryId = null;
     }
-    _wasCompactingContext = isCompactingContext;
+    _scheduleCompactionStateSync(
+      wasCompactingContext: isCompactingContext,
+      frozenCompactionBoundaryId: nextFrozenCompactionBoundaryId,
+    );
 
     // Use the latest compaction marker as the visible history boundary.
     int? boundaryIndex;
-    if (isCompactingContext && _frozenCompactionBoundaryId != null) {
+    if (isCompactingContext && nextFrozenCompactionBoundaryId != null) {
       // During compaction, resolve the frozen boundary by message ID.
       final frozenIdx = messages.indexWhere(
-        (m) => m.id == _frozenCompactionBoundaryId,
+        (m) => m.id == nextFrozenCompactionBoundaryId,
       );
       boundaryIndex = frozenIdx >= 0 ? frozenIdx : null;
     } else {
@@ -7051,6 +7063,38 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       entries.add(const _TimelineRetryIndicatorEntry());
     }
     return entries;
+  }
+
+  void _scheduleCompactionStateSync({
+    required bool wasCompactingContext,
+    required String? frozenCompactionBoundaryId,
+  }) {
+    if (_wasCompactingContext == wasCompactingContext &&
+        _frozenCompactionBoundaryId == frozenCompactionBoundaryId) {
+      return;
+    }
+
+    _nextWasCompactingContext = wasCompactingContext;
+    _nextFrozenCompactionBoundaryId = frozenCompactionBoundaryId;
+    if (_compactionStateSyncScheduled) {
+      return;
+    }
+
+    _compactionStateSyncScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _compactionStateSyncScheduled = false;
+      if (!mounted) {
+        return;
+      }
+      if (_wasCompactingContext == _nextWasCompactingContext &&
+          _frozenCompactionBoundaryId == _nextFrozenCompactionBoundaryId) {
+        return;
+      }
+      setState(() {
+        _wasCompactingContext = _nextWasCompactingContext;
+        _frozenCompactionBoundaryId = _nextFrozenCompactionBoundaryId;
+      });
+    });
   }
 
   int? _findLatestCompactionBoundaryIndex(

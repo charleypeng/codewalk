@@ -81,6 +81,9 @@ class AppProvider extends ChangeNotifier {
   String? _defaultServerId;
   final Map<String, ServerHealthStatus> _serverHealthById =
       <String, ServerHealthStatus>{};
+  bool _healthCheckInFlight = false;
+  bool _queuedHealthRefreshAll = false;
+  final Set<String> _queuedHealthServerIds = <String>{};
 
   AppStatus get status => _status;
   AppInfo? get appInfo => _appInfo;
@@ -816,9 +819,71 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> refreshServerHealth({String? serverId}) async {
     await initialize();
-    final targets = serverId == null
+    final normalizedServerId = serverId?.trim();
+
+    if (_healthCheckInFlight) {
+      _queueHealthRefresh(serverId: normalizedServerId);
+      return;
+    }
+
+    _healthCheckInFlight = true;
+    var runAll = normalizedServerId == null || normalizedServerId.isEmpty;
+    var runServerIds = <String>{};
+    if (!runAll) {
+      runServerIds = <String>{normalizedServerId};
+    }
+
+    try {
+      while (true) {
+        await _refreshServerHealthTargets(
+          runAll: runAll,
+          serverIds: runServerIds,
+        );
+
+        if (_queuedHealthRefreshAll) {
+          _queuedHealthRefreshAll = false;
+          _queuedHealthServerIds.clear();
+          runAll = true;
+          runServerIds = <String>{};
+          continue;
+        }
+
+        if (_queuedHealthServerIds.isNotEmpty) {
+          runAll = false;
+          runServerIds = Set<String>.from(_queuedHealthServerIds);
+          _queuedHealthServerIds.clear();
+          continue;
+        }
+
+        break;
+      }
+    } finally {
+      _healthCheckInFlight = false;
+      _queuedHealthRefreshAll = false;
+      _queuedHealthServerIds.clear();
+    }
+  }
+
+  void _queueHealthRefresh({String? serverId}) {
+    final normalizedServerId = serverId?.trim();
+    if (normalizedServerId == null || normalizedServerId.isEmpty) {
+      _queuedHealthRefreshAll = true;
+      _queuedHealthServerIds.clear();
+      return;
+    }
+    if (_queuedHealthRefreshAll) {
+      return;
+    }
+    _queuedHealthServerIds.add(normalizedServerId);
+  }
+
+  Future<void> _refreshServerHealthTargets({
+    required bool runAll,
+    required Set<String> serverIds,
+  }) async {
+    final targets = runAll
         ? List<ServerProfile>.from(_serverProfiles)
-        : _serverProfiles.where((p) => p.id == serverId).toList();
+        : _serverProfiles.where((p) => serverIds.contains(p.id)).toList();
     if (targets.isEmpty) {
       return;
     }

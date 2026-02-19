@@ -46,6 +46,13 @@ class AppConstants {
   static const String basicAuthPasswordKey = 'basic_auth_password';
   static const String localOpencodeCommandKey = 'local_opencode_command';
 
+  // Secure storage namespace and credential keys
+  static const String secureStorageNamespace = 'codewalk.secure';
+  static const String secureServerProfileBasicAuthUsernameKey =
+      'server_profile_basic_auth_username';
+  static const String secureServerProfileBasicAuthPasswordKey =
+      'server_profile_basic_auth_password';
+
   // Default configuration
   static const String defaultTheme = 'system';
   static const int maxMessageLength = 10000;

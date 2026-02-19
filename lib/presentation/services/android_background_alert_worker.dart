@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -131,11 +132,12 @@ class _AndroidBackgroundAlertRunner {
 
   final BackgroundAlertPlanner _planner;
   final _BackgroundNotificationDispatcher _notificationDispatcher;
+  static final FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   Future<bool> run({required String taskName}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final server = _resolveServerConfig(prefs);
+      final server = await _resolveServerConfig(prefs);
       if (server == null) {
         AppLogger.debug('background_alert_worker skipped (no active server)');
         return true;
@@ -263,7 +265,9 @@ class _AndroidBackgroundAlertRunner {
     return '$_backgroundAlertSnapshotKeyPrefix::$normalized';
   }
 
-  _ResolvedServerConfig? _resolveServerConfig(SharedPreferences prefs) {
+  Future<_ResolvedServerConfig?> _resolveServerConfig(
+    SharedPreferences prefs,
+  ) async {
     final profilesRaw = prefs.getString(AppConstants.serverProfilesKey);
     final activeServerId = prefs.getString(AppConstants.activeServerIdKey);
     final defaultServerId = prefs.getString(AppConstants.defaultServerIdKey);
@@ -289,14 +293,25 @@ class _AndroidBackgroundAlertRunner {
               if (baseUrl.isNotEmpty) {
                 final serverId = selected['id']?.toString().trim();
                 final basicEnabled = selected['basicAuthEnabled'] == true;
-                final username =
+                final legacyUsername =
                     selected['basicAuthUsername']?.toString().trim() ?? '';
-                final password =
+                final legacyPassword =
                     selected['basicAuthPassword']?.toString().trim() ?? '';
+                final effectiveServerId = (serverId == null || serverId.isEmpty)
+                    ? 'profile'
+                    : serverId;
+                final username = await _resolveProfileCredential(
+                  serverId: effectiveServerId,
+                  base: AppConstants.secureServerProfileBasicAuthUsernameKey,
+                  legacyValue: legacyUsername,
+                );
+                final password = await _resolveProfileCredential(
+                  serverId: effectiveServerId,
+                  base: AppConstants.secureServerProfileBasicAuthPasswordKey,
+                  legacyValue: legacyPassword,
+                );
                 return _ResolvedServerConfig(
-                  serverId: (serverId == null || serverId.isEmpty)
-                      ? 'profile'
-                      : serverId,
+                  serverId: effectiveServerId,
                   baseUrl: baseUrl,
                   authorizationHeader: basicEnabled
                       ? _buildBasicAuthorizationHeader(
@@ -319,8 +334,14 @@ class _AndroidBackgroundAlertRunner {
     if (host != null && host.isNotEmpty && port != null) {
       final basicEnabled =
           prefs.getBool(AppConstants.basicAuthEnabledKey) ?? false;
-      final username = prefs.getString(AppConstants.basicAuthUsernameKey) ?? '';
-      final password = prefs.getString(AppConstants.basicAuthPasswordKey) ?? '';
+      final username = await _resolveLegacyCredential(
+        prefs: prefs,
+        base: AppConstants.basicAuthUsernameKey,
+      );
+      final password = await _resolveLegacyCredential(
+        prefs: prefs,
+        base: AppConstants.basicAuthPasswordKey,
+      );
       return _ResolvedServerConfig(
         serverId: 'legacy',
         baseUrl: 'http://$host:$port',
@@ -334,6 +355,59 @@ class _AndroidBackgroundAlertRunner {
     }
 
     return null;
+  }
+
+  String _serverProfileSecureKey({
+    required String serverId,
+    required String base,
+  }) {
+    final encodedServerId = Uri.encodeComponent(serverId.trim());
+    return '${AppConstants.secureStorageNamespace}::$base::$encodedServerId';
+  }
+
+  String _legacySecureKey(String base) {
+    return '${AppConstants.secureStorageNamespace}::$base';
+  }
+
+  Future<String> _resolveProfileCredential({
+    required String serverId,
+    required String base,
+    required String legacyValue,
+  }) async {
+    final secureKey = _serverProfileSecureKey(serverId: serverId, base: base);
+    try {
+      final secureValue = await _secureStorage.read(key: secureKey);
+      if (secureValue != null && secureValue.trim().isNotEmpty) {
+        return secureValue;
+      }
+      if (legacyValue.trim().isEmpty) {
+        return '';
+      }
+      await _secureStorage.write(key: secureKey, value: legacyValue);
+      return legacyValue;
+    } catch (_) {
+      return legacyValue;
+    }
+  }
+
+  Future<String> _resolveLegacyCredential({
+    required SharedPreferences prefs,
+    required String base,
+  }) async {
+    final secureKey = _legacySecureKey(base);
+    try {
+      final secureValue = await _secureStorage.read(key: secureKey);
+      if (secureValue != null && secureValue.trim().isNotEmpty) {
+        return secureValue;
+      }
+      final legacyValue = prefs.getString(base) ?? '';
+      if (legacyValue.trim().isNotEmpty) {
+        await _secureStorage.write(key: secureKey, value: legacyValue);
+      }
+      return legacyValue;
+    } catch (_) {
+      return prefs.getString(base) ?? '';
+    }
   }
 
   Map<String, dynamic>? _selectServerProfile({

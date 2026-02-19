@@ -86,7 +86,7 @@ Notes:
 - [ ] `featK` - `ROADMAP.featK.md` (first-run onboarding wizard)
 - [ ] `featM` - `ROADMAP.featM.md` (Icons to Material Symbols migration)
 - [ ] `featN` - `ROADMAP.featN.md` (Material You design system revamp)
-- [ ] `featO` - `ROADMAP.featO.md` (Code health & technical debt)
+- [x] `featO` - `ROADMAP.featO.md` (Code health & technical debt)
 
 Use the same status convention from Legend for active execution updates (`[~]`, `[x]`, `[/]`).
 
@@ -233,13 +233,11 @@ Implemented compaction boundary timeline entry that collapses all pre-compaction
 
 #### `featO` Code health & technical debt
 
-**featO progress summary**: Delivered regression fixes in `00583f0`, follow-up scope guard in `4aa38ca`, and full rejected-draft UX restoration in `beb5265`.
+**featO progress summary**: Delivered regression fixes in `00583f0`, follow-up scope guard in `4aa38ca`, and full rejected-draft UX restoration in `beb5265`; this round implemented the 5 remaining items (`1.6`, `1.8`, `1.9`, `2.1`, `3.4`) and validated them in working tree state pending final commit.
 
-Backlog after triage keeps only 5 required items open: `1.6`, `1.8`, `1.9`, `2.1`, and `3.4`. All other previously open featO items were closed after necessity review (no additional implementation).
-
-- [ ] Group 1: Open (pending only `1.6`, `1.8`, `1.9`; other items closed after necessity review)
-- [ ] Group 2: Open (pending only `2.1`; `2.2` closed after necessity review)
-- [ ] Group 3: Open (pending only `3.4`; `3.1`, `3.2`, `3.3` closed after necessity review)
+- [x] Group 1: Concluded (implemented `1.6`, `1.8`, `1.9` in this round, pending commit)
+- [x] Group 2: Concluded (implemented `2.1` in this round, pending commit)
+- [x] Group 3: Concluded (implemented `3.4` in this round, pending commit)
 - [x] Group 4: Concluded after necessity triage
 - [x] Group 5: Concluded after necessity triage
 - [x] Group 6: Concluded after necessity triage
