@@ -233,13 +233,13 @@ Implemented compaction boundary timeline entry that collapses all pre-compaction
 
 #### `featO` Code health & technical debt
 
-**2026-02-17 Regression Fixes Batch** - Commit: 00583f0: Auto-follow only disables on real manual scroll intent; foreground resume catches up to latest when user is not browsing older history; rejected/failed send restores composer draft automatically for retry; stop/send state no longer stays stuck on Stop after session becomes idle/stream ends.
+**featO progress summary**: Delivered regression fixes in `00583f0`, follow-up scope guard in `4aa38ca`, and full rejected-draft UX restoration in `beb5265`.
 
-**v1.10.1 Follow-up** (pending commit): Rejected draft restore should NOT repopulate composer when user returns to chat later (only immediate retry within same session).
+Backlog after triage keeps only 5 required items open: `1.6`, `1.8`, `1.9`, `2.1`, and `3.4`. All other previously open featO items were closed after necessity review (no additional implementation).
 
-- [ ] Group 1: Bug fixes — DI resource leak, state mutation in build(), dispose guard, health polling race condition, markdown link tap, dead SessionRepository
-- [ ] Group 2: Security — credentials in flutter_secure_storage, streaming SHA-256
-- [ ] Group 3: Performance — cached shortcut maps, memoized message history, Dio lifecycle, ListView.builder for sessions
-- [ ] Group 4: Cleanup — dead constants, hardcoded values, error handling dedup, queryParams dedup
-- [ ] Group 5: Architecture — provider/data boundary, Dio in widget, domain serialization, DI duplication
-- [ ] Group 6: Tests — ShortcutBindingCodec, reasoningStatusParser, repository impls, shared fakes
+- [ ] Group 1: Open (pending only `1.6`, `1.8`, `1.9`; other items closed after necessity review)
+- [ ] Group 2: Open (pending only `2.1`; `2.2` closed after necessity review)
+- [ ] Group 3: Open (pending only `3.4`; `3.1`, `3.2`, `3.3` closed after necessity review)
+- [x] Group 4: Concluded after necessity triage
+- [x] Group 5: Concluded after necessity triage
+- [x] Group 6: Concluded after necessity triage
