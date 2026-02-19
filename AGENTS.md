@@ -23,7 +23,7 @@ CodeWalk é um projeto que visa permitir acessar agents de código de qualquer l
 
 ### Caption Dinâmica no Upload
 
-- Sempre use`TDL_CAPTION="Minha legenda customizada" make android`
+- Sempre use`HEY_CAPTION="Minha legenda customizada" make android`
 - **Evite**: "Ajustes mais recentes feitos"
 - **Prefira**: "Corrigida altura da caixa Thinking Process"
 

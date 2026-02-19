@@ -31,7 +31,6 @@ Concluded historical features were archived to `ROADMAP.archive.done.md` to keep
 
 ### Backlog Execution Packs
 
-- `ROADMAP.featP.md` - Giant file decomposition and orchestrator architecture
 - `ROADMAP.featA.md` - Sync hardening and remote config safety (tasks 2, 3, 9)
 - `ROADMAP.featB.md` - Realtime read flow and session rendering (tasks 4, 5, 7, 8)
 - `ROADMAP.featC.md` - Long conversation performance and files planning (tasks 6, 28, 30)
@@ -50,26 +49,25 @@ Concluded historical features were archived to `ROADMAP.archive.done.md` to keep
 
 ### Next Recommended Feature
 
-- `featP` - `ROADMAP.featP.md` (NEXT: giant file decomposition and orchestrator architecture)
+- `featF` - `ROADMAP.featF.md` (NEXT: files drafting UX + duplicate/copy interaction fixes)
 
 ### Backlog Pack Dependency Order
 
-1. `ROADMAP.featP.md` (giant file decomposition and orchestrator architecture - immediate priority)
-2. `ROADMAP.featA.md` (sync hardening baseline)
-3. `ROADMAP.featB.md` (realtime read/render foundation)
-4. `ROADMAP.featL.md` (compaction boundary + pre-boundary collapse)
-5. `ROADMAP.featD.md` (thinking/tool UX controls)
-6. `ROADMAP.featH.md` (startup/settings/tool-surface polish)
-7. `ROADMAP.featE.md` (composer popover/local server/shortcuts reliability)
-8. `ROADMAP.featI.md` (agent/shortcut/productivity parity)
-9. `ROADMAP.featF.md` (files drafting UX + duplicate/copy interaction fixes)
-10. `ROADMAP.featG.md` (favorites and variant selector ergonomics)
-11. `ROADMAP.featC.md` (focus/visibility render gate + files planning)
-12. `ROADMAP.featJ.md` (speech-to-text platform matrix)
-13. `ROADMAP.featK.md` (first-run onboarding wizard)
-14. `ROADMAP.featM.md` (Icons to Material Symbols migration - isolated track, can run anytime)
-15. `ROADMAP.featN.md` (Material You design system revamp - isolated track, can run anytime)
-16. `ROADMAP.featO.md` (Code health & technical debt - isolated track, Groups 1-3 recommended before featF)
+1. `ROADMAP.featA.md` (sync hardening baseline)
+2. `ROADMAP.featB.md` (realtime read/render foundation)
+3. `ROADMAP.featL.md` (compaction boundary + pre-boundary collapse)
+4. `ROADMAP.featD.md` (thinking/tool UX controls)
+5. `ROADMAP.featH.md` (startup/settings/tool-surface polish)
+6. `ROADMAP.featE.md` (composer popover/local server/shortcuts reliability)
+7. `ROADMAP.featI.md` (agent/shortcut/productivity parity)
+8. `ROADMAP.featF.md` (files drafting UX + duplicate/copy interaction fixes)
+9. `ROADMAP.featG.md` (favorites and variant selector ergonomics)
+10. `ROADMAP.featC.md` (focus/visibility render gate + files planning)
+11. `ROADMAP.featJ.md` (speech-to-text platform matrix)
+12. `ROADMAP.featK.md` (first-run onboarding wizard)
+13. `ROADMAP.featM.md` (Icons to Material Symbols migration - isolated track, can run anytime)
+14. `ROADMAP.featN.md` (Material You design system revamp - isolated track, can run anytime)
+15. `ROADMAP.featO.md` (Code health & technical debt - isolated track, Groups 1-3 recommended before featF)
 
 Notes:
 - Prefer this order by default to reduce regression risk in timeline/sync behavior.
@@ -78,7 +76,6 @@ Notes:
 
 ### Backlog Pack Execution Checklist
 
-- [ ] `featP` - `ROADMAP.featP.md` (giant file decomposition and orchestrator architecture) (NEXT)
 - [x] `featA` - `ROADMAP.featA.md` (sync hardening baseline)
 - [x] `featB` - `ROADMAP.featB.md` (realtime read/render foundation)
 - [x] `featL` - `ROADMAP.featL.md` (compaction boundary + pre-boundary collapse)
@@ -124,12 +121,6 @@ Implemented multi-pass scroll-to-bottom algorithm (up to 6 passes with 1px epsil
 - [ ] Quando a janela perder foco, continuar recebendo pooling mas não renderizar novas mensagens até a tela ganhar foco novamente para evitar desgaste de eficiencia. Porém somente quando estiver fora e foco e nao visivel pois o usuario pode estar olhando mesmo sem foco (desktop, tablets etc)
 - [ ] Na barra 'Files' tem um ícone de olho cortado pra ocultar a barra, trocar para algo mais intuitivo como um ícone estilo <| (encontre um ícone nativo)
 - [ ] Criar planejamento para os arquivos abertos em Files permitir comentar linhas igual no OpenCode web
-
-#### `featP` Giant file decomposition and orchestrator architecture
-
-- Next execution priority to modularize giant files and reduce orchestration risk before additional feature growth.
-- Detailed phased plan with granular, traceable checklists lives in `ROADMAP.featP.md`.
-- Scope targets `chat_page.dart`, `chat_provider.dart`, and `chat_input_widget.dart` decomposition without functional changes.
 
 #### `featD` Thinking and tool UX polish
 

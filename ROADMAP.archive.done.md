@@ -137,6 +137,12 @@ Description: Corrigir problemas críticos de código identificados via análise 
 
 Concluída a remoção dos problemas-alvo de deprecação/compatibilidade, com validação por `flutter analyze`, testes completos e build Android.
 
+### Feature featP: Giant file decomposition and orchestrator architecture
+Status: [x] Concluída
+
+Concluída a decomposição de arquivos gigantes em módulos e orchestrators para reduzir risco de orquestração e melhorar manutenibilidade sem mudança funcional.
+Commits: 5ebdc23
+
 ## Historical Dependency Order (Features 001-022)
 
 1. Feature 001 -> blocks all other features (baseline + safety rails)

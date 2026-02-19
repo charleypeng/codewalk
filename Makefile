@@ -3,8 +3,6 @@
 APK_DIR = build/app/outputs/flutter-apk
 APK_PATH = $(APK_DIR)/codewalk.apk
 ANALYZE_LOG = /tmp/flutter_analyze.log
-TDL_CHANNEL = VerselesBot
-TDL_TARGET = 6
 
 # TTY detection: suppress verbose output in non-interactive mode (CI/agents)
 ifneq ($(shell test -t 1 && echo yes),yes)
@@ -180,20 +178,8 @@ android:
 		echo "APK output not found (expected arm64 build in $(APK_DIR))"; \
 		exit 1; \
 	fi
-	@if command -v tdl >/dev/null 2>&1; then \
-		echo "Uploading APK via tdl..."; \
-		CAPTION_TEXT="$${TDL_CAPTION:-$$(git log -1 --pretty=%s 2>/dev/null || echo CodeWalk-Android-build)}"; \
-		CAPTION_ESCAPED="$$(printf '%s' "$$CAPTION_TEXT" | sed 's/\\/\\\\/g; s/\"/\\"/g')"; \
-		CAPTION_EXPR="\"$$CAPTION_ESCAPED\""; \
-		if tdl up -c "$(TDL_CHANNEL)" -t "$(TDL_TARGET)" --caption="$$CAPTION_EXPR" --path="$(APK_PATH)"; then \
-			echo "APK uploaded via tdl."; \
-		else \
-			echo "tdl upload failed."; \
-			exit 1; \
-		fi; \
-	else \
-		echo "tdl not found - upload skipped."; \
-	fi
+	@CAPTION_TEXT="$${HEY_CAPTION:-$$(git log -1 --pretty=%s 2>/dev/null || echo CodeWalk-Android-build)}"; \
+	~/bin/hey -f "$(APK_PATH)" "$$CAPTION_TEXT"
 
 precommit: check icons-check android
 
