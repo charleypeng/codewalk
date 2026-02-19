@@ -505,6 +505,73 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
     return recent;
   }
 
+  /// Build favorite model entries from the provider's favorite keys.
+  List<_ModelSelectorEntry> _buildFavoriteModelEntries(
+    ChatProvider chatProvider,
+    List<_ModelSelectorEntry> allEntries,
+  ) {
+    final byKey = <String, _ModelSelectorEntry>{
+      for (final entry in allEntries)
+        _selectorEntryKey(entry.providerId, entry.modelId): entry,
+    };
+    final favorites = <_ModelSelectorEntry>[];
+    final seen = <String>{};
+
+    for (final favoriteKey in chatProvider.favoriteModelKeys) {
+      final providerId = _providerIdFromSelectorKey(favoriteKey);
+      final modelId = _modelIdFromSelectorKey(favoriteKey);
+      if (providerId == null || modelId == null) {
+        continue;
+      }
+      final key = _selectorEntryKey(providerId, modelId);
+      if (!seen.add(key)) {
+        continue;
+      }
+      final entry = byKey[key];
+      if (entry == null) {
+        continue;
+      }
+      favorites.add(entry);
+    }
+    return favorites;
+  }
+
+  /// Trailing widget for model selector: star toggle + checkmark.
+  Widget _modelSelectorTrailing({
+    required ChatProvider chatProvider,
+    required String providerId,
+    required String modelId,
+    required bool isSelected,
+    required void Function() onFavoriteToggled,
+  }) {
+    final isFavorite = chatProvider.isModelFavorite(
+      providerId: providerId,
+      modelId: modelId,
+    );
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: Icon(
+            isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
+            size: 20,
+            color: isFavorite ? Colors.amber : null,
+          ),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          onPressed: () async {
+            await chatProvider.toggleModelFavorite(
+              providerId: providerId,
+              modelId: modelId,
+            );
+            onFavoriteToggled();
+          },
+        ),
+        if (isSelected) const Icon(Icons.check_rounded, size: 18),
+      ],
+    );
+  }
+
   Future<void> _openModelSelector(ChatProvider chatProvider) async {
     final entries = _buildModelSelectorEntries(chatProvider);
     final sortedProviders = _sortedProviders(chatProvider);
@@ -534,19 +601,39 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                 })
                 .toList(growable: false);
 
+            // Favorites section (shown when no search query).
+            final favoriteEntries = normalizedQuery.isEmpty
+                ? _buildFavoriteModelEntries(chatProvider, entries)
+                : const <_ModelSelectorEntry>[];
+            final favoriteKeys = favoriteEntries
+                .map(
+                  (entry) => _selectorEntryKey(entry.providerId, entry.modelId),
+                )
+                .toSet();
+
+            // Recent section excludes favorites.
             final recentEntries = normalizedQuery.isEmpty
                 ? _buildRecentModelEntries(chatProvider, entries)
+                    .where(
+                      (entry) => !favoriteKeys.contains(
+                        _selectorEntryKey(entry.providerId, entry.modelId),
+                      ),
+                    )
+                    .toList(growable: false)
                 : const <_ModelSelectorEntry>[];
             final recentKeys = recentEntries
                 .map(
                   (entry) => _selectorEntryKey(entry.providerId, entry.modelId),
                 )
                 .toSet();
+
+            // Provider sections exclude favorites and recents.
+            final excludeFromGrouped = {...favoriteKeys, ...recentKeys};
             final groupedSourceEntries =
-                normalizedQuery.isEmpty && recentKeys.isNotEmpty
+                normalizedQuery.isEmpty && excludeFromGrouped.isNotEmpty
                 ? matchingEntries
                       .where(
-                        (entry) => !recentKeys.contains(
+                        (entry) => !excludeFromGrouped.contains(
                           _selectorEntryKey(entry.providerId, entry.modelId),
                         ),
                       )
@@ -559,8 +646,9 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                   .putIfAbsent(entry.providerId, () => <_ModelSelectorEntry>[])
                   .add(entry);
             }
-            final hasVisibleEntries =
-                recentEntries.isNotEmpty || groupedEntries.isNotEmpty;
+            final hasVisibleEntries = favoriteEntries.isNotEmpty ||
+                recentEntries.isNotEmpty ||
+                groupedEntries.isNotEmpty;
 
             final selectedProviderId = chatProvider.selectedProviderId;
             final selectedModelId = chatProvider.selectedModelId;
@@ -607,6 +695,72 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                               )
                             : ListView(
                                 children: [
+                                  // Favorites section
+                                  if (favoriteEntries.isNotEmpty) ...[
+                                    Padding(
+                                      key: const ValueKey<String>(
+                                        'model_selector_favorites_header',
+                                      ),
+                                      padding: const EdgeInsets.fromLTRB(
+                                        16,
+                                        12,
+                                        16,
+                                        4,
+                                      ),
+                                      child: Text(
+                                        'Favorites',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                    ),
+                                    for (final entry in favoriteEntries)
+                                      ListTile(
+                                        key: ValueKey<String>(
+                                          'model_selector_fav_${entry.providerId}_${entry.modelId}',
+                                        ),
+                                        leading: Icon(
+                                          _modelSelectorListIcon(
+                                            providerId: entry.providerId,
+                                            providerName: entry.providerName,
+                                            modelId: entry.modelId,
+                                            modelName: entry.modelName,
+                                          ),
+                                          size: 18,
+                                        ),
+                                        title: Text(entry.modelName),
+                                        subtitle: Text(entry.providerName),
+                                        trailing: _modelSelectorTrailing(
+                                          chatProvider: chatProvider,
+                                          providerId: entry.providerId,
+                                          modelId: entry.modelId,
+                                          isSelected: selectedKey ==
+                                              _selectorEntryKey(
+                                                entry.providerId,
+                                                entry.modelId,
+                                              ),
+                                          onFavoriteToggled: () =>
+                                              setModalState(() {}),
+                                        ),
+                                        onTap: () async {
+                                          await chatProvider
+                                              .setSelectedModelByProvider(
+                                                providerId: entry.providerId,
+                                                modelId: entry.modelId,
+                                              );
+                                          if (!bottomSheetContext.mounted) {
+                                            return;
+                                          }
+                                          Navigator.of(
+                                            bottomSheetContext,
+                                          ).pop();
+                                        },
+                                      ),
+                                  ],
+                                  // Recent section
                                   if (recentEntries.isNotEmpty) ...[
                                     Padding(
                                       key: const ValueKey<String>(
@@ -644,14 +798,18 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                         ),
                                         title: Text(entry.modelName),
                                         subtitle: Text(entry.providerName),
-                                        trailing:
-                                            selectedKey ==
-                                                _selectorEntryKey(
-                                                  entry.providerId,
-                                                  entry.modelId,
-                                                )
-                                            ? const Icon(Icons.check_rounded)
-                                            : null,
+                                        trailing: _modelSelectorTrailing(
+                                          chatProvider: chatProvider,
+                                          providerId: entry.providerId,
+                                          modelId: entry.modelId,
+                                          isSelected: selectedKey ==
+                                              _selectorEntryKey(
+                                                entry.providerId,
+                                                entry.modelId,
+                                              ),
+                                          onFavoriteToggled: () =>
+                                              setModalState(() {}),
+                                        ),
                                         onTap: () async {
                                           await chatProvider
                                               .setSelectedModelByProvider(
@@ -667,6 +825,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                         },
                                       ),
                                   ],
+                                  // Provider sections
                                   for (final provider in sortedProviders)
                                     if (groupedEntries.containsKey(
                                       provider.id,
@@ -711,14 +870,18 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                               entry.modelName == entry.modelId
                                               ? null
                                               : Text(entry.modelId),
-                                          trailing:
-                                              selectedKey ==
-                                                  _selectorEntryKey(
-                                                    entry.providerId,
-                                                    entry.modelId,
-                                                  )
-                                              ? const Icon(Icons.check_rounded)
-                                              : null,
+                                          trailing: _modelSelectorTrailing(
+                                            chatProvider: chatProvider,
+                                            providerId: entry.providerId,
+                                            modelId: entry.modelId,
+                                            isSelected: selectedKey ==
+                                                _selectorEntryKey(
+                                                  entry.providerId,
+                                                  entry.modelId,
+                                                ),
+                                            onFavoriteToggled: () =>
+                                                setModalState(() {}),
+                                          ),
                                           onTap: () async {
                                             await chatProvider
                                                 .setSelectedModelByProvider(
@@ -769,7 +932,23 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
     );
     final buttonRect = buttonTopLeft & buttonBox.size;
     const margin = 8.0;
-    const menuWidth = 220.0;
+
+    // Auto-fit width based on the longest label text.
+    final textStyle =
+        Theme.of(context).textTheme.labelLarge ??
+        const TextStyle(fontSize: 14);
+    final labels = ['Auto', ...variants.map((v) => v.name)];
+    final longestLabel = labels.reduce(
+      (a, b) => a.length > b.length ? a : b,
+    );
+    final textPainter = TextPainter(
+      text: TextSpan(text: longestLabel, style: textStyle),
+      maxLines: 1,
+      textDirection: TextDirection.ltr,
+    )..layout();
+    // padding: 16 leading + 8 gap + 18 check icon + 16 trailing = 58
+    final menuWidth = (textPainter.width + 58).ceilToDouble();
+
     final left = (buttonRect.center.dx - (menuWidth / 2))
         .clamp(margin, overlayBox.size.width - menuWidth - margin)
         .toDouble();
@@ -777,7 +956,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
 
     final selected = await showMenu<String?>(
       context: context,
-      constraints: const BoxConstraints(
+      constraints: BoxConstraints(
         minWidth: menuWidth,
         maxWidth: menuWidth,
       ),

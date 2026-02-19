@@ -228,6 +228,7 @@ class ChatProvider extends ChangeNotifier {
   String? _selectedAgentName;
   String? _selectedVariantId;
   List<String> _recentModelKeys = <String>[];
+  List<String> _favoriteModelKeys = <String>[];
   Map<String, int> _modelUsageCounts = <String, int>{};
   Map<String, String> _selectedVariantByModel = <String, String>{};
   String _activeServerId = 'legacy';
@@ -348,6 +349,8 @@ class ChatProvider extends ChangeNotifier {
   String? get selectedVariantId => _selectedVariantId;
   List<String> get recentModelKeys =>
       List<String>.unmodifiable(_recentModelKeys);
+  List<String> get favoriteModelKeys =>
+      List<String>.unmodifiable(_favoriteModelKeys);
   Map<String, int> get modelUsageCounts =>
       Map<String, int>.unmodifiable(_modelUsageCounts);
   String get activeServerId => _activeServerId;
@@ -1236,6 +1239,28 @@ class ChatProvider extends ChangeNotifier {
         ? nextIndex + available.length
         : nextIndex;
     await setSelectedAgent(available[normalizedIndex].name);
+  }
+
+  bool isModelFavorite({required String providerId, required String modelId}) {
+    return _favoriteModelKeys.contains(_modelKey(providerId, modelId));
+  }
+
+  /// Toggle a model as favorite (local-only, no remote sync).
+  Future<void> toggleModelFavorite({
+    required String providerId,
+    required String modelId,
+  }) async {
+    final key = _modelKey(providerId, modelId);
+    _favoriteModelKeys = List<String>.from(_favoriteModelKeys);
+    if (_favoriteModelKeys.contains(key)) {
+      _favoriteModelKeys.remove(key);
+    } else {
+      _favoriteModelKeys.add(key);
+    }
+    final serverId = await _resolveServerScopeId();
+    final scopeId = _resolveContextScopeId();
+    await _persistModelPreferenceState(serverId: serverId, scopeId: scopeId);
+    notifyListeners();
   }
 
   /// Load session list

@@ -59,6 +59,7 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     required String scopeId,
   }) async {
     _recentModelKeys = <String>[];
+    _favoriteModelKeys = <String>[];
     _modelUsageCounts = <String, int>{};
     _selectedVariantByModel = <String, String>{};
 
@@ -78,6 +79,24 @@ extension _ChatProviderPreferenceOps on ChatProvider {
         }
       } catch (_) {
         _recentModelKeys = <String>[];
+      }
+    }
+
+    final favoritesJson = await localDataSource.getFavoriteModelsJson(
+      serverId: serverId,
+      scopeId: scopeId,
+    );
+    if (favoritesJson != null && favoritesJson.trim().isNotEmpty) {
+      try {
+        final decoded = json.decode(favoritesJson);
+        if (decoded is List<dynamic>) {
+          _favoriteModelKeys = decoded
+              .whereType<String>()
+              .where((value) => value.trim().isNotEmpty)
+              .toList();
+        }
+      } catch (_) {
+        _favoriteModelKeys = <String>[];
       }
     }
 
@@ -129,6 +148,11 @@ extension _ChatProviderPreferenceOps on ChatProvider {
   }) async {
     await localDataSource.saveRecentModelsJson(
       json.encode(_recentModelKeys),
+      serverId: serverId,
+      scopeId: scopeId,
+    );
+    await localDataSource.saveFavoriteModelsJson(
+      json.encode(_favoriteModelKeys),
       serverId: serverId,
       scopeId: scopeId,
     );

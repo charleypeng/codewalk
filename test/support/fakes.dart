@@ -147,6 +147,7 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
   String? selectedVariantMapJson;
   String? sessionSelectionOverridesJson;
   String? recentModelsJson;
+  String? favoriteModelsJson;
   String? modelUsageCountsJson;
   String? themeMode;
   String? experienceSettingsJson;
@@ -192,6 +193,7 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
     selectedVariantMapJson = null;
     sessionSelectionOverridesJson = null;
     recentModelsJson = null;
+    favoriteModelsJson = null;
     modelUsageCountsJson = null;
     themeMode = null;
     experienceSettingsJson = null;
@@ -394,6 +396,19 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
     if (serverId == null && scopeId == null) return recentModelsJson;
     return scopedStrings[_key(
       'recent_models',
+      serverId: serverId,
+      scopeId: scopeId,
+    )];
+  }
+
+  @override
+  Future<String?> getFavoriteModelsJson({
+    String? serverId,
+    String? scopeId,
+  }) async {
+    if (serverId == null && scopeId == null) return favoriteModelsJson;
+    return scopedStrings[_key(
+      'favorite_models',
       serverId: serverId,
       scopeId: scopeId,
     )];
@@ -727,6 +742,24 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
     }
     scopedStrings[_key('recent_models', serverId: serverId, scopeId: scopeId)] =
         recentModelsJson;
+  }
+
+  @override
+  Future<void> saveFavoriteModelsJson(
+    String favoriteModelsJson, {
+    String? serverId,
+    String? scopeId,
+  }) async {
+    if (serverId == null && scopeId == null) {
+      this.favoriteModelsJson = favoriteModelsJson;
+      return;
+    }
+    scopedStrings[_key(
+          'favorite_models',
+          serverId: serverId,
+          scopeId: scopeId,
+        )] =
+        favoriteModelsJson;
   }
 
   @override

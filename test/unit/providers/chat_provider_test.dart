@@ -4317,6 +4317,92 @@ void main() {
         expect(scopedProvider.sessions.first.id, 'ses_a_new');
       },
     );
+
+    test('toggleModelFavorite adds and removes model from favorites', () async {
+      appRepository.providersResult = Right(
+        ProvidersResponse(
+          providers: <Provider>[
+            Provider(
+              id: 'prov_a',
+              name: 'Provider A',
+              env: const <String>[],
+              models: <String, Model>{'mod_a': _model('mod_a')},
+            ),
+          ],
+          defaultModels: const <String, String>{'prov_a': 'mod_a'},
+          connected: const <String>['prov_a'],
+        ),
+      );
+      await provider.initializeProviders();
+
+      expect(
+        provider.isModelFavorite(providerId: 'prov_a', modelId: 'mod_a'),
+        isFalse,
+      );
+
+      await provider.toggleModelFavorite(
+        providerId: 'prov_a',
+        modelId: 'mod_a',
+      );
+      expect(
+        provider.isModelFavorite(providerId: 'prov_a', modelId: 'mod_a'),
+        isTrue,
+      );
+      expect(provider.favoriteModelKeys, contains('prov_a/mod_a'));
+
+      await provider.toggleModelFavorite(
+        providerId: 'prov_a',
+        modelId: 'mod_a',
+      );
+      expect(
+        provider.isModelFavorite(providerId: 'prov_a', modelId: 'mod_a'),
+        isFalse,
+      );
+      expect(provider.favoriteModelKeys, isEmpty);
+    });
+
+    test('favorite models persist and reload across provider instances',
+        () async {
+      appRepository.providersResult = Right(
+        ProvidersResponse(
+          providers: <Provider>[
+            Provider(
+              id: 'prov_a',
+              name: 'Provider A',
+              env: const <String>[],
+              models: <String, Model>{'mod_a': _model('mod_a')},
+            ),
+          ],
+          defaultModels: const <String, String>{'prov_a': 'mod_a'},
+          connected: const <String>['prov_a'],
+        ),
+      );
+      await provider.initializeProviders();
+      await provider.toggleModelFavorite(
+        providerId: 'prov_a',
+        modelId: 'mod_a',
+      );
+
+      // Verify the data was persisted to local storage.
+      final storedJson = await localDataSource.getFavoriteModelsJson(
+        serverId: 'srv_test',
+        scopeId: 'default',
+      );
+      expect(storedJson, isNotNull);
+      final decoded = json.decode(storedJson!) as List<dynamic>;
+      expect(decoded, contains('prov_a/mod_a'));
+
+      // Build a new provider instance and verify favorites are loaded.
+      final provider2 = buildProvider();
+      await provider2.initializeProviders();
+      // Let coalesced microtask notifications flush before asserting.
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        provider2.isModelFavorite(providerId: 'prov_a', modelId: 'mod_a'),
+        isTrue,
+      );
+      provider2.dispose();
+    });
   });
 }
 

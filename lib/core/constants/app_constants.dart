@@ -23,6 +23,7 @@ class AppConstants {
   static const String sessionSelectionOverridesKey =
       'session_selection_overrides';
   static const String recentModelsKey = 'recent_models';
+  static const String favoriteModelsKey = 'favorite_models';
   static const String modelUsageCountsKey = 'model_usage_counts';
   static const String themeKey = 'theme_mode';
   static const String lastSessionIdKey = 'last_session_id';

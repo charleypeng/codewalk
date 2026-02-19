@@ -138,6 +138,26 @@ extension _ChatPageShortcuts on _ChatPageState {
     final available = <({String providerId, String modelId})>[];
     final seen = <String>{};
 
+    // Favorites first, then recents (excluding duplicates).
+    for (final favoriteKey in chatProvider.favoriteModelKeys) {
+      final providerId = _providerIdFromSelectorKey(favoriteKey);
+      final modelId = _modelIdFromSelectorKey(favoriteKey);
+      if (providerId == null || modelId == null) {
+        continue;
+      }
+      final provider = chatProvider.providers
+          .where((entry) => entry.id == providerId)
+          .firstOrNull;
+      if (provider == null || !provider.models.containsKey(modelId)) {
+        continue;
+      }
+      final selectorKey = _selectorEntryKey(providerId, modelId);
+      if (!seen.add(selectorKey)) {
+        continue;
+      }
+      available.add((providerId: providerId, modelId: modelId));
+    }
+
     for (final recentModelKey in chatProvider.recentModelKeys) {
       final providerId = _providerIdFromSelectorKey(recentModelKey);
       final modelId = _modelIdFromSelectorKey(recentModelKey);

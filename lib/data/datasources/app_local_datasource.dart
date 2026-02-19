@@ -111,6 +111,16 @@ abstract class AppLocalDataSource {
     String? scopeId,
   });
 
+  /// Retrieve locally-persisted favorite model keys (scoped).
+  Future<String?> getFavoriteModelsJson({String? serverId, String? scopeId});
+
+  /// Save locally-persisted favorite model keys (scoped).
+  Future<void> saveFavoriteModelsJson(
+    String favoriteModelsJson, {
+    String? serverId,
+    String? scopeId,
+  });
+
   /// Technical comment translated to English.
   Future<String?> getModelUsageCountsJson({String? serverId, String? scopeId});
 
@@ -769,6 +779,36 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
         scopeId: scopeId,
       ),
       recentModelsJson,
+    );
+  }
+
+  @override
+  Future<String?> getFavoriteModelsJson({
+    String? serverId,
+    String? scopeId,
+  }) async {
+    return sharedPreferences.getString(
+      _scopedKey(
+        AppConstants.favoriteModelsKey,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+  }
+
+  @override
+  Future<void> saveFavoriteModelsJson(
+    String favoriteModelsJson, {
+    String? serverId,
+    String? scopeId,
+  }) async {
+    await sharedPreferences.setString(
+      _scopedKey(
+        AppConstants.favoriteModelsKey,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+      favoriteModelsJson,
     );
   }
 
