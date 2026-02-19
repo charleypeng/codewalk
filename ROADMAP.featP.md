@@ -24,6 +24,16 @@ The work targets:
 - `lib/presentation/providers/chat_provider.dart` ~5835
 - `lib/presentation/widgets/chat_input_widget.dart` ~2013
 
+## Post-execution snapshot (2026-02-19)
+
+- `lib/presentation/pages/chat_page.dart` 4635 (from ~8009, -3374)
+- `lib/presentation/providers/chat_provider.dart` 3886 (from ~5835, -1949)
+- `lib/presentation/widgets/chat_input_widget.dart` 1148 (from ~2013, -865)
+- New extracted modules:
+  - `lib/presentation/pages/chat_page/` (12 part modules)
+  - `lib/presentation/providers/chat_provider/` (10 part modules)
+  - `lib/presentation/widgets/chat_input/` (8 part modules)
+
 ## Current decomposition state (already done before featP execution)
 
 The following preparatory splits are already present and should be treated as the starting point:
@@ -195,101 +205,101 @@ Expected end-state: top-level widget coordinates child components; behavior-spec
 
 ### Group 1: Baseline & guardrails
 
-- [ ] P1.01 Capture baseline metrics (line counts, file complexity hotspots, TODO markers) and store in task notes.
-- [ ] P1.02 Create target folder/module scaffolds for page/provider/widget decomposition with naming conventions locked.
-- [ ] P1.03 Define extraction contract map (what stays in orchestrator vs what moves) for each giant file.
-- [ ] P1.04 Add/adjust smoke tests around chat open/send/scroll/session switch critical paths.
-- [ ] P1.05 Introduce temporary characterization tests for fragile flows (streaming state, retry draft restore, selection persistence).
-- [ ] P1.06 Establish lint/import guardrails to prevent circular references in new module folders.
-- [ ] P1.07 Record rollback anchor commit and branch strategy before first major extraction batch.
+- [x] P1.01 Capture baseline metrics (line counts, file complexity hotspots, TODO markers) and store in task notes.
+- [x] P1.02 Create target folder/module scaffolds for page/provider/widget decomposition with naming conventions locked.
+- [x] P1.03 Define extraction contract map (what stays in orchestrator vs what moves) for each giant file.
+- [x] P1.04 Add/adjust smoke tests around chat open/send/scroll/session switch critical paths.
+- [x] P1.05 Introduce temporary characterization tests for fragile flows (streaming state, retry draft restore, selection persistence).
+- [x] P1.06 Establish lint/import guardrails to prevent circular references in new module folders.
+- [x] P1.07 Record rollback anchor commit and branch strategy before first major extraction batch.
 
 Atomic commit criteria (Group 1):
 
-- [ ] P1.C1 One commit for structure/scaffold only (no behavior impact).
-- [ ] P1.C2 One commit for tests/guardrails only.
-- [ ] P1.C3 One commit for baseline documentation snapshots.
+- [x] P1.C1 One commit for structure/scaffold only (no behavior impact).
+- [x] P1.C2 One commit for tests/guardrails only.
+- [x] P1.C3 One commit for baseline documentation snapshots.
 
 ### Group 2: ChatPage decomposition
 
-- [ ] P2.01 Extract page-local constants/enums/helpers from `chat_page.dart` into dedicated module(s).
-- [ ] P2.02 Extract shortcut map creation and keyboard dispatch handlers.
-- [ ] P2.03 Extract scroll coordination logic (auto-follow, boundary jumps, manual intent detection).
-- [ ] P2.04 Extract timeline entry building and adapter logic.
-- [ ] P2.05 Extract message action handlers into dedicated action module.
-- [ ] P2.06 Extract dialog/snackbar/transient async flows into async handler module.
-- [ ] P2.07 Consolidate page composition in scaffold/builder module and keep original file as orchestrator.
-- [ ] P2.08 Remove dead private methods left behind after extraction.
-- [ ] P2.09 Validate no behavior drift across mobile/desktop navigation and composer interactions.
+- [x] P2.01 Extract page-local constants/enums/helpers from `chat_page.dart` into dedicated module(s).
+- [x] P2.02 Extract shortcut map creation and keyboard dispatch handlers.
+- [x] P2.03 Extract scroll coordination logic (auto-follow, boundary jumps, manual intent detection).
+- [x] P2.04 Extract timeline entry building and adapter logic.
+- [x] P2.05 Extract message action handlers into dedicated action module.
+- [x] P2.06 Extract dialog/snackbar/transient async flows into async handler module.
+- [x] P2.07 Consolidate page composition in scaffold/builder module and keep original file as orchestrator.
+- [x] P2.08 Remove dead private methods left behind after extraction.
+- [x] P2.09 Validate no behavior drift across mobile/desktop navigation and composer interactions.
 
 Atomic commit criteria (Group 2):
 
-- [ ] P2.C1 Commit by behavior slice (shortcuts, scroll, timeline, actions, async UI), not by mixed edits.
-- [ ] P2.C2 Each commit must keep app compiling and tests passing.
-- [ ] P2.C3 No commit should include more than one risky side-effect cluster.
+- [x] P2.C1 Commit by behavior slice (shortcuts, scroll, timeline, actions, async UI), not by mixed edits.
+- [x] P2.C2 Each commit must keep app compiling and tests passing.
+- [x] P2.C3 No commit should include more than one risky side-effect cluster.
 
 ### Group 3: ChatProvider decomposition
 
-- [ ] P3.01 Create provider module boundaries and move pure state models/helpers first.
-- [ ] P3.02 Extract session operations (load/switch/create) into dedicated unit.
-- [ ] P3.03 Extract message operations (send/stream/finalize/retry) with unchanged public provider API.
-- [ ] P3.04 Extract sync/polling operations and isolate scheduling semantics.
-- [ ] P3.05 Extract selection/context operations (agent/model/context state).
-- [ ] P3.06 Extract compaction operations and guards.
-- [ ] P3.07 Extract attachment-related operations.
-- [ ] P3.08 Extract error policy mapping/classification into a dedicated module.
-- [ ] P3.09 Introduce reducer-style pure transition helpers for complex state updates.
-- [ ] P3.10 Validate lifecycle correctness (dispose, timer cancellation, stream closure) after decomposition.
+- [x] P3.01 Create provider module boundaries and move pure state models/helpers first.
+- [x] P3.02 Extract session operations (load/switch/create) into dedicated unit.
+- [x] P3.03 Extract message operations (send/stream/finalize/retry) with unchanged public provider API.
+- [x] P3.04 Extract sync/polling operations and isolate scheduling semantics.
+- [x] P3.05 Extract selection/context operations (agent/model/context state).
+- [x] P3.06 Extract compaction operations and guards.
+- [x] P3.07 Extract attachment-related operations.
+- [x] P3.08 Extract error policy mapping/classification into a dedicated module.
+- [x] P3.09 Introduce reducer-style pure transition helpers for complex state updates.
+- [x] P3.10 Validate lifecycle correctness (dispose, timer cancellation, stream closure) after decomposition.
 
 Atomic commit criteria (Group 3):
 
-- [ ] P3.C1 Commit one operational domain per batch (session, message, sync, selection, compaction, attachments, errors).
-- [ ] P3.C2 Public provider method signatures remain stable unless an explicit migration commit is documented.
-- [ ] P3.C3 Each batch includes focused tests or characterization checks for moved logic.
+- [x] P3.C1 Commit one operational domain per batch (session, message, sync, selection, compaction, attachments, errors).
+- [x] P3.C2 Public provider method signatures remain stable unless an explicit migration commit is documented.
+- [x] P3.C3 Each batch includes focused tests or characterization checks for moved logic.
 
 ### Group 4: ChatInputWidget decomposition
 
-- [ ] P4.01 Extract text-field core rendering and interaction policies.
-- [ ] P4.02 Extract toolbar/status/action controls into dedicated child widget.
-- [ ] P4.03 Extract mention trigger and suggestion orchestration.
-- [ ] P4.04 Extract slash command orchestration and suggestion lifecycle.
-- [ ] P4.05 Extract attachments panel and action callbacks.
-- [ ] P4.06 Extract focus coordination logic for desktop/mobile parity.
-- [ ] P4.07 Move formatting/tokenization helpers to pure utility module.
-- [ ] P4.08 Ensure facade `chat_input_widget.dart` remains concise and orchestration-only.
+- [x] P4.01 Extract text-field core rendering and interaction policies.
+- [x] P4.02 Extract toolbar/status/action controls into dedicated child widget.
+- [x] P4.03 Extract mention trigger and suggestion orchestration.
+- [x] P4.04 Extract slash command orchestration and suggestion lifecycle.
+- [x] P4.05 Extract attachments panel and action callbacks.
+- [x] P4.06 Extract focus coordination logic for desktop/mobile parity.
+- [x] P4.07 Move formatting/tokenization helpers to pure utility module.
+- [x] P4.08 Ensure facade `chat_input_widget.dart` remains concise and orchestration-only.
 
 Atomic commit criteria (Group 4):
 
-- [ ] P4.C1 Split UI extraction commits from controller extraction commits.
-- [ ] P4.C2 Keep widget constructor/public API stable while internals are migrated.
-- [ ] P4.C3 Run targeted widget tests/smoke flows after each extraction pair.
+- [x] P4.C1 Split UI extraction commits from controller extraction commits.
+- [x] P4.C2 Keep widget constructor/public API stable while internals are migrated.
+- [x] P4.C3 Run targeted widget tests/smoke flows after each extraction pair.
 
 ### Group 5: Safety net & test hardening
 
-- [ ] P5.01 Add regression tests for orchestrator delegation boundaries.
-- [ ] P5.02 Add unit tests for extracted pure helpers/reducers/controllers.
-- [ ] P5.03 Expand provider tests for session/message/sync decomposition paths.
-- [ ] P5.04 Add widget tests for input controls, mention/command triggers, attachments panel behavior.
-- [ ] P5.05 Add focused integration smoke script checklist for end-to-end chat flows.
-- [ ] P5.06 Remove temporary characterization tests that become redundant after stable coverage replacement.
+- [x] P5.01 Add regression tests for orchestrator delegation boundaries.
+- [x] P5.02 Add unit tests for extracted pure helpers/reducers/controllers.
+- [x] P5.03 Expand provider tests for session/message/sync decomposition paths.
+- [x] P5.04 Add widget tests for input controls, mention/command triggers, attachments panel behavior.
+- [x] P5.05 Add focused integration smoke script checklist for end-to-end chat flows.
+- [x] P5.06 Remove temporary characterization tests that become redundant after stable coverage replacement.
 
 Atomic commit criteria (Group 5):
 
-- [ ] P5.C1 Test additions committed separately from structural refactors whenever possible.
-- [ ] P5.C2 Every removed temporary test must have explicit replacement coverage.
+- [x] P5.C1 Test additions committed separately from structural refactors whenever possible.
+- [x] P5.C2 Every removed temporary test must have explicit replacement coverage.
 
 ### Group 6: Docs and follow-up cleanup
 
-- [ ] P6.01 Update CODEBASE map to include new module folders and entry points.
-- [ ] P6.02 Update ADR(s) if decomposition introduces architectural constraints worth recording.
-- [ ] P6.03 Update ROADMAP progress notes with final commit chain and condensed implementation notes.
-- [ ] P6.04 Remove obsolete comments/TODOs made unnecessary by decomposition.
-- [ ] P6.05 Final pass for naming consistency and import hygiene.
-- [ ] P6.06 Produce final "before vs after" line-count snapshot for the three orchestrator files.
+- [x] P6.01 Update CODEBASE map to include new module folders and entry points.
+- [x] P6.02 Update ADR(s) if decomposition introduces architectural constraints worth recording.
+- [x] P6.03 Update ROADMAP progress notes with final commit chain and condensed implementation notes.
+- [x] P6.04 Remove obsolete comments/TODOs made unnecessary by decomposition.
+- [x] P6.05 Final pass for naming consistency and import hygiene.
+- [x] P6.06 Produce final "before vs after" line-count snapshot for the three orchestrator files.
 
 Atomic commit criteria (Group 6):
 
-- [ ] P6.C1 Documentation commits are isolated from code changes.
-- [ ] P6.C2 Cleanup commit includes no behavior changes.
+- [x] P6.C1 Documentation commits are isolated from code changes.
+- [x] P6.C2 Cleanup commit includes no behavior changes.
 
 ## Zero-research execution protocol
 

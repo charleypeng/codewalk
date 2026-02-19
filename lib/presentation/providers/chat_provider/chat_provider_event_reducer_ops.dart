@@ -1,0 +1,498 @@
+part of '../chat_provider.dart';
+
+extension _ChatProviderEventReducerOps on ChatProvider {
+  void _applyChatEvent(ChatEvent event) {
+    if (_isEphemeralTitleEvent(event)) return;
+    final eventSessionId = _extractEventSessionId(event.properties);
+    // Only dispatch sound/notification feedback for session lifecycle events
+    // (idle, error) when the event belongs to the current session.
+    // Sub-agent child sessions should not trigger user-facing sounds.
+    final isSessionLifecycle =
+        event.type == 'session.idle' || event.type == 'session.error';
+    if (!isSessionLifecycle || eventSessionId == _currentSession?.id) {
+      final sessionTitleHint = _sessionTitleForNotification(eventSessionId);
+      unawaited(
+        eventFeedbackDispatcher?.handle(
+          event,
+          sessionTitleHint: sessionTitleHint,
+          isAppInForeground: _isAppInForeground,
+          currentSessionId: _currentSession?.id,
+        ),
+      );
+    }
+    final properties = event.properties;
+    if (event.type != 'server.connected' &&
+        (event.type == 'session.status' ||
+            event.type == 'message.created' ||
+            event.type == 'message.updated' ||
+            event.type == 'session.updated' ||
+            event.type == 'session.created')) {
+      unawaited(_syncSelectionFromRemote(reason: 'event-${event.type}'));
+    }
+    switch (event.type) {
+      case 'server.connected':
+        unawaited(
+          refreshActiveSessionView(reason: 'realtime-server-connected'),
+        );
+        unawaited(
+          _syncSelectionFromRemote(
+            reason: 'event-server-connected',
+            force: true,
+          ),
+        );
+        break;
+      case 'session.created':
+      case 'session.updated':
+        final info = properties['info'];
+        if (info is Map<String, dynamic>) {
+          final nextSession = ChatSessionModel.fromJson(info).toDomain();
+          final existing = _sessionById(nextSession.id);
+          if (existing != null && nextSession.time.isBefore(existing.time)) {
+            AppLogger.debug(
+              'Ignoring stale session event for ${nextSession.id}: incoming=${nextSession.time.toIso8601String()} existing=${existing.time.toIso8601String()}',
+            );
+            break;
+          }
+          final pendingRename = _pendingRenameTitleBySessionId[nextSession.id];
+          if (pendingRename != null) {
+            final incomingTitle = nextSession.title?.trim();
+            if (incomingTitle == pendingRename) {
+              _pendingRenameTitleBySessionId.remove(nextSession.id);
+            } else {
+              AppLogger.debug(
+                'Ignoring conflicting session.updated while rename is pending for ${nextSession.id}',
+              );
+              break;
+            }
+          }
+          _upsertSession(nextSession);
+          if (_currentSession?.id == nextSession.id) {
+            _currentSession = nextSession;
+          }
+          _notifyListeners();
+        }
+        break;
+      case 'session.deleted':
+        final info = properties['info'];
+        final sessionId =
+            (info is Map<String, dynamic> ? info['id'] as String? : null) ??
+            properties['sessionID'] as String? ??
+            properties['id'] as String?;
+        if (sessionId != null && sessionId.isNotEmpty) {
+          final deletedCurrent = _currentSession?.id == sessionId;
+          _removeSessionById(sessionId);
+          if (deletedCurrent && _currentSession != null) {
+            unawaited(loadMessages(_currentSession!.id));
+            unawaited(loadSessionInsights(_currentSession!.id, silent: true));
+          }
+          _notifyListeners();
+        }
+        break;
+      case 'session.status':
+        final sessionId = properties['sessionID'] as String?;
+        final statusMap = properties['status'];
+        if (sessionId != null && statusMap is Map<String, dynamic>) {
+          final status = SessionStatusModel.fromJson(statusMap).toDomain();
+          _sessionStatusById[sessionId] = status;
+          _notifyListeners();
+          _attemptPendingRemoteSelectionSync(reason: 'event-session.status');
+        }
+        break;
+      case 'session.diff':
+        final sessionId = properties['sessionID'] as String?;
+        final diffRaw = properties['diff'];
+        if (sessionId != null && diffRaw is List) {
+          final parsed = diffRaw
+              .whereType<Map>()
+              .map(
+                (item) => SessionDiff(
+                  file: item['file'] as String? ?? '',
+                  before: item['before'] as String? ?? '',
+                  after: item['after'] as String? ?? '',
+                  additions: (item['additions'] as num?)?.toInt() ?? 0,
+                  deletions: (item['deletions'] as num?)?.toInt() ?? 0,
+                  status: item['status'] as String?,
+                ),
+              )
+              .toList(growable: false);
+          _sessionDiffById[sessionId] = parsed;
+          _notifyListeners();
+        }
+        break;
+      case 'todo.updated':
+        final sessionId = properties['sessionID'] as String?;
+        final todosRaw = properties['todos'];
+        if (sessionId != null && todosRaw is List) {
+          final parsed = todosRaw
+              .whereType<Map>()
+              .map(
+                (item) => SessionTodo(
+                  id: item['id'] as String? ?? '',
+                  content: item['content'] as String? ?? '',
+                  status: item['status'] as String? ?? 'pending',
+                  priority: item['priority'] as String? ?? 'medium',
+                ),
+              )
+              .toList(growable: false);
+          _sessionTodoById[sessionId] = parsed;
+          _notifyListeners();
+        }
+        break;
+      case 'session.idle':
+        final sessionId = properties['sessionID'] as String?;
+        if (sessionId != null) {
+          _sessionStatusById[sessionId] = const SessionStatusInfo(
+            type: SessionStatusType.idle,
+          );
+          if (sessionId == _currentSession?.id) {
+            _activeMessageStreamSessionId = null;
+            _clearActiveSendDraft();
+            _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
+            if (_state == ChatState.sending) {
+              _setState(ChatState.loaded);
+            } else {
+              _notifyListeners();
+            }
+          } else {
+            _notifyListeners();
+          }
+          _attemptPendingRemoteSelectionSync(reason: 'event-session.idle');
+        }
+        break;
+      case 'session.error':
+        final sessionId = properties['sessionID'] as String?;
+        if (sessionId != null && sessionId == _currentSession?.id) {
+          final error = properties['error'] as Map<String, dynamic>?;
+          final data = error?['data'] as Map<String, dynamic>? ?? {};
+          final message =
+              data['message'] as String? ??
+              error?['message'] as String? ??
+              'Session error';
+          final code = data['code']?.toString() ?? error?['code']?.toString();
+          if (_shouldSuppressAbortError(
+            sessionId: sessionId,
+            message: message,
+          )) {
+            _sessionStatusById[sessionId] = const SessionStatusInfo(
+              type: SessionStatusType.idle,
+            );
+            _errorMessage = null;
+            _setState(ChatState.loaded);
+            break;
+          }
+          if (_isRemoteAbortError(message: message, code: code)) {
+            _sessionStatusById[sessionId] = const SessionStatusInfo(
+              type: SessionStatusType.idle,
+            );
+            _errorMessage = null;
+            _queueUiNotice(
+              type: ChatUiNoticeType.remoteAbort,
+              message: ChatProvider._remoteAbortNoticeMessage,
+              actionLabel: 'Retry',
+            );
+            _setState(ChatState.loaded);
+            break;
+          }
+          _setError(message);
+        }
+        break;
+      case 'message.updated':
+      case 'message.created':
+        final info = properties['info'] as Map<String, dynamic>?;
+        final sessionId = info?['sessionID'] as String?;
+        final messageId = info?['id'] as String?;
+        if (sessionId != null &&
+            messageId != null &&
+            _currentSession?.id == sessionId) {
+          unawaited(_fetchMessageFallback(sessionId, messageId));
+        }
+        break;
+      case 'message.part.updated':
+        final partMap = properties['part'] as Map<String, dynamic>?;
+        final part = partMap == null
+            ? null
+            : MessagePartModel.fromJson(partMap).toDomain();
+        final sessionId = part?.sessionId;
+        final messageId = part?.messageId;
+        if (sessionId == null ||
+            messageId == null ||
+            _currentSession?.id != sessionId) {
+          break;
+        }
+
+        final partIndex = _messages.indexWhere((item) => item.id == messageId);
+        final delta = properties['delta'] as String?;
+        if (part == null ||
+            partIndex == -1 ||
+            (delta != null && delta.isNotEmpty)) {
+          unawaited(_fetchMessageFallback(sessionId, messageId));
+          break;
+        }
+        final message = _messages[partIndex];
+        final nextParts = List<MessagePart>.from(message.parts);
+        final existingPartIndex = nextParts.indexWhere(
+          (item) => item.id == part.id,
+        );
+        if (existingPartIndex == -1) {
+          nextParts.add(part);
+        } else {
+          nextParts[existingPartIndex] = part;
+        }
+        _messages[partIndex] = _copyMessageWithParts(message, nextParts);
+        _notifyListeners();
+        if (!_isCompactingContext) {
+          _scrollToBottomCallback?.call();
+        }
+        break;
+      case 'message.part.removed':
+        final sessionId = properties['sessionID'] as String?;
+        final messageId = properties['messageID'] as String?;
+        final partId = properties['partID'] as String?;
+        if (sessionId == null ||
+            messageId == null ||
+            partId == null ||
+            _currentSession?.id != sessionId) {
+          break;
+        }
+        final messageIndex = _messages.indexWhere(
+          (item) => item.id == messageId,
+        );
+        if (messageIndex == -1) {
+          break;
+        }
+        final message = _messages[messageIndex];
+        final nextParts = message.parts
+            .where((part) => part.id != partId)
+            .toList(growable: false);
+        _messages[messageIndex] = _copyMessageWithParts(message, nextParts);
+        _notifyListeners();
+        break;
+      case 'message.removed':
+        final sessionId = properties['sessionID'] as String?;
+        final messageId = properties['messageID'] as String?;
+        if (sessionId == null ||
+            messageId == null ||
+            _currentSession?.id != sessionId) {
+          break;
+        }
+        _messages.removeWhere((item) => item.id == messageId);
+        _notifyListeners();
+        break;
+      case 'permission.asked':
+      case 'permission.updated':
+        final permission = ChatPermissionRequestModel.fromJson(
+          properties,
+        ).toDomain();
+        final sessionPermissions = List<ChatPermissionRequest>.from(
+          _pendingPermissionsBySession[permission.sessionId] ??
+              const <ChatPermissionRequest>[],
+        );
+        final existingIndex = sessionPermissions.indexWhere(
+          (item) => item.id == permission.id,
+        );
+        if (existingIndex == -1) {
+          sessionPermissions.add(permission);
+        } else {
+          sessionPermissions[existingIndex] = permission;
+        }
+        _pendingPermissionsBySession[permission.sessionId] = sessionPermissions;
+        _notifyListeners();
+        break;
+      case 'permission.replied':
+        final sessionId = properties['sessionID'] as String?;
+        final requestId = properties['requestID'] as String?;
+        if (sessionId == null || requestId == null) {
+          break;
+        }
+        final existing = _pendingPermissionsBySession[sessionId];
+        if (existing == null) {
+          break;
+        }
+        final filtered = existing
+            .where((item) => item.id != requestId)
+            .toList(growable: false);
+        if (filtered.isEmpty) {
+          _pendingPermissionsBySession.remove(sessionId);
+        } else {
+          _pendingPermissionsBySession[sessionId] = filtered;
+        }
+        _notifyListeners();
+        break;
+      case 'question.asked':
+      case 'question.updated':
+        final question = ChatQuestionRequestModel.fromJson(
+          properties,
+        ).toDomain();
+        final sessionQuestions = List<ChatQuestionRequest>.from(
+          _pendingQuestionsBySession[question.sessionId] ??
+              const <ChatQuestionRequest>[],
+        );
+        final existingIndex = sessionQuestions.indexWhere(
+          (item) => item.id == question.id,
+        );
+        if (existingIndex == -1) {
+          sessionQuestions.add(question);
+        } else {
+          sessionQuestions[existingIndex] = question;
+        }
+        _pendingQuestionsBySession[question.sessionId] = sessionQuestions;
+        _notifyListeners();
+        break;
+      case 'question.replied':
+      case 'question.rejected':
+        final sessionId = properties['sessionID'] as String?;
+        final requestId = properties['requestID'] as String?;
+        if (sessionId == null || requestId == null) {
+          break;
+        }
+        final existing = _pendingQuestionsBySession[sessionId];
+        if (existing == null) {
+          break;
+        }
+        final filtered = existing
+            .where((item) => item.id != requestId)
+            .toList(growable: false);
+        if (filtered.isEmpty) {
+          _pendingQuestionsBySession.remove(sessionId);
+        } else {
+          _pendingQuestionsBySession[sessionId] = filtered;
+        }
+        _notifyListeners();
+        break;
+      default:
+        break;
+    }
+  }
+
+  void _handleGlobalEvent(ChatEvent event) {
+    if (_isEphemeralTitleEvent(event)) return;
+
+    final type = event.type;
+    final affectsContext =
+        type.startsWith('session.') ||
+        type.startsWith('message.') ||
+        type.startsWith('project.') ||
+        type.startsWith('worktree.');
+    if (!affectsContext) {
+      return;
+    }
+
+    final directory = _extractDirectoryFromEvent(event);
+    if (directory == null || directory.trim().isEmpty) {
+      _dirtyContextKeys.add(_activeContextKey);
+      if (_tryApplyGlobalEventIncremental(event)) {
+        return;
+      }
+      _scheduleCurrentContextRefresh(
+        reason: 'global:$type:no-directory',
+        refreshSessions: true,
+        refreshStatus: true,
+        refreshActiveSession: true,
+      );
+      return;
+    }
+
+    final targetContextKey = _composeContextKey(_activeServerId, directory);
+    _dirtyContextKeys.add(targetContextKey);
+
+    if (targetContextKey == _activeContextKey) {
+      if (_tryApplyGlobalEventIncremental(event)) {
+        return;
+      }
+      _scheduleGlobalFallbackReconcile(event);
+      return;
+    }
+
+    _contextSnapshots.remove(targetContextKey);
+    unawaited(_clearPersistedContextCache(targetContextKey));
+  }
+
+  bool _tryApplyGlobalEventIncremental(ChatEvent event) {
+    const supportedTypes = <String>{
+      'server.connected',
+      'session.created',
+      'session.updated',
+      'session.deleted',
+      'session.status',
+      'session.diff',
+      'session.idle',
+      'session.error',
+      'todo.updated',
+      'message.created',
+      'message.updated',
+      'message.part.updated',
+      'message.part.removed',
+      'message.removed',
+      'permission.asked',
+      'permission.updated',
+      'permission.replied',
+      'question.asked',
+      'question.updated',
+      'question.replied',
+      'question.rejected',
+    };
+    if (!supportedTypes.contains(event.type)) {
+      return false;
+    }
+    _applyChatEvent(event);
+    return true;
+  }
+
+  void _scheduleGlobalFallbackReconcile(ChatEvent event) {
+    final type = event.type;
+    final refreshSessions =
+        type.startsWith('session.') ||
+        type.startsWith('project.') ||
+        type.startsWith('worktree.');
+    final refreshActiveSession = type.startsWith('message.');
+    _scheduleCurrentContextRefresh(
+      reason: 'global:$type:fallback',
+      refreshSessions: refreshSessions,
+      refreshStatus: refreshSessions || refreshActiveSession,
+      refreshActiveSession: refreshActiveSession,
+    );
+  }
+
+  void _scheduleCurrentContextRefresh({
+    required String reason,
+    bool refreshSessions = false,
+    bool refreshStatus = false,
+    bool refreshActiveSession = false,
+  }) {
+    _pendingRefreshSessions = _pendingRefreshSessions || refreshSessions;
+    _pendingRefreshStatus = _pendingRefreshStatus || refreshStatus;
+    _pendingRefreshActiveSession =
+        _pendingRefreshActiveSession || refreshActiveSession;
+    _globalRefreshDebounce?.cancel();
+    _globalRefreshDebounce = Timer(const Duration(milliseconds: 300), () {
+      final shouldRefreshSessions = _pendingRefreshSessions;
+      final shouldRefreshStatus = _pendingRefreshStatus;
+      final shouldRefreshActiveSession = _pendingRefreshActiveSession;
+      _pendingRefreshSessions = false;
+      _pendingRefreshStatus = false;
+      _pendingRefreshActiveSession = false;
+
+      AppLogger.info(
+        'scoped_reconcile_triggered reason=$reason sessions=$shouldRefreshSessions active=$shouldRefreshActiveSession status=$shouldRefreshStatus',
+      );
+
+      if (shouldRefreshSessions) {
+        unawaited(loadSessions());
+      }
+
+      if (shouldRefreshActiveSession) {
+        unawaited(
+          refreshActiveSessionView(
+            reason: 'scoped-reconcile:$reason',
+            includeStatus: !shouldRefreshSessions && shouldRefreshStatus,
+          ),
+        );
+        return;
+      }
+
+      if (!shouldRefreshSessions && shouldRefreshStatus) {
+        unawaited(refreshSessionStatusSnapshot());
+      }
+    });
+  }
+}

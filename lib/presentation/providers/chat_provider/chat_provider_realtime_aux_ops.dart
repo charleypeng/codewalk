@@ -1,0 +1,257 @@
+part of '../chat_provider.dart';
+
+extension _ChatProviderRealtimeAuxOps on ChatProvider {
+  Future<void> _cancelSubscriptionSafely(
+    StreamSubscription<dynamic>? subscription, {
+    required String label,
+  }) async {
+    if (subscription == null) {
+      return;
+    }
+    try {
+      await subscription.cancel().timeout(const Duration(seconds: 2));
+    } catch (error) {
+      AppLogger.warn('Failed to cancel $label subscription', error: error);
+    }
+  }
+
+  void _markRealtimeSignal({required String source}) {
+    _lastRealtimeSignalAt = DateTime.now();
+    _consecutiveRealtimeFailures = 0;
+    if (_degradedMode) {
+      _exitDegradedMode(reason: 'signal-restored:$source');
+    }
+    _setSyncState(ChatSyncState.connected, reason: 'signal:$source');
+  }
+
+  void _handleRealtimeStreamFailure({required String source, Object? error}) {
+    _consecutiveRealtimeFailures += 1;
+    AppLogger.warn(
+      'event_stream_reconnecting source=$source attempts=$_consecutiveRealtimeFailures',
+      error: error,
+    );
+    _setSyncState(ChatSyncState.reconnecting, reason: 'stream-failure:$source');
+    if (_refreshlessRealtimeEnabled &&
+        _consecutiveRealtimeFailures >= _degradedFailureThreshold) {
+      _enterDegradedMode(reason: 'stream-failure:$source');
+    }
+  }
+
+  void _enterDegradedMode({required String reason}) {
+    if (!_refreshlessRealtimeEnabled || !_isForegroundActive || _degradedMode) {
+      return;
+    }
+    _degradedMode = true;
+    _degradedModeStartedAt = DateTime.now();
+    _setSyncState(ChatSyncState.delayed, reason: 'degraded-enter:$reason');
+    AppLogger.warn(
+      'sync_degraded_entered reason=$reason interval=${_degradedPollingInterval.inSeconds}s',
+    );
+    _degradedPollingTimer?.cancel();
+    _degradedPollingTimer = Timer.periodic(_degradedPollingInterval, (_) {
+      unawaited(_runDegradedScopedSync(reason: 'degraded-periodic'));
+    });
+    unawaited(_runDegradedScopedSync(reason: 'degraded-enter'));
+  }
+
+  void _exitDegradedMode({required String reason}) {
+    if (!_degradedMode) {
+      return;
+    }
+    _degradedMode = false;
+    final startedAt = _degradedModeStartedAt;
+    _degradedModeStartedAt = null;
+    _degradedPollingTimer?.cancel();
+    _degradedPollingTimer = null;
+    final durationSeconds = startedAt == null
+        ? null
+        : DateTime.now().difference(startedAt).inSeconds;
+    AppLogger.info(
+      'sync_degraded_recovered reason=$reason duration_s=${durationSeconds ?? 0}',
+    );
+  }
+
+  Future<void> _pauseRealtimeSubscriptions() async {
+    _eventStreamGeneration += 1;
+    await _cancelSubscriptionSafely(
+      _eventSubscription,
+      label: 'realtime event',
+    );
+    await _cancelSubscriptionSafely(
+      _globalEventSubscription,
+      label: 'global event',
+    );
+    _eventSubscription = null;
+    _globalEventSubscription = null;
+  }
+
+  Future<void> _loadPendingInteractions() async {
+    final directory = projectProvider.currentDirectory;
+
+    final permissionsResult = await listPendingPermissions(
+      directory: directory,
+    );
+    permissionsResult.fold(
+      (failure) {
+        AppLogger.warn('Failed to load pending permissions: $failure');
+      },
+      (permissions) {
+        final grouped = <String, List<ChatPermissionRequest>>{};
+        for (final item in permissions) {
+          grouped
+              .putIfAbsent(item.sessionId, () => <ChatPermissionRequest>[])
+              .add(item);
+        }
+        _pendingPermissionsBySession = grouped;
+      },
+    );
+
+    final questionsResult = await listPendingQuestions(directory: directory);
+    questionsResult.fold(
+      (failure) {
+        AppLogger.warn('Failed to load pending questions: $failure');
+      },
+      (questions) {
+        final grouped = <String, List<ChatQuestionRequest>>{};
+        for (final item in questions) {
+          grouped
+              .putIfAbsent(item.sessionId, () => <ChatQuestionRequest>[])
+              .add(item);
+        }
+        _pendingQuestionsBySession = grouped;
+      },
+    );
+
+    _notifyListeners();
+  }
+
+  void _upsertSession(ChatSession session) {
+    final existingIndex = _sessions.indexWhere((item) => item.id == session.id);
+    if (existingIndex == -1) {
+      _sessions.add(session);
+      _sortSessionsInPlace();
+      return;
+    }
+    _sessions[existingIndex] = session;
+    _sortSessionsInPlace();
+  }
+
+  void _removeSessionById(String sessionId) {
+    _sessions.removeWhere((item) => item.id == sessionId);
+    _removeSessionSelectionOverride(sessionId);
+    _pendingRenameTitleBySessionId.remove(sessionId);
+    _autoTitleConsolidatedSessionIds.remove(sessionId);
+    _autoTitleLastSignatureBySessionId.remove(sessionId);
+    _autoTitleInFlightSessionIds.remove(sessionId);
+    _autoTitleQueuedSessionIds.remove(sessionId);
+    if (_currentSession?.id == sessionId) {
+      _currentSession = _sessions.firstOrNull;
+      _messages = <ChatMessage>[];
+      _pendingLocalUserMessageIds.clear();
+      _applySelectionPriorityForCurrentSession();
+    }
+    _sessionStatusById.remove(sessionId);
+    _pendingPermissionsBySession.remove(sessionId);
+    _pendingQuestionsBySession.remove(sessionId);
+    _sessionChildrenById.remove(sessionId);
+    _sessionTodoById.remove(sessionId);
+    _sessionDiffById.remove(sessionId);
+  }
+
+  bool _isEphemeralTitleEvent(ChatEvent event) {
+    final props = event.properties;
+    final sessionId = _extractEventSessionId(props);
+    if (sessionId != null &&
+        ChatTitleGenerator.ephemeralSessionIds.contains(sessionId)) {
+      return true;
+    }
+    // Fallback: check session title in event payload (covers race condition).
+    final info = props['info'];
+    if (info is Map<String, dynamic>) {
+      final title = info['title'] as String?;
+      if (title == ChatTitleGenerator.ephemeralSessionTitle) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  String? _extractEventSessionId(Map<String, dynamic> properties) {
+    final direct = properties['sessionID']?.toString().trim();
+    if (direct != null && direct.isNotEmpty) {
+      return direct;
+    }
+    final info = properties['info'];
+    if (info is Map) {
+      final nested = info['sessionID']?.toString().trim();
+      if (nested != null && nested.isNotEmpty) {
+        return nested;
+      }
+      final nestedId = info['id']?.toString().trim();
+      if (nestedId != null && nestedId.isNotEmpty) {
+        return nestedId;
+      }
+    }
+    return null;
+  }
+
+  String? _sessionTitleForNotification(String? sessionId) {
+    if (sessionId == null || sessionId.isEmpty) {
+      return null;
+    }
+    final session = _sessionById(sessionId);
+    if (session == null) {
+      return null;
+    }
+    return SessionTitleFormatter.displayTitle(
+      time: session.time,
+      title: session.title,
+    );
+  }
+
+  String? _extractDirectoryFromEvent(ChatEvent event) {
+    final properties = event.properties;
+    final direct = properties['directory'] as String?;
+    if (direct != null && direct.trim().isNotEmpty) {
+      return direct.trim();
+    }
+
+    final info = properties['info'];
+    if (info is Map<String, dynamic>) {
+      final value = info['directory'] as String?;
+      if (value != null && value.trim().isNotEmpty) {
+        return value.trim();
+      }
+    }
+
+    final session = properties['session'];
+    if (session is Map<String, dynamic>) {
+      final value = session['directory'] as String?;
+      if (value != null && value.trim().isNotEmpty) {
+        return value.trim();
+      }
+    }
+
+    final project = properties['project'];
+    if (project is Map<String, dynamic>) {
+      final value = project['directory'] as String?;
+      if (value != null && value.trim().isNotEmpty) {
+        return value.trim();
+      }
+    }
+
+    return null;
+  }
+
+  Future<void> _clearPersistedContextCache(String contextKey) async {
+    final serverId = _serverIdFromContextKey(contextKey);
+    final scopeId = _scopeIdFromContextKey(contextKey);
+    if (serverId == null || scopeId == null) {
+      return;
+    }
+    await localDataSource.clearChatContextCache(
+      serverId: serverId,
+      scopeId: scopeId,
+    );
+  }
+}
