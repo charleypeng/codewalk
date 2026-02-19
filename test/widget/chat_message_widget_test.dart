@@ -1,5 +1,6 @@
 import 'package:codewalk/domain/entities/chat_message.dart';
 import 'package:codewalk/presentation/widgets/chat_message_widget.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -273,7 +274,7 @@ void main() {
         theme: ThemeData(platform: TargetPlatform.windows),
         home: Scaffold(
           body: ChatMessageWidget(
-            message: UserMessage(
+            message: AssistantMessage(
               id: 'msg_7',
               sessionId: 'ses_7',
               time: DateTime.fromMillisecondsSinceEpoch(1000),
@@ -304,6 +305,8 @@ void main() {
           widget.onDoubleTap != null,
     );
     final detector = tester.widget<GestureDetector>(backgroundDetectorFinder);
+    expect(detector.supportedDevices, contains(PointerDeviceKind.mouse));
+    expect(detector.supportedDevices, isNot(contains(PointerDeviceKind.touch)));
     detector.onDoubleTap?.call();
     await tester.pump(const Duration(milliseconds: 300));
 
@@ -318,7 +321,7 @@ void main() {
         theme: ThemeData(platform: TargetPlatform.android),
         home: Scaffold(
           body: ChatMessageWidget(
-            message: UserMessage(
+            message: AssistantMessage(
               id: 'msg_9',
               sessionId: 'ses_9',
               time: DateTime.fromMillisecondsSinceEpoch(1000),
@@ -349,7 +352,7 @@ void main() {
     expect(find.text('Copied to clipboard'), findsNothing);
   });
 
-  testWidgets('double tap on text does not trigger background copy', (
+  testWidgets('user message does not register background double tap copy', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
@@ -357,16 +360,16 @@ void main() {
         theme: ThemeData(platform: TargetPlatform.windows),
         home: Scaffold(
           body: ChatMessageWidget(
-            message: AssistantMessage(
-              id: 'msg_8',
-              sessionId: 'ses_8',
+            message: UserMessage(
+              id: 'msg_user_no_double_tap',
+              sessionId: 'ses_user_no_double_tap',
               time: DateTime.fromMillisecondsSinceEpoch(1000),
               parts: const <MessagePart>[
                 TextPart(
-                  id: 'part_text_8',
-                  messageId: 'msg_8',
-                  sessionId: 'ses_8',
-                  text: 'Word selection should win',
+                  id: 'part_text_user_no_double_tap',
+                  messageId: 'msg_user_no_double_tap',
+                  sessionId: 'ses_user_no_double_tap',
+                  text: 'User text',
                 ),
               ],
             ),
@@ -375,13 +378,113 @@ void main() {
       ),
     );
 
-    final textFinder = find.text('Word selection should win');
-    await tester.tap(textFinder);
-    await tester.pump(const Duration(milliseconds: 40));
-    await tester.tap(textFinder);
-    await tester.pump(const Duration(milliseconds: 300));
+    final backgroundDetectorFinder = find.byWidgetPredicate(
+      (widget) =>
+          widget is GestureDetector &&
+          widget.behavior == HitTestBehavior.opaque &&
+          widget.onDoubleTap != null,
+    );
+    expect(backgroundDetectorFinder, findsNothing);
+  });
 
-    expect(find.text('Copied to clipboard'), findsNothing);
+  testWidgets(
+    'double tap on text with touch does not trigger background copy',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(platform: TargetPlatform.windows),
+          home: Scaffold(
+            body: ChatMessageWidget(
+              message: AssistantMessage(
+                id: 'msg_8',
+                sessionId: 'ses_8',
+                time: DateTime.fromMillisecondsSinceEpoch(1000),
+                parts: const <MessagePart>[
+                  TextPart(
+                    id: 'part_text_8',
+                    messageId: 'msg_8',
+                    sessionId: 'ses_8',
+                    text: 'Word selection should win',
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final textFinder = find.text('Word selection should win');
+      await tester.tap(textFinder);
+      await tester.pump(const Duration(milliseconds: 40));
+      await tester.tap(textFinder);
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('Copied to clipboard'), findsNothing);
+    },
+  );
+
+  testWidgets('touch hold callback stays scoped to user messages', (
+    WidgetTester tester,
+  ) async {
+    var userLongPressCount = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            onBackgroundLongPress: () {
+              userLongPressCount += 1;
+            },
+            message: UserMessage(
+              id: 'msg_user_hold',
+              sessionId: 'ses_user_hold',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_text_user_hold',
+                  messageId: 'msg_user_hold',
+                  sessionId: 'ses_user_hold',
+                  text: 'Press and hold me',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.longPress(find.text('Press and hold me'));
+    await tester.pumpAndSettle();
+    expect(userLongPressCount, 1);
+
+    var assistantLongPressCount = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            onBackgroundLongPress: () {
+              assistantLongPressCount += 1;
+            },
+            message: AssistantMessage(
+              id: 'msg_assistant_hold',
+              sessionId: 'ses_assistant_hold',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_text_assistant_hold',
+                  messageId: 'msg_assistant_hold',
+                  sessionId: 'ses_assistant_hold',
+                  text: 'Assistant should stay selectable',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.longPress(find.text('Assistant should stay selectable'));
+    await tester.pumpAndSettle();
+    expect(assistantLongPressCount, 0);
   });
 
   testWidgets('tool completed output starts collapsed and can expand', (

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
@@ -58,6 +59,8 @@ class ChatMessageWidget extends StatelessWidget {
         .whereType<ReasoningPart>()
         .lastOrNull
         ?.id;
+    final copyText = isUser ? '' : _composeMessageCopyText(message);
+    final allowDesktopDoubleTapCopy = copyText.isNotEmpty;
 
     if (!hasVisibleContent && !hasVisibleError) {
       return const SizedBox.shrink();
@@ -78,8 +81,8 @@ class ChatMessageWidget extends StatelessWidget {
           child: _BubbleTouchHoldLayer(
             borderRadius: bubbleBorderRadius,
             flashColor: colorScheme.primary.withValues(alpha: 0.16),
-            onLongPress: onBackgroundLongPress,
-            onLongPressRelease: onBackgroundLongPressEnd,
+            onLongPress: isUser ? onBackgroundLongPress : null,
+            onLongPressRelease: isUser ? onBackgroundLongPressEnd : null,
             child: Container(
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
               decoration: BoxDecoration(
@@ -93,17 +96,19 @@ class ChatMessageWidget extends StatelessWidget {
               ),
               child: Stack(
                 children: [
-                  Positioned.fill(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onDoubleTap: () {
-                        final copyText = _composeMessageCopyText(message);
-                        if (copyText.isNotEmpty) {
-                          _copyTextToClipboard(context, copyText);
-                        }
-                      },
+                  if (allowDesktopDoubleTapCopy)
+                    Positioned.fill(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        supportedDevices: const <PointerDeviceKind>{
+                          PointerDeviceKind.mouse,
+                          PointerDeviceKind.stylus,
+                          PointerDeviceKind.invertedStylus,
+                        },
+                        onDoubleTap: () =>
+                            _copyTextToClipboard(context, copyText),
+                      ),
                     ),
-                  ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -2261,6 +2266,12 @@ class _BubbleTouchHoldLayerState extends State<_BubbleTouchHoldLayer> {
   bool _longPressTriggered = false;
   bool _isFlashing = false;
 
+  bool _isTouchLikePointer(PointerEvent event) {
+    return event.kind == PointerDeviceKind.touch ||
+        event.kind == PointerDeviceKind.stylus ||
+        event.kind == PointerDeviceKind.invertedStylus;
+  }
+
   @override
   void dispose() {
     _holdTimer?.cancel();
@@ -2269,7 +2280,7 @@ class _BubbleTouchHoldLayerState extends State<_BubbleTouchHoldLayer> {
   }
 
   void _handlePointerDown(PointerDownEvent event) {
-    if (widget.onLongPress == null) {
+    if (widget.onLongPress == null || !_isTouchLikePointer(event)) {
       return;
     }
     _holdTimer?.cancel();
