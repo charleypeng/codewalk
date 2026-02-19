@@ -19,23 +19,13 @@ import '../services/speech_input_service_stt.dart';
 import '../providers/settings_provider.dart';
 import 'sherpa_model_download_dialog.dart';
 
+part 'chat_input_widget_types_part.dart';
+
 enum ChatComposerMode { normal, shell }
 
 enum ChatComposerSuggestionType { file, agent }
 
 enum ChatComposerPopoverType { none, mention, slash }
-
-class _SpeechServiceResolution {
-  const _SpeechServiceResolution({
-    required this.service,
-    required this.engine,
-    required this.usedFallback,
-  });
-
-  final SpeechInputService service;
-  final SpeechToTextEngine engine;
-  final bool usedFallback;
-}
 
 class ChatInputController {
   _ChatInputWidgetState? _state;

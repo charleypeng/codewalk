@@ -41,57 +41,7 @@ import '../widgets/session_title_inline_editor.dart';
 import '../widgets/session_todo_list_widget.dart';
 import 'settings_page.dart';
 
-class _NewSessionIntent extends Intent {
-  const _NewSessionIntent();
-}
-
-class _RefreshIntent extends Intent {
-  const _RefreshIntent();
-}
-
-class _FocusInputIntent extends Intent {
-  const _FocusInputIntent();
-}
-
-class _QuickOpenIntent extends Intent {
-  const _QuickOpenIntent();
-}
-
-class _OpenSettingsIntent extends Intent {
-  const _OpenSettingsIntent();
-}
-
-class _CycleRecentModelsIntent extends Intent {
-  const _CycleRecentModelsIntent();
-}
-
-class _CycleVariantIntent extends Intent {
-  const _CycleVariantIntent();
-}
-
-class _EscapeIntent extends Intent {
-  const _EscapeIntent();
-}
-
-class _CycleAgentIntent extends Intent {
-  const _CycleAgentIntent({this.reverse = false});
-
-  final bool reverse;
-}
-
-class _ModelSelectorEntry {
-  const _ModelSelectorEntry({
-    required this.providerId,
-    required this.providerName,
-    required this.modelId,
-    required this.modelName,
-  });
-
-  final String providerId;
-  final String providerName;
-  final String modelId;
-  final String modelName;
-}
+part 'chat_page_types_part.dart';
 
 enum _ContextUsageAction { compactNow }
 
@@ -100,20 +50,6 @@ enum _DisplayToggleAction {
   toolCallBubbles,
   taskList,
   composerTips,
-}
-
-class _SessionContextUsageSnapshot {
-  const _SessionContextUsageSnapshot({
-    required this.usagePercent,
-    required this.totalTokens,
-    required this.totalCost,
-    required this.modelLimit,
-  });
-
-  final int usagePercent;
-  final int totalTokens;
-  final double totalCost;
-  final int? modelLimit;
 }
 
 /// Chat page

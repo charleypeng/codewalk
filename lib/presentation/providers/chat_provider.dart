@@ -47,6 +47,9 @@ import '../services/event_feedback_dispatcher.dart';
 import '../utils/session_title_formatter.dart';
 import 'project_provider.dart';
 
+part 'chat_provider_draft_part.dart';
+part 'chat_provider_types_part.dart';
+
 /// Chat state
 enum ChatState { initial, loading, loaded, error, sending }
 
@@ -66,139 +69,6 @@ enum SessionListFilter { active, archived, all }
 enum SessionListSort { recent, oldest, title }
 
 enum ChatUiNoticeType { remoteAbort }
-
-class ChatUiNotice {
-  const ChatUiNotice({
-    required this.id,
-    required this.type,
-    required this.message,
-    this.actionLabel,
-  });
-
-  final int id;
-  final ChatUiNoticeType type;
-  final String message;
-  final String? actionLabel;
-
-  bool get hasAction => actionLabel != null && actionLabel!.trim().isNotEmpty;
-}
-
-class _RejectedDraftEnvelope {
-  const _RejectedDraftEnvelope({required this.sessionId, required this.draft});
-
-  final String sessionId;
-  final ChatComposerDraft draft;
-}
-
-class _ChatContextSnapshot {
-  const _ChatContextSnapshot({
-    required this.sessions,
-    required this.currentSession,
-    required this.messages,
-    required this.sessionStatusById,
-    required this.pendingPermissionsBySession,
-    required this.pendingQuestionsBySession,
-    required this.sessionChildrenById,
-    required this.sessionTodoById,
-    required this.sessionDiffById,
-    required this.sessionSearchQuery,
-    required this.sessionListFilter,
-    required this.sessionListSort,
-    required this.sessionVisibleLimit,
-  });
-
-  final List<ChatSession> sessions;
-  final ChatSession? currentSession;
-  final List<ChatMessage> messages;
-  final Map<String, SessionStatusInfo> sessionStatusById;
-  final Map<String, List<ChatPermissionRequest>> pendingPermissionsBySession;
-  final Map<String, List<ChatQuestionRequest>> pendingQuestionsBySession;
-  final Map<String, List<ChatSession>> sessionChildrenById;
-  final Map<String, List<SessionTodo>> sessionTodoById;
-  final Map<String, List<SessionDiff>> sessionDiffById;
-  final String sessionSearchQuery;
-  final SessionListFilter sessionListFilter;
-  final SessionListSort sessionListSort;
-  final int sessionVisibleLimit;
-}
-
-class _AutoTitleCandidateMessage {
-  const _AutoTitleCandidateMessage({
-    required this.id,
-    required this.role,
-    required this.text,
-  });
-
-  final String id;
-  final MessageRole role;
-  final String text;
-}
-
-class _AutoTitleSnapshot {
-  const _AutoTitleSnapshot({
-    required this.messages,
-    required this.signature,
-    required this.userCount,
-    required this.assistantCount,
-  });
-
-  final List<_AutoTitleCandidateMessage> messages;
-  final String signature;
-  final int userCount;
-  final int assistantCount;
-
-  bool get isConsolidated => userCount >= 3 && assistantCount >= 3;
-}
-
-class _RemoteChatSelection {
-  const _RemoteChatSelection({
-    this.providerId,
-    this.modelId,
-    this.agentName,
-    this.variantByAgentAndModel = const <String, Map<String, String>>{},
-    this.sessionOverridesBySessionId =
-        const <String, _SessionSelectionOverride>{},
-  });
-
-  final String? providerId;
-  final String? modelId;
-  final String? agentName;
-  final Map<String, Map<String, String>> variantByAgentAndModel;
-  final Map<String, _SessionSelectionOverride> sessionOverridesBySessionId;
-
-  bool get hasModel =>
-      providerId != null &&
-      providerId!.trim().isNotEmpty &&
-      modelId != null &&
-      modelId!.trim().isNotEmpty;
-
-  String? variantForModel({
-    required String agentName,
-    required String modelKey,
-  }) {
-    final byModel = variantByAgentAndModel[agentName];
-    if (byModel == null) {
-      return null;
-    }
-    return byModel[modelKey];
-  }
-}
-
-class _SessionSelectionOverride {
-  const _SessionSelectionOverride({
-    required this.providerId,
-    required this.modelId,
-    required this.agentName,
-    required this.variantId,
-    required this.updatedAtEpochMs,
-  });
-
-  final String providerId;
-  final String modelId;
-  final String agentName;
-  final String? variantId;
-  final int updatedAtEpochMs;
-}
 
 /// Chat provider
 class ChatProvider extends ChangeNotifier {
@@ -828,61 +698,6 @@ class ChatProvider extends ChangeNotifier {
   void _clearAbortSuppression() {
     _abortSuppressionSessionId = null;
     _abortSuppressionStartedAt = null;
-  }
-
-  void _setActiveSendDraft(
-    String draftText, {
-    required List<FileInputPart> attachments,
-    required bool shellMode,
-  }) {
-    _clearRejectedDraft();
-    final normalizedDraft = draftText.trim();
-    final effectiveAttachments = shellMode
-        ? const <FileInputPart>[]
-        : List<FileInputPart>.unmodifiable(attachments);
-    if (normalizedDraft.isEmpty && effectiveAttachments.isEmpty) {
-      _activeSendDraft = null;
-      return;
-    }
-    final composerText = shellMode
-        ? normalizedDraft.isEmpty
-              ? ''
-              : '!$normalizedDraft'
-        : normalizedDraft;
-    _activeSendDraft = ChatComposerDraft(
-      text: composerText,
-      attachments: effectiveAttachments,
-      shellMode: shellMode,
-    );
-  }
-
-  void _clearActiveSendDraft() {
-    _activeSendDraft = null;
-  }
-
-  void _clearRejectedDraft() {
-    _rejectedDraft = null;
-  }
-
-  void _stashRejectedDraftForRetry({String? sessionId}) {
-    final draft = _activeSendDraft;
-    _activeSendDraft = null;
-    if (draft == null || !draft.hasContent) {
-      return;
-    }
-    final effectiveSessionId = sessionId?.trim();
-    if (!_isAppInForeground ||
-        !_isForegroundActive ||
-        !_isChatRouteActive ||
-        effectiveSessionId == null ||
-        effectiveSessionId.isEmpty) {
-      _clearRejectedDraft();
-      return;
-    }
-    _rejectedDraft = _RejectedDraftEnvelope(
-      sessionId: effectiveSessionId,
-      draft: draft,
-    );
   }
 
   String _modelKey(String providerId, String modelId) {
