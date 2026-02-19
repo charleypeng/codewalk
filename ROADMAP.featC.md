@@ -1,10 +1,16 @@
 # ROADMAP.featC - Long Conversation Performance and Files Planning
 
+**Status**: Completed (2026-02-19)
+**Commits**: pending-commit
+
 ## Scope
 
-- Task 6: Keep polling when unfocused but defer rendering until visible/focused according to visibility rules.
-- Task 28: Replace Files bar hide icon with intuitive native icon.
-- Task 30: Plan line comments for opened files (OpenCode web parity planning).
+- [x] Task 6: Keep polling when unfocused but defer rendering until visible/focused according to visibility rules.
+  - Render gate implemented: `_notifyListeners` suppresses rebuilds while app in background, flush on foreground return, SSE stays alive, desktop window focus/blur handlers added.
+- [x] Task 28: Replace Files bar hide icon with intuitive native icon.
+  - Icons replaced: `visibility_off` → `left_panel_close_rounded` / `right_panel_close_rounded` (Symbols).
+- [x] Task 30: Plan line comments for opened files (OpenCode web parity planning).
+  - Planning doc created: `ROADMAP.featC.comments-plan.md`.
 
 ## Goal
 

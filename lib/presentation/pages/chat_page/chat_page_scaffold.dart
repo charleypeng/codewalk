@@ -101,7 +101,7 @@ extension _ChatPageScaffold on _ChatPageState {
                               key: const ValueKey<String>(
                                 'hide_conversations_sidebar_button',
                               ),
-                              icon: const Icon(Icons.visibility_off_outlined),
+                              icon: const Icon(Symbols.left_panel_close_rounded),
                               onPressed: onCollapseRequested,
                               tooltip: 'Hide Conversations sidebar',
                             ),
@@ -270,7 +270,7 @@ extension _ChatPageScaffold on _ChatPageState {
                 key: const ValueKey<String>('hide_utility_sidebar_button'),
                 tooltip: 'Hide Utility sidebar',
                 onPressed: onCollapseRequested,
-                icon: const Icon(Icons.visibility_off_outlined),
+                icon: const Icon(Symbols.right_panel_close_rounded),
               ),
             ),
           Card(

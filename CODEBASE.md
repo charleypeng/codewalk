@@ -62,8 +62,8 @@ lib/domain/usecases/*.dart                        # Application use cases consum
 lib/presentation/providers/app_provider.dart      # Server profiles, health polling, local runtime state
 lib/presentation/providers/project_provider.dart  # Project/worktree context selection and persistence
 lib/presentation/providers/settings_provider.dart # Experience settings, sounds, and update checks
-lib/presentation/providers/chat_provider.dart     # Chat state/realtime/session facade; microtask coalescing, event dedup buffer, favorite models
-lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade
+lib/presentation/providers/chat_provider.dart     # Chat state/realtime/session facade; microtask coalescing, event dedup buffer, render gate, favorite models
+lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade; WindowListener for desktop lifecycle
 lib/presentation/widgets/chat_input_widget.dart   # Composer/input orchestration facade
 lib/presentation/widgets/chat_message_widget.dart # Message bubble with build-skip cache, cached MarkdownStyleSheet
 ```
@@ -233,6 +233,14 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
   recent event keys built by `_composeEventDeduplicationKey` (in `chat_provider_event_reducer_ops.dart`).
   `_isRecentlyProcessedEvent` and `_tryApplyGlobalEventIncremental` use this buffer to skip
   duplicates arriving on the global SSE stream.
+- **Render gate**: `_hasPendingRenderFlush` in ChatProvider suppresses `notifyListeners()` while
+  the app is in background. SSE data keeps accumulating in internal fields, but widgets do not
+  rebuild until the app returns to foreground and flushes the pending notification via
+  `setForegroundActive(true)`.
+- **Desktop window lifecycle**: `_ChatPageState` mixes in `WindowListener` (from `window_manager`)
+  to handle focus/blur/minimize/restore on desktop platforms. These events drive
+  `_applyForegroundPolicy`, which coordinates with the ChatProvider render gate and
+  `_handleReturnToChat` to pause/resume UI rebuilds and SSE refresh on window state changes.
 - **ChatMessageWidget build-skip cache**: Converted from `StatelessWidget` to `StatefulWidget`;
   completed messages short-circuit `build()` by returning a cached widget tree.
   `MarkdownStyleSheet` is cached in `_cachedMarkdownStyleSheet` and invalidated only on

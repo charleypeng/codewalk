@@ -10,6 +10,7 @@ import 'package:flutter_highlight/themes/atom-one-dark.dart';
 import 'package:flutter_highlight/themes/github.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart' hide Provider;
+import 'package:window_manager/window_manager.dart';
 import 'package:simple_icons/simple_icons.dart';
 
 import '../../core/config/feature_flags.dart';
@@ -82,7 +83,8 @@ class ChatPage extends StatefulWidget {
   State<ChatPage> createState() => _ChatPageState();
 }
 
-class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
+class _ChatPageState extends State<ChatPage>
+    with WidgetsBindingObserver, WindowListener {
   static const double _mobileBreakpoint = 840;
   static const double _largeDesktopBreakpoint = 1200;
   static const double _filePaneBreakpoint = 1100;
@@ -215,6 +217,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     HardwareKeyboard.instance.addHandler(_handleGlobalShortcutKeyEvent);
     _scrollController.addListener(_handleScrollChanged);
+    if (_isDesktopRuntime) {
+      windowManager.addListener(this);
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadInitialData();
     });
@@ -279,6 +284,9 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
     _tipRotationTimer?.cancel();
     _scrollController.removeListener(_handleScrollChanged);
     HardwareKeyboard.instance.removeHandler(_handleGlobalShortcutKeyEvent);
+    if (_isDesktopRuntime) {
+      windowManager.removeListener(this);
+    }
     WidgetsBinding.instance.removeObserver(this);
 
     _scrollController.dispose();
@@ -296,6 +304,37 @@ class _ChatPageState extends State<ChatPage> with WidgetsBindingObserver {
       _applyForegroundPolicy(reason: 'app-lifecycle-${state.name}');
       if (_isAppInForeground) {
         _handleReturnToChat(provider, reason: 'app-resumed');
+      }
+    }
+  }
+
+  // Desktop window visibility: suppress rebuilds when minimized,
+  // resume when restored/focused. Blur (losing focus while visible) is a no-op
+  // because the window content is still on-screen.
+  @override
+  void onWindowMinimize() {
+    _isAppInForeground = false;
+    _applyForegroundPolicy(reason: 'window-minimize');
+  }
+
+  @override
+  void onWindowRestore() {
+    _isAppInForeground = true;
+    _applyForegroundPolicy(reason: 'window-restore');
+    final provider = _chatProvider;
+    if (provider != null) {
+      _handleReturnToChat(provider, reason: 'window-restore');
+    }
+  }
+
+  @override
+  void onWindowFocus() {
+    if (!_isAppInForeground) {
+      _isAppInForeground = true;
+      _applyForegroundPolicy(reason: 'window-focus');
+      final provider = _chatProvider;
+      if (provider != null) {
+        _handleReturnToChat(provider, reason: 'window-focus');
       }
     }
   }

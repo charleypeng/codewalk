@@ -486,7 +486,7 @@ extension _ChatPageFileExplorerController on _ChatPageState {
                         minHeight: 36,
                       ),
                       onPressed: onCollapseRequested,
-                      icon: const Icon(Icons.visibility_off_outlined),
+                      icon: const Icon(Symbols.left_panel_close_rounded),
                     ),
                 ],
               ),

@@ -50,7 +50,7 @@ Concluded historical features were archived to `ROADMAP.archive.done.md` to keep
 
 ### Next Recommended Feature
 
-- `featC` - `ROADMAP.featC.md` (NEXT: focus/visibility render gate + files planning)
+- `featK` - `ROADMAP.featK.md` (NEXT: first-run onboarding wizard)
 
 ### Backlog Pack Dependency Order
 
@@ -87,7 +87,7 @@ Notes:
 - [x] `featI` - `ROADMAP.featI.md` (agent/shortcut/productivity parity)
 - [x] `featF` - `ROADMAP.featF.md` (files drafting UX + duplicate/copy interaction fixes)
 - [x] `featG` - `ROADMAP.featG.md` (favorites and variant selector ergonomics)
-- [ ] `featC` - `ROADMAP.featC.md` (focus/visibility render gate + files planning)
+- [x] `featC` - `ROADMAP.featC.md` (focus/visibility render gate + files planning)
 - [x] `featJ` - `ROADMAP.featJ.md` (speech-to-text platform matrix)
 - [ ] `featK` - `ROADMAP.featK.md` (first-run onboarding wizard)
 - [ ] `featM` - `ROADMAP.featM.md` (Icons to Material Symbols migration)
@@ -119,11 +119,17 @@ Implemented multi-pass scroll-to-bottom algorithm (up to 6 passes with 1px epsil
 **Commits**: a5b4b9d, 73f3f26
 **ADR**: ADR-028
 
-#### `featC` Focus/visibility gate and Files planning
+#### `featC` Focus/visibility gate and Files planning ✅
 
-- [ ] Quando a janela perder foco, continuar recebendo pooling mas não renderizar novas mensagens até a tela ganhar foco novamente para evitar desgaste de eficiencia. Porém somente quando estiver fora e foco e nao visivel pois o usuario pode estar olhando mesmo sem foco (desktop, tablets etc)
-- [ ] Na barra 'Files' tem um ícone de olho cortado pra ocultar a barra, trocar para algo mais intuitivo como um ícone estilo <| (encontre um ícone nativo)
-- [ ] Criar planejamento para os arquivos abertos em Files permitir comentar linhas igual no OpenCode web
+**Status**: Completed (2026-02-19)
+
+Render gate implemented: `_notifyListeners` suppresses rebuilds while app in background, flush on foreground return, SSE stays alive, desktop window focus/blur handlers added. Files bar icons replaced: `visibility_off` → `left_panel_close_rounded` / `right_panel_close_rounded` (Symbols). File comments planning doc created: `ROADMAP.featC.comments-plan.md`.
+
+- [x] Quando a janela perder foco, continuar recebendo pooling mas não renderizar novas mensagens até a tela ganhar foco novamente para evitar desgaste de eficiencia. Porém somente quando estiver fora e foco e nao visivel pois o usuario pode estar olhando mesmo sem foco (desktop, tablets etc)
+- [x] Na barra 'Files' tem um ícone de olho cortado pra ocultar a barra, trocar para algo mais intuitivo como um ícone estilo <| (encontre um ícone nativo)
+- [x] Criar planejamento para os arquivos abertos em Files permitir comentar linhas igual no OpenCode web
+
+**Commits**: pending-commit
 
 #### `featD` Thinking and tool UX polish
 

@@ -301,7 +301,16 @@ class ChatProvider extends ChangeNotifier {
   // during streaming (where 5+ event types fire per tick).
   bool _notifyScheduled = false;
 
+  // Render gate: suppress UI rebuilds while app is in background.
+  // SSE data keeps accumulating in internal fields, but widgets won't rebuild
+  // until the app returns to foreground and flushes the pending notification.
+  bool _hasPendingRenderFlush = false;
+
   void _notifyListeners() {
+    if (!_isForegroundActive) {
+      _hasPendingRenderFlush = true;
+      return;
+    }
     if (_notifyScheduled) return;
     _notifyScheduled = true;
     scheduleMicrotask(() {
@@ -682,19 +691,26 @@ class ChatProvider extends ChangeNotifier {
     if (!isActive) {
       _clearRejectedDraft();
     }
+
+    if (isActive && _hasPendingRenderFlush) {
+      // Flush accumulated state changes suppressed while in background.
+      _hasPendingRenderFlush = false;
+      _notifyListeners();
+    }
+
     if (!_refreshlessRealtimeEnabled) {
       return;
     }
 
     if (!isActive) {
+      // Pause health/degraded timers (UI-only concerns) but keep SSE alive
+      // so data accumulates in internal fields for flush on foreground return.
       _syncHealthTimer?.cancel();
       _syncHealthTimer = null;
       _degradedPollingTimer?.cancel();
       _degradedPollingTimer = null;
       _degradedMode = false;
       _degradedModeStartedAt = null;
-      _setSyncState(ChatSyncState.reconnecting, reason: 'app-background');
-      await _pauseRealtimeSubscriptions();
       return;
     }
 
