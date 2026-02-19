@@ -83,6 +83,16 @@ if(TARGET tray_manager_plugin)
   )
 endif()
 
+# Clang warns on legacy nlohmann/json UDL whitespace used by
+# flutter_secure_storage_linux's vendored header; keep -Werror globally and
+# relax this single warning class only for this plugin target.
+if(TARGET flutter_secure_storage_linux_plugin AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  target_compile_options(
+    flutter_secure_storage_linux_plugin
+    PRIVATE -Wno-error=deprecated-literal-operator
+  )
+endif()
+
 
 # === Installation ===
 # By default, "installing" just makes a relocatable bundle in the build

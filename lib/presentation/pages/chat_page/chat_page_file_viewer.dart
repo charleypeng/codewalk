@@ -1,6 +1,8 @@
 part of '../chat_page.dart';
 
 extension _ChatPageFileViewer on _ChatPageState {
+  static const int _maxHighlightedFileLength = 160000;
+
   Widget _buildFileViewerPanel({
     required _FileExplorerContextState fileState,
     required ProjectProvider projectProvider,
@@ -152,24 +154,10 @@ extension _ChatPageFileViewer on _ChatPageState {
                     case _FileTabLoadStatus.empty:
                       return const Center(child: Text('File is empty.'));
                     case _FileTabLoadStatus.ready:
-                      return SelectionArea(
-                        child: SingleChildScrollView(
-                          key: ValueKey<String>(
-                            'file_viewer_scroll_${_normalizeFilePath(activePath)}',
-                          ),
-                          padding: const EdgeInsets.all(12),
-                          child: Text(
-                            active.content,
-                            key: const ValueKey<String>(
-                              'file_viewer_content_text',
-                            ),
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  fontFamily: 'monospace',
-                                  height: 1.4,
-                                ),
-                          ),
-                        ),
+                      return _buildFileViewerContent(
+                        path: activePath,
+                        content: active.content,
+                        mimeType: active.mimeType,
                       );
                   }
                 },
@@ -179,5 +167,176 @@ extension _ChatPageFileViewer on _ChatPageState {
         ),
       ),
     );
+  }
+
+  Widget _buildFileViewerContent({
+    required String path,
+    required String content,
+    String? mimeType,
+  }) {
+    final normalizedPath = _normalizeFilePath(path);
+    final textStyle = Theme.of(
+      context,
+    ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace', height: 1.4);
+
+    final codeWidget = content.length <= _maxHighlightedFileLength
+        ? KeyedSubtree(
+            key: ValueKey<String>(
+              'file_viewer_content_highlight_${_normalizeFilePath(path)}',
+            ),
+            child: HighlightView(
+              content,
+              language: _resolveHighlightLanguage(
+                path: path,
+                mimeType: mimeType,
+              ),
+              theme: _resolveHighlightTheme(context),
+              textStyle: textStyle,
+            ),
+          )
+        : Text(
+            content,
+            key: const ValueKey<String>('file_viewer_content_text_fallback'),
+            style: textStyle,
+          );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final minWidth = constraints.maxWidth.isFinite
+            ? (constraints.maxWidth - 24).clamp(0.0, double.infinity)
+            : 0.0;
+        return SelectionArea(
+          child: SingleChildScrollView(
+            key: ValueKey<String>('file_viewer_scroll_$normalizedPath'),
+            padding: const EdgeInsets.all(12),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: minWidth),
+                child: codeWidget,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Map<String, TextStyle> _resolveHighlightTheme(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final baseTheme = Theme.of(context).brightness == Brightness.dark
+        ? atomOneDarkTheme
+        : githubTheme;
+    final rootStyle = (baseTheme['root'] ?? const TextStyle()).copyWith(
+      color: colorScheme.onSurface,
+      backgroundColor: Colors.transparent,
+    );
+    return <String, TextStyle>{...baseTheme, 'root': rootStyle};
+  }
+
+  String _resolveHighlightLanguage({required String path, String? mimeType}) {
+    final normalizedPath = _normalizeFilePath(path).toLowerCase();
+    final fileName = _fileNameFromPath(normalizedPath);
+    final extension = _fileExtension(fileName);
+    final normalizedMimeType = (mimeType ?? '').toLowerCase();
+
+    if (normalizedMimeType.contains('json')) {
+      return 'json';
+    }
+    if (normalizedMimeType.contains('yaml')) {
+      return 'yaml';
+    }
+    if (normalizedMimeType.contains('xml')) {
+      return 'xml';
+    }
+    if (normalizedMimeType.contains('markdown')) {
+      return 'markdown';
+    }
+    if (normalizedMimeType.contains('sql')) {
+      return 'sql';
+    }
+
+    switch (fileName) {
+      case 'dockerfile':
+        return 'dockerfile';
+      case 'makefile':
+        return 'makefile';
+      case '.bashrc':
+      case '.bash_profile':
+      case '.bash_aliases':
+      case '.zshrc':
+      case '.zprofile':
+      case '.zshenv':
+      case '.profile':
+        return 'bash';
+    }
+
+    switch (extension) {
+      case 'dart':
+        return 'dart';
+      case 'js':
+      case 'mjs':
+      case 'cjs':
+      case 'jsx':
+        return 'javascript';
+      case 'ts':
+      case 'mts':
+      case 'cts':
+      case 'tsx':
+        return 'typescript';
+      case 'json':
+        return 'json';
+      case 'yaml':
+      case 'yml':
+        return 'yaml';
+      case 'md':
+      case 'mdx':
+        return 'markdown';
+      case 'sh':
+      case 'ash':
+      case 'bash':
+      case 'zsh':
+        return 'bash';
+      case 'py':
+        return 'python';
+      case 'go':
+        return 'go';
+      case 'rs':
+        return 'rust';
+      case 'java':
+        return 'java';
+      case 'kt':
+      case 'kts':
+        return 'kotlin';
+      case 'swift':
+        return 'swift';
+      case 'php':
+        return 'php';
+      case 'rb':
+        return 'ruby';
+      case 'sql':
+        return 'sql';
+      case 'html':
+      case 'htm':
+      case 'xml':
+      case 'svg':
+        return 'xml';
+      case 'css':
+        return 'css';
+      case 'scss':
+        return 'scss';
+      case 'less':
+        return 'less';
+      case 'toml':
+      case 'ini':
+      case 'cfg':
+      case 'conf':
+      case 'properties':
+        return 'ini';
+      case 'vue':
+        return 'vue';
+      default:
+        return 'plaintext';
+    }
   }
 }

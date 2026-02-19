@@ -232,20 +232,120 @@ extension _ChatProviderMessageStateOps on ChatProvider {
   }
 
   String _normalizedUserMessageSignature(UserMessage message) {
-    final textSignature = message.parts
+    final textSignature = _normalizedUserTextSignature(message);
+    final fileSignature = _normalizedUserFileSignature(message);
+    if (fileSignature.isEmpty) {
+      return textSignature;
+    }
+    if (textSignature.isEmpty) {
+      return fileSignature;
+    }
+    return '$textSignature\n$fileSignature'.trim();
+  }
+
+  String _normalizedUserTextSignature(UserMessage message) {
+    return message.parts
         .whereType<TextPart>()
         .map((part) => part.text.trim())
         .where((text) => text.isNotEmpty)
         .join('\n');
-    final fileSignature = message.parts
-        .whereType<FilePart>()
-        .map((part) => '${part.mime.trim()}|${part.url.trim()}')
-        .where((value) => value.isNotEmpty)
-        .join('\n');
-    if (fileSignature.isEmpty) {
-      return textSignature;
+  }
+
+  String _normalizedUserFileSignature(UserMessage message) {
+    final fileSignatures =
+        message.parts
+            .whereType<FilePart>()
+            .map(_normalizedFilePartSignature)
+            .where((value) => value.isNotEmpty)
+            .toList(growable: false)
+          ..sort();
+    if (fileSignatures.isNotEmpty) {
+      return fileSignatures.join('\n');
     }
-    return '$textSignature\n$fileSignature'.trim();
+    return _normalizedUserFileMimeSignature(message);
+  }
+
+  String _normalizedUserFileMimeSignature(UserMessage message) {
+    final mimeSignatures =
+        message.parts
+            .whereType<FilePart>()
+            .map((part) => part.mime.trim().toLowerCase())
+            .where((value) => value.isNotEmpty)
+            .toList(growable: false)
+          ..sort();
+    return mimeSignatures.join('\n');
+  }
+
+  String _normalizedFilePartSignature(FilePart part) {
+    final mime = part.mime.trim().toLowerCase();
+    final sourcePath = (part.fileSource?.path ?? part.symbolSource?.path ?? '')
+        .trim();
+    final normalizedSourcePath = sourcePath.toLowerCase();
+    final normalizedFilename = (part.filename ?? '').trim().toLowerCase();
+    final normalizedUrlHint = _normalizedFileUrlHint(part.url);
+    final reference = normalizedSourcePath.isNotEmpty
+        ? normalizedSourcePath
+        : normalizedFilename.isNotEmpty
+        ? normalizedFilename
+        : normalizedUrlHint;
+    if (mime.isEmpty && reference.isEmpty) {
+      return '';
+    }
+    return '$mime|$reference';
+  }
+
+  String _normalizedFileUrlHint(String url) {
+    final normalized = url.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return '';
+    }
+    if (normalized.startsWith('data:')) {
+      final delimiter = normalized.indexOf(';');
+      final commaDelimiter = normalized.indexOf(',');
+      final endIndex = switch ((delimiter, commaDelimiter)) {
+        (>= 0, >= 0) => delimiter < commaDelimiter ? delimiter : commaDelimiter,
+        (>= 0, _) => delimiter,
+        (_, >= 0) => commaDelimiter,
+        _ => normalized.length,
+      };
+      return normalized.substring(0, endIndex);
+    }
+
+    final parsed = Uri.tryParse(normalized);
+    if (parsed == null) {
+      return normalized;
+    }
+    if (parsed.pathSegments.isNotEmpty) {
+      final basename = parsed.pathSegments.last.trim();
+      if (basename.isNotEmpty) {
+        return basename;
+      }
+    }
+    final withoutQuery = parsed.replace(query: '', fragment: '').toString();
+    return withoutQuery.trim();
+  }
+
+  bool _isLikelyPendingLocalUserMatch({
+    required UserMessage pending,
+    required UserMessage incoming,
+  }) {
+    final pendingText = _normalizedUserTextSignature(pending);
+    final incomingText = _normalizedUserTextSignature(incoming);
+    if (pendingText != incomingText) {
+      return false;
+    }
+
+    final pendingFileCount = pending.parts.whereType<FilePart>().length;
+    final incomingFileCount = incoming.parts.whereType<FilePart>().length;
+    if (pendingFileCount == 0 || incomingFileCount == 0) {
+      return false;
+    }
+    if (pendingFileCount != incomingFileCount) {
+      return false;
+    }
+
+    return _normalizedUserFileMimeSignature(pending) ==
+        _normalizedUserFileMimeSignature(incoming);
   }
 
   int _findPendingLocalUserMessageIndex(UserMessage incoming) {
@@ -267,7 +367,12 @@ extension _ChatProviderMessageStateOps on ChatProvider {
       }
       final currentSignature = _normalizedUserMessageSignature(current);
       if (currentSignature != incomingSignature) {
-        continue;
+        if (!_isLikelyPendingLocalUserMatch(
+          pending: current,
+          incoming: incoming,
+        )) {
+          continue;
+        }
       }
       final delta = incoming.time.difference(current.time).abs();
       if (delta > const Duration(minutes: 5)) {

@@ -29,6 +29,19 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
 
     _pendingLocalUserMessageIds.removeWhere(existingIds.contains);
 
+    for (final serverMessage in serverMessages) {
+      if (serverMessage is! UserMessage) {
+        continue;
+      }
+      final pendingLocalIndex = _findPendingLocalUserMessageIndex(
+        serverMessage,
+      );
+      if (pendingLocalIndex == -1) {
+        continue;
+      }
+      _pendingLocalUserMessageIds.remove(_messages[pendingLocalIndex].id);
+    }
+
     if (_pendingLocalUserMessageIds.isEmpty) {
       return merged;
     }

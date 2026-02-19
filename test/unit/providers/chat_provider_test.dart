@@ -2879,6 +2879,74 @@ void main() {
     );
 
     test(
+      'sendMessage dedupes optimistic attachment message when server file URL differs',
+      () async {
+        final now = DateTime.now();
+        final serverUserMessage = UserMessage(
+          id: 'msg_server_user_attachment_1',
+          sessionId: 'ses_1',
+          time: now.add(const Duration(seconds: 1)),
+          parts: const <MessagePart>[
+            FilePart(
+              id: 'prt_user_server_file_1',
+              messageId: 'msg_server_user_attachment_1',
+              sessionId: 'ses_1',
+              url: 'file:///tmp/uploaded/image.png',
+              mime: 'image/png',
+              filename: 'image.png',
+            ),
+          ],
+        );
+        final assistantCompleted = AssistantMessage(
+          id: 'msg_assistant_attachment_dedupe',
+          sessionId: 'ses_1',
+          time: now.add(const Duration(seconds: 2)),
+          completedTime: now.add(const Duration(seconds: 3)),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'prt_assistant_attachment_dedupe',
+              messageId: 'msg_assistant_attachment_dedupe',
+              sessionId: 'ses_1',
+              text: 'attachment dedupe ok',
+            ),
+          ],
+        );
+
+        chatRepository.sendMessageHandler = (_, __, ___, ____) async* {
+          yield Right(serverUserMessage);
+          await Future<void>.delayed(const Duration(milliseconds: 1));
+          yield Right(assistantCompleted);
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage(
+          '',
+          attachments: const <FileInputPart>[
+            FileInputPart(
+              mime: 'image/png',
+              url: 'data:image/png;base64,AA==',
+              filename: 'image.png',
+            ),
+          ],
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        expect(provider.state, ChatState.loaded);
+        expect(provider.messages.length, 2);
+        expect(provider.messages.first.id, 'msg_server_user_attachment_1');
+        expect((provider.messages.first as UserMessage).parts, hasLength(1));
+        final firstPart =
+            (provider.messages.first as UserMessage).parts.first as FilePart;
+        expect(firstPart.mime, 'image/png');
+        expect(firstPart.filename, 'image.png');
+        expect(provider.messages.last.id, 'msg_assistant_attachment_dedupe');
+      },
+    );
+
+    test(
       'sendMessage works when recent models are restored from local storage',
       () async {
         final scopeId =

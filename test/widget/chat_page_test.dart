@@ -1276,7 +1276,10 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(const ValueKey<String>('open_files_dialog_centered')),
-          matching: find.text('void main() => print("ok");'),
+          matching: find.text(
+            'void main() => print("ok");',
+            findRichText: true,
+          ),
         ),
         findsOneWidget,
       );
@@ -1421,7 +1424,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(const ValueKey<String>('open_files_dialog_centered')),
-          matching: find.text('void fallbackPath() {}'),
+          matching: find.text('void fallbackPath() {}', findRichText: true),
         ),
         findsOneWidget,
       );
@@ -1506,7 +1509,7 @@ void main() {
     expect(
       find.descendant(
         of: find.byKey(const ValueKey<String>('open_files_dialog_centered')),
-        matching: find.text('class ChatProvider {}'),
+        matching: find.text('class ChatProvider {}', findRichText: true),
       ),
       findsOneWidget,
     );
@@ -1604,7 +1607,7 @@ void main() {
     expect(
       find.descendant(
         of: find.byKey(const ValueKey<String>('open_files_dialog_fullscreen')),
-        matching: find.text('void mobileTabs() {}'),
+        matching: find.text('void mobileTabs() {}', findRichText: true),
       ),
       findsOneWidget,
     );
