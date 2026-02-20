@@ -152,10 +152,10 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
               Builder(
                 builder: (context) {
                   final sp = context.watch<SettingsProvider>();
-                  final width = MediaQuery.sizeOf(context).width;
-                  final isMobile = width < _ChatPageState._mobileBreakpoint;
+                  final sizeClass = context.windowSizeClass;
+                  final isMobile = sizeClass.isCompact;
                   final utilityPaneVisible =
-                      width >= _ChatPageState._largeDesktopBreakpoint &&
+                      sizeClass.isAtLeastLarge &&
                       sp.isDesktopPaneVisible(DesktopPane.utility);
                   if (chatProvider.currentSessionTodo.isEmpty ||
                       !sp.showTaskList ||
@@ -340,7 +340,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
+            FilledButton(
               onPressed: () {
                 chatProvider.clearError();
                 chatProvider.refresh();
@@ -370,7 +370,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
               ),
             ),
             const SizedBox(height: 16),
-            ElevatedButton.icon(
+            FilledButton.icon(
               onPressed: _createNewSession,
               icon: const Icon(Symbols.add),
               label: const Text('New Chat'),

@@ -296,7 +296,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ],
                 ),
-                child: ElevatedButton.icon(
+                child: FilledButton.tonal(
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -305,9 +305,8 @@ class _HomePageState extends State<HomePage> {
                       ),
                     );
                   },
-                  style: ElevatedButton.styleFrom(
+                  style: FilledButton.styleFrom(
                     backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppConstants.largePadding,
                       vertical: AppConstants.defaultPadding,
@@ -316,17 +315,23 @@ class _HomePageState extends State<HomePage> {
                       borderRadius: AppShapes.borderLarge,
                     ),
                   ),
-                  icon: const Icon(
-                    Symbols.settings_rounded,
-                    color: Colors.white,
-                  ),
-                  label: const Text(
-                    'Configure Server',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Symbols.settings_rounded,
+                        color: Colors.white,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Configure Server',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
