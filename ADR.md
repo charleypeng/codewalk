@@ -481,6 +481,8 @@ Additionally, redefine the mobile-viewport guard: the previous `_isMobileViewpor
 - ⚠ All existing breakpoint checks must be migrated to `WindowSizeClass` queries.
 - ❌ Arbitrary per-widget breakpoint overrides are intentionally discouraged; deviations must use `WindowSizeClass` tiers.
 
+**Note** (commit `f9efd1b`): A RenderFlex overflow in the medium-breakpoint directory selector was fixed as a direct consequence of this breakpoint model — constrained Medium-width layouts require explicit flex/overflow handling that Compact and Expanded layouts did not expose.
+
 ### Key Files
 
 - `lib/presentation/utils/window_size_class.dart`
@@ -524,6 +526,8 @@ Related: See `featN` in `ROADMAP.md`.
 - ⚠ All existing `BorderRadius.circular(...)` literals must be migrated to `AppShapes.*` references.
 - ⚠ Adding new shape tiers requires updating `AppShapes` and verifying downstream usage.
 - ❌ Global `materialTapTargetSize: padded` is intentionally rejected; per-widget scoping is the accepted pattern.
+
+**Note** (commit `f9efd1b`): Dynamic color availability detection was upgraded from a static platform heuristic (`_supportsDynamicColor()`) to runtime detection via `DynamicColorBuilder`, propagated through `SettingsProvider.dynamicColorAvailable`. As a consequence, the contrast slider is now disabled when dynamic color is active, since contrast adjustment only applies to `ColorScheme.fromSeed` (seed-based) themes.
 
 ### Key Files
 

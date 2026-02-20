@@ -89,7 +89,10 @@ class MyApp extends StatelessWidget {
               // Sync actual dynamic color availability to provider so
               // the settings UI can reflect reality (not just platform
               // heuristic).
-              final hasDynamic = lightDynamic != null;
+              // Consider dynamic color available when the platform provides
+              // at least one scheme (light or dark).
+              final hasDynamic =
+                  lightDynamic != null || darkDynamic != null;
               if (settingsProvider.dynamicColorAvailable != hasDynamic) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   settingsProvider.updateDynamicColorAvailability(
@@ -105,7 +108,7 @@ class MyApp extends StatelessWidget {
 
               // Use dynamic platform colors when available and enabled
               final lightScheme =
-                  useDynamic && hasDynamic
+                  useDynamic && lightDynamic != null
                       ? lightDynamic
                       : ColorScheme.fromSeed(
                           seedColor: seedColor,

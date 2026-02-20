@@ -45,7 +45,7 @@ codewalk/
 ## Entry Points
 
 ```text
-lib/main.dart                                # Runtime entry; DI, providers, DynamicColorBuilder with user theme prefs
+lib/main.dart                                # Runtime entry; DI, providers, DynamicColorBuilder with user theme prefs; syncs dynamic color availability to SettingsProvider via postFrameCallback
 lib/presentation/pages/app_shell_page.dart   # Root shell; gates onboarding wizard, mounts ChatPage and desktop tray behavior
 lib/presentation/pages/onboarding_wizard_page.dart # First-run wizard shown when no server is configured
 lib/presentation/pages/chat_page.dart         # Main chat/session/file UI entry; uses WindowSizeClass for responsive layout
@@ -66,7 +66,7 @@ lib/data/repositories/*.dart                      # Domain repository implementa
 lib/domain/usecases/*.dart                        # Application use cases consumed by providers
 lib/presentation/providers/app_provider.dart      # Server profiles, health polling, local runtime state
 lib/presentation/providers/project_provider.dart  # Project/worktree context selection and persistence
-lib/presentation/providers/settings_provider.dart # Experience settings, theme mode, dynamic color, brand seed, contrast, sounds, update checks
+lib/presentation/providers/settings_provider.dart # Experience settings, theme mode, dynamic color, brand seed, contrast, sounds, update checks; exposes `dynamicColorAvailable` (bool) and `updateDynamicColorAvailability()` for runtime platform signal
 lib/presentation/theme/brand_colors.dart              # BrandColor enum with 5 seed colors for non-dynamic-color themes
 lib/presentation/theme/app_shapes.dart                # AppShapes class with centralized MD3 shape constants
 lib/presentation/theme/app_theme.dart                 # Material You theme builder using AppShapes and color scheme
@@ -97,7 +97,7 @@ chat_page_scroll_coordinator.dart
 chat_page_workspace_controller.dart
 chat_page_shortcuts.dart
 chat_page_status_presenter.dart
-chat_page_selector_flow.dart
+chat_page_selector_flow.dart               # ConstrainedBox wrapped in Flexible to prevent overflow at medium breakpoint
 chat_page_scaffold.dart
 chat_page_file_explorer_controller.dart
 chat_page_file_viewer.dart
@@ -295,4 +295,7 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
   `large`, `extraLarge`) derived from MD3 breakpoints. `BuildContext.windowSizeClass` extension
   replaces hardcoded width checks in `ChatPage` and `SettingsPage`.
 - **Settings UI** (`appearance_settings_section.dart`): Theme mode, color picker (brand colors
-  + dynamic color toggle), and contrast level cards added to the Appearance section.
+  + dynamic color toggle), and contrast level cards added to the Appearance section. Dynamic
+  color availability is read from `settingsProvider.dynamicColorAvailable` (runtime signal set
+  by `DynamicColorBuilder` in `main.dart`) instead of a heuristic; contrast slider is disabled
+  when dynamic color is active.
