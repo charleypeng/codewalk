@@ -13,10 +13,6 @@
 ```text
 codewalk/
 ├── ai-docs/                            # AI docs and engineering artifacts
-│   ├── featM-icons-discovery.md        # Discovery of Icons.* usage before migration
-│   ├── featM-icons-mapping.csv         # Mapping table for migration to Symbols.*
-│   ├── featM-icons-by-file.csv         # Per-file migration status report
-│   └── featM-icons-audit.json          # Machine-readable migration audit
 ├── lib/                                # Application source
 │   ├── main.dart                       # App bootstrap (DI, providers, shell)
 │   ├── core/                           # Config, constants, DI, errors, logging, network
@@ -214,7 +210,6 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 - Platform folders currently present: `android/`, `linux/`, `macos/`, `web/`, `windows/`.
 - Android build targets Java 17 (`sourceCompatibility`, `targetCompatibility`, `jvmTarget`).
 - featM icon migration completed in `lib/presentation/**` and `test/widget/**`: Material icons moved from `Icons.*` to `Symbols.*` (`material_symbols_icons`).
-- featM audit artifacts: `ai-docs/featM-icons-audit.json`, `ai-docs/featM-icons-by-file.csv`, `ai-docs/featM-icons-discovery.md`, `ai-docs/featM-icons-mapping.csv`.
 
 ### Favorite Models
 
