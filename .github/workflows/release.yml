@@ -114,10 +114,6 @@ jobs:
             arch_tag: arm64
             flutter_arch: arm64
             asset_name: codewalk-macos-arm64.tar.gz
-          - runner: macos-15-intel
-            arch_tag: x64
-            flutter_arch: x64
-            asset_name: codewalk-macos-x64.tar.gz
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -226,7 +222,6 @@ jobs:
             artifacts/codewalk-linux-x64/codewalk-linux-x64.tar.gz
             artifacts/codewalk-windows-x64/codewalk-windows-x64.zip
             artifacts/codewalk-macos-arm64/codewalk-macos-arm64.tar.gz
-            artifacts/codewalk-macos-x64/codewalk-macos-x64.tar.gz
             artifacts/codewalk-android/codewalk-android-arm64.apk
           generate_release_notes: true
           draft: false
