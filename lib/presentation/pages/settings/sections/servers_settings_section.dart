@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -569,16 +570,29 @@ class _ServerSetupQuickGuideState extends State<ServerSetupQuickGuide> {
     return "'${value.replaceAll("'", "'\\''")}'";
   }
 
+  String _quotedPowerShellValue(String value) {
+    return "'${value.replaceAll("'", "''")}'";
+  }
+
   String _buildCommand() {
     final password = _passwordController.text.trim();
     if (!_protectWithPassword || password.isEmpty) {
       return _baseCommand;
     }
+
+    final isWindows =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
+    if (isWindows) {
+      return "\$env:OPENCODE_SERVER_PASSWORD=${_quotedPowerShellValue(password)}; $_baseCommand";
+    }
+
     return 'OPENCODE_SERVER_PASSWORD=${_quotedEnvValue(password)} $_baseCommand';
   }
 
   @override
   Widget build(BuildContext context) {
+    final isWindows =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
     final locale = Localizations.maybeLocaleOf(context);
     final isPortuguese =
         locale?.languageCode.toLowerCase().startsWith('pt') ?? false;
@@ -588,7 +602,11 @@ class _ServerSetupQuickGuideState extends State<ServerSetupQuickGuide> {
         ? '1. Instale o OpenCode CLI.'
         : '1. Install OpenCode CLI.';
     final commandLabel = isPortuguese
-        ? '2. Execute no terminal:'
+        ? isWindows
+              ? '2. Execute no PowerShell:'
+              : '2. Execute no terminal:'
+        : isWindows
+        ? '2. Run in PowerShell:'
         : '2. Run in your terminal:';
     final passwordToggleLabel = isPortuguese
         ? 'Proteger acesso com senha'

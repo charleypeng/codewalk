@@ -105,7 +105,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         break;
       case SetupWizardInitialFlow.managedLocalServer:
         _step = 3;
-        unawaited(_runLocalDiagnostics());
+        _scheduleLocalDiagnostics();
         break;
     }
   }
@@ -236,7 +236,16 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       _step = 3;
       _connectionError = null;
     });
-    unawaited(_runLocalDiagnostics());
+    _scheduleLocalDiagnostics();
+  }
+
+  void _scheduleLocalDiagnostics() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      unawaited(_runLocalDiagnostics());
+    });
   }
 
   Future<void> _runLocalDiagnostics() async {
@@ -298,6 +307,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       return;
     }
 
+    final existingServerIds = appProvider.serverProfiles
+        .map((profile) => profile.id)
+        .toSet();
     final success = await appProvider.addServerProfile(
       url: adjustedUrl,
       label: label,
@@ -311,11 +323,24 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
     if (!mounted) return;
 
     if (success) {
-      final serverId = appProvider.serverProfiles.last.id;
-      if (_editingServerId == null) {
+      String? serverId;
+      for (final profile in appProvider.serverProfiles.reversed) {
+        if (!existingServerIds.contains(profile.id)) {
+          serverId = profile.id;
+          break;
+        }
+      }
+      serverId ??= appProvider.activeServerId;
+      serverId ??= appProvider.serverProfiles.isNotEmpty
+          ? appProvider.serverProfiles.last.id
+          : null;
+
+      if (_editingServerId == null && serverId != null) {
         _addedServerId = serverId;
       }
-      final health = appProvider.healthFor(serverId);
+      final health = serverId == null
+          ? ServerHealthStatus.unhealthy
+          : appProvider.healthFor(serverId);
       setState(() {
         _testing = false;
         _connectionSuccess = health != ServerHealthStatus.unhealthy;
