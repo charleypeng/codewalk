@@ -50,7 +50,7 @@ Concluded historical features were archived to `ROADMAP.archive.done.md` to keep
 
 ### Next Recommended Feature
 
-- `featM` - `ROADMAP.featM.md` (NEXT: Icons to Material Symbols migration)
+- `featN` - `ROADMAP.featN.md` (NEXT: Material You design system revamp)
 
 ### Backlog Pack Dependency Order
 
