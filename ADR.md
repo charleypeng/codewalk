@@ -16,6 +16,8 @@ This document contains only active architectural decisions that represent the cu
 - ADR-010: Delivery Pipeline Split for CI Quality, Tagged Releases, and Minor-Tag Smoke Checks
 - ADR-011: First-Run Onboarding Wizard
 - ADR-012: Material Symbols Migration via `material_symbols_icons`
+- ADR-013: MD3 WindowSizeClass Responsive Breakpoint Strategy
+- ADR-014: Centralized MD3 Design Tokens for Shapes and Brand Colors
 
 ---
 
@@ -445,3 +447,89 @@ Standardize icon usage on `Symbols.*` from `material_symbols_icons` and migrate 
 
 - `pubspec.yaml`
 - `lib/`
+
+---
+
+## ADR-013: MD3 WindowSizeClass Responsive Breakpoint Strategy (2026-02-20)
+
+**Status**: Accepted
+
+### Context
+
+The UI layer relied on hardcoded pixel breakpoints (e.g. `_isMobileViewport` checks against arbitrary widths) scattered across multiple widgets and pages. This made responsive behavior inconsistent and difficult to reason about, especially when distinguishing phone, tablet, and desktop layouts. The `featN` Material You revamp required a systematic approach aligned with MD3 guidelines.
+
+Related: See `featN` in `ROADMAP.md`.
+
+### Decision
+
+Introduce a `WindowSizeClass` enum with five tiers matching MD3 Window Size Classes: Compact (<600dp), Medium (600–839dp), Expanded (840–1199dp), Large (1200–1599dp), ExtraLarge (≥1600dp). Provide convenience getters (`isCompact`, `isAtLeastExpanded`, etc.) and use `WindowSizeClass.fromWidth()` as the single source of truth for responsive decisions. Replace all hardcoded breakpoint checks with `WindowSizeClass` queries.
+
+Additionally, redefine the mobile-viewport guard: the previous `_isMobileViewport` (which only checked `isCompact`) was replaced with `!isAtLeastExpanded` to ensure mobile-oriented gestures and layouts also apply on Medium/tablet breakpoints, not just phone-sized screens.
+
+### Rationale
+
+- MD3 Window Size Classes are the canonical responsive framework for Material-based apps.
+- A single enum centralizes all breakpoint logic, eliminating scattered magic numbers.
+- The `!isAtLeastExpanded` guard correctly captures the intent: mobile gestures should work on any viewport smaller than desktop-class, including tablets in the Medium range.
+- Convenience getters improve readability and reduce error-prone raw comparisons.
+
+### Consequences
+
+- ✅ Consistent responsive behavior across all UI surfaces via a single canonical breakpoint model.
+- ✅ Mobile gesture/layout guard (`!isAtLeastExpanded`) correctly includes tablet/medium viewports.
+- ✅ Aligns with MD3 specification, reducing drift as Material guidelines evolve.
+- ⚠ All existing breakpoint checks must be migrated to `WindowSizeClass` queries.
+- ❌ Arbitrary per-widget breakpoint overrides are intentionally discouraged; deviations must use `WindowSizeClass` tiers.
+
+### Key Files
+
+- `lib/presentation/utils/window_size_class.dart`
+- `lib/presentation/pages/chat_page.dart`
+- `lib/presentation/pages/home_page.dart`
+- `lib/presentation/pages/settings_page.dart`
+- `lib/presentation/pages/chat_page/chat_page_file_explorer_controller.dart`
+- `lib/presentation/widgets/chat_message_widget.dart`
+
+---
+
+## ADR-014: Centralized MD3 Design Tokens for Shapes and Brand Colors (2026-02-20)
+
+**Status**: Accepted
+
+### Context
+
+Shape values (border radii) were scattered across 15+ widgets as magic `BorderRadius.circular(...)` literals with no consistent scale. Color seed selection for non-dynamic-color scenarios had no structured fallback. The `featN` Material You revamp required centralizing these design tokens to align with MD3 specifications.
+
+Related: See `featN` in `ROADMAP.md`.
+
+### Decision
+
+1. **AppShapes**: Introduce a centralized shape constants class implementing the MD3 shape scale — None (0), ExtraSmall (4), Small (8), Medium (12), Large (16), ExtraLarge (28), Full (999) — as static `BorderRadius` constants. Replace all scattered magic border-radius values with `AppShapes.*` references.
+
+2. **BrandColor**: Introduce an enum providing 5 curated seed colors as a deterministic fallback palette when dynamic color (`DynamicColorBuilder`) is unavailable or disabled by the user.
+
+3. **Touch target policy**: Global `materialTapTargetSize: MaterialTapTargetSize.padded` was evaluated and rejected because it caused cascading Row overflow issues in tight layouts. Touch target enforcement is scoped only to specific widgets that need it (e.g., model selector), rather than applied globally via theme.
+
+### Rationale
+
+- MD3 defines a canonical shape scale; centralizing it eliminates visual inconsistency and makes future scale adjustments atomic.
+- A brand-color enum provides predictable theming when platform dynamic color is absent, without hardcoding hex values at call sites.
+- Scoped tap-target enforcement avoids layout regressions while still meeting accessibility goals where they matter most.
+
+### Consequences
+
+- ✅ Single source of truth for shape tokens; changing the scale updates all surfaces atomically.
+- ✅ Brand color fallback is explicit and testable, decoupled from dynamic color availability.
+- ✅ Avoids global tap-target padding regressions in constrained layouts.
+- ⚠ All existing `BorderRadius.circular(...)` literals must be migrated to `AppShapes.*` references.
+- ⚠ Adding new shape tiers requires updating `AppShapes` and verifying downstream usage.
+- ❌ Global `materialTapTargetSize: padded` is intentionally rejected; per-widget scoping is the accepted pattern.
+
+### Key Files
+
+- `lib/presentation/theme/app_shapes.dart`
+- `lib/presentation/theme/brand_colors.dart`
+- `lib/presentation/theme/app_theme.dart`
+- `lib/presentation/pages/settings/sections/appearance_settings_section.dart`
+- `lib/presentation/widgets/chat_input_widget.dart`
+- `lib/presentation/widgets/chat_message_widget.dart`

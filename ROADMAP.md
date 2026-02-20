@@ -50,7 +50,7 @@ Concluded historical features were archived to `ROADMAP.archive.done.md` to keep
 
 ### Next Recommended Feature
 
-- `featN` - `ROADMAP.featN.md` (NEXT: Material You design system revamp)
+- `featQ` - `ROADMAP.featQ.md` (NEXT: Cross-platform UX and settings polish)
 
 ### Backlog Pack Dependency Order
 
@@ -91,7 +91,7 @@ Notes:
 - [x] `featJ` - `ROADMAP.featJ.md` (speech-to-text platform matrix)
 - [x] `featK` - `ROADMAP.featK.md` (first-run onboarding wizard)
 - [x] `featM` - `ROADMAP.featM.md` (Icons to Material Symbols migration)
-- [ ] `featN` - `ROADMAP.featN.md` (Material You design system revamp)
+- [x] `featN` - `ROADMAP.featN.md` (Material You design system revamp)
 - [x] `featO` - `ROADMAP.featO.md` (Code health & technical debt)
 - [ ] `featQ` - `ROADMAP.featQ.md` (Cross-platform UX and settings polish)
 
@@ -256,13 +256,13 @@ Completed full migration of icon usage from `Icons.*` to `Symbols.*` using `mate
 
 - [x] Migrar todos os usos de `Icons.*` para `Symbols.*` do pacote `material_symbols_icons` - Commit hash: e05d2fb
 
-#### `featN` Material You design system revamp
+#### `featN` Material You design system revamp ✅
 
-- [ ] Implementar dynamic color system com suporte a wallpaper extrapolation em Android 12+
-- [ ] Expandir palette de cores com temas brand/custom no Settings
-- [ ] Refine spacing/layout para melhor uso de espaço em múltiplos tamanhos de tela
-- [ ] Implementar adaptive layout patterns (responsive breakpoints, orientation-aware)
-- [ ] Polish componentes para estar 100% alinhado com Material Design 3 specs
+**Status**: Completed (2026-02-20)
+
+Full Material You design system revamp across four phases. Phase 1 (Color): wired ThemeMode toggle, dynamic color toggle with brand color palette, and contrast level control. Phase 2 (Responsive Layout): centralized breakpoints utility, medium breakpoint tablet layout, and home page responsive adaptation. Phase 3 (Component Polish): M3 shape system normalization and ElevatedButton-to-FilledButton migration. Phase 4 (Accessibility & Testing): semantic labeling, touch target sizing, widget tests, and test regression fixes.
+
+**Commits**: b408373, e50f6fc, 27834b2, fd67dd6, a72dc74, a718e57, 2b8e75d, 48cb6cb, f477d6f, c818e5a, 5e2c349, d5cf05c
 
 #### `featO` Code health & technical debt
 

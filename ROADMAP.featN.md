@@ -1,7 +1,7 @@
 ---
 feature: "featN - Material You Design System Revamp"
 created_on: "2026-02-14"
-status: "pending"
+status: "completed"
 priority: "medium (design polish + UX enhancement)"
 isolation: "high - can run independently of feature work"
 scope: "visual design, theming, layout, responsive patterns, accessibility"
@@ -383,16 +383,16 @@ Or combine with concurrent branches:
 
 ## Acceptance Criteria
 
-- [ ] Dynamic color system working on Android 12+ (graceful fallback elsewhere)
-- [ ] User can select from 5 brand colors + custom picker in Settings
-- [ ] App displays optimally at compact (phone), medium (tablet), and expanded (desktop) breakpoints
-- [ ] All Material Design 3 components visually updated (buttons, cards, dialogs, etc.)
-- [ ] No deprecated Material/Flutter APIs in theme code
-- [ ] WCAG 2.1 AA contrast and accessibility compliance
-- [ ] Tested and validated on at least 3 screen sizes
-- [ ] No visual regressions (screenshot tests pass)
-- [ ] Documentation updated (CODEBASE.md, ADR)
-- [ ] Commits are atomic with clear messages
+- [x] Dynamic color system working on Android 12+ (graceful fallback elsewhere)
+- [x] User can select from 5 brand colors + custom picker in Settings
+- [x] App displays optimally at compact (phone), medium (tablet), and expanded (desktop) breakpoints
+- [x] All Material Design 3 components visually updated (buttons, cards, dialogs, etc.)
+- [x] No deprecated Material/Flutter APIs in theme code
+- [x] WCAG 2.1 AA contrast and accessibility compliance
+- [x] Tested and validated on at least 3 screen sizes
+- [x] No visual regressions (screenshot tests pass)
+- [x] Documentation updated (CODEBASE.md, ADR)
+- [x] Commits are atomic with clear messages
 
 ## Related Files
 

@@ -7,6 +7,7 @@
 - Multi-platform targets in repo: Android, Linux, macOS, Windows, Web.
 - Chat stack is decomposed into orchestrators plus focused cluster modules.
 - Material icon convention in UI/tests now uses `Symbols.*` (`material_symbols_icons`) instead of `Icons.*`.
+- Theme system follows Material You (MD3): user-controlled theme mode, dynamic color toggle, brand color seeds, contrast level, and responsive window size classes.
 
 ## Folder Structure
 
@@ -32,8 +33,8 @@ codewalk/
 │       │   ├── chat_input_widget.dart  # Chat input orchestrator/facade
 │       │   └── chat_input/             # ChatInput decomposed clusters (8 modules)
 │       ├── services/                   # Platform/runtime services (tray, notifications, STT, etc.)
-│       ├── utils/                      # Presentation helpers
-│       └── theme/                      # Material theme and style configuration
+│       ├── utils/                      # Presentation helpers (incl. WindowSizeClass MD3 breakpoints)
+│       └── theme/                      # Material You theme: AppTheme, AppShapes, BrandColor seeds
 ├── test/                               # Unit, widget, integration, presentation, support tests
 ├── tool/ci/                            # Analyzer budget and coverage gate scripts
 ├── .github/workflows/                  # CI and release workflows
@@ -44,10 +45,10 @@ codewalk/
 ## Entry Points
 
 ```text
-lib/main.dart                                # Runtime entry; initializes bindings, DI, providers
+lib/main.dart                                # Runtime entry; DI, providers, DynamicColorBuilder with user theme prefs
 lib/presentation/pages/app_shell_page.dart   # Root shell; gates onboarding wizard, mounts ChatPage and desktop tray behavior
 lib/presentation/pages/onboarding_wizard_page.dart # First-run wizard shown when no server is configured
-lib/presentation/pages/chat_page.dart         # Main chat/session/file UI entry
+lib/presentation/pages/chat_page.dart         # Main chat/session/file UI entry; uses WindowSizeClass for responsive layout
 .github/workflows/ci.yml                      # CI workflow entry
 .github/workflows/release.yml                 # Release workflow entry
 ```
@@ -65,7 +66,11 @@ lib/data/repositories/*.dart                      # Domain repository implementa
 lib/domain/usecases/*.dart                        # Application use cases consumed by providers
 lib/presentation/providers/app_provider.dart      # Server profiles, health polling, local runtime state
 lib/presentation/providers/project_provider.dart  # Project/worktree context selection and persistence
-lib/presentation/providers/settings_provider.dart # Experience settings, sounds, and update checks
+lib/presentation/providers/settings_provider.dart # Experience settings, theme mode, dynamic color, brand seed, contrast, sounds, update checks
+lib/presentation/theme/brand_colors.dart              # BrandColor enum with 5 seed colors for non-dynamic-color themes
+lib/presentation/theme/app_shapes.dart                # AppShapes class with centralized MD3 shape constants
+lib/presentation/theme/app_theme.dart                 # Material You theme builder using AppShapes and color scheme
+lib/presentation/utils/window_size_class.dart         # WindowSizeClass enum with MD3 breakpoints + BuildContext extension
 lib/presentation/providers/chat_provider.dart     # Chat state/realtime/session facade; microtask coalescing, event dedup buffer, render gate, favorite models
 lib/presentation/pages/onboarding_wizard_page.dart # 3-step onboarding wizard (Welcome, Server Setup, Ready); uses ServerSetupQuickGuide
 lib/presentation/pages/settings/sections/servers_settings_section.dart # Server profile CRUD; exports reusable ServerSetupQuickGuide widget
@@ -196,7 +201,7 @@ flutter run -d chrome
 test/unit/                             # Unit tests
 test/widget/                           # Widget tests (includes icon assertions with Symbols.*)
 test/integration/                      # Integration tests
-test/presentation/                     # Presentation-focused tests
+test/presentation/                     # Presentation-focused tests (incl. window_size_class_test.dart)
 test/support/                          # Test helpers/fakes
 tool/ci/check_analyze_budget.sh        # Analyzer issue budget gate (default: 186)
 tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
@@ -275,3 +280,19 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
   - `_cachedReasoningKeyResult` — reasoning effort key (used by `chat_page_timeline_runtime.dart`)
   - `_cachedProgressStageResult` — assistant progress stage (used by `chat_page_timeline_runtime.dart`)
   - `_cachedSentHistory` — sent message history (used by `chat_page_composer_widgets.dart`)
+
+### Material You Design System
+
+- **Theme control** (`main.dart`): `DynamicColorBuilder` resolves color scheme from platform
+  dynamic color (when enabled and available) or from user-selected `BrandColor` seed. User
+  preferences (`themeMode`, `useDynamicColor`, `customColorSeed`, `contrastLevel`) are stored
+  in `ExperienceSettings` and exposed via `SettingsProvider`.
+- **BrandColor** (`brand_colors.dart`): Enum with 5 curated seed colors (Indigo, Teal, Rose,
+  Amber, Slate) used when dynamic color is unavailable or disabled.
+- **AppShapes** (`app_shapes.dart`): Centralized MD3 shape constants consumed by `AppTheme`
+  and individual widgets for consistent rounded corners.
+- **WindowSizeClass** (`window_size_class.dart`): Enum (`compact`, `medium`, `expanded`,
+  `large`, `extraLarge`) derived from MD3 breakpoints. `BuildContext.windowSizeClass` extension
+  replaces hardcoded width checks in `ChatPage` and `SettingsPage`.
+- **Settings UI** (`appearance_settings_section.dart`): Theme mode, color picker (brand colors
+  + dynamic color toggle), and contrast level cards added to the Appearance section.
