@@ -156,6 +156,8 @@ class _DesktopTrayServiceIo
     switch (_closeBehavior) {
       case DesktopCloseBehavior.close:
         _exiting = true;
+        // Disabling preventClose during onWindowClose lets the native
+        // close pipeline proceed — no explicit close()/destroy() needed.
         await windowManager.setPreventClose(false);
         return;
       case DesktopCloseBehavior.minimize:
@@ -198,8 +200,17 @@ class _DesktopTrayServiceIo
 
   Future<void> _quitApplication() async {
     _exiting = true;
-    // Use destroy() to bypass close prevention without toggling
-    // setPreventClose, so close-to-tray stays intact until the very end.
-    await windowManager.destroy();
+    try {
+      // Use destroy() to bypass close prevention without toggling
+      // setPreventClose, so close-to-tray stays intact until the very end.
+      await windowManager.destroy();
+    } catch (error, stackTrace) {
+      _exiting = false;
+      AppLogger.warn(
+        'Failed to destroy window during quit',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 }

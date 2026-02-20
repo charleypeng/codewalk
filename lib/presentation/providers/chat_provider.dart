@@ -1296,11 +1296,8 @@ class ChatProvider extends ChangeNotifier {
     }
 
     final delta = reverse ? -1 : 1;
-    final nextIndex = (currentIndex + delta) % available.length;
-    final normalizedIndex = nextIndex < 0
-        ? nextIndex + available.length
-        : nextIndex;
-    final nextName = available[normalizedIndex].name;
+    final nextIndex = (currentIndex + delta + available.length) % available.length;
+    final nextName = available[nextIndex].name;
     await setSelectedAgent(nextName);
     return nextName;
   }

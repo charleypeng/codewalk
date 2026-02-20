@@ -58,9 +58,6 @@ class _AppShellPageState extends State<AppShellPage> {
       await _desktopTrayService.initialize(
         closeBehavior: settingsProvider.desktopCloseBehavior,
       );
-      await _desktopTrayService.setDesktopCloseBehavior(
-        settingsProvider.desktopCloseBehavior,
-      );
     } catch (error, stackTrace) {
       AppLogger.warn(
         'Desktop tray configuration failed',
