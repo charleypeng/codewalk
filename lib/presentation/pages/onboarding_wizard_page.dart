@@ -102,9 +102,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                 FilledButton(
                   onPressed: () {
                     if (dontShowAgain) {
-                      context
-                          .read<SettingsProvider>()
-                          .setSkipOnboardingWizard(true);
+                      context.read<SettingsProvider>().setSkipOnboardingWizard(
+                        true,
+                      );
                     }
                     Navigator.of(dialogContext).pop(true);
                   },
@@ -153,13 +153,40 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
     });
 
     final appProvider = context.read<AppProvider>();
+    final adjustedUrl = _mapAndroidLoopback(_urlController.text.trim());
+    final label = _labelController.text.trim();
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text.trim();
 
-    // If we already added a server in a previous attempt, re-check its health
-    // instead of trying to add a duplicate profile.
-    if (_addedServerId != null) {
-      await appProvider.refreshServerHealth(serverId: _addedServerId);
+    final trackedServerId = _addedServerId;
+    final hasTrackedServer =
+        trackedServerId != null &&
+        appProvider.serverProfiles.any(
+          (profile) => profile.id == trackedServerId,
+        );
+
+    // If this wizard already created a server profile, update/re-check the same
+    // profile instead of attempting to add a duplicate URL.
+    if (hasTrackedServer) {
+      final updated = await appProvider.updateServerProfile(
+        id: trackedServerId,
+        url: adjustedUrl,
+        label: label,
+        basicAuthEnabled: _basicAuthEnabled,
+        basicAuthUsername: username,
+        basicAuthPassword: password,
+        aiGeneratedTitlesEnabled: _aiGeneratedTitlesEnabled,
+      );
       if (!mounted) return;
-      final health = appProvider.healthFor(_addedServerId!);
+      if (!updated) {
+        setState(() {
+          _testing = false;
+          _connectionError = appProvider.errorMessage;
+        });
+        return;
+      }
+
+      final health = appProvider.healthFor(trackedServerId);
       setState(() {
         _testing = false;
         _connectionSuccess = health != ServerHealthStatus.unhealthy;
@@ -171,14 +198,12 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       return;
     }
 
-    final adjustedUrl = _mapAndroidLoopback(_urlController.text.trim());
-
     final success = await appProvider.addServerProfile(
       url: adjustedUrl,
-      label: _labelController.text.trim(),
+      label: label,
       basicAuthEnabled: _basicAuthEnabled,
-      basicAuthUsername: _usernameController.text.trim(),
-      basicAuthPassword: _passwordController.text.trim(),
+      basicAuthUsername: username,
+      basicAuthPassword: password,
       aiGeneratedTitlesEnabled: _aiGeneratedTitlesEnabled,
       setAsActive: true,
     );
@@ -223,11 +248,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         uri.host == '127.0.0.1' || uri.host.toLowerCase() == 'localhost';
     if (!isLoopback) return normalized;
 
-    return Uri(
-      scheme: uri.scheme,
-      host: '10.0.2.2',
-      port: uri.port,
-    ).toString();
+    return Uri(scheme: uri.scheme, host: '10.0.2.2', port: uri.port).toString();
   }
 
   void _copyToClipboard(String text) {
@@ -259,10 +280,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
               : null,
           actions: [
             if (_step < 2 || !_connectionSuccess)
-              TextButton(
-                onPressed: _handleSkip,
-                child: const Text('Skip'),
-              ),
+              TextButton(onPressed: _handleSkip, child: const Text('Skip')),
           ],
         ),
         body: Center(
@@ -299,11 +317,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       key: const ValueKey('step_welcome'),
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(
-          Icons.code_rounded,
-          size: 72,
-          color: colorScheme.primary,
-        ),
+        Icon(Icons.code_rounded, size: 72, color: colorScheme.primary),
         const SizedBox(height: 24),
         Text(
           'Welcome to ${AppConstants.appName}',
@@ -313,9 +327,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         const SizedBox(height: 8),
         Text(
           'Connect to an OpenCode server to get started',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 40),
@@ -343,9 +357,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                         children: [
                           Text(
                             'Connect to server',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
+                            style: Theme.of(context).textTheme.titleMedium
                                 ?.copyWith(
                                   color: colorScheme.onPrimaryContainer,
                                 ),
@@ -353,9 +365,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                           const SizedBox(height: 4),
                           Text(
                             'I already have a server running',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
+                            style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   color: colorScheme.onPrimaryContainer,
                                 ),
@@ -402,22 +412,14 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                         children: [
                           Text(
                             'I need help setting up',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.copyWith(
-                                  color: colorScheme.onSurface,
-                                ),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(color: colorScheme.onSurface),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'Show me how to install and start a server',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: colorScheme.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -519,9 +521,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                   if (_basicAuthEnabled) ...[
                     TextFormField(
                       controller: _usernameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Username',
-                      ),
+                      decoration: const InputDecoration(labelText: 'Username'),
                       validator: (value) {
                         if (!_basicAuthEnabled) return null;
                         if ((value ?? '').trim().isEmpty) {
@@ -533,9 +533,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _passwordController,
-                      decoration: const InputDecoration(
-                        labelText: 'Password',
-                      ),
+                      decoration: const InputDecoration(labelText: 'Password'),
                       obscureText: true,
                       validator: (value) {
                         if (!_basicAuthEnabled) return null;
@@ -570,18 +568,18 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                           children: [
                             Icon(
                               Icons.error_outline,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onErrorContainer,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onErrorContainer,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 _connectionError!,
                                 style: TextStyle(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onErrorContainer,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onErrorContainer,
                                 ),
                               ),
                             ),
@@ -597,14 +595,10 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                         ? const SizedBox(
                             width: 18,
                             height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                            ),
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.link_rounded),
-                    label: Text(
-                      _testing ? 'Testing...' : 'Test connection',
-                    ),
+                    label: Text(_testing ? 'Testing...' : 'Test connection'),
                   ),
                 ],
               ),
@@ -625,11 +619,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         key: const ValueKey('step_ready_success'),
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.check_circle_rounded,
-            size: 72,
-            color: Colors.green,
-          ),
+          Icon(Icons.check_circle_rounded, size: 72, color: Colors.green),
           const SizedBox(height: 24),
           Text(
             "You're all set!",
@@ -659,11 +649,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       key: const ValueKey('step_ready_failed'),
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(
-          Icons.warning_amber_rounded,
-          size: 72,
-          color: colorScheme.error,
-        ),
+        Icon(Icons.warning_amber_rounded, size: 72, color: colorScheme.error),
         const SizedBox(height: 24),
         Text(
           'Connection issue',
@@ -673,9 +659,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         const SizedBox(height: 8),
         Text(
           _connectionError ?? 'Could not verify the server connection.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 40),
@@ -691,10 +677,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
           label: const Text('Try again'),
         ),
         const SizedBox(height: 12),
-        OutlinedButton(
-          onPressed: _complete,
-          child: const Text('Skip for now'),
-        ),
+        OutlinedButton(onPressed: _complete, child: const Text('Skip for now')),
       ],
     );
   }

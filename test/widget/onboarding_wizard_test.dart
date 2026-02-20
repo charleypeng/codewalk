@@ -44,9 +44,7 @@ void main() {
         ChangeNotifierProvider<AppProvider>.value(value: appProvider),
         ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
       ],
-      child: MaterialApp(
-        home: OnboardingWizardPage(onComplete: onComplete),
-      ),
+      child: MaterialApp(home: OnboardingWizardPage(onComplete: onComplete)),
     );
   }
 
@@ -69,9 +67,7 @@ void main() {
       WidgetTester tester,
     ) async {
       var completed = false;
-      await tester.pumpWidget(
-        buildWizard(onComplete: () => completed = true),
-      );
+      await tester.pumpWidget(buildWizard(onComplete: () => completed = true));
       await tester.pumpAndSettle();
 
       // Tap the Skip button in the AppBar.
@@ -97,9 +93,7 @@ void main() {
       WidgetTester tester,
     ) async {
       var completed = false;
-      await tester.pumpWidget(
-        buildWizard(onComplete: () => completed = true),
-      );
+      await tester.pumpWidget(buildWizard(onComplete: () => completed = true));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Skip'));
@@ -145,7 +139,12 @@ void main() {
       await tester.tap(find.text('Connect to server'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Server connection'), findsOneWidget);
+      expect(find.byKey(const ValueKey('step_server_setup')), findsOneWidget);
+
+      if (find.text('Continue to server URL').evaluate().isNotEmpty) {
+        await tester.tap(find.text('Continue to server URL'));
+        await tester.pumpAndSettle();
+      }
       expect(find.text('Server URL'), findsOneWidget);
       expect(find.text('Test connection'), findsOneWidget);
     });
