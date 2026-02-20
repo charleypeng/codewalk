@@ -755,11 +755,18 @@ class _PaneResizeHandleState extends State<_PaneResizeHandle> {
               : -details.delta.dx;
           final current = widget.settingsProvider.desktopPaneWidth(widget.pane);
           final next = (current + delta).clamp(160.0, 500.0);
-          unawaited(
-            widget.settingsProvider.setDesktopPaneWidth(widget.pane, next),
+          // Update in memory only; persist once on drag end to avoid
+          // excessive SharedPreferences writes during continuous drag.
+          widget.settingsProvider.updateDesktopPaneWidthInMemory(
+            widget.pane,
+            next,
           );
         },
-        onHorizontalDragEnd: (_) => setState(() => _dragging = false),
+        onHorizontalDragEnd: (_) {
+          setState(() => _dragging = false);
+          unawaited(widget.settingsProvider.persistDesktopPaneWidths());
+        },
+        onHorizontalDragCancel: () => setState(() => _dragging = false),
         onDoubleTap: () {
           unawaited(widget.settingsProvider.resetDesktopPaneWidth(widget.pane));
         },

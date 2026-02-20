@@ -205,7 +205,9 @@ class SettingsProvider extends ChangeNotifier {
     return _settings.desktopPaneWidths[pane] ?? defaultDesktopPaneWidth(pane);
   }
 
-  Future<void> setDesktopPaneWidth(DesktopPane pane, double width) async {
+  /// Update pane width in memory only (no disk write).
+  /// Use during continuous drag; call [persistDesktopPaneWidths] on drag end.
+  void updateDesktopPaneWidthInMemory(DesktopPane pane, double width) {
     final clamped = width.clamp(160.0, 500.0);
     final current = _settings.desktopPaneWidths[pane];
     if (current != null && (current - clamped).abs() < 1) {
@@ -215,6 +217,15 @@ class SettingsProvider extends ChangeNotifier {
     next[pane] = clamped;
     _settings = _settings.copyWith(desktopPaneWidths: next);
     notifyListeners();
+  }
+
+  /// Persist current pane widths to disk. Call once after drag ends.
+  Future<void> persistDesktopPaneWidths() async {
+    await _persist();
+  }
+
+  Future<void> setDesktopPaneWidth(DesktopPane pane, double width) async {
+    updateDesktopPaneWidthInMemory(pane, width);
     await _persist();
   }
 
