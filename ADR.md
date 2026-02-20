@@ -14,6 +14,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-008: Context-Scoped File Explorer and Viewer with Quick Open and Diff-Aware Refresh
 - ADR-009: Native Session Title Generation via Internal `title` Agent
 - ADR-010: Delivery Pipeline Split for CI Quality, Tagged Releases, and Minor-Tag Smoke Checks
+- ADR-011: First-Run Onboarding Wizard
 
 ---
 
@@ -373,3 +374,38 @@ Separate workflows by intent: quality-only CI on push/PR, multi-platform release
 - `Makefile`
 - `tool/ci/check_analyze_budget.sh`
 - `tool/ci/check_coverage.sh`
+
+---
+
+## ADR-011: First-Run Onboarding Wizard (2026-02-19)
+
+**Status**: Accepted
+
+### Context
+
+The app had no first-run experience; it opened directly to ChatPage with connection errors when no server was configured, leaving new users without guidance.
+
+### Decision
+
+Gate the main shell in `AppShellPage` via `Consumer2` checks on `serverProfiles` and `skipOnboardingWizard` flag. Introduce `OnboardingWizardPage` with a 3-step flow (Welcome, Server Setup, Ready). Persist the skip flag in `ExperienceSettings`.
+
+### Rationale
+
+- New users need guided setup to configure at least one server before using the app.
+- Gating at the shell level ensures no partial UI is shown before configuration is complete.
+- A persistent flag allows existing users to bypass the wizard entirely.
+
+### Consequences
+
+- ✅ New users see a guided setup flow that prevents unconfigured-state errors.
+- ✅ Existing users are unaffected; the wizard is skipped when profiles already exist.
+- ✅ "Reset app" in About allows returning to the wizard state for re-onboarding.
+- ⚠ Adds a gating layer in `AppShellPage` that must stay synchronized with profile state.
+- ❌ The wizard flow is intentionally linear; non-linear onboarding is not supported.
+
+### Key Files
+
+- `lib/presentation/pages/app_shell_page.dart`
+- `lib/presentation/pages/onboarding_wizard_page.dart`
+- `lib/domain/entities/experience_settings.dart`
+- `lib/presentation/providers/settings_provider.dart`

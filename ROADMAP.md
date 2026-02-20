@@ -50,7 +50,7 @@ Concluded historical features were archived to `ROADMAP.archive.done.md` to keep
 
 ### Next Recommended Feature
 
-- `featK` - `ROADMAP.featK.md` (NEXT: first-run onboarding wizard)
+- `featM` - `ROADMAP.featM.md` (NEXT: Icons to Material Symbols migration)
 
 ### Backlog Pack Dependency Order
 
@@ -89,7 +89,7 @@ Notes:
 - [x] `featG` - `ROADMAP.featG.md` (favorites and variant selector ergonomics)
 - [x] `featC` - `ROADMAP.featC.md` (focus/visibility render gate + files planning)
 - [x] `featJ` - `ROADMAP.featJ.md` (speech-to-text platform matrix)
-- [ ] `featK` - `ROADMAP.featK.md` (first-run onboarding wizard)
+- [x] `featK` - `ROADMAP.featK.md` (first-run onboarding wizard)
 - [ ] `featM` - `ROADMAP.featM.md` (Icons to Material Symbols migration)
 - [ ] `featN` - `ROADMAP.featN.md` (Material You design system revamp)
 - [x] `featO` - `ROADMAP.featO.md` (Code health & technical debt)
@@ -228,9 +228,15 @@ Model favorites: star toggle in model selector, persisted locally via SharedPref
 
 Commits: e73f15e, 52a35e7, 86b8162, 0347e88, 148b650, 1f4677c, a8a5d96, 889ea9a, 317f02e, addc1ac, f4108fe
 
-#### `featK` First-run onboarding wizard
+#### `featK` First-run onboarding wizard ✅
 
-- [ ] Wizard/onboarding quando abrir o app pela primeira vez: dialog central perguntando qual servidor cadastrar/usar e toggle do serviço do ch.at
+**Status**: Completed (2026-02-19)
+
+Implemented OnboardingWizardPage with 3-step flow (Welcome, Server Setup, Ready). Added `skipOnboardingWizard` flag in ExperienceSettings with gate in AppShellPage via Consumer2. Extracted ServerSetupQuickGuide as reusable widget. Moved Servers to first position in Settings. Added reset app button in About and Setup Wizard button in Servers section.
+
+- [x] Wizard/onboarding quando abrir o app pela primeira vez: dialog central perguntando qual servidor cadastrar/usar e toggle do serviço do ch.at
+
+**Commits**: 92fa47e
 
 #### `featL` Compaction boundary and low-cost nested history ✅
 

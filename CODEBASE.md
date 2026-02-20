@@ -19,6 +19,7 @@ codewalk/
 │   └── presentation/                   # UI, state providers, runtime services
 │       ├── pages/                      # App pages and page-level orchestration
 │       │   ├── app_shell_page.dart
+│       │   ├── onboarding_wizard_page.dart # First-run onboarding wizard (Welcome → Server Setup → Ready)
 │       │   ├── chat_page.dart          # Chat orchestrator/facade
 │       │   └── chat_page/              # ChatPage decomposed clusters (18 modules)
 │       ├── providers/                  # App/Chat/Project/Settings state orchestration
@@ -42,7 +43,8 @@ codewalk/
 
 ```text
 lib/main.dart                                # Runtime entry; initializes bindings, DI, providers
-lib/presentation/pages/app_shell_page.dart   # Root shell; mounts ChatPage and desktop tray behavior
+lib/presentation/pages/app_shell_page.dart   # Root shell; gates onboarding wizard, mounts ChatPage and desktop tray behavior
+lib/presentation/pages/onboarding_wizard_page.dart # First-run wizard shown when no server is configured
 lib/presentation/pages/chat_page.dart         # Main chat/session/file UI entry
 .github/workflows/ci.yml                      # CI workflow entry
 .github/workflows/release.yml                 # Release workflow entry
@@ -63,6 +65,8 @@ lib/presentation/providers/app_provider.dart      # Server profiles, health poll
 lib/presentation/providers/project_provider.dart  # Project/worktree context selection and persistence
 lib/presentation/providers/settings_provider.dart # Experience settings, sounds, and update checks
 lib/presentation/providers/chat_provider.dart     # Chat state/realtime/session facade; microtask coalescing, event dedup buffer, render gate, favorite models
+lib/presentation/pages/onboarding_wizard_page.dart # 3-step onboarding wizard (Welcome, Server Setup, Ready); uses ServerSetupQuickGuide
+lib/presentation/pages/settings/sections/servers_settings_section.dart # Server profile CRUD; exports reusable ServerSetupQuickGuide widget
 lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade; WindowListener for desktop lifecycle
 lib/presentation/widgets/chat_input_widget.dart   # Composer/input orchestration facade
 lib/presentation/widgets/chat_message_widget.dart # Message bubble with build-skip cache, cached MarkdownStyleSheet
@@ -223,6 +227,21 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 - **Keyboard shortcut** (`chat_page_shortcuts.dart`): `_cycleRecentModel` now cycles
   favorites first, then recents (deduped), before falling back to the current provider's
   model list.
+
+### Onboarding Wizard
+
+- **Gate**: `AppShellPage` shows `OnboardingWizardPage` when no server profiles exist and
+  `skipOnboardingWizard` is false; navigation back to the shell happens automatically via
+  `Consumer2` rebuild when a profile is added.
+- **Steps**: Welcome (connect or need-help paths) -> Server Setup (optional `ServerSetupQuickGuide`
+  + connection form with URL/label/auth/AI-titles) -> Ready (success or retry).
+- **`ServerSetupQuickGuide`** (`servers_settings_section.dart`): Reusable stateless widget showing
+  quick-start instructions and a copyable `opencode serve` command. Used by both the onboarding
+  wizard and the Settings > Servers add/edit dialog.
+- **Android loopback mapping**: Both the wizard and the servers section map `localhost`/`127.0.0.1`
+  to `10.0.2.2` on Android emulator builds.
+- **Skip persistence**: User can skip the wizard with an optional "Don't show again" checkbox,
+  which calls `SettingsProvider.setSkipOnboardingWizard(true)`.
 
 ### Performance Architecture
 
