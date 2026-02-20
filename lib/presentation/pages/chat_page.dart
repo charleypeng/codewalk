@@ -567,9 +567,7 @@ class _ChatPageState extends State<ChatPage>
           _CycleAgentIntent: CallbackAction<_CycleAgentIntent>(
             onInvoke: (intent) {
               final chatProvider = context.read<ChatProvider>();
-              unawaited(
-                _cycleAgentWithFeedback(chatProvider, reverse: intent.reverse),
-              );
+              unawaited(chatProvider.cycleAgent(reverse: intent.reverse));
               return null;
             },
           ),

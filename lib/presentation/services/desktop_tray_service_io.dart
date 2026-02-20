@@ -171,7 +171,8 @@ class _DesktopTrayServiceIo
 
   Future<void> _quitApplication() async {
     _exiting = true;
-    await windowManager.setPreventClose(false);
-    await windowManager.close();
+    // Use destroy() to bypass close prevention without toggling
+    // setPreventClose, so close-to-tray stays intact until the very end.
+    await windowManager.destroy();
   }
 }

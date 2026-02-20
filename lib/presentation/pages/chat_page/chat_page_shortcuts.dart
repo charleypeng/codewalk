@@ -86,10 +86,10 @@ extension _ChatPageShortcuts on _ChatPageState {
         _handleEscape();
         return;
       case ShortcutAction.cycleAgentForward:
-        unawaited(_cycleAgentWithFeedback(chatProvider));
+        unawaited(chatProvider.cycleAgent());
         return;
       case ShortcutAction.cycleAgentBackward:
-        unawaited(_cycleAgentWithFeedback(chatProvider, reverse: true));
+        unawaited(chatProvider.cycleAgent(reverse: true));
         return;
       case ShortcutAction.quitApp:
         unawaited(_quitDesktopApp());
@@ -141,32 +141,13 @@ extension _ChatPageShortcuts on _ChatPageState {
   }
 
   /// Force-quit the desktop app, bypassing close-to-tray.
+  /// Uses destroy() instead of close() so setPreventClose stays active
+  /// and the X-button close-to-tray behavior is never broken.
   Future<void> _quitDesktopApp() async {
     if (!_isDesktopRuntime) {
       return;
     }
-    await windowManager.setPreventClose(false);
-    await windowManager.close();
-  }
-
-  Future<void> _cycleAgentWithFeedback(
-    ChatProvider chatProvider, {
-    bool reverse = false,
-  }) async {
-    final name = await chatProvider.cycleAgent(reverse: reverse);
-    if (name == null || !mounted) {
-      return;
-    }
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(
-          content: Text('Agent: $name'),
-          duration: const Duration(milliseconds: 1500),
-          behavior: SnackBarBehavior.floating,
-          width: 260,
-        ),
-      );
+    await windowManager.destroy();
   }
 
   Future<void> _cycleRecentModel(ChatProvider chatProvider) async {
