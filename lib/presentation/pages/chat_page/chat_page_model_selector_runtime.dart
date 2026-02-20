@@ -558,7 +558,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
             color: isFavorite ? Colors.amber : null,
           ),
           padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
           onPressed: () async {
             await chatProvider.toggleModelFavorite(
               providerId: providerId,
