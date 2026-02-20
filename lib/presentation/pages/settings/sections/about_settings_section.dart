@@ -220,9 +220,13 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
 
     if (!mounted) return;
 
-    // Reset in-memory provider state to defaults.
-    context.read<AppProvider>().resetToDefaults();
-    context.read<SettingsProvider>().resetToDefaults();
+    // Reset in-memory provider state and re-initialize from (now empty) storage.
+    final appProvider = context.read<AppProvider>();
+    final settingsProvider = context.read<SettingsProvider>();
+    appProvider.resetToDefaults();
+    settingsProvider.resetToDefaults();
+    await appProvider.initialize();
+    await settingsProvider.initialize();
 
     // Navigate back to AppShellPage, clearing the stack so the
     // onboarding gate re-evaluates with empty server profiles.

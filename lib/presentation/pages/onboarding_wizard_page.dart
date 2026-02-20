@@ -27,6 +27,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
   bool _connectionSuccess = false;
   String? _connectionError;
   bool _testing = false;
+  // ID of the server profile added during this wizard session, so "Try again"
+  // re-tests health instead of attempting a duplicate addServerProfile.
+  String? _addedServerId;
 
   final TextEditingController _urlController = TextEditingController(
     text: _ServersSettingsSectionState.suggestedServerUrl,
@@ -150,6 +153,24 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
     });
 
     final appProvider = context.read<AppProvider>();
+
+    // If we already added a server in a previous attempt, re-check its health
+    // instead of trying to add a duplicate profile.
+    if (_addedServerId != null) {
+      await appProvider.refreshServerHealth(serverId: _addedServerId);
+      if (!mounted) return;
+      final health = appProvider.healthFor(_addedServerId!);
+      setState(() {
+        _testing = false;
+        _connectionSuccess = health != ServerHealthStatus.unhealthy;
+        _connectionError = health == ServerHealthStatus.unhealthy
+            ? 'Server health check failed. It may still be starting up.'
+            : null;
+        _step = 2;
+      });
+      return;
+    }
+
     final adjustedUrl = _mapAndroidLoopback(_urlController.text.trim());
 
     final success = await appProvider.addServerProfile(
@@ -165,10 +186,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
     if (!mounted) return;
 
     if (success) {
-      // Check if the server is healthy after adding
-      final health = appProvider.healthFor(
-        appProvider.serverProfiles.last.id,
-      );
+      final serverId = appProvider.serverProfiles.last.id;
+      _addedServerId = serverId;
+      final health = appProvider.healthFor(serverId);
       setState(() {
         _testing = false;
         _connectionSuccess = health != ServerHealthStatus.unhealthy;
