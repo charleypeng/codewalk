@@ -156,9 +156,18 @@ class _DesktopTrayServiceIo
     switch (_closeBehavior) {
       case DesktopCloseBehavior.close:
         _exiting = true;
-        // Disabling preventClose during onWindowClose lets the native
-        // close pipeline proceed — no explicit close()/destroy() needed.
-        await windowManager.setPreventClose(false);
+        try {
+          // Disabling preventClose during onWindowClose lets the native
+          // close pipeline proceed — no explicit close()/destroy() needed.
+          await windowManager.setPreventClose(false);
+        } catch (error, stackTrace) {
+          _exiting = false;
+          AppLogger.warn(
+            'Failed to disable close prevention',
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }
         return;
       case DesktopCloseBehavior.minimize:
         await windowManager.minimize();
