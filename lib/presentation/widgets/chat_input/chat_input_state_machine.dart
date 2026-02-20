@@ -23,15 +23,16 @@ extension _ChatInputStateMachine on _ChatInputWidgetState {
     });
 
     try {
+      // Format file line references as inline text so the LLM sees the
+      // selected code directly instead of receiving opaque file parts.
+      final fullPayload = _buildPayloadWithContext(payloadText);
+
       await widget.onSendMessage(
         ChatInputSubmission(
-          text: payloadText,
+          text: fullPayload,
           attachments: _mode == ChatComposerMode.shell
               ? const <FileInputPart>[]
-              : List<FileInputPart>.unmodifiable(<FileInputPart>[
-                  ..._attachments,
-                  ...widget.contextItems,
-                ]),
+              : List<FileInputPart>.unmodifiable(_attachments),
           mode: _mode,
         ),
       );
@@ -118,6 +119,29 @@ extension _ChatInputStateMachine on _ChatInputWidgetState {
       const Duration(milliseconds: 120),
       _refreshSuggestions,
     );
+  }
+
+  /// Build the final message text by appending file line references as
+  /// fenced code blocks so the LLM receives the selected content inline.
+  String _buildPayloadWithContext(String userText) {
+    if (widget.contextItems.isEmpty) {
+      return userText;
+    }
+    final buffer = StringBuffer(userText);
+    for (final item in widget.contextItems) {
+      final source = item.source;
+      if (source == null) {
+        continue;
+      }
+      final header = '${item.filename}:${source.text.start}-${source.text.end}';
+      buffer.writeln();
+      buffer.writeln();
+      buffer.writeln('`$header`');
+      buffer.writeln('```');
+      buffer.writeln(source.text.value);
+      buffer.write('```');
+    }
+    return buffer.toString();
   }
 
   Future<void> _refreshSuggestions() async {

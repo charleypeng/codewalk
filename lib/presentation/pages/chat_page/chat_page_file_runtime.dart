@@ -454,6 +454,10 @@ extension _ChatPageFileRuntime on _ChatPageState {
                     height: double.infinity,
                     margin: const EdgeInsets.fromLTRB(10, 10, 10, 10),
                     onStateChanged: () => setDialogState(() {}),
+                    onContextAdded: () {
+                      Navigator.of(dialogContext).pop();
+                      _inputFocusNode.requestFocus();
+                    },
                   ),
                 ),
               );
@@ -501,6 +505,10 @@ extension _ChatPageFileRuntime on _ChatPageState {
                           height: double.infinity,
                           margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
                           onStateChanged: () => setDialogState(() {}),
+                          onContextAdded: () {
+                            Navigator.of(dialogContext).pop();
+                            _inputFocusNode.requestFocus();
+                          },
                         ),
                       ),
                     ],
