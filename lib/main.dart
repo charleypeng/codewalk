@@ -85,6 +85,8 @@ class MyApp extends StatelessWidget {
               final useDynamic = settingsProvider.useDynamicColor;
               final customSeed = settingsProvider.customColorSeed;
 
+              final contrastLevel = settingsProvider.contrastLevel;
+
               // Resolve seed color: custom pick or default brand
               final seedColor = customSeed != null
                   ? Color(customSeed)
@@ -97,6 +99,7 @@ class MyApp extends StatelessWidget {
                       : ColorScheme.fromSeed(
                           seedColor: seedColor,
                           brightness: Brightness.light,
+                          contrastLevel: contrastLevel,
                         );
               final darkScheme =
                   useDynamic && darkDynamic != null
@@ -104,6 +107,7 @@ class MyApp extends StatelessWidget {
                       : ColorScheme.fromSeed(
                           seedColor: seedColor,
                           brightness: Brightness.dark,
+                          contrastLevel: contrastLevel,
                         );
 
               // Map user theme mode preference to Flutter ThemeMode

@@ -332,6 +332,7 @@ class ExperienceSettings {
       themeMode: ThemeModeOption.system,
       useDynamicColor: true,
       customColorSeed: null,
+      contrastLevel: 0.0,
       speechToTextEngine: defaultSpeechEngine,
       speechSilenceTimeoutSeconds: 5,
       sherpaLanguageCode: kSherpaLanguageSystem,
@@ -359,6 +360,7 @@ class ExperienceSettings {
     this.themeMode = ThemeModeOption.system,
     this.useDynamicColor = true,
     this.customColorSeed,
+    this.contrastLevel = 0.0,
     this.speechToTextEngine = SpeechToTextEngine.native,
     this.speechSilenceTimeoutSeconds = 5,
     this.sherpaLanguageCode = kSherpaLanguageSystem,
@@ -386,6 +388,7 @@ class ExperienceSettings {
   final ThemeModeOption themeMode;
   final bool useDynamicColor;
   final int? customColorSeed;
+  final double contrastLevel;
   final SpeechToTextEngine speechToTextEngine;
   final int speechSilenceTimeoutSeconds;
   final String sherpaLanguageCode;
@@ -413,6 +416,7 @@ class ExperienceSettings {
     ThemeModeOption? themeMode,
     bool? useDynamicColor,
     int? Function()? customColorSeed,
+    double? contrastLevel,
     SpeechToTextEngine? speechToTextEngine,
     int? speechSilenceTimeoutSeconds,
     String? sherpaLanguageCode,
@@ -449,6 +453,7 @@ class ExperienceSettings {
       customColorSeed: customColorSeed != null
           ? customColorSeed()
           : this.customColorSeed,
+      contrastLevel: contrastLevel ?? this.contrastLevel,
       speechToTextEngine: speechToTextEngine ?? this.speechToTextEngine,
       speechSilenceTimeoutSeconds:
           speechSilenceTimeoutSeconds ?? this.speechSilenceTimeoutSeconds,
@@ -510,6 +515,7 @@ class ExperienceSettings {
       'themeMode': themeModeOptionKey(themeMode),
       'useDynamicColor': useDynamicColor,
       if (customColorSeed != null) 'customColorSeed': customColorSeed,
+      'contrastLevel': contrastLevel,
       'speechToTextEngine': speechToTextEngineKey(speechToTextEngine),
       'speechSilenceTimeoutSeconds': speechSilenceTimeoutSeconds,
       'sherpaLanguageCode': sherpaLanguageCode,
@@ -708,6 +714,12 @@ class ExperienceSettings {
       customColorSeed = customColorSeedJson.toInt();
     }
 
+    var contrastLevel = defaults.contrastLevel;
+    final contrastLevelJson = json['contrastLevel'];
+    if (contrastLevelJson is num) {
+      contrastLevel = contrastLevelJson.toDouble().clamp(-1.0, 1.0);
+    }
+
     final speechToTextEngineJson = json['speechToTextEngine'];
     if (speechToTextEngineJson is String &&
         speechToTextEngineJson.trim().isNotEmpty) {
@@ -758,6 +770,7 @@ class ExperienceSettings {
       themeMode: themeMode,
       useDynamicColor: useDynamicColor,
       customColorSeed: customColorSeed,
+      contrastLevel: contrastLevel,
       speechToTextEngine: speechToTextEngine,
       speechSilenceTimeoutSeconds: speechSilenceTimeoutSeconds,
       sherpaLanguageCode: sherpaLanguageCode,

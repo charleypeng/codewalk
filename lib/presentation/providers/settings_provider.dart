@@ -53,6 +53,7 @@ class SettingsProvider extends ChangeNotifier {
   ThemeModeOption get themeMode => _settings.themeMode;
   bool get useDynamicColor => _settings.useDynamicColor;
   int? get customColorSeed => _settings.customColorSeed;
+  double get contrastLevel => _settings.contrastLevel;
   AppDensity get appDensity => _settings.appDensity;
   bool get showThinkingBubbles => _settings.showThinkingBubbles;
   bool get showToolCallBubbles => _settings.showToolCallBubbles;
@@ -208,6 +209,16 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(customColorSeed: () => value);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setContrastLevel(double level) async {
+    final clamped = level.clamp(-1.0, 1.0);
+    if (_settings.contrastLevel == clamped) {
+      return;
+    }
+    _settings = _settings.copyWith(contrastLevel: clamped);
     notifyListeners();
     await _persist();
   }

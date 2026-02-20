@@ -10,6 +10,15 @@ import '../../../../domain/entities/experience_settings.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../theme/brand_colors.dart';
 
+String _contrastLabel(double level) {
+  if (level <= -0.83) return 'Reduced';
+  if (level <= -0.17) return 'Low';
+  if (level <= 0.17) return 'Standard';
+  if (level <= 0.58) return 'Medium';
+  if (level <= 0.83) return 'Medium High';
+  return 'High';
+}
+
 /// Dynamic color is supported on Android 12+ and some desktop environments.
 bool _supportsDynamicColor() {
   if (kIsWeb) {
@@ -180,6 +189,51 @@ class AppearanceSettingsSection extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Contrast card
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppConstants.defaultPadding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Contrast',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Adjust the contrast level of the color scheme.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Text('Reduced'),
+                        Expanded(
+                          child: Slider(
+                            key: const ValueKey<String>(
+                              'settings_contrast_slider',
+                            ),
+                            value: settingsProvider.contrastLevel,
+                            min: -1.0,
+                            max: 1.0,
+                            divisions: 6,
+                            label: _contrastLabel(
+                              settingsProvider.contrastLevel,
+                            ),
+                            onChanged: (value) => unawaited(
+                              settingsProvider.setContrastLevel(value),
+                            ),
+                          ),
+                        ),
+                        const Text('High'),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 12),
