@@ -307,6 +307,105 @@ void main() {
       );
     });
 
+    test('persists theme mode preference', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+
+      expect(first.themeMode, ThemeModeOption.system);
+
+      await first.setThemeMode(ThemeModeOption.dark);
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(second.themeMode, ThemeModeOption.dark);
+    });
+
+    test('persists dynamic color and custom seed preferences', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+
+      expect(first.useDynamicColor, isTrue);
+      expect(first.customColorSeed, isNull);
+
+      await first.setUseDynamicColor(false);
+      await first.setCustomColorSeed(0xFF6750A4);
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(second.useDynamicColor, isFalse);
+      expect(second.customColorSeed, 0xFF6750A4);
+
+      await second.setCustomColorSeed(null);
+
+      final third = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await third.initialize();
+
+      expect(third.customColorSeed, isNull);
+    });
+
+    test('persists contrast level preference', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+
+      expect(first.contrastLevel, 0.0);
+
+      await first.setContrastLevel(0.5);
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(second.contrastLevel, 0.5);
+    });
+
+    test('clamps contrast level to valid range', () async {
+      final local = InMemoryAppLocalDataSource();
+      final provider = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await provider.initialize();
+
+      await provider.setContrastLevel(2.0);
+      expect(provider.contrastLevel, 1.0);
+
+      await provider.setContrastLevel(-5.0);
+      expect(provider.contrastLevel, -1.0);
+    });
+
     test('persists selected system and file sound sources', () async {
       final local = InMemoryAppLocalDataSource();
       final provider = SettingsProvider(
