@@ -11,6 +11,7 @@ class SttSpeechInputService implements SpeechInputService {
 
   bool _isAvailable = false;
   Future<bool>? _initialization;
+  String? _lastUnavailableReason;
 
   void Function(String status)? _onStatus;
   void Function()? _onError;
@@ -20,6 +21,9 @@ class SttSpeechInputService implements SpeechInputService {
 
   @override
   bool get isAvailable => _isAvailable;
+
+  @override
+  String? get unavailableReason => _lastUnavailableReason;
 
   @override
   Future<bool> initialize() async {
@@ -42,16 +46,41 @@ class SttSpeechInputService implements SpeechInputService {
   }
 
   Future<bool> _initializeSpeechEngine() async {
+    _lastUnavailableReason = null;
     try {
       _isAvailable = await _speechToText.initialize(
         onStatus: _handleStatus,
         onError: _handleError,
       );
+      if (!_isAvailable) {
+        _lastUnavailableReason = await _buildUnavailableReason();
+      }
       return _isAvailable;
     } catch (_) {
       _isAvailable = false;
+      _lastUnavailableReason = await _buildUnavailableReason(
+        fallback: 'Native speech engine failed to initialize.',
+      );
       return false;
     }
+  }
+
+  Future<String> _buildUnavailableReason({String? fallback}) async {
+    final permissionGranted = await _speechToText.hasPermission;
+    if (!permissionGranted) {
+      return 'Microphone permission is disabled.';
+    }
+
+    final errorMessage = _speechToText.lastError?.errorMsg.trim();
+    if (errorMessage != null && errorMessage.isNotEmpty) {
+      return errorMessage;
+    }
+
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.windows) {
+      return 'Check Windows speech privacy, online speech recognition, and installed speech language packs.';
+    }
+
+    return fallback ?? 'Native speech engine is unavailable on this device.';
   }
 
   @override
@@ -101,6 +130,10 @@ class SttSpeechInputService implements SpeechInputService {
   }
 
   void _handleError(SpeechRecognitionError error) {
+    final message = error.errorMsg.trim();
+    if (message.isNotEmpty) {
+      _lastUnavailableReason = message;
+    }
     _onError?.call();
   }
 }

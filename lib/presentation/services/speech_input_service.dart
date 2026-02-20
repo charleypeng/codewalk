@@ -31,4 +31,8 @@ abstract class SpeechInputService {
 
   /// True after a successful [initialize] call.
   bool get isAvailable;
+
+  /// Optional human-readable hint describing why initialization is unavailable.
+  /// Used by the UI to explain fallback decisions.
+  String? get unavailableReason => null;
 }

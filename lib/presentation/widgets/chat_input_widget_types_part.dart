@@ -5,9 +5,11 @@ class _SpeechServiceResolution {
     required this.service,
     required this.engine,
     required this.usedFallback,
+    this.unavailableReason,
   });
 
   final SpeechInputService service;
   final SpeechToTextEngine engine;
   final bool usedFallback;
+  final String? unavailableReason;
 }

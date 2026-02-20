@@ -63,6 +63,13 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     };
   }
 
+  bool get _isWindows {
+    if (kIsWeb) {
+      return false;
+    }
+    return defaultTargetPlatform == TargetPlatform.windows;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -166,6 +173,27 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                     Expanded(
                       child: Text(
                         'Native STT is disabled on Linux in this app. Sherpa is the default engine.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (_isWindows)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Symbols.info,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Native STT works on Windows when OS speech services are enabled. If native initialization fails, CodeWalk automatically falls back to Sherpa. Check Windows microphone privacy, Online speech recognition, and installed speech language packs.',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),

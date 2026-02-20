@@ -42,6 +42,9 @@ class SherpaSpeechInputService implements SpeechInputService {
   bool get isAvailable => _isAvailable;
 
   @override
+  String? get unavailableReason => null;
+
+  @override
   Future<bool> initialize() async {
     try {
       _ensureBindingsInitialized();

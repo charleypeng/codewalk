@@ -27,4 +27,7 @@ class SherpaSpeechInputService implements SpeechInputService {
 
   @override
   bool get isAvailable => false;
+
+  @override
+  String? get unavailableReason => null;
 }

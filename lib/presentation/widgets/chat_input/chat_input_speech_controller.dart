@@ -35,6 +35,7 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
         service: fallbackService,
         engine: fallbackEngine,
         usedFallback: true,
+        unavailableReason: primaryService?.unavailableReason,
       );
     }
 
@@ -71,9 +72,15 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
     _activeSpeechService = resolution.service;
     if (resolution.usedFallback && mounted) {
       final label = _speechEngineLabel(resolution.engine);
+      final reason = resolution.unavailableReason?.trim();
+      final reasonSuffix = reason != null && reason.isNotEmpty
+          ? ' ($reason)'
+          : '';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Selected STT engine unavailable. Using $label.'),
+          content: Text(
+            'Selected STT engine unavailable$reasonSuffix. Using $label.',
+          ),
         ),
       );
     }
