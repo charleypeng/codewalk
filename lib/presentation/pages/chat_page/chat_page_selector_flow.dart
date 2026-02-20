@@ -30,15 +30,22 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: isMobile ? 100 : (isLargeDesktop ? 400 : 300),
-                      ),
-                      child: Text(
-                        currentDirectoryChip,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
+                    // Flexible allows the text to shrink when the AppBar
+                    // title area is narrow (e.g. medium breakpoint with
+                    // the conversation pane taking 260dp).
+                    Flexible(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth:
+                              isMobile ? 100 : (isLargeDesktop ? 400 : 300),
+                        ),
+                        child: Text(
+                          currentDirectoryChip,
+                          overflow: TextOverflow.ellipsis,
+                          style:
+                              Theme.of(context).textTheme.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                       ),
                     ),

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -17,17 +16,6 @@ String _contrastLabel(double level) {
   if (level <= 0.58) return 'Medium';
   if (level <= 0.83) return 'Medium High';
   return 'High';
-}
-
-/// Dynamic color is supported on Android 12+ and some desktop environments.
-bool _supportsDynamicColor() {
-  if (kIsWeb) {
-    return false;
-  }
-  return switch (defaultTargetPlatform) {
-    TargetPlatform.android || TargetPlatform.linux => true,
-    _ => false,
-  };
 }
 
 class AppearanceSettingsSection extends StatelessWidget {
@@ -115,7 +103,7 @@ class AppearanceSettingsSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Dynamic color toggle — only on platforms that support it
-                  if (_supportsDynamicColor())
+                  if (settingsProvider.dynamicColorAvailable)
                     SwitchListTile.adaptive(
                       key: const ValueKey<String>(
                         'settings_toggle_dynamic_color',
@@ -129,7 +117,7 @@ class AppearanceSettingsSection extends StatelessWidget {
                         settingsProvider.setUseDynamicColor(value),
                       ),
                     ),
-                  if (_supportsDynamicColor()) const Divider(height: 1),
+                  if (settingsProvider.dynamicColorAvailable) const Divider(height: 1),
                   Padding(
                     padding: const EdgeInsets.all(AppConstants.defaultPadding),
                     child: Column(
@@ -142,7 +130,7 @@ class AppearanceSettingsSection extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           settingsProvider.useDynamicColor &&
-                                  _supportsDynamicColor()
+                                  settingsProvider.dynamicColorAvailable
                               ? 'Disable wallpaper colors to pick a brand color.'
                               : 'Pick a seed color for the app palette.',
                           style: Theme.of(context).textTheme.bodySmall,
@@ -159,7 +147,7 @@ class AppearanceSettingsSection extends StatelessWidget {
                                 settingsProvider.customColorSeed == brand.value;
                             final isDisabled =
                                 settingsProvider.useDynamicColor &&
-                                _supportsDynamicColor();
+                                settingsProvider.dynamicColorAvailable;
                             return Tooltip(
                               message: brand.label,
                               child: ChoiceChip(
@@ -192,49 +180,64 @@ class AppearanceSettingsSection extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            // Contrast card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(AppConstants.defaultPadding),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Contrast',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Adjust the contrast level of the color scheme.',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
+            // Contrast card — disabled when dynamic color is active because
+            // contrastLevel only applies to ColorScheme.fromSeed, not to the
+            // platform-provided dynamic scheme.
+            Builder(
+              builder: (context) {
+                final isDynamicActive =
+                    settingsProvider.useDynamicColor &&
+                    settingsProvider.dynamicColorAvailable;
+                return Card(
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.all(AppConstants.defaultPadding),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Reduced'),
-                        Expanded(
-                          child: Slider(
-                            key: const ValueKey<String>(
-                              'settings_contrast_slider',
-                            ),
-                            value: settingsProvider.contrastLevel,
-                            min: -1.0,
-                            max: 1.0,
-                            divisions: 6,
-                            label: _contrastLabel(
-                              settingsProvider.contrastLevel,
-                            ),
-                            onChanged: (value) => unawaited(
-                              settingsProvider.setContrastLevel(value),
-                            ),
-                          ),
+                        Text(
+                          'Contrast',
+                          style: Theme.of(context).textTheme.titleMedium,
                         ),
-                        const Text('High'),
+                        const SizedBox(height: 4),
+                        Text(
+                          isDynamicActive
+                              ? 'Disable wallpaper colors to adjust contrast.'
+                              : 'Adjust the contrast level of the color scheme.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Text('Reduced'),
+                            Expanded(
+                              child: Slider(
+                                key: const ValueKey<String>(
+                                  'settings_contrast_slider',
+                                ),
+                                value: settingsProvider.contrastLevel,
+                                min: -1.0,
+                                max: 1.0,
+                                divisions: 6,
+                                label: _contrastLabel(
+                                  settingsProvider.contrastLevel,
+                                ),
+                                onChanged: isDynamicActive
+                                    ? null
+                                    : (value) => unawaited(
+                                          settingsProvider
+                                              .setContrastLevel(value),
+                                        ),
+                              ),
+                            ),
+                            const Text('High'),
+                          ],
+                        ),
                       ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 12),
             // Density card

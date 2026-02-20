@@ -45,7 +45,12 @@ class SettingsProvider extends ChangeNotifier {
   bool _initialized = false;
   Future<void>? _initFuture;
 
+  // Whether the platform actually provided a dynamic color scheme at runtime.
+  // Set from main.dart's DynamicColorBuilder callback.
+  bool _dynamicColorAvailable = false;
+
   bool get initialized => _initialized;
+  bool get dynamicColorAvailable => _dynamicColorAvailable;
   ExperienceSettings get settings => _settings;
   UpdateCheckResult? get updateCheckResult => _updateCheckResult;
   bool get checkingForUpdate => _checkingForUpdate;
@@ -193,6 +198,15 @@ class SettingsProvider extends ChangeNotifier {
     _settings = _settings.copyWith(themeMode: mode);
     notifyListeners();
     await _persist();
+  }
+
+  /// Sync runtime dynamic color availability from DynamicColorBuilder.
+  void updateDynamicColorAvailability({required bool available}) {
+    if (_dynamicColorAvailable == available) {
+      return;
+    }
+    _dynamicColorAvailable = available;
+    notifyListeners();
   }
 
   Future<void> setUseDynamicColor(bool value) async {

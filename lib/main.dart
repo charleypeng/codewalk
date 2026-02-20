@@ -84,8 +84,19 @@ class MyApp extends StatelessWidget {
               final appDensity = settingsProvider.appDensity;
               final useDynamic = settingsProvider.useDynamicColor;
               final customSeed = settingsProvider.customColorSeed;
-
               final contrastLevel = settingsProvider.contrastLevel;
+
+              // Sync actual dynamic color availability to provider so
+              // the settings UI can reflect reality (not just platform
+              // heuristic).
+              final hasDynamic = lightDynamic != null;
+              if (settingsProvider.dynamicColorAvailable != hasDynamic) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  settingsProvider.updateDynamicColorAvailability(
+                    available: hasDynamic,
+                  );
+                });
+              }
 
               // Resolve seed color: custom pick or default brand
               final seedColor = customSeed != null
@@ -94,7 +105,7 @@ class MyApp extends StatelessWidget {
 
               // Use dynamic platform colors when available and enabled
               final lightScheme =
-                  useDynamic && lightDynamic != null
+                  useDynamic && hasDynamic
                       ? lightDynamic
                       : ColorScheme.fromSeed(
                           seedColor: seedColor,
