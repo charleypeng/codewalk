@@ -1,7 +1,7 @@
 # ROADMAP.featC - Long Conversation Performance and Files Planning
 
 **Status**: Completed (2026-02-19)
-**Commits**: pending-commit
+**Commits**: pending-commit, 51edd51
 
 ## Scope
 
@@ -11,6 +11,8 @@
   - Icons replaced: `visibility_off` → `left_panel_close_rounded` / `right_panel_close_rounded` (Symbols).
 - [x] Task 30: Plan line comments for opened files (OpenCode web parity planning).
   - Planning doc created: `ROADMAP.featC.comments-plan.md`.
+- [x] File Line References: gutter line numbers with tap/shift-tap selection, selection action bar, FileInputPart context chips in chat input, and send pipeline integration. - Commit: 96949cb
+  - Fix (51edd51): full-line click area, full-width selection highlight covers gutter+code, dialog closes and focuses composer after "Add to chat", context items sent as inline fenced code blocks instead of FileInputPart attachments to avoid raw XML in response bubbles.
 
 ## Goal
 

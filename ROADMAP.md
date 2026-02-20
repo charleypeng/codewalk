@@ -128,8 +128,10 @@ Render gate implemented: `_notifyListeners` suppresses rebuilds while app in bac
 - [x] Quando a janela perder foco, continuar recebendo pooling mas não renderizar novas mensagens até a tela ganhar foco novamente para evitar desgaste de eficiencia. Porém somente quando estiver fora e foco e nao visivel pois o usuario pode estar olhando mesmo sem foco (desktop, tablets etc)
 - [x] Na barra 'Files' tem um ícone de olho cortado pra ocultar a barra, trocar para algo mais intuitivo como um ícone estilo <| (encontre um ícone nativo)
 - [x] Criar planejamento para os arquivos abertos em Files permitir comentar linhas igual no OpenCode web
+- [x] File Line References: gutter line numbers, tap/shift-tap selection, selection action bar, FileInputPart context chips in chat input, send pipeline integration. - Commit: 96949cb
+  - Fix (51edd51): full-line click area, full-width selection highlight covers gutter+code, dialog closes and focuses composer after "Add to chat", context items sent as inline fenced code blocks instead of FileInputPart attachments to avoid raw XML in response bubbles.
 
-**Commits**: pending-commit
+**Commits**: pending-commit, 96949cb, 51edd51
 
 #### `featD` Thinking and tool UX polish
 
