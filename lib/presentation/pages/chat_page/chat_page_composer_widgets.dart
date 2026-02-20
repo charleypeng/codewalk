@@ -235,14 +235,14 @@ extension _ChatPageComposerWidgets on _ChatPageState {
         ),
       ),
       _ComposerStatusType.tip => Icon(
-        Icons.lightbulb_outline,
+        Symbols.lightbulb_outline,
         key: const ValueKey<String>('composer_reasoning_status_icon_tip'),
         size: 15,
         color: colorScheme.primary,
       ),
       _ComposerStatusType.receiving ||
       _ComposerStatusType.dynamicReasoning => Icon(
-        Icons.auto_awesome,
+        Symbols.auto_awesome,
         key: const ValueKey<String>('composer_reasoning_status_icon'),
         size: 15,
         color: colorScheme.primary,

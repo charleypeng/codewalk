@@ -3,6 +3,7 @@ import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/presentation/widgets/chat_input_widget.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -37,14 +38,14 @@ void main() {
 
     expect(find.byType(TextField), findsOneWidget);
     expect(find.byTooltip('Start voice input'), findsOneWidget);
-    expect(find.byIcon(Icons.send_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.keyboard_return_rounded), findsOneWidget);
+    expect(find.byIcon(Symbols.send_rounded), findsOneWidget);
+    expect(find.byIcon(Symbols.keyboard_return_rounded), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), 'hello');
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.send_rounded), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.send_rounded));
+    expect(find.byIcon(Symbols.send_rounded), findsOneWidget);
+    await tester.tap(find.byIcon(Symbols.send_rounded));
     await tester.pumpAndSettle();
 
     expect(sentSubmission?.text, 'hello');
@@ -106,7 +107,7 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(find.byIcon(Icons.send_rounded));
+    await tester.tap(find.byIcon(Symbols.send_rounded));
     await tester.pumpAndSettle();
 
     expect(sentSubmission?.mode, ChatComposerMode.shell);
@@ -428,10 +429,10 @@ void main() {
       ),
     );
 
-    expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.send_rounded), findsNothing);
+    expect(find.byIcon(Symbols.stop_rounded), findsOneWidget);
+    expect(find.byIcon(Symbols.send_rounded), findsNothing);
 
-    await tester.tap(find.byIcon(Icons.stop_rounded));
+    await tester.tap(find.byIcon(Symbols.stop_rounded));
     await tester.pumpAndSettle();
 
     expect(stopCount, 1);

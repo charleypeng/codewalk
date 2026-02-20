@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_constants.dart';
@@ -56,7 +57,7 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
               child: const Icon(
-                Icons.developer_mode,
+                Symbols.developer_mode,
                 color: Colors.white,
                 size: 20,
               ),
@@ -117,8 +118,8 @@ class _HomePageState extends State<HomePage> {
                       ),
                       child: Icon(
                         appProvider.isConnected
-                            ? Icons.cloud_done
-                            : Icons.cloud_off,
+                            ? Symbols.cloud_done
+                            : Symbols.cloud_off,
                         color: appProvider.isConnected
                             ? Theme.of(context).colorScheme.tertiary
                             : Theme.of(context).colorScheme.error,
@@ -158,7 +159,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                   child: Icon(
-                    Icons.settings,
+                    Symbols.settings,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                     size: 20,
                   ),
@@ -222,7 +223,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 child: Icon(
-                  Icons.cloud_off_rounded,
+                  Symbols.cloud_off_rounded,
                   size: 64,
                   color: Theme.of(context).colorScheme.error,
                 ),
@@ -313,7 +314,10 @@ class _HomePageState extends State<HomePage> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  icon: const Icon(Icons.settings_rounded, color: Colors.white),
+                  icon: const Icon(
+                    Symbols.settings_rounded,
+                    color: Colors.white,
+                  ),
                   label: const Text(
                     'Configure Server',
                     style: TextStyle(
@@ -409,7 +413,7 @@ class _HomePageState extends State<HomePage> {
                           ],
                         ),
                         child: const Icon(
-                          Icons.check_circle_rounded,
+                          Symbols.check_circle_rounded,
                           color: Colors.white,
                           size: 20,
                         ),
@@ -447,14 +451,14 @@ class _HomePageState extends State<HomePage> {
                             children: [
                               _buildInfoRow(
                                 context,
-                                Icons.dns_rounded,
+                                Symbols.dns_rounded,
                                 'Server',
                                 appProvider.serverUrl,
                               ),
                               const SizedBox(height: 8),
                               _buildInfoRow(
                                 context,
-                                Icons.computer_rounded,
+                                Symbols.computer_rounded,
                                 'Host',
                                 appProvider.appInfo!.hostname,
                               ),
@@ -514,7 +518,7 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   _buildFeatureCard(
                     context,
-                    icon: Icons.psychology_rounded,
+                    icon: Symbols.psychology_rounded,
                     title: 'AI Chat',
                     subtitle: 'Chat with AI assistant',
                     gradientColors: [
@@ -527,7 +531,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   _buildFeatureCard(
                     context,
-                    icon: Icons.folder_rounded,
+                    icon: Symbols.folder_rounded,
                     title: 'File Management',
                     subtitle: 'Browse and edit files',
                     gradientColors: [
@@ -542,7 +546,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   _buildFeatureCard(
                     context,
-                    icon: Icons.history_rounded,
+                    icon: Symbols.history_rounded,
                     title: 'Chat History',
                     subtitle: 'View chat history',
                     gradientColors: [
@@ -557,7 +561,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   _buildFeatureCard(
                     context,
-                    icon: Icons.smart_toy_rounded,
+                    icon: Symbols.smart_toy_rounded,
                     title: 'AI Agents',
                     subtitle: 'Select AI agents',
                     gradientColors: [

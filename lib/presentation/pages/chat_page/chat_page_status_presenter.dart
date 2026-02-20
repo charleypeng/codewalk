@@ -315,7 +315,7 @@ extension _ChatPageStatusPresenter on _ChatPageState {
                         ),
                       ),
                       if (server.id == appProvider.activeServerId)
-                        const Icon(Icons.check, size: 16),
+                        const Icon(Symbols.check, size: 16),
                     ],
                   ),
                 ),
@@ -342,7 +342,7 @@ extension _ChatPageStatusPresenter on _ChatPageState {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.cloud_outlined, size: 16),
+                const Icon(Symbols.cloud, size: 16),
                 const SizedBox(width: 8),
                 Container(
                   width: 8,
@@ -367,7 +367,7 @@ extension _ChatPageStatusPresenter on _ChatPageState {
                   style: Theme.of(context).textTheme.labelSmall,
                 ),
                 const SizedBox(width: 2),
-                const Icon(Icons.arrow_drop_down, size: 18),
+                const Icon(Symbols.arrow_drop_down, size: 18),
               ],
             ),
           ),

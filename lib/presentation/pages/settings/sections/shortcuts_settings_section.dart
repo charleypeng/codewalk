@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_constants.dart';
@@ -57,7 +58,7 @@ class _ShortcutsSettingsSectionState extends State<ShortcutsSettingsSection> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Search shortcuts',
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const Icon(Symbols.search),
                 suffixIcon: _searchController.text.isEmpty
                     ? null
                     : IconButton(
@@ -65,7 +66,7 @@ class _ShortcutsSettingsSectionState extends State<ShortcutsSettingsSection> {
                           _searchController.clear();
                           setState(() {});
                         },
-                        icon: const Icon(Icons.clear),
+                        icon: const Icon(Symbols.clear),
                       ),
               ),
               onChanged: (_) => setState(() {}),
@@ -75,7 +76,7 @@ class _ShortcutsSettingsSectionState extends State<ShortcutsSettingsSection> {
               alignment: Alignment.centerRight,
               child: TextButton.icon(
                 onPressed: () => settingsProvider.resetAllShortcuts(),
-                icon: const Icon(Icons.restart_alt),
+                icon: const Icon(Symbols.restart_alt),
                 label: const Text('Reset all'),
               ),
             ),
@@ -168,12 +169,12 @@ class _ShortcutTile extends StatelessWidget {
             IconButton(
               tooltip: 'Edit shortcut',
               onPressed: onEdit,
-              icon: const Icon(Icons.keyboard_rounded),
+              icon: const Icon(Symbols.keyboard_rounded),
             ),
             IconButton(
               tooltip: 'Reset shortcut',
               onPressed: onReset,
-              icon: const Icon(Icons.undo_rounded),
+              icon: const Icon(Symbols.undo_rounded),
             ),
           ],
         ),

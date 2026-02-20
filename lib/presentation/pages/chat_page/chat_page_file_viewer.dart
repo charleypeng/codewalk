@@ -95,7 +95,7 @@ extension _ChatPageFileViewer on _ChatPageState {
                                 minWidth: 22,
                                 minHeight: 22,
                               ),
-                              icon: const Icon(Icons.close, size: 14),
+                              icon: const Icon(Symbols.close, size: 14),
                               onPressed: () {
                                 _closeFileTab(
                                   fileState: fileState,
@@ -204,7 +204,7 @@ extension _ChatPageFileViewer on _ChatPageState {
       child: Row(
         children: [
           Icon(
-            Icons.check_box_outlined,
+            Symbols.check_box,
             size: 16,
             color: colorScheme.primary,
           ),
@@ -227,7 +227,7 @@ extension _ChatPageFileViewer on _ChatPageState {
               // Close dialog and focus composer after adding context.
               onContextAdded?.call();
             },
-            icon: const Icon(Icons.chat_bubble_outline, size: 16),
+            icon: const Icon(Symbols.chat_bubble_outline, size: 16),
             label: const Text('Add to chat'),
             style: TextButton.styleFrom(
               visualDensity: VisualDensity.compact,

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/constants/app_constants.dart';
@@ -50,49 +51,49 @@ class _SettingsPageState extends State<SettingsPage> {
       id: 'servers',
       title: 'Servers',
       description: 'OpenCode servers and health routing',
-      icon: Icons.dns_outlined,
+      icon: Symbols.dns,
       builder: (_) => const ServersSettingsSection(),
     ),
     _SettingsSection(
       id: 'appearance',
       title: 'Appearance',
       description: 'Density and timeline bubble visibility',
-      icon: Icons.tune_rounded,
+      icon: Symbols.tune_rounded,
       builder: (_) => const AppearanceSettingsSection(),
     ),
     _SettingsSection(
       id: 'notifications',
       title: 'Notifications',
       description: 'Per-category notify and sound controls',
-      icon: Icons.notifications_active_outlined,
+      icon: Symbols.notifications_active,
       builder: (_) => const NotificationsSettingsSection(),
     ),
     _SettingsSection(
       id: 'speech',
       title: 'Speech to text',
       description: 'Engine, silence timeout, and model options',
-      icon: Icons.mic_none_rounded,
+      icon: Symbols.mic_none_rounded,
       builder: (_) => const SpeechSettingsSection(),
     ),
     _SettingsSection(
       id: 'logs',
       title: 'Logs',
       description: 'Runtime diagnostics and troubleshooting data',
-      icon: Icons.receipt_long_rounded,
+      icon: Symbols.receipt_long_rounded,
       builder: (_) => const LogsSettingsSection(),
     ),
     _SettingsSection(
       id: 'shortcuts',
       title: 'Shortcuts',
       description: 'Search and edit key bindings',
-      icon: Icons.keyboard_command_key_rounded,
+      icon: Symbols.keyboard_command_key_rounded,
       builder: (_) => const ShortcutsSettingsSection(),
     ),
     _SettingsSection(
       id: 'about',
       title: 'About',
       description: 'Version, updates and links',
-      icon: Icons.info_outline,
+      icon: Symbols.info,
       builder: (_) => const AboutSettingsSection(),
     ),
   ];
@@ -209,7 +210,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       _showMobileDetail = false;
                     });
                   },
-                  icon: const Icon(Icons.arrow_back),
+                  icon: const Icon(Symbols.arrow_back),
                 )
               : null,
         ),
@@ -251,7 +252,7 @@ class _SettingsPageState extends State<SettingsPage> {
               leading: Icon(section.icon),
               title: Text(section.title),
               subtitle: Text(section.description),
-              trailing: const Icon(Icons.chevron_right),
+              trailing: const Icon(Symbols.chevron_right),
               onTap: () {
                 setState(() {
                   _selectedSectionId = section.id;

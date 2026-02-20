@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../domain/entities/chat_session.dart';
 
@@ -129,8 +130,8 @@ class _SessionTodoListWidgetState extends State<SessionTodoListWidget> {
               children: [
                 Icon(
                   widget.collapsed
-                      ? Icons.expand_more_rounded
-                      : Icons.expand_less_rounded,
+                      ? Symbols.expand_more_rounded
+                      : Symbols.expand_less_rounded,
                   size: 18,
                   color: colorScheme.onSurfaceVariant,
                 ),
@@ -176,9 +177,11 @@ class _SessionTodoListWidgetState extends State<SessionTodoListWidget> {
                   )
                 : Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: widget.todos.map((todo) {
-                      return _buildTodoItem(context, todo);
-                    }).toList(growable: false),
+                    children: widget.todos
+                        .map((todo) {
+                          return _buildTodoItem(context, todo);
+                        })
+                        .toList(growable: false),
                   ),
           ),
       ],
@@ -192,27 +195,21 @@ class _SessionTodoListWidgetState extends State<SessionTodoListWidget> {
     final isInProgress = todo.status == 'in_progress';
 
     final statusIcon = isCompleted
-        ? Icon(
-            Icons.check_box_outlined,
-            size: 16,
-            color: colorScheme.primary,
-          )
+        ? Icon(Symbols.check_box, size: 16, color: colorScheme.primary)
         : isInProgress
-            ? SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                  strokeWidth: 1.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    colorScheme.primary,
-                  ),
-                ),
-              )
-            : Icon(
-                Icons.check_box_outline_blank,
-                size: 16,
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-              );
+        ? SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 1.5,
+              valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+            ),
+          )
+        : Icon(
+            Symbols.check_box_outline_blank,
+            size: 16,
+            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+          );
 
     final priorityColor = switch (todo.priority) {
       'high' => colorScheme.error,
@@ -231,8 +228,7 @@ class _SessionTodoListWidgetState extends State<SessionTodoListWidget> {
             child: Text(
               todo.content,
               style: textTheme.bodySmall?.copyWith(
-                decoration:
-                    isCompleted ? TextDecoration.lineThrough : null,
+                decoration: isCompleted ? TextDecoration.lineThrough : null,
                 color: isCompleted
                     ? colorScheme.onSurfaceVariant.withValues(alpha: 0.5)
                     : null,

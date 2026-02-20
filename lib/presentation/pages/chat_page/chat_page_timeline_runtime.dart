@@ -110,8 +110,8 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
         ? 'Hide earlier messages'
         : 'Show earlier messages';
     final actionIcon = entry.expanded
-        ? Icons.unfold_less_rounded
-        : Icons.unfold_more_rounded;
+        ? Symbols.unfold_less_rounded
+        : Symbols.unfold_more_rounded;
 
     return Padding(
       key: ValueKey<String>(entry.key),
@@ -139,7 +139,7 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
-                      Icons.history_toggle_off_rounded,
+                      Symbols.history_toggle_off_rounded,
                       size: 18,
                       color: colorScheme.primary,
                     ),

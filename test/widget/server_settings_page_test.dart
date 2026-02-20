@@ -4,6 +4,7 @@ import 'package:codewalk/domain/usecases/get_app_info.dart';
 import 'package:codewalk/presentation/pages/server_settings_page.dart';
 import 'package:codewalk/presentation/providers/app_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
@@ -72,7 +73,7 @@ void main() {
     );
     final betaMenu = find.descendant(
       of: betaTile,
-      matching: find.byIcon(Icons.more_vert),
+      matching: find.byIcon(Symbols.more_vert),
     );
     expect(betaMenu, findsOneWidget);
 
@@ -100,7 +101,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Copy'), findsOneWidget);
-    expect(find.byIcon(Icons.copy_rounded), findsOneWidget);
+    expect(find.byIcon(Symbols.content_copy_rounded), findsOneWidget);
     expect(find.text('1. Install OpenCode CLI.'), findsOneWidget);
     expect(find.textContaining('opencode.ai/docs/server'), findsNothing);
     expect(find.textContaining('Use this URL in the app'), findsNothing);

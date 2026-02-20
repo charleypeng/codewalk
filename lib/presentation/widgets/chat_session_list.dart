@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 
 import '../../domain/entities/chat_session.dart';
@@ -69,7 +70,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.chat_bubble_outline,
+              Symbols.chat_bubble_outline,
               size: 64,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -282,7 +283,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
               switchOutCurve: Curves.easeInCubic,
               child: isSessionActive
                   ? Icon(
-                      Icons.sync_rounded,
+                      Symbols.sync_rounded,
                       key: ValueKey<String>(
                         'chat_session_loading_${session.id}',
                       ),
@@ -292,7 +293,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
                       size: 20,
                     )
                   : Icon(
-                      session.archived ? Icons.archive_outlined : Icons.chat,
+                      session.archived ? Symbols.archive : Symbols.chat,
                       key: ValueKey<String>('chat_session_idle_${session.id}'),
                       color: isSelected
                           ? colorScheme.onPrimary
@@ -320,7 +321,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
                   child: Padding(
                     padding: const EdgeInsets.only(right: 4),
                     child: Icon(
-                      expanded ? Icons.expand_more : Icons.chevron_right,
+                      expanded ? Symbols.expand_more : Symbols.chevron_right,
                       size: 18,
                       color: isSelected
                           ? colorScheme.onSecondaryContainer.withValues(
@@ -395,7 +396,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
                     ),
                   if (session.shared)
                     Icon(
-                      Icons.share,
+                      Symbols.share,
                       size: 12,
                       color: isSelected
                           ? colorScheme.onSecondaryContainer.withValues(
@@ -405,7 +406,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
                     ),
                   if (session.archived)
                     Icon(
-                      Icons.archive,
+                      Symbols.archive,
                       size: 12,
                       color: isSelected
                           ? colorScheme.onSecondaryContainer.withValues(
@@ -419,7 +420,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
           ),
           trailing: PopupMenuButton<String>(
             icon: Icon(
-              Icons.more_vert,
+              Symbols.more_vert,
               color: isSelected
                   ? colorScheme.onSecondaryContainer
                   : colorScheme.onSurfaceVariant,
@@ -451,7 +452,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
                 value: 'rename',
                 child: Row(
                   children: [
-                    Icon(Icons.edit),
+                    Icon(Symbols.edit),
                     SizedBox(width: 8),
                     Text('Rename'),
                   ],
@@ -461,7 +462,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
                 value: 'share',
                 child: Row(
                   children: [
-                    Icon(session.shared ? Icons.link_off : Icons.link),
+                    Icon(session.shared ? Symbols.link_off : Symbols.link),
                     const SizedBox(width: 8),
                     Text(session.shared ? 'Unshare' : 'Share'),
                   ],
@@ -472,7 +473,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
                   value: 'copy-link',
                   child: Row(
                     children: [
-                      Icon(Icons.copy),
+                      Icon(Symbols.content_copy),
                       SizedBox(width: 8),
                       Text('Copy Link'),
                     ],
@@ -483,9 +484,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
                 child: Row(
                   children: [
                     Icon(
-                      session.archived
-                          ? Icons.unarchive_outlined
-                          : Icons.archive_outlined,
+                      session.archived ? Symbols.unarchive : Symbols.archive,
                     ),
                     const SizedBox(width: 8),
                     Text(session.archived ? 'Unarchive' : 'Archive'),
@@ -496,7 +495,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
                 value: 'fork',
                 child: Row(
                   children: [
-                    Icon(Icons.call_split),
+                    Icon(Symbols.call_split),
                     SizedBox(width: 8),
                     Text('Fork'),
                   ],
@@ -506,7 +505,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
                 value: 'delete',
                 child: Row(
                   children: [
-                    Icon(Icons.delete, color: Colors.red),
+                    Icon(Symbols.delete, color: Colors.red),
                     SizedBox(width: 8),
                     Text('Delete', style: TextStyle(color: Colors.red)),
                   ],

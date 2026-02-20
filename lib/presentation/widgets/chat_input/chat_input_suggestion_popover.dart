@@ -26,8 +26,8 @@ extension _ChatInputSuggestionPopover on _ChatInputWidgetState {
                   title: item.value,
                   subtitle: item.subtitle,
                   icon: item.type == ChatComposerSuggestionType.file
-                      ? Icons.insert_drive_file_outlined
-                      : Icons.smart_toy_outlined,
+                      ? Symbols.insert_drive_file
+                      : Symbols.smart_toy,
                   badge: item.type == ChatComposerSuggestionType.file
                       ? 'file'
                       : 'agent',
@@ -40,8 +40,8 @@ extension _ChatInputSuggestionPopover on _ChatInputWidgetState {
                   title: '/${item.name}',
                   subtitle: item.description,
                   icon: item.isBuiltin
-                      ? Icons.bolt_outlined
-                      : Icons.extension_outlined,
+                      ? Symbols.bolt
+                      : Symbols.extension,
                   badge: item.source,
                 ),
               )

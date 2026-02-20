@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -51,8 +52,7 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
             _buildVersionTile(context),
             if (updateResult != null && updateResult.isNewer)
               _buildUpdateAvailableTile(context, settings, updateResult),
-            if (upToDate && updateResult == null)
-              _buildUpToDateTile(context),
+            if (upToDate && updateResult == null) _buildUpToDateTile(context),
             _buildCheckForUpdatesTile(context, settings, checking),
             const Divider(height: 32),
             _buildResetAppTile(context),
@@ -66,12 +66,10 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
 
   Widget _buildVersionTile(BuildContext context) {
     return ListTile(
-      leading: const Icon(Icons.info_outline),
+      leading: const Icon(Symbols.info),
       title: const Text('Version'),
       subtitle: Text(
-        _version.isEmpty
-            ? 'Loading...'
-            : '$_version (build $_buildNumber)',
+        _version.isEmpty ? 'Loading...' : '$_version (build $_buildNumber)',
       ),
     );
   }
@@ -91,7 +89,7 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
             Row(
               children: [
                 Icon(
-                  Icons.system_update_outlined,
+                  Symbols.system_update,
                   color: Theme.of(context).colorScheme.onPrimaryContainer,
                 ),
                 const SizedBox(width: 8),
@@ -124,12 +122,11 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
                 if (result.releaseUrl != null)
                   FilledButton.icon(
                     onPressed: () => _openUrl(result.releaseUrl!),
-                    icon: const Icon(Icons.open_in_new, size: 16),
+                    icon: const Icon(Symbols.open_in_new, size: 16),
                     label: const Text('View release'),
                   ),
                 OutlinedButton(
-                  onPressed: () =>
-                      settings.dismissUpdate(result.latestVersion),
+                  onPressed: () => settings.dismissUpdate(result.latestVersion),
                   child: const Text('Dismiss'),
                 ),
               ],
@@ -143,7 +140,7 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
   Widget _buildUpToDateTile(BuildContext context) {
     return ListTile(
       leading: Icon(
-        Icons.check_circle_outline,
+        Symbols.check_circle_outline,
         color: Theme.of(context).colorScheme.primary,
       ),
       title: const Text('You\'re up to date'),
@@ -163,7 +160,7 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
               height: 24,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : const Icon(Icons.refresh),
+          : const Icon(Symbols.refresh),
       title: const Text('Check for updates'),
       subtitle: Text(
         checking ? 'Checking...' : 'Tap to check for new versions',
@@ -175,11 +172,8 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
   Widget _buildResetAppTile(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return ListTile(
-      leading: Icon(Icons.restart_alt_rounded, color: colorScheme.error),
-      title: Text(
-        'Reset app',
-        style: TextStyle(color: colorScheme.error),
-      ),
+      leading: Icon(Symbols.restart_alt_rounded, color: colorScheme.error),
+      title: Text('Reset app', style: TextStyle(color: colorScheme.error)),
       subtitle: const Text('Erase all data and restart'),
       onTap: () => _confirmResetApp(context),
     );
@@ -239,10 +233,10 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
 
   Widget _buildGitHubTile(BuildContext context) {
     return ListTile(
-      leading: const Icon(Icons.code),
+      leading: const Icon(Symbols.code),
       title: const Text('GitHub'),
       subtitle: const Text('verseles/codewalk'),
-      trailing: const Icon(Icons.open_in_new, size: 16),
+      trailing: const Icon(Symbols.open_in_new, size: 16),
       onTap: () => _openUrl('https://github.com/verseles/codewalk'),
     );
   }

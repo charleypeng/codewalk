@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../domain/entities/chat_realtime.dart';
 
@@ -69,7 +70,7 @@ class _QuestionRequestCardState extends State<QuestionRequestCard> {
         children: [
           Row(
             children: [
-              Icon(Icons.help_outline, color: colorScheme.primary),
+              Icon(Symbols.help_outline, color: colorScheme.primary),
               const SizedBox(width: 8),
               Text(
                 'Question request',

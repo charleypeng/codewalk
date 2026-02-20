@@ -70,14 +70,14 @@ extension _ChatPageChrome on _ChatPageState {
                       chatProvider: chatProvider,
                       appProvider: appProvider,
                     );
-                    const menuIcon = Icon(Icons.menu);
+                    const menuIcon = Icon(Symbols.menu);
                     final alertIcon = SizedBox(
                       width: 24,
                       height: 24,
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          const Positioned.fill(child: Icon(Icons.menu)),
+                          const Positioned.fill(child: Icon(Symbols.menu)),
                           Positioned(
                             top: -1,
                             right: -1,
@@ -135,8 +135,8 @@ extension _ChatPageChrome on _ChatPageState {
                         children: [
                           Icon(
                             settingsProvider.isDesktopPaneVisible(pane)
-                                ? Icons.check_box_rounded
-                                : Icons.check_box_outline_blank_rounded,
+                                ? Symbols.check_box_rounded
+                                : Symbols.check_box_outline_blank_rounded,
                             size: 18,
                           ),
                           const SizedBox(width: 8),
@@ -147,7 +147,7 @@ extension _ChatPageChrome on _ChatPageState {
                   )
                   .toList(growable: false);
             },
-            icon: const Icon(Icons.view_sidebar_outlined),
+            icon: const Icon(Symbols.view_sidebar),
           ),
         PopupMenuButton<_DisplayToggleAction>(
           key: const ValueKey<String>('appbar_display_toggles_button'),
@@ -253,7 +253,7 @@ extension _ChatPageChrome on _ChatPageState {
                       color: color.withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    child: Icon(Icons.sync_rounded, size: 14, color: color),
+                    child: Icon(Symbols.sync_rounded, size: 14, color: color),
                   ),
                 ),
               );
@@ -262,25 +262,25 @@ extension _ChatPageChrome on _ChatPageState {
         if (isMobile)
           IconButton(
             key: const ValueKey<String>('appbar_quick_open_button'),
-            icon: const Icon(Icons.account_tree_outlined),
+            icon: const Icon(Symbols.account_tree),
             tooltip: 'Open Files',
             onPressed: () => unawaited(_openMobileFilesDialog()),
           ),
         if (!isMobile)
           IconButton(
-            icon: const Icon(Icons.add_comment_outlined),
+            icon: const Icon(Symbols.add_comment),
             tooltip: 'New Chat',
             onPressed: _createNewSession,
           ),
         if (!refreshlessEnabled)
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Symbols.refresh),
             tooltip: 'Refresh',
             onPressed: _refreshData,
           ),
         if (isMobile)
           IconButton(
-            icon: const Icon(Icons.add_comment_outlined),
+            icon: const Icon(Symbols.add_comment),
             tooltip: 'New Chat',
             onPressed: _createNewSession,
           ),
@@ -314,7 +314,7 @@ extension _ChatPageChrome on _ChatPageState {
               appBar: AppBar(
                 title: const Text('Files'),
                 leading: IconButton(
-                  icon: const Icon(Icons.close),
+                  icon: const Icon(Symbols.close),
                   tooltip: 'Close',
                   onPressed: () => Navigator.of(dialogContext).pop(),
                 ),
@@ -555,7 +555,7 @@ extension _ChatPageChrome on _ChatPageState {
       dense: _useDenseListTiles(dialogContext),
       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
       leading: Icon(
-        selected ? Icons.radio_button_checked : Icons.folder_open_outlined,
+        selected ? Symbols.radio_button_checked : Symbols.folder_open,
         size: 20,
       ),
       title: Text(displayName, overflow: TextOverflow.ellipsis),
@@ -565,7 +565,7 @@ extension _ChatPageChrome on _ChatPageState {
       selected: selected,
       onTap: onSwitch,
       trailing: IconButton(
-        icon: const Icon(Icons.close_rounded),
+        icon: const Icon(Symbols.close_rounded),
         tooltip: 'Close ${_projectDisplayLabel(project)}',
         onPressed: closeEnabled ? onClose : null,
       ),

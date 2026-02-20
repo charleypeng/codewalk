@@ -43,7 +43,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                       ),
                     ),
                     const SizedBox(width: 1),
-                    const Icon(Icons.arrow_drop_down, size: 16),
+                    const Icon(Symbols.arrow_drop_down, size: 16),
                   ],
                 ),
               ),
@@ -137,7 +137,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close),
+                  icon: const Icon(Symbols.close),
                   tooltip: 'Close',
                   onPressed: () => Navigator.of(dialogContext).pop(),
                 ),
@@ -174,19 +174,19 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                   onPressed: () => unawaited(
                     _openCreateWorkspaceFromSelector(dialogContext),
                   ),
-                  icon: const Icon(Icons.add_box_outlined),
+                  icon: const Icon(Symbols.add_box),
                   label: const Text('Create workspace in directory...'),
                 ),
                 if (!FeatureFlags.refreshlessRealtime)
                   FilledButton.tonalIcon(
                     onPressed: () => unawaited(projectProvider.loadProjects()),
-                    icon: const Icon(Icons.refresh_rounded),
+                    icon: const Icon(Symbols.refresh_rounded),
                     label: const Text('Refresh projects'),
                   ),
                 if (worktreeEnabled && !FeatureFlags.refreshlessRealtime)
                   FilledButton.tonalIcon(
                     onPressed: () => unawaited(projectProvider.loadWorktrees()),
-                    icon: const Icon(Icons.sync_rounded),
+                    icon: const Icon(Symbols.sync_rounded),
                     label: const Text('Refresh workspaces'),
                   ),
               ],
@@ -224,7 +224,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                             horizontal: 8,
                           ),
                           leading: const Icon(
-                            Icons.folder_off_outlined,
+                            Symbols.folder_off,
                             size: 20,
                           ),
                           title: Text(
@@ -239,14 +239,14 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                             spacing: 2,
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.undo_rounded),
+                                icon: const Icon(Symbols.undo_rounded),
                                 tooltip: 'Reopen $displayName',
                                 onPressed: () => unawaited(
                                   _reopenProjectContext(project.id),
                                 ),
                               ),
                               IconButton(
-                                icon: const Icon(Icons.delete_outline_rounded),
+                                icon: const Icon(Symbols.delete_outline_rounded),
                                 tooltip: 'Archive closed project $displayName',
                                 onPressed: () => unawaited(
                                   _archiveClosedProjectContext(project.id),
@@ -267,8 +267,8 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                       contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                       leading: Icon(
                         worktree.active
-                            ? Icons.folder_special_outlined
-                            : Icons.folder_copy_outlined,
+                            ? Symbols.folder_special
+                            : Symbols.folder_copy,
                         size: 20,
                       ),
                       title: Text(
@@ -289,13 +289,13 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                         spacing: 2,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.restart_alt_rounded),
+                            icon: const Icon(Symbols.restart_alt_rounded),
                             tooltip: 'Reset ${worktree.name}',
                             onPressed: () =>
                                 unawaited(_resetWorkspace(worktree.id)),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.delete_outline_rounded),
+                            icon: const Icon(Symbols.delete_outline_rounded),
                             tooltip: 'Delete ${worktree.name}',
                             onPressed: () =>
                                 unawaited(_deleteWorkspace(worktree.id)),

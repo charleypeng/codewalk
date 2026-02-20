@@ -14,7 +14,7 @@ extension _ChatInputAttachmentController on _ChatInputWidgetState {
           children: [
             if (widget.allowImageAttachment)
               ListTile(
-                leading: const Icon(Icons.photo_library),
+                leading: const Icon(Symbols.photo_library),
                 title: const Text('Select Images'),
                 onTap: () {
                   Navigator.of(context).pop();
@@ -23,7 +23,7 @@ extension _ChatInputAttachmentController on _ChatInputWidgetState {
               ),
             if (widget.allowPdfAttachment)
               ListTile(
-                leading: const Icon(Icons.picture_as_pdf),
+                leading: const Icon(Symbols.picture_as_pdf),
                 title: const Text('Select PDF'),
                 onTap: () {
                   Navigator.of(context).pop();

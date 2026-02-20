@@ -38,7 +38,7 @@ extension _ChatPageScaffold on _ChatPageState {
                         onPressed: () => unawaited(
                           _openSettingsPage(closeOnSelect: closeOnSelect),
                         ),
-                        child: const Icon(Icons.settings_outlined),
+                        child: const Icon(Symbols.settings),
                       ),
                     ),
                   ),
@@ -86,13 +86,13 @@ extension _ChatPageScaffold on _ChatPageState {
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.add),
+                            icon: const Icon(Symbols.add),
                             onPressed: _createNewSession,
                             tooltip: 'New Chat',
                           ),
                           if (!FeatureFlags.refreshlessRealtime)
                             IconButton(
-                              icon: const Icon(Icons.refresh),
+                              icon: const Icon(Symbols.refresh),
                               onPressed: _refreshData,
                               tooltip: 'Refresh',
                             ),
@@ -130,7 +130,7 @@ extension _ChatPageScaffold on _ChatPageState {
                             ],
                             child: _headerChip(
                               context,
-                              icon: Icons.filter_list,
+                              icon: Symbols.filter_list,
                               label: switch (chatProvider.sessionListFilter) {
                                 SessionListFilter.active => 'Active',
                                 SessionListFilter.archived => 'Archived',
@@ -157,7 +157,7 @@ extension _ChatPageScaffold on _ChatPageState {
                             ],
                             child: _headerChip(
                               context,
-                              icon: Icons.sort,
+                              icon: Symbols.sort,
                               label: switch (chatProvider.sessionListSort) {
                                 SessionListSort.recent => 'Recent',
                                 SessionListSort.oldest => 'Oldest',
@@ -173,7 +173,7 @@ extension _ChatPageScaffold on _ChatPageState {
                         onChanged: chatProvider.setSessionSearchQuery,
                         decoration: InputDecoration(
                           hintText: 'Search conversations',
-                          prefixIcon: const Icon(Icons.search),
+                          prefixIcon: const Icon(Symbols.search),
                           isDense: true,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
@@ -241,7 +241,7 @@ extension _ChatPageScaffold on _ChatPageState {
                       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
                       child: OutlinedButton.icon(
                         onPressed: chatProvider.loadMoreSessions,
-                        icon: const Icon(Icons.expand_more),
+                        icon: const Icon(Symbols.expand_more),
                         label: const Text('Load more'),
                       ),
                     ),
@@ -295,14 +295,14 @@ extension _ChatPageScaffold on _ChatPageState {
           const SizedBox(height: 12),
           FilledButton.icon(
             onPressed: _createNewSession,
-            icon: const Icon(Icons.add_comment_outlined),
+            icon: const Icon(Symbols.add_comment),
             label: const Text('New Chat'),
           ),
           if (!FeatureFlags.refreshlessRealtime) ...[
             const SizedBox(height: 8),
             OutlinedButton.icon(
               onPressed: _refreshData,
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(Symbols.refresh),
               label: const Text('Refresh'),
             ),
           ],
@@ -351,7 +351,7 @@ extension _ChatPageScaffold on _ChatPageState {
                                 );
                               }
                             },
-                            icon: const Icon(Icons.sync, size: 18),
+                            icon: const Icon(Symbols.sync, size: 18),
                             tooltip: 'Refresh session details',
                           ),
                       ],

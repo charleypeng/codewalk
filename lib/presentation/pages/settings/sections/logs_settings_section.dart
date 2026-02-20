@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../logs_page.dart';
@@ -36,7 +37,7 @@ class LogsSettingsSection extends StatelessWidget {
                         MaterialPageRoute(builder: (_) => const LogsPage()),
                       );
                     },
-                    icon: const Icon(Icons.open_in_new_rounded),
+                    icon: const Icon(Symbols.open_in_new_rounded),
                     label: const Text('Open App Logs'),
                   ),
                 ],

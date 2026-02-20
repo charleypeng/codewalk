@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../domain/entities/chat_realtime.dart';
 
@@ -31,7 +32,7 @@ class PermissionRequestCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.verified_user_outlined, color: colorScheme.primary),
+              Icon(Symbols.verified_user, color: colorScheme.primary),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(

@@ -235,7 +235,7 @@ extension _ChatPageFileExplorerController on _ChatPageState {
                       autofocus: true,
                       decoration: const InputDecoration(
                         hintText: 'Search files by name or path',
-                        prefixIcon: Icon(Icons.search),
+                        prefixIcon: Icon(Symbols.search),
                       ),
                       onChanged: (value) {
                         unawaited(runSearch(setModalState, value));
@@ -455,7 +455,7 @@ extension _ChatPageFileExplorerController on _ChatPageState {
                         ),
                       );
                     },
-                    icon: const Icon(Icons.search),
+                    icon: const Icon(Symbols.search),
                   ),
                   IconButton(
                     key: const ValueKey<String>('file_tree_refresh_button'),
@@ -474,7 +474,7 @@ extension _ChatPageFileExplorerController on _ChatPageState {
                         ),
                       );
                     },
-                    icon: const Icon(Icons.refresh_rounded),
+                    icon: const Icon(Symbols.refresh_rounded),
                   ),
                   if (onCollapseRequested != null)
                     IconButton(

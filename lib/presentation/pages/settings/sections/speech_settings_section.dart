@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
@@ -157,7 +158,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
-                      Icons.info_outline,
+                      Symbols.info,
                       size: 16,
                       color: Theme.of(context).colorScheme.outline,
                     ),
@@ -195,7 +196,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(
-                    Icons.warning_amber_rounded,
+                    Symbols.warning_amber_rounded,
                     size: 18,
                     color: Theme.of(context).colorScheme.tertiary,
                   ),
@@ -222,7 +223,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.info_outline, size: 20),
+            const Icon(Symbols.info, size: 20),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -364,9 +365,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                 children: [
                   Chip(
                     avatar: Icon(
-                      installed
-                          ? Icons.check_circle_outline
-                          : Icons.info_outline,
+                      installed ? Symbols.check_circle_outline : Symbols.info,
                       size: 18,
                     ),
                     label: Text(
@@ -390,7 +389,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                     onPressed: _isMutatingModel || installed
                         ? null
                         : () => unawaited(_downloadModel(effectiveCode)),
-                    icon: const Icon(Icons.download_rounded),
+                    icon: const Icon(Symbols.download_rounded),
                     label: const Text('Download'),
                   ),
                   const SizedBox(width: 8),
@@ -398,7 +397,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                     onPressed: _isMutatingModel || !installed
                         ? null
                         : () => unawaited(_deleteModel(effectiveCode)),
-                    icon: const Icon(Icons.delete_outline),
+                    icon: const Icon(Symbols.delete_outline),
                     label: const Text('Remove'),
                   ),
                   const SizedBox(width: 8),
@@ -407,7 +406,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                     onPressed: _isMutatingModel
                         ? null
                         : () => unawaited(_refreshModelStatuses()),
-                    icon: const Icon(Icons.refresh_rounded),
+                    icon: const Icon(Symbols.refresh_rounded),
                   ),
                 ],
               ),

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
@@ -310,7 +311,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
 
     return PopupMenuButton<String>(
       icon: Icon(
-        Icons.info_outline,
+        Symbols.info,
         size: 16,
         color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
@@ -454,7 +455,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       );
       return _buildInfoContainer(
         context,
-        icon: Icons.warning_amber_rounded,
+        icon: Symbols.warning_amber_rounded,
         title: 'Message part unavailable',
         subtitle: 'Large or malformed content was skipped for stability.',
       );
@@ -727,8 +728,8 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                 },
                 icon: Icon(
                   isInlineDataAttachment
-                      ? Icons.download_rounded
-                      : Icons.open_in_new_rounded,
+                      ? Symbols.download_rounded
+                      : Symbols.open_in_new_rounded,
                 ),
                 tooltip: isInlineDataAttachment ? 'Save File' : 'Open File',
               ),
@@ -837,19 +838,19 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         return _ToolPresentation(
           title: 'Running command',
           subtitle: rawToolName,
-          icon: Icons.terminal_rounded,
+          icon: Symbols.terminal_rounded,
         );
       case 'read':
         return _ToolPresentation(
           title: 'Reading file',
           subtitle: rawToolName,
-          icon: Icons.description_outlined,
+          icon: Symbols.description,
         );
       case 'write':
         return _ToolPresentation(
           title: 'Writing file',
           subtitle: rawToolName,
-          icon: Icons.edit_note_rounded,
+          icon: Symbols.edit_note_rounded,
         );
       case 'edit':
       case 'apply_patch':
@@ -857,20 +858,20 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         return _ToolPresentation(
           title: 'Editing files',
           subtitle: rawToolName,
-          icon: Icons.auto_fix_high_rounded,
+          icon: Symbols.auto_fix_high_rounded,
         );
       case 'glob':
       case 'find':
         return _ToolPresentation(
           title: 'Finding files',
           subtitle: rawToolName,
-          icon: Icons.folder_open_outlined,
+          icon: Symbols.folder_open,
         );
       case 'grep':
         return _ToolPresentation(
           title: 'Searching code',
           subtitle: rawToolName,
-          icon: Icons.search_rounded,
+          icon: Symbols.search_rounded,
         );
       case 'webfetch':
       case 'google_search':
@@ -882,26 +883,26 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         return _ToolPresentation(
           title: 'Searching the web',
           subtitle: rawToolName,
-          icon: Icons.travel_explore_rounded,
+          icon: Symbols.travel_explore_rounded,
         );
       case 'question':
         return _ToolPresentation(
           title: 'Waiting for your input',
           subtitle: rawToolName,
-          icon: Icons.help_outline_rounded,
+          icon: Symbols.help_outline_rounded,
         );
       case 'todowrite':
       case 'todoread':
         return _ToolPresentation(
           title: 'Updating task list',
           subtitle: rawToolName,
-          icon: Icons.checklist_rounded,
+          icon: Symbols.checklist_rounded,
         );
       default:
         return _ToolPresentation(
           title: 'Running ${_humanizeToolName(normalized)}',
           subtitle: rawToolName,
-          icon: Icons.extension_outlined,
+          icon: Symbols.extension,
         );
     }
   }
@@ -1029,7 +1030,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
           Row(
             children: [
               Icon(
-                Icons.psychology,
+                Symbols.psychology,
                 size: 16,
                 color: Theme.of(context).colorScheme.primary,
               ),
@@ -1062,7 +1063,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   Widget _buildAgentPart(BuildContext context, AgentPart part) {
     return _buildInfoContainer(
       context,
-      icon: Icons.support_agent,
+      icon: Symbols.support_agent,
       title: 'Agent',
       subtitle: part.name,
     );
@@ -1071,7 +1072,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   Widget _buildSnapshotPart(BuildContext context, SnapshotPart part) {
     return _buildInfoContainer(
       context,
-      icon: Icons.camera_alt_outlined,
+      icon: Symbols.camera_alt,
       title: 'Snapshot',
       subtitle: part.snapshot,
     );
@@ -1084,7 +1085,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         : '';
     return _buildInfoContainer(
       context,
-      icon: Icons.compare_arrows_outlined,
+      icon: Symbols.compare_arrows,
       title: 'Patch',
       subtitle: files.isEmpty ? part.hash : '$files$suffix',
     );
@@ -1096,7 +1097,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         : ' • ${part.model!.providerId}/${part.model!.modelId}';
     return _buildInfoContainer(
       context,
-      icon: Icons.task_outlined,
+      icon: Symbols.task,
       title: 'Subtask (${part.agent})',
       subtitle: '${part.description}$model',
     );
@@ -1105,7 +1106,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   Widget _buildRetryPart(BuildContext context, RetryPart part) {
     return _buildInfoContainer(
       context,
-      icon: Icons.refresh_outlined,
+      icon: Symbols.refresh,
       title: 'Retry #${part.attempt}',
       subtitle: part.error.message,
     );
@@ -1114,7 +1115,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   Widget _buildCompactionPart(BuildContext context, CompactionPart part) {
     return _buildInfoContainer(
       context,
-      icon: Icons.compress_outlined,
+      icon: Symbols.compress,
       title: 'Compaction',
       subtitle: part.auto ? 'automatic' : 'manual',
     );
@@ -1177,22 +1178,22 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       case ToolStatus.pending:
         color = colorScheme.secondary;
         label = 'Queued';
-        icon = Icons.schedule;
+        icon = Symbols.schedule;
         break;
       case ToolStatus.running:
         color = colorScheme.primary;
         label = 'In progress';
-        icon = Icons.play_arrow;
+        icon = Symbols.play_arrow;
         break;
       case ToolStatus.completed:
         color = colorScheme.tertiary;
         label = 'Done';
-        icon = Icons.check_circle_outline_rounded;
+        icon = Symbols.check_circle_outline_rounded;
         break;
       case ToolStatus.error:
         color = colorScheme.error;
         label = 'Needs attention';
-        icon = Icons.warning_amber_rounded;
+        icon = Symbols.warning_amber_rounded;
         break;
     }
 
@@ -1651,7 +1652,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       child: Row(
         children: [
           Icon(
-            Icons.error_outline,
+            Symbols.error_outline,
             color: Theme.of(context).colorScheme.error,
             size: 20,
           ),
@@ -1683,17 +1684,17 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
 
   IconData _getFileIcon(String mime) {
     if (mime.startsWith('image/')) {
-      return Icons.image;
+      return Symbols.image;
     } else if (mime.startsWith('video/')) {
-      return Icons.video_file;
+      return Symbols.video_file;
     } else if (mime.startsWith('audio/')) {
-      return Icons.audio_file;
+      return Symbols.audio_file;
     } else if (mime.contains('pdf')) {
-      return Icons.picture_as_pdf;
+      return Symbols.picture_as_pdf;
     } else if (mime.contains('text/')) {
-      return Icons.text_snippet;
+      return Symbols.text_snippet;
     } else {
-      return Icons.insert_drive_file;
+      return Symbols.insert_drive_file;
     }
   }
 
@@ -1826,11 +1827,7 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                Icons.account_tree_outlined,
-                size: 16,
-                color: colorScheme.primary,
-              ),
+              Icon(Symbols.account_tree, size: 16, color: colorScheme.primary),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(

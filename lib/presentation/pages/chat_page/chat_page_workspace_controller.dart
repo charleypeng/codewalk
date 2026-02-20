@@ -123,7 +123,7 @@ extension _ChatPageWorkspaceController on _ChatPageState {
                               gitDirectory = null;
                             });
                           },
-                          icon: const Icon(Icons.folder_open_outlined),
+                          icon: const Icon(Symbols.folder_open),
                         ),
                       ),
                     ),
@@ -134,8 +134,8 @@ extension _ChatPageWorkspaceController on _ChatPageState {
                         children: [
                           Icon(
                             gitDirectory == true
-                                ? Icons.check_circle_outline
-                                : Icons.warning_amber_rounded,
+                                ? Symbols.check_circle_outline
+                                : Symbols.warning_amber_rounded,
                             size: 16,
                             color: gitDirectory == true
                                 ? Theme.of(context).colorScheme.primary

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
@@ -62,18 +63,18 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                 children: [
                   OutlinedButton.icon(
                     onPressed: _openSetupWizard,
-                    icon: const Icon(Icons.auto_fix_high_rounded),
+                    icon: const Icon(Symbols.auto_fix_high_rounded),
                     label: const Text('Setup Wizard'),
                   ),
                   OutlinedButton.icon(
                     onPressed: () =>
                         context.read<AppProvider>().refreshServerHealth(),
-                    icon: const Icon(Icons.health_and_safety_outlined),
+                    icon: const Icon(Symbols.health_and_safety),
                     label: const Text('Refresh Health'),
                   ),
                   FilledButton.icon(
                     onPressed: _openCreateDialog,
-                    icon: const Icon(Icons.add),
+                    icon: const Icon(Symbols.add),
                     label: const Text('Add Server'),
                   ),
                 ],
@@ -262,21 +263,21 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                     onPressed: (isBusy || isRunning)
                         ? null
                         : () => _startLocalServer(appProvider),
-                    icon: const Icon(Icons.play_arrow_rounded),
+                    icon: const Icon(Symbols.play_arrow_rounded),
                     label: const Text('Start'),
                   ),
                   OutlinedButton.icon(
                     onPressed: (isBusy || !isRunning)
                         ? null
                         : () => _stopLocalServer(appProvider),
-                    icon: const Icon(Icons.stop_rounded),
+                    icon: const Icon(Symbols.stop_rounded),
                     label: const Text('Stop'),
                   ),
                   OutlinedButton.icon(
                     onPressed: setupBusy
                         ? null
                         : () => _openLocalServerWizard(appProvider),
-                    icon: const Icon(Icons.auto_fix_high_rounded),
+                    icon: const Icon(Symbols.auto_fix_high_rounded),
                     label: const Text('Setup Wizard'),
                   ),
                 ],
@@ -366,9 +367,8 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
   void _openSetupWizard() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => OnboardingWizardPage(
-          onComplete: () => Navigator.of(context).pop(),
-        ),
+        builder: (_) =>
+            OnboardingWizardPage(onComplete: () => Navigator.of(context).pop()),
       ),
     );
   }
@@ -378,7 +378,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.dns_outlined, size: 48),
+          const Icon(Symbols.dns, size: 48),
           const SizedBox(height: 12),
           Text(
             'No servers configured',
@@ -508,7 +508,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                                 : () async {
                                     await provider.runLocalServerDiagnostics();
                                   },
-                            icon: const Icon(Icons.refresh_rounded),
+                            icon: const Icon(Symbols.refresh_rounded),
                             label: const Text('Refresh Checks'),
                           ),
                           OutlinedButton.icon(
@@ -527,7 +527,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                                       'Using detected OpenCode command.',
                                     );
                                   },
-                            icon: const Icon(Icons.check_circle_outline),
+                            icon: const Icon(Symbols.check_circle_outline),
                             label: const Text('Use Existing'),
                           ),
                           FilledButton.icon(
@@ -543,7 +543,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                                       _showMessage(provider.errorMessage);
                                     }
                                   },
-                            icon: const Icon(Icons.rocket_launch_outlined),
+                            icon: const Icon(Symbols.rocket_launch),
                             label: const Text('Install Bun + OpenCode'),
                           ),
                           OutlinedButton.icon(
@@ -558,7 +558,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                                       _showMessage(provider.errorMessage);
                                     }
                                   },
-                            icon: const Icon(Icons.bolt_outlined),
+                            icon: const Icon(Symbols.bolt),
                             label: const Text('Install via Bun'),
                           ),
                           OutlinedButton.icon(
@@ -573,7 +573,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                                       _showMessage(provider.errorMessage);
                                     }
                                   },
-                            icon: const Icon(Icons.inventory_2_outlined),
+                            icon: const Icon(Symbols.inventory_2),
                             label: const Text('Install via npm'),
                           ),
                           OutlinedButton.icon(
@@ -589,9 +589,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                                       _showMessage(provider.errorMessage);
                                     }
                                   },
-                            icon: const Icon(
-                              Icons.download_for_offline_outlined,
-                            ),
+                            icon: const Icon(Symbols.download_for_offline),
                             label: const Text('Install Binary'),
                           ),
                         ],
@@ -678,8 +676,8 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
 
   Widget _buildToolStatusRow(String label, LocalToolStatus status) {
     final icon = status.available
-        ? const Icon(Icons.check_circle, color: Colors.green, size: 16)
-        : const Icon(Icons.cancel, color: Colors.red, size: 16);
+        ? const Icon(Symbols.check_circle, color: Colors.green, size: 16)
+        : const Icon(Symbols.cancel, color: Colors.red, size: 16);
 
     final details = <String>[];
     if (status.version.trim().isNotEmpty) {
@@ -784,7 +782,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                               ? null
                               : IconButton(
                                   tooltip: 'Clear server URL',
-                                  icon: const Icon(Icons.clear),
+                                  icon: const Icon(Symbols.clear),
                                   onPressed: () {
                                     urlController.clear();
                                     setState(() {});
@@ -1069,7 +1067,7 @@ class ServerSetupQuickGuide extends StatelessWidget {
           Row(
             children: [
               Icon(
-                Icons.info_outline,
+                Symbols.info,
                 size: 16,
                 color: Theme.of(context).colorScheme.primary,
               ),
@@ -1095,7 +1093,7 @@ class ServerSetupQuickGuide extends StatelessWidget {
               ),
               TextButton.icon(
                 onPressed: () => onCopy(command),
-                icon: const Icon(Icons.copy_rounded, size: 14),
+                icon: const Icon(Symbols.content_copy_rounded, size: 14),
                 label: const Text('Copy'),
                 style: TextButton.styleFrom(
                   minimumSize: Size.zero,

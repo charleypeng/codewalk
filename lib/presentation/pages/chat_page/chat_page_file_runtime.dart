@@ -443,7 +443,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
                       'Open files (${fileState.tabSelection.openPaths.length})',
                     ),
                     leading: IconButton(
-                      icon: const Icon(Icons.close),
+                      icon: const Icon(Symbols.close),
                       tooltip: 'Close',
                       onPressed: () => Navigator.of(dialogContext).pop(),
                     ),
@@ -497,7 +497,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
                               tooltip: 'Close',
                               onPressed: () =>
                                   Navigator.of(dialogContext).pop(),
-                              icon: const Icon(Icons.close),
+                              icon: const Icon(Symbols.close),
                             ),
                           ],
                         ),
@@ -586,7 +586,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
               children: [
                 if (node.isDirectory)
                   Icon(
-                    isExpanded ? Icons.expand_more : Icons.chevron_right,
+                    isExpanded ? Symbols.expand_more : Symbols.chevron_right,
                     size: 16,
                   )
                 else
@@ -695,7 +695,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
       case '.venv':
         return SimpleIcons.python;
       default:
-        return Icons.folder_outlined;
+        return Symbols.folder;
     }
   }
 
@@ -829,7 +829,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
       case 'jenkins.yml':
         return SimpleIcons.jenkins;
       case 'makefile':
-        return Icons.build_outlined;
+        return Symbols.build;
       case '.bashrc':
       case '.bash_profile':
       case '.bash_aliases':
@@ -889,7 +889,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
       case 'rst':
         return SimpleIcons.markdown;
       case 'txt':
-        return Icons.article;
+        return Symbols.article;
       case 'json':
         return SimpleIcons.json;
       case 'yaml':
@@ -922,9 +922,9 @@ extension _ChatPageFileRuntime on _ChatPageState {
       case 'zsh':
         return SimpleIcons.iterm2;
       case 'csv':
-        return Icons.table_chart;
+        return Symbols.table_chart;
       case 'tsv':
-        return Icons.table_rows;
+        return Symbols.table_rows;
       case 'sql':
         return SimpleIcons.postgresql;
       case 'pem':
@@ -946,7 +946,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
       case 'cfg':
       case 'conf':
       case 'properties':
-        return Icons.data_object_rounded;
+        return Symbols.data_object_rounded;
       case 'png':
       case 'jpg':
       case 'jpeg':
@@ -963,9 +963,9 @@ extension _ChatPageFileRuntime on _ChatPageState {
       case 'svgz':
         return SimpleIcons.inkscape;
       case 'pdf':
-        return Icons.picture_as_pdf_outlined;
+        return Symbols.picture_as_pdf;
       default:
-        return Icons.insert_drive_file_outlined;
+        return Symbols.insert_drive_file;
     }
   }
 

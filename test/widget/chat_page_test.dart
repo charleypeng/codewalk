@@ -45,6 +45,7 @@ import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:codewalk/presentation/utils/session_title_formatter.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart' hide Provider;
@@ -81,7 +82,7 @@ void main() {
       await tester.pumpWidget(_testApp(provider, appProvider));
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.menu), findsOneWidget);
+      expect(find.byIcon(Symbols.menu), findsOneWidget);
       expect(find.text('Desktop Shortcuts'), findsNothing);
     });
 
@@ -144,7 +145,7 @@ void main() {
       await tester.pumpWidget(_testApp(provider, appProvider));
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.menu), findsNothing);
+      expect(find.byIcon(Symbols.menu), findsNothing);
       expect(find.text('Keyboard shortcuts'), findsOneWidget);
       expect(find.textContaining('Ctrl/Cmd'), findsNothing);
       expect(find.text('Ctrl+N'), findsOneWidget);
@@ -588,7 +589,7 @@ void main() {
     expect(find.text('Project context'), findsOneWidget);
     expect(find.text('Current directory: /repo/a'), findsOneWidget);
     expect(find.text('Select a directory/workspace below'), findsOneWidget);
-    expect(find.byIcon(Icons.close_rounded), findsOneWidget);
+    expect(find.byIcon(Symbols.close_rounded), findsOneWidget);
   });
 
   testWidgets('closed project can be archived from closed list', (
@@ -1287,7 +1288,7 @@ void main() {
           of: find.byKey(
             const ValueKey<String>('file_tree_item_/repo/a/notes.txt'),
           ),
-          matching: find.byIcon(Icons.article),
+          matching: find.byIcon(Symbols.article),
         ),
         findsOneWidget,
       );
@@ -1296,7 +1297,7 @@ void main() {
           of: find.byKey(
             const ValueKey<String>('file_tree_item_/repo/a/data.csv'),
           ),
-          matching: find.byIcon(Icons.table_chart),
+          matching: find.byIcon(Symbols.table_chart),
         ),
         findsOneWidget,
       );
@@ -1305,7 +1306,7 @@ void main() {
           of: find.byKey(
             const ValueKey<String>('file_tree_item_/repo/a/data.tsv'),
           ),
-          matching: find.byIcon(Icons.table_rows),
+          matching: find.byIcon(Symbols.table_rows),
         ),
         findsOneWidget,
       );
@@ -1930,7 +1931,7 @@ void main() {
     await tester.enterText(find.byType(TextField).last, 'hello from widget');
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.send_rounded));
+    await tester.tap(find.byIcon(Symbols.send_rounded));
     await tester.pump();
     await tester.pumpAndSettle();
 
@@ -3278,7 +3279,7 @@ void main() {
     expect(
       find.descendant(
         of: fabFinder,
-        matching: find.byIcon(Icons.arrow_downward_rounded),
+        matching: find.byIcon(Symbols.arrow_downward_rounded),
       ),
       findsOneWidget,
     );
@@ -3312,7 +3313,7 @@ void main() {
     expect(
       find.descendant(
         of: fabFinder,
-        matching: find.byIcon(Icons.mark_chat_unread_outlined),
+        matching: find.byIcon(Symbols.mark_chat_unread),
       ),
       findsOneWidget,
     );
@@ -3327,7 +3328,7 @@ void main() {
       lessThanOrEqualTo(1),
     );
 
-    expect(find.byIcon(Icons.mark_chat_unread_outlined), findsNothing);
+    expect(find.byIcon(Symbols.mark_chat_unread), findsNothing);
   });
 
   testWidgets(
@@ -3960,8 +3961,8 @@ void main() {
         find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
         findsNothing,
       );
-      expect(find.byIcon(Icons.stop_rounded), findsNothing);
-      expect(find.byIcon(Icons.send_rounded), findsOneWidget);
+      expect(find.byIcon(Symbols.stop_rounded), findsNothing);
+      expect(find.byIcon(Symbols.send_rounded), findsOneWidget);
 
       repository.emitEvent(
         const ChatEvent(
@@ -3979,8 +3980,8 @@ void main() {
         find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
         findsNothing,
       );
-      expect(find.byIcon(Icons.stop_rounded), findsNothing);
-      expect(find.byIcon(Icons.send_rounded), findsOneWidget);
+      expect(find.byIcon(Symbols.stop_rounded), findsNothing);
+      expect(find.byIcon(Symbols.send_rounded), findsOneWidget);
     },
   );
 
@@ -4036,8 +4037,8 @@ void main() {
         find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
         findsNothing,
       );
-      expect(find.byIcon(Icons.stop_rounded), findsNothing);
-      expect(find.byIcon(Icons.send_rounded), findsOneWidget);
+      expect(find.byIcon(Symbols.stop_rounded), findsNothing);
+      expect(find.byIcon(Symbols.send_rounded), findsOneWidget);
     },
   );
 
@@ -4104,7 +4105,7 @@ void main() {
       expect(find.byType(SnackBar), findsOneWidget);
       expect(find.text('O que gostaria de fazer diferente?'), findsOneWidget);
       expect(find.text('Retry'), findsOneWidget);
-      expect(find.byIcon(Icons.error_outline), findsNothing);
+      expect(find.byIcon(Symbols.error_outline), findsNothing);
       expect(
         find.byKey(const ValueKey<String>('chat_message_list')),
         findsOneWidget,
@@ -4160,14 +4161,14 @@ void main() {
     );
     final inputField = tester.widget<TextField>(chatInputFieldFinder);
     expect(inputField.enabled, isTrue);
-    expect(find.byIcon(Icons.stop_rounded), findsOneWidget);
+    expect(find.byIcon(Symbols.stop_rounded), findsOneWidget);
 
     await tester.enterText(chatInputFieldFinder, 'draft while receiving');
     await tester.pump();
     final updatedInputField = tester.widget<TextField>(chatInputFieldFinder);
     expect(updatedInputField.controller!.text, 'draft while receiving');
 
-    await tester.tap(find.byIcon(Icons.stop_rounded));
+    await tester.tap(find.byIcon(Symbols.stop_rounded));
     await tester.pumpAndSettle();
 
     expect(repository.abortSessionCallCount, 1);
@@ -4219,7 +4220,7 @@ void main() {
 
     await tester.enterText(chatInputFieldFinder, 'keep this draft');
     await tester.pump();
-    await tester.tap(find.byIcon(Icons.send_rounded));
+    await tester.tap(find.byIcon(Symbols.send_rounded));
     await tester.pump();
 
     sendStream.add(const Left(ServerFailure('temporary send rejection')));
@@ -4407,7 +4408,7 @@ void main() {
     await provider.sendMessage('trigger failing stop');
     await tester.pump();
 
-    await tester.tap(find.byIcon(Icons.stop_rounded));
+    await tester.tap(find.byIcon(Symbols.stop_rounded));
     await tester.pumpAndSettle();
 
     expect(provider.errorMessage, 'Server error. Please try again later');

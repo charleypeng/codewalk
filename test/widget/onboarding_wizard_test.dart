@@ -8,6 +8,7 @@ import 'package:codewalk/presentation/providers/app_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
@@ -241,7 +242,7 @@ void main() {
       expect(find.text('Server connection'), findsOneWidget);
 
       // Tap back arrow.
-      await tester.tap(find.byIcon(Icons.arrow_back));
+      await tester.tap(find.byIcon(Symbols.arrow_back));
       await tester.pumpAndSettle();
 
       expect(find.text('Welcome to CodeWalk'), findsOneWidget);

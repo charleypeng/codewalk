@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 
 class SessionTitleInlineEditor extends StatefulWidget {
@@ -181,14 +182,14 @@ class _SessionTitleInlineEditorState extends State<SessionTitleInlineEditor> {
                           height: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.check, size: 18),
+                      : const Icon(Symbols.check, size: 18),
                   visualDensity: Theme.of(context).visualDensity,
                 ),
                 IconButton(
                   key: const ValueKey<String>('session_title_cancel_button'),
                   tooltip: 'Cancel rename',
                   onPressed: _saving ? null : _cancelEditing,
-                  icon: const Icon(Icons.close, size: 18),
+                  icon: const Icon(Symbols.close, size: 18),
                   visualDensity: Theme.of(context).visualDensity,
                 ),
               ],

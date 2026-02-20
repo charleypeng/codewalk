@@ -114,7 +114,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Icon(
-                                                Icons.compress_outlined,
+                                                Symbols.compress,
                                                 size: 16,
                                                 color: Theme.of(
                                                   context,
@@ -279,7 +279,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                   backgroundColor:
                                       colorScheme.surfaceContainerHigh,
                                   foregroundColor: colorScheme.onSurfaceVariant,
-                                  child: const Icon(Icons.arrow_upward_rounded),
+                                  child: const Icon(Symbols.arrow_upward_rounded),
                                 ),
                               )
                             : const SizedBox(
@@ -301,8 +301,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                             : colorScheme.onSurfaceVariant,
                         child: Icon(
                           _hasUnreadMessagesBelow
-                              ? Icons.mark_chat_unread_outlined
-                              : Icons.arrow_downward_rounded,
+                              ? Symbols.mark_chat_unread
+                              : Symbols.arrow_downward_rounded,
                         ),
                       ),
                     ],
@@ -329,7 +329,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.error_outline,
+              Symbols.error_outline,
               size: 64,
               color: Theme.of(context).colorScheme.error,
             ),
@@ -358,7 +358,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.chat_bubble_outline,
+              Symbols.chat_bubble_outline,
               size: 64,
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -372,7 +372,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: _createNewSession,
-              icon: const Icon(Icons.add),
+              icon: const Icon(Symbols.add),
               label: const Text('New Chat'),
             ),
           ],
@@ -386,7 +386,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.waving_hand,
+              Symbols.waving_hand,
               size: 64,
               color: Theme.of(context).colorScheme.primary,
             ),

@@ -1,6 +1,7 @@
 import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/presentation/widgets/chat_session_list.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -33,7 +34,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byIcon(Symbols.more_vert));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Rename'));
     await tester.pumpAndSettle();
@@ -62,7 +63,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byIcon(Symbols.more_vert));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Share'));
     await tester.pumpAndSettle();
@@ -91,13 +92,13 @@ void main() {
       ),
     );
 
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byIcon(Symbols.more_vert));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Archive'));
     await tester.pumpAndSettle();
     expect(archivedCalls, 1);
 
-    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.tap(find.byIcon(Symbols.more_vert));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Delete').first);
     await tester.pumpAndSettle();
@@ -120,8 +121,8 @@ void main() {
       ),
     );
 
-    expect(find.byIcon(Icons.sync_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.chat), findsNothing);
+    expect(find.byIcon(Symbols.sync_rounded), findsOneWidget);
+    expect(find.byIcon(Symbols.chat), findsNothing);
   });
 
   testWidgets('renders child sessions as collapsed sub-conversations', (

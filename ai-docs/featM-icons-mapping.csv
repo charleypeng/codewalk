@@ -1,0 +1,154 @@
+icon,count,mapped_symbol,complexity,note
+send_rounded,11,send_rounded,direct,
+stop_rounded,10,stop_rounded,direct,
+info_outline,9,,manual,No direct same-name symbol found
+close,7,close,direct,
+search,7,search,direct,
+more_vert,6,more_vert,direct,
+refresh_rounded,6,refresh_rounded,direct,
+error_outline,5,error_outline,direct,
+warning_amber_rounded,5,warning_amber_rounded,direct,
+check_circle_outline,4,check_circle_outline,direct,
+check_rounded,4,check_rounded,direct,
+menu,4,menu,direct,
+refresh,4,refresh,direct,
+smart_toy_outlined,4,,manual,No direct same-name symbol found
+sync_rounded,4,sync_rounded,direct,
+add,3,add,direct,
+add_comment_outlined,3,,manual,No direct same-name symbol found
+arrow_back,3,arrow_back,direct,
+arrow_forward_rounded,3,arrow_forward_rounded,direct,
+auto_fix_high_rounded,3,auto_fix_high_rounded,direct,
+chat_bubble_outline,3,chat_bubble_outline,direct,
+chevron_right,3,chevron_right,direct,
+clear,3,clear,direct,
+download_rounded,3,download_rounded,direct,
+expand_more,3,expand_more,direct,
+folder_open_outlined,3,,manual,No direct same-name symbol found
+insert_drive_file_outlined,3,,manual,No direct same-name symbol found
+mark_chat_unread_outlined,3,,manual,No direct same-name symbol found
+open_in_new_rounded,3,open_in_new_rounded,direct,
+account_tree_outlined,2,,manual,No direct same-name symbol found
+archive_outlined,2,,manual,No direct same-name symbol found
+arrow_downward_rounded,2,arrow_downward_rounded,direct,
+arrow_drop_down,2,arrow_drop_down,direct,
+arrow_upward_rounded,2,arrow_upward_rounded,direct,
+article,2,article,direct,
+attach_file_rounded,2,attach_file_rounded,direct,
+bolt_outlined,2,,manual,No direct same-name symbol found
+chat,2,chat,direct,
+check,2,check,direct,
+check_box_outlined,2,,manual,No direct same-name symbol found
+check_circle_outline_rounded,2,check_circle_outline_rounded,direct,
+check_circle_rounded,2,check_circle_rounded,direct,
+close_rounded,2,close_rounded,direct,
+code_rounded,2,code_rounded,direct,
+compress_outlined,2,,manual,No direct same-name symbol found
+copy_rounded,2,,manual,No direct same-name symbol found
+delete_outline,2,delete_outline,direct,
+delete_outline_rounded,2,delete_outline_rounded,direct,
+dns_outlined,2,,manual,No direct same-name symbol found
+dns_rounded,2,dns_rounded,direct,
+extension_outlined,2,,manual,No direct same-name symbol found
+folder_outlined,2,,manual,No direct same-name symbol found
+help_outline_rounded,2,help_outline_rounded,direct,
+keyboard_return_rounded,2,keyboard_return_rounded,direct,
+mic_none_rounded,2,mic_none_rounded,direct,
+open_in_new,2,open_in_new,direct,
+picture_as_pdf,2,picture_as_pdf,direct,
+picture_as_pdf_outlined,2,,manual,No direct same-name symbol found
+play_arrow_rounded,2,play_arrow_rounded,direct,
+restart_alt_rounded,2,restart_alt_rounded,direct,
+table_chart,2,table_chart,direct,
+table_rows,2,table_rows,direct,
+terminal_rounded,2,terminal_rounded,direct,
+undo_rounded,2,undo_rounded,direct,
+add_box_outlined,1,,manual,No direct same-name symbol found
+archive,1,archive,direct,
+audio_file,1,audio_file,direct,
+auto_awesome,1,auto_awesome,direct,
+build_outlined,1,,manual,No direct same-name symbol found
+call_split,1,call_split,direct,
+camera_alt_outlined,1,,manual,No direct same-name symbol found
+cancel,1,cancel,direct,
+check_box_outline_blank,1,check_box_outline_blank,direct,
+check_box_outline_blank_rounded,1,check_box_outline_blank_rounded,direct,
+check_box_rounded,1,check_box_rounded,direct,
+check_circle,1,check_circle,direct,
+checklist_rounded,1,checklist_rounded,direct,
+cloud_done,1,cloud_done,direct,
+cloud_off,1,cloud_off,direct,
+cloud_off_rounded,1,cloud_off_rounded,direct,
+cloud_outlined,1,,manual,No direct same-name symbol found
+code,1,code,direct,
+compare_arrows_outlined,1,,manual,No direct same-name symbol found
+computer_rounded,1,computer_rounded,direct,
+copy,1,,manual,No direct same-name symbol found
+copy_all_outlined,1,,manual,No direct same-name symbol found
+data_object_rounded,1,data_object_rounded,direct,
+delete,1,delete,direct,
+description_outlined,1,,manual,No direct same-name symbol found
+developer_mode,1,developer_mode,direct,
+download_for_offline_outlined,1,,manual,No direct same-name symbol found
+edit,1,edit,direct,
+edit_note_rounded,1,edit_note_rounded,direct,
+expand_less_rounded,1,expand_less_rounded,direct,
+expand_more_rounded,1,expand_more_rounded,direct,
+filter_list,1,filter_list,direct,
+folder_copy_outlined,1,,manual,No direct same-name symbol found
+folder_off_outlined,1,,manual,No direct same-name symbol found
+folder_rounded,1,folder_rounded,direct,
+folder_special_outlined,1,,manual,No direct same-name symbol found
+health_and_safety_outlined,1,,manual,No direct same-name symbol found
+help_outline,1,help_outline,direct,
+history_rounded,1,history_rounded,direct,
+history_toggle_off_rounded,1,history_toggle_off_rounded,direct,
+hourglass_top_rounded,1,hourglass_top_rounded,direct,
+image,1,image,direct,
+image_outlined,1,,manual,No direct same-name symbol found
+insert_drive_file,1,insert_drive_file,direct,
+inventory_2_outlined,1,,manual,No direct same-name symbol found
+keyboard_command_key_rounded,1,keyboard_command_key_rounded,direct,
+keyboard_rounded,1,keyboard_rounded,direct,
+library_music_outlined,1,,manual,No direct same-name symbol found
+lightbulb_outline,1,lightbulb_outline,direct,
+link,1,link,direct,
+link_off,1,link_off,direct,
+link_rounded,1,link_rounded,direct,
+mic_rounded,1,mic_rounded,direct,
+notifications_active_outlined,1,,manual,No direct same-name symbol found
+photo_library,1,photo_library,direct,
+play_arrow,1,play_arrow,direct,
+psychology,1,psychology,direct,
+psychology_rounded,1,psychology_rounded,direct,
+radio_button_checked,1,radio_button_checked,direct,
+receipt_long_rounded,1,receipt_long_rounded,direct,
+refresh_outlined,1,,manual,No direct same-name symbol found
+restart_alt,1,restart_alt,direct,
+rocket_launch_outlined,1,,manual,No direct same-name symbol found
+rule_folder_outlined,1,,manual,No direct same-name symbol found
+schedule,1,schedule,direct,
+search_rounded,1,search_rounded,direct,
+settings,1,settings,direct,
+settings_outlined,1,,manual,No direct same-name symbol found
+settings_rounded,1,settings_rounded,direct,
+share,1,share,direct,
+smart_toy_rounded,1,smart_toy_rounded,direct,
+sort,1,sort,direct,
+star_outline_rounded,1,star_outline_rounded,direct,
+star_rounded,1,star_rounded,direct,
+support_agent,1,support_agent,direct,
+sync,1,sync,direct,
+system_update_outlined,1,,manual,No direct same-name symbol found
+task_outlined,1,,manual,No direct same-name symbol found
+text_snippet,1,text_snippet,direct,
+travel_explore_rounded,1,travel_explore_rounded,direct,
+tune,1,tune,direct,
+tune_rounded,1,tune_rounded,direct,
+unarchive_outlined,1,,manual,No direct same-name symbol found
+unfold_less_rounded,1,unfold_less_rounded,direct,
+unfold_more_rounded,1,unfold_more_rounded,direct,
+verified_user_outlined,1,,manual,No direct same-name symbol found
+video_file,1,video_file,direct,
+view_sidebar_outlined,1,,manual,No direct same-name symbol found
+waving_hand,1,waving_hand,direct,

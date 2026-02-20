@@ -1,6 +1,7 @@
 import 'package:codewalk/domain/entities/chat_message.dart';
 import 'package:codewalk/presentation/widgets/chat_message_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -216,7 +217,7 @@ void main() {
     );
 
     expect(find.byTooltip('Save File'), findsOneWidget);
-    expect(find.byIcon(Icons.download_rounded), findsOneWidget);
+    expect(find.byIcon(Symbols.download_rounded), findsOneWidget);
     expect(find.text('preview.png'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('file_image_preview_part_file_data')),
@@ -257,7 +258,7 @@ void main() {
     );
 
     expect(find.byTooltip('Open File'), findsOneWidget);
-    expect(find.byIcon(Icons.open_in_new_rounded), findsOneWidget);
+    expect(find.byIcon(Symbols.open_in_new_rounded), findsOneWidget);
     expect(find.text('/tmp/report.pdf'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('file_image_preview_part_file_source')),
@@ -822,7 +823,7 @@ void main() {
     );
 
     expect(find.text('Done'), findsNothing);
-    expect(find.byIcon(Icons.check_circle_outline_rounded), findsOneWidget);
+    expect(find.byIcon(Symbols.check_circle_outline_rounded), findsOneWidget);
     expect(
       find.byWidgetPredicate(
         (widget) =>

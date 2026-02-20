@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_constants.dart';
@@ -85,7 +86,7 @@ class _NotificationsSettingsSectionState
               category: NotificationCategory.agent,
               title: 'Agent updates',
               subtitle: 'When a response finishes',
-              icon: Icons.smart_toy_outlined,
+              icon: Symbols.smart_toy,
             ),
             const SizedBox(height: 12),
             _buildCategoryCard(
@@ -94,7 +95,7 @@ class _NotificationsSettingsSectionState
               category: NotificationCategory.permissions,
               title: 'Permissions and questions',
               subtitle: 'When tools request your input',
-              icon: Icons.rule_folder_outlined,
+              icon: Symbols.rule_folder,
             ),
             const SizedBox(height: 12),
             _buildCategoryCard(
@@ -103,7 +104,7 @@ class _NotificationsSettingsSectionState
               category: NotificationCategory.errors,
               title: 'Errors',
               subtitle: 'When a session reports a failure',
-              icon: Icons.error_outline,
+              icon: Symbols.error_outline,
             ),
             if (_isDesktopPlatform || _isMobilePlatform) ...[
               const SizedBox(height: 16),
@@ -125,7 +126,7 @@ class _NotificationsSettingsSectionState
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.info_outline, size: 20),
+            const Icon(Symbols.info, size: 20),
             const SizedBox(width: 10),
             Expanded(
               child: Text(text, style: Theme.of(context).textTheme.bodySmall),
@@ -299,7 +300,7 @@ class _NotificationsSettingsSectionState
                           soundCategory: soundCategory,
                         ),
                       ),
-                      icon: const Icon(Icons.tune),
+                      icon: const Icon(Symbols.tune),
                       label: const Text('Choose system sound'),
                     ),
                   if (soundOption == SoundOption.customFile)
@@ -310,13 +311,13 @@ class _NotificationsSettingsSectionState
                           soundCategory: soundCategory,
                         ),
                       ),
-                      icon: const Icon(Icons.library_music_outlined),
+                      icon: const Icon(Symbols.library_music),
                       label: const Text('Choose audio file'),
                     ),
                   FilledButton.tonalIcon(
                     onPressed: () =>
                         settingsProvider.previewSound(soundCategory),
-                    icon: const Icon(Icons.play_arrow_rounded),
+                    icon: const Icon(Symbols.play_arrow_rounded),
                     label: const Text('Preview'),
                   ),
                 ],

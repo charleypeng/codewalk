@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/logging/app_logger.dart';
@@ -74,7 +75,7 @@ class _LogsPageState extends State<LogsPage> {
         actions: [
           if (_searchEnabled)
             IconButton(
-              icon: const Icon(Icons.close),
+              icon: const Icon(Symbols.close),
               tooltip: 'Close search',
               onPressed: () {
                 _searchController.clear();
@@ -85,7 +86,7 @@ class _LogsPageState extends State<LogsPage> {
             )
           else
             IconButton(
-              icon: const Icon(Icons.search),
+              icon: const Icon(Symbols.search),
               tooltip: 'Search logs',
               onPressed: () {
                 setState(() {
@@ -98,7 +99,7 @@ class _LogsPageState extends State<LogsPage> {
             builder: (context, _, __) {
               final filtered = _filteredEntries();
               return IconButton(
-                icon: const Icon(Icons.copy_all_outlined),
+                icon: const Icon(Symbols.copy_all),
                 tooltip: 'Copy filtered logs',
                 onPressed: filtered.isEmpty
                     ? null
@@ -107,7 +108,7 @@ class _LogsPageState extends State<LogsPage> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.delete_outline),
+            icon: const Icon(Symbols.delete_outline),
             tooltip: 'Clear logs',
             onPressed: AppLogger.clearEntries,
           ),

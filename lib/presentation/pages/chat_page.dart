@@ -1196,7 +1196,7 @@ class _DirectoryPickerSheetState extends State<_DirectoryPickerSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(
-                    Icons.info_outline,
+                    Symbols.info,
                     size: 16,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -1220,7 +1220,7 @@ class _DirectoryPickerSheetState extends State<_DirectoryPickerSheet> {
               controller: _filterController,
               decoration: InputDecoration(
                 isDense: true,
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const Icon(Symbols.search),
                 hintText: 'Filter directories',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -1256,7 +1256,7 @@ class _DirectoryPickerSheetState extends State<_DirectoryPickerSheet> {
                           key: const ValueKey<String>(
                             'directory_picker_parent',
                           ),
-                          leading: const Icon(Icons.arrow_upward_rounded),
+                          leading: const Icon(Symbols.arrow_upward_rounded),
                           title: const Text('..'),
                           subtitle: Text(parent),
                           onTap: () => _loadDirectory(parent),
@@ -1266,7 +1266,7 @@ class _DirectoryPickerSheetState extends State<_DirectoryPickerSheet> {
                           key: ValueKey<String>(
                             'directory_picker_item_$directory',
                           ),
-                          leading: const Icon(Icons.folder_outlined),
+                          leading: const Icon(Symbols.folder),
                           title: Text(_basename(directory)),
                           subtitle: Text(
                             directory,

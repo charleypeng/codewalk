@@ -90,7 +90,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                   'Failed to refresh providers and models',
               child: ActionChip(
                 key: const ValueKey<String>('model_selector_retry_button'),
-                avatar: const Icon(Icons.refresh_rounded, size: 16),
+                avatar: const Icon(Symbols.refresh_rounded, size: 16),
                 side: BorderSide.none,
                 shape: const StadiumBorder(),
                 label: const Text('Retry models'),
@@ -124,7 +124,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                     ? null
                     : _chatInputController.openAttachmentOptions,
                 style: attachButtonStyle,
-                icon: const Icon(Icons.attach_file_rounded),
+                icon: const Icon(Symbols.attach_file_rounded),
               ),
             ),
         ],
@@ -257,7 +257,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
       return SimpleIcons.v0;
     }
 
-    return Icons.smart_toy_outlined;
+    return Symbols.smart_toy;
   }
 
   IconData _modelSelectorListIcon({
@@ -400,7 +400,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                   ),
                 ),
                 if (chatProvider.selectedAgentName == entry.name)
-                  const Icon(Icons.check_rounded, size: 18),
+                  const Icon(Symbols.check_rounded, size: 18),
               ],
             ),
           ),
@@ -553,7 +553,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
       children: [
         IconButton(
           icon: Icon(
-            isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
+            isFavorite ? Symbols.star_rounded : Symbols.star_outline_rounded,
             size: 20,
             color: isFavorite ? Colors.amber : null,
           ),
@@ -567,7 +567,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
             onFavoriteToggled();
           },
         ),
-        if (isSelected) const Icon(Icons.check_rounded, size: 18),
+        if (isSelected) const Icon(Symbols.check_rounded, size: 18),
       ],
     );
   }
@@ -677,7 +677,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                           },
                           decoration: InputDecoration(
                             hintText: 'Search model or provider',
-                            prefixIcon: const Icon(Icons.search),
+                            prefixIcon: const Icon(Symbols.search),
                             isDense: true,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -974,7 +974,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
             children: [
               const Expanded(child: Text('Auto')),
               if (chatProvider.selectedVariantId == null)
-                const Icon(Icons.check_rounded, size: 18),
+                const Icon(Symbols.check_rounded, size: 18),
             ],
           ),
         ),
@@ -988,7 +988,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                   child: Text(variant.name, overflow: TextOverflow.ellipsis),
                 ),
                 if (chatProvider.selectedVariantId == variant.id)
-                  const Icon(Icons.check_rounded, size: 18),
+                  const Icon(Symbols.check_rounded, size: 18),
               ],
             ),
           ),

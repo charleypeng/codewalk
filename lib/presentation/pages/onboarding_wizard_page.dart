@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
@@ -274,7 +275,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
           automaticallyImplyLeading: false,
           leading: _step > 0
               ? IconButton(
-                  icon: const Icon(Icons.arrow_back),
+                  icon: const Icon(Symbols.arrow_back),
                   onPressed: _handleBack,
                 )
               : null,
@@ -317,7 +318,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       key: const ValueKey('step_welcome'),
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.code_rounded, size: 72, color: colorScheme.primary),
+        Icon(Symbols.code_rounded, size: 72, color: colorScheme.primary),
         const SizedBox(height: 24),
         Text(
           'Welcome to ${AppConstants.appName}',
@@ -347,7 +348,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.dns_rounded,
+                      Symbols.dns_rounded,
                       color: colorScheme.onPrimaryContainer,
                     ),
                     const SizedBox(width: 16),
@@ -374,7 +375,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                       ),
                     ),
                     Icon(
-                      Icons.arrow_forward_rounded,
+                      Symbols.arrow_forward_rounded,
                       color: colorScheme.onPrimaryContainer,
                     ),
                   ],
@@ -402,7 +403,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.help_outline_rounded,
+                      Symbols.help_outline_rounded,
                       color: colorScheme.onSurfaceVariant,
                     ),
                     const SizedBox(width: 16),
@@ -425,7 +426,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                       ),
                     ),
                     Icon(
-                      Icons.arrow_forward_rounded,
+                      Symbols.arrow_forward_rounded,
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ],
@@ -480,7 +481,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                           ? null
                           : IconButton(
                               tooltip: 'Clear',
-                              icon: const Icon(Icons.clear),
+                              icon: const Icon(Symbols.clear),
                               onPressed: () {
                                 _urlController.clear();
                                 setState(() {});
@@ -567,7 +568,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                         child: Row(
                           children: [
                             Icon(
-                              Icons.error_outline,
+                              Symbols.error_outline,
                               color: Theme.of(
                                 context,
                               ).colorScheme.onErrorContainer,
@@ -597,7 +598,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                             height: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Icon(Icons.link_rounded),
+                        : const Icon(Symbols.link_rounded),
                     label: Text(_testing ? 'Testing...' : 'Test connection'),
                   ),
                 ],
@@ -619,7 +620,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         key: const ValueKey('step_ready_success'),
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.check_circle_rounded, size: 72, color: Colors.green),
+          Icon(Symbols.check_circle_rounded, size: 72, color: Colors.green),
           const SizedBox(height: 24),
           Text(
             "You're all set!",
@@ -637,7 +638,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
           const SizedBox(height: 40),
           FilledButton.icon(
             onPressed: _complete,
-            icon: const Icon(Icons.arrow_forward_rounded),
+            icon: const Icon(Symbols.arrow_forward_rounded),
             label: Text('Start using ${AppConstants.appName}'),
           ),
         ],
@@ -649,7 +650,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       key: const ValueKey('step_ready_failed'),
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.warning_amber_rounded, size: 72, color: colorScheme.error),
+        Icon(Symbols.warning_amber_rounded, size: 72, color: colorScheme.error),
         const SizedBox(height: 24),
         Text(
           'Connection issue',
@@ -673,7 +674,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
               _connectionError = null;
             });
           },
-          icon: const Icon(Icons.refresh_rounded),
+          icon: const Icon(Symbols.refresh_rounded),
           label: const Text('Try again'),
         ),
         const SizedBox(height: 12),

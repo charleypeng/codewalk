@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
@@ -612,9 +613,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
 
   IconData _mentionIconForToken(String value) {
     if (value.contains('/') || value.contains('.')) {
-      return Icons.insert_drive_file_outlined;
+      return Symbols.insert_drive_file;
     }
-    return Icons.smart_toy_outlined;
+    return Symbols.smart_toy;
   }
 
   String _composerHintText() {
@@ -693,7 +694,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                   alignment: Alignment.centerLeft,
                   child: Chip(
                     key: const ValueKey<String>('composer_shell_mode_chip'),
-                    avatar: const Icon(Icons.terminal_rounded, size: 16),
+                    avatar: const Icon(Symbols.terminal_rounded, size: 16),
                     label: const Text('Shell mode'),
                     onDeleted: widget.enabled
                         ? () {
@@ -763,8 +764,8 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                     return InputChip(
                       avatar: Icon(
                         attachment.mime.startsWith('image/')
-                            ? Icons.image_outlined
-                            : Icons.picture_as_pdf_outlined,
+                            ? Symbols.image
+                            : Symbols.picture_as_pdf,
                         size: 18,
                       ),
                       label: Text(attachment.filename ?? 'attachment'),
@@ -786,23 +787,22 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                 child: Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: List<Widget>.generate(
-                    widget.contextItems.length,
-                    (index) {
-                      final item = widget.contextItems[index];
-                      final source = item.source;
-                      final label = source != null
-                          ? '${item.filename}:${source.text.start}-${source.text.end}'
-                          : (item.filename ?? 'context');
-                      return InputChip(
-                        avatar: const Icon(Icons.code_rounded, size: 16),
-                        label: Text(label),
-                        onDeleted: widget.enabled
-                            ? () => widget.onRemoveContextItem?.call(index)
-                            : null,
-                      );
-                    },
-                  ),
+                  children: List<Widget>.generate(widget.contextItems.length, (
+                    index,
+                  ) {
+                    final item = widget.contextItems[index];
+                    final source = item.source;
+                    final label = source != null
+                        ? '${item.filename}:${source.text.start}-${source.text.end}'
+                        : (item.filename ?? 'context');
+                    return InputChip(
+                      avatar: const Icon(Symbols.code_rounded, size: 16),
+                      label: Text(label),
+                      onDeleted: widget.enabled
+                          ? () => widget.onRemoveContextItem?.call(index)
+                          : null,
+                    );
+                  }),
                 ),
               ),
             if (showPopover)
@@ -827,7 +827,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                       onPressed: widget.enabled ? _showAttachmentOptions : null,
                       tooltip: 'Add attachment',
                       style: attachButtonStyle,
-                      icon: const Icon(Icons.attach_file_rounded),
+                      icon: const Icon(Symbols.attach_file_rounded),
                     ),
                     const SizedBox(width: 8),
                   ],
@@ -944,13 +944,13 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                                     ),
                                     icon: _isStartingListening
                                         ? const Icon(
-                                            Icons.hourglass_top_rounded,
+                                            Symbols.hourglass_top_rounded,
                                             size: 20,
                                           )
                                         : Icon(
                                             _isListening
-                                                ? Icons.mic_rounded
-                                                : Icons.mic_none_rounded,
+                                                ? Symbols.mic_rounded
+                                                : Symbols.mic_none_rounded,
                                             size: 20,
                                           ),
                                   ),
@@ -1030,7 +1030,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                                 height: _composerActionButtonSize,
                                 child: Center(
                                   child: Icon(
-                                    Icons.stop_rounded,
+                                    Symbols.stop_rounded,
                                     size: 24,
                                     color: colorScheme.error,
                                   ),
@@ -1044,7 +1044,10 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                                   children: [
                                     const Align(
                                       alignment: Alignment.center,
-                                      child: Icon(Icons.send_rounded, size: 24),
+                                      child: Icon(
+                                        Symbols.send_rounded,
+                                        size: 24,
+                                      ),
                                     ),
                                     Align(
                                       alignment: Alignment.bottomRight,
@@ -1066,7 +1069,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                                           child: Padding(
                                             padding: const EdgeInsets.all(1),
                                             child: Icon(
-                                              Icons.keyboard_return_rounded,
+                                              Symbols.keyboard_return_rounded,
                                               size: 9,
                                               color: canSend
                                                   ? colorScheme.onPrimary
