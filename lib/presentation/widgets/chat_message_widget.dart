@@ -173,13 +173,15 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       activeReasoningPartKey: activeReasoningPartKey,
     );
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      child: Align(
-        alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 760),
-          child: _BubbleTouchHoldLayer(
+    return Semantics(
+      label: isUser ? 'Your message' : 'Assistant message',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Align(
+          alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760),
+            child: _BubbleTouchHoldLayer(
             borderRadius: bubbleBorderRadius,
             flashColor: colorScheme.primary.withValues(alpha: 0.16),
             onLongPress: isUser ? onBackgroundLongPress : null,
@@ -261,6 +263,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

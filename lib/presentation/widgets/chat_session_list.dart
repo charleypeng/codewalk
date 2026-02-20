@@ -262,12 +262,15 @@ class _ChatSessionListState extends State<ChatSessionList> {
     return Padding(
       key: ValueKey<String>('chat_session_tile_${session.id}'),
       padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Material(
-        color: isSelected
-            ? colorScheme.secondaryContainer
-            : colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(18),
-        child: ListTile(
+      child: Semantics(
+        label: 'Chat session: ${session.title}',
+        selected: isSelected,
+        child: Material(
+          color: isSelected
+              ? colorScheme.secondaryContainer
+              : colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(18),
+          child: ListTile(
           mouseCursor: SystemMouseCursors.click,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
@@ -520,6 +523,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
             }
           },
         ),
+      ),
       ),
     );
   }

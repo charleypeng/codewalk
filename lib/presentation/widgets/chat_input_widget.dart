@@ -969,9 +969,12 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                         _handleSendButtonPressStart(canSend: canSend),
                     onPointerUp: (_) => _handleSendButtonPressEnd(),
                     onPointerCancel: (_) => _handleSendButtonPressEnd(),
-                    child: SizedBox.square(
-                      dimension: _composerActionButtonSize,
-                      child: FilledButton(
+                    child: Semantics(
+                      label: widget.isResponding ? 'Stop response' : 'Send message',
+                      button: true,
+                      child: SizedBox.square(
+                        dimension: _composerActionButtonSize,
+                        child: FilledButton(
                         onPressed: widget.isResponding
                             ? (widget.enabled &&
                                       !_isSending &&
@@ -1082,6 +1085,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                                   ],
                                 ),
                               ),
+                        ),
                       ),
                     ),
                   ),
