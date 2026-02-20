@@ -190,7 +190,12 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                         attachments: submission.attachments,
                         shellMode: submission.mode == ChatComposerMode.shell,
                       );
-                      // Technical comment translated to English.
+                      // Clear file line references after sending.
+                      if (_fileContextItems.isNotEmpty) {
+                        _setState(() {
+                          _fileContextItems.clear();
+                        });
+                      }
                       _scrollToBottom(force: true);
                     },
                     onStopRequested: () async {
@@ -215,6 +220,14 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                     showInlineAttachmentButton: false,
                     allowImageAttachment: supportsImages,
                     allowPdfAttachment: supportsPdf,
+                    contextItems: _fileContextItems,
+                    onRemoveContextItem: (index) {
+                      if (index >= 0 && index < _fileContextItems.length) {
+                        _setState(() {
+                          _fileContextItems.removeAt(index);
+                        });
+                      }
+                    },
                   );
                 },
               ),

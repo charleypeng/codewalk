@@ -10,7 +10,8 @@ extension _ChatInputStateMachine on _ChatInputWidgetState {
       return;
     }
     if (payloadText.isEmpty &&
-        (_mode == ChatComposerMode.shell || _attachments.isEmpty)) {
+        (_mode == ChatComposerMode.shell ||
+            (_attachments.isEmpty && widget.contextItems.isEmpty))) {
       return;
     }
     if (_isListening) {
@@ -27,7 +28,10 @@ extension _ChatInputStateMachine on _ChatInputWidgetState {
           text: payloadText,
           attachments: _mode == ChatComposerMode.shell
               ? const <FileInputPart>[]
-              : List<FileInputPart>.unmodifiable(_attachments),
+              : List<FileInputPart>.unmodifiable(<FileInputPart>[
+                  ..._attachments,
+                  ...widget.contextItems,
+                ]),
           mode: _mode,
         ),
       );

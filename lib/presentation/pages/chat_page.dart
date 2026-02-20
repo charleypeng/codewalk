@@ -145,6 +145,7 @@ class _ChatPageState extends State<ChatPage>
   final Map<String, _FileExplorerContextState> _fileContextStates =
       <String, _FileExplorerContextState>{};
   final Map<String, String> _fileDiffSignaturesByContext = <String, String>{};
+  final List<FileInputPart> _fileContextItems = <FileInputPart>[];
   DateTime? _serverAlertIssueStartedAt;
   Timer? _serverAlertRevealTimer;
   Timer? _composerStatusShowTimer;
@@ -764,6 +765,9 @@ class _FileExplorerContextState {
   final Map<String, _FileTabViewState> tabsByPath =
       <String, _FileTabViewState>{};
   FileTabSelectionState tabSelection = const FileTabSelectionState();
+  // Line selection state for "add to chat" feature (1-based line numbers).
+  final Map<String, Set<int>> selectedLinesByPath = <String, Set<int>>{};
+  final Map<String, int> lastSelectedLineByPath = <String, int>{};
   bool rootLoadScheduled = false;
   String? treeError;
 
@@ -773,6 +777,8 @@ class _FileExplorerContextState {
     directoryChildren.clear();
     expandedDirectories.clear();
     loadingDirectories.clear();
+    selectedLinesByPath.clear();
+    lastSelectedLineByPath.clear();
     rootLoadScheduled = false;
     treeError = null;
   }

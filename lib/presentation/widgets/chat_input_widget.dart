@@ -185,6 +185,8 @@ class ChatInputWidget extends StatefulWidget {
     this.allowImageAttachment = true,
     this.allowPdfAttachment = true,
     this.controller,
+    this.contextItems = const <FileInputPart>[],
+    this.onRemoveContextItem,
   });
 
   final FutureOr<void> Function(ChatInputSubmission submission) onSendMessage;
@@ -206,6 +208,9 @@ class ChatInputWidget extends StatefulWidget {
   final bool allowImageAttachment;
   final bool allowPdfAttachment;
   final ChatInputController? controller;
+  // File line references added as context for the next message.
+  final List<FileInputPart> contextItems;
+  final void Function(int index)? onRemoveContextItem;
 
   @override
   State<ChatInputWidget> createState() => _ChatInputWidgetState();
@@ -260,7 +265,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   FocusNode get _effectiveFocusNode => widget.focusNode ?? _internalFocusNode;
 
   bool get _hasDraftContent =>
-      _controller.text.trim().isNotEmpty || _attachments.isNotEmpty;
+      _controller.text.trim().isNotEmpty ||
+      _attachments.isNotEmpty ||
+      widget.contextItems.isNotEmpty;
 
   bool get _isDesktopPlatform {
     return kIsWeb ||
@@ -629,7 +636,8 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
         _attachments.isNotEmpty && _mode == ChatComposerMode.normal;
     final canSend =
         (_isComposing ||
-            (_attachments.isNotEmpty && _mode == ChatComposerMode.normal)) &&
+            ((_attachments.isNotEmpty || widget.contextItems.isNotEmpty) &&
+                _mode == ChatComposerMode.normal)) &&
         widget.enabled &&
         !_isSending &&
         !widget.isResponding;
@@ -769,6 +777,32 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                           : null,
                     );
                   }),
+                ),
+              ),
+            if (widget.contextItems.isNotEmpty)
+              Padding(
+                key: const ValueKey<String>('composer_context_items_row'),
+                padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: List<Widget>.generate(
+                    widget.contextItems.length,
+                    (index) {
+                      final item = widget.contextItems[index];
+                      final source = item.source;
+                      final label = source != null
+                          ? '${item.filename}:${source.text.start}-${source.text.end}'
+                          : (item.filename ?? 'context');
+                      return InputChip(
+                        avatar: const Icon(Icons.code_rounded, size: 16),
+                        label: Text(label),
+                        onDeleted: widget.enabled
+                            ? () => widget.onRemoveContextItem?.call(index)
+                            : null,
+                      );
+                    },
+                  ),
                 ),
               ),
             if (showPopover)

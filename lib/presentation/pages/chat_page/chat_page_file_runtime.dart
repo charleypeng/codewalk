@@ -348,6 +348,10 @@ extension _ChatPageFileRuntime on _ChatPageState {
   }) {
     _setState(() {
       fileState.tabSelection = closeFileTab(fileState.tabSelection, path);
+      // Clean up line selection state for the closed tab.
+      final normalizedPath = _normalizeFilePath(path);
+      fileState.selectedLinesByPath.remove(normalizedPath);
+      fileState.lastSelectedLineByPath.remove(normalizedPath);
     });
     onUpdated?.call();
   }
