@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'core/constants/app_constants.dart';
+import 'domain/entities/experience_settings.dart';
 import 'core/di/injection_container.dart' as di;
 import 'core/logging/app_logger.dart';
 import 'presentation/pages/app_shell_page.dart';
@@ -89,6 +90,12 @@ class MyApp extends StatelessWidget {
           return Consumer<SettingsProvider>(
             builder: (context, settingsProvider, _) {
               final appDensity = settingsProvider.appDensity;
+              // Map user theme mode preference to Flutter ThemeMode
+              final themeMode = switch (settingsProvider.themeMode) {
+                ThemeModeOption.light => ThemeMode.light,
+                ThemeModeOption.dark => ThemeMode.dark,
+                ThemeModeOption.system => ThemeMode.system,
+              };
               return MaterialApp(
                 title: AppConstants.appName,
                 theme: AppTheme.lightFrom(
@@ -99,7 +106,7 @@ class MyApp extends StatelessWidget {
                   darkDynamic ?? fallbackDark,
                   appDensity: appDensity,
                 ),
-                themeMode: ThemeMode.system,
+                themeMode: themeMode,
                 home: const AppShellPage(),
                 debugShowCheckedModeBanner: false,
               );

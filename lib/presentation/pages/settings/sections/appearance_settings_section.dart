@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_constants.dart';
@@ -35,6 +36,58 @@ class AppearanceSettingsSection extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
+            // Theme mode card
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(AppConstants.defaultPadding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Theme',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Choose between light, dark, or system theme.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<ThemeModeOption>(
+                        key: const ValueKey<String>(
+                          'settings_theme_mode_segmented',
+                        ),
+                        segments: const <ButtonSegment<ThemeModeOption>>[
+                          ButtonSegment<ThemeModeOption>(
+                            value: ThemeModeOption.system,
+                            label: Text('System'),
+                            icon: Icon(Symbols.brightness_auto),
+                          ),
+                          ButtonSegment<ThemeModeOption>(
+                            value: ThemeModeOption.light,
+                            label: Text('Light'),
+                            icon: Icon(Symbols.light_mode),
+                          ),
+                          ButtonSegment<ThemeModeOption>(
+                            value: ThemeModeOption.dark,
+                            label: Text('Dark'),
+                            icon: Icon(Symbols.dark_mode),
+                          ),
+                        ],
+                        selected: <ThemeModeOption>{settingsProvider.themeMode},
+                        onSelectionChanged: (selected) => unawaited(
+                          settingsProvider.setThemeMode(selected.first),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Density card
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(AppConstants.defaultPadding),

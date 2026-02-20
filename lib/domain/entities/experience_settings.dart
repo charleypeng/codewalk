@@ -23,6 +23,8 @@ enum DesktopPane { conversations, files, utility }
 
 enum AppDensity { extraDense, dense, normal, spacious, extraSpacious }
 
+enum ThemeModeOption { system, light, dark }
+
 enum SpeechToTextEngine { native, sherpa }
 
 const String kSherpaLanguageSystem = 'system';
@@ -230,6 +232,22 @@ String appDensityKey(AppDensity density) {
   };
 }
 
+String themeModeOptionKey(ThemeModeOption mode) {
+  return switch (mode) {
+    ThemeModeOption.system => 'system',
+    ThemeModeOption.light => 'light',
+    ThemeModeOption.dark => 'dark',
+  };
+}
+
+ThemeModeOption themeModeOptionFromKey(String value) {
+  return switch (value) {
+    'light' => ThemeModeOption.light,
+    'dark' => ThemeModeOption.dark,
+    _ => ThemeModeOption.system,
+  };
+}
+
 String speechToTextEngineKey(SpeechToTextEngine engine) {
   return switch (engine) {
     SpeechToTextEngine.native => 'native',
@@ -311,6 +329,7 @@ class ExperienceSettings {
       showComposerTips: true,
       keepDesktopRunningInTray: true,
       keepMobileRealtimeForShortPeriod: true,
+      themeMode: ThemeModeOption.system,
       speechToTextEngine: defaultSpeechEngine,
       speechSilenceTimeoutSeconds: 5,
       sherpaLanguageCode: kSherpaLanguageSystem,
@@ -335,6 +354,7 @@ class ExperienceSettings {
     required this.showComposerTips,
     required this.keepDesktopRunningInTray,
     required this.keepMobileRealtimeForShortPeriod,
+    this.themeMode = ThemeModeOption.system,
     this.speechToTextEngine = SpeechToTextEngine.native,
     this.speechSilenceTimeoutSeconds = 5,
     this.sherpaLanguageCode = kSherpaLanguageSystem,
@@ -359,6 +379,7 @@ class ExperienceSettings {
   final bool showComposerTips;
   final bool keepDesktopRunningInTray;
   final bool keepMobileRealtimeForShortPeriod;
+  final ThemeModeOption themeMode;
   final SpeechToTextEngine speechToTextEngine;
   final int speechSilenceTimeoutSeconds;
   final String sherpaLanguageCode;
@@ -383,6 +404,7 @@ class ExperienceSettings {
     bool? showComposerTips,
     bool? keepDesktopRunningInTray,
     bool? keepMobileRealtimeForShortPeriod,
+    ThemeModeOption? themeMode,
     SpeechToTextEngine? speechToTextEngine,
     int? speechSilenceTimeoutSeconds,
     String? sherpaLanguageCode,
@@ -414,6 +436,7 @@ class ExperienceSettings {
       keepMobileRealtimeForShortPeriod:
           keepMobileRealtimeForShortPeriod ??
           this.keepMobileRealtimeForShortPeriod,
+      themeMode: themeMode ?? this.themeMode,
       speechToTextEngine: speechToTextEngine ?? this.speechToTextEngine,
       speechSilenceTimeoutSeconds:
           speechSilenceTimeoutSeconds ?? this.speechSilenceTimeoutSeconds,
@@ -472,6 +495,7 @@ class ExperienceSettings {
       'showComposerTips': showComposerTips,
       'keepDesktopRunningInTray': keepDesktopRunningInTray,
       'keepMobileRealtimeForShortPeriod': keepMobileRealtimeForShortPeriod,
+      'themeMode': themeModeOptionKey(themeMode),
       'speechToTextEngine': speechToTextEngineKey(speechToTextEngine),
       'speechSilenceTimeoutSeconds': speechSilenceTimeoutSeconds,
       'sherpaLanguageCode': sherpaLanguageCode,
@@ -652,6 +676,12 @@ class ExperienceSettings {
       keepMobileRealtimeForShortPeriod = keepMobileRealtimeForShortPeriodJson;
     }
 
+    var themeMode = defaults.themeMode;
+    final themeModeJson = json['themeMode'];
+    if (themeModeJson is String && themeModeJson.trim().isNotEmpty) {
+      themeMode = themeModeOptionFromKey(themeModeJson.trim().toLowerCase());
+    }
+
     final speechToTextEngineJson = json['speechToTextEngine'];
     if (speechToTextEngineJson is String &&
         speechToTextEngineJson.trim().isNotEmpty) {
@@ -699,6 +729,7 @@ class ExperienceSettings {
       showComposerTips: showComposerTips,
       keepDesktopRunningInTray: keepDesktopRunningInTray,
       keepMobileRealtimeForShortPeriod: keepMobileRealtimeForShortPeriod,
+      themeMode: themeMode,
       speechToTextEngine: speechToTextEngine,
       speechSilenceTimeoutSeconds: speechSilenceTimeoutSeconds,
       sherpaLanguageCode: sherpaLanguageCode,

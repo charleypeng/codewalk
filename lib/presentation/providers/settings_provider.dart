@@ -50,6 +50,7 @@ class SettingsProvider extends ChangeNotifier {
   UpdateCheckResult? get updateCheckResult => _updateCheckResult;
   bool get checkingForUpdate => _checkingForUpdate;
   bool get lastCheckFoundNoUpdate => _lastCheckFoundNoUpdate;
+  ThemeModeOption get themeMode => _settings.themeMode;
   AppDensity get appDensity => _settings.appDensity;
   bool get showThinkingBubbles => _settings.showThinkingBubbles;
   bool get showToolCallBubbles => _settings.showToolCallBubbles;
@@ -180,6 +181,15 @@ class SettingsProvider extends ChangeNotifier {
 
   bool isDesktopPaneVisible(DesktopPane pane) {
     return _settings.desktopPanes[pane] ?? true;
+  }
+
+  Future<void> setThemeMode(ThemeModeOption mode) async {
+    if (_settings.themeMode == mode) {
+      return;
+    }
+    _settings = _settings.copyWith(themeMode: mode);
+    notifyListeners();
+    await _persist();
   }
 
   Future<void> setAppDensity(AppDensity density) async {
