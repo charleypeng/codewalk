@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_constants.dart';
@@ -328,6 +328,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
           overflow: TextOverflow.ellipsis,
         ),
         trailing: PopupMenuButton<_ServerAction>(
+          icon: const Icon(Symbols.more_vert),
           onSelected: (action) => _handleServerAction(
             appProvider: appProvider,
             profile: profile,

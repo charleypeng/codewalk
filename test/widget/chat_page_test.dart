@@ -45,9 +45,9 @@ import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:codewalk/presentation/utils/session_title_formatter.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart' hide Provider;
 import 'package:simple_icons/simple_icons.dart';
 

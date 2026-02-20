@@ -4,8 +4,8 @@ import 'package:codewalk/domain/usecases/get_app_info.dart';
 import 'package:codewalk/presentation/pages/server_settings_page.dart';
 import 'package:codewalk/presentation/providers/app_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../support/fakes.dart';

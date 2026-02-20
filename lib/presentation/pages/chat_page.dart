@@ -10,8 +10,8 @@ import 'package:flutter_highlight/themes/atom-one-dark.dart';
 import 'package:flutter_highlight/themes/github.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart' hide Provider;
-import 'package:window_manager/window_manager.dart';
 import 'package:simple_icons/simple_icons.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../../core/config/feature_flags.dart';
 import '../../core/di/injection_container.dart' as di;

@@ -5,19 +5,19 @@ import 'dart:math' as math;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/di/injection_container.dart' as di;
 import '../../core/logging/app_logger.dart';
-import '../../domain/entities/experience_settings.dart';
 import '../../domain/entities/chat_composer_draft.dart';
 import '../../domain/entities/chat_session.dart';
+import '../../domain/entities/experience_settings.dart';
+import '../providers/settings_provider.dart';
 import '../services/speech_input_service.dart';
 import '../services/speech_input_service_sherpa.dart';
 import '../services/speech_input_service_stt.dart';
-import '../providers/settings_provider.dart';
 import 'sherpa_model_download_dialog.dart';
 
 part 'chat_input_widget_types_part.dart';
