@@ -36,6 +36,7 @@ import '../utils/file_explorer_logic.dart';
 import '../utils/reasoning_status_parser.dart';
 import '../utils/session_title_formatter.dart';
 import '../utils/shortcut_binding_codec.dart';
+import '../utils/window_size_class.dart';
 import '../widgets/chat_input_widget.dart';
 import '../widgets/chat_message_widget.dart';
 import '../widgets/chat_session_list.dart';
@@ -85,8 +86,7 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage>
     with WidgetsBindingObserver, WindowListener {
-  static const double _mobileBreakpoint = 840;
-  static const double _largeDesktopBreakpoint = 1200;
+  // File pane shown when expanded and width exceeds this threshold
   static const double _filePaneBreakpoint = 1100;
   static const double _desktopSessionPaneWidth = 300;
   static const double _largeDesktopSessionPaneWidth = 320;
@@ -467,8 +467,9 @@ class _ChatPageState extends State<ChatPage>
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final isMobile = width < _mobileBreakpoint;
-        final isLargeDesktop = width >= _largeDesktopBreakpoint;
+        final sizeClass = WindowSizeClass.fromWidth(width);
+        final isMobile = sizeClass.isCompact || sizeClass == WindowSizeClass.medium;
+        final isLargeDesktop = sizeClass.isAtLeastLarge;
         final settingsProvider = context.watch<SettingsProvider>();
         final showConversationPane =
             !isMobile &&
@@ -730,7 +731,8 @@ class _ChatPageState extends State<ChatPage>
     if (!mounted) {
       return false;
     }
-    return MediaQuery.sizeOf(context).width < _mobileBreakpoint;
+    final sizeClass = context.windowSizeClass;
+    return sizeClass.isCompact || sizeClass == WindowSizeClass.medium;
   }
 
   ({String compactionId, String compactionLabel})? _resolveCompactionBoundary(

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../utils/window_size_class.dart';
 import 'settings/sections/about_settings_section.dart';
 import 'settings/sections/appearance_settings_section.dart';
 import 'settings/sections/logs_settings_section.dart';
@@ -38,7 +39,7 @@ class _SettingsSection {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  static const double _splitBreakpoint = 980;
+  // Split layout when expanded or wider (840dp+)
   static const Duration _doubleEscapeCloseThreshold = Duration(
     milliseconds: 500,
   );
@@ -193,8 +194,8 @@ class _SettingsPageState extends State<SettingsPage> {
     final section = visibleSections
         .where((item) => item.id == _selectedSectionId)
         .firstOrNull;
-    final width = MediaQuery.of(context).size.width;
-    final isSplit = width >= _splitBreakpoint;
+    final sizeClass = context.windowSizeClass;
+    final isSplit = sizeClass.isAtLeastExpanded;
 
     if (!isSplit) {
       return Scaffold(
