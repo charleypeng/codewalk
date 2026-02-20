@@ -146,7 +146,7 @@ class _IoLocalOpencodeServerRuntime implements LocalOpencodeServerRuntime {
     if (configuredPath != null && configuredPath.isNotEmpty) {
       opencodeStatus = await _probeExplicitCommand(configuredPath);
       if (!opencodeStatus.available) {
-        final fallback = await _probeCommand('opencode');
+        final fallback = await _probeOpencodeFromPathOrKnownLocations();
         opencodeStatus = fallback.available
             ? fallback
             : const LocalToolStatus(
@@ -156,7 +156,7 @@ class _IoLocalOpencodeServerRuntime implements LocalOpencodeServerRuntime {
               );
       }
     } else {
-      opencodeStatus = await _probeCommand('opencode');
+      opencodeStatus = await _probeOpencodeFromPathOrKnownLocations();
     }
 
     final nodeStatus = await _probeCommand('node');
@@ -540,6 +540,126 @@ class _IoLocalOpencodeServerRuntime implements LocalOpencodeServerRuntime {
     }
   }
 
+  Future<LocalToolStatus> _probeOpencodeFromPathOrKnownLocations() async {
+    final fromPath = await _probeCommand('opencode');
+    if (fromPath.available) {
+      return fromPath;
+    }
+
+    final fromKnownLocation = await _probeKnownOpencodeLocation();
+    if (fromKnownLocation != null) {
+      return fromKnownLocation;
+    }
+
+    return const LocalToolStatus(available: false);
+  }
+
+  Future<LocalToolStatus?> _probeKnownOpencodeLocation() async {
+    for (final candidate in _knownOpencodeCandidates()) {
+      final status = await _probeExplicitCommand(candidate);
+      if (!status.available) {
+        continue;
+      }
+      return LocalToolStatus(
+        available: true,
+        path: status.path,
+        version: status.version,
+        note: _knownLocationNote(candidate),
+      );
+    }
+    return null;
+  }
+
+  List<String> _knownOpencodeCandidates() {
+    final candidates = <String>[];
+    final localBin = _joinPath(_installRootDirectory().path, 'bin');
+    if (defaultTargetPlatform == TargetPlatform.windows) {
+      candidates.add(_joinPath(localBin, 'opencode.cmd'));
+      candidates.add(_joinPath(localBin, 'opencode.exe'));
+
+      final appData = Platform.environment['APPDATA']?.trim() ?? '';
+      if (appData.isNotEmpty) {
+        final npmBin = _joinPath(appData, 'npm');
+        candidates.add(_joinPath(npmBin, 'opencode.cmd'));
+        candidates.add(_joinPath(npmBin, 'opencode.exe'));
+      }
+
+      final home = _userHomeDirectory();
+      if (home != null && home.isNotEmpty) {
+        final bunBin = _joinPath(_joinPath(home, '.bun'), 'bin');
+        candidates.add(_joinPath(bunBin, 'opencode.cmd'));
+        candidates.add(_joinPath(bunBin, 'opencode.exe'));
+      }
+    } else {
+      candidates.add(_joinPath(localBin, 'opencode'));
+      final home = _userHomeDirectory();
+      if (home != null && home.isNotEmpty) {
+        final bunBin = _joinPath(_joinPath(home, '.bun'), 'bin');
+        candidates.add(_joinPath(bunBin, 'opencode'));
+      }
+    }
+
+    return candidates.toSet().toList(growable: false);
+  }
+
+  String _knownLocationNote(String commandPath) {
+    const base = 'Detected from a known installation directory.';
+    if (defaultTargetPlatform != TargetPlatform.windows) {
+      return base;
+    }
+
+    final directory = _directoryName(commandPath);
+    if (directory == null ||
+        directory.isEmpty ||
+        _pathContainsDirectory(directory)) {
+      return base;
+    }
+
+    return '$base PATH may need refresh; reopen CodeWalk if a recent install is not detected yet.';
+  }
+
+  bool _pathContainsDirectory(String pathToFind) {
+    final envPath = Platform.environment['PATH'];
+    if (envPath == null || envPath.trim().isEmpty) {
+      return false;
+    }
+
+    final separator = defaultTargetPlatform == TargetPlatform.windows
+        ? ';'
+        : ':';
+    final target = _normalizePathSegment(pathToFind);
+    if (target.isEmpty) {
+      return false;
+    }
+
+    for (final segment in envPath.split(separator)) {
+      if (_normalizePathSegment(segment) == target) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  String _normalizePathSegment(String raw) {
+    var value = raw.trim();
+    if (value.length >= 2 && value.startsWith('"') && value.endsWith('"')) {
+      value = value.substring(1, value.length - 1);
+    }
+
+    if (defaultTargetPlatform == TargetPlatform.windows) {
+      value = value.replaceAll('/', '\\').toLowerCase();
+      while (value.endsWith('\\')) {
+        value = value.substring(0, value.length - 1);
+      }
+      return value;
+    }
+
+    while (value.endsWith('/')) {
+      value = value.substring(0, value.length - 1);
+    }
+    return value;
+  }
+
   Future<LocalToolStatus> _probeExplicitCommand(String commandPath) async {
     final file = File(commandPath);
     if (!file.existsSync()) {
@@ -628,7 +748,7 @@ class _IoLocalOpencodeServerRuntime implements LocalOpencodeServerRuntime {
       return 'Install via Bun is recommended by OpenCode maintainers.';
     }
     if (node.available && npm.available) {
-      return 'Node + npm are available. Install OpenCode via npm or install Bun for the recommended flow.';
+      return 'Node + npm are available. Install OpenCode via npm or install Bun for the recommended flow. On Windows, refresh checks after install because PATH updates may lag in already-open apps.';
     }
     return 'No runtime detected. Install OpenCode binary directly or bootstrap Bun first.';
   }
@@ -711,6 +831,11 @@ class _IoLocalOpencodeServerRuntime implements LocalOpencodeServerRuntime {
           }
         }
       }
+    }
+
+    final knownLocation = await _probeKnownOpencodeLocation();
+    if (knownLocation != null && knownLocation.path.trim().isNotEmpty) {
+      return knownLocation.path;
     }
 
     return null;

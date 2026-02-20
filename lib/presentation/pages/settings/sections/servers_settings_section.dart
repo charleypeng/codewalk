@@ -497,6 +497,20 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                           report.recommendation,
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
+                        if (!kIsWeb &&
+                            defaultTargetPlatform ==
+                                TargetPlatform.windows) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            'Windows tip: after installing, click Refresh Checks. If detection still fails, reopen CodeWalk to reload PATH changes.',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                          ),
+                        ],
                       ],
                       const SizedBox(height: 12),
                       Wrap(

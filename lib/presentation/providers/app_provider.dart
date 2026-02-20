@@ -545,8 +545,11 @@ class AppProvider extends ChangeNotifier {
     _localEnvironmentReport = report;
 
     if (!report.opencode.available || report.opencode.path.trim().isEmpty) {
-      const message =
-          'OpenCode command was not detected. Run installation from the wizard.';
+      final isWindows =
+          !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
+      final message = isWindows
+          ? 'OpenCode command was not detected. If you installed it moments ago, refresh checks or reopen CodeWalk to reload PATH.'
+          : 'OpenCode command was not detected. Run installation from the wizard.';
       _localSetupInProgress = false;
       _localSetupMessage = message;
       _setError(message);
