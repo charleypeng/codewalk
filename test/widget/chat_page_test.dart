@@ -194,6 +194,83 @@ void main() {
       expect(find.text('Conversations'), findsOneWidget);
     });
 
+    testWidgets('desktop sidebar toggles do not duplicate markdown code lines', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(1300, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_sidebar_code',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Sidebar Code Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_sidebar_code'] = <ChatMessage>[
+        AssistantMessage(
+          id: 'msg_sidebar_code',
+          sessionId: 'ses_sidebar_code',
+          time: DateTime.fromMillisecondsSinceEpoch(1100),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_sidebar_code',
+              messageId: 'msg_sidebar_code',
+              sessionId: 'ses_sidebar_code',
+              text:
+                  'Use `alpha` and `beta` in sequence.\n\n```dart\nfinal answer = 42;\nprint(answer);\n```',
+            ),
+          ],
+        ),
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('alpha'), findsOneWidget);
+      expect(find.textContaining('beta'), findsOneWidget);
+      expect(find.textContaining('final answer = 42;'), findsOneWidget);
+      expect(find.textContaining('print(answer);'), findsOneWidget);
+
+      for (var i = 0; i < 3; i += 1) {
+        await tester.tap(
+          find.byKey(
+            const ValueKey<String>('hide_conversations_sidebar_button'),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('desktop_sidebars_menu_button')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(
+            const ValueKey<String>('desktop_sidebar_menu_item_conversations'),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.textContaining('alpha'), findsOneWidget);
+        expect(find.textContaining('beta'), findsOneWidget);
+        expect(find.textContaining('final answer = 42;'), findsOneWidget);
+        expect(find.textContaining('print(answer);'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      }
+    });
+
     testWidgets(
       'app bar display toggles menu controls thinking and tool bubbles',
       (WidgetTester tester) async {

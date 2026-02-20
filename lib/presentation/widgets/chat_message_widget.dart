@@ -183,9 +183,9 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
             onLongPressRelease: isUser ? onBackgroundLongPressEnd : null,
             onDoubleTap: canCopyWholeMessage
                 ? () => _copyTextToClipboard(
-                      context,
-                      _composeMessageCopyText(message),
-                    )
+                    context,
+                    _composeMessageCopyText(message),
+                  )
                 : null,
             child: Container(
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
@@ -2348,17 +2348,12 @@ class _MarkdownCodeBlockTapBuilder extends MarkdownElementBuilder {
           context,
         ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace');
     return GestureDetector(
-      key: const ValueKey<String>('markdown_pre_code_tap_target'),
       behavior: HitTestBehavior.opaque,
       onTap: () => onTapCode(code),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.all(8),
-        child: Text(
-          code,
-          key: const ValueKey<String>('markdown_pre_code_text'),
-          style: style,
-        ),
+        child: Text(code, style: style),
       ),
     );
   }
@@ -2387,14 +2382,9 @@ class _MarkdownInlineCodeTapBuilder extends MarkdownElementBuilder {
           context,
         ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace');
     return GestureDetector(
-      key: const ValueKey<String>('markdown_inline_code_tap_target'),
       behavior: HitTestBehavior.opaque,
       onTap: () => onTapCode(code),
-      child: Text(
-        code,
-        key: const ValueKey<String>('markdown_inline_code_text'),
-        style: style,
-      ),
+      child: Text(code, style: style),
     );
   }
 }

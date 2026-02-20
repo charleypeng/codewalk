@@ -434,12 +434,151 @@ void main() {
       ),
     );
 
-    await tester.tap(
-      find.byKey(const ValueKey<String>('markdown_pre_code_tap_target')),
-    );
+    await tester.tap(find.textContaining('final value = 42;'));
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Copied to clipboard'), findsOneWidget);
+  });
+
+  testWidgets('markdown code stays stable across parent rebuilds', (
+    WidgetTester tester,
+  ) async {
+    var showLeadingPanel = true;
+
+    Widget buildHost() {
+      return MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.windows),
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) {
+              return Row(
+                children: [
+                  if (showLeadingPanel) const SizedBox(width: 120),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton(
+                            onPressed: () {
+                              setState(() {
+                                showLeadingPanel = !showLeadingPanel;
+                              });
+                            },
+                            child: const Text('toggle panel'),
+                          ),
+                        ),
+                        Expanded(
+                          child: ChatMessageWidget(
+                            message: AssistantMessage(
+                              id: 'msg_code_stable',
+                              sessionId: 'ses_code_stable',
+                              time: DateTime.fromMillisecondsSinceEpoch(1000),
+                              completedTime:
+                                  DateTime.fromMillisecondsSinceEpoch(1200),
+                              parts: const <MessagePart>[
+                                TextPart(
+                                  id: 'part_code_stable',
+                                  messageId: 'msg_code_stable',
+                                  sessionId: 'ses_code_stable',
+                                  text:
+                                      '```dart\nfinal value = 42;\nprint(value);\n```',
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(buildHost());
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('final value = 42;'), findsOneWidget);
+    expect(find.textContaining('print(value);'), findsOneWidget);
+
+    for (var i = 0; i < 4; i += 1) {
+      await tester.tap(find.text('toggle panel'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('final value = 42;'), findsOneWidget);
+      expect(find.textContaining('print(value);'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
+  });
+
+  testWidgets('multiple inline code spans render without key collisions', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: AssistantMessage(
+              id: 'msg_inline_code_keys',
+              sessionId: 'ses_inline_code_keys',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_inline_code_keys',
+                  messageId: 'msg_inline_code_keys',
+                  sessionId: 'ses_inline_code_keys',
+                  text: 'Use `alpha` and `beta` in sequence.',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('alpha'), findsOneWidget);
+    expect(find.textContaining('beta'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('multiple fenced code blocks render without key collisions', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: AssistantMessage(
+              id: 'msg_fenced_code_keys',
+              sessionId: 'ses_fenced_code_keys',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_fenced_code_keys',
+                  messageId: 'msg_fenced_code_keys',
+                  sessionId: 'ses_fenced_code_keys',
+                  text:
+                      '```dart\nfinal alpha = 1;\n```\n\n```dart\nfinal beta = 2;\n```',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('final alpha = 1;'), findsOneWidget);
+    expect(find.textContaining('final beta = 2;'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('touch hold callback stays scoped to user messages', (
