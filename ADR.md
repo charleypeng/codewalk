@@ -15,6 +15,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-009: Native Session Title Generation via Internal `title` Agent
 - ADR-010: Delivery Pipeline Split for CI Quality, Tagged Releases, and Minor-Tag Smoke Checks
 - ADR-011: First-Run Onboarding Wizard
+- ADR-012: Material Symbols Migration via `material_symbols_icons`
 
 ---
 
@@ -409,3 +410,38 @@ Gate the main shell in `AppShellPage` via `Consumer2` checks on `serverProfiles`
 - `lib/presentation/pages/onboarding_wizard_page.dart`
 - `lib/domain/entities/experience_settings.dart`
 - `lib/presentation/providers/settings_provider.dart`
+
+---
+
+## ADR-012: Material Symbols Migration via `material_symbols_icons` (2026-02-20)
+
+**Status**: Accepted
+
+### Context
+
+The codebase used Flutter `Icons.*` references broadly, but feature requirements introduced symbols that are only available in Material Symbols (for example, panel-specific close icons). The project also needs broader icon coverage and a future-proof path aligned with Google's current design direction.
+
+Related: See `featM` in `ROADMAP.md` (commit `e05d2fb`).
+
+### Decision
+
+Standardize icon usage on `Symbols.*` from `material_symbols_icons` and migrate existing `Icons.*` references to symbol equivalents, keeping static symbol constants in code paths to preserve Flutter tree-shaking behavior.
+
+### Rationale
+
+- Material Symbols provides broader coverage than legacy Material Icons and unblocks missing-icon cases.
+- The package tracks Material Symbols updates and aligns with the ecosystem direction, reducing migration risk later.
+- Static references keep icon fonts optimizable during build, avoiding unnecessary asset growth from dynamic lookups.
+
+### Consequences
+
+- ✅ Access to the Material Symbols catalog and consistent icon language across mobile and desktop.
+- ✅ Future-friendly alignment with Google's symbol-first direction for new UI work.
+- ⚠ Naming adjustments are required (`Icons.*` to `Symbols.*`), including variant suffix differences in some cases.
+- ⚠ Visual style parity must be reviewed case-by-case where Symbols metrics/appearance differ from previous Icons usage.
+- ❌ Dynamic or computed icon indirection is intentionally discouraged to preserve static references and tree-shaking efficiency.
+
+### Key Files
+
+- `pubspec.yaml`
+- `lib/`

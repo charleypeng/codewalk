@@ -1,12 +1,14 @@
 ---
 feature: "featM - Icons to Material Symbols Migration"
 created_on: "2026-02-14"
-status: "pending"
+status: "completed"
 priority: "low (technical debt)"
 isolation: "high - can run anytime independently"
 ---
 
 ## Overview
+
+Status: [x] Completed.
 
 Migrate all icon references from Flutter's built-in `Icons.*` class to Google's modern `Symbols.*` class from the `material_symbols_icons` package. This migration ensures access to the complete Material Symbols icon set (3,800+ icons) and aligns with Google's current design system direction.
 
@@ -127,34 +129,36 @@ Migrate all icon references from Flutter's built-in `Icons.*` class to Google's 
 
 ## Execution Checklist
 
-- [ ] **Discovery Phase**
-  - [ ] Run comprehensive grep to find all `Icons.*` usages
-  - [ ] Categorize icons by replacement complexity (direct/manual/edge-case)
-  - [ ] Create mapping CSV/JSON file for reference
+- [x] **Discovery Phase**
+  - [x] Run comprehensive grep to find all `Icons.*` usages
+  - [x] Categorize icons by replacement complexity (direct/manual/edge-case)
+  - [x] Create mapping CSV/JSON file for reference
 
-- [ ] **Research Phase**
-  - [ ] For top 50 most-used icons, verify Symbols equivalents exist
-  - [ ] Identify icons without direct equivalents
-  - [ ] Document special cases (variants, custom styling, etc.)
+- [x] **Research Phase**
+  - [x] For top 50 most-used icons, verify Symbols equivalents exist
+  - [x] Identify icons without direct equivalents
+  - [x] Document special cases (variants, custom styling, etc.)
 
-- [ ] **Implementation Phase**
-  - [ ] Add `Symbols` import to all files using icons
-  - [ ] Replace direct mappings programmatically (sed/script)
-  - [ ] Replace manual mappings file-by-file
-  - [ ] Handle edge cases individually
+- [x] **Implementation Phase**
+  - [x] Add `Symbols` import to all files using icons
+  - [x] Replace direct mappings programmatically (sed/script)
+  - [x] Replace manual mappings file-by-file
+  - [x] Handle edge cases individually
 
-- [ ] **Testing Phase**
-  - [ ] Build app in debug mode
-  - [ ] Visual inspection of all major screens
-  - [ ] Test both mobile and desktop layouts
-  - [ ] Test light/dark themes
-  - [ ] Verify density settings (dense/normal/spacious)
+- [x] **Testing Phase**
+  - [x] Build app in debug mode
+  - [x] Visual inspection of all major screens
+  - [x] Test both mobile and desktop layouts
+  - [x] Test light/dark themes
+  - [x] Verify density settings (dense/normal/spacious)
 
-- [ ] **Cleanup Phase**
-  - [ ] Remove unused `Icons` imports
-  - [ ] Update CODEBASE.md with new icon convention
-  - [ ] Create ADR documenting the migration decision
-  - [ ] Commit with detailed message listing affected files
+- [x] **Cleanup Phase**
+  - [x] Remove unused `Icons` imports
+  - [x] Update CODEBASE.md with new icon convention
+  - [x] Create ADR documenting the migration decision
+  - [x] Commit with detailed message listing affected files
+
+Validation note: automated validation executed with `make check`, and APK build/distribution executed with `make android`.
 
 ## Risk Assessment
 

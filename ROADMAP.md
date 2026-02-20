@@ -90,7 +90,7 @@ Notes:
 - [x] `featC` - `ROADMAP.featC.md` (focus/visibility render gate + files planning)
 - [x] `featJ` - `ROADMAP.featJ.md` (speech-to-text platform matrix)
 - [x] `featK` - `ROADMAP.featK.md` (first-run onboarding wizard)
-- [ ] `featM` - `ROADMAP.featM.md` (Icons to Material Symbols migration)
+- [x] `featM` - `ROADMAP.featM.md` (Icons to Material Symbols migration)
 - [ ] `featN` - `ROADMAP.featN.md` (Material You design system revamp)
 - [x] `featO` - `ROADMAP.featO.md` (Code health & technical debt)
 - [ ] `featQ` - `ROADMAP.featQ.md` (Cross-platform UX and settings polish)
@@ -248,9 +248,13 @@ Implemented compaction boundary timeline entry that collapses all pre-compaction
 **Post-completion fixes**: Frozen boundary during active compaction (prevents premature collapse), post-compaction `ChatState.error` reset and incomplete-message cleanup, auto-scroll suppression during compaction streaming.
 **ADR**: ADR-027
 
-#### `featM` Icons to Material Symbols migration
+#### `featM` Icons to Material Symbols migration ✅
 
-- [ ] Migrar todos os usos de `Icons.*` para `Symbols.*` do pacote `material_symbols_icons`
+**Status**: Completed (2026-02-20)
+
+Completed full migration of icon usage from `Icons.*` to `Symbols.*` using `material_symbols_icons`, aligning the UI with Material Symbols across mobile and desktop.
+
+- [x] Migrar todos os usos de `Icons.*` para `Symbols.*` do pacote `material_symbols_icons` - Commit hash: e05d2fb
 
 #### `featN` Material You design system revamp
 
