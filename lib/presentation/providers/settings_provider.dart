@@ -62,6 +62,7 @@ class SettingsProvider extends ChangeNotifier {
   SpeechToTextEngine get speechToTextEngine => _settings.speechToTextEngine;
   int get speechSilenceTimeoutSeconds => _settings.speechSilenceTimeoutSeconds;
   String get sherpaLanguageCode => _settings.sherpaLanguageCode;
+  bool get skipOnboardingWizard => _settings.skipOnboardingWizard;
   bool get hasAnyServerBackedNotificationCategory =>
       _serverBackedNotifications.values.any((value) => value);
 
@@ -268,6 +269,15 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(speechSilenceTimeoutSeconds: normalized);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setSkipOnboardingWizard(bool value) async {
+    if (_settings.skipOnboardingWizard == value) {
+      return;
+    }
+    _settings = _settings.copyWith(skipOnboardingWizard: value);
     notifyListeners();
     await _persist();
   }
@@ -572,6 +582,18 @@ class SettingsProvider extends ChangeNotifier {
     _dismissedUpdateVersion = version;
     _updateCheckResult = null;
     await _localDataSource.saveDismissedUpdateVersion(version);
+    notifyListeners();
+  }
+
+  /// Resets in-memory state to defaults (used after clearAll during app reset).
+  void resetToDefaults() {
+    _settings = ExperienceSettings.defaults();
+    _updateCheckResult = null;
+    _dismissedUpdateVersion = null;
+    _checkingForUpdate = false;
+    _lastCheckFoundNoUpdate = false;
+    _initialized = false;
+    _initFuture = null;
     notifyListeners();
   }
 

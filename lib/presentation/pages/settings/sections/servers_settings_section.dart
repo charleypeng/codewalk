@@ -9,6 +9,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../domain/entities/server_profile.dart';
 import '../../../providers/app_provider.dart';
 import '../../../services/local_opencode_server_runtime_types.dart';
+import '../../onboarding_wizard_page.dart';
 
 class ServersSettingsSection extends StatefulWidget {
   const ServersSettingsSection({super.key});
@@ -59,6 +60,11 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
+                  OutlinedButton.icon(
+                    onPressed: _openSetupWizard,
+                    icon: const Icon(Icons.auto_fix_high_rounded),
+                    label: const Text('Setup Wizard'),
+                  ),
                   OutlinedButton.icon(
                     onPressed: () =>
                         context.read<AppProvider>().refreshServerHealth(),
@@ -352,6 +358,16 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
               child: Text('Delete'),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _openSetupWizard() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => OnboardingWizardPage(
+          onComplete: () => Navigator.of(context).pop(),
         ),
       ),
     );
@@ -710,88 +726,11 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
 
   static const String _suggestedServerUrl = 'http://127.0.0.1:4096';
 
+  /// Default server URL suggestion, exposed for reuse in onboarding wizard.
+  static const String suggestedServerUrl = _suggestedServerUrl;
+
   Widget _buildServerSetupQuickGuide(BuildContext context) {
-    final locale = Localizations.maybeLocaleOf(context);
-    final isPortuguese =
-        locale?.languageCode.toLowerCase().startsWith('pt') ?? false;
-
-    final title = isPortuguese ? 'Configuracao rapida' : 'Quick setup';
-    final firstStep = isPortuguese
-        ? '1. Instale o OpenCode CLI.'
-        : '1. Install OpenCode CLI.';
-    final commandLabel = isPortuguese
-        ? '2. Execute no terminal:'
-        : '2. Run in your terminal:';
-    const command = 'opencode serve --hostname 127.0.0.1 --port 4096';
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.info_outline,
-                size: 16,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                title,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(firstStep, style: Theme.of(context).textTheme.bodySmall),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  commandLabel,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
-              TextButton.icon(
-                onPressed: () => _copyTextToClipboard(command),
-                icon: const Icon(Icons.copy_rounded, size: 14),
-                label: const Text('Copy'),
-                style: TextButton.styleFrom(
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 4,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outlineVariant,
-              ),
-            ),
-            child: SelectableText(
-              command,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
-            ),
-          ),
-        ],
-      ),
-    );
+    return ServerSetupQuickGuide(onCopy: _copyTextToClipboard);
   }
 
   void _copyTextToClipboard(String text) {
@@ -1092,6 +1031,102 @@ class _MetaChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
         ),
         child: Text(label, style: Theme.of(context).textTheme.labelSmall),
+      ),
+    );
+  }
+}
+
+/// Reusable quick-guide widget for OpenCode server setup instructions.
+/// Used in both the Settings > Servers section and the onboarding wizard.
+class ServerSetupQuickGuide extends StatelessWidget {
+  const ServerSetupQuickGuide({super.key, required this.onCopy});
+
+  /// Command string for starting a local OpenCode server.
+  static const String command =
+      'opencode serve --hostname 127.0.0.1 --port 4096';
+
+  final void Function(String text) onCopy;
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = Localizations.maybeLocaleOf(context);
+    final isPortuguese =
+        locale?.languageCode.toLowerCase().startsWith('pt') ?? false;
+
+    final title = isPortuguese ? 'Configuracao rapida' : 'Quick setup';
+    final firstStep = isPortuguese
+        ? '1. Instale o OpenCode CLI.'
+        : '1. Install OpenCode CLI.';
+    final commandLabel = isPortuguese
+        ? '2. Execute no terminal:'
+        : '2. Run in your terminal:';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 16,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                title,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(firstStep, style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  commandLabel,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () => onCopy(command),
+                icon: const Icon(Icons.copy_rounded, size: 14),
+                label: const Text('Copy'),
+                style: TextButton.styleFrom(
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
+            ),
+            child: SelectableText(
+              command,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+            ),
+          ),
+        ],
       ),
     );
   }

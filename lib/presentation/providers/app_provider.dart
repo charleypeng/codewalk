@@ -1023,6 +1023,22 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Full in-memory reset after clearAll (used by the app reset feature).
+  void resetToDefaults() {
+    _status = AppStatus.initial;
+    _appInfo = null;
+    _errorMessage = '';
+    _isConnected = false;
+    _initialized = false;
+    _initFuture = null;
+    _serverProfiles = <ServerProfile>[];
+    _activeServerId = null;
+    _defaultServerId = null;
+    _serverHealthById.clear();
+    _healthTimer?.cancel();
+    notifyListeners();
+  }
+
   @visibleForTesting
   void setHealthForTesting(String serverId, ServerHealthStatus status) {
     _serverHealthById[serverId] = status;

@@ -4,8 +4,12 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/di/injection_container.dart' as di;
+import '../../../../data/datasources/app_local_datasource.dart';
+import '../../../providers/app_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../services/update_check_service.dart';
+import '../../app_shell_page.dart';
 
 class AboutSettingsSection extends StatefulWidget {
   const AboutSettingsSection({super.key});
@@ -50,6 +54,8 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
             if (upToDate && updateResult == null)
               _buildUpToDateTile(context),
             _buildCheckForUpdatesTile(context, settings, checking),
+            const Divider(height: 32),
+            _buildResetAppTile(context),
             const Divider(height: 32),
             _buildGitHubTile(context),
           ],
@@ -163,6 +169,67 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
         checking ? 'Checking...' : 'Tap to check for new versions',
       ),
       onTap: checking ? null : () => settings.checkForUpdate(),
+    );
+  }
+
+  Widget _buildResetAppTile(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return ListTile(
+      leading: Icon(Icons.restart_alt_rounded, color: colorScheme.error),
+      title: Text(
+        'Reset app',
+        style: TextStyle(color: colorScheme.error),
+      ),
+      subtitle: const Text('Erase all data and restart'),
+      onTap: () => _confirmResetApp(context),
+    );
+  }
+
+  Future<void> _confirmResetApp(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Reset app?'),
+          content: const Text(
+            'This will erase all servers, settings, and cached data. '
+            'This action cannot be undone.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Reset'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    // Clear all persisted data.
+    final localDataSource = di.sl<AppLocalDataSource>();
+    await localDataSource.clearAll();
+
+    if (!mounted) return;
+
+    // Reset in-memory provider state to defaults.
+    context.read<AppProvider>().resetToDefaults();
+    context.read<SettingsProvider>().resetToDefaults();
+
+    // Navigate back to AppShellPage, clearing the stack so the
+    // onboarding gate re-evaluates with empty server profiles.
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const AppShellPage()),
+      (_) => false,
     );
   }
 

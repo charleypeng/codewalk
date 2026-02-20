@@ -47,6 +47,13 @@ class _SettingsPageState extends State<SettingsPage> {
 
   late final List<_SettingsSection> _sections = <_SettingsSection>[
     _SettingsSection(
+      id: 'servers',
+      title: 'Servers',
+      description: 'OpenCode servers and health routing',
+      icon: Icons.dns_outlined,
+      builder: (_) => const ServersSettingsSection(),
+    ),
+    _SettingsSection(
       id: 'appearance',
       title: 'Appearance',
       description: 'Density and timeline bubble visibility',
@@ -80,13 +87,6 @@ class _SettingsPageState extends State<SettingsPage> {
       description: 'Search and edit key bindings',
       icon: Icons.keyboard_command_key_rounded,
       builder: (_) => const ShortcutsSettingsSection(),
-    ),
-    _SettingsSection(
-      id: 'servers',
-      title: 'Servers',
-      description: 'OpenCode servers and health routing',
-      icon: Icons.dns_outlined,
-      builder: (_) => const ServersSettingsSection(),
     ),
     _SettingsSection(
       id: 'about',

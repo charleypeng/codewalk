@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/domain/entities/provider.dart';
@@ -50,7 +51,20 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     final localDataSource = InMemoryAppLocalDataSource()
-      ..activeServerId = 'srv_test';
+      ..activeServerId = 'srv_test'
+      ..defaultServerId = 'srv_test'
+      ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'srv_test',
+          'url': 'http://127.0.0.1:4096',
+          'label': 'Test Server',
+          'basicAuthEnabled': false,
+          'basicAuthUsername': '',
+          'basicAuthPassword': '',
+          'createdAt': 0,
+          'updatedAt': 0,
+        },
+      ]);
     await tester.pumpWidget(
       _testApp(
         _buildChatProvider(localDataSource: localDataSource),
@@ -75,7 +89,20 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     final localDataSource = InMemoryAppLocalDataSource()
-      ..activeServerId = 'srv_test';
+      ..activeServerId = 'srv_test'
+      ..defaultServerId = 'srv_test'
+      ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'srv_test',
+          'url': 'http://127.0.0.1:4096',
+          'label': 'Test Server',
+          'basicAuthEnabled': false,
+          'basicAuthUsername': '',
+          'basicAuthPassword': '',
+          'createdAt': 0,
+          'updatedAt': 0,
+        },
+      ]);
     await tester.pumpWidget(
       _testApp(
         _buildChatProvider(localDataSource: localDataSource),
@@ -115,7 +142,20 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
       final localDataSource = InMemoryAppLocalDataSource()
-        ..activeServerId = 'srv_test';
+        ..activeServerId = 'srv_test'
+        ..defaultServerId = 'srv_test'
+        ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'srv_test',
+            'url': 'http://127.0.0.1:4096',
+            'label': 'Test Server',
+            'basicAuthEnabled': false,
+            'basicAuthUsername': '',
+            'basicAuthPassword': '',
+            'createdAt': 0,
+            'updatedAt': 0,
+          },
+        ]);
       await tester.pumpWidget(
         _testApp(
           _buildChatProvider(localDataSource: localDataSource),

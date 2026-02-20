@@ -338,6 +338,7 @@ class ExperienceSettings {
     this.speechToTextEngine = SpeechToTextEngine.native,
     this.speechSilenceTimeoutSeconds = 5,
     this.sherpaLanguageCode = kSherpaLanguageSystem,
+    this.skipOnboardingWizard = false,
   });
 
   final Map<NotificationCategory, bool> notifications;
@@ -361,6 +362,7 @@ class ExperienceSettings {
   final SpeechToTextEngine speechToTextEngine;
   final int speechSilenceTimeoutSeconds;
   final String sherpaLanguageCode;
+  final bool skipOnboardingWizard;
 
   ExperienceSettings copyWith({
     Map<NotificationCategory, bool>? notifications,
@@ -384,6 +386,7 @@ class ExperienceSettings {
     SpeechToTextEngine? speechToTextEngine,
     int? speechSilenceTimeoutSeconds,
     String? sherpaLanguageCode,
+    bool? skipOnboardingWizard,
   }) {
     return ExperienceSettings(
       notifications: notifications ?? this.notifications,
@@ -415,6 +418,7 @@ class ExperienceSettings {
       speechSilenceTimeoutSeconds:
           speechSilenceTimeoutSeconds ?? this.speechSilenceTimeoutSeconds,
       sherpaLanguageCode: sherpaLanguageCode ?? this.sherpaLanguageCode,
+      skipOnboardingWizard: skipOnboardingWizard ?? this.skipOnboardingWizard,
     );
   }
 
@@ -471,6 +475,7 @@ class ExperienceSettings {
       'speechToTextEngine': speechToTextEngineKey(speechToTextEngine),
       'speechSilenceTimeoutSeconds': speechSilenceTimeoutSeconds,
       'sherpaLanguageCode': sherpaLanguageCode,
+      'skipOnboardingWizard': skipOnboardingWizard,
     };
   }
 
@@ -669,6 +674,12 @@ class ExperienceSettings {
       sherpaLanguageCode = sherpaLanguageCodeJson.trim().toLowerCase();
     }
 
+    var skipOnboardingWizard = defaults.skipOnboardingWizard;
+    final skipOnboardingWizardJson = json['skipOnboardingWizard'];
+    if (skipOnboardingWizardJson is bool) {
+      skipOnboardingWizard = skipOnboardingWizardJson;
+    }
+
     return ExperienceSettings(
       notifications: notifications,
       sounds: sounds,
@@ -691,6 +702,7 @@ class ExperienceSettings {
       speechToTextEngine: speechToTextEngine,
       speechSilenceTimeoutSeconds: speechSilenceTimeoutSeconds,
       sherpaLanguageCode: sherpaLanguageCode,
+      skipOnboardingWizard: skipOnboardingWizard,
     );
   }
 }

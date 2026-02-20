@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/logging/app_logger.dart';
+import '../providers/app_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/desktop_tray_service.dart';
 import '../services/desktop_tray_service_types.dart';
 import 'chat_page.dart';
+import 'onboarding_wizard_page.dart';
 
 class AppShellPage extends StatefulWidget {
   const AppShellPage({super.key});
@@ -67,6 +69,23 @@ class _AppShellPageState extends State<AppShellPage> {
 
   @override
   Widget build(BuildContext context) {
-    return const ChatPage();
+    return Consumer2<AppProvider, SettingsProvider>(
+      builder: (context, appProvider, settingsProvider, _) {
+        // Wait until both providers have loaded persisted state.
+        if (!appProvider.initialized || !settingsProvider.initialized) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        // Show onboarding wizard when no server is configured and user
+        // hasn't opted out via "Don't show again".
+        final needsOnboarding = appProvider.serverProfiles.isEmpty &&
+            !settingsProvider.skipOnboardingWizard;
+        if (needsOnboarding) {
+          return const OnboardingWizardPage();
+        }
+        return const ChatPage();
+      },
+    );
   }
 }
