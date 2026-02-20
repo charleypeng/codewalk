@@ -130,8 +130,10 @@ Render gate implemented: `_notifyListeners` suppresses rebuilds while app in bac
 - [x] Criar planejamento para os arquivos abertos em Files permitir comentar linhas igual no OpenCode web
 - [x] File Line References: gutter line numbers, tap/shift-tap selection, selection action bar, FileInputPart context chips in chat input, send pipeline integration. - Commit: 96949cb
   - Fix (51edd51): full-line click area, full-width selection highlight covers gutter+code, dialog closes and focuses composer after "Add to chat", context items sent as inline fenced code blocks instead of FileInputPart attachments to avoid raw XML in response bubbles.
+  - Fix (b97f915): on mobile, close both file viewer and Files dialogs when adding line references to context.
+  - Fix (f6d4e43): gutter line numbers misaligned with code text — switched gutter from Text.rich to RichText to match HighlightView rendering (no textScaler).
 
-**Commits**: pending-commit, 96949cb, 51edd51
+**Commits**: pending-commit, 96949cb, 51edd51, b97f915, f6d4e43
 
 #### `featD` Thinking and tool UX polish
 
