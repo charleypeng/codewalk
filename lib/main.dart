@@ -79,17 +79,33 @@ class MyApp extends StatelessWidget {
       ],
       child: DynamicColorBuilder(
         builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-          final fallbackLight = ColorScheme.fromSeed(
-            seedColor: AppTheme.seedColor,
-            brightness: Brightness.light,
-          );
-          final fallbackDark = ColorScheme.fromSeed(
-            seedColor: AppTheme.seedColor,
-            brightness: Brightness.dark,
-          );
           return Consumer<SettingsProvider>(
             builder: (context, settingsProvider, _) {
               final appDensity = settingsProvider.appDensity;
+              final useDynamic = settingsProvider.useDynamicColor;
+              final customSeed = settingsProvider.customColorSeed;
+
+              // Resolve seed color: custom pick or default brand
+              final seedColor = customSeed != null
+                  ? Color(customSeed)
+                  : AppTheme.seedColor;
+
+              // Use dynamic platform colors when available and enabled
+              final lightScheme =
+                  useDynamic && lightDynamic != null
+                      ? lightDynamic
+                      : ColorScheme.fromSeed(
+                          seedColor: seedColor,
+                          brightness: Brightness.light,
+                        );
+              final darkScheme =
+                  useDynamic && darkDynamic != null
+                      ? darkDynamic
+                      : ColorScheme.fromSeed(
+                          seedColor: seedColor,
+                          brightness: Brightness.dark,
+                        );
+
               // Map user theme mode preference to Flutter ThemeMode
               final themeMode = switch (settingsProvider.themeMode) {
                 ThemeModeOption.light => ThemeMode.light,
@@ -99,11 +115,11 @@ class MyApp extends StatelessWidget {
               return MaterialApp(
                 title: AppConstants.appName,
                 theme: AppTheme.lightFrom(
-                  lightDynamic ?? fallbackLight,
+                  lightScheme,
                   appDensity: appDensity,
                 ),
                 darkTheme: AppTheme.darkFrom(
-                  darkDynamic ?? fallbackDark,
+                  darkScheme,
                   appDensity: appDensity,
                 ),
                 themeMode: themeMode,

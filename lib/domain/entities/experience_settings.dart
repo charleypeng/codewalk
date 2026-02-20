@@ -330,6 +330,8 @@ class ExperienceSettings {
       keepDesktopRunningInTray: true,
       keepMobileRealtimeForShortPeriod: true,
       themeMode: ThemeModeOption.system,
+      useDynamicColor: true,
+      customColorSeed: null,
       speechToTextEngine: defaultSpeechEngine,
       speechSilenceTimeoutSeconds: 5,
       sherpaLanguageCode: kSherpaLanguageSystem,
@@ -355,6 +357,8 @@ class ExperienceSettings {
     required this.keepDesktopRunningInTray,
     required this.keepMobileRealtimeForShortPeriod,
     this.themeMode = ThemeModeOption.system,
+    this.useDynamicColor = true,
+    this.customColorSeed,
     this.speechToTextEngine = SpeechToTextEngine.native,
     this.speechSilenceTimeoutSeconds = 5,
     this.sherpaLanguageCode = kSherpaLanguageSystem,
@@ -380,6 +384,8 @@ class ExperienceSettings {
   final bool keepDesktopRunningInTray;
   final bool keepMobileRealtimeForShortPeriod;
   final ThemeModeOption themeMode;
+  final bool useDynamicColor;
+  final int? customColorSeed;
   final SpeechToTextEngine speechToTextEngine;
   final int speechSilenceTimeoutSeconds;
   final String sherpaLanguageCode;
@@ -405,6 +411,8 @@ class ExperienceSettings {
     bool? keepDesktopRunningInTray,
     bool? keepMobileRealtimeForShortPeriod,
     ThemeModeOption? themeMode,
+    bool? useDynamicColor,
+    int? Function()? customColorSeed,
     SpeechToTextEngine? speechToTextEngine,
     int? speechSilenceTimeoutSeconds,
     String? sherpaLanguageCode,
@@ -437,6 +445,10 @@ class ExperienceSettings {
           keepMobileRealtimeForShortPeriod ??
           this.keepMobileRealtimeForShortPeriod,
       themeMode: themeMode ?? this.themeMode,
+      useDynamicColor: useDynamicColor ?? this.useDynamicColor,
+      customColorSeed: customColorSeed != null
+          ? customColorSeed()
+          : this.customColorSeed,
       speechToTextEngine: speechToTextEngine ?? this.speechToTextEngine,
       speechSilenceTimeoutSeconds:
           speechSilenceTimeoutSeconds ?? this.speechSilenceTimeoutSeconds,
@@ -496,6 +508,8 @@ class ExperienceSettings {
       'keepDesktopRunningInTray': keepDesktopRunningInTray,
       'keepMobileRealtimeForShortPeriod': keepMobileRealtimeForShortPeriod,
       'themeMode': themeModeOptionKey(themeMode),
+      'useDynamicColor': useDynamicColor,
+      if (customColorSeed != null) 'customColorSeed': customColorSeed,
       'speechToTextEngine': speechToTextEngineKey(speechToTextEngine),
       'speechSilenceTimeoutSeconds': speechSilenceTimeoutSeconds,
       'sherpaLanguageCode': sherpaLanguageCode,
@@ -682,6 +696,18 @@ class ExperienceSettings {
       themeMode = themeModeOptionFromKey(themeModeJson.trim().toLowerCase());
     }
 
+    var useDynamicColor = defaults.useDynamicColor;
+    final useDynamicColorJson = json['useDynamicColor'];
+    if (useDynamicColorJson is bool) {
+      useDynamicColor = useDynamicColorJson;
+    }
+
+    int? customColorSeed = defaults.customColorSeed;
+    final customColorSeedJson = json['customColorSeed'];
+    if (customColorSeedJson is num) {
+      customColorSeed = customColorSeedJson.toInt();
+    }
+
     final speechToTextEngineJson = json['speechToTextEngine'];
     if (speechToTextEngineJson is String &&
         speechToTextEngineJson.trim().isNotEmpty) {
@@ -730,6 +756,8 @@ class ExperienceSettings {
       keepDesktopRunningInTray: keepDesktopRunningInTray,
       keepMobileRealtimeForShortPeriod: keepMobileRealtimeForShortPeriod,
       themeMode: themeMode,
+      useDynamicColor: useDynamicColor,
+      customColorSeed: customColorSeed,
       speechToTextEngine: speechToTextEngine,
       speechSilenceTimeoutSeconds: speechSilenceTimeoutSeconds,
       sherpaLanguageCode: sherpaLanguageCode,

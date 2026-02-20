@@ -51,6 +51,8 @@ class SettingsProvider extends ChangeNotifier {
   bool get checkingForUpdate => _checkingForUpdate;
   bool get lastCheckFoundNoUpdate => _lastCheckFoundNoUpdate;
   ThemeModeOption get themeMode => _settings.themeMode;
+  bool get useDynamicColor => _settings.useDynamicColor;
+  int? get customColorSeed => _settings.customColorSeed;
   AppDensity get appDensity => _settings.appDensity;
   bool get showThinkingBubbles => _settings.showThinkingBubbles;
   bool get showToolCallBubbles => _settings.showToolCallBubbles;
@@ -188,6 +190,24 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(themeMode: mode);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setUseDynamicColor(bool value) async {
+    if (_settings.useDynamicColor == value) {
+      return;
+    }
+    _settings = _settings.copyWith(useDynamicColor: value);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setCustomColorSeed(int? value) async {
+    if (_settings.customColorSeed == value) {
+      return;
+    }
+    _settings = _settings.copyWith(customColorSeed: () => value);
     notifyListeners();
     await _persist();
   }

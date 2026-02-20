@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +8,18 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../domain/entities/experience_settings.dart';
 import '../../../providers/settings_provider.dart';
+import '../../../theme/brand_colors.dart';
+
+/// Dynamic color is supported on Android 12+ and some desktop environments.
+bool _supportsDynamicColor() {
+  if (kIsWeb) {
+    return false;
+  }
+  return switch (defaultTargetPlatform) {
+    TargetPlatform.android || TargetPlatform.linux => true,
+    _ => false,
+  };
+}
 
 class AppearanceSettingsSection extends StatelessWidget {
   const AppearanceSettingsSection({super.key});
@@ -84,6 +97,89 @@ class AppearanceSettingsSection extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Color card
+            Card(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Dynamic color toggle — only on platforms that support it
+                  if (_supportsDynamicColor())
+                    SwitchListTile.adaptive(
+                      key: const ValueKey<String>(
+                        'settings_toggle_dynamic_color',
+                      ),
+                      title: const Text('Use wallpaper colors'),
+                      subtitle: const Text(
+                        'Extract color scheme from your device wallpaper.',
+                      ),
+                      value: settingsProvider.useDynamicColor,
+                      onChanged: (value) => unawaited(
+                        settingsProvider.setUseDynamicColor(value),
+                      ),
+                    ),
+                  if (_supportsDynamicColor()) const Divider(height: 1),
+                  Padding(
+                    padding: const EdgeInsets.all(AppConstants.defaultPadding),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Brand color',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          settingsProvider.useDynamicColor &&
+                                  _supportsDynamicColor()
+                              ? 'Disable wallpaper colors to pick a brand color.'
+                              : 'Pick a seed color for the app palette.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          key: const ValueKey<String>(
+                            'settings_brand_color_wrap',
+                          ),
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: BrandColor.values.map((brand) {
+                            final isSelected =
+                                settingsProvider.customColorSeed == brand.value;
+                            final isDisabled =
+                                settingsProvider.useDynamicColor &&
+                                _supportsDynamicColor();
+                            return Tooltip(
+                              message: brand.label,
+                              child: ChoiceChip(
+                                key: ValueKey<String>(
+                                  'settings_brand_color_${brand.name}',
+                                ),
+                                label: const SizedBox.shrink(),
+                                selected: isSelected,
+                                onSelected: isDisabled
+                                    ? null
+                                    : (_) => unawaited(
+                                          settingsProvider.setCustomColorSeed(
+                                            isSelected ? null : brand.value,
+                                          ),
+                                        ),
+                                avatar: CircleAvatar(
+                                  backgroundColor: brand.seed,
+                                ),
+                                showCheckmark: isSelected,
+                                labelPadding: EdgeInsets.zero,
+                                padding: const EdgeInsets.all(4),
+                              ),
+                            );
+                          }).toList(growable: false),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 12),
