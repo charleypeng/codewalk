@@ -172,6 +172,7 @@ extension _ChatPageFileViewer on _ChatPageState {
                         content: active.content,
                         mimeType: active.mimeType,
                         fileState: fileState,
+                        onStateChanged: onStateChanged,
                       );
                   }
                 },
@@ -253,6 +254,7 @@ extension _ChatPageFileViewer on _ChatPageState {
     required String content,
     String? mimeType,
     required _FileExplorerContextState fileState,
+    VoidCallback? onStateChanged,
   }) {
     final normalizedPath = _normalizeFilePath(path);
     final textStyle = Theme.of(
@@ -302,78 +304,79 @@ extension _ChatPageFileViewer on _ChatPageState {
             ? (constraints.maxWidth - gutterWidth - 20)
                   .clamp(0.0, double.infinity)
             : 0.0;
-        return SelectionArea(
-          child: SingleChildScrollView(
-            key: ValueKey<String>('file_viewer_scroll_$normalizedPath'),
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Gutter: line numbers with tap-to-select support.
-                // Excluded from text selection so copy only captures code.
-                SelectionContainer.disabled(
-                  child: GestureDetector(
-                    onTapUp: (details) {
-                      final lineNumber =
-                          (details.localPosition.dy / lineHeight).floor() + 1;
-                      if (lineNumber < 1 || lineNumber > lineCount) {
-                        return;
-                      }
-                      final isShift =
-                          HardwareKeyboard.instance.isShiftPressed;
-                      _handleGutterLineTap(
-                        fileState: fileState,
-                        path: normalizedPath,
-                        lineNumber: lineNumber,
-                        lineCount: lineCount,
-                        isShiftHeld: isShift,
-                      );
-                    },
-                    child: Container(
-                      width: gutterWidth,
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerLow,
-                        border: Border(
-                          right: BorderSide(
-                            color: colorScheme.outlineVariant.withValues(
-                              alpha: 0.5,
-                            ),
-                          ),
+        // Gutter is outside SelectionArea so GestureDetector wins
+        // the gesture arena and receives taps without competition.
+        return SingleChildScrollView(
+          key: ValueKey<String>('file_viewer_scroll_$normalizedPath'),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Gutter: line numbers with tap-to-select support.
+              GestureDetector(
+                onTapUp: (details) {
+                  final lineNumber =
+                      (details.localPosition.dy / lineHeight).floor() + 1;
+                  if (lineNumber < 1 || lineNumber > lineCount) {
+                    return;
+                  }
+                  final isShift =
+                      HardwareKeyboard.instance.isShiftPressed;
+                  _handleGutterLineTap(
+                    fileState: fileState,
+                    path: normalizedPath,
+                    lineNumber: lineNumber,
+                    lineCount: lineCount,
+                    isShiftHeld: isShift,
+                  );
+                  onStateChanged?.call();
+                },
+                child: Container(
+                  width: gutterWidth,
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerLow,
+                    border: Border(
+                      right: BorderSide(
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.5,
                         ),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                      child: Text.rich(
-                        TextSpan(
-                          children: List<InlineSpan>.generate(lineCount, (
-                            index,
-                          ) {
-                            final lineNumber = index + 1;
-                            final isSelected = selectedLines.contains(
-                              lineNumber,
-                            );
-                            return TextSpan(
-                              text:
-                                  '${lineNumber.toString().padLeft(gutterDigits)}${index < lineCount - 1 ? '\n' : ''}',
-                              style: textStyle?.copyWith(
-                                color: isSelected
-                                    ? colorScheme.primary
-                                    : colorScheme.onSurfaceVariant.withValues(
-                                        alpha: 0.5,
-                                      ),
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : null,
-                              ),
-                            );
-                          }),
-                        ),
-                        textAlign: TextAlign.right,
                       ),
                     ),
                   ),
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Text.rich(
+                    TextSpan(
+                      children: List<InlineSpan>.generate(lineCount, (
+                        index,
+                      ) {
+                        final lineNumber = index + 1;
+                        final isSelected = selectedLines.contains(
+                          lineNumber,
+                        );
+                        return TextSpan(
+                          text:
+                              '${lineNumber.toString().padLeft(gutterDigits)}${index < lineCount - 1 ? '\n' : ''}',
+                          style: textStyle?.copyWith(
+                            color: isSelected
+                                ? colorScheme.primary
+                                : colorScheme.onSurfaceVariant.withValues(
+                                    alpha: 0.5,
+                                  ),
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : null,
+                          ),
+                        );
+                      }),
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
                 ),
-                // Code content with selection highlight overlay.
-                Expanded(
+              ),
+              // Code content with selection highlight overlay.
+              // SelectionArea wraps only code so text copy works.
+              Expanded(
+                child: SelectionArea(
                   child: Padding(
                     padding: const EdgeInsets.only(left: 8, right: 12),
                     child: SingleChildScrollView(
@@ -403,8 +406,8 @@ extension _ChatPageFileViewer on _ChatPageState {
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },
