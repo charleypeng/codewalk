@@ -469,8 +469,9 @@ class _ChatPageState extends State<ChatPage>
         final isMedium = sizeClass == WindowSizeClass.medium;
         final isLargeDesktop = sizeClass.isAtLeastLarge;
         final settingsProvider = context.watch<SettingsProvider>();
-        final conversationsPaneEnabled =
-            settingsProvider.isDesktopPaneVisible(DesktopPane.conversations);
+        final conversationsPaneEnabled = settingsProvider.isDesktopPaneVisible(
+          DesktopPane.conversations,
+        );
         // Medium: narrow conversation pane; expanded+: full pane
         final showConversationPane =
             !isMobile &&
@@ -510,14 +511,6 @@ class _ChatPageState extends State<ChatPage>
         );
         addShortcut(ShortcutAction.cycleVariant, const _CycleVariantIntent());
         addShortcut(ShortcutAction.escape, const _EscapeIntent());
-        addShortcut(
-          ShortcutAction.cycleAgentForward,
-          const _CycleAgentIntent(),
-        );
-        addShortcut(
-          ShortcutAction.cycleAgentBackward,
-          const _CycleAgentIntent(reverse: true),
-        );
         if (_isDesktopRuntime) {
           addShortcut(ShortcutAction.quitApp, const _QuitAppIntent());
         }
@@ -561,13 +554,6 @@ class _ChatPageState extends State<ChatPage>
           _EscapeIntent: CallbackAction<_EscapeIntent>(
             onInvoke: (_) {
               _handleEscape();
-              return null;
-            },
-          ),
-          _CycleAgentIntent: CallbackAction<_CycleAgentIntent>(
-            onInvoke: (intent) {
-              final chatProvider = context.read<ChatProvider>();
-              unawaited(chatProvider.cycleAgent(reverse: intent.reverse));
               return null;
             },
           ),

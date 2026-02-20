@@ -32,7 +32,7 @@ extension _ChatPageLifecycle on _ChatPageState {
     final settingsProvider = _settingsProvider;
     final keepDesktopRealtime =
         _isDesktopRuntime &&
-        (settingsProvider?.keepDesktopRunningInTray ?? true);
+        (settingsProvider?.desktopCloseBehavior != DesktopCloseBehavior.close);
     if (keepDesktopRealtime) {
       AppLogger.debug('foreground_policy reason=$reason mode=desktop-tray');
       unawaited(provider.setForegroundActive(true));

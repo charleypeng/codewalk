@@ -32,12 +32,6 @@ class _EscapeIntent extends Intent {
   const _EscapeIntent();
 }
 
-class _CycleAgentIntent extends Intent {
-  const _CycleAgentIntent({this.reverse = false});
-
-  final bool reverse;
-}
-
 class _QuitAppIntent extends Intent {
   const _QuitAppIntent();
 }

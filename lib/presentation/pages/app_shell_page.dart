@@ -51,15 +51,15 @@ class _AppShellPageState extends State<AppShellPage> {
 
   Future<void> _configureDesktopTray() async {
     final settingsProvider = _settingsProvider;
-    if (settingsProvider == null || !_desktopTrayService.supported) {
+    if (settingsProvider == null) {
       return;
     }
     try {
       await _desktopTrayService.initialize(
-        closeToTrayEnabled: settingsProvider.keepDesktopRunningInTray,
+        closeBehavior: settingsProvider.desktopCloseBehavior,
       );
-      await _desktopTrayService.setCloseToTrayEnabled(
-        settingsProvider.keepDesktopRunningInTray,
+      await _desktopTrayService.setDesktopCloseBehavior(
+        settingsProvider.desktopCloseBehavior,
       );
     } catch (error, stackTrace) {
       AppLogger.warn(
@@ -82,7 +82,8 @@ class _AppShellPageState extends State<AppShellPage> {
         }
         // Show onboarding wizard when no server is configured, unless user
         // opted out permanently or dismissed it this session.
-        final needsOnboarding = appProvider.serverProfiles.isEmpty &&
+        final needsOnboarding =
+            appProvider.serverProfiles.isEmpty &&
             !settingsProvider.skipOnboardingWizard &&
             !_wizardDismissedThisSession;
         if (needsOnboarding) {

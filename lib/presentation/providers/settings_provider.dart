@@ -65,7 +65,10 @@ class SettingsProvider extends ChangeNotifier {
   bool get showTaskList => _settings.showTaskList;
   bool get taskListCollapsed => _settings.taskListCollapsed;
   bool get showComposerTips => _settings.showComposerTips;
-  bool get keepDesktopRunningInTray => _settings.keepDesktopRunningInTray;
+  DesktopCloseBehavior get desktopCloseBehavior =>
+      _settings.desktopCloseBehavior;
+  bool get keepDesktopRunningInTray =>
+      _settings.desktopCloseBehavior != DesktopCloseBehavior.close;
   bool get keepMobileRealtimeForShortPeriod =>
       _settings.keepMobileRealtimeForShortPeriod;
   SpeechToTextEngine get speechToTextEngine => _settings.speechToTextEngine;
@@ -340,13 +343,19 @@ class SettingsProvider extends ChangeNotifier {
     await _persist();
   }
 
-  Future<void> setKeepDesktopRunningInTray(bool enabled) async {
-    if (_settings.keepDesktopRunningInTray == enabled) {
+  Future<void> setDesktopCloseBehavior(DesktopCloseBehavior behavior) async {
+    if (_settings.desktopCloseBehavior == behavior) {
       return;
     }
-    _settings = _settings.copyWith(keepDesktopRunningInTray: enabled);
+    _settings = _settings.copyWith(desktopCloseBehavior: behavior);
     notifyListeners();
     await _persist();
+  }
+
+  Future<void> setKeepDesktopRunningInTray(bool enabled) async {
+    await setDesktopCloseBehavior(
+      enabled ? DesktopCloseBehavior.tray : DesktopCloseBehavior.close,
+    );
   }
 
   Future<void> setKeepMobileRealtimeForShortPeriod(bool enabled) async {

@@ -155,15 +155,53 @@ class _NotificationsSettingsSectionState
             ),
             if (_isDesktopPlatform) ...[
               const SizedBox(height: 12),
-              SwitchListTile.adaptive(
+              Text(
+                'When closing the window',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 6),
+              RadioListTile<DesktopCloseBehavior>.adaptive(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Close to tray'),
                 subtitle: const Text(
-                  'Hide to system tray on window close and keep realtime updates active.',
+                  'Hide window and keep running in system tray.',
                 ),
-                value: settingsProvider.keepDesktopRunningInTray,
-                onChanged: (value) =>
-                    settingsProvider.setKeepDesktopRunningInTray(value),
+                value: DesktopCloseBehavior.tray,
+                groupValue: settingsProvider.desktopCloseBehavior,
+                onChanged: (value) {
+                  if (value == null) {
+                    return;
+                  }
+                  unawaited(settingsProvider.setDesktopCloseBehavior(value));
+                },
+              ),
+              RadioListTile<DesktopCloseBehavior>.adaptive(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Minimize when close'),
+                subtitle: const Text(
+                  'Minimize to taskbar/dock and keep running.',
+                ),
+                value: DesktopCloseBehavior.minimize,
+                groupValue: settingsProvider.desktopCloseBehavior,
+                onChanged: (value) {
+                  if (value == null) {
+                    return;
+                  }
+                  unawaited(settingsProvider.setDesktopCloseBehavior(value));
+                },
+              ),
+              RadioListTile<DesktopCloseBehavior>.adaptive(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Just close'),
+                subtitle: const Text('Exit the application completely.'),
+                value: DesktopCloseBehavior.close,
+                groupValue: settingsProvider.desktopCloseBehavior,
+                onChanged: (value) {
+                  if (value == null) {
+                    return;
+                  }
+                  unawaited(settingsProvider.setDesktopCloseBehavior(value));
+                },
               ),
             ],
             if (_isMobilePlatform) ...[

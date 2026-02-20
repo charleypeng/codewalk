@@ -1,3 +1,4 @@
+import '../../domain/entities/experience_settings.dart';
 import 'desktop_tray_service_types.dart';
 
 DesktopTrayService createDesktopTrayService() {
@@ -9,10 +10,12 @@ class _DesktopTrayServiceStub implements DesktopTrayService {
   bool get supported => false;
 
   @override
-  Future<void> initialize({required bool closeToTrayEnabled}) async {}
+  Future<void> initialize({
+    required DesktopCloseBehavior closeBehavior,
+  }) async {}
 
   @override
-  Future<void> setCloseToTrayEnabled(bool enabled) async {}
+  Future<void> setDesktopCloseBehavior(DesktopCloseBehavior behavior) async {}
 
   @override
   Future<void> dispose() async {}

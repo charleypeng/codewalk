@@ -6,6 +6,7 @@ import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../core/logging/app_logger.dart';
+import '../../domain/entities/experience_settings.dart';
 import 'desktop_tray_service_types.dart';
 
 DesktopTrayService createDesktopTrayService() {
@@ -16,9 +17,14 @@ class _DesktopTrayServiceIo
     with TrayListener, WindowListener
     implements DesktopTrayService {
   bool _initialized = false;
-  bool _closeToTrayEnabled = true;
+  bool _windowListenerAttached = false;
+  DesktopCloseBehavior _closeBehavior = DesktopCloseBehavior.tray;
   bool _exiting = false;
   bool _trayAvailable = true;
+
+  bool get _interceptsClose {
+    return _closeBehavior != DesktopCloseBehavior.close;
+  }
 
   bool get _isDesktopPlatform {
     if (kIsWeb) {
@@ -38,22 +44,26 @@ class _DesktopTrayServiceIo
   }
 
   @override
-  Future<void> initialize({required bool closeToTrayEnabled}) async {
+  Future<void> initialize({required DesktopCloseBehavior closeBehavior}) async {
     if (!_isDesktopPlatform) {
       return;
     }
 
-    _closeToTrayEnabled = closeToTrayEnabled;
+    _closeBehavior = closeBehavior;
 
     await windowManager.ensureInitialized();
+    if (!_windowListenerAttached) {
+      windowManager.addListener(this);
+      _windowListenerAttached = true;
+    }
 
     if (!_trayAvailable) {
-      await windowManager.setPreventClose(false);
+      await windowManager.setPreventClose(_interceptsClose);
       return;
     }
 
     if (_initialized) {
-      await windowManager.setPreventClose(_closeToTrayEnabled);
+      await windowManager.setPreventClose(_interceptsClose);
       return;
     }
 
@@ -62,20 +72,21 @@ class _DesktopTrayServiceIo
         'assets/images/icon.png',
         isTemplate: defaultTargetPlatform == TargetPlatform.macOS,
       );
-      await trayManager.setToolTip('CodeWalk');
+      if (defaultTargetPlatform != TargetPlatform.linux) {
+        await trayManager.setToolTip('CodeWalk');
+      }
       await trayManager.setContextMenu(
         Menu(
           items: <MenuItem>[
-            MenuItem(key: 'open', label: 'Open CodeWalk'),
+            MenuItem(key: 'show', label: 'Show'),
             MenuItem.separator(),
-            MenuItem(key: 'quit', label: 'Quit CodeWalk'),
+            MenuItem(key: 'quit', label: 'Quit'),
           ],
         ),
       );
       trayManager.addListener(this);
 
-      await windowManager.setPreventClose(_closeToTrayEnabled);
-      windowManager.addListener(this);
+      await windowManager.setPreventClose(_interceptsClose);
     } on MissingPluginException catch (error, stackTrace) {
       await _markTrayUnavailable(error, stackTrace);
       return;
@@ -89,37 +100,44 @@ class _DesktopTrayServiceIo
   }
 
   @override
-  Future<void> setCloseToTrayEnabled(bool enabled) async {
-    _closeToTrayEnabled = enabled;
-    if (!supported || !_initialized) {
+  Future<void> setDesktopCloseBehavior(DesktopCloseBehavior behavior) async {
+    _closeBehavior = behavior;
+    if (!_isDesktopPlatform) {
       return;
     }
-    await windowManager.setPreventClose(_closeToTrayEnabled);
+    await windowManager.setPreventClose(_interceptsClose);
   }
 
   @override
   Future<void> dispose() async {
-    if (!_initialized) {
-      return;
+    if (_initialized) {
+      trayManager.removeListener(this);
+      _initialized = false;
     }
-    trayManager.removeListener(this);
-    windowManager.removeListener(this);
-    _initialized = false;
+    if (_windowListenerAttached) {
+      windowManager.removeListener(this);
+      _windowListenerAttached = false;
+    }
   }
 
   @override
   void onTrayIconMouseDown() {
-    if (defaultTargetPlatform == TargetPlatform.macOS) {
-      unawaited(trayManager.popUpContextMenu());
+    unawaited(_showWindow());
+  }
+
+  @override
+  void onTrayIconRightMouseDown() {
+    if (defaultTargetPlatform == TargetPlatform.linux) {
+      // Linux AppIndicator handles right-click context menu natively.
       return;
     }
-    unawaited(_showWindow());
+    unawaited(trayManager.popUpContextMenu());
   }
 
   @override
   void onTrayMenuItemClick(MenuItem menuItem) {
     switch (menuItem.key) {
-      case 'open':
+      case 'show':
         unawaited(_showWindow());
         break;
       case 'quit':
@@ -132,11 +150,25 @@ class _DesktopTrayServiceIo
 
   @override
   Future<void> onWindowClose() async {
-    if (!_closeToTrayEnabled || _exiting || !_trayAvailable) {
-      await windowManager.setPreventClose(false);
+    if (_exiting) {
       return;
     }
-    await windowManager.hide();
+    switch (_closeBehavior) {
+      case DesktopCloseBehavior.close:
+        _exiting = true;
+        await windowManager.setPreventClose(false);
+        return;
+      case DesktopCloseBehavior.minimize:
+        await windowManager.minimize();
+        return;
+      case DesktopCloseBehavior.tray:
+        if (!_trayAvailable) {
+          await windowManager.minimize();
+          return;
+        }
+        await windowManager.hide();
+        return;
+    }
   }
 
   Future<void> _markTrayUnavailable(Object error, StackTrace stackTrace) async {
@@ -148,17 +180,12 @@ class _DesktopTrayServiceIo
       // Ignore best-effort cleanup.
     }
     try {
-      windowManager.removeListener(this);
-    } catch (_) {
-      // Ignore best-effort cleanup.
-    }
-    try {
-      await windowManager.setPreventClose(false);
+      await windowManager.setPreventClose(_interceptsClose);
     } catch (_) {
       // Ignore best-effort cleanup.
     }
     AppLogger.warn(
-      'Desktop tray plugin unavailable; close-to-tray was disabled',
+      'Desktop tray plugin unavailable; close falls back to taskbar minimize',
       error: error,
       stackTrace: stackTrace,
     );

@@ -28,6 +28,8 @@ enum ThemeModeOption { system, light, dark }
 
 enum SpeechToTextEngine { native, sherpa }
 
+enum DesktopCloseBehavior { tray, minimize, close }
+
 const String kSherpaLanguageSystem = 'system';
 
 class ShortcutDefinition {
@@ -223,6 +225,22 @@ String desktopPaneKey(DesktopPane pane) {
   };
 }
 
+String desktopCloseBehaviorKey(DesktopCloseBehavior behavior) {
+  return switch (behavior) {
+    DesktopCloseBehavior.tray => 'tray',
+    DesktopCloseBehavior.minimize => 'minimize',
+    DesktopCloseBehavior.close => 'close',
+  };
+}
+
+DesktopCloseBehavior desktopCloseBehaviorFromKey(String value) {
+  return switch (value) {
+    'minimize' => DesktopCloseBehavior.minimize,
+    'close' => DesktopCloseBehavior.close,
+    _ => DesktopCloseBehavior.tray,
+  };
+}
+
 DesktopPane? desktopPaneFromKey(String value) {
   return switch (value) {
     'conversations' => DesktopPane.conversations,
@@ -338,7 +356,7 @@ class ExperienceSettings {
       showTaskList: true,
       taskListCollapsed: false,
       showComposerTips: true,
-      keepDesktopRunningInTray: true,
+      desktopCloseBehavior: DesktopCloseBehavior.tray,
       keepMobileRealtimeForShortPeriod: true,
       themeMode: ThemeModeOption.system,
       useDynamicColor: true,
@@ -367,7 +385,7 @@ class ExperienceSettings {
     required this.showTaskList,
     required this.taskListCollapsed,
     required this.showComposerTips,
-    required this.keepDesktopRunningInTray,
+    required this.desktopCloseBehavior,
     required this.keepMobileRealtimeForShortPeriod,
     this.themeMode = ThemeModeOption.system,
     this.useDynamicColor = true,
@@ -396,7 +414,7 @@ class ExperienceSettings {
   final bool showTaskList;
   final bool taskListCollapsed;
   final bool showComposerTips;
-  final bool keepDesktopRunningInTray;
+  final DesktopCloseBehavior desktopCloseBehavior;
   final bool keepMobileRealtimeForShortPeriod;
   final ThemeModeOption themeMode;
   final bool useDynamicColor;
@@ -425,7 +443,7 @@ class ExperienceSettings {
     bool? showTaskList,
     bool? taskListCollapsed,
     bool? showComposerTips,
-    bool? keepDesktopRunningInTray,
+    DesktopCloseBehavior? desktopCloseBehavior,
     bool? keepMobileRealtimeForShortPeriod,
     ThemeModeOption? themeMode,
     bool? useDynamicColor,
@@ -458,8 +476,7 @@ class ExperienceSettings {
       showTaskList: showTaskList ?? this.showTaskList,
       taskListCollapsed: taskListCollapsed ?? this.taskListCollapsed,
       showComposerTips: showComposerTips ?? this.showComposerTips,
-      keepDesktopRunningInTray:
-          keepDesktopRunningInTray ?? this.keepDesktopRunningInTray,
+      desktopCloseBehavior: desktopCloseBehavior ?? this.desktopCloseBehavior,
       keepMobileRealtimeForShortPeriod:
           keepMobileRealtimeForShortPeriod ??
           this.keepMobileRealtimeForShortPeriod,
@@ -530,7 +547,9 @@ class ExperienceSettings {
       'showTaskList': showTaskList,
       'taskListCollapsed': taskListCollapsed,
       'showComposerTips': showComposerTips,
-      'keepDesktopRunningInTray': keepDesktopRunningInTray,
+      'desktopCloseBehavior': desktopCloseBehaviorKey(desktopCloseBehavior),
+      'keepDesktopRunningInTray':
+          desktopCloseBehavior != DesktopCloseBehavior.close,
       'keepMobileRealtimeForShortPeriod': keepMobileRealtimeForShortPeriod,
       'themeMode': themeModeOptionKey(themeMode),
       'useDynamicColor': useDynamicColor,
@@ -573,7 +592,7 @@ class ExperienceSettings {
     var showTaskList = defaults.showTaskList;
     var taskListCollapsed = defaults.taskListCollapsed;
     var showComposerTips = defaults.showComposerTips;
-    var keepDesktopRunningInTray = defaults.keepDesktopRunningInTray;
+    var desktopCloseBehavior = defaults.desktopCloseBehavior;
     var keepMobileRealtimeForShortPeriod =
         defaults.keepMobileRealtimeForShortPeriod;
     var speechToTextEngine = defaults.speechToTextEngine;
@@ -720,9 +739,19 @@ class ExperienceSettings {
       showComposerTips = showComposerTipsJson;
     }
 
-    final keepDesktopRunningInTrayJson = json['keepDesktopRunningInTray'];
-    if (keepDesktopRunningInTrayJson is bool) {
-      keepDesktopRunningInTray = keepDesktopRunningInTrayJson;
+    final desktopCloseBehaviorJson = json['desktopCloseBehavior'];
+    if (desktopCloseBehaviorJson is String &&
+        desktopCloseBehaviorJson.trim().isNotEmpty) {
+      desktopCloseBehavior = desktopCloseBehaviorFromKey(
+        desktopCloseBehaviorJson.trim().toLowerCase(),
+      );
+    } else {
+      final keepDesktopRunningInTrayJson = json['keepDesktopRunningInTray'];
+      if (keepDesktopRunningInTrayJson is bool) {
+        desktopCloseBehavior = keepDesktopRunningInTrayJson
+            ? DesktopCloseBehavior.tray
+            : DesktopCloseBehavior.close;
+      }
     }
 
     final keepMobileRealtimeForShortPeriodJson =
@@ -801,7 +830,7 @@ class ExperienceSettings {
       showTaskList: showTaskList,
       taskListCollapsed: taskListCollapsed,
       showComposerTips: showComposerTips,
-      keepDesktopRunningInTray: keepDesktopRunningInTray,
+      desktopCloseBehavior: desktopCloseBehavior,
       keepMobileRealtimeForShortPeriod: keepMobileRealtimeForShortPeriod,
       themeMode: themeMode,
       useDynamicColor: useDynamicColor,
