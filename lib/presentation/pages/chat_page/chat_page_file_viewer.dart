@@ -373,8 +373,12 @@ extension _ChatPageFileViewer on _ChatPageState {
                       width: gutterWidth,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 6),
-                        child: Text.rich(
-                          TextSpan(
+                        // Use RichText (not Text.rich) so the gutter
+                        // renders without MediaQuery textScaler, matching
+                        // HighlightView's RichText for pixel-aligned lines.
+                        child: RichText(
+                          text: TextSpan(
+                            style: textStyle,
                             children: List<InlineSpan>.generate(lineCount, (
                               index,
                             ) {
