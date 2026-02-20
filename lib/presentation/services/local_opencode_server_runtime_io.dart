@@ -748,7 +748,10 @@ class _IoLocalOpencodeServerRuntime implements LocalOpencodeServerRuntime {
       return 'Install via Bun is recommended by OpenCode maintainers.';
     }
     if (node.available && npm.available) {
-      return 'Node + npm are available. Install OpenCode via npm or install Bun for the recommended flow. On Windows, refresh checks after install because PATH updates may lag in already-open apps.';
+      final windowsHint = defaultTargetPlatform == TargetPlatform.windows
+          ? ' On Windows, refresh checks after install because PATH updates may lag in already-open apps.'
+          : '';
+      return 'Node + npm are available. Install OpenCode via npm or install Bun for the recommended flow.$windowsHint';
     }
     return 'No runtime detected. Install OpenCode binary directly or bootstrap Bun first.';
   }
