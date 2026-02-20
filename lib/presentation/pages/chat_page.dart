@@ -88,6 +88,7 @@ class _ChatPageState extends State<ChatPage>
     with WidgetsBindingObserver, WindowListener {
   // File pane shown when expanded and width exceeds this threshold
   static const double _filePaneBreakpoint = 1100;
+  static const double _mediumSessionPaneWidth = 260;
   static const double _desktopSessionPaneWidth = 300;
   static const double _largeDesktopSessionPaneWidth = 320;
   static const double _desktopFilePaneWidth = 280;
@@ -468,22 +469,30 @@ class _ChatPageState extends State<ChatPage>
       builder: (context, constraints) {
         final width = constraints.maxWidth;
         final sizeClass = WindowSizeClass.fromWidth(width);
-        final isMobile = sizeClass.isCompact || sizeClass == WindowSizeClass.medium;
+        final isMobile = sizeClass.isCompact;
+        final isMedium = sizeClass == WindowSizeClass.medium;
         final isLargeDesktop = sizeClass.isAtLeastLarge;
         final settingsProvider = context.watch<SettingsProvider>();
+        final conversationsPaneEnabled =
+            settingsProvider.isDesktopPaneVisible(DesktopPane.conversations);
+        // Medium: narrow conversation pane; expanded+: full pane
         final showConversationPane =
             !isMobile &&
-            settingsProvider.isDesktopPaneVisible(DesktopPane.conversations);
+            (isMedium ? conversationsPaneEnabled : true) &&
+            conversationsPaneEnabled;
         final showDesktopFilePane =
             !isMobile &&
+            !isMedium &&
             width >= _filePaneBreakpoint &&
             settingsProvider.isDesktopPaneVisible(DesktopPane.files);
         final showDesktopUtilityPane =
             isLargeDesktop &&
             settingsProvider.isDesktopPaneVisible(DesktopPane.utility);
-        final sessionPaneWidth = isLargeDesktop
-            ? _largeDesktopSessionPaneWidth
-            : _desktopSessionPaneWidth;
+        final sessionPaneWidth = isMedium
+            ? _mediumSessionPaneWidth
+            : isLargeDesktop
+                ? _largeDesktopSessionPaneWidth
+                : _desktopSessionPaneWidth;
         final mainContentWidth = isLargeDesktop ? 960.0 : double.infinity;
         const refreshlessEnabled = FeatureFlags.refreshlessRealtime;
         final shortcutMap = <ShortcutActivator, Intent>{};
@@ -584,11 +593,13 @@ class _ChatPageState extends State<ChatPage>
                 backgroundColor: Theme.of(context).colorScheme.surface,
                 resizeToAvoidBottomInset: true,
                 appBar: _buildAppBar(
-                  isMobile: isMobile,
+                  isMobile: isMobile || (isMedium && !showConversationPane),
                   isLargeDesktop: isLargeDesktop,
                   settingsProvider: settingsProvider,
                 ),
-                drawer: isMobile ? _buildSessionDrawer() : null,
+                drawer: (isMobile || (isMedium && !showConversationPane))
+                    ? _buildSessionDrawer()
+                    : null,
                 body: Consumer<ChatProvider>(
                   builder: (context, chatProvider, child) {
                     _syncSessionScrollState(chatProvider);
@@ -731,8 +742,7 @@ class _ChatPageState extends State<ChatPage>
     if (!mounted) {
       return false;
     }
-    final sizeClass = context.windowSizeClass;
-    return sizeClass.isCompact || sizeClass == WindowSizeClass.medium;
+    return context.windowSizeClass.isCompact;
   }
 
   ({String compactionId, String compactionLabel})? _resolveCompactionBoundary(
