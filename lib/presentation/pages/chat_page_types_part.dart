@@ -38,6 +38,10 @@ class _CycleAgentIntent extends Intent {
   final bool reverse;
 }
 
+class _QuitAppIntent extends Intent {
+  const _QuitAppIntent();
+}
+
 class _ModelSelectorEntry {
   const _ModelSelectorEntry({
     required this.providerId,

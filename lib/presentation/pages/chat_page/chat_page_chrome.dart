@@ -528,6 +528,21 @@ extension _ChatPageChrome on _ChatPageState {
     return false;
   }
 
+  /// Draggable resize handle that replaces VerticalDivider between panes.
+  /// [paneOnLeft] means the pane being resized is to the left of the handle;
+  /// when false (utility pane on the right), the drag delta is inverted.
+  Widget _buildResizableHandle({
+    required DesktopPane pane,
+    required SettingsProvider settingsProvider,
+    required bool paneOnLeft,
+  }) {
+    return _PaneResizeHandle(
+      pane: pane,
+      settingsProvider: settingsProvider,
+      paneOnLeft: paneOnLeft,
+    );
+  }
+
   Widget _buildSelectorSectionHeader(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
@@ -692,6 +707,68 @@ extension _ChatPageChrome on _ChatPageState {
           const SizedBox(width: 4),
           Text(label, style: Theme.of(context).textTheme.labelSmall),
         ],
+      ),
+    );
+  }
+}
+
+/// Interactive resize handle for desktop sidebar panes.
+/// Provides an 8px hit area with a thin visual line that thickens on
+/// hover/drag. Double-tap resets to the default width.
+class _PaneResizeHandle extends StatefulWidget {
+  const _PaneResizeHandle({
+    required this.pane,
+    required this.settingsProvider,
+    required this.paneOnLeft,
+  });
+
+  final DesktopPane pane;
+  final SettingsProvider settingsProvider;
+  final bool paneOnLeft;
+
+  @override
+  State<_PaneResizeHandle> createState() => _PaneResizeHandleState();
+}
+
+class _PaneResizeHandleState extends State<_PaneResizeHandle> {
+  bool _hovering = false;
+  bool _dragging = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = _hovering || _dragging;
+    final lineWidth = active ? 3.0 : 1.0;
+    final color = active
+        ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)
+        : Theme.of(context).colorScheme.outline.withValues(alpha: 0.12);
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeColumn,
+      onEnter: (_) => setState(() => _hovering = true),
+      onExit: (_) => setState(() => _hovering = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onHorizontalDragStart: (_) => setState(() => _dragging = true),
+        onHorizontalDragUpdate: (details) {
+          final delta = widget.paneOnLeft
+              ? details.delta.dx
+              : -details.delta.dx;
+          final current = widget.settingsProvider.desktopPaneWidth(widget.pane);
+          final next = (current + delta).clamp(160.0, 500.0);
+          unawaited(
+            widget.settingsProvider.setDesktopPaneWidth(widget.pane, next),
+          );
+        },
+        onHorizontalDragEnd: (_) => setState(() => _dragging = false),
+        onDoubleTap: () {
+          unawaited(widget.settingsProvider.resetDesktopPaneWidth(widget.pane));
+        },
+        child: SizedBox(
+          width: 8,
+          child: Center(
+            child: Container(width: lineWidth, color: color),
+          ),
+        ),
       ),
     );
   }

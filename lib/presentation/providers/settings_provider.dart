@@ -191,6 +191,44 @@ class SettingsProvider extends ChangeNotifier {
     return _settings.desktopPanes[pane] ?? true;
   }
 
+  // Default widths per pane when no custom width is persisted.
+  static double defaultDesktopPaneWidth(DesktopPane pane) {
+    return switch (pane) {
+      DesktopPane.conversations => 300,
+      DesktopPane.files => 280,
+      DesktopPane.utility => 280,
+    };
+  }
+
+  /// Current width for a desktop pane (persisted or default).
+  double desktopPaneWidth(DesktopPane pane) {
+    return _settings.desktopPaneWidths[pane] ?? defaultDesktopPaneWidth(pane);
+  }
+
+  Future<void> setDesktopPaneWidth(DesktopPane pane, double width) async {
+    final clamped = width.clamp(160.0, 500.0);
+    final current = _settings.desktopPaneWidths[pane];
+    if (current != null && (current - clamped).abs() < 1) {
+      return;
+    }
+    final next = Map<DesktopPane, double>.from(_settings.desktopPaneWidths);
+    next[pane] = clamped;
+    _settings = _settings.copyWith(desktopPaneWidths: next);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> resetDesktopPaneWidth(DesktopPane pane) async {
+    if (!_settings.desktopPaneWidths.containsKey(pane)) {
+      return;
+    }
+    final next = Map<DesktopPane, double>.from(_settings.desktopPaneWidths);
+    next.remove(pane);
+    _settings = _settings.copyWith(desktopPaneWidths: next);
+    notifyListeners();
+    await _persist();
+  }
+
   Future<void> setThemeMode(ThemeModeOption mode) async {
     if (_settings.themeMode == mode) {
       return;

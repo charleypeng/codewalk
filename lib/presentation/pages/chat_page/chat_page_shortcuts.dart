@@ -22,6 +22,9 @@ extension _ChatPageShortcuts on _ChatPageState {
     if (!FeatureFlags.refreshlessRealtime) {
       actions.insert(1, ShortcutAction.refresh);
     }
+    if (_isDesktopRuntime) {
+      actions.add(ShortcutAction.quitApp);
+    }
     return actions;
   }
 
@@ -83,10 +86,13 @@ extension _ChatPageShortcuts on _ChatPageState {
         _handleEscape();
         return;
       case ShortcutAction.cycleAgentForward:
-        unawaited(chatProvider.cycleAgent());
+        unawaited(_cycleAgentWithFeedback(chatProvider));
         return;
       case ShortcutAction.cycleAgentBackward:
-        unawaited(chatProvider.cycleAgent(reverse: true));
+        unawaited(_cycleAgentWithFeedback(chatProvider, reverse: true));
+        return;
+      case ShortcutAction.quitApp:
+        unawaited(_quitDesktopApp());
         return;
     }
   }
@@ -132,6 +138,35 @@ extension _ChatPageShortcuts on _ChatPageState {
         ),
       ),
     );
+  }
+
+  /// Force-quit the desktop app, bypassing close-to-tray.
+  Future<void> _quitDesktopApp() async {
+    if (!_isDesktopRuntime) {
+      return;
+    }
+    await windowManager.setPreventClose(false);
+    await windowManager.close();
+  }
+
+  Future<void> _cycleAgentWithFeedback(
+    ChatProvider chatProvider, {
+    bool reverse = false,
+  }) async {
+    final name = await chatProvider.cycleAgent(reverse: reverse);
+    if (name == null || !mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('Agent: $name'),
+          duration: const Duration(milliseconds: 1500),
+          behavior: SnackBarBehavior.floating,
+          width: 260,
+        ),
+      );
   }
 
   Future<void> _cycleRecentModel(ChatProvider chatProvider) async {

@@ -1198,8 +1198,8 @@ class ChatProvider extends ChangeNotifier {
     _selectedModelId = modelId;
     _selectedVariantId = _resolveStoredVariantForSelection();
     _storeCurrentSessionSelectionOverride();
-    await _persistSelection();
     notifyListeners();
+    await _persistSelection();
   }
 
   Future<void> setSelectedModel(String modelId) async {
@@ -1224,8 +1224,8 @@ class ChatProvider extends ChangeNotifier {
     }
     _selectedAgentName = next;
     _storeCurrentSessionSelectionOverride();
-    await _persistSelection();
     notifyListeners();
+    await _persistSelection();
   }
 
   Future<void> setSelectedVariant(String? variantId) async {
@@ -1272,16 +1272,19 @@ class ChatProvider extends ChangeNotifier {
     await setSelectedVariant(variantIds[currentIndex + 1]);
   }
 
-  Future<void> cycleAgent({bool reverse = false}) async {
+  /// Cycle to the next (or previous) selectable agent.
+  /// Returns the name of the newly selected agent, or null when the list
+  /// is empty and no cycling was performed.
+  Future<String?> cycleAgent({bool reverse = false}) async {
     final available = selectableAgents;
     if (available.isEmpty) {
-      return;
+      return null;
     }
 
     final selected = _selectedAgentName;
     if (selected == null) {
       await setSelectedAgent(available.first.name);
-      return;
+      return available.first.name;
     }
 
     final currentIndex = available.indexWhere(
@@ -1289,7 +1292,7 @@ class ChatProvider extends ChangeNotifier {
     );
     if (currentIndex == -1) {
       await setSelectedAgent(available.first.name);
-      return;
+      return available.first.name;
     }
 
     final delta = reverse ? -1 : 1;
@@ -1297,7 +1300,9 @@ class ChatProvider extends ChangeNotifier {
     final normalizedIndex = nextIndex < 0
         ? nextIndex + available.length
         : nextIndex;
-    await setSelectedAgent(available[normalizedIndex].name);
+    final nextName = available[normalizedIndex].name;
+    await setSelectedAgent(nextName);
+    return nextName;
   }
 
   bool isModelFavorite({required String providerId, required String modelId}) {

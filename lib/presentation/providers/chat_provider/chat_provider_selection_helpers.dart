@@ -783,7 +783,7 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
     if (currentDirectory == null) {
       return sessions
           .where((session) => !_isEphemeralTitleSession(session))
-          .toList(growable: false);
+          .toList();
     }
 
     final hasDirectoryMetadata = sessions.any((session) {
@@ -792,7 +792,7 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
     if (!hasDirectoryMetadata) {
       return sessions
           .where((session) => !_isEphemeralTitleSession(session))
-          .toList(growable: false);
+          .toList();
     }
 
     return sessions.where((session) {

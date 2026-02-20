@@ -89,10 +89,6 @@ class _ChatPageState extends State<ChatPage>
   // File pane shown when expanded and width exceeds this threshold
   static const double _filePaneBreakpoint = 1100;
   static const double _mediumSessionPaneWidth = 260;
-  static const double _desktopSessionPaneWidth = 300;
-  static const double _largeDesktopSessionPaneWidth = 320;
-  static const double _desktopFilePaneWidth = 280;
-  static const double _largeDesktopUtilityPaneWidth = 280;
   static const double _nearBottomThreshold = 200;
   static const double _jumpToFirstFabThreshold = 360;
   static const double _scrollToBottomEpsilon = 1;
@@ -488,11 +484,11 @@ class _ChatPageState extends State<ChatPage>
         final showDesktopUtilityPane =
             isLargeDesktop &&
             settingsProvider.isDesktopPaneVisible(DesktopPane.utility);
+        // Medium breakpoint stays fixed (compact layout); expanded+ uses
+        // the persisted/resizable width from settings.
         final sessionPaneWidth = isMedium
             ? _mediumSessionPaneWidth
-            : isLargeDesktop
-                ? _largeDesktopSessionPaneWidth
-                : _desktopSessionPaneWidth;
+            : settingsProvider.desktopPaneWidth(DesktopPane.conversations);
         final mainContentWidth = isLargeDesktop ? 960.0 : double.infinity;
         const refreshlessEnabled = FeatureFlags.refreshlessRealtime;
         final shortcutMap = <ShortcutActivator, Intent>{};
@@ -522,6 +518,9 @@ class _ChatPageState extends State<ChatPage>
           ShortcutAction.cycleAgentBackward,
           const _CycleAgentIntent(reverse: true),
         );
+        if (_isDesktopRuntime) {
+          addShortcut(ShortcutAction.quitApp, const _QuitAppIntent());
+        }
         final actionMap = <Type, Action<Intent>>{
           _NewSessionIntent: CallbackAction<_NewSessionIntent>(
             onInvoke: (_) {
@@ -568,10 +567,19 @@ class _ChatPageState extends State<ChatPage>
           _CycleAgentIntent: CallbackAction<_CycleAgentIntent>(
             onInvoke: (intent) {
               final chatProvider = context.read<ChatProvider>();
-              unawaited(chatProvider.cycleAgent(reverse: intent.reverse));
+              unawaited(
+                _cycleAgentWithFeedback(chatProvider, reverse: intent.reverse),
+              );
               return null;
             },
           ),
+          if (_isDesktopRuntime)
+            _QuitAppIntent: CallbackAction<_QuitAppIntent>(
+              onInvoke: (_) {
+                unawaited(_quitDesktopApp());
+                return null;
+              },
+            ),
         };
         if (!refreshlessEnabled) {
           addShortcut(ShortcutAction.refresh, const _RefreshIntent());
@@ -615,6 +623,12 @@ class _ChatPageState extends State<ChatPage>
                       );
                     }
 
+                    final filePaneWidth = settingsProvider.desktopPaneWidth(
+                      DesktopPane.files,
+                    );
+                    final utilityPaneWidth = settingsProvider.desktopPaneWidth(
+                      DesktopPane.utility,
+                    );
                     final rowChildren = <Widget>[
                       if (showConversationPane) ...[
                         SizedBox(
@@ -631,11 +645,18 @@ class _ChatPageState extends State<ChatPage>
                             },
                           ),
                         ),
-                        _buildPaneDivider(),
+                        if (isMedium)
+                          _buildPaneDivider()
+                        else
+                          _buildResizableHandle(
+                            pane: DesktopPane.conversations,
+                            settingsProvider: settingsProvider,
+                            paneOnLeft: true,
+                          ),
                       ],
                       if (showDesktopFilePane) ...[
                         SizedBox(
-                          width: _desktopFilePaneWidth,
+                          width: filePaneWidth,
                           child: _buildDesktopFilePane(
                             chatProvider,
                             onCollapseRequested: () {
@@ -648,7 +669,11 @@ class _ChatPageState extends State<ChatPage>
                             },
                           ),
                         ),
-                        _buildPaneDivider(),
+                        _buildResizableHandle(
+                          pane: DesktopPane.files,
+                          settingsProvider: settingsProvider,
+                          paneOnLeft: true,
+                        ),
                       ],
                       Expanded(
                         child: _buildChatContent(
@@ -659,9 +684,13 @@ class _ChatPageState extends State<ChatPage>
                         ),
                       ),
                       if (showDesktopUtilityPane) ...[
-                        _buildPaneDivider(),
+                        _buildResizableHandle(
+                          pane: DesktopPane.utility,
+                          settingsProvider: settingsProvider,
+                          paneOnLeft: false,
+                        ),
                         SizedBox(
-                          width: _largeDesktopUtilityPaneWidth,
+                          width: utilityPaneWidth,
                           child: _buildDesktopUtilityPane(
                             chatProvider,
                             settingsProvider: settingsProvider,
@@ -715,6 +744,8 @@ class _ChatPageState extends State<ChatPage>
         action: ShortcutAction.escape,
         description: 'Focus input (or close drawer when open)',
       ),
+      if (_isDesktopRuntime)
+        (action: ShortcutAction.quitApp, description: 'Quit application'),
     ];
 
     final hints = entries

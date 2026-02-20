@@ -17,6 +17,7 @@ enum ShortcutAction {
   escape,
   cycleAgentForward,
   cycleAgentBackward,
+  quitApp,
 }
 
 enum DesktopPane { conversations, files, utility }
@@ -116,6 +117,13 @@ const List<ShortcutDefinition> kShortcutDefinitions = <ShortcutDefinition>[
     description: 'Cycle to previous available agent',
     defaultBinding: 'mod+shift+j',
   ),
+  ShortcutDefinition(
+    action: ShortcutAction.quitApp,
+    group: 'Application',
+    label: 'Quit application',
+    description: 'Close the application (bypass close-to-tray)',
+    defaultBinding: 'mod+q',
+  ),
 ];
 
 String notificationCategoryKey(NotificationCategory category) {
@@ -186,6 +194,7 @@ String shortcutActionKey(ShortcutAction action) {
     ShortcutAction.escape => 'escape',
     ShortcutAction.cycleAgentForward => 'cycle_agent_forward',
     ShortcutAction.cycleAgentBackward => 'cycle_agent_backward',
+    ShortcutAction.quitApp => 'quit_app',
   };
 }
 
@@ -201,6 +210,7 @@ ShortcutAction? shortcutActionFromKey(String value) {
     'escape' => ShortcutAction.escape,
     'cycle_agent_forward' => ShortcutAction.cycleAgentForward,
     'cycle_agent_backward' => ShortcutAction.cycleAgentBackward,
+    'quit_app' => ShortcutAction.quitApp,
     _ => null,
   };
 }
@@ -321,6 +331,7 @@ class ExperienceSettings {
         DesktopPane.files: true,
         DesktopPane.utility: true,
       },
+      desktopPaneWidths: const <DesktopPane, double>{},
       appDensity: AppDensity.normal,
       showThinkingBubbles: true,
       showToolCallBubbles: true,
@@ -349,6 +360,7 @@ class ExperienceSettings {
     required this.soundLabels,
     required this.shortcuts,
     required this.desktopPanes,
+    this.desktopPaneWidths = const <DesktopPane, double>{},
     required this.appDensity,
     required this.showThinkingBubbles,
     required this.showToolCallBubbles,
@@ -377,6 +389,7 @@ class ExperienceSettings {
   final Map<SoundCategory, String> soundLabels;
   final Map<ShortcutAction, String> shortcuts;
   final Map<DesktopPane, bool> desktopPanes;
+  final Map<DesktopPane, double> desktopPaneWidths;
   final AppDensity appDensity;
   final bool showThinkingBubbles;
   final bool showToolCallBubbles;
@@ -405,6 +418,7 @@ class ExperienceSettings {
     Map<SoundCategory, String>? soundLabels,
     Map<ShortcutAction, String>? shortcuts,
     Map<DesktopPane, bool>? desktopPanes,
+    Map<DesktopPane, double>? desktopPaneWidths,
     AppDensity? appDensity,
     bool? showThinkingBubbles,
     bool? showToolCallBubbles,
@@ -437,6 +451,7 @@ class ExperienceSettings {
       soundLabels: soundLabels ?? this.soundLabels,
       shortcuts: shortcuts ?? this.shortcuts,
       desktopPanes: desktopPanes ?? this.desktopPanes,
+      desktopPaneWidths: desktopPaneWidths ?? this.desktopPaneWidths,
       appDensity: appDensity ?? this.appDensity,
       showThinkingBubbles: showThinkingBubbles ?? this.showThinkingBubbles,
       showToolCallBubbles: showToolCallBubbles ?? this.showToolCallBubbles,
@@ -504,6 +519,11 @@ class ExperienceSettings {
         for (final entry in desktopPanes.entries)
           desktopPaneKey(entry.key): entry.value,
       },
+      if (desktopPaneWidths.isNotEmpty)
+        'desktopPaneWidths': <String, double>{
+          for (final entry in desktopPaneWidths.entries)
+            desktopPaneKey(entry.key): entry.value,
+        },
       'appDensity': appDensityKey(appDensity),
       'showThinkingBubbles': showThinkingBubbles,
       'showToolCallBubbles': showToolCallBubbles,
@@ -546,6 +566,7 @@ class ExperienceSettings {
     final soundLabels = Map<SoundCategory, String>.from(defaults.soundLabels);
     final shortcuts = Map<ShortcutAction, String>.from(defaults.shortcuts);
     final desktopPanes = Map<DesktopPane, bool>.from(defaults.desktopPanes);
+    final desktopPaneWidths = <DesktopPane, double>{};
     var appDensity = defaults.appDensity;
     var showThinkingBubbles = defaults.showThinkingBubbles;
     var showToolCallBubbles = defaults.showToolCallBubbles;
@@ -655,6 +676,20 @@ class ExperienceSettings {
       }
     }
 
+    final desktopPaneWidthsJson = json['desktopPaneWidths'];
+    if (desktopPaneWidthsJson is Map) {
+      for (final entry in desktopPaneWidthsJson.entries) {
+        final pane = desktopPaneFromKey(entry.key.toString());
+        if (pane == null) {
+          continue;
+        }
+        final raw = entry.value;
+        if (raw is num) {
+          desktopPaneWidths[pane] = raw.toDouble().clamp(160.0, 500.0);
+        }
+      }
+    }
+
     final appDensityJson = json['appDensity'];
     if (appDensityJson is String && appDensityJson.trim().isNotEmpty) {
       appDensity = appDensityFromKey(appDensityJson.trim().toLowerCase());
@@ -759,6 +794,7 @@ class ExperienceSettings {
       soundLabels: soundLabels,
       shortcuts: shortcuts,
       desktopPanes: desktopPanes,
+      desktopPaneWidths: desktopPaneWidths,
       appDensity: appDensity,
       showThinkingBubbles: showThinkingBubbles,
       showToolCallBubbles: showToolCallBubbles,
