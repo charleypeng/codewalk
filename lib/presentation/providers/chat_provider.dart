@@ -490,10 +490,53 @@ class ChatProvider extends ChangeNotifier {
         }
       });
 
-    if (sorted.length <= _sessionVisibleLimit) {
-      return sorted;
+    final limited = sorted.length <= _sessionVisibleLimit
+        ? sorted
+        : sorted.take(_sessionVisibleLimit).toList(growable: false);
+
+    return _includeVisibleSessionAncestors(
+      visibleSessions: limited,
+      sortedFilteredSessions: sorted,
+    );
+  }
+
+  List<ChatSession> _includeVisibleSessionAncestors({
+    required List<ChatSession> visibleSessions,
+    required List<ChatSession> sortedFilteredSessions,
+  }) {
+    if (visibleSessions.isEmpty ||
+        visibleSessions.length == sortedFilteredSessions.length) {
+      return visibleSessions;
     }
-    return sorted.take(_sessionVisibleLimit).toList(growable: false);
+
+    final sessionById = <String, ChatSession>{
+      for (final session in sortedFilteredSessions) session.id: session,
+    };
+    final visibleIds = visibleSessions.map((session) => session.id).toSet();
+
+    for (final session in visibleSessions) {
+      var parentId = session.parentId;
+      final visited = <String>{session.id};
+      while (parentId != null && parentId.isNotEmpty) {
+        if (!visited.add(parentId)) {
+          break;
+        }
+        final parent = sessionById[parentId];
+        if (parent == null) {
+          break;
+        }
+        visibleIds.add(parent.id);
+        parentId = parent.parentId;
+      }
+    }
+
+    if (visibleIds.length == visibleSessions.length) {
+      return visibleSessions;
+    }
+
+    return sortedFilteredSessions
+        .where((session) => visibleIds.contains(session.id))
+        .toList(growable: false);
   }
 
   bool get canLoadMoreSessions {

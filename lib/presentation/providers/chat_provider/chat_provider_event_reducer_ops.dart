@@ -1,15 +1,78 @@
 part of '../chat_provider.dart';
 
 extension _ChatProviderEventReducerOps on ChatProvider {
+  bool _eventInfoContainsAny(Map<String, dynamic> info, Iterable<String> keys) {
+    for (final key in keys) {
+      if (info.containsKey(key)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  ChatSession _mergeSessionFromEventInfo({
+    required ChatSession incoming,
+    required ChatSession? existing,
+    required Map<String, dynamic> info,
+  }) {
+    if (existing == null) {
+      return incoming;
+    }
+
+    var merged = existing;
+    if (info.containsKey('workspaceId')) {
+      merged = merged.copyWith(workspaceId: incoming.workspaceId);
+    }
+    if (info.containsKey('time')) {
+      merged = merged.copyWith(
+        time: incoming.time,
+        archivedAt: incoming.archivedAt,
+      );
+    }
+    if (_eventInfoContainsAny(info, const <String>[
+      'title',
+      'name',
+      'sessionTitle',
+    ])) {
+      merged = merged.copyWith(title: incoming.title);
+    }
+    if (_eventInfoContainsAny(info, const <String>['parentID', 'parentId'])) {
+      merged = merged.copyWith(parentId: incoming.parentId);
+    }
+    if (info.containsKey('directory')) {
+      merged = merged.copyWith(directory: incoming.directory);
+    }
+    if (info.containsKey('summary')) {
+      merged = merged.copyWith(summary: incoming.summary);
+    }
+    if (info.containsKey('path')) {
+      merged = merged.copyWith(path: incoming.path);
+    }
+    if (_eventInfoContainsAny(info, const <String>['share', 'shared'])) {
+      merged = merged.copyWith(
+        shared: incoming.shared,
+        shareUrl: incoming.shareUrl,
+      );
+    }
+    return merged;
+  }
+
   /// Compose a dedup key from event type + identifying properties.
   /// Returns null for events that cannot be meaningfully deduplicated.
   String? _composeEventDeduplicationKey(ChatEvent event) {
     final props = event.properties;
-    final sessionId = props['sessionID'] as String? ??
-        (props['info'] is Map ? (props['info'] as Map)['sessionID'] as String? : null);
-    final messageId = props['messageID'] as String? ??
+    final sessionId =
+        props['sessionID'] as String? ??
+        (props['info'] is Map
+            ? (props['info'] as Map)['sessionID'] as String?
+            : null);
+    final messageId =
+        props['messageID'] as String? ??
         (props['info'] is Map ? (props['info'] as Map)['id'] as String? : null);
-    final partId = (props['part'] is Map ? (props['part'] as Map)['id'] as String? : null) ??
+    final partId =
+        (props['part'] is Map
+            ? (props['part'] as Map)['id'] as String?
+            : null) ??
         props['partID'] as String?;
     final requestId = props['requestID'] as String?;
     // Build composite key from available identifiers
@@ -88,14 +151,25 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       case 'session.updated':
         final info = properties['info'];
         if (info is Map<String, dynamic>) {
-          final nextSession = ChatSessionModel.fromJson(info).toDomain();
-          final existing = _sessionById(nextSession.id);
-          if (existing != null && nextSession.time.isBefore(existing.time)) {
+          final incomingSession = ChatSessionModel.fromJson(info).toDomain();
+          if (incomingSession.id.isEmpty) {
+            break;
+          }
+          final existing = _sessionById(incomingSession.id);
+          final hasIncomingTime = info.containsKey('time');
+          if (existing != null &&
+              hasIncomingTime &&
+              incomingSession.time.isBefore(existing.time)) {
             AppLogger.debug(
-              'Ignoring stale session event for ${nextSession.id}: incoming=${nextSession.time.toIso8601String()} existing=${existing.time.toIso8601String()}',
+              'Ignoring stale session event for ${incomingSession.id}: incoming=${incomingSession.time.toIso8601String()} existing=${existing.time.toIso8601String()}',
             );
             break;
           }
+          final nextSession = _mergeSessionFromEventInfo(
+            incoming: incomingSession,
+            existing: existing,
+            info: info,
+          );
           final pendingRename = _pendingRenameTitleBySessionId[nextSession.id];
           if (pendingRename != null) {
             final incomingTitle = nextSession.title?.trim();

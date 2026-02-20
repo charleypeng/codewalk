@@ -6,7 +6,6 @@ part 'chat_session_model.g.dart';
 /// Technical comment translated to English.
 @JsonSerializable()
 class ChatSessionModel {
-
   factory ChatSessionModel.fromJson(Map<String, dynamic> json) {
     final rawShare = json['share'];
     final shareMap = rawShare is Map
@@ -32,6 +31,17 @@ class ChatSessionModel {
       return null;
     }
 
+    String? readOptionalString(dynamic value) {
+      if (value is! String) {
+        return null;
+      }
+      final trimmed = value.trim();
+      if (trimmed.isEmpty) {
+        return null;
+      }
+      return trimmed;
+    }
+
     return ChatSessionModel(
       id: json['id'] as String? ?? '',
       workspaceId: json['workspaceId'] as String?,
@@ -40,7 +50,9 @@ class ChatSessionModel {
             const <String, dynamic>{},
       ),
       title: readNonEmptyTitle(),
-      parentId: json['parentID'] as String?,
+      parentId:
+          readOptionalString(json['parentID']) ??
+          readOptionalString(json['parentId']),
       directory: json['directory'] as String?,
       version: json['version'] as String?,
       shared: share != null || json['shared'] == true,
@@ -168,7 +180,6 @@ class ChatSessionModel {
 /// Technical comment translated to English.
 @JsonSerializable()
 class SessionTimeModel {
-
   factory SessionTimeModel.fromJson(Map<String, dynamic> json) {
     return SessionTimeModel(
       created: (json['created'] as num?)?.toInt() ?? 0,
@@ -208,7 +219,6 @@ class SessionTimeModel {
 /// Technical comment translated to English.
 @JsonSerializable()
 class SessionShareModel {
-
   factory SessionShareModel.fromJson(Map<String, dynamic> json) =>
       _$SessionShareModelFromJson(json);
   const SessionShareModel({required this.url});
@@ -221,7 +231,6 @@ class SessionShareModel {
 /// Technical comment translated to English.
 @JsonSerializable()
 class SessionPathModel {
-
   factory SessionPathModel.fromJson(Map<String, dynamic> json) =>
       _$SessionPathModelFromJson(json);
   const SessionPathModel({required this.root, required this.workspace});
@@ -243,7 +252,6 @@ class SessionPathModel {
 /// Technical comment translated to English.
 @JsonSerializable()
 class ChatInputModel {
-
   /// Supports both legacy flat (`providerID`/`modelID` + `mode`) and
   /// current nested (`model` + `agent`) request schemas.
   factory ChatInputModel.fromJson(Map<String, dynamic> json) {
@@ -334,7 +342,6 @@ class ChatInputModel {
 /// Technical comment translated to English.
 @JsonSerializable()
 class ChatInputPartModel {
-
   factory ChatInputPartModel.fromJson(Map<String, dynamic> json) {
     return ChatInputPartModel(
       type: json['type'] as String,
@@ -430,7 +437,6 @@ class ChatInputPartModel {
 /// Technical comment translated to English.
 @JsonSerializable()
 class SessionCreateInputModel {
-
   factory SessionCreateInputModel.fromJson(Map<String, dynamic> json) =>
       _$SessionCreateInputModelFromJson(json);
   const SessionCreateInputModel({this.parentId, this.title});
@@ -463,7 +469,6 @@ class SessionCreateInputModel {
 /// Technical comment translated to English.
 @JsonSerializable()
 class SessionUpdateInputModel {
-
   factory SessionUpdateInputModel.fromJson(Map<String, dynamic> json) =>
       _$SessionUpdateInputModelFromJson(json);
   const SessionUpdateInputModel({this.title, this.archivedAtEpochMs});

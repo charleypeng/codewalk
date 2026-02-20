@@ -3707,6 +3707,117 @@ void main() {
     );
 
     test(
+      'global session.updated preserves parentId when payload omits parent fields',
+      () async {
+        chatRepository.sessions
+          ..clear()
+          ..addAll(<ChatSession>[
+            ChatSession(
+              id: 'ses_parent',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              title: 'Parent',
+            ),
+            ChatSession(
+              id: 'ses_child',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(2000),
+              title: 'Child',
+              parentId: 'ses_parent',
+            ),
+          ]);
+
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'model_a': _model('model_a')},
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a'],
+          ),
+        );
+
+        await provider.initializeProviders();
+        await provider.loadSessions();
+        final activeDirectory = provider.projectProvider.currentDirectory;
+
+        chatRepository.emitGlobalEvent(
+          ChatEvent(
+            type: 'session.updated',
+            properties: <String, dynamic>{
+              'directory': ?activeDirectory,
+              'info': const <String, dynamic>{
+                'id': 'ses_child',
+                'workspaceId': 'default',
+                'title': 'Child renamed',
+                'time': <String, dynamic>{'created': 2000, 'updated': 3000},
+              },
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+
+        final updatedChild = provider.sessions
+            .where((session) => session.id == 'ses_child')
+            .first;
+        expect(updatedChild.title, 'Child renamed');
+        expect(updatedChild.parentId, 'ses_parent');
+      },
+    );
+
+    test(
+      'visibleSessions keeps ancestors needed for tree grouping beyond limit',
+      () async {
+        chatRepository.sessions
+          ..clear()
+          ..add(
+            ChatSession(
+              id: 'ses_parent',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              title: 'Parent',
+            ),
+          )
+          ..add(
+            ChatSession(
+              id: 'ses_child',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(999999),
+              title: 'Child',
+              parentId: 'ses_parent',
+            ),
+          )
+          ..addAll(
+            List<ChatSession>.generate(
+              44,
+              (index) => ChatSession(
+                id: 'ses_root_$index',
+                workspaceId: 'default',
+                time: DateTime.fromMillisecondsSinceEpoch(900000 - index),
+                title: 'Root $index',
+              ),
+            ),
+          );
+
+        await provider.loadSessions();
+
+        expect(
+          provider.visibleSessions.where((s) => s.id == 'ses_child'),
+          isNotEmpty,
+        );
+        expect(
+          provider.visibleSessions.where((s) => s.id == 'ses_parent'),
+          isNotEmpty,
+        );
+      },
+    );
+
+    test(
       'ignores conflicting session.updated events while rename is pending',
       () async {
         appRepository.providersResult = Right(
@@ -4208,6 +4319,37 @@ void main() {
     );
 
     test(
+      'loadSessions excludes internal _title_gen sessions from Conversations',
+      () async {
+        chatRepository.sessions
+          ..clear()
+          ..addAll(<ChatSession>[
+            ChatSession(
+              id: 'ses_internal_title',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(3000),
+              title: ChatTitleGenerator.ephemeralSessionTitle,
+            ),
+            ChatSession(
+              id: 'ses_user_visible',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(2000),
+              title: 'Visible Conversation',
+            ),
+          ]);
+
+        await provider.loadSessions();
+
+        expect(provider.sessions.map((session) => session.id), <String>[
+          'ses_user_visible',
+        ]);
+        expect(provider.visibleSessions.map((session) => session.id), <String>[
+          'ses_user_visible',
+        ]);
+      },
+    );
+
+    test(
       'global event marks non-active context dirty and reloads on return',
       () async {
         final scopedRepository = FakeChatRepository(
@@ -4361,48 +4503,50 @@ void main() {
       expect(provider.favoriteModelKeys, isEmpty);
     });
 
-    test('favorite models persist and reload across provider instances',
-        () async {
-      appRepository.providersResult = Right(
-        ProvidersResponse(
-          providers: <Provider>[
-            Provider(
-              id: 'prov_a',
-              name: 'Provider A',
-              env: const <String>[],
-              models: <String, Model>{'mod_a': _model('mod_a')},
-            ),
-          ],
-          defaultModels: const <String, String>{'prov_a': 'mod_a'},
-          connected: const <String>['prov_a'],
-        ),
-      );
-      await provider.initializeProviders();
-      await provider.toggleModelFavorite(
-        providerId: 'prov_a',
-        modelId: 'mod_a',
-      );
+    test(
+      'favorite models persist and reload across provider instances',
+      () async {
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'prov_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'mod_a': _model('mod_a')},
+              ),
+            ],
+            defaultModels: const <String, String>{'prov_a': 'mod_a'},
+            connected: const <String>['prov_a'],
+          ),
+        );
+        await provider.initializeProviders();
+        await provider.toggleModelFavorite(
+          providerId: 'prov_a',
+          modelId: 'mod_a',
+        );
 
-      // Verify the data was persisted to local storage.
-      final storedJson = await localDataSource.getFavoriteModelsJson(
-        serverId: 'srv_test',
-        scopeId: 'default',
-      );
-      expect(storedJson, isNotNull);
-      final decoded = json.decode(storedJson!) as List<dynamic>;
-      expect(decoded, contains('prov_a/mod_a'));
+        // Verify the data was persisted to local storage.
+        final storedJson = await localDataSource.getFavoriteModelsJson(
+          serverId: 'srv_test',
+          scopeId: 'default',
+        );
+        expect(storedJson, isNotNull);
+        final decoded = json.decode(storedJson!) as List<dynamic>;
+        expect(decoded, contains('prov_a/mod_a'));
 
-      // Build a new provider instance and verify favorites are loaded.
-      final provider2 = buildProvider();
-      await provider2.initializeProviders();
-      // Let coalesced microtask notifications flush before asserting.
-      await Future<void>.delayed(Duration.zero);
-      expect(
-        provider2.isModelFavorite(providerId: 'prov_a', modelId: 'mod_a'),
-        isTrue,
-      );
-      provider2.dispose();
-    });
+        // Build a new provider instance and verify favorites are loaded.
+        final provider2 = buildProvider();
+        await provider2.initializeProviders();
+        // Let coalesced microtask notifications flush before asserting.
+        await Future<void>.delayed(Duration.zero);
+        expect(
+          provider2.isModelFavorite(providerId: 'prov_a', modelId: 'mod_a'),
+          isTrue,
+        );
+        provider2.dispose();
+      },
+    );
 
     group('render gate', () {
       test(

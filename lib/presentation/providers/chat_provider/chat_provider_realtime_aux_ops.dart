@@ -126,6 +126,10 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
   }
 
   void _upsertSession(ChatSession session) {
+    if (_isEphemeralTitleSession(session)) {
+      _removeSessionById(session.id);
+      return;
+    }
     final existingIndex = _sessions.indexWhere((item) => item.id == session.id);
     if (existingIndex == -1) {
       _sessions.add(session);

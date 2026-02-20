@@ -781,20 +781,32 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
       projectProvider.currentDirectory,
     );
     if (currentDirectory == null) {
-      return List<ChatSession>.from(sessions);
+      return sessions
+          .where((session) => !_isEphemeralTitleSession(session))
+          .toList(growable: false);
     }
 
     final hasDirectoryMetadata = sessions.any((session) {
       return _normalizeDirectory(_sessionDirectory(session)) != null;
     });
     if (!hasDirectoryMetadata) {
-      return List<ChatSession>.from(sessions);
+      return sessions
+          .where((session) => !_isEphemeralTitleSession(session))
+          .toList(growable: false);
     }
 
     return sessions.where((session) {
       final sessionDirectory = _normalizeDirectory(_sessionDirectory(session));
-      return sessionDirectory == currentDirectory;
+      return sessionDirectory == currentDirectory &&
+          !_isEphemeralTitleSession(session);
     }).toList();
+  }
+
+  bool _isEphemeralTitleSession(ChatSession session) {
+    if (ChatTitleGenerator.ephemeralSessionIds.contains(session.id)) {
+      return true;
+    }
+    return session.title?.trim() == ChatTitleGenerator.ephemeralSessionTitle;
   }
 
   String? _sessionDirectory(ChatSession session) {

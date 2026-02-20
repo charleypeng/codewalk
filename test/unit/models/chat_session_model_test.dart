@@ -67,6 +67,25 @@ void main() {
       expect(withNameFallback.toDomain().title, 'Legacy Name');
       expect(withSessionTitleFallback.toDomain().title, 'Session Title Field');
     });
+
+    test('reads parent from parentID and parentId payload keys', () {
+      final withLegacyKey = ChatSessionModel.fromJson(<String, dynamic>{
+        'id': 'ses_legacy',
+        'workspaceId': 'ws_1',
+        'time': <String, dynamic>{'created': 1000, 'updated': 1000},
+        'parentID': '  ses_parent_legacy  ',
+      });
+
+      final withCamelKey = ChatSessionModel.fromJson(<String, dynamic>{
+        'id': 'ses_camel',
+        'workspaceId': 'ws_1',
+        'time': <String, dynamic>{'created': 1000, 'updated': 1000},
+        'parentId': 'ses_parent_camel',
+      });
+
+      expect(withLegacyKey.toDomain().parentId, 'ses_parent_legacy');
+      expect(withCamelKey.toDomain().parentId, 'ses_parent_camel');
+    });
   });
 
   group('ChatInputModel', () {
