@@ -7,6 +7,7 @@ import '../../core/di/injection_container.dart';
 import '../providers/app_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/project_provider.dart';
+import '../utils/window_size_class.dart';
 import 'chat_page.dart';
 import 'settings_page.dart';
 
@@ -510,11 +511,24 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: AppConstants.defaultPadding),
 
             Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                crossAxisSpacing: AppConstants.defaultPadding,
-                mainAxisSpacing: AppConstants.defaultPadding,
-                childAspectRatio: 1.1,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final sizeClass = WindowSizeClass.fromWidth(
+                    constraints.maxWidth,
+                  );
+                  final crossAxisCount = switch (sizeClass) {
+                    WindowSizeClass.compact => 1,
+                    WindowSizeClass.medium => 2,
+                    _ => 3,
+                  };
+                  return Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1200),
+                      child: GridView.count(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: AppConstants.defaultPadding,
+                        mainAxisSpacing: AppConstants.defaultPadding,
+                        childAspectRatio: 1.1,
                 children: [
                   _buildFeatureCard(
                     context,
@@ -577,6 +591,10 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                 ],
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ],
