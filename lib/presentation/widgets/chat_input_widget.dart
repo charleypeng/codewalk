@@ -16,6 +16,7 @@ import '../../domain/entities/chat_session.dart';
 import '../../domain/entities/experience_settings.dart';
 import '../providers/settings_provider.dart';
 import '../services/speech_input_service.dart';
+import '../theme/app_shapes.dart';
 import '../services/speech_input_service_sherpa.dart';
 import '../services/speech_input_service_stt.dart';
 import 'sherpa_model_download_dialog.dart';
@@ -674,7 +675,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     final inputBubbleColor = _mode == ChatComposerMode.shell
         ? shellBubbleColor
         : normalBubbleColor;
-    final inputBubbleBorderRadius = BorderRadius.circular(28);
+    final inputBubbleBorderRadius = AppShapes.borderExtraLarge;
 
     return Container(
       key: const ValueKey<String>('composer_root_container'),
@@ -1062,9 +1063,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                                                 ? colorScheme.onPrimary
                                                       .withValues(alpha: 0.16)
                                                 : colorScheme.primaryContainer,
-                                            borderRadius: BorderRadius.circular(
-                                              99,
-                                            ),
+                                            borderRadius: AppShapes.borderFull,
                                           ),
                                           child: Padding(
                                             padding: const EdgeInsets.all(1),

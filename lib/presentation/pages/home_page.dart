@@ -7,6 +7,7 @@ import '../../core/di/injection_container.dart';
 import '../providers/app_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/project_provider.dart';
+import '../theme/app_shapes.dart';
 import '../utils/window_size_class.dart';
 import 'chat_page.dart';
 import 'settings_page.dart';
@@ -46,7 +47,7 @@ class _HomePageState extends State<HomePage> {
                     Theme.of(context).colorScheme.tertiary,
                   ],
                 ),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: AppShapes.borderSmall,
                 boxShadow: [
                   BoxShadow(
                     color: Theme.of(
@@ -87,7 +88,7 @@ class _HomePageState extends State<HomePage> {
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: AppShapes.borderExtraLarge,
                     onTap: () {
                       Navigator.push(
                         context,
@@ -106,7 +107,7 @@ class _HomePageState extends State<HomePage> {
                             : Theme.of(
                                 context,
                               ).colorScheme.error.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: AppShapes.borderExtraLarge,
                         border: Border.all(
                           color: appProvider.isConnected
                               ? Theme.of(
@@ -138,7 +139,7 @@ class _HomePageState extends State<HomePage> {
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: AppShapes.borderExtraLarge,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -152,7 +153,7 @@ class _HomePageState extends State<HomePage> {
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surfaceContainerHighest
                         .withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: AppShapes.borderExtraLarge,
                     border: Border.all(
                       color: Theme.of(
                         context,
@@ -215,7 +216,7 @@ class _HomePageState extends State<HomePage> {
                       ).colorScheme.error.withValues(alpha: 0.05),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(40),
+                  borderRadius: AppShapes.borderExtraLarge,
                   border: Border.all(
                     color: Theme.of(
                       context,
@@ -249,7 +250,7 @@ class _HomePageState extends State<HomePage> {
                       ).colorScheme.onSurface.withValues(alpha: 0.05),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: AppShapes.borderMedium,
                 ),
                 child: Text(
                   'Need to connect to OpenCode server',
@@ -284,7 +285,7 @@ class _HomePageState extends State<HomePage> {
                       Theme.of(context).colorScheme.tertiary,
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: AppShapes.borderLarge,
                   boxShadow: [
                     BoxShadow(
                       color: Theme.of(
@@ -312,7 +313,7 @@ class _HomePageState extends State<HomePage> {
                       vertical: AppConstants.defaultPadding,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: AppShapes.borderLarge,
                     ),
                   ),
                   icon: const Icon(
@@ -370,7 +371,7 @@ class _HomePageState extends State<HomePage> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: AppShapes.borderExtraLarge,
                 border: Border.all(
                   color: Theme.of(
                     context,
@@ -402,7 +403,7 @@ class _HomePageState extends State<HomePage> {
                               ).colorScheme.tertiary.withValues(alpha: 0.8),
                             ],
                           ),
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: AppShapes.borderMedium,
                           boxShadow: [
                             BoxShadow(
                               color: Theme.of(
@@ -445,7 +446,7 @@ class _HomePageState extends State<HomePage> {
                                 .colorScheme
                                 .surfaceContainerHighest
                                 .withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: AppShapes.borderMedium,
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -626,7 +627,7 @@ class _HomePageState extends State<HomePage> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: AppShapes.borderExtraLarge,
         border: Border.all(
           color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
         ),
@@ -642,7 +643,7 @@ class _HomePageState extends State<HomePage> {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: AppShapes.borderExtraLarge,
           child: Padding(
             padding: const EdgeInsets.all(AppConstants.defaultPadding * 1.2),
             child: Column(
@@ -657,7 +658,7 @@ class _HomePageState extends State<HomePage> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: AppShapes.borderLarge,
                     boxShadow: [
                       BoxShadow(
                         color: gradientColors.first.withValues(alpha: 0.3),

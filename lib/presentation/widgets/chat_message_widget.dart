@@ -8,6 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:material_symbols_icons/symbols.dart';
+
+import '../theme/app_shapes.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/logging/app_logger.dart';
@@ -111,7 +113,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       ),
       codeblockDecoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppShapes.borderSmall,
       ),
     );
     _cachedMarkdownBrightness = brightness;
@@ -142,7 +144,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   Widget _buildContent(BuildContext context) {
     final isUser = message.role == MessageRole.user;
     final colorScheme = Theme.of(context).colorScheme;
-    final bubbleBorderRadius = BorderRadius.circular(18).copyWith(
+    final bubbleBorderRadius = AppShapes.borderLarge.copyWith(
       bottomRight: isUser ? const Radius.circular(6) : null,
       bottomLeft: !isUser ? const Radius.circular(6) : null,
     );
@@ -677,7 +679,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppShapes.borderSmall,
         border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
@@ -752,7 +754,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
 
     return ClipRRect(
       key: ValueKey<String>('file_image_preview_${part.id}'),
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: AppShapes.borderSmall,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxHeight: 220, minHeight: 120),
         child: Container(
@@ -946,7 +948,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         color: Theme.of(
           context,
         ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppShapes.borderSmall,
         border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
@@ -1019,7 +1021,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         color: Theme.of(
           context,
         ).colorScheme.primaryContainer.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppShapes.borderSmall,
         border: Border.all(
           color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
         ),
@@ -1134,7 +1136,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         color: Theme.of(
           context,
         ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppShapes.borderSmall,
         border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
@@ -1202,7 +1204,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: AppShapes.borderFull,
           border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Icon(icon, size: 16, color: color),
@@ -1273,7 +1275,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: AppShapes.borderExtraSmall,
                 ),
                 child: _buildToolBodyContent(
                   context,
@@ -1290,7 +1292,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.errorContainer,
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: AppShapes.borderExtraSmall,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1379,7 +1381,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: backgroundColor,
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: AppShapes.borderExtraSmall,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1412,7 +1414,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: AppShapes.borderExtraSmall,
       ),
       child: RichText(
         key: const ValueKey<String>('tool_command_text'),
@@ -1644,7 +1646,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppShapes.borderSmall,
         border: Border.all(
           color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
         ),
@@ -1816,7 +1818,7 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.36),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppShapes.borderSmall,
         border: Border.all(
           color: colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),

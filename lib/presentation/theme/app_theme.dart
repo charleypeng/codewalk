@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/entities/experience_settings.dart';
+import 'app_shapes.dart';
 
 class AppTheme {
   AppTheme._();
@@ -83,7 +84,9 @@ class AppTheme {
       cardTheme: CardThemeData(
         elevation: 0,
         color: colorScheme.surfaceContainerLow,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppShapes.extraLarge),
+        ),
       ),
       dividerTheme: DividerThemeData(
         color: colorScheme.outlineVariant,
@@ -94,20 +97,20 @@ class AppTheme {
         filled: true,
         fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppShapes.borderLarge,
           borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppShapes.borderLarge,
           borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppShapes.borderLarge,
           borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
       ),
       listTileTheme: ListTileThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: AppShapes.borderLarge),
       ),
       navigationBarTheme: NavigationBarThemeData(
         elevation: 0,
@@ -145,37 +148,31 @@ class AppTheme {
         contentTextStyle: TextStyle(color: colorScheme.onInverseSurface),
       ),
       chipTheme: base.chipTheme.copyWith(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: AppShapes.borderSmall),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: AppShapes.borderLarge),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: AppShapes.borderLarge),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: AppShapes.borderLarge),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppShapes.medium),
           ),
         ),
       ),
