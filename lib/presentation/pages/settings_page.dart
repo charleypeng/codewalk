@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../utils/window_size_class.dart';
+import 'onboarding_wizard_page.dart';
 import 'settings/sections/about_settings_section.dart';
 import 'settings/sections/appearance_settings_section.dart';
 import 'settings/sections/logs_settings_section.dart';
@@ -237,13 +238,27 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  Future<void> _openSetupWizard() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => OnboardingWizardPage(
+          showSkipAction: false,
+          onComplete: () => Navigator.of(context).pop(),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSectionList({required bool isSplit}) {
     return ListView(
       padding: const EdgeInsets.all(AppConstants.defaultPadding),
       children: [
-        if (!isSplit)
-          Text('Settings', style: Theme.of(context).textTheme.headlineSmall),
-        if (!isSplit) const SizedBox(height: 8),
+        FilledButton.icon(
+          onPressed: _openSetupWizard,
+          icon: const Icon(Symbols.auto_fix_high_rounded),
+          label: const Text('Setup Wizard'),
+        ),
+        const SizedBox(height: 12),
         ..._visibleSections.map((section) {
           final selected = section.id == _selectedSectionId;
           return Card(

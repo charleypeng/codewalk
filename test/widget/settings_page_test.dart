@@ -30,6 +30,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('Settings'), findsOneWidget);
+    expect(find.text('Setup Wizard'), findsOneWidget);
     expect(find.text('Appearance'), findsOneWidget);
     expect(find.text('Notifications'), findsOneWidget);
     expect(find.text('Speech to text'), findsOneWidget);

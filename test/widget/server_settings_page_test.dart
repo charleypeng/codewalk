@@ -86,42 +86,72 @@ void main() {
     expect(find.text('Cannot activate an unhealthy server'), findsOneWidget);
   });
 
-  testWidgets('add/edit dialog exposes AI generated title privacy toggle', (
-    WidgetTester tester,
-  ) async {
-    await tester.pumpWidget(_testApp(appProvider));
-    await tester.pumpAndSettle();
+  testWidgets(
+    'add server opens unified wizard and preserves remote setup form',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(_testApp(appProvider));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Add Server'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Server'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Quick setup'), findsOneWidget);
-    expect(
-      find.textContaining('opencode serve --hostname 127.0.0.1 --port 4096'),
-      findsOneWidget,
-    );
-    expect(find.text('Copy'), findsOneWidget);
-    expect(find.byIcon(Symbols.content_copy_rounded), findsOneWidget);
-    expect(find.text('1. Install OpenCode CLI.'), findsOneWidget);
-    expect(find.textContaining('opencode.ai/docs/server'), findsNothing);
-    expect(find.textContaining('Use this URL in the app'), findsNothing);
-    expect(find.text('4. Verify with /global/health or /doc.'), findsNothing);
+      expect(find.text('Server connection'), findsOneWidget);
+      expect(find.text('Choose another path'), findsOneWidget);
+      expect(find.text('AI generated titles'), findsOneWidget);
 
-    final urlField = tester.widget<TextFormField>(
-      find.byType(TextFormField).first,
-    );
-    expect(urlField.controller?.text, 'http://127.0.0.1:4096');
+      final urlField = tester.widget<TextFormField>(
+        find.byType(TextFormField).first,
+      );
+      expect(urlField.controller?.text, 'http://127.0.0.1:4096');
 
-    expect(find.byTooltip('Clear server URL'), findsOneWidget);
-    await tester.tap(find.byTooltip('Clear server URL'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Choose another path'));
+      await tester.pumpAndSettle();
 
-    final clearedUrlField = tester.widget<TextFormField>(
-      find.byType(TextFormField).first,
-    );
-    expect(clearedUrlField.controller?.text, isEmpty);
-    expect(find.text('AI generated titles'), findsOneWidget);
-  });
+      expect(find.text('Connect to server'), findsOneWidget);
+      expect(find.text('I need help setting up'), findsOneWidget);
+      expect(find.text('Use managed local server'), findsOneWidget);
+
+      await tester.tap(find.text('I need help setting up'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Quick setup'), findsOneWidget);
+      expect(
+        find.textContaining('opencode serve --hostname 0.0.0.0 --port 4096'),
+        findsOneWidget,
+      );
+      expect(find.text('Protect access with password'), findsOneWidget);
+      expect(find.text('Copy'), findsOneWidget);
+      expect(find.byIcon(Symbols.content_copy_rounded), findsOneWidget);
+      expect(find.text('1. Install OpenCode CLI.'), findsOneWidget);
+      expect(find.textContaining('opencode.ai/docs/server'), findsNothing);
+      expect(find.textContaining('Use this URL in the app'), findsNothing);
+      expect(find.text('4. Verify with /global/health or /doc.'), findsNothing);
+
+      await tester.tap(find.text('Protect access with password'));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'mypass123');
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('OPENCODE_SERVER_PASSWORD=\'mypass123\''),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Continue to server URL'));
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Clear'), findsOneWidget);
+      await tester.tap(find.byTooltip('Clear'));
+      await tester.pumpAndSettle();
+
+      final clearedUrlField = tester.widget<TextFormField>(
+        find.byType(TextFormField).first,
+      );
+      expect(clearedUrlField.controller?.text, isEmpty);
+      expect(find.text('AI generated titles'), findsOneWidget);
+    },
+  );
 }
 
 Widget _testApp(AppProvider appProvider) {

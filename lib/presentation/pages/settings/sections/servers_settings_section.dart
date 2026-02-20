@@ -1,8 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
@@ -73,7 +71,9 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                     label: const Text('Refresh Health'),
                   ),
                   FilledButton.icon(
-                    onPressed: _openCreateDialog,
+                    onPressed: () => _openSetupWizard(
+                      initialFlow: SetupWizardInitialFlow.connectServer,
+                    ),
                     icon: const Icon(Symbols.add),
                     label: const Text('Add Server'),
                   ),
@@ -276,7 +276,10 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                   OutlinedButton.icon(
                     onPressed: setupBusy
                         ? null
-                        : () => _openLocalServerWizard(appProvider),
+                        : () => _openSetupWizard(
+                            initialFlow:
+                                SetupWizardInitialFlow.managedLocalServer,
+                          ),
                     icon: const Icon(Symbols.auto_fix_high_rounded),
                     label: const Text('Setup Wizard'),
                   ),
@@ -365,11 +368,18 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
     );
   }
 
-  void _openSetupWizard() {
-    Navigator.of(context).push(
+  Future<void> _openSetupWizard({
+    SetupWizardInitialFlow initialFlow = SetupWizardInitialFlow.choose,
+    ServerProfile? initialServerProfile,
+  }) async {
+    await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) =>
-            OnboardingWizardPage(onComplete: () => Navigator.of(context).pop()),
+        builder: (_) => OnboardingWizardPage(
+          onComplete: () => Navigator.of(context).pop(),
+          showSkipAction: false,
+          initialFlow: initialFlow,
+          initialServerProfile: initialServerProfile,
+        ),
       ),
     );
   }
@@ -421,7 +431,10 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
         await appProvider.clearDefaultServer();
         break;
       case _ServerAction.edit:
-        await _openEditDialog(profile);
+        await _openSetupWizard(
+          initialFlow: SetupWizardInitialFlow.connectServer,
+          initialServerProfile: profile,
+        );
         break;
       case _ServerAction.delete:
         await _confirmDelete(profile);
@@ -444,506 +457,6 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
     if (!ok) {
       _showMessage(appProvider.errorMessage);
     }
-  }
-
-  Future<void> _openLocalServerWizard(AppProvider appProvider) async {
-    await appProvider.runLocalServerDiagnostics();
-    if (!mounted) {
-      return;
-    }
-
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return Consumer<AppProvider>(
-          builder: (context, provider, _) {
-            final report = provider.localEnvironmentReport;
-            final setupBusy = provider.localSetupInProgress;
-
-            return AlertDialog(
-              title: const Text('Local Server Setup Wizard'),
-              content: SizedBox(
-                width: 640,
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'This wizard checks required runtimes and installs OpenCode for desktop local mode.',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 10),
-                      if (report == null)
-                        const Center(child: CircularProgressIndicator())
-                      else ...[
-                        _buildDiagnosticRow('Platform', report.platform),
-                        _buildToolStatusRow('OpenCode', report.opencode),
-                        _buildToolStatusRow('Node.js', report.node),
-                        _buildToolStatusRow('npm', report.npm),
-                        _buildToolStatusRow('Bun', report.bun),
-                        _buildToolStatusRow('WSL', report.wsl),
-                        _buildDiagnosticRow(
-                          'Network',
-                          report.hasNetworkAccess ? 'reachable' : 'unreachable',
-                        ),
-                        _buildDiagnosticRow(
-                          'Install directory',
-                          report.installDirectoryWritable
-                              ? 'writable'
-                              : 'not writable',
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          report.recommendation,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        if (!kIsWeb &&
-                            defaultTargetPlatform ==
-                                TargetPlatform.windows) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            'Windows tip: after installing, click Refresh Checks. If detection still fails, reopen CodeWalk to reload PATH changes.',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
-                          ),
-                        ],
-                      ],
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          OutlinedButton.icon(
-                            onPressed: setupBusy
-                                ? null
-                                : () async {
-                                    await provider.runLocalServerDiagnostics();
-                                  },
-                            icon: const Icon(Symbols.refresh_rounded),
-                            label: const Text('Refresh Checks'),
-                          ),
-                          OutlinedButton.icon(
-                            onPressed:
-                                setupBusy ||
-                                    !(report?.opencode.available ?? false)
-                                ? null
-                                : () async {
-                                    final ok = await provider
-                                        .useDetectedLocalServerCommand();
-                                    if (!ok) {
-                                      _showMessage(provider.errorMessage);
-                                      return;
-                                    }
-                                    _showMessage(
-                                      'Using detected OpenCode command.',
-                                    );
-                                  },
-                            icon: const Icon(Symbols.check_circle_outline),
-                            label: const Text('Use Existing'),
-                          ),
-                          FilledButton.icon(
-                            onPressed: setupBusy
-                                ? null
-                                : () async {
-                                    final ok = await provider
-                                        .installLocalServerRequirements(
-                                          LocalOpencodeInstallMethod
-                                              .bunBootstrapThenInstall,
-                                        );
-                                    if (!ok) {
-                                      _showMessage(provider.errorMessage);
-                                    }
-                                  },
-                            icon: const Icon(Symbols.rocket_launch),
-                            label: const Text('Install Bun + OpenCode'),
-                          ),
-                          OutlinedButton.icon(
-                            onPressed: setupBusy
-                                ? null
-                                : () async {
-                                    final ok = await provider
-                                        .installLocalServerRequirements(
-                                          LocalOpencodeInstallMethod.bunGlobal,
-                                        );
-                                    if (!ok) {
-                                      _showMessage(provider.errorMessage);
-                                    }
-                                  },
-                            icon: const Icon(Symbols.bolt),
-                            label: const Text('Install via Bun'),
-                          ),
-                          OutlinedButton.icon(
-                            onPressed: setupBusy
-                                ? null
-                                : () async {
-                                    final ok = await provider
-                                        .installLocalServerRequirements(
-                                          LocalOpencodeInstallMethod.npmGlobal,
-                                        );
-                                    if (!ok) {
-                                      _showMessage(provider.errorMessage);
-                                    }
-                                  },
-                            icon: const Icon(Symbols.inventory_2),
-                            label: const Text('Install via npm'),
-                          ),
-                          OutlinedButton.icon(
-                            onPressed: setupBusy
-                                ? null
-                                : () async {
-                                    final ok = await provider
-                                        .installLocalServerRequirements(
-                                          LocalOpencodeInstallMethod
-                                              .downloadBinary,
-                                        );
-                                    if (!ok) {
-                                      _showMessage(provider.errorMessage);
-                                    }
-                                  },
-                            icon: const Icon(Symbols.download_for_offline),
-                            label: const Text('Install Binary'),
-                          ),
-                        ],
-                      ),
-                      if (provider.localSetupInProgress) ...[
-                        const SizedBox(height: 10),
-                        const LinearProgressIndicator(minHeight: 3),
-                      ],
-                      if (provider.localSetupMessage.trim().isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        Text(
-                          provider.localSetupMessage,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                      if (provider.localSetupLogs.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Text(
-                              'Logs',
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                            const Spacer(),
-                            TextButton(
-                              onPressed: setupBusy
-                                  ? null
-                                  : provider.clearLocalSetupLogs,
-                              child: const Text('Clear'),
-                            ),
-                          ],
-                        ),
-                        Container(
-                          width: double.infinity,
-                          constraints: const BoxConstraints(maxHeight: 220),
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surface,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.outlineVariant,
-                            ),
-                          ),
-                          child: SingleChildScrollView(
-                            child: SelectableText(
-                              provider.localSetupLogs.join('\n'),
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(fontFamily: 'monospace'),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Close'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildDiagnosticRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(width: 130, child: Text(label)),
-          Expanded(child: Text(value)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildToolStatusRow(String label, LocalToolStatus status) {
-    final icon = status.available
-        ? const Icon(Symbols.check_circle, color: Colors.green, size: 16)
-        : const Icon(Symbols.cancel, color: Colors.red, size: 16);
-
-    final details = <String>[];
-    if (status.version.trim().isNotEmpty) {
-      details.add(status.version.trim());
-    }
-    if (status.path.trim().isNotEmpty) {
-      details.add(status.path.trim());
-    }
-    if (status.note.trim().isNotEmpty) {
-      details.add(status.note.trim());
-    }
-
-    final value = details.isEmpty
-        ? (status.available ? 'available' : 'not available')
-        : details.join('  |  ');
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 130,
-            child: Row(
-              children: [
-                icon,
-                const SizedBox(width: 6),
-                Expanded(child: Text(label)),
-              ],
-            ),
-          ),
-          Expanded(child: Text(value)),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _openCreateDialog() async {
-    await _openProfileDialog(initial: null);
-  }
-
-  Future<void> _openEditDialog(ServerProfile profile) async {
-    await _openProfileDialog(initial: profile);
-  }
-
-  static const String _suggestedServerUrl = 'http://127.0.0.1:4096';
-
-  /// Default server URL suggestion, exposed for reuse in onboarding wizard.
-  static const String suggestedServerUrl = _suggestedServerUrl;
-
-  Widget _buildServerSetupQuickGuide(BuildContext context) {
-    return ServerSetupQuickGuide(onCopy: _copyTextToClipboard);
-  }
-
-  void _copyTextToClipboard(String text) {
-    Clipboard.setData(ClipboardData(text: text));
-    if (!mounted) {
-      return;
-    }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Command copied')));
-  }
-
-  Future<void> _openProfileDialog({ServerProfile? initial}) async {
-    final urlController = TextEditingController(
-      text: initial?.url ?? _suggestedServerUrl,
-    );
-    final labelController = TextEditingController(text: initial?.label ?? '');
-    final usernameController = TextEditingController(
-      text: initial?.basicAuthUsername ?? '',
-    );
-    final passwordController = TextEditingController(
-      text: initial?.basicAuthPassword ?? '',
-    );
-    var basicAuthEnabled = initial?.basicAuthEnabled ?? false;
-    var aiGeneratedTitlesEnabled = initial?.aiGeneratedTitlesEnabled ?? true;
-    final formKey = GlobalKey<FormState>();
-
-    final shouldSave = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text(initial == null ? 'Add Server' : 'Edit Server'),
-              content: Form(
-                key: formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _buildServerSetupQuickGuide(context),
-                      TextFormField(
-                        controller: urlController,
-                        onChanged: (_) {
-                          setState(() {});
-                        },
-                        decoration: InputDecoration(
-                          labelText: 'Server URL',
-                          hintText: _suggestedServerUrl,
-                          suffixIcon: urlController.text.trim().isEmpty
-                              ? null
-                              : IconButton(
-                                  tooltip: 'Clear server URL',
-                                  icon: const Icon(Symbols.clear),
-                                  onPressed: () {
-                                    urlController.clear();
-                                    setState(() {});
-                                  },
-                                ),
-                        ),
-                        validator: (value) {
-                          final raw = value?.trim() ?? '';
-                          if (raw.isEmpty) return 'Enter a server URL';
-                          try {
-                            AppProvider.normalizeServerUrl(raw);
-                            return null;
-                          } catch (_) {
-                            return 'Invalid URL';
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 10),
-                      TextFormField(
-                        controller: labelController,
-                        decoration: const InputDecoration(
-                          labelText: 'Label (optional)',
-                          hintText: 'Office server',
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      SwitchListTile(
-                        value: basicAuthEnabled,
-                        onChanged: (value) {
-                          setState(() {
-                            basicAuthEnabled = value;
-                          });
-                        },
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Use Basic Auth'),
-                      ),
-                      if (basicAuthEnabled) ...[
-                        TextFormField(
-                          controller: usernameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Username',
-                          ),
-                          validator: (value) {
-                            if (!basicAuthEnabled) return null;
-                            if ((value ?? '').trim().isEmpty) {
-                              return 'Enter username';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: passwordController,
-                          decoration: const InputDecoration(
-                            labelText: 'Password',
-                          ),
-                          obscureText: true,
-                          validator: (value) {
-                            if (!basicAuthEnabled) return null;
-                            if ((value ?? '').trim().isEmpty) {
-                              return 'Enter password';
-                            }
-                            return null;
-                          },
-                        ),
-                      ],
-                      const SizedBox(height: 6),
-                      SwitchListTile(
-                        value: aiGeneratedTitlesEnabled,
-                        onChanged: (value) {
-                          setState(() {
-                            aiGeneratedTitlesEnabled = value;
-                          });
-                        },
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('AI generated titles'),
-                        subtitle: const Text(
-                          'Uses your server\'s title agent to name conversations',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    if (formKey.currentState?.validate() != true) return;
-                    Navigator.of(dialogContext).pop(true);
-                  },
-                  child: const Text('Save'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    if (shouldSave != true || !mounted) {
-      urlController.dispose();
-      labelController.dispose();
-      usernameController.dispose();
-      passwordController.dispose();
-      return;
-    }
-
-    final appProvider = context.read<AppProvider>();
-    final adjustedUrl = _mapAndroidLoopback(urlController.text.trim());
-    final success = initial == null
-        ? await appProvider.addServerProfile(
-            url: adjustedUrl,
-            label: labelController.text.trim(),
-            basicAuthEnabled: basicAuthEnabled,
-            basicAuthUsername: usernameController.text.trim(),
-            basicAuthPassword: passwordController.text.trim(),
-            aiGeneratedTitlesEnabled: aiGeneratedTitlesEnabled,
-            setAsActive: appProvider.serverProfiles.isEmpty,
-          )
-        : await appProvider.updateServerProfile(
-            id: initial.id,
-            url: adjustedUrl,
-            label: labelController.text.trim(),
-            basicAuthEnabled: basicAuthEnabled,
-            basicAuthUsername: usernameController.text.trim(),
-            basicAuthPassword: passwordController.text.trim(),
-            aiGeneratedTitlesEnabled: aiGeneratedTitlesEnabled,
-          );
-
-    if (!success) {
-      _showMessage(appProvider.errorMessage);
-    } else if (kIsWeb == false &&
-        defaultTargetPlatform == TargetPlatform.android &&
-        adjustedUrl.contains('10.0.2.2') &&
-        urlController.text.contains('localhost')) {
-      _showMessage('Android emulator detected: localhost mapped to 10.0.2.2');
-    }
-
-    urlController.dispose();
-    labelController.dispose();
-    usernameController.dispose();
-    passwordController.dispose();
   }
 
   Future<void> _confirmDelete(ServerProfile profile) async {
@@ -973,27 +486,6 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
     if (!ok) {
       _showMessage(appProvider.errorMessage);
     }
-  }
-
-  String _mapAndroidLoopback(String input) {
-    var normalized = input.trim();
-    try {
-      normalized = AppProvider.normalizeServerUrl(normalized);
-    } catch (_) {
-      return input.trim();
-    }
-
-    final isAndroid =
-        !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
-    if (!isAndroid) return normalized;
-
-    final uri = Uri.tryParse(normalized);
-    if (uri == null) return normalized;
-    final isLoopback =
-        uri.host == '127.0.0.1' || uri.host.toLowerCase() == 'localhost';
-    if (!isLoopback) return normalized;
-
-    return Uri(scheme: uri.scheme, host: '10.0.2.2', port: uri.port).toString();
   }
 
   void _showMessage(String message) {
@@ -1051,14 +543,39 @@ class _MetaChip extends StatelessWidget {
 
 /// Reusable quick-guide widget for OpenCode server setup instructions.
 /// Used in both the Settings > Servers section and the onboarding wizard.
-class ServerSetupQuickGuide extends StatelessWidget {
+class ServerSetupQuickGuide extends StatefulWidget {
   const ServerSetupQuickGuide({super.key, required this.onCopy});
 
-  /// Command string for starting a local OpenCode server.
-  static const String command =
-      'opencode serve --hostname 127.0.0.1 --port 4096';
-
   final void Function(String text) onCopy;
+
+  @override
+  State<ServerSetupQuickGuide> createState() => _ServerSetupQuickGuideState();
+}
+
+class _ServerSetupQuickGuideState extends State<ServerSetupQuickGuide> {
+  static const String _baseCommand =
+      'opencode serve --hostname 0.0.0.0 --port 4096';
+
+  final TextEditingController _passwordController = TextEditingController();
+  bool _protectWithPassword = false;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  String _quotedEnvValue(String value) {
+    return "'${value.replaceAll("'", "'\\''")}'";
+  }
+
+  String _buildCommand() {
+    final password = _passwordController.text.trim();
+    if (!_protectWithPassword || password.isEmpty) {
+      return _baseCommand;
+    }
+    return 'OPENCODE_SERVER_PASSWORD=${_quotedEnvValue(password)} $_baseCommand';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1073,6 +590,11 @@ class ServerSetupQuickGuide extends StatelessWidget {
     final commandLabel = isPortuguese
         ? '2. Execute no terminal:'
         : '2. Run in your terminal:';
+    final passwordToggleLabel = isPortuguese
+        ? 'Proteger acesso com senha'
+        : 'Protect access with password';
+    final passwordHint = isPortuguese ? 'Senha do servidor' : 'Server password';
+    final command = _buildCommand();
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -1107,7 +629,7 @@ class ServerSetupQuickGuide extends StatelessWidget {
                 ),
               ),
               TextButton.icon(
-                onPressed: () => onCopy(command),
+                onPressed: () => widget.onCopy(command),
                 icon: const Icon(Symbols.content_copy_rounded, size: 14),
                 label: const Text('Copy'),
                 style: TextButton.styleFrom(
@@ -1121,6 +643,25 @@ class ServerSetupQuickGuide extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 6),
+          SwitchListTile(
+            value: _protectWithPassword,
+            onChanged: (value) {
+              setState(() {
+                _protectWithPassword = value;
+              });
+            },
+            contentPadding: EdgeInsets.zero,
+            title: Text(passwordToggleLabel),
+          ),
+          if (_protectWithPassword) ...[
+            const SizedBox(height: 4),
+            TextField(
+              controller: _passwordController,
+              decoration: InputDecoration(labelText: passwordHint),
+              onChanged: (_) => setState(() {}),
+            ),
+          ],
           const SizedBox(height: 4),
           Container(
             width: double.infinity,
