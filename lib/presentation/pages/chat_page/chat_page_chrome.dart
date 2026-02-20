@@ -733,6 +733,15 @@ class _PaneResizeHandle extends StatefulWidget {
 class _PaneResizeHandleState extends State<_PaneResizeHandle> {
   bool _hovering = false;
   bool _dragging = false;
+  bool _dirty = false;
+
+  void _persistIfDirty() {
+    if (!_dirty) {
+      return;
+    }
+    _dirty = false;
+    unawaited(widget.settingsProvider.persistDesktopPaneWidths());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -755,18 +764,22 @@ class _PaneResizeHandleState extends State<_PaneResizeHandle> {
               : -details.delta.dx;
           final current = widget.settingsProvider.desktopPaneWidth(widget.pane);
           final next = (current + delta).clamp(160.0, 500.0);
-          // Update in memory only; persist once on drag end to avoid
+          // Update in memory only; persist once on drag end/cancel to avoid
           // excessive SharedPreferences writes during continuous drag.
           widget.settingsProvider.updateDesktopPaneWidthInMemory(
             widget.pane,
             next,
           );
+          _dirty = true;
         },
         onHorizontalDragEnd: (_) {
           setState(() => _dragging = false);
-          unawaited(widget.settingsProvider.persistDesktopPaneWidths());
+          _persistIfDirty();
         },
-        onHorizontalDragCancel: () => setState(() => _dragging = false),
+        onHorizontalDragCancel: () {
+          setState(() => _dragging = false);
+          _persistIfDirty();
+        },
         onDoubleTap: () {
           unawaited(widget.settingsProvider.resetDesktopPaneWidth(widget.pane));
         },

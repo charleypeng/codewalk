@@ -143,10 +143,13 @@ extension _ChatPageShortcuts on _ChatPageState {
   /// Force-quit the desktop app, bypassing close-to-tray.
   /// Uses destroy() instead of close() so setPreventClose stays active
   /// and the X-button close-to-tray behavior is never broken.
+  /// Flushes pending settings to disk before destroying the window.
   Future<void> _quitDesktopApp() async {
     if (!_isDesktopRuntime) {
       return;
     }
+    final settingsProvider = _settingsProvider ?? context.read<SettingsProvider>();
+    await settingsProvider.persistDesktopPaneWidths();
     await windowManager.destroy();
   }
 
