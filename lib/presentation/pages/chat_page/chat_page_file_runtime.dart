@@ -455,7 +455,11 @@ extension _ChatPageFileRuntime on _ChatPageState {
                     margin: const EdgeInsets.fromLTRB(10, 10, 10, 10),
                     onStateChanged: () => setDialogState(() {}),
                     onContextAdded: () {
-                      Navigator.of(dialogContext).pop();
+                      // Pop both the file viewer dialog and the mobile
+                      // Files dialog behind it (two stacked routes).
+                      final navigator = Navigator.of(dialogContext);
+                      navigator.pop();
+                      navigator.pop();
                       _inputFocusNode.requestFocus();
                     },
                   ),
