@@ -60,7 +60,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
     }
     final view = View.of(context);
     final screenWidth = MediaQueryData.fromView(view).size.width;
-    final isSmallScreen = screenWidth < _ChatPageState._mobileBreakpoint;
+    final isSmallScreen = WindowSizeClass.fromWidth(screenWidth).isCompact;
     await showDialog<void>(
       context: context,
       barrierDismissible: true,

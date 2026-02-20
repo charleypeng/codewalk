@@ -354,6 +354,7 @@ extension _ChatPageStatusPresenter on _ChatPageState {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
+                  flex: 2,
                   child: Text(
                     active?.displayName ?? 'Server',
                     maxLines: 1,
@@ -362,9 +363,13 @@ extension _ChatPageStatusPresenter on _ChatPageState {
                   ),
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  statusLabel,
-                  style: Theme.of(context).textTheme.labelSmall,
+                Flexible(
+                  child: Text(
+                    statusLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
                 ),
                 const SizedBox(width: 2),
                 const Icon(Symbols.arrow_drop_down, size: 18),

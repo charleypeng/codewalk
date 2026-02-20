@@ -60,7 +60,6 @@ class AppTheme {
       colorScheme: colorScheme,
       brightness: brightness,
       visualDensity: visualDensityFor(appDensity),
-      materialTapTargetSize: MaterialTapTargetSize.padded,
     );
 
     final textTheme = Typography.material2021(
@@ -138,11 +137,6 @@ class AppTheme {
           fontWeight: FontWeight.w600,
         ),
         indicatorColor: colorScheme.secondaryContainer,
-      ),
-      iconButtonTheme: IconButtonThemeData(
-        style: IconButton.styleFrom(
-          tapTargetSize: MaterialTapTargetSize.padded,
-        ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: colorScheme.primaryContainer,

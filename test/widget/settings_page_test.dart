@@ -41,6 +41,14 @@ void main() {
     await tester.tap(find.text('Appearance').first);
     await tester.pumpAndSettle();
 
+    // Density card may be below the fold after Theme/Color/Contrast cards.
+    await tester.scrollUntilVisible(
+      find.text('Extra Dense'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+
     expect(find.text('Extra Dense'), findsOneWidget);
     expect(find.text('Dense'), findsOneWidget);
     expect(find.text('Normal'), findsOneWidget);

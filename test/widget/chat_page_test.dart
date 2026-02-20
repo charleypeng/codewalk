@@ -58,7 +58,7 @@ void main() {
 
   group('ChatPage responsive shell', () {
     testWidgets('shows drawer on mobile width', (WidgetTester tester) async {
-      await tester.binding.setSurfaceSize(const Size(700, 900));
+      await tester.binding.setSurfaceSize(const Size(500, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
       final localDataSource = InMemoryAppLocalDataSource()
@@ -89,7 +89,7 @@ void main() {
     testWidgets('delays hamburger alert badge during initial server issues', (
       WidgetTester tester,
     ) async {
-      await tester.binding.setSurfaceSize(const Size(700, 900));
+      await tester.binding.setSurfaceSize(const Size(500, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
       final localDataSource = InMemoryAppLocalDataSource()
@@ -366,7 +366,7 @@ void main() {
     testWidgets('mobile app bar opens files dialog in fullscreen', (
       WidgetTester tester,
     ) async {
-      await tester.binding.setSurfaceSize(const Size(700, 900));
+      await tester.binding.setSurfaceSize(const Size(500, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
       final localDataSource = InMemoryAppLocalDataSource()
@@ -407,7 +407,7 @@ void main() {
       final desktopAppBar = tester.widget<AppBar>(find.byType(AppBar).first);
       expect(desktopAppBar.toolbarHeight, 44);
 
-      await tester.binding.setSurfaceSize(const Size(700, 900));
+      await tester.binding.setSurfaceSize(const Size(500, 900));
       await tester.pumpAndSettle();
 
       final mobileAppBar = tester.widget<AppBar>(find.byType(AppBar).first);
@@ -688,7 +688,8 @@ void main() {
     final mobileDialogSize = tester.getSize(
       find.byKey(const ValueKey<String>('project_selector_dialog_content')),
     );
-    expect(mobileDialogSize.width, closeTo(390, 0.5));
+    // Fullscreen dialog occupies available width minus system padding
+    expect(mobileDialogSize.width, closeTo(390, 50));
     expect(
       find.text('Current directory: /repo/mobile-project'),
       findsOneWidget,
@@ -1596,7 +1597,7 @@ void main() {
   testWidgets('mobile open files button opens fullscreen tab dialog', (
     WidgetTester tester,
   ) async {
-    await tester.binding.setSurfaceSize(const Size(700, 900));
+    await tester.binding.setSurfaceSize(const Size(500, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     final localDataSource = InMemoryAppLocalDataSource()

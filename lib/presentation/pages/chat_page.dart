@@ -742,7 +742,9 @@ class _ChatPageState extends State<ChatPage>
     if (!mounted) {
       return false;
     }
-    return context.windowSizeClass.isCompact;
+    // Medium (tablet) still uses single-column layout where long-press
+    // to reuse prompt and similar mobile gestures must work.
+    return !context.windowSizeClass.isAtLeastExpanded;
   }
 
   ({String compactionId, String compactionLabel})? _resolveCompactionBoundary(

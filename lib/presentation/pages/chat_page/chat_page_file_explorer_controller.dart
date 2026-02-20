@@ -111,7 +111,7 @@ extension _ChatPageFileExplorerController on _ChatPageState {
       projectProvider: projectProvider,
       openInDialogAfterSelect: true,
       dialogFullscreen:
-          MediaQuery.sizeOf(context).width < _ChatPageState._mobileBreakpoint,
+          context.windowSizeClass.isCompact,
     );
   }
 
