@@ -21,6 +21,7 @@ class CodeWalkForegroundService : Service() {
         const val EXTRA_TITLE = "extra_title"
         const val EXTRA_BODY = "extra_body"
 
+        @Volatile
         private var instance: CodeWalkForegroundService? = null
 
         fun isRunning(): Boolean {
@@ -28,16 +29,10 @@ class CodeWalkForegroundService : Service() {
         }
 
         fun updateContent(context: Context, title: String, body: String) {
+            // Only valid while the service is running; the caller must start it first.
+            val service = instance ?: return
             val notification = buildNotification(context, title, body)
-            val service = instance
-            if (service != null) {
-                service.startForeground(NOTIFICATION_ID, notification)
-                return
-            }
-
-            val manager =
-                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            manager.notify(NOTIFICATION_ID, notification)
+            service.startForeground(NOTIFICATION_ID, notification)
         }
 
         private fun buildNotification(

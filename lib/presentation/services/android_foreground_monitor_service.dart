@@ -43,12 +43,13 @@ class AndroidForegroundMonitorService {
     }
 
     try {
-      if (!_running || _lastActiveSessionCount != normalizedCount) {
-        await _channel.invokeMethod<void>(
-          'updateForegroundNotification',
-          <String, String>{'title': title, 'body': _notificationBody},
-        );
-      }
+      // Always invoke the channel call instead of deduplicating by count.
+      // The native side is idempotent and this ensures the service is
+      // restarted if Android killed it while the Dart statics were stale.
+      await _channel.invokeMethod<void>(
+        'updateForegroundNotification',
+        <String, String>{'title': title, 'body': _notificationBody},
+      );
 
       _running = true;
       _lastActiveSessionCount = normalizedCount;
