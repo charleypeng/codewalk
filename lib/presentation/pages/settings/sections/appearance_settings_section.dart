@@ -27,6 +27,8 @@ class AppearanceSettingsSection extends StatelessWidget {
       builder: (context, settingsProvider, _) {
         final isDarkModeActive =
             Theme.of(context).brightness == Brightness.dark;
+        final amoledSwitchValue =
+            isDarkModeActive && settingsProvider.useAmoledDark;
         final selectedDensity = settingsProvider.appDensity;
         const densityOptions = <({AppDensity value, String label})>[
           (value: AppDensity.extraDense, label: 'Extra Dense'),
@@ -104,9 +106,9 @@ class AppearanceSettingsSection extends StatelessWidget {
                       subtitle: Text(
                         isDarkModeActive
                             ? 'Use pure black surfaces while dark mode is active.'
-                            : 'Available when dark mode is active.',
+                            : 'Switch to dark mode to enable AMOLED surfaces.',
                       ),
-                      value: settingsProvider.useAmoledDark,
+                      value: amoledSwitchValue,
                       onChanged: isDarkModeActive
                           ? (value) => unawaited(
                               settingsProvider.setUseAmoledDark(value),
