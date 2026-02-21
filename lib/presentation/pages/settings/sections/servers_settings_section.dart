@@ -21,6 +21,7 @@ class ServersSettingsSection extends StatefulWidget {
 enum _ServerAction { activate, setDefault, clearDefault, edit, delete, check }
 
 class _ServersSettingsSectionState extends State<ServersSettingsSection> {
+  final _activeServerDropdownKey = GlobalKey<FormFieldState<String>>();
   bool _loading = true;
 
   @override
@@ -123,7 +124,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
             ),
             const SizedBox(height: 10),
             DropdownButtonFormField<String>(
-              key: ValueKey<String?>('active_server_dropdown_$dropdownValue'),
+              key: _activeServerDropdownKey,
               initialValue: dropdownValue,
               items: appProvider.serverProfiles
                   .map(
@@ -151,6 +152,10 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                 if (id == null || id == currentActiveId) return;
                 final status = appProvider.healthFor(id);
                 if (status == ServerHealthStatus.unhealthy) {
+                  // Restore dropdown to the actual active value.
+                  _activeServerDropdownKey.currentState?.didChange(
+                    dropdownValue,
+                  );
                   _showMessage(
                     'This server is unhealthy. Use check health or edit settings before activating.',
                   );
@@ -159,6 +164,10 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
 
                 final ok = await appProvider.setActiveServer(id);
                 if (!ok && mounted) {
+                  // Restore dropdown on API failure.
+                  _activeServerDropdownKey.currentState?.didChange(
+                    dropdownValue,
+                  );
                   _showMessage(appProvider.errorMessage);
                 }
               },
