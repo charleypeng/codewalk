@@ -14,7 +14,6 @@ import androidx.core.app.NotificationCompat
 class CodeWalkForegroundService : Service() {
     companion object {
         private const val CHANNEL_ID = "codewalk_background_monitor_v2"
-        private const val LEGACY_CHANNEL_ID = "codewalk_background_monitor"
         private const val CHANNEL_NAME = "CodeWalk background monitor"
         private const val CHANNEL_DESCRIPTION = "Keeps CodeWalk background monitoring active"
         private const val NOTIFICATION_ID = 11001
@@ -102,7 +101,6 @@ class CodeWalkForegroundService : Service() {
         }
 
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.deleteNotificationChannel(LEGACY_CHANNEL_ID)
         val channel = NotificationChannel(
             CHANNEL_ID,
             CHANNEL_NAME,
