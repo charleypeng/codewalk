@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:codewalk/core/config/feature_flags.dart';
 import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/domain/entities/agent.dart';
@@ -168,9 +169,22 @@ void main() {
         await tester.pump();
 
         expect(provider.syncState, ChatSyncState.reconnecting);
+        expect(
+          find.byKey(const ValueKey<String>('appbar_drawer_alert_badge')),
+          findsNothing,
+        );
         await tester.pump(const Duration(seconds: 12));
         await tester.pump();
+        if (activeServerId != null) {
+          appProvider.setHealthForTesting(
+            activeServerId,
+            ServerHealthStatus.healthy,
+          );
+        }
+        await tester.pump();
 
+        expect(provider.syncState, ChatSyncState.reconnecting);
+        expect(provider.isForegroundResumeSyncing, isFalse);
         expect(
           find.byKey(const ValueKey<String>('appbar_drawer_alert_badge')),
           findsNothing,
@@ -224,22 +238,52 @@ void main() {
       await tester.pump();
       await tester.pump();
 
-      expect(provider.isForegroundResumeSyncing, isTrue);
+      if (FeatureFlags.refreshlessRealtime) {
+        expect(provider.isForegroundResumeSyncing, isTrue);
+      } else {
+        expect(provider.isForegroundResumeSyncing, isFalse);
+      }
       expect(provider.syncState, ChatSyncState.reconnecting);
 
       expect(
         find.byKey(const ValueKey<String>('appbar_drawer_alert_badge')),
         findsNothing,
       );
-      expect(
-        find.byKey(const ValueKey<String>('appbar_drawer_sync_loading')),
-        findsOneWidget,
-      );
+      if (FeatureFlags.refreshlessRealtime) {
+        expect(
+          find.byKey(const ValueKey<String>('appbar_drawer_sync_loading')),
+          findsOneWidget,
+        );
+      } else {
+        expect(
+          find.byKey(const ValueKey<String>('appbar_drawer_sync_loading')),
+          findsNothing,
+        );
+      }
 
       await tester.pump(const Duration(seconds: 13));
       await tester.pump();
+      if (activeServerId != null) {
+        appProvider.setHealthForTesting(
+          activeServerId,
+          ServerHealthStatus.healthy,
+        );
+      }
+      await tester.pump();
+      if (FeatureFlags.refreshlessRealtime) {
+        expect(provider.isForegroundResumeSyncing, isTrue);
+        expect(
+          find.byKey(const ValueKey<String>('appbar_drawer_sync_loading')),
+          findsOneWidget,
+        );
+      } else {
+        expect(
+          find.byKey(const ValueKey<String>('appbar_drawer_sync_loading')),
+          findsNothing,
+        );
+      }
       expect(
-        find.byKey(const ValueKey<String>('appbar_drawer_sync_loading')),
+        find.byKey(const ValueKey<String>('appbar_drawer_alert_badge')),
         findsNothing,
       );
     });

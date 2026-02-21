@@ -15,6 +15,16 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
         if (!_isForegroundResumeSyncing) {
           return;
         }
+        final recoverableSyncPending =
+            _syncState == ChatSyncState.reconnecting ||
+            _syncState == ChatSyncState.delayed ||
+            _degradedMode;
+        if (_isForegroundActive && recoverableSyncPending) {
+          _startForegroundResumeSyncIndicator(
+            reason: 'foreground-resume-pending',
+          );
+          return;
+        }
         _isForegroundResumeSyncing = false;
         _notifyListeners();
       },

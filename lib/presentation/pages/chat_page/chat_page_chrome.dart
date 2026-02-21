@@ -67,7 +67,6 @@ extension _ChatPageChrome on _ChatPageState {
                     );
                     final showSyncLoading = _shouldShowMenuSyncLoading(
                       chatProvider: chatProvider,
-                      appProvider: appProvider,
                     );
                     final alertColor = _serverStatusColor(
                       context: context,
@@ -463,11 +462,17 @@ extension _ChatPageChrome on _ChatPageState {
     final hasRecoverableSyncState = _isRecoverableSyncState(
       chatProvider: chatProvider,
     );
-    if (!appProvider.isConnected && !hasRecoverableSyncState) {
-      return Theme.of(context).colorScheme.error;
-    }
     if (hasRecoverableSyncState) {
+      final isRecoverableLoading = _isRecoverableSyncLoading(
+        chatProvider: chatProvider,
+      );
+      if (!appProvider.isConnected && !isRecoverableLoading) {
+        return Theme.of(context).colorScheme.error;
+      }
       return Theme.of(context).colorScheme.primary;
+    }
+    if (!appProvider.isConnected) {
+      return Theme.of(context).colorScheme.error;
     }
     return Colors.green;
   }
@@ -478,10 +483,7 @@ extension _ChatPageChrome on _ChatPageState {
         chatProvider.isInDegradedMode;
   }
 
-  bool _shouldShowMenuSyncLoading({
-    required ChatProvider chatProvider,
-    required AppProvider appProvider,
-  }) {
+  bool _isRecoverableSyncLoading({required ChatProvider chatProvider}) {
     if (AndroidForegroundMonitorService.isRunning) {
       return false;
     }
@@ -489,6 +491,10 @@ extension _ChatPageChrome on _ChatPageState {
       return false;
     }
     return _isRecoverableSyncState(chatProvider: chatProvider);
+  }
+
+  bool _shouldShowMenuSyncLoading({required ChatProvider chatProvider}) {
+    return _isRecoverableSyncLoading(chatProvider: chatProvider);
   }
 
   ServerHealthStatus _activeServerHealth(AppProvider appProvider) {
