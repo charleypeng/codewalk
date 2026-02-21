@@ -279,7 +279,7 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
 
   final SharedPreferences sharedPreferences;
   final FlutterSecureStorage _secureStorage;
-  ChatCachePayloadStore? _chatCachePayloadStore;
+  final ChatCachePayloadStore? _chatCachePayloadStore;
   final Set<String> _migratedLargeCacheKeys = <String>{};
 
   String _secureScopedKey(String base, {String? serverId, String? scopeId}) {
@@ -386,6 +386,8 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
         return stored;
       }
     } catch (_) {
+      // Skip the file store on subsequent reads if it is persistently broken.
+      _migratedLargeCacheKeys.add(key);
       return sharedPreferences.getString(key);
     }
 
@@ -396,7 +398,9 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
     final legacy = sharedPreferences.getString(key);
     if (legacy == null || legacy.trim().isEmpty) {
       _migratedLargeCacheKeys.add(key);
-      return legacy;
+      // Return null for both absent and whitespace-only values so first and
+      // subsequent reads within the same session are consistent.
+      return null;
     }
 
     try {
@@ -430,19 +434,18 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
       try {
         await store.remove(key);
       } catch (_) {}
+      _migratedLargeCacheKeys.add(key);
     }
-    _migratedLargeCacheKeys.add(key);
     await sharedPreferences.remove(key);
   }
 
   Future<void> _clearLargeCachePayloads() async {
     final store = _chatCachePayloadStore;
-    if (store == null) {
-      return;
+    if (store != null) {
+      try {
+        await store.clear();
+      } catch (_) {}
     }
-    try {
-      await store.clear();
-    } catch (_) {}
     _migratedLargeCacheKeys.clear();
   }
 
