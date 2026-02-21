@@ -126,7 +126,7 @@ class NotificationService {
 
       _initialized = true;
       await AndroidForegroundMonitorService.sync(
-        enabled: false,
+        enabled: true,
         activeSessionCount: 0,
       );
     } catch (error, stackTrace) {
@@ -313,7 +313,7 @@ class NotificationService {
     }
 
     await AndroidForegroundMonitorService.sync(
-      enabled: pendingSessionCount > 0,
+      enabled: true,
       activeSessionCount: pendingSessionCount,
     );
   }

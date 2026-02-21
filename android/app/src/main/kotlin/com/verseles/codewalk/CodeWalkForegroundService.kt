@@ -13,7 +13,7 @@ import androidx.core.app.NotificationCompat
 
 class CodeWalkForegroundService : Service() {
     companion object {
-        private const val CHANNEL_ID = "codewalk_background_monitor"
+        private const val CHANNEL_ID = "codewalk_background_monitor_v2"
         private const val CHANNEL_NAME = "CodeWalk background monitor"
         private const val CHANNEL_DESCRIPTION = "Keeps CodeWalk background monitoring active"
         private const val NOTIFICATION_ID = 11001
@@ -64,7 +64,8 @@ class CodeWalkForegroundService : Service() {
                 .setAutoCancel(false)
                 .setOnlyAlertOnce(true)
                 .setShowWhen(false)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setPriority(NotificationCompat.PRIORITY_MIN)
+                .setSilent(true)
                 .setCategory(NotificationCompat.CATEGORY_SERVICE)
                 .build()
         }
@@ -78,9 +79,9 @@ class CodeWalkForegroundService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val title = intent?.getStringExtra(EXTRA_TITLE)
-            ?: "Monitoring one session"
+            ?: "Background monitoring active"
         val body = intent?.getStringExtra(EXTRA_BODY)
-            ?: "For reliable notifications"
+            ?: "Reliable background alerts are active"
         startForeground(NOTIFICATION_ID, buildNotification(this, title, body))
         return START_STICKY
     }
@@ -103,7 +104,7 @@ class CodeWalkForegroundService : Service() {
         val channel = NotificationChannel(
             CHANNEL_ID,
             CHANNEL_NAME,
-            NotificationManager.IMPORTANCE_LOW,
+            NotificationManager.IMPORTANCE_MIN,
         ).apply {
             description = CHANNEL_DESCRIPTION
             setShowBadge(false)

@@ -256,6 +256,7 @@ class _ChatPageState extends State<ChatPage>
         if (pendingPayload != null) {
           unawaited(_handleNotificationTap(pendingPayload));
         }
+        unawaited(nextNotificationService.initialize());
       }
     }
     final nextSettingsProvider = context.read<SettingsProvider>();

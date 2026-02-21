@@ -5,6 +5,8 @@ import '../../core/logging/app_logger.dart';
 
 class AndroidForegroundMonitorService {
   static const MethodChannel _channel = MethodChannel('codewalk/system');
+  static const String _notificationBody =
+      'Reliable background alerts are active';
 
   static bool _running = false;
   static int _lastActiveSessionCount = -1;
@@ -20,6 +22,7 @@ class AndroidForegroundMonitorService {
     }
 
     final normalizedCount = activeSessionCount < 0 ? 0 : activeSessionCount;
+    final title = _titleForActiveSessionCount(normalizedCount);
     if (!enabled) {
       if (!_running) {
         _lastActiveSessionCount = -1;
@@ -39,20 +42,11 @@ class AndroidForegroundMonitorService {
       return;
     }
 
-    final title = normalizedCount == 1
-        ? 'Monitoring one session'
-        : 'Monitoring $normalizedCount sessions';
-    const body = 'For reliable notifications';
-
     try {
-      if (!_running) {
-        await _channel.invokeMethod<void>('startForegroundService');
-      }
-
       if (!_running || _lastActiveSessionCount != normalizedCount) {
         await _channel.invokeMethod<void>(
           'updateForegroundNotification',
-          <String, String>{'title': title, 'body': body},
+          <String, String>{'title': title, 'body': _notificationBody},
         );
       }
 
@@ -72,5 +66,15 @@ class AndroidForegroundMonitorService {
       return false;
     }
     return defaultTargetPlatform == TargetPlatform.android;
+  }
+
+  static String _titleForActiveSessionCount(int activeSessionCount) {
+    if (activeSessionCount <= 0) {
+      return 'Background monitoring active';
+    }
+    if (activeSessionCount == 1) {
+      return 'Monitoring one session';
+    }
+    return 'Monitoring $activeSessionCount sessions';
   }
 }

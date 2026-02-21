@@ -45,7 +45,7 @@ class MainActivity : FlutterActivity() {
                 "updateForegroundNotification" -> {
                     val title = call.argument<String>("title") ?: "CodeWalk"
                     val body = call.argument<String>("body")
-                        ?: "For reliable notifications"
+                        ?: "Reliable background alerts are active"
                     if (CodeWalkForegroundService.isRunning()) {
                         CodeWalkForegroundService.updateContent(this, title, body)
                     } else {
