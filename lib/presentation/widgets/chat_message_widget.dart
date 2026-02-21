@@ -1747,6 +1747,12 @@ class _CollapsibleToolChain extends StatefulWidget {
 class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
   late bool _expanded;
 
+  void _toggleExpanded() {
+    setState(() {
+      _expanded = !_expanded;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -1854,11 +1860,7 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
                 key: ValueKey<String>(
                   'tool_chain_toggle_${widget.messageId}_${widget.startPartId}',
                 ),
-                onPressed: () {
-                  setState(() {
-                    _expanded = !_expanded;
-                  });
-                },
+                onPressed: _toggleExpanded,
                 style: TextButton.styleFrom(
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -1883,9 +1885,38 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
                     padding: const EdgeInsets.only(top: 8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: widget.parts
-                          .map<Widget>(widget.partBuilder)
-                          .toList(growable: false),
+                      children: [
+                        ...widget.parts
+                            .map<Widget>(widget.partBuilder)
+                            .toList(growable: false),
+                        const SizedBox(height: 10),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            key: ValueKey<String>(
+                              'tool_chain_bottom_toggle_${widget.messageId}_${widget.startPartId}',
+                            ),
+                            onPressed: _toggleExpanded,
+                            style: TextButton.styleFrom(
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                            ),
+                            icon: Icon(
+                              Symbols.unfold_less_rounded,
+                              size: 15,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                            label: Text(
+                              'Collapse tool calls',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
           ),

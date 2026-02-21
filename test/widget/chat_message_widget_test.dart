@@ -898,8 +898,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Hide tool calls'), findsOneWidget);
+    expect(find.text('Collapse tool calls'), findsOneWidget);
     expect(find.text('Running command'), findsOneWidget);
     expect(find.text('Reading file'), findsOneWidget);
+
+    await tester.tap(find.text('Collapse tool calls'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tool calls collapsed'), findsOneWidget);
+    expect(find.text('Show tool calls'), findsOneWidget);
+    expect(find.text('Running command'), findsNothing);
   });
 
   testWidgets('keeps completed tool chains collapsed while session responds', (
