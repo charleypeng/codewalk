@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -987,6 +988,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     final presentation = _toolPresentation(part.tool);
     final descriptionLabel = _resolveToolDescriptionLabel(part);
     final typeLabel = _resolveToolTypeLabel(part);
+    final hasDetails = part.state.status != ToolStatus.pending;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -1042,6 +1044,8 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
           const SizedBox(height: 8),
           _ToolPartDetailsToggle(
             key: ValueKey<String>('tool_part_details_toggle_${part.id}'),
+            partId: part.id,
+            hasDetails: hasDetails,
             initiallyExpanded:
                 !(message is AssistantMessage &&
                     (message as AssistantMessage).isCompleted),
@@ -1860,7 +1864,7 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
       return '$primary • $patchLabel';
     }
 
-    final maxVisible = 2;
+    const maxVisible = 2;
     final visible = toolDescriptions.take(maxVisible).join(' • ');
     final remaining = toolDescriptions.length - maxVisible;
     final extraLabel = remaining > 0 ? ' • +$remaining more' : '';
@@ -1882,12 +1886,9 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
       return null;
     }
 
-    final unique = <String>[];
-    for (final type in toolTypes) {
-      if (!unique.contains(type)) {
-        unique.add(type);
-      }
-    }
+    final unique = LinkedHashSet<String>.from(
+      toolTypes,
+    ).toList(growable: false);
 
     if (unique.length == 1) {
       return unique.first;
@@ -2065,10 +2066,14 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
 class _ToolPartDetailsToggle extends StatefulWidget {
   const _ToolPartDetailsToggle({
     super.key,
+    required this.partId,
+    required this.hasDetails,
     required this.details,
     this.initiallyExpanded = true,
   });
 
+  final String partId;
+  final bool hasDetails;
   final Widget details;
   final bool initiallyExpanded;
 
@@ -2087,8 +2092,7 @@ class _ToolPartDetailsToggleState extends State<_ToolPartDetailsToggle> {
 
   @override
   Widget build(BuildContext context) {
-    final hasDetails = widget.details is! SizedBox;
-    if (!hasDetails) {
+    if (!widget.hasDetails) {
       return const SizedBox.shrink();
     }
 
@@ -2099,7 +2103,7 @@ class _ToolPartDetailsToggleState extends State<_ToolPartDetailsToggle> {
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(
-            key: const ValueKey<String>('tool_part_details_button'),
+            key: ValueKey<String>('tool_part_details_button_${widget.partId}'),
             onPressed: () {
               setState(() {
                 _expanded = !_expanded;

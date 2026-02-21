@@ -904,16 +904,28 @@ void main() {
 
     expect(find.text('Hide'), findsNWidgets(2));
     expect(
-      find.byKey(const ValueKey<String>('tool_part_details_button')),
-      findsNWidgets(2),
+      find.byKey(
+        const ValueKey<String>('tool_part_details_button_part_tool_chain_1'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(
+        const ValueKey<String>('tool_part_details_button_part_tool_chain_2'),
+      ),
+      findsOneWidget,
     );
 
     await tester.tap(
-      find.byKey(const ValueKey<String>('tool_part_details_button')).first,
+      find.byKey(
+        const ValueKey<String>('tool_part_details_button_part_tool_chain_1'),
+      ),
     );
     await tester.pumpAndSettle();
     await tester.tap(
-      find.byKey(const ValueKey<String>('tool_part_details_button')).last,
+      find.byKey(
+        const ValueKey<String>('tool_part_details_button_part_tool_chain_2'),
+      ),
     );
     await tester.pumpAndSettle();
 

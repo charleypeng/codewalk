@@ -58,8 +58,8 @@
   - [x] Investigate and fix conversation continuity when switching sessions/projects: context changes can unexpectedly abort active conversations, so preserve active streams/chats when appropriate. - Related commits: acce617 9dcd773
   - [ ] Plan the merge between the project selector and the conversations sidebar, grouping conversations by open projects to speed up navigation.
   - [ ] Tasks widget gets a footer progress bar based on total completed items.
-   - [ ] Plan support for sending a new message while the assistant is still working (OpenCode CLI/Web parity), following existing OpenCode interaction patterns.
-   - [ ] Allow pinning sessions in the Conversations sidebar.
+  - [ ] Plan support for sending a new message while the assistant is still working (OpenCode CLI/Web parity), following existing OpenCode interaction patterns.
+  - [ ] Allow pinning sessions in the Conversations sidebar.
 
 ## Goal
 
