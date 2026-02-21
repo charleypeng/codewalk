@@ -1,4 +1,4 @@
-.PHONY: help deps gen icons icons-check analyze test coverage smoke check desktop android precommit clean release
+.PHONY: help deps gen icons icons-tray icons-app tray-prepare icons-check analyze test coverage smoke check desktop android precommit clean release
 
 APK_DIR = build/app/outputs/flutter-apk
 APK_PATH = $(APK_DIR)/codewalk.apk
@@ -19,7 +19,10 @@ help:
 	@echo ""
 	@echo "  make deps       Install dependencies"
 	@echo "  make gen        Run build_runner"
-	@echo "  make icons      Regenerate app icons (standard + adaptive + desktop metadata)"
+	@echo "  make icons      Regenerate all icons (icons-tray + icons-app)"
+	@echo "  make icons-tray Regenerate tray icons from tray_mono_master.png"
+	@echo "  make icons-app  Regenerate app icons from original.png"
+	@echo "  make tray-prepare  Convert black bg to transparent on tray_mono_master*.png"
 	@echo "  make icons-check Validate icon artifacts and dimensions"
 	@echo "  make analyze    Run static analysis + issue budget gate"
 	@echo "  make test       Run tests"
@@ -38,25 +41,34 @@ deps:
 gen:
 	dart run build_runner build --delete-conflicting-outputs $(QUIET)
 
-icons:
-	@if [ ! -f "assets/images/original.png" ]; then \
-		echo "Missing source image: assets/images/original.png"; \
+icons: icons-tray icons-app
+
+# Convert black background to transparent on tray_mono_master*.png templates.
+tray-prepare:
+	@if ! command -v magick >/dev/null 2>&1; then \
+		echo "ImageMagick (magick) is required for make tray-prepare."; \
+		exit 1; \
+	fi
+	@for f in assets/images/tray_mono_master*.png; do \
+		[ -f "$$f" ] || continue; \
+		magick "$$f" -alpha copy -fill white -colorize 100% -resize 512x512\! \
+			-strip -define png:compression-level=9 "$$f"; \
+		echo "Prepared: $$f"; \
+	done
+
+# Derive platform tray icons from fixed tray_mono_master.png template.
+icons-tray:
+	@if [ ! -f "assets/images/tray_mono_master.png" ]; then \
+		echo "Missing fixed tray template: assets/images/tray_mono_master.png"; \
 		exit 1; \
 	fi
 	@if ! command -v magick >/dev/null 2>&1; then \
-		echo "ImageMagick (magick) is required for make icons."; \
+		echo "ImageMagick (magick) is required for make icons-tray."; \
 		exit 1; \
 	fi
-	magick assets/images/original.png -gravity center -crop 84%x84%+0+0 +repage -resize 720x775\! -strip -define png:compression-level=9 assets/images/icon.png
-	magick assets/images/original.png -gravity center -crop 84%x84%+0+0 +repage -resize 256x256\! -strip -define png:compression-level=9 assets/images/logo.256.png
-	magick assets/images/original.png -gravity center -crop 84%x84%+0+0 +repage -resize 1024x1024\! -strip -define png:compression-level=9 assets/images/logo.1024.png
-	magick assets/images/original.png -gravity center -crop 84%x84%+0+0 +repage -resize 512x512\! -colorspace gray -blur 0x1.8 -canny 0x1+10%+30% -threshold 28% -morphology Dilate Disk:2 -strip -define png:compression-level=9 assets/images/tray_mono_mask.png
-	magick -size 512x512 xc:white assets/images/tray_mono_mask.png -alpha off -compose CopyOpacity -composite -strip -define png:compression-level=9 assets/images/tray_mono_master.png
 	magick assets/images/tray_mono_master.png -resize 48x48\! -strip -define png:compression-level=9 assets/images/tray_icon_linux.png
 	magick -size 44x44 xc:black \( assets/images/tray_mono_master.png -resize 44x44\! -alpha extract \) -alpha off -compose CopyOpacity -composite -strip -define png:compression-level=9 assets/images/tray_icon_macos_template.png
 	magick assets/images/tray_mono_master.png -resize 64x64\! -define icon:auto-resize=64,48,32,24,20,16 assets/images/tray_icon_windows.ico
-	rm -f assets/images/tray_mono_mask.png
-	magick assets/images/original.png -gravity center -crop 78%x78%+0+0 +repage -resize 1024x1024\! -strip -define png:compression-level=9 assets/images/adaptive_foreground.png
 	@for size_dir in "drawable-mdpi:24" "drawable-hdpi:36" "drawable-xhdpi:48" "drawable-xxhdpi:72" "drawable-xxxhdpi:96"; do \
 		dir=$${size_dir%%:*}; size=$${size_dir##*:}; \
 		mkdir -p android/app/src/main/res/$$dir; \
@@ -65,6 +77,22 @@ icons:
 			-alpha off -compose CopyOpacity -composite -strip -define png:compression-level=9 \
 			android/app/src/main/res/$$dir/ic_stat_codewalk.png; \
 	done
+	@echo "Tray icons regenerated."
+
+# Derive app icons from original.png (launcher, adaptive, desktop, web).
+icons-app:
+	@if [ ! -f "assets/images/original.png" ]; then \
+		echo "Missing source image: assets/images/original.png"; \
+		exit 1; \
+	fi
+	@if ! command -v magick >/dev/null 2>&1; then \
+		echo "ImageMagick (magick) is required for make icons-app."; \
+		exit 1; \
+	fi
+	magick assets/images/original.png -gravity center -crop 84%x84%+0+0 +repage -resize 720x775\! -strip -define png:compression-level=9 assets/images/icon.png
+	magick assets/images/original.png -gravity center -crop 84%x84%+0+0 +repage -resize 256x256\! -strip -define png:compression-level=9 assets/images/logo.256.png
+	magick assets/images/original.png -gravity center -crop 84%x84%+0+0 +repage -resize 1024x1024\! -strip -define png:compression-level=9 assets/images/logo.1024.png
+	magick assets/images/original.png -gravity center -crop 78%x78%+0+0 +repage -resize 1024x1024\! -strip -define png:compression-level=9 assets/images/adaptive_foreground.png
 	mkdir -p linux/runner/resources
 	magick assets/images/original.png -gravity center -crop 84%x84%+0+0 +repage -resize 512x512\! -strip -define png:compression-level=9 \( -size 512x512 xc:none -fill white -draw "roundrectangle 0,0 511,511 72,72" \) -compose CopyOpacity -composite linux/runner/resources/app_icon.png
 	cp -f linux/runner/resources/app_icon.png linux/runner/resources/com.verseles.codewalk.png
@@ -95,7 +123,7 @@ icons:
 	# Web maskable icons with safe zone: keep critical subject inside center area.
 	magick -size 512x512 xc:'#7EAFC2' \( assets/images/original.png -gravity center -crop 90%x90%+0+0 +repage -resize 420x420\! \) -gravity center -composite -strip -define png:compression-level=9 web/icons/Icon-maskable-512.png
 	magick web/icons/Icon-maskable-512.png -resize 192x192\! -strip -define png:compression-level=9 web/icons/Icon-maskable-192.png
-	@echo "Icons regenerated for launcher, tray, and Android notifications."
+	@echo "App icons regenerated."
 
 icons-check:
 	@if ! command -v magick >/dev/null 2>&1; then \
