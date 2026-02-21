@@ -31,6 +31,8 @@ class ChatMessageWidget extends StatefulWidget {
     this.showThinkingBubbles = true,
     this.showToolCallBubbles = true,
     this.isSessionActivelyResponding = false,
+    this.resolveToolChainExpanded,
+    this.onToolChainExpandedChanged,
     this.onBackgroundLongPress,
     this.onBackgroundLongPressEnd,
   });
@@ -40,6 +42,9 @@ class ChatMessageWidget extends StatefulWidget {
   final bool showThinkingBubbles;
   final bool showToolCallBubbles;
   final bool isSessionActivelyResponding;
+  final bool? Function(String startPartId)? resolveToolChainExpanded;
+  final void Function(String startPartId, bool expanded)?
+  onToolChainExpandedChanged;
   final VoidCallback? onBackgroundLongPress;
   final VoidCallback? onBackgroundLongPressEnd;
 
@@ -138,6 +143,10 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   bool get showThinkingBubbles => widget.showThinkingBubbles;
   bool get showToolCallBubbles => widget.showToolCallBubbles;
   bool get isSessionActivelyResponding => widget.isSessionActivelyResponding;
+  bool? Function(String startPartId)? get resolveToolChainExpanded =>
+      widget.resolveToolChainExpanded;
+  void Function(String startPartId, bool expanded)?
+  get onToolChainExpandedChanged => widget.onToolChainExpandedChanged;
   VoidCallback? get onBackgroundLongPress => widget.onBackgroundLongPress;
   VoidCallback? get onBackgroundLongPressEnd => widget.onBackgroundLongPressEnd;
 
@@ -193,77 +202,77 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
             child: Semantics(
               label: isUser ? 'Your message' : 'Assistant message',
               child: Container(
-              padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-              decoration: BoxDecoration(
-                color: isUser
-                    ? colorScheme.primaryContainer.withValues(alpha: 0.45)
-                    : colorScheme.surfaceContainerHigh,
-                borderRadius: bubbleBorderRadius,
-                border: Border.all(
-                  color: colorScheme.outlineVariant.withValues(alpha: 0.45),
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+                decoration: BoxDecoration(
+                  color: isUser
+                      ? colorScheme.primaryContainer.withValues(alpha: 0.45)
+                      : colorScheme.surfaceContainerHigh,
+                  borderRadius: bubbleBorderRadius,
+                  border: Border.all(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.45),
+                  ),
                 ),
-              ),
-              child: Stack(
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            isUser ? 'You' : 'Assistant',
-                            style: Theme.of(context).textTheme.labelMedium
-                                ?.copyWith(
-                                  color: isUser
-                                      ? colorScheme.primary
-                                      : colorScheme.onSurfaceVariant,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _formatTime(message.time),
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                  fontSize: 11,
-                                ),
-                          ),
-                          const Spacer(),
-                          if (!isUser && message is AssistantMessage)
-                            _buildAssistantInfo(
-                              context,
-                              message as AssistantMessage,
+                child: Stack(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              isUser ? 'You' : 'Assistant',
+                              style: Theme.of(context).textTheme.labelMedium
+                                  ?.copyWith(
+                                    color: isUser
+                                        ? colorScheme.primary
+                                        : colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                             ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      if (isUser)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: renderedParts,
-                        )
-                      else
-                        SelectionArea(
-                          child: Column(
+                            const SizedBox(width: 8),
+                            Text(
+                              _formatTime(message.time),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontSize: 11,
+                                  ),
+                            ),
+                            const Spacer(),
+                            if (!isUser && message is AssistantMessage)
+                              _buildAssistantInfo(
+                                context,
+                                message as AssistantMessage,
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        if (isUser)
+                          Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: renderedParts,
+                          )
+                        else
+                          SelectionArea(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: renderedParts,
+                            ),
                           ),
-                        ),
-                      if (message is AssistantMessage &&
-                          (message as AssistantMessage).error != null)
-                        _buildErrorInfo(
-                          context,
-                          (message as AssistantMessage).error!,
-                        ),
-                    ],
-                  ),
-                ],
+                        if (message is AssistantMessage &&
+                            (message as AssistantMessage).error != null)
+                          _buildErrorInfo(
+                            context,
+                            (message as AssistantMessage).error!,
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -494,57 +503,59 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
           .toList(growable: false);
     }
 
+    final allToolSurfaceParts = message.parts
+        .where(_isToolSurfacePart)
+        .toList(growable: false);
+    if (allToolSurfaceParts.isEmpty) {
+      return message.parts
+          .map<Widget>(
+            (part) => _buildMessagePartSafely(
+              context,
+              part,
+              latestReasoningPartId: latestReasoningPartId,
+              activeReasoningPartKey: activeReasoningPartKey,
+            ),
+          )
+          .toList(growable: false);
+    }
+
+    final chainStartPartId = allToolSurfaceParts.first.id;
     final rendered = <Widget>[];
-    var index = 0;
-    while (index < message.parts.length) {
-      final part = message.parts[index];
-      if (!_isToolSurfacePart(part)) {
+    var insertedCollapsedToolChain = false;
+    for (final part in message.parts) {
+      if (_isToolSurfacePart(part)) {
+        if (insertedCollapsedToolChain) {
+          continue;
+        }
         rendered.add(
-          _buildMessagePartSafely(
-            context,
-            part,
-            latestReasoningPartId: latestReasoningPartId,
-            activeReasoningPartKey: activeReasoningPartKey,
+          _CollapsibleToolChain(
+            key: ValueKey<String>('tool_chain_${message.id}_$chainStartPartId'),
+            messageId: message.id,
+            startPartId: chainStartPartId,
+            autoCollapsed: shouldAutoCollapseToolChains,
+            persistedExpanded: resolveToolChainExpanded?.call(chainStartPartId),
+            onExpandedChanged: (expanded) {
+              onToolChainExpandedChanged?.call(chainStartPartId, expanded);
+            },
+            parts: allToolSurfaceParts,
+            partBuilder: (toolPart) => _buildMessagePart(
+              context,
+              toolPart,
+              latestReasoningPartId: latestReasoningPartId,
+              activeReasoningPartKey: activeReasoningPartKey,
+            ),
           ),
         );
-        index += 1;
-        continue;
-      }
-
-      final chainParts = <MessagePart>[];
-      while (index < message.parts.length &&
-          _isToolSurfacePart(message.parts[index])) {
-        chainParts.add(message.parts[index]);
-        index += 1;
-      }
-
-      if (chainParts.length <= 1) {
-        rendered.add(
-          _buildMessagePartSafely(
-            context,
-            chainParts.first,
-            latestReasoningPartId: latestReasoningPartId,
-            activeReasoningPartKey: activeReasoningPartKey,
-          ),
-        );
+        insertedCollapsedToolChain = true;
         continue;
       }
 
       rendered.add(
-        _CollapsibleToolChain(
-          key: ValueKey<String>(
-            'tool_chain_${message.id}_${chainParts.first.id}',
-          ),
-          messageId: message.id,
-          startPartId: chainParts.first.id,
-          autoCollapsed: shouldAutoCollapseToolChains,
-          parts: chainParts,
-          partBuilder: (toolPart) => _buildMessagePart(
-            context,
-            toolPart,
-            latestReasoningPartId: latestReasoningPartId,
-            activeReasoningPartKey: activeReasoningPartKey,
-          ),
+        _buildMessagePartSafely(
+          context,
+          part,
+          latestReasoningPartId: latestReasoningPartId,
+          activeReasoningPartKey: activeReasoningPartKey,
         ),
       );
     }
@@ -1734,6 +1745,8 @@ class _CollapsibleToolChain extends StatefulWidget {
     required this.messageId,
     required this.startPartId,
     required this.autoCollapsed,
+    required this.persistedExpanded,
+    required this.onExpandedChanged,
     required this.parts,
     required this.partBuilder,
   });
@@ -1741,6 +1754,8 @@ class _CollapsibleToolChain extends StatefulWidget {
   final String messageId;
   final String startPartId;
   final bool autoCollapsed;
+  final bool? persistedExpanded;
+  final ValueChanged<bool>? onExpandedChanged;
   final List<MessagePart> parts;
   final Widget Function(MessagePart part) partBuilder;
 
@@ -1754,12 +1769,22 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
   @override
   void initState() {
     super.initState();
-    _expanded = !widget.autoCollapsed;
+    _expanded = widget.persistedExpanded ?? !widget.autoCollapsed;
   }
 
   @override
   void didUpdateWidget(covariant _CollapsibleToolChain oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final persistedExpanded = widget.persistedExpanded;
+    if (persistedExpanded != null) {
+      if (persistedExpanded != _expanded) {
+        setState(() {
+          _expanded = persistedExpanded;
+        });
+      }
+      return;
+    }
+
     if (!oldWidget.autoCollapsed && widget.autoCollapsed && _expanded) {
       setState(() {
         _expanded = false;
@@ -1862,6 +1887,7 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
                   setState(() {
                     _expanded = !_expanded;
                   });
+                  widget.onExpandedChanged?.call(_expanded);
                 },
                 style: TextButton.styleFrom(
                   minimumSize: Size.zero,

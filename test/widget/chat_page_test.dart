@@ -3848,6 +3848,138 @@ void main() {
   });
 
   testWidgets(
+    'keeps tool-chain expansion state when switching sessions and returning',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_tool_state_a',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Tool State A',
+          ),
+          ChatSession(
+            id: 'ses_tool_state_b',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(2000),
+            title: 'Tool State B',
+          ),
+        ],
+      );
+
+      repository.messagesBySession['ses_tool_state_a'] = <ChatMessage>[
+        AssistantMessage(
+          id: 'msg_tool_state_a',
+          sessionId: 'ses_tool_state_a',
+          time: DateTime.fromMillisecondsSinceEpoch(2100),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(2200),
+          parts: <MessagePart>[
+            ToolPart(
+              id: 'part_tool_state_a_1',
+              messageId: 'msg_tool_state_a',
+              sessionId: 'ses_tool_state_a',
+              callId: 'call_tool_state_a_1',
+              tool: 'bash',
+              state: ToolStateCompleted(
+                input: const <String, dynamic>{'command': 'pwd'},
+                output: '/tmp/project',
+                time: ToolTime(
+                  start: DateTime.fromMillisecondsSinceEpoch(2100),
+                  end: DateTime.fromMillisecondsSinceEpoch(2120),
+                ),
+              ),
+            ),
+            ToolPart(
+              id: 'part_tool_state_a_2',
+              messageId: 'msg_tool_state_a',
+              sessionId: 'ses_tool_state_a',
+              callId: 'call_tool_state_a_2',
+              tool: 'read',
+              state: ToolStateCompleted(
+                input: const <String, dynamic>{'filePath': 'lib/main.dart'},
+                output: 'line 1\nline 2',
+                time: ToolTime(
+                  start: DateTime.fromMillisecondsSinceEpoch(2130),
+                  end: DateTime.fromMillisecondsSinceEpoch(2150),
+                ),
+              ),
+            ),
+            const TextPart(
+              id: 'part_tool_state_a_text',
+              messageId: 'msg_tool_state_a',
+              sessionId: 'ses_tool_state_a',
+              text: 'Final answer A',
+            ),
+          ],
+        ),
+      ];
+
+      repository.messagesBySession['ses_tool_state_b'] = <ChatMessage>[
+        AssistantMessage(
+          id: 'msg_tool_state_b',
+          sessionId: 'ses_tool_state_b',
+          time: DateTime.fromMillisecondsSinceEpoch(2300),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(2310),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_tool_state_b_text',
+              messageId: 'msg_tool_state_b',
+              sessionId: 'ses_tool_state_b',
+              text: 'Final answer B',
+            ),
+          ],
+        ),
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      final sessionA = provider.sessions
+          .where((session) => session.id == 'ses_tool_state_a')
+          .first;
+      final sessionB = provider.sessions
+          .where((session) => session.id == 'ses_tool_state_b')
+          .first;
+
+      await provider.selectSession(sessionA);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tool calls collapsed'), findsOneWidget);
+      expect(find.text('Show tool calls'), findsOneWidget);
+
+      await tester.tap(find.text('Show tool calls'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Hide tool calls'), findsOneWidget);
+      expect(find.text('Running command'), findsOneWidget);
+      expect(find.text('Reading file'), findsOneWidget);
+
+      await provider.selectSession(sessionB);
+      await tester.pumpAndSettle();
+
+      await provider.selectSession(sessionA);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Hide tool calls'), findsOneWidget);
+      expect(find.text('Running command'), findsOneWidget);
+      expect(find.text('Reading file'), findsOneWidget);
+      expect(find.text('Show tool calls'), findsNothing);
+    },
+  );
+
+  testWidgets(
     'shows delayed tip in composer for both thinking and receiving stages',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));

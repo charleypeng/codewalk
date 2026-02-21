@@ -279,7 +279,9 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                   backgroundColor:
                                       colorScheme.surfaceContainerHigh,
                                   foregroundColor: colorScheme.onSurfaceVariant,
-                                  child: const Icon(Symbols.arrow_upward_rounded),
+                                  child: const Icon(
+                                    Symbols.arrow_upward_rounded,
+                                  ),
                                 ),
                               )
                             : const SizedBox(
@@ -442,6 +444,19 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                       activeReasoningPartKey: latestReasoningPartKey,
                       showThinkingBubbles: settingsProvider.showThinkingBubbles,
                       showToolCallBubbles: settingsProvider.showToolCallBubbles,
+                      resolveToolChainExpanded: (startPartId) =>
+                          _resolveToolChainExpandedState(
+                            sessionId: message.sessionId,
+                            messageId: message.id,
+                            startPartId: startPartId,
+                          ),
+                      onToolChainExpandedChanged: (startPartId, expanded) =>
+                          _storeToolChainExpandedState(
+                            sessionId: message.sessionId,
+                            messageId: message.id,
+                            startPartId: startPartId,
+                            expanded: expanded,
+                          ),
                       isSessionActivelyResponding:
                           chatProvider.isCurrentSessionActivelyResponding,
                       onBackgroundLongPress: () =>

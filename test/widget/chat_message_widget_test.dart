@@ -977,6 +977,91 @@ void main() {
   });
 
   testWidgets(
+    'restores tool-chain expansion from parent-managed persisted state',
+    (WidgetTester tester) async {
+      final message = AssistantMessage(
+        id: 'msg_tool_chain_persisted',
+        sessionId: 'ses_tool_chain_persisted',
+        time: DateTime.fromMillisecondsSinceEpoch(1000),
+        completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+        parts: <MessagePart>[
+          ToolPart(
+            id: 'part_tool_chain_persisted_1',
+            messageId: 'msg_tool_chain_persisted',
+            sessionId: 'ses_tool_chain_persisted',
+            callId: 'call_chain_persisted_1',
+            tool: 'bash',
+            state: ToolStateCompleted(
+              input: const <String, dynamic>{'command': 'pwd'},
+              output: '/tmp/project',
+              time: ToolTime(
+                start: DateTime.fromMillisecondsSinceEpoch(1000),
+                end: DateTime.fromMillisecondsSinceEpoch(1050),
+              ),
+            ),
+          ),
+          ToolPart(
+            id: 'part_tool_chain_persisted_2',
+            messageId: 'msg_tool_chain_persisted',
+            sessionId: 'ses_tool_chain_persisted',
+            callId: 'call_chain_persisted_2',
+            tool: 'read',
+            state: ToolStateCompleted(
+              input: const <String, dynamic>{'filePath': 'lib/main.dart'},
+              output: 'line 1\nline 2',
+              time: ToolTime(
+                start: DateTime.fromMillisecondsSinceEpoch(1060),
+                end: DateTime.fromMillisecondsSinceEpoch(1100),
+              ),
+            ),
+          ),
+          const TextPart(
+            id: 'part_tool_chain_persisted_text',
+            messageId: 'msg_tool_chain_persisted',
+            sessionId: 'ses_tool_chain_persisted',
+            text: 'Final answer',
+          ),
+        ],
+      );
+
+      bool? persistedExpanded;
+      Widget buildWidget() {
+        return MaterialApp(
+          home: Scaffold(
+            body: ChatMessageWidget(
+              message: message,
+              resolveToolChainExpanded: (_) => persistedExpanded,
+              onToolChainExpandedChanged: (_, expanded) {
+                persistedExpanded = expanded;
+              },
+            ),
+          ),
+        );
+      }
+
+      await tester.pumpWidget(buildWidget());
+      expect(find.text('Tool calls collapsed'), findsOneWidget);
+
+      await tester.tap(find.text('Show tool calls'));
+      await tester.pumpAndSettle();
+
+      expect(persistedExpanded, isTrue);
+      expect(find.text('Hide tool calls'), findsOneWidget);
+      expect(find.text('Running command'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+
+      await tester.pumpWidget(buildWidget());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Hide tool calls'), findsOneWidget);
+      expect(find.text('Running command'), findsOneWidget);
+      expect(find.text('Reading file'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'thinking starts compact, expands with bounded viewport, and previous block collapses',
     (WidgetTester tester) async {
       AssistantMessage buildMessage(List<MessagePart> parts) {

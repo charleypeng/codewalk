@@ -145,6 +145,7 @@ class _ChatPageState extends State<ChatPage>
   final Map<String, _FileExplorerContextState> _fileContextStates =
       <String, _FileExplorerContextState>{};
   final Map<String, String> _fileDiffSignaturesByContext = <String, String>{};
+  final Map<String, bool> _toolChainExpandedStateByKey = <String, bool>{};
   final List<FileInputPart> _fileContextItems = <FileInputPart>[];
   DateTime? _serverAlertIssueStartedAt;
   Timer? _serverAlertRevealTimer;

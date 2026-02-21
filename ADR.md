@@ -85,7 +85,7 @@ Standardize context identity as `serverId::scopeId` (directory-first, project fa
 - ⚠ All scope-changing operations must flow through the serialization queue; bypassing it risks concurrent state corruption.
 - ❌ Invalid scope keys are rejected instead of silently merged.
 
-**Note** (commits `cb324c4`, `785eee8`): Rapid project switching and workspace create/delete operations are now serialized through `_runProjectScopeTransition`, which uses a `Completer`-based single-flight queue with loading overlay coordination. This prevents race conditions when users switch contexts faster than provider state can settle.
+**Note** (commits `cb324c4`, `785eee8`): Scope transition serialization queue added.
 
 ### Key Files
 
@@ -124,7 +124,7 @@ Use realtime streams as the primary sync mechanism, automatically enter degraded
 - ⚠ Generation-based invalidation is required to prevent stale preserved streams from mutating current session state; all preserved subscriptions must be drained on context switches.
 - ❌ Continuous background streaming is not guaranteed on mobile.
 
-**Note** (commits `acce617`, `9dcd773`, `37f0397`): Active message streams are now preserved during session navigation instead of being cancelled. The preserved subscription set is drained on every context switch (not just project switches) to prevent HTTP connection leaks. Generation-based invalidation ensures stale stream callbacks cannot mutate current session state.
+**Note** (commits `acce617`, `9dcd773`, `37f0397`): Preserved stream lifecycle, drain-on-context-switch, and generation invalidation added.
 
 ### Key Files
 
@@ -593,14 +593,8 @@ Enforce runtime usage through platform services: Android notifications use `@dra
 - `Makefile`
 - `lib/presentation/services/notification_service.dart`
 - `lib/presentation/services/desktop_tray_service_io.dart`
-- `android/app/src/main/res/drawable-mdpi/ic_stat_codewalk.png`
-- `android/app/src/main/res/drawable-hdpi/ic_stat_codewalk.png`
-- `android/app/src/main/res/drawable-xhdpi/ic_stat_codewalk.png`
-- `android/app/src/main/res/drawable-xxhdpi/ic_stat_codewalk.png`
-- `android/app/src/main/res/drawable-xxxhdpi/ic_stat_codewalk.png`
-- `assets/images/tray_icon_linux.png`
-- `assets/images/tray_icon_macos_template.png`
-- `assets/images/tray_icon_windows.ico`
+- `android/app/src/main/res/drawable-*/ic_stat_codewalk.png`
+- `assets/images/tray_icon_*.png`, `assets/images/tray_icon_windows.ico`
 - `assets/images/macos_appicon_source.png`
 
 ---

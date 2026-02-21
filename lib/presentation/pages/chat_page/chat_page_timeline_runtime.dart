@@ -90,6 +90,41 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
     return null;
   }
 
+  String _toolChainExpansionStateKey({
+    required String sessionId,
+    required String messageId,
+    required String startPartId,
+  }) {
+    return '$sessionId::$messageId::$startPartId';
+  }
+
+  bool? _resolveToolChainExpandedState({
+    required String sessionId,
+    required String messageId,
+    required String startPartId,
+  }) {
+    final key = _toolChainExpansionStateKey(
+      sessionId: sessionId,
+      messageId: messageId,
+      startPartId: startPartId,
+    );
+    return _toolChainExpandedStateByKey[key];
+  }
+
+  void _storeToolChainExpandedState({
+    required String sessionId,
+    required String messageId,
+    required String startPartId,
+    required bool expanded,
+  }) {
+    final key = _toolChainExpansionStateKey(
+      sessionId: sessionId,
+      messageId: messageId,
+      startPartId: startPartId,
+    );
+    _toolChainExpandedStateByKey[key] = expanded;
+  }
+
   void _setCollapsedHistoryGroupExpanded({
     required String groupId,
     required bool expanded,
