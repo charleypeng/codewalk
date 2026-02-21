@@ -27,8 +27,9 @@ class AppearanceSettingsSection extends StatelessWidget {
       builder: (context, settingsProvider, _) {
         final isDarkModeActive =
             Theme.of(context).brightness == Brightness.dark;
-        final amoledSwitchValue =
-            isDarkModeActive && settingsProvider.useAmoledDark;
+        // Show the persisted preference regardless of active theme.
+        // The switch is disabled when dark mode is inactive.
+        final amoledSwitchValue = settingsProvider.useAmoledDark;
         final selectedDensity = settingsProvider.appDensity;
         const densityOptions = <({AppDensity value, String label})>[
           (value: AppDensity.extraDense, label: 'Extra Dense'),

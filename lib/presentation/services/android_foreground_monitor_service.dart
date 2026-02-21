@@ -33,6 +33,9 @@ class AndroidForegroundMonitorService {
         _running = false;
         _lastActiveSessionCount = -1;
       } catch (error, stackTrace) {
+        // Reset so the next sync() call can retry the stop.
+        _running = false;
+        _lastActiveSessionCount = -1;
         AppLogger.warn(
           'Failed to stop Android foreground monitor service',
           error: error,

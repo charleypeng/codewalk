@@ -497,10 +497,9 @@ extension _ChatPageChrome on _ChatPageState {
       chatProvider: chatProvider,
     );
     if (hasRecoverableSyncState) {
-      final isRecoverableLoading = _isRecoverableSyncLoading(
-        chatProvider: chatProvider,
-      );
-      if (!appProvider.isConnected && !isRecoverableLoading) {
+      // Show error color immediately when the device is confirmed offline,
+      // regardless of the loading indicator state.
+      if (!appProvider.isConnected) {
         return Theme.of(context).colorScheme.error;
       }
       return Theme.of(context).colorScheme.primary;
