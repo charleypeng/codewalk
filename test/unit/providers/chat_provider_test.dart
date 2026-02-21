@@ -2119,6 +2119,108 @@ void main() {
     );
 
     test(
+      'switching sessions keeps in-flight stream alive to avoid unintended abort',
+      () async {
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_2',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1500),
+            title: 'Session 2',
+          ),
+        );
+
+        final streamController =
+            StreamController<Either<Failure, ChatMessage>>();
+        var streamCancelled = false;
+        streamController.onCancel = () {
+          streamCancelled = true;
+        };
+        addTearDown(() async {
+          await streamController.close();
+        });
+
+        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+          return streamController.stream;
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+
+        final session1 = provider.sessions
+            .where((item) => item.id == 'ses_1')
+            .first;
+        final session2 = provider.sessions
+            .where((item) => item.id == 'ses_2')
+            .first;
+
+        await provider.selectSession(session1);
+        await provider.sendMessage('keep stream alive');
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        await provider.selectSession(session2);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(provider.currentSession?.id, 'ses_2');
+        expect(streamCancelled, isFalse);
+      },
+    );
+
+    test(
+      'sending in another session does not cancel previous session stream',
+      () async {
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_2',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1500),
+            title: 'Session 2',
+          ),
+        );
+
+        final firstStream = StreamController<Either<Failure, ChatMessage>>();
+        final secondStream = StreamController<Either<Failure, ChatMessage>>();
+        var firstStreamCancelled = false;
+        firstStream.onCancel = () {
+          firstStreamCancelled = true;
+        };
+        addTearDown(() async {
+          await firstStream.close();
+          await secondStream.close();
+        });
+
+        var sendCalls = 0;
+        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+          sendCalls += 1;
+          if (sendCalls == 1) {
+            return firstStream.stream;
+          }
+          return secondStream.stream;
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+
+        final session1 = provider.sessions
+            .where((item) => item.id == 'ses_1')
+            .first;
+        final session2 = provider.sessions
+            .where((item) => item.id == 'ses_2')
+            .first;
+
+        await provider.selectSession(session1);
+        await provider.sendMessage('first session prompt');
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        await provider.selectSession(session2);
+        await provider.sendMessage('second session prompt');
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(firstStreamCancelled, isFalse);
+      },
+    );
+
+    test(
       'providers refresh exposes failed state and recovers on retry',
       () async {
         appRepository.providersResult = const Left(
@@ -4086,6 +4188,101 @@ void main() {
         await scopedProvider.projectProvider.switchProject('proj_a');
         await scopedProvider.onProjectScopeChanged();
         expect(scopedProvider.sessions.first.id, 'ses_a');
+      },
+    );
+
+    test(
+      'project scope change does not cancel in-flight stream from previous context',
+      () async {
+        final scopedRepository = FakeChatRepository(
+          sessions: <ChatSession>[
+            ChatSession(
+              id: 'ses_a',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              title: 'Session A',
+            ),
+          ],
+        );
+        final streamController =
+            StreamController<Either<Failure, ChatMessage>>();
+        var streamCancelled = false;
+        streamController.onCancel = () {
+          streamCancelled = true;
+        };
+        scopedRepository.sendMessageHandler = (_, __, ___, ____) {
+          return streamController.stream;
+        };
+        addTearDown(() async {
+          await streamController.close();
+        });
+
+        final scopedLocal = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test';
+        final scopedProvider = ChatProvider(
+          sendChatMessage: SendChatMessage(scopedRepository),
+          getChatSessions: GetChatSessions(scopedRepository),
+          createChatSession: CreateChatSession(scopedRepository),
+          getChatMessages: GetChatMessages(scopedRepository),
+          getChatMessage: GetChatMessage(scopedRepository),
+          getAgents: GetAgents(appRepository),
+          getProviders: GetProviders(appRepository),
+          deleteChatSession: DeleteChatSession(scopedRepository),
+          updateChatSession: UpdateChatSession(scopedRepository),
+          shareChatSession: ShareChatSession(scopedRepository),
+          unshareChatSession: UnshareChatSession(scopedRepository),
+          forkChatSession: ForkChatSession(scopedRepository),
+          getSessionStatus: GetSessionStatus(scopedRepository),
+          getSessionChildren: GetSessionChildren(scopedRepository),
+          getSessionTodo: GetSessionTodo(scopedRepository),
+          getSessionDiff: GetSessionDiff(scopedRepository),
+          watchChatEvents: WatchChatEvents(scopedRepository),
+          watchGlobalChatEvents: WatchGlobalChatEvents(scopedRepository),
+          listPendingPermissions: ListPendingPermissions(scopedRepository),
+          replyPermission: ReplyPermission(scopedRepository),
+          listPendingQuestions: ListPendingQuestions(scopedRepository),
+          replyQuestion: ReplyQuestion(scopedRepository),
+          rejectQuestion: RejectQuestion(scopedRepository),
+          projectProvider: ProjectProvider(
+            projectRepository: FakeProjectRepository(
+              currentProject: Project(
+                id: 'proj_a',
+                name: 'Project A',
+                path: '/repo/a',
+                createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+              ),
+              projects: <Project>[
+                Project(
+                  id: 'proj_a',
+                  name: 'Project A',
+                  path: '/repo/a',
+                  createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+                ),
+                Project(
+                  id: 'proj_b',
+                  name: 'Project B',
+                  path: '/repo/b',
+                  createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+                ),
+              ],
+            ),
+            localDataSource: scopedLocal,
+          ),
+          localDataSource: scopedLocal,
+        );
+        await scopedProvider.projectProvider.initializeProject();
+        await scopedProvider.initializeProviders();
+        await scopedProvider.loadSessions();
+        await scopedProvider.selectSession(scopedProvider.sessions.first);
+
+        await scopedProvider.sendMessage('keep this conversation alive');
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        await scopedProvider.projectProvider.switchProject('proj_b');
+        await scopedProvider.onProjectScopeChanged();
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(streamCancelled, isFalse);
       },
     );
 

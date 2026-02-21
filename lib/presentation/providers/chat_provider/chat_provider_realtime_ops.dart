@@ -4,7 +4,15 @@ extension _ChatProviderRealtimeOps on ChatProvider {
   Future<void> _cancelActiveMessageSubscription({
     required String reason,
     bool invalidateGeneration = false,
+    bool preserveActiveStream = false,
   }) async {
+    if (preserveActiveStream && _messageSubscription != null) {
+      if (invalidateGeneration) {
+        _messageStreamGeneration += 1;
+      }
+      AppLogger.info('Keeping active message stream reason=$reason');
+      return;
+    }
     if (invalidateGeneration) {
       _messageStreamGeneration += 1;
     }

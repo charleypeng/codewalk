@@ -1573,7 +1573,8 @@ class ChatProvider extends ChangeNotifier {
 
     await _cancelActiveMessageSubscription(
       reason: 'session-switch',
-      invalidateGeneration: true,
+      invalidateGeneration: false,
+      preserveActiveStream: true,
     );
 
     // Clear current message list
@@ -1670,8 +1671,9 @@ class ChatProvider extends ChangeNotifier {
       return;
     }
 
+    final sendSessionId = _currentSession!.id;
     AppLogger.info(
-      'Provider send start session=${_currentSession!.id} agent=${_selectedAgentName ?? "-"} provider=${_selectedProviderId ?? "-"} model=${_selectedModelId ?? "-"} variant=${_selectedVariantId ?? "auto"}',
+      'Provider send start session=$sendSessionId agent=${_selectedAgentName ?? "-"} provider=${_selectedProviderId ?? "-"} model=${_selectedModelId ?? "-"} variant=${_selectedVariantId ?? "auto"}',
     );
     _setActiveSendDraft(
       trimmedText,
@@ -1696,7 +1698,7 @@ class ChatProvider extends ChangeNotifier {
           TextPart(
             id: '${localMessageId}_text',
             messageId: localMessageId,
-            sessionId: _currentSession!.id,
+            sessionId: sendSessionId,
             text: shellMode ? '!$trimmedText' : trimmedText,
             time: now,
           ),
@@ -1708,7 +1710,7 @@ class ChatProvider extends ChangeNotifier {
           FilePart(
             id: '${localMessageId}_file_$index',
             messageId: localMessageId,
-            sessionId: _currentSession!.id,
+            sessionId: sendSessionId,
             url: attachment.url,
             mime: attachment.mime,
             filename: attachment.filename,
@@ -1717,7 +1719,7 @@ class ChatProvider extends ChangeNotifier {
       }
       final userMessage = UserMessage(
         id: localMessageId,
-        sessionId: _currentSession!.id,
+        sessionId: sendSessionId,
         time: now,
         parts: userParts,
       );
@@ -1725,7 +1727,7 @@ class ChatProvider extends ChangeNotifier {
       _messages.add(userMessage);
       _pendingLocalUserMessageIds.add(localMessageId);
       notifyListeners();
-      _scheduleAutoTitleRefresh(_currentSession!.id);
+      _scheduleAutoTitleRefresh(sendSessionId);
       unawaited(_persistLastSessionSnapshotBestEffort());
 
       // Ensure providers are initialized
@@ -1771,15 +1773,21 @@ class ChatProvider extends ChangeNotifier {
       );
 
       // Cancel previous subscription and invalidate stale callbacks.
+      final hasOtherSessionActiveStream =
+          _messageSubscription != null &&
+          _activeMessageStreamSessionId != null &&
+          _activeMessageStreamSessionId != sendSessionId;
       await _cancelActiveMessageSubscription(
         reason: 'start-send',
         invalidateGeneration: true,
+        preserveActiveStream: hasOtherSessionActiveStream,
       );
       final streamGeneration = _messageStreamGeneration;
-      _activeMessageStreamSessionId = _currentSession?.id;
+      final streamSessionId = sendSessionId;
+      _activeMessageStreamSessionId = streamSessionId;
 
       AppLogger.info(
-        'Provider send subscribing stream session=${_currentSession!.id} directory=${projectProvider.currentDirectory ?? "-"}',
+        'Provider send subscribing stream session=$streamSessionId directory=${projectProvider.currentDirectory ?? "-"}',
       );
 
       // Send message and listen for streaming response
@@ -1787,7 +1795,7 @@ class ChatProvider extends ChangeNotifier {
           sendChatMessage(
             SendChatMessageParams(
               projectId: projectProvider.currentProjectId,
-              sessionId: _currentSession!.id,
+              sessionId: streamSessionId,
               input: input,
               directory: projectProvider.currentDirectory,
             ),
@@ -1801,20 +1809,32 @@ class ChatProvider extends ChangeNotifier {
               }
               result.fold((failure) {
                 if (_shouldSuppressAbortError(
-                  sessionId: _currentSession?.id,
+                  sessionId: streamSessionId,
                   message: failure.message,
                 )) {
                   AppLogger.info(
-                    'Suppressing expected abort failure session=${_currentSession?.id ?? "-"}',
+                    'Suppressing expected abort failure session=$streamSessionId',
                   );
                   _clearActiveSendDraft();
                   _errorMessage = null;
-                  _setState(ChatState.loaded);
+                  if (_currentSession?.id == streamSessionId) {
+                    _setState(ChatState.loaded);
+                  } else {
+                    _notifyListeners();
+                  }
                   return;
                 }
-                _stashRejectedDraftForRetry(
-                  sessionId: _activeMessageStreamSessionId,
-                );
+                _stashRejectedDraftForRetry(sessionId: streamSessionId);
+                if (_currentSession?.id != streamSessionId) {
+                  AppLogger.warn(
+                    'Background send stream failure session=$streamSessionId message=${failure.message}',
+                  );
+                  _sessionStatusById[streamSessionId] = const SessionStatusInfo(
+                    type: SessionStatusType.idle,
+                  );
+                  _notifyListeners();
+                  return;
+                }
                 _handleFailure(failure);
               }, _updateOrAddMessage);
             },
@@ -1826,11 +1846,22 @@ class ChatProvider extends ChangeNotifier {
                 return;
               }
               _messageSubscription = null;
-              final streamSessionId = _activeMessageStreamSessionId;
-              _activeMessageStreamSessionId = null;
+              if (_activeMessageStreamSessionId == streamSessionId) {
+                _activeMessageStreamSessionId = null;
+              }
               _stashRejectedDraftForRetry(sessionId: streamSessionId);
               AppLogger.error('Provider send stream error', error: error);
-              _setError('Failed to send message: $error');
+              if (_currentSession?.id != streamSessionId) {
+                _sessionStatusById[streamSessionId] = const SessionStatusInfo(
+                  type: SessionStatusType.idle,
+                );
+                _notifyListeners();
+                return;
+              }
+              _setError(
+                'Failed to send message: $error',
+                sessionId: streamSessionId,
+              );
             },
             onDone: () {
               if (streamGeneration != _messageStreamGeneration) {
@@ -1840,29 +1871,31 @@ class ChatProvider extends ChangeNotifier {
                 return;
               }
               _messageSubscription = null;
-              _activeMessageStreamSessionId = null;
-              _clearActiveSendDraft();
-              AppLogger.info('Provider send stream finished');
-              final sessionId = _currentSession?.id;
-              if (sessionId != null) {
-                _sessionStatusById[sessionId] = const SessionStatusInfo(
-                  type: SessionStatusType.idle,
-                );
-                _markIncompleteAssistantMessagesAsCompleted(
-                  sessionId: sessionId,
-                );
+              if (_activeMessageStreamSessionId == streamSessionId) {
+                _activeMessageStreamSessionId = null;
               }
-              _setState(ChatState.loaded);
-              unawaited(_persistLastSessionSnapshotBestEffort());
-              if (sessionId != null) {
-                unawaited(loadSessionInsights(sessionId, silent: true));
+              _clearActiveSendDraft();
+              AppLogger.info(
+                'Provider send stream finished session=$streamSessionId',
+              );
+              _sessionStatusById[streamSessionId] = const SessionStatusInfo(
+                type: SessionStatusType.idle,
+              );
+              if (_currentSession?.id == streamSessionId) {
+                _markIncompleteAssistantMessagesAsCompleted(
+                  sessionId: streamSessionId,
+                );
+                _setState(ChatState.loaded);
+                unawaited(_persistLastSessionSnapshotBestEffort());
+                unawaited(loadSessionInsights(streamSessionId, silent: true));
+              } else {
+                _notifyListeners();
               }
             },
           );
       AppLogger.info('Provider send stream subscription attached');
     } catch (error, stackTrace) {
-      final streamSessionId =
-          _activeMessageStreamSessionId ?? _currentSession?.id;
+      final streamSessionId = _activeMessageStreamSessionId ?? sendSessionId;
       _activeMessageStreamSessionId = null;
       _stashRejectedDraftForRetry(sessionId: streamSessionId);
       AppLogger.error(
@@ -1871,7 +1904,7 @@ class ChatProvider extends ChangeNotifier {
         stackTrace: stackTrace,
       );
       if (_shouldSuppressAbortError(
-        sessionId: _currentSession?.id,
+        sessionId: streamSessionId,
         message: error.toString(),
       )) {
         _clearActiveSendDraft();
@@ -1879,7 +1912,7 @@ class ChatProvider extends ChangeNotifier {
         _setState(ChatState.loaded);
         return;
       }
-      _setError('Failed to start message send');
+      _setError('Failed to start message send', sessionId: streamSessionId);
     }
   }
 
