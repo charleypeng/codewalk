@@ -510,7 +510,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Thinking Process'), findsOneWidget);
-        expect(find.text('Running command'), findsOneWidget);
+        expect(find.text('Tool calls collapsed'), findsOneWidget);
 
         await tester.tap(
           find.byKey(const ValueKey<String>('appbar_display_toggles_button')),
@@ -522,7 +522,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Thinking Process'), findsNothing);
-        expect(find.text('Running command'), findsOneWidget);
+        expect(find.text('Tool calls collapsed'), findsOneWidget);
 
         await tester.tap(
           find.byKey(const ValueKey<String>('appbar_display_toggles_button')),
@@ -533,7 +533,7 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(find.text('Running command'), findsNothing);
+        expect(find.text('Tool calls collapsed'), findsNothing);
       },
     );
 
@@ -3848,7 +3848,7 @@ void main() {
   });
 
   testWidgets(
-    'keeps tool-chain expansion state when switching sessions and returning',
+    'resets tool-chain expansion when switching sessions and returning',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -3972,10 +3972,125 @@ void main() {
       await provider.selectSession(sessionA);
       await tester.pumpAndSettle();
 
-      expect(find.text('Hide tool calls'), findsOneWidget);
-      expect(find.text('Running command'), findsOneWidget);
-      expect(find.text('Reading file'), findsOneWidget);
-      expect(find.text('Show tool calls'), findsNothing);
+      expect(find.text('Tool calls collapsed'), findsOneWidget);
+      expect(find.text('Show tool calls'), findsOneWidget);
+      expect(find.text('Hide tool calls'), findsNothing);
+      expect(find.text('Running command'), findsNothing);
+      expect(find.text('Reading file'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'groups assistant work messages between user and final assistant response',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_assistant_work_grouping',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Assistant Work Grouping',
+          ),
+        ],
+      );
+
+      repository.messagesBySession['ses_assistant_work_grouping'] =
+          <ChatMessage>[
+            UserMessage(
+              id: 'msg_work_user',
+              sessionId: 'ses_assistant_work_grouping',
+              time: DateTime.fromMillisecondsSinceEpoch(1100),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_work_user',
+                  messageId: 'msg_work_user',
+                  sessionId: 'ses_assistant_work_grouping',
+                  text: 'Build this for me',
+                ),
+              ],
+            ),
+            AssistantMessage(
+              id: 'msg_work_step_1',
+              sessionId: 'ses_assistant_work_grouping',
+              time: DateTime.fromMillisecondsSinceEpoch(1200),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(1210),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_work_step_1',
+                  messageId: 'msg_work_step_1',
+                  sessionId: 'ses_assistant_work_grouping',
+                  text: 'Working step 1',
+                ),
+              ],
+            ),
+            AssistantMessage(
+              id: 'msg_work_step_2',
+              sessionId: 'ses_assistant_work_grouping',
+              time: DateTime.fromMillisecondsSinceEpoch(1300),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(1310),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_work_step_2',
+                  messageId: 'msg_work_step_2',
+                  sessionId: 'ses_assistant_work_grouping',
+                  text: 'Working step 2',
+                ),
+              ],
+            ),
+            AssistantMessage(
+              id: 'msg_work_final',
+              sessionId: 'ses_assistant_work_grouping',
+              time: DateTime.fromMillisecondsSinceEpoch(1400),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(1410),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_work_final',
+                  messageId: 'msg_work_final',
+                  sessionId: 'ses_assistant_work_grouping',
+                  text: 'Final assistant response',
+                ),
+              ],
+            ),
+          ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('timeline_collapsed_assistant_work_header'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Working step 1'), findsNothing);
+      expect(find.text('Working step 2'), findsNothing);
+      expect(find.text('Final assistant response'), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>('timeline_collapsed_assistant_work_toggle'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Working step 1'), findsOneWidget);
+      expect(find.text('Working step 2'), findsOneWidget);
+      expect(find.text('Final assistant response'), findsOneWidget);
     },
   );
 

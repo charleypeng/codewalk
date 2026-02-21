@@ -444,19 +444,6 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                       activeReasoningPartKey: latestReasoningPartKey,
                       showThinkingBubbles: settingsProvider.showThinkingBubbles,
                       showToolCallBubbles: settingsProvider.showToolCallBubbles,
-                      resolveToolChainExpanded: (startPartId) =>
-                          _resolveToolChainExpandedState(
-                            sessionId: message.sessionId,
-                            messageId: message.id,
-                            startPartId: startPartId,
-                          ),
-                      onToolChainExpandedChanged: (startPartId, expanded) =>
-                          _storeToolChainExpandedState(
-                            sessionId: message.sessionId,
-                            messageId: message.id,
-                            startPartId: startPartId,
-                            expanded: expanded,
-                          ),
                       isSessionActivelyResponding:
                           chatProvider.isCurrentSessionActivelyResponding,
                       onBackgroundLongPress: () =>
@@ -467,6 +454,9 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                   }
                   if (entry is _TimelineCollapsedHistoryEntry) {
                     return _buildCollapsedHistoryEntry(entry);
+                  }
+                  if (entry is _TimelineCollapsedAssistantWorkEntry) {
+                    return _buildCollapsedAssistantWorkEntry(entry);
                   }
                   return _buildRetryingMessageIndicator();
                 },
@@ -497,7 +487,9 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
         isCompactingContext == _cachedTimelineIsCompacting &&
         isSessionActivelyResponding == _cachedTimelineIsResponding &&
         showRetryIndicator == _cachedTimelineShowRetry &&
-        _expandedCollapsedHistoryGroupId == _cachedTimelineExpandedGroupId) {
+        _expandedCollapsedHistoryGroupId == _cachedTimelineExpandedGroupId &&
+        _expandedAssistantWorkGroupId ==
+            _cachedTimelineExpandedAssistantWorkGroupId) {
       return _cachedTimelineEntries!;
     }
     final entries = <_TimelineEntry>[];
@@ -555,18 +547,29 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
         );
         // Build pre-boundary messages only when user expands the group.
         if (expanded) {
-          for (var index = 0; index < boundaryIndex; index += 1) {
-            entries.add(_TimelineMessageEntry(messages[index]));
-          }
+          _appendTimelineEntriesForRange(
+            entries: entries,
+            messages: messages,
+            startIndex: 0,
+            endExclusive: boundaryIndex,
+          );
         }
-        for (var index = boundaryIndex; index < messages.length; index += 1) {
-          entries.add(_TimelineMessageEntry(messages[index]));
-        }
+        _appendTimelineEntriesForRange(
+          entries: entries,
+          messages: messages,
+          startIndex: boundaryIndex,
+          endExclusive: messages.length,
+        );
       }
     }
 
     if (entries.isEmpty) {
-      entries.addAll(messages.map<_TimelineEntry>(_TimelineMessageEntry.new));
+      _appendTimelineEntriesForRange(
+        entries: entries,
+        messages: messages,
+        startIndex: 0,
+        endExclusive: messages.length,
+      );
     }
 
     if (showRetryIndicator) {
@@ -580,7 +583,89 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     _cachedTimelineIsResponding = isSessionActivelyResponding;
     _cachedTimelineShowRetry = showRetryIndicator;
     _cachedTimelineExpandedGroupId = _expandedCollapsedHistoryGroupId;
+    _cachedTimelineExpandedAssistantWorkGroupId = _expandedAssistantWorkGroupId;
     _cachedTimelineEntries = entries;
     return entries;
+  }
+
+  void _appendTimelineEntriesForRange({
+    required List<_TimelineEntry> entries,
+    required List<ChatMessage> messages,
+    required int startIndex,
+    required int endExclusive,
+  }) {
+    if (startIndex >= endExclusive) {
+      return;
+    }
+
+    var index = startIndex;
+    while (index < endExclusive) {
+      final current = messages[index];
+      if (current is! UserMessage) {
+        entries.add(_TimelineMessageEntry(current));
+        index += 1;
+        continue;
+      }
+
+      entries.add(_TimelineMessageEntry(current));
+
+      final assistantRunStart = index + 1;
+      var assistantRunEnd = assistantRunStart;
+      while (assistantRunEnd < endExclusive &&
+          messages[assistantRunEnd] is AssistantMessage) {
+        assistantRunEnd += 1;
+      }
+
+      if (assistantRunEnd == assistantRunStart) {
+        index += 1;
+        continue;
+      }
+
+      final finalAssistant = messages[assistantRunEnd - 1] as AssistantMessage;
+      final workMessageCount = assistantRunEnd - assistantRunStart - 1;
+      if (workMessageCount > 0 &&
+          _isSuccessfulFinalAssistantMessage(finalAssistant)) {
+        final workGroup = _CollapsedAssistantWorkGroup(
+          startMessageId: messages[assistantRunStart].id,
+          endMessageId: messages[assistantRunEnd - 2].id,
+          finalMessageId: finalAssistant.id,
+          messageCount: workMessageCount,
+          createdAt: finalAssistant.time,
+        );
+        final expanded = _expandedAssistantWorkGroupId == workGroup.id;
+        entries.add(
+          _TimelineCollapsedAssistantWorkEntry(
+            group: workGroup,
+            expanded: expanded,
+          ),
+        );
+        if (expanded) {
+          for (
+            var assistantIndex = assistantRunStart;
+            assistantIndex < assistantRunEnd - 1;
+            assistantIndex += 1
+          ) {
+            entries.add(_TimelineMessageEntry(messages[assistantIndex]));
+          }
+        }
+        entries.add(_TimelineMessageEntry(finalAssistant));
+      } else {
+        for (
+          var assistantIndex = assistantRunStart;
+          assistantIndex < assistantRunEnd;
+          assistantIndex += 1
+        ) {
+          entries.add(_TimelineMessageEntry(messages[assistantIndex]));
+        }
+      }
+
+      index = assistantRunEnd;
+    }
+  }
+
+  bool _isSuccessfulFinalAssistantMessage(AssistantMessage message) {
+    return message.isCompleted &&
+        message.error == null &&
+        message.summary != true;
   }
 }

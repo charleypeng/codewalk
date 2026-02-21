@@ -90,41 +90,6 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
     return null;
   }
 
-  String _toolChainExpansionStateKey({
-    required String sessionId,
-    required String messageId,
-    required String startPartId,
-  }) {
-    return '$sessionId::$messageId::$startPartId';
-  }
-
-  bool? _resolveToolChainExpandedState({
-    required String sessionId,
-    required String messageId,
-    required String startPartId,
-  }) {
-    final key = _toolChainExpansionStateKey(
-      sessionId: sessionId,
-      messageId: messageId,
-      startPartId: startPartId,
-    );
-    return _toolChainExpandedStateByKey[key];
-  }
-
-  void _storeToolChainExpandedState({
-    required String sessionId,
-    required String messageId,
-    required String startPartId,
-    required bool expanded,
-  }) {
-    final key = _toolChainExpansionStateKey(
-      sessionId: sessionId,
-      messageId: messageId,
-      startPartId: startPartId,
-    );
-    _toolChainExpandedStateByKey[key] = expanded;
-  }
-
   void _setCollapsedHistoryGroupExpanded({
     required String groupId,
     required bool expanded,
@@ -135,6 +100,19 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
     }
     _setState(() {
       _expandedCollapsedHistoryGroupId = nextGroupId;
+    });
+  }
+
+  void _setAssistantWorkGroupExpanded({
+    required String groupId,
+    required bool expanded,
+  }) {
+    final nextGroupId = expanded ? groupId : null;
+    if (_expandedAssistantWorkGroupId == nextGroupId) {
+      return;
+    }
+    _setState(() {
+      _expandedAssistantWorkGroupId = nextGroupId;
     });
   }
 
@@ -205,6 +183,89 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
                 const SizedBox(height: 4),
                 Text(
                   '${group.messageCount} messages hidden before ${group.compactionLabel} compaction',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCollapsedAssistantWorkEntry(
+    _TimelineCollapsedAssistantWorkEntry entry,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final group = entry.group;
+    final actionLabel = entry.expanded
+        ? 'Hide work messages'
+        : 'Show work messages';
+    final actionIcon = entry.expanded
+        ? Symbols.unfold_less_rounded
+        : Symbols.unfold_more_rounded;
+
+    return Padding(
+      key: ValueKey<String>(entry.key),
+      padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 760),
+          child: Container(
+            key: const ValueKey<String>(
+              'timeline_collapsed_assistant_work_header',
+            ),
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.45,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Symbols.account_tree_rounded,
+                      size: 18,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Assistant work is collapsed',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      key: const ValueKey<String>(
+                        'timeline_collapsed_assistant_work_toggle',
+                      ),
+                      onPressed: () => _setAssistantWorkGroupExpanded(
+                        groupId: group.id,
+                        expanded: !entry.expanded,
+                      ),
+                      icon: Icon(actionIcon, size: 16),
+                      label: Text(actionLabel),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${group.messageCount} assistant work messages hidden before final response',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),

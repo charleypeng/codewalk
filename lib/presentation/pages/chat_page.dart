@@ -145,7 +145,6 @@ class _ChatPageState extends State<ChatPage>
   final Map<String, _FileExplorerContextState> _fileContextStates =
       <String, _FileExplorerContextState>{};
   final Map<String, String> _fileDiffSignaturesByContext = <String, String>{};
-  final Map<String, bool> _toolChainExpandedStateByKey = <String, bool>{};
   final List<FileInputPart> _fileContextItems = <FileInputPart>[];
   DateTime? _serverAlertIssueStartedAt;
   Timer? _serverAlertRevealTimer;
@@ -163,6 +162,7 @@ class _ChatPageState extends State<ChatPage>
   _ComposerStatusPresentation? _lastComposerStatusTarget;
   bool _composerStatusTargetInitialized = false;
   String? _expandedCollapsedHistoryGroupId;
+  String? _expandedAssistantWorkGroupId;
   String? _frozenCompactionBoundaryId;
   bool _wasCompactingContext = false;
   String? _nextFrozenCompactionBoundaryId;
@@ -177,6 +177,7 @@ class _ChatPageState extends State<ChatPage>
   bool _cachedTimelineIsResponding = false;
   bool _cachedTimelineShowRetry = false;
   String? _cachedTimelineExpandedGroupId;
+  String? _cachedTimelineExpandedAssistantWorkGroupId;
   List<_TimelineEntry>? _cachedTimelineEntries;
 
   // Cache for _resolveSessionContextUsage (O(N) double-scan of messages).
@@ -894,6 +895,38 @@ class _CollapsedHistoryGroup {
 
   String get id =>
       '${compactionId}_${startMessageId}_${endMessageId}_${createdAt.millisecondsSinceEpoch}';
+}
+
+class _TimelineCollapsedAssistantWorkEntry extends _TimelineEntry {
+  const _TimelineCollapsedAssistantWorkEntry({
+    required this.group,
+    required this.expanded,
+  });
+
+  final _CollapsedAssistantWorkGroup group;
+  final bool expanded;
+
+  @override
+  String get key => 'timeline_collapsed_assistant_work_${group.id}';
+}
+
+class _CollapsedAssistantWorkGroup {
+  const _CollapsedAssistantWorkGroup({
+    required this.startMessageId,
+    required this.endMessageId,
+    required this.finalMessageId,
+    required this.messageCount,
+    required this.createdAt,
+  });
+
+  final String startMessageId;
+  final String endMessageId;
+  final String finalMessageId;
+  final int messageCount;
+  final DateTime createdAt;
+
+  String get id =>
+      '${finalMessageId}_${startMessageId}_${endMessageId}_${createdAt.millisecondsSinceEpoch}';
 }
 
 class _TimelineRetryIndicatorEntry extends _TimelineEntry {

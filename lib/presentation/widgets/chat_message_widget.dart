@@ -31,8 +31,6 @@ class ChatMessageWidget extends StatefulWidget {
     this.showThinkingBubbles = true,
     this.showToolCallBubbles = true,
     this.isSessionActivelyResponding = false,
-    this.resolveToolChainExpanded,
-    this.onToolChainExpandedChanged,
     this.onBackgroundLongPress,
     this.onBackgroundLongPressEnd,
   });
@@ -42,9 +40,6 @@ class ChatMessageWidget extends StatefulWidget {
   final bool showThinkingBubbles;
   final bool showToolCallBubbles;
   final bool isSessionActivelyResponding;
-  final bool? Function(String startPartId)? resolveToolChainExpanded;
-  final void Function(String startPartId, bool expanded)?
-  onToolChainExpandedChanged;
   final VoidCallback? onBackgroundLongPress;
   final VoidCallback? onBackgroundLongPressEnd;
 
@@ -143,10 +138,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   bool get showThinkingBubbles => widget.showThinkingBubbles;
   bool get showToolCallBubbles => widget.showToolCallBubbles;
   bool get isSessionActivelyResponding => widget.isSessionActivelyResponding;
-  bool? Function(String startPartId)? get resolveToolChainExpanded =>
-      widget.resolveToolChainExpanded;
-  void Function(String startPartId, bool expanded)?
-  get onToolChainExpandedChanged => widget.onToolChainExpandedChanged;
   VoidCallback? get onBackgroundLongPress => widget.onBackgroundLongPress;
   VoidCallback? get onBackgroundLongPressEnd => widget.onBackgroundLongPressEnd;
 
@@ -485,9 +476,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         ? message as AssistantMessage
         : null;
     final shouldAutoCollapseToolChains =
-        assistantMessage != null &&
-        assistantMessage.isCompleted &&
-        !isSessionActivelyResponding;
+        assistantMessage != null && assistantMessage.isCompleted;
     if (assistantMessage == null ||
         !shouldAutoCollapseToolChains ||
         !showToolCallBubbles) {
@@ -533,10 +522,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
             messageId: message.id,
             startPartId: chainStartPartId,
             autoCollapsed: shouldAutoCollapseToolChains,
-            persistedExpanded: resolveToolChainExpanded?.call(chainStartPartId),
-            onExpandedChanged: (expanded) {
-              onToolChainExpandedChanged?.call(chainStartPartId, expanded);
-            },
             parts: allToolSurfaceParts,
             partBuilder: (toolPart) => _buildMessagePart(
               context,
@@ -1745,8 +1730,6 @@ class _CollapsibleToolChain extends StatefulWidget {
     required this.messageId,
     required this.startPartId,
     required this.autoCollapsed,
-    required this.persistedExpanded,
-    required this.onExpandedChanged,
     required this.parts,
     required this.partBuilder,
   });
@@ -1754,8 +1737,6 @@ class _CollapsibleToolChain extends StatefulWidget {
   final String messageId;
   final String startPartId;
   final bool autoCollapsed;
-  final bool? persistedExpanded;
-  final ValueChanged<bool>? onExpandedChanged;
   final List<MessagePart> parts;
   final Widget Function(MessagePart part) partBuilder;
 
@@ -1769,22 +1750,12 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
   @override
   void initState() {
     super.initState();
-    _expanded = widget.persistedExpanded ?? !widget.autoCollapsed;
+    _expanded = !widget.autoCollapsed;
   }
 
   @override
   void didUpdateWidget(covariant _CollapsibleToolChain oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final persistedExpanded = widget.persistedExpanded;
-    if (persistedExpanded != null) {
-      if (persistedExpanded != _expanded) {
-        setState(() {
-          _expanded = persistedExpanded;
-        });
-      }
-      return;
-    }
-
     if (!oldWidget.autoCollapsed && widget.autoCollapsed && _expanded) {
       setState(() {
         _expanded = false;
@@ -1887,7 +1858,6 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
                   setState(() {
                     _expanded = !_expanded;
                   });
-                  widget.onExpandedChanged?.call(_expanded);
                 },
                 style: TextButton.styleFrom(
                   minimumSize: Size.zero,

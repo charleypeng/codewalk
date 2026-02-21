@@ -149,6 +149,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       }
       _pendingInitialScrollSessionId = sessionId;
       _expandedCollapsedHistoryGroupId = null;
+      _expandedAssistantWorkGroupId = null;
       _frozenCompactionBoundaryId = null;
       _wasCompactingContext = false;
       _nextFrozenCompactionBoundaryId = null;
@@ -179,6 +180,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _autoFollowToLatest = true;
       _showScrollToFirstFab = false;
       _expandedCollapsedHistoryGroupId = null;
+      _expandedAssistantWorkGroupId = null;
       _frozenCompactionBoundaryId = null;
       _wasCompactingContext = false;
       _nextFrozenCompactionBoundaryId = null;
