@@ -178,6 +178,8 @@ class ChatProvider extends ChangeNotifier {
   StreamSubscription<dynamic>? _messageSubscription;
   StreamSubscription<dynamic>? _eventSubscription;
   StreamSubscription<dynamic>? _globalEventSubscription;
+  final Set<StreamSubscription<dynamic>> _preservedMessageSubscriptions =
+      <StreamSubscription<dynamic>>{};
   int _eventStreamGeneration = 0;
   Timer? _globalRefreshDebounce;
   bool _isRespondingInteraction = false;
@@ -1573,7 +1575,7 @@ class ChatProvider extends ChangeNotifier {
 
     await _cancelActiveMessageSubscription(
       reason: 'session-switch',
-      invalidateGeneration: false,
+      invalidateGeneration: true,
       preserveActiveStream: true,
     );
 
@@ -1791,7 +1793,8 @@ class ChatProvider extends ChangeNotifier {
       );
 
       // Send message and listen for streaming response
-      _messageSubscription =
+      late final StreamSubscription<dynamic> sendSubscription;
+      sendSubscription =
           sendChatMessage(
             SendChatMessageParams(
               projectId: projectProvider.currentProjectId,
@@ -1839,15 +1842,24 @@ class ChatProvider extends ChangeNotifier {
               }, _updateOrAddMessage);
             },
             onError: (error) {
+              _preservedMessageSubscriptions.remove(sendSubscription);
               if (streamGeneration != _messageStreamGeneration) {
+                if (identical(_messageSubscription, sendSubscription)) {
+                  _messageSubscription = null;
+                  if (_activeMessageStreamSessionId == streamSessionId) {
+                    _activeMessageStreamSessionId = null;
+                  }
+                }
                 AppLogger.debug(
                   'Ignoring stale send stream error generation=$streamGeneration active=$_messageStreamGeneration',
                 );
                 return;
               }
-              _messageSubscription = null;
-              if (_activeMessageStreamSessionId == streamSessionId) {
-                _activeMessageStreamSessionId = null;
+              if (identical(_messageSubscription, sendSubscription)) {
+                _messageSubscription = null;
+                if (_activeMessageStreamSessionId == streamSessionId) {
+                  _activeMessageStreamSessionId = null;
+                }
               }
               _stashRejectedDraftForRetry(sessionId: streamSessionId);
               AppLogger.error('Provider send stream error', error: error);
@@ -1864,15 +1876,24 @@ class ChatProvider extends ChangeNotifier {
               );
             },
             onDone: () {
+              _preservedMessageSubscriptions.remove(sendSubscription);
               if (streamGeneration != _messageStreamGeneration) {
+                if (identical(_messageSubscription, sendSubscription)) {
+                  _messageSubscription = null;
+                  if (_activeMessageStreamSessionId == streamSessionId) {
+                    _activeMessageStreamSessionId = null;
+                  }
+                }
                 AppLogger.debug(
                   'Ignoring stale send stream completion generation=$streamGeneration active=$_messageStreamGeneration',
                 );
                 return;
               }
-              _messageSubscription = null;
-              if (_activeMessageStreamSessionId == streamSessionId) {
-                _activeMessageStreamSessionId = null;
+              if (identical(_messageSubscription, sendSubscription)) {
+                _messageSubscription = null;
+                if (_activeMessageStreamSessionId == streamSessionId) {
+                  _activeMessageStreamSessionId = null;
+                }
               }
               _clearActiveSendDraft();
               AppLogger.info(
@@ -1893,6 +1914,7 @@ class ChatProvider extends ChangeNotifier {
               }
             },
           );
+      _messageSubscription = sendSubscription;
       AppLogger.info('Provider send stream subscription attached');
     } catch (error, stackTrace) {
       final streamSessionId = _activeMessageStreamSessionId ?? sendSessionId;
@@ -2310,6 +2332,7 @@ class ChatProvider extends ChangeNotifier {
         invalidateGeneration: true,
       ),
     );
+    unawaited(_cancelPreservedMessageSubscriptions(reason: 'dispose'));
     _eventStreamGeneration += 1;
     _eventSubscription?.cancel();
     _globalEventSubscription?.cancel();

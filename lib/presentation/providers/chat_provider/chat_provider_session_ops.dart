@@ -10,9 +10,14 @@ extension _ChatProviderSessionOps on ChatProvider {
     _eventStreamGeneration += 1;
     await _cancelActiveMessageSubscription(
       reason: 'context-switch',
-      invalidateGeneration: reason != 'project',
+      invalidateGeneration: true,
       preserveActiveStream: reason == 'project',
     );
+    if (reason != 'project') {
+      await _cancelPreservedMessageSubscriptions(
+        reason: 'context-switch-$reason',
+      );
+    }
     await _cancelSubscriptionSafely(
       _eventSubscription,
       label: 'realtime event',

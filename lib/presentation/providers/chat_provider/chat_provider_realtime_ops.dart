@@ -1,12 +1,32 @@
 part of '../chat_provider.dart';
 
 extension _ChatProviderRealtimeOps on ChatProvider {
+  Future<void> _cancelPreservedMessageSubscriptions({
+    required String reason,
+  }) async {
+    if (_preservedMessageSubscriptions.isEmpty) {
+      return;
+    }
+    final preserved = List<StreamSubscription<dynamic>>.from(
+      _preservedMessageSubscriptions,
+    );
+    _preservedMessageSubscriptions.clear();
+    for (final subscription in preserved) {
+      await _cancelSubscriptionSafely(
+        subscription,
+        label: 'preserved message stream ($reason)',
+      );
+    }
+  }
+
   Future<void> _cancelActiveMessageSubscription({
     required String reason,
     bool invalidateGeneration = false,
     bool preserveActiveStream = false,
   }) async {
-    if (preserveActiveStream && _messageSubscription != null) {
+    final active = _messageSubscription;
+    if (preserveActiveStream && active != null) {
+      _preservedMessageSubscriptions.add(active);
       if (invalidateGeneration) {
         _messageStreamGeneration += 1;
       }
@@ -16,9 +36,11 @@ extension _ChatProviderRealtimeOps on ChatProvider {
     if (invalidateGeneration) {
       _messageStreamGeneration += 1;
     }
-    final active = _messageSubscription;
     _messageSubscription = null;
     _activeMessageStreamSessionId = null;
+    if (active != null) {
+      _preservedMessageSubscriptions.remove(active);
+    }
     await _cancelSubscriptionSafely(active, label: 'message stream ($reason)');
   }
 
