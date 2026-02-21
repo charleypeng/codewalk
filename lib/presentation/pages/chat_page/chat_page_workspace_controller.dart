@@ -4,36 +4,48 @@ extension _ChatPageWorkspaceController on _ChatPageState {
   Future<void> _runProjectScopeTransition(
     Future<void> Function() operation,
   ) async {
-    final inFlight = _projectScopeTransitionTask;
-    if (inFlight != null) {
+    while (true) {
+      final inFlight = _projectScopeTransitionTask;
+      if (inFlight == null) {
+        break;
+      }
       await inFlight;
     }
     if (!mounted) {
       return;
     }
 
-    final task = () async {
-      _setState(() {
-        _isProjectScopeTransitioning = true;
-      });
-      try {
-        await operation();
-      } finally {
-        if (mounted) {
-          _setState(() {
-            _isProjectScopeTransitioning = false;
-          });
-        }
-      }
-    }();
+    final completion = Completer<void>();
+    _projectScopeTransitionTask = completion.future;
 
-    _projectScopeTransitionTask = task;
+    Object? pendingError;
+    StackTrace? pendingStackTrace;
+
+    _setState(() {
+      _isProjectScopeTransitioning = true;
+    });
+
     try {
-      await task;
+      await operation();
+    } catch (error, stackTrace) {
+      pendingError = error;
+      pendingStackTrace = stackTrace;
     } finally {
-      if (identical(_projectScopeTransitionTask, task)) {
+      if (mounted) {
+        _setState(() {
+          _isProjectScopeTransitioning = false;
+        });
+      }
+      if (!completion.isCompleted) {
+        completion.complete();
+      }
+      if (identical(_projectScopeTransitionTask, completion.future)) {
         _projectScopeTransitionTask = null;
       }
+    }
+
+    if (pendingError != null && pendingStackTrace != null) {
+      Error.throwWithStackTrace(pendingError, pendingStackTrace);
     }
   }
 
