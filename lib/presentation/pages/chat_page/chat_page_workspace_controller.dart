@@ -342,8 +342,10 @@ extension _ChatPageWorkspaceController on _ChatPageState {
       );
       return;
     }
-    await projectProvider.switchToDirectoryContext(created.directory);
-    await chatProvider.onProjectScopeChanged();
+    await _runProjectScopeTransition(() async {
+      await projectProvider.switchToDirectoryContext(created.directory);
+      await chatProvider.onProjectScopeChanged();
+    });
     if (!mounted) {
       return;
     }
@@ -410,7 +412,9 @@ extension _ChatPageWorkspaceController on _ChatPageState {
       );
       return;
     }
-    await chatProvider.onProjectScopeChanged();
+    await _runProjectScopeTransition(() async {
+      await chatProvider.onProjectScopeChanged();
+    });
     if (!mounted) {
       return;
     }
