@@ -64,6 +64,8 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   bool _lastShowThinking = true;
   bool _lastShowToolCalls = true;
   bool _lastResponding = false;
+  double _lastVisualDensityVertical = 0;
+  double _lastVisualDensityHorizontal = 0;
 
   /// Whether the current rebuild can be skipped (inputs unchanged).
   bool _canSkipRebuild() {
@@ -73,22 +75,28 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
 
     final partCount = msg.parts.length;
     final lastPartId = msg.parts.isNotEmpty ? msg.parts.last.id : null;
+    final density = Theme.of(context).visualDensity;
     return partCount == _lastPartCount &&
         lastPartId == _lastPartId &&
         widget.activeReasoningPartKey == _lastReasoningKey &&
         widget.showThinkingBubbles == _lastShowThinking &&
         widget.showToolCallBubbles == _lastShowToolCalls &&
-        widget.isSessionActivelyResponding == _lastResponding;
+        widget.isSessionActivelyResponding == _lastResponding &&
+        density.vertical == _lastVisualDensityVertical &&
+        density.horizontal == _lastVisualDensityHorizontal;
   }
 
-  void _updateBuildSnapshot() {
+  void _updateBuildSnapshot(BuildContext context) {
     final msg = widget.message;
+    final density = Theme.of(context).visualDensity;
     _lastPartCount = msg.parts.length;
     _lastPartId = msg.parts.isNotEmpty ? msg.parts.last.id : null;
     _lastReasoningKey = widget.activeReasoningPartKey;
     _lastShowThinking = widget.showThinkingBubbles;
     _lastShowToolCalls = widget.showToolCallBubbles;
     _lastResponding = widget.isSessionActivelyResponding;
+    _lastVisualDensityVertical = density.vertical;
+    _lastVisualDensityHorizontal = density.horizontal;
   }
 
   // Cached build result to return when rebuild is skipped.
@@ -126,7 +134,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     if (_cachedBuild != null && _canSkipRebuild()) {
       return _cachedBuild!;
     }
-    _updateBuildSnapshot();
+    _updateBuildSnapshot(context);
     final result = _buildContent(context);
     _cachedBuild = result;
     return result;
@@ -144,6 +152,13 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   Widget _buildContent(BuildContext context) {
     final isUser = message.role == MessageRole.user;
     final colorScheme = Theme.of(context).colorScheme;
+    final bubblePadding = isUser
+        ? const EdgeInsets.fromLTRB(14, 10, 14, 12)
+        : const EdgeInsets.fromLTRB(12, 8, 12, 10);
+    final headerContentSpacing = _resolveHeaderContentSpacing(
+      context,
+      isUser: isUser,
+    );
     final bubbleBorderRadius = AppShapes.borderLarge.copyWith(
       bottomRight: isUser ? const Radius.circular(6) : null,
       bottomLeft: !isUser ? const Radius.circular(6) : null,
@@ -193,15 +208,12 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
             child: Semantics(
               label: isUser ? 'Your message' : 'Assistant message',
               child: Container(
-                padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+                padding: bubblePadding,
                 decoration: BoxDecoration(
                   color: isUser
                       ? colorScheme.primaryContainer.withValues(alpha: 0.45)
                       : colorScheme.surfaceContainerHigh,
                   borderRadius: bubbleBorderRadius,
-                  border: Border.all(
-                    color: colorScheme.outlineVariant.withValues(alpha: 0.45),
-                  ),
                 ),
                 child: Stack(
                   children: [
@@ -210,17 +222,17 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                       children: [
                         Row(
                           children: [
-                            Text(
-                              isUser ? 'You' : 'Assistant',
-                              style: Theme.of(context).textTheme.labelMedium
-                                  ?.copyWith(
-                                    color: isUser
-                                        ? colorScheme.primary
-                                        : colorScheme.onSurfaceVariant,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                            ),
-                            const SizedBox(width: 8),
+                            if (isUser) ...[
+                              Text(
+                                'You',
+                                style: Theme.of(context).textTheme.labelMedium
+                                    ?.copyWith(
+                                      color: colorScheme.primary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
                             Text(
                               _formatTime(message.time),
                               style: Theme.of(context).textTheme.bodySmall
@@ -237,7 +249,12 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                               ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(
+                          key: ValueKey<String>(
+                            'message_header_spacing_${message.id}',
+                          ),
+                          height: headerContentSpacing,
+                        ),
                         if (isUser)
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -266,6 +283,15 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         ),
       ),
     );
+  }
+
+  double _resolveHeaderContentSpacing(
+    BuildContext context, {
+    required bool isUser,
+  }) {
+    final density = Theme.of(context).visualDensity.vertical;
+    final baseSpacing = isUser ? 8.0 : 4.0;
+    return (baseSpacing + density).clamp(2.0, 12.0);
   }
 
   bool _messageHasVisibleContent(ChatMessage message) {
@@ -522,6 +548,8 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
             messageId: message.id,
             startPartId: chainStartPartId,
             autoCollapsed: shouldAutoCollapseToolChains,
+            toolDescriptionLabelBuilder: _resolveToolDescriptionLabel,
+            toolTypeLabelBuilder: _resolveToolTypeLabel,
             parts: allToolSurfaceParts,
             partBuilder: (toolPart) => _buildMessagePart(
               context,
@@ -558,6 +586,24 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   bool _isTodoToolPart(ToolPart part) {
     final normalized = _normalizeToolName(part.tool);
     return normalized == 'todowrite' || normalized == 'todoread';
+  }
+
+  String _resolveToolDescriptionLabel(ToolPart part) {
+    final title = switch (part.state.status) {
+      ToolStatus.running => (part.state as ToolStateRunning).title,
+      ToolStatus.completed => (part.state as ToolStateCompleted).title,
+      ToolStatus.error => (part.state as ToolStateError).title,
+      ToolStatus.pending => null,
+    };
+    final normalizedTitle = title?.trim();
+    if (normalizedTitle != null && normalizedTitle.isNotEmpty) {
+      return normalizedTitle;
+    }
+    return _toolPresentation(part.tool).title;
+  }
+
+  String _resolveToolTypeLabel(ToolPart part) {
+    return _toolPresentation(part.tool).title;
   }
 
   Widget _buildTextPart(BuildContext context, TextPart part) {
@@ -939,6 +985,8 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     final isCompactToolStatus = MediaQuery.sizeOf(context).width < 600;
     final colorScheme = Theme.of(context).colorScheme;
     final presentation = _toolPresentation(part.tool);
+    final descriptionLabel = _resolveToolDescriptionLabel(part);
+    final typeLabel = _resolveToolTypeLabel(part);
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -948,7 +996,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
           context,
         ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         borderRadius: AppShapes.borderSmall,
-        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -962,22 +1009,25 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      presentation.title,
+                      descriptionLabel,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      presentation.subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                    if (typeLabel.toLowerCase() !=
+                        descriptionLabel.toLowerCase()) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        typeLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -990,9 +1040,13 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
             ],
           ),
           const SizedBox(height: 8),
-
-          // Tool status details
-          _buildToolStateDetails(context, part.state, part.tool),
+          _ToolPartDetailsToggle(
+            key: ValueKey<String>('tool_part_details_toggle_${part.id}'),
+            initiallyExpanded:
+                !(message is AssistantMessage &&
+                    (message as AssistantMessage).isCompleted),
+            details: _buildToolStateDetails(context, part.state, part.tool),
+          ),
         ],
       ),
     );
@@ -1136,7 +1190,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
           context,
         ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
         borderRadius: AppShapes.borderSmall,
-        border: Border.all(color: Theme.of(context).dividerColor),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1730,6 +1783,8 @@ class _CollapsibleToolChain extends StatefulWidget {
     required this.messageId,
     required this.startPartId,
     required this.autoCollapsed,
+    required this.toolDescriptionLabelBuilder,
+    required this.toolTypeLabelBuilder,
     required this.parts,
     required this.partBuilder,
   });
@@ -1737,6 +1792,8 @@ class _CollapsibleToolChain extends StatefulWidget {
   final String messageId;
   final String startPartId;
   final bool autoCollapsed;
+  final String Function(ToolPart part) toolDescriptionLabelBuilder;
+  final String Function(ToolPart part) toolTypeLabelBuilder;
   final List<MessagePart> parts;
   final Widget Function(MessagePart part) partBuilder;
 
@@ -1776,11 +1833,79 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
     }
   }
 
-  String _buildSummaryLabel() {
+  String _buildCollapsedPrimaryLabel() {
     final toolParts = widget.parts.whereType<ToolPart>().toList(
       growable: false,
     );
     final patchCount = widget.parts.whereType<PatchPart>().length;
+    final toolDescriptions = toolParts
+        .map(widget.toolDescriptionLabelBuilder)
+        .map((label) => label.trim())
+        .where((label) => label.isNotEmpty)
+        .toList(growable: false);
+
+    if (toolDescriptions.isEmpty) {
+      if (patchCount > 0) {
+        return patchCount == 1 ? '1 patch' : '$patchCount patches';
+      }
+      return 'Tool execution';
+    }
+
+    if (toolDescriptions.length == 1) {
+      final primary = toolDescriptions.first;
+      if (patchCount <= 0) {
+        return primary;
+      }
+      final patchLabel = patchCount == 1 ? '1 patch' : '$patchCount patches';
+      return '$primary • $patchLabel';
+    }
+
+    final maxVisible = 2;
+    final visible = toolDescriptions.take(maxVisible).join(' • ');
+    final remaining = toolDescriptions.length - maxVisible;
+    final extraLabel = remaining > 0 ? ' • +$remaining more' : '';
+    final patchLabel = patchCount > 0
+        ? ' • ${patchCount == 1 ? '1 patch' : '$patchCount patches'}'
+        : '';
+    return '$visible$extraLabel$patchLabel';
+  }
+
+  String? _buildCollapsedSecondaryLabel() {
+    final toolTypes = widget.parts
+        .whereType<ToolPart>()
+        .map(widget.toolTypeLabelBuilder)
+        .map((label) => label.trim())
+        .where((label) => label.isNotEmpty)
+        .toList(growable: false);
+
+    if (toolTypes.isEmpty) {
+      return null;
+    }
+
+    final unique = <String>[];
+    for (final type in toolTypes) {
+      if (!unique.contains(type)) {
+        unique.add(type);
+      }
+    }
+
+    if (unique.length == 1) {
+      return unique.first;
+    }
+
+    if (unique.length <= 3) {
+      return unique.join(' • ');
+    }
+
+    return '${unique.take(2).join(' • ')} • +${unique.length - 2} types';
+  }
+
+  String _buildExpandedSummaryLabel() {
+    final toolParts = widget.parts.whereType<ToolPart>().toList(
+      growable: false,
+    );
+    final patchCount = widget.parts.whereType<PatchPart>().length;
+
     if (toolParts.isEmpty) {
       return patchCount == 1 ? '1 patch' : '$patchCount patches';
     }
@@ -1814,6 +1939,14 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
     final colorScheme = Theme.of(context).colorScheme;
     final disableAnimations =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final collapsedPrimaryLabel = _buildCollapsedPrimaryLabel();
+    final collapsedSecondaryLabelRaw = _buildCollapsedSecondaryLabel();
+    final collapsedSecondaryLabel =
+        collapsedSecondaryLabelRaw != null &&
+            collapsedSecondaryLabelRaw.trim().toLowerCase() !=
+                collapsedPrimaryLabel.trim().toLowerCase()
+        ? collapsedSecondaryLabelRaw
+        : null;
 
     return Container(
       key: ValueKey<String>(
@@ -1824,9 +1957,6 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.36),
         borderRadius: AppShapes.borderSmall,
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1841,18 +1971,24 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _expanded ? 'Tool calls' : 'Tool calls collapsed',
+                      _expanded ? 'Tool calls' : collapsedPrimaryLabel,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _buildSummaryLabel(),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                    if (_expanded ||
+                        (collapsedSecondaryLabel != null &&
+                            collapsedSecondaryLabel.isNotEmpty)) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        _expanded
+                            ? _buildExpandedSummaryLabel()
+                            : collapsedSecondaryLabel!,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -1869,7 +2005,7 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
                     vertical: 2,
                   ),
                 ),
-                child: Text(_expanded ? 'Hide tool calls' : 'Show tool calls'),
+                child: Text(_expanded ? 'Hide' : 'Details'),
               ),
             ],
           ),
@@ -1911,7 +2047,7 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
                               color: colorScheme.onSurfaceVariant,
                             ),
                             label: Text(
-                              'Collapse tool calls',
+                              'Hide',
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
                           ),
@@ -1922,6 +2058,62 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ToolPartDetailsToggle extends StatefulWidget {
+  const _ToolPartDetailsToggle({
+    super.key,
+    required this.details,
+    this.initiallyExpanded = true,
+  });
+
+  final Widget details;
+  final bool initiallyExpanded;
+
+  @override
+  State<_ToolPartDetailsToggle> createState() => _ToolPartDetailsToggleState();
+}
+
+class _ToolPartDetailsToggleState extends State<_ToolPartDetailsToggle> {
+  late bool _expanded;
+
+  @override
+  void initState() {
+    super.initState();
+    _expanded = widget.initiallyExpanded;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasDetails = widget.details is! SizedBox;
+    if (!hasDetails) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_expanded) widget.details,
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton(
+            key: const ValueKey<String>('tool_part_details_button'),
+            onPressed: () {
+              setState(() {
+                _expanded = !_expanded;
+              });
+            },
+            style: TextButton.styleFrom(
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            ),
+            child: Text(_expanded ? 'Hide' : 'Details'),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -510,7 +510,14 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Thinking Process'), findsOneWidget);
-        expect(find.text('Tool calls collapsed'), findsOneWidget);
+        expect(
+          find.byKey(
+            const ValueKey<String>(
+              'tool_chain_toggle_msg_display_toggles_part_display_tool',
+            ),
+          ),
+          findsOneWidget,
+        );
 
         await tester.tap(
           find.byKey(const ValueKey<String>('appbar_display_toggles_button')),
@@ -522,7 +529,14 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('Thinking Process'), findsNothing);
-        expect(find.text('Tool calls collapsed'), findsOneWidget);
+        expect(
+          find.byKey(
+            const ValueKey<String>(
+              'tool_chain_toggle_msg_display_toggles_part_display_tool',
+            ),
+          ),
+          findsOneWidget,
+        );
 
         await tester.tap(
           find.byKey(const ValueKey<String>('appbar_display_toggles_button')),
@@ -533,7 +547,14 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(find.text('Tool calls collapsed'), findsNothing);
+        expect(
+          find.byKey(
+            const ValueKey<String>(
+              'tool_chain_toggle_msg_display_toggles_part_display_tool',
+            ),
+          ),
+          findsNothing,
+        );
       },
     );
 
@@ -3956,13 +3977,18 @@ void main() {
       await provider.selectSession(sessionA);
       await tester.pumpAndSettle();
 
-      expect(find.text('Tool calls collapsed'), findsOneWidget);
-      expect(find.text('Show tool calls'), findsOneWidget);
+      expect(find.text('Details'), findsOneWidget);
 
-      await tester.tap(find.text('Show tool calls'));
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>(
+            'tool_chain_toggle_msg_tool_state_a_part_tool_state_a_1',
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
 
-      expect(find.text('Hide tool calls'), findsOneWidget);
+      expect(find.text('Hide'), findsNWidgets(2));
       expect(find.text('Running command'), findsOneWidget);
       expect(find.text('Reading file'), findsOneWidget);
 
@@ -3972,9 +3998,8 @@ void main() {
       await provider.selectSession(sessionA);
       await tester.pumpAndSettle();
 
-      expect(find.text('Tool calls collapsed'), findsOneWidget);
-      expect(find.text('Show tool calls'), findsOneWidget);
-      expect(find.text('Hide tool calls'), findsNothing);
+      expect(find.text('Details'), findsOneWidget);
+      expect(find.text('Hide'), findsNothing);
       expect(find.text('Running command'), findsNothing);
       expect(find.text('Reading file'), findsNothing);
     },
@@ -4093,6 +4118,158 @@ void main() {
       expect(find.text('Final assistant response'), findsOneWidget);
     },
   );
+
+  testWidgets('merges consecutive assistant tool-only messages into one bubble', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_merge_tool_run',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Merge Tool Run',
+        ),
+      ],
+    );
+
+    repository.messagesBySession['ses_merge_tool_run'] = <ChatMessage>[
+      UserMessage(
+        id: 'msg_merge_tool_user',
+        sessionId: 'ses_merge_tool_run',
+        time: DateTime.fromMillisecondsSinceEpoch(1100),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'part_merge_tool_user',
+            messageId: 'msg_merge_tool_user',
+            sessionId: 'ses_merge_tool_run',
+            text: 'Run grouped tools',
+          ),
+        ],
+      ),
+      AssistantMessage(
+        id: 'msg_merge_tool_1',
+        sessionId: 'ses_merge_tool_run',
+        time: DateTime.fromMillisecondsSinceEpoch(1200),
+        completedTime: DateTime.fromMillisecondsSinceEpoch(1210),
+        parts: <MessagePart>[
+          AgentPart(
+            id: 'part_merge_tool_agent_1',
+            messageId: 'msg_merge_tool_1',
+            sessionId: 'ses_merge_tool_run',
+            name: 'reviewer',
+          ),
+          ToolPart(
+            id: 'part_merge_tool_1',
+            messageId: 'msg_merge_tool_1',
+            sessionId: 'ses_merge_tool_run',
+            callId: 'call_merge_tool_1',
+            tool: 'bash',
+            state: ToolStateCompleted(
+              input: const <String, dynamic>{'command': 'pwd'},
+              output: '/tmp/work',
+              time: ToolTime(
+                start: DateTime.fromMillisecondsSinceEpoch(1200),
+                end: DateTime.fromMillisecondsSinceEpoch(1205),
+              ),
+            ),
+          ),
+        ],
+      ),
+      AssistantMessage(
+        id: 'msg_merge_tool_2',
+        sessionId: 'ses_merge_tool_run',
+        time: DateTime.fromMillisecondsSinceEpoch(1250),
+        completedTime: DateTime.fromMillisecondsSinceEpoch(1260),
+        parts: <MessagePart>[
+          SubtaskPart(
+            id: 'part_merge_tool_subtask_2',
+            messageId: 'msg_merge_tool_2',
+            sessionId: 'ses_merge_tool_run',
+            prompt: 'group',
+            description: 'Tool execution step',
+            agent: 'reviewer',
+          ),
+          ToolPart(
+            id: 'part_merge_tool_2',
+            messageId: 'msg_merge_tool_2',
+            sessionId: 'ses_merge_tool_run',
+            callId: 'call_merge_tool_2',
+            tool: 'read',
+            state: ToolStateCompleted(
+              input: const <String, dynamic>{'filePath': 'lib/main.dart'},
+              output: 'line 1\nline 2',
+              time: ToolTime(
+                start: DateTime.fromMillisecondsSinceEpoch(1250),
+                end: DateTime.fromMillisecondsSinceEpoch(1255),
+              ),
+            ),
+          ),
+        ],
+      ),
+      AssistantMessage(
+        id: 'msg_merge_tool_final',
+        sessionId: 'ses_merge_tool_run',
+        time: DateTime.fromMillisecondsSinceEpoch(1300),
+        completedTime: DateTime.fromMillisecondsSinceEpoch(1310),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'part_merge_tool_final',
+            messageId: 'msg_merge_tool_final',
+            sessionId: 'ses_merge_tool_run',
+            text: 'Final assistant answer',
+          ),
+        ],
+      ),
+    ];
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(
+        const ValueKey<String>('timeline_collapsed_assistant_work_header'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Final assistant answer'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('timeline_collapsed_assistant_work_toggle'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Details'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>(
+          'tool_chain_toggle_merged_tool_run_msg_merge_tool_1_msg_merge_tool_2_part_merge_tool_1',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Running command'), findsOneWidget);
+    expect(find.text('Reading file'), findsOneWidget);
+  });
 
   testWidgets(
     'shows delayed tip in composer for both thinking and receiving stages',

@@ -602,8 +602,17 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     while (index < endExclusive) {
       final current = messages[index];
       if (current is! UserMessage) {
-        entries.add(_TimelineMessageEntry(current));
-        index += 1;
+        if (_isMergeableAssistantToolOnlyMessage(current)) {
+          index = _appendMergedAssistantToolOnlyRun(
+            entries: entries,
+            messages: messages,
+            startIndex: index,
+            endExclusive: endExclusive,
+          );
+        } else {
+          entries.add(_TimelineMessageEntry(current));
+          index += 1;
+        }
         continue;
       }
 
@@ -640,27 +649,191 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           ),
         );
         if (expanded) {
-          for (
-            var assistantIndex = assistantRunStart;
-            assistantIndex < assistantRunEnd - 1;
-            assistantIndex += 1
-          ) {
-            entries.add(_TimelineMessageEntry(messages[assistantIndex]));
-          }
+          _appendRangeWithAssistantToolMerging(
+            entries: entries,
+            messages: messages,
+            startIndex: assistantRunStart,
+            endExclusive: assistantRunEnd - 1,
+          );
         }
         entries.add(_TimelineMessageEntry(finalAssistant));
       } else {
-        for (
-          var assistantIndex = assistantRunStart;
-          assistantIndex < assistantRunEnd;
-          assistantIndex += 1
-        ) {
-          entries.add(_TimelineMessageEntry(messages[assistantIndex]));
-        }
+        _appendRangeWithAssistantToolMerging(
+          entries: entries,
+          messages: messages,
+          startIndex: assistantRunStart,
+          endExclusive: assistantRunEnd,
+        );
       }
 
       index = assistantRunEnd;
     }
+  }
+
+  void _appendRangeWithAssistantToolMerging({
+    required List<_TimelineEntry> entries,
+    required List<ChatMessage> messages,
+    required int startIndex,
+    required int endExclusive,
+  }) {
+    if (startIndex >= endExclusive) {
+      return;
+    }
+
+    var index = startIndex;
+    while (index < endExclusive) {
+      final current = messages[index];
+      if (!_isMergeableAssistantToolOnlyMessage(current)) {
+        entries.add(_TimelineMessageEntry(current));
+        index += 1;
+        continue;
+      }
+
+      index = _appendMergedAssistantToolOnlyRun(
+        entries: entries,
+        messages: messages,
+        startIndex: index,
+        endExclusive: endExclusive,
+      );
+    }
+  }
+
+  int _appendMergedAssistantToolOnlyRun({
+    required List<_TimelineEntry> entries,
+    required List<ChatMessage> messages,
+    required int startIndex,
+    required int endExclusive,
+  }) {
+    var mergeEnd = startIndex + 1;
+    while (mergeEnd < endExclusive &&
+        _isMergeableAssistantToolOnlyMessage(messages[mergeEnd])) {
+      mergeEnd += 1;
+    }
+
+    if (mergeEnd - startIndex == 1) {
+      entries.add(_TimelineMessageEntry(messages[startIndex]));
+      return mergeEnd;
+    }
+
+    final mergedMessage = _mergeAssistantToolOnlyMessages(
+      messages
+          .sublist(startIndex, mergeEnd)
+          .cast<AssistantMessage>()
+          .toList(growable: false),
+    );
+    entries.add(_TimelineMessageEntry(mergedMessage));
+    return mergeEnd;
+  }
+
+  bool _isMergeableAssistantToolOnlyMessage(ChatMessage message) {
+    if (message is! AssistantMessage || message.error != null) {
+      return false;
+    }
+
+    var hasToolSurfacePart = false;
+    for (final part in message.parts) {
+      switch (part.type) {
+        case PartType.tool:
+        case PartType.patch:
+          hasToolSurfacePart = true;
+          break;
+        case PartType.stepStart:
+        case PartType.stepFinish:
+        case PartType.agent:
+        case PartType.snapshot:
+        case PartType.subtask:
+        case PartType.retry:
+        case PartType.reasoning:
+          break;
+        case PartType.text:
+          if ((part as TextPart).text.trim().isNotEmpty) {
+            return false;
+          }
+          break;
+        default:
+          return false;
+      }
+    }
+
+    return hasToolSurfacePart;
+  }
+
+  AssistantMessage _mergeAssistantToolOnlyMessages(
+    List<AssistantMessage> messages,
+  ) {
+    final first = messages.first;
+    final last = messages.last;
+    final mergedParts = <MessagePart>[
+      for (final message in messages) ...message.parts,
+    ];
+
+    final mergedTokens = _sumAssistantTokens(messages);
+    final mergedCost = _sumAssistantCost(messages);
+
+    return AssistantMessage(
+      id: 'merged_tool_run_${first.id}_${last.id}',
+      sessionId: first.sessionId,
+      time: first.time,
+      parts: mergedParts,
+      completedTime: last.completedTime,
+      providerId: last.providerId ?? first.providerId,
+      modelId: last.modelId ?? first.modelId,
+      cost: mergedCost,
+      tokens: mergedTokens,
+      mode: last.mode ?? first.mode,
+      summary: false,
+    );
+  }
+
+  MessageTokens? _sumAssistantTokens(List<AssistantMessage> messages) {
+    var input = 0;
+    var output = 0;
+    var reasoning = 0;
+    var cacheRead = 0;
+    var cacheWrite = 0;
+    var hasTokens = false;
+
+    for (final message in messages) {
+      final tokens = message.tokens;
+      if (tokens == null) {
+        continue;
+      }
+      hasTokens = true;
+      input += tokens.input;
+      output += tokens.output;
+      reasoning += tokens.reasoning;
+      cacheRead += tokens.cacheRead;
+      cacheWrite += tokens.cacheWrite;
+    }
+
+    if (!hasTokens) {
+      return null;
+    }
+
+    return MessageTokens(
+      input: input,
+      output: output,
+      reasoning: reasoning,
+      cacheRead: cacheRead,
+      cacheWrite: cacheWrite,
+    );
+  }
+
+  double? _sumAssistantCost(List<AssistantMessage> messages) {
+    var total = 0.0;
+    var hasCost = false;
+    for (final message in messages) {
+      final cost = message.cost;
+      if (cost == null) {
+        continue;
+      }
+      total += cost;
+      hasCost = true;
+    }
+    if (!hasCost) {
+      return null;
+    }
+    return total;
   }
 
   bool _isSuccessfulFinalAssistantMessage(AssistantMessage message) {

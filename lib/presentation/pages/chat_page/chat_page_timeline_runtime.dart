@@ -242,7 +242,7 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Assistant work is collapsed',
+                        'Work messages are collapsed',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface,

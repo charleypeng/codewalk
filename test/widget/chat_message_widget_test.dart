@@ -685,7 +685,7 @@ void main() {
     );
 
     expect(find.text('Tool Call: bash'), findsNothing);
-    expect(find.text('bash'), findsOneWidget);
+    expect(find.text('Running command'), findsOneWidget);
     expect(find.text('Done'), findsOneWidget);
     expect(
       find.byWidgetPredicate(
@@ -754,7 +754,7 @@ void main() {
     );
 
     expect(find.text('Tool Call: bash'), findsNothing);
-    expect(find.text('bash'), findsOneWidget);
+    expect(find.text('Running command'), findsOneWidget);
     expect(find.text('Needs attention'), findsOneWidget);
     expect(
       find.byWidgetPredicate(
@@ -889,25 +889,50 @@ void main() {
       ),
     );
 
-    expect(find.text('Tool calls collapsed'), findsOneWidget);
-    expect(find.text('Show tool calls'), findsOneWidget);
-    expect(find.text('Running command'), findsNothing);
-    expect(find.text('Reading file'), findsNothing);
+    expect(find.text('Details'), findsOneWidget);
+    expect(find.textContaining('Running command'), findsOneWidget);
+    expect(find.textContaining('Reading file'), findsOneWidget);
 
-    await tester.tap(find.text('Show tool calls'));
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>(
+          'tool_chain_toggle_msg_tool_chain_part_tool_chain_1',
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
-    expect(find.text('Hide tool calls'), findsOneWidget);
-    expect(find.text('Collapse tool calls'), findsOneWidget);
-    expect(find.text('Running command'), findsOneWidget);
-    expect(find.text('Reading file'), findsOneWidget);
+    expect(find.text('Hide'), findsNWidgets(2));
+    expect(
+      find.byKey(const ValueKey<String>('tool_part_details_button')),
+      findsNWidgets(2),
+    );
 
-    await tester.tap(find.text('Collapse tool calls'));
+    await tester.tap(
+      find.byKey(const ValueKey<String>('tool_part_details_button')).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('tool_part_details_button')).last,
+    );
     await tester.pumpAndSettle();
 
-    expect(find.text('Tool calls collapsed'), findsOneWidget);
-    expect(find.text('Show tool calls'), findsOneWidget);
-    expect(find.text('Running command'), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('tool_command_text')),
+      findsNWidgets(2),
+    );
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>(
+          'tool_chain_bottom_toggle_msg_tool_chain_part_tool_chain_1',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Details'), findsOneWidget);
+    expect(find.textContaining('Running command'), findsOneWidget);
   });
 
   testWidgets('keeps completed tool chains collapsed while session responds', (
@@ -963,9 +988,9 @@ void main() {
       ),
     );
 
-    expect(find.text('Tool calls collapsed'), findsOneWidget);
-    expect(find.text('Running command'), findsNothing);
-    expect(find.text('Reading file'), findsNothing);
+    expect(find.text('Details'), findsOneWidget);
+    expect(find.textContaining('Running command'), findsOneWidget);
+    expect(find.textContaining('Reading file'), findsOneWidget);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -979,9 +1004,64 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Tool calls collapsed'), findsOneWidget);
-    expect(find.text('Running command'), findsNothing);
-    expect(find.text('Reading file'), findsNothing);
+    expect(find.text('Details'), findsOneWidget);
+    expect(find.textContaining('Running command'), findsOneWidget);
+    expect(find.textContaining('Reading file'), findsOneWidget);
+  });
+
+  testWidgets('shows tool call descriptions in collapsed summary', (
+    WidgetTester tester,
+  ) async {
+    final message = AssistantMessage(
+      id: 'msg_tool_summary_descriptions',
+      sessionId: 'ses_tool_summary_descriptions',
+      time: DateTime.fromMillisecondsSinceEpoch(1000),
+      completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+      parts: <MessagePart>[
+        ToolPart(
+          id: 'part_tool_summary_descriptions_1',
+          messageId: 'msg_tool_summary_descriptions',
+          sessionId: 'ses_tool_summary_descriptions',
+          callId: 'call_tool_summary_descriptions_1',
+          tool: 'bash',
+          state: ToolStateCompleted(
+            input: const <String, dynamic>{'command': 'ls'},
+            output: 'README.md',
+            time: ToolTime(
+              start: DateTime.fromMillisecondsSinceEpoch(1000),
+              end: DateTime.fromMillisecondsSinceEpoch(1050),
+            ),
+            title: 'Listing project files',
+          ),
+        ),
+        ToolPart(
+          id: 'part_tool_summary_descriptions_2',
+          messageId: 'msg_tool_summary_descriptions',
+          sessionId: 'ses_tool_summary_descriptions',
+          callId: 'call_tool_summary_descriptions_2',
+          tool: 'read',
+          state: ToolStateCompleted(
+            input: const <String, dynamic>{'filePath': 'README.md'},
+            output: 'Intro',
+            time: ToolTime(
+              start: DateTime.fromMillisecondsSinceEpoch(1060),
+              end: DateTime.fromMillisecondsSinceEpoch(1100),
+            ),
+            title: 'Reading project docs',
+          ),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: ChatMessageWidget(message: message)),
+      ),
+    );
+
+    expect(find.text('Details'), findsOneWidget);
+    expect(find.textContaining('Listing project files'), findsOneWidget);
+    expect(find.textContaining('Reading project docs'), findsOneWidget);
   });
 
   testWidgets('resets tool-chain expansion after widget remount', (
@@ -1033,12 +1113,18 @@ void main() {
     }
 
     await tester.pumpWidget(buildWidget());
-    expect(find.text('Tool calls collapsed'), findsOneWidget);
+    expect(find.text('Details'), findsOneWidget);
 
-    await tester.tap(find.text('Show tool calls'));
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>(
+          'tool_chain_toggle_msg_tool_chain_remount_part_tool_chain_remount_1',
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
 
-    expect(find.text('Hide tool calls'), findsOneWidget);
+    expect(find.text('Hide'), findsNWidgets(2));
     expect(find.text('Running command'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -1047,9 +1133,104 @@ void main() {
     await tester.pumpWidget(buildWidget());
     await tester.pumpAndSettle();
 
-    expect(find.text('Tool calls collapsed'), findsOneWidget);
-    expect(find.text('Show tool calls'), findsOneWidget);
-    expect(find.text('Running command'), findsNothing);
+    expect(find.text('Details'), findsOneWidget);
+    expect(find.textContaining('Running command'), findsOneWidget);
+  });
+
+  testWidgets('hides assistant title while keeping user header label', (
+    WidgetTester tester,
+  ) async {
+    final userMessage = UserMessage(
+      id: 'msg_user_header',
+      sessionId: 'ses_header_labels',
+      time: DateTime.fromMillisecondsSinceEpoch(1000),
+      parts: const <MessagePart>[
+        TextPart(
+          id: 'part_user_header',
+          messageId: 'msg_user_header',
+          sessionId: 'ses_header_labels',
+          text: 'User text',
+        ),
+      ],
+    );
+
+    final assistantMessage = AssistantMessage(
+      id: 'msg_assistant_header',
+      sessionId: 'ses_header_labels',
+      time: DateTime.fromMillisecondsSinceEpoch(1100),
+      completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+      parts: const <MessagePart>[
+        TextPart(
+          id: 'part_assistant_header',
+          messageId: 'msg_assistant_header',
+          sessionId: 'ses_header_labels',
+          text: 'Assistant text',
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              ChatMessageWidget(message: userMessage),
+              ChatMessageWidget(message: assistantMessage),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('You'), findsOneWidget);
+    expect(find.text('Assistant'), findsNothing);
+    expect(find.text('Assistant text'), findsOneWidget);
+  });
+
+  testWidgets('assistant header spacing follows visual density', (
+    WidgetTester tester,
+  ) async {
+    final message = AssistantMessage(
+      id: 'msg_density_spacing',
+      sessionId: 'ses_density_spacing',
+      time: DateTime.fromMillisecondsSinceEpoch(1100),
+      completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+      parts: const <MessagePart>[
+        TextPart(
+          id: 'part_density_spacing',
+          messageId: 'msg_density_spacing',
+          sessionId: 'ses_density_spacing',
+          text: 'Density aware content',
+        ),
+      ],
+    );
+
+    Future<double> pumpAndReadSpacing(VisualDensity density) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(useMaterial3: true, visualDensity: density),
+          home: Scaffold(body: ChatMessageWidget(message: message)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final spacing = tester.widget<SizedBox>(
+        find.byKey(
+          const ValueKey<String>('message_header_spacing_msg_density_spacing'),
+        ),
+      );
+      return spacing.height!;
+    }
+
+    final denseHeight = await pumpAndReadSpacing(
+      const VisualDensity(horizontal: -2, vertical: -2),
+    );
+    final normalHeight = await pumpAndReadSpacing(VisualDensity.standard);
+    final spaciousHeight = await pumpAndReadSpacing(
+      const VisualDensity(horizontal: 2, vertical: 2),
+    );
+
+    expect(denseHeight, lessThanOrEqualTo(normalHeight));
+    expect(spaciousHeight, greaterThan(normalHeight));
   });
 
   testWidgets(

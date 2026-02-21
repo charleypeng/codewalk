@@ -40,12 +40,10 @@
   - [ ] Investigate and fix project-switch navigation regression (including while app is busy): after changing project, navigation sometimes reopens a sub-conversation from the main session instead of restoring the primary conversation the user was previously viewing.
   - [ ] Context knob shows only the number (without `%`), while popover keeps `%`.
 
-- **Group 3 — Chat UX, Composer, and Tool Bubble Polish** [ ]
-  - [ ] Tool-call collapse is standardized: when final assistant response arrives, collapse all tool bubbles into a single collapsed group between user message and assistant response.
+- **Group 3 — Chat UX, Composer, and Tool Bubble Polish** [~]
+  - [~] Standardize tool-call collapse, remove 'Assistant' titles, visually merge consecutive assistant tool-calls into one bubble (no errors/non-tool messages between them), and remove assistant/user bubble borders while preserving final response visibility and collapsing work when it arrives.
   - [ ] Require custom textual descriptions for every tool call; when a tool call finishes, auto-collapse it to icon+title with an inline expand button to reopen details.
   - [ ] Mirror subagent permission prompts/authorization requests in the main conversation so users can respond there too, with a subtle origin badge indicating the request comes from a subagent.
-  - [ ] Remove the border around tool-call bubbles.
-  - [ ] Experiment with all border variations related to Assistant message bubbles.
   - [ ] Investigate and fix mobile-first blank chat screen when opening very large conversations: the screen goes fully white until app restart, and usually opens correctly after relaunch.
   - [ ] Investigate and fix mobile chat-state refresh after app resume: sometimes the latest assistant message is not rendered when returning from background, but appears after switching to another conversation and back.
   - [ ] Investigate and fix conversation-open click behavior: sometimes opening a conversation requires two clicks (first opens the conversation, second closes the sidebar), and a fast double-click on the same item can freeze the screen, especially with large histories.
@@ -57,11 +55,11 @@
   - [ ] In composer, increase slightly the composer status text font size for better readability.
   - [ ] In mic/STT usage, insert text at current cursor position (not always at the end).
   - [ ] Handle `MessageAborted` with an inline friendly red chat message (`"What you want to do different?"`) instead of toast+retry; keep toast flow for punctual/non-abort errors.
-  - [ ] Investigate and fix conversation continuity when switching sessions/projects: context changes can unexpectedly abort active conversations, so preserve active streams/chats when appropriate.
+  - [x] Investigate and fix conversation continuity when switching sessions/projects: context changes can unexpectedly abort active conversations, so preserve active streams/chats when appropriate. - Related commits: acce617 9dcd773
   - [ ] Plan the merge between the project selector and the conversations sidebar, grouping conversations by open projects to speed up navigation.
   - [ ] Tasks widget gets a footer progress bar based on total completed items.
-  - [ ] Plan support for sending a new message while the assistant is still working (OpenCode CLI/Web parity), following existing OpenCode interaction patterns.
-  - [ ] Run a UI experiment: remove assistant bubble borders and reduce assistant bubble padding; in this experiment keep background color only on user bubbles and remove user bubble border line too.
+   - [ ] Plan support for sending a new message while the assistant is still working (OpenCode CLI/Web parity), following existing OpenCode interaction patterns.
+   - [ ] Allow pinning sessions in the Conversations sidebar.
 
 ## Goal
 
