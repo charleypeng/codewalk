@@ -4,19 +4,35 @@ extension _ChatPageWorkspaceController on _ChatPageState {
   Future<void> _runProjectScopeTransition(
     Future<void> Function() operation,
   ) async {
-    if (_isProjectScopeTransitioning) {
+    final inFlight = _projectScopeTransitionTask;
+    if (inFlight != null) {
+      await inFlight;
+    }
+    if (!mounted) {
       return;
     }
-    _setState(() {
-      _isProjectScopeTransitioning = true;
-    });
+
+    final task = () async {
+      _setState(() {
+        _isProjectScopeTransitioning = true;
+      });
+      try {
+        await operation();
+      } finally {
+        if (mounted) {
+          _setState(() {
+            _isProjectScopeTransitioning = false;
+          });
+        }
+      }
+    }();
+
+    _projectScopeTransitionTask = task;
     try {
-      await operation();
+      await task;
     } finally {
-      if (mounted) {
-        _setState(() {
-          _isProjectScopeTransitioning = false;
-        });
+      if (identical(_projectScopeTransitionTask, task)) {
+        _projectScopeTransitionTask = null;
       }
     }
   }

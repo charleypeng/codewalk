@@ -135,6 +135,7 @@ class _ChatPageState extends State<ChatPage>
   bool _hasUnreadMessagesBelow = false;
   bool _showScrollToFirstFab = false;
   bool _isProjectScopeTransitioning = false;
+  Future<void>? _projectScopeTransitionTask;
   bool _isAppInForeground = true;
   bool _wasChatRouteCurrent = true;
   bool _isProgrammaticScrollInFlight = false;

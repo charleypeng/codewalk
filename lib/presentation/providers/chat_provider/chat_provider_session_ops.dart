@@ -80,7 +80,15 @@ extension _ChatProviderSessionOps on ChatProvider {
     AppLogger.info(
       'Switching chat context reason=$reason context=$_activeContextKey',
     );
-    unawaited(initializeProviders());
+    unawaited(
+      initializeProviders().catchError((Object error, StackTrace stackTrace) {
+        AppLogger.warn(
+          'Background providers refresh failed during context switch',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }),
+    );
 
     final contextMarkedDirty = _dirtyContextKeys.remove(nextContextKey);
     if (contextMarkedDirty || _sessions.isEmpty) {
