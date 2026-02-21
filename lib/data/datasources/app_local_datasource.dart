@@ -2,7 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../core/constants/app_constants.dart';
+import '../cache/chat_cache_payload_store.dart';
 
 /// Technical comment translated to English.
 abstract class AppLocalDataSource {
@@ -270,10 +272,14 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
   AppLocalDataSourceImpl({
     required this.sharedPreferences,
     FlutterSecureStorage? secureStorage,
-  }) : _secureStorage = secureStorage ?? const FlutterSecureStorage();
+    ChatCachePayloadStore? chatCachePayloadStore,
+  }) : _secureStorage = secureStorage ?? const FlutterSecureStorage(),
+       _chatCachePayloadStore =
+           chatCachePayloadStore ?? createChatCachePayloadStore();
 
   final SharedPreferences sharedPreferences;
   final FlutterSecureStorage _secureStorage;
+  ChatCachePayloadStore? _chatCachePayloadStore;
 
   String _secureScopedKey(String base, {String? serverId, String? scopeId}) {
     return _scopedKey(
@@ -365,6 +371,68 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
     }
     final encodedContext = Uri.encodeComponent(scopedContext);
     return '$base::$encodedServer::$encodedContext';
+  }
+
+  Future<String?> _readLargeCachePayload(String key) async {
+    final store = _chatCachePayloadStore;
+    if (store == null) {
+      return sharedPreferences.getString(key);
+    }
+    try {
+      final stored = await store.read(key);
+      if (stored != null) {
+        return stored;
+      }
+      final legacy = sharedPreferences.getString(key);
+      if (legacy == null || legacy.trim().isEmpty) {
+        return legacy;
+      }
+      await store.write(key, legacy);
+      await sharedPreferences.remove(key);
+      return legacy;
+    } catch (_) {
+      _chatCachePayloadStore = null;
+      return sharedPreferences.getString(key);
+    }
+  }
+
+  Future<void> _writeLargeCachePayload(String key, String value) async {
+    final store = _chatCachePayloadStore;
+    if (store == null) {
+      await sharedPreferences.setString(key, value);
+      return;
+    }
+    try {
+      await store.write(key, value);
+      await sharedPreferences.remove(key);
+    } catch (_) {
+      _chatCachePayloadStore = null;
+      await sharedPreferences.setString(key, value);
+    }
+  }
+
+  Future<void> _removeLargeCachePayload(String key) async {
+    final store = _chatCachePayloadStore;
+    if (store != null) {
+      try {
+        await store.remove(key);
+      } catch (_) {
+        _chatCachePayloadStore = null;
+      }
+    }
+    await sharedPreferences.remove(key);
+  }
+
+  Future<void> _clearLargeCachePayloads() async {
+    final store = _chatCachePayloadStore;
+    if (store == null) {
+      return;
+    }
+    try {
+      await store.clear();
+    } catch (_) {
+      _chatCachePayloadStore = null;
+    }
   }
 
   @override
@@ -972,13 +1040,12 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
 
   @override
   Future<String?> getCachedSessions({String? serverId, String? scopeId}) async {
-    return sharedPreferences.getString(
-      _scopedKey(
-        AppConstants.cachedSessionsKey,
-        serverId: serverId,
-        scopeId: scopeId,
-      ),
+    final key = _scopedKey(
+      AppConstants.cachedSessionsKey,
+      serverId: serverId,
+      scopeId: scopeId,
     );
+    return _readLargeCachePayload(key);
   }
 
   @override
@@ -987,14 +1054,12 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
     String? serverId,
     String? scopeId,
   }) async {
-    await sharedPreferences.setString(
-      _scopedKey(
-        AppConstants.cachedSessionsKey,
-        serverId: serverId,
-        scopeId: scopeId,
-      ),
-      sessionsJson,
+    final key = _scopedKey(
+      AppConstants.cachedSessionsKey,
+      serverId: serverId,
+      scopeId: scopeId,
     );
+    await _writeLargeCachePayload(key, sessionsJson);
   }
 
   @override
@@ -1032,13 +1097,12 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
     String? serverId,
     String? scopeId,
   }) async {
-    return sharedPreferences.getString(
-      _scopedKey(
-        AppConstants.lastSessionSnapshotKey,
-        serverId: serverId,
-        scopeId: scopeId,
-      ),
+    final key = _scopedKey(
+      AppConstants.lastSessionSnapshotKey,
+      serverId: serverId,
+      scopeId: scopeId,
     );
+    return _readLargeCachePayload(key);
   }
 
   @override
@@ -1047,14 +1111,12 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
     String? serverId,
     String? scopeId,
   }) async {
-    await sharedPreferences.setString(
-      _scopedKey(
-        AppConstants.lastSessionSnapshotKey,
-        serverId: serverId,
-        scopeId: scopeId,
-      ),
-      snapshotJson,
+    final key = _scopedKey(
+      AppConstants.lastSessionSnapshotKey,
+      serverId: serverId,
+      scopeId: scopeId,
     );
+    await _writeLargeCachePayload(key, snapshotJson);
   }
 
   @override
@@ -1092,7 +1154,7 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
     String? serverId,
     String? scopeId,
   }) async {
-    await sharedPreferences.remove(
+    await _removeLargeCachePayload(
       _scopedKey(
         AppConstants.lastSessionSnapshotKey,
         serverId: serverId,
@@ -1113,12 +1175,22 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
     required String serverId,
     required String scopeId,
   }) async {
-    final keys = <String>[
+    await _removeLargeCachePayload(
       _scopedKey(
         AppConstants.cachedSessionsKey,
         serverId: serverId,
         scopeId: scopeId,
       ),
+    );
+    await _removeLargeCachePayload(
+      _scopedKey(
+        AppConstants.lastSessionSnapshotKey,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+
+    final keys = <String>[
       _scopedKey(
         AppConstants.cachedSessionsUpdatedAtKey,
         serverId: serverId,
@@ -1131,11 +1203,6 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
       ),
       _scopedKey(
         AppConstants.lastSessionIdKey,
-        serverId: serverId,
-        scopeId: scopeId,
-      ),
-      _scopedKey(
-        AppConstants.lastSessionSnapshotKey,
         serverId: serverId,
         scopeId: scopeId,
       ),
@@ -1262,6 +1329,7 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
 
   @override
   Future<void> clearAll() async {
+    await _clearLargeCachePayloads();
     await sharedPreferences.clear();
     try {
       await _secureStorage.deleteAll();

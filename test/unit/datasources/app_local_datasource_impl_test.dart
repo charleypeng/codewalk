@@ -1,10 +1,35 @@
 import 'dart:convert';
 
 import 'package:codewalk/core/constants/app_constants.dart';
+import 'package:codewalk/data/cache/chat_cache_payload_store.dart';
 import 'package:codewalk/data/datasources/app_local_datasource.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+class _InMemoryChatCachePayloadStore implements ChatCachePayloadStore {
+  final Map<String, String> values = <String, String>{};
+
+  @override
+  Future<void> clear() async {
+    values.clear();
+  }
+
+  @override
+  Future<String?> read(String key) async {
+    return values[key];
+  }
+
+  @override
+  Future<void> remove(String key) async {
+    values.remove(key);
+  }
+
+  @override
+  Future<void> write(String key, String value) async {
+    values[key] = value;
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -123,6 +148,50 @@ void main() {
       );
       expect(hydratedProfile['basicAuthUsername'], 'alice');
       expect(hydratedProfile['basicAuthPassword'], 'super-secret');
+    },
+  );
+
+  test(
+    'stores large chat cache payload in cache store instead of preferences',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final cacheStore = _InMemoryChatCachePayloadStore();
+      final dataSource = AppLocalDataSourceImpl(
+        sharedPreferences: prefs,
+        chatCachePayloadStore: cacheStore,
+      );
+
+      await dataSource.saveCachedSessions('[{"id":"s1"}]');
+
+      expect(
+        cacheStore.values[AppConstants.cachedSessionsKey],
+        '[{"id":"s1"}]',
+      );
+      expect(prefs.getString(AppConstants.cachedSessionsKey), isNull);
+    },
+  );
+
+  test(
+    'migrates legacy cached sessions payload from preferences to cache store',
+    () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        AppConstants.cachedSessionsKey: '[{"id":"legacy"}]',
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final cacheStore = _InMemoryChatCachePayloadStore();
+      final dataSource = AppLocalDataSourceImpl(
+        sharedPreferences: prefs,
+        chatCachePayloadStore: cacheStore,
+      );
+
+      final payload = await dataSource.getCachedSessions();
+
+      expect(payload, '[{"id":"legacy"}]');
+      expect(
+        cacheStore.values[AppConstants.cachedSessionsKey],
+        '[{"id":"legacy"}]',
+      );
+      expect(prefs.getString(AppConstants.cachedSessionsKey), isNull);
     },
   );
 }
