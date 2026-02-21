@@ -552,7 +552,6 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
             messages: messages,
             startIndex: 0,
             endExclusive: boundaryIndex,
-            isSessionActivelyResponding: isSessionActivelyResponding,
           );
         }
         _appendTimelineEntriesForRange(
@@ -560,7 +559,6 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           messages: messages,
           startIndex: boundaryIndex,
           endExclusive: messages.length,
-          isSessionActivelyResponding: isSessionActivelyResponding,
         );
       }
     }
@@ -571,7 +569,6 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
         messages: messages,
         startIndex: 0,
         endExclusive: messages.length,
-        isSessionActivelyResponding: isSessionActivelyResponding,
       );
     }
 
@@ -596,7 +593,6 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     required List<ChatMessage> messages,
     required int startIndex,
     required int endExclusive,
-    required bool isSessionActivelyResponding,
   }) {
     if (startIndex >= endExclusive) {
       return;
@@ -628,10 +624,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       final finalAssistant = messages[assistantRunEnd - 1] as AssistantMessage;
       final workMessageCount = assistantRunEnd - assistantRunStart - 1;
       if (workMessageCount > 0 &&
-          _isSuccessfulFinalAssistantMessage(
-            finalAssistant,
-            isSessionActivelyResponding: isSessionActivelyResponding,
-          )) {
+          _isSuccessfulFinalAssistantMessage(finalAssistant)) {
         final workGroup = _CollapsedAssistantWorkGroup(
           startMessageId: messages[assistantRunStart].id,
           endMessageId: messages[assistantRunEnd - 2].id,
@@ -670,12 +663,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     }
   }
 
-  bool _isSuccessfulFinalAssistantMessage(
-    AssistantMessage message, {
-    required bool isSessionActivelyResponding,
-  }) {
+  bool _isSuccessfulFinalAssistantMessage(AssistantMessage message) {
     return message.isCompleted &&
-        !isSessionActivelyResponding &&
         message.error == null &&
         message.summary != true;
   }
