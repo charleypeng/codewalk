@@ -31,6 +31,26 @@ class _InMemoryChatCachePayloadStore implements ChatCachePayloadStore {
   }
 }
 
+class _ThrowingChatCachePayloadStore implements ChatCachePayloadStore {
+  @override
+  Future<void> clear() async {}
+
+  @override
+  Future<String?> read(String key) async {
+    throw StateError('cache read failed');
+  }
+
+  @override
+  Future<void> remove(String key) async {
+    throw StateError('cache remove failed');
+  }
+
+  @override
+  Future<void> write(String key, String value) async {
+    throw StateError('cache write failed');
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -192,6 +212,44 @@ void main() {
         '[{"id":"legacy"}]',
       );
       expect(prefs.getString(AppConstants.cachedSessionsKey), isNull);
+    },
+  );
+
+  test(
+    'stores last session snapshot in cache store instead of preferences',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final cacheStore = _InMemoryChatCachePayloadStore();
+      final dataSource = AppLocalDataSourceImpl(
+        sharedPreferences: prefs,
+        chatCachePayloadStore: cacheStore,
+      );
+
+      await dataSource.saveLastSessionSnapshot('{"session":"s1"}');
+
+      expect(
+        cacheStore.values[AppConstants.lastSessionSnapshotKey],
+        '{"session":"s1"}',
+      );
+      expect(prefs.getString(AppConstants.lastSessionSnapshotKey), isNull);
+    },
+  );
+
+  test(
+    'falls back to SharedPreferences when cache store write fails',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final dataSource = AppLocalDataSourceImpl(
+        sharedPreferences: prefs,
+        chatCachePayloadStore: _ThrowingChatCachePayloadStore(),
+      );
+
+      await dataSource.saveCachedSessions('[{"id":"fallback"}]');
+
+      expect(
+        prefs.getString(AppConstants.cachedSessionsKey),
+        '[{"id":"fallback"}]',
+      );
     },
   );
 }

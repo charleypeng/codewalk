@@ -280,6 +280,7 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
   final SharedPreferences sharedPreferences;
   final FlutterSecureStorage _secureStorage;
   ChatCachePayloadStore? _chatCachePayloadStore;
+  final Set<String> _migratedLargeCacheKeys = <String>{};
 
   String _secureScopedKey(String base, {String? serverId, String? scopeId}) {
     return _scopedKey(
@@ -378,22 +379,34 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
     if (store == null) {
       return sharedPreferences.getString(key);
     }
+
     try {
       final stored = await store.read(key);
       if (stored != null) {
         return stored;
       }
-      final legacy = sharedPreferences.getString(key);
-      if (legacy == null || legacy.trim().isEmpty) {
-        return legacy;
-      }
-      await store.write(key, legacy);
-      await sharedPreferences.remove(key);
-      return legacy;
     } catch (_) {
-      _chatCachePayloadStore = null;
       return sharedPreferences.getString(key);
     }
+
+    if (_migratedLargeCacheKeys.contains(key)) {
+      return null;
+    }
+
+    final legacy = sharedPreferences.getString(key);
+    if (legacy == null || legacy.trim().isEmpty) {
+      _migratedLargeCacheKeys.add(key);
+      return legacy;
+    }
+
+    try {
+      await store.write(key, legacy);
+      await sharedPreferences.remove(key);
+      _migratedLargeCacheKeys.add(key);
+    } catch (_) {
+      return legacy;
+    }
+    return legacy;
   }
 
   Future<void> _writeLargeCachePayload(String key, String value) async {
@@ -405,8 +418,8 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
     try {
       await store.write(key, value);
       await sharedPreferences.remove(key);
+      _migratedLargeCacheKeys.add(key);
     } catch (_) {
-      _chatCachePayloadStore = null;
       await sharedPreferences.setString(key, value);
     }
   }
@@ -416,10 +429,9 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
     if (store != null) {
       try {
         await store.remove(key);
-      } catch (_) {
-        _chatCachePayloadStore = null;
-      }
+      } catch (_) {}
     }
+    _migratedLargeCacheKeys.add(key);
     await sharedPreferences.remove(key);
   }
 
@@ -430,9 +442,8 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
     }
     try {
       await store.clear();
-    } catch (_) {
-      _chatCachePayloadStore = null;
-    }
+    } catch (_) {}
+    _migratedLargeCacheKeys.clear();
   }
 
   @override
