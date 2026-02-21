@@ -947,43 +947,132 @@ void main() {
     expect(find.textContaining('Running command'), findsOneWidget);
   });
 
-  testWidgets('keeps completed tool chains collapsed while session responds', (
-    WidgetTester tester,
-  ) async {
-    final message = AssistantMessage(
-      id: 'msg_tool_chain_streaming',
-      sessionId: 'ses_tool_chain_streaming',
-      time: DateTime.fromMillisecondsSinceEpoch(1000),
-      completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
-      parts: <MessagePart>[
-        ToolPart(
-          id: 'part_tool_chain_streaming_1',
-          messageId: 'msg_tool_chain_streaming',
-          sessionId: 'ses_tool_chain_streaming',
-          callId: 'call_chain_streaming_1',
-          tool: 'bash',
-          state: ToolStateCompleted(
-            input: const <String, dynamic>{'command': 'pwd'},
-            output: '/tmp/project',
-            time: ToolTime(
-              start: DateTime.fromMillisecondsSinceEpoch(1000),
-              end: DateTime.fromMillisecondsSinceEpoch(1050),
+  testWidgets(
+    'keeps tool chain expanded while responding and collapses after completion',
+    (WidgetTester tester) async {
+      final message = AssistantMessage(
+        id: 'msg_tool_chain_streaming',
+        sessionId: 'ses_tool_chain_streaming',
+        time: DateTime.fromMillisecondsSinceEpoch(1000),
+        completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+        parts: <MessagePart>[
+          ToolPart(
+            id: 'part_tool_chain_streaming_1',
+            messageId: 'msg_tool_chain_streaming',
+            sessionId: 'ses_tool_chain_streaming',
+            callId: 'call_chain_streaming_1',
+            tool: 'bash',
+            state: ToolStateCompleted(
+              input: const <String, dynamic>{'command': 'pwd'},
+              output: '/tmp/project',
+              time: ToolTime(
+                start: DateTime.fromMillisecondsSinceEpoch(1000),
+                end: DateTime.fromMillisecondsSinceEpoch(1050),
+              ),
+            ),
+          ),
+          ToolPart(
+            id: 'part_tool_chain_streaming_2',
+            messageId: 'msg_tool_chain_streaming',
+            sessionId: 'ses_tool_chain_streaming',
+            callId: 'call_chain_streaming_2',
+            tool: 'read',
+            state: ToolStateCompleted(
+              input: const <String, dynamic>{'filePath': 'lib/main.dart'},
+              output: 'line 1\nline 2',
+              time: ToolTime(
+                start: DateTime.fromMillisecondsSinceEpoch(1060),
+                end: DateTime.fromMillisecondsSinceEpoch(1100),
+              ),
+            ),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChatMessageWidget(
+              message: message,
+              isSessionActivelyResponding: true,
             ),
           ),
         ),
-        ToolPart(
-          id: 'part_tool_chain_streaming_2',
-          messageId: 'msg_tool_chain_streaming',
-          sessionId: 'ses_tool_chain_streaming',
-          callId: 'call_chain_streaming_2',
-          tool: 'read',
-          state: ToolStateCompleted(
-            input: const <String, dynamic>{'filePath': 'lib/main.dart'},
-            output: 'line 1\nline 2',
-            time: ToolTime(
-              start: DateTime.fromMillisecondsSinceEpoch(1060),
-              end: DateTime.fromMillisecondsSinceEpoch(1100),
+      );
+
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'tool_chain_toggle_msg_tool_chain_streaming_part_tool_chain_streaming_1',
+          ),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'tool_part_details_button_part_tool_chain_streaming_1',
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'tool_part_details_button_part_tool_chain_streaming_2',
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Running command'), findsOneWidget);
+      expect(find.textContaining('Reading file'), findsOneWidget);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChatMessageWidget(
+              message: message,
+              isSessionActivelyResponding: false,
             ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'tool_chain_toggle_msg_tool_chain_streaming_part_tool_chain_streaming_1',
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Details'), findsOneWidget);
+      expect(find.textContaining('Running command'), findsOneWidget);
+      expect(find.textContaining('Reading file'), findsOneWidget);
+    },
+  );
+
+  testWidgets('uses input description while tool is running', (
+    WidgetTester tester,
+  ) async {
+    final message = AssistantMessage(
+      id: 'msg_tool_running_description',
+      sessionId: 'ses_tool_running_description',
+      time: DateTime.fromMillisecondsSinceEpoch(1000),
+      parts: <MessagePart>[
+        ToolPart(
+          id: 'part_tool_running_description',
+          messageId: 'msg_tool_running_description',
+          sessionId: 'ses_tool_running_description',
+          callId: 'call_tool_running_description',
+          tool: 'bash',
+          state: ToolStateRunning(
+            input: const <String, dynamic>{
+              'description': 'Checking project status in real time',
+              'command': 'git status --short',
+            },
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
           ),
         ),
       ],
@@ -1000,25 +1089,25 @@ void main() {
       ),
     );
 
-    expect(find.text('Details'), findsOneWidget);
-    expect(find.textContaining('Running command'), findsOneWidget);
-    expect(find.textContaining('Reading file'), findsOneWidget);
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: ChatMessageWidget(
-            message: message,
-            isSessionActivelyResponding: false,
-          ),
+    expect(find.text('Checking project status in real time'), findsOneWidget);
+    expect(
+      find.byKey(
+        const ValueKey<String>(
+          'tool_part_details_button_part_tool_running_description',
         ),
       ),
+      findsOneWidget,
     );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Details'), findsOneWidget);
-    expect(find.textContaining('Running command'), findsOneWidget);
-    expect(find.textContaining('Reading file'), findsOneWidget);
+    expect(find.text('Hide'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is RichText &&
+            widget.key == const ValueKey<String>('tool_command_text') &&
+            widget.text.toPlainText().contains('Command: git status --short'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('shows tool call descriptions in collapsed summary', (

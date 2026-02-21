@@ -503,7 +503,9 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         ? message as AssistantMessage
         : null;
     final shouldAutoCollapseToolChains =
-        assistantMessage != null && assistantMessage.isCompleted;
+        assistantMessage != null &&
+        assistantMessage.isCompleted &&
+        !isSessionActivelyResponding;
     if (assistantMessage == null ||
         !shouldAutoCollapseToolChains ||
         !showToolCallBubbles) {
@@ -590,17 +592,99 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   }
 
   String _resolveToolDescriptionLabel(ToolPart part) {
-    final title = switch (part.state.status) {
+    final explicitTitle = switch (part.state.status) {
       ToolStatus.running => (part.state as ToolStateRunning).title,
       ToolStatus.completed => (part.state as ToolStateCompleted).title,
       ToolStatus.error => (part.state as ToolStateError).title,
       ToolStatus.pending => null,
     };
-    final normalizedTitle = title?.trim();
-    if (normalizedTitle != null && normalizedTitle.isNotEmpty) {
-      return normalizedTitle;
+
+    final candidateLabels = <String?>[
+      explicitTitle,
+      _extractPreferredToolLabel(_toolStateMetadata(part.state)),
+      _extractPreferredToolLabel(_toolStateInput(part.state)),
+    ];
+    for (final candidate in candidateLabels) {
+      final normalized = _normalizeToolLabel(candidate);
+      if (normalized != null) {
+        return normalized;
+      }
     }
+
     return _toolPresentation(part.tool).title;
+  }
+
+  Map<String, dynamic>? _toolStateMetadata(ToolState state) {
+    return switch (state.status) {
+      ToolStatus.running => (state as ToolStateRunning).metadata,
+      ToolStatus.completed => (state as ToolStateCompleted).metadata,
+      ToolStatus.error => (state as ToolStateError).metadata,
+      ToolStatus.pending => null,
+    };
+  }
+
+  Map<String, dynamic>? _toolStateInput(ToolState state) {
+    return switch (state.status) {
+      ToolStatus.running => (state as ToolStateRunning).input,
+      ToolStatus.completed => (state as ToolStateCompleted).input,
+      ToolStatus.error => (state as ToolStateError).input,
+      ToolStatus.pending => null,
+    };
+  }
+
+  String? _extractPreferredToolLabel(
+    Map<String, dynamic>? data, {
+    int depth = 0,
+  }) {
+    if (data == null || data.isEmpty || depth > 1) {
+      return null;
+    }
+
+    const preferredKeys = <String>[
+      'description',
+      'title',
+      'label',
+      'summary',
+      'caption',
+      'task',
+      'intent',
+      'purpose',
+      'message',
+    ];
+    for (final key in preferredKeys) {
+      final normalized = _normalizeToolLabel(data[key]);
+      if (normalized != null) {
+        return normalized;
+      }
+    }
+
+    const nestedKeys = <String>['metadata', 'meta', 'tool', 'state', 'ui'];
+    for (final key in nestedKeys) {
+      final nested = data[key];
+      if (nested is Map) {
+        final nestedMap = Map<String, dynamic>.from(nested);
+        final nestedLabel = _extractPreferredToolLabel(
+          nestedMap,
+          depth: depth + 1,
+        );
+        if (nestedLabel != null) {
+          return nestedLabel;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  String? _normalizeToolLabel(dynamic raw) {
+    if (raw is! String) {
+      return null;
+    }
+    final normalized = raw.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (normalized.isEmpty) {
+      return null;
+    }
+    return normalized;
   }
 
   String _resolveToolTypeLabel(ToolPart part) {
@@ -2114,7 +2198,10 @@ class _ToolPartDetailsToggleState extends State<_ToolPartDetailsToggle> {
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             ),
-            child: Text(_expanded ? 'Hide' : 'Details'),
+            child: Text(
+              _expanded ? 'Hide' : 'Details',
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
           ),
         ),
       ],
@@ -2334,7 +2421,7 @@ class _CollapsibleToolContentState extends State<_CollapsibleToolContent> {
       children: [
         contentViewport,
         Align(
-          alignment: Alignment.centerRight,
+          alignment: Alignment.center,
           child: TextButton(
             key: const ValueKey<String>('tool_content_toggle_button'),
             onPressed: () {
@@ -2349,7 +2436,9 @@ class _CollapsibleToolContentState extends State<_CollapsibleToolContent> {
             ),
             child: Text(
               _expanded ? 'Show less' : 'Show more',
-              style: widget.toggleTextStyle,
+              style:
+                  widget.toggleTextStyle ??
+                  Theme.of(context).textTheme.labelSmall,
             ),
           ),
         ),
