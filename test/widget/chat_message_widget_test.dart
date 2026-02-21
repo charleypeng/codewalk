@@ -902,7 +902,7 @@ void main() {
     expect(find.text('Reading file'), findsOneWidget);
   });
 
-  testWidgets('keeps completed tool chains collapsed while session responds', (
+  testWidgets('defers tool-chain collapse until session response is finished', (
     WidgetTester tester,
   ) async {
     final message = AssistantMessage(
@@ -955,9 +955,9 @@ void main() {
       ),
     );
 
-    expect(find.text('Tool calls collapsed'), findsOneWidget);
-    expect(find.text('Running command'), findsNothing);
-    expect(find.text('Reading file'), findsNothing);
+    expect(find.text('Tool calls collapsed'), findsNothing);
+    expect(find.text('Running command'), findsOneWidget);
+    expect(find.text('Reading file'), findsOneWidget);
 
     await tester.pumpWidget(
       MaterialApp(

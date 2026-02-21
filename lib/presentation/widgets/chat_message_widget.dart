@@ -476,7 +476,9 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         ? message as AssistantMessage
         : null;
     final shouldAutoCollapseToolChains =
-        assistantMessage != null && assistantMessage.isCompleted;
+        assistantMessage != null &&
+        assistantMessage.isCompleted &&
+        !isSessionActivelyResponding;
     if (assistantMessage == null ||
         !shouldAutoCollapseToolChains ||
         !showToolCallBubbles) {
