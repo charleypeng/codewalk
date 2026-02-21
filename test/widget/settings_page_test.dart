@@ -57,6 +57,27 @@ void main() {
     expect(find.text('Spacious'), findsOneWidget);
     expect(find.text('Extra Spacious'), findsOneWidget);
 
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey<String>('settings_toggle_composer_tips')),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Composer tips'), findsOneWidget);
+    expect(find.text('Task list'), findsOneWidget);
+
+    final composerTipsFinder = find.byKey(
+      const ValueKey<String>('settings_toggle_composer_tips'),
+    );
+    expect(tester.widget<SwitchListTile>(composerTipsFinder).value, isTrue);
+
+    await tester.tap(composerTipsFinder);
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<SwitchListTile>(composerTipsFinder).value, isFalse);
+    expect(settingsProvider.showComposerTips, isFalse);
+
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
 

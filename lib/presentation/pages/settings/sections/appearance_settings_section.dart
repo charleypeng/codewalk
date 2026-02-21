@@ -113,11 +113,11 @@ class AppearanceSettingsSection extends StatelessWidget {
                         'Extract color scheme from your device wallpaper.',
                       ),
                       value: settingsProvider.useDynamicColor,
-                      onChanged: (value) => unawaited(
-                        settingsProvider.setUseDynamicColor(value),
-                      ),
+                      onChanged: (value) =>
+                          unawaited(settingsProvider.setUseDynamicColor(value)),
                     ),
-                  if (settingsProvider.dynamicColorAvailable) const Divider(height: 1),
+                  if (settingsProvider.dynamicColorAvailable)
+                    const Divider(height: 1),
                   Padding(
                     padding: const EdgeInsets.all(AppConstants.defaultPadding),
                     child: Column(
@@ -142,36 +142,39 @@ class AppearanceSettingsSection extends StatelessWidget {
                           ),
                           spacing: 10,
                           runSpacing: 10,
-                          children: BrandColor.values.map((brand) {
-                            final isSelected =
-                                settingsProvider.customColorSeed == brand.value;
-                            final isDisabled =
-                                settingsProvider.useDynamicColor &&
-                                settingsProvider.dynamicColorAvailable;
-                            return Tooltip(
-                              message: brand.label,
-                              child: ChoiceChip(
-                                key: ValueKey<String>(
-                                  'settings_brand_color_${brand.name}',
-                                ),
-                                label: const SizedBox.shrink(),
-                                selected: isSelected,
-                                onSelected: isDisabled
-                                    ? null
-                                    : (_) => unawaited(
-                                          settingsProvider.setCustomColorSeed(
-                                            isSelected ? null : brand.value,
+                          children: BrandColor.values
+                              .map((brand) {
+                                final isSelected =
+                                    settingsProvider.customColorSeed ==
+                                    brand.value;
+                                final isDisabled =
+                                    settingsProvider.useDynamicColor &&
+                                    settingsProvider.dynamicColorAvailable;
+                                return Tooltip(
+                                  message: brand.label,
+                                  child: ChoiceChip(
+                                    key: ValueKey<String>(
+                                      'settings_brand_color_${brand.name}',
+                                    ),
+                                    label: const SizedBox.shrink(),
+                                    selected: isSelected,
+                                    onSelected: isDisabled
+                                        ? null
+                                        : (_) => unawaited(
+                                            settingsProvider.setCustomColorSeed(
+                                              isSelected ? null : brand.value,
+                                            ),
                                           ),
-                                        ),
-                                avatar: CircleAvatar(
-                                  backgroundColor: brand.seed,
-                                ),
-                                showCheckmark: isSelected,
-                                labelPadding: EdgeInsets.zero,
-                                padding: const EdgeInsets.all(4),
-                              ),
-                            );
-                          }).toList(growable: false),
+                                    avatar: CircleAvatar(
+                                      backgroundColor: brand.seed,
+                                    ),
+                                    showCheckmark: isSelected,
+                                    labelPadding: EdgeInsets.zero,
+                                    padding: const EdgeInsets.all(4),
+                                  ),
+                                );
+                              })
+                              .toList(growable: false),
                         ),
                       ],
                     ),
@@ -190,8 +193,7 @@ class AppearanceSettingsSection extends StatelessWidget {
                     settingsProvider.dynamicColorAvailable;
                 return Card(
                   child: Padding(
-                    padding:
-                        const EdgeInsets.all(AppConstants.defaultPadding),
+                    padding: const EdgeInsets.all(AppConstants.defaultPadding),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -225,9 +227,10 @@ class AppearanceSettingsSection extends StatelessWidget {
                                 onChanged: isDynamicActive
                                     ? null
                                     : (value) => unawaited(
-                                          settingsProvider
-                                              .setContrastLevel(value),
+                                        settingsProvider.setContrastLevel(
+                                          value,
                                         ),
+                                      ),
                               ),
                             ),
                             const Text('High'),
@@ -315,17 +318,27 @@ class AppearanceSettingsSection extends StatelessWidget {
                   ),
                   const Divider(height: 1),
                   SwitchListTile.adaptive(
-                    key: const ValueKey<String>(
-                      'settings_toggle_task_list',
-                    ),
+                    key: const ValueKey<String>('settings_toggle_task_list'),
                     title: const Text('Task list'),
                     subtitle: const Text(
                       'Show or hide the session task list widget.',
                     ),
                     value: settingsProvider.showTaskList,
-                    onChanged: (value) => unawaited(
-                      settingsProvider.setShowTaskList(value),
+                    onChanged: (value) =>
+                        unawaited(settingsProvider.setShowTaskList(value)),
+                  ),
+                  const Divider(height: 1),
+                  SwitchListTile.adaptive(
+                    key: const ValueKey<String>(
+                      'settings_toggle_composer_tips',
                     ),
+                    title: const Text('Composer tips'),
+                    subtitle: const Text(
+                      'Show or hide rotating tips while the assistant is reasoning.',
+                    ),
+                    value: settingsProvider.showComposerTips,
+                    onChanged: (value) =>
+                        unawaited(settingsProvider.setShowComposerTips(value)),
                   ),
                 ],
               ),
