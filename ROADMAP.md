@@ -93,7 +93,7 @@ Notes:
 - [x] `featM` - `ROADMAP.featM.md` (Icons to Material Symbols migration)
 - [x] `featN` - `ROADMAP.featN.md` (Material You design system revamp)
 - [x] `featO` - `ROADMAP.featO.md` (Code health & technical debt)
-- [ ] `featQ` - `ROADMAP.featQ.md` (Cross-platform UX and settings polish)
+- [~] `featQ` - `ROADMAP.featQ.md` (Cross-platform UX and settings polish)
 
 Use the same status convention from Legend for active execution updates (`[~]`, `[x]`, `[/]`).
 

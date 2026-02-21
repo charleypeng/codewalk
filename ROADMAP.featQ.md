@@ -13,7 +13,7 @@
   - [x] On macOS, investigate square launcher icon and align with macOS icon guidelines. — `2bae6d7`
   - [x] Standardize fallback icon borders for OSes without specific icon guidelines (Android already OK; investigate Windows and others). — `2bae6d7`
   - [x] Research and implement tray/notification icon simplification per OS, including Android status-bar notification icon standardization (monochrome + transparent) with an ImageMagick pipeline. — `2bae6d7`, `d909f88`
-  - [ ] Research and select the fastest, most efficient Flutter caching strategy/system, then implement it in the app with focus on performance and cross-platform consistency.
+   - [x] Research and select the fastest, most efficient Flutter caching strategy/system, then implement it in the app with focus on performance and cross-platform consistency. — `04741b1`, `c80f168`
   - [ ] Verify/adjust mobile-only background sync to be low impact on battery and data usage.
 
 - **Group 2 — Settings, Wizard, Status, and Update Consistency** [~]
