@@ -14,11 +14,13 @@
   - [x] Standardize fallback icon borders for OSes without specific icon guidelines (Android already OK; investigate Windows and others). — `2bae6d7`
   - [x] Research and implement tray/notification icon simplification per OS, including Android status-bar notification icon standardization (monochrome + transparent) with an ImageMagick pipeline. — `2bae6d7`, `d909f88`
   - [ ] Research and select the fastest, most efficient Flutter caching strategy/system, then implement it in the app with focus on performance and cross-platform consistency.
+  - [ ] Verify/adjust mobile-only background sync to be low impact on battery and data usage.
 
 - **Group 2 — Settings, Wizard, Status, and Update Consistency** [~]
   - [x] Reorganize Wizard visuals to highlight the recommended option and alternatives. — `92fa47e`
   - [x] Unify the general Setup Wizard and server Setup Wizard into a single, consistent experience. - Related commits: bd12170 226f4b5
   - [ ] Sync Settings > Appearance with the `Display` popover.
+  - [ ] Add an AMOLED mode switch available when dark mode is active.
   - [x] In Settings, move Servers to first position (before Appearance). — `92fa47e`
   - [ ] In Settings > Logs, remove extra step and open logs screen directly.
   - [ ] On mobile, Back in Settings follows hierarchical navigation: section -> Settings main screen -> app main screen; only after that should Back close the app.
@@ -27,8 +29,9 @@
   - [ ] In Settings > About, create an independent update system for new versions.
   - [ ] In About, add "check updates on open" option (default on), with toast and update button.
   - [x] Ensure notifications do not prefix the title with generic labels such as `Finished:`.
+  - [ ] Verify that opening a notification navigates to its source session; implement/fix if needed.
   - [x] In sync status, avoid orange dot for recoverable states (`degraded`/`delayed`/`reconnecting`); show subtle loading in menu when returning from foreground without persistent indicator.
-  - [ ] Fix visual desync of the select near Settings vs server popover (reactive status consistency).
+  - [~] Fix visual desync of the select near Settings vs server popover (reactive status consistency).
   - [ ] Simplify terminology mismatch Project vs Workspace in "Project Context" dialog.
   - [ ] Reorganize the "Project Context" screen for a more dynamic visual UX; tapping a project opens it immediately and closes the dialog, removing the need for a separate open button next to trash.
   - [ ] Fix intermittent stale project selection in "Project Context": after switching projects, the UI must always reflect the newly selected project without requiring reopening the dialog and selecting again.
@@ -42,6 +45,7 @@
   - [ ] Require custom textual descriptions for every tool call; when a tool call finishes, auto-collapse it to icon+title with an inline expand button to reopen details.
   - [ ] Mirror subagent permission prompts/authorization requests in the main conversation so users can respond there too, with a subtle origin badge indicating the request comes from a subagent.
   - [ ] Remove the border around tool-call bubbles.
+  - [ ] Experiment with all border variations related to Assistant message bubbles.
   - [ ] Investigate and fix mobile-first blank chat screen when opening very large conversations: the screen goes fully white until app restart, and usually opens correctly after relaunch.
   - [ ] Investigate and fix mobile chat-state refresh after app resume: sometimes the latest assistant message is not rendered when returning from background, but appears after switching to another conversation and back.
   - [ ] Investigate and fix conversation-open click behavior: sometimes opening a conversation requires two clicks (first opens the conversation, second closes the sidebar), and a fast double-click on the same item can freeze the screen, especially with large histories.

@@ -107,6 +107,10 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
   Widget _buildActiveServerCard(AppProvider appProvider) {
     final activeServer = appProvider.activeServer;
     final activeId = appProvider.activeServerId;
+    final hasActiveInList = appProvider.serverProfiles.any(
+      (profile) => profile.id == activeId,
+    );
+    final dropdownValue = hasActiveInList ? activeId : null;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.defaultPadding),
@@ -119,7 +123,8 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
             ),
             const SizedBox(height: 10),
             DropdownButtonFormField<String>(
-              initialValue: activeId,
+              key: ValueKey<String?>('active_server_dropdown_$dropdownValue'),
+              initialValue: dropdownValue,
               items: appProvider.serverProfiles
                   .map(
                     (profile) => DropdownMenuItem<String>(
@@ -142,7 +147,8 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                   )
                   .toList(),
               onChanged: (id) async {
-                if (id == null || id == activeId) return;
+                final currentActiveId = appProvider.activeServerId;
+                if (id == null || id == currentActiveId) return;
                 final status = appProvider.healthFor(id);
                 if (status == ServerHealthStatus.unhealthy) {
                   _showMessage(
