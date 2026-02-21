@@ -20,7 +20,7 @@
   - [x] Reorganize Wizard visuals to highlight the recommended option and alternatives. — `92fa47e`
   - [x] Unify the general Setup Wizard and server Setup Wizard into a single, consistent experience. - Related commits: bd12170 226f4b5
   - [x] Sync Settings > Appearance with the `Display` popover. — `d51266d`
-  - [ ] Add an AMOLED mode switch available when dark mode is active.
+  - [x] Add an AMOLED mode switch available when dark mode is active. — `2ccc089`, `4b1d4cc`
   - [x] In Settings, move Servers to first position (before Appearance). — `92fa47e`
   - [ ] In Settings > Logs, remove extra step and open logs screen directly.
   - [ ] On mobile, Back in Settings follows hierarchical navigation: section -> Settings main screen -> app main screen; only after that should Back close the app.
