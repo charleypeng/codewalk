@@ -19,7 +19,7 @@
 - **Group 2 — Settings, Wizard, Status, and Update Consistency** [~]
   - [x] Reorganize Wizard visuals to highlight the recommended option and alternatives. — `92fa47e`
   - [x] Unify the general Setup Wizard and server Setup Wizard into a single, consistent experience. - Related commits: bd12170 226f4b5
-  - [ ] Sync Settings > Appearance with the `Display` popover.
+  - [x] Sync Settings > Appearance with the `Display` popover. — `d51266d`
   - [ ] Add an AMOLED mode switch available when dark mode is active.
   - [x] In Settings, move Servers to first position (before Appearance). — `92fa47e`
   - [ ] In Settings > Logs, remove extra step and open logs screen directly.
