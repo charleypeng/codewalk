@@ -125,7 +125,6 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/icon.png
-    - assets/images/tray_mono_master.png
     - assets/images/tray_icon_linux.png
     - assets/images/tray_icon_macos_template.png
     - assets/images/tray_icon_windows.ico
