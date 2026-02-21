@@ -27,6 +27,9 @@ extension _ChatProviderRealtimeOps on ChatProvider {
     final active = _messageSubscription;
     if (preserveActiveStream && active != null) {
       _preservedMessageSubscriptions.add(active);
+      // Detach from active tracking so the new session starts clean.
+      _messageSubscription = null;
+      _activeMessageStreamSessionId = null;
       if (invalidateGeneration) {
         _messageStreamGeneration += 1;
       }

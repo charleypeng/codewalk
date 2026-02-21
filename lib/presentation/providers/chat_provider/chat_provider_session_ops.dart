@@ -13,11 +13,11 @@ extension _ChatProviderSessionOps on ChatProvider {
       invalidateGeneration: true,
       preserveActiveStream: reason == 'project',
     );
-    if (reason != 'project') {
-      await _cancelPreservedMessageSubscriptions(
-        reason: 'context-switch-$reason',
-      );
-    }
+    // Drain all preserved subscriptions on every context switch to prevent
+    // stream and HTTP connection leaks across repeated switches.
+    await _cancelPreservedMessageSubscriptions(
+      reason: 'context-switch-$reason',
+    );
     await _cancelSubscriptionSafely(
       _eventSubscription,
       label: 'realtime event',
