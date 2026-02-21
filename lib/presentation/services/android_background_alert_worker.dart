@@ -817,7 +817,7 @@ class _BackgroundNotificationDispatcher {
       return;
     }
     try {
-      const android = AndroidInitializationSettings('@mipmap/launcher_icon');
+      const android = AndroidInitializationSettings('@drawable/ic_stat_codewalk');
       const settings = InitializationSettings(android: android);
       await _plugin.initialize(settings: settings);
       final androidPlugin = _plugin
