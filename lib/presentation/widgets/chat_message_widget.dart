@@ -56,6 +56,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   static const int _maxToolOutputPreviewChars = 50000;
   static const int _maxToolCommandPreviewChars = 6000;
   static const int _maxSyntheticDiffChars = 20000;
+  static final RegExp _whitespaceRegExp = RegExp(r'\s+');
 
   // Snapshot of the last build inputs to skip redundant rebuilds.
   // Completed messages can skip rebuild when no visible prop changed.
@@ -662,7 +663,17 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     for (final key in nestedKeys) {
       final nested = data[key];
       if (nested is Map) {
-        final nestedMap = Map<String, dynamic>.from(nested);
+        final nestedMap = <String, dynamic>{};
+        for (final entry in nested.entries) {
+          final nestedKey = entry.key;
+          if (nestedKey is! String) {
+            continue;
+          }
+          nestedMap[nestedKey] = entry.value;
+        }
+        if (nestedMap.isEmpty) {
+          continue;
+        }
         final nestedLabel = _extractPreferredToolLabel(
           nestedMap,
           depth: depth + 1,
@@ -680,11 +691,15 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     if (raw is! String) {
       return null;
     }
-    final normalized = raw.replaceAll(RegExp(r'\s+'), ' ').trim();
+    final normalized = raw.replaceAll(_whitespaceRegExp, ' ').trim();
     if (normalized.isEmpty) {
       return null;
     }
-    return normalized;
+    const maxLabelLength = 120;
+    if (normalized.length <= maxLabelLength) {
+      return normalized;
+    }
+    return '${normalized.substring(0, maxLabelLength - 1)}…';
   }
 
   String _resolveToolTypeLabel(ToolPart part) {
