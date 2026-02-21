@@ -14,11 +14,13 @@ This document contains only active architectural decisions that represent the cu
 - ADR-008: Context-Scoped File Explorer and Viewer with Quick Open and Diff-Aware Refresh
 - ADR-009: Native Session Title Generation via Internal `title` Agent
 - ADR-010: Delivery Pipeline Split for CI Quality, Tagged Releases, and Minor-Tag Smoke Checks
-- ADR-011: First-Run Onboarding Wizard
+- ADR-011: Unified Server Setup Wizard (Onboarding and Settings)
 - ADR-012: Material Symbols Migration via `material_symbols_icons`
 - ADR-013: MD3 WindowSizeClass Responsive Breakpoint Strategy
 - ADR-014: Centralized MD3 Design Tokens for Shapes and Brand Colors
 - ADR-015: Platform-Specific Icon Asset Pipeline for Tray, Android Notifications, and macOS Launcher Masking
+- ADR-016: Hybrid File-Backed Cache for Large Chat Payloads
+- ADR-017: Android Foreground Service for Reliable Background Monitoring
 
 ---
 
@@ -67,7 +69,7 @@ Session, selection, and file state must remain isolated per server and per works
 
 ### Decision
 
-Standardize context identity as `serverId::scopeId` (directory-first, project fallback), and orchestrate project/worktree lifecycle through context-aware provider flows.
+Standardize context identity as `serverId::scopeId` (directory-first, project fallback), and orchestrate project/worktree lifecycle through context-aware provider flows. Project scope transitions (project switches, workspace create/delete, project close/reopen) are serialized through a single-flight queue (`_runProjectScopeTransition`) with `Completer`-based tracking to prevent race conditions from rapid user actions.
 
 ### Rationale
 
@@ -80,7 +82,10 @@ Standardize context identity as `serverId::scopeId` (directory-first, project fa
 - ✅ Prevents cross-context bleed in session/model/selection state.
 - ✅ Supports explicit project switching and worktree lifecycle management.
 - ⚠ Increases coordination between project and chat providers.
+- ⚠ All scope-changing operations must flow through the serialization queue; bypassing it risks concurrent state corruption.
 - ❌ Invalid scope keys are rejected instead of silently merged.
+
+**Note** (commits `cb324c4`, `785eee8`): Rapid project switching and workspace create/delete operations are now serialized through `_runProjectScopeTransition`, which uses a `Completer`-based single-flight queue with loading overlay coordination. This prevents race conditions when users switch contexts faster than provider state can settle.
 
 ### Key Files
 
@@ -102,7 +107,7 @@ The app requires realtime-first behavior for session/message coherence, but it m
 
 ### Decision
 
-Use realtime streams as the primary sync mechanism, automatically enter degraded polling when signals fail/stale, and apply platform-aware background policies (desktop tray continuity, mobile hold/fallback strategy).
+Use realtime streams as the primary sync mechanism, automatically enter degraded polling when signals fail/stale, and apply platform-aware background policies (desktop tray continuity, mobile hold/fallback strategy). Active message-response streams are preserved (not cancelled) during session navigation to maintain in-flight response continuity. Preserved streams are tracked in a dedicated set and drained on every context switch to prevent connection leaks. A generation counter (`_messageStreamGeneration`) invalidates stale preserved-stream callbacks, preventing cross-session state mutation.
 
 ### Rationale
 
@@ -114,8 +119,12 @@ Use realtime streams as the primary sync mechanism, automatically enter degraded
 
 - ✅ Maintains near-live UX under normal connectivity.
 - ✅ Preserves functional sync under stream degradation.
+- ✅ Preserves in-flight AI responses during session navigation, matching OpenCode Web continuity behavior.
 - ⚠ Lifecycle orchestration becomes more stateful and timing-sensitive.
+- ⚠ Generation-based invalidation is required to prevent stale preserved streams from mutating current session state; all preserved subscriptions must be drained on context switches.
 - ❌ Continuous background streaming is not guaranteed on mobile.
+
+**Note** (commits `acce617`, `9dcd773`, `37f0397`): Active message streams are now preserved during session navigation instead of being cancelled. The preserved subscription set is drained on every context switch (not just project switches) to prevent HTTP connection leaks. Generation-based invalidation ensures stale stream callbacks cannot mutate current session state.
 
 ### Key Files
 
@@ -125,6 +134,7 @@ Use realtime streams as the primary sync mechanism, automatically enter degraded
 - `lib/presentation/pages/app_shell_page.dart`
 - `lib/presentation/services/desktop_tray_service.dart`
 - `lib/presentation/services/android_background_alert_worker.dart`
+- `lib/presentation/providers/chat_provider/chat_provider_session_ops.dart`
 
 ---
 
@@ -381,7 +391,7 @@ Separate workflows by intent: quality-only CI on push/PR, multi-platform release
 
 ---
 
-## ADR-011: First-Run Onboarding Wizard (2026-02-19)
+## ADR-011: Unified Server Setup Wizard (Onboarding and Settings) (2026-02-19)
 
 **Status**: Accepted
 
@@ -391,7 +401,7 @@ The app had no first-run experience; it opened directly to ChatPage with connect
 
 ### Decision
 
-Gate the main shell in `AppShellPage` via `Consumer2` checks on `serverProfiles` and `skipOnboardingWizard` flag. Introduce `OnboardingWizardPage` with a 3-step flow (Welcome, Server Setup, Ready). Persist the skip flag in `ExperienceSettings`.
+Gate the main shell in `AppShellPage` via `Consumer2` checks on `serverProfiles` and `skipOnboardingWizard` flag. Introduce `OnboardingWizardPage` with a 3-step flow (Welcome, Server Setup, Ready). Persist the skip flag in `ExperienceSettings`. The wizard is also surfaced at the top of Server Settings as the canonical server setup entry point, consolidating the previously separate inline setup form into the same wizard flow used during onboarding.
 
 ### Rationale
 
@@ -405,6 +415,7 @@ Gate the main shell in `AppShellPage` via `Consumer2` checks on `serverProfiles`
 - ✅ Existing users are unaffected; the wizard is skipped when profiles already exist.
 - ✅ "Reset app" in About allows returning to the wizard state for re-onboarding.
 - ⚠ Adds a gating layer in `AppShellPage` that must stay synchronized with profile state.
+- ✅ Server setup consolidated into a single wizard flow, reducing code duplication and ensuring consistent setup UX across first-run and settings contexts.
 - ❌ The wizard flow is intentionally linear; non-linear onboarding is not supported.
 
 ### Key Files
@@ -413,6 +424,9 @@ Gate the main shell in `AppShellPage` via `Consumer2` checks on `serverProfiles`
 - `lib/presentation/pages/onboarding_wizard_page.dart`
 - `lib/domain/entities/experience_settings.dart`
 - `lib/presentation/providers/settings_provider.dart`
+- `lib/presentation/pages/settings/sections/servers_settings_section.dart`
+
+**Note** (commit `bd12170`): The wizard was unified to serve both first-run onboarding and settings-page server setup. The previous inline server setup form in `servers_settings_section.dart` was replaced with the wizard flow, consolidating 613 lines of duplicated setup logic.
 
 ---
 
@@ -588,3 +602,77 @@ Enforce runtime usage through platform services: Android notifications use `@dra
 - `assets/images/tray_icon_macos_template.png`
 - `assets/images/tray_icon_windows.ico`
 - `assets/images/macos_appicon_source.png`
+
+---
+
+## ADR-016: Hybrid File-Backed Cache for Large Chat Payloads (2026-02-20)
+
+**Status**: Accepted
+
+### Context
+
+SharedPreferences has platform-specific size limits and performance degradation for large JSON payloads (session lists, full session snapshots). On some Android devices, payloads exceeding a few hundred KB cause observable write delays and risk silent data truncation.
+
+### Decision
+
+Introduce a two-tier cache architecture: large chat payloads are written to a file-backed store (`ChatCachePayloadStore`) in the app support directory (`chat_cache_v1/`), while metadata and small values remain in SharedPreferences. The file store uses SHA-1 key hashing for deterministic filenames and maintains a 24-entry LRU in-memory read cache. Transparent lazy migration moves existing large values from SharedPreferences to the file store on first access, tracked by a `_migratedLargeCacheKeys` set. Platform-conditional imports provide a no-op stub on web.
+
+### Rationale
+
+- SharedPreferences is designed for small key-value pairs; using it for multi-hundred-KB JSON blobs violates platform contracts.
+- A file-backed store removes size limits and improves write performance for large payloads.
+- Lazy migration avoids a blocking startup cost while ensuring data is progressively moved.
+- Full fallback to SharedPreferences on file-store failure ensures the app never breaks due to storage layer issues.
+
+### Consequences
+
+- ✅ Eliminates payload size limits and improves write performance for large session data.
+- ✅ Transparent migration requires no user action; existing data is preserved.
+- ✅ Full fallback to SharedPreferences ensures resilience against file-store failures.
+- ⚠ Adds platform-conditional compilation paths (io vs. stub) and migration tracking state.
+- ❌ Web platform uses stub (no file store); large payloads remain in SharedPreferences on web.
+
+### Key Files
+
+- `lib/data/cache/chat_cache_payload_store.dart`
+- `lib/data/cache/chat_cache_payload_store_base.dart`
+- `lib/data/cache/chat_cache_payload_store_io.dart`
+- `lib/data/cache/chat_cache_payload_store_stub.dart`
+- `lib/data/datasources/app_local_datasource.dart`
+
+---
+
+## ADR-017: Android Foreground Service for Reliable Background Monitoring (2026-02-20)
+
+**Status**: Accepted
+
+### Context
+
+Android aggressively kills background processes and restricts background execution. The app's background alert monitoring requires a reliable mechanism to survive Android process management and deliver timely notifications even when the app is not in the foreground.
+
+### Decision
+
+Implement a native Kotlin foreground service (`CodeWalkForegroundService`) with `START_STICKY` restart policy, bridged to Dart via `MethodChannel('codewalk/system')`. The Dart-side orchestrator (`AndroidForegroundMonitorService`) provides idempotent `sync()` calls that always invoke the native bridge without count-based deduplication, ensuring the service is restarted if Android killed it while Dart statics were stale. The service uses a dedicated low-priority notification channel (`codewalk_background_monitor_v2`, `IMPORTANCE_MIN`) for the persistent monitoring notification, separate from the alert notification channel which uses default importance for audible alerts.
+
+### Rationale
+
+- `START_STICKY` ensures Android restarts the service after process death, maintaining monitoring continuity.
+- Idempotent sync (always calling the native bridge) avoids stale Dart state from masking a killed native service.
+- A dedicated low-priority notification channel keeps the mandatory foreground notification silent and non-intrusive.
+- Separate alert and monitor channels allow users to configure notification preferences independently.
+- `@Volatile` on the companion `instance` field ensures thread-safe access from the MethodChannel handler.
+
+### Consequences
+
+- ✅ Background monitoring survives Android process management via `START_STICKY`.
+- ✅ Idempotent sync prevents stale-state gaps between Dart and native service lifecycle.
+- ✅ Silent monitor notification with separate alert channel preserves notification UX quality.
+- ⚠ Requires maintaining native Kotlin code alongside the Dart implementation.
+- ⚠ `START_STICKY` restart is not guaranteed on all OEM Android variants with aggressive battery optimization.
+- ❌ The foreground notification is mandatory while monitoring is active (Android OS requirement).
+
+### Key Files
+
+- `android/app/src/main/kotlin/com/verseles/codewalk/CodeWalkForegroundService.kt`
+- `lib/presentation/services/android_foreground_monitor_service.dart`
+- `lib/presentation/services/android_background_alert_worker.dart`
