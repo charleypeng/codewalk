@@ -834,7 +834,10 @@ class ChatProvider extends ChangeNotifier {
           if (_currentSession?.id != session.id) {
             return;
           }
-          _messages = _mergeServerMessagesWithPendingLocalUsers(messages);
+          _messages = _mergeServerMessagesWithActiveLocalTail(
+            messages,
+            sessionId: session.id,
+          );
           notifyListeners();
           _scheduleAutoTitleRefresh(session.id);
           if (!_isCompactingContext) {
@@ -1649,7 +1652,10 @@ class ChatProvider extends ChangeNotifier {
         if (fetchId != _messagesFetchId || _currentSession?.id != sessionId) {
           return;
         }
-        _messages = messages;
+        _messages = _mergeServerMessagesWithActiveLocalTail(
+          messages,
+          sessionId: sessionId,
+        );
         _pendingLocalUserMessageIds.clear();
         _scheduleAutoTitleRefresh(sessionId);
         _setState(ChatState.loaded);

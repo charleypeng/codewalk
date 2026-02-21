@@ -61,4 +61,45 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
 
     return merged;
   }
+
+  List<ChatMessage> _mergeServerMessagesWithActiveLocalTail(
+    List<ChatMessage> serverMessages, {
+    required String sessionId,
+  }) {
+    final merged = _mergeServerMessagesWithPendingLocalUsers(serverMessages);
+    final currentSessionId = _currentSession?.id;
+    final shouldPreserveLocalTail =
+        currentSessionId == sessionId && isSessionActivelyResponding(sessionId);
+    if (!shouldPreserveLocalTail || _messages.isEmpty) {
+      return merged;
+    }
+
+    final existingIds = merged.map((message) => message.id).toSet();
+    final localMessages = _messages
+        .where((message) => message.sessionId == sessionId)
+        .toList(growable: false);
+    if (localMessages.isEmpty) {
+      return merged;
+    }
+
+    var anchorIndex = -1;
+    for (var index = localMessages.length - 1; index >= 0; index -= 1) {
+      if (existingIds.contains(localMessages[index].id)) {
+        anchorIndex = index;
+        break;
+      }
+    }
+
+    final tailStart = anchorIndex >= 0 ? anchorIndex + 1 : 0;
+    for (var index = tailStart; index < localMessages.length; index += 1) {
+      final message = localMessages[index];
+      if (existingIds.contains(message.id)) {
+        continue;
+      }
+      merged.add(message);
+      existingIds.add(message.id);
+    }
+
+    return merged;
+  }
 }

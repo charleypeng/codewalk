@@ -13,11 +13,15 @@ extension _ChatProviderSessionOps on ChatProvider {
       invalidateGeneration: true,
       preserveActiveStream: reason == 'project',
     );
-    // Drain all preserved subscriptions on every context switch to prevent
-    // stream and HTTP connection leaks across repeated switches.
-    await _cancelPreservedMessageSubscriptions(
-      reason: 'context-switch-$reason',
-    );
+    // Preserve active response stream while switching only the project scope.
+    // This avoids interrupting an in-flight response from the previous
+    // directory context. For server scope changes we still drain preserved
+    // subscriptions to avoid leaks.
+    if (reason != 'project') {
+      await _cancelPreservedMessageSubscriptions(
+        reason: 'context-switch-$reason',
+      );
+    }
     await _cancelSubscriptionSafely(
       _eventSubscription,
       label: 'realtime event',

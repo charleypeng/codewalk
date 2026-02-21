@@ -4272,6 +4272,110 @@ void main() {
   });
 
   testWidgets(
+    'does not collapse assistant work group before final assistant response',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_no_final_collapse',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'No Final Collapse',
+          ),
+        ],
+      );
+
+      repository.messagesBySession['ses_no_final_collapse'] = <ChatMessage>[
+        UserMessage(
+          id: 'msg_no_final_user',
+          sessionId: 'ses_no_final_collapse',
+          time: DateTime.fromMillisecondsSinceEpoch(1100),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_no_final_user',
+              messageId: 'msg_no_final_user',
+              sessionId: 'ses_no_final_collapse',
+              text: 'Run tools',
+            ),
+          ],
+        ),
+        AssistantMessage(
+          id: 'msg_no_final_tool_1',
+          sessionId: 'ses_no_final_collapse',
+          time: DateTime.fromMillisecondsSinceEpoch(1200),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1210),
+          parts: <MessagePart>[
+            ToolPart(
+              id: 'part_no_final_tool_1',
+              messageId: 'msg_no_final_tool_1',
+              sessionId: 'ses_no_final_collapse',
+              callId: 'call_no_final_tool_1',
+              tool: 'bash',
+              state: ToolStateCompleted(
+                input: const <String, dynamic>{'command': 'pwd'},
+                output: '/tmp/no-final',
+                time: ToolTime(
+                  start: DateTime.fromMillisecondsSinceEpoch(1200),
+                  end: DateTime.fromMillisecondsSinceEpoch(1205),
+                ),
+              ),
+            ),
+          ],
+        ),
+        AssistantMessage(
+          id: 'msg_no_final_tool_2',
+          sessionId: 'ses_no_final_collapse',
+          time: DateTime.fromMillisecondsSinceEpoch(1250),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1260),
+          parts: <MessagePart>[
+            ToolPart(
+              id: 'part_no_final_tool_2',
+              messageId: 'msg_no_final_tool_2',
+              sessionId: 'ses_no_final_collapse',
+              callId: 'call_no_final_tool_2',
+              tool: 'read',
+              state: ToolStateCompleted(
+                input: const <String, dynamic>{'filePath': 'README.md'},
+                output: 'hello',
+                time: ToolTime(
+                  start: DateTime.fromMillisecondsSinceEpoch(1250),
+                  end: DateTime.fromMillisecondsSinceEpoch(1255),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('timeline_collapsed_assistant_work_header'),
+        ),
+        findsNothing,
+      );
+      expect(find.text('Details'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'shows delayed tip in composer for both thinking and receiving stages',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));

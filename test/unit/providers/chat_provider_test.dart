@@ -3657,6 +3657,64 @@ void main() {
     );
 
     test(
+      'refreshActiveSessionView preserves active local tail against stale snapshot',
+      () async {
+        final sendStream = StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          await sendStream.close();
+        });
+        chatRepository.sendMessageHandler = (_, __, ___, ____) =>
+            sendStream.stream;
+
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        unawaited(provider.sendMessage('Run live tools'));
+        await Future<void>.delayed(Duration.zero);
+
+        final liveAssistant = AssistantMessage(
+          id: 'msg_live_tail',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(2200),
+          parts: <MessagePart>[
+            ToolPart(
+              id: 'part_live_tail_tool',
+              messageId: 'msg_live_tail',
+              sessionId: 'ses_1',
+              callId: 'call_live_tail_tool',
+              tool: 'bash',
+              state: ToolStateRunning(
+                input: const <String, dynamic>{
+                  'description': 'Collecting runtime details',
+                  'command': 'git status --short',
+                },
+                time: DateTime.fromMillisecondsSinceEpoch(2200),
+              ),
+            ),
+          ],
+        );
+
+        sendStream.add(Right(liveAssistant));
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(provider.isCurrentSessionActivelyResponding, isTrue);
+        expect(
+          provider.messages.any((msg) => msg.id == 'msg_live_tail'),
+          isTrue,
+        );
+
+        chatRepository.messagesBySession['ses_1'] = const <ChatMessage>[];
+        await provider.refreshActiveSessionView(includeStatus: false);
+
+        expect(provider.isCurrentSessionActivelyResponding, isTrue);
+        expect(
+          provider.messages.any((msg) => msg.id == 'msg_live_tail'),
+          isTrue,
+        );
+      },
+    );
+
+    test(
       'enters degraded mode after repeated stream failures and recovers on signal',
       () async {
         appRepository.providersResult = Right(

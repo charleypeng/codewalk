@@ -839,6 +839,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
   bool _isSuccessfulFinalAssistantMessage(AssistantMessage message) {
     return message.isCompleted &&
         message.error == null &&
-        message.summary != true;
+        message.summary != true &&
+        !_isMergeableAssistantToolOnlyMessage(message);
   }
 }
