@@ -21,6 +21,18 @@ CodeWalk é um projeto que visa permitir acessar agents de código de qualquer l
 - **Assim que o usuário puder testar**: execute `make android` o mais breve possível pois é um processo relativamente que compila e envia o apk para o telegram. Execute sempre que encerrar uma tarefa envolvendo código. Também preferencialmente em background e assincrono
 - **Antes do commit**: Se não mudou nada código desde o último check, não é necessário outro `make check`
 
+### Fluxo obrigatório quando solicitado pelo usuário
+
+- Quando o usuário pedir explicitamente, seguir esta ordem sem pular etapas:
+  1. implementar a mudança;
+  2. rodar `make check`;
+  3. fazer commit;
+  4. chamar reviewer para o commit;
+  5. aplicar apenas correções aceitas e repetir reviewer em loop até não restarem correções com as quais o agente concorda;
+  6. rodar `HEY_CAPTION="..." make android`;
+  7. só então notificar o usuário.
+- Evitar notificação intermediária de "concluído" antes do fim do passo 6.
+
 ### Caption Dinâmica no Upload
 
 - Sempre use`HEY_CAPTION="Minha legenda customizada" make android`
