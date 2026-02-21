@@ -1,6 +1,41 @@
 part of '../chat_provider.dart';
 
 extension _ChatProviderRealtimeAuxOps on ChatProvider {
+  void _startForegroundResumeSyncIndicator({required String reason}) {
+    if (!_refreshlessRealtimeEnabled) {
+      return;
+    }
+    final shouldNotify = !_isForegroundResumeSyncing;
+    _isForegroundResumeSyncing = true;
+    _foregroundResumeSyncTimer?.cancel();
+    _foregroundResumeSyncTimer = Timer(
+      ChatProvider._foregroundResumeSyncIndicatorDuration,
+      () {
+        _foregroundResumeSyncTimer = null;
+        if (!_isForegroundResumeSyncing) {
+          return;
+        }
+        _isForegroundResumeSyncing = false;
+        _notifyListeners();
+      },
+    );
+    if (shouldNotify) {
+      AppLogger.debug('sync_resume_indicator_started reason=$reason');
+      _notifyListeners();
+    }
+  }
+
+  void _stopForegroundResumeSyncIndicator({required String reason}) {
+    _foregroundResumeSyncTimer?.cancel();
+    _foregroundResumeSyncTimer = null;
+    if (!_isForegroundResumeSyncing) {
+      return;
+    }
+    _isForegroundResumeSyncing = false;
+    AppLogger.debug('sync_resume_indicator_stopped reason=$reason');
+    _notifyListeners();
+  }
+
   Future<void> _cancelSubscriptionSafely(
     StreamSubscription<dynamic>? subscription, {
     required String label,
@@ -18,6 +53,7 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
   void _markRealtimeSignal({required String source}) {
     _lastRealtimeSignalAt = DateTime.now();
     _consecutiveRealtimeFailures = 0;
+    _stopForegroundResumeSyncIndicator(reason: 'signal:$source');
     if (_degradedMode) {
       _exitDegradedMode(reason: 'signal-restored:$source');
     }

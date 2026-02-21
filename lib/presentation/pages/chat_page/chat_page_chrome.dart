@@ -65,6 +65,10 @@ extension _ChatPageChrome on _ChatPageState {
                       chatProvider: chatProvider,
                       appProvider: appProvider,
                     );
+                    final showSyncLoading = _shouldShowMenuSyncLoading(
+                      chatProvider: chatProvider,
+                      appProvider: appProvider,
+                    );
                     final alertColor = _serverStatusColor(
                       context: context,
                       chatProvider: chatProvider,
@@ -96,13 +100,42 @@ extension _ChatPageChrome on _ChatPageState {
                         ],
                       ),
                     );
+                    final loadingIcon = SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          const Positioned.fill(child: Icon(Symbols.menu)),
+                          Positioned(
+                            top: -1,
+                            right: -1,
+                            child: SizedBox(
+                              key: const ValueKey<String>(
+                                'appbar_drawer_sync_loading',
+                              ),
+                              width: 9,
+                              height: 9,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1.4,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
                     return IconButton(
                       key: const ValueKey<String>('appbar_drawer_button'),
                       tooltip: MaterialLocalizations.of(
                         leadingContext,
                       ).openAppDrawerTooltip,
                       onPressed: () => Scaffold.of(leadingContext).openDrawer(),
-                      icon: hasAlert ? alertIcon : menuIcon,
+                      icon: hasAlert
+                          ? alertIcon
+                          : (showSyncLoading ? loadingIcon : menuIcon),
                     );
                   },
                 );
@@ -427,15 +460,35 @@ extension _ChatPageChrome on _ChatPageState {
     required ChatProvider chatProvider,
     required AppProvider appProvider,
   }) {
-    if (!appProvider.isConnected ||
-        chatProvider.syncState == ChatSyncState.reconnecting) {
+    final hasRecoverableSyncState = _isRecoverableSyncState(
+      chatProvider: chatProvider,
+    );
+    if (!appProvider.isConnected && !hasRecoverableSyncState) {
       return Theme.of(context).colorScheme.error;
     }
-    if (chatProvider.syncState == ChatSyncState.delayed ||
-        chatProvider.isInDegradedMode) {
-      return Colors.orange;
+    if (hasRecoverableSyncState) {
+      return Theme.of(context).colorScheme.primary;
     }
     return Colors.green;
+  }
+
+  bool _isRecoverableSyncState({required ChatProvider chatProvider}) {
+    return chatProvider.syncState == ChatSyncState.reconnecting ||
+        chatProvider.syncState == ChatSyncState.delayed ||
+        chatProvider.isInDegradedMode;
+  }
+
+  bool _shouldShowMenuSyncLoading({
+    required ChatProvider chatProvider,
+    required AppProvider appProvider,
+  }) {
+    if (AndroidForegroundMonitorService.isRunning) {
+      return false;
+    }
+    if (!chatProvider.isForegroundResumeSyncing) {
+      return false;
+    }
+    return _isRecoverableSyncState(chatProvider: chatProvider);
   }
 
   ServerHealthStatus _activeServerHealth(AppProvider appProvider) {
@@ -473,16 +526,13 @@ extension _ChatPageChrome on _ChatPageState {
     if (health != ServerHealthStatus.healthy) {
       return true;
     }
-    if (!appProvider.isConnected) {
-      return true;
-    }
     if (!FeatureFlags.refreshlessRealtime) {
+      return !appProvider.isConnected;
+    }
+    if (_isRecoverableSyncState(chatProvider: chatProvider)) {
       return false;
     }
-    if (chatProvider.syncState != ChatSyncState.connected) {
-      return true;
-    }
-    return chatProvider.isInDegradedMode;
+    return !appProvider.isConnected;
   }
 
   void _resetServerAlertGraceState() {

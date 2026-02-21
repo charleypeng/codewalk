@@ -131,6 +131,119 @@ void main() {
       );
     });
 
+    testWidgets(
+      'does not show hamburger alert badge for recoverable sync states',
+      (WidgetTester tester) async {
+        await tester.binding.setSurfaceSize(const Size(500, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test'
+          ..defaultServerId = 'srv_test'
+          ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 'srv_test',
+              'url': 'http://127.0.0.1:4096',
+              'label': 'Test Server',
+              'basicAuthEnabled': false,
+              'basicAuthUsername': '',
+              'basicAuthPassword': '',
+              'createdAt': 0,
+              'updatedAt': 0,
+            },
+          ]);
+        final provider = _buildChatProvider(localDataSource: localDataSource);
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+        await tester.pumpWidget(_testApp(provider, appProvider));
+        await tester.pumpAndSettle();
+
+        final activeServerId = appProvider.activeServerId;
+        if (activeServerId != null) {
+          appProvider.setHealthForTesting(
+            activeServerId,
+            ServerHealthStatus.healthy,
+          );
+        }
+        await tester.pump();
+
+        expect(provider.syncState, ChatSyncState.reconnecting);
+        await tester.pump(const Duration(seconds: 12));
+        await tester.pump();
+
+        expect(
+          find.byKey(const ValueKey<String>('appbar_drawer_alert_badge')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('appbar_drawer_sync_loading')),
+          findsNothing,
+        );
+      },
+    );
+
+    testWidgets('shows subtle menu loading after returning from background', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(500, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..defaultServerId = 'srv_test'
+        ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'srv_test',
+            'url': 'http://127.0.0.1:4096',
+            'label': 'Test Server',
+            'basicAuthEnabled': false,
+            'basicAuthUsername': '',
+            'basicAuthPassword': '',
+            'createdAt': 0,
+            'updatedAt': 0,
+          },
+        ]);
+      final provider = _buildChatProvider(localDataSource: localDataSource);
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      final activeServerId = appProvider.activeServerId;
+      if (activeServerId != null) {
+        appProvider.setHealthForTesting(
+          activeServerId,
+          ServerHealthStatus.healthy,
+        );
+      }
+      await tester.pump();
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      await tester.pump();
+
+      expect(provider.isForegroundResumeSyncing, isTrue);
+      expect(provider.syncState, ChatSyncState.reconnecting);
+
+      expect(
+        find.byKey(const ValueKey<String>('appbar_drawer_alert_badge')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('appbar_drawer_sync_loading')),
+        findsOneWidget,
+      );
+
+      await tester.pump(const Duration(seconds: 13));
+      await tester.pump();
+      expect(
+        find.byKey(const ValueKey<String>('appbar_drawer_sync_loading')),
+        findsNothing,
+      );
+    });
+
     testWidgets('shows utility pane on large desktop width', (
       WidgetTester tester,
     ) async {

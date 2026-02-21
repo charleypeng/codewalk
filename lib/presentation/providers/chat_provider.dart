@@ -253,10 +253,12 @@ class ChatProvider extends ChangeNotifier {
   final Set<String> _dirtyContextKeys = <String>{};
   Timer? _syncHealthTimer;
   Timer? _degradedPollingTimer;
+  Timer? _foregroundResumeSyncTimer;
   DateTime? _lastRealtimeSignalAt;
   ChatSyncState _syncState = ChatSyncState.reconnecting;
   bool _isForegroundActive = true;
   bool _degradedMode = false;
+  bool _isForegroundResumeSyncing = false;
   DateTime? _degradedModeStartedAt;
   int _consecutiveRealtimeFailures = 0;
   bool _pendingRefreshSessions = false;
@@ -285,6 +287,9 @@ class ChatProvider extends ChangeNotifier {
   static const int _maxRecentModels = 8;
   static const Duration _abortSuppressionWindow = Duration(seconds: 8);
   static const Duration _remoteSelectionSyncThrottle = Duration(seconds: 2);
+  static const Duration _foregroundResumeSyncIndicatorDuration = Duration(
+    seconds: 12,
+  );
   static const String _configCodewalkNamespace = 'codewalk';
   static const String _configSelectionKey = 'selection';
   static const String _configVariantByAgentAndModelKey =
@@ -408,6 +413,7 @@ class ChatProvider extends ChangeNotifier {
 
   ChatSyncState get syncState => _syncState;
   bool get isInDegradedMode => _degradedMode;
+  bool get isForegroundResumeSyncing => _isForegroundResumeSyncing;
   bool get refreshlessRealtimeEnabled => _refreshlessRealtimeEnabled;
   bool get isAbortingResponse => _isAbortingResponse;
   bool get isCompactingContext => _isCompactingContext;
@@ -730,9 +736,11 @@ class ChatProvider extends ChangeNotifier {
   }
 
   Future<void> setForegroundActive(bool isActive) async {
+    final wasActive = _isForegroundActive;
     _isForegroundActive = isActive;
     if (!isActive) {
       _clearRejectedDraft();
+      _stopForegroundResumeSyncIndicator(reason: 'background');
     }
 
     if (isActive && _hasPendingRenderFlush) {
@@ -755,6 +763,10 @@ class ChatProvider extends ChangeNotifier {
       _degradedMode = false;
       _degradedModeStartedAt = null;
       return;
+    }
+
+    if (!wasActive) {
+      _startForegroundResumeSyncIndicator(reason: 'foreground');
     }
 
     _startSyncHealthMonitor();
@@ -1296,7 +1308,8 @@ class ChatProvider extends ChangeNotifier {
     }
 
     final delta = reverse ? -1 : 1;
-    final nextIndex = (currentIndex + delta + available.length) % available.length;
+    final nextIndex =
+        (currentIndex + delta + available.length) % available.length;
     final nextName = available[nextIndex].name;
     await setSelectedAgent(nextName);
     return nextName;
@@ -2266,6 +2279,7 @@ class ChatProvider extends ChangeNotifier {
     _globalRefreshDebounce?.cancel();
     _syncHealthTimer?.cancel();
     _degradedPollingTimer?.cancel();
+    _foregroundResumeSyncTimer?.cancel();
     super.dispose();
   }
 }

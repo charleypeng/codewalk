@@ -27,7 +27,7 @@
   - [ ] In Settings > About, create an independent update system for new versions.
   - [ ] In About, add "check updates on open" option (default on), with toast and update button.
   - [x] Ensure notifications do not prefix the title with generic labels such as `Finished:`.
-  - [~] In sync status, avoid orange dot for recoverable states (`degraded`/`delayed`/`reconnecting`); show subtle loading in menu when returning from foreground without persistent indicator.
+  - [x] In sync status, avoid orange dot for recoverable states (`degraded`/`delayed`/`reconnecting`); show subtle loading in menu when returning from foreground without persistent indicator.
   - [ ] Fix visual desync of the select near Settings vs server popover (reactive status consistency).
   - [ ] Simplify terminology mismatch Project vs Workspace in "Project Context" dialog.
   - [ ] Reorganize the "Project Context" screen for a more dynamic visual UX; tapping a project opens it immediately and closes the dialog, removing the need for a separate open button next to trash.

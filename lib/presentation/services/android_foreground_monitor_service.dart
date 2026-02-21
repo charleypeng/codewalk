@@ -9,6 +9,8 @@ class AndroidForegroundMonitorService {
   static bool _running = false;
   static int _lastActiveSessionCount = -1;
 
+  static bool get isRunning => _running;
+
   static Future<void> sync({
     required bool enabled,
     required int activeSessionCount,

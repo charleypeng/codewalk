@@ -31,6 +31,7 @@ import '../providers/chat_provider.dart';
 import '../providers/project_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/android_background_alert_worker.dart';
+import '../services/android_foreground_monitor_service.dart';
 import '../services/notification_service.dart';
 import '../utils/file_explorer_logic.dart';
 import '../utils/reasoning_status_parser.dart';
