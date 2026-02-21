@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../domain/entities/experience_settings.dart';
 import '../../../providers/settings_provider.dart';
+import '../../../services/android_battery_optimization_service.dart';
 import '../../../services/notification_sound_source_service.dart';
 import '../../../services/notification_sound_source_service_types.dart';
 
@@ -25,7 +26,13 @@ class _NotificationsSettingsSectionState
 
   final NotificationSoundSourceService _soundSourceService =
       createNotificationSoundSourceService();
+  final AndroidBatteryOptimizationService _batteryOptimizationService =
+      AndroidBatteryOptimizationService();
   bool _synced = false;
+  bool _batteryStatusSynced = false;
+  bool _batteryStatusLoading = false;
+  bool _batteryRequestInFlight = false;
+  bool? _isIgnoringBatteryOptimizations;
 
   bool get _isDesktopPlatform {
     if (kIsWeb) {
@@ -49,6 +56,13 @@ class _NotificationsSettingsSectionState
     };
   }
 
+  bool get _isAndroidPlatform {
+    if (kIsWeb) {
+      return false;
+    }
+    return defaultTargetPlatform == TargetPlatform.android;
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -59,6 +73,10 @@ class _NotificationsSettingsSectionState
     unawaited(
       context.read<SettingsProvider>().syncNotificationsFromServerConfig(),
     );
+    if (!_batteryStatusSynced && _isAndroidPlatform) {
+      _batteryStatusSynced = true;
+      unawaited(_refreshBatteryOptimizationStatus());
+    }
   }
 
   @override
@@ -218,11 +236,160 @@ class _NotificationsSettingsSectionState
                 onChanged: (value) =>
                     settingsProvider.setKeepMobileRealtimeForShortPeriod(value),
               ),
+              if (_isAndroidPlatform) ...[
+                const SizedBox(height: 10),
+                const Divider(height: 1),
+                const SizedBox(height: 10),
+                _buildBatteryOptimizationPrompt(),
+              ],
             ],
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildBatteryOptimizationPrompt() {
+    final status = _isIgnoringBatteryOptimizations;
+    final statusColor = switch (status) {
+      true => Theme.of(context).colorScheme.primary,
+      false => Theme.of(context).colorScheme.error,
+      null => Theme.of(context).colorScheme.onSurfaceVariant,
+    };
+    final statusIcon = switch (status) {
+      true => Icons.check_circle_outline,
+      false => Icons.warning_amber_rounded,
+      null => Icons.help_outline,
+    };
+    final statusText = switch (status) {
+      true => 'Battery optimization is disabled for CodeWalk.',
+      false =>
+        'Battery optimization is enabled. Some devices may delay background alerts.',
+      null => 'Could not read battery optimization status yet.',
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Android battery optimization',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 6),
+        Text(
+          'If notifications only arrive when reopening the app, allow CodeWalk to run without optimization on this device.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 8),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(statusIcon, size: 18, color: statusColor),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                statusText,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: statusColor),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            FilledButton.tonalIcon(
+              onPressed: _batteryRequestInFlight
+                  ? null
+                  : () => unawaited(_requestBatteryOptimizationExemption()),
+              icon: _batteryRequestInFlight
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Symbols.settings),
+              label: Text(
+                status == true
+                    ? 'Open battery settings'
+                    : 'Disable optimization',
+              ),
+            ),
+            OutlinedButton.icon(
+              onPressed: (_batteryStatusLoading || _batteryRequestInFlight)
+                  ? null
+                  : () => unawaited(_refreshBatteryOptimizationStatus()),
+              icon: _batteryStatusLoading
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Symbols.refresh),
+              label: const Text('Refresh status'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Future<void> _refreshBatteryOptimizationStatus() async {
+    if (!_isAndroidPlatform) {
+      return;
+    }
+    if (_batteryStatusLoading) {
+      return;
+    }
+    setState(() {
+      _batteryStatusLoading = true;
+    });
+
+    final status = await _batteryOptimizationService
+        .isIgnoringBatteryOptimizations();
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _batteryStatusLoading = false;
+      _isIgnoringBatteryOptimizations = status;
+    });
+  }
+
+  Future<void> _requestBatteryOptimizationExemption() async {
+    if (!_isAndroidPlatform) {
+      return;
+    }
+    if (_batteryRequestInFlight) {
+      return;
+    }
+    setState(() {
+      _batteryRequestInFlight = true;
+    });
+
+    final opened = await _batteryOptimizationService
+        .requestDisableBatteryOptimizations();
+    if (mounted) {
+      _showSnackBar(
+        opened
+            ? 'Android battery settings opened. Allow unrestricted battery for CodeWalk.'
+            : 'Could not open Android battery optimization settings.',
+      );
+    }
+
+    await Future<void>.delayed(const Duration(milliseconds: 600));
+    await _refreshBatteryOptimizationStatus();
+
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _batteryRequestInFlight = false;
+    });
   }
 
   Widget _buildCategoryCard({

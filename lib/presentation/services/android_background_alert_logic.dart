@@ -1,5 +1,17 @@
 import '../../domain/entities/experience_settings.dart';
 
+const Duration kBackgroundFastProbeInterval = Duration(minutes: 2);
+
+bool hasActiveBackgroundSessions(Map<String, String> sessionStatusById) {
+  for (final rawStatus in sessionStatusById.values) {
+    final normalized = rawStatus.trim().toLowerCase();
+    if (normalized == 'busy' || normalized == 'retry') {
+      return true;
+    }
+  }
+  return false;
+}
+
 class BackgroundInteractionRequest {
   const BackgroundInteractionRequest({
     required this.id,
@@ -207,8 +219,7 @@ class BackgroundAlertPlanner {
             BackgroundAlertSignal(
               kind: BackgroundAlertKind.error,
               categoryKey: 'errors',
-              title:
-                  'Error: ${_sessionTitleFor(current.sessionTitleById[entry.key])}',
+              title: _sessionTitleFor(current.sessionTitleById[entry.key]),
               body: 'A session reported an error.',
               sessionId: entry.key,
             ),
@@ -226,7 +237,9 @@ class BackgroundAlertPlanner {
             BackgroundAlertSignal(
               kind: BackgroundAlertKind.permission,
               categoryKey: 'permissions',
-              title: 'Action required',
+              title: _sessionTitleFor(
+                current.sessionTitleById[request.sessionId],
+              ),
               body: 'A tool permission needs your input.',
               sessionId: request.sessionId,
             ),
@@ -242,7 +255,9 @@ class BackgroundAlertPlanner {
             BackgroundAlertSignal(
               kind: BackgroundAlertKind.question,
               categoryKey: 'permissions',
-              title: 'Action required',
+              title: _sessionTitleFor(
+                current.sessionTitleById[request.sessionId],
+              ),
               body: 'A tool question needs your input.',
               sessionId: request.sessionId,
             ),
@@ -276,7 +291,7 @@ class BackgroundAlertPlanner {
             BackgroundAlertSignal(
               kind: BackgroundAlertKind.completion,
               categoryKey: 'agent',
-              title: 'Finished: $title',
+              title: title,
               body: 'Agent finished the current response.',
               sessionId: sessionId,
             ),
@@ -290,7 +305,7 @@ class BackgroundAlertPlanner {
             BackgroundAlertSignal(
               kind: BackgroundAlertKind.error,
               categoryKey: 'errors',
-              title: 'Error: $title',
+              title: title,
               body: 'A session reported an error.',
               sessionId: sessionId,
             ),
@@ -312,7 +327,9 @@ class BackgroundAlertPlanner {
           BackgroundAlertSignal(
             kind: BackgroundAlertKind.permission,
             categoryKey: 'permissions',
-            title: 'Action required',
+            title: _sessionTitleFor(
+              current.sessionTitleById[request.sessionId],
+            ),
             body: 'A tool permission needs your input.',
             sessionId: request.sessionId,
           ),
@@ -328,7 +345,9 @@ class BackgroundAlertPlanner {
           BackgroundAlertSignal(
             kind: BackgroundAlertKind.question,
             categoryKey: 'permissions',
-            title: 'Action required',
+            title: _sessionTitleFor(
+              current.sessionTitleById[request.sessionId],
+            ),
             body: 'A tool question needs your input.',
             sessionId: request.sessionId,
           ),

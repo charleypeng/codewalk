@@ -6,7 +6,7 @@
   - [x] Fix first-run without config/server: avoid visual loops/errors and do not query without configured server. — `92fa47e`
   - [x] Review server wizard flow on Windows (installation and recognition). — `c62ee3b`, `9e54aea`
   - [x] Confirm real `speech_to_text` (Native) support on Windows and document why fallback to Sherpa happens. Note: Windows native STT is supported; fallback to Sherpa happens when native initialization fails due permission/privacy, online speech availability, or missing language packs.
-  - [ ] On Android, after leaving the screen, notifications stop arriving; plan a low-impact permanent consultation/polling strategy to keep notification delivery without draining battery.
+  - [x] On Android, after leaving the screen, notifications stop arriving; implemented adaptive polling, persistent monitor only when alerts are pending, and battery-optimization prompt.
   - [x] On Linux, close-to-tray keeps app running instead of fully closing; added `mod+q` quit shortcut and close-to-tray toggle so the window hides on close but quits on shortcut.
   - [x] `mod+j` and `mod+shift+j` switch model correctly; fixed agent cycling logic and added SnackBar feedback on switch. Also fixed bug: `_filterSessionsForCurrentContext` returned fixed-length lists that broke `deleteSession`.
   - [x] Desktop sidebars become horizontally resizable; implemented drag-to-resize with persisted width on both left and right desktop sidebars.
@@ -15,7 +15,7 @@
   - [x] Research and implement tray/notification icon simplification per OS, including Android status-bar notification icon standardization (monochrome + transparent) with an ImageMagick pipeline. — `2bae6d7`, `d909f88`
   - [ ] Research and select the fastest, most efficient Flutter caching strategy/system, then implement it in the app with focus on performance and cross-platform consistency.
 
-- **Group 2 — Settings, Wizard, Status, and Update Consistency** [ ]
+- **Group 2 — Settings, Wizard, Status, and Update Consistency** [~]
   - [x] Reorganize Wizard visuals to highlight the recommended option and alternatives. — `92fa47e`
   - [x] Unify the general Setup Wizard and server Setup Wizard into a single, consistent experience. - Related commits: bd12170 226f4b5
   - [ ] Sync Settings > Appearance with the `Display` popover.
@@ -26,8 +26,8 @@
   - [ ] Add shortcut to enable/disable STT in Shortcuts.
   - [ ] In Settings > About, create an independent update system for new versions.
   - [ ] In About, add "check updates on open" option (default on), with toast and update button.
-  - [ ] Ensure notifications do not prefix the title with generic labels such as `Finished:`.
-  - [ ] In sync status, avoid orange dot for recoverable states (`degraded`/`delayed`/`reconnecting`); show subtle loading in menu when returning from foreground without persistent indicator.
+  - [x] Ensure notifications do not prefix the title with generic labels such as `Finished:`.
+  - [~] In sync status, avoid orange dot for recoverable states (`degraded`/`delayed`/`reconnecting`); show subtle loading in menu when returning from foreground without persistent indicator.
   - [ ] Fix visual desync of the select near Settings vs server popover (reactive status consistency).
   - [ ] Simplify terminology mismatch Project vs Workspace in "Project Context" dialog.
   - [ ] Reorganize the "Project Context" screen for a more dynamic visual UX; tapping a project opens it immediately and closes the dialog, removing the need for a separate open button next to trash.

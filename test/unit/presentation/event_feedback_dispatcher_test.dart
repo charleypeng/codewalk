@@ -76,7 +76,7 @@ void main() {
 
     expect(notificationService.lastCategory, 'agent');
     expect(notificationService.lastSessionId, 'ses_1');
-    expect(notificationService.lastTitle, 'Finished: Refactor login flow');
+    expect(notificationService.lastTitle, 'Refactor login flow');
   });
 
   test(

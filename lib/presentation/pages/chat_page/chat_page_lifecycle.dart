@@ -20,6 +20,61 @@ extension _ChatPageLifecycle on _ChatPageState {
       );
     }
 
+    void primeAndroidBackgroundSnapshot() {
+      if (!_isMobileRuntime) {
+        return;
+      }
+
+      final serverId = provider.activeServerId.trim();
+      if (serverId.isEmpty) {
+        return;
+      }
+
+      final statusById = <String, String>{};
+      for (final entry in provider.sessionStatusById.entries) {
+        final sessionId = entry.key.trim();
+        if (sessionId.isEmpty) {
+          continue;
+        }
+        statusById[sessionId] = entry.value.type.name;
+      }
+
+      final hasActiveSession = statusById.values.any((status) {
+        return status == 'busy' || status == 'retry';
+      });
+      if (!hasActiveSession) {
+        return;
+      }
+
+      final sessionUpdatedAtById = <String, int>{};
+      final sessionTitleById = <String, String>{};
+      for (final session in provider.sessions) {
+        final sessionId = session.id.trim();
+        if (sessionId.isEmpty) {
+          continue;
+        }
+
+        final title = session.title?.trim();
+        if (title != null && title.isNotEmpty) {
+          sessionTitleById[sessionId] = title;
+        }
+
+        final updatedAt = session.time.millisecondsSinceEpoch;
+        if (updatedAt > 0) {
+          sessionUpdatedAtById[sessionId] = updatedAt;
+        }
+      }
+
+      unawaited(
+        AndroidBackgroundAlertWorker.primeSnapshot(
+          serverId: serverId,
+          sessionStatusById: statusById,
+          sessionUpdatedAtById: sessionUpdatedAtById,
+          sessionTitleById: sessionTitleById,
+        ),
+      );
+    }
+
     _backgroundRealtimeHoldTimer?.cancel();
     _backgroundRealtimeHoldTimer = null;
 
@@ -28,6 +83,8 @@ extension _ChatPageLifecycle on _ChatPageState {
       unawaited(provider.setForegroundActive(true));
       return;
     }
+
+    primeAndroidBackgroundSnapshot();
 
     final settingsProvider = _settingsProvider;
     final keepDesktopRealtime =
@@ -47,8 +104,7 @@ extension _ChatPageLifecycle on _ChatPageState {
       AppLogger.debug('foreground_policy reason=$reason mode=mobile-hold');
       unawaited(provider.setForegroundActive(true));
       scheduleAndroidProbe(
-        _ChatPageState._mobileBackgroundRealtimeHoldDuration +
-            const Duration(minutes: 1),
+        AndroidBackgroundAlertWorker.activeSessionProbeInterval,
       );
       _backgroundRealtimeHoldTimer = Timer(
         _ChatPageState._mobileBackgroundRealtimeHoldDuration,

@@ -121,7 +121,7 @@ class EventFeedbackDispatcher {
           notificationCategory: NotificationCategory.permissions,
           soundCategory: SoundCategory.permissions,
           categoryKey: 'permissions',
-          title: 'Action required',
+          title: sessionTitle ?? 'Session',
           body: 'A tool permission or question needs your input.',
           sessionId: sessionId,
         );
@@ -130,9 +130,7 @@ class EventFeedbackDispatcher {
           notificationCategory: NotificationCategory.errors,
           soundCategory: SoundCategory.errors,
           categoryKey: 'errors',
-          title: sessionTitle == null
-              ? 'Session error'
-              : 'Error: $sessionTitle',
+          title: sessionTitle ?? 'Session',
           body: 'A session reported an error.',
           sessionId: sessionId,
         );
@@ -141,7 +139,7 @@ class EventFeedbackDispatcher {
           notificationCategory: NotificationCategory.agent,
           soundCategory: SoundCategory.agent,
           categoryKey: 'agent',
-          title: 'Finished: ${sessionTitle ?? 'Session'}',
+          title: sessionTitle ?? 'Session',
           body: 'Agent finished the current response.',
           sessionId: sessionId,
         );

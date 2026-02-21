@@ -5,6 +5,34 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   const planner = BackgroundAlertPlanner();
 
+  test('detects active sessions for busy and retry statuses', () {
+    expect(
+      hasActiveBackgroundSessions(const <String, String>{
+        'ses_idle': 'idle',
+        'ses_busy': 'busy',
+      }),
+      isTrue,
+    );
+    expect(
+      hasActiveBackgroundSessions(const <String, String>{'ses_retry': 'retry'}),
+      isTrue,
+    );
+  });
+
+  test('ignores idle and unknown statuses when detecting active sessions', () {
+    expect(
+      hasActiveBackgroundSessions(const <String, String>{
+        'ses_idle': 'idle',
+        'ses_done': 'finished',
+      }),
+      isFalse,
+    );
+  });
+
+  test('uses two-minute fast probe cadence', () {
+    expect(kBackgroundFastProbeInterval, const Duration(minutes: 2));
+  });
+
   test('first run emits actionable permission and question requests', () {
     const current = BackgroundPollingState(
       sessionStatusById: <String, String>{'ses_1': 'busy'},
@@ -78,7 +106,7 @@ void main() {
     expect(plan.baselineOnly, isFalse);
     expect(plan.signals.length, 1);
     expect(plan.signals.first.kind, BackgroundAlertKind.error);
-    expect(plan.signals.first.title, 'Error: Build feature');
+    expect(plan.signals.first.title, 'Build feature');
   });
 
   test('emits completion when session transitions busy to idle', () {
@@ -108,7 +136,7 @@ void main() {
     expect(plan.signals.length, 1);
     expect(plan.signals.first.kind, BackgroundAlertKind.completion);
     expect(plan.signals.first.categoryKey, 'agent');
-    expect(plan.signals.first.title, 'Finished: Build feature');
+    expect(plan.signals.first.title, 'Build feature');
   });
 
   test('emits error when session transitions to retry', () {
@@ -137,7 +165,7 @@ void main() {
     expect(plan.signals.length, 1);
     expect(plan.signals.first.kind, BackgroundAlertKind.error);
     expect(plan.signals.first.categoryKey, 'errors');
-    expect(plan.signals.first.title, 'Error: Build feature');
+    expect(plan.signals.first.title, 'Build feature');
   });
 
   test('emits action-required for unseen permission and question ids', () {

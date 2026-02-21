@@ -24,6 +24,7 @@ const String _backgroundAlertOneOffUniqueName =
 const String _backgroundAlertTaskName = 'codewalk.background.alerts.poll';
 const String _backgroundAlertSnapshotKeyPrefix =
     'codewalk.android.background.alert.snapshot.v1';
+const Duration _backgroundAlertFailureRetryInterval = Duration(minutes: 5);
 
 @pragma('vm:entry-point')
 void codewalkBackgroundAlertDispatcher() {
@@ -35,6 +36,8 @@ void codewalkBackgroundAlertDispatcher() {
 
 class AndroidBackgroundAlertWorker {
   static bool _initialized = false;
+  static const Duration activeSessionProbeInterval =
+      kBackgroundFastProbeInterval;
 
   static Future<void> ensureRegistered() async {
     if (!_isAndroidRuntime()) {
@@ -78,16 +81,27 @@ class AndroidBackgroundAlertWorker {
 
   static Future<void> scheduleProbe({
     Duration initialDelay = const Duration(minutes: 1),
+    bool ensureInitialized = true,
   }) async {
     if (!_isAndroidRuntime()) {
       return;
     }
 
-    if (!_initialized) {
+    if (ensureInitialized && !_initialized) {
       await ensureRegistered();
       if (!_initialized) {
         return;
       }
+    }
+
+    await _registerOneOffTask(initialDelay: initialDelay);
+  }
+
+  static Future<void> _registerOneOffTask({
+    required Duration initialDelay,
+  }) async {
+    if (!_isAndroidRuntime()) {
+      return;
     }
 
     try {
@@ -109,11 +123,93 @@ class AndroidBackgroundAlertWorker {
     }
   }
 
+  static Future<void> primeSnapshot({
+    required String serverId,
+    required Map<String, String> sessionStatusById,
+    required Map<String, int> sessionUpdatedAtById,
+    required Map<String, String> sessionTitleById,
+  }) async {
+    if (!_isAndroidRuntime()) {
+      return;
+    }
+
+    final normalizedServerId = serverId.trim();
+    if (normalizedServerId.isEmpty) {
+      return;
+    }
+
+    final normalizedStatusById = <String, String>{};
+    for (final entry in sessionStatusById.entries) {
+      final sessionId = entry.key.trim();
+      final status = entry.value.trim().toLowerCase();
+      if (sessionId.isEmpty || status.isEmpty) {
+        continue;
+      }
+      normalizedStatusById[sessionId] = status;
+    }
+
+    if (!hasActiveBackgroundSessions(normalizedStatusById)) {
+      return;
+    }
+
+    final normalizedUpdatedAtById = <String, int>{};
+    for (final entry in sessionUpdatedAtById.entries) {
+      final sessionId = entry.key.trim();
+      final updatedAt = entry.value;
+      if (sessionId.isEmpty || updatedAt <= 0) {
+        continue;
+      }
+      normalizedUpdatedAtById[sessionId] = updatedAt;
+    }
+
+    final normalizedTitleById = <String, String>{};
+    for (final entry in sessionTitleById.entries) {
+      final sessionId = entry.key.trim();
+      final title = entry.value.trim();
+      if (sessionId.isEmpty || title.isEmpty) {
+        continue;
+      }
+      normalizedTitleById[sessionId] = title;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final snapshotKey = _backgroundAlertSnapshotStorageKey(normalizedServerId);
+    final existingSnapshotRaw = prefs.getString(snapshotKey);
+    var existingSnapshot = BackgroundAlertSnapshot.empty();
+    if (existingSnapshotRaw != null && existingSnapshotRaw.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(existingSnapshotRaw);
+        if (decoded is Map<String, dynamic>) {
+          existingSnapshot = BackgroundAlertSnapshot.fromJson(decoded);
+        } else if (decoded is Map) {
+          existingSnapshot = BackgroundAlertSnapshot.fromJson(
+            Map<String, dynamic>.from(decoded),
+          );
+        }
+      } catch (_) {
+        // Falls back to an empty snapshot.
+      }
+    }
+
+    final primedSnapshot = BackgroundAlertSnapshot(
+      sessionStatusById: normalizedStatusById,
+      sessionUpdatedAtById: normalizedUpdatedAtById,
+      notifiedPermissionRequestIds:
+          existingSnapshot.notifiedPermissionRequestIds,
+      notifiedQuestionRequestIds: existingSnapshot.notifiedQuestionRequestIds,
+      lastPolledAtEpochMs: DateTime.now().millisecondsSinceEpoch,
+    );
+
+    await prefs.setString(snapshotKey, jsonEncode(primedSnapshot.toJson()));
+  }
+
   @pragma('vm:entry-point')
   static Future<bool> executeTask({required String taskName}) async {
     if (!_isAndroidRuntime()) {
       return true;
     }
+
+    _initialized = true;
 
     final runner = _AndroidBackgroundAlertRunner(
       planner: const BackgroundAlertPlanner(),
@@ -145,8 +241,11 @@ class _AndroidBackgroundAlertRunner {
 
       final settings = _readSettings(prefs);
       final dio = _createDioClient(server);
+      final snapshotKey = _snapshotStorageKey(server.serverId);
+      final previousSnapshot = _readSnapshot(prefs, snapshotKey);
       final statusById = await _fetchSessionStatusById(dio);
       if (statusById == null) {
+        await _scheduleRetryAfterStatusFailure(previousSnapshot);
         AppLogger.warn(
           'background_alert_worker skipped ($taskName): status fetch failed',
         );
@@ -164,9 +263,6 @@ class _AndroidBackgroundAlertRunner {
         permissionRequests: permissionRequests,
         questionRequests: questionRequests,
       );
-
-      final snapshotKey = _snapshotStorageKey(server.serverId);
-      final previousSnapshot = _readSnapshot(prefs, snapshotKey);
 
       final nowEpochMs = DateTime.now().millisecondsSinceEpoch;
       final plan = _planner.plan(
@@ -187,6 +283,8 @@ class _AndroidBackgroundAlertRunner {
         jsonEncode(plan.nextSnapshot.toJson()),
       );
 
+      await _scheduleNextProbe(statusById);
+
       AppLogger.debug(
         'background_alert_worker task=$taskName baseline=${plan.baselineOnly} alerts=${plan.signals.length}',
       );
@@ -199,6 +297,45 @@ class _AndroidBackgroundAlertRunner {
       );
       return true;
     }
+  }
+
+  Future<void> _scheduleNextProbe(Map<String, String> statusById) async {
+    if (!hasActiveBackgroundSessions(statusById)) {
+      return;
+    }
+
+    await _scheduleProbe(
+      delay: AndroidBackgroundAlertWorker.activeSessionProbeInterval,
+      reason: 'active-session',
+    );
+  }
+
+  Future<void> _scheduleRetryAfterStatusFailure(
+    BackgroundAlertSnapshot previousSnapshot,
+  ) async {
+    final wasActive = hasActiveBackgroundSessions(
+      previousSnapshot.sessionStatusById,
+    );
+    await _scheduleProbe(
+      delay: wasActive
+          ? AndroidBackgroundAlertWorker.activeSessionProbeInterval
+          : _backgroundAlertFailureRetryInterval,
+      reason: wasActive ? 'status-failure-active' : 'status-failure-fallback',
+    );
+  }
+
+  Future<void> _scheduleProbe({
+    required Duration delay,
+    required String reason,
+  }) async {
+    AppLogger.debug(
+      'background_alert_worker schedule_probe reason=$reason delay=${delay.inMinutes}m',
+    );
+
+    await AndroidBackgroundAlertWorker.scheduleProbe(
+      initialDelay: delay,
+      ensureInitialized: false,
+    );
   }
 
   Dio _createDioClient(_ResolvedServerConfig server) {
@@ -261,8 +398,7 @@ class _AndroidBackgroundAlertRunner {
   }
 
   String _snapshotStorageKey(String serverId) {
-    final normalized = serverId.trim().isEmpty ? 'legacy' : serverId.trim();
-    return '$_backgroundAlertSnapshotKeyPrefix::$normalized';
+    return _backgroundAlertSnapshotStorageKey(serverId);
   }
 
   Future<_ResolvedServerConfig?> _resolveServerConfig(
@@ -784,4 +920,9 @@ bool _isAndroidRuntime() {
     return false;
   }
   return defaultTargetPlatform == TargetPlatform.android;
+}
+
+String _backgroundAlertSnapshotStorageKey(String serverId) {
+  final normalized = serverId.trim().isEmpty ? 'legacy' : serverId.trim();
+  return '$_backgroundAlertSnapshotKeyPrefix::$normalized';
 }

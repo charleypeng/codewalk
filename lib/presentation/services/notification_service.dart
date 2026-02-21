@@ -6,6 +6,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../../core/logging/app_logger.dart';
 import '../../domain/entities/experience_settings.dart';
+import 'android_foreground_monitor_service.dart';
 import 'web_notification_bridge.dart';
 
 class NotificationTapPayload {
@@ -124,6 +125,10 @@ class NotificationService {
       }
 
       _initialized = true;
+      await AndroidForegroundMonitorService.sync(
+        enabled: false,
+        activeSessionCount: 0,
+      );
     } catch (error, stackTrace) {
       AppLogger.warn(
         'Notification initialization unavailable on this platform',
@@ -191,6 +196,7 @@ class NotificationService {
           sessionId: normalizedSessionId,
           payload: payload,
         );
+        await _syncAndroidForegroundMonitorWithPendingNotifications();
       }
 
       return true;
@@ -271,6 +277,85 @@ class NotificationService {
         // Best effort cleanup.
       }
     }
+
+    await _syncAndroidForegroundMonitorWithPendingNotifications();
+  }
+
+  Future<void> _syncAndroidForegroundMonitorWithPendingNotifications() async {
+    if (!_isAndroidRuntime) {
+      return;
+    }
+
+    final activeSessionIds = await _activeSessionIdsFromSystem();
+
+    if (activeSessionIds.isNotEmpty) {
+      _notificationIdsBySession.removeWhere((sessionId, ids) {
+        if (ids.isEmpty) {
+          return true;
+        }
+        return !activeSessionIds.contains(sessionId);
+      });
+    }
+
+    var pendingSessionCount = 0;
+    if (activeSessionIds.isNotEmpty) {
+      pendingSessionCount = activeSessionIds.length;
+    } else {
+      for (final ids in _notificationIdsBySession.values) {
+        if (ids.isNotEmpty) {
+          pendingSessionCount += 1;
+        }
+      }
+    }
+
+    await AndroidForegroundMonitorService.sync(
+      enabled: pendingSessionCount > 0,
+      activeSessionCount: pendingSessionCount,
+    );
+  }
+
+  Future<Set<String>> _activeSessionIdsFromSystem() async {
+    final sessionIds = <String>{};
+    try {
+      final active = await _plugin.getActiveNotifications();
+      for (final notification in active) {
+        final payloadSession = NotificationTapPayload.fromRaw(
+          notification.payload,
+        )?.sessionId;
+        if (payloadSession != null && payloadSession.isNotEmpty) {
+          sessionIds.add(payloadSession);
+        }
+
+        final tag = notification.tag?.trim();
+        if (tag != null && tag.isNotEmpty) {
+          if (tag.startsWith('session:')) {
+            final sessionId = tag.substring('session:'.length).trim();
+            if (sessionId.isNotEmpty) {
+              sessionIds.add(sessionId);
+            }
+          }
+          if (tag.startsWith('session-summary:')) {
+            final sessionId = tag.substring('session-summary:'.length).trim();
+            if (sessionId.isNotEmpty) {
+              sessionIds.add(sessionId);
+            }
+          }
+        }
+
+        final groupKey = notification.groupKey?.trim();
+        if (groupKey != null && groupKey.startsWith('codewalk.session.')) {
+          final sessionId = groupKey
+              .substring('codewalk.session.'.length)
+              .trim();
+          if (sessionId.isNotEmpty) {
+            sessionIds.add(sessionId);
+          }
+        }
+      }
+    } catch (_) {
+      // Some Android variants may restrict active notification introspection.
+    }
+    return sessionIds;
   }
 
   NotificationDetails _buildDetails({
