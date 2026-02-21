@@ -10,9 +10,9 @@
   - [x] On Linux, close-to-tray keeps app running instead of fully closing; added `mod+q` quit shortcut and close-to-tray toggle so the window hides on close but quits on shortcut.
   - [x] `mod+j` and `mod+shift+j` switch model correctly; fixed agent cycling logic and added SnackBar feedback on switch. Also fixed bug: `_filterSessionsForCurrentContext` returned fixed-length lists that broke `deleteSession`.
   - [x] Desktop sidebars become horizontally resizable; implemented drag-to-resize with persisted width on both left and right desktop sidebars.
-  - [x] On macOS, investigate square launcher icon and align with macOS icon guidelines.
-  - [x] Standardize fallback icon borders for OSes without specific icon guidelines (Android already OK; investigate Windows and others).
-  - [x] Research and implement tray/notification icon simplification per OS, including Android status-bar notification icon standardization (monochrome + transparent) with an ImageMagick pipeline.
+  - [x] On macOS, investigate square launcher icon and align with macOS icon guidelines. — `2bae6d7`
+  - [x] Standardize fallback icon borders for OSes without specific icon guidelines (Android already OK; investigate Windows and others). — `2bae6d7`
+  - [x] Research and implement tray/notification icon simplification per OS, including Android status-bar notification icon standardization (monochrome + transparent) with an ImageMagick pipeline. — `2bae6d7`, `d909f88`
   - [ ] Research and select the fastest, most efficient Flutter caching strategy/system, then implement it in the app with focus on performance and cross-platform consistency.
 
 - **Group 2 — Settings, Wizard, Status, and Update Consistency** [ ]
