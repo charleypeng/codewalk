@@ -288,17 +288,21 @@ class NotificationService {
 
     final activeSessionIds = await _activeSessionIdsFromSystem();
 
-    if (activeSessionIds.isNotEmpty) {
-      _notificationIdsBySession.removeWhere((sessionId, ids) {
-        if (ids.isEmpty) {
-          return true;
-        }
-        return !activeSessionIds.contains(sessionId);
-      });
+    if (activeSessionIds != null) {
+      if (activeSessionIds.isEmpty) {
+        _notificationIdsBySession.clear();
+      } else {
+        _notificationIdsBySession.removeWhere((sessionId, ids) {
+          if (ids.isEmpty) {
+            return true;
+          }
+          return !activeSessionIds.contains(sessionId);
+        });
+      }
     }
 
     var pendingSessionCount = 0;
-    if (activeSessionIds.isNotEmpty) {
+    if (activeSessionIds != null) {
       pendingSessionCount = activeSessionIds.length;
     } else {
       for (final ids in _notificationIdsBySession.values) {
@@ -314,7 +318,7 @@ class NotificationService {
     );
   }
 
-  Future<Set<String>> _activeSessionIdsFromSystem() async {
+  Future<Set<String>?> _activeSessionIdsFromSystem() async {
     final sessionIds = <String>{};
     try {
       final active = await _plugin.getActiveNotifications();
@@ -352,10 +356,11 @@ class NotificationService {
           }
         }
       }
+      return sessionIds;
     } catch (_) {
       // Some Android variants may restrict active notification introspection.
+      return null;
     }
-    return sessionIds;
   }
 
   NotificationDetails _buildDetails({

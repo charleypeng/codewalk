@@ -23,6 +23,10 @@ class CodeWalkForegroundService : Service() {
 
         private var instance: CodeWalkForegroundService? = null
 
+        fun isRunning(): Boolean {
+            return instance != null
+        }
+
         fun updateContent(context: Context, title: String, body: String) {
             val notification = buildNotification(context, title, body)
             val service = instance

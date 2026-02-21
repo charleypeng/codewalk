@@ -46,8 +46,11 @@ class MainActivity : FlutterActivity() {
                     val title = call.argument<String>("title") ?: "CodeWalk"
                     val body = call.argument<String>("body")
                         ?: "For reliable notifications"
-                    startCodeWalkForegroundService(title = title, body = body)
-                    CodeWalkForegroundService.updateContent(this, title, body)
+                    if (CodeWalkForegroundService.isRunning()) {
+                        CodeWalkForegroundService.updateContent(this, title, body)
+                    } else {
+                        startCodeWalkForegroundService(title = title, body = body)
+                    }
                     result.success(true)
                 }
                 "isIgnoringBatteryOptimizations" -> {
