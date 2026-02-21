@@ -394,7 +394,7 @@ class ChatProvider extends ChangeNotifier {
         status == SessionStatusType.busy || status == SessionStatusType.retry;
     final hasActiveStream =
         _activeMessageStreamSessionId == normalizedSessionId &&
-        (_messageSubscription != null || _state == ChatState.sending);
+        _messageSubscription != null;
 
     if (!isCurrentSession) {
       return hasBusyStatus;
