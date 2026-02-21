@@ -83,6 +83,7 @@ class MyApp extends StatelessWidget {
             builder: (context, settingsProvider, _) {
               final appDensity = settingsProvider.appDensity;
               final useDynamic = settingsProvider.useDynamicColor;
+              final useAmoledDark = settingsProvider.useAmoledDark;
               final customSeed = settingsProvider.customColorSeed;
               final contrastLevel = settingsProvider.contrastLevel;
 
@@ -91,8 +92,7 @@ class MyApp extends StatelessWidget {
               // heuristic).
               // Consider dynamic color available when the platform provides
               // at least one scheme (light or dark).
-              final hasDynamic =
-                  lightDynamic != null || darkDynamic != null;
+              final hasDynamic = lightDynamic != null || darkDynamic != null;
               if (settingsProvider.dynamicColorAvailable != hasDynamic) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   settingsProvider.updateDynamicColorAvailability(
@@ -107,22 +107,23 @@ class MyApp extends StatelessWidget {
                   : AppTheme.seedColor;
 
               // Use dynamic platform colors when available and enabled
-              final lightScheme =
-                  useDynamic && lightDynamic != null
-                      ? lightDynamic
-                      : ColorScheme.fromSeed(
-                          seedColor: seedColor,
-                          brightness: Brightness.light,
-                          contrastLevel: contrastLevel,
-                        );
-              final darkScheme =
-                  useDynamic && darkDynamic != null
-                      ? darkDynamic
-                      : ColorScheme.fromSeed(
-                          seedColor: seedColor,
-                          brightness: Brightness.dark,
-                          contrastLevel: contrastLevel,
-                        );
+              final lightScheme = useDynamic && lightDynamic != null
+                  ? lightDynamic
+                  : ColorScheme.fromSeed(
+                      seedColor: seedColor,
+                      brightness: Brightness.light,
+                      contrastLevel: contrastLevel,
+                    );
+              final darkScheme = useDynamic && darkDynamic != null
+                  ? darkDynamic
+                  : ColorScheme.fromSeed(
+                      seedColor: seedColor,
+                      brightness: Brightness.dark,
+                      contrastLevel: contrastLevel,
+                    );
+              final resolvedDarkScheme = useAmoledDark
+                  ? _applyAmoledDarkScheme(darkScheme)
+                  : darkScheme;
 
               // Map user theme mode preference to Flutter ThemeMode
               final themeMode = switch (settingsProvider.themeMode) {
@@ -132,12 +133,9 @@ class MyApp extends StatelessWidget {
               };
               return MaterialApp(
                 title: AppConstants.appName,
-                theme: AppTheme.lightFrom(
-                  lightScheme,
-                  appDensity: appDensity,
-                ),
+                theme: AppTheme.lightFrom(lightScheme, appDensity: appDensity),
                 darkTheme: AppTheme.darkFrom(
-                  darkScheme,
+                  resolvedDarkScheme,
                   appDensity: appDensity,
                 ),
                 themeMode: themeMode,
@@ -169,4 +167,18 @@ bool _isAndroidRuntime() {
     return false;
   }
   return defaultTargetPlatform == TargetPlatform.android;
+}
+
+ColorScheme _applyAmoledDarkScheme(ColorScheme base) {
+  const black = Colors.black;
+  return base.copyWith(
+    surface: black,
+    surfaceDim: black,
+    surfaceBright: black,
+    surfaceContainerLowest: black,
+    surfaceContainerLow: black,
+    surfaceContainer: black,
+    surfaceContainerHigh: black,
+    surfaceContainerHighest: black,
+  );
 }

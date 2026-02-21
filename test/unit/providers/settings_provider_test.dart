@@ -330,6 +330,29 @@ void main() {
       expect(second.themeMode, ThemeModeOption.dark);
     });
 
+    test('persists AMOLED dark preference', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+
+      expect(first.useAmoledDark, isFalse);
+
+      await first.setUseAmoledDark(true);
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(second.useAmoledDark, isTrue);
+    });
+
     test('persists dynamic color and custom seed preferences', () async {
       final local = InMemoryAppLocalDataSource();
       final first = SettingsProvider(

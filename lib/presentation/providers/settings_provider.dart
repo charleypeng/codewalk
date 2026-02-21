@@ -56,6 +56,7 @@ class SettingsProvider extends ChangeNotifier {
   bool get checkingForUpdate => _checkingForUpdate;
   bool get lastCheckFoundNoUpdate => _lastCheckFoundNoUpdate;
   ThemeModeOption get themeMode => _settings.themeMode;
+  bool get useAmoledDark => _settings.useAmoledDark;
   bool get useDynamicColor => _settings.useDynamicColor;
   int? get customColorSeed => _settings.customColorSeed;
   double get contrastLevel => _settings.contrastLevel;
@@ -248,6 +249,15 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(themeMode: mode);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setUseAmoledDark(bool value) async {
+    if (_settings.useAmoledDark == value) {
+      return;
+    }
+    _settings = _settings.copyWith(useAmoledDark: value);
     notifyListeners();
     await _persist();
   }

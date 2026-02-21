@@ -359,6 +359,7 @@ class ExperienceSettings {
       desktopCloseBehavior: DesktopCloseBehavior.tray,
       keepMobileRealtimeForShortPeriod: true,
       themeMode: ThemeModeOption.system,
+      useAmoledDark: false,
       useDynamicColor: true,
       customColorSeed: null,
       contrastLevel: 0.0,
@@ -388,6 +389,7 @@ class ExperienceSettings {
     required this.desktopCloseBehavior,
     required this.keepMobileRealtimeForShortPeriod,
     this.themeMode = ThemeModeOption.system,
+    this.useAmoledDark = false,
     this.useDynamicColor = true,
     this.customColorSeed,
     this.contrastLevel = 0.0,
@@ -417,6 +419,7 @@ class ExperienceSettings {
   final DesktopCloseBehavior desktopCloseBehavior;
   final bool keepMobileRealtimeForShortPeriod;
   final ThemeModeOption themeMode;
+  final bool useAmoledDark;
   final bool useDynamicColor;
   final int? customColorSeed;
   final double contrastLevel;
@@ -446,6 +449,7 @@ class ExperienceSettings {
     DesktopCloseBehavior? desktopCloseBehavior,
     bool? keepMobileRealtimeForShortPeriod,
     ThemeModeOption? themeMode,
+    bool? useAmoledDark,
     bool? useDynamicColor,
     int? Function()? customColorSeed,
     double? contrastLevel,
@@ -481,6 +485,7 @@ class ExperienceSettings {
           keepMobileRealtimeForShortPeriod ??
           this.keepMobileRealtimeForShortPeriod,
       themeMode: themeMode ?? this.themeMode,
+      useAmoledDark: useAmoledDark ?? this.useAmoledDark,
       useDynamicColor: useDynamicColor ?? this.useDynamicColor,
       customColorSeed: customColorSeed != null
           ? customColorSeed()
@@ -552,6 +557,7 @@ class ExperienceSettings {
           desktopCloseBehavior != DesktopCloseBehavior.close,
       'keepMobileRealtimeForShortPeriod': keepMobileRealtimeForShortPeriod,
       'themeMode': themeModeOptionKey(themeMode),
+      'useAmoledDark': useAmoledDark,
       'useDynamicColor': useDynamicColor,
       if (customColorSeed != null) 'customColorSeed': customColorSeed,
       'contrastLevel': contrastLevel,
@@ -766,6 +772,12 @@ class ExperienceSettings {
       themeMode = themeModeOptionFromKey(themeModeJson.trim().toLowerCase());
     }
 
+    var useAmoledDark = defaults.useAmoledDark;
+    final useAmoledDarkJson = json['useAmoledDark'];
+    if (useAmoledDarkJson is bool) {
+      useAmoledDark = useAmoledDarkJson;
+    }
+
     var useDynamicColor = defaults.useDynamicColor;
     final useDynamicColorJson = json['useDynamicColor'];
     if (useDynamicColorJson is bool) {
@@ -833,6 +845,7 @@ class ExperienceSettings {
       desktopCloseBehavior: desktopCloseBehavior,
       keepMobileRealtimeForShortPeriod: keepMobileRealtimeForShortPeriod,
       themeMode: themeMode,
+      useAmoledDark: useAmoledDark,
       useDynamicColor: useDynamicColor,
       customColorSeed: customColorSeed,
       contrastLevel: contrastLevel,

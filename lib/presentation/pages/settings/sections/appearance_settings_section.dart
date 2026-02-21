@@ -25,6 +25,8 @@ class AppearanceSettingsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, _) {
+        final isDarkModeActive =
+            Theme.of(context).brightness == Brightness.dark;
         final selectedDensity = settingsProvider.appDensity;
         const densityOptions = <({AppDensity value, String label})>[
           (value: AppDensity.extraDense, label: 'Extra Dense'),
@@ -91,6 +93,25 @@ class AppearanceSettingsSection extends StatelessWidget {
                           settingsProvider.setThemeMode(selected.first),
                         ),
                       ),
+                    ),
+                    const SizedBox(height: 12),
+                    SwitchListTile.adaptive(
+                      key: const ValueKey<String>(
+                        'settings_toggle_amoled_dark',
+                      ),
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('AMOLED dark mode'),
+                      subtitle: Text(
+                        isDarkModeActive
+                            ? 'Use pure black surfaces while dark mode is active.'
+                            : 'Available when dark mode is active.',
+                      ),
+                      value: settingsProvider.useAmoledDark,
+                      onChanged: isDarkModeActive
+                          ? (value) => unawaited(
+                              settingsProvider.setUseAmoledDark(value),
+                            )
+                          : null,
                     ),
                   ],
                 ),
