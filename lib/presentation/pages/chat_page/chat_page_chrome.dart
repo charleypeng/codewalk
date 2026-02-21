@@ -536,7 +536,7 @@ extension _ChatPageChrome on _ChatPageState {
       return !appProvider.isConnected;
     }
     if (_isRecoverableSyncState(chatProvider: chatProvider)) {
-      return false;
+      return chatProvider.isRecoverableSyncAlertEscalated;
     }
     return !appProvider.isConnected;
   }

@@ -286,6 +286,23 @@ void main() {
         find.byKey(const ValueKey<String>('appbar_drawer_alert_badge')),
         findsNothing,
       );
+
+      if (FeatureFlags.refreshlessRealtime) {
+        await tester.pump(const Duration(seconds: 52));
+        await tester.pump();
+        if (activeServerId != null) {
+          appProvider.setHealthForTesting(
+            activeServerId,
+            ServerHealthStatus.healthy,
+          );
+        }
+        await tester.pump();
+        expect(provider.isForegroundResumeSyncing, isFalse);
+        expect(
+          find.byKey(const ValueKey<String>('appbar_drawer_sync_loading')),
+          findsNothing,
+        );
+      }
     });
 
     testWidgets('shows utility pane on large desktop width', (

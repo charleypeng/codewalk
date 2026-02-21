@@ -7,6 +7,10 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     }
     final shouldNotify = !_isForegroundResumeSyncing;
     _isForegroundResumeSyncing = true;
+    if (shouldNotify) {
+      _foregroundResumeSyncCycleCount = 0;
+      _recoverableSyncAlertEscalated = false;
+    }
     _foregroundResumeSyncTimer?.cancel();
     _foregroundResumeSyncTimer = Timer(
       ChatProvider._foregroundResumeSyncIndicatorDuration,
@@ -20,11 +24,17 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
             _syncState == ChatSyncState.delayed ||
             _degradedMode;
         if (_isForegroundActive && recoverableSyncPending) {
-          _startForegroundResumeSyncIndicator(
-            reason: 'foreground-resume-pending',
-          );
-          return;
+          _foregroundResumeSyncCycleCount += 1;
+          if (_foregroundResumeSyncCycleCount <
+              ChatProvider._foregroundResumeSyncIndicatorMaxCycles) {
+            _startForegroundResumeSyncIndicator(
+              reason: 'foreground-resume-pending',
+            );
+            return;
+          }
+          _recoverableSyncAlertEscalated = true;
         }
+        _foregroundResumeSyncCycleCount = 0;
         _isForegroundResumeSyncing = false;
         _notifyListeners();
       },
@@ -38,10 +48,14 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
   void _stopForegroundResumeSyncIndicator({required String reason}) {
     _foregroundResumeSyncTimer?.cancel();
     _foregroundResumeSyncTimer = null;
-    if (!_isForegroundResumeSyncing) {
+    _foregroundResumeSyncCycleCount = 0;
+    final wasSyncing = _isForegroundResumeSyncing;
+    final wasEscalated = _recoverableSyncAlertEscalated;
+    _isForegroundResumeSyncing = false;
+    _recoverableSyncAlertEscalated = false;
+    if (!wasSyncing && !wasEscalated) {
       return;
     }
-    _isForegroundResumeSyncing = false;
     AppLogger.debug('sync_resume_indicator_stopped reason=$reason');
     _notifyListeners();
   }

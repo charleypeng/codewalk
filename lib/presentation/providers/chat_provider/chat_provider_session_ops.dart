@@ -26,6 +26,11 @@ extension _ChatProviderSessionOps on ChatProvider {
     _lastRealtimeSignalAt = null;
     _degradedMode = false;
     _degradedModeStartedAt = null;
+    _foregroundResumeSyncTimer?.cancel();
+    _foregroundResumeSyncTimer = null;
+    _foregroundResumeSyncCycleCount = 0;
+    _isForegroundResumeSyncing = false;
+    _recoverableSyncAlertEscalated = false;
     _degradedPollingTimer?.cancel();
     _degradedPollingTimer = null;
     if (_refreshlessRealtimeEnabled) {

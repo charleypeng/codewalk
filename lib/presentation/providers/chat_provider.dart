@@ -254,11 +254,13 @@ class ChatProvider extends ChangeNotifier {
   Timer? _syncHealthTimer;
   Timer? _degradedPollingTimer;
   Timer? _foregroundResumeSyncTimer;
+  int _foregroundResumeSyncCycleCount = 0;
   DateTime? _lastRealtimeSignalAt;
   ChatSyncState _syncState = ChatSyncState.reconnecting;
   bool _isForegroundActive = true;
   bool _degradedMode = false;
   bool _isForegroundResumeSyncing = false;
+  bool _recoverableSyncAlertEscalated = false;
   DateTime? _degradedModeStartedAt;
   int _consecutiveRealtimeFailures = 0;
   bool _pendingRefreshSessions = false;
@@ -290,6 +292,7 @@ class ChatProvider extends ChangeNotifier {
   static const Duration _foregroundResumeSyncIndicatorDuration = Duration(
     seconds: 12,
   );
+  static const int _foregroundResumeSyncIndicatorMaxCycles = 5;
   static const String _configCodewalkNamespace = 'codewalk';
   static const String _configSelectionKey = 'selection';
   static const String _configVariantByAgentAndModelKey =
@@ -414,6 +417,7 @@ class ChatProvider extends ChangeNotifier {
   ChatSyncState get syncState => _syncState;
   bool get isInDegradedMode => _degradedMode;
   bool get isForegroundResumeSyncing => _isForegroundResumeSyncing;
+  bool get isRecoverableSyncAlertEscalated => _recoverableSyncAlertEscalated;
   bool get refreshlessRealtimeEnabled => _refreshlessRealtimeEnabled;
   bool get isAbortingResponse => _isAbortingResponse;
   bool get isCompactingContext => _isCompactingContext;
