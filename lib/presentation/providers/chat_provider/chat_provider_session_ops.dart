@@ -80,7 +80,7 @@ extension _ChatProviderSessionOps on ChatProvider {
     AppLogger.info(
       'Switching chat context reason=$reason context=$_activeContextKey',
     );
-    await initializeProviders();
+    unawaited(initializeProviders());
 
     final contextMarkedDirty = _dirtyContextKeys.remove(nextContextKey);
     if (contextMarkedDirty || _sessions.isEmpty) {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:codewalk/core/errors/failures.dart';
@@ -5,9 +6,31 @@ import 'package:codewalk/core/logging/app_logger.dart';
 import 'package:codewalk/domain/entities/project.dart';
 import 'package:codewalk/domain/entities/worktree.dart';
 import 'package:codewalk/presentation/providers/project_provider.dart';
+import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fakes.dart';
+
+class _DelayedWorktreeProjectRepository extends FakeProjectRepository {
+  _DelayedWorktreeProjectRepository({
+    required super.currentProject,
+    required super.projects,
+    required super.worktrees,
+  });
+
+  Completer<void>? pendingWorktreeGate;
+
+  @override
+  Future<Either<Failure, List<Worktree>>> getWorktrees({
+    String? directory,
+  }) async {
+    final gate = pendingWorktreeGate;
+    if (gate != null) {
+      await gate.future;
+    }
+    return super.getWorktrees(directory: directory);
+  }
+}
 
 void main() {
   group('ProjectProvider', () {
@@ -94,6 +117,58 @@ void main() {
         );
       },
     );
+
+    test('switchProject does not block while worktrees refresh', () async {
+      final delayedRepository = _DelayedWorktreeProjectRepository(
+        currentProject: Project(
+          id: 'proj_a',
+          name: 'Project A',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+        projects: <Project>[
+          Project(
+            id: 'proj_a',
+            name: 'Project A',
+            path: '/repo/a',
+            createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+          ),
+          Project(
+            id: 'proj_b',
+            name: 'Project B',
+            path: '/repo/b',
+            createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+          ),
+        ],
+        worktrees: const <Worktree>[
+          Worktree(
+            id: 'wt_1',
+            name: 'Workspace A',
+            directory: '/repo/a/workspace-a',
+            projectId: 'proj_a',
+          ),
+        ],
+      );
+      provider = ProjectProvider(
+        projectRepository: delayedRepository,
+        localDataSource: localDataSource,
+      );
+
+      await provider.initializeProject();
+
+      final gate = Completer<void>();
+      delayedRepository.pendingWorktreeGate = gate;
+
+      final switched = await provider
+          .switchProject('proj_b')
+          .timeout(const Duration(milliseconds: 80), onTimeout: () => false);
+
+      expect(switched, isTrue);
+      expect(provider.currentProject?.id, 'proj_b');
+
+      gate.complete();
+      await Future<void>.delayed(const Duration(milliseconds: 1));
+    });
 
     test(
       'close and reopen context updates open lists deterministically',

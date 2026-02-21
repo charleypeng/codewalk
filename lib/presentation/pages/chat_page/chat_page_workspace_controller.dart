@@ -1,37 +1,88 @@
 part of '../chat_page.dart';
 
 extension _ChatPageWorkspaceController on _ChatPageState {
-  Future<void> _switchProjectContext(String projectId) async {
-    final projectProvider = context.read<ProjectProvider>();
-    final chatProvider = context.read<ChatProvider>();
-    final changed = await projectProvider.switchProject(projectId);
-    if (!changed) {
+  Future<void> _runProjectScopeTransition(
+    Future<void> Function() operation,
+  ) async {
+    if (_isProjectScopeTransitioning) {
       return;
     }
-    await chatProvider.onProjectScopeChanged();
+    _setState(() {
+      _isProjectScopeTransitioning = true;
+    });
+    try {
+      await operation();
+    } finally {
+      if (mounted) {
+        _setState(() {
+          _isProjectScopeTransitioning = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _switchProjectContext(String projectId) async {
+    final projectProvider = context.read<ProjectProvider>();
+    if (projectProvider.currentProject?.id == projectId) {
+      return;
+    }
+    final chatProvider = context.read<ChatProvider>();
+    await _runProjectScopeTransition(() async {
+      final changed = await projectProvider.switchProject(projectId);
+      if (!changed) {
+        return;
+      }
+      await chatProvider.onProjectScopeChanged();
+    });
+  }
+
+  Future<void> _switchDirectoryContext(String directory) async {
+    final projectProvider = context.read<ProjectProvider>();
+    final normalized = directory.trim();
+    if (normalized.isEmpty || projectProvider.currentDirectory == normalized) {
+      return;
+    }
+    final chatProvider = context.read<ChatProvider>();
+    await _runProjectScopeTransition(() async {
+      final switched = await projectProvider.switchToDirectoryContext(
+        normalized,
+      );
+      if (!switched) {
+        return;
+      }
+      await chatProvider.onProjectScopeChanged();
+    });
   }
 
   Future<void> _closeProjectContext(String projectId) async {
     final projectProvider = context.read<ProjectProvider>();
-    final chatProvider = context.read<ChatProvider>();
+    final wasActiveProject = projectProvider.currentProject?.id == projectId;
     final changed = await projectProvider.closeProject(projectId);
     if (!changed) {
       return;
     }
-    await chatProvider.onProjectScopeChanged();
+    if (!wasActiveProject) {
+      return;
+    }
+    final chatProvider = context.read<ChatProvider>();
+    await _runProjectScopeTransition(() async {
+      await chatProvider.onProjectScopeChanged();
+    });
   }
 
   Future<void> _reopenProjectContext(String projectId) async {
     final projectProvider = context.read<ProjectProvider>();
     final chatProvider = context.read<ChatProvider>();
-    final changed = await projectProvider.reopenProject(
-      projectId,
-      makeActive: true,
-    );
-    if (!changed) {
-      return;
-    }
-    await chatProvider.onProjectScopeChanged();
+    await _runProjectScopeTransition(() async {
+      final changed = await projectProvider.reopenProject(
+        projectId,
+        makeActive: true,
+      );
+      if (!changed) {
+        return;
+      }
+      await chatProvider.onProjectScopeChanged();
+    });
   }
 
   Future<void> _archiveClosedProjectContext(String projectId) async {

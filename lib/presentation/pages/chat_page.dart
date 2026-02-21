@@ -134,6 +134,7 @@ class _ChatPageState extends State<ChatPage>
   bool _showScrollToLatestFab = false;
   bool _hasUnreadMessagesBelow = false;
   bool _showScrollToFirstFab = false;
+  bool _isProjectScopeTransitioning = false;
   bool _isAppInForeground = true;
   bool _wasChatRouteCurrent = true;
   bool _isProgrammaticScrollInFlight = false;
@@ -599,101 +600,114 @@ class _ChatPageState extends State<ChatPage>
                     _syncChatRouteActivity(chatProvider);
                     _consumePendingUiNotice(chatProvider);
                     _consumeRejectedDraft(chatProvider);
+                    late final Widget content;
                     if (isMobile) {
-                      return _buildChatContent(
+                      content = _buildChatContent(
                         chatProvider: chatProvider,
                         maxContentWidth: double.infinity,
                         horizontalPadding: 0,
                         verticalPadding: 0,
                       );
-                    }
-
-                    final filePaneWidth = settingsProvider.desktopPaneWidth(
-                      DesktopPane.files,
-                    );
-                    final utilityPaneWidth = settingsProvider.desktopPaneWidth(
-                      DesktopPane.utility,
-                    );
-                    final rowChildren = <Widget>[
-                      if (showConversationPane) ...[
-                        SizedBox(
-                          width: sessionPaneWidth,
-                          child: _buildSessionPanel(
-                            closeOnSelect: false,
-                            onCollapseRequested: () {
-                              unawaited(
-                                settingsProvider.setDesktopPaneVisible(
-                                  DesktopPane.conversations,
-                                  false,
-                                ),
-                              );
-                            },
+                    } else {
+                      final filePaneWidth = settingsProvider.desktopPaneWidth(
+                        DesktopPane.files,
+                      );
+                      final utilityPaneWidth = settingsProvider
+                          .desktopPaneWidth(DesktopPane.utility);
+                      final rowChildren = <Widget>[
+                        if (showConversationPane) ...[
+                          SizedBox(
+                            width: sessionPaneWidth,
+                            child: _buildSessionPanel(
+                              closeOnSelect: false,
+                              onCollapseRequested: () {
+                                unawaited(
+                                  settingsProvider.setDesktopPaneVisible(
+                                    DesktopPane.conversations,
+                                    false,
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                        if (isMedium)
-                          _buildPaneDivider()
-                        else
+                          if (isMedium)
+                            _buildPaneDivider()
+                          else
+                            _buildResizableHandle(
+                              pane: DesktopPane.conversations,
+                              settingsProvider: settingsProvider,
+                              paneOnLeft: true,
+                            ),
+                        ],
+                        if (showDesktopFilePane) ...[
+                          SizedBox(
+                            width: filePaneWidth,
+                            child: _buildDesktopFilePane(
+                              chatProvider,
+                              onCollapseRequested: () {
+                                unawaited(
+                                  settingsProvider.setDesktopPaneVisible(
+                                    DesktopPane.files,
+                                    false,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
                           _buildResizableHandle(
-                            pane: DesktopPane.conversations,
+                            pane: DesktopPane.files,
                             settingsProvider: settingsProvider,
                             paneOnLeft: true,
                           ),
-                      ],
-                      if (showDesktopFilePane) ...[
-                        SizedBox(
-                          width: filePaneWidth,
-                          child: _buildDesktopFilePane(
-                            chatProvider,
-                            onCollapseRequested: () {
-                              unawaited(
-                                settingsProvider.setDesktopPaneVisible(
-                                  DesktopPane.files,
-                                  false,
-                                ),
-                              );
-                            },
+                        ],
+                        Expanded(
+                          child: _buildChatContent(
+                            chatProvider: chatProvider,
+                            maxContentWidth: mainContentWidth,
+                            horizontalPadding: 12,
+                            verticalPadding: 2,
                           ),
                         ),
-                        _buildResizableHandle(
-                          pane: DesktopPane.files,
-                          settingsProvider: settingsProvider,
-                          paneOnLeft: true,
-                        ),
-                      ],
-                      Expanded(
-                        child: _buildChatContent(
-                          chatProvider: chatProvider,
-                          maxContentWidth: mainContentWidth,
-                          horizontalPadding: 12,
-                          verticalPadding: 2,
-                        ),
-                      ),
-                      if (showDesktopUtilityPane) ...[
-                        _buildResizableHandle(
-                          pane: DesktopPane.utility,
-                          settingsProvider: settingsProvider,
-                          paneOnLeft: false,
-                        ),
-                        SizedBox(
-                          width: utilityPaneWidth,
-                          child: _buildDesktopUtilityPane(
-                            chatProvider,
+                        if (showDesktopUtilityPane) ...[
+                          _buildResizableHandle(
+                            pane: DesktopPane.utility,
                             settingsProvider: settingsProvider,
-                            onCollapseRequested: () {
-                              unawaited(
-                                settingsProvider.setDesktopPaneVisible(
-                                  DesktopPane.utility,
-                                  false,
-                                ),
-                              );
-                            },
+                            paneOnLeft: false,
                           ),
+                          SizedBox(
+                            width: utilityPaneWidth,
+                            child: _buildDesktopUtilityPane(
+                              chatProvider,
+                              settingsProvider: settingsProvider,
+                              onCollapseRequested: () {
+                                unawaited(
+                                  settingsProvider.setDesktopPaneVisible(
+                                    DesktopPane.utility,
+                                    false,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ];
+                      content = Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: rowChildren,
+                      );
+                    }
+
+                    if (!_isProjectScopeTransitioning) {
+                      return content;
+                    }
+
+                    return Stack(
+                      children: [
+                        Positioned.fill(child: content),
+                        Positioned.fill(
+                          child: _buildProjectScopeLoadingOverlay(),
                         ),
                       ],
-                    ];
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: rowChildren,
                     );
                   },
                 ),

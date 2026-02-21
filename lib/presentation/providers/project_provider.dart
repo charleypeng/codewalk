@@ -29,6 +29,7 @@ class ProjectProvider extends ChangeNotifier {
   List<String> _openProjectIds = <String>[];
   List<String> _archivedProjectIds = <String>[];
   List<Worktree> _worktrees = <Worktree>[];
+  int _worktreesRequestId = 0;
   bool _worktreeSupported = false;
   String _activeServerId = 'legacy';
   String? _error;
@@ -156,8 +157,8 @@ class ProjectProvider extends ChangeNotifier {
     _currentProject = target;
     _ensureOpenProject(projectId);
     await _persistProjectState();
-    await loadWorktrees(silent: true);
     notifyListeners();
+    _refreshWorktreesForCurrentContext();
     return true;
   }
 
@@ -214,8 +215,8 @@ class ProjectProvider extends ChangeNotifier {
     _currentProject = selectedProject;
     _ensureOpenProject(selectedProject.id);
     await _persistProjectState();
-    await loadWorktrees(silent: true);
     notifyListeners();
+    _refreshWorktreesForCurrentContext();
     return true;
   }
 
@@ -245,8 +246,8 @@ class ProjectProvider extends ChangeNotifier {
       _currentProject = fallback;
       if (_currentProject != null) {
         _ensureOpenProject(_currentProject!.id);
+        _refreshWorktreesForCurrentContext();
       }
-      await loadWorktrees(silent: true);
     }
 
     await _persistProjectState();
@@ -264,12 +265,25 @@ class ProjectProvider extends ChangeNotifier {
     _ensureOpenProject(projectId);
     if (makeActive) {
       _currentProject = project;
-      await loadWorktrees(silent: true);
+      _refreshWorktreesForCurrentContext();
     }
 
     await _persistProjectState();
     notifyListeners();
     return true;
+  }
+
+  void _refreshWorktreesForCurrentContext() {
+    final expectedContextKey = contextKey;
+    unawaited(_refreshWorktreesForContext(expectedContextKey));
+  }
+
+  Future<void> _refreshWorktreesForContext(String expectedContextKey) async {
+    await loadWorktrees(silent: true);
+    if (contextKey != expectedContextKey) {
+      return;
+    }
+    notifyListeners();
   }
 
   Future<bool> archiveClosedProject(String projectId) async {
@@ -292,8 +306,12 @@ class ProjectProvider extends ChangeNotifier {
   }
 
   Future<void> loadWorktrees({bool silent = false}) async {
+    final requestId = ++_worktreesRequestId;
     final directory = currentDirectory;
     if (directory == null || directory.trim().isEmpty) {
+      if (requestId != _worktreesRequestId) {
+        return;
+      }
       _worktrees = <Worktree>[];
       _worktreeSupported = false;
       if (!silent) {
@@ -303,6 +321,9 @@ class ProjectProvider extends ChangeNotifier {
     }
 
     final result = await _projectRepository.getWorktrees(directory: directory);
+    if (requestId != _worktreesRequestId) {
+      return;
+    }
     result.fold(
       (failure) {
         if (failure is NetworkFailure && failure.code == 404) {

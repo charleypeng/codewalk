@@ -26,6 +26,40 @@ extension _ChatPageChrome on _ChatPageState {
     };
   }
 
+  Widget _buildProjectScopeLoadingOverlay() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return AbsorbPointer(
+      key: const ValueKey<String>('project_scope_loading_overlay'),
+      child: ColoredBox(
+        color: colorScheme.surface.withValues(alpha: 0.74),
+        child: Center(
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2.2),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Loading project context...',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   double _toolbarHeightForDensity({
     required bool isMobile,
     required AppDensity density,
@@ -660,26 +694,28 @@ extension _ChatPageChrome on _ChatPageState {
     BuildContext dialogContext,
     String projectId,
   ) async {
-    await _switchProjectContext(projectId);
     if (dialogContext.mounted) {
       Navigator.of(dialogContext).pop();
     }
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) {
+      return;
+    }
+    await _switchProjectContext(projectId);
   }
 
   Future<void> _switchWorkspaceFromSelector(
     BuildContext dialogContext,
     String directory,
   ) async {
-    final projectProvider = context.read<ProjectProvider>();
-    final chatProvider = context.read<ChatProvider>();
-    final switched = await projectProvider.switchToDirectoryContext(directory);
-    if (!switched) {
-      return;
-    }
-    await chatProvider.onProjectScopeChanged();
     if (dialogContext.mounted) {
       Navigator.of(dialogContext).pop();
     }
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) {
+      return;
+    }
+    await _switchDirectoryContext(directory);
   }
 
   String _directoryLabel(String? directory) {
