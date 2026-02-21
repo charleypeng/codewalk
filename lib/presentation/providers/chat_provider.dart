@@ -389,23 +389,18 @@ class ChatProvider extends ChangeNotifier {
       (message) =>
           message.sessionId == normalizedSessionId && !message.isCompleted,
     );
-    if (isCurrentSession && _state == ChatState.sending) {
-      return true;
-    }
-
     final status = _sessionStatusById[normalizedSessionId]?.type;
     final hasBusyStatus =
         status == SessionStatusType.busy || status == SessionStatusType.retry;
-    if (!hasBusyStatus) {
-      return isCurrentSession && _state == ChatState.sending;
-    }
-    if (!isCurrentSession) {
-      return true;
-    }
     final hasActiveStream =
-        _messageSubscription != null &&
-        _activeMessageStreamSessionId == normalizedSessionId;
-    return hasInProgressAssistant || hasActiveStream;
+        _activeMessageStreamSessionId == normalizedSessionId &&
+        (_messageSubscription != null || _state == ChatState.sending);
+
+    if (!isCurrentSession) {
+      return hasBusyStatus;
+    }
+
+    return hasActiveStream || (hasBusyStatus && hasInProgressAssistant);
   }
 
   bool get isCurrentSessionActivelyResponding {

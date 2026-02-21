@@ -90,7 +90,14 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
       }
     }
 
-    final tailStart = anchorIndex >= 0 ? anchorIndex + 1 : 0;
+    // With no overlap, preserve only a bounded recent tail to avoid keeping
+    // stale phantom messages from very old local snapshots.
+    const maxTailMessagesWithoutAnchor = 12;
+    final tailStart = anchorIndex >= 0
+        ? anchorIndex + 1
+        : (localMessages.length > maxTailMessagesWithoutAnchor
+              ? localMessages.length - maxTailMessagesWithoutAnchor
+              : 0);
     for (var index = tailStart; index < localMessages.length; index += 1) {
       final message = localMessages[index];
       if (existingIds.contains(message.id)) {

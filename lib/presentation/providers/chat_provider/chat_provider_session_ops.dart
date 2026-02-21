@@ -4,6 +4,12 @@ extension _ChatProviderSessionOps on ChatProvider {
   Future<void> _switchContext({required String reason}) async {
     _storeCurrentContextSnapshot();
 
+    if (reason == 'project') {
+      await _cancelPreservedMessageSubscriptions(
+        reason: 'context-switch-project-stale',
+      );
+    }
+
     _providersFetchId += 1;
     _sessionsFetchId += 1;
     _messagesFetchId += 1;
@@ -13,10 +19,7 @@ extension _ChatProviderSessionOps on ChatProvider {
       invalidateGeneration: true,
       preserveActiveStream: reason == 'project',
     );
-    // Preserve active response stream while switching only the project scope.
-    // This avoids interrupting an in-flight response from the previous
-    // directory context. For server scope changes we still drain preserved
-    // subscriptions to avoid leaks.
+    // Drain preserved subscriptions for non-project scope switches.
     if (reason != 'project') {
       await _cancelPreservedMessageSubscriptions(
         reason: 'context-switch-$reason',

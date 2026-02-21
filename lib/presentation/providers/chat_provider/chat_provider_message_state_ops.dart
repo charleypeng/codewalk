@@ -149,6 +149,16 @@ extension _ChatProviderMessageStateOps on ChatProvider {
       AppLogger.debug(
         'Assistant message status: ${message.isCompleted ? "completed" : "in_progress"}',
       );
+      if (message.isCompleted &&
+          _state == ChatState.sending &&
+          _currentSession?.id == message.sessionId &&
+          !isSessionActivelyResponding(message.sessionId)) {
+        AppLogger.debug(
+          'Message completed and stream idle, setting state loaded',
+        );
+        _clearActiveSendDraft();
+        _setState(ChatState.loaded);
+      }
     }
 
     _notifyListeners();
