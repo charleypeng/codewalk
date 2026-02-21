@@ -38,7 +38,7 @@ class AndroidForegroundMonitorService {
     }
 
     final title = normalizedCount == 1
-        ? 'Monitoring one of session'
+        ? 'Monitoring one session'
         : 'Monitoring $normalizedCount sessions';
     const body = 'For reliable notifications';
 

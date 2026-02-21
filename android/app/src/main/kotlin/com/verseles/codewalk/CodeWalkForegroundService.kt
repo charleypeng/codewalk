@@ -78,7 +78,7 @@ class CodeWalkForegroundService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val title = intent?.getStringExtra(EXTRA_TITLE)
-            ?: "Monitoring one of session"
+            ?: "Monitoring one session"
         val body = intent?.getStringExtra(EXTRA_BODY)
             ?: "For reliable notifications"
         startForeground(NOTIFICATION_ID, buildNotification(this, title, body))
