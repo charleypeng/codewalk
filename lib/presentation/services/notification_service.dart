@@ -394,6 +394,9 @@ class NotificationService {
           soundSource: soundSource,
         ),
         groupKey: groupKey,
+        groupAlertBehavior: sessionId == null
+            ? GroupAlertBehavior.all
+            : GroupAlertBehavior.children,
         tag: tag,
       ),
       macOS: DarwinNotificationDetails(
@@ -445,7 +448,7 @@ class NotificationService {
         playSound: false,
         groupKey: _sessionGroupKey(sessionId),
         setAsGroupSummary: true,
-        groupAlertBehavior: GroupAlertBehavior.summary,
+        groupAlertBehavior: GroupAlertBehavior.children,
         tag: _sessionSummaryTag(sessionId),
       ),
     );
