@@ -50,7 +50,21 @@ icons:
 	magick assets/images/original.png -gravity center -crop 84%x84%+0+0 +repage -resize 720x775\! -strip -define png:compression-level=9 assets/images/icon.png
 	magick assets/images/original.png -gravity center -crop 84%x84%+0+0 +repage -resize 256x256\! -strip -define png:compression-level=9 assets/images/logo.256.png
 	magick assets/images/original.png -gravity center -crop 84%x84%+0+0 +repage -resize 1024x1024\! -strip -define png:compression-level=9 assets/images/logo.1024.png
+	magick assets/images/original.png -gravity center -crop 84%x84%+0+0 +repage -resize 512x512\! -colorspace gray -blur 0x1.8 -canny 0x1+10%+30% -threshold 28% -morphology Dilate Disk:2 -strip -define png:compression-level=9 assets/images/tray_mono_mask.png
+	magick -size 512x512 xc:white assets/images/tray_mono_mask.png -alpha off -compose CopyOpacity -composite -strip -define png:compression-level=9 assets/images/tray_mono_master.png
+	magick assets/images/tray_mono_master.png -resize 48x48\! -strip -define png:compression-level=9 assets/images/tray_icon_linux.png
+	magick -size 44x44 xc:black \( assets/images/tray_mono_master.png -resize 44x44\! -alpha extract \) -alpha off -compose CopyOpacity -composite -strip -define png:compression-level=9 assets/images/tray_icon_macos_template.png
+	magick assets/images/tray_mono_master.png -resize 64x64\! -define icon:auto-resize=64,48,32,24,20,16 assets/images/tray_icon_windows.ico
+	rm -f assets/images/tray_mono_mask.png
 	magick assets/images/original.png -gravity center -crop 78%x78%+0+0 +repage -resize 1024x1024\! -strip -define png:compression-level=9 assets/images/adaptive_foreground.png
+	@for size_dir in "drawable-mdpi:24" "drawable-hdpi:36" "drawable-xhdpi:48" "drawable-xxhdpi:72" "drawable-xxxhdpi:96"; do \
+		dir=$${size_dir%%:*}; size=$${size_dir##*:}; \
+		mkdir -p android/app/src/main/res/$$dir; \
+		magick -size $${size}x$${size} xc:white \
+			\( assets/images/tray_mono_master.png -resize $${size}x$${size}\! -alpha extract -morphology Dilate Disk:1 \) \
+			-alpha off -compose CopyOpacity -composite -strip -define png:compression-level=9 \
+			android/app/src/main/res/$$dir/ic_stat_codewalk.png; \
+	done
 	mkdir -p linux/runner/resources
 	magick assets/images/original.png -gravity center -crop 84%x84%+0+0 +repage -resize 512x512\! -strip -define png:compression-level=9 \( -size 512x512 xc:none -fill white -draw "roundrectangle 0,0 511,511 72,72" \) -compose CopyOpacity -composite linux/runner/resources/app_icon.png
 	cp -f linux/runner/resources/app_icon.png linux/runner/resources/com.verseles.codewalk.png
@@ -68,19 +82,20 @@ icons:
 		'StartupWMClass=com.verseles.codewalk' \
 		'Keywords=AI;Code;Assistant;OpenCode;' \
 		> linux/runner/resources/com.verseles.codewalk.desktop
-	magick assets/images/original.png -gravity center -crop 84%x84%+0+0 +repage -resize 1024x1024\! -define icon:auto-resize=256,128,64,48,32,24,16 windows/runner/resources/app_icon.ico
-	magick assets/images/logo.1024.png -resize 16x16\! -strip -define png:compression-level=9 macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_16.png
-	magick assets/images/logo.1024.png -resize 32x32\! -strip -define png:compression-level=9 macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_32.png
-	magick assets/images/logo.1024.png -resize 64x64\! -strip -define png:compression-level=9 macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_64.png
-	magick assets/images/logo.1024.png -resize 128x128\! -strip -define png:compression-level=9 macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_128.png
-	magick assets/images/logo.1024.png -resize 256x256\! -strip -define png:compression-level=9 macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png
-	magick assets/images/logo.1024.png -resize 512x512\! -strip -define png:compression-level=9 macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png
-	cp -f assets/images/logo.1024.png macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png
+	magick -size 1024x1024 xc:none \( assets/images/original.png -gravity center -crop 84%x84%+0+0 +repage -resize 860x860\! \) -gravity center -composite -define icon:auto-resize=256,128,64,48,32,24,16 windows/runner/resources/app_icon.ico
+	magick assets/images/original.png -gravity center -crop 84%x84%+0+0 +repage -resize 1024x1024\! -strip -define png:compression-level=9 \( -size 1024x1024 xc:none -fill white -draw "roundrectangle 0,0 1023,1023 180,180" \) -compose CopyOpacity -composite assets/images/macos_appicon_source.png
+	magick assets/images/macos_appicon_source.png -resize 16x16\! -strip -define png:compression-level=9 macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_16.png
+	magick assets/images/macos_appicon_source.png -resize 32x32\! -strip -define png:compression-level=9 macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_32.png
+	magick assets/images/macos_appicon_source.png -resize 64x64\! -strip -define png:compression-level=9 macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_64.png
+	magick assets/images/macos_appicon_source.png -resize 128x128\! -strip -define png:compression-level=9 macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_128.png
+	magick assets/images/macos_appicon_source.png -resize 256x256\! -strip -define png:compression-level=9 macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png
+	magick assets/images/macos_appicon_source.png -resize 512x512\! -strip -define png:compression-level=9 macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png
+	cp -f assets/images/macos_appicon_source.png macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png
 	dart run flutter_launcher_icons
 	# Web maskable icons with safe zone: keep critical subject inside center area.
 	magick -size 512x512 xc:'#7EAFC2' \( assets/images/original.png -gravity center -crop 90%x90%+0+0 +repage -resize 420x420\! \) -gravity center -composite -strip -define png:compression-level=9 web/icons/Icon-maskable-512.png
 	magick web/icons/Icon-maskable-512.png -resize 192x192\! -strip -define png:compression-level=9 web/icons/Icon-maskable-192.png
-	@echo "Icons regenerated for Android + Linux/Freedesktop + Windows + macOS."
+	@echo "Icons regenerated for launcher, tray, and Android notifications."
 
 icons-check:
 	@if ! command -v magick >/dev/null 2>&1; then \
@@ -90,11 +105,21 @@ icons-check:
 	@set -e; \
 	for f in \
 		assets/images/icon.png \
+		assets/images/tray_mono_master.png \
+		assets/images/tray_icon_linux.png \
+		assets/images/tray_icon_macos_template.png \
+		assets/images/tray_icon_windows.ico \
+		assets/images/macos_appicon_source.png \
 		assets/images/adaptive_foreground.png \
 		linux/runner/resources/app_icon.png \
 		linux/runner/resources/com.verseles.codewalk.png \
 		linux/runner/resources/com.verseles.codewalk.desktop \
 		windows/runner/resources/app_icon.ico \
+		android/app/src/main/res/drawable-mdpi/ic_stat_codewalk.png \
+		android/app/src/main/res/drawable-hdpi/ic_stat_codewalk.png \
+		android/app/src/main/res/drawable-xhdpi/ic_stat_codewalk.png \
+		android/app/src/main/res/drawable-xxhdpi/ic_stat_codewalk.png \
+		android/app/src/main/res/drawable-xxxhdpi/ic_stat_codewalk.png \
 		android/app/src/main/res/mipmap-anydpi-v26/launcher_icon.xml \
 		macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_16.png \
 		macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_32.png \
@@ -108,6 +133,12 @@ icons-check:
 		test -f "$$f" || { echo "Missing icon artifact: $$f"; exit 1; }; \
 	done
 	@test "$$(magick identify -format '%wx%h' assets/images/icon.png)" = "720x775" || (echo "Invalid assets/images/icon.png size"; exit 1)
+	@test "$$(magick identify -format '%wx%h' assets/images/tray_mono_master.png)" = "512x512" || (echo "Invalid tray mono master size"; exit 1)
+	@test "$$(magick identify -format '%wx%h' assets/images/tray_icon_linux.png)" = "48x48" || (echo "Invalid Linux tray icon size"; exit 1)
+	@test "$$(magick identify -format '%wx%h' assets/images/tray_icon_macos_template.png)" = "44x44" || (echo "Invalid macOS tray template size"; exit 1)
+	@magick identify -format '%[opaque]' assets/images/tray_mono_master.png | grep -qi '^false$$' || (echo "Tray mono master must keep transparency"; exit 1)
+	@magick identify -format '%[opaque]' assets/images/tray_icon_linux.png | grep -qi '^false$$' || (echo "Linux tray icon must keep transparency"; exit 1)
+	@magick identify -format '%[opaque]' assets/images/tray_icon_macos_template.png | grep -qi '^false$$' || (echo "macOS tray template must keep transparency"; exit 1)
 	@test "$$(magick identify -format '%wx%h' assets/images/adaptive_foreground.png)" = "1024x1024" || (echo "Invalid assets/images/adaptive_foreground.png size"; exit 1)
 	@test "$$(magick identify -format '%wx%h' linux/runner/resources/app_icon.png)" = "512x512" || (echo "Invalid linux app icon size"; exit 1)
 	@test "$$(magick identify -format '%wx%h' linux/runner/resources/com.verseles.codewalk.png)" = "512x512" || (echo "Invalid linux app-id icon size"; exit 1)
@@ -121,6 +152,13 @@ icons-check:
 	@test "$$(magick identify -format '%wx%h' macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png)" = "256x256" || (echo "Invalid macOS 256x256 icon"; exit 1)
 	@test "$$(magick identify -format '%wx%h' macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png)" = "512x512" || (echo "Invalid macOS 512x512 icon"; exit 1)
 	@test "$$(magick identify -format '%wx%h' macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png)" = "1024x1024" || (echo "Invalid macOS 1024x1024 icon"; exit 1)
+	@magick identify -format '%[opaque]' macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png | grep -qi '^false$$' || (echo "macOS launcher icon must include rounded transparency"; exit 1)
+	@test "$$(magick identify -format '%wx%h' android/app/src/main/res/drawable-mdpi/ic_stat_codewalk.png)" = "24x24" || (echo "Invalid Android mdpi notification icon"; exit 1)
+	@test "$$(magick identify -format '%wx%h' android/app/src/main/res/drawable-hdpi/ic_stat_codewalk.png)" = "36x36" || (echo "Invalid Android hdpi notification icon"; exit 1)
+	@test "$$(magick identify -format '%wx%h' android/app/src/main/res/drawable-xhdpi/ic_stat_codewalk.png)" = "48x48" || (echo "Invalid Android xhdpi notification icon"; exit 1)
+	@test "$$(magick identify -format '%wx%h' android/app/src/main/res/drawable-xxhdpi/ic_stat_codewalk.png)" = "72x72" || (echo "Invalid Android xxhdpi notification icon"; exit 1)
+	@test "$$(magick identify -format '%wx%h' android/app/src/main/res/drawable-xxxhdpi/ic_stat_codewalk.png)" = "96x96" || (echo "Invalid Android xxxhdpi notification icon"; exit 1)
+	@magick identify -format '%[opaque]' android/app/src/main/res/drawable-mdpi/ic_stat_codewalk.png | grep -qi '^false$$' || (echo "Android notification icon must keep transparency"; exit 1)
 	@test "$$(magick identify -format '%wx%h' web/icons/Icon-maskable-192.png)" = "192x192" || (echo "Invalid web maskable 192 icon"; exit 1)
 	@test "$$(magick identify -format '%wx%h' web/icons/Icon-maskable-512.png)" = "512x512" || (echo "Invalid web maskable 512 icon"; exit 1)
 	@grep -q '^\[Desktop Entry\]$$' linux/runner/resources/com.verseles.codewalk.desktop || (echo "Missing Desktop Entry header"; exit 1)

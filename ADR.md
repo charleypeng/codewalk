@@ -18,6 +18,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-012: Material Symbols Migration via `material_symbols_icons`
 - ADR-013: MD3 WindowSizeClass Responsive Breakpoint Strategy
 - ADR-014: Centralized MD3 Design Tokens for Shapes and Brand Colors
+- ADR-015: Platform-Specific Icon Asset Pipeline for Tray, Android Notifications, and macOS Launcher Masking
 
 ---
 
@@ -537,3 +538,53 @@ Related: See `featN` in `ROADMAP.md`.
 - `lib/presentation/pages/settings/sections/appearance_settings_section.dart`
 - `lib/presentation/widgets/chat_input_widget.dart`
 - `lib/presentation/widgets/chat_message_widget.dart`
+
+---
+
+## ADR-015: Platform-Specific Icon Asset Pipeline for Tray, Android Notifications, and macOS Launcher Masking (2026-02-20)
+
+**Status**: Accepted
+
+### Context
+
+The app now relies on platform-specific icon constraints for desktop tray rendering and Android notification visibility. A single generic source icon does not produce consistent results across Linux/macOS/Windows tray surfaces, and Android status-bar notifications require a dedicated monochrome small icon resource. macOS launcher icons also need rounded-corner masking in generation to match expected platform appearance.
+
+### Decision
+
+Standardize `make icons` as the canonical image pipeline using ImageMagick to generate:
+
+- OS-specific tray assets (`tray_icon_linux.png`, `tray_icon_macos_template.png`, `tray_icon_windows.ico`) from a shared monochrome master.
+- Android notification small icons as `ic_stat_codewalk` in `android/app/src/main/res/drawable-*`.
+- macOS launcher source with rounded-corner mask before generating app icon sizes.
+
+Enforce runtime usage through platform services: Android notifications use `@drawable/ic_stat_codewalk` in `AndroidNotificationDetails`, and desktop tray service loads OS-specific tray assets.
+
+### Rationale
+
+- Platform-specific icon rendering rules differ and require explicit per-target outputs.
+- A generated pipeline prevents manual asset drift and keeps outputs reproducible.
+- Dedicated Android small-icon resources improve status-bar legibility and consistency.
+- Rounded macOS launcher source aligns generated icons with native visual expectations.
+
+### Consequences
+
+- ✅ Predictable, reproducible icon generation for tray, notification, and launcher targets.
+- ✅ Better notification icon clarity on Android via dedicated `ic_stat_codewalk` resources.
+- ✅ Correct tray appearance per desktop OS using target-specific assets.
+- ⚠ `make icons` now depends on ImageMagick availability in contributor/build environments.
+- ❌ Ad hoc manual replacement of generated icon outputs is intentionally discouraged.
+
+### Key Files
+
+- `Makefile`
+- `lib/presentation/services/notification_service.dart`
+- `lib/presentation/services/desktop_tray_service_io.dart`
+- `android/app/src/main/res/drawable-mdpi/ic_stat_codewalk.png`
+- `android/app/src/main/res/drawable-hdpi/ic_stat_codewalk.png`
+- `android/app/src/main/res/drawable-xhdpi/ic_stat_codewalk.png`
+- `android/app/src/main/res/drawable-xxhdpi/ic_stat_codewalk.png`
+- `android/app/src/main/res/drawable-xxxhdpi/ic_stat_codewalk.png`
+- `assets/images/tray_icon_linux.png`
+- `assets/images/tray_icon_macos_template.png`
+- `assets/images/tray_icon_windows.ico`
+- `assets/images/macos_appicon_source.png`

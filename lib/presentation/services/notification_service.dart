@@ -49,6 +49,8 @@ class NotificationService {
   NotificationService({FlutterLocalNotificationsPlugin? plugin})
     : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
+  static const String _androidSmallIcon = '@drawable/ic_stat_codewalk';
+
   final FlutterLocalNotificationsPlugin _plugin;
   final StreamController<NotificationTapPayload> _tapController =
       StreamController<NotificationTapPayload>.broadcast();
@@ -294,6 +296,7 @@ class NotificationService {
         channelDescription: 'CodeWalk $category notifications',
         importance: _androidImportanceForCategory(category),
         priority: _androidPriorityForCategory(category),
+        icon: _androidSmallIcon,
         playSound: playSound,
         sound: _resolveAndroidSound(
           playSound: playSound,
@@ -348,6 +351,7 @@ class NotificationService {
         channelDescription: 'CodeWalk $category notifications',
         importance: _androidImportanceForCategory(category),
         priority: _androidPriorityForCategory(category),
+        icon: _androidSmallIcon,
         playSound: false,
         groupKey: _sessionGroupKey(sessionId),
         setAsGroupSummary: true,

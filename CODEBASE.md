@@ -14,6 +14,7 @@
 ```text
 codewalk/
 ├── ai-docs/                            # AI docs and engineering artifacts
+├── assets/images/                      # Source and generated launcher/tray icon assets used by `make icons`
 ├── lib/                                # Application source
 │   ├── main.dart                       # App bootstrap (DI, providers, shell)
 │   ├── core/                           # Config, constants, DI, errors, logging, network
@@ -39,6 +40,8 @@ codewalk/
 ├── tool/ci/                            # Analyzer budget and coverage gate scripts
 ├── .github/workflows/                  # CI and release workflows
 ├── android/ linux/ macos/ web/ windows/ # Platform runners/build configs
+├── android/app/src/main/res/drawable-*/ # Android notification small icons (`ic_stat_codewalk.png`)
+├── linux/runner/resources/             # Linux launcher icon + desktop entry icon metadata
 └── Makefile                            # Main development and validation commands
 ```
 
@@ -71,6 +74,8 @@ lib/presentation/theme/brand_colors.dart              # BrandColor enum with 5 s
 lib/presentation/theme/app_shapes.dart                # AppShapes class with centralized MD3 shape constants
 lib/presentation/theme/app_theme.dart                 # Material You theme builder using AppShapes and color scheme
 lib/presentation/utils/window_size_class.dart         # WindowSizeClass enum with MD3 breakpoints + BuildContext extension
+lib/presentation/services/desktop_tray_service_io.dart # Desktop tray lifecycle; selects tray icon per OS (macOS template PNG, Windows ICO, Linux PNG)
+lib/presentation/services/notification_service.dart    # Local notifications; Android uses `@drawable/ic_stat_codewalk` small icon
 lib/presentation/providers/chat_provider.dart     # Chat state/realtime/session facade; microtask coalescing, event dedup buffer, render gate, favorite models
 lib/presentation/pages/onboarding_wizard_page.dart # 3-step onboarding wizard (Welcome, Server Setup, Ready); uses ServerSetupQuickGuide
 lib/presentation/pages/settings/sections/servers_settings_section.dart # Server profile CRUD; exports reusable ServerSetupQuickGuide widget
@@ -181,6 +186,8 @@ lib/data/datasources/project_remote_datasource.dart
 ```bash
 make deps
 make gen
+make icons
+make icons-check
 make analyze
 make test
 make coverage

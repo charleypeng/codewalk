@@ -22,6 +22,15 @@ class _DesktopTrayServiceIo
   bool _exiting = false;
   bool _trayAvailable = true;
 
+  String get _trayIconAssetPath {
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.macOS => 'assets/images/tray_icon_macos_template.png',
+      TargetPlatform.windows => 'assets/images/tray_icon_windows.ico',
+      TargetPlatform.linux => 'assets/images/tray_icon_linux.png',
+      _ => 'assets/images/tray_icon_linux.png',
+    };
+  }
+
   bool get _interceptsClose {
     return _closeBehavior != DesktopCloseBehavior.close;
   }
@@ -69,7 +78,7 @@ class _DesktopTrayServiceIo
 
     try {
       await trayManager.setIcon(
-        'assets/images/icon.png',
+        _trayIconAssetPath,
         isTemplate: defaultTargetPlatform == TargetPlatform.macOS,
       );
       if (defaultTargetPlatform != TargetPlatform.linux) {
