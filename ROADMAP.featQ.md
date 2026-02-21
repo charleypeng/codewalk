@@ -31,7 +31,7 @@
   - [x] Ensure notifications do not prefix the title with generic labels such as `Finished:`.
   - [ ] Verify that opening a notification navigates to its source session; implement/fix if needed.
   - [x] In sync status, avoid orange dot for recoverable states (`degraded`/`delayed`/`reconnecting`); show subtle loading in menu when returning from foreground without persistent indicator.
-  - [~] Fix visual desync of the select near Settings vs server popover (reactive status consistency).
+  - [x] Fix visual desync of the select near Settings vs server popover (reactive status consistency). — `6b1f425`
   - [ ] Simplify terminology mismatch Project vs Workspace in "Project Context" dialog.
   - [ ] Reorganize the "Project Context" screen for a more dynamic visual UX; tapping a project opens it immediately and closes the dialog, removing the need for a separate open button next to trash.
   - [ ] Fix intermittent stale project selection in "Project Context": after switching projects, the UI must always reflect the newly selected project without requiring reopening the dialog and selecting again.
