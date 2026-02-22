@@ -816,6 +816,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       var pendingMessageFetches = 0;
       String? activeAssistantMessageId;
       var fallbackCompletionWatchStarted = false;
+      var idleCompletionFallbackQueued = false;
 
       int extractCreatedTimeMs(dynamic timeValue) {
         if (timeValue is Map<String, dynamic>) {
@@ -1036,6 +1037,21 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
             });
       }
 
+      void triggerIdleCompletionFallback(String reason) {
+        if (messageCompleted || idleCompletionFallbackQueued) {
+          return;
+        }
+        idleCompletionFallbackQueued = true;
+        final knownMessageId = activeAssistantMessageId;
+        if (knownMessageId != null && knownMessageId.isNotEmpty) {
+          fetchAndEmitMessage(knownMessageId);
+        }
+        startFallbackCompletionWatch(
+          reason: reason,
+          initialDelay: Duration.zero,
+        );
+      }
+
       // Create SSE listener
       try {
         final eventResponse = await dio.get(
@@ -1137,10 +1153,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
                       if (properties?['sessionID'] == sessionId) {
                         AppLogger.debug('Event: session.idle for $sessionId');
                         if (!messageCompleted) {
-                          messageCompleted = true;
-                          maybeCloseEventController(
-                            delay: const Duration(milliseconds: 500),
-                          );
+                          triggerIdleCompletionFallback('session-idle');
                         }
                       }
                     } else if (eventType == 'session.status') {
@@ -1150,10 +1163,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
                         final status =
                             properties?['status'] as Map<String, dynamic>?;
                         if (status?['type'] == 'idle' && !messageCompleted) {
-                          messageCompleted = true;
-                          maybeCloseEventController(
-                            delay: const Duration(milliseconds: 500),
-                          );
+                          triggerIdleCompletionFallback('session-status-idle');
                         }
                       }
                     } else if (eventType == 'message.removed') {

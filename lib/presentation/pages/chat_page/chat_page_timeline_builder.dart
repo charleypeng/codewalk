@@ -481,9 +481,11 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     required bool isCompactingContext,
   }) {
     final lastId = messages.isNotEmpty ? messages.last.id : null;
+    final messageFingerprint = Object.hashAll(messages);
     if (_cachedTimelineEntries != null &&
         messages.length == _cachedTimelineMessageCount &&
         lastId == _cachedTimelineLastMessageId &&
+        messageFingerprint == _cachedTimelineMessageFingerprint &&
         isCompactingContext == _cachedTimelineIsCompacting &&
         isSessionActivelyResponding == _cachedTimelineIsResponding &&
         showRetryIndicator == _cachedTimelineShowRetry &&
@@ -579,6 +581,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     // Store in cache for subsequent rebuilds with unchanged message list.
     _cachedTimelineMessageCount = messages.length;
     _cachedTimelineLastMessageId = lastId;
+    _cachedTimelineMessageFingerprint = messageFingerprint;
     _cachedTimelineIsCompacting = isCompactingContext;
     _cachedTimelineIsResponding = isSessionActivelyResponding;
     _cachedTimelineShowRetry = showRetryIndicator;

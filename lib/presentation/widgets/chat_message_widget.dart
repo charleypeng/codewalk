@@ -61,6 +61,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   // Snapshot of the last build inputs to skip redundant rebuilds.
   // Completed messages can skip rebuild when no visible prop changed.
   int _lastPartCount = -1;
+  int _lastMessageHash = 0;
   String? _lastPartId;
   String? _lastReasoningKey;
   bool _lastShowThinking = true;
@@ -78,7 +79,8 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     final partCount = msg.parts.length;
     final lastPartId = msg.parts.isNotEmpty ? msg.parts.last.id : null;
     final density = Theme.of(context).visualDensity;
-    return partCount == _lastPartCount &&
+    return msg.hashCode == _lastMessageHash &&
+        partCount == _lastPartCount &&
         lastPartId == _lastPartId &&
         widget.activeReasoningPartKey == _lastReasoningKey &&
         widget.showThinkingBubbles == _lastShowThinking &&
@@ -91,6 +93,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   void _updateBuildSnapshot(BuildContext context) {
     final msg = widget.message;
     final density = Theme.of(context).visualDensity;
+    _lastMessageHash = msg.hashCode;
     _lastPartCount = msg.parts.length;
     _lastPartId = msg.parts.isNotEmpty ? msg.parts.last.id : null;
     _lastReasoningKey = widget.activeReasoningPartKey;

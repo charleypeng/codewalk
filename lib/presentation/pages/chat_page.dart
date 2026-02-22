@@ -173,6 +173,7 @@ class _ChatPageState extends State<ChatPage>
   // rebuilds where the message list hasn't changed (e.g. session.status events).
   int _cachedTimelineMessageCount = -1;
   String? _cachedTimelineLastMessageId;
+  int _cachedTimelineMessageFingerprint = 0;
   bool _cachedTimelineIsCompacting = false;
   bool _cachedTimelineIsResponding = false;
   bool _cachedTimelineShowRetry = false;

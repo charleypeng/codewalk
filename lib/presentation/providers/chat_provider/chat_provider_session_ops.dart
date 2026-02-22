@@ -4,12 +4,6 @@ extension _ChatProviderSessionOps on ChatProvider {
   Future<void> _switchContext({required String reason}) async {
     _storeCurrentContextSnapshot();
 
-    if (reason == 'project') {
-      await _cancelPreservedMessageSubscriptions(
-        reason: 'context-switch-project-stale',
-      );
-    }
-
     _providersFetchId += 1;
     _sessionsFetchId += 1;
     _messagesFetchId += 1;

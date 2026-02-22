@@ -2167,6 +2167,102 @@ void main() {
     );
 
     test(
+      'switching back to a session keeps preserved stream updates alive',
+      () async {
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_2',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1500),
+            title: 'Session 2',
+          ),
+        );
+
+        final streamController =
+            StreamController<Either<Failure, ChatMessage>>();
+        var streamCancelled = false;
+        streamController.onCancel = () {
+          streamCancelled = true;
+        };
+        addTearDown(() async {
+          await streamController.close();
+        });
+
+        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+          return streamController.stream;
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+
+        final session1 = provider.sessions
+            .where((item) => item.id == 'ses_1')
+            .first;
+        final session2 = provider.sessions
+            .where((item) => item.id == 'ses_2')
+            .first;
+
+        await provider.selectSession(session1);
+        await provider.sendMessage('keep stream updates alive');
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        await provider.selectSession(session2);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        streamController.add(
+          Right(
+            AssistantMessage(
+              id: 'msg_stream_back_to_session',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(3000),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_stream_back_to_session_partial',
+                  messageId: 'msg_stream_back_to_session',
+                  sessionId: 'ses_1',
+                  text: 'partial',
+                ),
+              ],
+            ),
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        await provider.selectSession(session1);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        streamController.add(
+          Right(
+            AssistantMessage(
+              id: 'msg_stream_back_to_session',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(3000),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(3200),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_stream_back_to_session_done',
+                  messageId: 'msg_stream_back_to_session',
+                  sessionId: 'ses_1',
+                  text: 'done after return',
+                ),
+              ],
+            ),
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(provider.currentSession?.id, 'ses_1');
+        expect(streamCancelled, isFalse);
+        final assistant = provider.messages
+            .whereType<AssistantMessage>()
+            .where((message) => message.id == 'msg_stream_back_to_session')
+            .first;
+        expect((assistant.parts.single as TextPart).text, 'done after return');
+        expect(assistant.isCompleted, isTrue);
+      },
+    );
+
+    test(
       'sending in another session does not cancel previous session stream',
       () async {
         chatRepository.sessions.add(
@@ -4250,7 +4346,7 @@ void main() {
     );
 
     test(
-      'project scope change does not cancel in-flight stream from previous context',
+      'project scope round-trip does not cancel in-flight stream from previous context',
       () async {
         final scopedRepository = FakeChatRepository(
           sessions: <ChatSession>[
@@ -4337,6 +4433,10 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 20));
 
         await scopedProvider.projectProvider.switchProject('proj_b');
+        await scopedProvider.onProjectScopeChanged();
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        await scopedProvider.projectProvider.switchProject('proj_a');
         await scopedProvider.onProjectScopeChanged();
         await Future<void>.delayed(const Duration(milliseconds: 20));
 

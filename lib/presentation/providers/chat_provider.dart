@@ -1573,7 +1573,9 @@ class ChatProvider extends ChangeNotifier {
 
     await _cancelActiveMessageSubscription(
       reason: 'session-switch',
-      invalidateGeneration: true,
+      // Keep generation stable so a preserved in-flight stream can continue
+      // delivering updates if the user comes back to the original session.
+      invalidateGeneration: false,
       preserveActiveStream: true,
     );
 

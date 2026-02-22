@@ -4376,6 +4376,94 @@ void main() {
   );
 
   testWidgets(
+    'updates final assistant bubble after message.updated with same id',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_message_updated_final',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Realtime Final Message',
+          ),
+        ],
+      );
+
+      repository.messagesBySession['ses_message_updated_final'] = <ChatMessage>[
+        AssistantMessage(
+          id: 'msg_final_same_id',
+          sessionId: 'ses_message_updated_final',
+          time: DateTime.fromMillisecondsSinceEpoch(1200),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_final_same_id_draft',
+              messageId: 'msg_final_same_id',
+              sessionId: 'ses_message_updated_final',
+              text: 'draft answer',
+            ),
+          ],
+        ),
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('draft answer'), findsOneWidget);
+
+      repository.messagesBySession['ses_message_updated_final'] = <ChatMessage>[
+        AssistantMessage(
+          id: 'msg_final_same_id',
+          sessionId: 'ses_message_updated_final',
+          time: DateTime.fromMillisecondsSinceEpoch(1200),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1300),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_final_same_id_done',
+              messageId: 'msg_final_same_id',
+              sessionId: 'ses_message_updated_final',
+              text: 'final answer visible',
+            ),
+          ],
+        ),
+      ];
+
+      repository.emitEvent(
+        const ChatEvent(
+          type: 'message.updated',
+          properties: <String, dynamic>{
+            'info': <String, dynamic>{
+              'id': 'msg_final_same_id',
+              'sessionID': 'ses_message_updated_final',
+            },
+          },
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 80));
+      await tester.pumpAndSettle();
+
+      expect(find.text('final answer visible'), findsOneWidget);
+      expect(find.text('draft answer'), findsNothing);
+    },
+  );
+
+  testWidgets(
     'shows delayed tip in composer for both thinking and receiving stages',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));
