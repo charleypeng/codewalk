@@ -308,6 +308,11 @@ class _ChatPageState extends State<ChatPage>
       provider.setAppInForeground(_isAppInForeground);
       _applyForegroundPolicy(reason: 'app-lifecycle-${state.name}');
       if (_isAppInForeground) {
+        if (_isChatScreenActive()) {
+          unawaited(
+            provider.refreshActiveSessionView(reason: 'app-lifecycle-resumed'),
+          );
+        }
         _handleReturnToChat(provider, reason: 'app-resumed');
       }
     }

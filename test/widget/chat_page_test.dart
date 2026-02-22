@@ -4463,6 +4463,85 @@ void main() {
     },
   );
 
+  testWidgets('refreshes active session message list when app resumes', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_resume_refresh',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Resume Refresh Session',
+        ),
+      ],
+    );
+
+    repository.messagesBySession['ses_resume_refresh'] = <ChatMessage>[
+      AssistantMessage(
+        id: 'msg_resume_refresh',
+        sessionId: 'ses_resume_refresh',
+        time: DateTime.fromMillisecondsSinceEpoch(1200),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'part_resume_refresh_draft',
+            messageId: 'msg_resume_refresh',
+            sessionId: 'ses_resume_refresh',
+            text: 'draft before background',
+          ),
+        ],
+      ),
+    ];
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('draft before background'), findsOneWidget);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+
+    repository.messagesBySession['ses_resume_refresh'] = <ChatMessage>[
+      AssistantMessage(
+        id: 'msg_resume_refresh',
+        sessionId: 'ses_resume_refresh',
+        time: DateTime.fromMillisecondsSinceEpoch(1200),
+        completedTime: DateTime.fromMillisecondsSinceEpoch(1300),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'part_resume_refresh_final',
+            messageId: 'msg_resume_refresh',
+            sessionId: 'ses_resume_refresh',
+            text: 'final after resume sync',
+          ),
+        ],
+      ),
+    ];
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 120));
+    await tester.pumpAndSettle();
+
+    expect(find.text('final after resume sync'), findsOneWidget);
+    expect(find.text('draft before background'), findsNothing);
+  });
+
   testWidgets(
     'shows delayed tip in composer for both thinking and receiving stages',
     (WidgetTester tester) async {
