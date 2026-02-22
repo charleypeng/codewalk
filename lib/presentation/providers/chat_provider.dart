@@ -642,42 +642,6 @@ class ChatProvider extends ChangeNotifier {
     return List<ChatPermissionRequest>.unmodifiable(collected);
   }
 
-  Set<String> get currentThreadSubagentPermissionRequestIds {
-    final currentSessionId = _currentSession?.id;
-    if (currentSessionId == null || currentSessionId.isEmpty) {
-      return const <String>{};
-    }
-
-    final descendantIds = _orderedCurrentSessionDescendantIds().toSet();
-    if (descendantIds.isEmpty) {
-      return const <String>{};
-    }
-
-    final requestIds = <String>{};
-    for (final sessionId in descendantIds) {
-      final sessionRequests = _pendingPermissionsBySession[sessionId];
-      if (sessionRequests == null || sessionRequests.isEmpty) {
-        continue;
-      }
-      for (final request in sessionRequests) {
-        requestIds.add(request.id);
-      }
-    }
-    return requestIds;
-  }
-
-  bool isCurrentThreadSubagentPermission(ChatPermissionRequest request) {
-    final currentSessionId = _currentSession?.id;
-    if (currentSessionId == null || currentSessionId.isEmpty) {
-      return false;
-    }
-    if (request.sessionId == currentSessionId) {
-      return false;
-    }
-    final descendantIds = _orderedCurrentSessionDescendantIds().toSet();
-    return descendantIds.contains(request.sessionId);
-  }
-
   List<String> _orderedCurrentSessionDescendantIds() {
     final currentSessionId = _currentSession?.id;
     if (currentSessionId == null || currentSessionId.isEmpty) {

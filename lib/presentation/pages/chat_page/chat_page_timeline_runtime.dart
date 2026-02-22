@@ -3,8 +3,7 @@ part of '../chat_page.dart';
 extension _ChatPageTimelineRuntime on _ChatPageState {
   Widget _buildInteractionPrompts(ChatProvider chatProvider) {
     final permissionRequests = chatProvider.currentThreadPermissionRequests;
-    final subagentPermissionIds =
-        chatProvider.currentThreadSubagentPermissionRequestIds;
+    final currentSessionId = chatProvider.currentSession?.id;
     final questionRequest = chatProvider.currentQuestionRequest;
     if (permissionRequests.isEmpty && questionRequest == null) {
       return const SizedBox.shrink();
@@ -20,7 +19,8 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
             request: permissionRequest,
             busy: chatProvider.isRespondingInteraction,
             originBadgeLabel:
-                subagentPermissionIds.contains(permissionRequest.id)
+                currentSessionId != null &&
+                    permissionRequest.sessionId != currentSessionId
                 ? 'Subagent'
                 : null,
             onDecide: (reply) {

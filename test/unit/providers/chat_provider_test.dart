@@ -4474,27 +4474,13 @@ void main() {
           provider.currentThreadPermissionRequests.map((item) => item.id),
           <String>['perm_root_1', 'perm_sub_1'],
         );
-        expect(
-          provider.currentThreadSubagentPermissionRequestIds,
-          contains('perm_sub_1'),
-        );
-        expect(
-          provider.currentThreadSubagentPermissionRequestIds,
-          isNot(contains('perm_root_1')),
-        );
+        final currentSessionId = provider.currentSession?.id;
+        final subagentRequestIds = provider.currentThreadPermissionRequests
+            .where((item) => item.sessionId != currentSessionId)
+            .map((item) => item.id)
+            .toList(growable: false);
 
-        final subagentRequest = provider.currentThreadPermissionRequests
-            .where((item) => item.id == 'perm_sub_1')
-            .first;
-        final rootRequest = provider.currentThreadPermissionRequests
-            .where((item) => item.id == 'perm_root_1')
-            .first;
-
-        expect(
-          provider.isCurrentThreadSubagentPermission(subagentRequest),
-          true,
-        );
-        expect(provider.isCurrentThreadSubagentPermission(rootRequest), false);
+        expect(subagentRequestIds, <String>['perm_sub_1']);
       },
     );
 

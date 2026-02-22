@@ -416,8 +416,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     final showMessageProgressIndicator =
         progressStage == _AssistantProgressStage.retrying;
     final interactionPermissions = chatProvider.currentThreadPermissionRequests;
-    final subagentPermissionIds =
-        chatProvider.currentThreadSubagentPermissionRequestIds;
+    final currentSessionId = chatProvider.currentSession?.id;
 
     final timelineEntries = _buildMessageTimelineEntries(
       messages: chatProvider.messages,
@@ -426,7 +425,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           chatProvider.isCurrentSessionActivelyResponding,
       isCompactingContext: chatProvider.isCompactingContext,
       interactionPermissions: interactionPermissions,
-      subagentPermissionRequestIds: subagentPermissionIds,
+      currentSessionId: currentSessionId,
     );
 
     return NotificationListener<ScrollMetricsNotification>(
@@ -491,14 +490,14 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     required bool isSessionActivelyResponding,
     required bool isCompactingContext,
     required List<ChatPermissionRequest> interactionPermissions,
-    required Set<String> subagentPermissionRequestIds,
+    required String? currentSessionId,
   }) {
     final lastId = messages.isNotEmpty ? messages.last.id : null;
     final messageFingerprint = Object.hashAll(messages);
     final permissionPromptSignature = interactionPermissions
         .map(
           (request) =>
-              '${request.id}:${request.sessionId}:${subagentPermissionRequestIds.contains(request.id)}',
+              '${request.id}:${request.sessionId}:${currentSessionId != null && request.sessionId != currentSessionId}',
         )
         .join('|');
     if (_cachedTimelineEntries != null &&
@@ -596,10 +595,12 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
 
     if (interactionPermissions.isNotEmpty) {
       for (final request in interactionPermissions) {
+        final fromSubagent =
+            currentSessionId != null && request.sessionId != currentSessionId;
         entries.add(
           _TimelinePermissionPromptEntry(
             request: request,
-            fromSubagent: subagentPermissionRequestIds.contains(request.id),
+            fromSubagent: fromSubagent,
           ),
         );
       }

@@ -20,8 +20,11 @@ class PermissionRequestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final originLabel = originBadgeLabel?.trim();
-    final hasOriginBadge = originLabel != null && originLabel.isNotEmpty;
+    final normalizedOriginLabel = originBadgeLabel?.trim();
+    final originLabel =
+        normalizedOriginLabel == null || normalizedOriginLabel.isEmpty
+        ? null
+        : normalizedOriginLabel;
 
     return Container(
       width: double.infinity,
@@ -47,7 +50,7 @@ class PermissionRequestCard extends StatelessWidget {
                   ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
-              if (hasOriginBadge)
+              if (originLabel != null)
                 Container(
                   key: ValueKey<String>(
                     'permission_request_origin_badge_${request.id}',
@@ -75,7 +78,7 @@ class PermissionRequestCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        originLabel ?? '',
+                        originLabel,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: colorScheme.onSecondaryContainer,
                           fontWeight: FontWeight.w600,
