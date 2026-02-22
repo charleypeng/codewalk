@@ -68,6 +68,7 @@ class EventFeedbackDispatcher {
           body: signal.body,
           category: signal.categoryKey,
           sessionId: signal.sessionId,
+          directory: signal.directory,
           playSound: shouldSound && !isAppInForeground,
           soundOption: soundOption,
           soundSource: soundSource,
@@ -109,6 +110,7 @@ class EventFeedbackDispatcher {
   }) {
     final properties = event.properties;
     final sessionId = _extractSessionId(properties);
+    final directory = _extractDirectory(properties);
     final sessionTitle = _extractSessionTitle(
       properties,
       sessionTitleHint: sessionTitleHint,
@@ -124,6 +126,7 @@ class EventFeedbackDispatcher {
           title: sessionTitle ?? 'Session',
           body: 'A tool permission or question needs your input.',
           sessionId: sessionId,
+          directory: directory,
         );
       case 'session.error':
         return _FeedbackSignal(
@@ -133,6 +136,7 @@ class EventFeedbackDispatcher {
           title: sessionTitle ?? 'Session',
           body: 'A session reported an error.',
           sessionId: sessionId,
+          directory: directory,
         );
       case 'session.idle':
         return _FeedbackSignal(
@@ -142,10 +146,44 @@ class EventFeedbackDispatcher {
           title: sessionTitle ?? 'Session',
           body: 'Agent finished the current response.',
           sessionId: sessionId,
+          directory: directory,
         );
       default:
         return null;
     }
+  }
+
+  String? _extractDirectory(Map<String, dynamic> properties) {
+    final direct = properties['directory']?.toString().trim();
+    if (direct != null && direct.isNotEmpty) {
+      return direct;
+    }
+
+    final info = properties['info'];
+    if (info is Map) {
+      final nested = info['directory']?.toString().trim();
+      if (nested != null && nested.isNotEmpty) {
+        return nested;
+      }
+    }
+
+    final session = properties['session'];
+    if (session is Map) {
+      final nested = session['directory']?.toString().trim();
+      if (nested != null && nested.isNotEmpty) {
+        return nested;
+      }
+    }
+
+    final project = properties['project'];
+    if (project is Map) {
+      final nested = project['directory']?.toString().trim();
+      if (nested != null && nested.isNotEmpty) {
+        return nested;
+      }
+    }
+
+    return null;
   }
 
   String? _extractSessionId(Map<String, dynamic> properties) {
@@ -210,6 +248,7 @@ class _FeedbackSignal {
     required this.title,
     required this.body,
     this.sessionId,
+    this.directory,
   });
 
   final NotificationCategory notificationCategory;
@@ -218,4 +257,5 @@ class _FeedbackSignal {
   final String title;
   final String body;
   final String? sessionId;
+  final String? directory;
 }

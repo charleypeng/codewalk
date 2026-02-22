@@ -16,6 +16,7 @@ class _FakeNotificationService extends NotificationService {
   String? lastBody;
   String? lastCategory;
   String? lastSessionId;
+  String? lastDirectory;
   bool? lastPlaySound;
   SoundOption? lastSoundOption;
   String? lastSoundSource;
@@ -26,6 +27,7 @@ class _FakeNotificationService extends NotificationService {
     required String body,
     required String category,
     String? sessionId,
+    String? directory,
     bool playSound = true,
     SoundOption soundOption = SoundOption.systemDefault,
     String? soundSource,
@@ -34,6 +36,7 @@ class _FakeNotificationService extends NotificationService {
     lastBody = body;
     lastCategory = category;
     lastSessionId = sessionId;
+    lastDirectory = directory;
     lastPlaySound = playSound;
     lastSoundOption = soundOption;
     lastSoundSource = soundSource;
@@ -77,6 +80,36 @@ void main() {
     expect(notificationService.lastCategory, 'agent');
     expect(notificationService.lastSessionId, 'ses_1');
     expect(notificationService.lastTitle, 'Refactor login flow');
+  });
+
+  test('propagates directory metadata to notification payload', () async {
+    final settingsProvider = SettingsProvider(
+      localDataSource: InMemoryAppLocalDataSource(),
+      dioClient: DioClient(),
+      soundService: _FakeSoundService(),
+    );
+    await settingsProvider.initialize();
+
+    final notificationService = _FakeNotificationService();
+    final dispatcher = EventFeedbackDispatcher(
+      settingsProvider: settingsProvider,
+      notificationService: notificationService,
+      soundService: _FakeSoundService(),
+    );
+
+    await dispatcher.handle(
+      const ChatEvent(
+        type: 'session.idle',
+        properties: <String, dynamic>{
+          'sessionID': 'ses_dir',
+          'directory': '/tmp/workspace-a',
+        },
+      ),
+      isAppInForeground: false,
+    );
+
+    expect(notificationService.lastSessionId, 'ses_dir');
+    expect(notificationService.lastDirectory, '/tmp/workspace-a');
   });
 
   test(

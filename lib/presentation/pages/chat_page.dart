@@ -111,6 +111,11 @@ class _ChatPageState extends State<ChatPage>
   static const Duration _doubleEscapeStopThreshold = Duration(
     milliseconds: 500,
   );
+  static const int _notificationTapMaxAttempts = 12;
+  static const int _notificationTapReloadAttempts = 3;
+  static const Duration _notificationTapRetryInterval = Duration(
+    milliseconds: 180,
+  );
   static const double _composerStatusReservedHeight = 26;
 
   final ScrollController _scrollController = ScrollController();
@@ -124,6 +129,8 @@ class _ChatPageState extends State<ChatPage>
       TextEditingController();
   NotificationService? _notificationService;
   StreamSubscription<NotificationTapPayload>? _notificationTapSubscription;
+  NotificationTapPayload? _pendingNotificationTap;
+  Future<void>? _notificationTapTask;
   ChatProvider? _chatProvider;
   AppProvider? _appProvider;
   SettingsProvider? _settingsProvider;
@@ -256,11 +263,11 @@ class _ChatPageState extends State<ChatPage>
         _notificationTapSubscription = nextNotificationService
             .onNotificationTapped
             .listen((payload) {
-              unawaited(_handleNotificationTap(payload));
+              _scheduleNotificationTap(payload);
             });
         final pendingPayload = nextNotificationService.consumePendingTap();
         if (pendingPayload != null) {
-          unawaited(_handleNotificationTap(pendingPayload));
+          _scheduleNotificationTap(pendingPayload);
         }
         unawaited(nextNotificationService.initialize());
       }
@@ -451,32 +458,80 @@ class _ChatPageState extends State<ChatPage>
     );
   }
 
+  void _scheduleNotificationTap(NotificationTapPayload payload) {
+    _pendingNotificationTap = payload;
+    _notificationTapTask ??= _drainNotificationTapQueue();
+  }
+
+  Future<void> _drainNotificationTapQueue() async {
+    try {
+      while (mounted) {
+        final payload = _pendingNotificationTap;
+        if (payload == null) {
+          break;
+        }
+        _pendingNotificationTap = null;
+        await _handleNotificationTap(payload);
+      }
+    } finally {
+      _notificationTapTask = null;
+      if (mounted && _pendingNotificationTap != null) {
+        _notificationTapTask = _drainNotificationTapQueue();
+      }
+    }
+  }
+
   Future<void> _handleNotificationTap(NotificationTapPayload payload) async {
     if (!mounted) {
       return;
     }
-    final sessionId = payload.sessionId;
+    final sessionId = payload.sessionId?.trim();
     if (sessionId == null || sessionId.isEmpty) {
       return;
     }
 
+    final targetDirectory = payload.directory?.trim();
+    if (targetDirectory != null && targetDirectory.isNotEmpty) {
+      final currentDirectory = context.read<ProjectProvider>().currentDirectory;
+      if (currentDirectory != targetDirectory) {
+        await _switchDirectoryContext(targetDirectory);
+        if (!mounted) {
+          return;
+        }
+      }
+    }
+
     final chatProvider = _chatProvider ?? context.read<ChatProvider>();
-    var targetSession = chatProvider.sessions
-        .where((item) => item.id == sessionId)
-        .firstOrNull;
-    if (targetSession == null) {
-      await chatProvider.loadSessions();
+    var reloadAttempts = 0;
+
+    for (var attempt = 0; attempt < _notificationTapMaxAttempts; attempt += 1) {
+      final targetSession = chatProvider.sessions
+          .where((item) => item.id == sessionId)
+          .firstOrNull;
+      if (targetSession != null) {
+        await chatProvider.selectSession(targetSession);
+        return;
+      }
+
+      if (chatProvider.state != ChatState.loading &&
+          reloadAttempts < _notificationTapReloadAttempts) {
+        reloadAttempts += 1;
+        await chatProvider.loadSessions();
+        if (!mounted) {
+          return;
+        }
+        continue;
+      }
+
+      if (attempt + 1 >= _notificationTapMaxAttempts) {
+        return;
+      }
+
+      await Future<void>.delayed(_notificationTapRetryInterval);
       if (!mounted) {
         return;
       }
-      targetSession = chatProvider.sessions
-          .where((item) => item.id == sessionId)
-          .firstOrNull;
     }
-    if (targetSession == null) {
-      return;
-    }
-    await chatProvider.selectSession(targetSession);
   }
 
   double _lastKnownMaxScrollExtent = 0;

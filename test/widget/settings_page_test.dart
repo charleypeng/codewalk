@@ -93,4 +93,62 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Permissions and questions'), findsOneWidget);
   });
+
+  testWidgets('mobile back follows detail then list then app flow', (
+    WidgetTester tester,
+  ) async {
+    final local = InMemoryAppLocalDataSource();
+    final settingsProvider = SettingsProvider(
+      localDataSource: local,
+      dioClient: DioClient(),
+      soundService: SoundService(),
+    );
+    unawaited(settingsProvider.initialize());
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<SettingsProvider>.value(
+        value: settingsProvider,
+        child: MaterialApp(
+          home: Builder(
+            builder: (context) {
+              return Scaffold(
+                body: Center(
+                  child: FilledButton(
+                    key: const ValueKey<String>('open_settings_button'),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const SettingsPage()),
+                      );
+                    },
+                    child: const Text('Open settings'),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('open_settings_button')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(SettingsPage), findsOneWidget);
+
+    await tester.tap(find.text('Appearance').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Composer tips'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.byType(SettingsPage), findsOneWidget);
+    expect(find.text('Appearance'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.text('Open settings'), findsOneWidget);
+    expect(find.byType(SettingsPage), findsNothing);
+  });
 }

@@ -6,6 +6,7 @@ void main() {
     const payload = NotificationTapPayload(
       category: 'agent',
       sessionId: 'ses_123',
+      directory: '/tmp/workspace',
     );
 
     final raw = payload.toRaw();
@@ -14,6 +15,21 @@ void main() {
     expect(parsed, isNotNull);
     expect(parsed?.category, 'agent');
     expect(parsed?.sessionId, 'ses_123');
+    expect(parsed?.directory, '/tmp/workspace');
+  });
+
+  test('supports payload without directory metadata', () {
+    const payload = NotificationTapPayload(
+      category: 'agent',
+      sessionId: 'ses_1',
+    );
+
+    final raw = payload.toRaw();
+    final parsed = NotificationTapPayload.fromRaw(raw);
+
+    expect(parsed, isNotNull);
+    expect(parsed?.sessionId, 'ses_1');
+    expect(parsed?.directory, isNull);
   });
 
   test('returns null for invalid payload', () {

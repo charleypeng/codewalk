@@ -10,15 +10,21 @@ import 'android_foreground_monitor_service.dart';
 import 'web_notification_bridge.dart';
 
 class NotificationTapPayload {
-  const NotificationTapPayload({required this.category, this.sessionId});
+  const NotificationTapPayload({
+    required this.category,
+    this.sessionId,
+    this.directory,
+  });
 
   final String category;
   final String? sessionId;
+  final String? directory;
 
   String toRaw() {
     return jsonEncode(<String, dynamic>{
       'category': category,
       'sessionId': sessionId,
+      'directory': directory,
     });
   }
 
@@ -36,9 +42,11 @@ class NotificationTapPayload {
         return null;
       }
       final sessionId = decoded['sessionId']?.toString().trim();
+      final directory = decoded['directory']?.toString().trim();
       return NotificationTapPayload(
         category: category,
         sessionId: (sessionId?.isEmpty ?? true) ? null : sessionId,
+        directory: (directory?.isEmpty ?? true) ? null : directory,
       );
     } catch (_) {
       return null;
@@ -143,14 +151,17 @@ class NotificationService {
     required String body,
     required String category,
     String? sessionId,
+    String? directory,
     bool playSound = true,
     SoundOption soundOption = SoundOption.systemDefault,
     String? soundSource,
   }) async {
     final normalizedSessionId = _normalizeSessionId(sessionId);
+    final normalizedDirectory = _normalizeDirectory(directory);
     final payload = NotificationTapPayload(
       category: category,
       sessionId: normalizedSessionId,
+      directory: normalizedDirectory,
     ).toRaw();
 
     if (kIsWeb) {
@@ -556,6 +567,14 @@ class NotificationService {
 
   String? _normalizeSessionId(String? sessionId) {
     final trimmed = sessionId?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return null;
+    }
+    return trimmed;
+  }
+
+  String? _normalizeDirectory(String? directory) {
+    final trimmed = directory?.trim();
     if (trimmed == null || trimmed.isEmpty) {
       return null;
     }

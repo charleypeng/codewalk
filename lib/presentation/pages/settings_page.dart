@@ -210,26 +210,37 @@ class _SettingsPageState extends State<SettingsPage> {
     final isSplit = sizeClass.isAtLeastExpanded;
 
     if (!isSplit) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text(
-            _showMobileDetail ? (section?.title ?? 'Settings') : 'Settings',
+      return PopScope(
+        canPop: !_showMobileDetail,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop || !_showMobileDetail) {
+            return;
+          }
+          setState(() {
+            _showMobileDetail = false;
+          });
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text(
+              _showMobileDetail ? (section?.title ?? 'Settings') : 'Settings',
+            ),
+            leading: _showMobileDetail
+                ? IconButton(
+                    tooltip: 'Back',
+                    onPressed: () {
+                      setState(() {
+                        _showMobileDetail = false;
+                      });
+                    },
+                    icon: const Icon(Symbols.arrow_back),
+                  )
+                : null,
           ),
-          leading: _showMobileDetail
-              ? IconButton(
-                  tooltip: 'Back',
-                  onPressed: () {
-                    setState(() {
-                      _showMobileDetail = false;
-                    });
-                  },
-                  icon: const Icon(Symbols.arrow_back),
-                )
-              : null,
+          body: _showMobileDetail && section != null
+              ? section.builder(context)
+              : _buildSectionList(isSplit: false),
         ),
-        body: _showMobileDetail && section != null
-            ? section.builder(context)
-            : _buildSectionList(isSplit: false),
       );
     }
 
