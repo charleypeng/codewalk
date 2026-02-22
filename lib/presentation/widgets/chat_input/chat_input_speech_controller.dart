@@ -43,7 +43,7 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
   }
 
   Future<void> _startListening() async {
-    if (!widget.enabled || _isSending || _isStartingListening) return;
+    if (!widget.enabled || _isStartingListening) return;
 
     if (!mounted) {
       return;

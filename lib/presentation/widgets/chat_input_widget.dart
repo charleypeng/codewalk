@@ -912,10 +912,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                                   padding: const EdgeInsets.only(right: 6),
                                   child: IconButton.filledTonal(
                                     onPressed:
-                                        widget.enabled &&
-                                            !_isSending &&
-                                            !_isStartingListening &&
-                                            !widget.isResponding
+                                        widget.enabled && !_isStartingListening
                                         ? () => unawaited(_toggleVoiceInput())
                                         : null,
                                     tooltip: _isStartingListening

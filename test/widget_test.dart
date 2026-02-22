@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:codewalk/domain/entities/chat_composer_draft.dart';
 import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/presentation/widgets/chat_input_widget.dart';
@@ -436,6 +438,61 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(stopCount, 1);
+  });
+
+  testWidgets('microphone stays enabled while responding', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (_) {},
+          isResponding: true,
+          onStopRequested: () {},
+        ),
+      ),
+    );
+
+    final micButton = tester.widget<IconButton>(
+      find.ancestor(
+        of: find.byTooltip('Start voice input'),
+        matching: find.byType(IconButton),
+      ),
+    );
+
+    expect(micButton.onPressed, isNotNull);
+  });
+
+  testWidgets('microphone stays enabled while send is in flight', (
+    WidgetTester tester,
+  ) async {
+    final sendCompleter = Completer<void>();
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (_) async {
+            await sendCompleter.future;
+          },
+        ),
+      ),
+    );
+
+    await tester.enterText(find.byType(TextField), 'hello');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Symbols.send_rounded));
+    await tester.pump();
+
+    final micButton = tester.widget<IconButton>(
+      find.ancestor(
+        of: find.byTooltip('Start voice input'),
+        matching: find.byType(IconButton),
+      ),
+    );
+    expect(micButton.onPressed, isNotNull);
+
+    sendCompleter.complete();
+    await tester.pumpAndSettle();
   });
 
   testWidgets('responding with draft switches action to send', (
