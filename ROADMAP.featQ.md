@@ -14,7 +14,7 @@
   - [x] Standardize fallback icon borders for OSes without specific icon guidelines (Android already OK; investigate Windows and others). — `2bae6d7`
   - [x] Research and implement tray/notification icon simplification per OS, including Android status-bar notification icon standardization (monochrome + transparent) with an ImageMagick pipeline. — `2bae6d7`, `d909f88`
    - [x] Research and select the fastest, most efficient Flutter caching strategy/system, then implement it in the app with focus on performance and cross-platform consistency. — `04741b1`, `c80f168`
-  - [ ] Verify/adjust mobile-only background sync to be low impact on battery and data usage.
+  - [x] Verify/adjust mobile-only background sync to be low impact on battery and data usage. — `24d5241`
 
 - **Group 2 — Settings, Wizard, Status, and Update Consistency** [~]
   - [x] Reorganize Wizard visuals to highlight the recommended option and alternatives. — `92fa47e`
@@ -23,14 +23,14 @@
   - [x] Add an AMOLED mode switch available when dark mode is active. — `2ccc089`, `4b1d4cc`
   - [x] In Settings, move Servers to first position (before Appearance). — `92fa47e`
   - [x] In Settings > Logs, remove extra step and open logs screen directly. - Commit hash: 3ad147e
-  - [ ] On mobile, Back in Settings follows hierarchical navigation: section -> Settings main screen -> app main screen; only after that should Back close the app.
-  - [ ] In Settings > Shortcuts, review shortcut coverage and add missing options.
-  - [ ] Add shortcut to enable/disable STT in Shortcuts.
-  - [ ] In Settings > About, create an independent update system for new versions.
-  - [ ] In About, add "check updates on open" option (default on), with toast and update button.
-  - [x] Ensure notifications do not prefix the title with generic labels such as `Finished:`.
-  - [ ] Verify that opening a notification navigates to its source session; implement/fix if needed.
-  - [x] In sync status, avoid orange dot for recoverable states (`degraded`/`delayed`/`reconnecting`); show subtle loading in menu when returning from foreground without persistent indicator.
+- [x] On mobile, Back in Settings follows hierarchical navigation: section -> Settings main screen -> app main screen; only after that should Back close the app. - Commit hash: e846e54
+- [ ] In Settings > Shortcuts, review shortcut coverage and add missing options.
+- [ ] Add shortcut to enable/disable STT in Shortcuts.
+- [ ] In Settings > About, create an independent update system for new versions.
+- [ ] In About, add "check updates on open" option (default on), with toast and update button.
+- [x] Ensure notifications do not prefix the title with generic labels such as `Finished:`.
+- [x] Verify that opening a notification navigates to its source session; implement/fix if needed. - Commit hash: e846e54
+- [x] In sync status, avoid orange dot for recoverable states (`degraded`/`delayed`/`reconnecting`); show subtle loading in menu when returning from foreground without persistent indicator.
   - [x] Fix visual desync of the select near Settings vs server popover (reactive status consistency). — `6b1f425`
   - [ ] Simplify terminology mismatch Project vs Workspace in "Project Context" dialog.
   - [ ] Reorganize the "Project Context" screen for a more dynamic visual UX; tapping a project opens it immediately and closes the dialog, removing the need for a separate open button next to trash.
@@ -44,9 +44,9 @@
   - [x] Standardize tool-call collapse, remove 'Assistant' titles, visually merge consecutive assistant tool-calls into one bubble (no errors/non-tool messages between them), and remove assistant/user bubble borders while preserving final response visibility and collapsing work when it arrives. — `1665e71`
   - [x] Require custom textual descriptions for every tool call; when a tool call finishes, auto-collapse it to icon+title with an inline expand button to reopen details. — `1665e71`
   - [x] Mirror subagent permission prompts/authorization requests in the main conversation so users can respond there too, with a subtle origin badge indicating the request comes from a subagent. — `d367602`, `f9ee596`
-  - [ ] Investigate and fix mobile-first blank chat screen when opening very large conversations: the screen goes fully white until app restart, and usually opens correctly after relaunch.
+  - [x] Investigate and fix mobile-first blank chat screen when opening very large conversations: the screen goes fully white until app restart, and usually opens correctly after relaunch. - Commit hash: fe8762b
   - [x] Investigate and fix mobile chat-state refresh after app resume: sometimes the latest assistant message is not rendered when returning from background, but appears after switching to another conversation and back. — `1581c65`, `3639206`, `ab752f1`
-  - [ ] Investigate and fix conversation-open click behavior: sometimes opening a conversation requires two clicks (first opens the conversation, second closes the sidebar), and a fast double-click on the same item can freeze the screen, especially with large histories.
+  - [x] Investigate and fix conversation-open click behavior: sometimes opening a conversation requires two clicks (first opens the conversation, second closes the sidebar), and a fast double-click on the same item can freeze the screen, especially with large histories. - Commit hash: 204114e
   - [ ] Investigate and fix intermittent blank history on conversation open: chat can appear empty until pull/scroll, likely due to auto-scroll to the last message overshooting (overscroll) and leaving the viewport outside the content.
   - [ ] After returning from background, position the conversation at the start of the most recent message (top of text) instead of at the end of that message.
   - [ ] In composer, adjust `ArrowUp`/`ArrowDown` without modifiers for multiline behavior before history navigation; with modifiers keep default editor behavior.
