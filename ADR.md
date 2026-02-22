@@ -21,6 +21,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-015: Platform-Specific Icon Asset Pipeline for Tray, Android Notifications, and macOS Launcher Masking
 - ADR-016: Hybrid File-Backed Cache for Large Chat Payloads
 - ADR-017: Android Foreground Service for Reliable Background Monitoring
+- ADR-018: Dedicated SSE Dio Instance for Connection Pool Isolation
 
 ---
 
@@ -127,6 +128,8 @@ Use realtime streams as the primary sync mechanism, automatically enter degraded
 **Note** (commits `acce617`, `9dcd773`, `37f0397`): Preserved stream lifecycle, drain-on-context-switch, and generation invalidation added.
 
 **Note** (commit `77592fa`): Fixed stale-persisted-session-ID race condition where `loadSessions()` triggered by global events could read a stale session ID from disk and revert an in-memory session switch. Three defensive guards added: `selectSession()` now invalidates `_sessionsFetchId`, `loadLastSession()` prioritizes in-memory `_currentSession?.id` over persisted ID, and `_restoreLastSessionSnapshotFromCache()` guards against overwriting an already-switched session.
+
+**Note** (commit `1fcf33e`): SSE streams are now served by a dedicated Dio instance (`_sseDio`) with an isolated connection pool, preventing Android HTTP client from evicting SSE connections when regular HTTP requests compete for TCP connections during session switches. See ADR-018.
 
 **Note**: In polling-only background monitoring (when push notifications are unavailable), added a 5-minute tail probe after active sessions end to reduce missed notifications. Implementation uses `kBackgroundTailProbeInterval` (5 minutes) as the constant and `shouldScheduleBackgroundTailProbe()` to determine eligibility based on session state and platform support.
 
@@ -675,3 +678,48 @@ Implement a native Kotlin foreground service (`CodeWalkForegroundService`) with 
 - `android/app/src/main/kotlin/com/verseles/codewalk/CodeWalkForegroundService.kt`
 - `lib/presentation/services/android_foreground_monitor_service.dart`
 - `lib/presentation/services/android_background_alert_worker.dart`
+
+---
+
+## ADR-018: Dedicated SSE Dio Instance for Connection Pool Isolation (2026-02-22)
+
+**Status**: Accepted
+
+**Related**: ADR-003 (Realtime-First Sync Lifecycle)
+
+### Context
+
+The shared Dio singleton's HTTP connection pool on Android drops per-send SSE long-lived connections when `selectSession` triggers regular HTTP requests (`loadMessages`, selection sync). The Android HTTP client aggressively reuses TCP connections; when the shared pool needs a connection for a regular request, it closes the least-recently-used connection — which is the SSE stream. The server detects the disconnection and sends `MessageAbortedError`, causing a false abort visible to the user.
+
+Confirmed via `curl` that the server does NOT abort concurrent sessions when SSE connections stay alive — the problem is 100% client-side connection pool eviction.
+
+### Decision
+
+Create a second Dio instance (`_sseDio`) in `DioClient` with its own `IOHttpClientAdapter` and `HttpClient`, dedicated exclusively to SSE streams. Use conditional imports (`dio_sse_adapter.dart` → `dio_sse_adapter_io.dart` / `dio_sse_adapter_stub.dart`) for IO/web platform compatibility. The SSE `HttpClient` is configured with `idleTimeout: 2h` and `maxConnectionsPerHost: 4`.
+
+`ChatRemoteDataSourceImpl` accepts an optional `sseDio` parameter with fallback to the regular `dio` (for tests and web). All SSE connections — per-send `/event` and provider-level `/event`, `/global/event` — route through `sseDio`. `baseUrl` and auth configuration are mirrored to both Dio instances in `updateBaseUrl()`, `setBasicAuth()`, and `clearAuth()`.
+
+### Rationale
+
+- A separate `HttpClient` with its own connection pool eliminates TCP connection contention between regular HTTP requests and long-lived SSE streams entirely.
+- Conditional imports follow the same pattern used by `ChatCachePayloadStore` (ADR-016), providing a no-op stub on web where browsers manage connections natively.
+- Optional `sseDio` injection maintains backward compatibility with all existing tests without requiring mock changes.
+- Mirroring auth/baseUrl in both instances keeps configuration synchronized without requiring a shared interceptor chain.
+
+### Consequences
+
+- ✅ Eliminates false abort on concurrent session switch caused by connection pool eviction.
+- ✅ SSE streams are never evicted by regular HTTP requests competing for connections.
+- ✅ Web platform is unaffected (no-op stub; browser manages connections natively).
+- ⚠ Two Dio instances must stay synchronized for `baseUrl` and auth changes — all config methods in `DioClient` must update both.
+- ⚠ No `dispose()` exists for either Dio instance; acceptable since `DioClient` is a `registerLazySingleton` with app-lifetime scope.
+- ❌ Slightly higher memory footprint from the second connection pool (negligible for mobile/desktop).
+
+### Key Files
+
+- `lib/core/network/dio_client.dart`
+- `lib/core/network/dio_sse_adapter.dart`
+- `lib/core/network/dio_sse_adapter_io.dart`
+- `lib/core/network/dio_sse_adapter_stub.dart`
+- `lib/data/datasources/chat_remote_datasource.dart`
+- `lib/core/di/injection_container.dart`
