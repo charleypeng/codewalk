@@ -61,9 +61,12 @@ lib/presentation/pages/chat_page.dart         # Main chat/session/file UI entry;
 
 ```text
 lib/core/di/injection_container.dart              # Registers datasources, repositories, usecases, providers
-lib/core/network/dio_client.dart                  # HTTP client config, auth, and base URL updates
+lib/core/network/dio_client.dart                  # HTTP client config, auth, base URL updates; exposes `dio` (regular) and `sseDio` (dedicated SSE instance with isolated connection pool)
+lib/core/network/dio_sse_adapter.dart              # Conditional export: routes to IO or stub adapter
+lib/core/network/dio_sse_adapter_io.dart           # IO platforms: configures IOHttpClientAdapter with separate HttpClient for SSE (2h idle, 4 max connections)
+lib/core/network/dio_sse_adapter_stub.dart         # Web platform: no-op (browser manages connections natively)
 lib/data/datasources/app_remote_datasource.dart   # App bootstrap/config/providers/agents API access
-lib/data/datasources/chat_remote_datasource.dart  # Chat/session/message/realtime API access
+lib/data/datasources/chat_remote_datasource.dart  # Chat/session/message/realtime API access; accepts optional `sseDio` for SSE stream isolation from regular HTTP pool
 lib/data/datasources/project_remote_datasource.dart # Project/worktree/file API access
 lib/data/datasources/app_local_datasource.dart    # Persistent settings, profiles, cache, credentials, favorite models; uses ChatCachePayloadStore hybrid store with shared_preferences fallback for large payloads
 lib/data/cache/chat_cache_payload_store.dart      # Factory with conditional import for platform-specific store

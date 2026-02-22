@@ -55,7 +55,7 @@
   - [ ] In composer, increase slightly the composer status text font size for better readability.
   - [x] In mic/STT usage, insert text at current cursor position (not always at the end). - Commit hash: 3ad147e
   - [x] Handle `MessageAborted` with an inline friendly red chat message (`"What you want to do different?"`) instead of toast+retry; keep toast flow for punctual/non-abort errors. - Planning doc: `ROADMAP.featQ.messageaborted-inline-plan.md` - Implementation concluded (inline abort without toast retry).
-  - [x] Investigate and fix conversation continuity when switching sessions/projects: context changes can unexpectedly abort active conversations, so preserve active streams/chats when appropriate. - Related commits: acce617 9dcd773 1581c65
+  - [x] Investigate and fix conversation continuity when switching sessions/projects: context changes can unexpectedly abort active conversations, so preserve active streams/chats when appropriate. Isolated SSE streams with dedicated Dio instance to prevent false abort on concurrent session switch. - Related commits: acce617 9dcd773 1581c65 cdee253 1fcf33e
   - [ ] Plan the merge between the project selector and the conversations sidebar, grouping conversations by open projects to speed up navigation.
   - [ ] Tasks widget gets a footer progress bar based on total completed items.
   - [x] Plan support for sending a new message while the assistant is still working (OpenCode CLI/Web parity), following existing OpenCode interaction patterns. - Planning doc: `ROADMAP.featQ.concurrent-send-plan.md`
