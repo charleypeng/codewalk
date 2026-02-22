@@ -903,6 +903,15 @@ class ChatProvider extends ChangeNotifier {
     if (session == null) {
       return;
     }
+    // During abort suppression, polling already delivered fresh data.
+    // Loading from server risks showing stale abort content that the
+    // suppression window is designed to hide.
+    if (_isAbortSuppressionActiveForSession(session.id)) {
+      AppLogger.info(
+        'Skipping active session refresh during abort suppression session=${session.id} reason=$reason',
+      );
+      return;
+    }
     if (_activeSessionRefreshInFlight) {
       return;
     }
