@@ -1,20 +1,6 @@
 part of '../chat_provider.dart';
 
 extension _ChatProviderAbortPolicyOps on ChatProvider {
-  void _queueUiNotice({
-    required ChatUiNoticeType type,
-    required String message,
-    String? actionLabel,
-  }) {
-    _nextUiNoticeId += 1;
-    _pendingUiNotice = ChatUiNotice(
-      id: _nextUiNoticeId,
-      type: type,
-      message: message,
-      actionLabel: actionLabel,
-    );
-  }
-
   bool _isAbortLikeMessage(String message) {
     final normalized = message.trim().toLowerCase();
     return normalized.contains('aborted') ||
@@ -34,5 +20,37 @@ extension _ChatProviderAbortPolicyOps on ChatProvider {
   void _clearAbortSuppression() {
     _abortSuppressionSessionId = null;
     _abortSuppressionStartedAt = null;
+  }
+
+  void _appendInlineAbortMessage({required String sessionId}) {
+    if (_currentSession?.id != sessionId) {
+      return;
+    }
+
+    final lastMessage = _messages.lastOrNull;
+    if (lastMessage is AssistantMessage) {
+      final lastError = lastMessage.error;
+      if (lastError != null &&
+          lastError.name == ChatProvider._remoteAbortInlineErrorName &&
+          lastError.message == ChatProvider._remoteAbortNoticeMessage) {
+        return;
+      }
+    }
+
+    final now = DateTime.now();
+    final messageId = 'msg_inline_abort_${now.microsecondsSinceEpoch}';
+    _messages.add(
+      AssistantMessage(
+        id: messageId,
+        sessionId: sessionId,
+        time: now,
+        completedTime: now,
+        parts: const <MessagePart>[],
+        error: const MessageError(
+          name: ChatProvider._remoteAbortInlineErrorName,
+          message: ChatProvider._remoteAbortNoticeMessage,
+        ),
+      ),
+    );
   }
 }

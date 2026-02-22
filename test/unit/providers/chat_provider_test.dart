@@ -2892,7 +2892,7 @@ void main() {
       },
     );
 
-    test('session.error remote abort emits transient UI notice', () async {
+    test('session.error remote abort appends inline message', () async {
       await provider.projectProvider.initializeProject();
       await provider.loadSessions();
       await provider.selectSession(provider.sessions.first);
@@ -2913,13 +2913,12 @@ void main() {
 
       expect(provider.state, ChatState.loaded);
       expect(provider.errorMessage, isNull);
-
-      final notice = provider.consumePendingUiNotice();
-      expect(notice, isNotNull);
-      expect(notice!.type, ChatUiNoticeType.remoteAbort);
-      expect(notice.message, 'O que gostaria de fazer diferente?');
-      expect(notice.actionLabel, 'Retry');
       expect(provider.consumePendingUiNotice(), isNull);
+
+      final inlineAbort = provider.messages.last as AssistantMessage;
+      expect(inlineAbort.error, isNotNull);
+      expect(inlineAbort.error!.name, 'MessageAborted');
+      expect(inlineAbort.error!.message, 'What you want to do different?');
     });
 
     test(
@@ -3046,6 +3045,80 @@ void main() {
           );
         });
         expect(sentFollowUp, isTrue);
+      },
+    );
+
+    test(
+      'sendMessageWithInterrupt waits for busy status to settle before follow-up send',
+      () async {
+        final firstStreamController =
+            StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          await firstStreamController.close();
+        });
+        final assistantAfterSettledInterrupt = AssistantMessage(
+          id: 'msg_after_settled_interrupt',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(3500),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(3600),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_after_settled_interrupt',
+              messageId: 'msg_after_settled_interrupt',
+              sessionId: 'ses_1',
+              text: 'reply after settle',
+            ),
+          ],
+        );
+
+        var sendCalls = 0;
+        DateTime? secondSendAt;
+        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+          sendCalls += 1;
+          if (sendCalls == 1) {
+            return firstStreamController.stream;
+          }
+          secondSendAt = DateTime.now();
+          return Stream<Either<Failure, ChatMessage>>.value(
+            Right(assistantAfterSettledInterrupt),
+          );
+        };
+        chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+          'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('initial prompt');
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        final statusCallsBefore = chatRepository.getSessionStatusCallCount;
+        final interruptRequestedAt = DateTime.now();
+        unawaited(
+          Future<void>.delayed(const Duration(milliseconds: 220), () {
+            chatRepository.sessionStatusById =
+                const <String, SessionStatusInfo>{
+                  'ses_1': SessionStatusInfo(type: SessionStatusType.idle),
+                };
+          }),
+        );
+
+        await provider.sendMessageWithInterrupt('follow-up prompt');
+        await Future<void>.delayed(const Duration(milliseconds: 60));
+
+        expect(chatRepository.abortSessionCallCount, 1);
+        expect(sendCalls, 2);
+        expect(
+          chatRepository.getSessionStatusCallCount,
+          greaterThan(statusCallsBefore),
+        );
+        expect(secondSendAt, isNotNull);
+        expect(
+          secondSendAt!.difference(interruptRequestedAt).inMilliseconds,
+          greaterThanOrEqualTo(120),
+        );
       },
     );
 

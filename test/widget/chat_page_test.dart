@@ -4912,76 +4912,75 @@ void main() {
     },
   );
 
-  testWidgets(
-    'shows soft retry snackbar for remote abort without blocking chat',
-    (WidgetTester tester) async {
-      final repository = FakeChatRepository(
-        sessions: <ChatSession>[
-          ChatSession(
-            id: 'ses_remote_abort',
-            workspaceId: 'default',
-            time: DateTime.fromMillisecondsSinceEpoch(1000),
-            title: 'Remote Abort Session',
+  testWidgets('shows inline abort message without retry snackbar', (
+    WidgetTester tester,
+  ) async {
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_remote_abort',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Remote Abort Session',
+        ),
+      ],
+    );
+    repository.messagesBySession['ses_remote_abort'] = <ChatMessage>[
+      UserMessage(
+        id: 'msg_remote_abort_user',
+        sessionId: 'ses_remote_abort',
+        time: DateTime.fromMillisecondsSinceEpoch(1100),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'part_remote_abort_user',
+            messageId: 'msg_remote_abort_user',
+            sessionId: 'ses_remote_abort',
+            text: 'keep chat visible',
           ),
         ],
-      );
-      repository.messagesBySession['ses_remote_abort'] = <ChatMessage>[
-        UserMessage(
-          id: 'msg_remote_abort_user',
-          sessionId: 'ses_remote_abort',
-          time: DateTime.fromMillisecondsSinceEpoch(1100),
-          parts: const <MessagePart>[
-            TextPart(
-              id: 'part_remote_abort_user',
-              messageId: 'msg_remote_abort_user',
-              sessionId: 'ses_remote_abort',
-              text: 'keep chat visible',
-            ),
-          ],
-        ),
-      ];
+      ),
+    ];
 
-      final localDataSource = InMemoryAppLocalDataSource()
-        ..activeServerId = 'srv_test';
-      final provider = _buildChatProvider(
-        chatRepository: repository,
-        localDataSource: localDataSource,
-      );
-      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
 
-      await tester.pumpWidget(_testApp(provider, appProvider));
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
 
-      await provider.loadSessions();
-      await provider.selectSession(provider.sessions.first);
-      await provider.initializeProviders();
-      await tester.pumpAndSettle();
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await provider.initializeProviders();
+    await tester.pumpAndSettle();
 
-      repository.emitEvent(
-        const ChatEvent(
-          type: 'session.error',
-          properties: <String, dynamic>{
-            'sessionID': 'ses_remote_abort',
-            'error': <String, dynamic>{
-              'message': 'The operation was aborted by user',
-            },
+    repository.emitEvent(
+      const ChatEvent(
+        type: 'session.error',
+        properties: <String, dynamic>{
+          'sessionID': 'ses_remote_abort',
+          'error': <String, dynamic>{
+            'message': 'The operation was aborted by user',
           },
-        ),
-      );
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      await tester.pump();
+        },
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump();
 
-      expect(find.byType(SnackBar), findsOneWidget);
-      expect(find.text('O que gostaria de fazer diferente?'), findsOneWidget);
-      expect(find.text('Retry'), findsOneWidget);
-      expect(find.byIcon(Symbols.error_outline), findsNothing);
-      expect(
-        find.byKey(const ValueKey<String>('chat_message_list')),
-        findsOneWidget,
-      );
-    },
-  );
+    expect(find.byType(SnackBar), findsNothing);
+    expect(find.text('What you want to do different?'), findsOneWidget);
+    expect(find.text('Retry'), findsNothing);
+    expect(find.byIcon(Symbols.error_outline), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('chat_message_list')),
+      findsOneWidget,
+    );
+  });
 
   testWidgets('keeps input editable while responding and stop aborts session', (
     WidgetTester tester,
@@ -5125,7 +5124,7 @@ void main() {
 
     await tester.tap(find.byIcon(Symbols.send_rounded));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 80));
+    await tester.pump(const Duration(milliseconds: 260));
 
     expect(repository.abortSessionCallCount, 1);
     expect(repository.lastAbortSessionId, 'ses_interrupt_send');

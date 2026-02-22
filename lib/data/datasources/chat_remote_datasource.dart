@@ -830,6 +830,17 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         return 0;
       }
 
+      bool isAbortLikeSessionError({String? name, String? message}) {
+        final normalized = '${name ?? ''} ${message ?? ''}'
+            .trim()
+            .toLowerCase();
+        return normalized.contains('abort') ||
+            normalized.contains('aborted') ||
+            normalized.contains('cancelled') ||
+            normalized.contains('canceled') ||
+            normalized.contains('retry');
+      }
+
       Future<String?> resolveAssistantMessageId() async {
         if (activeAssistantMessageId != null &&
             activeAssistantMessageId!.isNotEmpty) {
@@ -1136,6 +1147,20 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
                         if (error != null) {
                           final errorName =
                               error['name'] as String? ?? 'UnknownError';
+                          final errorData =
+                              error['data'] as Map<String, dynamic>?;
+                          final errorMessage =
+                              errorData?['message'] as String? ??
+                              error['message'] as String?;
+                          if (isAbortLikeSessionError(
+                            name: errorName,
+                            message: errorMessage,
+                          )) {
+                            AppLogger.info(
+                              'Ignoring abort-like session.error in send stream session=$sessionId',
+                            );
+                            return;
+                          }
                           if (!eventController.isClosed) {
                             eventController.addError(
                               Exception('Session error: $errorName'),

@@ -302,11 +302,8 @@ extension _ChatProviderEventReducerOps on ChatProvider {
               type: SessionStatusType.idle,
             );
             _errorMessage = null;
-            _queueUiNotice(
-              type: ChatUiNoticeType.remoteAbort,
-              message: ChatProvider._remoteAbortNoticeMessage,
-              actionLabel: 'Retry',
-            );
+            _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
+            _appendInlineAbortMessage(sessionId: sessionId);
             _setState(ChatState.loaded);
             break;
           }

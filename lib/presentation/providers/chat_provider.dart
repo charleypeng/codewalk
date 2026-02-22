@@ -210,11 +210,11 @@ class ChatProvider extends ChangeNotifier {
   String? _abortSuppressionSessionId;
   DateTime? _abortSuppressionStartedAt;
   ChatUiNotice? _pendingUiNotice;
-  int _nextUiNoticeId = 0;
   int _messageStreamGeneration = 0;
   String? _activeMessageStreamSessionId;
   ChatComposerDraft? _activeSendDraft;
   _RejectedDraftEnvelope? _rejectedDraft;
+  bool _interruptSendInFlight = false;
 
   // Project and provider-related state
   String? _currentProjectId;
@@ -304,7 +304,15 @@ class ChatProvider extends ChangeNotifier {
   static const String _configSyncAgentName = '__codewalk';
   static const String _remoteAutoVariantValue = '__auto__';
   static const String _remoteAbortNoticeMessage =
-      'O que gostaria de fazer diferente?';
+      'What you want to do different?';
+  static const String _remoteAbortInlineErrorName = 'MessageAborted';
+  static const Duration _interruptSendStatusPollInterval = Duration(
+    milliseconds: 120,
+  );
+  static const int _interruptSendStatusMaxAttempts = 6;
+  static const Duration _interruptSendPostAbortDelay = Duration(
+    milliseconds: 120,
+  );
 
   // Microtask coalescing: multiple calls within the same microtask frame
   // result in a single notifyListeners() invocation, reducing rebuild storms
@@ -1674,17 +1682,34 @@ class ChatProvider extends ChangeNotifier {
         (trimmedText.isEmpty && effectiveAttachments.isEmpty)) {
       return;
     }
-
-    final targetSessionId = _currentSession!.id;
-    if (isCurrentSessionActivelyResponding) {
+    if (_interruptSendInFlight) {
       AppLogger.info(
-        'Provider interrupt-and-send requested session=$targetSessionId',
+        'Provider interrupt-and-send ignored because a previous request is still in flight',
       );
-      final stopped = await abortActiveResponse(suppressFailureUi: true);
-      if (!stopped) {
+      return;
+    }
+    _interruptSendInFlight = true;
+
+    try {
+      final targetSessionId = _currentSession!.id;
+      if (isCurrentSessionActivelyResponding) {
         AppLogger.info(
-          'Provider interrupt-and-send continuing after stop failure session=$targetSessionId',
+          'Provider interrupt-and-send requested session=$targetSessionId',
         );
+        final stopped = await abortActiveResponse(suppressFailureUi: true);
+        if (!stopped) {
+          AppLogger.info(
+            'Provider interrupt-and-send continuing after stop failure session=$targetSessionId',
+          );
+        }
+
+        if (_currentSession?.id != targetSessionId) {
+          AppLogger.info(
+            'Provider interrupt-and-send cancelled due session switch from=$targetSessionId to=${_currentSession?.id ?? "-"}',
+          );
+          return;
+        }
+        await _awaitInterruptSendSessionReady(targetSessionId);
       }
 
       if (_currentSession?.id != targetSessionId) {
@@ -1693,13 +1718,44 @@ class ChatProvider extends ChangeNotifier {
         );
         return;
       }
+
+      await sendMessage(
+        trimmedText,
+        attachments: effectiveAttachments,
+        shellMode: shellMode,
+      );
+    } finally {
+      _interruptSendInFlight = false;
+    }
+  }
+
+  Future<void> _awaitInterruptSendSessionReady(String sessionId) async {
+    for (
+      var attempt = 0;
+      attempt < _interruptSendStatusMaxAttempts;
+      attempt += 1
+    ) {
+      if (_currentSession?.id != sessionId) {
+        return;
+      }
+
+      await refreshSessionStatusSnapshot();
+      final statusType = _sessionStatusById[sessionId]?.type;
+      final hasBusyStatus =
+          statusType == SessionStatusType.busy ||
+          statusType == SessionStatusType.retry;
+      final hasActiveLocalStream =
+          _activeMessageStreamSessionId == sessionId &&
+          _messageSubscription != null;
+
+      if (!hasBusyStatus && !hasActiveLocalStream && !_isAbortingResponse) {
+        break;
+      }
+
+      await Future<void>.delayed(_interruptSendStatusPollInterval);
     }
 
-    await sendMessage(
-      trimmedText,
-      attachments: effectiveAttachments,
-      shellMode: shellMode,
-    );
+    await Future<void>.delayed(_interruptSendPostAbortDelay);
   }
 
   /// Send message
@@ -2033,9 +2089,11 @@ class ChatProvider extends ChangeNotifier {
       );
       _setState(ChatState.loaded);
       _markIncompleteAssistantMessagesAsCompleted();
-      _sessionStatusById[session.id] = const SessionStatusInfo(
-        type: SessionStatusType.idle,
-      );
+      if (!suppressFailureUi) {
+        _sessionStatusById[session.id] = const SessionStatusInfo(
+          type: SessionStatusType.idle,
+        );
+      }
       _clearActiveSendDraft();
       _errorMessage = null;
       success = true;

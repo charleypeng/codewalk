@@ -1799,6 +1799,9 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   }
 
   Widget _buildErrorInfo(BuildContext context, MessageError error) {
+    final isInlineAbortError = error.name == 'MessageAborted';
+    final title = isInlineAbortError ? null : error.name;
+
     return Container(
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(12),
@@ -1821,16 +1824,20 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  error.name,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: Theme.of(context).colorScheme.onErrorContainer,
+                if (title != null)
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).colorScheme.onErrorContainer,
+                    ),
                   ),
-                ),
                 Text(
                   error.message,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: isInlineAbortError
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                     color: Theme.of(context).colorScheme.onErrorContainer,
                   ),
                 ),
