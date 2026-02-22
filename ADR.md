@@ -126,6 +126,8 @@ Use realtime streams as the primary sync mechanism, automatically enter degraded
 
 **Note** (commits `acce617`, `9dcd773`, `37f0397`): Preserved stream lifecycle, drain-on-context-switch, and generation invalidation added.
 
+**Note** (commit `77592fa`): Fixed stale-persisted-session-ID race condition where `loadSessions()` triggered by global events could read a stale session ID from disk and revert an in-memory session switch. Three defensive guards added: `selectSession()` now invalidates `_sessionsFetchId`, `loadLastSession()` prioritizes in-memory `_currentSession?.id` over persisted ID, and `_restoreLastSessionSnapshotFromCache()` guards against overwriting an already-switched session.
+
 ### Key Files
 
 - `lib/presentation/providers/chat_provider/chat_provider_realtime_ops.dart`
@@ -135,6 +137,7 @@ Use realtime streams as the primary sync mechanism, automatically enter degraded
 - `lib/presentation/services/desktop_tray_service.dart`
 - `lib/presentation/services/android_background_alert_worker.dart`
 - `lib/presentation/providers/chat_provider/chat_provider_session_ops.dart`
+- `lib/presentation/providers/chat_provider/chat_provider_cache_persistence_ops.dart`
 
 ---
 
