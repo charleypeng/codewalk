@@ -818,6 +818,10 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       var messageCompleted = false;
       String? activeAssistantMessageId;
       var fallbackCompletionWatchStarted = false;
+      // Timestamp used to distinguish new messages from stale ones.
+      // Without per-send SSE, resolveAssistantMessageId must skip
+      // completed messages from previous sends.
+      final sendStartMs = DateTime.now().millisecondsSinceEpoch;
 
       int extractCreatedTimeMs(dynamic timeValue) {
         if (timeValue is Map<String, dynamic>) {
@@ -851,8 +855,14 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           }
 
           final list = response.data as List<dynamic>? ?? const <dynamic>[];
-          String? candidateId;
-          var candidateCreated = -1;
+
+          // Prefer incomplete messages (from current send) over completed
+          // ones (from previous sends). Without per-send SSE, the latest
+          // completed message belongs to an earlier request.
+          String? incompleteId;
+          var incompleteCreated = -1;
+          String? freshCompletedId;
+          var freshCompletedCreated = -1;
 
           for (final raw in list) {
             if (raw is! Map) {
@@ -869,12 +879,29 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
             }
 
             final created = extractCreatedTimeMs(info['time']);
-            if (created >= candidateCreated) {
-              candidateCreated = created;
-              candidateId = id;
+            final timeMap = info['time'];
+            final completedMs = timeMap is Map<String, dynamic>
+                ? (timeMap['completed'] as num?)?.toInt()
+                : null;
+            final isCompleted = completedMs != null;
+
+            if (!isCompleted) {
+              // In-progress message — likely from the current send.
+              if (created >= incompleteCreated) {
+                incompleteCreated = created;
+                incompleteId = id;
+              }
+            } else if (created >= sendStartMs - 2000) {
+              // Completed AFTER send started — fresh, not stale.
+              if (created >= freshCompletedCreated) {
+                freshCompletedCreated = created;
+                freshCompletedId = id;
+              }
             }
+            // Completed before sendStartMs → stale, skip.
           }
 
+          final candidateId = incompleteId ?? freshCompletedId;
           if (candidateId != null) {
             activeAssistantMessageId = candidateId;
             AppLogger.info(
