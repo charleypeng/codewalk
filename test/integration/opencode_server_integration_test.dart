@@ -1,4 +1,5 @@
 import 'package:codewalk/core/errors/failures.dart';
+import 'package:codewalk/core/errors/exceptions.dart';
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/data/datasources/app_remote_datasource.dart';
 import 'package:codewalk/data/datasources/chat_remote_datasource.dart';
@@ -307,35 +308,34 @@ void main() {
     );
 
     test(
-      'ChatRemoteDataSource falls back to /message when prompt_async is unavailable',
+      'ChatRemoteDataSource fails fast when prompt_async is unavailable',
       () async {
         server.promptAsyncSupported = false;
-        server.streamMessageUpdates = true;
 
         final remote = ChatRemoteDataSourceImpl(
           dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
         );
 
-        final messages = await remote
-            .sendMessage(
-              'default',
-              'ses_1',
-              const ChatInputModel(
-                messageId: 'msg_user_fallback_1',
-                providerId: 'mock-provider',
-                modelId: 'mock-model',
-                parts: <ChatInputPartModel>[
-                  ChatInputPartModel(type: 'text', text: 'fallback please'),
-                ],
-              ),
-            )
-            .toList();
+        await expectLater(
+          () => remote
+              .sendMessage(
+                'default',
+                'ses_1',
+                const ChatInputModel(
+                  messageId: 'msg_user_fallback_1',
+                  providerId: 'mock-provider',
+                  modelId: 'mock-model',
+                  parts: <ChatInputPartModel>[
+                    ChatInputPartModel(type: 'text', text: 'fallback please'),
+                  ],
+                ),
+              )
+              .toList(),
+          throwsA(isA<NotFoundException>()),
+        );
 
-        expect(messages, isNotEmpty);
-        expect((messages.last.parts.single).text, 'done');
-        expect(messages.last.completedTime, isNotNull);
         expect(server.promptAsyncRequestCount, 1);
-        expect(server.messageRequestCount, 1);
+        expect(server.messageRequestCount, 0);
       },
     );
 

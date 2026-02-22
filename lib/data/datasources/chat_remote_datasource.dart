@@ -1246,122 +1246,35 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         AppLogger.warn('Failed to connect to event stream', error: e);
       }
 
-      // Prefer async send endpoint to avoid aborting other busy sessions.
-      Response<dynamic> response;
-      var usedAsyncEndpoint = false;
-      try {
-        response = await dio.post(
-          '/session/$sessionId/prompt_async',
-          data: input.toJson(),
-          queryParameters: queryParams.isNotEmpty ? queryParams : null,
-        );
-        usedAsyncEndpoint = true;
-      } on DioException catch (error) {
-        if (error.response?.statusCode == 404) {
-          AppLogger.info(
-            'prompt_async unavailable for session=$sessionId, falling back to /message',
-          );
-          response = await dio.post(
-            '/session/$sessionId/message',
-            data: input.toJson(),
-            queryParameters: queryParams.isNotEmpty ? queryParams : null,
-          );
-        } else {
-          rethrow;
-        }
+      // Use async send endpoint to avoid cross-session abort coupling.
+      final response = await dio.post(
+        '/session/$sessionId/prompt_async',
+        data: input.toJson(),
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+
+      if (response.statusCode != 204 && response.statusCode != 200) {
+        throw const ServerException('Failed to send message');
       }
 
-      if (usedAsyncEndpoint) {
-        if (response.statusCode != 204 && response.statusCode != 200) {
-          throw const ServerException('Failed to send message');
-        }
+      AppLogger.info('Async send request accepted for session=$sessionId');
 
-        AppLogger.info('Async send request accepted for session=$sessionId');
-
-        if (eventSubscription == null) {
-          AppLogger.info(
-            'No send-event stream available for async send; using polling fallback',
-          );
-          startFallbackCompletionWatch(
-            reason: 'prompt-async-no-sse',
-            initialDelay: Duration.zero,
-          );
-        } else {
-          // Safety net: some servers keep /event connected but may not emit
-          // message events for every request. Prevents stuck "sending".
-          startFallbackCompletionWatch(reason: 'prompt-async-watchdog');
-        }
-
-        await for (final message in eventController.stream) {
-          yield message;
-        }
-      } else if (response.statusCode == 200) {
-        AppLogger.info('Send request accepted for session=$sessionId');
-
-        // Parse immediate server response (`{info, parts}`) when available.
-        final responseData = response.data;
-        ChatMessageModel? immediateMessage;
-        if (responseData is Map<String, dynamic>) {
-          final info =
-              (responseData['info'] as Map<String, dynamic>?) ??
-              <String, dynamic>{};
-          final parts =
-              (responseData['parts'] as List<dynamic>?) ?? <dynamic>[];
-          if (info.isNotEmpty) {
-            activeAssistantMessageId = info['id'] as String?;
-            immediateMessage = ChatMessageModel.fromJson({
-              ...info,
-              'parts': parts,
-            });
-            AppLogger.info(
-              'Immediate assistant message received id=${activeAssistantMessageId ?? "-"} completed=${immediateMessage.completedTime != null}',
-            );
-            yield immediateMessage;
-          }
-        }
-
-        // If the immediate response already completed, no streaming is needed.
-        if (immediateMessage?.completedTime != null) {
-          await eventSubscription?.cancel();
-          if (!eventController.isClosed) {
-            await eventController.close();
-          }
-          return;
-        }
-
-        // If stream connection is unavailable, return what we already have.
-        if (eventSubscription == null) {
-          final fallbackMessageId =
-              activeAssistantMessageId ?? await resolveAssistantMessageId();
-          if (fallbackMessageId != null) {
-            AppLogger.info(
-              'No send-event stream available; using polling fallback id=$fallbackMessageId',
-            );
-            final completed = await pollCompleteMessage(fallbackMessageId);
-            if (completed != null) {
-              yield completed;
-            }
-          } else {
-            AppLogger.warn(
-              'No send-event stream and assistant message ID unresolved',
-            );
-          }
-          if (!eventController.isClosed) {
-            await eventController.close();
-          }
-          return;
-        }
-
+      if (eventSubscription == null) {
+        AppLogger.info(
+          'No send-event stream available for async send; using polling fallback',
+        );
+        startFallbackCompletionWatch(
+          reason: 'prompt-async-no-sse',
+          initialDelay: Duration.zero,
+        );
+      } else {
         // Safety net: some servers keep /event connected but may not emit
         // message events for every request. Prevents stuck "sending".
-        startFallbackCompletionWatch(reason: 'send-event-watchdog');
+        startFallbackCompletionWatch(reason: 'prompt-async-watchdog');
+      }
 
-        // Listen for subsequent message updates
-        await for (final message in eventController.stream) {
-          yield message;
-        }
-      } else {
-        throw const ServerException('Failed to send message');
+      await for (final message in eventController.stream) {
+        yield message;
       }
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
