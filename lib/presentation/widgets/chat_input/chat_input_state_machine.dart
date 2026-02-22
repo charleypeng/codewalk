@@ -18,6 +18,12 @@ extension _ChatInputStateMachine on _ChatInputWidgetState {
       await _stopListening();
     }
 
+    final draftTextAtSendStart = _controller.text;
+    final draftAttachmentsAtSendStart = List<FileInputPart>.unmodifiable(
+      _attachments,
+    );
+    final draftModeAtSendStart = _mode;
+
     _setState(() {
       _isSending = true;
     });
@@ -39,21 +45,32 @@ extension _ChatInputStateMachine on _ChatInputWidgetState {
       if (!mounted) {
         return;
       }
-      _controller.clear();
-      _setState(() {
-        _isComposing = false;
-        _attachments.clear();
-        _mode = ChatComposerMode.normal;
-        _popoverType = ChatComposerPopoverType.none;
-        _mentionSuggestions = <ChatComposerMentionSuggestion>[];
-        _slashSuggestions = <ChatComposerSlashCommandSuggestion>[];
-        _activeSuggestionIndex = 0;
-      });
-      if (_shouldHideKeyboardAfterSend) {
-        _effectiveFocusNode.unfocus();
-        unawaited(
-          SystemChannels.textInput.invokeMethod<void>('TextInput.hide'),
-        );
+      final draftChangedDuringSend =
+          _controller.text != draftTextAtSendStart ||
+          !listEquals(_attachments, draftAttachmentsAtSendStart) ||
+          _mode != draftModeAtSendStart;
+
+      if (!draftChangedDuringSend) {
+        _controller.clear();
+        _setState(() {
+          _isComposing = false;
+          _attachments.clear();
+          _mode = ChatComposerMode.normal;
+          _popoverType = ChatComposerPopoverType.none;
+          _mentionSuggestions = <ChatComposerMentionSuggestion>[];
+          _slashSuggestions = <ChatComposerSlashCommandSuggestion>[];
+          _activeSuggestionIndex = 0;
+        });
+        if (_shouldHideKeyboardAfterSend) {
+          _effectiveFocusNode.unfocus();
+          unawaited(
+            SystemChannels.textInput.invokeMethod<void>('TextInput.hide'),
+          );
+        }
+      } else {
+        _setState(() {
+          _isComposing = _controller.text.trim().isNotEmpty;
+        });
       }
     } catch (error) {
       if (!mounted) {

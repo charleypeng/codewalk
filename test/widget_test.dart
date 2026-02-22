@@ -495,6 +495,36 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  testWidgets('send completion does not clear draft changed while sending', (
+    WidgetTester tester,
+  ) async {
+    final sendCompleter = Completer<void>();
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (_) async {
+            await sendCompleter.future;
+          },
+        ),
+      ),
+    );
+
+    await tester.enterText(find.byType(TextField), 'initial prompt');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Symbols.send_rounded));
+    await tester.pump();
+
+    await tester.enterText(find.byType(TextField), 'new draft while sending');
+    await tester.pump();
+
+    sendCompleter.complete();
+    await tester.pumpAndSettle();
+
+    final textField = tester.widget<TextField>(find.byType(TextField));
+    expect(textField.controller!.text, 'new draft while sending');
+  });
+
   testWidgets('responding with draft switches action to send', (
     WidgetTester tester,
   ) async {
