@@ -66,7 +66,7 @@ lib/core/network/dio_sse_adapter.dart              # Conditional export: routes 
 lib/core/network/dio_sse_adapter_io.dart           # IO platforms: configures IOHttpClientAdapter with separate HttpClient for SSE (2h idle, 4 max connections)
 lib/core/network/dio_sse_adapter_stub.dart         # Web platform: no-op (browser manages connections natively)
 lib/data/datasources/app_remote_datasource.dart   # App bootstrap/config/providers/agents API access
-lib/data/datasources/chat_remote_datasource.dart  # Chat/session/message/realtime API access; accepts optional `sseDio` for SSE stream isolation from regular HTTP pool
+lib/data/datasources/chat_remote_datasource.dart  # Chat/session/message/realtime API access; accepts optional `sseDio` for SSE stream isolation; sendMessage uses polling + provider-level SSE only (no per-send SSE) to prevent server-side abort on disconnect
 lib/data/datasources/project_remote_datasource.dart # Project/worktree/file API access
 lib/data/datasources/app_local_datasource.dart    # Persistent settings, profiles, cache, credentials, favorite models; uses ChatCachePayloadStore hybrid store with shared_preferences fallback for large payloads
 lib/data/cache/chat_cache_payload_store.dart      # Factory with conditional import for platform-specific store
@@ -184,7 +184,7 @@ lib/data/datasources/chat_remote_datasource.dart
   - /session, /session/{id}, /session/{id}/message, /session/{id}/shell
   - /session/status, /session/{id}/children, /session/{id}/todo, /session/{id}/diff
   - /session/{id}/abort, /session/{id}/revert, /session/{id}/unrevert, /session/{id}/init, /session/{id}/summarize
-  - /event, /global/event
+  - /event (provider-level SSE only; per-send SSE removed), /global/event
   - /permission, /permission/{requestId}/reply
   - /question, /question/{requestId}/reply, /question/{requestId}/reject
 

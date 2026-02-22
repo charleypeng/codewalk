@@ -697,7 +697,9 @@ Confirmed via `curl` that the server does NOT abort concurrent sessions when SSE
 
 Create a second Dio instance (`_sseDio`) in `DioClient` with its own `IOHttpClientAdapter` and `HttpClient`, dedicated exclusively to SSE streams. Use conditional imports (`dio_sse_adapter.dart` → `dio_sse_adapter_io.dart` / `dio_sse_adapter_stub.dart`) for IO/web platform compatibility. The SSE `HttpClient` is configured with `idleTimeout: 2h` and `maxConnectionsPerHost: 4`.
 
-`ChatRemoteDataSourceImpl` accepts an optional `sseDio` parameter with fallback to the regular `dio` (for tests and web). All SSE connections — per-send `/event` and provider-level `/event`, `/global/event` — route through `sseDio`. `baseUrl` and auth configuration are mirrored to both Dio instances in `updateBaseUrl()`, `setBasicAuth()`, and `clearAuth()`.
+`ChatRemoteDataSourceImpl` accepts an optional `sseDio` parameter with fallback to the regular `dio` (for tests and web). Provider-level SSE connections (`/event`, `/global/event`) route through `sseDio`. `baseUrl` and auth configuration are mirrored to both Dio instances in `updateBaseUrl()`, `setBasicAuth()`, and `clearAuth()`.
+
+**Update (commit `61934e9`)**: Per-send SSE connections were removed entirely from the `prompt_async` path. The server monitors per-send SSE connections and aborts the AI agent when it detects disconnection (e.g. half-open TCP after background resume). Without per-send SSE, `prompt_async` processes fully async — message delivery relies on immediate polling (`startFallbackCompletionWatch` with zero delay) plus provider-level SSE. The dedicated SSE Dio remains in use for provider-level SSE streams.
 
 ### Rationale
 
@@ -710,6 +712,7 @@ Create a second Dio instance (`_sseDio`) in `DioClient` with its own `IOHttpClie
 
 - ✅ Eliminates false abort on concurrent session switch caused by connection pool eviction.
 - ✅ SSE streams are never evicted by regular HTTP requests competing for connections.
+- ✅ Eliminates server-side abort triggered by dead per-send SSE connections after background resume.
 - ✅ Web platform is unaffected (no-op stub; browser manages connections natively).
 - ⚠ Two Dio instances must stay synchronized for `baseUrl` and auth changes — all config methods in `DioClient` must update both.
 - ⚠ No `dispose()` exists for either Dio instance; acceptable since `DioClient` is a `registerLazySingleton` with app-lifetime scope.
