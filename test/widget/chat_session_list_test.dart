@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/presentation/widgets/chat_session_list.dart';
 import 'package:flutter/material.dart';
@@ -123,6 +125,46 @@ void main() {
 
     expect(find.byIcon(Symbols.sync_rounded), findsOneWidget);
     expect(find.byIcon(Symbols.chat), findsNothing);
+  });
+
+  testWidgets('ignores repeated taps while session selection is in flight', (
+    tester,
+  ) async {
+    var selectionCalls = 0;
+    final inFlightSelection = Completer<void>();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatSessionList(
+            sessions: <ChatSession>[session()],
+            onSessionSelected: (_) async {
+              selectionCalls += 1;
+              await inFlightSelection.future;
+            },
+          ),
+        ),
+      ),
+    );
+
+    final tileFinder = find.byKey(
+      const ValueKey<String>('chat_session_tile_ses_1'),
+    );
+
+    await tester.tap(tileFinder);
+    await tester.pump();
+    await tester.tap(tileFinder);
+    await tester.pump();
+
+    expect(selectionCalls, 1);
+
+    inFlightSelection.complete();
+    await tester.pumpAndSettle();
+
+    await tester.tap(tileFinder);
+    await tester.pump();
+
+    expect(selectionCalls, 2);
   });
 
   testWidgets('renders child sessions as collapsed sub-conversations', (

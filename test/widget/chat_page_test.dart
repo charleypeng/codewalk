@@ -87,6 +87,84 @@ void main() {
       expect(find.text('Desktop Shortcuts'), findsNothing);
     });
 
+    testWidgets('mobile double tap on conversation keeps chat route mounted', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(500, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_1',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Session 1',
+          ),
+          ChatSession(
+            id: 'ses_2',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(2000),
+            title: 'Session 2',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_1'] = <ChatMessage>[];
+      repository.messagesBySession['ses_2'] = <ChatMessage>[];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..defaultServerId = 'srv_test'
+        ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'srv_test',
+            'url': 'http://127.0.0.1:4096',
+            'label': 'Test Server',
+            'basicAuthEnabled': false,
+            'basicAuthUsername': '',
+            'basicAuthPassword': '',
+            'createdAt': 0,
+            'updatedAt': 0,
+          },
+        ]);
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('appbar_drawer_button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Conversations'), findsOneWidget);
+
+      final targetSessionTile = find.byKey(
+        const ValueKey<String>('chat_session_tile_ses_2'),
+      );
+      expect(targetSessionTile, findsOneWidget);
+
+      await tester.tap(targetSessionTile);
+      await tester.tap(targetSessionTile);
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ChatPage), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('appbar_drawer_button')),
+        findsOneWidget,
+      );
+      expect(provider.currentSession?.id, 'ses_2');
+      expect(find.text('Conversations'), findsNothing);
+    });
+
     testWidgets('delays hamburger alert badge during initial server issues', (
       WidgetTester tester,
     ) async {

@@ -101,7 +101,9 @@ extension _ChatPageScaffold on _ChatPageState {
                               key: const ValueKey<String>(
                                 'hide_conversations_sidebar_button',
                               ),
-                              icon: const Icon(Symbols.left_panel_close_rounded),
+                              icon: const Icon(
+                                Symbols.left_panel_close_rounded,
+                              ),
                               onPressed: onCollapseRequested,
                               tooltip: 'Hide Conversations sidebar',
                             ),
@@ -194,10 +196,10 @@ extension _ChatPageScaffold on _ChatPageState {
                       currentSession: chatProvider.currentSession,
                       isSessionActive: chatProvider.isSessionActivelyResponding,
                       onSessionSelected: (session) async {
+                        await _closeDrawerIfNeeded(
+                          closeOnSelect: closeOnSelect,
+                        );
                         await chatProvider.selectSession(session);
-                        if (closeOnSelect && context.mounted) {
-                          Navigator.of(context).pop();
-                        }
                       },
                       onSessionDeleted: (session) async {
                         await chatProvider.deleteSession(session.id);
