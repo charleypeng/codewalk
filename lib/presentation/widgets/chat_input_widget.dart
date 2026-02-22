@@ -636,13 +636,17 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     final mentionTokens = _extractMentionTokens(_controller.text);
     final showAttachments =
         _attachments.isNotEmpty && _mode == ChatComposerMode.normal;
-    final canSend =
+    final hasSendPayload =
         (_isComposing ||
-            ((_attachments.isNotEmpty || widget.contextItems.isNotEmpty) &&
-                _mode == ChatComposerMode.normal)) &&
-        widget.enabled &&
-        !_isSending &&
-        !widget.isResponding;
+        ((_attachments.isNotEmpty || widget.contextItems.isNotEmpty) &&
+            _mode == ChatComposerMode.normal));
+    final canSend = hasSendPayload && widget.enabled && !_isSending;
+    final showStopAction = widget.isResponding && !hasSendPayload;
+    final sendSemanticsLabel = showStopAction
+        ? 'Stop response'
+        : (widget.isResponding
+              ? 'Interrupt response and send message'
+              : 'Send message');
     final showPopover = _popoverType != ChatComposerPopoverType.none;
     const composerBackgroundColor = Colors.transparent;
     final normalBubblePreferredColor = Color.alphaBlend(
@@ -970,121 +974,123 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                     onPointerUp: (_) => _handleSendButtonPressEnd(),
                     onPointerCancel: (_) => _handleSendButtonPressEnd(),
                     child: Semantics(
-                      label: widget.isResponding ? 'Stop response' : 'Send message',
+                      label: sendSemanticsLabel,
                       button: true,
                       child: SizedBox.square(
                         dimension: _composerActionButtonSize,
                         child: FilledButton(
-                        onPressed: widget.isResponding
-                            ? (widget.enabled &&
-                                      !_isSending &&
-                                      widget.onStopRequested != null
-                                  ? () => unawaited(_requestStopResponse())
-                                  : null)
-                            : (canSend ? _handleSendButtonTap : null),
-                        style: FilledButton.styleFrom(
-                          minimumSize: const Size(
-                            _composerActionButtonSize,
-                            _composerActionButtonSize,
+                          onPressed: showStopAction
+                              ? (widget.enabled &&
+                                        !_isSending &&
+                                        widget.onStopRequested != null
+                                    ? () => unawaited(_requestStopResponse())
+                                    : null)
+                              : (canSend ? _handleSendButtonTap : null),
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(
+                              _composerActionButtonSize,
+                              _composerActionButtonSize,
+                            ),
+                            maximumSize: const Size(
+                              _composerActionButtonSize,
+                              _composerActionButtonSize,
+                            ),
+                            fixedSize: const Size(
+                              _composerActionButtonSize,
+                              _composerActionButtonSize,
+                            ),
+                            shape: const CircleBorder(),
+                            padding: EdgeInsets.zero,
+                            backgroundColor: showStopAction
+                                ? const Color(0xFF424242)
+                                : (canSend
+                                      ? colorScheme.primary
+                                      : colorScheme.surfaceContainerHighest),
+                            foregroundColor: showStopAction
+                                ? colorScheme.error
+                                : (canSend
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.onSurfaceVariant),
+                            elevation: canSend ? 1.5 : 0,
+                            shadowColor: colorScheme.primary.withValues(
+                              alpha: 0.3,
+                            ),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            visualDensity: Theme.of(context).visualDensity,
                           ),
-                          maximumSize: const Size(
-                            _composerActionButtonSize,
-                            _composerActionButtonSize,
-                          ),
-                          fixedSize: const Size(
-                            _composerActionButtonSize,
-                            _composerActionButtonSize,
-                          ),
-                          shape: const CircleBorder(),
-                          padding: EdgeInsets.zero,
-                          backgroundColor: widget.isResponding
-                              ? const Color(0xFF424242)
-                              : (canSend
-                                    ? colorScheme.primary
-                                    : colorScheme.surfaceContainerHighest),
-                          foregroundColor: widget.isResponding
-                              ? colorScheme.error
-                              : (canSend
-                                    ? colorScheme.onPrimary
-                                    : colorScheme.onSurfaceVariant),
-                          elevation: canSend ? 1.5 : 0,
-                          shadowColor: colorScheme.primary.withValues(
-                            alpha: 0.3,
-                          ),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: Theme.of(context).visualDensity,
-                        ),
-                        child: _isSending
-                            ? const SizedBox(
-                                width: _composerActionButtonSize,
-                                height: _composerActionButtonSize,
-                                child: Center(
-                                  child: SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : widget.isResponding
-                            ? SizedBox(
-                                width: _composerActionButtonSize,
-                                height: _composerActionButtonSize,
-                                child: Center(
-                                  child: Icon(
-                                    Symbols.stop_rounded,
-                                    size: 24,
-                                    color: colorScheme.error,
-                                  ),
-                                ),
-                              )
-                            : SizedBox(
-                                width: _composerActionButtonSize,
-                                height: _composerActionButtonSize,
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    const Align(
-                                      alignment: Alignment.center,
-                                      child: Icon(
-                                        Symbols.send_rounded,
-                                        size: 24,
+                          child: _isSending
+                              ? const SizedBox(
+                                  width: _composerActionButtonSize,
+                                  height: _composerActionButtonSize,
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
                                       ),
                                     ),
-                                    Align(
-                                      alignment: Alignment.bottomRight,
-                                      child: Padding(
-                                        padding: const EdgeInsets.only(
-                                          right: 3,
-                                          bottom: 3,
+                                  ),
+                                )
+                              : showStopAction
+                              ? SizedBox(
+                                  width: _composerActionButtonSize,
+                                  height: _composerActionButtonSize,
+                                  child: Center(
+                                    child: Icon(
+                                      Symbols.stop_rounded,
+                                      size: 24,
+                                      color: colorScheme.error,
+                                    ),
+                                  ),
+                                )
+                              : SizedBox(
+                                  width: _composerActionButtonSize,
+                                  height: _composerActionButtonSize,
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      const Align(
+                                        alignment: Alignment.center,
+                                        child: Icon(
+                                          Symbols.send_rounded,
+                                          size: 24,
                                         ),
-                                        child: DecoratedBox(
-                                          decoration: BoxDecoration(
-                                            color: canSend
-                                                ? colorScheme.onPrimary
-                                                      .withValues(alpha: 0.16)
-                                                : colorScheme.primaryContainer,
-                                            borderRadius: AppShapes.borderFull,
+                                      ),
+                                      Align(
+                                        alignment: Alignment.bottomRight,
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(
+                                            right: 3,
+                                            bottom: 3,
                                           ),
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(1),
-                                            child: Icon(
-                                              Symbols.keyboard_return_rounded,
-                                              size: 9,
+                                          child: DecoratedBox(
+                                            decoration: BoxDecoration(
                                               color: canSend
                                                   ? colorScheme.onPrimary
+                                                        .withValues(alpha: 0.16)
                                                   : colorScheme
-                                                        .onPrimaryContainer,
+                                                        .primaryContainer,
+                                              borderRadius:
+                                                  AppShapes.borderFull,
+                                            ),
+                                            child: Padding(
+                                              padding: const EdgeInsets.all(1),
+                                              child: Icon(
+                                                Symbols.keyboard_return_rounded,
+                                                size: 9,
+                                                color: canSend
+                                                    ? colorScheme.onPrimary
+                                                    : colorScheme
+                                                          .onPrimaryContainer,
+                                              ),
                                             ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
                         ),
                       ),
                     ),

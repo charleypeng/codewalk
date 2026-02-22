@@ -4564,8 +4564,8 @@ void main() {
       addTearDown(() async {
         await streamController.close();
       });
-      repository.sendMessageHandler = (_, __, ___, ____) =>
-          streamController.stream;
+      repository.sendMessageHandler =
+          (projectId, sessionId, input, directory) => streamController.stream;
 
       final localDataSource = InMemoryAppLocalDataSource()
         ..activeServerId = 'srv_test';
@@ -5038,11 +5038,107 @@ void main() {
     final updatedInputField = tester.widget<TextField>(chatInputFieldFinder);
     expect(updatedInputField.controller!.text, 'draft while receiving');
 
+    await tester.enterText(chatInputFieldFinder, '');
+    await tester.pump();
+
     await tester.tap(find.byIcon(Symbols.stop_rounded));
     await tester.pumpAndSettle();
 
     expect(repository.abortSessionCallCount, 1);
     expect(repository.lastAbortSessionId, 'ses_stop');
+  });
+
+  testWidgets('responding composer sends follow-up and aborts previous run', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_interrupt_send',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Interrupt And Send Session',
+        ),
+      ],
+    );
+    final firstStream = StreamController<Either<Failure, ChatMessage>>();
+    addTearDown(() async {
+      await firstStream.close();
+    });
+    final assistantAfterInterrupt = AssistantMessage(
+      id: 'msg_after_interrupt',
+      sessionId: 'ses_interrupt_send',
+      time: DateTime.fromMillisecondsSinceEpoch(2000),
+      completedTime: DateTime.fromMillisecondsSinceEpoch(2100),
+      parts: const <MessagePart>[
+        TextPart(
+          id: 'part_after_interrupt',
+          messageId: 'msg_after_interrupt',
+          sessionId: 'ses_interrupt_send',
+          text: 'reply after interrupt',
+        ),
+      ],
+    );
+    var sendCalls = 0;
+    repository.sendMessageHandler = (_, __, ___, ____) {
+      sendCalls += 1;
+      if (sendCalls == 1) {
+        return firstStream.stream;
+      }
+      return Stream<Either<Failure, ChatMessage>>.value(
+        Right(assistantAfterInterrupt),
+      );
+    };
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await provider.initializeProviders();
+    await tester.pumpAndSettle();
+
+    await provider.sendMessage('trigger active response');
+    await tester.pump();
+
+    final chatInputFieldFinder = find.descendant(
+      of: find.byKey(const ValueKey<String>('composer_input_row')),
+      matching: find.byType(TextField),
+    );
+
+    await tester.enterText(chatInputFieldFinder, 'follow-up while responding');
+    await tester.pump();
+
+    expect(find.byIcon(Symbols.send_rounded), findsOneWidget);
+    expect(find.byIcon(Symbols.stop_rounded), findsNothing);
+
+    await tester.tap(find.byIcon(Symbols.send_rounded));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+
+    expect(repository.abortSessionCallCount, 1);
+    expect(repository.lastAbortSessionId, 'ses_interrupt_send');
+    expect(sendCalls, 2);
+
+    final sentFollowUp = provider.messages.whereType<UserMessage>().any((
+      message,
+    ) {
+      return message.parts.whereType<TextPart>().any(
+        (part) => part.text == 'follow-up while responding',
+      );
+    });
+    expect(sentFollowUp, isTrue);
   });
 
   testWidgets('restores composer draft automatically when send is rejected', (

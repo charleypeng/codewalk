@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/domain/usecases/check_connection.dart';
 import 'package:codewalk/domain/usecases/get_app_info.dart';

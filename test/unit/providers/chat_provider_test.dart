@@ -2985,6 +2985,137 @@ void main() {
       },
     );
 
+    test(
+      'sendMessageWithInterrupt aborts in-flight response and sends follow-up',
+      () async {
+        final firstStreamController =
+            StreamController<Either<Failure, ChatMessage>>();
+        var firstStreamCancelled = false;
+        firstStreamController.onCancel = () {
+          firstStreamCancelled = true;
+        };
+        addTearDown(() async {
+          await firstStreamController.close();
+        });
+        final assistantAfterInterrupt = AssistantMessage(
+          id: 'msg_after_interrupt_provider',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(3000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(3200),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_after_interrupt_provider',
+              messageId: 'msg_after_interrupt_provider',
+              sessionId: 'ses_1',
+              text: 'interrupt ok',
+            ),
+          ],
+        );
+
+        var sendCalls = 0;
+        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+          sendCalls += 1;
+          if (sendCalls == 1) {
+            return firstStreamController.stream;
+          }
+          return Stream<Either<Failure, ChatMessage>>.value(
+            Right(assistantAfterInterrupt),
+          );
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('initial prompt');
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        await provider.sendMessageWithInterrupt('follow-up prompt');
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+
+        expect(chatRepository.abortSessionCallCount, 1);
+        expect(firstStreamCancelled, isTrue);
+        expect(sendCalls, 2);
+        expect(provider.state, ChatState.loaded);
+
+        final sentFollowUp = provider.messages.whereType<UserMessage>().any((
+          message,
+        ) {
+          return message.parts.whereType<TextPart>().any(
+            (part) => part.text == 'follow-up prompt',
+          );
+        });
+        expect(sentFollowUp, isTrue);
+      },
+    );
+
+    test(
+      'sendMessageWithInterrupt ignores stop failure and continues sending',
+      () async {
+        final firstStreamController =
+            StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          await firstStreamController.close();
+        });
+
+        final assistantAfterInterruptFailure = AssistantMessage(
+          id: 'msg_after_interrupt_stop_failure',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(4000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(4100),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_after_interrupt_stop_failure',
+              messageId: 'msg_after_interrupt_stop_failure',
+              sessionId: 'ses_1',
+              text: 'continued after stop failure',
+            ),
+          ],
+        );
+
+        var sendCalls = 0;
+        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+          sendCalls += 1;
+          if (sendCalls == 1) {
+            return firstStreamController.stream;
+          }
+          return Stream<Either<Failure, ChatMessage>>.value(
+            Right(assistantAfterInterruptFailure),
+          );
+        };
+        chatRepository.abortSessionFailure = const ServerFailure(
+          'abort failed',
+        );
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('initial prompt');
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        await provider.sendMessageWithInterrupt('follow-up prompt');
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+
+        expect(chatRepository.abortSessionCallCount, 1);
+        expect(sendCalls, 2);
+        expect(provider.state, ChatState.loaded);
+        expect(provider.errorMessage, isNull);
+
+        final sentFollowUp = provider.messages.whereType<UserMessage>().any((
+          message,
+        ) {
+          return message.parts.whereType<TextPart>().any(
+            (part) => part.text == 'follow-up prompt',
+          );
+        });
+        expect(sentFollowUp, isTrue);
+
+        final rejectedDraft = provider.consumeRejectedDraft(sessionId: 'ses_1');
+        expect(rejectedDraft, isNull);
+      },
+    );
+
     test('session.error after stop still surfaces non-abort errors', () async {
       final streamController = StreamController<Either<Failure, ChatMessage>>();
       addTearDown(() async {

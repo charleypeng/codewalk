@@ -185,7 +185,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                   );
                   return ChatInputWidget(
                     onSendMessage: (submission) async {
-                      await chatProvider.sendMessage(
+                      await chatProvider.sendMessageWithInterrupt(
                         submission.text,
                         attachments: submission.attachments,
                         shellMode: submission.mode == ChatComposerMode.shell,

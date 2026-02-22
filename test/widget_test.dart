@@ -438,6 +438,38 @@ void main() {
     expect(stopCount, 1);
   });
 
+  testWidgets('responding with draft switches action to send', (
+    WidgetTester tester,
+  ) async {
+    ChatInputSubmission? sentSubmission;
+    var stopCount = 0;
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (submission) {
+            sentSubmission = submission;
+          },
+          isResponding: true,
+          onStopRequested: () {
+            stopCount += 1;
+          },
+        ),
+      ),
+    );
+
+    await tester.enterText(find.byType(TextField), 'follow-up prompt');
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Symbols.send_rounded), findsOneWidget);
+    expect(find.byIcon(Symbols.stop_rounded), findsNothing);
+
+    await tester.tap(find.byIcon(Symbols.send_rounded));
+    await tester.pumpAndSettle();
+
+    expect(sentSubmission?.text, 'follow-up prompt');
+    expect(stopCount, 0);
+  });
+
   testWidgets('composer keeps outer background transparent', (
     WidgetTester tester,
   ) async {

@@ -6,7 +6,7 @@ extension _ChatInputStateMachine on _ChatInputWidgetState {
     final payloadText = _mode == ChatComposerMode.shell
         ? _normalizeShellPayload(text)
         : text;
-    if (!widget.enabled || _isSending || widget.isResponding) {
+    if (!widget.enabled || _isSending) {
       return;
     }
     if (payloadText.isEmpty &&

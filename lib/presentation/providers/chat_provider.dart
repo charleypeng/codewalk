@@ -1661,6 +1661,47 @@ class ChatProvider extends ChangeNotifier {
     );
   }
 
+  Future<void> sendMessageWithInterrupt(
+    String text, {
+    List<FileInputPart> attachments = const <FileInputPart>[],
+    bool shellMode = false,
+  }) async {
+    final trimmedText = text.trim();
+    final effectiveAttachments = shellMode
+        ? const <FileInputPart>[]
+        : attachments;
+    if (_currentSession == null ||
+        (trimmedText.isEmpty && effectiveAttachments.isEmpty)) {
+      return;
+    }
+
+    final targetSessionId = _currentSession!.id;
+    if (isCurrentSessionActivelyResponding) {
+      AppLogger.info(
+        'Provider interrupt-and-send requested session=$targetSessionId',
+      );
+      final stopped = await abortActiveResponse(suppressFailureUi: true);
+      if (!stopped) {
+        AppLogger.info(
+          'Provider interrupt-and-send continuing after stop failure session=$targetSessionId',
+        );
+      }
+
+      if (_currentSession?.id != targetSessionId) {
+        AppLogger.info(
+          'Provider interrupt-and-send cancelled due session switch from=$targetSessionId to=${_currentSession?.id ?? "-"}',
+        );
+        return;
+      }
+    }
+
+    await sendMessage(
+      trimmedText,
+      attachments: effectiveAttachments,
+      shellMode: shellMode,
+    );
+  }
+
   /// Send message
   Future<void> sendMessage(
     String text, {
@@ -1941,14 +1982,16 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> abortActiveResponse() async {
+  Future<bool> abortActiveResponse({bool suppressFailureUi = false}) async {
     if (!canAbortActiveResponse) {
       return false;
     }
     final session = _currentSession;
     final usecase = abortChatSession;
     if (session == null || usecase == null) {
-      _setError('Stop is unavailable for the current session');
+      if (!suppressFailureUi) {
+        _setError('Stop is unavailable for the current session');
+      }
       return false;
     }
 
@@ -1969,9 +2012,18 @@ class ChatProvider extends ChangeNotifier {
     late final bool success;
     if (result.isLeft()) {
       final failure = result.fold((value) => value, (_) => null);
-      _clearAbortSuppression();
+      if (!suppressFailureUi) {
+        _clearAbortSuppression();
+      }
       if (failure != null) {
-        _handleFailure(failure);
+        if (suppressFailureUi) {
+          AppLogger.info(
+            'Suppressing abort failure during interrupt-and-send session=${session.id} message=${failure.message}',
+          );
+          _errorMessage = null;
+        } else {
+          _handleFailure(failure);
+        }
       }
       success = false;
     } else {
@@ -1990,7 +2042,7 @@ class ChatProvider extends ChangeNotifier {
     }
 
     _isAbortingResponse = false;
-    if (!success && _errorMessage == null) {
+    if (!success && !suppressFailureUi && _errorMessage == null) {
       _errorMessage = previousError ?? 'Failed to stop current response';
     }
     notifyListeners();
