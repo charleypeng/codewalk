@@ -138,6 +138,15 @@ extension _ChatProviderCachePersistenceOps on ChatProvider {
         return;
       }
 
+      // Guard against overwriting a session that was already switched
+      // in memory by selectSession() during the async cache read above.
+      final inMemoryId = _currentSession?.id;
+      if (inMemoryId != null &&
+          inMemoryId.trim().isNotEmpty &&
+          inMemoryId != session.id) {
+        return;
+      }
+
       final selectedSession =
           _sessions.where((item) => item.id == session.id).firstOrNull ??
           session;

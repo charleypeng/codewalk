@@ -1462,17 +1462,23 @@ class ChatProvider extends ChangeNotifier {
             scopeId: scopeId,
           );
 
+      // Prefer the in-memory session over the persisted ID to avoid reverting
+      // a session switch that already updated _currentSession but whose
+      // persistence write is still in flight.
       ChatSession? targetSession;
-      if (resolvedStoredSessionId != null &&
+      final inMemorySessionId = _currentSession?.id;
+      if (inMemorySessionId != null) {
+        targetSession = _sessions
+            .where((session) => session.id == inMemorySessionId)
+            .firstOrNull;
+      }
+      if (targetSession == null &&
+          resolvedStoredSessionId != null &&
           resolvedStoredSessionId.trim().isNotEmpty) {
         targetSession = _sessions
             .where((session) => session.id == resolvedStoredSessionId)
             .firstOrNull;
       }
-
-      targetSession ??= _sessions
-          .where((session) => session.id == _currentSession?.id)
-          .firstOrNull;
       targetSession ??= _sessions.reduce((left, right) {
         return left.time.isAfter(right.time) ? left : right;
       });
@@ -1578,6 +1584,10 @@ class ChatProvider extends ChangeNotifier {
       await loadSessionInsights(session.id, silent: true);
       return;
     }
+
+    // Invalidate any concurrent loadSessions() that captured a stale
+    // persisted session ID before this switch updated memory/disk.
+    _sessionsFetchId += 1;
 
     await _cancelActiveMessageSubscription(
       reason: 'session-switch',
