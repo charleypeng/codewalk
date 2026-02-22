@@ -30,7 +30,8 @@ CodeWalk é um projeto que visa permitir acessar agents de código de qualquer l
   4. chamar reviewer para o commit;
   5. aplicar apenas correções aceitas e repetir reviewer em loop até não restarem correções com as quais o agente concorda;
   6. rodar `HEY_CAPTION="..." make android`;
-  7. só então notificar o usuário.
+  7. só então notificar o usuário e enviar o relatório final;
+  8. informar a próxima tarefa sugerida (preferencialmente do roadmap atual).
 - Evitar notificação intermediária de "concluído" antes do fim do passo 6.
 
 ### Caption Dinâmica no Upload
