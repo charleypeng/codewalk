@@ -22,7 +22,7 @@
   - [x] Sync Settings > Appearance with the `Display` popover. — `d51266d`
   - [x] Add an AMOLED mode switch available when dark mode is active. — `2ccc089`, `4b1d4cc`
   - [x] In Settings, move Servers to first position (before Appearance). — `92fa47e`
-  - [ ] In Settings > Logs, remove extra step and open logs screen directly.
+  - [x] In Settings > Logs, remove extra step and open logs screen directly. - Commit hash: 3ad147e
   - [ ] On mobile, Back in Settings follows hierarchical navigation: section -> Settings main screen -> app main screen; only after that should Back close the app.
   - [ ] In Settings > Shortcuts, review shortcut coverage and add missing options.
   - [ ] Add shortcut to enable/disable STT in Shortcuts.
@@ -43,7 +43,7 @@
 - **Group 3 — Chat UX, Composer, and Tool Bubble Polish** [~]
   - [x] Standardize tool-call collapse, remove 'Assistant' titles, visually merge consecutive assistant tool-calls into one bubble (no errors/non-tool messages between them), and remove assistant/user bubble borders while preserving final response visibility and collapsing work when it arrives. — `1665e71`
   - [x] Require custom textual descriptions for every tool call; when a tool call finishes, auto-collapse it to icon+title with an inline expand button to reopen details. — `1665e71`
-  - [ ] Mirror subagent permission prompts/authorization requests in the main conversation so users can respond there too, with a subtle origin badge indicating the request comes from a subagent.
+  - [x] Mirror subagent permission prompts/authorization requests in the main conversation so users can respond there too, with a subtle origin badge indicating the request comes from a subagent. — `d367602`, `f9ee596`
   - [ ] Investigate and fix mobile-first blank chat screen when opening very large conversations: the screen goes fully white until app restart, and usually opens correctly after relaunch.
   - [x] Investigate and fix mobile chat-state refresh after app resume: sometimes the latest assistant message is not rendered when returning from background, but appears after switching to another conversation and back. — `1581c65`, `3639206`, `ab752f1`
   - [ ] Investigate and fix conversation-open click behavior: sometimes opening a conversation requires two clicks (first opens the conversation, second closes the sidebar), and a fast double-click on the same item can freeze the screen, especially with large histories.
@@ -51,9 +51,9 @@
   - [ ] After returning from background, position the conversation at the start of the most recent message (top of text) instead of at the end of that message.
   - [ ] In composer, adjust `ArrowUp`/`ArrowDown` without modifiers for multiline behavior before history navigation; with modifiers keep default editor behavior.
   - [ ] In composer, simplify the input placeholder to a single short phrase (e.g., `Type your needs...`) with no extra helper text.
-  - [ ] In composer, after clicking `New chat`, focus the composer input automatically so typing can start right away.
+  - [x] In composer, after clicking `New chat`, focus the composer input automatically so typing can start right away. - Commit hash: 3ad147e
   - [ ] In composer, increase slightly the composer status text font size for better readability.
-  - [ ] In mic/STT usage, insert text at current cursor position (not always at the end).
+  - [x] In mic/STT usage, insert text at current cursor position (not always at the end). - Commit hash: 3ad147e
   - [x] Handle `MessageAborted` with an inline friendly red chat message (`"What you want to do different?"`) instead of toast+retry; keep toast flow for punctual/non-abort errors. - Planning doc: `ROADMAP.featQ.messageaborted-inline-plan.md` - Implementation concluded (inline abort without toast retry).
   - [x] Investigate and fix conversation continuity when switching sessions/projects: context changes can unexpectedly abort active conversations, so preserve active streams/chats when appropriate. - Related commits: acce617 9dcd773 1581c65
   - [ ] Plan the merge between the project selector and the conversations sidebar, grouping conversations by open projects to speed up navigation.
