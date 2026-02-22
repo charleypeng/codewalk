@@ -33,6 +33,36 @@ void main() {
     expect(kBackgroundFastProbeInterval, const Duration(minutes: 2));
   });
 
+  test('uses five-minute tail probe cadence', () {
+    expect(kBackgroundTailProbeInterval, const Duration(minutes: 5));
+  });
+
+  test('schedules tail probe only when active sessions just ended', () {
+    expect(
+      shouldScheduleBackgroundTailProbe(
+        previousSessionStatusById: const <String, String>{'ses_1': 'busy'},
+        currentSessionStatusById: const <String, String>{'ses_1': 'idle'},
+      ),
+      isTrue,
+    );
+
+    expect(
+      shouldScheduleBackgroundTailProbe(
+        previousSessionStatusById: const <String, String>{'ses_1': 'idle'},
+        currentSessionStatusById: const <String, String>{'ses_1': 'idle'},
+      ),
+      isFalse,
+    );
+
+    expect(
+      shouldScheduleBackgroundTailProbe(
+        previousSessionStatusById: const <String, String>{'ses_1': 'busy'},
+        currentSessionStatusById: const <String, String>{'ses_1': 'retry'},
+      ),
+      isFalse,
+    );
+  });
+
   test('first run emits actionable permission and question requests', () {
     const current = BackgroundPollingState(
       sessionStatusById: <String, String>{'ses_1': 'busy'},

@@ -38,6 +38,7 @@ class AndroidBackgroundAlertWorker {
   static bool _initialized = false;
   static const Duration activeSessionProbeInterval =
       kBackgroundFastProbeInterval;
+  static const Duration tailProbeInterval = kBackgroundTailProbeInterval;
 
   static Future<void> ensureRegistered() async {
     if (!_isAndroidRuntime()) {
@@ -283,7 +284,10 @@ class _AndroidBackgroundAlertRunner {
         jsonEncode(plan.nextSnapshot.toJson()),
       );
 
-      await _scheduleNextProbe(statusById);
+      await _scheduleNextProbe(
+        previousSnapshot: previousSnapshot,
+        currentStatusById: statusById,
+      );
 
       AppLogger.debug(
         'background_alert_worker task=$taskName baseline=${plan.baselineOnly} alerts=${plan.signals.length}',
@@ -299,15 +303,27 @@ class _AndroidBackgroundAlertRunner {
     }
   }
 
-  Future<void> _scheduleNextProbe(Map<String, String> statusById) async {
-    if (!hasActiveBackgroundSessions(statusById)) {
+  Future<void> _scheduleNextProbe({
+    required BackgroundAlertSnapshot previousSnapshot,
+    required Map<String, String> currentStatusById,
+  }) async {
+    if (hasActiveBackgroundSessions(currentStatusById)) {
+      await _scheduleProbe(
+        delay: AndroidBackgroundAlertWorker.activeSessionProbeInterval,
+        reason: 'active-session',
+      );
       return;
     }
 
-    await _scheduleProbe(
-      delay: AndroidBackgroundAlertWorker.activeSessionProbeInterval,
-      reason: 'active-session',
-    );
+    if (shouldScheduleBackgroundTailProbe(
+      previousSessionStatusById: previousSnapshot.sessionStatusById,
+      currentSessionStatusById: currentStatusById,
+    )) {
+      await _scheduleProbe(
+        delay: AndroidBackgroundAlertWorker.tailProbeInterval,
+        reason: 'tail-after-active-session',
+      );
+    }
   }
 
   Future<void> _scheduleRetryAfterStatusFailure(
@@ -817,7 +833,9 @@ class _BackgroundNotificationDispatcher {
       return;
     }
     try {
-      const android = AndroidInitializationSettings('@drawable/ic_stat_codewalk');
+      const android = AndroidInitializationSettings(
+        '@drawable/ic_stat_codewalk',
+      );
       const settings = InitializationSettings(android: android);
       await _plugin.initialize(settings: settings);
       final androidPlugin = _plugin

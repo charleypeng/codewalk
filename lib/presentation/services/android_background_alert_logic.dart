@@ -1,6 +1,7 @@
 import '../../domain/entities/experience_settings.dart';
 
 const Duration kBackgroundFastProbeInterval = Duration(minutes: 2);
+const Duration kBackgroundTailProbeInterval = Duration(minutes: 5);
 
 bool hasActiveBackgroundSessions(Map<String, String> sessionStatusById) {
   for (final rawStatus in sessionStatusById.values) {
@@ -10,6 +11,19 @@ bool hasActiveBackgroundSessions(Map<String, String> sessionStatusById) {
     }
   }
   return false;
+}
+
+bool shouldScheduleBackgroundTailProbe({
+  required Map<String, String> previousSessionStatusById,
+  required Map<String, String> currentSessionStatusById,
+}) {
+  final hadActiveSessions = hasActiveBackgroundSessions(
+    previousSessionStatusById,
+  );
+  if (!hadActiveSessions) {
+    return false;
+  }
+  return !hasActiveBackgroundSessions(currentSessionStatusById);
 }
 
 class BackgroundInteractionRequest {
