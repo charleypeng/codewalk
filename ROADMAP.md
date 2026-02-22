@@ -101,6 +101,11 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 
 ### Open Backlog by Pack
 
+#### `featQ` Cross-platform UX and settings polish
+
+- [x] Investigate and fix conversation continuity when switching sessions/projects... - Related commits: acce617 9dcd773 1581c65
+- [x] Investigate and fix mobile chat-state refresh after app resume: latest assistant message not rendered when returning from background. - Commits: 3639206 ab752f1
+
 #### `featA` Sync hardening and remote config safety ✅
 
 **Status**: Completed (2026-02-14)

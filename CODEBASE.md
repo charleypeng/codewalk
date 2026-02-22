@@ -7,7 +7,7 @@
 - Multi-platform targets in repo: Android, Linux, macOS, Windows, Web.
 - Chat stack is decomposed into orchestrators plus focused cluster modules.
 - Material icon convention in UI/tests now uses `Symbols.*` (`material_symbols_icons`) instead of `Icons.*`.
-- Theme system follows Material You (MD3): user-controlled theme mode, dynamic color toggle, brand color seeds, contrast level, and responsive window size classes.
+- Theme system follows Material You (MD3): user-controlled theme mode, dynamic color toggle, AMOLED dark toggle, brand color seeds, contrast level, and responsive window size classes.
 
 ## Folder Structure
 
@@ -18,7 +18,8 @@ codewalk/
 ├── lib/                                # Application source
 │   ├── main.dart                       # App bootstrap (DI, providers, shell)
 │   ├── core/                           # Config, constants, DI, errors, logging, network
-│   ├── data/                           # Data layer: datasources, models, repositories
+│   ├── data/                           # Data layer: datasources, models, repositories, cache
+│   │   └── cache/                      # Hybrid file+memory cache for large chat payloads
 │   ├── domain/                         # Domain layer: entities, repository contracts, use cases
 │   └── presentation/                   # UI, state providers, runtime services
 │       ├── pages/                      # App pages and page-level orchestration
@@ -64,24 +65,30 @@ lib/core/network/dio_client.dart                  # HTTP client config, auth, an
 lib/data/datasources/app_remote_datasource.dart   # App bootstrap/config/providers/agents API access
 lib/data/datasources/chat_remote_datasource.dart  # Chat/session/message/realtime API access
 lib/data/datasources/project_remote_datasource.dart # Project/worktree/file API access
-lib/data/datasources/app_local_datasource.dart    # Persistent settings, profiles, cache, credentials, and favorite models
+lib/data/datasources/app_local_datasource.dart    # Persistent settings, profiles, cache, credentials, favorite models; uses ChatCachePayloadStore hybrid store with shared_preferences fallback for large payloads
+lib/data/cache/chat_cache_payload_store.dart      # Factory with conditional import for platform-specific store
+lib/data/cache/chat_cache_payload_store_base.dart # Abstract interface for cache store (read/write/remove/clear)
+lib/data/cache/chat_cache_payload_store_io.dart   # IO implementation: hybrid file+LRU memory cache (24 entries) for chat payloads
+lib/data/cache/chat_cache_payload_store_stub.dart # Non-IO platforms: disabled payload store (returns null)
 lib/data/repositories/*.dart                      # Domain repository implementations
 lib/domain/usecases/*.dart                        # Application use cases consumed by providers
 lib/presentation/providers/app_provider.dart      # Server profiles, health polling, local runtime state
 lib/presentation/providers/project_provider.dart  # Project/worktree context selection and persistence
-lib/presentation/providers/settings_provider.dart # Experience settings, theme mode, dynamic color, brand seed, contrast, composer tips visibility, sounds, update checks, desktop pane widths; exposes `dynamicColorAvailable` (bool) and `updateDynamicColorAvailability()` for runtime platform signal
+lib/presentation/providers/settings_provider.dart # Experience settings, theme mode, dynamic color, AMOLED dark toggle, brand seed, contrast, composer tips visibility, sounds, update checks, desktop pane widths; exposes `dynamicColorAvailable` (bool) and `updateDynamicColorAvailability()` for runtime platform signal
 lib/presentation/theme/brand_colors.dart              # BrandColor enum with 5 seed colors for non-dynamic-color themes
 lib/presentation/theme/app_shapes.dart                # AppShapes class with centralized MD3 shape constants
 lib/presentation/theme/app_theme.dart                 # Material You theme builder using AppShapes and color scheme
 lib/presentation/utils/window_size_class.dart         # WindowSizeClass enum with MD3 breakpoints + BuildContext extension
 lib/presentation/services/desktop_tray_service_io.dart # Desktop tray lifecycle; selects tray icon per OS (macOS template PNG, Windows ICO, Linux PNG)
 lib/presentation/services/notification_service.dart    # Local notifications; Android uses `@drawable/ic_stat_codewalk` small icon
+lib/presentation/services/android_foreground_monitor_service.dart # Android foreground service via MethodChannel; keeps background monitoring active
+lib/presentation/services/android_battery_optimization_service.dart # Android battery optimization query/exemption request via MethodChannel
 lib/presentation/providers/chat_provider.dart     # Chat state/realtime/session facade; microtask coalescing, event dedup buffer, render gate, favorite models
 lib/presentation/pages/onboarding_wizard_page.dart # 3-step onboarding wizard (Welcome, Server Setup, Ready); uses ServerSetupQuickGuide
 lib/presentation/pages/settings/sections/servers_settings_section.dart # Server profile CRUD; exports reusable ServerSetupQuickGuide widget
-lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade; WindowListener for desktop lifecycle
+lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade; WindowListener for desktop lifecycle; holds tool-chain expanded state map
 lib/presentation/widgets/chat_input_widget.dart   # Composer/input orchestration facade
-lib/presentation/widgets/chat_message_widget.dart # Message bubble with build-skip cache, cached MarkdownStyleSheet
+lib/presentation/widgets/chat_message_widget.dart # Message bubble with build-skip cache, cached MarkdownStyleSheet; tool-chain expand/restore callbacks
 ```
 
 ## Chat Architecture
@@ -114,7 +121,7 @@ chat_page_chrome.dart
 chat_page_file_runtime.dart
 chat_page_composer_widgets.dart
 chat_page_model_selector_runtime.dart
-chat_page_timeline_runtime.dart
+chat_page_timeline_runtime.dart              # Tool-chain expanded state key resolution (sessionId::messageId::startPartId)
 ```
 
 ### `lib/presentation/providers/chat_provider/` clusters (current)
@@ -159,6 +166,7 @@ lib/domain/usecases/       # Use case boundaries used by providers
 lib/data/models/           # API/storage models and JSON adapters
 lib/data/repositories/     # Repository implementations
 lib/data/datasources/      # Remote/local IO boundaries
+lib/data/cache/            # Hybrid payload cache primitives used by AppLocalDataSource
 ```
 
 ## Key API/DataSource locations
@@ -223,6 +231,19 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 - Android build targets Java 17 (`sourceCompatibility`, `targetCompatibility`, `jvmTarget`).
 - featM icon migration completed in `lib/presentation/**` and `test/widget/**`: Material icons moved from `Icons.*` to `Symbols.*` (`material_symbols_icons`).
 
+### Android Background Monitoring
+
+- **Native foreground service** (`android/app/src/main/kotlin/com/verseles/codewalk/CodeWalkForegroundService.kt`):
+  Owns the ongoing Android monitor notification and receives MethodChannel-driven updates.
+- **Dart bridge** (`android_foreground_monitor_service.dart`): Calls `codewalk/system`
+  channel methods (`updateForegroundNotification`, `stopForegroundService`) and keeps
+  service state idempotent from Flutter side.
+- **Notification integration** (`notification_service.dart`): Syncs active-session counts
+  with the foreground monitor so background alert reliability status remains visible.
+- **Battery optimization UX** (`android_battery_optimization_service.dart` +
+  `notifications_settings_section.dart`): Queries and requests optimization exemption from
+  Settings to reduce background task interruptions on Android.
+
 ### Favorite Models
 
 - **Storage key**: `favoriteModelsKey` in `AppConstants` (`app_constants.dart`).
@@ -275,10 +296,19 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
   to handle focus/blur/minimize/restore on desktop platforms. These events drive
   `_applyForegroundPolicy`, which coordinates with the ChatProvider render gate and
   `_handleReturnToChat` to pause/resume UI rebuilds and SSE refresh on window state changes.
+- **App resume reconciliation**: On `AppLifecycleState.resumed` with an active chat route,
+  `ChatPage` triggers `provider.refreshActiveSessionView(reason: 'app-lifecycle-resumed')`
+  to reconcile missed updates. `_lastResumeRefreshAt` dedupe guard skips immediate
+  reconnect-triggered refresh shortly after resume.
 - **ChatMessageWidget build-skip cache**: Converted from `StatelessWidget` to `StatefulWidget`;
   completed messages short-circuit `build()` by returning a cached widget tree.
   `MarkdownStyleSheet` is cached in `_cachedMarkdownStyleSheet` and invalidated only on
   brightness change.
+- **Tool-call chain expansion persistence**: `_ChatPageState` stores expansion state in
+  `_toolChainExpandedStateByKey`, keyed by `sessionId::messageId::startPartId`.
+  `ChatMessageWidget` restores and updates this parent-managed state through
+  `resolveToolChainExpanded` and `onToolChainExpandedChanged` callbacks, preserving
+  collapsed/expanded tool-call chains when switching sessions and revisiting messages.
 - **ChatPage (_ChatPageState) derived-data caches**: The page state holds per-build caches that
   skip recomputation when message list identity has not changed:
   - `_cachedTimelineEntries` — timeline entry list (used by `chat_page_timeline_builder.dart`)
@@ -292,8 +322,9 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 
 - **Theme control** (`main.dart`): `DynamicColorBuilder` resolves color scheme from platform
   dynamic color (when enabled and available) or from user-selected `BrandColor` seed. User
-  preferences (`themeMode`, `useDynamicColor`, `customColorSeed`, `contrastLevel`) are stored
-  in `ExperienceSettings` and exposed via `SettingsProvider`.
+  preferences (`themeMode`, `useDynamicColor`, `useAmoledDark`, `customColorSeed`, `contrastLevel`)
+  are stored in `ExperienceSettings` and exposed via `SettingsProvider`. When `useAmoledDark` is
+  enabled, `_applyAmoledDarkScheme()` overrides all surface colors to `Colors.black` in dark theme.
 - **BrandColor** (`brand_colors.dart`): Enum with 5 curated seed colors (Indigo, Teal, Rose,
   Amber, Slate) used when dynamic color is unavailable or disabled.
 - **AppShapes** (`app_shapes.dart`): Centralized MD3 shape constants consumed by `AppTheme`
