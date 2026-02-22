@@ -1730,6 +1730,7 @@ class ChatProvider extends ChangeNotifier {
   }
 
   Future<void> _awaitInterruptSendSessionReady(String sessionId) async {
+    var settled = false;
     for (
       var attempt = 0;
       attempt < _interruptSendStatusMaxAttempts;
@@ -1749,10 +1750,17 @@ class ChatProvider extends ChangeNotifier {
           _messageSubscription != null;
 
       if (!hasBusyStatus && !hasActiveLocalStream && !_isAbortingResponse) {
+        settled = true;
         break;
       }
 
       await Future<void>.delayed(_interruptSendStatusPollInterval);
+    }
+
+    if (!settled) {
+      AppLogger.warn(
+        'Provider interrupt-and-send proceeding without settled status session=$sessionId',
+      );
     }
 
     await Future<void>.delayed(_interruptSendPostAbortDelay);

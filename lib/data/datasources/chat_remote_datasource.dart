@@ -837,8 +837,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         return normalized.contains('abort') ||
             normalized.contains('aborted') ||
             normalized.contains('cancelled') ||
-            normalized.contains('canceled') ||
-            normalized.contains('retry');
+            normalized.contains('canceled');
       }
 
       Future<String?> resolveAssistantMessageId() async {

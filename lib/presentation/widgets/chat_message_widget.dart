@@ -1799,7 +1799,10 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   }
 
   Widget _buildErrorInfo(BuildContext context, MessageError error) {
-    final isInlineAbortError = error.name == 'MessageAborted';
+    final normalizedErrorName = error.name.trim().toLowerCase();
+    final isInlineAbortError =
+        normalizedErrorName.contains('abort') ||
+        normalizedErrorName.contains('cancel');
     final title = isInlineAbortError ? null : error.name;
 
     return Container(
