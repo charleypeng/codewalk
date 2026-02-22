@@ -240,7 +240,7 @@ void main() {
     );
 
     test(
-      'ChatRemoteDataSource consumes SSE update after initial send response',
+      'ChatRemoteDataSource prefers prompt_async and consumes SSE update',
       () async {
         server.streamMessageUpdates = true;
 
@@ -263,10 +263,11 @@ void main() {
             )
             .toList();
 
-        expect(messages.length, greaterThanOrEqualTo(2));
-        expect((messages.first.parts.single).text, 'working');
+        expect(messages, isNotEmpty);
         expect((messages.last.parts.single).text, 'done');
         expect(messages.last.completedTime, isNotNull);
+        expect(server.promptAsyncRequestCount, 1);
+        expect(server.messageRequestCount, 0);
       },
     );
 
@@ -297,10 +298,44 @@ void main() {
             )
             .toList();
 
-        expect(messages.length, greaterThanOrEqualTo(2));
-        expect((messages.first.parts.single).text, 'working');
+        expect(messages, isNotEmpty);
         expect((messages.last.parts.single).text, 'done');
         expect(messages.last.completedTime, isNotNull);
+        expect(server.promptAsyncRequestCount, 1);
+        expect(server.messageRequestCount, 0);
+      },
+    );
+
+    test(
+      'ChatRemoteDataSource falls back to /message when prompt_async is unavailable',
+      () async {
+        server.promptAsyncSupported = false;
+        server.streamMessageUpdates = true;
+
+        final remote = ChatRemoteDataSourceImpl(
+          dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
+        );
+
+        final messages = await remote
+            .sendMessage(
+              'default',
+              'ses_1',
+              const ChatInputModel(
+                messageId: 'msg_user_fallback_1',
+                providerId: 'mock-provider',
+                modelId: 'mock-model',
+                parts: <ChatInputPartModel>[
+                  ChatInputPartModel(type: 'text', text: 'fallback please'),
+                ],
+              ),
+            )
+            .toList();
+
+        expect(messages, isNotEmpty);
+        expect((messages.last.parts.single).text, 'done');
+        expect(messages.last.completedTime, isNotNull);
+        expect(server.promptAsyncRequestCount, 1);
+        expect(server.messageRequestCount, 1);
       },
     );
 

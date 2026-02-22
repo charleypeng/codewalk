@@ -10,11 +10,14 @@ class MockOpenCodeServer {
   final String initialSessionTitle;
 
   bool sendMessageValidationError = false;
+  bool promptAsyncSupported = true;
   bool streamMessageUpdates = false;
   String? requiredEventDirectory;
   String? requiredMessageDirectory;
   String? requiredProjectDirectory;
   Map<String, dynamic>? lastSendMessagePayload;
+  int promptAsyncRequestCount = 0;
+  int messageRequestCount = 0;
   int eventConnectionCount = 0;
   int globalEventConnectionCount = 0;
   int eventCloseDelayMs = 900;
@@ -90,6 +93,9 @@ class MockOpenCodeServer {
     lastQuestionReplyRequestId = null;
     lastQuestionReplyPayload = null;
     lastQuestionRejectRequestId = null;
+    promptAsyncSupported = true;
+    promptAsyncRequestCount = 0;
+    messageRequestCount = 0;
     sessionStatusById = <String, Map<String, dynamic>>{
       'ses_1': <String, dynamic>{'type': 'idle'},
     };
@@ -169,6 +175,52 @@ class MockOpenCodeServer {
       'projectID': projectId,
       'active': active,
       'createdAt': DateTime.now().toIso8601String(),
+    };
+  }
+
+  void _seedAssistantMessageForSession(String sessionId) {
+    final createdAt = DateTime.now().millisecondsSinceEpoch;
+    final immediate = <String, dynamic>{
+      'info': <String, dynamic>{
+        'id': 'msg_ai_1',
+        'sessionID': sessionId,
+        'role': 'assistant',
+        'time': <String, dynamic>{
+          'created': createdAt,
+          'completed': streamMessageUpdates ? 0 : createdAt + 50,
+        },
+      },
+      'parts': <dynamic>[
+        <String, dynamic>{
+          'id': 'prt_ai_working',
+          'messageID': 'msg_ai_1',
+          'sessionID': sessionId,
+          'type': 'text',
+          'text': streamMessageUpdates ? 'working' : 'done',
+        },
+      ],
+    };
+
+    _messagesBySession[sessionId] = <Map<String, dynamic>>[immediate];
+    _messageDetails['msg_ai_1'] = <String, dynamic>{
+      'info': <String, dynamic>{
+        'id': 'msg_ai_1',
+        'sessionID': sessionId,
+        'role': 'assistant',
+        'time': <String, dynamic>{
+          'created': createdAt,
+          'completed': createdAt + 100,
+        },
+      },
+      'parts': <dynamic>[
+        <String, dynamic>{
+          'id': 'prt_ai_done',
+          'messageID': 'msg_ai_1',
+          'sessionID': sessionId,
+          'type': 'text',
+          'text': 'done',
+        },
+      ],
     };
   }
 
@@ -756,6 +808,35 @@ class MockOpenCodeServer {
       return;
     }
 
+    if (segments.length == 3 &&
+        segments[0] == 'session' &&
+        segments[2] == 'prompt_async' &&
+        method == 'POST') {
+      final sessionId = segments[1];
+      promptAsyncRequestCount += 1;
+      final payload = await _readJsonBody(request);
+      lastSendMessagePayload = payload;
+
+      if (!promptAsyncSupported) {
+        await _writeJson(request.response, 404, <String, dynamic>{
+          'error': 'prompt_async unsupported',
+        });
+        return;
+      }
+
+      if (sendMessageValidationError) {
+        await _writeJson(request.response, 400, <String, dynamic>{
+          'error': 'invalid',
+        });
+        return;
+      }
+
+      _seedAssistantMessageForSession(sessionId);
+      request.response.statusCode = 204;
+      await request.response.close();
+      return;
+    }
+
     if (segments.length == 4 &&
         segments[0] == 'session' &&
         segments[2] == 'message') {
@@ -802,6 +883,7 @@ class MockOpenCodeServer {
       }
 
       if (method == 'POST') {
+        messageRequestCount += 1;
         final payload = await _readJsonBody(request);
         lastSendMessagePayload = payload;
 
@@ -812,52 +894,9 @@ class MockOpenCodeServer {
           return;
         }
 
-        final createdAt = DateTime.now().millisecondsSinceEpoch;
-
-        final immediate = <String, dynamic>{
-          'info': <String, dynamic>{
-            'id': 'msg_ai_1',
-            'sessionID': sessionId,
-            'role': 'assistant',
-            'time': <String, dynamic>{
-              'created': createdAt,
-              'completed': streamMessageUpdates ? 0 : createdAt + 50,
-            },
-          },
-          'parts': <dynamic>[
-            <String, dynamic>{
-              'id': 'prt_ai_working',
-              'messageID': 'msg_ai_1',
-              'sessionID': sessionId,
-              'type': 'text',
-              'text': streamMessageUpdates ? 'working' : 'done',
-            },
-          ],
-        };
-
-        _messagesBySession[sessionId] = <Map<String, dynamic>>[immediate];
-
-        _messageDetails['msg_ai_1'] = <String, dynamic>{
-          'info': <String, dynamic>{
-            'id': 'msg_ai_1',
-            'sessionID': sessionId,
-            'role': 'assistant',
-            'time': <String, dynamic>{
-              'created': createdAt,
-              'completed': createdAt + 100,
-            },
-          },
-          'parts': <dynamic>[
-            <String, dynamic>{
-              'id': 'prt_ai_done',
-              'messageID': 'msg_ai_1',
-              'sessionID': sessionId,
-              'type': 'text',
-              'text': 'done',
-            },
-          ],
-        };
-
+        _seedAssistantMessageForSession(sessionId);
+        final immediate =
+            _messagesBySession[sessionId]?.first ?? <String, dynamic>{};
         await _writeJson(request.response, 200, immediate);
         return;
       }

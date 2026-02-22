@@ -1246,14 +1246,56 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         AppLogger.warn('Failed to connect to event stream', error: e);
       }
 
-      // Send message request
-      final response = await dio.post(
-        '/session/$sessionId/message',
-        data: input.toJson(),
-        queryParameters: queryParams.isNotEmpty ? queryParams : null,
-      );
+      // Prefer async send endpoint to avoid aborting other busy sessions.
+      Response<dynamic> response;
+      var usedAsyncEndpoint = false;
+      try {
+        response = await dio.post(
+          '/session/$sessionId/prompt_async',
+          data: input.toJson(),
+          queryParameters: queryParams.isNotEmpty ? queryParams : null,
+        );
+        usedAsyncEndpoint = true;
+      } on DioException catch (error) {
+        if (error.response?.statusCode == 404) {
+          AppLogger.info(
+            'prompt_async unavailable for session=$sessionId, falling back to /message',
+          );
+          response = await dio.post(
+            '/session/$sessionId/message',
+            data: input.toJson(),
+            queryParameters: queryParams.isNotEmpty ? queryParams : null,
+          );
+        } else {
+          rethrow;
+        }
+      }
 
-      if (response.statusCode == 200) {
+      if (usedAsyncEndpoint) {
+        if (response.statusCode != 204 && response.statusCode != 200) {
+          throw const ServerException('Failed to send message');
+        }
+
+        AppLogger.info('Async send request accepted for session=$sessionId');
+
+        if (eventSubscription == null) {
+          AppLogger.info(
+            'No send-event stream available for async send; using polling fallback',
+          );
+          startFallbackCompletionWatch(
+            reason: 'prompt-async-no-sse',
+            initialDelay: Duration.zero,
+          );
+        } else {
+          // Safety net: some servers keep /event connected but may not emit
+          // message events for every request. Prevents stuck "sending".
+          startFallbackCompletionWatch(reason: 'prompt-async-watchdog');
+        }
+
+        await for (final message in eventController.stream) {
+          yield message;
+        }
+      } else if (response.statusCode == 200) {
         AppLogger.info('Send request accepted for session=$sessionId');
 
         // Parse immediate server response (`{info, parts}`) when available.

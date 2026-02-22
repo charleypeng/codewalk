@@ -261,10 +261,10 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           _sessionStatusById[sessionId] = const SessionStatusInfo(
             type: SessionStatusType.idle,
           );
+          _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
           if (sessionId == _currentSession?.id) {
             _activeMessageStreamSessionId = null;
             _clearActiveSendDraft();
-            _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
             if (_state == ChatState.sending) {
               _setState(ChatState.loaded);
             } else {
@@ -278,37 +278,45 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         break;
       case 'session.error':
         final sessionId = properties['sessionID'] as String?;
-        if (sessionId != null && sessionId == _currentSession?.id) {
-          final error = properties['error'] as Map<String, dynamic>?;
-          final data = error?['data'] as Map<String, dynamic>? ?? {};
-          final message =
-              data['message'] as String? ??
-              error?['message'] as String? ??
-              'Session error';
-          final code = data['code']?.toString() ?? error?['code']?.toString();
-          if (_shouldSuppressAbortError(
-            sessionId: sessionId,
-            message: message,
-          )) {
-            _sessionStatusById[sessionId] = const SessionStatusInfo(
-              type: SessionStatusType.idle,
-            );
-            _errorMessage = null;
-            _setState(ChatState.loaded);
-            break;
-          }
-          if (_isRemoteAbortError(message: message, code: code)) {
-            _sessionStatusById[sessionId] = const SessionStatusInfo(
-              type: SessionStatusType.idle,
-            );
-            _errorMessage = null;
-            _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
-            _appendInlineAbortMessage(sessionId: sessionId);
-            _setState(ChatState.loaded);
-            break;
-          }
-          _setError(message);
+        if (sessionId == null) {
+          break;
         }
+
+        if (sessionId != _currentSession?.id) {
+          _sessionStatusById[sessionId] = const SessionStatusInfo(
+            type: SessionStatusType.idle,
+          );
+          _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
+          _notifyListeners();
+          break;
+        }
+
+        final error = properties['error'] as Map<String, dynamic>?;
+        final data = error?['data'] as Map<String, dynamic>? ?? {};
+        final message =
+            data['message'] as String? ??
+            error?['message'] as String? ??
+            'Session error';
+        final code = data['code']?.toString() ?? error?['code']?.toString();
+        if (_shouldSuppressAbortError(sessionId: sessionId, message: message)) {
+          _sessionStatusById[sessionId] = const SessionStatusInfo(
+            type: SessionStatusType.idle,
+          );
+          _errorMessage = null;
+          _setState(ChatState.loaded);
+          break;
+        }
+        if (_isRemoteAbortError(message: message, code: code)) {
+          _sessionStatusById[sessionId] = const SessionStatusInfo(
+            type: SessionStatusType.idle,
+          );
+          _errorMessage = null;
+          _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
+          _appendInlineAbortMessage(sessionId: sessionId);
+          _setState(ChatState.loaded);
+          break;
+        }
+        _setError(message);
         break;
       case 'message.updated':
       case 'message.created':

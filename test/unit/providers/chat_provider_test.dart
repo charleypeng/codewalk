@@ -2922,6 +2922,80 @@ void main() {
     });
 
     test(
+      'session.error from non-current session only settles background status',
+      () async {
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_2',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1500),
+            title: 'Session 2',
+          ),
+        );
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.where((item) => item.id == 'ses_1').first,
+        );
+        await provider.initializeProviders();
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.error',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_2',
+              'error': <String, dynamic>{'message': 'background failure'},
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(provider.currentSession?.id, 'ses_1');
+        expect(provider.errorMessage, isNull);
+        expect(
+          provider.sessionStatusById['ses_2']?.type,
+          SessionStatusType.idle,
+        );
+      },
+    );
+
+    test(
+      'session.idle from non-current session updates only that status',
+      () async {
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_2',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1500),
+            title: 'Session 2',
+          ),
+        );
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.where((item) => item.id == 'ses_1').first,
+        );
+        await provider.initializeProviders();
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.idle',
+            properties: <String, dynamic>{'sessionID': 'ses_2'},
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(provider.currentSession?.id, 'ses_1');
+        expect(
+          provider.sessionStatusById['ses_2']?.type,
+          SessionStatusType.idle,
+        );
+      },
+    );
+
+    test(
       'sending again immediately after stop keeps provider stable and delivers next reply',
       () async {
         final firstStreamController =
