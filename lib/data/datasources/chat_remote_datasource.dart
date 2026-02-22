@@ -196,9 +196,15 @@ abstract class ChatRemoteDataSource {
 
 /// Chat remote data source implementation
 class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
-  const ChatRemoteDataSourceImpl({required this.dio});
+  const ChatRemoteDataSourceImpl({required this.dio, Dio? sseDio})
+      : _sseDio = sseDio;
 
   final Dio dio;
+
+  /// Dedicated Dio for SSE streams, isolated from the regular HTTP pool.
+  /// Falls back to [dio] when not provided (tests, web).
+  final Dio? _sseDio;
+  Dio get _effectiveSseDio => _sseDio ?? dio;
 
   @override
   Future<List<ChatSessionModel>> getSessions({
@@ -1062,9 +1068,10 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         );
       }
 
-      // Create SSE listener
+      // Create SSE listener using dedicated Dio to isolate from HTTP pool.
+      // Prevents session abort when regular requests close shared connections.
       try {
-        final eventResponse = await dio.get(
+        final eventResponse = await _effectiveSseDio.get(
           '/event',
           queryParameters: queryParams.isNotEmpty ? queryParams : null,
           options: Options(
@@ -1335,7 +1342,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         try {
           final cancelToken = CancelToken();
           requestCancelToken = cancelToken;
-          final response = await dio.get(
+          final response = await _effectiveSseDio.get(
             path,
             queryParameters: queryParams.isNotEmpty ? queryParams : null,
             options: Options(

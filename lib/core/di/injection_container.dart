@@ -77,7 +77,10 @@ Future<void> init() async {
   );
 
   sl.registerLazySingleton<ChatRemoteDataSource>(
-    () => ChatRemoteDataSourceImpl(dio: sl<DioClient>().dio),
+    () => ChatRemoteDataSourceImpl(
+      dio: sl<DioClient>().dio,
+      sseDio: sl<DioClient>().sseDio,
+    ),
   );
 
   sl.registerLazySingleton<ProjectRemoteDataSource>(
