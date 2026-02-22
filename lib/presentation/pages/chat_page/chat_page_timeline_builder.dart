@@ -415,6 +415,9 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     );
     final showMessageProgressIndicator =
         progressStage == _AssistantProgressStage.retrying;
+    final interactionPermissions = chatProvider.currentThreadPermissionRequests;
+    final subagentPermissionIds =
+        chatProvider.currentThreadSubagentPermissionRequestIds;
 
     final timelineEntries = _buildMessageTimelineEntries(
       messages: chatProvider.messages,
@@ -422,6 +425,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       isSessionActivelyResponding:
           chatProvider.isCurrentSessionActivelyResponding,
       isCompactingContext: chatProvider.isCompactingContext,
+      interactionPermissions: interactionPermissions,
+      subagentPermissionRequestIds: subagentPermissionIds,
     );
 
     return NotificationListener<ScrollMetricsNotification>(
@@ -458,6 +463,12 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                   if (entry is _TimelineCollapsedAssistantWorkEntry) {
                     return _buildCollapsedAssistantWorkEntry(entry);
                   }
+                  if (entry is _TimelinePermissionPromptEntry) {
+                    return _buildInlinePermissionPromptEntry(
+                      entry,
+                      chatProvider,
+                    );
+                  }
                   return _buildRetryingMessageIndicator();
                 },
                 childCount: timelineEntries.length,
@@ -479,9 +490,17 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     required bool showRetryIndicator,
     required bool isSessionActivelyResponding,
     required bool isCompactingContext,
+    required List<ChatPermissionRequest> interactionPermissions,
+    required Set<String> subagentPermissionRequestIds,
   }) {
     final lastId = messages.isNotEmpty ? messages.last.id : null;
     final messageFingerprint = Object.hashAll(messages);
+    final permissionPromptSignature = interactionPermissions
+        .map(
+          (request) =>
+              '${request.id}:${request.sessionId}:${subagentPermissionRequestIds.contains(request.id)}',
+        )
+        .join('|');
     if (_cachedTimelineEntries != null &&
         messages.length == _cachedTimelineMessageCount &&
         lastId == _cachedTimelineLastMessageId &&
@@ -489,6 +508,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
         isCompactingContext == _cachedTimelineIsCompacting &&
         isSessionActivelyResponding == _cachedTimelineIsResponding &&
         showRetryIndicator == _cachedTimelineShowRetry &&
+        permissionPromptSignature == _cachedTimelinePermissionPromptSignature &&
         _expandedCollapsedHistoryGroupId == _cachedTimelineExpandedGroupId &&
         _expandedAssistantWorkGroupId ==
             _cachedTimelineExpandedAssistantWorkGroupId) {
@@ -574,6 +594,17 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       );
     }
 
+    if (interactionPermissions.isNotEmpty) {
+      for (final request in interactionPermissions) {
+        entries.add(
+          _TimelinePermissionPromptEntry(
+            request: request,
+            fromSubagent: subagentPermissionRequestIds.contains(request.id),
+          ),
+        );
+      }
+    }
+
     if (showRetryIndicator) {
       entries.add(const _TimelineRetryIndicatorEntry());
     }
@@ -585,6 +616,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     _cachedTimelineIsCompacting = isCompactingContext;
     _cachedTimelineIsResponding = isSessionActivelyResponding;
     _cachedTimelineShowRetry = showRetryIndicator;
+    _cachedTimelinePermissionPromptSignature = permissionPromptSignature;
     _cachedTimelineExpandedGroupId = _expandedCollapsedHistoryGroupId;
     _cachedTimelineExpandedAssistantWorkGroupId = _expandedAssistantWorkGroupId;
     _cachedTimelineEntries = entries;

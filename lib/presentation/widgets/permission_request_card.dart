@@ -9,15 +9,20 @@ class PermissionRequestCard extends StatelessWidget {
     required this.request,
     required this.busy,
     required this.onDecide,
+    this.originBadgeLabel,
   });
 
   final ChatPermissionRequest request;
   final bool busy;
   final ValueChanged<String> onDecide;
+  final String? originBadgeLabel;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final originLabel = originBadgeLabel?.trim();
+    final hasOriginBadge = originLabel != null && originLabel.isNotEmpty;
+
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(10, 0, 10, 8),
@@ -42,6 +47,43 @@ class PermissionRequestCard extends StatelessWidget {
                   ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
+              if (hasOriginBadge)
+                Container(
+                  key: ValueKey<String>(
+                    'permission_request_origin_badge_${request.id}',
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.secondaryContainer.withValues(
+                      alpha: 0.7,
+                    ),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.55),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Symbols.support_agent_rounded,
+                        size: 12,
+                        color: colorScheme.onSecondaryContainer,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        originLabel ?? '',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onSecondaryContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
           if (request.patterns.isNotEmpty) ...[

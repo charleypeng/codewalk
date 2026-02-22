@@ -24,6 +24,7 @@ void main() {
           body: PermissionRequestCard(
             request: request,
             busy: false,
+            originBadgeLabel: 'Subagent',
             onDecide: (reply) => decided = reply,
           ),
         ),
@@ -31,6 +32,7 @@ void main() {
     );
 
     expect(find.textContaining('Permission request:'), findsOneWidget);
+    expect(find.text('Subagent'), findsOneWidget);
     await tester.tap(find.text('Allow Once'));
     await tester.pump();
     expect(decided, 'once');

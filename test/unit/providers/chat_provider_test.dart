@@ -4410,6 +4410,95 @@ void main() {
     );
 
     test(
+      'collects current-thread permissions including subagent descendants',
+      () async {
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_child_1',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(900),
+            title: 'Child Session',
+            parentId: 'ses_1',
+          ),
+        );
+
+        chatRepository.pendingPermissions = const <ChatPermissionRequest>[
+          ChatPermissionRequest(
+            id: 'perm_root_1',
+            sessionId: 'ses_1',
+            permission: 'edit',
+            patterns: <String>['lib/**'],
+            always: <String>[],
+            metadata: <String, dynamic>{},
+          ),
+          ChatPermissionRequest(
+            id: 'perm_sub_1',
+            sessionId: 'ses_child_1',
+            permission: 'bash',
+            patterns: <String>['*'],
+            always: <String>[],
+            metadata: <String, dynamic>{},
+          ),
+          ChatPermissionRequest(
+            id: 'perm_other_1',
+            sessionId: 'ses_unrelated',
+            permission: 'read',
+            patterns: <String>['README.md'],
+            always: <String>[],
+            metadata: <String, dynamic>{},
+          ),
+        ];
+
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'model_a': _model('model_a')},
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a'],
+          ),
+        );
+
+        await provider.initializeProviders();
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.where((item) => item.id == 'ses_1').first,
+        );
+
+        expect(
+          provider.currentThreadPermissionRequests.map((item) => item.id),
+          <String>['perm_root_1', 'perm_sub_1'],
+        );
+        expect(
+          provider.currentThreadSubagentPermissionRequestIds,
+          contains('perm_sub_1'),
+        );
+        expect(
+          provider.currentThreadSubagentPermissionRequestIds,
+          isNot(contains('perm_root_1')),
+        );
+
+        final subagentRequest = provider.currentThreadPermissionRequests
+            .where((item) => item.id == 'perm_sub_1')
+            .first;
+        final rootRequest = provider.currentThreadPermissionRequests
+            .where((item) => item.id == 'perm_root_1')
+            .first;
+
+        expect(
+          provider.isCurrentThreadSubagentPermission(subagentRequest),
+          true,
+        );
+        expect(provider.isCurrentThreadSubagentPermission(rootRequest), false);
+      },
+    );
+
+    test(
       'rejectQuestionRequest removes pending question from provider state',
       () async {
         chatRepository.pendingQuestions = const <ChatQuestionRequest>[

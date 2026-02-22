@@ -2384,6 +2384,110 @@ void main() {
     expect(find.text('Submit Answers'), findsNothing);
   });
 
+  testWidgets(
+    'mirrors subagent permission requests in timeline and prompt area',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_root',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Root Session',
+          ),
+          ChatSession(
+            id: 'ses_sub_1',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(900),
+            title: 'Sub Session',
+            parentId: 'ses_root',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_root'] = <ChatMessage>[
+        UserMessage(
+          id: 'msg_root_1',
+          sessionId: 'ses_root',
+          time: DateTime.fromMillisecondsSinceEpoch(1200),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_root_1',
+              messageId: 'msg_root_1',
+              sessionId: 'ses_root',
+              text: 'Show pending permissions',
+            ),
+          ],
+        ),
+      ];
+      repository.pendingPermissions = const <ChatPermissionRequest>[
+        ChatPermissionRequest(
+          id: 'perm_mirror_1',
+          sessionId: 'ses_sub_1',
+          permission: 'bash',
+          patterns: <String>['*'],
+          always: <String>[],
+          metadata: <String, dynamic>{},
+        ),
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.initializeProviders();
+      await provider.loadSessions();
+      await provider.selectSession(
+        provider.sessions.where((session) => session.id == 'ses_root').first,
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'interaction_permission_request_perm_mirror_1',
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>('timeline_permission_request_perm_mirror_1'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Subagent'), findsWidgets);
+
+      await tester.tap(find.text('Allow Once').first);
+      await tester.pumpAndSettle();
+
+      expect(repository.lastPermissionRequestId, 'perm_mirror_1');
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'interaction_permission_request_perm_mirror_1',
+          ),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>('timeline_permission_request_perm_mirror_1'),
+        ),
+        findsNothing,
+      );
+    },
+  );
+
   testWidgets('shows model selector with search and quick reasoning selector', (
     WidgetTester tester,
   ) async {
@@ -4684,8 +4788,7 @@ void main() {
           await streamController.close();
         }
       });
-      repository.sendMessageHandler = (_, __, ___, ____) =>
-          streamController.stream;
+      repository.sendMessageHandler = (_, _, _, _) => streamController.stream;
 
       final localDataSource = InMemoryAppLocalDataSource()
         ..activeServerId = 'srv_test';
@@ -5002,8 +5105,7 @@ void main() {
     addTearDown(() async {
       await streamController.close();
     });
-    repository.sendMessageHandler = (_, __, ___, ____) =>
-        streamController.stream;
+    repository.sendMessageHandler = (_, _, _, _) => streamController.stream;
 
     final localDataSource = InMemoryAppLocalDataSource()
       ..activeServerId = 'srv_test';
@@ -5082,7 +5184,7 @@ void main() {
       ],
     );
     var sendCalls = 0;
-    repository.sendMessageHandler = (_, __, ___, ____) {
+    repository.sendMessageHandler = (_, _, _, _) {
       sendCalls += 1;
       if (sendCalls == 1) {
         return firstStream.stream;
@@ -5160,7 +5262,7 @@ void main() {
     addTearDown(() async {
       await sendStream.close();
     });
-    repository.sendMessageHandler = (_, __, ___, ____) => sendStream.stream;
+    repository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
 
     final localDataSource = InMemoryAppLocalDataSource()
       ..activeServerId = 'srv_test';
@@ -5215,8 +5317,7 @@ void main() {
     addTearDown(() async {
       await streamController.close();
     });
-    repository.sendMessageHandler = (_, __, ___, ____) =>
-        streamController.stream;
+    repository.sendMessageHandler = (_, _, _, _) => streamController.stream;
 
     final localDataSource = InMemoryAppLocalDataSource()
       ..activeServerId = 'srv_test';
@@ -5292,8 +5393,7 @@ void main() {
     addTearDown(() async {
       await streamController.close();
     });
-    repository.sendMessageHandler = (_, __, ___, ____) =>
-        streamController.stream;
+    repository.sendMessageHandler = (_, _, _, _) => streamController.stream;
 
     final localDataSource = InMemoryAppLocalDataSource()
       ..activeServerId = 'srv_test';
@@ -5351,8 +5451,7 @@ void main() {
     addTearDown(() async {
       await streamController.close();
     });
-    repository.sendMessageHandler = (_, __, ___, ____) =>
-        streamController.stream;
+    repository.sendMessageHandler = (_, _, _, _) => streamController.stream;
 
     final localDataSource = InMemoryAppLocalDataSource()
       ..activeServerId = 'srv_test';

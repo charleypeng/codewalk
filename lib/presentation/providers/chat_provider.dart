@@ -614,6 +614,134 @@ class ChatProvider extends ChangeNotifier {
   ChatQuestionRequest? get currentQuestionRequest =>
       currentSessionQuestions.firstOrNull;
 
+  List<ChatPermissionRequest> get currentThreadPermissionRequests {
+    final currentSessionId = _currentSession?.id;
+    if (currentSessionId == null || currentSessionId.isEmpty) {
+      return const <ChatPermissionRequest>[];
+    }
+
+    final orderedSessionIds = <String>[
+      currentSessionId,
+      ..._orderedCurrentSessionDescendantIds(),
+    ];
+    final seenRequestIds = <String>{};
+    final collected = <ChatPermissionRequest>[];
+
+    for (final sessionId in orderedSessionIds) {
+      final sessionRequests = _pendingPermissionsBySession[sessionId];
+      if (sessionRequests == null || sessionRequests.isEmpty) {
+        continue;
+      }
+      for (final request in sessionRequests) {
+        if (seenRequestIds.add(request.id)) {
+          collected.add(request);
+        }
+      }
+    }
+
+    return List<ChatPermissionRequest>.unmodifiable(collected);
+  }
+
+  Set<String> get currentThreadSubagentPermissionRequestIds {
+    final currentSessionId = _currentSession?.id;
+    if (currentSessionId == null || currentSessionId.isEmpty) {
+      return const <String>{};
+    }
+
+    final descendantIds = _orderedCurrentSessionDescendantIds().toSet();
+    if (descendantIds.isEmpty) {
+      return const <String>{};
+    }
+
+    final requestIds = <String>{};
+    for (final sessionId in descendantIds) {
+      final sessionRequests = _pendingPermissionsBySession[sessionId];
+      if (sessionRequests == null || sessionRequests.isEmpty) {
+        continue;
+      }
+      for (final request in sessionRequests) {
+        requestIds.add(request.id);
+      }
+    }
+    return requestIds;
+  }
+
+  bool isCurrentThreadSubagentPermission(ChatPermissionRequest request) {
+    final currentSessionId = _currentSession?.id;
+    if (currentSessionId == null || currentSessionId.isEmpty) {
+      return false;
+    }
+    if (request.sessionId == currentSessionId) {
+      return false;
+    }
+    final descendantIds = _orderedCurrentSessionDescendantIds().toSet();
+    return descendantIds.contains(request.sessionId);
+  }
+
+  List<String> _orderedCurrentSessionDescendantIds() {
+    final currentSessionId = _currentSession?.id;
+    if (currentSessionId == null || currentSessionId.isEmpty) {
+      return const <String>[];
+    }
+
+    final childIdsByParent = _childSessionIdsByParent();
+    if (childIdsByParent.isEmpty) {
+      return const <String>[];
+    }
+
+    final visited = <String>{currentSessionId};
+    final orderedDescendants = <String>[];
+    final queue = ListQueue<String>()..add(currentSessionId);
+
+    while (queue.isNotEmpty) {
+      final parentId = queue.removeFirst();
+      final childIds = childIdsByParent[parentId] ?? const <String>[];
+      for (final childId in childIds) {
+        if (!visited.add(childId)) {
+          continue;
+        }
+        orderedDescendants.add(childId);
+        queue.add(childId);
+      }
+    }
+
+    return orderedDescendants;
+  }
+
+  Map<String, List<String>> _childSessionIdsByParent() {
+    final output = <String, List<String>>{};
+
+    void appendChild({required String parentId, required String childId}) {
+      if (parentId.isEmpty || childId.isEmpty || parentId == childId) {
+        return;
+      }
+      final children = output.putIfAbsent(parentId, () => <String>[]);
+      if (!children.contains(childId)) {
+        children.add(childId);
+      }
+    }
+
+    for (final session in _sessions) {
+      final parentId = session.parentId?.trim();
+      if (parentId == null || parentId.isEmpty) {
+        continue;
+      }
+      appendChild(parentId: parentId, childId: session.id);
+    }
+
+    for (final entry in _sessionChildrenById.entries) {
+      final parentId = entry.key.trim();
+      if (parentId.isEmpty) {
+        continue;
+      }
+      for (final child in entry.value) {
+        appendChild(parentId: parentId, childId: child.id);
+      }
+    }
+
+    return output;
+  }
+
   List<ChatSession> get currentSessionChildren {
     final sessionId = _currentSession?.id;
     if (sessionId == null) {

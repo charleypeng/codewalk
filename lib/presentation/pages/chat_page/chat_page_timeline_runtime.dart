@@ -2,18 +2,27 @@ part of '../chat_page.dart';
 
 extension _ChatPageTimelineRuntime on _ChatPageState {
   Widget _buildInteractionPrompts(ChatProvider chatProvider) {
-    final permissionRequest = chatProvider.currentPermissionRequest;
+    final permissionRequests = chatProvider.currentThreadPermissionRequests;
+    final subagentPermissionIds =
+        chatProvider.currentThreadSubagentPermissionRequestIds;
     final questionRequest = chatProvider.currentQuestionRequest;
-    if (permissionRequest == null && questionRequest == null) {
+    if (permissionRequests.isEmpty && questionRequest == null) {
       return const SizedBox.shrink();
     }
 
     return Column(
       children: [
-        if (permissionRequest != null)
+        for (final permissionRequest in permissionRequests)
           PermissionRequestCard(
+            key: ValueKey<String>(
+              'interaction_permission_request_${permissionRequest.id}',
+            ),
             request: permissionRequest,
             busy: chatProvider.isRespondingInteraction,
+            originBadgeLabel:
+                subagentPermissionIds.contains(permissionRequest.id)
+                ? 'Subagent'
+                : null,
             onDecide: (reply) {
               unawaited(
                 chatProvider.respondPermissionRequest(
@@ -44,6 +53,26 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
             },
           ),
       ],
+    );
+  }
+
+  Widget _buildInlinePermissionPromptEntry(
+    _TimelinePermissionPromptEntry entry,
+    ChatProvider chatProvider,
+  ) {
+    return PermissionRequestCard(
+      key: ValueKey<String>('timeline_permission_request_${entry.request.id}'),
+      request: entry.request,
+      busy: chatProvider.isRespondingInteraction,
+      originBadgeLabel: entry.fromSubagent ? 'Subagent' : null,
+      onDecide: (reply) {
+        unawaited(
+          chatProvider.respondPermissionRequest(
+            requestId: entry.request.id,
+            reply: reply,
+          ),
+        );
+      },
     );
   }
 
