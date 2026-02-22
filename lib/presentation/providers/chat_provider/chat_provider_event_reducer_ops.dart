@@ -264,7 +264,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           // Defer completion marking when a preserved stream is still
           // draining for this session — onDone of that stream handles it.
           final hasPreserved = _hasPreservedStreamForSession(sessionId);
-          AppLogger.debug(
+          AppLogger.info(
             'session.idle session=$sessionId isCurrent=${sessionId == _currentSession?.id} hasPreservedStream=$hasPreserved',
           );
           if (!hasPreserved) {
@@ -297,7 +297,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           // Defer completion marking when a preserved stream is still
           // draining for this session — onDone of that stream handles it.
           final hasPreservedErr = _hasPreservedStreamForSession(sessionId);
-          AppLogger.debug(
+          AppLogger.info(
             'session.error non-current session=$sessionId hasPreservedStream=$hasPreservedErr',
           );
           if (!hasPreservedErr) {
@@ -314,6 +314,9 @@ extension _ChatProviderEventReducerOps on ChatProvider {
             error?['message'] as String? ??
             'Session error';
         final code = data['code']?.toString() ?? error?['code']?.toString();
+        AppLogger.info(
+          'session.error current session=$sessionId message=$message code=$code hasPreservedStream=${_hasPreservedStreamForSession(sessionId)}',
+        );
         if (_shouldSuppressAbortError(sessionId: sessionId, message: message)) {
           _sessionStatusById[sessionId] = const SessionStatusInfo(
             type: SessionStatusType.idle,

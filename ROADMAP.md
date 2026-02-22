@@ -105,6 +105,10 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 
 - [x] Investigate and fix conversation continuity when switching sessions/projects... - Related commits: acce617 9dcd773 1581c65
 - [x] Investigate and fix mobile chat-state refresh after app resume: latest assistant message not rendered when returning from background. - Commits: 3639206 ab752f1
+- [x] Investigate and fix mobile-first blank chat screen when opening very large conversations: the screen goes fully white until app restart. - Commit hash: fe8762b
+- [x] Investigate and fix conversation-open click behavior: double-click freeze and sidebar sync. - Commit hash: 204114e
+- [x] Verify/adjust mobile-only background sync to be low impact on battery and data usage. - Commit hash: 24d5241
+- [x] On mobile, Back in Settings follows hierarchical navigation: section -> Settings main screen -> app main screen. - Commit hash: 1e7bf7b
 
 #### `featA` Sync hardening and remote config safety ✅
 

@@ -82,6 +82,8 @@ lib/presentation/utils/window_size_class.dart         # WindowSizeClass enum wit
 lib/presentation/services/desktop_tray_service_io.dart # Desktop tray lifecycle; selects tray icon per OS (macOS template PNG, Windows ICO, Linux PNG)
 lib/presentation/services/notification_service.dart    # Local notifications; Android uses `@drawable/ic_stat_codewalk` small icon
 lib/presentation/services/android_foreground_monitor_service.dart # Android foreground service via MethodChannel; keeps background monitoring active
+lib/presentation/services/android_background_alert_worker.dart # WorkManager-based background polling; fast probe (2m) for active sessions, tail probe (5m) after completion
+lib/presentation/services/android_background_alert_logic.dart # Pure logic for tail probe scheduling, alert planning, and snapshot state
 lib/presentation/services/android_battery_optimization_service.dart # Android battery optimization query/exemption request via MethodChannel
 lib/presentation/providers/chat_provider.dart     # Chat state/realtime/session facade; microtask coalescing, event dedup buffer, render gate, favorite models
 lib/presentation/pages/onboarding_wizard_page.dart # 3-step onboarding wizard (Welcome, Server Setup, Ready); uses ServerSetupQuickGuide

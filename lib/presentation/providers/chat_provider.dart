@@ -1691,7 +1691,7 @@ class ChatProvider extends ChangeNotifier {
       invalidateGeneration: true,
       preserveActiveStream: true,
     );
-    AppLogger.debug(
+    AppLogger.info(
       'selectSession generation=$_messageStreamGeneration preserved=${_preservedMessageSubscriptions.length} target=${session.id}',
     );
 
@@ -2071,7 +2071,7 @@ class ChatProvider extends ChangeNotifier {
                 _markIncompleteAssistantMessagesAsCompleted(
                   sessionId: streamSessionId,
                 );
-                AppLogger.debug(
+                AppLogger.info(
                   'Stale send stream error — finalized session=$streamSessionId generation=$streamGeneration active=$_messageStreamGeneration',
                 );
                 return;
@@ -2110,7 +2110,7 @@ class ChatProvider extends ChangeNotifier {
                 _markIncompleteAssistantMessagesAsCompleted(
                   sessionId: streamSessionId,
                 );
-                AppLogger.debug(
+                AppLogger.info(
                   'Stale send stream done — finalized session=$streamSessionId generation=$streamGeneration active=$_messageStreamGeneration',
                 );
                 return;

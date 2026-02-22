@@ -23,7 +23,7 @@
   - [x] Add an AMOLED mode switch available when dark mode is active. — `2ccc089`, `4b1d4cc`
   - [x] In Settings, move Servers to first position (before Appearance). — `92fa47e`
   - [x] In Settings > Logs, remove extra step and open logs screen directly. - Commit hash: 3ad147e
-- [x] On mobile, Back in Settings follows hierarchical navigation: section -> Settings main screen -> app main screen; only after that should Back close the app. - Commit hash: e846e54
+- [x] On mobile, Back in Settings follows hierarchical navigation: section -> Settings main screen -> app main screen; only after that should Back close the app. - Related commits: e846e54 1e7bf7b
 - [ ] In Settings > Shortcuts, review shortcut coverage and add missing options.
 - [ ] Add shortcut to enable/disable STT in Shortcuts.
 - [ ] In Settings > About, create an independent update system for new versions.
