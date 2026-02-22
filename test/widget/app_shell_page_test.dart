@@ -82,7 +82,7 @@ void main() {
     );
   });
 
-  testWidgets('opens logs from settings and returns to chat via back arrow', (
+  testWidgets('opens logs directly from settings and returns via back arrow', (
     WidgetTester tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1200, 900));
@@ -119,20 +119,13 @@ void main() {
     await tester.tap(find.text('Logs').first);
     await tester.pumpAndSettle();
 
-    await tester.tap(
-      find.byKey(const ValueKey<String>('settings_open_logs_button')),
-    );
-    await tester.pumpAndSettle();
-
     expect(find.text('App Logs'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
 
-    expect(
-      find.byKey(const ValueKey<String>('settings_open_logs_button')),
-      findsOneWidget,
-    );
+    expect(find.text('Settings'), findsWidgets);
+    expect(find.text('Logs'), findsOneWidget);
   });
 
   testWidgets(

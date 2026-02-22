@@ -855,6 +855,41 @@ void main() {
     );
   });
 
+  test('splitComposerTextAtSelection keeps trailing text at caret', () {
+    final split = splitComposerTextAtSelection(
+      const TextEditingValue(
+        text: 'hello world',
+        selection: TextSelection.collapsed(offset: 6),
+      ),
+    );
+
+    expect(split.leadingText, 'hello ');
+    expect(split.trailingText, 'world');
+  });
+
+  test('splitComposerTextAtSelection replaces selected range', () {
+    final split = splitComposerTextAtSelection(
+      const TextEditingValue(
+        text: 'hello brave world',
+        selection: TextSelection(baseOffset: 6, extentOffset: 11),
+      ),
+    );
+
+    expect(split.leadingText, 'hello ');
+    expect(split.trailingText, ' world');
+  });
+
+  test('composeComposerValueWithSuffix keeps cursor before suffix', () {
+    final value = composeComposerValueWithSuffix(
+      leadingText: 'hello voice',
+      trailingText: ' world',
+    );
+
+    expect(value.text, 'hello voice world');
+    expect(value.selection.baseOffset, 'hello voice'.length);
+    expect(value.selection.extentOffset, 'hello voice'.length);
+  });
+
   test('composer attachment style keeps transparent backgrounds', () {
     final style = composerAttachButtonStyle(
       colorScheme: const ColorScheme.light(),

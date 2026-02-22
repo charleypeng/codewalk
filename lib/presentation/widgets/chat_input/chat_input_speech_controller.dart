@@ -89,7 +89,9 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
       seconds: settingsProvider.speechSilenceTimeoutSeconds,
     );
 
-    _speechPrefix = _controller.text;
+    final textWindow = splitComposerTextAtSelection(_controller.value);
+    _speechPrefix = textWindow.leadingText;
+    _speechSuffix = textWindow.trailingText;
     _speechCommittedText = '';
     try {
       await _speechService.startListening(
@@ -149,15 +151,15 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
     final spokenText = isFinal
         ? _speechCommittedText
         : _appendSpeechSegment(_speechCommittedText, text);
-    final nextText = _appendSpeechSegment(_speechPrefix, spokenText);
-
-    _controller.value = TextEditingValue(
-      text: nextText,
-      selection: TextSelection.collapsed(offset: nextText.length),
+    final leadingText = _appendSpeechSegment(_speechPrefix, spokenText);
+    final nextValue = composeComposerValueWithSuffix(
+      leadingText: leadingText,
+      trailingText: _speechSuffix,
     );
+    _controller.value = nextValue;
 
     _setState(() {
-      _isComposing = nextText.trim().isNotEmpty;
+      _isComposing = nextValue.text.trim().isNotEmpty;
     });
   }
 

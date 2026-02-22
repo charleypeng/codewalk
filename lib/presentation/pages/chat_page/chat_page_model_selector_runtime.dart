@@ -614,12 +614,12 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
             // Recent section excludes favorites.
             final recentEntries = normalizedQuery.isEmpty
                 ? _buildRecentModelEntries(chatProvider, entries)
-                    .where(
-                      (entry) => !favoriteKeys.contains(
-                        _selectorEntryKey(entry.providerId, entry.modelId),
-                      ),
-                    )
-                    .toList(growable: false)
+                      .where(
+                        (entry) => !favoriteKeys.contains(
+                          _selectorEntryKey(entry.providerId, entry.modelId),
+                        ),
+                      )
+                      .toList(growable: false)
                 : const <_ModelSelectorEntry>[];
             final recentKeys = recentEntries
                 .map(
@@ -646,7 +646,8 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                   .putIfAbsent(entry.providerId, () => <_ModelSelectorEntry>[])
                   .add(entry);
             }
-            final hasVisibleEntries = favoriteEntries.isNotEmpty ||
+            final hasVisibleEntries =
+                favoriteEntries.isNotEmpty ||
                 recentEntries.isNotEmpty ||
                 groupedEntries.isNotEmpty;
 
@@ -737,7 +738,8 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                           chatProvider: chatProvider,
                                           providerId: entry.providerId,
                                           modelId: entry.modelId,
-                                          isSelected: selectedKey ==
+                                          isSelected:
+                                              selectedKey ==
                                               _selectorEntryKey(
                                                 entry.providerId,
                                                 entry.modelId,
@@ -802,7 +804,8 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                           chatProvider: chatProvider,
                                           providerId: entry.providerId,
                                           modelId: entry.modelId,
-                                          isSelected: selectedKey ==
+                                          isSelected:
+                                              selectedKey ==
                                               _selectorEntryKey(
                                                 entry.providerId,
                                                 entry.modelId,
@@ -874,7 +877,8 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                             chatProvider: chatProvider,
                                             providerId: entry.providerId,
                                             modelId: entry.modelId,
-                                            isSelected: selectedKey ==
+                                            isSelected:
+                                                selectedKey ==
                                                 _selectorEntryKey(
                                                   entry.providerId,
                                                   entry.modelId,
@@ -935,12 +939,9 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
 
     // Auto-fit width based on the longest label text.
     final textStyle =
-        Theme.of(context).textTheme.labelLarge ??
-        const TextStyle(fontSize: 14);
+        Theme.of(context).textTheme.labelLarge ?? const TextStyle(fontSize: 14);
     final labels = ['Auto', ...variants.map((v) => v.name)];
-    final longestLabel = labels.reduce(
-      (a, b) => a.length > b.length ? a : b,
-    );
+    final longestLabel = labels.reduce((a, b) => a.length > b.length ? a : b);
     final textPainter = TextPainter(
       text: TextSpan(text: longestLabel, style: textStyle),
       maxLines: 1,
@@ -956,10 +957,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
 
     final selected = await showMenu<String?>(
       context: context,
-      constraints: BoxConstraints(
-        minWidth: menuWidth,
-        maxWidth: menuWidth,
-      ),
+      constraints: BoxConstraints(minWidth: menuWidth, maxWidth: menuWidth),
       position: RelativeRect.fromLTRB(
         left,
         top.toDouble(),
@@ -1005,6 +1003,15 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
 
     // Technical comment translated to English.
     await chatProvider.createNewSession();
+    if (!mounted) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _inputFocusNode.requestFocus();
+    });
   }
 
   List<ChatComposerSlashCommandSuggestion> _builtinSlashCommands() {

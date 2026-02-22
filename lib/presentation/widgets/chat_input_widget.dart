@@ -166,6 +166,37 @@ Color resolveComposerBubbleColor({
   );
 }
 
+@visibleForTesting
+({String leadingText, String trailingText}) splitComposerTextAtSelection(
+  TextEditingValue value,
+) {
+  final text = value.text;
+  final length = text.length;
+  if (!value.selection.isValid) {
+    return (leadingText: text, trailingText: '');
+  }
+  final start = value.selection.start.clamp(0, length).toInt();
+  final end = value.selection.end.clamp(0, length).toInt();
+  final from = math.min(start, end);
+  final to = math.max(start, end);
+  return (
+    leadingText: text.substring(0, from),
+    trailingText: text.substring(to),
+  );
+}
+
+@visibleForTesting
+TextEditingValue composeComposerValueWithSuffix({
+  required String leadingText,
+  required String trailingText,
+}) {
+  final text = '$leadingText$trailingText';
+  return TextEditingValue(
+    text: text,
+    selection: TextSelection.collapsed(offset: leadingText.length),
+  );
+}
+
 /// Chat input widget
 class ChatInputWidget extends StatefulWidget {
   const ChatInputWidget({
@@ -252,6 +283,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   String _activeMentionQuery = '';
   String _activeSlashQuery = '';
   String _speechPrefix = '';
+  String _speechSuffix = '';
   String _speechCommittedText = '';
   Timer? _sendHoldTimer;
   Timer? _suggestionDebounce;

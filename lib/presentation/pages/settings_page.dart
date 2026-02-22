@@ -5,10 +5,10 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../utils/window_size_class.dart';
+import 'logs_page.dart';
 import 'onboarding_wizard_page.dart';
 import 'settings/sections/about_settings_section.dart';
 import 'settings/sections/appearance_settings_section.dart';
-import 'settings/sections/logs_settings_section.dart';
 import 'settings/sections/notifications_settings_section.dart';
 import 'settings/sections/servers_settings_section.dart';
 import 'settings/sections/shortcuts_settings_section.dart';
@@ -82,7 +82,7 @@ class _SettingsPageState extends State<SettingsPage> {
       title: 'Logs',
       description: 'Runtime diagnostics and troubleshooting data',
       icon: Symbols.receipt_long_rounded,
-      builder: (_) => const LogsSettingsSection(),
+      builder: (_) => const SizedBox.shrink(),
     ),
     _SettingsSection(
       id: 'shortcuts',
@@ -128,13 +128,24 @@ class _SettingsPageState extends State<SettingsPage> {
   void initState() {
     super.initState();
     HardwareKeyboard.instance.addHandler(_handleGlobalKeyEvent);
+    final initialSectionId = widget.initialSectionId == 'logs'
+        ? ''
+        : widget.initialSectionId;
     final visibleSections = _visibleSections;
     _selectedSectionId = visibleSections
-        .where((section) => section.id == widget.initialSectionId)
+        .where((section) => section.id == initialSectionId)
         .firstOrNull
         ?.id;
     _selectedSectionId ??= visibleSections.first.id;
-    _showMobileDetail = widget.initialSectionId.isNotEmpty;
+    _showMobileDetail = initialSectionId.isNotEmpty;
+    if (widget.initialSectionId == 'logs') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        _openLogsPage();
+      });
+    }
   }
 
   @override
@@ -249,6 +260,12 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  Future<void> _openLogsPage() async {
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const LogsPage()));
+  }
+
   Widget _buildSectionList({required bool isSplit}) {
     return ListView(
       padding: const EdgeInsets.all(AppConstants.defaultPadding),
@@ -270,6 +287,10 @@ class _SettingsPageState extends State<SettingsPage> {
               subtitle: Text(section.description),
               trailing: const Icon(Symbols.chevron_right),
               onTap: () {
+                if (section.id == 'logs') {
+                  _openLogsPage();
+                  return;
+                }
                 setState(() {
                   _selectedSectionId = section.id;
                   _showMobileDetail = true;
