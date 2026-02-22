@@ -2122,6 +2122,11 @@ class ChatProvider extends ChangeNotifier {
                 }
               }
               _clearActiveSendDraft();
+              // Activate abort suppression so that any session.error arriving
+              // on the provider-level SSE shortly after this stream closes
+              // (e.g. due to half-open TCP after background resume) is
+              // suppressed while the datasource polling fallback completes.
+              _startAbortSuppression(streamSessionId);
               AppLogger.info(
                 'Provider send stream finished session=$streamSessionId',
               );
