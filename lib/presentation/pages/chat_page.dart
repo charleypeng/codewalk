@@ -153,6 +153,7 @@ class _ChatPageState extends State<ChatPage>
   Timer? _composerStopHintTimer;
   Timer? _backgroundRealtimeHoldTimer;
   Timer? _tipRotationTimer;
+  DateTime? _lastResumeRefreshAt;
   int _currentTipIndex = 0;
   DateTime? _lastGlobalEscapeAt;
   _ComposerStatusPresentation? _visibleComposerStatus;
@@ -309,6 +310,7 @@ class _ChatPageState extends State<ChatPage>
       _applyForegroundPolicy(reason: 'app-lifecycle-${state.name}');
       if (_isAppInForeground) {
         if (_isChatScreenActive()) {
+          _lastResumeRefreshAt = DateTime.now();
           unawaited(
             provider.refreshActiveSessionView(reason: 'app-lifecycle-resumed'),
           );
@@ -433,6 +435,12 @@ class _ChatPageState extends State<ChatPage>
 
   Future<void> _handleServerReconnected() async {
     if (!mounted || !_isChatScreenActive()) {
+      return;
+    }
+    final lastResumeRefreshAt = _lastResumeRefreshAt;
+    if (lastResumeRefreshAt != null &&
+        DateTime.now().difference(lastResumeRefreshAt) <
+            const Duration(seconds: 2)) {
       return;
     }
     final chatProvider = _chatProvider ?? context.read<ChatProvider>();
