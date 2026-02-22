@@ -794,7 +794,6 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     String? directory,
   }) async* {
     final eventController = StreamController<ChatMessageModel>();
-    StreamSubscription<String>? eventSubscription;
     try {
       final queryParams = <String, String>{};
       if (directory != null) {
@@ -816,13 +815,9 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         return;
       }
 
-      // Start SSE listener for message update events
       var messageCompleted = false;
-      var eventStreamEnded = false;
-      var pendingMessageFetches = 0;
       String? activeAssistantMessageId;
       var fallbackCompletionWatchStarted = false;
-      var idleCompletionFallbackQueued = false;
 
       int extractCreatedTimeMs(dynamic timeValue) {
         if (timeValue is Map<String, dynamic>) {
@@ -834,16 +829,6 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           return timeValue.toInt();
         }
         return 0;
-      }
-
-      bool isAbortLikeSessionError({String? name, String? message}) {
-        final normalized = '${name ?? ''} ${message ?? ''}'
-            .trim()
-            .toLowerCase();
-        return normalized.contains('abort') ||
-            normalized.contains('aborted') ||
-            normalized.contains('cancelled') ||
-            normalized.contains('canceled');
       }
 
       Future<String?> resolveAssistantMessageId() async {
@@ -947,20 +932,10 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
       void maybeCloseEventController({Duration delay = Duration.zero}) {
         Future<void>.delayed(delay, () {
-          if (eventController.isClosed) {
+          if (eventController.isClosed || !messageCompleted) {
             return;
           }
-          if (pendingMessageFetches > 0) {
-            return;
-          }
-          if (!messageCompleted && !eventStreamEnded) {
-            return;
-          }
-
-          eventSubscription?.cancel();
-          if (!eventController.isClosed) {
-            eventController.close();
-          }
+          eventController.close();
         });
       }
 
@@ -1017,241 +992,11 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         }());
       }
 
-      void fetchAndEmitMessage(String messageId) {
-        pendingMessageFetches += 1;
-        _getCompleteMessage(
-              projectId,
-              sessionId,
-              messageId,
-              directory: directory,
-            )
-            .then((message) {
-              if (message == null) {
-                return;
-              }
-
-              if (!eventController.isClosed) {
-                eventController.add(message);
-              }
-
-              if (message.completedTime != null && !messageCompleted) {
-                messageCompleted = true;
-                maybeCloseEventController(
-                  delay: const Duration(milliseconds: 500),
-                );
-              }
-            })
-            .catchError((error) {
-              AppLogger.warn('Failed to fetch complete message', error: error);
-            })
-            .whenComplete(() {
-              pendingMessageFetches -= 1;
-              if (pendingMessageFetches < 0) {
-                pendingMessageFetches = 0;
-              }
-              maybeCloseEventController();
-            });
-      }
-
-      void triggerIdleCompletionFallback(String reason) {
-        if (messageCompleted || idleCompletionFallbackQueued) {
-          return;
-        }
-        idleCompletionFallbackQueued = true;
-        final knownMessageId = activeAssistantMessageId;
-        if (knownMessageId != null && knownMessageId.isNotEmpty) {
-          fetchAndEmitMessage(knownMessageId);
-        }
-        startFallbackCompletionWatch(
-          reason: reason,
-          initialDelay: Duration.zero,
-        );
-      }
-
-      // Create SSE listener using dedicated Dio to isolate from HTTP pool.
-      // Prevents session abort when regular requests close shared connections.
-      try {
-        final eventResponse = await _effectiveSseDio.get(
-          '/event',
-          queryParameters: queryParams.isNotEmpty ? queryParams : null,
-          options: Options(
-            headers: {
-              'Accept': 'text/event-stream',
-              'Cache-Control': 'no-cache',
-            },
-            responseType: ResponseType.stream,
-            connectTimeout: const Duration(seconds: 5),
-            receiveTimeout: const Duration(minutes: 5),
-          ),
-        );
-
-        if (eventResponse.statusCode == 200) {
-          AppLogger.info('Connected send-event stream for session=$sessionId');
-
-          eventSubscription = (eventResponse.data as ResponseBody).stream
-              .transform(
-                StreamTransformer.fromHandlers(
-                  handleData: (Uint8List data, EventSink<String> sink) {
-                    sink.add(utf8.decode(data));
-                  },
-                ),
-              )
-              .transform(const LineSplitter())
-              .where((line) => line.startsWith('data: '))
-              .map((line) => line.substring(6)) // Remove "data: " prefix
-              .where((data) => data.isNotEmpty && data != '[DONE]')
-              .listen(
-                (eventData) {
-                  try {
-                    final event = jsonDecode(eventData) as Map<String, dynamic>;
-                    final eventType = event['type'] as String?;
-
-                    AppLogger.debug('Event received: $eventType');
-
-                    if (eventType == 'message.updated') {
-                      final properties =
-                          event['properties'] as Map<String, dynamic>?;
-                      final info = properties?['info'] as Map<String, dynamic>?;
-
-                      if (info != null && info['sessionID'] == sessionId) {
-                        final messageId = info['id'] as String?;
-                        if (messageId == null || messageId.isEmpty) {
-                          return;
-                        }
-                        activeAssistantMessageId = messageId;
-                        AppLogger.debug('Event: message.updated ${info['id']}');
-                        fetchAndEmitMessage(messageId);
-                      }
-                    } else if (eventType == 'message.part.updated') {
-                      final properties =
-                          event['properties'] as Map<String, dynamic>?;
-                      final part = properties?['part'] as Map<String, dynamic>?;
-
-                      if (part != null && part['sessionID'] == sessionId) {
-                        final messageId = part['messageID'] as String?;
-                        if (messageId == null || messageId.isEmpty) {
-                          return;
-                        }
-                        activeAssistantMessageId = messageId;
-                        AppLogger.debug(
-                          'Event: message.part.updated ${part['messageID']}',
-                        );
-                        fetchAndEmitMessage(messageId);
-                      }
-                    } else if (eventType == 'session.updated') {
-                      AppLogger.debug('Event: session.updated');
-                      // Session metadata updated - could notify provider
-                    } else if (eventType == 'session.error') {
-                      final properties =
-                          event['properties'] as Map<String, dynamic>?;
-                      final errorSessionId =
-                          properties?['sessionID'] as String?;
-                      if (errorSessionId == sessionId) {
-                        AppLogger.warn('Event: session.error for $sessionId');
-                        final error =
-                            properties?['error'] as Map<String, dynamic>?;
-                        if (error != null) {
-                          final errorName =
-                              error['name'] as String? ?? 'UnknownError';
-                          final errorData =
-                              error['data'] as Map<String, dynamic>?;
-                          final errorMessage =
-                              errorData?['message'] as String? ??
-                              error['message'] as String?;
-                          if (isAbortLikeSessionError(
-                            name: errorName,
-                            message: errorMessage,
-                          )) {
-                            AppLogger.info(
-                              'Ignoring abort-like session.error in send stream session=$sessionId',
-                            );
-                            return;
-                          }
-                          if (!eventController.isClosed) {
-                            eventController.addError(
-                              Exception('Session error: $errorName'),
-                            );
-                          }
-                        }
-                        messageCompleted = true;
-                        maybeCloseEventController(
-                          delay: const Duration(milliseconds: 500),
-                        );
-                      }
-                    } else if (eventType == 'session.idle') {
-                      final properties =
-                          event['properties'] as Map<String, dynamic>?;
-                      if (properties?['sessionID'] == sessionId) {
-                        AppLogger.debug('Event: session.idle for $sessionId');
-                        if (!messageCompleted) {
-                          triggerIdleCompletionFallback('session-idle');
-                        }
-                      }
-                    } else if (eventType == 'session.status') {
-                      final properties =
-                          event['properties'] as Map<String, dynamic>?;
-                      if (properties?['sessionID'] == sessionId) {
-                        final status =
-                            properties?['status'] as Map<String, dynamic>?;
-                        if (status?['type'] == 'idle' && !messageCompleted) {
-                          triggerIdleCompletionFallback('session-status-idle');
-                        }
-                      }
-                    } else if (eventType == 'message.removed') {
-                      AppLogger.debug('Event: message.removed');
-                      // Message removed from session - UI should handle
-                    } else if (eventType == 'message.part.removed') {
-                      final properties =
-                          event['properties'] as Map<String, dynamic>?;
-                      final removedSessionId =
-                          properties?['sessionID'] as String?;
-                      final removedMessageId =
-                          properties?['messageID'] as String?;
-                      if (removedSessionId == sessionId &&
-                          removedMessageId != null) {
-                        activeAssistantMessageId = removedMessageId;
-                        AppLogger.debug(
-                          'Event: message.part.removed $removedMessageId',
-                        );
-                        fetchAndEmitMessage(removedMessageId);
-                      }
-                    } else {
-                      // Other events (file.edited, permission.updated, etc.)
-                      // Logged at debug level, not actionable for mobile client
-                      AppLogger.debug('Event: $eventType (ignored)');
-                    }
-                  } catch (e) {
-                    AppLogger.warn('Failed to parse event', error: e);
-                    AppLogger.debug('Event data: $eventData');
-                  }
-                },
-                onError: (error) {
-                  AppLogger.warn('Event stream error', error: error);
-                  if (!eventController.isClosed) {
-                    eventController.addError(error);
-                  }
-                },
-                onDone: () {
-                  AppLogger.info(
-                    'Send-event stream ended for session=$sessionId',
-                  );
-                  eventStreamEnded = true;
-                  if (!messageCompleted && !eventController.isClosed) {
-                    startFallbackCompletionWatch(
-                      reason: 'send-event-stream-ended',
-                      initialDelay: Duration.zero,
-                    );
-                    return;
-                  }
-                  maybeCloseEventController(
-                    delay: const Duration(milliseconds: 200),
-                  );
-                },
-              );
-        }
-      } catch (e) {
-        AppLogger.warn('Failed to connect to event stream', error: e);
-      }
+      // Per-send SSE intentionally skipped for prompt_async path.
+      // The server monitors per-send SSE connections and aborts the AI agent
+      // when it detects disconnection (e.g. half-open TCP after background
+      // resume). Without per-send SSE, prompt_async processes fully async
+      // and the provider-level SSE + polling handle message delivery.
 
       // Use async send endpoint to avoid cross-session abort coupling.
       final response = await dio.post(
@@ -1266,19 +1011,11 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
       AppLogger.info('Async send request accepted for session=$sessionId');
 
-      if (eventSubscription == null) {
-        AppLogger.info(
-          'No send-event stream available for async send; using polling fallback',
-        );
-        startFallbackCompletionWatch(
-          reason: 'prompt-async-no-sse',
-          initialDelay: Duration.zero,
-        );
-      } else {
-        // Safety net: some servers keep /event connected but may not emit
-        // message events for every request. Prevents stuck "sending".
-        startFallbackCompletionWatch(reason: 'prompt-async-watchdog');
-      }
+      // Polling delivers the response; provider-level SSE handles realtime.
+      startFallbackCompletionWatch(
+        reason: 'prompt-async-polling',
+        initialDelay: Duration.zero,
+      );
 
       await for (final message in eventController.stream) {
         yield message;
@@ -1296,7 +1033,6 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       throw const ServerException('Failed to send message');
     } finally {
       AppLogger.info('Chat send flow finalized for session=$sessionId');
-      eventSubscription?.cancel();
       if (!eventController.isClosed) {
         eventController.close();
       }
