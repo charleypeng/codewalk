@@ -8,7 +8,7 @@ extension _ChatProviderRealtimeOps on ChatProvider {
       return;
     }
     final preserved = List<StreamSubscription<dynamic>>.from(
-      _preservedMessageSubscriptions,
+      _preservedMessageSubscriptions.keys,
     );
     _preservedMessageSubscriptions.clear();
     for (final subscription in preserved) {
@@ -19,6 +19,12 @@ extension _ChatProviderRealtimeOps on ChatProvider {
     }
   }
 
+  /// Whether a preserved (background) stream subscription is still draining
+  /// for [sessionId]. Used by the event reducer to defer completion marking.
+  bool _hasPreservedStreamForSession(String sessionId) {
+    return _preservedMessageSubscriptions.containsValue(sessionId);
+  }
+
   Future<void> _cancelActiveMessageSubscription({
     required String reason,
     bool invalidateGeneration = false,
@@ -26,7 +32,13 @@ extension _ChatProviderRealtimeOps on ChatProvider {
   }) async {
     final active = _messageSubscription;
     if (preserveActiveStream && active != null) {
-      _preservedMessageSubscriptions.add(active);
+      final preservedSessionId = _activeMessageStreamSessionId ?? '';
+      if (preservedSessionId.isEmpty) {
+        AppLogger.warn(
+          'Preserving stream with unknown session ID reason=$reason',
+        );
+      }
+      _preservedMessageSubscriptions[active] = preservedSessionId;
       // Detach from active tracking so the new session starts clean.
       _messageSubscription = null;
       _activeMessageStreamSessionId = null;

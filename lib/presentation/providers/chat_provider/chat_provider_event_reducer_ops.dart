@@ -261,7 +261,15 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           _sessionStatusById[sessionId] = const SessionStatusInfo(
             type: SessionStatusType.idle,
           );
-          _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
+          // Defer completion marking when a preserved stream is still
+          // draining for this session — onDone of that stream handles it.
+          final hasPreserved = _hasPreservedStreamForSession(sessionId);
+          AppLogger.debug(
+            'session.idle session=$sessionId isCurrent=${sessionId == _currentSession?.id} hasPreservedStream=$hasPreserved',
+          );
+          if (!hasPreserved) {
+            _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
+          }
           if (sessionId == _currentSession?.id) {
             _activeMessageStreamSessionId = null;
             _clearActiveSendDraft();
@@ -286,7 +294,15 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           _sessionStatusById[sessionId] = const SessionStatusInfo(
             type: SessionStatusType.idle,
           );
-          _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
+          // Defer completion marking when a preserved stream is still
+          // draining for this session — onDone of that stream handles it.
+          final hasPreservedErr = _hasPreservedStreamForSession(sessionId);
+          AppLogger.debug(
+            'session.error non-current session=$sessionId hasPreservedStream=$hasPreservedErr',
+          );
+          if (!hasPreservedErr) {
+            _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
+          }
           _notifyListeners();
           break;
         }

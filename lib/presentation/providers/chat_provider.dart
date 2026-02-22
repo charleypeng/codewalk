@@ -178,8 +178,10 @@ class ChatProvider extends ChangeNotifier {
   StreamSubscription<dynamic>? _messageSubscription;
   StreamSubscription<dynamic>? _eventSubscription;
   StreamSubscription<dynamic>? _globalEventSubscription;
-  final Set<StreamSubscription<dynamic>> _preservedMessageSubscriptions =
-      <StreamSubscription<dynamic>>{};
+  // Maps preserved stream subscriptions to their originating session ID so
+  // the event reducer can check whether a session still has an active stream.
+  final Map<StreamSubscription<dynamic>, String>
+      _preservedMessageSubscriptions = <StreamSubscription<dynamic>, String>{};
   int _eventStreamGeneration = 0;
   Timer? _globalRefreshDebounce;
   bool _isRespondingInteraction = false;
@@ -1683,10 +1685,14 @@ class ChatProvider extends ChangeNotifier {
 
     await _cancelActiveMessageSubscription(
       reason: 'session-switch',
-      // Keep generation stable so a preserved in-flight stream can continue
-      // delivering updates if the user comes back to the original session.
-      invalidateGeneration: false,
+      // Invalidate generation so preserved stream callbacks become stale and
+      // return early — prevents cross-session message corruption. Messages
+      // are reloaded from server when the user switches back.
+      invalidateGeneration: true,
       preserveActiveStream: true,
+    );
+    AppLogger.debug(
+      'selectSession generation=$_messageStreamGeneration preserved=${_preservedMessageSubscriptions.length} target=${session.id}',
     );
 
     // Clear current message list
@@ -2060,8 +2066,13 @@ class ChatProvider extends ChangeNotifier {
                     _activeMessageStreamSessionId = null;
                   }
                 }
+                // Stream errored while stale — finalize any incomplete messages
+                // that were deferred by the event reducer preserved-stream guard.
+                _markIncompleteAssistantMessagesAsCompleted(
+                  sessionId: streamSessionId,
+                );
                 AppLogger.debug(
-                  'Ignoring stale send stream error generation=$streamGeneration active=$_messageStreamGeneration',
+                  'Stale send stream error — finalized session=$streamSessionId generation=$streamGeneration active=$_messageStreamGeneration',
                 );
                 return;
               }
@@ -2094,8 +2105,13 @@ class ChatProvider extends ChangeNotifier {
                     _activeMessageStreamSessionId = null;
                   }
                 }
+                // Stream finished draining — finalize any incomplete messages
+                // that were deferred by the event reducer preserved-stream guard.
+                _markIncompleteAssistantMessagesAsCompleted(
+                  sessionId: streamSessionId,
+                );
                 AppLogger.debug(
-                  'Ignoring stale send stream completion generation=$streamGeneration active=$_messageStreamGeneration',
+                  'Stale send stream done — finalized session=$streamSessionId generation=$streamGeneration active=$_messageStreamGeneration',
                 );
                 return;
               }
