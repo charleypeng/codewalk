@@ -757,11 +757,11 @@ extension _ChatPageChrome on _ChatPageState {
     if (!closeOnSelect) {
       return;
     }
-    final scaffoldState = Scaffold.maybeOf(context);
-    if (!(scaffoldState?.isDrawerOpen ?? false)) {
+    final scaffoldState = _scaffoldKey.currentState;
+    if (scaffoldState == null || !scaffoldState.isDrawerOpen) {
       return;
     }
-    Navigator.of(context).pop();
+    scaffoldState.closeDrawer();
     await Future<void>.delayed(Duration.zero);
   }
 

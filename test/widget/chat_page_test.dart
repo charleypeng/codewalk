@@ -144,6 +144,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      final scaffoldState = tester.state<ScaffoldState>(
+        find.byType(Scaffold).first,
+      );
+      expect(scaffoldState.isDrawerOpen, isTrue);
+
       expect(find.text('Conversations'), findsOneWidget);
 
       final targetSessionTile = find.byKey(
@@ -163,7 +168,75 @@ void main() {
       );
       expect(provider.currentSession?.id, 'ses_2');
       expect(find.text('Conversations'), findsNothing);
+      expect(scaffoldState.isDrawerOpen, isFalse);
     });
+
+    testWidgets(
+      'mobile selection closes drawer even when session is already active',
+      (WidgetTester tester) async {
+        await tester.binding.setSurfaceSize(const Size(500, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final repository = FakeChatRepository(
+          sessions: <ChatSession>[
+            ChatSession(
+              id: 'ses_active',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              title: 'Active Session',
+            ),
+          ],
+        );
+        repository.messagesBySession['ses_active'] = <ChatMessage>[];
+
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test'
+          ..defaultServerId = 'srv_test'
+          ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 'srv_test',
+              'url': 'http://127.0.0.1:4096',
+              'label': 'Test Server',
+              'basicAuthEnabled': false,
+              'basicAuthUsername': '',
+              'basicAuthPassword': '',
+              'createdAt': 0,
+              'updatedAt': 0,
+            },
+          ]);
+        final provider = _buildChatProvider(
+          chatRepository: repository,
+          localDataSource: localDataSource,
+        );
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+        await tester.pumpWidget(_testApp(provider, appProvider));
+        await tester.pumpAndSettle();
+
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('appbar_drawer_button')),
+        );
+        await tester.pumpAndSettle();
+
+        final scaffoldState = tester.state<ScaffoldState>(
+          find.byType(Scaffold).first,
+        );
+        expect(scaffoldState.isDrawerOpen, isTrue);
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('chat_session_tile_ses_active')),
+        );
+        await tester.pump();
+        await tester.pumpAndSettle();
+
+        expect(provider.currentSession?.id, 'ses_active');
+        expect(scaffoldState.isDrawerOpen, isFalse);
+      },
+    );
 
     testWidgets('delays hamburger alert badge during initial server issues', (
       WidgetTester tester,

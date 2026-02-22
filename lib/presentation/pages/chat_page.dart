@@ -116,6 +116,7 @@ class _ChatPageState extends State<ChatPage>
   final ScrollController _scrollController = ScrollController();
   final FocusNode _inputFocusNode = FocusNode(debugLabel: 'chat_input');
   final ChatInputController _chatInputController = ChatInputController();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final GlobalKey _agentSelectorChipKey = GlobalKey(
     debugLabel: 'agent_selector_chip',
   );
@@ -603,6 +604,7 @@ class _ChatPageState extends State<ChatPage>
             child: Focus(
               autofocus: true,
               child: Scaffold(
+                key: _scaffoldKey,
                 backgroundColor: Theme.of(context).colorScheme.surface,
                 resizeToAvoidBottomInset: true,
                 appBar: _buildAppBar(

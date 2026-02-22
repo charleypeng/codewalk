@@ -196,10 +196,10 @@ extension _ChatPageScaffold on _ChatPageState {
                       currentSession: chatProvider.currentSession,
                       isSessionActive: chatProvider.isSessionActivelyResponding,
                       onSessionSelected: (session) async {
+                        await chatProvider.selectSession(session);
                         await _closeDrawerIfNeeded(
                           closeOnSelect: closeOnSelect,
                         );
-                        await chatProvider.selectSession(session);
                       },
                       onSessionDeleted: (session) async {
                         await chatProvider.deleteSession(session.id);
@@ -232,9 +232,9 @@ extension _ChatPageScaffold on _ChatPageState {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Conversation forked')),
                         );
-                        if (closeOnSelect) {
-                          Navigator.of(context).pop();
-                        }
+                        await _closeDrawerIfNeeded(
+                          closeOnSelect: closeOnSelect,
+                        );
                       },
                     ),
                   ),
