@@ -101,6 +101,12 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     if (!changed) {
       return;
     }
+    // Notify and scroll after completion-triggered work collapse so the
+    // final assistant message stays visible on screen.
+    _notifyListeners();
+    if (!_isCompactingContext) {
+      _scheduleScrollToBottom();
+    }
   }
 
   void _updateOrAddMessage(ChatMessage message) {
