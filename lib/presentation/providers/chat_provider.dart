@@ -124,12 +124,14 @@ class ChatProvider extends ChangeNotifier {
     Duration degradedPollingInterval = const Duration(seconds: 30),
     int degradedFailureThreshold = 3,
     bool refreshlessRealtimeEnabled = FeatureFlags.refreshlessRealtime,
+    Duration abortSuppressionWindow = const Duration(seconds: 8),
   }) {
     _syncSignalStaleThreshold = syncSignalStaleThreshold;
     _syncHealthCheckInterval = syncHealthCheckInterval;
     _degradedPollingInterval = degradedPollingInterval;
     _degradedFailureThreshold = degradedFailureThreshold;
     _refreshlessRealtimeEnabled = refreshlessRealtimeEnabled;
+    _abortSuppressionWindow = abortSuppressionWindow;
     _activeContextKey = _composeContextKey(
       _activeServerId,
       _resolveContextScopeId(),
@@ -291,7 +293,7 @@ class ChatProvider extends ChangeNotifier {
   static const Duration _sessionsCacheTtl = Duration(days: 3);
   static const Duration _lastSessionSnapshotTtl = Duration(days: 7);
   static const int _maxRecentModels = 8;
-  static const Duration _abortSuppressionWindow = Duration(seconds: 8);
+  late final Duration _abortSuppressionWindow;
   static const Duration _remoteSelectionSyncThrottle = Duration(seconds: 2);
   static const Duration _foregroundResumeSyncIndicatorDuration = Duration(
     seconds: 12,

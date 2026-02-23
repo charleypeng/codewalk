@@ -179,6 +179,7 @@ void main() {
     ChatProvider buildProvider({
       DioClient? dioClient,
       Duration syncHealthCheckInterval = const Duration(seconds: 5),
+      Duration abortSuppressionWindow = const Duration(milliseconds: 30),
     }) {
       return ChatProvider(
         sendChatMessage: SendChatMessage(chatRepository),
@@ -212,6 +213,7 @@ void main() {
         localDataSource: localDataSource,
         dioClient: dioClient,
         syncHealthCheckInterval: syncHealthCheckInterval,
+        abortSuppressionWindow: abortSuppressionWindow,
       );
     }
 
@@ -5700,6 +5702,522 @@ void main() {
           expect(provider.messages, isEmpty);
           // Stream is still alive.
           expect(streamCancelled, isFalse);
+        },
+      );
+    });
+
+    group('selection sync deferral during abort suppression', () {
+      // Shared setup: 2 providers (for model switch), agent with 'build',
+      // controllable send stream via StreamController, and a short
+      // abortSuppressionWindow (50ms) to keep tests fast.
+      late _RecordingDioClient dioClient;
+
+      /// Bootstraps the provider with controllable stream support.
+      /// Returns a [StreamController] that the test can close manually
+      /// to trigger onDone → _startAbortSuppression.
+      Future<StreamController<Either<Failure, ChatMessage>>>
+          initWithControllableStream({
+        Duration abortSuppressionWindow = const Duration(milliseconds: 50),
+      }) async {
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'model_a': _model('model_a')},
+              ),
+              Provider(
+                id: 'provider_b',
+                name: 'Provider B',
+                env: const <String>[],
+                models: <String, Model>{'model_b': _model('model_b')},
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a', 'provider_b'],
+          ),
+        );
+        appRepository.agentsResult = const Right(<Agent>[
+          Agent(name: 'build', mode: 'primary', hidden: false, native: false),
+        ]);
+
+        dioClient = _RecordingDioClient(
+          configResponse: <String, dynamic>{
+            'model': 'provider_a/model_a',
+            'default_agent': 'build',
+          },
+        );
+        provider = buildProvider(
+          dioClient: dioClient,
+          syncHealthCheckInterval: const Duration(milliseconds: 50),
+          abortSuppressionWindow: abortSuppressionWindow,
+        );
+
+        final sendStreamController =
+            StreamController<Either<Failure, ChatMessage>>();
+
+        chatRepository.sendMessageHandler = (_, sessionId, __, ___) {
+          // Emit one assistant message, then leave stream open for the test
+          // to close manually.
+          sendStreamController.add(
+            Right(
+              AssistantMessage(
+                id: 'msg_a_1',
+                sessionId: sessionId,
+                time: DateTime.now(),
+                completedTime: DateTime.now(),
+                parts: <MessagePart>[
+                  TextPart(
+                    id: 'p1',
+                    messageId: 'msg_a_1',
+                    sessionId: sessionId,
+                    text: 'ok',
+                  ),
+                ],
+              ),
+            ),
+          );
+          return sendStreamController.stream;
+        };
+
+        await provider.initializeProviders();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        dioClient.patchBodies.clear();
+
+        return sendStreamController;
+      }
+
+      bool _hasModelBPatch() {
+        return dioClient.patchBodies.whereType<Map<String, dynamic>>().any(
+          (body) {
+            final selection = _selectionPayloadFromPatch(body);
+            return selection?['providerId'] == 'provider_b' &&
+                selection?['modelId'] == 'model_b';
+          },
+        );
+      }
+
+      test('selection sync deferred when abort suppression is active', () async {
+        final sendStream = await initWithControllableStream();
+
+        // Start a send — stream stays open while the controller is open
+        await provider.sendMessage('hello');
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        // Close stream → triggers onDone → _startAbortSuppression
+        await sendStream.close();
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        // Switch model while abort suppression is active (window = 50ms)
+        await provider.setSelectedModelByProvider(
+          providerId: 'provider_b',
+          modelId: 'model_b',
+        );
+
+        // Patch should NOT have been sent (deferred by abort suppression)
+        expect(_hasModelBPatch(), isFalse);
+      });
+
+      test(
+        'selection sync fires after abort suppression window expires',
+        () async {
+          final sendStream = await initWithControllableStream();
+
+          await provider.sendMessage('hello');
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+          await sendStream.close();
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+
+          // Switch model while suppression is active
+          await provider.setSelectedModelByProvider(
+            providerId: 'provider_b',
+            modelId: 'model_b',
+          );
+          expect(_hasModelBPatch(), isFalse);
+
+          // Wait for suppression window (50ms) to expire + margin
+          await Future<void>.delayed(const Duration(milliseconds: 80));
+
+          // Emit session.idle to trigger _attemptPendingRemoteSelectionSync
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'session.status',
+              properties: <String, dynamic>{
+                'sessionID': 'ses_1',
+                'status': <String, dynamic>{'type': 'idle'},
+              },
+            ),
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 40));
+
+          // Patch should have been flushed now
+          expect(_hasModelBPatch(), isTrue);
+        },
+      );
+
+      test(
+        'selection sync deferred when SSE reports busy after window expires',
+        () async {
+          final sendStream = await initWithControllableStream();
+
+          await provider.sendMessage('hello');
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+          await sendStream.close();
+
+          // Wait for suppression window to expire
+          await Future<void>.delayed(const Duration(milliseconds: 80));
+
+          // SSE reports busy — this guard takes over from abort suppression
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'session.status',
+              properties: <String, dynamic>{
+                'sessionID': 'ses_1',
+                'status': <String, dynamic>{'type': 'busy'},
+              },
+            ),
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+
+          // Switch model while busy
+          await provider.setSelectedModelByProvider(
+            providerId: 'provider_b',
+            modelId: 'model_b',
+          );
+          expect(_hasModelBPatch(), isFalse);
+
+          // SSE reports idle — flush should happen
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'session.status',
+              properties: <String, dynamic>{
+                'sessionID': 'ses_1',
+                'status': <String, dynamic>{'type': 'idle'},
+              },
+            ),
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 40));
+
+          expect(_hasModelBPatch(), isTrue);
+        },
+      );
+
+      test(
+        'abort suppression via abortActiveResponse also defers sync',
+        () async {
+          final sendStream = await initWithControllableStream();
+
+          await provider.sendMessage('hello');
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+
+          // Abort while stream is open — calls _startAbortSuppression
+          await provider.abortActiveResponse();
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+
+          // Close the stream (abort already cancelled the subscription
+          // but the controller may still be open)
+          await sendStream.close();
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+
+          // Switch model while abort suppression is active
+          await provider.setSelectedModelByProvider(
+            providerId: 'provider_b',
+            modelId: 'model_b',
+          );
+
+          expect(_hasModelBPatch(), isFalse);
+        },
+      );
+
+      test(
+        'abort suppression for session A does not block sync on session B',
+        () async {
+          // Add a second session before initializing the provider
+          chatRepository.sessions.add(
+            ChatSession(
+              id: 'ses_2',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(2000),
+              title: 'Session 2',
+            ),
+          );
+
+          appRepository.providersResult = Right(
+            ProvidersResponse(
+              providers: <Provider>[
+                Provider(
+                  id: 'provider_a',
+                  name: 'Provider A',
+                  env: const <String>[],
+                  models: <String, Model>{'model_a': _model('model_a')},
+                ),
+                Provider(
+                  id: 'provider_b',
+                  name: 'Provider B',
+                  env: const <String>[],
+                  models: <String, Model>{'model_b': _model('model_b')},
+                ),
+              ],
+              defaultModels: const <String, String>{'provider_a': 'model_a'},
+              connected: const <String>['provider_a', 'provider_b'],
+            ),
+          );
+          appRepository.agentsResult = const Right(<Agent>[
+            Agent(
+              name: 'build',
+              mode: 'primary',
+              hidden: false,
+              native: false,
+            ),
+          ]);
+
+          dioClient = _RecordingDioClient(
+            configResponse: <String, dynamic>{
+              'model': 'provider_a/model_a',
+              'default_agent': 'build',
+            },
+          );
+          provider = buildProvider(
+            dioClient: dioClient,
+            syncHealthCheckInterval: const Duration(seconds: 10),
+            abortSuppressionWindow: const Duration(milliseconds: 50),
+          );
+
+          final sendStreamController =
+              StreamController<Either<Failure, ChatMessage>>();
+          chatRepository.sendMessageHandler = (_, sessionId, __, ___) {
+            sendStreamController.add(
+              Right(
+                AssistantMessage(
+                  id: 'msg_a_1',
+                  sessionId: sessionId,
+                  time: DateTime.now(),
+                  completedTime: DateTime.now(),
+                  parts: <MessagePart>[
+                    TextPart(
+                      id: 'p1',
+                      messageId: 'msg_a_1',
+                      sessionId: sessionId,
+                      text: 'ok',
+                    ),
+                  ],
+                ),
+              ),
+            );
+            return sendStreamController.stream;
+          };
+
+          await provider.initializeProviders();
+          await provider.loadSessions();
+
+          // Select ses_1 and send — abort suppression activates for ses_1
+          final session1 =
+              provider.sessions.firstWhere((s) => s.id == 'ses_1');
+          await provider.selectSession(session1);
+          await provider.sendMessage('hello');
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+          await sendStreamController.close();
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+
+          // Verify abort suppression blocks sync on ses_1
+          dioClient.patchBodies.clear();
+          await provider.setSelectedModelByProvider(
+            providerId: 'provider_b',
+            modelId: 'model_b',
+          );
+          expect(_hasModelBPatch(), isFalse);
+
+          // Switch to ses_2 — abort suppression should NOT apply
+          final session2 =
+              provider.sessions.firstWhere((s) => s.id == 'ses_2');
+          await provider.selectSession(session2);
+
+          // Reset model to provider_a on ses_2 context so we can verify
+          // an immediate sync when switching to provider_b.
+          await provider.setSelectedModelByProvider(
+            providerId: 'provider_a',
+            modelId: 'model_a',
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+          dioClient.patchBodies.clear();
+
+          await provider.setSelectedModelByProvider(
+            providerId: 'provider_b',
+            modelId: 'model_b',
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 80));
+
+          expect(_hasModelBPatch(), isTrue);
+        },
+      );
+
+      test(
+        'session.error during abort suppression does not trigger premature sync',
+        () async {
+          final sendStream = await initWithControllableStream();
+
+          await provider.sendMessage('hello');
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+          await sendStream.close();
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+
+          // Switch model — gets deferred
+          await provider.setSelectedModelByProvider(
+            providerId: 'provider_b',
+            modelId: 'model_b',
+          );
+          expect(_hasModelBPatch(), isFalse);
+
+          // Emit session.error with abort-like message during suppression
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'session.error',
+              properties: <String, dynamic>{
+                'sessionID': 'ses_1',
+                'error': <String, dynamic>{
+                  'message': 'Request was aborted',
+                },
+              },
+            ),
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+
+          // Sync should still NOT have fired (suppression still active)
+          expect(_hasModelBPatch(), isFalse);
+
+          // Wait for window to expire + emit idle to flush
+          await Future<void>.delayed(const Duration(milliseconds: 60));
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'session.status',
+              properties: <String, dynamic>{
+                'sessionID': 'ses_1',
+                'status': <String, dynamic>{'type': 'idle'},
+              },
+            ),
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 40));
+
+          expect(_hasModelBPatch(), isTrue);
+        },
+      );
+
+      test(
+        'multiple selection changes during suppression are coalesced',
+        () async {
+          final sendStream = await initWithControllableStream();
+
+          await provider.sendMessage('hello');
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+          await sendStream.close();
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+
+          // Rapid-fire model switches during suppression window
+          await provider.setSelectedModelByProvider(
+            providerId: 'provider_b',
+            modelId: 'model_b',
+          );
+          await provider.setSelectedModelByProvider(
+            providerId: 'provider_a',
+            modelId: 'model_a',
+          );
+          await provider.setSelectedModelByProvider(
+            providerId: 'provider_b',
+            modelId: 'model_b',
+          );
+
+          // Nothing flushed yet
+          expect(_hasModelBPatch(), isFalse);
+
+          // Wait for window to expire + emit idle
+          await Future<void>.delayed(const Duration(milliseconds: 80));
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'session.status',
+              properties: <String, dynamic>{
+                'sessionID': 'ses_1',
+                'status': <String, dynamic>{'type': 'idle'},
+              },
+            ),
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 40));
+
+          // All patches from a single coalesced flush should reflect the
+          // FINAL selection (provider_b/model_b). None should contain the
+          // intermediate provider_a/model_a — that proves the 3 rapid changes
+          // were collapsed into a single sync transaction.
+          final selectionPatches = dioClient.patchBodies
+              .whereType<Map<String, dynamic>>()
+              .where((body) => _selectionPayloadFromPatch(body) != null)
+              .toList();
+          expect(selectionPatches, isNotEmpty);
+
+          // No patch should carry the intermediate provider_a/model_a
+          final hasIntermediateModelA = selectionPatches.any((body) {
+            final sel = _selectionPayloadFromPatch(body);
+            return sel?['providerId'] == 'provider_a' &&
+                sel?['modelId'] == 'model_a';
+          });
+          expect(hasIntermediateModelA, isFalse);
+
+          // All patches should reflect the final provider_b/model_b
+          for (final body in selectionPatches) {
+            final sel = _selectionPayloadFromPatch(body);
+            expect(sel?['providerId'], 'provider_b');
+            expect(sel?['modelId'], 'model_b');
+          }
+        },
+      );
+
+      test(
+        'completed send without active session does not defer sync',
+        () async {
+          // Setup providers without selecting a session
+          appRepository.providersResult = Right(
+            ProvidersResponse(
+              providers: <Provider>[
+                Provider(
+                  id: 'provider_a',
+                  name: 'Provider A',
+                  env: const <String>[],
+                  models: <String, Model>{'model_a': _model('model_a')},
+                ),
+                Provider(
+                  id: 'provider_b',
+                  name: 'Provider B',
+                  env: const <String>[],
+                  models: <String, Model>{'model_b': _model('model_b')},
+                ),
+              ],
+              defaultModels: const <String, String>{'provider_a': 'model_a'},
+              connected: const <String>['provider_a', 'provider_b'],
+            ),
+          );
+
+          dioClient = _RecordingDioClient(
+            configResponse: <String, dynamic>{
+              'model': 'provider_a/model_a',
+            },
+          );
+          provider = buildProvider(
+            dioClient: dioClient,
+            abortSuppressionWindow: const Duration(milliseconds: 50),
+          );
+
+          await provider.initializeProviders();
+          dioClient.patchBodies.clear();
+
+          // Switch model without any session selected — no deferral
+          await provider.setSelectedModelByProvider(
+            providerId: 'provider_b',
+            modelId: 'model_b',
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 40));
+
+          expect(_hasModelBPatch(), isTrue);
         },
       );
     });

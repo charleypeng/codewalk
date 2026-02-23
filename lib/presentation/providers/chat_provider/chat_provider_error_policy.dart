@@ -48,7 +48,7 @@ extension _ChatProviderErrorPolicy on ChatProvider {
     }
     final startedAt = _abortSuppressionStartedAt!;
     if (DateTime.now().difference(startedAt) >
-        ChatProvider._abortSuppressionWindow) {
+        _abortSuppressionWindow) {
       _clearAbortSuppression();
       return false;
     }
