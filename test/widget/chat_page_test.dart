@@ -5925,15 +5925,316 @@ void main() {
       'Renamed Inline',
     );
   });
+
+  testWidgets(
+    'mobile keyboard temporarily collapses task panel and restores expansion',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      const sessionId = 'ses_todo_keyboard_restore';
+      const baseMediaQueryData = MediaQueryData(size: Size(390, 844));
+      final keyboardMediaQueryData = baseMediaQueryData.copyWith(
+        viewInsets: const EdgeInsets.only(bottom: 280),
+      );
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: sessionId,
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Todo keyboard restore session',
+          ),
+        ],
+      );
+      repository.messagesBySession[sessionId] = <ChatMessage>[];
+      repository.sessionTodoById[sessionId] = const <SessionTodo>[
+        SessionTodo(
+          id: 'todo_restore_1',
+          content: 'Todo',
+          status: 'in_progress',
+          priority: 'medium',
+        ),
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+      final settingsProvider = SettingsProvider(
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        soundService: SoundService(),
+      );
+      await settingsProvider.initialize();
+      addTearDown(settingsProvider.dispose);
+
+      await tester.pumpWidget(
+        _testApp(
+          provider,
+          appProvider,
+          settingsProvider: settingsProvider,
+          mediaQueryData: baseMediaQueryData,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tasks (1)'), findsOneWidget);
+      expect(find.text('Task 1/1 Todo'), findsNothing);
+      expect(settingsProvider.taskListCollapsed, isFalse);
+
+      await tester.pumpWidget(
+        _testApp(
+          provider,
+          appProvider,
+          settingsProvider: settingsProvider,
+          mediaQueryData: keyboardMediaQueryData,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Task 1/1 Todo'), findsOneWidget);
+      expect(find.text('Tasks (1)'), findsNothing);
+      expect(settingsProvider.taskListCollapsed, isFalse);
+
+      await tester.pumpWidget(
+        _testApp(
+          provider,
+          appProvider,
+          settingsProvider: settingsProvider,
+          mediaQueryData: baseMediaQueryData,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tasks (1)'), findsOneWidget);
+      expect(find.text('Task 1/1 Todo'), findsNothing);
+      expect(settingsProvider.taskListCollapsed, isFalse);
+    },
+  );
+
+  testWidgets(
+    'mobile task panel remains collapsed after keyboard closes when preference is collapsed',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      const sessionId = 'ses_todo_keyboard_keep_collapsed';
+      const baseMediaQueryData = MediaQueryData(size: Size(390, 844));
+      final keyboardMediaQueryData = baseMediaQueryData.copyWith(
+        viewInsets: const EdgeInsets.only(bottom: 280),
+      );
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: sessionId,
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Todo keyboard keep collapsed session',
+          ),
+        ],
+      );
+      repository.messagesBySession[sessionId] = <ChatMessage>[];
+      repository.sessionTodoById[sessionId] = const <SessionTodo>[
+        SessionTodo(
+          id: 'todo_collapsed_1',
+          content: 'Todo',
+          status: 'in_progress',
+          priority: 'medium',
+        ),
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+      final settingsProvider = SettingsProvider(
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        soundService: SoundService(),
+      );
+      await settingsProvider.initialize();
+      addTearDown(settingsProvider.dispose);
+
+      await tester.pumpWidget(
+        _testApp(
+          provider,
+          appProvider,
+          settingsProvider: settingsProvider,
+          mediaQueryData: baseMediaQueryData,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tasks (1)'), findsOneWidget);
+      await tester.tap(find.text('Tasks (1)'));
+      await tester.pumpAndSettle();
+
+      expect(settingsProvider.taskListCollapsed, isTrue);
+      expect(find.text('Task 1/1 Todo'), findsOneWidget);
+
+      await tester.pumpWidget(
+        _testApp(
+          provider,
+          appProvider,
+          settingsProvider: settingsProvider,
+          mediaQueryData: keyboardMediaQueryData,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Task 1/1 Todo'), findsOneWidget);
+
+      await tester.pumpWidget(
+        _testApp(
+          provider,
+          appProvider,
+          settingsProvider: settingsProvider,
+          mediaQueryData: baseMediaQueryData,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(settingsProvider.taskListCollapsed, isTrue);
+      expect(find.text('Task 1/1 Todo'), findsOneWidget);
+      expect(find.text('Tasks (1)'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'tapping task panel while keyboard is open does not persist collapse toggle',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      const sessionId = 'ses_todo_keyboard_toggle_guard';
+      const baseMediaQueryData = MediaQueryData(size: Size(390, 844));
+      final keyboardMediaQueryData = baseMediaQueryData.copyWith(
+        viewInsets: const EdgeInsets.only(bottom: 280),
+      );
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: sessionId,
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Todo keyboard toggle guard session',
+          ),
+        ],
+      );
+      repository.messagesBySession[sessionId] = <ChatMessage>[];
+      repository.sessionTodoById[sessionId] = const <SessionTodo>[
+        SessionTodo(
+          id: 'todo_toggle_guard_1',
+          content: 'Todo',
+          status: 'in_progress',
+          priority: 'medium',
+        ),
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+      final settingsProvider = SettingsProvider(
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        soundService: SoundService(),
+      );
+      await settingsProvider.initialize();
+      addTearDown(settingsProvider.dispose);
+
+      await tester.pumpWidget(
+        _testApp(
+          provider,
+          appProvider,
+          settingsProvider: settingsProvider,
+          mediaQueryData: baseMediaQueryData,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      expect(settingsProvider.taskListCollapsed, isFalse);
+
+      await tester.pumpWidget(
+        _testApp(
+          provider,
+          appProvider,
+          settingsProvider: settingsProvider,
+          mediaQueryData: keyboardMediaQueryData,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Task 1/1 Todo'), findsOneWidget);
+      await tester.tap(find.text('Task 1/1 Todo'));
+      await tester.pumpAndSettle();
+
+      expect(settingsProvider.taskListCollapsed, isFalse);
+
+      await tester.pumpWidget(
+        _testApp(
+          provider,
+          appProvider,
+          settingsProvider: settingsProvider,
+          mediaQueryData: baseMediaQueryData,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(settingsProvider.taskListCollapsed, isFalse);
+      expect(find.text('Tasks (1)'), findsOneWidget);
+      expect(find.text('Task 1/1 Todo'), findsNothing);
+    },
+  );
 }
 
-Widget _testApp(ChatProvider provider, AppProvider appProvider) {
-  final settingsProvider = SettingsProvider(
-    localDataSource: provider.localDataSource,
-    dioClient: DioClient(),
-    soundService: SoundService(),
-  );
-  unawaited(settingsProvider.initialize());
+Widget _testApp(
+  ChatProvider provider,
+  AppProvider appProvider, {
+  SettingsProvider? settingsProvider,
+  MediaQueryData? mediaQueryData,
+}) {
+  final effectiveSettingsProvider =
+      settingsProvider ??
+      SettingsProvider(
+        localDataSource: provider.localDataSource,
+        dioClient: DioClient(),
+        soundService: SoundService(),
+      );
+  if (settingsProvider == null) {
+    unawaited(effectiveSettingsProvider.initialize());
+  }
+
+  Widget home = const ChatPage();
+  if (mediaQueryData != null) {
+    home = MediaQuery(data: mediaQueryData, child: home);
+  }
+
   return MultiProvider(
     providers: [
       ChangeNotifierProvider<ChatProvider>.value(value: provider),
@@ -5941,9 +6242,11 @@ Widget _testApp(ChatProvider provider, AppProvider appProvider) {
       ChangeNotifierProvider<ProjectProvider>.value(
         value: provider.projectProvider,
       ),
-      ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
+      ChangeNotifierProvider<SettingsProvider>.value(
+        value: effectiveSettingsProvider,
+      ),
     ],
-    child: const MaterialApp(home: ChatPage()),
+    child: MaterialApp(home: home),
   );
 }
 

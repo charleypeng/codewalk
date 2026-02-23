@@ -154,6 +154,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                   final sp = context.watch<SettingsProvider>();
                   final sizeClass = context.windowSizeClass;
                   final isMobile = sizeClass.isCompact;
+                  final isKeyboardOpen =
+                      MediaQuery.viewInsetsOf(context).bottom > 0;
                   final utilityPaneVisible =
                       sizeClass.isAtLeastLarge &&
                       sp.isDesktopPaneVisible(DesktopPane.utility);
@@ -162,7 +164,12 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                       (!isMobile && utilityPaneVisible)) {
                     return const SizedBox.shrink();
                   }
-                  return _buildInlineTodoCard(context, chatProvider, sp);
+                  return _buildInlineTodoCard(
+                    context,
+                    chatProvider,
+                    sp,
+                    forceCollapsed: isMobile && isKeyboardOpen,
+                  );
                 },
               ),
               // Message list
