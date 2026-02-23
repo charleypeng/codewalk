@@ -92,7 +92,7 @@ void main() {
     expect(find.text('Enable experimental multi-device sync'), findsOneWidget);
     expect(
       find.text(
-        'Can abort on-going sessions when working in more than one session at the same time.',
+        'Can abort ongoing sessions when working in more than one session at the same time.',
       ),
       findsOneWidget,
     );

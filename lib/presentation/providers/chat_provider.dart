@@ -444,7 +444,7 @@ class ChatProvider extends ChangeNotifier {
   }
 
   bool get _isExperimentalMultiDeviceSyncEnabled {
-    return settingsProvider?.enableExperimentalMultiDeviceSync ?? true;
+    return settingsProvider?.enableExperimentalMultiDeviceSync ?? false;
   }
 
   bool get _hasLocalActiveSelectionSyncWork {

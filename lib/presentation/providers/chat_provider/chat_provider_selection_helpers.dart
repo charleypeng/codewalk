@@ -321,7 +321,12 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
       );
       _lastSyncedRemoteVariantKey = syncKey;
       return true;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to sync selection to remote config',
+        error: error,
+        stackTrace: stackTrace,
+      );
       // Remote sync is best-effort; local state remains source of truth.
       return false;
     }

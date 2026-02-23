@@ -47,7 +47,7 @@ class BehaviorSettingsSection extends StatelessWidget {
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'Can abort on-going sessions when working in more than one session at the same time.',
+                        'Can abort ongoing sessions when working in more than one session at the same time.',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),

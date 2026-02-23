@@ -178,6 +178,7 @@ void main() {
     late FakeAppRepository appRepository;
     late InMemoryAppLocalDataSource localDataSource;
     late ChatProvider provider;
+    late SettingsProvider defaultSettingsProvider;
 
     ChatProvider buildProvider({
       DioClient? dioClient,
@@ -215,7 +216,7 @@ void main() {
           localDataSource: localDataSource,
         ),
         localDataSource: localDataSource,
-        settingsProvider: settingsProvider,
+        settingsProvider: settingsProvider ?? defaultSettingsProvider,
         dioClient: dioClient,
         syncHealthCheckInterval: syncHealthCheckInterval,
         abortSuppressionWindow: abortSuppressionWindow,
@@ -242,7 +243,7 @@ void main() {
       return settingsProvider;
     }
 
-    setUp(() {
+    setUp(() async {
       chatRepository = FakeChatRepository(
         sessions: <ChatSession>[
           ChatSession(
@@ -256,6 +257,18 @@ void main() {
       appRepository = FakeAppRepository();
       localDataSource = InMemoryAppLocalDataSource();
       localDataSource.activeServerId = 'srv_test';
+
+      localDataSource.experienceSettingsJson = jsonEncode(
+        ExperienceSettings.defaults()
+            .copyWith(enableExperimentalMultiDeviceSync: true)
+            .toJson(),
+      );
+      defaultSettingsProvider = SettingsProvider(
+        localDataSource: localDataSource,
+        dioClient: _RecordingDioClient(),
+        soundService: SoundService(),
+      );
+      await defaultSettingsProvider.initialize();
 
       provider = buildProvider();
     });
