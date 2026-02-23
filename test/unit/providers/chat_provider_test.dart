@@ -6680,6 +6680,7 @@ void main() {
           await provider.projectProvider.initializeProject();
           await provider.loadSessions();
           await provider.selectSession(provider.sessions.first);
+          await provider.initializeProviders();
 
           final versionBeforeEvent = provider.messagesVersion;
 
@@ -6828,6 +6829,7 @@ void main() {
           await provider.projectProvider.initializeProject();
           await provider.loadSessions();
           await provider.selectSession(provider.sessions.first);
+          await provider.initializeProviders();
 
           final versionBeforeEvent = provider.messagesVersion;
           const updatedPart = TextPart(
