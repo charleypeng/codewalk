@@ -37,7 +37,7 @@
   - [x] Fix intermittent stale project selection in "Project Context": after switching projects, the UI must always reflect the newly selected project without requiring reopening the dialog and selecting again. — `4902506`
   - [x] Add project/workspace context cache to enable faster switching between recently used projects. — `6f8d167`
   - [ ] Replace the current project selection dialog with an inline rich select/dropdown component.
-  - [ ] Investigate and fix project-switch navigation regression (including while app is busy): after changing project, navigation sometimes reopens a sub-conversation from the main session instead of restoring the primary conversation the user was previously viewing.
+- [x] Investigate and fix project-switch navigation regression (including while app is busy): after changing project, navigation sometimes reopens a sub-conversation from the main session instead of restoring the primary conversation the user was previously viewing. — Related commits: e92b287 2facf4f ac0759c cb324c4 77592fa
   - [ ] Context knob shows only the number (without `%`), while popover keeps `%`.
 
 - **Group 3 — Chat UX, Composer, and Tool Bubble Polish** [~]

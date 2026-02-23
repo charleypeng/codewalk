@@ -2,6 +2,7 @@ import 'package:codewalk/domain/entities/chat_realtime.dart';
 import 'package:codewalk/presentation/widgets/permission_request_card.dart';
 import 'package:codewalk/presentation/widgets/question_request_card.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -105,5 +106,124 @@ void main() {
     await tester.tap(find.text('Confirm Reject'));
     await tester.pump();
     expect(rejected, isTrue);
+  });
+
+  testWidgets('QuestionRequestCard supports desktop keyboard shortcuts', (
+    WidgetTester tester,
+  ) async {
+    List<List<String>>? submitted;
+    const request = ChatQuestionRequest(
+      id: 'q_keyboard_1',
+      sessionId: 'ses_1',
+      questions: <ChatQuestionInfo>[
+        ChatQuestionInfo(
+          question: 'Pick one option',
+          header: 'Keyboard',
+          options: <ChatQuestionOption>[
+            ChatQuestionOption(label: 'Alpha', description: 'Option alpha'),
+            ChatQuestionOption(label: 'Beta', description: 'Option beta'),
+          ],
+          multiple: false,
+          custom: false,
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: QuestionRequestCard(
+            request: request,
+            busy: false,
+            onSubmit: (answers) => submitted = answers,
+            onReject: () {},
+          ),
+        ),
+      ),
+    );
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.altLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyR);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
+    await tester.pump();
+    expect(find.text('Reopen'), findsOneWidget);
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.altLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyR);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
+    await tester.pump();
+    expect(find.text('Review Answers'), findsOneWidget);
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.altLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
+    await tester.pump();
+    expect(find.text('Submit Answers'), findsOneWidget);
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.altLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
+    await tester.pump();
+
+    expect(submitted, const <List<String>>[
+      <String>['Alpha'],
+    ]);
+  });
+
+  testWidgets('QuestionRequestCard ignores shortcuts while busy', (
+    WidgetTester tester,
+  ) async {
+    List<List<String>>? submitted;
+    var rejected = false;
+    const request = ChatQuestionRequest(
+      id: 'q_keyboard_busy_1',
+      sessionId: 'ses_1',
+      questions: <ChatQuestionInfo>[
+        ChatQuestionInfo(
+          question: 'Pick one option',
+          header: 'Keyboard',
+          options: <ChatQuestionOption>[
+            ChatQuestionOption(label: 'Alpha', description: 'Option alpha'),
+            ChatQuestionOption(label: 'Beta', description: 'Option beta'),
+          ],
+          multiple: false,
+          custom: false,
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: QuestionRequestCard(
+            request: request,
+            busy: true,
+            onSubmit: (answers) => submitted = answers,
+            onReject: () => rejected = true,
+          ),
+        ),
+      ),
+    );
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.altLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyR);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.altLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
+    await tester.pump();
+
+    expect(find.text('Reopen'), findsNothing);
+    expect(find.text('Review your answers before submitting.'), findsNothing);
+    expect(submitted, isNull);
+    expect(rejected, isFalse);
   });
 }

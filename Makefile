@@ -210,6 +210,9 @@ analyze:
 	bash tool/ci/check_analyze_budget.sh $(ANALYZE_LOG) 186
 
 test:
+	flutter test --no-pub $(QUIET)
+
+test-parallel:
 	flutter test --no-pub -j $(TEST_JOBS) $(QUIET)
 
 test-fast:

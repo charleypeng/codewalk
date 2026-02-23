@@ -1084,48 +1084,45 @@ void main() {
       },
     );
 
-    test(
-      'sendMessage does not forward local messageId to server',
-      () async {
-        final now = DateTime.now();
-        String? echoedMessageId;
+    test('sendMessage does not forward local messageId to server', () async {
+      final now = DateTime.now();
+      String? echoedMessageId;
 
-        chatRepository.sendMessageHandler = (_, __, input, ___) async* {
-          echoedMessageId = input.messageId;
-          yield Right(
-            UserMessage(
-              id: 'msg_server_user_1',
-              sessionId: 'ses_1',
-              time: now.add(const Duration(seconds: 1)),
-              parts: <MessagePart>[
-                TextPart(
-                  id: 'prt_user_server_1',
-                  messageId: 'msg_server_user_1',
-                  sessionId: 'ses_1',
-                  text: 'hello stable id',
-                ),
-              ],
-            ),
-          );
-        };
+      chatRepository.sendMessageHandler = (_, __, input, ___) async* {
+        echoedMessageId = input.messageId;
+        yield Right(
+          UserMessage(
+            id: 'msg_server_user_1',
+            sessionId: 'ses_1',
+            time: now.add(const Duration(seconds: 1)),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'prt_user_server_1',
+                messageId: 'msg_server_user_1',
+                sessionId: 'ses_1',
+                text: 'hello stable id',
+              ),
+            ],
+          ),
+        );
+      };
 
-        await provider.projectProvider.initializeProject();
-        await provider.loadSessions();
-        await provider.selectSession(provider.sessions.first);
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
 
-        await provider.sendMessage('hello stable id');
-        await Future<void>.delayed(const Duration(milliseconds: 30));
+      await provider.sendMessage('hello stable id');
+      await Future<void>.delayed(const Duration(milliseconds: 30));
 
-        // messageId must not be sent to the server.
-        expect(echoedMessageId, isNull);
-        expect(provider.state, ChatState.loaded);
-        // Reconciliation by content signature deduplicates the optimistic message.
-        expect(provider.messages.whereType<UserMessage>(), hasLength(1));
-        final userMessage = provider.messages.single as UserMessage;
-        expect(userMessage.id, 'msg_server_user_1');
-        expect((userMessage.parts.single as TextPart).text, 'hello stable id');
-      },
-    );
+      // messageId must not be sent to the server.
+      expect(echoedMessageId, isNull);
+      expect(provider.state, ChatState.loaded);
+      // Reconciliation by content signature deduplicates the optimistic message.
+      expect(provider.messages.whereType<UserMessage>(), hasLength(1));
+      final userMessage = provider.messages.single as UserMessage;
+      expect(userMessage.id, 'msg_server_user_1');
+      expect((userMessage.parts.single as TextPart).text, 'hello stable id');
+    });
 
     test(
       'sendMessage dedupes optimistic attachment message when server file URL differs',
@@ -1455,13 +1452,31 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 10));
 
         // There must be exactly one UserMessage (the server version).
-        final userMessages = provider.messages.whereType<UserMessage>().toList();
+        final userMessages = provider.messages
+            .whereType<UserMessage>()
+            .toList();
         expect(
           userMessages,
           hasLength(1),
           reason: 'User message was duplicated during active session refresh',
         );
         expect(userMessages.single.id, 'msg_server_user');
+
+        // Assistant tail message must also stay de-duplicated after refresh.
+        final assistantMessages = provider.messages
+            .whereType<AssistantMessage>()
+            .toList();
+        expect(
+          assistantMessages,
+          hasLength(1),
+          reason:
+              'Assistant message was duplicated during active session refresh',
+        );
+        expect(assistantMessages.single.id, 'msg_assistant_partial');
+        expect(
+          (assistantMessages.single.parts.single as TextPart).text,
+          'still thinking...',
+        );
       },
     );
   });

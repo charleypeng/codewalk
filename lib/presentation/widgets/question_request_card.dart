@@ -1,7 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../domain/entities/chat_realtime.dart';
+
+class _QuestionPrimaryIntent extends Intent {
+  const _QuestionPrimaryIntent();
+}
+
+class _QuestionBackIntent extends Intent {
+  const _QuestionBackIntent();
+}
+
+class _QuestionRejectIntent extends Intent {
+  const _QuestionRejectIntent();
+}
 
 class QuestionRequestCard extends StatefulWidget {
   const QuestionRequestCard({
@@ -164,6 +177,86 @@ class _QuestionRequestCardState extends State<QuestionRequestCard> {
     });
   }
 
+  void _invokePrimaryAction() {
+    if (widget.busy) {
+      return;
+    }
+    if (_showRejectedState) {
+      // In rejected mode, the primary shortcut confirms server-side reject.
+      widget.onReject();
+      return;
+    }
+    if (_isReviewStep) {
+      widget.onSubmit(_buildAnswers());
+      return;
+    }
+    _goToNextStep();
+  }
+
+  void _invokeBackAction() {
+    if (widget.busy) {
+      return;
+    }
+    if (_showRejectedState) {
+      _reopenRejectedQuestion();
+      return;
+    }
+    _goToPreviousStep();
+  }
+
+  void _invokeRejectAction() {
+    if (widget.busy) {
+      return;
+    }
+    if (_showRejectedState) {
+      // Alt+R toggles reject mode, so pressing it again reopens the wizard.
+      _reopenRejectedQuestion();
+      return;
+    }
+    _showRejectState();
+  }
+
+  Widget _wrapWithKeyboardNavigation(Widget child) {
+    return FocusTraversalGroup(
+      policy: OrderedTraversalPolicy(),
+      child: Shortcuts(
+        shortcuts: const <ShortcutActivator, Intent>{
+          SingleActivator(LogicalKeyboardKey.arrowRight, alt: true):
+              _QuestionPrimaryIntent(),
+          SingleActivator(LogicalKeyboardKey.enter, alt: true):
+              _QuestionPrimaryIntent(),
+          SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true):
+              _QuestionBackIntent(),
+          SingleActivator(LogicalKeyboardKey.keyR, alt: true):
+              _QuestionRejectIntent(),
+        },
+        child: Actions(
+          actions: <Type, Action<Intent>>{
+            _QuestionPrimaryIntent: CallbackAction<_QuestionPrimaryIntent>(
+              onInvoke: (_) {
+                _invokePrimaryAction();
+                return null;
+              },
+            ),
+            _QuestionBackIntent: CallbackAction<_QuestionBackIntent>(
+              onInvoke: (_) {
+                _invokeBackAction();
+                return null;
+              },
+            ),
+            _QuestionRejectIntent: CallbackAction<_QuestionRejectIntent>(
+              onInvoke: (_) {
+                _invokeRejectAction();
+                return null;
+              },
+            ),
+          },
+          child: child,
+        ),
+      ),
+    );
+  }
+
   Widget _buildStepProgress(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final currentStep = (_stepIndex + 1).clamp(1, _totalSteps);
@@ -218,13 +311,18 @@ class _QuestionRequestCardState extends State<QuestionRequestCard> {
           ).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: 10),
-        for (final option in question.options)
+        for (
+          var optionIndex = 0;
+          optionIndex < question.options.length;
+          optionIndex++
+        )
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: _QuestionOptionTile(
-              label: option.label,
-              description: option.description,
-              selected: selected.contains(option.label),
+              autofocus: optionIndex == 0,
+              label: question.options[optionIndex].label,
+              description: question.options[optionIndex].description,
+              selected: selected.contains(question.options[optionIndex].label),
               multiple: question.multiple,
               enabled: !widget.busy,
               onTap: () {
@@ -232,7 +330,7 @@ class _QuestionRequestCardState extends State<QuestionRequestCard> {
                   _toggleOption(
                     questionIndex: questionIndex,
                     question: question,
-                    label: option.label,
+                    label: question.options[optionIndex].label,
                   );
                 });
               },
@@ -340,6 +438,7 @@ class _QuestionRequestCardState extends State<QuestionRequestCard> {
             alignment: WrapAlignment.end,
             children: [
               OutlinedButton(
+                autofocus: true,
                 onPressed: widget.busy ? null : _reopenRejectedQuestion,
                 child: const Text('Reopen'),
               ),
@@ -394,7 +493,7 @@ class _QuestionRequestCardState extends State<QuestionRequestCard> {
   @override
   Widget build(BuildContext context) {
     if (_showRejectedState) {
-      return _buildCompactRejectedCard(context);
+      return _wrapWithKeyboardNavigation(_buildCompactRejectedCard(context));
     }
 
     final mediaQuery = MediaQuery.of(context);
@@ -408,7 +507,7 @@ class _QuestionRequestCardState extends State<QuestionRequestCard> {
         .toDouble();
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
+    final card = Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(10, 0, 10, 8),
       padding: const EdgeInsets.all(12),
@@ -456,11 +555,13 @@ class _QuestionRequestCardState extends State<QuestionRequestCard> {
         ),
       ),
     );
+    return _wrapWithKeyboardNavigation(card);
   }
 }
 
-class _QuestionOptionTile extends StatelessWidget {
+class _QuestionOptionTile extends StatefulWidget {
   const _QuestionOptionTile({
+    required this.autofocus,
     required this.label,
     required this.description,
     required this.selected,
@@ -469,6 +570,7 @@ class _QuestionOptionTile extends StatelessWidget {
     required this.onTap,
   });
 
+  final bool autofocus;
   final String label;
   final String description;
   final bool selected;
@@ -477,75 +579,128 @@ class _QuestionOptionTile extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_QuestionOptionTile> createState() => _QuestionOptionTileState();
+}
+
+class _QuestionOptionTileState extends State<_QuestionOptionTile> {
+  bool _isFocusHighlighted = false;
+
+  @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final normalizedDescription = description.trim();
+    final normalizedDescription = widget.description.trim();
     final hasDescription = normalizedDescription.isNotEmpty;
-    final icon = multiple
-        ? (selected
+    final icon = widget.multiple
+        ? (widget.selected
               ? Symbols.check_box_rounded
               : Symbols.check_box_outline_blank_rounded)
-        : (selected
+        : (widget.selected
               ? Symbols.radio_button_checked
               : Symbols.radio_button_unchecked);
+    final borderColor = _isFocusHighlighted
+        ? colorScheme.primary
+        : widget.selected
+        ? colorScheme.primary.withValues(alpha: 0.45)
+        : colorScheme.outlineVariant.withValues(alpha: 0.55);
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOut,
-      decoration: BoxDecoration(
-        color: selected
-            ? colorScheme.secondaryContainer.withValues(alpha: 0.6)
-            : colorScheme.surface.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: selected
-              ? colorScheme.primary.withValues(alpha: 0.45)
-              : colorScheme.outlineVariant.withValues(alpha: 0.55),
+    return FocusableActionDetector(
+      autofocus: widget.autofocus,
+      enabled: widget.enabled,
+      shortcuts: const <ShortcutActivator, Intent>{
+        SingleActivator(LogicalKeyboardKey.enter): ActivateIntent(),
+        SingleActivator(LogicalKeyboardKey.numpadEnter): ActivateIntent(),
+        SingleActivator(LogicalKeyboardKey.space): ActivateIntent(),
+        SingleActivator(LogicalKeyboardKey.arrowDown): NextFocusIntent(),
+        SingleActivator(LogicalKeyboardKey.arrowUp): PreviousFocusIntent(),
+      },
+      actions: <Type, Action<Intent>>{
+        ActivateIntent: CallbackAction<ActivateIntent>(
+          onInvoke: (_) {
+            widget.onTap();
+            return null;
+          },
         ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
+        NextFocusIntent: CallbackAction<NextFocusIntent>(
+          onInvoke: (_) {
+            FocusScope.of(context).nextFocus();
+            return null;
+          },
+        ),
+        PreviousFocusIntent: CallbackAction<PreviousFocusIntent>(
+          onInvoke: (_) {
+            FocusScope.of(context).previousFocus();
+            return null;
+          },
+        ),
+      },
+      onShowFocusHighlight: (value) {
+        if (_isFocusHighlighted == value) {
+          return;
+        }
+        setState(() {
+          _isFocusHighlighted = value;
+        });
+      },
+      mouseCursor: widget.enabled
+          ? SystemMouseCursors.click
+          : MouseCursor.defer,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        decoration: BoxDecoration(
+          color: widget.selected
+              ? colorScheme.secondaryContainer.withValues(alpha: 0.6)
+              : colorScheme.surface.withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(12),
-          onTap: enabled ? onTap : null,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Icon(
-                    icon,
-                    size: 20,
-                    color: selected
-                        ? colorScheme.primary
-                        : colorScheme.onSurfaceVariant,
+          border: Border.all(
+            color: borderColor,
+            width: _isFocusHighlighted ? 1.8 : 1,
+          ),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            canRequestFocus: false,
+            onTap: widget.enabled ? widget.onTap : null,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Icon(
+                      icon,
+                      size: 20,
+                      color: widget.selected
+                          ? colorScheme.primary
+                          : colorScheme.onSurfaceVariant,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        label,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      if (hasDescription) ...[
-                        const SizedBox(height: 2),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          normalizedDescription,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: colorScheme.onSurfaceVariant),
+                          widget.label,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
                         ),
+                        if (hasDescription) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            normalizedDescription,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: colorScheme.onSurfaceVariant),
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
