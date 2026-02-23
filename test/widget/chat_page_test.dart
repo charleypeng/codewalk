@@ -225,7 +225,10 @@ void main() {
           findsOneWidget,
         );
         expect(scaffoldState.isDrawerOpen, isFalse);
-        expect(find.text('Conversations'), findsNothing);
+        expect(
+          find.byKey(const ValueKey<String>('sidebar_settings_icon_button')),
+          findsNothing,
+        );
       },
     );
 
