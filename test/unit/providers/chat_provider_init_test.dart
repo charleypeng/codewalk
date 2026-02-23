@@ -1,3 +1,6 @@
+@Tags(<String>['slow'])
+library;
+
 import 'dart:convert';
 
 import 'package:codewalk/core/network/dio_client.dart';

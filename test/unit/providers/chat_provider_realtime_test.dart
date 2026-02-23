@@ -1,3 +1,6 @@
+@Tags(<String>['slow'])
+library;
+
 import 'dart:async';
 import 'dart:convert';
 
