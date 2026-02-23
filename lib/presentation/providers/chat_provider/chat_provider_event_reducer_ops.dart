@@ -436,11 +436,13 @@ extension _ChatProviderEventReducerOps on ChatProvider {
             _currentSession?.id != sessionId) {
           break;
         }
-        final previousLength = _messages.length;
-        _messages.removeWhere((item) => item.id == messageId);
-        if (_messages.length == previousLength) {
+        final removedIndex = _messages.indexWhere(
+          (item) => item.id == messageId,
+        );
+        if (removedIndex == -1) {
           break;
         }
+        _messages.removeAt(removedIndex);
         _messagesVersion++;
         _notifyListeners();
         break;
