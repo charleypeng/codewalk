@@ -197,6 +197,7 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     if (_currentSession?.id == sessionId) {
       _currentSession = _sessions.firstOrNull;
       _messages = <ChatMessage>[];
+      _messagesVersion++;
       _pendingLocalUserMessageIds.clear();
       _applySelectionPriorityForCurrentSession();
     }

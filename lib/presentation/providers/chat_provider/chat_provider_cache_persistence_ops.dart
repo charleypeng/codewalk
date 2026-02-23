@@ -161,6 +161,7 @@ extension _ChatProviderCachePersistenceOps on ChatProvider {
 
       _currentSession = selectedSession;
       _messages = cachedMessages;
+      _messagesVersion++;
       _pendingLocalUserMessageIds.clear();
       _setState(ChatState.loaded);
 

@@ -101,6 +101,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     if (!changed) {
       return;
     }
+    _messagesVersion++;
     // Notify and scroll after completion-triggered work collapse so the
     // final assistant message stays visible on screen.
     _notifyListeners();
@@ -125,6 +126,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
         final previousId = _messages[pendingLocalIndex].id;
         _pendingLocalUserMessageIds.remove(previousId);
         _messages[pendingLocalIndex] = message;
+        _messagesVersion++;
         _notifyListeners();
         _attemptPendingRemoteSelectionSync(reason: 'message-user-replaced');
         _scheduleAutoTitleRefresh(message.sessionId);
@@ -137,6 +139,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     if (index != -1) {
       // Update existing message
       _messages[index] = message;
+      _messagesVersion++;
       if (message is UserMessage) {
         _pendingLocalUserMessageIds.remove(message.id);
       }
@@ -146,6 +149,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     } else {
       // Add new message
       _messages.add(message);
+      _messagesVersion++;
       AppLogger.debug('Added new message: ${message.id}, role=${message.role}');
     }
 

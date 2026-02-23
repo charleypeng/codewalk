@@ -178,11 +178,9 @@ class _ChatPageState extends State<ChatPage>
   bool _nextWasCompactingContext = false;
   bool _compactionStateSyncScheduled = false;
 
-  // Cache for _buildMessageTimelineEntries to avoid O(N) recomputation on
-  // rebuilds where the message list hasn't changed (e.g. session.status events).
-  int _cachedTimelineMessageCount = -1;
-  String? _cachedTimelineLastMessageId;
-  int _cachedTimelineMessageFingerprint = 0;
+  // Cache for _buildMessageTimelineEntries. Uses ChatProvider.messagesVersion
+  // (O(1) monotonic counter) instead of Object.hashAll (O(N*M) Equatable hash).
+  int _cachedTimelineMessagesVersion = -1;
   bool _cachedTimelineIsCompacting = false;
   bool _cachedTimelineIsResponding = false;
   bool _cachedTimelineShowRetry = false;

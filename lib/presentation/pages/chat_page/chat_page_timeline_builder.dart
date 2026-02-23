@@ -420,6 +420,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
 
     final timelineEntries = _buildMessageTimelineEntries(
       messages: chatProvider.messages,
+      messagesVersion: chatProvider.messagesVersion,
       showRetryIndicator: showMessageProgressIndicator,
       isSessionActivelyResponding:
           chatProvider.isCurrentSessionActivelyResponding,
@@ -486,14 +487,13 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
 
   List<_TimelineEntry> _buildMessageTimelineEntries({
     required List<ChatMessage> messages,
+    required int messagesVersion,
     required bool showRetryIndicator,
     required bool isSessionActivelyResponding,
     required bool isCompactingContext,
     required List<ChatPermissionRequest> interactionPermissions,
     required String? currentSessionId,
   }) {
-    final lastId = messages.isNotEmpty ? messages.last.id : null;
-    final messageFingerprint = Object.hashAll(messages);
     final permissionPromptSignature = interactionPermissions
         .map(
           (request) =>
@@ -501,9 +501,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
         )
         .join('|');
     if (_cachedTimelineEntries != null &&
-        messages.length == _cachedTimelineMessageCount &&
-        lastId == _cachedTimelineLastMessageId &&
-        messageFingerprint == _cachedTimelineMessageFingerprint &&
+        messagesVersion == _cachedTimelineMessagesVersion &&
         isCompactingContext == _cachedTimelineIsCompacting &&
         isSessionActivelyResponding == _cachedTimelineIsResponding &&
         showRetryIndicator == _cachedTimelineShowRetry &&
@@ -611,9 +609,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     }
 
     // Store in cache for subsequent rebuilds with unchanged message list.
-    _cachedTimelineMessageCount = messages.length;
-    _cachedTimelineLastMessageId = lastId;
-    _cachedTimelineMessageFingerprint = messageFingerprint;
+    _cachedTimelineMessagesVersion = messagesVersion;
     _cachedTimelineIsCompacting = isCompactingContext;
     _cachedTimelineIsResponding = isSessionActivelyResponding;
     _cachedTimelineShowRetry = showRetryIndicator;

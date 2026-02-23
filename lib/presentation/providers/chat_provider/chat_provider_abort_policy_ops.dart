@@ -55,5 +55,6 @@ extension _ChatProviderAbortPolicyOps on ChatProvider {
         ),
       ),
     );
+    _messagesVersion++;
   }
 }

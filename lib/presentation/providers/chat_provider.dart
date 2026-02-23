@@ -180,6 +180,10 @@ class ChatProvider extends ChangeNotifier {
   List<ChatSession> _sessions = [];
   ChatSession? _currentSession;
   List<ChatMessage> _messages = [];
+  // Monotonic counter bumped on every _messages mutation so the timeline
+  // builder can short-circuit its cache check in O(1) instead of computing
+  // Object.hashAll over all messages+parts (O(N*M)) on every build.
+  int _messagesVersion = 0;
   String? _errorMessage;
   StreamSubscription<dynamic>? _messageSubscription;
   StreamSubscription<dynamic>? _eventSubscription;
@@ -368,6 +372,7 @@ class ChatProvider extends ChangeNotifier {
   String? get sessionInsightsError => _sessionInsightsError;
   ChatSession? get currentSession => _currentSession;
   List<ChatMessage> get messages => _messages;
+  int get messagesVersion => _messagesVersion;
   String? get errorMessage => _errorMessage;
   ChatUiNotice? get pendingUiNotice => _pendingUiNotice;
   String? get currentProjectId => _currentProjectId;
@@ -975,6 +980,7 @@ class ChatProvider extends ChangeNotifier {
             messages,
             sessionId: session.id,
           );
+          _messagesVersion++;
           notifyListeners();
           _scheduleAutoTitleRefresh(session.id);
           if (!_isCompactingContext) {
@@ -1634,6 +1640,7 @@ class ChatProvider extends ChangeNotifier {
       if (_sessions.isEmpty) {
         _currentSession = null;
         _messages = <ChatMessage>[];
+        _messagesVersion++;
         await _clearLastSessionSnapshotBestEffort(
           serverId: serverId,
           scopeId: scopeId,
@@ -1739,6 +1746,7 @@ class ChatProvider extends ChangeNotifier {
     _sortSessionsInPlace();
     _currentSession = session;
     _messages = <ChatMessage>[];
+    _messagesVersion++;
     _pendingLocalUserMessageIds.clear();
     _clearRejectedDraft();
     _sessionInsightsError = null;
@@ -1789,6 +1797,7 @@ class ChatProvider extends ChangeNotifier {
 
     // Clear current message list
     _messages.clear();
+    _messagesVersion++;
     _pendingLocalUserMessageIds.clear();
     _clearRejectedDraft();
     _currentSession = session;
@@ -1861,6 +1870,7 @@ class ChatProvider extends ChangeNotifier {
           messages,
           sessionId: sessionId,
         );
+        _messagesVersion++;
         _pendingLocalUserMessageIds.clear();
         _scheduleAutoTitleRefresh(sessionId);
         _setState(ChatState.loaded);
@@ -2035,6 +2045,7 @@ class ChatProvider extends ChangeNotifier {
       );
 
       _messages.add(userMessage);
+      _messagesVersion++;
       _pendingLocalUserMessageIds.add(localMessageId);
       notifyListeners();
       _scheduleAutoTitleRefresh(sendSessionId);
@@ -2611,6 +2622,7 @@ class ChatProvider extends ChangeNotifier {
     if (wasCurrent) {
       _currentSession = _sessions.firstOrNull;
       _messages = <ChatMessage>[];
+      _messagesVersion++;
     }
     notifyListeners();
 
@@ -2627,6 +2639,7 @@ class ChatProvider extends ChangeNotifier {
         _sessions = previousSessions;
         _currentSession = previousCurrent;
         _messages = previousMessages;
+        _messagesVersion++;
         _sortSessionsInPlace();
         unawaited(_persistLastSessionSnapshotBestEffort());
         _handleFailure(failure);

@@ -25,6 +25,7 @@ extension _ChatProviderPreferenceOps on ChatProvider {
       _sessions = <ChatSession>[];
       _currentSession = null;
       _messages = <ChatMessage>[];
+      _messagesVersion++;
       _sessionStatusById = <String, SessionStatusInfo>{};
       _pendingPermissionsBySession = <String, List<ChatPermissionRequest>>{};
       _pendingQuestionsBySession = <String, List<ChatQuestionRequest>>{};
@@ -41,6 +42,7 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     _sessions = _filterSessionsForCurrentContext(snapshot.sessions);
     _currentSession = snapshot.currentSession;
     _messages = snapshot.messages;
+    _messagesVersion++;
     _pendingLocalUserMessageIds.clear();
     _sessionStatusById = snapshot.sessionStatusById;
     _pendingPermissionsBySession = snapshot.pendingPermissionsBySession;

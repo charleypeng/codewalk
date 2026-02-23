@@ -6545,6 +6545,94 @@ void main() {
         },
       );
     });
+
+    group('messagesVersion', () {
+      test('starts at zero', () {
+        expect(provider.messagesVersion, 0);
+      });
+
+      test('increments when messages are loaded via loadMessages', () async {
+        final assistantMessage = AssistantMessage(
+          id: 'msg_1',
+          sessionId: 'ses_1',
+          time: DateTime.now(),
+          completedTime: DateTime.now(),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'prt_1',
+              messageId: 'msg_1',
+              sessionId: 'ses_1',
+              text: 'hello',
+            ),
+          ],
+        );
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          assistantMessage,
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        final versionAfterSelect = provider.messagesVersion;
+        // loadMessages is called internally by selectSession, bumping the
+        // version at least once (clear + load).
+        expect(versionAfterSelect, greaterThan(0));
+      });
+
+      test('increments on sendMessage (local user message added)', () async {
+        chatRepository.sendMessageHandler = (_, __, ___, ____) async* {
+          // Never emit — we only care about the local user message bump.
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        final versionBeforeSend = provider.messagesVersion;
+        await provider.sendMessage('test message');
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        expect(provider.messagesVersion, greaterThan(versionBeforeSend));
+        expect(provider.messages, isNotEmpty);
+      });
+
+      test('increments on session delete that clears current messages',
+          () async {
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_a',
+            sessionId: 'ses_1',
+            time: DateTime.now(),
+            completedTime: DateTime.now(),
+          ),
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        final versionBeforeDelete = provider.messagesVersion;
+        await provider.deleteSession('ses_1');
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        expect(provider.messagesVersion, greaterThan(versionBeforeDelete));
+      });
+
+      test('does not increment without message mutations', () async {
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        final versionAfterInit = provider.messagesVersion;
+
+        // Wait idle — no operations that touch _messages.
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+
+        expect(provider.messagesVersion, versionAfterInit);
+      });
+    });
   });
 }
 

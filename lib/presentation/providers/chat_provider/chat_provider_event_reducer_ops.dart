@@ -392,6 +392,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           nextParts[existingPartIndex] = part;
         }
         _messages[partIndex] = _copyMessageWithParts(message, nextParts);
+        _messagesVersion++;
         _notifyListeners();
         if (!_isCompactingContext) {
           _scheduleScrollToBottom();
@@ -418,6 +419,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
             .where((part) => part.id != partId)
             .toList(growable: false);
         _messages[messageIndex] = _copyMessageWithParts(message, nextParts);
+        _messagesVersion++;
         _notifyListeners();
         break;
       case 'message.removed':
@@ -429,6 +431,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           break;
         }
         _messages.removeWhere((item) => item.id == messageId);
+        _messagesVersion++;
         _notifyListeners();
         break;
       case 'permission.asked':
