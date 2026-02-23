@@ -50,10 +50,11 @@ jobs:
           path: /tmp/flutter_analyze.log
 
   test_shards:
+    # Keep PR/branch feedback fast; main/tag pushes run the coverage job instead.
     if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/v'))
     needs: quality
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
