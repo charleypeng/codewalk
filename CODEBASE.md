@@ -219,6 +219,15 @@ flutter run -d chrome
 
 ```text
 test/unit/                             # Unit tests
+test/unit/providers/                   # ChatProvider split tests (7 files, 125 tests, parallelized with -j 12)
+  chat_provider_init_test.dart         #   12 tests — initialization, config sync, model/agent selection
+  chat_provider_sync_test.dart         #   17 tests — deferred sync, cycle, scope, overrides, variant sync
+  chat_provider_messaging_test.dart    #   14 tests — sessions, sendMessage, draft restore
+  chat_provider_realtime_test.dart     #   20 tests — title gen, SSE, abort, reconciliation
+  chat_provider_session_ops_test.dart  #   25 tests — rename/share/fork/delete, insights, idle
+  chat_provider_project_test.dart      #   11 tests — permissions, questions, project scope, favorites
+  chat_provider_concurrency_test.dart  #   26 tests — render gate, multi-session, abort suppression
+  chat_provider_test_support.dart      #   Shared utilities (RecordingDioClient, buildChatProvider, testModel)
 test/widget/                           # Widget tests (includes icon assertions with Symbols.*)
 test/integration/                      # Integration tests
 test/presentation/                     # Presentation-focused tests (incl. window_size_class_test.dart)
