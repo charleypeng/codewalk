@@ -464,10 +464,12 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         ? 'Connect to an OpenCode server to get started'
         : 'Pick the best path for your current setup';
 
-    return Column(
+    // Scroll needed: welcome content overflows on small screens (icon + texts + 3 cards).
+    return SingleChildScrollView(
       key: const ValueKey('step_welcome'),
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
         Icon(Symbols.code_rounded, size: 72, color: colorScheme.primary),
         const SizedBox(height: 24),
         Text(
@@ -641,7 +643,8 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
             ),
           ),
         ),
-      ],
+        ],
+      ),
     );
   }
 

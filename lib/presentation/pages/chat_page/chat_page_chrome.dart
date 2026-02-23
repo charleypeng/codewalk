@@ -753,7 +753,11 @@ extension _ChatPageChrome on _ChatPageState {
     return name;
   }
 
-  Future<void> _closeDrawerIfNeeded({required bool closeOnSelect}) async {
+  // Close the drawer without yielding to the microtask queue. A
+  // `Future.delayed(Duration.zero)` yield here would allow pending gesture
+  // callbacks (e.g. DrawerController._handleDragCancel after a rapid double
+  // tap) to re-open the drawer before the close animation settles.
+  void _closeDrawerIfNeeded({required bool closeOnSelect}) {
     if (!closeOnSelect) {
       return;
     }
@@ -762,14 +766,13 @@ extension _ChatPageChrome on _ChatPageState {
       return;
     }
     scaffoldState.closeDrawer();
-    await Future<void>.delayed(Duration.zero);
   }
 
   Future<void> _openSettingsPage({
     required bool closeOnSelect,
     String initialSectionId = '',
   }) async {
-    await _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
+    _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
     if (!mounted) {
       return;
     }

@@ -197,7 +197,11 @@ extension _ChatPageScaffold on _ChatPageState {
                       isSessionActive: chatProvider.isSessionActivelyResponding,
                       onSessionSelected: (session) async {
                         await chatProvider.selectSession(session);
-                        await _closeDrawerIfNeeded(
+                        // Close AFTER selectSession: during its awaits the
+                        // second tap's gesture events are fully processed
+                        // (including _handleDragCancel which may re-open the
+                        // drawer). Closing last ensures the drawer stays shut.
+                        _closeDrawerIfNeeded(
                           closeOnSelect: closeOnSelect,
                         );
                       },
@@ -232,7 +236,7 @@ extension _ChatPageScaffold on _ChatPageState {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Conversation forked')),
                         );
-                        await _closeDrawerIfNeeded(
+                        _closeDrawerIfNeeded(
                           closeOnSelect: closeOnSelect,
                         );
                       },
