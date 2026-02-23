@@ -1629,7 +1629,10 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 20));
 
         expect(chatRepository.lastSendInput?.variant, 'high');
-        expect(chatRepository.lastSendInput?.messageId, isNull);
+        expect(
+          chatRepository.lastSendInput?.messageId,
+          startsWith('local_user_'),
+        );
       },
     );
 
@@ -2118,7 +2121,10 @@ void main() {
           chatRepository.lastSendInput?.parts.single,
           const TextInputPart(text: 'hello provider'),
         );
-        expect(chatRepository.lastSendInput?.messageId, isNull);
+        expect(
+          chatRepository.lastSendInput?.messageId,
+          startsWith('local_user_'),
+        );
         expect(
           chatRepository.lastSendDirectory,
           provider.projectProvider.currentProject?.path,
@@ -3548,6 +3554,48 @@ void main() {
     );
 
     test(
+      'sendMessage forwards local messageId and reconciles server user by same id',
+      () async {
+        final now = DateTime.now();
+        String? echoedMessageId;
+
+        chatRepository.sendMessageHandler = (_, __, input, ___) async* {
+          echoedMessageId = input.messageId;
+          final serverMessageId = input.messageId ?? 'msg_server_user_fallback';
+          yield Right(
+            UserMessage(
+              id: serverMessageId,
+              sessionId: 'ses_1',
+              time: now.add(const Duration(seconds: 1)),
+              parts: <MessagePart>[
+                TextPart(
+                  id: 'prt_user_server_same_id',
+                  messageId: serverMessageId,
+                  sessionId: 'ses_1',
+                  text: 'hello stable id',
+                ),
+              ],
+            ),
+          );
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('hello stable id');
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        expect(echoedMessageId, startsWith('local_user_'));
+        expect(provider.state, ChatState.loaded);
+        expect(provider.messages.whereType<UserMessage>(), hasLength(1));
+        final userMessage = provider.messages.single as UserMessage;
+        expect(userMessage.id, echoedMessageId);
+        expect((userMessage.parts.single as TextPart).text, 'hello stable id');
+      },
+    );
+
+    test(
       'sendMessage dedupes optimistic attachment message when server file URL differs',
       () async {
         final now = DateTime.now();
@@ -3764,7 +3812,10 @@ void main() {
           chatRepository.lastSendInput?.parts.single,
           const TextInputPart(text: 'hello with persistence failure'),
         );
-        expect(chatRepository.lastSendInput?.messageId, isNull);
+        expect(
+          chatRepository.lastSendInput?.messageId,
+          startsWith('local_user_'),
+        );
         final assistant = resilientProvider.messages.last as AssistantMessage;
         expect((assistant.parts.single as TextPart).text, 'resilient answer');
       },
@@ -6688,7 +6739,7 @@ void main() {
       });
 
       test('does not increment on message.part.removed no-op event', () async {
-        final initialPart = TextPart(
+        const initialPart = TextPart(
           id: 'prt_1',
           messageId: 'msg_a',
           sessionId: 'ses_1',
@@ -6700,7 +6751,7 @@ void main() {
             sessionId: 'ses_1',
             time: DateTime.now(),
             completedTime: DateTime.now(),
-            parts: <MessagePart>[initialPart],
+            parts: const <MessagePart>[initialPart],
           ),
         ];
 
@@ -6728,7 +6779,7 @@ void main() {
       });
 
       test('does not increment on message.part.updated no-op event', () async {
-        final initialPart = TextPart(
+        const initialPart = TextPart(
           id: 'prt_1',
           messageId: 'msg_a',
           sessionId: 'ses_1',
@@ -6740,7 +6791,7 @@ void main() {
             sessionId: 'ses_1',
             time: DateTime.now(),
             completedTime: DateTime.now(),
-            parts: <MessagePart>[initialPart],
+            parts: const <MessagePart>[initialPart],
           ),
         ];
 
@@ -6766,7 +6817,7 @@ void main() {
       test(
         'increments on message.part.updated when part content changes',
         () async {
-          final initialPart = TextPart(
+          const initialPart = TextPart(
             id: 'prt_1',
             messageId: 'msg_a',
             sessionId: 'ses_1',
@@ -6778,7 +6829,7 @@ void main() {
               sessionId: 'ses_1',
               time: DateTime.now(),
               completedTime: DateTime.now(),
-              parts: <MessagePart>[initialPart],
+              parts: const <MessagePart>[initialPart],
             ),
           ];
 
@@ -6787,7 +6838,7 @@ void main() {
           await provider.selectSession(provider.sessions.first);
 
           final versionBeforeEvent = provider.messagesVersion;
-          final updatedPart = TextPart(
+          const updatedPart = TextPart(
             id: 'prt_1',
             messageId: 'msg_a',
             sessionId: 'ses_1',

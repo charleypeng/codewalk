@@ -2092,6 +2092,7 @@ class ChatProvider extends ChangeNotifier {
         ...effectiveAttachments,
       ];
       final input = ChatInput(
+        messageId: localMessageId,
         providerId: _selectedProviderId ?? 'anthropic',
         modelId: _selectedModelId ?? 'claude-3-5-sonnet-20241022',
         variant: _selectedVariantId,

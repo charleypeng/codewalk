@@ -372,6 +372,22 @@ extension _ChatProviderMessageStateOps on ChatProvider {
   }
 
   int _findPendingLocalUserMessageIndex(UserMessage incoming) {
+    for (var index = 0; index < _messages.length; index += 1) {
+      final current = _messages[index];
+      if (current is! UserMessage) {
+        continue;
+      }
+      if (!_pendingLocalUserMessageIds.contains(current.id)) {
+        continue;
+      }
+      if (current.sessionId != incoming.sessionId) {
+        continue;
+      }
+      if (current.id == incoming.id) {
+        return index;
+      }
+    }
+
     final incomingSignature = _normalizedUserMessageSignature(incoming);
     if (incomingSignature.isEmpty) {
       return -1;
