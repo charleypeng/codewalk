@@ -224,16 +224,6 @@ extension _ChatPageComposerWidgets on _ChatPageState {
   Widget _buildComposerReasoningStatusLine(_ComposerStatusPresentation status) {
     final colorScheme = Theme.of(context).colorScheme;
     final leading = switch (status.type) {
-      _ComposerStatusType.thinking => SizedBox(
-        key: const ValueKey<String>('composer_reasoning_status_spinner'),
-        width: 16,
-        height: 16,
-        child: CircularProgressIndicator.adaptive(
-          strokeWidth: 2.4,
-          strokeCap: StrokeCap.round,
-          valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-        ),
-      ),
       _ComposerStatusType.tip => Icon(
         Symbols.lightbulb_outline,
         key: const ValueKey<String>('composer_reasoning_status_icon_tip'),

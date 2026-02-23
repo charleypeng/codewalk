@@ -1026,7 +1026,6 @@ enum _AssistantProgressStage { thinking, receiving, retrying }
 enum _ComposerStatusType {
   dynamicReasoning,
   receiving,
-  thinking,
   stopHint,
   tip,
 }
@@ -1042,9 +1041,6 @@ class _ComposerStatusPresentation {
 
   const _ComposerStatusPresentation.receiving()
     : this._(type: _ComposerStatusType.receiving, label: 'Reasoning...');
-
-  const _ComposerStatusPresentation.thinking()
-    : this._(type: _ComposerStatusType.thinking, label: 'Thinking...');
 
   const _ComposerStatusPresentation.stopHint()
     : this._(type: _ComposerStatusType.stopHint, label: 'Double ESC to stop');

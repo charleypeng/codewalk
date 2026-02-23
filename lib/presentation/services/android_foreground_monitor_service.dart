@@ -9,7 +9,6 @@ class AndroidForegroundMonitorService {
       'Reliable background alerts are active';
 
   static bool _running = false;
-  static int _lastActiveSessionCount = -1;
 
   static bool get isRunning => _running;
 
@@ -25,17 +24,14 @@ class AndroidForegroundMonitorService {
     final title = _titleForActiveSessionCount(normalizedCount);
     if (!enabled) {
       if (!_running) {
-        _lastActiveSessionCount = -1;
         return;
       }
       try {
         await _channel.invokeMethod<void>('stopForegroundService');
         _running = false;
-        _lastActiveSessionCount = -1;
       } catch (error, stackTrace) {
         // Reset so the next sync() call can retry the stop.
         _running = false;
-        _lastActiveSessionCount = -1;
         AppLogger.warn(
           'Failed to stop Android foreground monitor service',
           error: error,
@@ -55,7 +51,6 @@ class AndroidForegroundMonitorService {
       );
 
       _running = true;
-      _lastActiveSessionCount = normalizedCount;
     } catch (error, stackTrace) {
       AppLogger.warn(
         'Failed to sync Android foreground monitor service',

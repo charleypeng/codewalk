@@ -131,20 +131,6 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     );
   }
 
-  Future<void> _pauseRealtimeSubscriptions() async {
-    _eventStreamGeneration += 1;
-    await _cancelSubscriptionSafely(
-      _eventSubscription,
-      label: 'realtime event',
-    );
-    await _cancelSubscriptionSafely(
-      _globalEventSubscription,
-      label: 'global event',
-    );
-    _eventSubscription = null;
-    _globalEventSubscription = null;
-  }
-
   Future<void> _loadPendingInteractions() async {
     final directory = projectProvider.currentDirectory;
 

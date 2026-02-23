@@ -8,7 +8,6 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../domain/entities/server_profile.dart';
 import '../../../providers/app_provider.dart';
-import '../../../services/local_opencode_server_runtime_types.dart';
 import '../../onboarding_wizard_page.dart';
 
 class ServersSettingsSection extends StatefulWidget {

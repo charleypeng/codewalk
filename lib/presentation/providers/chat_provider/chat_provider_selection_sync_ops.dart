@@ -207,47 +207,6 @@ extension _ChatProviderSelectionSyncOps on ChatProvider {
     return payload;
   }
 
-  Future<bool> _syncSelectedModelToRemoteConfig() async {
-    final client = dioClient;
-    final providerId = _selectedProviderId;
-    final modelId = _selectedModelId;
-    if (client == null || providerId == null || modelId == null) {
-      return true;
-    }
-
-    final modelKey = _modelKey(providerId, modelId);
-    if (_lastSyncedRemoteModelKey == modelKey) {
-      return true;
-    }
-
-    try {
-      final updatedAtEpochMs = DateTime.now().millisecondsSinceEpoch;
-      await client.patch<void>(
-        '/config',
-        data: <String, dynamic>{
-          'agent': <String, dynamic>{
-            ChatProvider._configSyncAgentName: <String, dynamic>{
-              'options': <String, dynamic>{
-                ChatProvider._configCodewalkNamespace:
-                    _buildSelectionSyncPayload(
-                      updatedAtEpochMs: updatedAtEpochMs,
-                      includeVariantSnapshot: true,
-                      includeSessionSelections: true,
-                    ),
-              },
-            },
-          },
-        },
-        queryParameters: _configQueryParameters(),
-      );
-      _lastSyncedRemoteModelKey = modelKey;
-      return true;
-    } catch (_) {
-      // Remote sync is best-effort; local state remains source of truth.
-      return false;
-    }
-  }
-
   Future<void> _runSelectionSyncTransaction({required String reason}) async {
     final success = await _syncSelectionToRemoteConfig();
     if (success) {
