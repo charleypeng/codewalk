@@ -125,6 +125,10 @@ class ChatProvider extends ChangeNotifier {
     Duration syncSignalStaleThreshold = const Duration(seconds: 20),
     Duration syncHealthCheckInterval = const Duration(seconds: 5),
     Duration degradedPollingInterval = const Duration(seconds: 30),
+    Duration foregroundResumeSyncIndicatorDuration = const Duration(
+      seconds: 12,
+    ),
+    int foregroundResumeSyncIndicatorMaxCycles = 5,
     int degradedFailureThreshold = 3,
     bool refreshlessRealtimeEnabled = FeatureFlags.refreshlessRealtime,
     Duration abortSuppressionWindow = const Duration(seconds: 8),
@@ -132,6 +136,10 @@ class ChatProvider extends ChangeNotifier {
     _syncSignalStaleThreshold = syncSignalStaleThreshold;
     _syncHealthCheckInterval = syncHealthCheckInterval;
     _degradedPollingInterval = degradedPollingInterval;
+    _foregroundResumeSyncIndicatorDuration =
+        foregroundResumeSyncIndicatorDuration;
+    _foregroundResumeSyncIndicatorMaxCycles =
+        foregroundResumeSyncIndicatorMaxCycles;
     _degradedFailureThreshold = degradedFailureThreshold;
     _refreshlessRealtimeEnabled = refreshlessRealtimeEnabled;
     _abortSuppressionWindow = abortSuppressionWindow;
@@ -290,6 +298,8 @@ class ChatProvider extends ChangeNotifier {
   late final Duration _syncSignalStaleThreshold;
   late final Duration _syncHealthCheckInterval;
   late final Duration _degradedPollingInterval;
+  late final Duration _foregroundResumeSyncIndicatorDuration;
+  late final int _foregroundResumeSyncIndicatorMaxCycles;
   late final int _degradedFailureThreshold;
   late final bool _refreshlessRealtimeEnabled;
 
@@ -303,10 +313,6 @@ class ChatProvider extends ChangeNotifier {
   static const int _maxRecentModels = 8;
   late final Duration _abortSuppressionWindow;
   static const Duration _remoteSelectionSyncThrottle = Duration(seconds: 2);
-  static const Duration _foregroundResumeSyncIndicatorDuration = Duration(
-    seconds: 12,
-  );
-  static const int _foregroundResumeSyncIndicatorMaxCycles = 5;
   static const String _configCodewalkNamespace = 'codewalk';
   static const String _configSelectionKey = 'selection';
   static const String _configVariantByAgentAndModelKey =

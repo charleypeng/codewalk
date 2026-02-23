@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+@Tags(<String>['slow'])
 void main() {
   testWidgets('hides step blocks from assistant message body', (
     WidgetTester tester,

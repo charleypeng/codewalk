@@ -172,6 +172,7 @@ String? _variantPayloadValueFromPatch(
   return value?.toString();
 }
 
+@Tags(<String>['slow'])
 void main() {
   group('ChatProvider', () {
     late FakeChatRepository chatRepository;

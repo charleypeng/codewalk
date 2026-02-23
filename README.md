@@ -99,6 +99,8 @@ Release assets are published per OS/architecture (no universal desktop archive).
 
 ```bash
 make check      # deps + codegen + analyze + test
+make check-fast # deps + codegen + analyze + test-fast
+make test-fast  # excludes slow/integration tags
 make android    # build arm64 APK
 make precommit  # check + android
 ```

@@ -30,6 +30,7 @@ class AppProvider extends ChangeNotifier {
     required DioClient dioClient,
     LocalOpencodeServerRuntime? localServerRuntime,
     Future<ServerHealthStatus> Function(String url)? localServerHealthProbe,
+    Duration serverHealthRequestTimeout = const Duration(seconds: 3),
     bool enableHealthPolling = true,
   }) : _getAppInfo = getAppInfo,
        _checkConnection = checkConnection,
@@ -38,6 +39,7 @@ class AppProvider extends ChangeNotifier {
        _localServerRuntime =
            localServerRuntime ?? createLocalOpencodeServerRuntime(),
        _localServerHealthProbe = localServerHealthProbe,
+       _serverHealthRequestTimeout = serverHealthRequestTimeout,
        _enableHealthPolling = enableHealthPolling;
 
   final GetAppInfo _getAppInfo;
@@ -47,6 +49,7 @@ class AppProvider extends ChangeNotifier {
   final LocalOpencodeServerRuntime _localServerRuntime;
   final Future<ServerHealthStatus> Function(String url)?
   _localServerHealthProbe;
+  final Duration _serverHealthRequestTimeout;
   final bool _enableHealthPolling;
 
   AppStatus _status = AppStatus.initial;
@@ -901,9 +904,9 @@ class AppProvider extends ChangeNotifier {
     final dio = Dio(
       BaseOptions(
         baseUrl: profile.url,
-        connectTimeout: const Duration(seconds: 3),
-        receiveTimeout: const Duration(seconds: 3),
-        sendTimeout: const Duration(seconds: 3),
+        connectTimeout: _serverHealthRequestTimeout,
+        receiveTimeout: _serverHealthRequestTimeout,
+        sendTimeout: _serverHealthRequestTimeout,
       ),
     );
 

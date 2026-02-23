@@ -43,6 +43,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../support/fakes.dart';
 import '../support/mock_opencode_server.dart';
 
+@Tags(<String>['integration', 'slow'])
 void main() {
   group('integration with controllable mock OpenCode server', () {
     late MockOpenCodeServer server;

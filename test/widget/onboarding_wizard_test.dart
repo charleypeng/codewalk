@@ -26,6 +26,7 @@ void main() {
       checkConnection: CheckConnection(FakeAppRepository()),
       localDataSource: localDataSource,
       dioClient: DioClient(),
+      serverHealthRequestTimeout: const Duration(milliseconds: 120),
       enableHealthPolling: false,
     );
     settingsProvider = SettingsProvider(
@@ -180,7 +181,7 @@ void main() {
       // Tap "Test connection" and let the async chain complete.
       await tester.tap(find.text('Test connection'));
       await tester.runAsync(() async {
-        await Future<void>.delayed(const Duration(seconds: 3));
+        await Future<void>.delayed(const Duration(milliseconds: 180));
       });
       // Use pump instead of pumpAndSettle to avoid timeout from spinner.
       await tester.pump();
@@ -200,7 +201,7 @@ void main() {
 
         await tester.tap(find.text('Test connection'));
         await tester.runAsync(() async {
-          await Future<void>.delayed(const Duration(seconds: 3));
+          await Future<void>.delayed(const Duration(milliseconds: 180));
         });
         await tester.pump();
 
@@ -216,7 +217,7 @@ void main() {
           if (find.text('Test connection').evaluate().isNotEmpty) {
             await tester.tap(find.text('Test connection'));
             await tester.runAsync(() async {
-              await Future<void>.delayed(const Duration(seconds: 3));
+              await Future<void>.delayed(const Duration(milliseconds: 180));
             });
             await tester.pump();
           }

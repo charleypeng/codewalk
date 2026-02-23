@@ -13,7 +13,7 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     }
     _foregroundResumeSyncTimer?.cancel();
     _foregroundResumeSyncTimer = Timer(
-      ChatProvider._foregroundResumeSyncIndicatorDuration,
+      _foregroundResumeSyncIndicatorDuration,
       () {
         _foregroundResumeSyncTimer = null;
         if (!_isForegroundResumeSyncing) {
@@ -26,7 +26,7 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
         if (_isForegroundActive && recoverableSyncPending) {
           _foregroundResumeSyncCycleCount += 1;
           if (_foregroundResumeSyncCycleCount <
-              ChatProvider._foregroundResumeSyncIndicatorMaxCycles) {
+              _foregroundResumeSyncIndicatorMaxCycles) {
             _startForegroundResumeSyncIndicator(
               reason: 'foreground-resume-pending',
             );

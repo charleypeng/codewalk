@@ -1,8 +1,10 @@
-.PHONY: help deps gen icons icons-tray icons-app tray-prepare icons-check analyze test coverage smoke check desktop android precommit clean release
+.PHONY: help deps gen icons icons-tray icons-app tray-prepare icons-check analyze test test-fast test-unit test-widget test-integration test-shard coverage smoke check check-fast desktop android precommit clean release
 
 APK_DIR = build/app/outputs/flutter-apk
 APK_PATH = $(APK_DIR)/codewalk.apk
 ANALYZE_LOG = /tmp/flutter_analyze.log
+TEST_JOBS ?= 12
+FAST_EXCLUDE_TAGS ?= slow,integration
 
 # TTY detection: suppress verbose output in non-interactive mode (CI/agents)
 ifneq ($(shell test -t 1 && echo yes),yes)
@@ -25,10 +27,16 @@ help:
 	@echo "  make tray-prepare  Convert black bg to transparent on tray_mono_master*.png"
 	@echo "  make icons-check Validate icon artifacts and dimensions"
 	@echo "  make analyze    Run static analysis + issue budget gate"
-	@echo "  make test       Run tests"
+	@echo "  make test       Run full test suite (parallel)"
+	@echo "  make test-fast  Run fast tests only (exclude slow/integration tags)"
+	@echo "  make test-unit  Run unit + presentation tests only"
+	@echo "  make test-widget  Run widget tests only"
+	@echo "  make test-integration  Run integration-tagged tests only"
+	@echo "  make test-shard SHARD_TOTAL=N SHARD_INDEX=I  Run one sharded test slice"
 	@echo "  make coverage   Run tests with coverage + threshold gate"
 	@echo "  make smoke      Run integration smoke test against OpenCode server"
 	@echo "  make check      deps + gen + analyze + test"
+	@echo "  make check-fast deps + gen + analyze + test-fast"
 	@echo "  make desktop    Build desktop app for current host OS"
 	@echo "  make android    Build Android APK (arm64)"
 	@echo "  make precommit  check + android"
@@ -202,7 +210,26 @@ analyze:
 	bash tool/ci/check_analyze_budget.sh $(ANALYZE_LOG) 186
 
 test:
-	flutter test $(QUIET)
+	flutter test --no-pub -j $(TEST_JOBS) $(QUIET)
+
+test-fast:
+	flutter test --no-pub -j $(TEST_JOBS) --exclude-tags "$(FAST_EXCLUDE_TAGS)" $(QUIET)
+
+test-unit:
+	flutter test --no-pub -j $(TEST_JOBS) test/unit test/presentation $(QUIET)
+
+test-widget:
+	flutter test --no-pub -j $(TEST_JOBS) test/widget test/widget_test.dart $(QUIET)
+
+test-integration:
+	flutter test --no-pub -j 1 --tags integration test/integration $(QUIET)
+
+test-shard:
+	@if [ -z "$(SHARD_TOTAL)" ] || [ -z "$(SHARD_INDEX)" ]; then \
+		echo "Usage: make test-shard SHARD_TOTAL=<n> SHARD_INDEX=<i>"; \
+		exit 1; \
+	fi
+	flutter test --no-pub -j $(TEST_JOBS) --total-shards $(SHARD_TOTAL) --shard-index $(SHARD_INDEX) $(QUIET)
 
 coverage:
 	flutter test --coverage $(QUIET)
@@ -212,6 +239,8 @@ smoke:
 	bash tool/qa/smoke_test.sh
 
 check: deps gen analyze test
+
+check-fast: deps gen analyze test-fast
 
 desktop:
 	@set -e; \

@@ -55,6 +55,7 @@ import 'package:simple_icons/simple_icons.dart';
 
 import '../support/fakes.dart';
 
+@Tags(<String>['slow'])
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -385,7 +386,7 @@ void main() {
           find.byKey(const ValueKey<String>('appbar_drawer_alert_badge')),
           findsNothing,
         );
-        await tester.pump(const Duration(seconds: 12));
+        await tester.pump(const Duration(milliseconds: 350));
         await tester.pump();
         if (activeServerId != null) {
           appProvider.setHealthForTesting(
@@ -473,7 +474,7 @@ void main() {
         );
       }
 
-      await tester.pump(const Duration(seconds: 13));
+      await tester.pump(const Duration(milliseconds: 350));
       await tester.pump();
       if (activeServerId != null) {
         appProvider.setHealthForTesting(
@@ -500,7 +501,7 @@ void main() {
       );
 
       if (FeatureFlags.refreshlessRealtime) {
-        await tester.pump(const Duration(seconds: 52));
+        await tester.pump(const Duration(milliseconds: 650));
         await tester.pump();
         if (activeServerId != null) {
           appProvider.setHealthForTesting(
@@ -2421,7 +2422,7 @@ void main() {
       final reconnectMessageCalls = repository.getMessagesCallCount;
       final reconnectStatusCalls = repository.getSessionStatusCallCount;
 
-      await tester.pump(const Duration(seconds: 5));
+      await tester.pump(const Duration(milliseconds: 600));
       await tester.pumpAndSettle();
 
       expect(repository.getMessagesCallCount, reconnectMessageCalls);
@@ -6002,6 +6003,10 @@ ChatProvider _buildChatProvider({
       localDataSource: localDataSource,
     ),
     localDataSource: localDataSource,
+    syncHealthCheckInterval: const Duration(milliseconds: 150),
+    foregroundResumeSyncIndicatorDuration: const Duration(milliseconds: 250),
+    foregroundResumeSyncIndicatorMaxCycles: 2,
+    abortSuppressionWindow: const Duration(milliseconds: 500),
   );
 }
 

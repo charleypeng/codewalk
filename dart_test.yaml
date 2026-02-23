@@ -3,3 +3,7 @@ tags:
     # Tests that require a reachable OpenCode server instance.
   hardware:
     # Reserved for tests that depend on host/device hardware.
+  integration:
+    # End-to-end integration coverage; typically slower than unit/widget.
+  slow:
+    # Long-running tests kept out of fast local feedback loops.
