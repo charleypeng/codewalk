@@ -56,11 +56,14 @@ extension _ChatProviderCorePart on ChatProvider {
           scopeId: scopeId,
         );
 
-        final remoteSelection = await _loadRemoteChatSelection();
-        if (remoteSelection != null) {
-          _mergeRemoteSessionSelectionOverrides(
-            remoteSelection.sessionOverridesBySessionId,
-          );
+        _RemoteChatSelection? remoteSelection;
+        if (_isExperimentalMultiDeviceSyncEnabled) {
+          remoteSelection = await _loadRemoteChatSelection();
+          if (remoteSelection != null) {
+            _mergeRemoteSessionSelectionOverrides(
+              remoteSelection.sessionOverridesBySessionId,
+            );
+          }
         }
 
         final persistedProvider = await localDataSource.getSelectedProvider(
@@ -75,11 +78,12 @@ extension _ChatProviderCorePart on ChatProvider {
         Provider? selectedProvider;
 
         if (remoteSelection != null && remoteSelection.hasModel) {
+          final remote = remoteSelection;
           selectedProvider = _providers
-              .where((p) => p.id == remoteSelection.providerId)
+              .where((p) => p.id == remote.providerId)
               .firstOrNull;
           if (selectedProvider != null &&
-              !selectedProvider.models.containsKey(remoteSelection.modelId)) {
+              !selectedProvider.models.containsKey(remote.modelId)) {
             selectedProvider = null;
           }
         }

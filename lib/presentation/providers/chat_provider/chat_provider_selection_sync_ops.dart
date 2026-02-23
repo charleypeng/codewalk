@@ -107,6 +107,9 @@ extension _ChatProviderSelectionSyncOps on ChatProvider {
     required String reason,
     bool force = false,
   }) async {
+    if (!_isExperimentalMultiDeviceSyncEnabled) {
+      return;
+    }
     final client = dioClient;
     if (client == null || (_providers.isEmpty && _agents.isEmpty)) {
       return;

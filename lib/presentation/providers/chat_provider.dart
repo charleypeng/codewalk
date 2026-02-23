@@ -47,6 +47,7 @@ import '../services/chat_title_generator.dart';
 import '../services/event_feedback_dispatcher.dart';
 import '../utils/session_title_formatter.dart';
 import 'project_provider.dart';
+import 'settings_provider.dart';
 
 part 'chat_provider_draft_part.dart';
 part 'chat_provider_types_part.dart';
@@ -116,6 +117,7 @@ class ChatProvider extends ChangeNotifier {
     required this.rejectQuestion,
     required this.projectProvider,
     required this.localDataSource,
+    this.settingsProvider,
     this.dioClient,
     this.eventFeedbackDispatcher,
     this.titleGenerator,
@@ -168,6 +170,7 @@ class ChatProvider extends ChangeNotifier {
   final RejectQuestion rejectQuestion;
   final ProjectProvider projectProvider;
   final AppLocalDataSource localDataSource;
+  final SettingsProvider? settingsProvider;
   final DioClient? dioClient;
   final EventFeedbackDispatcher? eventFeedbackDispatcher;
   final ChatTitleGenerator? titleGenerator;
@@ -183,7 +186,7 @@ class ChatProvider extends ChangeNotifier {
   // Maps preserved stream subscriptions to their originating session ID so
   // the event reducer can check whether a session still has an active stream.
   final Map<StreamSubscription<dynamic>, String>
-      _preservedMessageSubscriptions = <StreamSubscription<dynamic>, String>{};
+  _preservedMessageSubscriptions = <StreamSubscription<dynamic>, String>{};
   int _eventStreamGeneration = 0;
   Timer? _globalRefreshDebounce;
   bool _isRespondingInteraction = false;
@@ -440,6 +443,10 @@ class ChatProvider extends ChangeNotifier {
     return isCurrentSessionActivelyResponding;
   }
 
+  bool get _isExperimentalMultiDeviceSyncEnabled {
+    return settingsProvider?.enableExperimentalMultiDeviceSync ?? true;
+  }
+
   bool get _hasLocalActiveSelectionSyncWork {
     final hasInProgressAssistant = _messages.whereType<AssistantMessage>().any(
       (message) => !message.isCompleted,
@@ -450,23 +457,38 @@ class ChatProvider extends ChangeNotifier {
         hasInProgressAssistant;
   }
 
+  bool get _hasAnyBusySessionStatus {
+    for (final status in _sessionStatusById.values) {
+      if (status.type == SessionStatusType.busy ||
+          status.type == SessionStatusType.retry) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool get _hasAnyActiveAbortSuppression {
+    final sessionId = _abortSuppressionSessionId;
+    if (sessionId == null || sessionId.trim().isEmpty) {
+      return false;
+    }
+    return _isAbortSuppressionActiveForSession(sessionId);
+  }
+
   bool get _shouldDeferRemoteSelectionSync {
-    if (_currentSession == null) {
+    if (!_isExperimentalMultiDeviceSyncEnabled) {
       return false;
     }
     if (_hasLocalActiveSelectionSyncWork) {
       return true;
     }
-    // Defer during abort suppression window: the server may still be running
-    // multi-step processing (tool-calls loop). PATCH /config triggers
-    // Instance.dispose() server-side, which aborts ALL active sessions.
-    if (_isAbortSuppressionActiveForSession(_currentSession?.id)) {
+    if (_preservedMessageSubscriptions.isNotEmpty) {
       return true;
     }
-    final status = currentSessionStatus?.type;
-    final hasBusyStatus =
-        status == SessionStatusType.busy || status == SessionStatusType.retry;
-    return hasBusyStatus;
+    if (_hasAnyActiveAbortSuppression) {
+      return true;
+    }
+    return _hasAnyBusySessionStatus;
   }
 
   bool get _canFlushPendingRemoteSelectionSync {
@@ -1265,6 +1287,15 @@ class ChatProvider extends ChangeNotifier {
       scopeId: scopeId,
     );
     if (syncRemote) {
+      if (!_isExperimentalMultiDeviceSyncEnabled) {
+        _pendingRemoteSelectionSync = false;
+        _pendingRemoteSelectionSyncSince = null;
+        _setSelectionSyncTransactionPhase(
+          _SelectionSyncTransactionPhase.idle,
+          reason: 'sync-disabled',
+        );
+        return;
+      }
       if (_shouldDeferRemoteSelectionSync) {
         _markPendingRemoteSelectionSync(reason: 'active-response');
       } else {

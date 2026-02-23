@@ -233,6 +233,29 @@ void main() {
       expect(second.keepMobileRealtimeForShortPeriod, isFalse);
     });
 
+    test('persists experimental multi-device sync preference', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+
+      expect(first.enableExperimentalMultiDeviceSync, isFalse);
+
+      await first.setEnableExperimentalMultiDeviceSync(true);
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(second.enableExperimentalMultiDeviceSync, isTrue);
+    });
+
     test('persists speech engine, timeout, and Sherpa language', () async {
       final local = InMemoryAppLocalDataSource();
       final first = SettingsProvider(

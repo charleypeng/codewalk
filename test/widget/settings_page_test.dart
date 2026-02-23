@@ -33,6 +33,7 @@ void main() {
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('Setup Wizard'), findsOneWidget);
     expect(find.text('Appearance'), findsOneWidget);
+    expect(find.text('Behavior'), findsOneWidget);
     expect(find.text('Notifications'), findsOneWidget);
     expect(find.text('Speech to text'), findsOneWidget);
     expect(find.text('Logs'), findsOneWidget);
@@ -77,6 +78,31 @@ void main() {
 
     expect(tester.widget<SwitchListTile>(composerTipsFinder).value, isFalse);
     expect(settingsProvider.showComposerTips, isFalse);
+
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Behavior').first);
+    await tester.pumpAndSettle();
+
+    final syncToggleFinder = find.byKey(
+      const ValueKey<String>('settings_toggle_experimental_multi_device_sync'),
+    );
+    expect(syncToggleFinder, findsOneWidget);
+    expect(find.text('Enable experimental multi-device sync'), findsOneWidget);
+    expect(
+      find.text(
+        'Can abort on-going sessions when working in more than one session at the same time.',
+      ),
+      findsOneWidget,
+    );
+    expect(tester.widget<SwitchListTile>(syncToggleFinder).value, isFalse);
+
+    await tester.tap(syncToggleFinder);
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<SwitchListTile>(syncToggleFinder).value, isTrue);
+    expect(settingsProvider.enableExperimentalMultiDeviceSync, isTrue);
 
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
@@ -138,6 +164,12 @@ void main() {
     expect(find.byType(SettingsPage), findsOneWidget);
 
     await tester.tap(find.text('Appearance').first);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey<String>('settings_toggle_composer_tips')),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
     await tester.pumpAndSettle();
     expect(find.text('Composer tips'), findsOneWidget);
 

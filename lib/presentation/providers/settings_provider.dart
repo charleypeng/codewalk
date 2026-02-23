@@ -72,6 +72,8 @@ class SettingsProvider extends ChangeNotifier {
       _settings.desktopCloseBehavior != DesktopCloseBehavior.close;
   bool get keepMobileRealtimeForShortPeriod =>
       _settings.keepMobileRealtimeForShortPeriod;
+  bool get enableExperimentalMultiDeviceSync =>
+      _settings.enableExperimentalMultiDeviceSync;
   SpeechToTextEngine get speechToTextEngine => _settings.speechToTextEngine;
   int get speechSilenceTimeoutSeconds => _settings.speechSilenceTimeoutSeconds;
   String get sherpaLanguageCode => _settings.sherpaLanguageCode;
@@ -373,6 +375,15 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(keepMobileRealtimeForShortPeriod: enabled);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setEnableExperimentalMultiDeviceSync(bool enabled) async {
+    if (_settings.enableExperimentalMultiDeviceSync == enabled) {
+      return;
+    }
+    _settings = _settings.copyWith(enableExperimentalMultiDeviceSync: enabled);
     notifyListeners();
     await _persist();
   }

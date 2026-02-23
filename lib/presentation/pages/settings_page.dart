@@ -9,6 +9,7 @@ import 'logs_page.dart';
 import 'onboarding_wizard_page.dart';
 import 'settings/sections/about_settings_section.dart';
 import 'settings/sections/appearance_settings_section.dart';
+import 'settings/sections/behavior_settings_section.dart';
 import 'settings/sections/notifications_settings_section.dart';
 import 'settings/sections/servers_settings_section.dart';
 import 'settings/sections/shortcuts_settings_section.dart';
@@ -62,6 +63,13 @@ class _SettingsPageState extends State<SettingsPage> {
       description: 'Density and timeline bubble visibility',
       icon: Symbols.tune_rounded,
       builder: (_) => const AppearanceSettingsSection(),
+    ),
+    _SettingsSection(
+      id: 'behavior',
+      title: 'Behavior',
+      description: 'Composer sync and concurrency safety',
+      icon: Symbols.settings,
+      builder: (_) => const BehaviorSettingsSection(),
     ),
     _SettingsSection(
       id: 'notifications',

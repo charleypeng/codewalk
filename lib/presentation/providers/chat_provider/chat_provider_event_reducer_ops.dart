@@ -307,12 +307,24 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           break;
         }
 
-        final error = properties['error'] as Map<String, dynamic>?;
-        final data = error?['data'] as Map<String, dynamic>? ?? {};
-        final message =
-            data['message'] as String? ??
-            error?['message'] as String? ??
-            'Session error';
+        final rawError = properties['error'];
+        final error = rawError is Map
+            ? Map<String, dynamic>.from(rawError)
+            : null;
+        final dataRaw = error?['data'];
+        final data = dataRaw is Map
+            ? Map<String, dynamic>.from(dataRaw)
+            : const <String, dynamic>{};
+        final messageFromData = data['message']?.toString().trim();
+        final messageFromError = error?['message']?.toString().trim();
+        final messageFromRawError = rawError is String ? rawError.trim() : null;
+        final message = (messageFromData != null && messageFromData.isNotEmpty)
+            ? messageFromData
+            : (messageFromError != null && messageFromError.isNotEmpty)
+            ? messageFromError
+            : (messageFromRawError != null && messageFromRawError.isNotEmpty)
+            ? messageFromRawError
+            : 'Session error';
         final code = data['code']?.toString() ?? error?['code']?.toString();
         AppLogger.info(
           'session.error current session=$sessionId message=$message code=$code hasPreservedStream=${_hasPreservedStreamForSession(sessionId)}',

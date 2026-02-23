@@ -358,6 +358,7 @@ class ExperienceSettings {
       showComposerTips: true,
       desktopCloseBehavior: DesktopCloseBehavior.tray,
       keepMobileRealtimeForShortPeriod: true,
+      enableExperimentalMultiDeviceSync: false,
       themeMode: ThemeModeOption.system,
       useAmoledDark: false,
       useDynamicColor: true,
@@ -388,6 +389,7 @@ class ExperienceSettings {
     required this.showComposerTips,
     required this.desktopCloseBehavior,
     required this.keepMobileRealtimeForShortPeriod,
+    this.enableExperimentalMultiDeviceSync = false,
     this.themeMode = ThemeModeOption.system,
     this.useAmoledDark = false,
     this.useDynamicColor = true,
@@ -418,6 +420,7 @@ class ExperienceSettings {
   final bool showComposerTips;
   final DesktopCloseBehavior desktopCloseBehavior;
   final bool keepMobileRealtimeForShortPeriod;
+  final bool enableExperimentalMultiDeviceSync;
   final ThemeModeOption themeMode;
   final bool useAmoledDark;
   final bool useDynamicColor;
@@ -448,6 +451,7 @@ class ExperienceSettings {
     bool? showComposerTips,
     DesktopCloseBehavior? desktopCloseBehavior,
     bool? keepMobileRealtimeForShortPeriod,
+    bool? enableExperimentalMultiDeviceSync,
     ThemeModeOption? themeMode,
     bool? useAmoledDark,
     bool? useDynamicColor,
@@ -484,6 +488,9 @@ class ExperienceSettings {
       keepMobileRealtimeForShortPeriod:
           keepMobileRealtimeForShortPeriod ??
           this.keepMobileRealtimeForShortPeriod,
+      enableExperimentalMultiDeviceSync:
+          enableExperimentalMultiDeviceSync ??
+          this.enableExperimentalMultiDeviceSync,
       themeMode: themeMode ?? this.themeMode,
       useAmoledDark: useAmoledDark ?? this.useAmoledDark,
       useDynamicColor: useDynamicColor ?? this.useDynamicColor,
@@ -556,6 +563,7 @@ class ExperienceSettings {
       'keepDesktopRunningInTray':
           desktopCloseBehavior != DesktopCloseBehavior.close,
       'keepMobileRealtimeForShortPeriod': keepMobileRealtimeForShortPeriod,
+      'enableExperimentalMultiDeviceSync': enableExperimentalMultiDeviceSync,
       'themeMode': themeModeOptionKey(themeMode),
       'useAmoledDark': useAmoledDark,
       'useDynamicColor': useDynamicColor,
@@ -601,6 +609,8 @@ class ExperienceSettings {
     var desktopCloseBehavior = defaults.desktopCloseBehavior;
     var keepMobileRealtimeForShortPeriod =
         defaults.keepMobileRealtimeForShortPeriod;
+    var enableExperimentalMultiDeviceSync =
+        defaults.enableExperimentalMultiDeviceSync;
     var speechToTextEngine = defaults.speechToTextEngine;
     var speechSilenceTimeoutSeconds = defaults.speechSilenceTimeoutSeconds;
     var sherpaLanguageCode = defaults.sherpaLanguageCode;
@@ -766,6 +776,12 @@ class ExperienceSettings {
       keepMobileRealtimeForShortPeriod = keepMobileRealtimeForShortPeriodJson;
     }
 
+    final enableExperimentalMultiDeviceSyncJson =
+        json['enableExperimentalMultiDeviceSync'];
+    if (enableExperimentalMultiDeviceSyncJson is bool) {
+      enableExperimentalMultiDeviceSync = enableExperimentalMultiDeviceSyncJson;
+    }
+
     var themeMode = defaults.themeMode;
     final themeModeJson = json['themeMode'];
     if (themeModeJson is String && themeModeJson.trim().isNotEmpty) {
@@ -844,6 +860,7 @@ class ExperienceSettings {
       showComposerTips: showComposerTips,
       desktopCloseBehavior: desktopCloseBehavior,
       keepMobileRealtimeForShortPeriod: keepMobileRealtimeForShortPeriod,
+      enableExperimentalMultiDeviceSync: enableExperimentalMultiDeviceSync,
       themeMode: themeMode,
       useAmoledDark: useAmoledDark,
       useDynamicColor: useDynamicColor,

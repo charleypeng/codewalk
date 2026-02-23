@@ -406,15 +406,73 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
   }
 
   Future<bool> _syncSelectionToRemoteConfig() async {
-    final modelSynced = await _syncSelectedModelToRemoteConfig();
-    final agentSynced = await _syncSelectedAgentToRemoteConfig();
-    final variantSynced = await _syncSelectedVariantToRemoteConfig();
-    final sessionOverridesSynced =
-        await _syncSessionSelectionOverridesToRemoteConfig();
-    return modelSynced &&
-        agentSynced &&
-        variantSynced &&
-        sessionOverridesSynced;
+    final client = dioClient;
+    if (client == null) {
+      return true;
+    }
+
+    final providerId = _selectedProviderId;
+    final modelId = _selectedModelId;
+    final modelKey = (providerId == null || modelId == null)
+        ? null
+        : _modelKey(providerId, modelId);
+    final agentNameRaw = _selectedAgentName?.trim();
+    final agentName = (agentNameRaw == null || agentNameRaw.isEmpty)
+        ? null
+        : agentNameRaw;
+    final variantValue =
+        (_selectedVariantId == null || _selectedVariantId!.trim().isEmpty)
+        ? ChatProvider._remoteAutoVariantValue
+        : _selectedVariantId!.trim();
+    final variantSyncKey = (agentName == null || modelKey == null)
+        ? null
+        : _remoteVariantSyncKey(
+            agentName: agentName,
+            modelKey: modelKey,
+            variantValue: variantValue,
+          );
+    final overridesSignature = _sessionOverridesSignature(
+      _sessionOverridesForContext(_activeContextKey),
+    );
+
+    final hasSelectionChanges =
+        _lastSyncedRemoteModelKey != modelKey ||
+        _lastSyncedRemoteAgentName != agentName ||
+        _lastSyncedRemoteVariantKey != variantSyncKey ||
+        _lastSyncedRemoteSessionOverridesSignature != overridesSignature;
+    if (!hasSelectionChanges) {
+      return true;
+    }
+
+    try {
+      final updatedAtEpochMs = DateTime.now().millisecondsSinceEpoch;
+      await client.patch<void>(
+        '/config',
+        data: <String, dynamic>{
+          'agent': <String, dynamic>{
+            ChatProvider._configSyncAgentName: <String, dynamic>{
+              'options': <String, dynamic>{
+                ChatProvider._configCodewalkNamespace:
+                    _buildSelectionSyncPayload(
+                      updatedAtEpochMs: updatedAtEpochMs,
+                      includeVariantSnapshot: true,
+                      includeSessionSelections: true,
+                    ),
+              },
+            },
+          },
+        },
+        queryParameters: _configQueryParameters(),
+      );
+      _lastSyncedRemoteModelKey = modelKey;
+      _lastSyncedRemoteAgentName = agentName;
+      _lastSyncedRemoteVariantKey = variantSyncKey;
+      _lastSyncedRemoteSessionOverridesSignature = overridesSignature;
+      return true;
+    } catch (_) {
+      // Remote sync is best-effort; local state remains source of truth.
+      return false;
+    }
   }
 
   void _setSelectionSyncTransactionPhase(
@@ -442,6 +500,17 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
   }
 
   void _attemptPendingRemoteSelectionSync({required String reason}) {
+    if (!_isExperimentalMultiDeviceSyncEnabled) {
+      if (_pendingRemoteSelectionSync) {
+        _pendingRemoteSelectionSync = false;
+        _pendingRemoteSelectionSyncSince = null;
+        _setSelectionSyncTransactionPhase(
+          _SelectionSyncTransactionPhase.idle,
+          reason: 'sync-disabled',
+        );
+      }
+      return;
+    }
     if (!_pendingRemoteSelectionSync) {
       return;
     }

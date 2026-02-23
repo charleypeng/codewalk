@@ -192,6 +192,7 @@ Future<void> init() async {
       rejectQuestion: sl(),
       projectProvider: sl(),
       localDataSource: sl(),
+      settingsProvider: sl(),
       dioClient: sl(),
       eventFeedbackDispatcher: sl(),
       titleGenerator: sl(),
