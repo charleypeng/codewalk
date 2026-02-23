@@ -232,7 +232,7 @@ test-shard:
 	flutter test --no-pub -j $(TEST_JOBS) --total-shards $(SHARD_TOTAL) --shard-index $(SHARD_INDEX) $(QUIET)
 
 coverage:
-	flutter test --coverage $(QUIET)
+	flutter test --no-pub --coverage -j $(TEST_JOBS) $(QUIET)
 	bash tool/ci/check_coverage.sh coverage/lcov.info 35
 
 smoke:

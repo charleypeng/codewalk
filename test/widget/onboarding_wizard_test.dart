@@ -181,6 +181,7 @@ void main() {
       // Tap "Test connection" and let the async chain complete.
       await tester.tap(find.text('Test connection'));
       await tester.runAsync(() async {
+        // Keep a small margin above the injected 120ms health timeout.
         await Future<void>.delayed(const Duration(milliseconds: 180));
       });
       // Use pump instead of pumpAndSettle to avoid timeout from spinner.
@@ -201,6 +202,7 @@ void main() {
 
         await tester.tap(find.text('Test connection'));
         await tester.runAsync(() async {
+          // Keep a small margin above the injected 120ms health timeout.
           await Future<void>.delayed(const Duration(milliseconds: 180));
         });
         await tester.pump();
@@ -217,6 +219,7 @@ void main() {
           if (find.text('Test connection').evaluate().isNotEmpty) {
             await tester.tap(find.text('Test connection'));
             await tester.runAsync(() async {
+              // Keep a small margin above the injected 120ms health timeout.
               await Future<void>.delayed(const Duration(milliseconds: 180));
             });
             await tester.pump();
