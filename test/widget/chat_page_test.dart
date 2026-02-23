@@ -38,6 +38,7 @@ import 'package:codewalk/domain/usecases/update_chat_session.dart';
 import 'package:codewalk/domain/usecases/watch_chat_events.dart';
 import 'package:codewalk/domain/usecases/watch_global_chat_events.dart';
 import 'package:codewalk/presentation/pages/chat_page.dart';
+import 'package:codewalk/presentation/pages/settings_page.dart';
 import 'package:codewalk/presentation/providers/app_provider.dart';
 import 'package:codewalk/presentation/providers/chat_provider.dart';
 import 'package:codewalk/presentation/providers/project_provider.dart';
@@ -213,23 +214,17 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(
-          find.text('Density and timeline bubble visibility'),
-          findsOneWidget,
-        );
+        expect(find.byType(SettingsPage), findsOneWidget);
 
         await tester.pageBack();
         await tester.pumpAndSettle();
 
-        final chatScaffoldState = tester.state<ScaffoldState>(
-          find.byType(Scaffold).first,
-        );
         expect(find.byType(ChatPage), findsOneWidget);
         expect(
           find.byKey(const ValueKey<String>('appbar_drawer_button')),
           findsOneWidget,
         );
-        expect(chatScaffoldState.isDrawerOpen, isFalse);
+        expect(scaffoldState.isDrawerOpen, isFalse);
         expect(find.text('Conversations'), findsNothing);
       },
     );
