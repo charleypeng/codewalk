@@ -4079,38 +4079,61 @@ void main() {
       },
     );
 
+    test('loadSessionInsights calls all 4 endpoints', () async {
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+
+      // Reset counters after selectSession (which also calls loadSessionInsights).
+      chatRepository.getSessionChildrenCallCount = 0;
+      chatRepository.getSessionTodoCallCount = 0;
+      chatRepository.getSessionDiffCallCount = 0;
+      chatRepository.getSessionStatusCallCount = 0;
+
+      await provider.loadSessionInsights('ses_1');
+
+      expect(chatRepository.getSessionChildrenCallCount, 1);
+      expect(chatRepository.getSessionTodoCallCount, 1);
+      expect(chatRepository.getSessionDiffCallCount, 1);
+      expect(chatRepository.getSessionStatusCallCount, 1);
+    });
+
+    test('loadSessionInsights handles partial failures gracefully', () async {
+      chatRepository.sessionChildrenFailure = const ServerFailure(
+        'children down',
+      );
+      chatRepository.sessionDiffFailure = const ServerFailure('diff down');
+      chatRepository.sessionTodoById['ses_1'] = const <SessionTodo>[
+        SessionTodo(
+          id: 'todo_partial',
+          content: 'Survive failure',
+          status: 'pending',
+          priority: 'low',
+        ),
+      ];
+      chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+        'ses_1': SessionStatusInfo(type: SessionStatusType.idle),
+      };
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.loadSessionInsights('ses_1');
+
+      // Todo and status populated despite children and diff failing.
+      expect(provider.currentSessionTodo, hasLength(1));
+      expect(provider.currentSessionTodo.single.id, 'todo_partial');
+      expect(provider.currentSessionStatus?.type, SessionStatusType.idle);
+    });
+
     test(
-      'loadSessionInsights calls all 4 endpoints',
+      'loadSessionInsights keeps partial data when one endpoint throws',
       () async {
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
 
-        // Reset counters after selectSession (which also calls loadSessionInsights).
-        chatRepository.getSessionChildrenCallCount = 0;
-        chatRepository.getSessionTodoCallCount = 0;
-        chatRepository.getSessionDiffCallCount = 0;
-        chatRepository.getSessionStatusCallCount = 0;
-
-        await provider.loadSessionInsights('ses_1');
-
-        expect(chatRepository.getSessionChildrenCallCount, 1);
-        expect(chatRepository.getSessionTodoCallCount, 1);
-        expect(chatRepository.getSessionDiffCallCount, 1);
-        expect(chatRepository.getSessionStatusCallCount, 1);
-      },
-    );
-
-    test(
-      'loadSessionInsights handles partial failures gracefully',
-      () async {
-        chatRepository.sessionChildrenFailure =
-            const ServerFailure('children down');
-        chatRepository.sessionDiffFailure =
-            const ServerFailure('diff down');
         chatRepository.sessionTodoById['ses_1'] = const <SessionTodo>[
           SessionTodo(
-            id: 'todo_partial',
-            content: 'Survive failure',
+            id: 'todo_after_throw',
+            content: 'Still available',
             status: 'pending',
             priority: 'low',
           ),
@@ -4118,69 +4141,84 @@ void main() {
         chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
           'ses_1': SessionStatusInfo(type: SessionStatusType.idle),
         };
-
-        await provider.loadSessions();
-        await provider.selectSession(provider.sessions.first);
-        await provider.loadSessionInsights('ses_1');
-
-        // Todo and status populated despite children and diff failing.
-        expect(provider.currentSessionTodo, hasLength(1));
-        expect(provider.currentSessionTodo.single.id, 'todo_partial');
-        expect(provider.currentSessionStatus?.type, SessionStatusType.idle);
-      },
-    );
-
-    test(
-      'loadSessionInsights runs calls concurrently',
-      () async {
-        await provider.loadSessions();
-        await provider.selectSession(provider.sessions.first);
-
-        // Set up delay hooks AFTER selectSession to avoid blocking it.
-        final childrenStarted = Completer<void>();
-        final todoStarted = Completer<void>();
-        final gate = Completer<void>();
-
-        // Children blocks on gate; todo signals when it starts.
         chatRepository.getSessionChildrenDelay = () async {
-          childrenStarted.complete();
-          await gate.future;
-        };
-        chatRepository.getSessionTodoDelay = () async {
-          todoStarted.complete();
+          throw StateError('children boom');
         };
 
-        final insightsFuture = provider.loadSessionInsights('ses_1');
+        await expectLater(provider.loadSessionInsights('ses_1'), completes);
 
-        // If sequential, todo would never start while children is blocked.
-        // With parallel execution, todo starts independently.
-        await todoStarted.future;
-        expect(childrenStarted.isCompleted, isTrue);
-
-        // Release the gate so loadSessionInsights can finish.
-        gate.complete();
-        await insightsFuture;
+        expect(provider.currentSessionTodo, hasLength(1));
+        expect(provider.currentSessionTodo.single.id, 'todo_after_throw');
+        expect(provider.currentSessionStatus?.type, SessionStatusType.idle);
+        expect(provider.isLoadingSessionInsights, isFalse);
       },
     );
 
     test(
-      'loadSessionInsights does not set loading flag when silent',
+      'loadSessionInsights clears loading flag when status throws',
       () async {
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
 
-        bool sawLoading = false;
-        provider.addListener(() {
-          if (provider.isLoadingSessionInsights) {
-            sawLoading = true;
-          }
-        });
+        chatRepository.getSessionStatusDelay = () async {
+          throw StateError('status boom');
+        };
 
-        await provider.loadSessionInsights('ses_1', silent: true);
+        await expectLater(provider.loadSessionInsights('ses_1'), completes);
 
-        expect(sawLoading, isFalse);
+        expect(provider.isLoadingSessionInsights, isFalse);
+        expect(
+          provider.sessionInsightsError,
+          'Some session details could not be loaded',
+        );
       },
     );
+
+    test('loadSessionInsights runs calls concurrently', () async {
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+
+      // Set up delay hooks AFTER selectSession to avoid blocking it.
+      final childrenStarted = Completer<void>();
+      final todoStarted = Completer<void>();
+      final gate = Completer<void>();
+
+      // Children blocks on gate; todo signals when it starts.
+      chatRepository.getSessionChildrenDelay = () async {
+        childrenStarted.complete();
+        await gate.future;
+      };
+      chatRepository.getSessionTodoDelay = () async {
+        todoStarted.complete();
+      };
+
+      final insightsFuture = provider.loadSessionInsights('ses_1');
+
+      // If sequential, todo would never start while children is blocked.
+      // With parallel execution, todo starts independently.
+      await todoStarted.future;
+      expect(childrenStarted.isCompleted, isTrue);
+
+      // Release the gate so loadSessionInsights can finish.
+      gate.complete();
+      await insightsFuture;
+    });
+
+    test('loadSessionInsights does not set loading flag when silent', () async {
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+
+      bool sawLoading = false;
+      provider.addListener(() {
+        if (provider.isLoadingSessionInsights) {
+          sawLoading = true;
+        }
+      });
+
+      await provider.loadSessionInsights('ses_1', silent: true);
+
+      expect(sawLoading, isFalse);
+    });
 
     test(
       'session.idle clears stale active stream activity for current session',

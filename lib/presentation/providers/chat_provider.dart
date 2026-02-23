@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
 
+import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../core/config/feature_flags.dart';
@@ -1016,6 +1017,24 @@ class ChatProvider extends ChangeNotifier {
     );
   }
 
+  Future<Either<Failure, T>> _runSessionInsightRequest<T>({
+    required String requestName,
+    required Future<Either<Failure, T>> Function() request,
+  }) async {
+    try {
+      return await request();
+    } catch (error, stackTrace) {
+      AppLogger.error(
+        'Unexpected exception while loading session $requestName',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return Left(
+        UnknownFailure('Unexpected error while loading session $requestName'),
+      );
+    }
+  }
+
   Future<void> loadSessionInsights(
     String sessionId, {
     String? messageId,
@@ -1027,90 +1046,107 @@ class ChatProvider extends ChangeNotifier {
       notifyListeners();
     }
 
-    final directory = projectProvider.currentDirectory;
-    final projectId = projectProvider.currentProjectId;
+    try {
+      final directory = projectProvider.currentDirectory;
+      final projectId = projectProvider.currentProjectId;
 
-    // Launch all 4 independent calls concurrently.
-    final childrenFuture = getSessionChildren(
-      GetSessionChildrenParams(
-        projectId: projectId,
-        sessionId: sessionId,
-        directory: directory,
-      ),
-    );
-    final todoFuture = getSessionTodo(
-      GetSessionTodoParams(
-        projectId: projectId,
-        sessionId: sessionId,
-        directory: directory,
-      ),
-    );
-    final diffFuture = getSessionDiff(
-      GetSessionDiffParams(
-        projectId: projectId,
-        sessionId: sessionId,
-        messageId: messageId,
-        directory: directory,
-      ),
-    );
-    final statusFuture = getSessionStatus(
-      GetSessionStatusParams(directory: directory),
-    );
+      // Launch all 4 independent calls concurrently.
+      final childrenFuture = _runSessionInsightRequest(
+        requestName: 'children',
+        request: () => getSessionChildren(
+          GetSessionChildrenParams(
+            projectId: projectId,
+            sessionId: sessionId,
+            directory: directory,
+          ),
+        ),
+      );
+      final todoFuture = _runSessionInsightRequest(
+        requestName: 'todo',
+        request: () => getSessionTodo(
+          GetSessionTodoParams(
+            projectId: projectId,
+            sessionId: sessionId,
+            directory: directory,
+          ),
+        ),
+      );
+      final diffFuture = _runSessionInsightRequest(
+        requestName: 'diff',
+        request: () => getSessionDiff(
+          GetSessionDiffParams(
+            projectId: projectId,
+            sessionId: sessionId,
+            messageId: messageId,
+            directory: directory,
+          ),
+        ),
+      );
+      final statusFuture = _runSessionInsightRequest(
+        requestName: 'status',
+        request: () =>
+            getSessionStatus(GetSessionStatusParams(directory: directory)),
+      );
 
-    // Await all results (futures already running in parallel).
-    final childrenResult = await childrenFuture;
-    final todoResult = await todoFuture;
-    final diffResult = await diffFuture;
-    final statusResult = await statusFuture;
+      // Await all results (futures already running in parallel).
+      final childrenResult = await childrenFuture;
+      final todoResult = await todoFuture;
+      final diffResult = await diffFuture;
+      final statusResult = await statusFuture;
 
-    childrenResult.fold(
-      (failure) {
-        AppLogger.warn(
-          'Failed to load session children for $sessionId: $failure',
-        );
-      },
-      (children) {
-        _sessionChildrenById[sessionId] = children;
-      },
-    );
+      childrenResult.fold(
+        (failure) {
+          AppLogger.warn(
+            'Failed to load session children for $sessionId: $failure',
+          );
+        },
+        (children) {
+          _sessionChildrenById[sessionId] = children;
+        },
+      );
 
-    todoResult.fold(
-      (failure) {
-        AppLogger.warn('Failed to load session todo for $sessionId: $failure');
-      },
-      (todos) {
-        _sessionTodoById[sessionId] = todos;
-      },
-    );
+      todoResult.fold(
+        (failure) {
+          AppLogger.warn(
+            'Failed to load session todo for $sessionId: $failure',
+          );
+        },
+        (todos) {
+          _sessionTodoById[sessionId] = todos;
+        },
+      );
 
-    diffResult.fold(
-      (failure) {
-        AppLogger.warn('Failed to load session diff for $sessionId: $failure');
-      },
-      (diff) {
-        _sessionDiffById[sessionId] = diff;
-      },
-    );
+      diffResult.fold(
+        (failure) {
+          AppLogger.warn(
+            'Failed to load session diff for $sessionId: $failure',
+          );
+        },
+        (diff) {
+          _sessionDiffById[sessionId] = diff;
+        },
+      );
 
-    statusResult.fold(
-      (failure) {
-        AppLogger.warn('Failed to refresh status for $sessionId: $failure');
-        if (!silent) {
-          _sessionInsightsError = 'Some session details could not be loaded';
-        }
-      },
-      (statusMap) {
-        statusMap.removeWhere(
-          (id, _) => ChatTitleGenerator.ephemeralSessionIds.contains(id),
-        );
-        _sessionStatusById = statusMap;
-      },
-    );
-
-    if (!silent) {
-      _isLoadingSessionInsights = false;
+      statusResult.fold(
+        (failure) {
+          AppLogger.warn('Failed to refresh status for $sessionId: $failure');
+          if (!silent) {
+            _sessionInsightsError = 'Some session details could not be loaded';
+          }
+        },
+        (statusMap) {
+          statusMap.removeWhere(
+            (id, _) => ChatTitleGenerator.ephemeralSessionIds.contains(id),
+          );
+          _sessionStatusById = statusMap;
+        },
+      );
+    } finally {
+      if (!silent) {
+        _isLoadingSessionInsights = false;
+      }
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   Future<void> respondPermissionRequest({
