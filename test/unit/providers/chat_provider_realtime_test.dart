@@ -1349,6 +1349,121 @@ void main() {
         expect((assistant.parts.single as TextPart).text, 'resilient answer');
       },
     );
+
+    test(
+      'refreshActiveSessionView does not duplicate user message reconciled by content signature',
+      () async {
+        // Simulate the duplication bug: the local optimistic user message has a
+        // different ID than the server-echoed version. During an active stream,
+        // _mergeServerMessagesWithActiveLocalTail must not re-append the local
+        // message after _mergeServerMessagesWithPendingLocalUsers reconciled it.
+        final now = DateTime.now();
+        final streamController =
+            StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          await streamController.close();
+        });
+
+        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+          // Emit the server user message echo, then keep the stream open
+          // (simulating an in-progress assistant response / tool calls).
+          streamController.add(
+            Right(
+              UserMessage(
+                id: 'msg_server_user',
+                sessionId: 'ses_1',
+                time: now.add(const Duration(seconds: 1)),
+                parts: const <MessagePart>[
+                  TextPart(
+                    id: 'prt_server_user',
+                    messageId: 'msg_server_user',
+                    sessionId: 'ses_1',
+                    text: 'hello dedup active',
+                  ),
+                ],
+              ),
+            ),
+          );
+          // Emit a partial (in-progress) assistant to keep session "active".
+          streamController.add(
+            Right(
+              AssistantMessage(
+                id: 'msg_assistant_partial',
+                sessionId: 'ses_1',
+                time: now.add(const Duration(seconds: 2)),
+                // No completedTime — this marks it as in-progress.
+                parts: const <MessagePart>[
+                  TextPart(
+                    id: 'prt_assistant_partial',
+                    messageId: 'msg_assistant_partial',
+                    sessionId: 'ses_1',
+                    text: 'thinking...',
+                  ),
+                ],
+              ),
+            ),
+          );
+          return streamController.stream;
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('hello dedup active');
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        // Verify the stream is still open and the session is actively
+        // responding (prerequisite for the tail preservation code path).
+        expect(provider.isCurrentSessionActivelyResponding, isTrue);
+
+        // Set up messagesBySession to return the server-side view (different
+        // user message ID, same text). This is what refreshActiveSessionView
+        // will fetch from getChatMessages.
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          UserMessage(
+            id: 'msg_server_user',
+            sessionId: 'ses_1',
+            time: now.add(const Duration(seconds: 1)),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_server_user',
+                messageId: 'msg_server_user',
+                sessionId: 'ses_1',
+                text: 'hello dedup active',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_assistant_partial',
+            sessionId: 'ses_1',
+            time: now.add(const Duration(seconds: 2)),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_assistant_partial',
+                messageId: 'msg_assistant_partial',
+                sessionId: 'ses_1',
+                text: 'still thinking...',
+              ),
+            ],
+          ),
+        ];
+
+        // Trigger the merge via refresh — this is where the duplication
+        // happened before the fix.
+        await provider.refresh();
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        // There must be exactly one UserMessage (the server version).
+        final userMessages = provider.messages.whereType<UserMessage>().toList();
+        expect(
+          userMessages,
+          hasLength(1),
+          reason: 'User message was duplicated during active session refresh',
+        );
+        expect(userMessages.single.id, 'msg_server_user');
+      },
+    );
   });
 }
 

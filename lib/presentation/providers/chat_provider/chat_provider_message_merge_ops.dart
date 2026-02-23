@@ -17,18 +17,31 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     }, _updateOrAddMessage);
   }
 
-  List<ChatMessage> _mergeServerMessagesWithPendingLocalUsers(
+  /// Merges server messages with any pending local user messages that haven't
+  /// been echoed by the server yet. Returns both the merged list and the set of
+  /// local IDs that were reconciled (matched to a server message by content
+  /// signature), so callers can avoid re-adding them during tail preservation.
+  ({List<ChatMessage> messages, Set<String> reconciledLocalIds})
+  _mergeServerMessagesWithPendingLocalUsers(
     List<ChatMessage> serverMessages,
   ) {
-    if (_pendingLocalUserMessageIds.isEmpty) {
-      return serverMessages;
-    }
+    final emptyResult = (
+      messages: serverMessages,
+      reconciledLocalIds: const <String>{},
+    );
+    if (_pendingLocalUserMessageIds.isEmpty) return emptyResult;
 
     final merged = List<ChatMessage>.from(serverMessages);
     final existingIds = serverMessages.map((message) => message.id).toSet();
+    final reconciledLocalIds = <String>{};
 
+    // Track IDs matched by exact server ID before removing from pending.
+    for (final id in _pendingLocalUserMessageIds) {
+      if (existingIds.contains(id)) reconciledLocalIds.add(id);
+    }
     _pendingLocalUserMessageIds.removeWhere(existingIds.contains);
 
+    // Track IDs matched by content signature (different local vs server ID).
     for (final serverMessage in serverMessages) {
       if (serverMessage is! UserMessage) {
         continue;
@@ -39,11 +52,13 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
       if (pendingLocalIndex == -1) {
         continue;
       }
-      _pendingLocalUserMessageIds.remove(_messages[pendingLocalIndex].id);
+      final localId = _messages[pendingLocalIndex].id;
+      reconciledLocalIds.add(localId);
+      _pendingLocalUserMessageIds.remove(localId);
     }
 
     if (_pendingLocalUserMessageIds.isEmpty) {
-      return merged;
+      return (messages: merged, reconciledLocalIds: reconciledLocalIds);
     }
 
     for (final message in _messages) {
@@ -59,14 +74,16 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
       merged.add(message);
     }
 
-    return merged;
+    return (messages: merged, reconciledLocalIds: reconciledLocalIds);
   }
 
   List<ChatMessage> _mergeServerMessagesWithActiveLocalTail(
     List<ChatMessage> serverMessages, {
     required String sessionId,
   }) {
-    final merged = _mergeServerMessagesWithPendingLocalUsers(serverMessages);
+    final (:messages, :reconciledLocalIds) =
+        _mergeServerMessagesWithPendingLocalUsers(serverMessages);
+    final merged = messages;
     final currentSessionId = _currentSession?.id;
     final shouldPreserveLocalTail =
         currentSessionId == sessionId && isSessionActivelyResponding(sessionId);
@@ -75,6 +92,8 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     }
 
     final existingIds = merged.map((message) => message.id).toSet();
+    // Treat reconciled local IDs as already present so they are not re-added.
+    existingIds.addAll(reconciledLocalIds);
     final localMessages = _messages
         .where((message) => message.sessionId == sessionId)
         .toList(growable: false);
