@@ -944,5 +944,147 @@ void main() {
         provider2.dispose();
       },
     );
+
+    test(
+      'currentThreadPermissionRequests returns identical cached list on '
+      'repeated access without mutations',
+      () async {
+        chatRepository.pendingPermissions = const <ChatPermissionRequest>[
+          ChatPermissionRequest(
+            id: 'perm_cache_1',
+            sessionId: 'ses_1',
+            permission: 'edit',
+            patterns: <String>['lib/**'],
+            always: <String>[],
+            metadata: <String, dynamic>{},
+          ),
+        ];
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'model_a': testModel('model_a')},
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a'],
+          ),
+        );
+
+        await provider.initializeProviders();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        final first = provider.currentThreadPermissionRequests;
+        final second = provider.currentThreadPermissionRequests;
+        expect(identical(first, second), isTrue);
+      },
+    );
+
+    test(
+      'currentThreadPermissionRequests cache invalidates on permission event',
+      () async {
+        chatRepository.pendingPermissions = const <ChatPermissionRequest>[
+          ChatPermissionRequest(
+            id: 'perm_inv_1',
+            sessionId: 'ses_1',
+            permission: 'edit',
+            patterns: <String>['lib/**'],
+            always: <String>[],
+            metadata: <String, dynamic>{},
+          ),
+        ];
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'model_a': testModel('model_a')},
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a'],
+          ),
+        );
+
+        await provider.initializeProviders();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        final before = provider.currentThreadPermissionRequests;
+        expect(before.map((item) => item.id), <String>['perm_inv_1']);
+
+        // Respond to the permission request (removes it from pending map).
+        await provider.respondPermissionRequest(
+          requestId: 'perm_inv_1',
+          reply: 'once',
+        );
+
+        final after = provider.currentThreadPermissionRequests;
+        expect(identical(before, after), isFalse);
+        expect(after, isEmpty);
+      },
+    );
+
+    test(
+      'currentThreadPermissionRequests cache invalidates on session switch',
+      () async {
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_2',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(500),
+            title: 'Session 2',
+          ),
+        );
+        chatRepository.pendingPermissions = const <ChatPermissionRequest>[
+          ChatPermissionRequest(
+            id: 'perm_sw_1',
+            sessionId: 'ses_1',
+            permission: 'edit',
+            patterns: <String>['lib/**'],
+            always: <String>[],
+            metadata: <String, dynamic>{},
+          ),
+        ];
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'model_a': testModel('model_a')},
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a'],
+          ),
+        );
+
+        await provider.initializeProviders();
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.where((item) => item.id == 'ses_1').first,
+        );
+
+        final beforeSwitch = provider.currentThreadPermissionRequests;
+        expect(beforeSwitch.map((item) => item.id), <String>['perm_sw_1']);
+
+        // Switch to a session that has no pending permissions.
+        await provider.selectSession(
+          provider.sessions.where((item) => item.id == 'ses_2').first,
+        );
+
+        final afterSwitch = provider.currentThreadPermissionRequests;
+        expect(identical(beforeSwitch, afterSwitch), isFalse);
+        expect(afterSwitch, isEmpty);
+      },
+    );
   });
 }

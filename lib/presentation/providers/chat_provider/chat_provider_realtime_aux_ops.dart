@@ -149,6 +149,7 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
               .add(item);
         }
         _pendingPermissionsBySession = grouped;
+        _threadPermissionsVersion++;
       },
     );
 
@@ -179,10 +180,12 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     final existingIndex = _sessions.indexWhere((item) => item.id == session.id);
     if (existingIndex == -1) {
       _sessions.add(session);
+      _threadPermissionsVersion++;
       _sortSessionsInPlace();
       return;
     }
     _sessions[existingIndex] = session;
+    _threadPermissionsVersion++;
     _sortSessionsInPlace();
   }
 
@@ -207,6 +210,7 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     _sessionChildrenById.remove(sessionId);
     _sessionTodoById.remove(sessionId);
     _sessionDiffById.remove(sessionId);
+    _threadPermissionsVersion++;
   }
 
   bool _isEphemeralTitleEvent(ChatEvent event) {

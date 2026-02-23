@@ -44,6 +44,7 @@ extension _ChatProviderCachePersistenceOps on ChatProvider {
 
         if (cachedSessions.isNotEmpty) {
           _sessions = cachedSessions;
+          _threadPermissionsVersion++;
           _sortSessionsInPlace();
           _setState(ChatState.loaded);
           if (!isFresh) {
@@ -160,6 +161,7 @@ extension _ChatProviderCachePersistenceOps on ChatProvider {
       }
 
       _currentSession = selectedSession;
+      _threadPermissionsVersion++;
       _messages = cachedMessages;
       _messagesVersion++;
       _pendingLocalUserMessageIds.clear();

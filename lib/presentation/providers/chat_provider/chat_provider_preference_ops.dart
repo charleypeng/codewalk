@@ -36,6 +36,7 @@ extension _ChatProviderPreferenceOps on ChatProvider {
       _sessionListFilter = SessionListFilter.active;
       _sessionListSort = SessionListSort.recent;
       _sessionVisibleLimit = 40;
+      _threadPermissionsVersion++;
       return;
     }
 
@@ -54,6 +55,7 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     _sessionListFilter = snapshot.sessionListFilter;
     _sessionListSort = snapshot.sessionListSort;
     _sessionVisibleLimit = snapshot.sessionVisibleLimit;
+    _threadPermissionsVersion++;
   }
 
   Future<void> _loadModelPreferenceState({

@@ -185,6 +185,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           _upsertSession(nextSession);
           if (_currentSession?.id == nextSession.id) {
             _currentSession = nextSession;
+            _threadPermissionsVersion++;
           }
           _notifyListeners();
         }
@@ -464,6 +465,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           sessionPermissions[existingIndex] = permission;
         }
         _pendingPermissionsBySession[permission.sessionId] = sessionPermissions;
+        _threadPermissionsVersion++;
         _notifyListeners();
         break;
       case 'permission.replied':
@@ -484,6 +486,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         } else {
           _pendingPermissionsBySession[sessionId] = filtered;
         }
+        _threadPermissionsVersion++;
         _notifyListeners();
         break;
       case 'question.asked':

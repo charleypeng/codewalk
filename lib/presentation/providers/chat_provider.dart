@@ -192,6 +192,15 @@ class ChatProvider extends ChangeNotifier {
   // builder can short-circuit its cache check in O(1) instead of computing
   // Object.hashAll over all messages+parts (O(N*M)) on every build.
   int _messagesVersion = 0;
+  // Monotonic counter bumped on every mutation to the four inputs of
+  // currentThreadPermissionRequests (_pendingPermissionsBySession,
+  // _sessionChildrenById, _sessions, _currentSession) so the getter can
+  // short-circuit its BFS traversal + collection allocation in O(1).
+  int _threadPermissionsVersion = 0;
+  int _cachedThreadPermissionsAtVersion = -1;
+  List<ChatPermissionRequest> _cachedThreadPermissionRequests = const [];
+  int _cachedChildMapAtVersion = -1;
+  Map<String, List<String>> _cachedChildSessionIdsByParent = const {};
   String? _errorMessage;
   StreamSubscription<dynamic>? _messageSubscription;
   StreamSubscription<dynamic>? _eventSubscription;
@@ -659,9 +668,15 @@ class ChatProvider extends ChangeNotifier {
       currentSessionQuestions.firstOrNull;
 
   List<ChatPermissionRequest> get currentThreadPermissionRequests {
+    if (_cachedThreadPermissionsAtVersion == _threadPermissionsVersion) {
+      return _cachedThreadPermissionRequests;
+    }
+
     final currentSessionId = _currentSession?.id;
     if (currentSessionId == null || currentSessionId.isEmpty) {
-      return const <ChatPermissionRequest>[];
+      _cachedThreadPermissionsAtVersion = _threadPermissionsVersion;
+      _cachedThreadPermissionRequests = const <ChatPermissionRequest>[];
+      return _cachedThreadPermissionRequests;
     }
 
     final orderedSessionIds = <String>[
@@ -683,7 +698,10 @@ class ChatProvider extends ChangeNotifier {
       }
     }
 
-    return List<ChatPermissionRequest>.unmodifiable(collected);
+    _cachedThreadPermissionsAtVersion = _threadPermissionsVersion;
+    _cachedThreadPermissionRequests =
+        List<ChatPermissionRequest>.unmodifiable(collected);
+    return _cachedThreadPermissionRequests;
   }
 
   List<String> _orderedCurrentSessionDescendantIds() {
@@ -717,6 +735,10 @@ class ChatProvider extends ChangeNotifier {
   }
 
   Map<String, List<String>> _childSessionIdsByParent() {
+    if (_cachedChildMapAtVersion == _threadPermissionsVersion) {
+      return _cachedChildSessionIdsByParent;
+    }
+
     final output = <String, List<String>>{};
 
     void appendChild({required String parentId, required String childId}) {
@@ -747,6 +769,8 @@ class ChatProvider extends ChangeNotifier {
       }
     }
 
+    _cachedChildMapAtVersion = _threadPermissionsVersion;
+    _cachedChildSessionIdsByParent = output;
     return output;
   }
 
@@ -1114,6 +1138,7 @@ class ChatProvider extends ChangeNotifier {
         },
         (children) {
           _sessionChildrenById[sessionId] = children;
+          _threadPermissionsVersion++;
         },
       );
 
@@ -1191,6 +1216,7 @@ class ChatProvider extends ChangeNotifier {
           _pendingPermissionsBySession[sessionId] = filtered;
         }
       }
+      _threadPermissionsVersion++;
     });
     notifyListeners();
   }
@@ -1597,6 +1623,7 @@ class ChatProvider extends ChangeNotifier {
         return;
       }
       _sessions = filteredSessions;
+      _threadPermissionsVersion++;
       _sessionVisibleLimit = 40;
       _sortSessionsInPlace();
       _setState(ChatState.loaded);
@@ -1645,6 +1672,7 @@ class ChatProvider extends ChangeNotifier {
     try {
       if (_sessions.isEmpty) {
         _currentSession = null;
+        _threadPermissionsVersion++;
         _messages = <ChatMessage>[];
         _messagesVersion++;
         await _clearLastSessionSnapshotBestEffort(
@@ -1751,6 +1779,7 @@ class ChatProvider extends ChangeNotifier {
     _sessions.add(session);
     _sortSessionsInPlace();
     _currentSession = session;
+    _threadPermissionsVersion++;
     _messages = <ChatMessage>[];
     _messagesVersion++;
     _pendingLocalUserMessageIds.clear();
@@ -1807,6 +1836,7 @@ class ChatProvider extends ChangeNotifier {
     _pendingLocalUserMessageIds.clear();
     _clearRejectedDraft();
     _currentSession = session;
+    _threadPermissionsVersion++;
     _applySelectionPriorityForCurrentSession();
     notifyListeners();
 
@@ -2496,6 +2526,7 @@ class ChatProvider extends ChangeNotifier {
           (item) => item.id != session.id && !item.archived,
           orElse: () => previous,
         );
+        _threadPermissionsVersion++;
       }
     }
     notifyListeners();
@@ -2516,6 +2547,7 @@ class ChatProvider extends ChangeNotifier {
         _applySessionLocally(previous);
         if (_currentSession?.id != previous.id && session.id == previous.id) {
           _currentSession = previous;
+          _threadPermissionsVersion++;
         }
         _handleFailure(failure);
         notifyListeners();
@@ -2627,6 +2659,7 @@ class ChatProvider extends ChangeNotifier {
 
     if (wasCurrent) {
       _currentSession = _sessions.firstOrNull;
+      _threadPermissionsVersion++;
       _messages = <ChatMessage>[];
       _messagesVersion++;
     }
@@ -2644,6 +2677,7 @@ class ChatProvider extends ChangeNotifier {
       (failure) {
         _sessions = previousSessions;
         _currentSession = previousCurrent;
+        _threadPermissionsVersion++;
         _messages = previousMessages;
         _messagesVersion++;
         _sortSessionsInPlace();
