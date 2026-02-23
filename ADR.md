@@ -22,6 +22,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-016: Hybrid File-Backed Cache for Large Chat Payloads
 - ADR-017: Android Foreground Service for Reliable Background Monitoring
 - ADR-018: Dedicated SSE Dio Instance for Connection Pool Isolation
+- ADR-019: Defer Config-Mutating API Calls During Active Server Processing
 
 ---
 
@@ -716,7 +717,11 @@ Create a second Dio instance (`_sseDio`) in `DioClient` with its own `IOHttpClie
 - ✅ Web platform is unaffected (no-op stub; browser manages connections natively).
 - ⚠ Two Dio instances must stay synchronized for `baseUrl` and auth changes — all config methods in `DioClient` must update both.
 - ⚠ No `dispose()` exists for either Dio instance; acceptable since `DioClient` is a `registerLazySingleton` with app-lifetime scope.
+- ✅ Selection sync deferral during abort suppression eliminates server-side Instance disposal during active multi-step processing.
+- ⚠ The 8s abort suppression window must be longer than typical inter-step gaps; very long tool executions may need the SSE busy-status fallback.
 - ❌ Slightly higher memory footprint from the second connection pool (negligible for mobile/desktop).
+
+**Note**: The app's selection sync (`PATCH /config`) triggers `Config.update()` on the OpenCode server, which calls `Instance.dispose()`. Instance disposal runs cleanup handlers that abort ALL active session `AbortController`s — killing any multi-step processing in progress. This was the root cause of false aborts on complex prompts (tool-calls with multiple steps). Fix: defer selection sync during the 8-second abort suppression window post-send, so `PATCH /config` never arrives while the server is still processing multi-step loops. After the window, the existing `hasBusyStatus` check (based on SSE session status) prevents premature sync. See ADR-019 for the full decision on config-mutating call deferral.
 
 ### Key Files
 
@@ -726,3 +731,48 @@ Create a second Dio instance (`_sseDio`) in `DioClient` with its own `IOHttpClie
 - `lib/core/network/dio_sse_adapter_stub.dart`
 - `lib/data/datasources/chat_remote_datasource.dart`
 - `lib/core/di/injection_container.dart`
+
+---
+
+## ADR-019: Defer Config-Mutating API Calls During Active Server Processing (2026-02-22)
+
+**Status**: Accepted
+
+**Related**: ADR-018 (Dedicated SSE Dio Instance), ADR-003 (Realtime-First Sync Lifecycle)
+
+### Context
+
+The app syncs user selections (model, provider, system prompt) to the OpenCode server via `PATCH /config`. On the server side, `Config.update()` calls `Instance.dispose()`, which runs cleanup handlers that abort ALL active session `AbortController`s. When the user sends a complex prompt that triggers multi-step processing (tool-calls with multiple steps), a selection sync fired during processing would kill the in-flight session — causing false aborts that appeared as server-side failures but were actually client-initiated lifecycle disruption.
+
+This was confirmed as the root cause of false aborts on complex prompts: the client's selection sync arrived while the server was between tool-call steps, triggering Instance disposal and aborting the entire session.
+
+### Decision
+
+Defer all config-mutating API calls (`PATCH /config`) during the post-send abort suppression window (8 seconds). The deferral uses two complementary guards:
+
+1. **Abort suppression window (time-based)**: For the first 8 seconds after `prompt_async` send, selection sync is suppressed entirely. This covers the critical startup phase where SSE session status may not yet reflect "busy" state.
+2. **SSE busy-status check (state-based)**: After the 8s window expires, the existing `hasBusyStatus` check (derived from SSE session status events) prevents sync while the server reports an active session. This covers long-running tool executions that extend beyond the initial window.
+
+Selection changes made during suppression are not lost — they are applied on the next eligible sync cycle once both guards clear.
+
+### Rationale
+
+- `PATCH /config` is the only client-initiated API call that triggers server-side `Instance.dispose()`, making it the sole vector for client-caused session abortion.
+- The 8s time-based guard is necessary because SSE status events have propagation delay — the server may be processing before the client receives a "busy" status update.
+- The state-based `hasBusyStatus` fallback ensures protection extends beyond the fixed window for long-running operations.
+- Two-layer deferral (time + state) provides defense-in-depth without requiring server-side changes.
+
+### Consequences
+
+- ✅ Eliminates client-caused false aborts during multi-step server processing (tool-calls, complex prompts).
+- ✅ Selection changes are preserved and applied after processing completes — no user input is lost.
+- ✅ No server-side changes required; fix is entirely client-side.
+- ⚠ The 8s abort suppression window must be longer than typical inter-step gaps; if the server takes longer than 8s between steps AND SSE status has not yet propagated, a race condition is theoretically possible (mitigated by the SSE busy-status fallback).
+- ⚠ Selection sync latency increases by up to 8s after sending a prompt — user sees the old selection on the server briefly.
+- ❌ Immediate selection sync during active processing is intentionally prohibited; this is a correctness tradeoff over responsiveness.
+
+### Key Files
+
+- `lib/presentation/providers/chat_provider/chat_provider_send_ops.dart`
+- `lib/presentation/providers/chat_provider/chat_provider_realtime_ops.dart`
+- `lib/data/datasources/chat_remote_datasource.dart`

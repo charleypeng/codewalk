@@ -455,6 +455,12 @@ class ChatProvider extends ChangeNotifier {
     if (_hasLocalActiveSelectionSyncWork) {
       return true;
     }
+    // Defer during abort suppression window: the server may still be running
+    // multi-step processing (tool-calls loop). PATCH /config triggers
+    // Instance.dispose() server-side, which aborts ALL active sessions.
+    if (_isAbortSuppressionActiveForSession(_currentSession?.id)) {
+      return true;
+    }
     final status = currentSessionStatus?.type;
     final hasBusyStatus =
         status == SessionStatusType.busy || status == SessionStatusType.retry;
