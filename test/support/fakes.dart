@@ -896,7 +896,17 @@ class FakeChatRepository implements ChatRepository {
   String? lastGetSessionsDirectory;
   int getSessionsCallCount = 0;
   int getMessagesCallCount = 0;
+  int getSessionChildrenCallCount = 0;
+  int getSessionTodoCallCount = 0;
+  int getSessionDiffCallCount = 0;
   int getSessionStatusCallCount = 0;
+
+  // Optional delay hooks for concurrency verification in tests.
+  Future<void> Function()? getSessionChildrenDelay;
+  Future<void> Function()? getSessionTodoDelay;
+  Future<void> Function()? getSessionDiffDelay;
+  Future<void> Function()? getSessionStatusDelay;
+
   String? lastSendProjectId;
   String? lastSendSessionId;
   String? lastSendDirectory;
@@ -1097,6 +1107,7 @@ class FakeChatRepository implements ChatRepository {
     String? directory,
   }) async {
     getSessionStatusCallCount += 1;
+    if (getSessionStatusDelay != null) await getSessionStatusDelay!();
     if (sessionStatusFailure != null) {
       return Left(sessionStatusFailure!);
     }
@@ -1109,6 +1120,8 @@ class FakeChatRepository implements ChatRepository {
     String sessionId, {
     String? directory,
   }) async {
+    getSessionChildrenCallCount += 1;
+    if (getSessionChildrenDelay != null) await getSessionChildrenDelay!();
     if (sessionChildrenFailure != null) {
       return Left(sessionChildrenFailure!);
     }
@@ -1125,6 +1138,8 @@ class FakeChatRepository implements ChatRepository {
     String sessionId, {
     String? directory,
   }) async {
+    getSessionTodoCallCount += 1;
+    if (getSessionTodoDelay != null) await getSessionTodoDelay!();
     if (sessionTodoFailure != null) {
       return Left(sessionTodoFailure!);
     }
@@ -1142,6 +1157,8 @@ class FakeChatRepository implements ChatRepository {
     String? messageId,
     String? directory,
   }) async {
+    getSessionDiffCallCount += 1;
+    if (getSessionDiffDelay != null) await getSessionDiffDelay!();
     if (sessionDiffFailure != null) {
       return Left(sessionDiffFailure!);
     }

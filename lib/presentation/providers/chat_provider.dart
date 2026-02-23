@@ -1030,13 +1030,39 @@ class ChatProvider extends ChangeNotifier {
     final directory = projectProvider.currentDirectory;
     final projectId = projectProvider.currentProjectId;
 
-    final childrenResult = await getSessionChildren(
+    // Launch all 4 independent calls concurrently.
+    final childrenFuture = getSessionChildren(
       GetSessionChildrenParams(
         projectId: projectId,
         sessionId: sessionId,
         directory: directory,
       ),
     );
+    final todoFuture = getSessionTodo(
+      GetSessionTodoParams(
+        projectId: projectId,
+        sessionId: sessionId,
+        directory: directory,
+      ),
+    );
+    final diffFuture = getSessionDiff(
+      GetSessionDiffParams(
+        projectId: projectId,
+        sessionId: sessionId,
+        messageId: messageId,
+        directory: directory,
+      ),
+    );
+    final statusFuture = getSessionStatus(
+      GetSessionStatusParams(directory: directory),
+    );
+
+    // Await all results (futures already running in parallel).
+    final childrenResult = await childrenFuture;
+    final todoResult = await todoFuture;
+    final diffResult = await diffFuture;
+    final statusResult = await statusFuture;
+
     childrenResult.fold(
       (failure) {
         AppLogger.warn(
@@ -1048,13 +1074,6 @@ class ChatProvider extends ChangeNotifier {
       },
     );
 
-    final todoResult = await getSessionTodo(
-      GetSessionTodoParams(
-        projectId: projectId,
-        sessionId: sessionId,
-        directory: directory,
-      ),
-    );
     todoResult.fold(
       (failure) {
         AppLogger.warn('Failed to load session todo for $sessionId: $failure');
@@ -1064,14 +1083,6 @@ class ChatProvider extends ChangeNotifier {
       },
     );
 
-    final diffResult = await getSessionDiff(
-      GetSessionDiffParams(
-        projectId: projectId,
-        sessionId: sessionId,
-        messageId: messageId,
-        directory: directory,
-      ),
-    );
     diffResult.fold(
       (failure) {
         AppLogger.warn('Failed to load session diff for $sessionId: $failure');
@@ -1081,9 +1092,6 @@ class ChatProvider extends ChangeNotifier {
       },
     );
 
-    final statusResult = await getSessionStatus(
-      GetSessionStatusParams(directory: directory),
-    );
     statusResult.fold(
       (failure) {
         AppLogger.warn('Failed to refresh status for $sessionId: $failure');
