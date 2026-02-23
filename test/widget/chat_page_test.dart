@@ -172,6 +172,69 @@ void main() {
     });
 
     testWidgets(
+      'mobile opening settings from drawer keeps drawer closed after back',
+      (WidgetTester tester) async {
+        await tester.binding.setSurfaceSize(const Size(500, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test'
+          ..defaultServerId = 'srv_test'
+          ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 'srv_test',
+              'url': 'http://127.0.0.1:4096',
+              'label': 'Test Server',
+              'basicAuthEnabled': false,
+              'basicAuthUsername': '',
+              'basicAuthPassword': '',
+              'createdAt': 0,
+              'updatedAt': 0,
+            },
+          ]);
+        final provider = _buildChatProvider(localDataSource: localDataSource);
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+        await tester.pumpWidget(_testApp(provider, appProvider));
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('appbar_drawer_button')),
+        );
+        await tester.pumpAndSettle();
+
+        final scaffoldState = tester.state<ScaffoldState>(
+          find.byType(Scaffold).first,
+        );
+        expect(scaffoldState.isDrawerOpen, isTrue);
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('sidebar_settings_icon_button')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Density and timeline bubble visibility'),
+          findsOneWidget,
+        );
+
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+
+        final chatScaffoldState = tester.state<ScaffoldState>(
+          find.byType(Scaffold).first,
+        );
+        expect(find.byType(ChatPage), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey<String>('appbar_drawer_button')),
+          findsOneWidget,
+        );
+        expect(chatScaffoldState.isDrawerOpen, isFalse);
+        expect(find.text('Conversations'), findsNothing);
+      },
+    );
+
+    testWidgets(
       'mobile selection closes drawer even when session is already active',
       (WidgetTester tester) async {
         await tester.binding.setSurfaceSize(const Size(500, 900));
