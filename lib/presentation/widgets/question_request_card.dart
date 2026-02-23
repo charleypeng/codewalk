@@ -404,7 +404,7 @@ class _QuestionRequestCardState extends State<QuestionRequestCard> {
             .toDouble();
     final isCompact = mediaQuery.size.width < 640;
     final maxCardHeight = (availableHeight * (isCompact ? 0.64 : 0.54))
-        .clamp(260.0, 560.0)
+        .clamp(220.0, 560.0)
         .toDouble();
     final colorScheme = Theme.of(context).colorScheme;
 
