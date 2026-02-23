@@ -6597,8 +6597,65 @@ void main() {
         expect(provider.messages, isNotEmpty);
       });
 
-      test('increments on session delete that clears current messages',
-          () async {
+      test(
+        'increments on session delete that clears current messages',
+        () async {
+          chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+            AssistantMessage(
+              id: 'msg_a',
+              sessionId: 'ses_1',
+              time: DateTime.now(),
+              completedTime: DateTime.now(),
+            ),
+          ];
+
+          await provider.projectProvider.initializeProject();
+          await provider.loadSessions();
+          await provider.selectSession(provider.sessions.first);
+
+          final versionBeforeDelete = provider.messagesVersion;
+          await provider.deleteSession('ses_1');
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+
+          expect(provider.messagesVersion, greaterThan(versionBeforeDelete));
+        },
+      );
+
+      test(
+        'increments on message.removed event when a message is removed',
+        () async {
+          chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+            AssistantMessage(
+              id: 'msg_a',
+              sessionId: 'ses_1',
+              time: DateTime.now(),
+              completedTime: DateTime.now(),
+            ),
+          ];
+
+          await provider.projectProvider.initializeProject();
+          await provider.loadSessions();
+          await provider.selectSession(provider.sessions.first);
+
+          final versionBeforeEvent = provider.messagesVersion;
+
+          chatRepository.emitEvent(
+            const ChatEvent(
+              type: 'message.removed',
+              properties: <String, dynamic>{
+                'sessionID': 'ses_1',
+                'messageID': 'msg_a',
+              },
+            ),
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 40));
+
+          expect(provider.messagesVersion, greaterThan(versionBeforeEvent));
+          expect(provider.messages, isEmpty);
+        },
+      );
+
+      test('does not increment on message.removed no-op event', () async {
         chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
           AssistantMessage(
             id: 'msg_a',
@@ -6612,12 +6669,146 @@ void main() {
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
 
-        final versionBeforeDelete = provider.messagesVersion;
-        await provider.deleteSession('ses_1');
-        await Future<void>.delayed(const Duration(milliseconds: 10));
+        final versionBeforeEvent = provider.messagesVersion;
 
-        expect(provider.messagesVersion, greaterThan(versionBeforeDelete));
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'message.removed',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_1',
+              'messageID': 'missing_message',
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(provider.messagesVersion, versionBeforeEvent);
+        expect(provider.messages, hasLength(1));
       });
+
+      test('does not increment on message.part.removed no-op event', () async {
+        final initialPart = TextPart(
+          id: 'prt_1',
+          messageId: 'msg_a',
+          sessionId: 'ses_1',
+          text: 'hello',
+        );
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_a',
+            sessionId: 'ses_1',
+            time: DateTime.now(),
+            completedTime: DateTime.now(),
+            parts: <MessagePart>[initialPart],
+          ),
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        final versionBeforeEvent = provider.messagesVersion;
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'message.part.removed',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_1',
+              'messageID': 'msg_a',
+              'partID': 'missing_part',
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(provider.messagesVersion, versionBeforeEvent);
+        final message = provider.messages.single as AssistantMessage;
+        expect(message.parts, hasLength(1));
+      });
+
+      test('does not increment on message.part.updated no-op event', () async {
+        final initialPart = TextPart(
+          id: 'prt_1',
+          messageId: 'msg_a',
+          sessionId: 'ses_1',
+          text: 'hello',
+        );
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_a',
+            sessionId: 'ses_1',
+            time: DateTime.now(),
+            completedTime: DateTime.now(),
+            parts: <MessagePart>[initialPart],
+          ),
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        final versionBeforeEvent = provider.messagesVersion;
+
+        chatRepository.emitEvent(
+          ChatEvent(
+            type: 'message.part.updated',
+            properties: <String, dynamic>{
+              'part': MessagePartModel.fromDomain(initialPart).toJson(),
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(provider.messagesVersion, versionBeforeEvent);
+      });
+
+      test(
+        'increments on message.part.updated when part content changes',
+        () async {
+          final initialPart = TextPart(
+            id: 'prt_1',
+            messageId: 'msg_a',
+            sessionId: 'ses_1',
+            text: 'hello',
+          );
+          chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+            AssistantMessage(
+              id: 'msg_a',
+              sessionId: 'ses_1',
+              time: DateTime.now(),
+              completedTime: DateTime.now(),
+              parts: <MessagePart>[initialPart],
+            ),
+          ];
+
+          await provider.projectProvider.initializeProject();
+          await provider.loadSessions();
+          await provider.selectSession(provider.sessions.first);
+
+          final versionBeforeEvent = provider.messagesVersion;
+          final updatedPart = TextPart(
+            id: 'prt_1',
+            messageId: 'msg_a',
+            sessionId: 'ses_1',
+            text: 'hello updated',
+          );
+
+          chatRepository.emitEvent(
+            ChatEvent(
+              type: 'message.part.updated',
+              properties: <String, dynamic>{
+                'part': MessagePartModel.fromDomain(updatedPart).toJson(),
+              },
+            ),
+          );
+          await Future<void>.delayed(const Duration(milliseconds: 40));
+
+          expect(provider.messagesVersion, greaterThan(versionBeforeEvent));
+          final message = provider.messages.single as AssistantMessage;
+          final textPart = message.parts.single as TextPart;
+          expect(textPart.text, 'hello updated');
+        },
+      );
 
       test('does not increment without message mutations', () async {
         await provider.projectProvider.initializeProject();
