@@ -73,7 +73,10 @@ void main() {
       ),
     );
 
+    expect(find.text('Continue'), findsOneWidget);
     await tester.tap(find.text('Yes'));
+    await tester.pump();
+    await tester.tap(find.text('Review Answers'));
     await tester.pump();
     await tester.tap(find.text('Submit Answers'));
     await tester.pump();
@@ -84,6 +87,22 @@ void main() {
     ]);
 
     await tester.tap(find.text('Reject'));
+    await tester.pump();
+    expect(find.text('Reopen'), findsOneWidget);
+    expect(find.text('Confirm Reject'), findsOneWidget);
+    expect(
+      find.textContaining('Question group marked as rejected'),
+      findsOneWidget,
+    );
+    expect(rejected, isFalse);
+
+    await tester.tap(find.text('Reopen'));
+    await tester.pump();
+    expect(find.text('Reopen'), findsNothing);
+
+    await tester.tap(find.text('Reject'));
+    await tester.pump();
+    await tester.tap(find.text('Confirm Reject'));
     await tester.pump();
     expect(rejected, isTrue);
   });

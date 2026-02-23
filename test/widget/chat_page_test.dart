@@ -2587,14 +2587,24 @@ void main() {
     await provider.selectSession(provider.sessions.first);
     await tester.pumpAndSettle();
 
-    expect(find.text('Submit Answers'), findsOneWidget);
+    expect(find.text('Review Answers'), findsOneWidget);
     expect(find.text('Reject'), findsOneWidget);
 
     await tester.tap(find.text('Reject'));
     await tester.pumpAndSettle();
 
+    expect(find.text('Reopen'), findsOneWidget);
+    expect(find.text('Confirm Reject'), findsOneWidget);
+    expect(
+      find.textContaining('Question group marked as rejected'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Confirm Reject'));
+    await tester.pumpAndSettle();
+
     expect(repository.lastQuestionRejectRequestId, 'q_widget_reject_1');
-    expect(find.text('Submit Answers'), findsNothing);
+    expect(find.text('Review Answers'), findsNothing);
   });
 
   testWidgets(
