@@ -2608,7 +2608,7 @@ void main() {
   });
 
   testWidgets(
-    'mirrors subagent permission requests in timeline and prompt area',
+    'shows subagent permission requests once in interaction prompt area',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -2686,9 +2686,9 @@ void main() {
         find.byKey(
           const ValueKey<String>('timeline_permission_request_perm_mirror_1'),
         ),
-        findsOneWidget,
+        findsNothing,
       );
-      expect(find.text('Subagent'), findsWidgets);
+      expect(find.text('Subagent'), findsOneWidget);
 
       await tester.tap(find.text('Allow Once').first);
       await tester.pumpAndSettle();
@@ -2702,12 +2702,7 @@ void main() {
         ),
         findsNothing,
       );
-      expect(
-        find.byKey(
-          const ValueKey<String>('timeline_permission_request_perm_mirror_1'),
-        ),
-        findsNothing,
-      );
+      expect(find.text('Subagent'), findsNothing);
     },
   );
 
