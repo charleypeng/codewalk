@@ -41,6 +41,7 @@
   - [ ] Context knob shows only the number (without `%`), while popover keeps `%`.
 
 - **Group 3 — Chat UX, Composer, and Tool Bubble Polish** [ ]
+  - [ ] Transformar bolhas do usuário em largura dinâmica para parece mais como chat
   - [ ] Standardize tool-call collapse, remove 'Assistant' titles, visually merge consecutive assistant tool-calls into one bubble (no errors/non-tool messages between them), and remove assistant/user bubble borders while preserving final response visibility and collapsing work when it arrives. — `1665e71`
   - [ ] Require custom textual descriptions for every tool call; when a tool call finishes, auto-collapse it to icon+title with an inline expand button to reopen details. — `1665e71`
   - [ ] Mirror subagent permission prompts/authorization requests in the main conversation so users can respond there too, with a subtle origin badge indicating the request comes from a subagent. — `d367602`, `f9ee596`
