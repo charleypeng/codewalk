@@ -33,7 +33,8 @@
 
 - **Given** server profiles are configured
 - **When** the app is active
-- **Then** the app periodically checks each server's health and shows a visual online/offline indicator
+- **Then** the app checks each server's health every 10 seconds and shows a visual online/offline indicator
+- **Then** health checks are independent of session data sync — messages and events arrive via real-time SSE, not polling
 
 ### Server goes offline during use
 
@@ -58,7 +59,7 @@
 
 - **Given** an existing session with conversation history
 - **When** the user forks the session
-- **Then** a new independent session is created as a copy from that point — changes to either session do not affect the other
+- **Then** a new independent session is created as a full copy of the session at the moment of the fork action — changes to either session do not affect the other
 
 ### Sessions are scoped to a project
 
@@ -69,8 +70,9 @@
 ### Auto-generated session titles
 
 - **Given** a new session with no custom title
-- **When** the conversation progresses
-- **Then** the app automatically generates a title based on the conversation content
+- **When** each new message is added to the conversation
+- **Then** the app automatically generates (or re-generates) a title based on the conversation content
+- **Then** title generation stops once the session has accumulated 3 or more user messages **and** 3 or more assistant messages — sufficient context has been established by that point
 
 ---
 
@@ -101,6 +103,7 @@
 - **When** the queue is dispatched (either on first idle opportunity or via `Send now`)
 - **Then** all queued message texts are merged and sent as a single payload
 - **Then** each original queued message becomes one line in that payload (simple `\n` line breaks between messages)
+- **Then** the individual queued messages are removed from the timeline and replaced by the single consolidated message
 
 ### Send now forces immediate queued dispatch
 
@@ -119,8 +122,9 @@
 
 - **Given** the assistant executes tool calls during a response (file reads, commands, etc.)
 - **When** the assistant finishes the complete response
-- **Then** the intermediate tool call groups collapse to keep the chat clean
+- **Then** all tool call groups between the user message and the final assistant message collapse to keep the chat clean
 - **Then** collapse never happens while the assistant is still streaming
+- **Then** the user can manually re-expand any collapsed work group by tapping its Details toggle
 
 ### UI remains fluid during streaming
 
@@ -135,20 +139,36 @@
 ### Message history navigation
 
 - **Given** the user has sent previous messages in the session
-- **When** the user presses the up/down arrow keys in the composer
+- **When** the user presses the up arrow key while the cursor is at the beginning of the input (or down arrow at the end)
 - **Then** the composer cycles through previously sent messages
+- **Then** if the cursor is not already at the boundary, the first key press moves it there; the second press begins cycling
 
-### File mentions with @
+### File and agent mentions with @
 
 - **Given** the user is typing in the composer
 - **When** the user types `@`
-- **Then** a file/context mention picker appears, allowing the user to reference project files in the message
+- **Then** a mention picker appears with two types of suggestions: project files and available agents
+- **Then** file results are fetched live from the server's project file search API (up to 12 results per query)
+- **Then** agent results come from the locally cached agent list provided by the server
 
 ### Slash commands with /
 
 - **Given** the user is typing in the composer
 - **When** the user types `/`
 - **Then** a command picker appears with available slash commands
+
+The following commands are always available (builtin):
+
+| Command | Action |
+|---------|--------|
+| `/new` | Start a new conversation |
+| `/model` | Open the model selector |
+| `/agent` | Open the agent selector |
+| `/open` | Quick-open a project file |
+| `/help` | Show available commands |
+| `/compact` | Compact (summarize) the current session context |
+
+Additional commands may be provided by the connected OpenCode server and merged into the picker alongside the builtins.
 
 ---
 
@@ -182,6 +202,15 @@
 - **When** the user activates voice input
 - **Then** the STT feature works on all platforms where the device has a microphone
 
+The app uses a dual-engine strategy with automatic fallback:
+
+| Platform | Primary engine | Notes |
+|----------|---------------|-------|
+| Android | Native (system speech recognizer) | Sherpa excluded from Android build; Native only |
+| Linux | Sherpa ONNX | On-device models downloaded from HuggingFace; Native not supported on Linux |
+| macOS / iOS | Native (system speech recognizer) | Falls back to Sherpa ONNX if native unavailable |
+| Windows / Web | Native (system speech recognizer) | Falls back to Sherpa ONNX if native unavailable |
+
 ---
 
 ## Interactive Prompts
@@ -190,8 +219,13 @@
 
 - **Given** the server needs user approval to perform an action (e.g., execute a command, write a file)
 - **When** the server sends a permission request
-- **Then** an interactive card appears in the chat with approve/deny options
+- **Then** an interactive card appears in the chat with three response options:
+  - **Allow Once** — approves the action for this single occurrence
+  - **Always** — approves the action permanently for this session
+  - **Reject** — denies the action
 - **Then** the server waits for the user's response before proceeding
+- **When** the user allows (once or always), the server continues the operation
+- **When** the user rejects, the server receives a rejection and the session pauses — the assistant stops and waits for the user to send a new message before continuing
 
 ### Question prompts
 
@@ -239,14 +273,18 @@
 
 ### Mobile drawer status indicator (hamburger)
 
-- **Given** the mobile AppBar hamburger button is visible
-- **When** the app is in a non-urgent state (server health unknown or recoverable sync without escalation)
-- **Then** no status dot badge is shown on the hamburger icon
-- **When** the app is resynchronizing right after foreground resume (recoverable state)
-- **Then** a subtle loading spinner may appear on the hamburger icon instead of a dot
-- **When** an urgent state is present (server unhealthy/offline or escalated recoverable sync)
-- **Then** a red dot badge is shown after the alert grace period
-- **Then** non-urgent blue/gray dot badges are never shown on the hamburger icon
+The hamburger icon has exactly three states — only one can be active at a time:
+
+- **Default (no badge)**: normal operation; no urgent or loading condition is active
+- **Loading spinner**: shown only when all three conditions are true simultaneously:
+  1. The app returned from background and is actively resynchronizing (`isForegroundResumeSyncing`)
+  2. The sync state is recoverable (reconnecting, delayed, or degraded — not failed)
+  3. The Android foreground service is NOT running
+- **Red dot badge**: shown when an urgent condition persists beyond the grace period:
+  - Server health is `unhealthy` or `offline`, OR
+  - Recoverable sync alert has escalated (unresolved for too long)
+
+Non-urgent (blue/gray) dot badges are never shown on the hamburger icon.
 
 ### Desktop: split view
 
@@ -254,17 +292,79 @@
 - **When** the user navigates the app
 - **Then** the session list is always visible alongside the chat in a split-view layout
 
+### Desktop: system tray
+
+- **Given** the app is running on Linux, macOS, or Windows
+- **When** the app is open (foreground or background)
+- **Then** a tray icon is shown in the system notification area
+- **Then** the tray menu provides two actions: **Show** (bring the window to front) and **Quit** (force-quit the app, bypassing close-to-tray)
+
 ### Keyboard shortcuts
 
 - **Given** a physical keyboard is connected (desktop or mobile with external keyboard)
 - **When** the user presses a keyboard shortcut
 - **Then** the corresponding action is executed (shortcuts work on desktop and on mobile with an external keyboard)
 
-### Mobile keyboard collapses auxiliary panels
+All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-configurable in Settings:
 
-- **Given** an auxiliary panel is open (task list, drawer, etc.) on mobile
+| Shortcut | Action | Notes |
+|----------|--------|-------|
+| `mod+n` | New conversation | |
+| `mod+r` | Refresh data | |
+| `mod+l` | Focus composer input | |
+| `mod+p` | Quick-open project file | |
+| `mod+,` | Open Settings | |
+| `mod+m` | Cycle recent/favorite models | |
+| `mod+t` | Cycle model variants | |
+| `mod+j` | Next agent | |
+| `mod+shift+j` | Previous agent | |
+| `Escape` | Close drawer / focus input | Double-press stops active response |
+| `mod+q` | Quit app | Desktop only; bypasses close-to-tray |
+
+### Mobile keyboard collapses the task panel
+
+- **Given** the task list panel is expanded on mobile
 - **When** the on-screen keyboard appears
-- **Then** auxiliary panels auto-collapse to maximize available space for the chat and composer
+- **Then** the task list panel automatically collapses to free space for the chat and composer
+- **Then** when the keyboard is dismissed, the panel returns to its previous state (expanded or collapsed)
+
+---
+
+## Provider and Model Selection
+
+### Selecting a provider and model
+
+- **Given** the connected OpenCode server has providers configured (e.g., Claude, OpenAI, Gemini)
+- **When** the user opens the model selector
+- **Then** all available providers and their models are listed, sourced directly from the server
+- **Then** the user can select any model to use for the current session
+
+### Model variants and reasoning effort
+
+- **Given** the selected model supports variants (e.g., reasoning effort levels)
+- **When** the user opens the variant selector
+- **Then** the available variants are listed and one can be selected for the session
+
+### Favorite models
+
+- **Given** the user stars a model in the model selector
+- **When** the model selector is opened again
+- **Then** starred models appear in a **Favorites** section above recent models
+- **Then** favorites are persisted locally, scoped per server and project (not shared across servers)
+
+### Recent model cycling
+
+- **Given** the user has previously selected models in the session
+- **When** the user presses `mod+m`
+- **Then** the app cycles through favorite models first, then recent models, applying the selection immediately
+
+### Agent selection
+
+- **Given** the connected server provides agents (specialized AI configurations)
+- **When** the user opens the agent selector or types `/agent`
+- **Then** all available agents are listed and one can be selected
+- **When** the user presses `mod+j` / `mod+shift+j`
+- **Then** the app cycles forward/backward through the available agents
 
 ---
 
@@ -286,24 +386,35 @@
 
 ## Notifications
 
-### Background notifications
+> The OpenCode server does not support traditional push notifications. The app uses platform-native techniques to deliver background alerts reliably while minimizing battery impact.
 
-- **Given** the app is in the background
-- **When** the assistant finishes a response → push notification
-- **When** a permission request arrives → push notification
-- **When** a question prompt arrives → push notification
+### Background alerts (Android)
+
+- **Given** the app is running on Android and goes to background
+- **When** the assistant finishes a response, a permission request arrives, or a question prompt arrives
+- **Then** the app delivers a local notification via a combination of:
+  - A persistent foreground notification (always visible while the app process is alive)
+  - A WorkManager background worker that polls for active session state at regular intervals
+  - A short-lived one-off probe scheduled when the app moves to background
+- **Then** notifications are intended to fire only while the app is in the background; while in foreground, the user receives real-time updates directly in the chat UI
+
+### Background alerts (Desktop)
+
+- **Given** the app is running on Linux, macOS, or Windows
+- **When** background alerts would be relevant
+- **Then** the system tray icon serves as the always-present indicator; local notifications may be shown through the OS notification system
 
 ### Server offline does NOT notify
 
 - **Given** the active server goes offline
 - **When** the app detects the disconnection
-- **Then** no push notification is sent — server availability is not the app's responsibility. The user sees the status when they open the app.
+- **Then** no notification is sent — server availability is not the app's responsibility. The user sees the status when they open the app.
 
 ### Android persistent notification
 
 - **Given** the app is running on Android
 - **When** the app is active or in background
-- **Then** a persistent notification acts as a tray icon, enabling reliable notification delivery
+- **Then** a persistent notification is shown in the notification drawer, keeping the app process alive and enabling reliable alert delivery
 
 ---
 
