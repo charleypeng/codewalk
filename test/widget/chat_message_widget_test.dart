@@ -1320,6 +1320,119 @@ void main() {
     expect(find.text('Queued'), findsOneWidget);
   });
 
+  testWidgets('uses narrower max width for user bubbles on wide layouts', (
+    WidgetTester tester,
+  ) async {
+    final repeatedText = List<String>.filled(
+      8,
+      'This message is intentionally long to fill the bubble width.',
+    ).join(' ');
+
+    final userMessage = UserMessage(
+      id: 'msg_user_dynamic_width',
+      sessionId: 'ses_dynamic_width',
+      time: DateTime.fromMillisecondsSinceEpoch(1000),
+      parts: <MessagePart>[
+        TextPart(
+          id: 'part_user_dynamic_width',
+          messageId: 'msg_user_dynamic_width',
+          sessionId: 'ses_dynamic_width',
+          text: repeatedText,
+        ),
+      ],
+    );
+
+    final assistantMessage = AssistantMessage(
+      id: 'msg_assistant_dynamic_width',
+      sessionId: 'ses_dynamic_width',
+      time: DateTime.fromMillisecondsSinceEpoch(1100),
+      completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+      parts: <MessagePart>[
+        TextPart(
+          id: 'part_assistant_dynamic_width',
+          messageId: 'msg_assistant_dynamic_width',
+          sessionId: 'ses_dynamic_width',
+          text: repeatedText,
+        ),
+      ],
+    );
+
+    Widget buildFrame(Widget child) {
+      return MaterialApp(
+        home: Scaffold(body: SizedBox(width: 900, child: child)),
+      );
+    }
+
+    await tester.pumpWidget(
+      buildFrame(ChatMessageWidget(message: userMessage)),
+    );
+    await tester.pumpAndSettle();
+
+    final userBubbleSize = tester.getSize(
+      find.byKey(
+        const ValueKey<String>('message_bubble_msg_user_dynamic_width'),
+      ),
+    );
+
+    await tester.pumpWidget(
+      buildFrame(ChatMessageWidget(message: assistantMessage)),
+    );
+    await tester.pumpAndSettle();
+
+    final assistantBubbleSize = tester.getSize(
+      find.byKey(
+        const ValueKey<String>('message_bubble_msg_assistant_dynamic_width'),
+      ),
+    );
+
+    expect(userBubbleSize.width, lessThan(assistantBubbleSize.width));
+    expect(userBubbleSize.width, lessThanOrEqualTo(640));
+  });
+
+  testWidgets('keeps user bubble within narrow viewport constraints', (
+    WidgetTester tester,
+  ) async {
+    final repeatedText = List<String>.filled(
+      4,
+      'Narrow viewport message content for wrapping behavior.',
+    ).join(' ');
+
+    final userMessage = UserMessage(
+      id: 'msg_user_narrow_width',
+      sessionId: 'ses_narrow_width',
+      time: DateTime.fromMillisecondsSinceEpoch(1000),
+      parts: <MessagePart>[
+        TextPart(
+          id: 'part_user_narrow_width',
+          messageId: 'msg_user_narrow_width',
+          sessionId: 'ses_narrow_width',
+          text: repeatedText,
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 280,
+            child: ChatMessageWidget(message: userMessage),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final userBubbleWidth = tester.getSize(
+      find.byKey(
+        const ValueKey<String>('message_bubble_msg_user_narrow_width'),
+      ),
+    );
+
+    expect(userBubbleWidth.width, lessThanOrEqualTo(280));
+    expect(userBubbleWidth.width, greaterThan(160));
+  });
+
   testWidgets('assistant header spacing follows visual density', (
     WidgetTester tester,
   ) async {

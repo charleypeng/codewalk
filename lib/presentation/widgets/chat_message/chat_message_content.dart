@@ -46,118 +46,147 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       child: Align(
         alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 760),
-          child: _BubbleTouchHoldLayer(
-            borderRadius: bubbleBorderRadius,
-            flashColor: colorScheme.primary.withValues(alpha: 0.16),
-            onLongPress: isUser ? onBackgroundLongPress : null,
-            onLongPressRelease: isUser ? onBackgroundLongPressEnd : null,
-            onDoubleTap: canCopyWholeMessage
-                ? () => _copyTextToClipboard(
-                    context,
-                    _composeMessageCopyText(message),
-                  )
-                : null,
-            child: Semantics(
-              label: isUser ? 'Your message' : 'Assistant message',
-              child: Container(
-                padding: bubblePadding,
-                decoration: BoxDecoration(
-                  color: isUser
-                      ? colorScheme.primaryContainer.withValues(alpha: 0.45)
-                      : colorScheme.surfaceContainerHigh,
-                  borderRadius: bubbleBorderRadius,
-                ),
-                child: Stack(
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            const assistantBubbleMaxWidth = 760.0;
+            const userBubbleMaxWidth = 640.0;
+            const userBubbleWidthFactor = 0.82;
+            const userBubbleMinWidth = 220.0;
+
+            final availableWidth = constraints.maxWidth.isFinite
+                ? constraints.maxWidth
+                : assistantBubbleMaxWidth;
+            final assistantMaxWidth = math.min(
+              assistantBubbleMaxWidth,
+              availableWidth,
+            );
+            final userCandidateWidth = math.min(
+              userBubbleMaxWidth,
+              availableWidth * userBubbleWidthFactor,
+            );
+            final userMaxWidth = math.min(
+              assistantMaxWidth,
+              math.max(userBubbleMinWidth, userCandidateWidth),
+            );
+            final bubbleMaxWidth = isUser ? userMaxWidth : assistantMaxWidth;
+
+            return ConstrainedBox(
+              key: ValueKey<String>('message_bubble_${message.id}'),
+              constraints: BoxConstraints(maxWidth: bubbleMaxWidth),
+              child: _BubbleTouchHoldLayer(
+                borderRadius: bubbleBorderRadius,
+                flashColor: colorScheme.primary.withValues(alpha: 0.16),
+                onLongPress: isUser ? onBackgroundLongPress : null,
+                onLongPressRelease: isUser ? onBackgroundLongPressEnd : null,
+                onDoubleTap: canCopyWholeMessage
+                    ? () => _copyTextToClipboard(
+                        context,
+                        _composeMessageCopyText(message),
+                      )
+                    : null,
+                child: Semantics(
+                  label: isUser ? 'Your message' : 'Assistant message',
+                  child: Container(
+                    padding: bubblePadding,
+                    decoration: BoxDecoration(
+                      color: isUser
+                          ? colorScheme.primaryContainer.withValues(alpha: 0.45)
+                          : colorScheme.surfaceContainerHigh,
+                      borderRadius: bubbleBorderRadius,
+                    ),
+                    child: Stack(
                       children: [
-                        Row(
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (isUser) ...[
-                              Text(
-                                'You',
-                                style: Theme.of(context).textTheme.labelMedium
-                                    ?.copyWith(
-                                      color: colorScheme.primary,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                              ),
-                              const SizedBox(width: 8),
-                              if (isQueuedUserMessage) ...[
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.secondaryContainer,
-                                    borderRadius: AppShapes.borderSmall,
-                                  ),
-                                  child: Text(
-                                    'Queued',
+                            Row(
+                              children: [
+                                if (isUser) ...[
+                                  Text(
+                                    'You',
                                     style: Theme.of(context)
                                         .textTheme
-                                        .labelSmall
+                                        .labelMedium
                                         ?.copyWith(
-                                          color:
-                                              colorScheme.onSecondaryContainer,
+                                          color: colorScheme.primary,
                                           fontWeight: FontWeight.w700,
                                         ),
                                   ),
+                                  const SizedBox(width: 8),
+                                  if (isQueuedUserMessage) ...[
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: colorScheme.secondaryContainer,
+                                        borderRadius: AppShapes.borderSmall,
+                                      ),
+                                      child: Text(
+                                        'Queued',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelSmall
+                                            ?.copyWith(
+                                              color: colorScheme
+                                                  .onSecondaryContainer,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                  ],
+                                ],
+                                Text(
+                                  _formatTime(message.time),
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: colorScheme.onSurfaceVariant,
+                                        fontSize: 11,
+                                      ),
                                 ),
-                                const SizedBox(width: 8),
-                              ],
-                            ],
-                            Text(
-                              _formatTime(message.time),
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
-                                    fontSize: 11,
+                                const Spacer(),
+                                if (!isUser && message is AssistantMessage)
+                                  _buildAssistantInfo(
+                                    context,
+                                    message as AssistantMessage,
                                   ),
+                              ],
                             ),
-                            const Spacer(),
-                            if (!isUser && message is AssistantMessage)
-                              _buildAssistantInfo(
+                            SizedBox(
+                              key: ValueKey<String>(
+                                'message_header_spacing_${message.id}',
+                              ),
+                              height: headerContentSpacing,
+                            ),
+                            if (isUser)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: renderedParts,
+                              )
+                            else
+                              SelectionArea(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: renderedParts,
+                                ),
+                              ),
+                            if (message is AssistantMessage &&
+                                (message as AssistantMessage).error != null)
+                              _buildErrorInfo(
                                 context,
-                                message as AssistantMessage,
+                                (message as AssistantMessage).error!,
                               ),
                           ],
                         ),
-                        SizedBox(
-                          key: ValueKey<String>(
-                            'message_header_spacing_${message.id}',
-                          ),
-                          height: headerContentSpacing,
-                        ),
-                        if (isUser)
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: renderedParts,
-                          )
-                        else
-                          SelectionArea(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: renderedParts,
-                            ),
-                          ),
-                        if (message is AssistantMessage &&
-                            (message as AssistantMessage).error != null)
-                          _buildErrorInfo(
-                            context,
-                            (message as AssistantMessage).error!,
-                          ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
