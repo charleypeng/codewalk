@@ -7,13 +7,11 @@
 CodeWalk is a project that provides access to code agents from anywhere — desktop or mobile.
 
 - **Every implementation must be designed for both mobile and desktop**. Preferably unified and responsive. **Priority: mobile UX, modern look, Material You**.
-- **The app is not in production.** There is no need for backward-compatibility shims, migration guards, or deprecation layers — change APIs, data structures, and contracts freely.
 - After completing a change, verify whether it requires new tests or updates to existing tests.
 - For visual adjustments, confirm with the user the exact block/screen referenced before changing; avoid assumptions.
 
 - In this project specifically, we do NOT use `make precommit` directly — prefer splitting into `make check` and `make android`.
 - Key base documentation is in ./ai-docs; always run at least one `ls` in that folder to know what exists.
-- **`BEHAVIOR.md`** defines how the app behaves from the user's perspective (expected flows, anti-behaviors). Read it alongside `CODEBASE.md`, `ROADMAP.md`, and `ADR.md` at conversation start. If a code change would violate a documented behavior, **warn the user before proceeding** and get confirmation. Once confirmed, update `BEHAVIOR.md` to reflect the new understanding.
 
 ## 📐 ADR Quick Reference (details in `ADR.md`)
 
@@ -46,24 +44,21 @@ CodeWalk is a project that provides access to code agents from anywhere — desk
 - **After completing code changes**: Run `make check` **immediately** (preferably background and async).
 - **Critical order**: `make check` must run right after code completion, BEFORE changing .md files or committing.
 - **If only static files changed (.md, text)**: `make check` and `make android` are not required.
+- **Once the user can test**: Run `make android` as soon as possible — it compiles and sends the APK to Telegram. Run after every task involving code. Preferably background and async.
 - **Before commit**: If no code changed since the last check, another `make check` is not needed.
 
-### Standard flow (always apply when the user requests implementation or corrections)
+### Mandatory flow when explicitly requested by the user
 
-Follow this order without skipping steps — triggered by any implementation or fix request, no additional explicit instruction needed:
-
-1. implement the change;
-2. run `make check`;
-3. commit all code immediately (no user approval needed);
-4. call reviewer for all code commits;
-5. apply only accepted fixes, commit, and repeat reviewer until zero accepted corrections;
-6. run `HEY_CAPTION="..." make android` — once, automatically, after the reviewer loop is complete;
-   - Steps 6, 7, and 8 below can run in parallel (preferred):
-7. update docs (`CODEBASE.md`, `ROADMAP.md`, `ADR.md`);
-8. `~/bin/hey` (short sentence) + prepare final report with Code Review section;
-9. wait for steps 6–8 to finish, then deliver the final report and suggest the next task.
-
-- Avoid intermediate "done" notifications before steps 6–8 are complete.
+- When the user explicitly asks, follow this order without skipping steps:
+  1. implement the change;
+  2. run `make check`;
+  3. commit;
+  4. call reviewer for the commit;
+  5. apply only accepted fixes and repeat reviewer in a loop until no remaining corrections the agent agrees with;
+  6. run `HEY_CAPTION="..." make android`;
+  7. only then notify the user and send the final report;
+  8. suggest the next task (preferably from the current roadmap).
+- Avoid intermediate "done" notifications before step 6 is complete.
 
 ### Dynamic Caption on Upload
 
