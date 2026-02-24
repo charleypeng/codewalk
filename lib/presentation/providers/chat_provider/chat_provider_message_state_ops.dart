@@ -271,6 +271,22 @@ extension _ChatProviderMessageStateOps on ChatProvider {
       final pendingLocalIndex = _findPendingLocalUserMessageIndex(message);
       if (pendingLocalIndex != -1) {
         final previousId = _messages[pendingLocalIndex].id;
+        final existingIncomingIndex = _messages.indexWhere(
+          (item) => item.id == message.id,
+        );
+        if (existingIncomingIndex != -1 &&
+            existingIncomingIndex != pendingLocalIndex) {
+          _pendingLocalUserMessageIds.remove(previousId);
+          _queuedLocalUserMessageIds.remove(previousId);
+          _messages[existingIncomingIndex] = message;
+          _messages.removeAt(pendingLocalIndex);
+          _messagesVersion++;
+          _notifyListeners();
+          _attemptPendingRemoteSelectionSync(reason: 'message-user-deduped');
+          _scheduleAutoTitleRefresh(message.sessionId);
+          _scheduleScrollToBottom();
+          return;
+        }
         _pendingLocalUserMessageIds.remove(previousId);
         _queuedLocalUserMessageIds.remove(previousId);
         _messages[pendingLocalIndex] = message;
@@ -418,7 +434,12 @@ extension _ChatProviderMessageStateOps on ChatProvider {
   String _normalizedUserTextSignature(UserMessage message) {
     return message.parts
         .whereType<TextPart>()
-        .map((part) => part.text.trim())
+        .map((part) {
+          final text = part.text.trim();
+          // Strip leading '!' shell-mode prefix for signature comparison so
+          // that local '!cmd' matches server-echoed 'cmd'.
+          return text.startsWith('!') ? text.substring(1).trim() : text;
+        })
         .where((text) => text.isNotEmpty)
         .join('\n');
   }
@@ -539,9 +560,14 @@ extension _ChatProviderMessageStateOps on ChatProvider {
 
     final incomingSignature = _normalizedUserMessageSignature(incoming);
     if (incomingSignature.isEmpty) {
-      return -1;
+      // Server echoed with empty parts — fall back to time-proximity-only
+      // match when there is exactly one pending local user message for the
+      // same session (avoids ambiguity with multiple pending messages).
+      return _findSolePendingLocalUserByTimeProximity(incoming);
     }
 
+    var bestMatchIndex = -1;
+    Duration? bestMatchDelta;
     for (var index = 0; index < _messages.length; index += 1) {
       final current = _messages[index];
       if (current is! UserMessage) {
@@ -566,9 +592,34 @@ extension _ChatProviderMessageStateOps on ChatProvider {
       if (delta > const Duration(minutes: 5)) {
         continue;
       }
-      return index;
+      if (bestMatchDelta == null || delta < bestMatchDelta) {
+        bestMatchDelta = delta;
+        bestMatchIndex = index;
+      }
     }
-    return -1;
+    return bestMatchIndex;
+  }
+
+  /// Matches a server [UserMessage] (with empty content signature) to a pending
+  /// local user message using only time proximity and session ID. Only returns
+  /// a match when exactly one pending candidate exists for the session to avoid
+  /// ambiguous replacements.
+  int _findSolePendingLocalUserByTimeProximity(UserMessage incoming) {
+    int candidateIndex = -1;
+    for (var index = 0; index < _messages.length; index += 1) {
+      final current = _messages[index];
+      if (current is! UserMessage) continue;
+      if (!_pendingLocalUserMessageIds.contains(current.id)) continue;
+      if (current.sessionId != incoming.sessionId) continue;
+      final delta = incoming.time.difference(current.time).abs();
+      if (delta > const Duration(minutes: 5)) continue;
+      if (candidateIndex != -1) {
+        // Multiple candidates — ambiguous, don't guess.
+        return -1;
+      }
+      candidateIndex = index;
+    }
+    return candidateIndex;
   }
 
   void _handleFailure(Failure failure) {

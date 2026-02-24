@@ -17,14 +17,75 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     }, _updateOrAddMessage);
   }
 
+  bool _shouldSkipLocalUserAppendAsDuplicateEcho({
+    required UserMessage localMessage,
+    required List<ChatMessage> mergedMessages,
+  }) {
+    if (!localMessage.id.startsWith('local_user_')) {
+      return false;
+    }
+    if (_queuedLocalUserMessageIds.contains(localMessage.id)) {
+      return false;
+    }
+
+    final localSignature = _normalizedUserMessageSignature(localMessage);
+    if (localSignature.isNotEmpty) {
+      for (final serverMessage in mergedMessages) {
+        if (serverMessage is! UserMessage) {
+          continue;
+        }
+        final serverSignature = _normalizedUserMessageSignature(serverMessage);
+        if (serverSignature.isNotEmpty && serverSignature == localSignature) {
+          return true;
+        }
+      }
+    }
+
+    UserMessage? latestServerUserMessage;
+    var hasInProgressAssistant = false;
+    for (final message in mergedMessages) {
+      if (message is UserMessage) {
+        latestServerUserMessage = message;
+      } else if (message is AssistantMessage && !message.isCompleted) {
+        hasInProgressAssistant = true;
+      }
+    }
+
+    if (!hasInProgressAssistant || latestServerUserMessage == null) {
+      return false;
+    }
+
+    final latestServerSignature = _normalizedUserMessageSignature(
+      latestServerUserMessage,
+    );
+    if (localSignature.isNotEmpty && latestServerSignature.isNotEmpty) {
+      final sharesPrefix =
+          localSignature.startsWith(latestServerSignature) ||
+          latestServerSignature.startsWith(localSignature);
+      if (!sharesPrefix) {
+        return false;
+      }
+    }
+
+    final earliestEchoTime = localMessage.time.subtract(
+      const Duration(seconds: 2),
+    );
+    final latestEchoTime = localMessage.time.add(const Duration(seconds: 45));
+    final serverTime = latestServerUserMessage.time;
+    if (serverTime.isBefore(earliestEchoTime) ||
+        serverTime.isAfter(latestEchoTime)) {
+      return false;
+    }
+
+    return true;
+  }
+
   /// Merges server messages with any pending local user messages that haven't
   /// been echoed by the server yet. Returns both the merged list and the set of
   /// local IDs that were reconciled (matched to a server message by content
   /// signature), so callers can avoid re-adding them during tail preservation.
   ({List<ChatMessage> messages, Set<String> reconciledLocalIds})
-  _mergeServerMessagesWithPendingLocalUsers(
-    List<ChatMessage> serverMessages,
-  ) {
+  _mergeServerMessagesWithPendingLocalUsers(List<ChatMessage> serverMessages) {
     final emptyResult = (
       messages: serverMessages,
       reconciledLocalIds: const <String>{},
@@ -66,6 +127,14 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
         continue;
       }
       if (!_pendingLocalUserMessageIds.contains(message.id)) {
+        continue;
+      }
+      if (_shouldSkipLocalUserAppendAsDuplicateEcho(
+        localMessage: message,
+        mergedMessages: merged,
+      )) {
+        reconciledLocalIds.add(message.id);
+        _pendingLocalUserMessageIds.remove(message.id);
         continue;
       }
       if (existingIds.contains(message.id)) {
@@ -120,6 +189,14 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     for (var index = tailStart; index < localMessages.length; index += 1) {
       final message = localMessages[index];
       if (existingIds.contains(message.id)) {
+        continue;
+      }
+      if (message is UserMessage &&
+          _shouldSkipLocalUserAppendAsDuplicateEcho(
+            localMessage: message,
+            mergedMessages: merged,
+          )) {
+        _pendingLocalUserMessageIds.remove(message.id);
         continue;
       }
       merged.add(message);

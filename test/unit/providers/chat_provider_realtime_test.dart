@@ -1791,6 +1791,103 @@ void main() {
     );
 
     test(
+      'refreshActiveSessionView keeps single user bubble when snapshot user is partial and stream later updates same server id',
+      () async {
+        final now = DateTime.now();
+        final streamController =
+            StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          await streamController.close();
+        });
+
+        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+          return streamController.stream;
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('hello duplicate placeholder');
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(provider.isCurrentSessionActivelyResponding, isTrue);
+
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          UserMessage(
+            id: 'msg_server_user_partial',
+            sessionId: 'ses_1',
+            time: now.add(const Duration(seconds: 1)),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_server_user_partial',
+                messageId: 'msg_server_user_partial',
+                sessionId: 'ses_1',
+                text: 'hello duplicate',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_assistant_partial_race',
+            sessionId: 'ses_1',
+            time: now.add(const Duration(seconds: 2)),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_assistant_partial_race',
+                messageId: 'msg_assistant_partial_race',
+                sessionId: 'ses_1',
+                text: 'working...',
+              ),
+            ],
+          ),
+        ];
+
+        await provider.refresh();
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        var userMessages = provider.messages.whereType<UserMessage>().toList();
+        expect(
+          userMessages,
+          hasLength(1),
+          reason:
+              'Transient duplicate user bubble appeared during busy snapshot merge',
+        );
+        expect(userMessages.single.id, 'msg_server_user_partial');
+
+        streamController.add(
+          Right(
+            UserMessage(
+              id: 'msg_server_user_partial',
+              sessionId: 'ses_1',
+              time: now.add(const Duration(seconds: 1)),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'prt_server_user_full',
+                  messageId: 'msg_server_user_partial',
+                  sessionId: 'ses_1',
+                  text: 'hello duplicate placeholder',
+                ),
+              ],
+            ),
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        userMessages = provider.messages.whereType<UserMessage>().toList();
+        expect(
+          userMessages,
+          hasLength(1),
+          reason: 'Duplicate user bubble persisted after stream user update',
+        );
+        expect(userMessages.single.id, 'msg_server_user_partial');
+        expect(
+          (userMessages.single.parts.single as TextPart).text,
+          'hello duplicate placeholder',
+        );
+      },
+    );
+
+    test(
       'loadMessages keeps pending reconciliation for late server user echo',
       () async {
         final now = DateTime.now();
@@ -1839,6 +1936,309 @@ void main() {
             .toList();
         expect(userMessages, hasLength(1));
         expect(userMessages.single.id, 'msg_server_user_late');
+      },
+    );
+
+    test(
+      'refreshActiveSessionView does not duplicate user message when content-signature match fails (empty server parts)',
+      () async {
+        // Scenario: server echoes a UserMessage with empty parts during an
+        // active session. The content-signature reconciliation fails but the
+        // tail-append guard must still prevent re-adding the local copy.
+        final now = DateTime.now();
+        final streamController =
+            StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          await streamController.close();
+        });
+
+        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+          // Emit user echo with empty parts (simulates the race).
+          streamController.add(
+            Right(
+              UserMessage(
+                id: 'msg_server_user_empty',
+                sessionId: 'ses_1',
+                time: now.add(const Duration(seconds: 1)),
+                parts: const <MessagePart>[],
+              ),
+            ),
+          );
+          // Emit partial assistant to keep session active.
+          streamController.add(
+            Right(
+              AssistantMessage(
+                id: 'msg_assistant_empty_race',
+                sessionId: 'ses_1',
+                time: now.add(const Duration(seconds: 2)),
+                parts: const <MessagePart>[
+                  TextPart(
+                    id: 'prt_assistant_empty_race',
+                    messageId: 'msg_assistant_empty_race',
+                    sessionId: 'ses_1',
+                    text: 'working...',
+                  ),
+                ],
+              ),
+            ),
+          );
+          return streamController.stream;
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('hello empty race');
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        expect(provider.isCurrentSessionActivelyResponding, isTrue);
+
+        // Server view returns the empty-parts user message.
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          UserMessage(
+            id: 'msg_server_user_empty',
+            sessionId: 'ses_1',
+            time: now.add(const Duration(seconds: 1)),
+            parts: const <MessagePart>[],
+          ),
+          AssistantMessage(
+            id: 'msg_assistant_empty_race',
+            sessionId: 'ses_1',
+            time: now.add(const Duration(seconds: 2)),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_assistant_empty_race',
+                messageId: 'msg_assistant_empty_race',
+                sessionId: 'ses_1',
+                text: 'still working...',
+              ),
+            ],
+          ),
+        ];
+
+        await provider.refresh();
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        // Must not duplicate: either the local message was replaced by
+        // time-proximity (Fix 2) or the tail guard skips it (Fix 1).
+        final userMessages = provider.messages
+            .whereType<UserMessage>()
+            .toList();
+        expect(
+          userMessages,
+          hasLength(1),
+          reason:
+              'User message duplicated during active refresh with empty server parts',
+        );
+      },
+    );
+
+    test(
+      'refreshActiveSessionView does not duplicate shell-mode user message with ! prefix',
+      () async {
+        // Scenario: local message text is '!ls -la' (shell mode), server echoes
+        // 'ls -la' (without !). The shell-aware signature normalization must
+        // reconcile them so no duplicate appears.
+        final now = DateTime.now();
+        final streamController =
+            StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          await streamController.close();
+        });
+
+        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+          // Server echoes the user message without the leading '!'.
+          streamController.add(
+            Right(
+              UserMessage(
+                id: 'msg_server_user_shell',
+                sessionId: 'ses_1',
+                time: now.add(const Duration(seconds: 1)),
+                parts: const <MessagePart>[
+                  TextPart(
+                    id: 'prt_server_user_shell',
+                    messageId: 'msg_server_user_shell',
+                    sessionId: 'ses_1',
+                    text: 'ls -la',
+                  ),
+                ],
+              ),
+            ),
+          );
+          streamController.add(
+            Right(
+              AssistantMessage(
+                id: 'msg_assistant_shell',
+                sessionId: 'ses_1',
+                time: now.add(const Duration(seconds: 2)),
+                parts: const <MessagePart>[
+                  TextPart(
+                    id: 'prt_assistant_shell',
+                    messageId: 'msg_assistant_shell',
+                    sessionId: 'ses_1',
+                    text: 'running command...',
+                  ),
+                ],
+              ),
+            ),
+          );
+          return streamController.stream;
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('ls -la', shellMode: true);
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        expect(provider.isCurrentSessionActivelyResponding, isTrue);
+
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          UserMessage(
+            id: 'msg_server_user_shell',
+            sessionId: 'ses_1',
+            time: now.add(const Duration(seconds: 1)),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_server_user_shell',
+                messageId: 'msg_server_user_shell',
+                sessionId: 'ses_1',
+                text: 'ls -la',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_assistant_shell',
+            sessionId: 'ses_1',
+            time: now.add(const Duration(seconds: 2)),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_assistant_shell',
+                messageId: 'msg_assistant_shell',
+                sessionId: 'ses_1',
+                text: 'running command...',
+              ),
+            ],
+          ),
+        ];
+
+        await provider.refresh();
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        final userMessages = provider.messages
+            .whereType<UserMessage>()
+            .toList();
+        expect(
+          userMessages,
+          hasLength(1),
+          reason:
+              'Shell-mode user message duplicated during active session refresh',
+        );
+        expect(userMessages.single.id, 'msg_server_user_shell');
+      },
+    );
+
+    test(
+      'tail-append loop skips pending local user message when server has content-equivalent message',
+      () async {
+        // Scenario: content-signature reconciliation succeeds for the message
+        // text but reconciledLocalIds is somehow not propagated (edge case).
+        // The tail-append guard must independently prevent the duplication.
+        final now = DateTime.now();
+        final streamController =
+            StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          await streamController.close();
+        });
+
+        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+          streamController.add(
+            Right(
+              UserMessage(
+                id: 'msg_server_user_tail',
+                sessionId: 'ses_1',
+                time: now.add(const Duration(seconds: 1)),
+                parts: const <MessagePart>[
+                  TextPart(
+                    id: 'prt_server_user_tail',
+                    messageId: 'msg_server_user_tail',
+                    sessionId: 'ses_1',
+                    text: 'hello tail guard',
+                  ),
+                ],
+              ),
+            ),
+          );
+          streamController.add(
+            Right(
+              AssistantMessage(
+                id: 'msg_assistant_tail',
+                sessionId: 'ses_1',
+                time: now.add(const Duration(seconds: 2)),
+                parts: const <MessagePart>[
+                  TextPart(
+                    id: 'prt_assistant_tail',
+                    messageId: 'msg_assistant_tail',
+                    sessionId: 'ses_1',
+                    text: 'processing...',
+                  ),
+                ],
+              ),
+            ),
+          );
+          return streamController.stream;
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('hello tail guard');
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        expect(provider.isCurrentSessionActivelyResponding, isTrue);
+
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          UserMessage(
+            id: 'msg_server_user_tail',
+            sessionId: 'ses_1',
+            time: now.add(const Duration(seconds: 1)),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_server_user_tail',
+                messageId: 'msg_server_user_tail',
+                sessionId: 'ses_1',
+                text: 'hello tail guard',
+              ),
+            ],
+          ),
+        ];
+
+        // Refresh — server has user message but no assistant yet. The local
+        // tail must keep the in-progress assistant but NOT re-add the local
+        // user message that matches the server version by content.
+        await provider.refresh();
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        final userMessages = provider.messages
+            .whereType<UserMessage>()
+            .toList();
+        expect(
+          userMessages,
+          hasLength(1),
+          reason:
+              'Pending local user message leaked through tail-append despite server content match',
+        );
+        expect(userMessages.single.id, 'msg_server_user_tail');
+
+        // The streamed assistant must still be preserved in the local tail.
+        final assistantMessages = provider.messages
+            .whereType<AssistantMessage>()
+            .toList();
+        expect(assistantMessages, hasLength(1));
+        expect(assistantMessages.single.id, 'msg_assistant_tail');
       },
     );
   });
