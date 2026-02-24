@@ -308,6 +308,17 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
   recent event keys built by `_composeEventDeduplicationKey` (in `chat_provider_event_reducer_ops.dart`).
   `_isRecentlyProcessedEvent` and `_tryApplyGlobalEventIncremental` use this buffer to skip
   duplicates arriving on the global SSE stream.
+- **Busy-window optimistic user dedup guard** (`chat_provider_message_merge_ops.dart`):
+  `_shouldSkipLocalUserAppendAsDuplicateEcho` now blocks transient optimistic/local user re-append
+  during active-stream refresh windows by checking signature overlap + bounded echo-time window
+  against the latest server user message.
+- **Pending replacement hardening** (`chat_provider_message_state_ops.dart`):
+  `_updateOrAddMessage` handles pending-local replacement when a server user message arrives with
+  an already-present server ID, preventing local/server duplicate-ID coexistence and preserving a
+  single canonical user bubble.
+- **Realtime regression coverage** (`test/unit/providers/chat_provider_realtime_test.dart`):
+  added guard tests for active-stream refresh reconciliation and the late stream user-update path
+  to keep user-message dedup stable under snapshot/stream races.
 - **Render gate**: `_hasPendingRenderFlush` in ChatProvider suppresses `notifyListeners()` while
   the app is in background. SSE data keeps accumulating in internal fields, but widgets do not
   rebuild until the app returns to foreground and flushes the pending notification via
