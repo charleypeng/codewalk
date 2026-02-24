@@ -562,14 +562,17 @@ extension _ChatPageChrome on _ChatPageState {
     required AppProvider appProvider,
   }) {
     final health = _activeServerHealth(appProvider);
-    if (health != ServerHealthStatus.healthy) {
+    if (health == ServerHealthStatus.unhealthy) {
       return true;
+    }
+    if (health == ServerHealthStatus.unknown) {
+      return false;
     }
     if (!FeatureFlags.refreshlessRealtime) {
       return !appProvider.isConnected;
     }
     if (_isRecoverableSyncState(chatProvider: chatProvider)) {
-      return chatProvider.isRecoverableSyncAlertEscalated;
+      return false;
     }
     return !appProvider.isConnected;
   }
