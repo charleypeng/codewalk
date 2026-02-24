@@ -146,7 +146,7 @@ extension _ChatPageStatusPresenter on _ChatPageState {
             valueColor: AlwaysStoppedAnimation<Color>(color),
           ),
           Text(
-            '$usagePercent%',
+            '$usagePercent',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               fontSize: usagePercent >= 100 ? 7.5 : 8.5,
               fontWeight: FontWeight.w700,

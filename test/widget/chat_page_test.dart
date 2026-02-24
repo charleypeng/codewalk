@@ -2100,7 +2100,7 @@ void main() {
     );
   });
 
-  testWidgets('context usage knob shows percent and popover metrics', (
+  testWidgets('context usage knob shows compact value and popover metrics', (
     WidgetTester tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1000, 900));
@@ -2161,7 +2161,7 @@ void main() {
     expect(
       find.descendant(
         of: find.byKey(const ValueKey<String>('appbar_context_usage_button')),
-        matching: find.text('30%'),
+        matching: find.text('30'),
       ),
       findsOneWidget,
     );
