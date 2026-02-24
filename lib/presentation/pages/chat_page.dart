@@ -543,6 +543,9 @@ class _ChatPageState extends State<ChatPage>
         final isMobile = sizeClass.isCompact;
         final isMedium = sizeClass == WindowSizeClass.medium;
         final isLargeDesktop = sizeClass.isAtLeastLarge;
+        final keyboardOpen =
+            MediaQuery.viewInsetsOf(context).bottom > 0 ||
+            View.of(context).viewInsets.bottom > 0;
         final settingsProvider = context.watch<SettingsProvider>();
         final conversationsPaneEnabled = settingsProvider.isDesktopPaneVisible(
           DesktopPane.conversations,
@@ -678,6 +681,7 @@ class _ChatPageState extends State<ChatPage>
                     if (isMobile) {
                       content = _buildChatContent(
                         chatProvider: chatProvider,
+                        isKeyboardOpen: keyboardOpen,
                         maxContentWidth: double.infinity,
                         horizontalPadding: 0,
                         verticalPadding: 0,
@@ -737,6 +741,7 @@ class _ChatPageState extends State<ChatPage>
                         Expanded(
                           child: _buildChatContent(
                             chatProvider: chatProvider,
+                            isKeyboardOpen: keyboardOpen,
                             maxContentWidth: mainContentWidth,
                             horizontalPadding: 12,
                             verticalPadding: 2,
@@ -1021,12 +1026,7 @@ class _TimelineRetryIndicatorEntry extends _TimelineEntry {
 
 enum _AssistantProgressStage { thinking, receiving, retrying }
 
-enum _ComposerStatusType {
-  dynamicReasoning,
-  receiving,
-  stopHint,
-  tip,
-}
+enum _ComposerStatusType { dynamicReasoning, receiving, stopHint, tip, queued }
 
 class _ComposerStatusPresentation {
   const _ComposerStatusPresentation._({
@@ -1045,6 +1045,12 @@ class _ComposerStatusPresentation {
 
   const _ComposerStatusPresentation.tip(String label)
     : this._(type: _ComposerStatusType.tip, label: label);
+
+  const _ComposerStatusPresentation.queued(int count)
+    : this._(
+        type: _ComposerStatusType.queued,
+        label: count == 1 ? '1 message queued' : '$count messages queued',
+      );
 
   static const List<String> _receivingTips = [
     'Tip: Use @ to mention files in your prompt',
@@ -1159,11 +1165,12 @@ class _ComposerStatusLanternTextState extends State<_ComposerStatusLanternText>
       animation: _controller,
       child: textWidget,
       builder: (context, child) {
-        final center = ((_controller.value * 1.8) - 0.4).clamp(0.0, 1.0);
-        final left = (center - 0.16).clamp(0.0, 1.0);
-        final innerLeft = (center - 0.06).clamp(0.0, 1.0);
-        final innerRight = (center + 0.06).clamp(0.0, 1.0);
-        final right = (center + 0.16).clamp(0.0, 1.0);
+        final rawCenter = (_controller.value * 1.8) - 0.4;
+        final left = (rawCenter - 0.16).clamp(0.0, 1.0);
+        final innerLeft = (rawCenter - 0.06).clamp(0.0, 1.0);
+        final center = rawCenter.clamp(0.0, 1.0);
+        final innerRight = (rawCenter + 0.06).clamp(0.0, 1.0);
+        final right = (rawCenter + 0.16).clamp(0.0, 1.0);
 
         return ShaderMask(
           blendMode: BlendMode.srcIn,

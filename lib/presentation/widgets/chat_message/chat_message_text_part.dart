@@ -25,6 +25,7 @@ extension _ChatMessageTextPartBuilder on _ChatMessageWidgetState {
           else
             MarkdownBody(
               data: textForRender,
+              softLineBreak: true,
               styleSheet: _resolveMarkdownStyleSheet(context),
               builders: <String, MarkdownElementBuilder>{
                 'pre': _MarkdownCodeBlockTapBuilder(

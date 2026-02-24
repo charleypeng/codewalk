@@ -1289,6 +1289,37 @@ void main() {
     expect(find.text('Assistant text'), findsOneWidget);
   });
 
+  testWidgets('shows queued badge for queued user message', (
+    WidgetTester tester,
+  ) async {
+    final userMessage = UserMessage(
+      id: 'msg_user_queued_badge',
+      sessionId: 'ses_user_queued_badge',
+      time: DateTime.fromMillisecondsSinceEpoch(1000),
+      parts: const <MessagePart>[
+        TextPart(
+          id: 'part_user_queued_badge',
+          messageId: 'msg_user_queued_badge',
+          sessionId: 'ses_user_queued_badge',
+          text: 'Queued message body',
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: userMessage,
+            isQueuedUserMessage: true,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Queued'), findsOneWidget);
+  });
+
   testWidgets('assistant header spacing follows visual density', (
     WidgetTester tester,
   ) async {

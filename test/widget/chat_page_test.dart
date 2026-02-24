@@ -5081,6 +5081,75 @@ void main() {
   );
 
   testWidgets(
+    'shows composer status text without shader when animations are disabled',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_progress_no_motion',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Progress No Motion Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_progress_no_motion'] =
+          const <ChatMessage>[];
+
+      final streamController = StreamController<Either<Failure, ChatMessage>>();
+      addTearDown(() async {
+        if (!streamController.isClosed) {
+          await streamController.close();
+        }
+      });
+      repository.sendMessageHandler =
+          (projectId, sessionId, input, directory) => streamController.stream;
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      const mediaQueryData = MediaQueryData(
+        size: Size(1000, 900),
+        disableAnimations: true,
+      );
+      await tester.pumpWidget(
+        _testApp(provider, appProvider, mediaQueryData: mediaQueryData),
+      );
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      await provider.sendMessage('status progress no motion');
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
+        findsOneWidget,
+      );
+      expect(find.byType(ShaderMask), findsNothing);
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is Text && (w.data?.startsWith('Tip:') ?? false),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
     'shows transient reasoning status above composer and hides it after completion',
     (WidgetTester tester) async {
       final repository = FakeChatRepository(
@@ -5981,11 +6050,11 @@ void main() {
           mediaQueryData: baseMediaQueryData,
         ),
       );
-      await tester.pumpAndSettle();
+      await _pumpUiFrames(tester);
 
       await provider.loadSessions();
       await provider.selectSession(provider.sessions.first);
-      await tester.pumpAndSettle();
+      await _pumpUiFrames(tester);
 
       expect(find.text('Tasks (1)'), findsOneWidget);
       expect(find.text('Task 1/1 Todo'), findsNothing);
@@ -5999,7 +6068,7 @@ void main() {
           mediaQueryData: keyboardMediaQueryData,
         ),
       );
-      await tester.pumpAndSettle();
+      await _pumpUiFrames(tester);
 
       expect(find.text('Task 1/1 Todo'), findsOneWidget);
       expect(find.text('Tasks (1)'), findsNothing);
@@ -6013,7 +6082,7 @@ void main() {
           mediaQueryData: baseMediaQueryData,
         ),
       );
-      await tester.pumpAndSettle();
+      await _pumpUiFrames(tester);
 
       expect(find.text('Tasks (1)'), findsOneWidget);
       expect(find.text('Task 1/1 Todo'), findsNothing);
@@ -6076,15 +6145,15 @@ void main() {
           mediaQueryData: baseMediaQueryData,
         ),
       );
-      await tester.pumpAndSettle();
+      await _pumpUiFrames(tester);
 
       await provider.loadSessions();
       await provider.selectSession(provider.sessions.first);
-      await tester.pumpAndSettle();
+      await _pumpUiFrames(tester);
 
       expect(find.text('Tasks (1)'), findsOneWidget);
       await tester.tap(find.text('Tasks (1)'));
-      await tester.pumpAndSettle();
+      await _pumpUiFrames(tester);
 
       expect(settingsProvider.taskListCollapsed, isTrue);
       expect(find.text('Task 1/1 Todo'), findsOneWidget);
@@ -6097,7 +6166,7 @@ void main() {
           mediaQueryData: keyboardMediaQueryData,
         ),
       );
-      await tester.pumpAndSettle();
+      await _pumpUiFrames(tester);
 
       expect(find.text('Task 1/1 Todo'), findsOneWidget);
 
@@ -6109,7 +6178,7 @@ void main() {
           mediaQueryData: baseMediaQueryData,
         ),
       );
-      await tester.pumpAndSettle();
+      await _pumpUiFrames(tester);
 
       expect(settingsProvider.taskListCollapsed, isTrue);
       expect(find.text('Task 1/1 Todo'), findsOneWidget);
@@ -6172,11 +6241,11 @@ void main() {
           mediaQueryData: baseMediaQueryData,
         ),
       );
-      await tester.pumpAndSettle();
+      await _pumpUiFrames(tester);
 
       await provider.loadSessions();
       await provider.selectSession(provider.sessions.first);
-      await tester.pumpAndSettle();
+      await _pumpUiFrames(tester);
 
       expect(settingsProvider.taskListCollapsed, isFalse);
 
@@ -6188,11 +6257,11 @@ void main() {
           mediaQueryData: keyboardMediaQueryData,
         ),
       );
-      await tester.pumpAndSettle();
+      await _pumpUiFrames(tester);
 
       expect(find.text('Task 1/1 Todo'), findsOneWidget);
       await tester.tap(find.text('Task 1/1 Todo'));
-      await tester.pumpAndSettle();
+      await _pumpUiFrames(tester);
 
       expect(settingsProvider.taskListCollapsed, isFalse);
 
@@ -6204,13 +6273,18 @@ void main() {
           mediaQueryData: baseMediaQueryData,
         ),
       );
-      await tester.pumpAndSettle();
+      await _pumpUiFrames(tester);
 
       expect(settingsProvider.taskListCollapsed, isFalse);
       expect(find.text('Tasks (1)'), findsOneWidget);
       expect(find.text('Task 1/1 Todo'), findsNothing);
     },
   );
+}
+
+Future<void> _pumpUiFrames(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 250));
 }
 
 Widget _testApp(

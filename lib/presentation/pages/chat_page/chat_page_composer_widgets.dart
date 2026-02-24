@@ -103,6 +103,14 @@ extension _ChatPageComposerWidgets on _ChatPageState {
     );
   }
 
+  Future<void> _handleSendQueuedNow(ChatProvider chatProvider) async {
+    final sent = await chatProvider.sendQueuedNow();
+    if (!mounted || !sent) {
+      return;
+    }
+    _scrollToBottom(force: true);
+  }
+
   void _applyComposerStatusTarget(_ComposerStatusPresentation? target) {
     if (target == null) {
       _tipRotationTimer?.cancel();
@@ -137,7 +145,8 @@ extension _ChatPageComposerWidgets on _ChatPageState {
     _composerStatusHideTimer?.cancel();
     _composerStatusHideTimer = null;
 
-    if (target.type == _ComposerStatusType.dynamicReasoning) {
+    if (target.type == _ComposerStatusType.dynamicReasoning ||
+        target.type == _ComposerStatusType.queued) {
       _tipRotationTimer?.cancel();
       _tipRotationTimer = null;
       _composerStatusShowTimer?.cancel();
@@ -229,6 +238,7 @@ extension _ChatPageComposerWidgets on _ChatPageState {
 
   Widget _buildComposerReasoningStatusLine(_ComposerStatusPresentation status) {
     final colorScheme = Theme.of(context).colorScheme;
+    final chatProvider = context.read<ChatProvider>();
     final leading = switch (status.type) {
       _ComposerStatusType.tip => Icon(
         Symbols.lightbulb_outline,
@@ -242,6 +252,12 @@ extension _ChatPageComposerWidgets on _ChatPageState {
         key: const ValueKey<String>('composer_reasoning_status_icon'),
         size: 15,
         color: colorScheme.primary,
+      ),
+      _ComposerStatusType.queued => Icon(
+        Symbols.schedule_send,
+        key: const ValueKey<String>('composer_reasoning_status_icon_queue'),
+        size: 15,
+        color: colorScheme.secondary,
       ),
       _ComposerStatusType.stopHint => const SizedBox.shrink(),
     };
@@ -280,6 +296,24 @@ extension _ChatPageComposerWidgets on _ChatPageState {
                 style: textStyle,
               ),
             ),
+            if (status.type == _ComposerStatusType.queued)
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: TextButton(
+                  key: const ValueKey<String>('composer_send_now_button'),
+                  onPressed: () =>
+                      unawaited(_handleSendQueuedNow(chatProvider)),
+                  style: TextButton.styleFrom(
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    minimumSize: const Size(0, 24),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                  ),
+                  child: const Text('Send now'),
+                ),
+              ),
           ],
         ),
       ),

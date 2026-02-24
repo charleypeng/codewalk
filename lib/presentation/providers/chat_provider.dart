@@ -231,6 +231,13 @@ class ChatProvider extends ChangeNotifier {
   bool _isLoadingSessionInsights = false;
   String? _sessionInsightsError;
   final Set<String> _pendingLocalUserMessageIds = <String>{};
+  final Set<String> _queuedLocalUserMessageIds = <String>{};
+  final Map<String, ListQueue<_QueuedSendEnvelope>> _queuedSendBySessionId =
+      <String, ListQueue<_QueuedSendEnvelope>>{};
+  final Set<String> _queuedDrainInFlightSessionIds = <String>{};
+  final Set<String> _queuedDrainDeferredSessionIds = <String>{};
+  final Set<String> _queuedRetryScheduledSessionIds = <String>{};
+  int _localMessageIdSequence = 0;
   bool _activeSessionRefreshInFlight = false;
   bool _isAbortingResponse = false;
   bool _isCompactingContext = false;
@@ -462,6 +469,63 @@ class ChatProvider extends ChangeNotifier {
       return false;
     }
     return isCurrentSessionActivelyResponding;
+  }
+
+  bool isQueuedUserMessage(String messageId) {
+    final normalizedMessageId = messageId.trim();
+    if (normalizedMessageId.isEmpty) {
+      return false;
+    }
+    return _queuedLocalUserMessageIds.contains(normalizedMessageId);
+  }
+
+  int queuedMessageCountForSession(String sessionId) {
+    final normalizedSessionId = sessionId.trim();
+    if (normalizedSessionId.isEmpty) {
+      return 0;
+    }
+    return _queuedSendBySessionId[normalizedSessionId]?.length ?? 0;
+  }
+
+  int get currentSessionQueuedMessageCount {
+    final sessionId = _currentSession?.id;
+    if (sessionId == null) {
+      return 0;
+    }
+    return queuedMessageCountForSession(sessionId);
+  }
+
+  ListQueue<_QueuedSendEnvelope> _queueForSession(String sessionId) {
+    final normalizedSessionId = sessionId.trim();
+    if (normalizedSessionId.isEmpty) {
+      return ListQueue<_QueuedSendEnvelope>();
+    }
+    return _queuedSendBySessionId.putIfAbsent(
+      normalizedSessionId,
+      ListQueue<_QueuedSendEnvelope>.new,
+    );
+  }
+
+  void _syncQueuedLocalUserMessageIds() {
+    _queuedLocalUserMessageIds.clear();
+    _queuedLocalUserMessageIds.addAll(
+      _queuedSendBySessionId.values.expand(
+        (queue) => queue.map((item) => item.localMessageId),
+      ),
+    );
+  }
+
+  void _clearQueuedSendState() {
+    _queuedSendBySessionId.clear();
+    _queuedLocalUserMessageIds.clear();
+    _queuedDrainInFlightSessionIds.clear();
+    _queuedDrainDeferredSessionIds.clear();
+    _queuedRetryScheduledSessionIds.clear();
+  }
+
+  String _nextLocalUserMessageId() {
+    _localMessageIdSequence += 1;
+    return 'local_user_${DateTime.now().microsecondsSinceEpoch}_${_localMessageIdSequence}';
   }
 
   bool get _isExperimentalMultiDeviceSyncEnabled {
@@ -699,8 +763,9 @@ class ChatProvider extends ChangeNotifier {
     }
 
     _cachedThreadPermissionsAtVersion = _threadPermissionsVersion;
-    _cachedThreadPermissionRequests =
-        List<ChatPermissionRequest>.unmodifiable(collected);
+    _cachedThreadPermissionRequests = List<ChatPermissionRequest>.unmodifiable(
+      collected,
+    );
     return _cachedThreadPermissionRequests;
   }
 
@@ -1011,6 +1076,8 @@ class ChatProvider extends ChangeNotifier {
             sessionId: session.id,
           );
           _messagesVersion++;
+          _prunePendingLocalUserMessageIdsToVisibleUsers();
+          _pruneQueuedLocalUserMessageIdsToVisibleUsers();
           notifyListeners();
           _scheduleAutoTitleRefresh(session.id);
           if (!_isCompactingContext) {
@@ -1783,6 +1850,7 @@ class ChatProvider extends ChangeNotifier {
     _messages = <ChatMessage>[];
     _messagesVersion++;
     _pendingLocalUserMessageIds.clear();
+    _clearQueuedSendState();
     _clearRejectedDraft();
     _sessionInsightsError = null;
 
@@ -1834,6 +1902,7 @@ class ChatProvider extends ChangeNotifier {
     _messages.clear();
     _messagesVersion++;
     _pendingLocalUserMessageIds.clear();
+    _clearQueuedSendState();
     _clearRejectedDraft();
     _currentSession = session;
     _threadPermissionsVersion++;
@@ -1852,6 +1921,7 @@ class ChatProvider extends ChangeNotifier {
     // Load messages for selected session
     await loadMessages(session.id);
     await loadSessionInsights(session.id, silent: true);
+    _scheduleQueuedSendDrain(session.id, reason: 'session-selected');
   }
 
   /// Load message list
@@ -1907,12 +1977,291 @@ class ChatProvider extends ChangeNotifier {
           sessionId: sessionId,
         );
         _messagesVersion++;
-        _pendingLocalUserMessageIds.clear();
+        _prunePendingLocalUserMessageIdsToVisibleUsers();
+        _pruneQueuedLocalUserMessageIdsToVisibleUsers();
         _scheduleAutoTitleRefresh(sessionId);
         _setState(ChatState.loaded);
         unawaited(_persistLastSessionSnapshotBestEffort());
+        _scheduleQueuedSendDrain(sessionId, reason: 'load-messages');
       },
     );
+  }
+
+  Future<void> submitMessageWithQueue(
+    String text, {
+    List<FileInputPart> attachments = const <FileInputPart>[],
+    bool shellMode = false,
+  }) async {
+    final trimmedText = text.trim();
+    final effectiveAttachments = shellMode
+        ? const <FileInputPart>[]
+        : attachments;
+    final session = _currentSession;
+    if (session == null ||
+        (trimmedText.isEmpty && effectiveAttachments.isEmpty)) {
+      return;
+    }
+
+    final sessionId = session.id;
+    final hasQueuedMessages = queuedMessageCountForSession(sessionId) > 0;
+    if (_isSessionBusyForQueuedSend(sessionId) || hasQueuedMessages) {
+      final localMessageId = _appendLocalUserMessage(
+        sessionId: sessionId,
+        text: trimmedText,
+        attachments: effectiveAttachments,
+        shellMode: shellMode,
+      );
+      final queue = _queueForSession(sessionId)
+        ..add(
+          _QueuedSendEnvelope(
+            sessionId: sessionId,
+            localMessageId: localMessageId,
+            text: trimmedText,
+            attachments: List<FileInputPart>.unmodifiable(effectiveAttachments),
+            shellMode: shellMode,
+          ),
+        );
+      _syncQueuedLocalUserMessageIds();
+      _notifyListeners();
+      _scheduleAutoTitleRefresh(sessionId);
+      unawaited(_persistLastSessionSnapshotBestEffort());
+      AppLogger.info(
+        'Provider queued message session=$sessionId size=${queue.length}',
+      );
+      if (!_isSessionBusyForQueuedSend(sessionId)) {
+        _scheduleQueuedSendDrain(sessionId, reason: 'queue-while-idle');
+      }
+      return;
+    }
+
+    await sendMessage(
+      trimmedText,
+      attachments: effectiveAttachments,
+      shellMode: shellMode,
+    );
+  }
+
+  bool _isSessionBusyForQueuedSend(String sessionId) {
+    if (_currentSession?.id != sessionId) {
+      return false;
+    }
+    if (_interruptSendInFlight || _isAbortingResponse) {
+      return true;
+    }
+    if (_state == ChatState.sending) {
+      return true;
+    }
+    return isSessionActivelyResponding(sessionId);
+  }
+
+  void _scheduleQueuedSendDrain(
+    String sessionId, {
+    required String reason,
+    bool allowRetrySchedule = true,
+  }) {
+    if (_queuedDrainInFlightSessionIds.contains(sessionId)) {
+      _queuedDrainDeferredSessionIds.add(sessionId);
+      return;
+    }
+    unawaited(
+      _drainQueuedSends(
+        sessionId,
+        reason: reason,
+        allowRetrySchedule: allowRetrySchedule,
+      ),
+    );
+  }
+
+  void _scheduleQueuedSendRetryOnce(String sessionId) {
+    final normalizedSessionId = sessionId.trim();
+    if (normalizedSessionId.isEmpty) {
+      return;
+    }
+    if (!_queuedRetryScheduledSessionIds.add(normalizedSessionId)) {
+      return;
+    }
+
+    unawaited(
+      Future<void>.delayed(const Duration(seconds: 1), () {
+        _queuedRetryScheduledSessionIds.remove(normalizedSessionId);
+        if (_currentSession?.id != normalizedSessionId) {
+          return;
+        }
+        if (_isSessionBusyForQueuedSend(normalizedSessionId)) {
+          return;
+        }
+        if (queuedMessageCountForSession(normalizedSessionId) == 0) {
+          return;
+        }
+        _scheduleQueuedSendDrain(
+          normalizedSessionId,
+          reason: 'retry-after-failure',
+          allowRetrySchedule: false,
+        );
+      }),
+    );
+  }
+
+  ({String text, List<FileInputPart> attachments, bool shellMode})
+  _buildMergedQueuedPayload(List<_QueuedSendEnvelope> queuedBatch) {
+    final allShellMode =
+        queuedBatch.isNotEmpty &&
+        queuedBatch.every((queued) => queued.shellMode);
+    final mergedLines = <String>[];
+    for (final queued in queuedBatch) {
+      final line = queued.text.trim();
+      if (line.isEmpty) {
+        continue;
+      }
+      if (allShellMode) {
+        mergedLines.add(line);
+      } else {
+        // Mixed-mode batches are sent in normal mode and keep shell intent by
+        // prefixing shell lines with '!'.
+        final normalizedShellLine = line.startsWith('!') ? line : '!$line';
+        mergedLines.add(queued.shellMode ? normalizedShellLine : line);
+      }
+    }
+
+    final mergedAttachments = <FileInputPart>[
+      for (final queued in queuedBatch) ...queued.attachments,
+    ];
+    return (
+      text: mergedLines.join('\n'),
+      attachments: List<FileInputPart>.unmodifiable(mergedAttachments),
+      shellMode: allShellMode,
+    );
+  }
+
+  Future<bool> sendQueuedNow() async {
+    final sessionId = _currentSession?.id;
+    if (sessionId == null || currentSessionQueuedMessageCount == 0) {
+      return false;
+    }
+
+    final wasBusy = _isSessionBusyForQueuedSend(sessionId);
+    if (wasBusy && canAbortActiveResponse) {
+      final stopped = await abortActiveResponse(suppressFailureUi: true);
+      if (!stopped) {
+        AppLogger.info(
+          'Provider send-now continuing after stop failure session=$sessionId',
+        );
+      }
+    }
+
+    if (wasBusy && _currentSession?.id == sessionId) {
+      await _awaitInterruptSendSessionReady(sessionId);
+    }
+
+    if (_queuedDrainInFlightSessionIds.contains(sessionId)) {
+      return true;
+    }
+
+    final drained = await _drainQueuedSends(sessionId, reason: 'send-now');
+    return drained || queuedMessageCountForSession(sessionId) == 0;
+  }
+
+  Future<bool> _drainQueuedSends(
+    String sessionId, {
+    required String reason,
+    bool allowRetrySchedule = true,
+  }) async {
+    if (_queuedDrainInFlightSessionIds.contains(sessionId)) {
+      return false;
+    }
+    _queuedDrainInFlightSessionIds.add(sessionId);
+
+    try {
+      if (_currentSession?.id != sessionId) {
+        return false;
+      }
+      if (_isSessionBusyForQueuedSend(sessionId)) {
+        return false;
+      }
+
+      final queue = _queuedSendBySessionId[sessionId];
+      if (queue == null || queue.isEmpty) {
+        _queuedSendBySessionId.remove(sessionId);
+        _syncQueuedLocalUserMessageIds();
+        _notifyListeners();
+        return false;
+      }
+
+      final queuedBatch = queue.toList(growable: false);
+      final payload = _buildMergedQueuedPayload(queuedBatch);
+      if (payload.text.isEmpty && payload.attachments.isEmpty) {
+        _queuedSendBySessionId.remove(sessionId);
+        _syncQueuedLocalUserMessageIds();
+        _notifyListeners();
+        return false;
+      }
+
+      final mergedLocalMessageId = _consolidateQueuedLocalUserMessages(
+        sessionId: sessionId,
+        queuedBatch: queuedBatch,
+        mergedText: payload.text,
+        mergedAttachments: payload.attachments,
+        shellMode: payload.shellMode,
+      );
+      _queuedSendBySessionId[sessionId] =
+          ListQueue<_QueuedSendEnvelope>.from(<_QueuedSendEnvelope>[
+            _QueuedSendEnvelope(
+              sessionId: sessionId,
+              localMessageId: mergedLocalMessageId,
+              text: payload.text,
+              attachments: payload.attachments,
+              shellMode: payload.shellMode,
+            ),
+          ]);
+      _syncQueuedLocalUserMessageIds();
+
+      AppLogger.info(
+        'Provider draining queued batch session=$sessionId reason=$reason count=${queuedBatch.length}',
+      );
+      var sendStarted = false;
+      try {
+        sendStarted = await sendMessage(
+          payload.text,
+          attachments: payload.attachments,
+          shellMode: payload.shellMode,
+          localMessageId: mergedLocalMessageId,
+          appendOptimisticMessage: false,
+          sessionIdOverride: sessionId,
+        );
+      } catch (error, stackTrace) {
+        AppLogger.error(
+          'Provider queued batch dispatch crashed session=$sessionId reason=$reason',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+      if (!sendStarted) {
+        AppLogger.warn(
+          'Provider queued batch dispatch failed session=$sessionId reason=$reason',
+        );
+        if (allowRetrySchedule) {
+          _scheduleQueuedSendRetryOnce(sessionId);
+        }
+        _notifyListeners();
+        return false;
+      }
+
+      _queuedSendBySessionId.remove(sessionId);
+      _syncQueuedLocalUserMessageIds();
+      _notifyListeners();
+      return true;
+    } finally {
+      _queuedDrainInFlightSessionIds.remove(sessionId);
+      final shouldDrainDeferred = _queuedDrainDeferredSessionIds.remove(
+        sessionId,
+      );
+      if (shouldDrainDeferred &&
+          _currentSession?.id == sessionId &&
+          !_isSessionBusyForQueuedSend(sessionId) &&
+          queuedMessageCountForSession(sessionId) > 0) {
+        _scheduleQueuedSendDrain(sessionId, reason: 'deferred');
+      }
+    }
   }
 
   Future<void> sendMessageWithInterrupt(
@@ -2013,21 +2362,30 @@ class ChatProvider extends ChangeNotifier {
   }
 
   /// Send message
-  Future<void> sendMessage(
+  Future<bool> sendMessage(
     String text, {
     List<FileInputPart> attachments = const <FileInputPart>[],
     bool shellMode = false,
+    String? localMessageId,
+    bool appendOptimisticMessage = true,
+    String? sessionIdOverride,
   }) async {
     final trimmedText = text.trim();
     final effectiveAttachments = shellMode
         ? const <FileInputPart>[]
         : attachments;
-    if (_currentSession == null ||
+    final normalizedSessionOverride = sessionIdOverride;
+    final hasSessionOverride =
+        normalizedSessionOverride != null &&
+        normalizedSessionOverride.isNotEmpty;
+    if ((!hasSessionOverride && _currentSession == null) ||
         (trimmedText.isEmpty && effectiveAttachments.isEmpty)) {
-      return;
+      return false;
     }
 
-    final sendSessionId = _currentSession!.id;
+    final sendSessionId = hasSessionOverride
+        ? normalizedSessionOverride!
+        : _currentSession!.id;
     AppLogger.info(
       'Provider send start session=$sendSessionId agent=${_selectedAgentName ?? "-"} provider=${_selectedProviderId ?? "-"} model=${_selectedModelId ?? "-"} variant=${_selectedVariantId ?? "auto"}',
     );
@@ -2042,47 +2400,27 @@ class ChatProvider extends ChangeNotifier {
       // Sync project ID from ProjectProvider
       _currentProjectId = projectProvider.currentProjectId;
 
-      // Generate message ID
-      final localMessageId =
-          'local_user_${DateTime.now().microsecondsSinceEpoch}';
+      final resolvedLocalMessageId = localMessageId?.trim().isNotEmpty == true
+          ? localMessageId!.trim()
+          : null;
+      final hasExistingLocalMessage =
+          resolvedLocalMessageId != null &&
+          _messages.whereType<UserMessage>().any(
+            (message) => message.id == resolvedLocalMessageId,
+          );
+      final activeLocalMessageId =
+          appendOptimisticMessage ||
+              resolvedLocalMessageId == null ||
+              !hasExistingLocalMessage
+          ? _appendLocalUserMessage(
+              sessionId: sendSessionId,
+              text: trimmedText,
+              attachments: effectiveAttachments,
+              shellMode: shellMode,
+            )
+          : resolvedLocalMessageId;
 
-      // Add user message to UI
-      final now = DateTime.now();
-      final userParts = <MessagePart>[];
-      if (trimmedText.isNotEmpty) {
-        userParts.add(
-          TextPart(
-            id: '${localMessageId}_text',
-            messageId: localMessageId,
-            sessionId: sendSessionId,
-            text: shellMode ? '!$trimmedText' : trimmedText,
-            time: now,
-          ),
-        );
-      }
-      for (var index = 0; index < effectiveAttachments.length; index += 1) {
-        final attachment = effectiveAttachments[index];
-        userParts.add(
-          FilePart(
-            id: '${localMessageId}_file_$index',
-            messageId: localMessageId,
-            sessionId: sendSessionId,
-            url: attachment.url,
-            mime: attachment.mime,
-            filename: attachment.filename,
-          ),
-        );
-      }
-      final userMessage = UserMessage(
-        id: localMessageId,
-        sessionId: sendSessionId,
-        time: now,
-        parts: userParts,
-      );
-
-      _messages.add(userMessage);
-      _messagesVersion++;
-      _pendingLocalUserMessageIds.add(localMessageId);
+      _pendingLocalUserMessageIds.add(activeLocalMessageId);
       notifyListeners();
       _scheduleAutoTitleRefresh(sendSessionId);
       unawaited(_persistLastSessionSnapshotBestEffort());
@@ -2282,10 +2620,15 @@ class ChatProvider extends ChangeNotifier {
               } else {
                 _notifyListeners();
               }
+              _scheduleQueuedSendDrain(
+                streamSessionId,
+                reason: 'stream-finished',
+              );
             },
           );
       _messageSubscription = sendSubscription;
       AppLogger.info('Provider send stream subscription attached');
+      return true;
     } catch (error, stackTrace) {
       final streamSessionId = _activeMessageStreamSessionId ?? sendSessionId;
       _activeMessageStreamSessionId = null;
@@ -2302,9 +2645,10 @@ class ChatProvider extends ChangeNotifier {
         _clearActiveSendDraft();
         _errorMessage = null;
         _setState(ChatState.loaded);
-        return;
+        return false;
       }
       _setError('Failed to start message send', sessionId: streamSessionId);
+      return false;
     }
   }
 
@@ -2376,6 +2720,7 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
     if (success) {
       unawaited(_persistLastSessionSnapshotBestEffort());
+      _scheduleQueuedSendDrain(session.id, reason: 'abort-success');
     }
     return success;
   }

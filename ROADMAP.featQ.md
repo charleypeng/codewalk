@@ -59,6 +59,7 @@
   - [ ] Plan the merge between the project selector and the conversations sidebar, grouping conversations by open projects to speed up navigation.
   - [ ] Tasks widget gets a footer progress bar based on total completed items.
   - [x] Plan support for sending a new message while the assistant is still working (OpenCode CLI/Web parity), following existing OpenCode interaction patterns. - Planning doc: `ROADMAP.featQ.concurrent-send-plan.md`
+  - [x] Deliver queued-send behavior while processing: queue new messages during active run; `Send now` aborts current run and sends queued content; multiple queued drafts merge into one payload with single `\n` separators; show queued status/indicators in composer/chat UI. - Related commits: dfd64eb f8df06a c8884b2
   - [ ] Allow pinning sessions in the Conversations sidebar.
 
 ## Goal

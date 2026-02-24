@@ -110,6 +110,153 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     }
   }
 
+  void _prunePendingLocalUserMessageIdsToVisibleUsers() {
+    if (_pendingLocalUserMessageIds.isEmpty) {
+      return;
+    }
+    final visibleUserIds = _messages
+        .whereType<UserMessage>()
+        .map((message) => message.id)
+        .toSet();
+    _pendingLocalUserMessageIds.removeWhere(
+      (id) => !visibleUserIds.contains(id),
+    );
+  }
+
+  void _pruneQueuedLocalUserMessageIdsToVisibleUsers() {
+    if (_queuedLocalUserMessageIds.isEmpty) {
+      return;
+    }
+    final visibleUserIds = _messages
+        .whereType<UserMessage>()
+        .map((message) => message.id)
+        .toSet();
+    _queuedLocalUserMessageIds.removeWhere(
+      (id) => !visibleUserIds.contains(id),
+    );
+  }
+
+  UserMessage _buildLocalUserMessage({
+    required String localMessageId,
+    required String sessionId,
+    required DateTime time,
+    required String text,
+    required List<FileInputPart> attachments,
+    required bool shellMode,
+  }) {
+    final userParts = <MessagePart>[];
+    if (text.isNotEmpty) {
+      userParts.add(
+        TextPart(
+          id: '${localMessageId}_text',
+          messageId: localMessageId,
+          sessionId: sessionId,
+          text: shellMode ? '!$text' : text,
+          time: time,
+        ),
+      );
+    }
+    for (var index = 0; index < attachments.length; index += 1) {
+      final attachment = attachments[index];
+      userParts.add(
+        FilePart(
+          id: '${localMessageId}_file_$index',
+          messageId: localMessageId,
+          sessionId: sessionId,
+          url: attachment.url,
+          mime: attachment.mime,
+          filename: attachment.filename,
+        ),
+      );
+    }
+    return UserMessage(
+      id: localMessageId,
+      sessionId: sessionId,
+      time: time,
+      parts: userParts,
+    );
+  }
+
+  String _appendLocalUserMessage({
+    required String sessionId,
+    required String text,
+    required List<FileInputPart> attachments,
+    required bool shellMode,
+  }) {
+    final localMessageId = _nextLocalUserMessageId();
+    _messages.add(
+      _buildLocalUserMessage(
+        localMessageId: localMessageId,
+        sessionId: sessionId,
+        time: DateTime.now(),
+        text: text,
+        attachments: attachments,
+        shellMode: shellMode,
+      ),
+    );
+    _messagesVersion++;
+    _pendingLocalUserMessageIds.add(localMessageId);
+    return localMessageId;
+  }
+
+  String _consolidateQueuedLocalUserMessages({
+    required String sessionId,
+    required List<_QueuedSendEnvelope> queuedBatch,
+    required String mergedText,
+    required List<FileInputPart> mergedAttachments,
+    required bool shellMode,
+  }) {
+    final queuedLocalIds = queuedBatch
+        .map((item) => item.localMessageId)
+        .where((id) => id.isNotEmpty)
+        .toList(growable: false);
+    final queuedLocalIdSet = queuedLocalIds.toSet();
+    final anchorLocalId =
+        queuedLocalIds.firstOrNull ?? _nextLocalUserMessageId();
+
+    var insertionIndex = -1;
+    for (var index = 0; index < _messages.length; index += 1) {
+      final message = _messages[index];
+      if (message is! UserMessage) {
+        continue;
+      }
+      if (message.sessionId != sessionId) {
+        continue;
+      }
+      if (!queuedLocalIdSet.contains(message.id)) {
+        continue;
+      }
+      insertionIndex = index;
+      break;
+    }
+
+    _messages.removeWhere(
+      (message) =>
+          message is UserMessage &&
+          message.sessionId == sessionId &&
+          queuedLocalIdSet.contains(message.id),
+    );
+
+    final consolidatedMessage = _buildLocalUserMessage(
+      localMessageId: anchorLocalId,
+      sessionId: sessionId,
+      time: DateTime.now(),
+      text: mergedText,
+      attachments: mergedAttachments,
+      shellMode: shellMode,
+    );
+    if (insertionIndex < 0 || insertionIndex > _messages.length) {
+      _messages.add(consolidatedMessage);
+    } else {
+      _messages.insert(insertionIndex, consolidatedMessage);
+    }
+    _messagesVersion++;
+    _pendingLocalUserMessageIds.removeWhere(queuedLocalIdSet.contains);
+    _pendingLocalUserMessageIds.add(anchorLocalId);
+    _queuedLocalUserMessageIds.removeWhere(queuedLocalIdSet.contains);
+    return anchorLocalId;
+  }
+
   void _updateOrAddMessage(ChatMessage message) {
     final currentSessionId = _currentSession?.id;
     if (currentSessionId == null || message.sessionId != currentSessionId) {
@@ -125,6 +272,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
       if (pendingLocalIndex != -1) {
         final previousId = _messages[pendingLocalIndex].id;
         _pendingLocalUserMessageIds.remove(previousId);
+        _queuedLocalUserMessageIds.remove(previousId);
         _messages[pendingLocalIndex] = message;
         _messagesVersion++;
         _notifyListeners();
@@ -142,6 +290,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
       _messagesVersion++;
       if (message is UserMessage) {
         _pendingLocalUserMessageIds.remove(message.id);
+        _queuedLocalUserMessageIds.remove(message.id);
       }
       AppLogger.debug(
         'Updated message: ${message.id}, parts=${message.parts.length}',

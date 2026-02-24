@@ -38,6 +38,7 @@ class ChatMessageWidget extends StatefulWidget {
     this.showThinkingBubbles = true,
     this.showToolCallBubbles = true,
     this.isSessionActivelyResponding = false,
+    this.isQueuedUserMessage = false,
     this.onBackgroundLongPress,
     this.onBackgroundLongPressEnd,
   });
@@ -47,6 +48,7 @@ class ChatMessageWidget extends StatefulWidget {
   final bool showThinkingBubbles;
   final bool showToolCallBubbles;
   final bool isSessionActivelyResponding;
+  final bool isQueuedUserMessage;
   final VoidCallback? onBackgroundLongPress;
   final VoidCallback? onBackgroundLongPressEnd;
 
@@ -73,6 +75,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   bool _lastShowThinking = true;
   bool _lastShowToolCalls = true;
   bool _lastResponding = false;
+  bool _lastQueued = false;
   double _lastVisualDensityVertical = 0;
   double _lastVisualDensityHorizontal = 0;
 
@@ -92,6 +95,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         widget.showThinkingBubbles == _lastShowThinking &&
         widget.showToolCallBubbles == _lastShowToolCalls &&
         widget.isSessionActivelyResponding == _lastResponding &&
+        widget.isQueuedUserMessage == _lastQueued &&
         density.vertical == _lastVisualDensityVertical &&
         density.horizontal == _lastVisualDensityHorizontal;
   }
@@ -106,6 +110,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     _lastShowThinking = widget.showThinkingBubbles;
     _lastShowToolCalls = widget.showToolCallBubbles;
     _lastResponding = widget.isSessionActivelyResponding;
+    _lastQueued = widget.isQueuedUserMessage;
     _lastVisualDensityVertical = density.vertical;
     _lastVisualDensityHorizontal = density.horizontal;
   }
@@ -157,6 +162,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   bool get showThinkingBubbles => widget.showThinkingBubbles;
   bool get showToolCallBubbles => widget.showToolCallBubbles;
   bool get isSessionActivelyResponding => widget.isSessionActivelyResponding;
+  bool get isQueuedUserMessage => widget.isQueuedUserMessage;
   VoidCallback? get onBackgroundLongPress => widget.onBackgroundLongPress;
   VoidCallback? get onBackgroundLongPressEnd => widget.onBackgroundLongPressEnd;
 

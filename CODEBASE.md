@@ -245,6 +245,12 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 - Android build targets Java 17 (`sourceCompatibility`, `targetCompatibility`, `jvmTarget`).
 - featM icon migration completed in `lib/presentation/**` and `test/widget/**`: Material icons moved from `Icons.*` to `Symbols.*` (`material_symbols_icons`).
 
+### Queued Send Flow
+
+- **Provider queue state + drain/send-now**: `chat_provider.dart` tracks per-session queued envelopes/local queued IDs and drains them as a merged batch; `sendQueuedNow()` can stop active response and force immediate drain.
+- **Composer queued status + action**: `chat_page_composer_status.dart` prioritizes queued-count status, and `chat_page_composer_widgets.dart` renders queued UI with a `Send now` action.
+- **Queued message badge**: `chat_message_widget.dart` + `chat_message_content.dart` expose/render `isQueuedUserMessage` with a `Queued` badge in user message bubbles.
+
 ### Android Background Monitoring
 
 - **Native foreground service** (`android/app/src/main/kotlin/com/verseles/codewalk/CodeWalkForegroundService.kt`):

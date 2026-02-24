@@ -86,6 +86,30 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
                                     ),
                               ),
                               const SizedBox(width: 8),
+                              if (isQueuedUserMessage) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.secondaryContainer,
+                                    borderRadius: AppShapes.borderSmall,
+                                  ),
+                                  child: Text(
+                                    'Queued',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color:
+                                              colorScheme.onSecondaryContainer,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
                             ],
                             Text(
                               _formatTime(message.time),

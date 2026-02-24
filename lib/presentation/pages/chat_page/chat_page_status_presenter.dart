@@ -148,7 +148,7 @@ extension _ChatPageStatusPresenter on _ChatPageState {
           Text(
             '$usagePercent',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              fontSize: usagePercent >= 100 ? 7.5 : 8.5,
+              fontSize: usagePercent >= 100 ? 8.5 : 9.5,
               fontWeight: FontWeight.w700,
               color: knobTextColor,
               height: 1,

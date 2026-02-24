@@ -36,6 +36,11 @@ extension _ChatPageComposerStatus on _ChatPageState {
   _ComposerStatusPresentation? _resolveComposerStatusTarget(
     ChatProvider chatProvider,
   ) {
+    final queuedCount = chatProvider.currentSessionQueuedMessageCount;
+    if (queuedCount > 0) {
+      return _ComposerStatusPresentation.queued(queuedCount);
+    }
+
     final latestMessage = chatProvider.messages.isEmpty
         ? null
         : chatProvider.messages.last;

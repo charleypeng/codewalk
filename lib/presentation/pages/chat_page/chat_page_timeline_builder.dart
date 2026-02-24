@@ -3,6 +3,7 @@ part of '../chat_page.dart';
 extension _ChatPageTimelineBuilder on _ChatPageState {
   Widget _buildChatContent({
     required ChatProvider chatProvider,
+    required bool isKeyboardOpen,
     required double maxContentWidth,
     required double horizontalPadding,
     required double verticalPadding,
@@ -153,22 +154,31 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                 builder: (context) {
                   final sp = context.watch<SettingsProvider>();
                   final sizeClass = context.windowSizeClass;
-                  final isMobile = sizeClass.isCompact;
-                  final isKeyboardOpen =
-                      MediaQuery.viewInsetsOf(context).bottom > 0;
+                  final isCompactLayout = sizeClass.isCompact;
+                  final mediaKeyboardInset = MediaQuery.viewInsetsOf(
+                    context,
+                  ).bottom;
+                  final viewKeyboardInset = View.of(context).viewInsets.bottom;
+                  final effectiveKeyboardOpen =
+                      isKeyboardOpen ||
+                      mediaKeyboardInset > 0 ||
+                      viewKeyboardInset > 0;
+                  final shouldForceCollapse =
+                      effectiveKeyboardOpen &&
+                      (isCompactLayout || _isMobileRuntime);
                   final utilityPaneVisible =
                       sizeClass.isAtLeastLarge &&
                       sp.isDesktopPaneVisible(DesktopPane.utility);
                   if (chatProvider.currentSessionTodo.isEmpty ||
                       !sp.showTaskList ||
-                      (!isMobile && utilityPaneVisible)) {
+                      (!isCompactLayout && utilityPaneVisible)) {
                     return const SizedBox.shrink();
                   }
                   return _buildInlineTodoCard(
                     context,
                     chatProvider,
                     sp,
-                    forceCollapsed: isMobile && isKeyboardOpen,
+                    forceCollapsed: shouldForceCollapse,
                   );
                 },
               ),
@@ -192,7 +202,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                   );
                   return ChatInputWidget(
                     onSendMessage: (submission) async {
-                      await chatProvider.sendMessageWithInterrupt(
+                      await chatProvider.submitMessageWithQueue(
                         submission.text,
                         attachments: submission.attachments,
                         shellMode: submission.mode == ChatComposerMode.shell,
@@ -458,6 +468,9 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                       showToolCallBubbles: settingsProvider.showToolCallBubbles,
                       isSessionActivelyResponding:
                           chatProvider.isCurrentSessionActivelyResponding,
+                      isQueuedUserMessage:
+                          message.role == MessageRole.user &&
+                          chatProvider.isQueuedUserMessage(message.id),
                       onBackgroundLongPress: () =>
                           _handleMessageBackgroundLongPress(message),
                       onBackgroundLongPressEnd: () =>
