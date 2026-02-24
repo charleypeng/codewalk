@@ -550,6 +550,10 @@ extension _ChatPageChrome on _ChatPageState {
     if (health == ServerHealthStatus.unknown) {
       return Theme.of(context).colorScheme.outline;
     }
+    if (_isRecoverableSyncState(chatProvider: chatProvider) &&
+        chatProvider.isRecoverableSyncAlertEscalated) {
+      return Theme.of(context).colorScheme.error;
+    }
     return _syncStatusColor(
       context: context,
       chatProvider: chatProvider,
@@ -572,7 +576,7 @@ extension _ChatPageChrome on _ChatPageState {
       return !appProvider.isConnected;
     }
     if (_isRecoverableSyncState(chatProvider: chatProvider)) {
-      return false;
+      return chatProvider.isRecoverableSyncAlertEscalated;
     }
     return !appProvider.isConnected;
   }
