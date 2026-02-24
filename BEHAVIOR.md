@@ -237,6 +237,17 @@
 - **When** the user navigates the app
 - **Then** the chat occupies the full screen, with the session list accessible via a lateral drawer
 
+### Mobile drawer status indicator (hamburger)
+
+- **Given** the mobile AppBar hamburger button is visible
+- **When** the app is in a non-urgent state (server health unknown or recoverable sync without escalation)
+- **Then** no status dot badge is shown on the hamburger icon
+- **When** the app is resynchronizing right after foreground resume (recoverable state)
+- **Then** a subtle loading spinner may appear on the hamburger icon instead of a dot
+- **When** an urgent state is present (server unhealthy/offline or escalated recoverable sync)
+- **Then** a red dot badge is shown after the alert grace period
+- **Then** non-urgent blue/gray dot badges are never shown on the hamburger icon
+
 ### Desktop: split view
 
 - **Given** the app is running on a desktop (expanded screen)
