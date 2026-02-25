@@ -42,6 +42,9 @@ class SettingsProvider extends ChangeNotifier {
   String? _dismissedUpdateVersion;
   bool _checkingForUpdate = false;
   bool _lastCheckFoundNoUpdate = false;
+  // Set only by _performStartupUpdateCheck(); cleared by acknowledgeStartupUpdateToast().
+  // Keeps startup-origin results separate from manual check results.
+  bool _pendingStartupUpdateToast = false;
   bool _initialized = false;
   Future<void>? _initFuture;
 
@@ -55,6 +58,7 @@ class SettingsProvider extends ChangeNotifier {
   UpdateCheckResult? get updateCheckResult => _updateCheckResult;
   bool get checkingForUpdate => _checkingForUpdate;
   bool get lastCheckFoundNoUpdate => _lastCheckFoundNoUpdate;
+  bool get pendingStartupUpdateToast => _pendingStartupUpdateToast;
   ThemeModeOption get themeMode => _settings.themeMode;
   bool get useAmoledDark => _settings.useAmoledDark;
   bool get useDynamicColor => _settings.useDynamicColor;
@@ -162,11 +166,18 @@ class SettingsProvider extends ChangeNotifier {
           result.isNewer &&
           result.latestVersion != _dismissedUpdateVersion) {
         _updateCheckResult = result;
+        _pendingStartupUpdateToast = true;
         notifyListeners();
       }
     } catch (_) {
       // Startup check is silent; errors are swallowed.
     }
+  }
+
+  /// Clears the pending startup toast flag after AppShellPage has consumed it.
+  void acknowledgeStartupUpdateToast() {
+    if (!_pendingStartupUpdateToast) return;
+    _pendingStartupUpdateToast = false;
   }
 
   bool isNotificationEnabled(NotificationCategory category) {
@@ -755,6 +766,7 @@ class SettingsProvider extends ChangeNotifier {
     _dismissedUpdateVersion = null;
     _checkingForUpdate = false;
     _lastCheckFoundNoUpdate = false;
+    _pendingStartupUpdateToast = false;
     _initialized = false;
     _initFuture = null;
     notifyListeners();

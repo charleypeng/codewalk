@@ -97,13 +97,17 @@ class _AppShellPageState extends State<AppShellPage> {
           );
         }
         // Schedule startup update toast once the main shell is rendered.
+        // Only fires for startup-origin checks (pendingStartupUpdateToast),
+        // not for manual "Check for updates" presses.
         // Flag is set here (not in the callback) to prevent multiple
         // addPostFrameCallback registrations across rebuilds.
         final updateResult = settingsProvider.updateCheckResult;
         if (!_shownStartupUpdateToast &&
+            settingsProvider.pendingStartupUpdateToast &&
             updateResult != null &&
             updateResult.isNewer) {
           _shownStartupUpdateToast = true;
+          settingsProvider.acknowledgeStartupUpdateToast();
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _showUpdateToast(context, updateResult);
           });
@@ -127,9 +131,12 @@ class _AppShellPageState extends State<AppShellPage> {
                   launchUrl(
                     Uri.parse(result.releaseUrl!),
                     mode: LaunchMode.externalApplication,
-                  ).catchError((Object e) {
+                  ).then((success) {
+                    if (!success) {
+                      AppLogger.warn('Failed to open release URL: returned false');
+                    }
+                  }).catchError((Object e) {
                     AppLogger.warn('Failed to open release URL', error: e);
-                    return false;
                   }),
                 ),
               )
