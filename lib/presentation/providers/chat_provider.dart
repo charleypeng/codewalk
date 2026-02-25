@@ -732,6 +732,44 @@ class ChatProvider extends ChangeNotifier {
     return total > visibleSidebarSessions.length;
   }
 
+  List<ChatSession> _mergeAllSessions({
+    required List<ChatSession> incomingSessions,
+  }) {
+    if (_allSessions.isEmpty) {
+      return List<ChatSession>.from(incomingSessions);
+    }
+
+    final mergedById = <String, ChatSession>{
+      for (final session in _allSessions) session.id: session,
+    };
+    for (final session in incomingSessions) {
+      mergedById[session.id] = session;
+    }
+
+    final currentDirectory = _normalizeDirectory(
+      projectProvider.currentDirectory,
+    );
+    if (currentDirectory != null) {
+      final incomingIdsForCurrentDirectory = incomingSessions
+          .where(
+            (session) =>
+                _normalizeDirectory(_sessionDirectory(session)) ==
+                currentDirectory,
+          )
+          .map((session) => session.id)
+          .toSet();
+      mergedById.removeWhere((id, session) {
+        final sessionDirectory = _normalizeDirectory(
+          _sessionDirectory(session),
+        );
+        return sessionDirectory == currentDirectory &&
+            !incomingIdsForCurrentDirectory.contains(id);
+      });
+    }
+
+    return mergedById.values.toList();
+  }
+
   SessionStatusInfo? get currentSessionStatus {
     final sessionId = _currentSession?.id;
     if (sessionId == null) {
@@ -1725,7 +1763,7 @@ class ChatProvider extends ChangeNotifier {
       if (fetchId != _sessionsFetchId) {
         return;
       }
-      _allSessions = allSessions;
+      _allSessions = _mergeAllSessions(incomingSessions: allSessions);
       _sessions = filteredSessions;
       _threadPermissionsVersion++;
       _sessionVisibleLimit = 40;
