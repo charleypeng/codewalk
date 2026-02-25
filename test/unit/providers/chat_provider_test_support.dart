@@ -5,6 +5,7 @@
 import 'dart:convert';
 
 import 'package:codewalk/core/network/dio_client.dart';
+import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/domain/entities/provider.dart';
 import 'package:codewalk/domain/usecases/abort_chat_session.dart';
@@ -233,6 +234,60 @@ ChatProvider buildChatProvider({
     dioClient: dioClient,
     syncHealthCheckInterval: syncHealthCheckInterval,
     abortSuppressionWindow: abortSuppressionWindow,
+  );
+}
+
+/// Holds the pre-initialized fake repositories and settings provider that every
+/// ChatProvider test file needs in its setUp. Build with [buildDefaultTestFixtures].
+class ChatProviderTestFixtures {
+  ChatProviderTestFixtures({
+    required this.chatRepository,
+    required this.appRepository,
+    required this.localDataSource,
+    required this.defaultSettingsProvider,
+  });
+
+  final FakeChatRepository chatRepository;
+  final FakeAppRepository appRepository;
+  final InMemoryAppLocalDataSource localDataSource;
+  final SettingsProvider defaultSettingsProvider;
+}
+
+/// Builds the standard test fixtures shared by all ChatProvider split-test
+/// files. Call in setUp and assign results to the group-level late variables,
+/// then build the provider with the local buildProvider() wrapper.
+Future<ChatProviderTestFixtures> buildDefaultTestFixtures() async {
+  final chatRepository = FakeChatRepository(
+    sessions: <ChatSession>[
+      ChatSession(
+        id: 'ses_1',
+        workspaceId: 'default',
+        time: DateTime.fromMillisecondsSinceEpoch(1000),
+        title: 'Session 1',
+      ),
+    ],
+  );
+  final appRepository = FakeAppRepository();
+  final localDataSource = InMemoryAppLocalDataSource();
+  localDataSource.activeServerId = 'srv_test';
+
+  localDataSource.experienceSettingsJson = jsonEncode(
+    ExperienceSettings.defaults()
+        .copyWith(enableExperimentalMultiDeviceSync: true)
+        .toJson(),
+  );
+  final defaultSettingsProvider = SettingsProvider(
+    localDataSource: localDataSource,
+    dioClient: RecordingDioClient(),
+    soundService: SoundService(),
+  );
+  await defaultSettingsProvider.initialize();
+
+  return ChatProviderTestFixtures(
+    chatRepository: chatRepository,
+    appRepository: appRepository,
+    localDataSource: localDataSource,
+    defaultSettingsProvider: defaultSettingsProvider,
   );
 }
 

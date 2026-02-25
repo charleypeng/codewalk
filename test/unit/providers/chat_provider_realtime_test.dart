@@ -6,11 +6,9 @@ import 'dart:convert';
 
 import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/core/network/dio_client.dart';
-import 'package:codewalk/domain/entities/agent.dart';
 import 'package:codewalk/domain/entities/chat_message.dart';
 import 'package:codewalk/domain/entities/chat_realtime.dart';
 import 'package:codewalk/domain/entities/chat_session.dart';
-import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/domain/entities/provider.dart';
 import 'package:codewalk/domain/usecases/abort_chat_session.dart';
 import 'package:codewalk/domain/usecases/create_chat_session.dart';
@@ -40,7 +38,6 @@ import 'package:codewalk/presentation/providers/chat_provider.dart';
 import 'package:codewalk/presentation/providers/project_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/chat_title_generator.dart';
-import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -74,32 +71,11 @@ void main() {
     }
 
     setUp(() async {
-      chatRepository = FakeChatRepository(
-        sessions: <ChatSession>[
-          ChatSession(
-            id: 'ses_1',
-            workspaceId: 'default',
-            time: DateTime.fromMillisecondsSinceEpoch(1000),
-            title: 'Session 1',
-          ),
-        ],
-      );
-      appRepository = FakeAppRepository();
-      localDataSource = InMemoryAppLocalDataSource();
-      localDataSource.activeServerId = 'srv_test';
-
-      localDataSource.experienceSettingsJson = jsonEncode(
-        ExperienceSettings.defaults()
-            .copyWith(enableExperimentalMultiDeviceSync: true)
-            .toJson(),
-      );
-      defaultSettingsProvider = SettingsProvider(
-        localDataSource: localDataSource,
-        dioClient: RecordingDioClient(),
-        soundService: SoundService(),
-      );
-      await defaultSettingsProvider.initialize();
-
+      final fixtures = await buildDefaultTestFixtures();
+      chatRepository = fixtures.chatRepository;
+      appRepository = fixtures.appRepository;
+      localDataSource = fixtures.localDataSource;
+      defaultSettingsProvider = fixtures.defaultSettingsProvider;
       provider = buildProvider();
     });
 
