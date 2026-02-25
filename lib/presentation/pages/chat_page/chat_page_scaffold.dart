@@ -204,6 +204,7 @@ extension _ChatPageScaffold on _ChatPageState {
                       directoryLabels: directoryLabels,
                       isSessionActive: chatProvider.isSessionActivelyResponding,
                       onSessionSelected: (session) async {
+                        var switchedContext = false;
                         final sessionDirectory =
                             session.directory ??
                             session.path?.workspace ??
@@ -213,9 +214,25 @@ extension _ChatPageScaffold on _ChatPageState {
                             sessionDirectory.trim() !=
                                 (projectProvider.currentDirectory ?? '')
                                     .trim()) {
-                          await _switchDirectoryContext(sessionDirectory);
+                          switchedContext = true;
+                          await _switchDirectoryContext(
+                            sessionDirectory,
+                            preferredSessionId: session.id,
+                          );
                         }
-                        await chatProvider.selectSession(session);
+                        final activeChatProvider = context.read<ChatProvider>();
+                        if (!switchedContext ||
+                            activeChatProvider.currentSession?.id !=
+                                session.id) {
+                          final refreshedSession =
+                              activeChatProvider.visibleSidebarSessions
+                                  .where((item) => item.id == session.id)
+                                  .firstOrNull ??
+                              session;
+                          await activeChatProvider.selectSession(
+                            refreshedSession,
+                          );
+                        }
                         // Close AFTER selectSession: during its awaits the
                         // second tap's gesture events are fully processed
                         // (including _handleDragCancel which may re-open the

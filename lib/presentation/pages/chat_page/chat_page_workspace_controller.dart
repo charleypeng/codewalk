@@ -64,7 +64,10 @@ extension _ChatPageWorkspaceController on _ChatPageState {
     });
   }
 
-  Future<void> _switchDirectoryContext(String directory) async {
+  Future<void> _switchDirectoryContext(
+    String directory, {
+    String? preferredSessionId,
+  }) async {
     final projectProvider = context.read<ProjectProvider>();
     final normalized = directory.trim();
     if (normalized.isEmpty || projectProvider.currentDirectory == normalized) {
@@ -78,7 +81,9 @@ extension _ChatPageWorkspaceController on _ChatPageState {
       if (!switched) {
         return;
       }
-      await chatProvider.onProjectScopeChanged();
+      await chatProvider.onProjectScopeChanged(
+        preferredSessionId: preferredSessionId,
+      );
     });
   }
 
