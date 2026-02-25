@@ -18,9 +18,6 @@ class ChatSessionList extends StatefulWidget {
     this.onSessionShareToggled,
     this.onSessionArchiveToggled,
     this.onSessionForked,
-    this.groupByProject = false,
-    this.activeDirectory,
-    this.directoryLabels = const <String, String>{},
   });
 
   final List<ChatSession> sessions;
@@ -34,9 +31,6 @@ class ChatSessionList extends StatefulWidget {
   final Future<bool> Function(ChatSession session, bool archived)?
   onSessionArchiveToggled;
   final Future<void> Function(ChatSession session)? onSessionForked;
-  final bool groupByProject;
-  final String? activeDirectory;
-  final Map<String, String> directoryLabels;
 
   @override
   State<ChatSessionList> createState() => _ChatSessionListState();
@@ -44,7 +38,6 @@ class ChatSessionList extends StatefulWidget {
 
 class _ChatSessionListState extends State<ChatSessionList> {
   final Set<String> _expandedParentIds = <String>{};
-  final Set<String> _expandedGroupKeys = <String>{};
   String? _cachedTreeSignature;
   List<_SessionTreeRow> _cachedVisibleRows = const <_SessionTreeRow>[];
   bool _sessionSelectionInFlight = false;
@@ -56,7 +49,6 @@ class _ChatSessionListState extends State<ChatSessionList> {
       for (final session in widget.sessions) session.id: session,
     };
     _expandCurrentSessionAncestors(sessionById);
-    _expandCurrentSessionGroup();
   }
 
   @override
@@ -64,13 +56,10 @@ class _ChatSessionListState extends State<ChatSessionList> {
     super.didUpdateWidget(oldWidget);
     final sessionIds = widget.sessions.map((session) => session.id).toSet();
     _expandedParentIds.removeWhere((id) => !sessionIds.contains(id));
-    final groupKeys = widget.sessions.map(_sessionGroupKey).toSet();
-    _expandedGroupKeys.removeWhere((key) => !groupKeys.contains(key));
     final sessionById = <String, ChatSession>{
       for (final session in widget.sessions) session.id: session,
     };
     _expandCurrentSessionAncestors(sessionById);
-    _expandCurrentSessionGroup();
     _invalidateTreeCache();
   }
 
@@ -103,10 +92,6 @@ class _ChatSessionListState extends State<ChatSessionList> {
           ],
         ),
       );
-    }
-
-    if (widget.groupByProject) {
-      return _buildGroupedSessionList(context);
     }
 
     final sessionById = <String, ChatSession>{
@@ -166,234 +151,6 @@ class _ChatSessionListState extends State<ChatSessionList> {
         );
       },
     );
-  }
-
-  Widget _buildGroupedSessionList(BuildContext context) {
-    final grouped = <String, List<ChatSession>>{};
-    for (final session in widget.sessions) {
-      grouped
-          .putIfAbsent(_sessionGroupKey(session), () => <ChatSession>[])
-          .add(session);
-    }
-
-    final activeGroupKey = _normalizeGroupKey(widget.activeDirectory);
-    final sortedGroupKeys = grouped.keys.toList(growable: false)
-      ..sort((a, b) {
-        if (a == activeGroupKey && b != activeGroupKey) {
-          return -1;
-        }
-        if (b == activeGroupKey && a != activeGroupKey) {
-          return 1;
-        }
-        final aLatest = grouped[a]!
-            .map((session) => session.time)
-            .reduce((x, y) => x.isAfter(y) ? x : y);
-        final bLatest = grouped[b]!
-            .map((session) => session.time)
-            .reduce((x, y) => x.isAfter(y) ? x : y);
-        return bLatest.compareTo(aLatest);
-      });
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-      children: [
-        for (final groupKey in sortedGroupKeys) ...[
-          _buildGroupHeader(
-            context: context,
-            groupKey: groupKey,
-            sessionCount: grouped[groupKey]!.length,
-            expanded: _expandedGroupKeys.contains(groupKey),
-            isActive: groupKey == activeGroupKey,
-          ),
-          if (_expandedGroupKeys.contains(groupKey))
-            ..._buildGroupSessionTiles(context, sessions: grouped[groupKey]!),
-        ],
-      ],
-    );
-  }
-
-  List<Widget> _buildGroupSessionTiles(
-    BuildContext context, {
-    required List<ChatSession> sessions,
-  }) {
-    final sessionById = <String, ChatSession>{
-      for (final session in sessions) session.id: session,
-    };
-    final childrenByParent = <String, List<ChatSession>>{};
-    final roots = <ChatSession>[];
-    for (final session in sessions) {
-      final parentId = session.parentId;
-      if (parentId == null ||
-          parentId.isEmpty ||
-          !sessionById.containsKey(parentId) ||
-          parentId == session.id) {
-        roots.add(session);
-        continue;
-      }
-      childrenByParent
-          .putIfAbsent(parentId, () => <ChatSession>[])
-          .add(session);
-    }
-
-    final visited = <String>{};
-    final rows = <_SessionTreeRow>[];
-    for (final root in roots) {
-      rows.addAll(
-        _buildSessionRows(
-          session: root,
-          childrenByParent: childrenByParent,
-          depth: 0,
-          visited: visited,
-        ),
-      );
-    }
-    return rows
-        .map(
-          (row) => _buildSessionTile(
-            context,
-            session: row.session,
-            depth: row.depth,
-            hasChildren: row.hasChildren,
-            childCount: row.childCount,
-            expanded: row.expanded,
-          ),
-        )
-        .toList(growable: false);
-  }
-
-  Widget _buildGroupHeader({
-    required BuildContext context,
-    required String groupKey,
-    required int sessionCount,
-    required bool expanded,
-    required bool isActive,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final title =
-        widget.directoryLabels[groupKey] ?? _groupTitleFromKey(groupKey);
-    final subtitle = _groupSubtitleFromKey(groupKey);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
-      child: InkWell(
-        key: ValueKey<String>('chat_session_group_$groupKey'),
-        onTap: () {
-          setState(() {
-            if (expanded) {
-              _expandedGroupKeys.remove(groupKey);
-            } else {
-              _expandedGroupKeys.add(groupKey);
-            }
-            _invalidateTreeCache();
-          });
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          decoration: BoxDecoration(
-            color: isActive
-                ? colorScheme.primaryContainer.withValues(alpha: 0.45)
-                : colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          child: Row(
-            children: [
-              Icon(
-                expanded ? Symbols.expand_more : Symbols.chevron_right,
-                size: 18,
-                color: isActive
-                    ? colorScheme.onPrimaryContainer
-                    : colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: isActive
-                            ? colorScheme.onPrimaryContainer
-                            : colorScheme.onSurface,
-                      ),
-                    ),
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: isActive
-                            ? colorScheme.onPrimaryContainer.withValues(
-                                alpha: 0.85,
-                              )
-                            : colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '$sessionCount',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: isActive
-                      ? colorScheme.onPrimaryContainer
-                      : colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _expandCurrentSessionGroup() {
-    final current = widget.currentSession;
-    if (current == null) {
-      return;
-    }
-    _expandedGroupKeys.add(_sessionGroupKey(current));
-  }
-
-  String _sessionGroupKey(ChatSession session) {
-    return _normalizeGroupKey(
-      session.directory ?? session.path?.workspace ?? session.path?.root,
-    );
-  }
-
-  String _normalizeGroupKey(String? raw) {
-    final trimmed = raw?.trim();
-    if (trimmed == null ||
-        trimmed.isEmpty ||
-        trimmed == '/' ||
-        trimmed == '-') {
-      return 'global';
-    }
-    return trimmed;
-  }
-
-  String _groupTitleFromKey(String groupKey) {
-    if (groupKey == 'global') {
-      return 'Global';
-    }
-    final normalized = groupKey.replaceAll('\\', '/');
-    final segments = normalized
-        .split('/')
-        .map((part) => part.trim())
-        .where((part) => part.isNotEmpty)
-        .toList(growable: false);
-    return segments.isEmpty ? groupKey : segments.last;
-  }
-
-  String _groupSubtitleFromKey(String groupKey) {
-    if (groupKey == 'global') {
-      return 'Global context';
-    }
-    return groupKey;
   }
 
   bool _expandCurrentSessionAncestors(Map<String, ChatSession> sessionById) {

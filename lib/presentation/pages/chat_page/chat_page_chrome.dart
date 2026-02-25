@@ -683,10 +683,12 @@ extension _ChatPageChrome on _ChatPageState {
     );
   }
 
-  Future<void> _openCreateWorkspaceFromSelector({
-    required VoidCallback onClose,
-  }) async {
-    onClose();
+  Future<void> _openCreateWorkspaceFromSelector(
+    BuildContext dialogContext,
+  ) async {
+    if (dialogContext.mounted) {
+      Navigator.of(dialogContext).pop();
+    }
     await Future<void>.delayed(Duration.zero);
     if (!mounted) {
       return;
@@ -694,11 +696,13 @@ extension _ChatPageChrome on _ChatPageState {
     await _createWorkspace();
   }
 
-  Future<void> _switchProjectFromSelector({
-    required String projectId,
-    required VoidCallback onClose,
-  }) async {
-    onClose();
+  Future<void> _switchProjectFromSelector(
+    BuildContext dialogContext,
+    String projectId,
+  ) async {
+    if (dialogContext.mounted) {
+      Navigator.of(dialogContext).pop();
+    }
     await Future<void>.delayed(Duration.zero);
     if (!mounted) {
       return;

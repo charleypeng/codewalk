@@ -18,93 +18,41 @@ extension _ChatPageSelectorFlow on _ChatPageState {
           alignment: Alignment.centerLeft,
           child: Tooltip(
             message: 'Choose Directory',
-            child: MenuAnchor(
-              controller: _projectSelectorMenuController,
-              menuChildren: [
-                Builder(
-                  builder: (context) {
-                    var filterQuery = '';
-                    return StatefulBuilder(
-                      builder: (context, setState) {
-                        return SizedBox(
-                          width: 620,
-                          height: 620,
-                          child: Consumer<ProjectProvider>(
-                            builder: (context, provider, _) {
-                              return _buildProjectSelectorSurface(
-                                projectProvider: provider,
-                                isSmallScreen: false,
-                                filterQuery: filterQuery,
-                                onFilterChanged: (value) {
-                                  setState(() {
-                                    filterQuery = value;
-                                  });
-                                },
-                                onClose: () {
-                                  if (_projectSelectorMenuController.isOpen) {
-                                    _projectSelectorMenuController.close();
-                                  }
-                                },
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    );
-                  },
+            child: InkWell(
+              onTap: () => unawaited(_openProjectSelectorDialog()),
+              borderRadius: BorderRadius.circular(10),
+              child: Padding(
+                key: const ValueKey<String>('project_selector_button'),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isMobile ? 2 : 4,
+                  vertical: 2,
                 ),
-              ],
-              builder: (context, menuController, _) {
-                return InkWell(
-                  key: _projectSelectorButtonKey,
-                  onTap: () {
-                    if (isMobile) {
-                      unawaited(_openProjectSelectorSheet());
-                      return;
-                    }
-                    if (menuController.isOpen) {
-                      menuController.close();
-                    } else {
-                      menuController.open();
-                    }
-                  },
-                  borderRadius: BorderRadius.circular(10),
-                  child: Padding(
-                    key: const ValueKey<String>('project_selector_button'),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isMobile ? 2 : 4,
-                      vertical: 2,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxWidth: isMobile
-                                  ? 100
-                                  : (isLargeDesktop ? 400 : 300),
-                            ),
-                            child: Text(
-                              currentDirectoryChip,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.labelLarge
-                                  ?.copyWith(fontWeight: FontWeight.w600),
-                            ),
-                          ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Flexible allows the text to shrink when the AppBar
+                    // title area is narrow (e.g. medium breakpoint with
+                    // the conversation pane taking 260dp).
+                    Flexible(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: isMobile
+                              ? 100
+                              : (isLargeDesktop ? 400 : 300),
                         ),
-                        const SizedBox(width: 1),
-                        Icon(
-                          menuController.isOpen
-                              ? Symbols.arrow_drop_up
-                              : Symbols.arrow_drop_down,
-                          size: 16,
+                        child: Text(
+                          currentDirectoryChip,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(fontWeight: FontWeight.w600),
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                );
-              },
+                    const SizedBox(width: 1),
+                    const Icon(Symbols.arrow_drop_down, size: 16),
+                  ],
+                ),
+              ),
             ),
           ),
         );
@@ -112,38 +60,45 @@ extension _ChatPageSelectorFlow on _ChatPageState {
     );
   }
 
-  Future<void> _openProjectSelectorSheet() async {
+  Future<void> _openProjectSelectorDialog() async {
     if (!mounted) {
       return;
     }
-    await showModalBottomSheet<void>(
+    final view = View.of(context);
+    final screenWidth = MediaQueryData.fromView(view).size.width;
+    final isSmallScreen = WindowSizeClass.fromWidth(screenWidth).isCompact;
+    await showDialog<void>(
       context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (sheetContext) {
-        var filterQuery = '';
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return SizedBox(
-              height: MediaQuery.sizeOf(context).height * 0.9,
-              child: Consumer<ProjectProvider>(
-                builder: (context, projectProvider, _) {
-                  return _buildProjectSelectorSurface(
-                    projectProvider: projectProvider,
-                    isSmallScreen: true,
-                    filterQuery: filterQuery,
-                    onFilterChanged: (value) {
-                      setState(() {
-                        filterQuery = value;
-                      });
-                    },
-                    onClose: () {
-                      if (Navigator.of(sheetContext).canPop()) {
-                        Navigator.of(sheetContext).pop();
-                      }
-                    },
-                  );
-                },
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return Consumer<ProjectProvider>(
+          builder: (context, projectProvider, child) {
+            final content = _buildProjectSelectorDialogContent(
+              dialogContext: dialogContext,
+              projectProvider: projectProvider,
+              isSmallScreen: isSmallScreen,
+            );
+            if (isSmallScreen) {
+              return Dialog.fullscreen(
+                key: const ValueKey<String>(
+                  'project_selector_dialog_fullscreen',
+                ),
+                child: content,
+              );
+            }
+            return Dialog(
+              key: const ValueKey<String>('project_selector_dialog_centered'),
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 24,
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: SizedBox(
+                width: 760,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 720),
+                  child: content,
+                ),
               ),
             );
           },
@@ -152,36 +107,16 @@ extension _ChatPageSelectorFlow on _ChatPageState {
     );
   }
 
-  Widget _buildProjectSelectorSurface({
+  Widget _buildProjectSelectorDialogContent({
+    required BuildContext dialogContext,
     required ProjectProvider projectProvider,
     required bool isSmallScreen,
-    required String filterQuery,
-    required ValueChanged<String> onFilterChanged,
-    required VoidCallback onClose,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = Theme.of(dialogContext).colorScheme;
     final currentProject = projectProvider.currentProject;
     final currentDirectoryFull = _directoryLabel(
       projectProvider.currentDirectory,
     );
-    final normalizedFilter = filterQuery.trim().toLowerCase();
-
-    bool matchesProject(Project project) {
-      if (normalizedFilter.isEmpty) {
-        return true;
-      }
-      final displayName = _projectDisplayLabel(project).toLowerCase();
-      final path = _directoryLabel(project.path).toLowerCase();
-      return displayName.contains(normalizedFilter) ||
-          path.contains(normalizedFilter);
-    }
-
-    final openProjects = projectProvider.openProjects
-        .where(matchesProject)
-        .toList(growable: false);
-    final closedProjects = projectProvider.closedProjects
-        .where(matchesProject)
-        .toList(growable: false);
 
     return Material(
       key: const ValueKey<String>('project_selector_dialog_content'),
@@ -201,13 +136,13 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                 Expanded(
                   child: Text(
                     'Project context',
-                    style: Theme.of(context).textTheme.titleLarge,
+                    style: Theme.of(dialogContext).textTheme.titleLarge,
                   ),
                 ),
                 IconButton(
                   icon: const Icon(Symbols.close),
                   tooltip: 'Close',
-                  onPressed: onClose,
+                  onPressed: () => Navigator.of(dialogContext).pop(),
                 ),
               ],
             ),
@@ -225,7 +160,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                 const SizedBox(height: 2),
                 Text(
                   'Select a project below.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
@@ -240,7 +175,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
               children: [
                 FilledButton.tonalIcon(
                   onPressed: () => unawaited(
-                    _openCreateWorkspaceFromSelector(onClose: onClose),
+                    _openCreateWorkspaceFromSelector(dialogContext),
                   ),
                   icon: const Icon(Symbols.add_box),
                   label: const Text('Open project folder...'),
@@ -254,53 +189,34 @@ extension _ChatPageSelectorFlow on _ChatPageState {
               ],
             ),
           ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(isSmallScreen ? 16 : 20, 0, 20, 8),
-            child: TextField(
-              key: const ValueKey<String>('project_selector_filter_input'),
-              onChanged: onFilterChanged,
-              decoration: InputDecoration(
-                hintText: 'Filter projects',
-                prefixIcon: const Icon(Symbols.search),
-                isDense: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-          ),
           const Divider(height: 1),
           Expanded(
             child: ListView(
-              primary: false,
               padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
               children: [
-                _buildSelectorSectionHeader(context, 'Open projects'),
-                for (final project in openProjects)
+                _buildSelectorSectionHeader(dialogContext, 'Open projects'),
+                for (final project in projectProvider.openProjects)
                   _buildOpenProjectTile(
-                    dialogContext: context,
+                    dialogContext: dialogContext,
                     project: project,
                     selected: project.id == currentProject?.id,
                     onSwitch: () => unawaited(
-                      _switchProjectFromSelector(
-                        projectId: project.id,
-                        onClose: onClose,
-                      ),
+                      _switchProjectFromSelector(dialogContext, project.id),
                     ),
                     onClose: () => unawaited(_closeProjectContext(project.id)),
                     closeEnabled:
                         projectProvider.openProjects.length > 1 ||
                         project.id != currentProject?.id,
                   ),
-                if (closedProjects.isNotEmpty) ...[
+                if (projectProvider.closedProjects.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  _buildSelectorSectionHeader(context, 'Closed projects'),
-                  for (final project in closedProjects)
+                  _buildSelectorSectionHeader(dialogContext, 'Closed projects'),
+                  for (final project in projectProvider.closedProjects)
                     Builder(
                       builder: (_) {
                         final displayName = _projectDisplayLabel(project);
                         return ListTile(
-                          dense: _useDenseListTiles(context),
+                          dense: _useDenseListTiles(dialogContext),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 8,
                           ),
@@ -338,16 +254,6 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                       },
                     ),
                 ],
-                if (openProjects.isEmpty && closedProjects.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Text(
-                      'No projects match your filter.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),

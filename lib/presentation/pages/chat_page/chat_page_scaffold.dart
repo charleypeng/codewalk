@@ -55,8 +55,8 @@ extension _ChatPageScaffold on _ChatPageState {
     required bool closeOnSelect,
     VoidCallback? onCollapseRequested,
   }) {
-    return Consumer2<ChatProvider, ProjectProvider>(
-      builder: (context, chatProvider, projectProvider, child) {
+    return Consumer<ChatProvider>(
+      builder: (context, chatProvider, child) {
         if (_sessionSearchController.text != chatProvider.sessionSearchQuery) {
           _sessionSearchController.value = TextEditingValue(
             text: chatProvider.sessionSearchQuery,
@@ -65,11 +65,6 @@ extension _ChatPageScaffold on _ChatPageState {
             ),
           );
         }
-
-        final directoryLabels = <String, String>{
-          for (final project in projectProvider.openProjects)
-            _directoryLabel(project.path): _projectDisplayLabel(project),
-        };
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -199,9 +194,6 @@ extension _ChatPageScaffold on _ChatPageState {
                     child: ChatSessionList(
                       sessions: chatProvider.visibleSessions,
                       currentSession: chatProvider.currentSession,
-                      groupByProject: true,
-                      activeDirectory: projectProvider.currentDirectory,
-                      directoryLabels: directoryLabels,
                       isSessionActive: chatProvider.isSessionActivelyResponding,
                       onSessionSelected: (session) async {
                         await chatProvider.selectSession(session);
@@ -209,7 +201,9 @@ extension _ChatPageScaffold on _ChatPageState {
                         // second tap's gesture events are fully processed
                         // (including _handleDragCancel which may re-open the
                         // drawer). Closing last ensures the drawer stays shut.
-                        _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
+                        _closeDrawerIfNeeded(
+                          closeOnSelect: closeOnSelect,
+                        );
                       },
                       onSessionDeleted: (session) async {
                         await chatProvider.deleteSession(session.id);
@@ -242,7 +236,9 @@ extension _ChatPageScaffold on _ChatPageState {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Conversation forked')),
                         );
-                        _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
+                        _closeDrawerIfNeeded(
+                          closeOnSelect: closeOnSelect,
+                        );
                       },
                     ),
                   ),

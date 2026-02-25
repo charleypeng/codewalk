@@ -125,10 +125,6 @@ class _ChatPageState extends State<ChatPage>
   final GlobalKey _agentSelectorChipKey = GlobalKey(
     debugLabel: 'agent_selector_chip',
   );
-  final GlobalKey _projectSelectorButtonKey = GlobalKey(
-    debugLabel: 'project_selector_button',
-  );
-  final MenuController _projectSelectorMenuController = MenuController();
   final TextEditingController _sessionSearchController =
       TextEditingController();
   NotificationService? _notificationService;
