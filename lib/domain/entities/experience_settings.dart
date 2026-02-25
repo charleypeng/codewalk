@@ -367,6 +367,7 @@ class ExperienceSettings {
       speechToTextEngine: defaultSpeechEngine,
       speechSilenceTimeoutSeconds: 5,
       sherpaLanguageCode: kSherpaLanguageSystem,
+      checkUpdatesOnOpen: true,
     );
   }
   const ExperienceSettings({
@@ -399,6 +400,7 @@ class ExperienceSettings {
     this.speechSilenceTimeoutSeconds = 5,
     this.sherpaLanguageCode = kSherpaLanguageSystem,
     this.skipOnboardingWizard = false,
+    this.checkUpdatesOnOpen = true,
   });
 
   final Map<NotificationCategory, bool> notifications;
@@ -430,6 +432,7 @@ class ExperienceSettings {
   final int speechSilenceTimeoutSeconds;
   final String sherpaLanguageCode;
   final bool skipOnboardingWizard;
+  final bool checkUpdatesOnOpen;
 
   ExperienceSettings copyWith({
     Map<NotificationCategory, bool>? notifications,
@@ -461,6 +464,7 @@ class ExperienceSettings {
     int? speechSilenceTimeoutSeconds,
     String? sherpaLanguageCode,
     bool? skipOnboardingWizard,
+    bool? checkUpdatesOnOpen,
   }) {
     return ExperienceSettings(
       notifications: notifications ?? this.notifications,
@@ -503,6 +507,7 @@ class ExperienceSettings {
           speechSilenceTimeoutSeconds ?? this.speechSilenceTimeoutSeconds,
       sherpaLanguageCode: sherpaLanguageCode ?? this.sherpaLanguageCode,
       skipOnboardingWizard: skipOnboardingWizard ?? this.skipOnboardingWizard,
+      checkUpdatesOnOpen: checkUpdatesOnOpen ?? this.checkUpdatesOnOpen,
     );
   }
 
@@ -573,6 +578,7 @@ class ExperienceSettings {
       'speechSilenceTimeoutSeconds': speechSilenceTimeoutSeconds,
       'sherpaLanguageCode': sherpaLanguageCode,
       'skipOnboardingWizard': skipOnboardingWizard,
+      'checkUpdatesOnOpen': checkUpdatesOnOpen,
     };
   }
 
@@ -840,6 +846,12 @@ class ExperienceSettings {
       skipOnboardingWizard = skipOnboardingWizardJson;
     }
 
+    var checkUpdatesOnOpen = defaults.checkUpdatesOnOpen;
+    final checkUpdatesOnOpenJson = json['checkUpdatesOnOpen'];
+    if (checkUpdatesOnOpenJson is bool) {
+      checkUpdatesOnOpen = checkUpdatesOnOpenJson;
+    }
+
     return ExperienceSettings(
       notifications: notifications,
       sounds: sounds,
@@ -870,6 +882,7 @@ class ExperienceSettings {
       speechSilenceTimeoutSeconds: speechSilenceTimeoutSeconds,
       sherpaLanguageCode: sherpaLanguageCode,
       skipOnboardingWizard: skipOnboardingWizard,
+      checkUpdatesOnOpen: checkUpdatesOnOpen,
     );
   }
 }

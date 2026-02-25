@@ -53,6 +53,7 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
             if (updateResult != null && updateResult.isNewer)
               _buildUpdateAvailableTile(context, settings, updateResult),
             if (upToDate && updateResult == null) _buildUpToDateTile(context),
+            _buildCheckUpdatesOnOpenTile(context, settings),
             _buildCheckForUpdatesTile(context, settings, checking),
             const Divider(height: 32),
             _buildResetAppTile(context),
@@ -107,8 +108,8 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
                 result.releaseNotes!.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(
-                result.releaseNotes!.length > 200
-                    ? '${result.releaseNotes!.substring(0, 200)}...'
+                result.releaseNotes!.length > 400
+                    ? '${result.releaseNotes!.substring(0, 400)}...'
                     : result.releaseNotes!,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.onPrimaryContainer,
@@ -145,6 +146,19 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
       ),
       title: const Text('You\'re up to date'),
       subtitle: Text('v$_version is the latest version'),
+    );
+  }
+
+  Widget _buildCheckUpdatesOnOpenTile(
+    BuildContext context,
+    SettingsProvider settings,
+  ) {
+    return SwitchListTile(
+      secondary: const Icon(Symbols.update),
+      title: const Text('Check for updates on open'),
+      subtitle: const Text('Automatically check when the app starts'),
+      value: settings.settings.checkUpdatesOnOpen,
+      onChanged: (value) => settings.setCheckUpdatesOnOpen(value),
     );
   }
 

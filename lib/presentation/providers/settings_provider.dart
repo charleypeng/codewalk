@@ -145,8 +145,28 @@ class SettingsProvider extends ChangeNotifier {
     _dismissedUpdateVersion = await _localDataSource
         .getDismissedUpdateVersion();
     unawaited(syncNotificationsFromServerConfig());
+    if (_settings.checkUpdatesOnOpen) {
+      unawaited(_performStartupUpdateCheck());
+    }
     _initialized = true;
     notifyListeners();
+  }
+
+  /// Silently checks for updates on startup. No spinner, no "up to date" state.
+  /// Only notifies when a newer version is found and not already dismissed.
+  Future<void> _performStartupUpdateCheck() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      final result = await _updateCheckService.check(info.version);
+      if (result != null &&
+          result.isNewer &&
+          result.latestVersion != _dismissedUpdateVersion) {
+        _updateCheckResult = result;
+        notifyListeners();
+      }
+    } catch (_) {
+      // Startup check is silent; errors are swallowed.
+    }
   }
 
   bool isNotificationEnabled(NotificationCategory category) {
@@ -412,6 +432,15 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(skipOnboardingWizard: value);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setCheckUpdatesOnOpen(bool value) async {
+    if (_settings.checkUpdatesOnOpen == value) {
+      return;
+    }
+    _settings = _settings.copyWith(checkUpdatesOnOpen: value);
     notifyListeners();
     await _persist();
   }

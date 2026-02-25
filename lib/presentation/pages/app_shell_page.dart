@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/logging/app_logger.dart';
 import '../providers/app_provider.dart';
@@ -24,6 +25,8 @@ class _AppShellPageState extends State<AppShellPage> {
   // Tracks whether the wizard was dismissed this session (without persisting
   // the preference). Resets on app restart, unlike skipOnboardingWizard.
   bool _wizardDismissedThisSession = false;
+  // Ensures the startup update toast is shown at most once per session.
+  bool _shownStartupUpdateToast = false;
 
   @override
   void didChangeDependencies() {
@@ -92,8 +95,46 @@ class _AppShellPageState extends State<AppShellPage> {
             },
           );
         }
+        // Schedule startup update toast once the main shell is rendered.
+        final updateResult = settingsProvider.updateCheckResult;
+        if (!_shownStartupUpdateToast &&
+            updateResult != null &&
+            updateResult.isNewer) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _maybeShowUpdateToast(context, settingsProvider);
+          });
+        }
         return const ChatPage();
       },
+    );
+  }
+
+  /// Shows a one-time SnackBar when a startup update check finds a newer version.
+  void _maybeShowUpdateToast(
+    BuildContext context,
+    SettingsProvider settings,
+  ) {
+    if (_shownStartupUpdateToast) return;
+    final result = settings.updateCheckResult;
+    if (result == null || !result.isNewer) return;
+    if (!mounted) return;
+    setState(() {
+      _shownStartupUpdateToast = true;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Update available: v${result.latestVersion}'),
+        duration: const Duration(seconds: 6),
+        action: result.releaseUrl != null
+            ? SnackBarAction(
+                label: 'View',
+                onPressed: () => launchUrl(
+                  Uri.parse(result.releaseUrl!),
+                  mode: LaunchMode.externalApplication,
+                ),
+              )
+            : null,
+      ),
     );
   }
 }
