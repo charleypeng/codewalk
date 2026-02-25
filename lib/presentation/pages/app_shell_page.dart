@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/logging/app_logger.dart';
 import '../providers/app_provider.dart';
@@ -28,6 +27,11 @@ class _AppShellPageState extends State<AppShellPage> {
   bool _wizardDismissedThisSession = false;
   // Ensures the startup update toast is shown at most once per session.
   bool _shownStartupUpdateToast = false;
+  // Guards for install-state SnackBars so they are shown at most once each.
+  bool _shownProgressSnackBar = false;
+  bool _shownDoneSnackBar = false;
+  bool _shownFailedSnackBar = false;
+  UpdateInstallState _lastObservedInstallState = UpdateInstallState.idle;
 
   @override
   void didChangeDependencies() {
@@ -109,38 +113,120 @@ class _AppShellPageState extends State<AppShellPage> {
           _shownStartupUpdateToast = true;
           settingsProvider.acknowledgeStartupUpdateToast();
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            _showUpdateToast(context, updateResult);
+            _showUpdateToast(context, settingsProvider, updateResult);
           });
         }
+
+        // React to install state transitions with SnackBars.
+        final installState = settingsProvider.installState;
+        if (installState != _lastObservedInstallState) {
+          _lastObservedInstallState = installState;
+          if (installState == UpdateInstallState.downloading &&
+              !_shownProgressSnackBar) {
+            _shownProgressSnackBar = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _showDownloadingSnackBar(context, settingsProvider);
+            });
+          } else if (installState == UpdateInstallState.done &&
+              !_shownDoneSnackBar) {
+            _shownDoneSnackBar = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _showDoneSnackBar(context);
+            });
+          } else if (installState == UpdateInstallState.failed &&
+              !_shownFailedSnackBar) {
+            _shownFailedSnackBar = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _showFailedSnackBar(context, settingsProvider);
+            });
+          }
+        }
+
         return const ChatPage();
       },
     );
   }
 
   /// Shows a one-time SnackBar when a startup update check finds a newer version.
-  void _showUpdateToast(BuildContext context, UpdateCheckResult result) {
+  /// The action triggers the in-app install flow instead of opening a browser.
+  void _showUpdateToast(
+    BuildContext context,
+    SettingsProvider settingsProvider,
+    UpdateCheckResult result,
+  ) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Update available: v${result.latestVersion}'),
         duration: const Duration(seconds: 6),
-        action: result.releaseUrl != null
-            ? SnackBarAction(
-                label: 'View',
-                onPressed: () => unawaited(
-                  launchUrl(
-                    Uri.parse(result.releaseUrl!),
-                    mode: LaunchMode.externalApplication,
-                  ).then((success) {
-                    if (!success) {
-                      AppLogger.warn('Failed to open release URL: returned false');
-                    }
-                  }).catchError((Object e) {
-                    AppLogger.warn('Failed to open release URL', error: e);
-                  }),
-                ),
-              )
-            : null,
+        action: SnackBarAction(
+          label: 'Install',
+          onPressed: () => unawaited(settingsProvider.startInstall()),
+        ),
+      ),
+    );
+  }
+
+  /// Shows a persistent SnackBar while the APK is being downloaded.
+  void _showDownloadingSnackBar(
+    BuildContext context,
+    SettingsProvider settingsProvider,
+  ) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: const Duration(days: 1), // dismissed programmatically
+        content: ListenableBuilder(
+          listenable: settingsProvider,
+          builder: (_, __) => Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Downloading update…'),
+              const SizedBox(height: 4),
+              LinearProgressIndicator(
+                value: settingsProvider.installProgress > 0
+                    ? settingsProvider.installProgress
+                    : null,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Shows a SnackBar confirming the desktop update was applied.
+  void _showDoneSnackBar(BuildContext context) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Update installed. Restart the app to apply.'),
+        duration: Duration(seconds: 8),
+      ),
+    );
+  }
+
+  /// Shows a SnackBar when the install failed, with a retry action.
+  void _showFailedSnackBar(
+    BuildContext context,
+    SettingsProvider settingsProvider,
+  ) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Install failed'),
+        duration: const Duration(seconds: 8),
+        action: SnackBarAction(
+          label: 'Retry',
+          onPressed: () {
+            _shownProgressSnackBar = false;
+            _shownFailedSnackBar = false;
+            unawaited(settingsProvider.startInstall());
+          },
+        ),
       ),
     );
   }

@@ -1,7 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -12,6 +16,9 @@ import '../../domain/entities/experience_settings.dart';
 import '../services/sound_service.dart';
 import '../services/update_check_service.dart';
 import '../utils/shortcut_binding_codec.dart';
+
+/// Tracks the lifecycle of an in-app update installation.
+enum UpdateInstallState { idle, downloading, installing, done, failed }
 
 class SettingsProvider extends ChangeNotifier {
   SettingsProvider({
@@ -45,6 +52,8 @@ class SettingsProvider extends ChangeNotifier {
   // Set only by _performStartupUpdateCheck(); cleared by acknowledgeStartupUpdateToast().
   // Keeps startup-origin results separate from manual check results.
   bool _pendingStartupUpdateToast = false;
+  UpdateInstallState _installState = UpdateInstallState.idle;
+  double _installProgress = 0.0;
   bool _initialized = false;
   Future<void>? _initFuture;
 
@@ -59,6 +68,8 @@ class SettingsProvider extends ChangeNotifier {
   bool get checkingForUpdate => _checkingForUpdate;
   bool get lastCheckFoundNoUpdate => _lastCheckFoundNoUpdate;
   bool get pendingStartupUpdateToast => _pendingStartupUpdateToast;
+  UpdateInstallState get installState => _installState;
+  double get installProgress => _installProgress;
   ThemeModeOption get themeMode => _settings.themeMode;
   bool get useAmoledDark => _settings.useAmoledDark;
   bool get useDynamicColor => _settings.useDynamicColor;
@@ -755,6 +766,8 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> dismissUpdate(String version) async {
     _dismissedUpdateVersion = version;
     _updateCheckResult = null;
+    _installState = UpdateInstallState.idle;
+    _installProgress = 0.0;
     await _localDataSource.saveDismissedUpdateVersion(version);
     notifyListeners();
   }
@@ -767,8 +780,89 @@ class SettingsProvider extends ChangeNotifier {
     _checkingForUpdate = false;
     _lastCheckFoundNoUpdate = false;
     _pendingStartupUpdateToast = false;
+    _installState = UpdateInstallState.idle;
+    _installProgress = 0.0;
     _initialized = false;
     _initFuture = null;
+    notifyListeners();
+  }
+
+  /// Begins the in-app update installation flow for the current platform.
+  /// Android: downloads the APK then opens the system installer.
+  /// Desktop: runs the install.cat shell script and signals "Restart to apply".
+  Future<void> startInstall() async {
+    if (_installState == UpdateInstallState.downloading ||
+        _installState == UpdateInstallState.installing) return;
+    final result = _updateCheckResult;
+    if (result == null) return;
+
+    final isAndroid =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+    if (isAndroid) {
+      await _installAndroid(result);
+    } else {
+      await _installDesktop();
+    }
+  }
+
+  Future<void> _installAndroid(UpdateCheckResult result) async {
+    final apkUrl = result.apkUrl;
+    if (apkUrl == null) return;
+
+    _installState = UpdateInstallState.downloading;
+    _installProgress = 0.0;
+    notifyListeners();
+
+    try {
+      final tmpDir = await getTemporaryDirectory();
+      final destPath = '${tmpDir.path}/codewalk-update.apk';
+      await Dio().download(
+        apkUrl,
+        destPath,
+        onReceiveProgress: (received, total) {
+          _installProgress = total > 0 ? received / total : 0.0;
+          notifyListeners();
+        },
+      );
+      _installState = UpdateInstallState.installing;
+      notifyListeners();
+      await OpenFilex.open(destPath);
+    } catch (error, stackTrace) {
+      AppLogger.warn('APK download failed', error: error, stackTrace: stackTrace);
+      _installState = UpdateInstallState.failed;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _installDesktop() async {
+    _installState = UpdateInstallState.installing;
+    notifyListeners();
+
+    try {
+      final isWindows =
+          !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
+      ProcessResult processResult;
+      if (isWindows) {
+        processResult = await Process.run(
+          'powershell',
+          ['-c', 'irm install.cat/verseles/codewalk | iex'],
+        );
+      } else {
+        processResult = await Process.run(
+          'sh',
+          ['-c', 'curl -fsSL install.cat/verseles/codewalk | sh'],
+        );
+      }
+      _installState = processResult.exitCode == 0
+          ? UpdateInstallState.done
+          : UpdateInstallState.failed;
+      if (processResult.exitCode != 0) {
+        AppLogger.warn('Desktop install failed: ${processResult.stderr}');
+      }
+    } catch (error, stackTrace) {
+      AppLogger.warn('Desktop install failed', error: error, stackTrace: stackTrace);
+      _installState = UpdateInstallState.failed;
+    }
     notifyListeners();
   }
 

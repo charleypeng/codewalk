@@ -53,12 +53,15 @@ class UpdateCheckResult {
     required this.latestVersion,
     this.releaseUrl,
     this.releaseNotes,
+    this.apkUrl,
     required this.isNewer,
   });
 
   final String latestVersion;
   final String? releaseUrl;
   final String? releaseNotes;
+  // Direct download URL for the .apk asset from the GitHub release, if present.
+  final String? apkUrl;
   final bool isNewer;
 }
 
@@ -108,10 +111,24 @@ class UpdateCheckService {
       final latestSemver = Semver.tryParse(tagName);
       if (latestSemver == null) return null;
 
+      // Extract the APK asset URL from the release assets list.
+      String? apkUrl;
+      final assets = data['assets'];
+      if (assets is List) {
+        for (final asset in assets) {
+          final name = (asset['name'] as String?) ?? '';
+          if (name.endsWith('.apk')) {
+            apkUrl = asset['browser_download_url'] as String?;
+            break;
+          }
+        }
+      }
+
       final result = UpdateCheckResult(
         latestVersion: latestSemver.toString(),
         releaseUrl: data['html_url'] as String?,
         releaseNotes: data['body'] as String?,
+        apkUrl: apkUrl,
         isNewer: latestSemver.isNewerThan(currentSemver),
       );
 

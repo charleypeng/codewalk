@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:async';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/injection_container.dart' as di;
@@ -80,6 +81,7 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
     SettingsProvider settings,
     UpdateCheckResult result,
   ) {
+    final installState = settings.installState;
     return Card(
       color: Theme.of(context).colorScheme.primaryContainer,
       child: Padding(
@@ -117,24 +119,87 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
               ),
             ],
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: [
-                if (result.releaseUrl != null)
-                  FilledButton.icon(
-                    onPressed: () => _openUrl(result.releaseUrl!),
-                    icon: const Icon(Symbols.open_in_new, size: 16),
-                    label: const Text('View release'),
-                  ),
-                OutlinedButton(
-                  onPressed: () => settings.dismissUpdate(result.latestVersion),
-                  child: const Text('Dismiss'),
-                ),
-              ],
-            ),
+            // Install progress/state widget
+            _buildInstallControl(context, settings, result, installState),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildInstallControl(
+    BuildContext context,
+    SettingsProvider settings,
+    UpdateCheckResult result,
+    UpdateInstallState installState,
+  ) {
+    if (installState == UpdateInstallState.downloading) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          LinearProgressIndicator(
+            value: settings.installProgress > 0 ? settings.installProgress : null,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Downloading… ${(settings.installProgress * 100).toStringAsFixed(0)}%',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (installState == UpdateInstallState.installing) {
+      return Row(
+        children: [
+          const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Installing…',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (installState == UpdateInstallState.done) {
+      return Text(
+        'Update installed. Restart the app to apply.',
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: Theme.of(context).colorScheme.onPrimaryContainer,
+        ),
+      );
+    }
+
+    // idle or failed: show action buttons
+    return Wrap(
+      spacing: 8,
+      children: [
+        if (installState == UpdateInstallState.failed)
+          FilledButton.icon(
+            onPressed: () => unawaited(settings.startInstall()),
+            icon: const Icon(Symbols.refresh, size: 16),
+            label: const Text('Retry install'),
+          )
+        else
+          FilledButton.icon(
+            onPressed: () => unawaited(settings.startInstall()),
+            icon: const Icon(Symbols.download, size: 16),
+            label: const Text('Install update'),
+          ),
+        OutlinedButton(
+          onPressed: () => settings.dismissUpdate(result.latestVersion),
+          child: const Text('Dismiss'),
+        ),
+      ],
     );
   }
 
