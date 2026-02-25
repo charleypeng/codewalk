@@ -215,3 +215,95 @@ Items moved from `ROADMAP.md` pending backlog to reduce active-file noise.
 - [x] Aplicar cores de +, - e +- em tool calls como apply_patch e outros, bem como cores de fundo pra mostrar o diff
 - [x] Tornar o botão de attach (anexar) sem fundo e mais discreto no composer
 - [x] Tornar o fundo fora do input do composer transparente e tornar o fundo do input mais contrastado. Meio que inverter os fundos
+
+### Feature featA: Sync hardening and remote config safety
+**Status**: Completed (2026-02-14)
+
+Implemented namespaced selection sync transaction system with explicit state phases (`idle -> pendingRemote -> appliedRemote -> failed`) to prevent abort during active requests. Deferred remote flush until session lifecycle reaches safe idle/busy state. Migrated sync persistence to app-namespaced storage (`agent.__codewalk.options.codewalk.selection`) eliminating workspace `config.json` side effects. Added reasoning status parser to extract `**...**` status lines, hide thinking bubbles, and display latest status in progress indicator. Extended composer status with unified lifecycle model featuring 1s delayed show/hide behavior to prevent UI flashing.
+**Commits**: f7c6d0d, 1d5f0be, 6a7ea2a
+**ADR**: ADR-026
+
+### Feature featB: Realtime read flow and session rendering
+**Status**: Completed (2026-02-14)
+
+Implemented multi-pass scroll-to-bottom algorithm (up to 6 passes with 1px epsilon threshold) to reliably reach conversation end with dynamic message heights. Added dual FAB navigation system (jump-to-latest + jump-to-first) for instant boundary navigation in long conversations. Restructured session list into hierarchical parent/child tree with collapsible sub-conversations for agent/subagent grouping. Implemented route-aware auto-follow behavior that preserves user scroll intent while auto-scrolling to latest on app resume. Reclassified remote abort events from blocking full-screen errors to non-blocking dismissible snackbar with retry action.
+**Commits**: a5b4b9d, 73f3f26
+**ADR**: ADR-028
+
+### Feature featC: Focus/visibility gate and Files planning
+**Status**: Completed (2026-02-19)
+
+Render gate implemented: `_notifyListeners` suppresses rebuilds while app in background, flush on foreground return, SSE stays alive, desktop window focus/blur handlers added. Files bar icons replaced: `visibility_off` → `left_panel_close_rounded` / `right_panel_close_rounded` (Symbols). File comments planning doc created: `ROADMAP.featC.comments-plan.md`.
+**Commits**: pending-commit, 96949cb, 51edd51, b97f915, f6d4e43
+
+### Feature featD: Thinking and tool UX polish
+**Status**: Completed
+
+Implemented easy-access toggle for Thinking/Tool bubbles, global density settings (compact/normal/spacious), max-height limits (300px) for tool calls with internal scrolling, customized titles for common tool calls, and transitioned header status display to a smooth sweep effect in the composer status line.
+**Commits**: (Implicit in ROADMAP.md task markings)
+
+### Feature featE: Session header/context controls
+**Status**: Completed (2026-02-15)
+
+Implemented desktop local-server wizard with runtime checks for `opencode serve` availability, installer path detection (binary/npm/bun), and CI multi-OS OpenCode smoke test coverage via GitHub Actions.
+**Commits**: 5dc1f31, 01f91bf, 7e2732c, 074dcd2
+
+### Feature featF: Files navigation and drafting UX
+**Status**: Completed (2026-02-19)
+
+Delivered phase F focused on files/chat UX stability: replaced the original full remote editor target with a Files viewer that now supports syntax highlighting (full write editor intentionally deferred due to current server Files API limitations), fixed optimistic-message deduplication for attachment messages including local-vs-remote URL mismatch reconciliation, and revised copy gestures so desktop double-click reliably copies the full assistant message while single-tap on markdown code copies only the snippet and links remain openable.
+**Commits**: 840bd75, 20e9d17, 0cb2854
+
+### Feature featG: Model favorites and variant selector ergonomics
+**Status**: Completed (2026-02-19)
+
+Model favorites: star toggle in model selector, persisted locally via SharedPreferences (scoped per server+project), "Favorites" section above "Recent" in selector, mod+m cycles favorites+recents. Variant popover auto-fit: replaced fixed 220px width with TextPainter-measured width + padding for compact, content-aware sizing.
+**Commits**: af0b5ed
+
+### Feature featH: Settings/onboarding/operation polish
+**Status**: Completed
+
+Implemented background async provider/model refresh on startup, added OpenCode server installation guides to the setup screen, automated tool-call condensation after assistant response, and transformed thinking bubbles into 4-line auto-scrolling boxes with "show more" expansion.
+**Commits**: 4a037f9, 3b931c5
+
+### Feature featI: Agent/shortcut/productivity parity
+**Status**: Completed
+
+Full parity implementation: consolidated header layout (context/rename/Files icons), responsive Shortcut panel for mobile keyboards, support for to-do operations, status-line tips, image/attachment previews in chat bubbles, native 'title' agent integration, GitHub-based update checks, background/tray policy controls, and advanced notification rules with sound selection and session grouping.
+**Commits**: d2fd909, 51d6195, 20c5dc6, fb6e118, 7e2732c
+
+### Feature featJ: Speech-to-text platform matrix
+**Status**: Completed (2026-02-18)
+
+Abstracted `SpeechInputService` for cross-platform STT, implemented native Android/iOS/macOS drivers with auto-punctuation and silence detection, and added Sherpa-ONNX on-device engine for Linux with model management.
+**Commits**: e73f15e, 52a35e7, 86b8162, 0347e88, 148b650, 1f4677c, a8a5d96, 889ea9a, 317f02e, addc1ac, f4108fe
+
+### Feature featK: First-run onboarding wizard
+**Status**: Completed (2026-02-19)
+
+Implemented OnboardingWizardPage with 3-step flow (Welcome, Server Setup, Ready). Added `skipOnboardingWizard` flag in ExperienceSettings with gate in AppShellPage via Consumer2. Extracted ServerSetupQuickGuide as reusable widget. Moved Servers to first position in Settings. Added reset app button in About and Setup Wizard button in Servers section.
+**Commits**: 92fa47e
+
+### Feature featL: Compaction boundary and low-cost nested history
+**Status**: Completed (2026-02-14)
+
+Implemented compaction boundary timeline entry that collapses all pre-compaction messages by default, keeping only compaction response and post-compaction messages visible. Added lazy pre-boundary rendering with session-scoped expansion reset to minimize memory/render cost. Extended boundary detection to handle summary assistant messages as fallback when `CompactionPart` markers are absent. Added selection neutrality guard to prevent compaction-related messages from overriding user-selected agents/models during sync adoption.
+**Commits**: fd3ce04, 4af9f01
+
+### Feature featM: Icons to Material Symbols migration
+**Status**: Completed (2026-02-20)
+
+Completed full migration of icon usage from `Icons.*` to `Symbols.*` using `material_symbols_icons`, aligning the UI with Material Symbols across mobile and desktop.
+**Commits**: e05d2fb
+
+### Feature featN: Material You design system revamp
+**Status**: Completed (2026-02-20)
+
+Full Material You design system revamp across four phases: dynamic color engine, adaptive 5-breakpoint layout, M3 component normalization, and accessibility compliance.
+**Commits**: b408373, e50f6fc, 27834b2, fd67dd6, a72dc74, a718e57, 2b8e75d, 48cb6cb, f477d6f, c818e5a, 5e2c349, d5cf05c
+
+### Feature featO: Code health & technical debt
+**Status**: Completed
+
+Resolved all prioritized technical debt: regression fixes, scope guards, draft UX restoration, dead code elimination (~210 lines removed), and analyzer warning cleanup (0 warnings).
+**Commits**: 00583f0, 4aa38ca, beb5265, 70bcbc6, 51757e8
