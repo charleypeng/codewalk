@@ -558,22 +558,21 @@ class ChatProvider extends ChangeNotifier {
     for (final entry in statusMap.entries) {
       final sessionId = entry.key;
       final statusType = entry.value.type;
-      if (statusType == SessionStatusType.retry) {
-        _sessionUnreadCompletionIds.remove(sessionId);
-        if (sessionId != currentSessionId) {
-          _sessionErrorAttentionIds.add(sessionId);
-        }
-        continue;
-      }
-      if (statusType == SessionStatusType.busy) {
-        _sessionUnreadCompletionIds.remove(sessionId);
-        continue;
-      }
-      // Keep sticky error attention on idle until the user focuses the session
-      // or an explicit event clears it, avoiding silent dismissal on snapshot
-      // refresh races.
-      if (statusType == SessionStatusType.idle) {
-        continue;
+      switch (statusType) {
+        case SessionStatusType.retry:
+          _sessionUnreadCompletionIds.remove(sessionId);
+          if (sessionId != currentSessionId) {
+            _sessionErrorAttentionIds.add(sessionId);
+          }
+          break;
+        case SessionStatusType.busy:
+          _sessionUnreadCompletionIds.remove(sessionId);
+          break;
+        case SessionStatusType.idle:
+          // Keep sticky error attention on idle until the user focuses the
+          // session or an explicit event clears it, avoiding silent dismissal
+          // on snapshot refresh races.
+          break;
       }
     }
     _pruneSessionAttentionStateToKnownSessions();
@@ -2759,6 +2758,7 @@ class ChatProvider extends ChangeNotifier {
                 final addedUnread = _sessionUnreadCompletionIds.add(
                   streamSessionId,
                 );
+                // `Set.add` returns true only when the value is newly inserted.
                 final statusChanged =
                     previousStatusType != SessionStatusType.idle;
                 if (statusChanged || clearedError || addedUnread) {
