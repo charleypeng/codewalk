@@ -1,10 +1,7 @@
 part of '../chat_provider.dart';
 
 extension _ChatProviderSessionOps on ChatProvider {
-  Future<void> _switchContext({
-    required String reason,
-    String? preferredSessionId,
-  }) async {
+  Future<void> _switchContext({required String reason}) async {
     _storeCurrentContextSnapshot();
 
     _providersFetchId += 1;
@@ -102,16 +99,10 @@ extension _ChatProviderSessionOps on ChatProvider {
 
     final contextMarkedDirty = _dirtyContextKeys.remove(nextContextKey);
     if (contextMarkedDirty || _sessions.isEmpty) {
-      await loadSessions(preferredSessionId: preferredSessionId);
+      await loadSessions();
       return;
     }
 
-    await loadLastSession(
-      serverId: serverId,
-      scopeId: nextScope,
-      storedSessionId: preferredSessionId?.trim().isEmpty == true
-          ? null
-          : preferredSessionId?.trim(),
-    );
+    await loadLastSession(serverId: serverId, scopeId: nextScope);
   }
 }

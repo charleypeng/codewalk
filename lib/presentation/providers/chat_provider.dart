@@ -1451,11 +1451,8 @@ class ChatProvider extends ChangeNotifier {
     return 'legacy';
   }
 
-  Future<void> onProjectScopeChanged({String? preferredSessionId}) async {
-    await _switchContext(
-      reason: 'project',
-      preferredSessionId: preferredSessionId,
-    );
+  Future<void> onProjectScopeChanged() async {
+    await _switchContext(reason: 'project');
   }
 
   /// Reset provider state and reload server-scoped data.
@@ -1696,7 +1693,7 @@ class ChatProvider extends ChangeNotifier {
   }
 
   /// Load session list
-  Future<void> loadSessions({String? preferredSessionId}) async {
+  Future<void> loadSessions() async {
     if (_state == ChatState.loading) return;
     final fetchId = ++_sessionsFetchId;
 
@@ -1705,14 +1702,10 @@ class ChatProvider extends ChangeNotifier {
 
     final serverId = await _resolveServerScopeId();
     final scopeId = _resolveContextScopeId();
-    final requestedSessionId = preferredSessionId?.trim();
-    final storedSessionId =
-        requestedSessionId != null && requestedSessionId.isNotEmpty
-        ? requestedSessionId
-        : await localDataSource.getCurrentSessionId(
-            serverId: serverId,
-            scopeId: scopeId,
-          );
+    final storedSessionId = await localDataSource.getCurrentSessionId(
+      serverId: serverId,
+      scopeId: scopeId,
+    );
 
     try {
       // First try loading from cache
