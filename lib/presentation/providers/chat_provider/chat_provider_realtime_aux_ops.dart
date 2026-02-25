@@ -177,37 +177,19 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
       _removeSessionById(session.id);
       return;
     }
-    final existingAllIndex = _allSessions.indexWhere(
-      (item) => item.id == session.id,
-    );
-    if (existingAllIndex == -1) {
-      _allSessions.add(session);
-    } else {
-      _allSessions[existingAllIndex] = session;
+    final existingIndex = _sessions.indexWhere((item) => item.id == session.id);
+    if (existingIndex == -1) {
+      _sessions.add(session);
+      _threadPermissionsVersion++;
+      _sortSessionsInPlace();
+      return;
     }
-
-    final inCurrentContext = _filterSessionsForCurrentContext(<ChatSession>[
-      session,
-    ]).isNotEmpty;
-    final existingCurrentIndex = _sessions.indexWhere(
-      (item) => item.id == session.id,
-    );
-    if (inCurrentContext) {
-      if (existingCurrentIndex == -1) {
-        _sessions.add(session);
-      } else {
-        _sessions[existingCurrentIndex] = session;
-      }
-    } else if (existingCurrentIndex != -1) {
-      _sessions.removeAt(existingCurrentIndex);
-    }
-
+    _sessions[existingIndex] = session;
     _threadPermissionsVersion++;
     _sortSessionsInPlace();
   }
 
   void _removeSessionById(String sessionId) {
-    _allSessions.removeWhere((item) => item.id == sessionId);
     _sessions.removeWhere((item) => item.id == sessionId);
     _removeSessionSelectionOverride(sessionId);
     _pendingRenameTitleBySessionId.remove(sessionId);

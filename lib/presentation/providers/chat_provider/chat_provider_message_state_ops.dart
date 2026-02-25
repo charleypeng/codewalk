@@ -641,7 +641,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
   }
 
   ChatSession? _sessionById(String sessionId) {
-    return _allSessions.where((session) => session.id == sessionId).firstOrNull;
+    return _sessions.where((session) => session.id == sessionId).firstOrNull;
   }
 
   void _applySessionLocally(ChatSession session) {

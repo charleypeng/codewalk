@@ -363,7 +363,7 @@ void main() {
         await scopedProvider.projectProvider.initializeProject();
         await scopedProvider.initializeProviders();
         await scopedProvider.loadSessions();
-        expect(scopedRepository.lastGetSessionsDirectory, isNull);
+        expect(scopedRepository.lastGetSessionsDirectory, '/repo/a');
         expect(scopedProvider.sessions.first.id, 'ses_a');
 
         scopedRepository.sessions
@@ -378,7 +378,7 @@ void main() {
           );
         await scopedProvider.projectProvider.switchProject('proj_b');
         await scopedProvider.onProjectScopeChanged();
-        expect(scopedRepository.lastGetSessionsDirectory, isNull);
+        expect(scopedRepository.lastGetSessionsDirectory, '/repo/b');
         expect(scopedProvider.sessions.first.id, 'ses_b');
 
         await scopedProvider.projectProvider.switchProject('proj_a');
@@ -700,26 +700,18 @@ void main() {
         await scopedProvider.initializeProviders();
         await scopedProvider.loadSessions();
 
-        expect(scopedRepository.lastGetSessionsDirectory, isNull);
+        expect(scopedRepository.lastGetSessionsDirectory, '/repo/a');
         expect(scopedProvider.sessions.map((item) => item.id), <String>[
           'ses_a',
         ]);
-        expect(
-          scopedProvider.visibleSidebarSessions.map((item) => item.id),
-          <String>['ses_a', 'ses_b', 'ses_unknown'],
-        );
 
         await scopedProvider.projectProvider.switchProject('proj_b');
         await scopedProvider.onProjectScopeChanged();
 
-        expect(scopedRepository.lastGetSessionsDirectory, isNull);
+        expect(scopedRepository.lastGetSessionsDirectory, '/repo/b');
         expect(scopedProvider.sessions.map((item) => item.id), <String>[
           'ses_b',
         ]);
-        expect(
-          scopedProvider.visibleSidebarSessions.map((item) => item.id),
-          <String>['ses_a', 'ses_b', 'ses_unknown'],
-        );
       },
     );
 

@@ -23,7 +23,6 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     final snapshot = _contextSnapshots[contextKey];
     if (snapshot == null) {
       _sessions = <ChatSession>[];
-      _allSessions = <ChatSession>[];
       _currentSession = null;
       _messages = <ChatMessage>[];
       _messagesVersion++;
@@ -41,10 +40,7 @@ extension _ChatProviderPreferenceOps on ChatProvider {
       return;
     }
 
-    _allSessions = snapshot.sessions
-        .where((session) => !_isEphemeralTitleSession(session))
-        .toList();
-    _sessions = _filterSessionsForCurrentContext(_allSessions);
+    _sessions = _filterSessionsForCurrentContext(snapshot.sessions);
     _currentSession = snapshot.currentSession;
     _messages = snapshot.messages;
     _messagesVersion++;
