@@ -1358,6 +1358,8 @@ void main() {
     );
 
     Widget buildFrame(Widget child) {
+      // Default widget-test surface is 800px wide; 900 here intentionally
+      // clamps to the available viewport after scaffold/padding constraints.
       return MaterialApp(
         home: Scaffold(body: SizedBox(width: 900, child: child)),
       );

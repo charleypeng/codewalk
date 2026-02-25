@@ -1,5 +1,11 @@
 part of '../chat_message_widget.dart';
 
+const _assistantBubbleMaxWidth = 760.0;
+const _userBubbleMaxWidth = 640.0;
+// 82% gives a natural messaging-app feel while leaving visible left margin.
+const _userBubbleWidthFactor = 0.82;
+const _userBubbleMinWidth = 220.0;
+
 /// Top-level content builder: bubble layout, header, error display,
 /// and touch/hold gesture layer.
 extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
@@ -48,25 +54,20 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
         alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
         child: LayoutBuilder(
           builder: (context, constraints) {
-            const assistantBubbleMaxWidth = 760.0;
-            const userBubbleMaxWidth = 640.0;
-            const userBubbleWidthFactor = 0.82;
-            const userBubbleMinWidth = 220.0;
-
             final availableWidth = constraints.maxWidth.isFinite
                 ? constraints.maxWidth
-                : assistantBubbleMaxWidth;
+                : _assistantBubbleMaxWidth;
             final assistantMaxWidth = math.min(
-              assistantBubbleMaxWidth,
+              _assistantBubbleMaxWidth,
               availableWidth,
             );
             final userCandidateWidth = math.min(
-              userBubbleMaxWidth,
-              availableWidth * userBubbleWidthFactor,
+              _userBubbleMaxWidth,
+              availableWidth * _userBubbleWidthFactor,
             );
             final userMaxWidth = math.min(
               assistantMaxWidth,
-              math.max(userBubbleMinWidth, userCandidateWidth),
+              math.max(_userBubbleMinWidth, userCandidateWidth),
             );
             final bubbleMaxWidth = isUser ? userMaxWidth : assistantMaxWidth;
 
