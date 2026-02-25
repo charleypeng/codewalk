@@ -32,11 +32,11 @@
 - [x] Verify that opening a notification navigates to its source session; implement/fix if needed. - Commit hash: e846e54
 - [x] In sync status, avoid orange dot for recoverable states (`degraded`/`delayed`/`reconnecting`); show subtle loading in menu when returning from foreground without persistent indicator.
   - [x] Fix visual desync of the select near Settings vs server popover (reactive status consistency). — `6b1f425`
-  - [ ] Simplify terminology mismatch Project vs Workspace in "Project Context" dialog.
-  - [ ] Reorganize the "Project Context" screen for a more dynamic visual UX; tapping a project opens it immediately and closes the dialog, removing the need for a separate open button next to trash.
+  - [x] Simplify terminology mismatch Project vs Workspace in "Project Context" dialog. — `5c2d700`, `70dbbd6`, `e422300`, `4fd6882`
+  - [x] Reorganize the "Project Context" screen for a more dynamic visual UX; tapping a project opens it immediately and closes the dialog, removing the need for a separate open button next to trash. — `0cc892c`
   - [x] Fix intermittent stale project selection in "Project Context": after switching projects, the UI must always reflect the newly selected project without requiring reopening the dialog and selecting again. — `4902506`
   - [x] Add project/workspace context cache to enable faster switching between recently used projects. — `6f8d167`
-  - [ ] Replace the current project selection dialog with an inline rich select/dropdown component.
+  - [x] Replace the current project selection dialog with an inline rich select/dropdown component. — `0cc892c`
 - [x] Investigate and fix project-switch navigation regression (including while app is busy): after changing project, navigation sometimes reopens a sub-conversation from the main session instead of restoring the primary conversation the user was previously viewing. — Related commits: e92b287 2facf4f ac0759c cb324c4 77592fa
   - [x] Context knob shows only the number (without `%`), while popover keeps `%`.
 
@@ -57,7 +57,7 @@
   - [x] In mic/STT usage, insert text at current cursor position (not always at the end). - Commit hash: 3ad147e
   - [x] Handle `MessageAborted` with an inline friendly red chat message (`"What you want to do different?"`) instead of toast+retry; keep toast flow for punctual/non-abort errors. - Planning doc: `ROADMAP.featQ.messageaborted-inline-plan.md` - Implementation concluded (inline abort without toast retry).
   - [x] Investigate and fix conversation continuity when switching sessions/projects: context changes can unexpectedly abort active conversations, so preserve active streams/chats when appropriate. Isolated SSE streams with dedicated Dio instance to prevent false abort on concurrent session switch. Removed per-send SSE from prompt_async path to prevent server-side abort on disconnect. Skip active session refresh during abort suppression to prevent reconcile from loading server-side abort content. Fix stale message resolution in polling-only path that caused false-completion on second+ sends to same session. Defer selection sync (PATCH /config) during abort suppression window — PATCH triggered server-side Instance.dispose() which aborted all active multi-step sessions. - Related commits: acce617 9dcd773 1581c65 cdee253 1fcf33e 68baebe 61934e9 0ee474c df9ec9e 931d9a8
-  - [ ] Plan the merge between the project selector and the conversations sidebar, grouping conversations by open projects to speed up navigation.
+  - [x] Plan the merge between the project selector and the conversations sidebar, grouping conversations by open projects to speed up navigation. — `0cc892c`
   - [x] Tasks widget gets a footer progress bar based on total completed items.
   - [x] Plan support for sending a new message while the assistant is still working (OpenCode CLI/Web parity), following existing OpenCode interaction patterns. - Planning doc: `ROADMAP.featQ.concurrent-send-plan.md`
   - [x] Deliver queued-send behavior while processing: queue new messages during active run; `Send now` aborts current run and sends queued content; multiple queued drafts merge into one payload with single `\n` separators; show queued status/indicators in composer/chat UI. - Related commits: dfd64eb f8df06a c8884b2

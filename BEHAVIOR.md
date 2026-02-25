@@ -63,9 +63,24 @@
 
 ### Sessions are scoped to a project
 
-- **Given** the user has multiple projects/workspaces
+- **Given** the user has multiple projects/folders
 - **When** the user switches to a different project
 - **Then** the visible session list changes to show only sessions belonging to that project
+
+### Project context picker is folder-first
+
+- **Given** the user opens the project context picker (`Choose Directory`)
+- **When** the user interacts with context options
+- **Then** the UI uses project/folder language only (no workspace distinction in this flow)
+- **Then** the action `Open project folder...` allows opening any folder as project context, including non-Git folders
+
+### Conversations are grouped by project context
+
+- **Given** the user has conversations from multiple project directories
+- **When** the Conversations sidebar is rendered
+- **Then** sessions are grouped under project headers by directory context
+- **Then** the active project group is shown first and expanded by default
+- **Then** users can collapse/expand each project group independently
 
 ### Auto-generated session titles
 
