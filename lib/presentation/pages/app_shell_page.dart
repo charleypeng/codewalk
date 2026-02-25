@@ -9,6 +9,7 @@ import '../providers/app_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/desktop_tray_service.dart';
 import '../services/desktop_tray_service_types.dart';
+import '../services/update_check_service.dart';
 import 'chat_page.dart';
 import 'onboarding_wizard_page.dart';
 
@@ -96,12 +97,15 @@ class _AppShellPageState extends State<AppShellPage> {
           );
         }
         // Schedule startup update toast once the main shell is rendered.
+        // Flag is set here (not in the callback) to prevent multiple
+        // addPostFrameCallback registrations across rebuilds.
         final updateResult = settingsProvider.updateCheckResult;
         if (!_shownStartupUpdateToast &&
             updateResult != null &&
             updateResult.isNewer) {
+          _shownStartupUpdateToast = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            _maybeShowUpdateToast(context, settingsProvider);
+            _showUpdateToast(context, updateResult);
           });
         }
         return const ChatPage();
@@ -110,17 +114,8 @@ class _AppShellPageState extends State<AppShellPage> {
   }
 
   /// Shows a one-time SnackBar when a startup update check finds a newer version.
-  void _maybeShowUpdateToast(
-    BuildContext context,
-    SettingsProvider settings,
-  ) {
-    if (_shownStartupUpdateToast) return;
-    final result = settings.updateCheckResult;
-    if (result == null || !result.isNewer) return;
+  void _showUpdateToast(BuildContext context, UpdateCheckResult result) {
     if (!mounted) return;
-    setState(() {
-      _shownStartupUpdateToast = true;
-    });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Update available: v${result.latestVersion}'),
@@ -128,9 +123,14 @@ class _AppShellPageState extends State<AppShellPage> {
         action: result.releaseUrl != null
             ? SnackBarAction(
                 label: 'View',
-                onPressed: () => launchUrl(
-                  Uri.parse(result.releaseUrl!),
-                  mode: LaunchMode.externalApplication,
+                onPressed: () => unawaited(
+                  launchUrl(
+                    Uri.parse(result.releaseUrl!),
+                    mode: LaunchMode.externalApplication,
+                  ).catchError((Object e) {
+                    AppLogger.warn('Failed to open release URL', error: e);
+                    return false;
+                  }),
                 ),
               )
             : null,
