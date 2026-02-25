@@ -22,7 +22,6 @@ class ProjectProvider extends ChangeNotifier {
 
   final ProjectRepository _projectRepository;
   final AppLocalDataSource _localDataSource;
-  static const String _syntheticDirectoryPrefix = 'dir::';
 
   ProjectStatus _status = ProjectStatus.initial;
   List<Project> _projects = <Project>[];
@@ -118,13 +117,6 @@ class ProjectProvider extends ChangeNotifier {
 
       await _restoreArchivedProjects();
       await _restoreOpenProjects();
-      if (savedProjectId != null && savedProjectId.trim().isNotEmpty) {
-        _currentProject =
-            _projects
-                .where((item) => item.id == savedProjectId.trim())
-                .firstOrNull ??
-            _currentProject;
-      }
       _ensureOpenProject(_currentProject!.id);
       await _persistProjectState();
       await loadWorktrees(silent: true);
@@ -204,25 +196,12 @@ class ProjectProvider extends ChangeNotifier {
         (item) {
           final fetchedPath = item.path.trim();
           if (fetchedPath == normalized) {
-            final scopedProject = _resolveDirectoryScopedProject(
-              item,
-              directory: normalized,
-            );
-            project = scopedProject;
-            final existingPathIndex = _projects.indexWhere(
-              (p) => p.path.trim() == scopedProject.path.trim(),
-            );
-            if (existingPathIndex >= 0) {
-              _projects[existingPathIndex] = scopedProject;
+            project = item;
+            final existingIndex = _projects.indexWhere((p) => p.id == item.id);
+            if (existingIndex >= 0) {
+              _projects[existingIndex] = item;
             } else {
-              final existingIdIndex = _projects.indexWhere(
-                (p) => p.id == scopedProject.id,
-              );
-              if (existingIdIndex >= 0) {
-                _projects[existingIdIndex] = scopedProject;
-              } else {
-                _projects = <Project>[scopedProject, ..._projects];
-              }
+              _projects = <Project>[item, ..._projects];
             }
             return;
           }
@@ -757,21 +736,7 @@ class ProjectProvider extends ChangeNotifier {
         }
       },
       (projects) {
-        final previousSynthetic = _projects
-            .where(_isSyntheticDirectoryProject)
-            .toList(growable: false);
-        final loadedProjects = _sanitizeProjects(projects);
-        final merged = List<Project>.from(loadedProjects);
-        for (final synthetic in previousSynthetic) {
-          final existsById = merged.any((item) => item.id == synthetic.id);
-          final existsByPath = merged.any(
-            (item) => item.path.trim() == synthetic.path.trim(),
-          );
-          if (!existsById && !existsByPath) {
-            merged.add(synthetic);
-          }
-        }
-        _projects = merged;
+        _projects = _sanitizeProjects(projects);
         _openProjectIds = _openProjectIds
             .where((id) => _projects.any((item) => item.id == id))
             .toList(growable: false);
@@ -807,29 +772,10 @@ class ProjectProvider extends ChangeNotifier {
       try {
         final decoded = jsonDecode(raw);
         if (decoded is List) {
-          final restored = <String>[];
-          for (final id in decoded.whereType<String>()) {
-            if (_projects.any((project) => project.id == id)) {
-              restored.add(id);
-              continue;
-            }
-            final synthetic = _restoreSyntheticProjectFromId(id);
-            if (synthetic == null) {
-              continue;
-            }
-            final existingPathIndex = _projects.indexWhere(
-              (project) => project.path.trim() == synthetic.path.trim(),
-            );
-            if (existingPathIndex >= 0) {
-              _projects[existingPathIndex] = synthetic;
-            } else if (!_projects.any(
-              (project) => project.id == synthetic.id,
-            )) {
-              _projects = <Project>[synthetic, ..._projects];
-            }
-            restored.add(synthetic.id);
-          }
-          _openProjectIds = restored.toList(growable: false);
+          _openProjectIds = decoded
+              .whereType<String>()
+              .where((id) => _projects.any((project) => project.id == id))
+              .toList(growable: false);
         }
       } catch (e, stackTrace) {
         AppLogger.warn(
@@ -955,7 +901,7 @@ class ProjectProvider extends ChangeNotifier {
   }
 
   Project _buildSyntheticDirectoryProject(String directory) {
-    final normalized = _normalizeDirectoryPath(directory);
+    final normalized = directory.trim();
     final normalizedPath = normalized.replaceAll('\\', '/');
     final segments = normalizedPath
         .split('/')
@@ -965,51 +911,11 @@ class ProjectProvider extends ChangeNotifier {
     final name = segments.isEmpty ? normalized : segments.last;
     final now = DateTime.now();
     return Project(
-      id: '$_syntheticDirectoryPrefix$normalized',
+      id: 'dir::$normalized',
       name: name,
       path: normalized,
       createdAt: now,
       updatedAt: now,
     );
-  }
-
-  Project _resolveDirectoryScopedProject(
-    Project project, {
-    required String directory,
-  }) {
-    final normalized = _normalizeDirectoryPath(directory);
-    final hasIdCollision = _projects.any(
-      (item) => item.id == project.id && item.path.trim() != normalized,
-    );
-    if (!hasIdCollision) {
-      return project;
-    }
-    AppLogger.info(
-      'Directory context id collision detected. Using synthetic id for path=$normalized',
-    );
-    return _buildSyntheticDirectoryProject(normalized);
-  }
-
-  Project? _restoreSyntheticProjectFromId(String id) {
-    if (!id.startsWith(_syntheticDirectoryPrefix)) {
-      return null;
-    }
-    final directory = id.substring(_syntheticDirectoryPrefix.length).trim();
-    if (directory.isEmpty) {
-      return null;
-    }
-    return _buildSyntheticDirectoryProject(directory);
-  }
-
-  bool _isSyntheticDirectoryProject(Project project) {
-    return project.id.startsWith(_syntheticDirectoryPrefix);
-  }
-
-  String _normalizeDirectoryPath(String directory) {
-    var normalized = directory.trim().replaceAll('\\', '/');
-    if (normalized.length > 1) {
-      normalized = normalized.replaceAll(RegExp(r'/+$'), '');
-    }
-    return normalized;
   }
 }

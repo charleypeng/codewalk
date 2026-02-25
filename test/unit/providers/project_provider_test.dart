@@ -32,31 +32,6 @@ class _DelayedWorktreeProjectRepository extends FakeProjectRepository {
   }
 }
 
-class _CollidingDirectoryProjectRepository extends FakeProjectRepository {
-  _CollidingDirectoryProjectRepository({
-    required super.currentProject,
-    required super.projects,
-  });
-
-  @override
-  Future<Either<Failure, Project>> getCurrentProject({
-    String? directory,
-  }) async {
-    if (directory != null && directory.trim().isNotEmpty) {
-      final normalized = directory.trim();
-      return Right(
-        Project(
-          id: 'project',
-          name: 'Directory',
-          path: normalized,
-          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-        ),
-      );
-    }
-    return super.getCurrentProject(directory: directory);
-  }
-}
-
 void main() {
   group('ProjectProvider', () {
     late InMemoryAppLocalDataSource localDataSource;
@@ -307,70 +282,6 @@ void main() {
         expect(
           provider.projects.any((project) => project.path == '/repo/plain'),
           isTrue,
-        );
-      },
-    );
-
-    test(
-      'switchToDirectoryContext keeps previously opened non-git directories',
-      () async {
-        await provider.initializeProject();
-
-        final switchedFirst = await provider.switchToDirectoryContext(
-          '/repo/plain-a',
-        );
-        final switchedSecond = await provider.switchToDirectoryContext(
-          '/repo/plain-b',
-        );
-
-        expect(switchedFirst, isTrue);
-        expect(switchedSecond, isTrue);
-        expect(
-          provider.openProjectIds,
-          containsAll(<String>['dir::/repo/plain-a', 'dir::/repo/plain-b']),
-        );
-        expect(
-          provider.openProjects.map((item) => item.path),
-          containsAll(<String>['/repo/plain-a', '/repo/plain-b']),
-        );
-      },
-    );
-
-    test(
-      'switchToDirectoryContext handles server id collisions per directory',
-      () async {
-        projectRepository = _CollidingDirectoryProjectRepository(
-          currentProject: Project(
-            id: 'project',
-            name: 'Project',
-            path: '/repo/a',
-            createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-          ),
-          projects: <Project>[
-            Project(
-              id: 'project',
-              name: 'Project',
-              path: '/repo/a',
-              createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-            ),
-          ],
-        );
-        provider = ProjectProvider(
-          projectRepository: projectRepository,
-          localDataSource: localDataSource,
-        );
-
-        await provider.initializeProject();
-        await provider.switchToDirectoryContext('/repo/plain-a');
-        await provider.switchToDirectoryContext('/repo/plain-b');
-
-        expect(
-          provider.openProjectIds,
-          containsAll(<String>['dir::/repo/plain-a', 'dir::/repo/plain-b']),
-        );
-        expect(
-          provider.openProjects.map((item) => item.path),
-          containsAll(<String>['/repo/plain-a', '/repo/plain-b']),
         );
       },
     );

@@ -365,10 +365,6 @@ void main() {
         await scopedProvider.loadSessions();
         expect(scopedRepository.lastGetSessionsDirectory, isNull);
         expect(scopedProvider.sessions.first.id, 'ses_a');
-        expect(
-          scopedProvider.visibleSidebarSessions.map((item) => item.id),
-          contains('ses_a'),
-        );
 
         scopedRepository.sessions
           ..clear()
@@ -384,18 +380,10 @@ void main() {
         await scopedProvider.onProjectScopeChanged();
         expect(scopedRepository.lastGetSessionsDirectory, isNull);
         expect(scopedProvider.sessions.first.id, 'ses_b');
-        expect(
-          scopedProvider.visibleSidebarSessions.map((item) => item.id),
-          containsAll(<String>['ses_a', 'ses_b']),
-        );
 
         await scopedProvider.projectProvider.switchProject('proj_a');
         await scopedProvider.onProjectScopeChanged();
         expect(scopedProvider.sessions.first.id, 'ses_a');
-        expect(
-          scopedProvider.visibleSidebarSessions.map((item) => item.id),
-          containsAll(<String>['ses_a', 'ses_b']),
-        );
       },
     );
 

@@ -43,7 +43,7 @@ extension _ChatProviderCachePersistenceOps on ChatProvider {
         );
 
         if (cachedSessions.isNotEmpty) {
-          _allSessions = _mergeAllSessions(incomingSessions: cachedSessions);
+          _allSessions = cachedSessions;
           _sessions = cachedSessions;
           _threadPermissionsVersion++;
           _sortSessionsInPlace();
