@@ -655,7 +655,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     if (_mode == ChatComposerMode.shell) {
       return 'Shell command (Esc to exit)';
     }
-    return 'Type a message... (`@` file/agent, `/` command, `!` shell)';
+    return 'Type your needs...';
   }
 
   @override

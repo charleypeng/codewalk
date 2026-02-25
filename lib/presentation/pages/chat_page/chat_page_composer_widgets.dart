@@ -267,6 +267,8 @@ extension _ChatPageComposerWidgets on _ChatPageState {
             fontWeight: FontWeight.w400,
           )
         : Theme.of(context).textTheme.bodySmall?.copyWith(
+            fontSize:
+                (Theme.of(context).textTheme.bodySmall?.fontSize ?? 12) + 1,
             color: colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w700,
           );

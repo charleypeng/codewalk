@@ -106,6 +106,18 @@ class _SessionTodoListWidgetState extends State<SessionTodoListWidget> {
     return 'Tasks $completedCount/${todos.length} completed';
   }
 
+  int get _completedCount {
+    return widget.todos.where((todo) => todo.status == 'completed').length;
+  }
+
+  double get _completionProgress {
+    final total = widget.todos.length;
+    if (total == 0) {
+      return 0;
+    }
+    return _completedCount / total;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.todos.isEmpty || _hidden) {
@@ -184,7 +196,43 @@ class _SessionTodoListWidgetState extends State<SessionTodoListWidget> {
                         .toList(growable: false),
                   ),
           ),
+        if (!widget.collapsed) _buildFooterProgress(context),
       ],
+    );
+  }
+
+  Widget _buildFooterProgress(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final totalCount = widget.todos.length;
+    final completedCount = _completedCount;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 8, 4, 2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              key: const ValueKey<String>('session_todo_footer_progress_bar'),
+              value: _completionProgress,
+              minHeight: 6,
+              backgroundColor: colorScheme.surfaceContainerHighest,
+              valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Progress $completedCount/$totalCount completed',
+            key: const ValueKey<String>('session_todo_footer_progress_text'),
+            style: textTheme.labelSmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

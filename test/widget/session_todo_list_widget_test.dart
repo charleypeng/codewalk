@@ -50,6 +50,11 @@ void main() {
     expect(find.text('Set up database'), findsOneWidget);
     expect(find.text('Write API endpoints'), findsOneWidget);
     expect(find.text('Add tests'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('session_todo_footer_progress_bar')),
+      findsOneWidget,
+    );
+    expect(find.text('Progress 1/3 completed'), findsOneWidget);
   });
 
   testWidgets('shows summary with in-progress task when collapsed', (
@@ -60,6 +65,10 @@ void main() {
     expect(find.text('Task 2/3 Write API endpoints'), findsOneWidget);
     expect(find.text('Set up database'), findsNothing);
     expect(find.text('Add tests'), findsNothing);
+    expect(
+      find.byKey(const ValueKey<String>('session_todo_footer_progress_bar')),
+      findsNothing,
+    );
   });
 
   testWidgets('shows completed count when collapsed with no in-progress', (
@@ -88,9 +97,7 @@ void main() {
     WidgetTester tester,
   ) async {
     var toggled = false;
-    await tester.pumpWidget(
-      buildWidget(onToggle: () => toggled = true),
-    );
+    await tester.pumpWidget(buildWidget(onToggle: () => toggled = true));
 
     await tester.tap(find.text('Tasks (3)'));
     expect(toggled, isTrue);
@@ -165,9 +172,7 @@ void main() {
         priority: 'low',
       ),
     );
-    await tester.pumpWidget(
-      buildWidget(items: manyTodos, maxVisibleItems: 10),
-    );
+    await tester.pumpWidget(buildWidget(items: manyTodos, maxVisibleItems: 10));
 
     expect(find.byType(Scrollbar), findsOneWidget);
   });

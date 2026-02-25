@@ -38,10 +38,10 @@
   - [x] Add project/workspace context cache to enable faster switching between recently used projects. — `6f8d167`
   - [ ] Replace the current project selection dialog with an inline rich select/dropdown component.
 - [x] Investigate and fix project-switch navigation regression (including while app is busy): after changing project, navigation sometimes reopens a sub-conversation from the main session instead of restoring the primary conversation the user was previously viewing. — Related commits: e92b287 2facf4f ac0759c cb324c4 77592fa
-  - [ ] Context knob shows only the number (without `%`), while popover keeps `%`.
+  - [x] Context knob shows only the number (without `%`), while popover keeps `%`.
 
 - **Group 3 — Chat UX, Composer, and Tool Bubble Polish** [~]
-  - [ ] Transformar bolhas do usuário em largura dinâmica para parece mais como chat
+  - [x] Transformar bolhas do usuário em largura dinâmica para parece mais como chat
   - [x] Standardize tool-call collapse, remove 'Assistant' titles, visually merge consecutive assistant tool-calls into one bubble (no errors/non-tool messages between them), and remove assistant/user bubble borders while preserving final response visibility and collapsing work when it arrives. — `1665e71`
   - [x] Require custom textual descriptions for every tool call; when a tool call finishes, auto-collapse it to icon+title with an inline expand button to reopen details. — `1665e71`
   - [x] Mirror subagent permission prompts/authorization requests in the main conversation so users can respond there too, with a subtle origin badge indicating the request comes from a subagent. — `d367602`, `f9ee596`
@@ -51,14 +51,14 @@
   - [ ] Investigate and fix intermittent blank history on conversation open: chat can appear empty until pull/scroll, likely due to auto-scroll to the last message overshooting (overscroll) and leaving the viewport outside the content.
   - [ ] After returning from background, position the conversation at the start of the most recent message (top of text) instead of at the end of that message.
   - [ ] In composer, adjust `ArrowUp`/`ArrowDown` without modifiers for multiline behavior before history navigation; with modifiers keep default editor behavior.
-  - [ ] In composer, simplify the input placeholder to a single short phrase (e.g., `Type your needs...`) with no extra helper text.
+  - [x] In composer, simplify the input placeholder to a single short phrase (e.g., `Type your needs...`) with no extra helper text.
   - [x] In composer, after clicking `New chat`, focus the composer input automatically so typing can start right away. - Commit hash: 3ad147e
-  - [ ] In composer, increase slightly the composer status text font size for better readability.
+  - [x] In composer, increase slightly the composer status text font size for better readability.
   - [x] In mic/STT usage, insert text at current cursor position (not always at the end). - Commit hash: 3ad147e
   - [x] Handle `MessageAborted` with an inline friendly red chat message (`"What you want to do different?"`) instead of toast+retry; keep toast flow for punctual/non-abort errors. - Planning doc: `ROADMAP.featQ.messageaborted-inline-plan.md` - Implementation concluded (inline abort without toast retry).
   - [x] Investigate and fix conversation continuity when switching sessions/projects: context changes can unexpectedly abort active conversations, so preserve active streams/chats when appropriate. Isolated SSE streams with dedicated Dio instance to prevent false abort on concurrent session switch. Removed per-send SSE from prompt_async path to prevent server-side abort on disconnect. Skip active session refresh during abort suppression to prevent reconcile from loading server-side abort content. Fix stale message resolution in polling-only path that caused false-completion on second+ sends to same session. Defer selection sync (PATCH /config) during abort suppression window — PATCH triggered server-side Instance.dispose() which aborted all active multi-step sessions. - Related commits: acce617 9dcd773 1581c65 cdee253 1fcf33e 68baebe 61934e9 0ee474c df9ec9e 931d9a8
   - [ ] Plan the merge between the project selector and the conversations sidebar, grouping conversations by open projects to speed up navigation.
-  - [ ] Tasks widget gets a footer progress bar based on total completed items.
+  - [x] Tasks widget gets a footer progress bar based on total completed items.
   - [x] Plan support for sending a new message while the assistant is still working (OpenCode CLI/Web parity), following existing OpenCode interaction patterns. - Planning doc: `ROADMAP.featQ.concurrent-send-plan.md`
   - [x] Deliver queued-send behavior while processing: queue new messages during active run; `Send now` aborts current run and sends queued content; multiple queued drafts merge into one payload with single `\n` separators; show queued status/indicators in composer/chat UI. - Related commits: dfd64eb f8df06a c8884b2
   - [ ] Allow pinning sessions in the Conversations sidebar.
