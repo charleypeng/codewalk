@@ -120,6 +120,17 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 - [x] Suavizar efeito de varredura do status no composer: ajustar a animação para que a varredura ultrapasse levemente o início e o fim do texto (overscan), evitando corte abrupto na última letra e reinício visível no começo. DoD: 1) sweep continua além da última letra antes de desaparecer; 2) início também recebe overscan para entrada suave; 3) transição de loop sem salto perceptível; 4) comportamento consistente em mobile e desktop.
 - [ ] Substituir ícone lateral por badges flutuantes na lista de sessões: remover o ícone fixo à esquerda de cada sessão/conversa (que consome espaço no mobile) e adotar badges flutuantes compactos. Incluir sistema de badges de estado para indicar sessões que exigem atenção. DoD: 1) ícone lateral removido da lista de sessões no mobile; 2) badges flutuantes compactos sem prejuízo de legibilidade/tap target; 3) badges de atenção para estados relevantes (ex.: nova resposta, question pendente, erro/notificação); 4) estilo alinhado ao Material You (MD3) e consistente entre mobile/desktop.
 - [ ] Exibir badge no menu hambúrguer para sessões fora de foco que exigem atenção: em cenário multi-sessão no mobile, mostrar indicador visual no ícone/menu hambúrguer quando houver sessão não focada com evento pendente (resposta concluída, question aguardando ação, erro/notificação relevante). DoD: 1) badge aparece quando qualquer sessão fora de foco tiver estado de atenção; 2) badge desaparece/atualiza ao consumir o evento ou focar a sessão; 3) diferenciação mínima de tipo de evento (ex.: dot/contador/estado) sem poluir UI; 4) estilo coerente com Material You (MD3) e boa visibilidade em telas pequenas.
+- [ ] In Settings > Shortcuts, review shortcut coverage and add missing options.
+- [ ] Add shortcut to enable/disable STT in Shortcuts.
+- [x] In Settings > About, create an independent update system for new versions. Polished update tile: card layout, 400-char release notes. Commits: fb15388, 2c13bfe
+- [x] In About, add "check updates on open" option (default on), with toast and update button. checkUpdatesOnOpen field in ExperienceSettings, startup background check, one-time SnackBar toast in AppShellPage. Commits: fb15388, 2c13bfe
+- [ ] Reorganize the "Project Context" screen for a more dynamic visual UX; tapping a project opens it immediately and closes the dialog, removing the need for a separate open button next to trash.
+- [ ] Replace the current project selection dialog with an inline rich select/dropdown component.
+- [ ] Investigate and fix intermittent blank history on conversation open: chat can appear empty until pull/scroll, likely due to auto-scroll overscroll leaving the viewport outside the content.
+- [ ] After returning from background, position the conversation at the start of the most recent message (top of text) instead of at the end.
+- [ ] In composer, adjust ArrowUp/ArrowDown without modifiers for multiline behavior before history navigation; with modifiers keep default editor behavior.
+- [ ] Plan the merge between the project selector and the conversations sidebar, grouping conversations by open projects to speed up navigation.
+- [ ] Allow pinning sessions in the Conversations sidebar.
 - [x] Transformar bolhas do usuário em largura dinâmica para parece mais como chat
 #### `featA` Sync hardening and remote config safety ✅
 

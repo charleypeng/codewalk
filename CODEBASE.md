@@ -50,7 +50,7 @@ codewalk/
 
 ```text
 lib/main.dart                                # Runtime entry; DI, providers, DynamicColorBuilder with user theme prefs; syncs dynamic color availability to SettingsProvider via postFrameCallback
-lib/presentation/pages/app_shell_page.dart   # Root shell; gates onboarding wizard, mounts ChatPage and desktop tray behavior
+lib/presentation/pages/app_shell_page.dart   # Root shell; gates onboarding wizard, mounts ChatPage and desktop tray behavior; triggers startup update toast via `addPostFrameCallback` + `UpdateCheckResult` when `checkUpdatesOnOpen` is enabled
 lib/presentation/pages/onboarding_wizard_page.dart # First-run wizard shown when no server is configured
 lib/presentation/pages/chat_page.dart         # Main chat/session/file UI entry; uses WindowSizeClass for responsive layout
 .github/workflows/ci.yml                      # CI workflow entry
@@ -77,7 +77,7 @@ lib/data/repositories/*.dart                      # Domain repository implementa
 lib/domain/usecases/*.dart                        # Application use cases consumed by providers
 lib/presentation/providers/app_provider.dart      # Server profiles, health polling, local runtime state
 lib/presentation/providers/project_provider.dart  # Project/worktree context selection and persistence
-lib/presentation/providers/settings_provider.dart # Experience settings, theme mode, dynamic color, AMOLED dark toggle, brand seed, contrast, composer tips visibility, sounds, update checks, desktop pane widths; exposes `dynamicColorAvailable` (bool) and `updateDynamicColorAvailability()` for runtime platform signal
+lib/presentation/providers/settings_provider.dart # Experience settings, theme mode, dynamic color, AMOLED dark toggle, brand seed, contrast, composer tips visibility, sounds, update checks, desktop pane widths; exposes `dynamicColorAvailable` (bool) and `updateDynamicColorAvailability()` for runtime platform signal; `setCheckUpdatesOnOpen()` setter and `_performStartupUpdateCheck()` private method drive the startup update toast
 lib/presentation/theme/brand_colors.dart              # BrandColor enum with 5 seed colors for non-dynamic-color themes
 lib/presentation/theme/app_shapes.dart                # AppShapes class with centralized MD3 shape constants
 lib/presentation/theme/app_theme.dart                 # Material You theme builder using AppShapes and color scheme
@@ -353,8 +353,8 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 
 - **Theme control** (`main.dart`): `DynamicColorBuilder` resolves color scheme from platform
   dynamic color (when enabled and available) or from user-selected `BrandColor` seed. User
-  preferences (`themeMode`, `useDynamicColor`, `useAmoledDark`, `customColorSeed`, `contrastLevel`)
-  are stored in `ExperienceSettings` and exposed via `SettingsProvider`. When `useAmoledDark` is
+  preferences (`themeMode`, `useDynamicColor`, `useAmoledDark`, `customColorSeed`, `contrastLevel`,
+  `checkUpdatesOnOpen`) are stored in `ExperienceSettings` and exposed via `SettingsProvider`. When `useAmoledDark` is
   enabled, `_applyAmoledDarkScheme()` overrides all surface colors to `Colors.black` in dark theme.
 - **BrandColor** (`brand_colors.dart`): Enum with 5 curated seed colors (Indigo, Teal, Rose,
   Amber, Slate) used when dynamic color is unavailable or disabled.
@@ -365,7 +365,8 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
   replaces hardcoded width checks in `ChatPage` and `SettingsPage`.
 - **Settings UI** (`appearance_settings_section.dart`): Theme mode, color picker (brand colors
   + dynamic color toggle), contrast level cards, and a Composer tips toggle in the Appearance
-  section. Dynamic color availability is read from `settingsProvider.dynamicColorAvailable`
+  section. `about_settings_section.dart` contains a `SwitchListTile` for the `checkUpdatesOnOpen`
+  toggle that controls startup update checks. Dynamic color availability is read from `settingsProvider.dynamicColorAvailable`
   (runtime signal set by `DynamicColorBuilder` in `main.dart`) instead of a heuristic; contrast
   slider is disabled when dynamic color is active. Composer tips visibility is shared with the
   Chat Display popover toggle through `settingsProvider.showComposerTips`.
