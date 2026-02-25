@@ -117,9 +117,6 @@ extension _ChatPageSelectorFlow on _ChatPageState {
     final currentDirectoryFull = _directoryLabel(
       projectProvider.currentDirectory,
     );
-    final worktreeEnabled =
-        projectProvider.worktreeSupported ||
-        projectProvider.worktrees.isNotEmpty;
 
     return Material(
       key: const ValueKey<String>('project_selector_dialog_content'),
@@ -162,7 +159,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Select a project below. Workspaces are project variants.',
+                  'Select a project below.',
                   style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -181,19 +178,13 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                     _openCreateWorkspaceFromSelector(dialogContext),
                   ),
                   icon: const Icon(Symbols.add_box),
-                  label: const Text('Create project workspace...'),
+                  label: const Text('Open project folder...'),
                 ),
                 if (!FeatureFlags.refreshlessRealtime)
                   FilledButton.tonalIcon(
                     onPressed: () => unawaited(projectProvider.loadProjects()),
                     icon: const Icon(Symbols.refresh_rounded),
                     label: const Text('Refresh projects'),
-                  ),
-                if (worktreeEnabled && !FeatureFlags.refreshlessRealtime)
-                  FilledButton.tonalIcon(
-                    onPressed: () => unawaited(projectProvider.loadWorktrees()),
-                    icon: const Icon(Symbols.sync_rounded),
-                    label: const Text('Refresh project workspaces'),
                   ),
               ],
             ),
@@ -261,55 +252,6 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                           ),
                         );
                       },
-                    ),
-                ],
-                if (worktreeEnabled) ...[
-                  const SizedBox(height: 8),
-                  _buildSelectorSectionHeader(
-                    dialogContext,
-                    'Project workspaces',
-                  ),
-                  for (final worktree in projectProvider.worktrees)
-                    ListTile(
-                      dense: _useDenseListTiles(dialogContext),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                      leading: Icon(
-                        worktree.active
-                            ? Symbols.folder_special
-                            : Symbols.folder_copy,
-                        size: 20,
-                      ),
-                      title: Text(
-                        worktree.name,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      subtitle: Text(
-                        _directoryLabel(worktree.directory),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      onTap: () => unawaited(
-                        _switchWorkspaceFromSelector(
-                          dialogContext,
-                          worktree.directory,
-                        ),
-                      ),
-                      trailing: Wrap(
-                        spacing: 2,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Symbols.restart_alt_rounded),
-                            tooltip: 'Reset ${worktree.name}',
-                            onPressed: () =>
-                                unawaited(_resetWorkspace(worktree.id)),
-                          ),
-                          IconButton(
-                            icon: const Icon(Symbols.delete_outline_rounded),
-                            tooltip: 'Delete ${worktree.name}',
-                            onPressed: () =>
-                                unawaited(_deleteWorkspace(worktree.id)),
-                          ),
-                        ],
-                      ),
                     ),
                 ],
               ],

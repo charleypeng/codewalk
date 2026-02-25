@@ -1355,7 +1355,7 @@ class _DirectoryPickerSheetState extends State<_DirectoryPickerSheet> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Any folder can open as project context. Git folders can also create workspaces.',
+                      'Choose a folder to open as project context.',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),

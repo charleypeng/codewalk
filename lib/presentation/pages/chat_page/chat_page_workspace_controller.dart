@@ -131,71 +131,52 @@ extension _ChatPageWorkspaceController on _ChatPageState {
 
   Future<void> _createWorkspace() async {
     final projectProvider = context.read<ProjectProvider>();
-    final chatProvider = context.read<ChatProvider>();
     final appProvider = context.read<AppProvider>();
     final defaultDirectory =
         projectProvider.currentDirectory ??
         appProvider.appInfo?.path.data ??
         '/';
-    final nameController = TextEditingController();
     final baseDirectoryController = TextEditingController(
       text: defaultDirectory,
     );
-    final createdInput = await showDialog<(String, String?)>(
+    final selectedDirectory = await showDialog<String>(
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (dialogContext, setDialogState) {
             return AlertDialog(
-              title: const Text('Open project or create workspace'),
+              title: const Text('Open project folder'),
               content: SizedBox(
                 width: 420,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      key: const ValueKey<String>('workspace_name_input'),
-                      controller: nameController,
-                      autofocus: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Workspace name (Git only)',
-                        hintText: 'Optional for non-Git folders',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
+                child: TextField(
+                  key: const ValueKey<String>('workspace_base_directory_input'),
+                  controller: baseDirectoryController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: 'Project directory',
+                    hintText: '/repo/my-project',
+                    helperText: 'Choose any folder to open as project context.',
+                    suffixIcon: IconButton(
                       key: const ValueKey<String>(
-                        'workspace_base_directory_input',
+                        'workspace_open_directory_picker_button',
                       ),
-                      controller: baseDirectoryController,
-                      decoration: InputDecoration(
-                        labelText: 'Project directory',
-                        hintText: '/repo/my-project',
-                        helperText:
-                            'Non-Git folders open as project context. Git folders can create workspaces.',
-                        suffixIcon: IconButton(
-                          key: const ValueKey<String>(
-                            'workspace_open_directory_picker_button',
-                          ),
-                          tooltip: 'Browse directories',
-                          onPressed: () async {
-                            final picked = await _openDirectoryPicker(
-                              initialDirectory:
-                                  baseDirectoryController.text.trim().isEmpty
-                                  ? defaultDirectory
-                                  : baseDirectoryController.text.trim(),
-                            );
-                            if (!dialogContext.mounted || picked == null) {
-                              return;
-                            }
-                            baseDirectoryController.text = picked;
-                            setDialogState(() {});
-                          },
-                          icon: const Icon(Symbols.folder_open),
-                        ),
-                      ),
+                      tooltip: 'Browse directories',
+                      onPressed: () async {
+                        final picked = await _openDirectoryPicker(
+                          initialDirectory:
+                              baseDirectoryController.text.trim().isEmpty
+                              ? defaultDirectory
+                              : baseDirectoryController.text.trim(),
+                        );
+                        if (!dialogContext.mounted || picked == null) {
+                          return;
+                        }
+                        baseDirectoryController.text = picked;
+                        setDialogState(() {});
+                      },
+                      icon: const Icon(Symbols.folder_open),
                     ),
-                  ],
+                  ),
                 ),
               ),
               actions: [
@@ -204,17 +185,16 @@ extension _ChatPageWorkspaceController on _ChatPageState {
                   child: const Text('Cancel'),
                 ),
                 FilledButton(
-                  onPressed: () async {
-                    final name = nameController.text.trim();
+                  onPressed: () {
                     final baseDirectory = baseDirectoryController.text.trim();
                     if (!dialogContext.mounted) {
                       return;
                     }
                     Navigator.of(
                       dialogContext,
-                    ).pop((name, baseDirectory.isEmpty ? null : baseDirectory));
+                    ).pop(baseDirectory.isEmpty ? null : baseDirectory);
                   },
-                  child: const Text('Create'),
+                  child: const Text('Open folder'),
                 ),
               ],
             );
@@ -222,81 +202,31 @@ extension _ChatPageWorkspaceController on _ChatPageState {
         );
       },
     );
-    if (!mounted || createdInput == null) {
+    if (!mounted || selectedDirectory == null) {
       return;
     }
 
-    final workspaceName = createdInput.$1.trim();
-    final requestedDirectory = createdInput.$2?.trim();
-    if (requestedDirectory != null && requestedDirectory.isNotEmpty) {
-      final isGit = await projectProvider.isGitDirectory(requestedDirectory);
-      if (!mounted) {
-        return;
-      }
-      if (isGit != true) {
-        await _switchDirectoryContext(requestedDirectory);
-        if (!mounted) {
-          return;
-        }
-        final openedDirectory = projectProvider.currentDirectory;
-        if (openedDirectory == requestedDirectory) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Project context opened: $requestedDirectory'),
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                projectProvider.error ??
-                    'Failed to open project context: $requestedDirectory',
-              ),
-            ),
-          );
-        }
-        return;
-      }
-    }
-
-    if (workspaceName.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Workspace name is required for Git directories.'),
-        ),
-      );
+    final requestedDirectory = selectedDirectory.trim();
+    if (requestedDirectory.isEmpty) {
       return;
     }
 
-    final created = await projectProvider.createWorktree(
-      workspaceName,
-      switchToCreated: true,
-      directory: requestedDirectory,
-    );
+    await _switchDirectoryContext(requestedDirectory);
     if (!mounted) {
       return;
     }
-    if (created == null) {
+    final openedDirectory = projectProvider.currentDirectory;
+    if (openedDirectory == requestedDirectory) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(projectProvider.error ?? 'Failed to create workspace'),
-        ),
+        SnackBar(content: Text('Project context opened: $requestedDirectory')),
       );
-      return;
-    }
-    await _runProjectScopeTransition(() async {
-      await projectProvider.switchToDirectoryContext(created.directory);
-      await chatProvider.onProjectScopeChanged();
-    });
-    if (!mounted) {
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          requestedDirectory == null
-              ? 'Workspace created: ${created.name}'
-              : 'Workspace created in $requestedDirectory: ${created.name}',
+          projectProvider.error ??
+              'Failed to open project context: $requestedDirectory',
         ),
       ),
     );
@@ -318,50 +248,5 @@ extension _ChatPageWorkspaceController on _ChatPageState {
       useSafeArea: true,
       builder: (_) => _DirectoryPickerSheet(initialDirectory: startDirectory),
     );
-  }
-
-  Future<void> _resetWorkspace(String worktreeId) async {
-    final projectProvider = context.read<ProjectProvider>();
-    final ok = await projectProvider.resetWorktree(worktreeId);
-    if (!mounted) {
-      return;
-    }
-    if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(projectProvider.error ?? 'Failed to reset workspace'),
-        ),
-      );
-      return;
-    }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Workspace reset')));
-  }
-
-  Future<void> _deleteWorkspace(String worktreeId) async {
-    final projectProvider = context.read<ProjectProvider>();
-    final chatProvider = context.read<ChatProvider>();
-    final ok = await projectProvider.deleteWorktree(worktreeId);
-    if (!mounted) {
-      return;
-    }
-    if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(projectProvider.error ?? 'Failed to delete workspace'),
-        ),
-      );
-      return;
-    }
-    await _runProjectScopeTransition(() async {
-      await chatProvider.onProjectScopeChanged();
-    });
-    if (!mounted) {
-      return;
-    }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Workspace deleted')));
   }
 }

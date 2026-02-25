@@ -710,20 +710,6 @@ extension _ChatPageChrome on _ChatPageState {
     await _switchProjectContext(projectId);
   }
 
-  Future<void> _switchWorkspaceFromSelector(
-    BuildContext dialogContext,
-    String directory,
-  ) async {
-    if (dialogContext.mounted) {
-      Navigator.of(dialogContext).pop();
-    }
-    await Future<void>.delayed(Duration.zero);
-    if (!mounted) {
-      return;
-    }
-    await _switchDirectoryContext(directory);
-  }
-
   String _directoryLabel(String? directory) {
     final trimmed = directory?.trim();
     if (trimmed == null ||

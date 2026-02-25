@@ -996,10 +996,7 @@ void main() {
     );
     expect(find.text('Project context'), findsOneWidget);
     expect(find.text('Current directory: /repo/a'), findsOneWidget);
-    expect(
-      find.text('Select a project below. Workspaces are project variants.'),
-      findsOneWidget,
-    );
+    expect(find.text('Select a project below.'), findsOneWidget);
     expect(find.byIcon(Symbols.close_rounded), findsOneWidget);
   });
 
@@ -1145,7 +1142,7 @@ void main() {
     expect(find.text('Current directory: Global'), findsOneWidget);
   });
 
-  testWidgets('create workspace allows overriding base directory', (
+  testWidgets('open project folder allows overriding base directory', (
     WidgetTester tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1000, 900));
@@ -1167,9 +1164,14 @@ void main() {
           path: '/repo/a',
           createdAt: DateTime.fromMillisecondsSinceEpoch(0),
         ),
+        Project(
+          id: 'proj_custom',
+          name: 'Custom',
+          path: '/repo/custom',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+        ),
       ],
     );
-    projectRepository.gitDirectories.add('/repo/custom');
     final provider = _buildChatProvider(
       localDataSource: localDataSource,
       projectRepository: projectRepository,
@@ -1181,33 +1183,23 @@ void main() {
 
     await tester.tap(find.byTooltip('Choose Directory'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Create project workspace...'));
+    await tester.tap(find.text('Open project folder...'));
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.byKey(const ValueKey<String>('workspace_name_input')),
-      'Feature API',
-    );
     await tester.enterText(
       find.byKey(const ValueKey<String>('workspace_base_directory_input')),
       '/repo/custom',
     );
-    await tester.tap(find.text('Create'));
+    await tester.tap(find.text('Open folder'));
     await tester.pumpAndSettle();
 
-    expect(projectRepository.lastCreatedWorktreeName, 'Feature API');
-    expect(projectRepository.lastCreatedWorktreeDirectory, '/repo/custom');
-    expect(
-      provider.projectProvider.currentDirectory,
-      '/repo/custom/feature-api',
-    );
-    expect(
-      find.text('Workspace created in /repo/custom: Feature API'),
-      findsOneWidget,
-    );
+    expect(projectRepository.lastCreatedWorktreeName, isNull);
+    expect(projectRepository.lastCreatedWorktreeDirectory, isNull);
+    expect(provider.projectProvider.currentDirectory, '/repo/custom');
+    expect(find.text('Project context opened: /repo/custom'), findsOneWidget);
   });
 
-  testWidgets('create workspace opens non-git directory as project context', (
+  testWidgets('open project folder supports non-git directories', (
     WidgetTester tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1000, 900));
@@ -1248,14 +1240,14 @@ void main() {
 
     await tester.tap(find.byTooltip('Choose Directory'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Create project workspace...'));
+    await tester.tap(find.text('Open project folder...'));
     await tester.pumpAndSettle();
 
     await tester.enterText(
       find.byKey(const ValueKey<String>('workspace_base_directory_input')),
       '/repo/plain',
     );
-    await tester.tap(find.text('Create'));
+    await tester.tap(find.text('Open folder'));
     await tester.pumpAndSettle();
 
     expect(projectRepository.lastCreatedWorktreeName, isNull);
@@ -1264,7 +1256,7 @@ void main() {
     expect(find.text('Project context opened: /repo/plain'), findsOneWidget);
   });
 
-  testWidgets('create workspace supports browsing directories dynamically', (
+  testWidgets('open project folder supports browsing directories dynamically', (
     WidgetTester tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1000, 900));
@@ -1286,6 +1278,12 @@ void main() {
           path: '/repo/a',
           createdAt: DateTime.fromMillisecondsSinceEpoch(0),
         ),
+        Project(
+          id: 'proj_client_app',
+          name: 'Client App',
+          path: '/repo/a/client/app',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+        ),
       ],
     );
     projectRepository.directoriesByPath['/repo/a'] = <String>[
@@ -1295,8 +1293,6 @@ void main() {
     projectRepository.directoriesByPath['/repo/a/client'] = <String>[
       '/repo/a/client/app',
     ];
-    projectRepository.gitDirectories.add('/repo/a/client/app');
-
     final provider = _buildChatProvider(
       localDataSource: localDataSource,
       projectRepository: projectRepository,
@@ -1308,7 +1304,7 @@ void main() {
 
     await tester.tap(find.byTooltip('Choose Directory'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Create project workspace...'));
+    await tester.tap(find.text('Open project folder...'));
     await tester.pumpAndSettle();
 
     await tester.tap(
@@ -1323,9 +1319,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.text(
-        'Any folder can open as project context. Git folders can also create workspaces.',
-      ),
+      find.text('Choose a folder to open as project context.'),
       findsOneWidget,
     );
     await tester.tap(
@@ -1347,17 +1341,11 @@ void main() {
 
     expect(find.text('/repo/a/client/app'), findsOneWidget);
 
-    await tester.enterText(
-      find.byKey(const ValueKey<String>('workspace_name_input')),
-      'Feature Browser',
-    );
-    await tester.tap(find.text('Create'));
+    await tester.tap(find.text('Open folder'));
     await tester.pumpAndSettle();
 
-    expect(
-      projectRepository.lastCreatedWorktreeDirectory,
-      '/repo/a/client/app',
-    );
+    expect(projectRepository.lastCreatedWorktreeDirectory, isNull);
+    expect(provider.projectProvider.currentDirectory, '/repo/a/client/app');
   });
 
   testWidgets(
