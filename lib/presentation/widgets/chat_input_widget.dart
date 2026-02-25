@@ -103,7 +103,7 @@ Color microphoneButtonBackgroundColor({
   required bool isListening,
   required ColorScheme colorScheme,
 }) {
-  return isListening ? colorScheme.error : colorScheme.secondaryContainer;
+  return isListening ? colorScheme.error : Colors.transparent;
 }
 
 @visibleForTesting

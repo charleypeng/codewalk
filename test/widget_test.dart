@@ -819,14 +819,14 @@ void main() {
     },
   );
 
-  test('microphone button uses default palette when inactive', () {
+  test('microphone button uses transparent background when inactive', () {
     const colorScheme = ColorScheme.light();
     expect(
       microphoneButtonBackgroundColor(
         isListening: false,
         colorScheme: colorScheme,
       ),
-      colorScheme.secondaryContainer,
+      Colors.transparent,
     );
     expect(
       microphoneButtonForegroundColor(
