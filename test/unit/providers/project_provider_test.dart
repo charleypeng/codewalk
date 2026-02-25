@@ -270,6 +270,23 @@ void main() {
     });
 
     test(
+      'switchToDirectoryContext creates directory fallback when server keeps current project',
+      () async {
+        await provider.initializeProject();
+
+        final switched = await provider.switchToDirectoryContext('/repo/plain');
+
+        expect(switched, isTrue);
+        expect(provider.currentProject?.path, '/repo/plain');
+        expect(provider.currentProject?.id, 'dir::/repo/plain');
+        expect(
+          provider.projects.any((project) => project.path == '/repo/plain'),
+          isTrue,
+        );
+      },
+    );
+
+    test(
       'switchToDirectoryContext returns false when directory is unchanged',
       () async {
         await provider.initializeProject();

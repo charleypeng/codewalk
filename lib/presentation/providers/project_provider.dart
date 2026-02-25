@@ -168,6 +168,9 @@ class ProjectProvider extends ChangeNotifier {
       _setError('Failed to switch project: directory is empty');
       return false;
     }
+    if (_currentProject?.path.trim() == normalized) {
+      return false;
+    }
 
     var project = _projects
         .where((item) => item.path.trim() == normalized)
@@ -191,24 +194,41 @@ class ProjectProvider extends ChangeNotifier {
           );
         },
         (item) {
-          project = item;
-          final existingIndex = _projects.indexWhere((p) => p.id == item.id);
-          if (existingIndex >= 0) {
-            _projects[existingIndex] = item;
-          } else {
-            _projects = <Project>[item, ..._projects];
+          final fetchedPath = item.path.trim();
+          if (fetchedPath == normalized) {
+            project = item;
+            final existingIndex = _projects.indexWhere((p) => p.id == item.id);
+            if (existingIndex >= 0) {
+              _projects[existingIndex] = item;
+            } else {
+              _projects = <Project>[item, ..._projects];
+            }
+            return;
           }
+          AppLogger.info(
+            'Ignoring current project response during directory switch: requested=$normalized fetched=$fetchedPath id=${item.id}',
+          );
         },
       );
     }
 
     if (project == null) {
-      _setError('Failed to switch project: directory not found');
-      return false;
+      final synthetic = _buildSyntheticDirectoryProject(normalized);
+      final existingSyntheticIndex = _projects.indexWhere(
+        (item) => item.id == synthetic.id,
+      );
+      if (existingSyntheticIndex >= 0) {
+        _projects[existingSyntheticIndex] = synthetic;
+      } else {
+        _projects = <Project>[synthetic, ..._projects];
+      }
+      project = synthetic;
+      AppLogger.info('Created local directory context fallback: $normalized');
     }
 
     final selectedProject = project!;
-    if (_currentProject?.id == selectedProject.id) {
+    if (_currentProject?.id == selectedProject.id &&
+        _currentProject?.path.trim() == selectedProject.path.trim()) {
       return false;
     }
 
@@ -878,5 +898,24 @@ class ProjectProvider extends ChangeNotifier {
         .where((item) => !_isPlaceholderRootProject(item))
         .toList(growable: false);
     return sanitized.isEmpty ? projects : sanitized;
+  }
+
+  Project _buildSyntheticDirectoryProject(String directory) {
+    final normalized = directory.trim();
+    final normalizedPath = normalized.replaceAll('\\', '/');
+    final segments = normalizedPath
+        .split('/')
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toList(growable: false);
+    final name = segments.isEmpty ? normalized : segments.last;
+    final now = DateTime.now();
+    return Project(
+      id: 'dir::$normalized',
+      name: name,
+      path: normalized,
+      createdAt: now,
+      updatedAt: now,
+    );
   }
 }
