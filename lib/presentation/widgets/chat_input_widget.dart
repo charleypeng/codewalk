@@ -941,7 +941,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                                   ),
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.only(right: 6),
+                                  padding: const EdgeInsets.only(right: 2),
                                   child: IconButton.filledTonal(
                                     onPressed:
                                         widget.enabled && !_isStartingListening
