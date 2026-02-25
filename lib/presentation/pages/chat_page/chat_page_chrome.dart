@@ -99,6 +99,10 @@ extension _ChatPageChrome on _ChatPageState {
                       chatProvider: chatProvider,
                       appProvider: appProvider,
                     );
+                    final outOfFocusAttentionKind =
+                        chatProvider.outOfFocusAttentionKind;
+                    final hasSessionAttention =
+                        outOfFocusAttentionKind != SessionAttentionKind.none;
                     final showSyncLoading = _shouldShowMenuSyncLoading(
                       chatProvider: chatProvider,
                     );
@@ -160,6 +164,34 @@ extension _ChatPageChrome on _ChatPageState {
                         ],
                       ),
                     );
+                    final attentionIcon = SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          const Positioned.fill(child: Icon(Symbols.menu)),
+                          Positioned(
+                            top: -1,
+                            right: -1,
+                            child: Container(
+                              key: const ValueKey<String>(
+                                'appbar_drawer_attention_badge',
+                              ),
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: _sessionAttentionBadgeColor(
+                                  context: context,
+                                  kind: outOfFocusAttentionKind,
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
                     return IconButton(
                       key: const ValueKey<String>('appbar_drawer_button'),
                       tooltip: MaterialLocalizations.of(
@@ -168,7 +200,9 @@ extension _ChatPageChrome on _ChatPageState {
                       onPressed: () => Scaffold.of(leadingContext).openDrawer(),
                       icon: hasAlert
                           ? alertIcon
-                          : (showSyncLoading ? loadingIcon : menuIcon),
+                          : (hasSessionAttention
+                                ? attentionIcon
+                                : (showSyncLoading ? loadingIcon : menuIcon)),
                     );
                   },
                 );
@@ -559,6 +593,20 @@ extension _ChatPageChrome on _ChatPageState {
       chatProvider: chatProvider,
       appProvider: appProvider,
     );
+  }
+
+  Color _sessionAttentionBadgeColor({
+    required BuildContext context,
+    required SessionAttentionKind kind,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return switch (kind) {
+      SessionAttentionKind.error => colorScheme.error,
+      SessionAttentionKind.pendingInteraction => colorScheme.tertiary,
+      SessionAttentionKind.unreadCompletion => colorScheme.primary,
+      SessionAttentionKind.active => colorScheme.primary,
+      SessionAttentionKind.none => colorScheme.outline,
+    };
   }
 
   bool _hasImmediateServerStatusAlert({

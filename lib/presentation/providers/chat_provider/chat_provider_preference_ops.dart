@@ -9,6 +9,8 @@ extension _ChatProviderPreferenceOps on ChatProvider {
       sessionStatusById: _sessionStatusById,
       pendingPermissionsBySession: _pendingPermissionsBySession,
       pendingQuestionsBySession: _pendingQuestionsBySession,
+      sessionUnreadCompletionIds: _sessionUnreadCompletionIds,
+      sessionErrorAttentionIds: _sessionErrorAttentionIds,
       sessionChildrenById: _sessionChildrenById,
       sessionTodoById: _sessionTodoById,
       sessionDiffById: _sessionDiffById,
@@ -29,6 +31,8 @@ extension _ChatProviderPreferenceOps on ChatProvider {
       _sessionStatusById = <String, SessionStatusInfo>{};
       _pendingPermissionsBySession = <String, List<ChatPermissionRequest>>{};
       _pendingQuestionsBySession = <String, List<ChatQuestionRequest>>{};
+      _sessionUnreadCompletionIds.clear();
+      _sessionErrorAttentionIds.clear();
       _sessionChildrenById = <String, List<ChatSession>>{};
       _sessionTodoById = <String, List<SessionTodo>>{};
       _sessionDiffById = <String, List<SessionDiff>>{};
@@ -49,6 +53,12 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     _sessionStatusById = snapshot.sessionStatusById;
     _pendingPermissionsBySession = snapshot.pendingPermissionsBySession;
     _pendingQuestionsBySession = snapshot.pendingQuestionsBySession;
+    _sessionUnreadCompletionIds
+      ..clear()
+      ..addAll(snapshot.sessionUnreadCompletionIds);
+    _sessionErrorAttentionIds
+      ..clear()
+      ..addAll(snapshot.sessionErrorAttentionIds);
     _sessionChildrenById = snapshot.sessionChildrenById;
     _sessionTodoById = snapshot.sessionTodoById;
     _sessionDiffById = snapshot.sessionDiffById;
@@ -56,6 +66,7 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     _sessionListFilter = snapshot.sessionListFilter;
     _sessionListSort = snapshot.sessionListSort;
     _sessionVisibleLimit = snapshot.sessionVisibleLimit;
+    _pruneSessionAttentionStateToKnownSessions();
     _threadPermissionsVersion++;
   }
 

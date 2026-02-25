@@ -409,6 +409,101 @@ void main() {
       },
     );
 
+    testWidgets(
+      'shows hamburger attention badge for out-of-focus session interactions',
+      (WidgetTester tester) async {
+        await tester.binding.setSurfaceSize(const Size(500, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final repository = FakeChatRepository(
+          sessions: <ChatSession>[
+            ChatSession(
+              id: 'ses_focus',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(3000),
+              title: 'Focused Session',
+            ),
+            ChatSession(
+              id: 'ses_other',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(2000),
+              title: 'Other Session',
+            ),
+          ],
+        );
+        repository.messagesBySession['ses_focus'] = <ChatMessage>[];
+        repository.messagesBySession['ses_other'] = <ChatMessage>[];
+
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test'
+          ..defaultServerId = 'srv_test'
+          ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 'srv_test',
+              'url': 'http://127.0.0.1:4096',
+              'label': 'Test Server',
+              'basicAuthEnabled': false,
+              'basicAuthUsername': '',
+              'basicAuthPassword': '',
+              'createdAt': 0,
+              'updatedAt': 0,
+            },
+          ]);
+        final provider = _buildChatProvider(
+          chatRepository: repository,
+          localDataSource: localDataSource,
+        );
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+        await tester.pumpWidget(_testApp(provider, appProvider));
+        await tester.pumpAndSettle();
+
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.where((item) => item.id == 'ses_focus').first,
+        );
+        await tester.pumpAndSettle();
+
+        repository.emitEvent(
+          const ChatEvent(
+            type: 'question.asked',
+            properties: <String, dynamic>{
+              'id': 'question_1',
+              'sessionID': 'ses_other',
+              'questions': <Map<String, dynamic>>[
+                <String, dynamic>{
+                  'question': 'Proceed?',
+                  'header': 'Confirm',
+                  'options': <Map<String, dynamic>>[
+                    <String, dynamic>{
+                      'label': 'Yes',
+                      'description': 'Continue',
+                    },
+                  ],
+                },
+              ],
+            },
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 60));
+
+        expect(
+          find.byKey(const ValueKey<String>('appbar_drawer_attention_badge')),
+          findsOneWidget,
+        );
+
+        await provider.selectSession(
+          provider.sessions.where((item) => item.id == 'ses_other').first,
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey<String>('appbar_drawer_attention_badge')),
+          findsNothing,
+        );
+      },
+    );
+
     testWidgets('shows subtle menu loading after returning from background', (
       WidgetTester tester,
     ) async {

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:codewalk/domain/entities/chat_session.dart';
+import 'package:codewalk/presentation/providers/chat_provider.dart';
 import 'package:codewalk/presentation/widgets/chat_session_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -125,6 +126,57 @@ void main() {
 
     expect(find.byIcon(Symbols.sync_rounded), findsOneWidget);
     expect(find.byIcon(Symbols.chat), findsNothing);
+  });
+
+  testWidgets('mobile layout uses floating badge instead of leading icon', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatSessionList(
+            sessions: <ChatSession>[session()],
+            isMobileLayout: true,
+            sessionAttentionFor: (_) =>
+                const SessionAttentionState(isActive: true),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(CircleAvatar), findsNothing);
+    expect(
+      find.byKey(
+        const ValueKey<String>('chat_session_attention_badge_active_ses_1'),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('shows pending-interaction floating badge when needed', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatSessionList(
+            sessions: <ChatSession>[session()],
+            isMobileLayout: true,
+            sessionAttentionFor: (_) =>
+                const SessionAttentionState(hasPendingInteraction: true),
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      find.byKey(
+        const ValueKey<String>(
+          'chat_session_attention_badge_pendingInteraction_ses_1',
+        ),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('ignores repeated taps while session selection is in flight', (

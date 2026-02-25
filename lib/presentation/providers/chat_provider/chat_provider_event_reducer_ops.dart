@@ -212,6 +212,19 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         if (sessionId != null && statusMap is Map<String, dynamic>) {
           final status = SessionStatusModel.fromJson(statusMap).toDomain();
           _sessionStatusById[sessionId] = status;
+          if (status.type == SessionStatusType.retry &&
+              sessionId != _currentSession?.id) {
+            _sessionErrorAttentionIds.add(sessionId);
+          } else {
+            _sessionErrorAttentionIds.remove(sessionId);
+          }
+          if (status.type == SessionStatusType.busy ||
+              status.type == SessionStatusType.retry) {
+            _sessionUnreadCompletionIds.remove(sessionId);
+          }
+          if (sessionId == _currentSession?.id) {
+            _clearSessionAttentionForSession(sessionId);
+          }
           _notifyListeners();
           _attemptPendingRemoteSelectionSync(reason: 'event-session.status');
         }
@@ -259,6 +272,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       case 'session.idle':
         final sessionId = properties['sessionID'] as String?;
         if (sessionId != null) {
+          final previousStatusType = _sessionStatusById[sessionId]?.type;
           _sessionStatusById[sessionId] = const SessionStatusInfo(
             type: SessionStatusType.idle,
           );
@@ -271,7 +285,9 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           if (!hasPreserved) {
             _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
           }
+          _sessionErrorAttentionIds.remove(sessionId);
           if (sessionId == _currentSession?.id) {
+            _clearSessionAttentionForSession(sessionId);
             _activeMessageStreamSessionId = null;
             _clearActiveSendDraft();
             if (_state == ChatState.sending) {
@@ -280,6 +296,12 @@ extension _ChatProviderEventReducerOps on ChatProvider {
               _notifyListeners();
             }
           } else {
+            final wasBusyBeforeIdle =
+                previousStatusType == SessionStatusType.busy ||
+                previousStatusType == SessionStatusType.retry;
+            if (hasPreserved || wasBusyBeforeIdle) {
+              _sessionUnreadCompletionIds.add(sessionId);
+            }
             _notifyListeners();
           }
           _attemptPendingRemoteSelectionSync(reason: 'event-session.idle');
@@ -304,6 +326,8 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           if (!hasPreservedErr) {
             _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
           }
+          _sessionUnreadCompletionIds.remove(sessionId);
+          _sessionErrorAttentionIds.add(sessionId);
           _notifyListeners();
           break;
         }
@@ -334,6 +358,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           _sessionStatusById[sessionId] = const SessionStatusInfo(
             type: SessionStatusType.idle,
           );
+          _clearSessionAttentionForSession(sessionId);
           _errorMessage = null;
           _setState(ChatState.loaded);
           break;
@@ -342,6 +367,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           _sessionStatusById[sessionId] = const SessionStatusInfo(
             type: SessionStatusType.idle,
           );
+          _clearSessionAttentionForSession(sessionId);
           _errorMessage = null;
           _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
           _appendInlineAbortMessage(sessionId: sessionId);

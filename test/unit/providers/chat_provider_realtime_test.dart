@@ -687,6 +687,11 @@ void main() {
           provider.sessionStatusById['ses_2']?.type,
           SessionStatusType.idle,
         );
+        final attention = provider.sessionAttentionFor('ses_2');
+        expect(attention.hasError, isTrue);
+        expect(provider.hasOutOfFocusAttention, isTrue);
+        expect(provider.outOfFocusAttentionCount, 1);
+        expect(provider.outOfFocusAttentionKind, SessionAttentionKind.error);
       },
     );
 
@@ -721,6 +726,114 @@ void main() {
         expect(
           provider.sessionStatusById['ses_2']?.type,
           SessionStatusType.idle,
+        );
+      },
+    );
+
+    test(
+      'non-current busy -> idle transition marks unread completion attention',
+      () async {
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_2',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1500),
+            title: 'Session 2',
+          ),
+        );
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.where((item) => item.id == 'ses_1').first,
+        );
+        await provider.initializeProviders();
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.status',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_2',
+              'status': <String, dynamic>{'type': 'busy'},
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.idle',
+            properties: <String, dynamic>{'sessionID': 'ses_2'},
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        final attentionBeforeSelect = provider.sessionAttentionFor('ses_2');
+        expect(attentionBeforeSelect.hasUnreadCompletion, isTrue);
+        expect(
+          provider.outOfFocusAttentionKind,
+          SessionAttentionKind.unreadCompletion,
+        );
+
+        await provider.selectSession(
+          provider.sessions.where((item) => item.id == 'ses_2').first,
+        );
+
+        final attentionAfterSelect = provider.sessionAttentionFor('ses_2');
+        expect(attentionAfterSelect.hasUnreadCompletion, isFalse);
+        expect(provider.hasOutOfFocusAttention, isFalse);
+      },
+    );
+
+    test(
+      'question.asked marks out-of-focus pending interaction attention',
+      () async {
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_2',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1500),
+            title: 'Session 2',
+          ),
+        );
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.where((item) => item.id == 'ses_1').first,
+        );
+        await provider.initializeProviders();
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'question.asked',
+            properties: <String, dynamic>{
+              'id': 'question_1',
+              'sessionID': 'ses_2',
+              'questions': <Map<String, dynamic>>[
+                <String, dynamic>{
+                  'question': 'Proceed?',
+                  'header': 'Header',
+                  'options': <Map<String, dynamic>>[
+                    <String, dynamic>{
+                      'label': 'Yes',
+                      'description': 'Continue',
+                    },
+                  ],
+                },
+              ],
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        final attention = provider.sessionAttentionFor('ses_2');
+        expect(attention.hasPendingInteraction, isTrue);
+        expect(provider.hasOutOfFocusAttention, isTrue);
+        expect(provider.outOfFocusAttentionCount, 1);
+        expect(
+          provider.outOfFocusAttentionKind,
+          SessionAttentionKind.pendingInteraction,
         );
       },
     );

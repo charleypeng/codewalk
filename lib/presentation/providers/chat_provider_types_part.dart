@@ -16,6 +16,48 @@ class ChatUiNotice {
   bool get hasAction => actionLabel != null && actionLabel!.trim().isNotEmpty;
 }
 
+enum SessionAttentionKind {
+  none,
+  active,
+  unreadCompletion,
+  pendingInteraction,
+  error,
+}
+
+@immutable
+class SessionAttentionState {
+  const SessionAttentionState({
+    this.isActive = false,
+    this.hasPendingInteraction = false,
+    this.hasError = false,
+    this.hasUnreadCompletion = false,
+  });
+
+  final bool isActive;
+  final bool hasPendingInteraction;
+  final bool hasError;
+  final bool hasUnreadCompletion;
+
+  bool get requiresAttention =>
+      hasPendingInteraction || hasError || hasUnreadCompletion;
+
+  SessionAttentionKind get primaryKind {
+    if (hasError) {
+      return SessionAttentionKind.error;
+    }
+    if (hasPendingInteraction) {
+      return SessionAttentionKind.pendingInteraction;
+    }
+    if (hasUnreadCompletion) {
+      return SessionAttentionKind.unreadCompletion;
+    }
+    if (isActive) {
+      return SessionAttentionKind.active;
+    }
+    return SessionAttentionKind.none;
+  }
+}
+
 class _RejectedDraftEnvelope {
   const _RejectedDraftEnvelope({required this.sessionId, required this.draft});
 
@@ -47,6 +89,8 @@ class _ChatContextSnapshot {
     required this.sessionStatusById,
     required this.pendingPermissionsBySession,
     required this.pendingQuestionsBySession,
+    required this.sessionUnreadCompletionIds,
+    required this.sessionErrorAttentionIds,
     required this.sessionChildrenById,
     required this.sessionTodoById,
     required this.sessionDiffById,
@@ -62,6 +106,8 @@ class _ChatContextSnapshot {
   final Map<String, SessionStatusInfo> sessionStatusById;
   final Map<String, List<ChatPermissionRequest>> pendingPermissionsBySession;
   final Map<String, List<ChatQuestionRequest>> pendingQuestionsBySession;
+  final Set<String> sessionUnreadCompletionIds;
+  final Set<String> sessionErrorAttentionIds;
   final Map<String, List<ChatSession>> sessionChildrenById;
   final Map<String, List<SessionTodo>> sessionTodoById;
   final Map<String, List<SessionDiff>> sessionDiffById;

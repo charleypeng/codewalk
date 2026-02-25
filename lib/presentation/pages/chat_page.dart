@@ -697,6 +697,7 @@ class _ChatPageState extends State<ChatPage>
                             width: sessionPaneWidth,
                             child: _buildSessionPanel(
                               closeOnSelect: false,
+                              isMobileLayout: false,
                               onCollapseRequested: () {
                                 unawaited(
                                   settingsProvider.setDesktopPaneVisible(

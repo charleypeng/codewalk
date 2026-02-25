@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../domain/entities/chat_session.dart';
+import '../providers/chat_provider.dart';
 import '../utils/session_title_formatter.dart';
 
 /// Chat session list widget
@@ -12,6 +13,8 @@ class ChatSessionList extends StatefulWidget {
     required this.sessions,
     this.currentSession,
     this.isSessionActive,
+    this.sessionAttentionFor,
+    this.isMobileLayout = false,
     this.onSessionSelected,
     this.onSessionDeleted,
     this.onSessionRenamed,
@@ -23,6 +26,8 @@ class ChatSessionList extends StatefulWidget {
   final List<ChatSession> sessions;
   final ChatSession? currentSession;
   final bool Function(String sessionId)? isSessionActive;
+  final SessionAttentionState Function(String sessionId)? sessionAttentionFor;
+  final bool isMobileLayout;
   final Future<void> Function(ChatSession session)? onSessionSelected;
   final Future<void> Function(ChatSession session)? onSessionDeleted;
   final Future<bool> Function(ChatSession session, String title)?
@@ -274,6 +279,14 @@ class _ChatSessionListState extends State<ChatSessionList> {
   }) {
     final isSelected = widget.currentSession?.id == session.id;
     final isSessionActive = widget.isSessionActive?.call(session.id) ?? false;
+    final sessionAttention =
+        widget.sessionAttentionFor?.call(session.id) ??
+        SessionAttentionState(isActive: isSessionActive);
+    final floatingBadgeKind = _resolveFloatingBadgeKind(
+      attention: sessionAttention,
+      isMobileLayout: widget.isMobileLayout,
+    );
+    final showLeadingIcon = !widget.isMobileLayout;
     final colorScheme = Theme.of(context).colorScheme;
     final childLabel = childCount == 1
         ? '1 sub-conversation'
@@ -290,267 +303,384 @@ class _ChatSessionListState extends State<ChatSessionList> {
               ? colorScheme.secondaryContainer
               : colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(18),
-          child: ListTile(
-            mouseCursor: SystemMouseCursors.click,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
-            ),
-            contentPadding: EdgeInsets.fromLTRB(10 + (depth * 16.0), 0, 4, 0),
-            leading: CircleAvatar(
-              backgroundColor: isSelected
-                  ? colorScheme.primary
-                  : colorScheme.surfaceContainerHighest,
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 220),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                child: isSessionActive
-                    ? Icon(
-                        Symbols.sync_rounded,
-                        key: ValueKey<String>(
-                          'chat_session_loading_${session.id}',
-                        ),
-                        color: isSelected
-                            ? colorScheme.onPrimary
-                            : colorScheme.primary,
-                        size: 20,
-                      )
-                    : Icon(
-                        session.archived ? Symbols.archive : Symbols.chat,
-                        key: ValueKey<String>(
-                          'chat_session_idle_${session.id}',
-                        ),
-                        color: isSelected
-                            ? colorScheme.onPrimary
-                            : colorScheme.onSurfaceVariant,
-                        size: 20,
-                      ),
-              ),
-            ),
-            title: Row(
-              children: [
-                if (hasChildren)
-                  InkWell(
-                    key: ValueKey<String>('chat_session_toggle_${session.id}'),
-                    onTap: () {
-                      setState(() {
-                        if (expanded) {
-                          _expandedParentIds.remove(session.id);
-                        } else {
-                          _expandedParentIds.add(session.id);
-                        }
-                        _invalidateTreeCache();
-                      });
-                    },
-                    borderRadius: BorderRadius.circular(10),
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 4),
-                      child: Icon(
-                        expanded ? Symbols.expand_more : Symbols.chevron_right,
-                        size: 18,
-                        color: isSelected
-                            ? colorScheme.onSecondaryContainer.withValues(
-                                alpha: 0.9,
-                              )
-                            : colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  )
-                else if (depth > 0)
-                  const SizedBox(width: 22),
-                Expanded(
-                  child: Text(
-                    SessionTitleFormatter.displayTitle(
-                      time: session.time,
-                      title: session.title,
-                    ),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: isSelected
-                          ? FontWeight.w700
-                          : FontWeight.w500,
-                      color: isSelected
-                          ? colorScheme.onSecondaryContainer
-                          : null,
-                      decoration: session.archived
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              ListTile(
+                mouseCursor: SystemMouseCursors.click,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
                 ),
-              ],
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (session.summary != null && session.summary!.isNotEmpty)
-                  Text(
-                    session.summary!,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: isSelected
-                          ? colorScheme.onSecondaryContainer.withValues(
-                              alpha: 0.8,
-                            )
-                          : colorScheme.onSurfaceVariant,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                const SizedBox(height: 4),
-                Wrap(
-                  spacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
+                contentPadding: EdgeInsets.fromLTRB(
+                  10 + (depth * 16.0),
+                  0,
+                  4,
+                  0,
+                ),
+                leading: showLeadingIcon
+                    ? CircleAvatar(
+                        backgroundColor: isSelected
+                            ? colorScheme.primary
+                            : colorScheme.surfaceContainerHighest,
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 220),
+                          switchInCurve: Curves.easeOutCubic,
+                          switchOutCurve: Curves.easeInCubic,
+                          child: isSessionActive
+                              ? Icon(
+                                  Symbols.sync_rounded,
+                                  key: ValueKey<String>(
+                                    'chat_session_loading_${session.id}',
+                                  ),
+                                  color: isSelected
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.primary,
+                                  size: 20,
+                                )
+                              : Icon(
+                                  session.archived
+                                      ? Symbols.archive
+                                      : Symbols.chat,
+                                  key: ValueKey<String>(
+                                    'chat_session_idle_${session.id}',
+                                  ),
+                                  color: isSelected
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.onSurfaceVariant,
+                                  size: 20,
+                                ),
+                        ),
+                      )
+                    : null,
+                title: Row(
                   children: [
-                    Text(
-                      _formatTime(session.time),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: isSelected
-                            ? colorScheme.onSecondaryContainer.withValues(
-                                alpha: 0.7,
-                              )
-                            : colorScheme.onSurfaceVariant,
+                    if (hasChildren)
+                      InkWell(
+                        key: ValueKey<String>(
+                          'chat_session_toggle_${session.id}',
+                        ),
+                        onTap: () {
+                          setState(() {
+                            if (expanded) {
+                              _expandedParentIds.remove(session.id);
+                            } else {
+                              _expandedParentIds.add(session.id);
+                            }
+                            _invalidateTreeCache();
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(10),
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: Icon(
+                            expanded
+                                ? Symbols.expand_more
+                                : Symbols.chevron_right,
+                            size: 18,
+                            color: isSelected
+                                ? colorScheme.onSecondaryContainer.withValues(
+                                    alpha: 0.9,
+                                  )
+                                : colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      )
+                    else if (depth > 0)
+                      const SizedBox(width: 22),
+                    Expanded(
+                      child: Text(
+                        SessionTitleFormatter.displayTitle(
+                          time: session.time,
+                          title: session.title,
+                        ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                          color: isSelected
+                              ? colorScheme.onSecondaryContainer
+                              : null,
+                          decoration: session.archived
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (hasChildren)
+                  ],
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (session.summary != null && session.summary!.isNotEmpty)
                       Text(
-                        childLabel,
+                        session.summary!,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: isSelected
                               ? colorScheme.onSecondaryContainer.withValues(
-                                  alpha: 0.7,
+                                  alpha: 0.8,
                                 )
                               : colorScheme.onSurfaceVariant,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    if (session.shared)
-                      Icon(
-                        Symbols.share,
-                        size: 12,
-                        color: isSelected
-                            ? colorScheme.onSecondaryContainer.withValues(
-                                alpha: 0.7,
-                              )
-                            : colorScheme.onSurfaceVariant,
-                      ),
-                    if (session.archived)
-                      Icon(
-                        Symbols.archive,
-                        size: 12,
-                        color: isSelected
-                            ? colorScheme.onSecondaryContainer.withValues(
-                                alpha: 0.7,
-                              )
-                            : colorScheme.onSurfaceVariant,
-                      ),
-                  ],
-                ),
-              ],
-            ),
-            trailing: PopupMenuButton<String>(
-              icon: Icon(
-                Symbols.more_vert,
-                color: isSelected
-                    ? colorScheme.onSecondaryContainer
-                    : colorScheme.onSurfaceVariant,
-              ),
-              onSelected: (value) {
-                switch (value) {
-                  case 'rename':
-                    _showRenameDialog(context, session);
-                    break;
-                  case 'share':
-                    _toggleShare(context, session);
-                    break;
-                  case 'copy-link':
-                    _copyShareLink(context, session);
-                    break;
-                  case 'archive':
-                    _toggleArchive(context, session);
-                    break;
-                  case 'fork':
-                    _forkSession(context, session);
-                    break;
-                  case 'delete':
-                    _showDeleteDialog(context, session);
-                    break;
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'rename',
-                  child: Row(
-                    children: [
-                      Icon(Symbols.edit),
-                      SizedBox(width: 8),
-                      Text('Rename'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem(
-                  value: 'share',
-                  child: Row(
-                    children: [
-                      Icon(session.shared ? Symbols.link_off : Symbols.link),
-                      const SizedBox(width: 8),
-                      Text(session.shared ? 'Unshare' : 'Share'),
-                    ],
-                  ),
-                ),
-                if (session.shareUrl != null && session.shareUrl!.isNotEmpty)
-                  const PopupMenuItem(
-                    value: 'copy-link',
-                    child: Row(
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Icon(Symbols.content_copy),
-                        SizedBox(width: 8),
-                        Text('Copy Link'),
+                        Text(
+                          _formatTime(session.time),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: isSelected
+                                    ? colorScheme.onSecondaryContainer
+                                          .withValues(alpha: 0.7)
+                                    : colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                        if (hasChildren)
+                          Text(
+                            childLabel,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: isSelected
+                                      ? colorScheme.onSecondaryContainer
+                                            .withValues(alpha: 0.7)
+                                      : colorScheme.onSurfaceVariant,
+                                ),
+                          ),
+                        if (session.shared)
+                          Icon(
+                            Symbols.share,
+                            size: 12,
+                            color: isSelected
+                                ? colorScheme.onSecondaryContainer.withValues(
+                                    alpha: 0.7,
+                                  )
+                                : colorScheme.onSurfaceVariant,
+                          ),
+                        if (session.archived)
+                          Icon(
+                            Symbols.archive,
+                            size: 12,
+                            color: isSelected
+                                ? colorScheme.onSecondaryContainer.withValues(
+                                    alpha: 0.7,
+                                  )
+                                : colorScheme.onSurfaceVariant,
+                          ),
                       ],
                     ),
-                  ),
-                PopupMenuItem(
-                  value: 'archive',
-                  child: Row(
-                    children: [
-                      Icon(
-                        session.archived ? Symbols.unarchive : Symbols.archive,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(session.archived ? 'Unarchive' : 'Archive'),
-                    ],
-                  ),
+                  ],
                 ),
-                const PopupMenuItem(
-                  value: 'fork',
-                  child: Row(
-                    children: [
-                      Icon(Symbols.call_split),
-                      SizedBox(width: 8),
-                      Text('Fork'),
-                    ],
+                trailing: PopupMenuButton<String>(
+                  icon: Icon(
+                    Symbols.more_vert,
+                    color: isSelected
+                        ? colorScheme.onSecondaryContainer
+                        : colorScheme.onSurfaceVariant,
                   ),
-                ),
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Symbols.delete, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('Delete', style: TextStyle(color: Colors.red)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            onTap: _sessionSelectionInFlight
-                ? null
-                : () async {
-                    await _handleSessionSelected(session);
+                  onSelected: (value) {
+                    switch (value) {
+                      case 'rename':
+                        _showRenameDialog(context, session);
+                        break;
+                      case 'share':
+                        _toggleShare(context, session);
+                        break;
+                      case 'copy-link':
+                        _copyShareLink(context, session);
+                        break;
+                      case 'archive':
+                        _toggleArchive(context, session);
+                        break;
+                      case 'fork':
+                        _forkSession(context, session);
+                        break;
+                      case 'delete':
+                        _showDeleteDialog(context, session);
+                        break;
+                    }
                   },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'rename',
+                      child: Row(
+                        children: [
+                          Icon(Symbols.edit),
+                          SizedBox(width: 8),
+                          Text('Rename'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'share',
+                      child: Row(
+                        children: [
+                          Icon(
+                            session.shared ? Symbols.link_off : Symbols.link,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(session.shared ? 'Unshare' : 'Share'),
+                        ],
+                      ),
+                    ),
+                    if (session.shareUrl != null &&
+                        session.shareUrl!.isNotEmpty)
+                      const PopupMenuItem(
+                        value: 'copy-link',
+                        child: Row(
+                          children: [
+                            Icon(Symbols.content_copy),
+                            SizedBox(width: 8),
+                            Text('Copy Link'),
+                          ],
+                        ),
+                      ),
+                    PopupMenuItem(
+                      value: 'archive',
+                      child: Row(
+                        children: [
+                          Icon(
+                            session.archived
+                                ? Symbols.unarchive
+                                : Symbols.archive,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(session.archived ? 'Unarchive' : 'Archive'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'fork',
+                      child: Row(
+                        children: [
+                          Icon(Symbols.call_split),
+                          SizedBox(width: 8),
+                          Text('Fork'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Symbols.delete, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Delete', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                onTap: _sessionSelectionInFlight
+                    ? null
+                    : () async {
+                        await _handleSessionSelected(session);
+                      },
+              ),
+              if (floatingBadgeKind != SessionAttentionKind.none)
+                Positioned(
+                  top: 8,
+                  right: 46,
+                  child: _buildFloatingAttentionBadge(
+                    context,
+                    sessionId: session.id,
+                    kind: floatingBadgeKind,
+                    isSelected: isSelected,
+                  ),
+                ),
+            ],
           ),
         ),
       ),
     );
+  }
+
+  SessionAttentionKind _resolveFloatingBadgeKind({
+    required SessionAttentionState attention,
+    required bool isMobileLayout,
+  }) {
+    final primaryKind = attention.primaryKind;
+    if (primaryKind == SessionAttentionKind.none) {
+      return SessionAttentionKind.none;
+    }
+    if (!isMobileLayout && primaryKind == SessionAttentionKind.active) {
+      return SessionAttentionKind.none;
+    }
+    return primaryKind;
+  }
+
+  Widget _buildFloatingAttentionBadge(
+    BuildContext context, {
+    required String sessionId,
+    required SessionAttentionKind kind,
+    required bool isSelected,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final badgeColor = _attentionBadgeColor(
+      colorScheme: colorScheme,
+      kind: kind,
+      isSelected: isSelected,
+    );
+    final badgeKey = ValueKey<String>(
+      'chat_session_attention_badge_${kind.name}_$sessionId',
+    );
+
+    if (kind == SessionAttentionKind.unreadCompletion) {
+      return Container(
+        key: badgeKey,
+        width: 10,
+        height: 10,
+        decoration: BoxDecoration(color: badgeColor, shape: BoxShape.circle),
+      );
+    }
+
+    final badgeIcon = switch (kind) {
+      SessionAttentionKind.active => Symbols.sync_rounded,
+      SessionAttentionKind.pendingInteraction => Symbols.help,
+      SessionAttentionKind.error => Symbols.error,
+      SessionAttentionKind.none => Symbols.circle,
+      SessionAttentionKind.unreadCompletion => Symbols.circle,
+    };
+    final iconColor = switch (kind) {
+      SessionAttentionKind.error => colorScheme.onError,
+      SessionAttentionKind.pendingInteraction => colorScheme.onTertiary,
+      SessionAttentionKind.active => colorScheme.onPrimary,
+      SessionAttentionKind.none => colorScheme.onSurface,
+      SessionAttentionKind.unreadCompletion => colorScheme.onSurface,
+    };
+
+    return AnimatedContainer(
+      key: badgeKey,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOutCubic,
+      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+      decoration: BoxDecoration(
+        color: badgeColor,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Icon(badgeIcon, size: 11, color: iconColor),
+    );
+  }
+
+  Color _attentionBadgeColor({
+    required ColorScheme colorScheme,
+    required SessionAttentionKind kind,
+    required bool isSelected,
+  }) {
+    return switch (kind) {
+      SessionAttentionKind.error => colorScheme.error,
+      SessionAttentionKind.pendingInteraction => colorScheme.tertiary,
+      SessionAttentionKind.unreadCompletion =>
+        isSelected ? colorScheme.onSecondaryContainer : colorScheme.primary,
+      SessionAttentionKind.active => colorScheme.primary,
+      SessionAttentionKind.none => colorScheme.onSurface,
+    };
   }
 
   String _formatTime(DateTime time) {

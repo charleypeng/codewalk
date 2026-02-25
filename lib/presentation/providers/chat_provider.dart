@@ -218,6 +218,8 @@ class ChatProvider extends ChangeNotifier {
       <String, List<ChatPermissionRequest>>{};
   Map<String, List<ChatQuestionRequest>> _pendingQuestionsBySession =
       <String, List<ChatQuestionRequest>>{};
+  final Set<String> _sessionUnreadCompletionIds = <String>{};
+  final Set<String> _sessionErrorAttentionIds = <String>{};
   Map<String, List<ChatSession>> _sessionChildrenById =
       <String, List<ChatSession>>{};
   Map<String, List<SessionTodo>> _sessionTodoById =
@@ -452,6 +454,124 @@ class ChatProvider extends ChangeNotifier {
       return false;
     }
     return isSessionActivelyResponding(sessionId);
+  }
+
+  SessionAttentionState sessionAttentionFor(String sessionId) {
+    final normalizedSessionId = sessionId.trim();
+    if (normalizedSessionId.isEmpty) {
+      return const SessionAttentionState();
+    }
+
+    final statusType = _sessionStatusById[normalizedSessionId]?.type;
+    final hasPendingPermission =
+        (_pendingPermissionsBySession[normalizedSessionId]?.isNotEmpty ??
+        false);
+    final hasPendingQuestion =
+        (_pendingQuestionsBySession[normalizedSessionId]?.isNotEmpty ?? false);
+
+    return SessionAttentionState(
+      isActive: isSessionActivelyResponding(normalizedSessionId),
+      hasPendingInteraction: hasPendingPermission || hasPendingQuestion,
+      hasError:
+          statusType == SessionStatusType.retry ||
+          _sessionErrorAttentionIds.contains(normalizedSessionId),
+      hasUnreadCompletion: _sessionUnreadCompletionIds.contains(
+        normalizedSessionId,
+      ),
+    );
+  }
+
+  bool get hasOutOfFocusAttention => outOfFocusAttentionCount > 0;
+
+  int get outOfFocusAttentionCount {
+    final currentSessionId = _currentSession?.id;
+    var total = 0;
+    for (final session in _sessions) {
+      if (session.id == currentSessionId) {
+        continue;
+      }
+      final attention = sessionAttentionFor(session.id);
+      if (attention.requiresAttention) {
+        total += 1;
+      }
+    }
+    return total;
+  }
+
+  SessionAttentionKind get outOfFocusAttentionKind {
+    final currentSessionId = _currentSession?.id;
+    var hasPendingInteraction = false;
+    var hasUnreadCompletion = false;
+
+    for (final session in _sessions) {
+      if (session.id == currentSessionId) {
+        continue;
+      }
+      final attention = sessionAttentionFor(session.id);
+      if (!attention.requiresAttention) {
+        continue;
+      }
+      if (attention.hasError) {
+        return SessionAttentionKind.error;
+      }
+      hasPendingInteraction =
+          hasPendingInteraction || attention.hasPendingInteraction;
+      hasUnreadCompletion =
+          hasUnreadCompletion || attention.hasUnreadCompletion;
+    }
+
+    if (hasPendingInteraction) {
+      return SessionAttentionKind.pendingInteraction;
+    }
+    if (hasUnreadCompletion) {
+      return SessionAttentionKind.unreadCompletion;
+    }
+    return SessionAttentionKind.none;
+  }
+
+  void _clearSessionAttentionForSession(String sessionId) {
+    final normalizedSessionId = sessionId.trim();
+    if (normalizedSessionId.isEmpty) {
+      return;
+    }
+    _sessionUnreadCompletionIds.remove(normalizedSessionId);
+    _sessionErrorAttentionIds.remove(normalizedSessionId);
+  }
+
+  void _pruneSessionAttentionStateToKnownSessions() {
+    final knownSessionIds = _sessions.map((session) => session.id).toSet();
+    _sessionUnreadCompletionIds.removeWhere(
+      (sessionId) => !knownSessionIds.contains(sessionId),
+    );
+    _sessionErrorAttentionIds.removeWhere(
+      (sessionId) => !knownSessionIds.contains(sessionId),
+    );
+
+    final currentSessionId = _currentSession?.id;
+    if (currentSessionId != null) {
+      _clearSessionAttentionForSession(currentSessionId);
+    }
+  }
+
+  void _syncAttentionFromStatusMap(Map<String, SessionStatusInfo> statusMap) {
+    final currentSessionId = _currentSession?.id;
+    for (final entry in statusMap.entries) {
+      final sessionId = entry.key;
+      final statusType = entry.value.type;
+      if (statusType == SessionStatusType.retry) {
+        _sessionUnreadCompletionIds.remove(sessionId);
+        if (sessionId != currentSessionId) {
+          _sessionErrorAttentionIds.add(sessionId);
+        }
+        continue;
+      }
+      if (statusType == SessionStatusType.busy) {
+        _sessionUnreadCompletionIds.remove(sessionId);
+        continue;
+      }
+      _sessionErrorAttentionIds.remove(sessionId);
+    }
+    _pruneSessionAttentionStateToKnownSessions();
   }
 
   ChatSyncState get syncState => _syncState;
@@ -1112,6 +1232,7 @@ class ChatProvider extends ChangeNotifier {
           (id, _) => ChatTitleGenerator.ephemeralSessionIds.contains(id),
         );
         _sessionStatusById = statusMap;
+        _syncAttentionFromStatusMap(statusMap);
         if (!silent) {
           _sessionInsightsError = null;
         }
@@ -1243,6 +1364,7 @@ class ChatProvider extends ChangeNotifier {
             (id, _) => ChatTitleGenerator.ephemeralSessionIds.contains(id),
           );
           _sessionStatusById = statusMap;
+          _syncAttentionFromStatusMap(statusMap);
         },
       );
     } finally {
@@ -1693,6 +1815,7 @@ class ChatProvider extends ChangeNotifier {
       _threadPermissionsVersion++;
       _sessionVisibleLimit = 40;
       _sortSessionsInPlace();
+      _pruneSessionAttentionStateToKnownSessions();
       _setState(ChatState.loaded);
 
       await _saveCachedSessions(
@@ -1905,6 +2028,7 @@ class ChatProvider extends ChangeNotifier {
     _clearQueuedSendState();
     _clearRejectedDraft();
     _currentSession = session;
+    _clearSessionAttentionForSession(session.id);
     _threadPermissionsVersion++;
     _applySelectionPriorityForCurrentSession();
     notifyListeners();
@@ -2528,6 +2652,8 @@ class ChatProvider extends ChangeNotifier {
                   _sessionStatusById[streamSessionId] = const SessionStatusInfo(
                     type: SessionStatusType.idle,
                   );
+                  _sessionUnreadCompletionIds.remove(streamSessionId);
+                  _sessionErrorAttentionIds.add(streamSessionId);
                   _notifyListeners();
                   return;
                 }
@@ -2565,6 +2691,8 @@ class ChatProvider extends ChangeNotifier {
                 _sessionStatusById[streamSessionId] = const SessionStatusInfo(
                   type: SessionStatusType.idle,
                 );
+                _sessionUnreadCompletionIds.remove(streamSessionId);
+                _sessionErrorAttentionIds.add(streamSessionId);
                 _notifyListeners();
                 return;
               }
@@ -2618,6 +2746,8 @@ class ChatProvider extends ChangeNotifier {
                 unawaited(_persistLastSessionSnapshotBestEffort());
                 unawaited(loadSessionInsights(streamSessionId, silent: true));
               } else {
+                _sessionErrorAttentionIds.remove(streamSessionId);
+                _sessionUnreadCompletionIds.add(streamSessionId);
                 _notifyListeners();
               }
               _scheduleQueuedSendDrain(
@@ -2708,6 +2838,7 @@ class ChatProvider extends ChangeNotifier {
           type: SessionStatusType.idle,
         );
       }
+      _clearSessionAttentionForSession(session.id);
       _clearActiveSendDraft();
       _errorMessage = null;
       success = true;

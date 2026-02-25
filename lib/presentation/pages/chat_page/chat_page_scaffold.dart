@@ -3,7 +3,9 @@ part of '../chat_page.dart';
 extension _ChatPageScaffold on _ChatPageState {
   Widget _buildSessionDrawer() {
     return Drawer(
-      child: SafeArea(child: _buildSessionPanel(closeOnSelect: true)),
+      child: SafeArea(
+        child: _buildSessionPanel(closeOnSelect: true, isMobileLayout: true),
+      ),
     );
   }
 
@@ -53,6 +55,7 @@ extension _ChatPageScaffold on _ChatPageState {
 
   Widget _buildSessionPanel({
     required bool closeOnSelect,
+    required bool isMobileLayout,
     VoidCallback? onCollapseRequested,
   }) {
     return Consumer<ChatProvider>(
@@ -195,15 +198,15 @@ extension _ChatPageScaffold on _ChatPageState {
                       sessions: chatProvider.visibleSessions,
                       currentSession: chatProvider.currentSession,
                       isSessionActive: chatProvider.isSessionActivelyResponding,
+                      sessionAttentionFor: chatProvider.sessionAttentionFor,
+                      isMobileLayout: isMobileLayout,
                       onSessionSelected: (session) async {
                         await chatProvider.selectSession(session);
                         // Close AFTER selectSession: during its awaits the
                         // second tap's gesture events are fully processed
                         // (including _handleDragCancel which may re-open the
                         // drawer). Closing last ensures the drawer stays shut.
-                        _closeDrawerIfNeeded(
-                          closeOnSelect: closeOnSelect,
-                        );
+                        _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
                       },
                       onSessionDeleted: (session) async {
                         await chatProvider.deleteSession(session.id);
@@ -236,9 +239,7 @@ extension _ChatPageScaffold on _ChatPageState {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Conversation forked')),
                         );
-                        _closeDrawerIfNeeded(
-                          closeOnSelect: closeOnSelect,
-                        );
+                        _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
                       },
                     ),
                   ),
