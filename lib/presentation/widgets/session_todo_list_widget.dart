@@ -26,6 +26,10 @@ class SessionTodoListWidget extends StatefulWidget {
 class _SessionTodoListWidgetState extends State<SessionTodoListWidget> {
   static const Duration _allCompletedHideDelay = Duration(seconds: 3);
   static const double _itemHeight = 24;
+  static const Duration _progressAnimationDuration = Duration(
+    milliseconds: 260,
+  );
+  static const Curve _progressAnimationCurve = Curves.easeInOutCubic;
 
   final ScrollController _scrollController = ScrollController();
   Timer? _hideTimer;
@@ -167,19 +171,29 @@ class _SessionTodoListWidgetState extends State<SessionTodoListWidget> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 3),
                 SizedBox(
                   width: double.infinity,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(999),
-                    child: LinearProgressIndicator(
-                      key: const ValueKey<String>('session_todo_progress_bar'),
-                      value: _completionProgress,
-                      minHeight: 3,
-                      backgroundColor: colorScheme.surfaceContainerHighest,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        colorScheme.primary,
-                      ),
+                    child: TweenAnimationBuilder<double>(
+                      duration: _progressAnimationDuration,
+                      curve: _progressAnimationCurve,
+                      tween: Tween<double>(end: _completionProgress),
+                      builder: (context, animatedValue, child) {
+                        final normalizedValue = animatedValue.clamp(0.0, 1.0);
+                        return LinearProgressIndicator(
+                          key: const ValueKey<String>(
+                            'session_todo_progress_bar',
+                          ),
+                          value: normalizedValue,
+                          minHeight: 3,
+                          backgroundColor: colorScheme.surfaceContainerHighest,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            colorScheme.primary,
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
