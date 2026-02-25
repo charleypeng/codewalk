@@ -997,7 +997,58 @@ void main() {
     expect(find.text('Project context'), findsOneWidget);
     expect(find.text('Current directory: /repo/a'), findsOneWidget);
     expect(find.text('Select a project below.'), findsOneWidget);
-    expect(find.byIcon(Symbols.close_rounded), findsOneWidget);
+    expect(find.byIcon(Symbols.close), findsOneWidget);
+  });
+
+  testWidgets('project selector filter narrows visible projects', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: FakeProjectRepository(
+        currentProject: Project(
+          id: 'proj_a',
+          name: 'Project A',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+        projects: <Project>[
+          Project(
+            id: 'proj_a',
+            name: 'Project A',
+            path: '/repo/a',
+            createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+          ),
+          Project(
+            id: 'proj_b',
+            name: 'Billing',
+            path: '/repo/billing',
+            createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+          ),
+        ],
+      ),
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Choose Directory'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('project_selector_filter_input')),
+      'bill',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Billing'), findsOneWidget);
+    expect(find.text('Project A'), findsNothing);
   });
 
   testWidgets('closed project can be archived from closed list', (

@@ -250,4 +250,54 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('groups sessions by project directory when enabled', (
+    tester,
+  ) async {
+    final sessions = <ChatSession>[
+      ChatSession(
+        id: 'ses_a1',
+        workspaceId: 'default',
+        time: DateTime.fromMillisecondsSinceEpoch(1000),
+        title: 'A1',
+        directory: '/repo/a',
+      ),
+      ChatSession(
+        id: 'ses_b1',
+        workspaceId: 'default',
+        time: DateTime.fromMillisecondsSinceEpoch(2000),
+        title: 'B1',
+        directory: '/repo/b',
+      ),
+    ];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatSessionList(
+            sessions: sessions,
+            currentSession: sessions.last,
+            groupByProject: true,
+            activeDirectory: '/repo/b',
+            directoryLabels: const <String, String>{
+              '/repo/a': 'Project A',
+              '/repo/b': 'Project B',
+            },
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Project A'), findsOneWidget);
+    expect(find.text('Project B'), findsOneWidget);
+    expect(find.text('B1'), findsOneWidget);
+    expect(find.text('A1'), findsNothing);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('chat_session_group_/repo/a')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('A1'), findsOneWidget);
+  });
 }
