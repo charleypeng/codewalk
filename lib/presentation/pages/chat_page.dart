@@ -17,6 +17,7 @@ import '../../core/config/feature_flags.dart';
 import '../../core/di/injection_container.dart' as di;
 import '../../core/logging/app_logger.dart';
 import '../../core/network/dio_client.dart';
+import '../../core/utils/path_utils.dart';
 import '../../domain/entities/agent.dart';
 import '../../domain/entities/chat_composer_draft.dart';
 import '../../domain/entities/chat_message.dart';

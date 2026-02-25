@@ -6,9 +6,10 @@ import '../../domain/entities/project.dart';
 import '../../domain/entities/worktree.dart';
 import '../../domain/repositories/project_repository.dart';
 import '../datasources/project_remote_datasource.dart';
+import 'dio_exception_handler.dart';
 
 /// Technical comment translated to English.
-class ProjectRepositoryImpl implements ProjectRepository {
+class ProjectRepositoryImpl with DioExceptionHandler implements ProjectRepository {
 
   ProjectRepositoryImpl({required this.remoteDataSource});
   final ProjectRemoteDataSource remoteDataSource;
@@ -19,7 +20,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
       final projectsModel = await remoteDataSource.getProjects();
       return Right(projectsModel.toDomain());
     } on DioException catch (e) {
-      return Left(_handleDioException(e));
+      return Left(handleDioException(e));
     } on Exception catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -35,7 +36,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
       );
       return Right(projectModel.toDomain());
     } on DioException catch (e) {
-      return Left(_handleDioException(e));
+      return Left(handleDioException(e));
     } on Exception catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -47,7 +48,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
       final projectModel = await remoteDataSource.getProject(projectId);
       return Right(projectModel.toDomain());
     } on DioException catch (e) {
-      return Left(_handleDioException(e));
+      return Left(handleDioException(e));
     } on Exception catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -63,7 +64,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
         models.map((item) => item.toDomain()).toList(growable: false),
       );
     } on DioException catch (e) {
-      return Left(_handleDioException(e));
+      return Left(handleDioException(e));
     } on Exception catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -81,7 +82,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
       );
       return Right(model.toDomain());
     } on DioException catch (e) {
-      return Left(_handleDioException(e));
+      return Left(handleDioException(e));
     } on Exception catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -96,7 +97,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
       await remoteDataSource.resetWorktree(worktreeId, directory: directory);
       return const Right(null);
     } on DioException catch (e) {
-      return Left(_handleDioException(e));
+      return Left(handleDioException(e));
     } on Exception catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -111,7 +112,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
       await remoteDataSource.deleteWorktree(worktreeId, directory: directory);
       return const Right(null);
     } on DioException catch (e) {
-      return Left(_handleDioException(e));
+      return Left(handleDioException(e));
     } on Exception catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -125,7 +126,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
       final items = await remoteDataSource.listDirectories(directory);
       return Right(items);
     } on DioException catch (e) {
-      return Left(_handleDioException(e));
+      return Left(handleDioException(e));
     } on Exception catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -137,7 +138,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
       final result = await remoteDataSource.isGitDirectory(directory);
       return Right(result);
     } on DioException catch (e) {
-      return Left(_handleDioException(e));
+      return Left(handleDioException(e));
     } on Exception catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -157,7 +158,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
         items.map((item) => item.toDomain()).toList(growable: false),
       );
     } on DioException catch (e) {
-      return Left(_handleDioException(e));
+      return Left(handleDioException(e));
     } on Exception catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -179,7 +180,7 @@ class ProjectRepositoryImpl implements ProjectRepository {
         items.map((item) => item.toDomain()).toList(growable: false),
       );
     } on DioException catch (e) {
-      return Left(_handleDioException(e));
+      return Left(handleDioException(e));
     } on Exception catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -197,37 +198,9 @@ class ProjectRepositoryImpl implements ProjectRepository {
       );
       return Right(content.toDomain());
     } on DioException catch (e) {
-      return Left(_handleDioException(e));
+      return Left(handleDioException(e));
     } on Exception catch (e) {
       return Left(ServerFailure(e.toString()));
-    }
-  }
-
-  /// Technical comment translated to English.
-  Failure _handleDioException(DioException e) {
-    switch (e.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-        return const NetworkFailure('Connection timeout');
-      case DioExceptionType.badResponse:
-        final statusCode = e.response?.statusCode;
-        if (statusCode != null) {
-          if (statusCode >= 400 && statusCode < 500) {
-            return NetworkFailure('Client error', statusCode);
-          } else if (statusCode >= 500) {
-            return ServerFailure('Server error', statusCode);
-          }
-        }
-        return const ServerFailure('Response error');
-      case DioExceptionType.cancel:
-        return const NetworkFailure('Request cancelled');
-      case DioExceptionType.connectionError:
-        return const NetworkFailure('Network connection error');
-      case DioExceptionType.unknown:
-        return NetworkFailure('Unknown network error: ${e.message}');
-      case DioExceptionType.badCertificate:
-        return const NetworkFailure('Certificate error');
     }
   }
 }

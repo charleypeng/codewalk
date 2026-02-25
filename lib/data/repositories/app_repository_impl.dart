@@ -9,9 +9,10 @@ import '../../domain/entities/provider.dart';
 import '../../domain/repositories/app_repository.dart';
 import '../datasources/app_local_datasource.dart';
 import '../datasources/app_remote_datasource.dart';
+import 'dio_exception_handler.dart';
 
 /// Technical comment translated to English.
-class AppRepositoryImpl implements AppRepository {
+class AppRepositoryImpl with DioExceptionHandler implements AppRepository {
 
   AppRepositoryImpl({
     required this.remoteDataSource,
@@ -30,7 +31,7 @@ class AppRepositoryImpl implements AppRepository {
       );
       return Right(appInfoModel.toEntity());
     } on DioException catch (e) {
-      return Left(_handleDioException(e));
+      return Left(handleDioException(e));
     } on Exception catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -42,7 +43,7 @@ class AppRepositoryImpl implements AppRepository {
       final result = await remoteDataSource.initializeApp(directory: directory);
       return Right(result);
     } on DioException catch (e) {
-      return Left(_handleDioException(e));
+      return Left(handleDioException(e));
     } on Exception catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -54,7 +55,7 @@ class AppRepositoryImpl implements AppRepository {
       await remoteDataSource.getAppInfo(directory: directory);
       return const Right(true);
     } on DioException catch (e) {
-      return Left(_handleDioException(e));
+      return Left(handleDioException(e));
     } on Exception catch (e) {
       return Left(NetworkFailure(e.toString()));
     }
@@ -80,34 +81,6 @@ class AppRepositoryImpl implements AppRepository {
     }
   }
 
-  /// Technical comment translated to English.
-  Failure _handleDioException(DioException e) {
-    switch (e.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-        return const NetworkFailure('Connection timeout');
-      case DioExceptionType.badResponse:
-        final statusCode = e.response?.statusCode;
-        if (statusCode != null) {
-          if (statusCode >= 400 && statusCode < 500) {
-            return NetworkFailure('Client error', statusCode);
-          } else if (statusCode >= 500) {
-            return ServerFailure('Server error', statusCode);
-          }
-        }
-        return const ServerFailure('Response error');
-      case DioExceptionType.cancel:
-        return const NetworkFailure('Request cancelled');
-      case DioExceptionType.connectionError:
-        return const NetworkFailure('Network connection error');
-      case DioExceptionType.unknown:
-        return NetworkFailure('Unknown network error: ${e.message}');
-      case DioExceptionType.badCertificate:
-        return const NetworkFailure('Certificate error');
-    }
-  }
-
   @override
   Future<Either<Failure, ProvidersResponse>> getProviders({
     String? directory,
@@ -118,7 +91,7 @@ class AppRepositoryImpl implements AppRepository {
       );
       return Right(providersModel.toDomain());
     } on DioException catch (e) {
-      return Left(_handleDioException(e));
+      return Left(handleDioException(e));
     } on Exception catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -135,7 +108,7 @@ class AppRepositoryImpl implements AppRepository {
           .toList(growable: false);
       return Right(agents);
     } on DioException catch (e) {
-      return Left(_handleDioException(e));
+      return Left(handleDioException(e));
     } on Exception catch (e) {
       return Left(ServerFailure(e.toString()));
     }

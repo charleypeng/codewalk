@@ -1,25 +1,10 @@
 part of '../chat_page.dart';
 
 extension _ChatPageFileRuntime on _ChatPageState {
-  String _normalizeFilePath(String value) {
-    var normalized = value.trim().replaceAll('\\', '/');
-    if (normalized.length > 1) {
-      normalized = normalized.replaceAll(RegExp(r'/+$'), '');
-    }
-    return normalized;
-  }
+  // Delegate to shared path_utils to avoid duplicating normalization logic.
+  String _normalizeFilePath(String value) => normalizeFilePath(value);
 
-  String _fileBasename(String path) {
-    final normalized = _normalizeFilePath(path);
-    if (normalized.isEmpty || normalized == '/') {
-      return normalized.isEmpty ? 'file' : '/';
-    }
-    final separator = normalized.lastIndexOf('/');
-    if (separator < 0 || separator == normalized.length - 1) {
-      return normalized;
-    }
-    return normalized.substring(separator + 1);
-  }
+  String _fileBasename(String path) => fileBasename(path);
 
   String _resolveFileRootDirectory({
     required ProjectProvider projectProvider,

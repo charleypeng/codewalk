@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/logging/app_logger.dart';
+import 'file_part_action_service_shared.dart';
 import 'file_part_action_types.dart';
 
 Future<FilePartActionResult> handleFilePartAction({
@@ -270,16 +271,8 @@ Future<FilePartActionResult> _launchUri(
   return FilePartActionResult(success: false, message: fallbackMessage);
 }
 
-Future<bool> _safeLaunch(Uri uri, {LaunchMode? mode}) async {
-  try {
-    if (mode == null) {
-      return launchUrl(uri);
-    }
-    return launchUrl(uri, mode: mode);
-  } catch (_) {
-    return false;
-  }
-}
+// Delegate to shared implementation to avoid duplication with web variant.
+Future<bool> _safeLaunch(Uri uri, {LaunchMode? mode}) => safeLaunch(uri, mode: mode);
 
 String? _toFilePath(Uri uri) {
   try {
@@ -322,20 +315,8 @@ String _resolveOutputName({
   return 'attachment_$timestamp$extension';
 }
 
-String _mimeToExtension(String mimeType) {
-  if (mimeType.contains('png')) return '.png';
-  if (mimeType.contains('jpeg') || mimeType.contains('jpg')) return '.jpg';
-  if (mimeType.contains('gif')) return '.gif';
-  if (mimeType.contains('webp')) return '.webp';
-  if (mimeType.contains('bmp')) return '.bmp';
-  if (mimeType.contains('heic')) return '.heic';
-  if (mimeType.contains('heif')) return '.heif';
-  if (mimeType.contains('pdf')) return '.pdf';
-  if (mimeType.contains('json')) return '.json';
-  if (mimeType.contains('markdown')) return '.md';
-  if (mimeType.contains('plain') || mimeType.startsWith('text/')) return '.txt';
-  return '.bin';
-}
+// Delegate to shared implementation to avoid duplication with web variant.
+String _mimeToExtension(String mimeType) => mimeToExtension(mimeType);
 
 String _sanitizeFilename(String filename) {
   final sanitized = filename.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_').trim();
