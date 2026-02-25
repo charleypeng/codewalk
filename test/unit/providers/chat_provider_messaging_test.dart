@@ -302,7 +302,7 @@ void main() {
           ],
         );
 
-        chatRepository.sendMessageHandler = (_, __, ___, ____) async* {
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
           yield Right(assistantPartial);
           await Future<void>.delayed(const Duration(milliseconds: 1));
           yield Right(assistantCompleted);
@@ -337,8 +337,7 @@ void main() {
       addTearDown(() async {
         await sendStream.close();
       });
-      chatRepository.sendMessageHandler = (_, __, ___, ____) =>
-          sendStream.stream;
+      chatRepository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
 
       await provider.projectProvider.initializeProject();
       await provider.loadSessions();
@@ -360,8 +359,7 @@ void main() {
       addTearDown(() async {
         await sendStream.close();
       });
-      chatRepository.sendMessageHandler = (_, __, ___, ____) =>
-          sendStream.stream;
+      chatRepository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
 
       await provider.projectProvider.initializeProject();
       await provider.loadSessions();
@@ -382,8 +380,7 @@ void main() {
       addTearDown(() async {
         await sendStream.close();
       });
-      chatRepository.sendMessageHandler = (_, __, ___, ____) =>
-          sendStream.stream;
+      chatRepository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
 
       await provider.projectProvider.initializeProject();
       await provider.loadSessions();
@@ -415,8 +412,7 @@ void main() {
         addTearDown(() async {
           await sendStream.close();
         });
-        chatRepository.sendMessageHandler = (_, __, ___, ____) =>
-            sendStream.stream;
+        chatRepository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
 
         await provider.projectProvider.initializeProject();
         await provider.loadSessions();
@@ -445,7 +441,7 @@ void main() {
 
         final streamController =
             StreamController<Either<Failure, ChatMessage>>();
-        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+        chatRepository.sendMessageHandler = (_, _, _, _) {
           return streamController.stream;
         };
 
@@ -515,7 +511,7 @@ void main() {
           await streamController.close();
         });
 
-        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+        chatRepository.sendMessageHandler = (_, _, _, _) {
           return streamController.stream;
         };
 
@@ -563,7 +559,7 @@ void main() {
           await streamController.close();
         });
 
-        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+        chatRepository.sendMessageHandler = (_, _, _, _) {
           return streamController.stream;
         };
 
@@ -664,7 +660,7 @@ void main() {
         });
 
         var sendCalls = 0;
-        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+        chatRepository.sendMessageHandler = (_, _, _, _) {
           sendCalls += 1;
           if (sendCalls == 1) {
             return firstStream.stream;
@@ -751,7 +747,7 @@ void main() {
           ),
         ],
       );
-      chatRepository.sendMessageHandler = (_, __, ___, ____) async* {
+      chatRepository.sendMessageHandler = (_, _, _, _) async* {
         yield Right(assistantCompleted);
       };
 

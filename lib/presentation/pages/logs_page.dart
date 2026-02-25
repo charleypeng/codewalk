@@ -96,7 +96,7 @@ class _LogsPageState extends State<LogsPage> {
             ),
           ValueListenableBuilder<UnmodifiableListView<LogEntry>>(
             valueListenable: AppLogger.entries,
-            builder: (context, _, __) {
+            builder: (context, _, _) {
               final filtered = _filteredEntries();
               return IconButton(
                 icon: const Icon(Symbols.copy_all),
@@ -155,7 +155,7 @@ class _LogsPageState extends State<LogsPage> {
                     : ListView.separated(
                         padding: const EdgeInsets.all(12),
                         itemCount: ordered.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        separatorBuilder: (_, _) => const SizedBox(height: 8),
                         itemBuilder: (context, index) {
                           return _LogTile(entry: ordered[index]);
                         },

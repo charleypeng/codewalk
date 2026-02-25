@@ -534,8 +534,7 @@ void main() {
         addTearDown(() async {
           await sendStream.close();
         });
-        chatRepository.sendMessageHandler = (_, __, ___, ____) =>
-            sendStream.stream;
+        chatRepository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
 
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
@@ -677,8 +676,7 @@ void main() {
         addTearDown(() async {
           await sendStream.close();
         });
-        chatRepository.sendMessageHandler = (_, __, ___, ____) =>
-            sendStream.stream;
+        chatRepository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
 
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
@@ -1010,7 +1008,7 @@ void main() {
         );
 
         final renameCompleter = Completer<Either<Failure, ChatSession>>();
-        chatRepository.updateSessionHandler = (_, sessionId, input, __) {
+        chatRepository.updateSessionHandler = (_, sessionId, input, _) {
           return renameCompleter.future;
         };
 

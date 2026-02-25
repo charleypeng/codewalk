@@ -90,7 +90,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                     ? _buildEmptyState()
                     : ListView.separated(
                         itemCount: profiles.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        separatorBuilder: (_, _) => const SizedBox(height: 8),
                         itemBuilder: (_, index) => _buildProfileTile(
                           appProvider: appProvider,
                           profile: profiles[index],

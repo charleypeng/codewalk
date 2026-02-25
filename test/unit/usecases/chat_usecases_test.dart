@@ -60,7 +60,7 @@ void main() {
     test(
       'SendChatMessage forwards parameters and streams assistant message',
       () async {
-        repository.sendMessageHandler = (_, sessionId, input, __) {
+        repository.sendMessageHandler = (_, sessionId, input, _) {
           final assistant = AssistantMessage(
             id: 'msg_assistant_1',
             sessionId: sessionId,

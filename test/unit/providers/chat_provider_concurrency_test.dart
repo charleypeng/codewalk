@@ -363,7 +363,7 @@ void main() {
             await streamController.close();
           });
 
-          chatRepository.sendMessageHandler = (_, __, ___, ____) {
+          chatRepository.sendMessageHandler = (_, _, _, _) {
             return streamController.stream;
           };
 
@@ -425,7 +425,7 @@ void main() {
             await streamController.close();
           });
 
-          chatRepository.sendMessageHandler = (_, __, ___, ____) {
+          chatRepository.sendMessageHandler = (_, _, _, _) {
             return streamController.stream;
           };
 
@@ -494,7 +494,7 @@ void main() {
             await streamController.close();
           });
 
-          chatRepository.sendMessageHandler = (_, __, ___, ____) {
+          chatRepository.sendMessageHandler = (_, _, _, _) {
             return streamController.stream;
           };
 
@@ -1095,7 +1095,7 @@ void main() {
       });
 
       test('increments on sendMessage (local user message added)', () async {
-        chatRepository.sendMessageHandler = (_, __, ___, ____) async* {
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
           // Never emit — we only care about the local user message bump.
         };
 

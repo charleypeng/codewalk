@@ -406,7 +406,7 @@ void main() {
         streamController.onCancel = () {
           streamCancelled = true;
         };
-        scopedRepository.sendMessageHandler = (_, __, ___, ____) {
+        scopedRepository.sendMessageHandler = (_, _, _, _) {
           return streamController.stream;
         };
         addTearDown(() async {
@@ -945,44 +945,41 @@ void main() {
       },
     );
 
-    test(
-      'currentThreadPermissionRequests returns identical cached list on '
-      'repeated access without mutations',
-      () async {
-        chatRepository.pendingPermissions = const <ChatPermissionRequest>[
-          ChatPermissionRequest(
-            id: 'perm_cache_1',
-            sessionId: 'ses_1',
-            permission: 'edit',
-            patterns: <String>['lib/**'],
-            always: <String>[],
-            metadata: <String, dynamic>{},
-          ),
-        ];
-        appRepository.providersResult = Right(
-          ProvidersResponse(
-            providers: <Provider>[
-              Provider(
-                id: 'provider_a',
-                name: 'Provider A',
-                env: const <String>[],
-                models: <String, Model>{'model_a': testModel('model_a')},
-              ),
-            ],
-            defaultModels: const <String, String>{'provider_a': 'model_a'},
-            connected: const <String>['provider_a'],
-          ),
-        );
+    test('currentThreadPermissionRequests returns identical cached list on '
+        'repeated access without mutations', () async {
+      chatRepository.pendingPermissions = const <ChatPermissionRequest>[
+        ChatPermissionRequest(
+          id: 'perm_cache_1',
+          sessionId: 'ses_1',
+          permission: 'edit',
+          patterns: <String>['lib/**'],
+          always: <String>[],
+          metadata: <String, dynamic>{},
+        ),
+      ];
+      appRepository.providersResult = Right(
+        ProvidersResponse(
+          providers: <Provider>[
+            Provider(
+              id: 'provider_a',
+              name: 'Provider A',
+              env: const <String>[],
+              models: <String, Model>{'model_a': testModel('model_a')},
+            ),
+          ],
+          defaultModels: const <String, String>{'provider_a': 'model_a'},
+          connected: const <String>['provider_a'],
+        ),
+      );
 
-        await provider.initializeProviders();
-        await provider.loadSessions();
-        await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
 
-        final first = provider.currentThreadPermissionRequests;
-        final second = provider.currentThreadPermissionRequests;
-        expect(identical(first, second), isTrue);
-      },
-    );
+      final first = provider.currentThreadPermissionRequests;
+      final second = provider.currentThreadPermissionRequests;
+      expect(identical(first, second), isTrue);
+    });
 
     test(
       'currentThreadPermissionRequests cache invalidates on permission event',

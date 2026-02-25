@@ -898,7 +898,7 @@ void main() {
             ),
           ],
         );
-        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+        chatRepository.sendMessageHandler = (_, _, _, _) {
           return Stream<Either<Failure, ChatMessage>>.value(
             Right(compactionSummaryMessage),
           );

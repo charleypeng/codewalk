@@ -2302,7 +2302,7 @@ void main() {
       ],
     );
 
-    repository.sendMessageHandler = (_, sessionId, __, ___) {
+    repository.sendMessageHandler = (_, sessionId, _, _) {
       final reply = AssistantMessage(
         id: 'msg_assistant_widget',
         sessionId: sessionId,
@@ -3758,8 +3758,7 @@ void main() {
         await streamController.close();
       }
     });
-    repository.sendMessageHandler = (_, __, ___, ____) =>
-        streamController.stream;
+    repository.sendMessageHandler = (_, _, _, _) => streamController.stream;
 
     final localDataSource = InMemoryAppLocalDataSource()
       ..activeServerId = 'srv_test';
@@ -3849,8 +3848,7 @@ void main() {
     addTearDown(() async {
       await streamController.close();
     });
-    repository.sendMessageHandler = (_, __, ___, ____) =>
-        streamController.stream;
+    repository.sendMessageHandler = (_, _, _, _) => streamController.stream;
 
     final localDataSource = InMemoryAppLocalDataSource()
       ..activeServerId = 'srv_test';
@@ -5526,7 +5524,7 @@ void main() {
     expect(repository.lastAbortSessionId, 'ses_stop');
   });
 
-  testWidgets('responding composer sends follow-up and aborts previous run', (
+  testWidgets('responding composer queues follow-up without auto-abort', (
     WidgetTester tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1000, 900));
@@ -5603,20 +5601,19 @@ void main() {
 
     await tester.tap(find.byIcon(Symbols.send_rounded));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 260));
 
-    expect(repository.abortSessionCallCount, 1);
-    expect(repository.lastAbortSessionId, 'ses_interrupt_send');
-    expect(sendCalls, 2);
-
-    final sentFollowUp = provider.messages.whereType<UserMessage>().any((
-      message,
+    for (
+      var i = 0;
+      i < 20 && provider.currentSessionQueuedMessageCount == 0;
+      i++
     ) {
-      return message.parts.whereType<TextPart>().any(
-        (part) => part.text == 'follow-up while responding',
-      );
-    });
-    expect(sentFollowUp, isTrue);
+      await tester.pump(const Duration(milliseconds: 80));
+    }
+
+    expect(repository.abortSessionCallCount, 0);
+    expect(repository.lastAbortSessionId, isNull);
+    expect(sendCalls, 1);
+    expect(provider.currentSessionQueuedMessageCount, greaterThan(0));
   });
 
   testWidgets('restores composer draft automatically when send is rejected', (

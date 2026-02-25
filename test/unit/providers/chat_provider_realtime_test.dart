@@ -140,7 +140,7 @@ void main() {
           titleGenerator: titleGenerator,
         );
 
-        chatRepository.sendMessageHandler = (_, __, ___, ____) async* {
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
           yield Right(
             AssistantMessage(
               id: 'msg_assistant_toggle_off',
@@ -218,7 +218,7 @@ void main() {
         );
 
         var responseCounter = 0;
-        chatRepository.sendMessageHandler = (_, __, ___, ____) async* {
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
           responseCounter += 1;
           yield Right(
             AssistantMessage(
@@ -322,7 +322,7 @@ void main() {
         );
 
         final updatedSessionIds = <String>[];
-        chatRepository.updateSessionHandler = (_, sessionId, input, __) async {
+        chatRepository.updateSessionHandler = (_, sessionId, input, _) async {
           updatedSessionIds.add(sessionId);
           final index = chatRepository.sessions.indexWhere(
             (item) => item.id == sessionId,
@@ -334,7 +334,7 @@ void main() {
           return Right(updated);
         };
 
-        chatRepository.sendMessageHandler = (_, __, ___, ____) async* {
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
           yield Right(
             AssistantMessage(
               id: 'msg_assistant_stale',
@@ -533,7 +533,7 @@ void main() {
         addTearDown(() async {
           await streamController.close();
         });
-        chatRepository.sendMessageHandler = (_, __, ___, ____) =>
+        chatRepository.sendMessageHandler = (_, _, _, _) =>
             streamController.stream;
 
         await provider.projectProvider.initializeProject();
@@ -572,7 +572,7 @@ void main() {
         addTearDown(() async {
           await streamController.close();
         });
-        chatRepository.sendMessageHandler = (_, __, ___, ____) =>
+        chatRepository.sendMessageHandler = (_, _, _, _) =>
             streamController.stream;
 
         await provider.projectProvider.initializeProject();
@@ -748,7 +748,7 @@ void main() {
           ],
         );
         var sendCalls = 0;
-        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+        chatRepository.sendMessageHandler = (_, _, _, _) {
           sendCalls += 1;
           if (sendCalls == 1) {
             return firstStreamController.stream;
@@ -816,7 +816,7 @@ void main() {
         );
 
         var sendCalls = 0;
-        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+        chatRepository.sendMessageHandler = (_, _, _, _) {
           sendCalls += 1;
           if (sendCalls == 1) {
             return firstStreamController.stream;
@@ -877,7 +877,7 @@ void main() {
 
         var sendCalls = 0;
         DateTime? secondSendAt;
-        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+        chatRepository.sendMessageHandler = (_, _, _, _) {
           sendCalls += 1;
           if (sendCalls == 1) {
             return firstStreamController.stream;
@@ -951,7 +951,7 @@ void main() {
         );
 
         var sendCalls = 0;
-        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+        chatRepository.sendMessageHandler = (_, _, _, _) {
           sendCalls += 1;
           if (sendCalls == 1) {
             return firstStreamController.stream;
@@ -1033,7 +1033,7 @@ void main() {
         );
 
         var sendCalls = 0;
-        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+        chatRepository.sendMessageHandler = (_, _, _, _) {
           sendCalls += 1;
           if (sendCalls == 1) {
             return firstStreamController.stream;
@@ -1126,7 +1126,7 @@ void main() {
         );
 
         var sendCalls = 0;
-        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+        chatRepository.sendMessageHandler = (_, _, _, _) {
           sendCalls += 1;
           if (sendCalls == 1) {
             return firstStreamController.stream;
@@ -1187,7 +1187,7 @@ void main() {
         );
 
         var sendCalls = 0;
-        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+        chatRepository.sendMessageHandler = (_, _, _, _) {
           sendCalls += 1;
           if (sendCalls == 1) {
             return firstStreamController.stream;
@@ -1263,7 +1263,7 @@ void main() {
 
         var sendCalls = 0;
         var failNextDispatch = true;
-        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+        chatRepository.sendMessageHandler = (_, _, _, _) {
           sendCalls += 1;
           if (sendCalls == 1) {
             return firstStreamController.stream;
@@ -1308,7 +1308,7 @@ void main() {
       addTearDown(() async {
         await streamController.close();
       });
-      chatRepository.sendMessageHandler = (_, __, ___, ____) =>
+      chatRepository.sendMessageHandler = (_, _, _, _) =>
           streamController.stream;
 
       await provider.projectProvider.initializeProject();
@@ -1368,7 +1368,7 @@ void main() {
           ],
         );
 
-        chatRepository.sendMessageHandler = (_, __, ___, ____) async* {
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
           yield Right(serverUserMessage);
           await Future<void>.delayed(const Duration(milliseconds: 1));
           yield Right(assistantCompleted);
@@ -1398,7 +1398,7 @@ void main() {
       final now = DateTime.now();
       String? echoedMessageId;
 
-      chatRepository.sendMessageHandler = (_, __, input, ___) async* {
+      chatRepository.sendMessageHandler = (_, _, input, _) async* {
         echoedMessageId = input.messageId;
         yield Right(
           UserMessage(
@@ -1468,7 +1468,7 @@ void main() {
           ],
         );
 
-        chatRepository.sendMessageHandler = (_, __, ___, ____) async* {
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
           yield Right(serverUserMessage);
           await Future<void>.delayed(const Duration(milliseconds: 1));
           yield Right(assistantCompleted);
@@ -1543,7 +1543,7 @@ void main() {
             ),
           ],
         );
-        chatRepository.sendMessageHandler = (_, __, ___, ____) async* {
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
           yield Right(assistantCompleted);
         };
 
@@ -1634,7 +1634,7 @@ void main() {
             ),
           ],
         );
-        chatRepository.sendMessageHandler = (_, __, ___, ____) async* {
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
           yield Right(assistantCompleted);
         };
 
@@ -1671,7 +1671,7 @@ void main() {
           await streamController.close();
         });
 
-        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+        chatRepository.sendMessageHandler = (_, _, _, _) {
           // Emit the server user message echo, then keep the stream open
           // (simulating an in-progress assistant response / tool calls).
           streamController.add(
@@ -1800,7 +1800,7 @@ void main() {
           await streamController.close();
         });
 
-        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+        chatRepository.sendMessageHandler = (_, _, _, _) {
           return streamController.stream;
         };
 
@@ -1952,7 +1952,7 @@ void main() {
           await streamController.close();
         });
 
-        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+        chatRepository.sendMessageHandler = (_, _, _, _) {
           // Emit user echo with empty parts (simulates the race).
           streamController.add(
             Right(
@@ -2047,7 +2047,7 @@ void main() {
           await streamController.close();
         });
 
-        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+        chatRepository.sendMessageHandler = (_, _, _, _) {
           // Server echoes the user message without the leading '!'.
           streamController.add(
             Right(
@@ -2153,7 +2153,7 @@ void main() {
           await streamController.close();
         });
 
-        chatRepository.sendMessageHandler = (_, __, ___, ____) {
+        chatRepository.sendMessageHandler = (_, _, _, _) {
           streamController.add(
             Right(
               UserMessage(
