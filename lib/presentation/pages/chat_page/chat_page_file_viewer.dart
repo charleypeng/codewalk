@@ -561,7 +561,7 @@ extension _ChatPageFileViewer on _ChatPageState {
 
   String _resolveHighlightLanguage({required String path, String? mimeType}) {
     final normalizedPath = _normalizeFilePath(path).toLowerCase();
-    final fileName = _fileNameFromPath(normalizedPath);
+    final fileName = fileBasename(normalizedPath);
     final extension = _fileExtension(fileName);
     final normalizedMimeType = (mimeType ?? '').toLowerCase();
 

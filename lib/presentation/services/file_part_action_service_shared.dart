@@ -4,10 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 /// failure. Avoids crashing the caller when the URL cannot be handled.
 Future<bool> safeLaunch(Uri uri, {LaunchMode? mode}) async {
   try {
-    if (mode == null) {
-      return launchUrl(uri);
-    }
-    return launchUrl(uri, mode: mode);
+    return launchUrl(uri, mode: mode ?? LaunchMode.platformDefault);
   } catch (_) {
     return false;
   }

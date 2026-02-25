@@ -632,7 +632,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
     if (normalizedPath.endsWith('/.github/workflows')) {
       return SimpleIcons.githubactions;
     }
-    final folderName = _fileNameFromPath(normalizedPath);
+    final folderName = fileBasename(normalizedPath);
     switch (folderName) {
       case '.github':
         return SimpleIcons.github;
@@ -686,7 +686,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
 
   IconData _fileIconForPath(String path) {
     final normalizedPath = path.trim().replaceAll('\\', '/').toLowerCase();
-    final fileName = _fileNameFromPath(normalizedPath);
+    final fileName = fileBasename(normalizedPath);
     final extension = _fileExtension(fileName);
 
     // Prefer filename-based mappings for canonical config/build files.
@@ -954,16 +954,6 @@ extension _ChatPageFileRuntime on _ChatPageState {
     }
   }
 
-  String _fileNameFromPath(String normalizedPath) {
-    if (normalizedPath.isEmpty) {
-      return normalizedPath;
-    }
-    final separator = normalizedPath.lastIndexOf('/');
-    if (separator < 0 || separator == normalizedPath.length - 1) {
-      return normalizedPath;
-    }
-    return normalizedPath.substring(separator + 1);
-  }
 
   String _fileExtension(String fileName) {
     final separator = fileName.lastIndexOf('.');

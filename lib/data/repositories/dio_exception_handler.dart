@@ -20,6 +20,7 @@ mixin DioExceptionHandler {
             return ServerFailure('Server error', statusCode);
           }
         }
+        // Unexpected 1xx/2xx/3xx from badResponse, or null status — treat as server error.
         return const ServerFailure('Response error');
       case DioExceptionType.cancel:
         return const NetworkFailure('Request cancelled');

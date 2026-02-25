@@ -17,8 +17,10 @@ String fileBasename(String path) {
   if (normalized.isEmpty || normalized == '/') {
     return normalized.isEmpty ? 'file' : '/';
   }
+  // normalizeFilePath strips trailing slashes, so separator can never be the
+  // last char here (the bare "/" root is already handled above).
   final separator = normalized.lastIndexOf('/');
-  if (separator < 0 || separator == normalized.length - 1) {
+  if (separator < 0) {
     return normalized;
   }
   return normalized.substring(separator + 1);
