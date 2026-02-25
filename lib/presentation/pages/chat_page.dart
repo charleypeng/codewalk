@@ -1355,7 +1355,7 @@ class _DirectoryPickerSheetState extends State<_DirectoryPickerSheet> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Workspace creation requires a Git repository directory.',
+                      'Any folder can open as project context. Git folders can also create workspaces.',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),

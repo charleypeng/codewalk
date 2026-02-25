@@ -1207,6 +1207,63 @@ void main() {
     );
   });
 
+  testWidgets('create workspace opens non-git directory as project context', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_a',
+        name: 'Project A',
+        path: '/repo/a',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_a',
+          name: 'Project A',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+        Project(
+          id: 'proj_plain',
+          name: 'Plain Folder',
+          path: '/repo/plain',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+        ),
+      ],
+    );
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Choose Directory'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create project workspace...'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('workspace_base_directory_input')),
+      '/repo/plain',
+    );
+    await tester.tap(find.text('Create'));
+    await tester.pumpAndSettle();
+
+    expect(projectRepository.lastCreatedWorktreeName, isNull);
+    expect(projectRepository.lastCreatedWorktreeDirectory, isNull);
+    expect(provider.projectProvider.currentDirectory, '/repo/plain');
+    expect(find.text('Project context opened: /repo/plain'), findsOneWidget);
+  });
+
   testWidgets('create workspace supports browsing directories dynamically', (
     WidgetTester tester,
   ) async {
@@ -1266,7 +1323,9 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.text('Workspace creation requires a Git repository directory.'),
+      find.text(
+        'Any folder can open as project context. Git folders can also create workspaces.',
+      ),
       findsOneWidget,
     );
     await tester.tap(

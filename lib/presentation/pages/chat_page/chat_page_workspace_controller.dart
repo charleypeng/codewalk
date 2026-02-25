@@ -144,14 +144,10 @@ extension _ChatPageWorkspaceController on _ChatPageState {
     final createdInput = await showDialog<(String, String?)>(
       context: context,
       builder: (dialogContext) {
-        var validatingDirectory = false;
-        String? validationMessage;
-        bool? gitDirectory;
-
         return StatefulBuilder(
           builder: (dialogContext, setDialogState) {
             return AlertDialog(
-              title: const Text('Create Workspace'),
+              title: const Text('Open project or create workspace'),
               content: SizedBox(
                 width: 420,
                 child: Column(
@@ -162,8 +158,8 @@ extension _ChatPageWorkspaceController on _ChatPageState {
                       controller: nameController,
                       autofocus: true,
                       decoration: const InputDecoration(
-                        labelText: 'Workspace name',
-                        hintText: 'ex: feature-branch',
+                        labelText: 'Workspace name (Git only)',
+                        hintText: 'Optional for non-Git folders',
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -173,10 +169,10 @@ extension _ChatPageWorkspaceController on _ChatPageState {
                       ),
                       controller: baseDirectoryController,
                       decoration: InputDecoration(
-                        labelText: 'Base directory',
+                        labelText: 'Project directory',
                         hintText: '/repo/my-project',
                         helperText:
-                            'Browse folders to pick where the workspace is created',
+                            'Non-Git folders open as project context. Git folders can create workspaces.',
                         suffixIcon: IconButton(
                           key: const ValueKey<String>(
                             'workspace_open_directory_picker_button',
@@ -193,47 +189,12 @@ extension _ChatPageWorkspaceController on _ChatPageState {
                               return;
                             }
                             baseDirectoryController.text = picked;
-                            setDialogState(() {
-                              validationMessage = null;
-                              gitDirectory = null;
-                            });
+                            setDialogState(() {});
                           },
                           icon: const Icon(Symbols.folder_open),
                         ),
                       ),
                     ),
-                    if (validationMessage != null) ...[
-                      const SizedBox(height: 8),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            gitDirectory == true
-                                ? Symbols.check_circle_outline
-                                : Symbols.warning_amber_rounded,
-                            size: 16,
-                            color: gitDirectory == true
-                                ? Theme.of(context).colorScheme.primary
-                                : Theme.of(context).colorScheme.error,
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              validationMessage!,
-                              key: const ValueKey<String>(
-                                'workspace_directory_validation_message',
-                              ),
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: gitDirectory == true
-                                        ? Theme.of(context).colorScheme.primary
-                                        : Theme.of(context).colorScheme.error,
-                                  ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -243,74 +204,17 @@ extension _ChatPageWorkspaceController on _ChatPageState {
                   child: const Text('Cancel'),
                 ),
                 FilledButton(
-                  onPressed: validatingDirectory
-                      ? null
-                      : () async {
-                          final name = nameController.text.trim();
-                          if (name.isEmpty) {
-                            setDialogState(() {
-                              validationMessage =
-                                  'Workspace name cannot be empty.';
-                              gitDirectory = false;
-                            });
-                            return;
-                          }
-
-                          final baseDirectory = baseDirectoryController.text
-                              .trim();
-                          if (baseDirectory.isNotEmpty) {
-                            setDialogState(() {
-                              validatingDirectory = true;
-                              validationMessage = null;
-                              gitDirectory = null;
-                            });
-                            final isGit = await projectProvider.isGitDirectory(
-                              baseDirectory,
-                            );
-                            if (!dialogContext.mounted) {
-                              return;
-                            }
-                            if (isGit == null) {
-                              setDialogState(() {
-                                validatingDirectory = false;
-                                validationMessage =
-                                    projectProvider.error ??
-                                    'Failed to validate directory.';
-                                gitDirectory = false;
-                              });
-                              return;
-                            }
-                            if (!isGit) {
-                              setDialogState(() {
-                                validatingDirectory = false;
-                                validationMessage =
-                                    'Selected directory is not a Git repository.';
-                                gitDirectory = false;
-                              });
-                              return;
-                            }
-                            setDialogState(() {
-                              validatingDirectory = false;
-                              validationMessage = 'Git repository detected.';
-                              gitDirectory = true;
-                            });
-                          }
-
-                          if (!dialogContext.mounted) {
-                            return;
-                          }
-                          Navigator.of(dialogContext).pop((
-                            name,
-                            baseDirectory.isEmpty ? null : baseDirectory,
-                          ));
-                        },
-                  child: validatingDirectory
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Create'),
+                  onPressed: () async {
+                    final name = nameController.text.trim();
+                    final baseDirectory = baseDirectoryController.text.trim();
+                    if (!dialogContext.mounted) {
+                      return;
+                    }
+                    Navigator.of(
+                      dialogContext,
+                    ).pop((name, baseDirectory.isEmpty ? null : baseDirectory));
+                  },
+                  child: const Text('Create'),
                 ),
               ],
             );
@@ -318,14 +222,56 @@ extension _ChatPageWorkspaceController on _ChatPageState {
         );
       },
     );
-    if (!mounted || createdInput == null || createdInput.$1.trim().isEmpty) {
+    if (!mounted || createdInput == null) {
+      return;
+    }
+
+    final workspaceName = createdInput.$1.trim();
+    final requestedDirectory = createdInput.$2?.trim();
+    if (requestedDirectory != null && requestedDirectory.isNotEmpty) {
+      final isGit = await projectProvider.isGitDirectory(requestedDirectory);
+      if (!mounted) {
+        return;
+      }
+      if (isGit != true) {
+        await _switchDirectoryContext(requestedDirectory);
+        if (!mounted) {
+          return;
+        }
+        final openedDirectory = projectProvider.currentDirectory;
+        if (openedDirectory == requestedDirectory) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Project context opened: $requestedDirectory'),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                projectProvider.error ??
+                    'Failed to open project context: $requestedDirectory',
+              ),
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    if (workspaceName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Workspace name is required for Git directories.'),
+        ),
+      );
       return;
     }
 
     final created = await projectProvider.createWorktree(
-      createdInput.$1,
+      workspaceName,
       switchToCreated: true,
-      directory: createdInput.$2,
+      directory: requestedDirectory,
     );
     if (!mounted) {
       return;
@@ -348,9 +294,9 @@ extension _ChatPageWorkspaceController on _ChatPageState {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          createdInput.$2 == null
+          requestedDirectory == null
               ? 'Workspace created: ${created.name}'
-              : 'Workspace created in ${createdInput.$2}: ${created.name}',
+              : 'Workspace created in $requestedDirectory: ${created.name}',
         ),
       ),
     );
