@@ -197,13 +197,24 @@ extension _ChatPageScaffold on _ChatPageState {
                 children: [
                   Expanded(
                     child: ChatSessionList(
-                      sessions: chatProvider.visibleSessions,
+                      sessions: chatProvider.visibleSidebarSessions,
                       currentSession: chatProvider.currentSession,
                       groupByProject: true,
                       activeDirectory: projectProvider.currentDirectory,
                       directoryLabels: directoryLabels,
                       isSessionActive: chatProvider.isSessionActivelyResponding,
                       onSessionSelected: (session) async {
+                        final sessionDirectory =
+                            session.directory ??
+                            session.path?.workspace ??
+                            session.path?.root;
+                        if (sessionDirectory != null &&
+                            sessionDirectory.trim().isNotEmpty &&
+                            sessionDirectory.trim() !=
+                                (projectProvider.currentDirectory ?? '')
+                                    .trim()) {
+                          await _switchDirectoryContext(sessionDirectory);
+                        }
                         await chatProvider.selectSession(session);
                         // Close AFTER selectSession: during its awaits the
                         // second tap's gesture events are fully processed
@@ -246,7 +257,7 @@ extension _ChatPageScaffold on _ChatPageState {
                       },
                     ),
                   ),
-                  if (chatProvider.canLoadMoreSessions)
+                  if (chatProvider.canLoadMoreSidebarSessions)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
                       child: OutlinedButton.icon(

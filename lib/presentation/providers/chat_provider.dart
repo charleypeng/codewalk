@@ -186,6 +186,7 @@ class ChatProvider extends ChangeNotifier {
 
   ChatState _state = ChatState.initial;
   List<ChatSession> _sessions = [];
+  List<ChatSession> _allSessions = [];
   ChatSession? _currentSession;
   List<ChatMessage> _messages = [];
   // Monotonic counter bumped on every _messages mutation so the timeline
@@ -581,8 +582,16 @@ class ChatProvider extends ChangeNotifier {
   }
 
   List<ChatSession> get visibleSessions {
+    return _visibleSessionsFrom(_sessions);
+  }
+
+  List<ChatSession> get visibleSidebarSessions {
+    return _visibleSessionsFrom(_allSessions);
+  }
+
+  List<ChatSession> _visibleSessionsFrom(List<ChatSession> source) {
     final query = _sessionSearchQuery.trim().toLowerCase();
-    final filtered = _sessions
+    final filtered = source
         .where((session) {
           final archived = session.archived;
           switch (_sessionListFilter) {
@@ -695,6 +704,32 @@ class ChatProvider extends ChangeNotifier {
       return title.contains(query) || summary.contains(query);
     }).length;
     return total > visibleSessions.length;
+  }
+
+  bool get canLoadMoreSidebarSessions {
+    final query = _sessionSearchQuery.trim().toLowerCase();
+    final total = _allSessions.where((session) {
+      final archived = session.archived;
+      switch (_sessionListFilter) {
+        case SessionListFilter.active:
+          if (archived) {
+            return false;
+          }
+        case SessionListFilter.archived:
+          if (!archived) {
+            return false;
+          }
+        case SessionListFilter.all:
+          break;
+      }
+      if (query.isEmpty) {
+        return true;
+      }
+      final title = (session.title ?? '').toLowerCase();
+      final summary = (session.summary ?? '').toLowerCase();
+      return title.contains(query) || summary.contains(query);
+    }).length;
+    return total > visibleSidebarSessions.length;
   }
 
   SessionStatusInfo? get currentSessionStatus {
@@ -1665,9 +1700,7 @@ class ChatProvider extends ChangeNotifier {
       );
 
       // Then fetch latest data from server
-      final result = await getChatSessions(
-        GetChatSessionsParams(directory: projectProvider.currentDirectory),
-      );
+      final result = await getChatSessions(const GetChatSessionsParams());
 
       if (fetchId != _sessionsFetchId) {
         return;
@@ -1685,10 +1718,14 @@ class ChatProvider extends ChangeNotifier {
       }
 
       final sessions = result.fold((_) => <ChatSession>[], (value) => value);
-      final filteredSessions = _filterSessionsForCurrentContext(sessions);
+      final allSessions = sessions
+          .where((session) => !_isEphemeralTitleSession(session))
+          .toList();
+      final filteredSessions = _filterSessionsForCurrentContext(allSessions);
       if (fetchId != _sessionsFetchId) {
         return;
       }
+      _allSessions = allSessions;
       _sessions = filteredSessions;
       _threadPermissionsVersion++;
       _sessionVisibleLimit = 40;
@@ -1841,8 +1878,10 @@ class ChatProvider extends ChangeNotifier {
       return;
     }
 
+    _allSessions = List<ChatSession>.from(_allSessions);
     _sessions = List<ChatSession>.from(_sessions);
     _removeSessionById(session.id);
+    _allSessions.add(session);
     _sessions.add(session);
     _sortSessionsInPlace();
     _currentSession = session;
@@ -2994,6 +3033,7 @@ class ChatProvider extends ChangeNotifier {
   /// Delete session
   Future<void> deleteSession(String sessionId) async {
     _currentProjectId = projectProvider.currentProjectId;
+    final previousAllSessions = List<ChatSession>.from(_allSessions);
     final previousSessions = List<ChatSession>.from(_sessions);
     final previousCurrent = _currentSession;
     final previousMessages = List<ChatMessage>.from(_messages);
@@ -3020,6 +3060,7 @@ class ChatProvider extends ChangeNotifier {
 
     result.fold(
       (failure) {
+        _allSessions = previousAllSessions;
         _sessions = previousSessions;
         _currentSession = previousCurrent;
         _threadPermissionsVersion++;
