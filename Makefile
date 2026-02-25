@@ -2,6 +2,7 @@
 
 APK_DIR = build/app/outputs/flutter-apk
 APK_PATH = $(APK_DIR)/codewalk.apk
+ANDROID_KEY_PROPERTIES = android/key.properties
 ANALYZE_LOG = /tmp/flutter_analyze.log
 TEST_JOBS ?= 12
 FAST_EXCLUDE_TAGS ?= slow,integration
@@ -265,6 +266,24 @@ desktop:
 	fi
 
 android:
+	@if [ ! -f "$(ANDROID_KEY_PROPERTIES)" ]; then \
+		echo "Missing $(ANDROID_KEY_PROPERTIES). Refusing to build a debug-signed release APK."; \
+		echo "Create $(ANDROID_KEY_PROPERTIES) with keyAlias/keyPassword/storePassword/storeFile before running make android."; \
+		exit 1; \
+	fi
+	@store_file=$$(grep '^storeFile=' "$(ANDROID_KEY_PROPERTIES)" | sed 's/^storeFile=//'); \
+	store_password=$$(grep '^storePassword=' "$(ANDROID_KEY_PROPERTIES)" | sed 's/^storePassword=//'); \
+	key_password=$$(grep '^keyPassword=' "$(ANDROID_KEY_PROPERTIES)" | sed 's/^keyPassword=//'); \
+	key_alias=$$(grep '^keyAlias=' "$(ANDROID_KEY_PROPERTIES)" | sed 's/^keyAlias=//'); \
+	if [ -z "$$store_file" ] || [ -z "$$store_password" ] || [ -z "$$key_password" ] || [ -z "$$key_alias" ]; then \
+		echo "Incomplete $(ANDROID_KEY_PROPERTIES). Required keys: storeFile, storePassword, keyPassword, keyAlias."; \
+		exit 1; \
+	fi; \
+	if [ ! -f "$$store_file" ] && [ ! -f "android/$$store_file" ] && [ ! -f "android/app/$$store_file" ]; then \
+		echo "Keystore declared in $(ANDROID_KEY_PROPERTIES) not found: $$store_file"; \
+		echo "Expected one of: $$store_file, android/$$store_file, android/app/$$store_file"; \
+		exit 1; \
+	fi
 	flutter build apk --release --target-platform android-arm64 --split-per-abi $(QUIET)
 	@if [ -f "$(APK_DIR)/app-arm64-v8a-release.apk" ]; then \
 		mv -f "$(APK_DIR)/app-arm64-v8a-release.apk" "$(APK_PATH)"; \
