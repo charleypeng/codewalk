@@ -746,6 +746,27 @@ class ChatProvider extends ChangeNotifier {
       mergedById[session.id] = session;
     }
 
+    final currentDirectory = _normalizeDirectory(
+      projectProvider.currentDirectory,
+    );
+    if (currentDirectory != null) {
+      final incomingIdsForCurrentDirectory = incomingSessions
+          .where(
+            (session) =>
+                _normalizeDirectory(_sessionDirectory(session)) ==
+                currentDirectory,
+          )
+          .map((session) => session.id)
+          .toSet();
+      mergedById.removeWhere((id, session) {
+        final sessionDirectory = _normalizeDirectory(
+          _sessionDirectory(session),
+        );
+        return sessionDirectory == currentDirectory &&
+            !incomingIdsForCurrentDirectory.contains(id);
+      });
+    }
+
     return mergedById.values.toList();
   }
 
