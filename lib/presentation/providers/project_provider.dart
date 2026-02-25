@@ -32,6 +32,7 @@ class ProjectProvider extends ChangeNotifier {
   List<Worktree> _worktrees = <Worktree>[];
   int _worktreesRequestId = 0;
   bool _worktreeSupported = false;
+  Set<String> _serverProjectIds = <String>{};
   String _activeServerId = 'legacy';
   String? _error;
 
@@ -204,10 +205,11 @@ class ProjectProvider extends ChangeNotifier {
         (item) {
           final fetchedPath = item.path.trim();
           if (fetchedPath == normalized) {
-            final scopedProject = _resolveDirectoryScopedProject(
-              item,
-              directory: normalized,
-            );
+            final existingByPath = _projects
+                .where((p) => p.path.trim() == normalized)
+                .firstOrNull;
+            final scopedProject =
+                existingByPath ?? _buildSyntheticDirectoryProject(normalized);
             project = scopedProject;
             final existingPathIndex = _projects.indexWhere(
               (p) => p.path.trim() == scopedProject.path.trim(),
@@ -761,6 +763,7 @@ class ProjectProvider extends ChangeNotifier {
             .where(_isSyntheticDirectoryProject)
             .toList(growable: false);
         final loadedProjects = _sanitizeProjects(projects);
+        _serverProjectIds = loadedProjects.map((item) => item.id).toSet();
         final merged = List<Project>.from(loadedProjects);
         for (final synthetic in previousSynthetic) {
           final existsById = merged.any((item) => item.id == synthetic.id);
@@ -809,25 +812,61 @@ class ProjectProvider extends ChangeNotifier {
         if (decoded is List) {
           final restored = <String>[];
           for (final id in decoded.whereType<String>()) {
-            if (_projects.any((project) => project.id == id)) {
+            final existing = _projects
+                .where((project) => project.id == id)
+                .firstOrNull;
+            if (existing != null) {
+              final shouldMigrateToSynthetic =
+                  !_isSyntheticDirectoryProject(existing) &&
+                  !_serverProjectIds.contains(existing.id) &&
+                  existing.path.trim().isNotEmpty &&
+                  existing.path.trim() != '/' &&
+                  existing.path.trim() != '-';
+              if (shouldMigrateToSynthetic) {
+                final recoveredProject = _buildSyntheticDirectoryProject(
+                  existing.path,
+                );
+                final existingPathIndex = _projects.indexWhere(
+                  (project) =>
+                      project.path.trim() == recoveredProject.path.trim(),
+                );
+                if (existingPathIndex >= 0) {
+                  _projects[existingPathIndex] = recoveredProject;
+                } else {
+                  _projects = <Project>[recoveredProject, ..._projects];
+                }
+                restored.add(recoveredProject.id);
+                continue;
+              }
               restored.add(id);
               continue;
             }
-            final synthetic = _restoreSyntheticProjectFromId(id);
-            if (synthetic == null) {
+            Project? recovered = _restoreSyntheticProjectFromId(id);
+            if (recovered == null &&
+                _currentProject != null &&
+                _currentProject!.id == id &&
+                _currentProject!.path.trim().isNotEmpty &&
+                _currentProject!.path.trim() != '/' &&
+                _currentProject!.path.trim() != '-') {
+              recovered = _buildSyntheticDirectoryProject(
+                _currentProject!.path,
+              );
+            }
+            if (recovered == null) {
               continue;
             }
+            final recoveredProject = recovered;
             final existingPathIndex = _projects.indexWhere(
-              (project) => project.path.trim() == synthetic.path.trim(),
+              (project) => project.path.trim() == recoveredProject.path.trim(),
             );
             if (existingPathIndex >= 0) {
-              _projects[existingPathIndex] = synthetic;
+              _projects[existingPathIndex] = recoveredProject;
             } else if (!_projects.any(
-              (project) => project.id == synthetic.id,
+              (project) => project.id == recoveredProject.id,
             )) {
-              _projects = <Project>[synthetic, ..._projects];
+              _projects = <Project>[recoveredProject, ..._projects];
             }
-            restored.add(synthetic.id);
+            restored.add(recoveredProject.id);
           }
           _openProjectIds = restored.toList(growable: false);
         }
@@ -971,23 +1010,6 @@ class ProjectProvider extends ChangeNotifier {
       createdAt: now,
       updatedAt: now,
     );
-  }
-
-  Project _resolveDirectoryScopedProject(
-    Project project, {
-    required String directory,
-  }) {
-    final normalized = _normalizeDirectoryPath(directory);
-    final hasIdCollision = _projects.any(
-      (item) => item.id == project.id && item.path.trim() != normalized,
-    );
-    if (!hasIdCollision) {
-      return project;
-    }
-    AppLogger.info(
-      'Directory context id collision detected. Using synthetic id for path=$normalized',
-    );
-    return _buildSyntheticDirectoryProject(normalized);
   }
 
   Project? _restoreSyntheticProjectFromId(String id) {
