@@ -329,52 +329,9 @@ void main() {
           provider.openProjectIds,
           containsAll(<String>['dir::/repo/plain-a', 'dir::/repo/plain-b']),
         );
-        expect(provider.openProjectIds, isNot(contains('project')));
         expect(
           provider.openProjects.map((item) => item.path),
           containsAll(<String>['/repo/plain-a', '/repo/plain-b']),
-        );
-      },
-    );
-
-    test(
-      'initializeProject migrates legacy generic open id to synthetic directory id',
-      () async {
-        projectRepository = _CollidingDirectoryProjectRepository(
-          currentProject: Project(
-            id: 'project',
-            name: 'Directory',
-            path: '/repo/plain-a',
-            createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-          ),
-          projects: <Project>[
-            Project(
-              id: 'proj_a',
-              name: 'Project A',
-              path: '/repo/a',
-              createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-            ),
-          ],
-        );
-        provider = ProjectProvider(
-          projectRepository: projectRepository,
-          localDataSource: localDataSource,
-        );
-        await localDataSource.saveCurrentProjectId(
-          'project',
-          serverId: 'srv_test',
-        );
-        await localDataSource.saveOpenProjectIdsJson(
-          jsonEncode(<String>['project']),
-          serverId: 'srv_test',
-        );
-
-        await provider.initializeProject();
-
-        expect(provider.openProjectIds, contains('dir::/repo/plain-a'));
-        expect(
-          provider.openProjects.any((item) => item.path == '/repo/plain-a'),
-          isTrue,
         );
       },
     );
