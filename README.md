@@ -47,6 +47,11 @@ Installers automatically select the best artifact for your OS/CPU:
 
 Release assets are published per OS/architecture (no universal desktop archive).
 
+- Android
+
+  Download the latest APK directly:
+  [codewalk-android-arm64.apk](https://github.com/verseles/codewalk/releases/latest/download/codewalk-android-arm64.apk)
+
 ### Uninstall
 
 - Linux & macOS
