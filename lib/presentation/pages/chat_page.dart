@@ -252,7 +252,7 @@ class _ChatPageState extends State<ChatPage>
     if (!identical(_appProvider, nextAppProvider)) {
       _appProvider?.removeListener(_handleAppProviderChange);
       _appProvider = nextAppProvider;
-      _lastServerId = _normalizeServerId(nextAppProvider.activeServerId);
+      _lastServerId = nextAppProvider.activeServerId;
       _lastServerConnectionState = nextAppProvider.isConnected;
       _appProvider?.addListener(_handleAppProviderChange);
     }
@@ -423,18 +423,9 @@ class _ChatPageState extends State<ChatPage>
     if (appProvider == null) {
       return;
     }
-    final currentServerId = _normalizeServerId(appProvider.activeServerId);
-    final previousServerId = _normalizeServerId(_lastServerId);
+    final currentServerId = appProvider.activeServerId;
     final currentConnected = appProvider.isConnected;
-    final missingServerIsTransient =
-        currentServerId == null &&
-        previousServerId != null &&
-        appProvider.serverProfiles.isNotEmpty;
-    if (missingServerIsTransient) {
-      _lastServerConnectionState = currentConnected;
-      return;
-    }
-    final serverChanged = currentServerId != previousServerId;
+    final serverChanged = currentServerId != _lastServerId;
 
     if (serverChanged) {
       _lastServerId = currentServerId;
@@ -450,14 +441,6 @@ class _ChatPageState extends State<ChatPage>
     if (wasConnected == false && currentConnected) {
       unawaited(_handleServerReconnected());
     }
-  }
-
-  String? _normalizeServerId(String? serverId) {
-    final trimmed = serverId?.trim();
-    if (trimmed == null || trimmed.isEmpty) {
-      return null;
-    }
-    return trimmed;
   }
 
   Future<void> _handleServerReconnected() async {

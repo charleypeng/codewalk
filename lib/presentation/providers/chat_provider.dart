@@ -306,7 +306,6 @@ class ChatProvider extends ChangeNotifier {
   bool _pendingRefreshStatus = false;
   bool _pendingRefreshActiveSession = false;
   bool _featureFlagLogged = false;
-  bool _missingActiveServerScopeLogged = false;
   final Map<String, String> _pendingRenameTitleBySessionId = <String, String>{};
   final Set<String> _autoTitleConsolidatedSessionIds = <String>{};
   final Map<String, String> _autoTitleLastSignatureBySessionId =
@@ -1436,32 +1435,14 @@ class ChatProvider extends ChangeNotifier {
 
   Future<String> _resolveServerScopeId() async {
     final stored = await localDataSource.getActiveServerId();
-    final normalizedStored = stored?.trim();
-    if (normalizedStored != null && normalizedStored.isNotEmpty) {
-      _missingActiveServerScopeLogged = false;
-      _activeServerId = normalizedStored;
+    if (stored != null && stored.isNotEmpty) {
+      _activeServerId = stored;
       _activeContextKey = _composeContextKey(
         _activeServerId,
         _resolveContextScopeId(),
       );
-      return normalizedStored;
+      return stored;
     }
-    final current = _activeServerId.trim();
-    if (current.isNotEmpty && current != 'legacy') {
-      if (!_missingActiveServerScopeLogged) {
-        AppLogger.warn(
-          'Active server ID missing in local storage; preserving in-memory server scope: $current',
-        );
-        _missingActiveServerScopeLogged = true;
-      }
-      _activeServerId = current;
-      _activeContextKey = _composeContextKey(
-        _activeServerId,
-        _resolveContextScopeId(),
-      );
-      return current;
-    }
-    _missingActiveServerScopeLogged = false;
     _activeServerId = 'legacy';
     _activeContextKey = _composeContextKey(
       _activeServerId,

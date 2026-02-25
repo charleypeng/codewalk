@@ -206,17 +206,14 @@ extension _ChatPageScaffold on _ChatPageState {
                       onSessionSelected: (session) async {
                         var switchedContext = false;
                         final sessionDirectory =
-                            _normalizeDirectoryForComparison(
-                              session.directory ??
-                                  session.path?.workspace ??
-                                  session.path?.root,
-                            );
-                        final currentDirectory =
-                            _normalizeDirectoryForComparison(
-                              projectProvider.currentDirectory,
-                            );
+                            session.directory ??
+                            session.path?.workspace ??
+                            session.path?.root;
                         if (sessionDirectory != null &&
-                            sessionDirectory != currentDirectory) {
+                            sessionDirectory.trim().isNotEmpty &&
+                            sessionDirectory.trim() !=
+                                (projectProvider.currentDirectory ?? '')
+                                    .trim()) {
                           switchedContext = true;
                           await _switchDirectoryContext(
                             sessionDirectory,
@@ -293,23 +290,6 @@ extension _ChatPageScaffold on _ChatPageState {
         );
       },
     );
-  }
-
-  String? _normalizeDirectoryForComparison(String? raw) {
-    final trimmed = raw?.trim();
-    if (trimmed == null ||
-        trimmed.isEmpty ||
-        trimmed == '/' ||
-        trimmed == '-') {
-      return null;
-    }
-    var normalized = trimmed.replaceAll('\\', '/');
-    if (normalized.length > 1) {
-      normalized = normalized.replaceAll(RegExp(r'/+$'), '');
-    }
-    return normalized.isEmpty || normalized == '/' || normalized == '-'
-        ? null
-        : normalized;
   }
 
   Widget _buildDesktopUtilityPane(

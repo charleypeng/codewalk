@@ -373,14 +373,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
         trimmed == '-') {
       return 'global';
     }
-    var normalized = trimmed.replaceAll('\\', '/');
-    if (normalized.length > 1) {
-      normalized = normalized.replaceAll(RegExp(r'/+$'), '');
-    }
-    if (normalized.isEmpty || normalized == '/' || normalized == '-') {
-      return 'global';
-    }
-    return normalized;
+    return trimmed;
   }
 
   String _groupTitleFromKey(String groupKey) {

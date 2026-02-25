@@ -430,50 +430,6 @@ void main() {
       },
     );
 
-    test(
-      'switchToDirectoryContext treats trailing slash as unchanged directory',
-      () async {
-        await provider.initializeProject();
-
-        final switched = await provider.switchToDirectoryContext('/repo/a/');
-
-        expect(switched, isFalse);
-        expect(provider.currentProject?.path, '/repo/a');
-      },
-    );
-
-    test(
-      'switchToDirectoryContext normalizes synthetic directory id to avoid duplicates',
-      () async {
-        await provider.initializeProject();
-
-        final switchedFirst = await provider.switchToDirectoryContext(
-          '/repo/plain-a/',
-        );
-        final switchedSecond = await provider.switchToDirectoryContext(
-          '/repo/plain-a',
-        );
-
-        expect(switchedFirst, isTrue);
-        expect(switchedSecond, isFalse);
-        expect(provider.openProjectIds, contains('dir::/repo/plain-a'));
-        expect(provider.openProjectIds, isNot(contains('dir::/repo/plain-a/')));
-      },
-    );
-
-    test(
-      'initializeProject preserves in-memory server scope when storage is temporarily empty',
-      () async {
-        await provider.initializeProject();
-        expect(provider.activeServerId, 'srv_test');
-
-        localDataSource.activeServerId = null;
-        await provider.initializeProject(forceReload: true);
-
-        expect(provider.activeServerId, 'srv_test');
-      },
-    );
-
     test('listDirectories surfaces errors and logs them', () async {
       projectRepository.directoryFailure = const NetworkFailure(
         'Client error',

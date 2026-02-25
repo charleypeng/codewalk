@@ -49,17 +49,11 @@ class ProjectProvider extends ChangeNotifier {
   bool get worktreeSupported => _worktreeSupported;
 
   String? get currentDirectory {
-    final path = _currentProject?.path;
-    if (path == null) {
+    final path = _currentProject?.path.trim();
+    if (path == null || path.isEmpty || path == '/' || path == '-') {
       return null;
     }
-    final normalizedPath = _normalizeDirectoryPath(path);
-    if (normalizedPath.isEmpty ||
-        normalizedPath == '/' ||
-        normalizedPath == '-') {
-      return null;
-    }
-    return normalizedPath;
+    return path;
   }
 
   String get currentScopeId => currentDirectory ?? currentProjectId;
@@ -178,25 +172,22 @@ class ProjectProvider extends ChangeNotifier {
   }
 
   Future<bool> switchToDirectoryContext(String directory) async {
-    final normalized = _normalizeDirectoryPath(directory);
-    if (normalized.isEmpty || normalized == '-') {
+    final normalized = directory.trim();
+    if (normalized.isEmpty) {
       _setError('Failed to switch project: directory is empty');
       return false;
     }
-    final currentNormalizedPath = _currentProject == null
-        ? null
-        : _normalizeDirectoryPath(_currentProject!.path);
-    if (currentNormalizedPath == normalized) {
+    if (_currentProject?.path.trim() == normalized) {
       return false;
     }
 
     var project = _projects
-        .where((item) => _normalizeDirectoryPath(item.path) == normalized)
+        .where((item) => item.path.trim() == normalized)
         .firstOrNull;
     if (project == null) {
       await _loadProjects(silent: true);
       project = _projects
-          .where((item) => _normalizeDirectoryPath(item.path) == normalized)
+          .where((item) => item.path.trim() == normalized)
           .firstOrNull;
     }
 
@@ -212,18 +203,16 @@ class ProjectProvider extends ChangeNotifier {
           );
         },
         (item) {
-          final fetchedPath = _normalizeDirectoryPath(item.path);
+          final fetchedPath = item.path.trim();
           if (fetchedPath == normalized) {
             final existingByPath = _projects
-                .where((p) => _normalizeDirectoryPath(p.path) == normalized)
+                .where((p) => p.path.trim() == normalized)
                 .firstOrNull;
             final scopedProject =
                 existingByPath ?? _buildSyntheticDirectoryProject(normalized);
             project = scopedProject;
             final existingPathIndex = _projects.indexWhere(
-              (p) =>
-                  _normalizeDirectoryPath(p.path) ==
-                  _normalizeDirectoryPath(scopedProject.path),
+              (p) => p.path.trim() == scopedProject.path.trim(),
             );
             if (existingPathIndex >= 0) {
               _projects[existingPathIndex] = scopedProject;
@@ -262,8 +251,7 @@ class ProjectProvider extends ChangeNotifier {
 
     final selectedProject = project!;
     if (_currentProject?.id == selectedProject.id &&
-        _normalizeDirectoryPath(_currentProject?.path ?? '') ==
-            _normalizeDirectoryPath(selectedProject.path)) {
+        _currentProject?.path.trim() == selectedProject.path.trim()) {
       return false;
     }
 
@@ -457,9 +445,7 @@ class ProjectProvider extends ChangeNotifier {
 
         if (switchToCreated) {
           final switched = await switchToDirectoryContext(worktree.directory);
-          if (!switched &&
-              _normalizeDirectoryPath(_currentProject?.path ?? '') !=
-                  _normalizeDirectoryPath(worktree.directory)) {
+          if (!switched && _currentProject?.path.trim() != worktree.directory) {
             AppLogger.warn(
               'Workspace created but context switch did not apply directory=${worktree.directory}',
             );
@@ -538,11 +524,7 @@ class ProjectProvider extends ChangeNotifier {
         var projectStateChanged = false;
         if (removed != null) {
           final removedProjectIds = _projects
-              .where(
-                (item) =>
-                    _normalizeDirectoryPath(item.path) ==
-                    _normalizeDirectoryPath(removed.directory),
-              )
+              .where((item) => item.path == removed.directory)
               .map((item) => item.id)
               .toSet();
           if (removedProjectIds.isNotEmpty) {
@@ -786,9 +768,7 @@ class ProjectProvider extends ChangeNotifier {
         for (final synthetic in previousSynthetic) {
           final existsById = merged.any((item) => item.id == synthetic.id);
           final existsByPath = merged.any(
-            (item) =>
-                _normalizeDirectoryPath(item.path) ==
-                _normalizeDirectoryPath(synthetic.path),
+            (item) => item.path.trim() == synthetic.path.trim(),
           );
           if (!existsById && !existsByPath) {
             merged.add(synthetic);
@@ -815,17 +795,10 @@ class ProjectProvider extends ChangeNotifier {
 
   Future<String> _resolveServerId() async {
     final stored = await _localDataSource.getActiveServerId();
-    if (stored != null && stored.trim().isNotEmpty) {
-      return stored.trim();
+    if (stored == null || stored.trim().isEmpty) {
+      return 'legacy';
     }
-    final current = _activeServerId.trim();
-    if (current.isNotEmpty && current != 'legacy') {
-      AppLogger.warn(
-        'Active server ID missing in local storage; preserving in-memory server scope: $current',
-      );
-      return current;
-    }
-    return 'legacy';
+    return stored.trim();
   }
 
   Future<void> _restoreOpenProjects() async {
@@ -843,23 +816,19 @@ class ProjectProvider extends ChangeNotifier {
                 .where((project) => project.id == id)
                 .firstOrNull;
             if (existing != null) {
-              final normalizedExistingPath = _normalizeDirectoryPath(
-                existing.path,
-              );
               final shouldMigrateToSynthetic =
                   !_isSyntheticDirectoryProject(existing) &&
                   !_serverProjectIds.contains(existing.id) &&
-                  normalizedExistingPath.isNotEmpty &&
-                  normalizedExistingPath != '/' &&
-                  normalizedExistingPath != '-';
+                  existing.path.trim().isNotEmpty &&
+                  existing.path.trim() != '/' &&
+                  existing.path.trim() != '-';
               if (shouldMigrateToSynthetic) {
                 final recoveredProject = _buildSyntheticDirectoryProject(
                   existing.path,
                 );
                 final existingPathIndex = _projects.indexWhere(
                   (project) =>
-                      _normalizeDirectoryPath(project.path) ==
-                      _normalizeDirectoryPath(recoveredProject.path),
+                      project.path.trim() == recoveredProject.path.trim(),
                 );
                 if (existingPathIndex >= 0) {
                   _projects[existingPathIndex] = recoveredProject;
@@ -876,9 +845,9 @@ class ProjectProvider extends ChangeNotifier {
             if (recovered == null &&
                 _currentProject != null &&
                 _currentProject!.id == id &&
-                _normalizeDirectoryPath(_currentProject!.path).isNotEmpty &&
-                _normalizeDirectoryPath(_currentProject!.path) != '/' &&
-                _normalizeDirectoryPath(_currentProject!.path) != '-') {
+                _currentProject!.path.trim().isNotEmpty &&
+                _currentProject!.path.trim() != '/' &&
+                _currentProject!.path.trim() != '-') {
               recovered = _buildSyntheticDirectoryProject(
                 _currentProject!.path,
               );
@@ -888,9 +857,7 @@ class ProjectProvider extends ChangeNotifier {
             }
             final recoveredProject = recovered;
             final existingPathIndex = _projects.indexWhere(
-              (project) =>
-                  _normalizeDirectoryPath(project.path) ==
-                  _normalizeDirectoryPath(recoveredProject.path),
+              (project) => project.path.trim() == recoveredProject.path.trim(),
             );
             if (existingPathIndex >= 0) {
               _projects[existingPathIndex] = recoveredProject;
