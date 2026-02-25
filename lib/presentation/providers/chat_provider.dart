@@ -569,7 +569,12 @@ class ChatProvider extends ChangeNotifier {
         _sessionUnreadCompletionIds.remove(sessionId);
         continue;
       }
-      _sessionErrorAttentionIds.remove(sessionId);
+      // Keep sticky error attention on idle until the user focuses the session
+      // or an explicit event clears it, avoiding silent dismissal on snapshot
+      // refresh races.
+      if (statusType == SessionStatusType.idle) {
+        continue;
+      }
     }
     _pruneSessionAttentionStateToKnownSessions();
   }
@@ -2735,6 +2740,8 @@ class ChatProvider extends ChangeNotifier {
               AppLogger.info(
                 'Provider send stream finished session=$streamSessionId',
               );
+              final previousStatusType =
+                  _sessionStatusById[streamSessionId]?.type;
               _sessionStatusById[streamSessionId] = const SessionStatusInfo(
                 type: SessionStatusType.idle,
               );
@@ -2746,9 +2753,17 @@ class ChatProvider extends ChangeNotifier {
                 unawaited(_persistLastSessionSnapshotBestEffort());
                 unawaited(loadSessionInsights(streamSessionId, silent: true));
               } else {
-                _sessionErrorAttentionIds.remove(streamSessionId);
-                _sessionUnreadCompletionIds.add(streamSessionId);
-                _notifyListeners();
+                final clearedError = _sessionErrorAttentionIds.remove(
+                  streamSessionId,
+                );
+                final addedUnread = _sessionUnreadCompletionIds.add(
+                  streamSessionId,
+                );
+                final statusChanged =
+                    previousStatusType != SessionStatusType.idle;
+                if (statusChanged || clearedError || addedUnread) {
+                  _notifyListeners();
+                }
               }
               _scheduleQueuedSendDrain(
                 streamSessionId,
