@@ -136,6 +136,15 @@
 
 ## Composer
 
+### Microphone button visual behavior
+
+- **Given** the composer input is visible
+- **When** voice input is idle (not listening)
+- **Then** the microphone button uses a transparent background, preserving the composer bubble look
+- **When** voice input is active (or starting)
+- **Then** the microphone button background turns red to indicate active capture
+- **Then** the button is visually aligned with the right edge curvature of the composer input
+
 ### Message history navigation
 
 - **Given** the user has sent previous messages in the session
@@ -260,6 +269,14 @@ The app uses a dual-engine strategy with automatic fallback:
 - **When** the agent reports its task progress
 - **Then** a task list is displayed in the session showing the agent's current and completed steps
 - **Then** the task list is read-only for the user — it is controlled entirely by the server/agent
+
+### Header progress indicator for tasks
+
+- **Given** the current session has a visible task list
+- **When** the task list is rendered in either collapsed or expanded mode
+- **Then** a single thin, full-width progress bar appears directly below the task header (same position in both states)
+- **Then** the progress value represents completed tasks divided by total tasks
+- **Then** progress changes animate smoothly with an ease-in-out transition between values
 
 ---
 
