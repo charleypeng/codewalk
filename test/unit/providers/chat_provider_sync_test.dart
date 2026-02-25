@@ -965,6 +965,47 @@ void main() {
     );
 
     test(
+      'onServerScopeChanged preserves in-memory server scope when local active server id is temporarily empty',
+      () async {
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'model_a': testModel('model_a')},
+              ),
+              Provider(
+                id: 'provider_b',
+                name: 'Provider B',
+                env: const <String>[],
+                models: <String, Model>{'model_b': testModel('model_b')},
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a', 'provider_b'],
+          ),
+        );
+
+        await provider.projectProvider.initializeProject();
+        await provider.initializeProviders();
+        await provider.setSelectedModelByProvider(
+          providerId: 'provider_b',
+          modelId: 'model_b',
+        );
+        expect(provider.selectedProviderId, 'provider_b');
+        expect(provider.selectedModelId, 'model_b');
+
+        localDataSource.activeServerId = null;
+        await provider.onServerScopeChanged();
+
+        expect(provider.selectedProviderId, 'provider_b');
+        expect(provider.selectedModelId, 'model_b');
+      },
+    );
+
+    test(
       'onServerScopeChanged restores agent selection per server scope',
       () async {
         appRepository.providersResult = Right(

@@ -300,4 +300,49 @@ void main() {
 
     expect(find.text('A1'), findsOneWidget);
   });
+
+  testWidgets(
+    'groups sessions with trailing-slash and normalized directory under one header',
+    (tester) async {
+      final sessions = <ChatSession>[
+        ChatSession(
+          id: 'ses_norm_1',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'A1',
+          directory: '/repo/a',
+        ),
+        ChatSession(
+          id: 'ses_norm_2',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(2000),
+          title: 'A2',
+          directory: '/repo/a/',
+        ),
+      ];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChatSessionList(
+              sessions: sessions,
+              currentSession: sessions.last,
+              groupByProject: true,
+              activeDirectory: '/repo/a',
+              directoryLabels: const <String, String>{'/repo/a': 'Project A'},
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('chat_session_group_/repo/a')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('chat_session_group_/repo/a/')),
+        findsNothing,
+      );
+    },
+  );
 }
