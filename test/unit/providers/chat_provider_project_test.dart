@@ -736,6 +736,105 @@ void main() {
     );
 
     test(
+      'loadSessions keeps sidebar history when server returns partial directory list',
+      () async {
+        final scopedRepository = FakeChatRepository(
+          sessions: <ChatSession>[
+            ChatSession(
+              id: 'ses_a_old',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              title: 'Session A Old',
+              directory: '/repo/a',
+            ),
+            ChatSession(
+              id: 'ses_a_new',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(2000),
+              title: 'Session A New',
+              directory: '/repo/a',
+            ),
+          ],
+        );
+        final scopedLocal = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test';
+        final scopedProvider = ChatProvider(
+          sendChatMessage: SendChatMessage(scopedRepository),
+          getChatSessions: GetChatSessions(scopedRepository),
+          createChatSession: CreateChatSession(scopedRepository),
+          getChatMessages: GetChatMessages(scopedRepository),
+          getChatMessage: GetChatMessage(scopedRepository),
+          getAgents: GetAgents(appRepository),
+          getProviders: GetProviders(appRepository),
+          deleteChatSession: DeleteChatSession(scopedRepository),
+          updateChatSession: UpdateChatSession(scopedRepository),
+          shareChatSession: ShareChatSession(scopedRepository),
+          unshareChatSession: UnshareChatSession(scopedRepository),
+          forkChatSession: ForkChatSession(scopedRepository),
+          getSessionStatus: GetSessionStatus(scopedRepository),
+          getSessionChildren: GetSessionChildren(scopedRepository),
+          getSessionTodo: GetSessionTodo(scopedRepository),
+          getSessionDiff: GetSessionDiff(scopedRepository),
+          watchChatEvents: WatchChatEvents(scopedRepository),
+          watchGlobalChatEvents: WatchGlobalChatEvents(scopedRepository),
+          listPendingPermissions: ListPendingPermissions(scopedRepository),
+          replyPermission: ReplyPermission(scopedRepository),
+          listPendingQuestions: ListPendingQuestions(scopedRepository),
+          replyQuestion: ReplyQuestion(scopedRepository),
+          rejectQuestion: RejectQuestion(scopedRepository),
+          projectProvider: ProjectProvider(
+            projectRepository: FakeProjectRepository(
+              currentProject: Project(
+                id: 'proj_a',
+                name: 'Project A',
+                path: '/repo/a',
+                createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+              ),
+              projects: <Project>[
+                Project(
+                  id: 'proj_a',
+                  name: 'Project A',
+                  path: '/repo/a',
+                  createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+                ),
+              ],
+            ),
+            localDataSource: scopedLocal,
+          ),
+          localDataSource: scopedLocal,
+        );
+
+        await scopedProvider.projectProvider.initializeProject();
+        await scopedProvider.initializeProviders();
+        await scopedProvider.loadSessions();
+        expect(
+          scopedProvider.visibleSidebarSessions.map((item) => item.id),
+          containsAll(<String>['ses_a_old', 'ses_a_new']),
+        );
+
+        // Simulate server-side partial list (pagination/limit) for same directory.
+        scopedRepository.sessions
+          ..clear()
+          ..add(
+            ChatSession(
+              id: 'ses_a_new',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(2000),
+              title: 'Session A New',
+              directory: '/repo/a',
+            ),
+          );
+
+        await scopedProvider.loadSessions();
+
+        expect(
+          scopedProvider.visibleSidebarSessions.map((item) => item.id),
+          containsAll(<String>['ses_a_old', 'ses_a_new']),
+        );
+      },
+    );
+
+    test(
       'loadSessions excludes internal _title_gen sessions from Conversations',
       () async {
         chatRepository.sessions
