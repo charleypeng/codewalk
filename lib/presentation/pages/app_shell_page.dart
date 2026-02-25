@@ -121,7 +121,13 @@ class _AppShellPageState extends State<AppShellPage> {
         final installState = settingsProvider.installState;
         if (installState != _lastObservedInstallState) {
           _lastObservedInstallState = installState;
-          if (installState == UpdateInstallState.downloading &&
+          if (installState == UpdateInstallState.idle) {
+            // startInstall() briefly resets to idle before starting; clear guards
+            // so subsequent state transitions trigger fresh SnackBars.
+            _shownProgressSnackBar = false;
+            _shownDoneSnackBar = false;
+            _shownFailedSnackBar = false;
+          } else if (installState == UpdateInstallState.downloading &&
               !_shownProgressSnackBar) {
             _shownProgressSnackBar = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -222,8 +228,7 @@ class _AppShellPageState extends State<AppShellPage> {
         action: SnackBarAction(
           label: 'Retry',
           onPressed: () {
-            _shownProgressSnackBar = false;
-            _shownFailedSnackBar = false;
+            // Guards are cleared by the idle→downloading state transition in the builder.
             unawaited(settingsProvider.startInstall());
           },
         ),

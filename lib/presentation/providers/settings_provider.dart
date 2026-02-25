@@ -790,11 +790,17 @@ class SettingsProvider extends ChangeNotifier {
   /// Begins the in-app update installation flow for the current platform.
   /// Android: downloads the APK then opens the system installer.
   /// Desktop: runs the install.cat shell script and signals "Restart to apply".
+  /// Resetting to idle first lets AppShellPage clear its SnackBar guards on retry.
   Future<void> startInstall() async {
     if (_installState == UpdateInstallState.downloading ||
         _installState == UpdateInstallState.installing) return;
     final result = _updateCheckResult;
     if (result == null) return;
+
+    // Reset to idle so AppShellPage observers can clear their snackbar guards.
+    _installState = UpdateInstallState.idle;
+    _installProgress = 0.0;
+    notifyListeners();
 
     final isAndroid =
         !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
@@ -813,10 +819,17 @@ class SettingsProvider extends ChangeNotifier {
     _installProgress = 0.0;
     notifyListeners();
 
+    String? destPath;
     try {
       final tmpDir = await getTemporaryDirectory();
-      final destPath = '${tmpDir.path}/codewalk-update.apk';
-      await Dio().download(
+      destPath = '${tmpDir.path}/codewalk-update.apk';
+      // Use explicit timeouts; APK downloads can be large but should not hang forever.
+      await Dio(
+        BaseOptions(
+          connectTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(minutes: 10),
+        ),
+      ).download(
         apkUrl,
         destPath,
         onReceiveProgress: (received, total) {
@@ -829,6 +842,13 @@ class SettingsProvider extends ChangeNotifier {
       await OpenFilex.open(destPath);
     } catch (error, stackTrace) {
       AppLogger.warn('APK download failed', error: error, stackTrace: stackTrace);
+      // Clean up partial file so a retry does not open a corrupt APK.
+      if (destPath != null) {
+        try {
+          final file = File(destPath);
+          if (file.existsSync()) file.deleteSync();
+        } catch (_) {}
+      }
       _installState = UpdateInstallState.failed;
       notifyListeners();
     }
@@ -841,17 +861,18 @@ class SettingsProvider extends ChangeNotifier {
     try {
       final isWindows =
           !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
+      // Wrap in a timeout so a stalled network does not hang indefinitely.
       ProcessResult processResult;
       if (isWindows) {
         processResult = await Process.run(
           'powershell',
           ['-c', 'irm install.cat/verseles/codewalk | iex'],
-        );
+        ).timeout(const Duration(minutes: 5));
       } else {
         processResult = await Process.run(
           'sh',
           ['-c', 'curl -fsSL install.cat/verseles/codewalk | sh'],
-        );
+        ).timeout(const Duration(minutes: 5));
       }
       _installState = processResult.exitCode == 0
           ? UpdateInstallState.done
