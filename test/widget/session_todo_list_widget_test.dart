@@ -51,10 +51,10 @@ void main() {
     expect(find.text('Write API endpoints'), findsOneWidget);
     expect(find.text('Add tests'), findsOneWidget);
     expect(
-      find.byKey(const ValueKey<String>('session_todo_footer_progress_bar')),
+      find.byKey(const ValueKey<String>('session_todo_progress_bar')),
       findsOneWidget,
     );
-    expect(find.text('Progress 1/3 completed'), findsOneWidget);
+    expect(find.text('Progress 1/3 completed'), findsNothing);
   });
 
   testWidgets('shows summary with in-progress task when collapsed', (
@@ -66,9 +66,10 @@ void main() {
     expect(find.text('Set up database'), findsNothing);
     expect(find.text('Add tests'), findsNothing);
     expect(
-      find.byKey(const ValueKey<String>('session_todo_footer_progress_bar')),
-      findsNothing,
+      find.byKey(const ValueKey<String>('session_todo_progress_bar')),
+      findsOneWidget,
     );
+    expect(find.text('Progress 1/3 completed'), findsNothing);
   });
 
   testWidgets('shows completed count when collapsed with no in-progress', (

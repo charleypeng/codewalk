@@ -136,29 +136,51 @@ class _SessionTodoListWidgetState extends State<SessionTodoListWidget> {
           borderRadius: BorderRadius.circular(6),
           onTap: widget.onToggleCollapsed,
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-            child: Row(
+            padding: const EdgeInsets.fromLTRB(4, 4, 4, 6),
+            child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  widget.collapsed
-                      ? Symbols.expand_more_rounded
-                      : Symbols.expand_less_rounded,
-                  size: 18,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    widget.collapsed
-                        ? _collapsedSummary()
-                        : 'Tasks (${widget.todos.length})',
-                    style: textTheme.labelMedium?.copyWith(
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      widget.collapsed
+                          ? Symbols.expand_more_rounded
+                          : Symbols.expand_less_rounded,
+                      size: 18,
                       color: colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        widget.collapsed
+                            ? _collapsedSummary()
+                            : 'Tasks (${widget.todos.length})',
+                        style: textTheme.labelMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                SizedBox(
+                  width: double.infinity,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: LinearProgressIndicator(
+                      key: const ValueKey<String>('session_todo_progress_bar'),
+                      value: _completionProgress,
+                      minHeight: 3,
+                      backgroundColor: colorScheme.surfaceContainerHighest,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        colorScheme.primary,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -196,43 +218,7 @@ class _SessionTodoListWidgetState extends State<SessionTodoListWidget> {
                         .toList(growable: false),
                   ),
           ),
-        if (!widget.collapsed) _buildFooterProgress(context),
       ],
-    );
-  }
-
-  Widget _buildFooterProgress(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final totalCount = widget.todos.length;
-    final completedCount = _completedCount;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 8, 4, 2),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              key: const ValueKey<String>('session_todo_footer_progress_bar'),
-              value: _completionProgress,
-              minHeight: 6,
-              backgroundColor: colorScheme.surfaceContainerHighest,
-              valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Progress $completedCount/$totalCount completed',
-            key: const ValueKey<String>('session_todo_footer_progress_text'),
-            style: textTheme.labelSmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
