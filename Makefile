@@ -277,7 +277,7 @@ android:
 		exit 1; \
 	fi
 	@CAPTION_TEXT="$${HEY_CAPTION:-$$(git log -1 --pretty=%s 2>/dev/null || echo CodeWalk-Android-build)}"; \
-	~/bin/hey -f "$(APK_PATH)" "$$CAPTION_TEXT"
+	HEY_SYNC=1 ~/bin/hey -f "$(APK_PATH)" "$$CAPTION_TEXT"
 
 precommit: check icons-check android
 
