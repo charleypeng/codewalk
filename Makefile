@@ -271,10 +271,10 @@ android:
 		echo "Create $(ANDROID_KEY_PROPERTIES) with keyAlias/keyPassword/storePassword/storeFile before running make android."; \
 		exit 1; \
 	fi
-	@store_file=$$(grep '^storeFile=' "$(ANDROID_KEY_PROPERTIES)" | sed 's/^storeFile=//'); \
-	store_password=$$(grep '^storePassword=' "$(ANDROID_KEY_PROPERTIES)" | sed 's/^storePassword=//'); \
-	key_password=$$(grep '^keyPassword=' "$(ANDROID_KEY_PROPERTIES)" | sed 's/^keyPassword=//'); \
-	key_alias=$$(grep '^keyAlias=' "$(ANDROID_KEY_PROPERTIES)" | sed 's/^keyAlias=//'); \
+	@store_file=$$(awk -F= '/^[[:space:]]*storeFile[[:space:]]*=/{sub(/^[^=]*=/,""); gsub(/\r/, ""); gsub(/^[[:space:]]+|[[:space:]]+$$/, ""); print; exit}' "$(ANDROID_KEY_PROPERTIES)"); \
+	store_password=$$(awk -F= '/^[[:space:]]*storePassword[[:space:]]*=/{sub(/^[^=]*=/,""); gsub(/\r/, ""); gsub(/^[[:space:]]+|[[:space:]]+$$/, ""); print; exit}' "$(ANDROID_KEY_PROPERTIES)"); \
+	key_password=$$(awk -F= '/^[[:space:]]*keyPassword[[:space:]]*=/{sub(/^[^=]*=/,""); gsub(/\r/, ""); gsub(/^[[:space:]]+|[[:space:]]+$$/, ""); print; exit}' "$(ANDROID_KEY_PROPERTIES)"); \
+	key_alias=$$(awk -F= '/^[[:space:]]*keyAlias[[:space:]]*=/{sub(/^[^=]*=/,""); gsub(/\r/, ""); gsub(/^[[:space:]]+|[[:space:]]+$$/, ""); print; exit}' "$(ANDROID_KEY_PROPERTIES)"); \
 	if [ -z "$$store_file" ] || [ -z "$$store_password" ] || [ -z "$$key_password" ] || [ -z "$$key_alias" ]; then \
 		echo "Incomplete $(ANDROID_KEY_PROPERTIES). Required keys: storeFile, storePassword, keyPassword, keyAlias."; \
 		exit 1; \
