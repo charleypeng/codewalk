@@ -166,6 +166,8 @@ try {
 
   Info "Extracting package"
   Expand-Archive -Path $zipPath -DestinationPath $InstallDir -Force
+  # Remove Zone.Identifier ADS so SmartScreen does not warn on first run.
+  Get-ChildItem -Path $InstallDir -Recurse | Unblock-File -ErrorAction SilentlyContinue
 
   if (-not (Test-Path $BinaryPath)) {
     $nested = Join-Path $InstallDir "bin\codewalk.exe"

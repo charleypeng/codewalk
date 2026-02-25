@@ -132,6 +132,8 @@ install_macos_bundle() {
   target_bundle="$MAC_APPS_DIR/$APP_NAME.app"
   rm -rf "$target_bundle"
   cp -R "$bundle_path" "$target_bundle"
+  # Remove macOS quarantine attribute so Gatekeeper does not block the app.
+  xattr -cr "$target_bundle" 2>/dev/null || true
 
   app_exec="$(find "$target_bundle/Contents/MacOS" -maxdepth 1 -type f 2>/dev/null | head -1 || true)"
   if [ -n "$app_exec" ] && [ -x "$app_exec" ]; then
