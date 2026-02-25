@@ -36,16 +36,15 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                     Flexible(
                       child: ConstrainedBox(
                         constraints: BoxConstraints(
-                          maxWidth:
-                              isMobile ? 100 : (isLargeDesktop ? 400 : 300),
+                          maxWidth: isMobile
+                              ? 100
+                              : (isLargeDesktop ? 400 : 300),
                         ),
                         child: Text(
                           currentDirectoryChip,
                           overflow: TextOverflow.ellipsis,
-                          style:
-                              Theme.of(context).textTheme.labelLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),
@@ -163,7 +162,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Select a directory/workspace below',
+                  'Select a project below. Workspaces are project variants.',
                   style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -182,7 +181,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                     _openCreateWorkspaceFromSelector(dialogContext),
                   ),
                   icon: const Icon(Symbols.add_box),
-                  label: const Text('Create workspace in directory...'),
+                  label: const Text('Create project workspace...'),
                 ),
                 if (!FeatureFlags.refreshlessRealtime)
                   FilledButton.tonalIcon(
@@ -194,7 +193,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                   FilledButton.tonalIcon(
                     onPressed: () => unawaited(projectProvider.loadWorktrees()),
                     icon: const Icon(Symbols.sync_rounded),
-                    label: const Text('Refresh workspaces'),
+                    label: const Text('Refresh project workspaces'),
                   ),
               ],
             ),
@@ -230,10 +229,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 8,
                           ),
-                          leading: const Icon(
-                            Symbols.folder_off,
-                            size: 20,
-                          ),
+                          leading: const Icon(Symbols.folder_off, size: 20),
                           title: Text(
                             displayName,
                             overflow: TextOverflow.ellipsis,
@@ -253,7 +249,9 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                                 ),
                               ),
                               IconButton(
-                                icon: const Icon(Symbols.delete_outline_rounded),
+                                icon: const Icon(
+                                  Symbols.delete_outline_rounded,
+                                ),
                                 tooltip: 'Archive closed project $displayName',
                                 onPressed: () => unawaited(
                                   _archiveClosedProjectContext(project.id),
@@ -267,7 +265,10 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                 ],
                 if (worktreeEnabled) ...[
                   const SizedBox(height: 8),
-                  _buildSelectorSectionHeader(dialogContext, 'Workspaces'),
+                  _buildSelectorSectionHeader(
+                    dialogContext,
+                    'Project workspaces',
+                  ),
                   for (final worktree in projectProvider.worktrees)
                     ListTile(
                       dense: _useDenseListTiles(dialogContext),

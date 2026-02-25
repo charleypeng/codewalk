@@ -996,7 +996,10 @@ void main() {
     );
     expect(find.text('Project context'), findsOneWidget);
     expect(find.text('Current directory: /repo/a'), findsOneWidget);
-    expect(find.text('Select a directory/workspace below'), findsOneWidget);
+    expect(
+      find.text('Select a project below. Workspaces are project variants.'),
+      findsOneWidget,
+    );
     expect(find.byIcon(Symbols.close_rounded), findsOneWidget);
   });
 
@@ -1178,7 +1181,7 @@ void main() {
 
     await tester.tap(find.byTooltip('Choose Directory'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Create workspace in directory...'));
+    await tester.tap(find.text('Create project workspace...'));
     await tester.pumpAndSettle();
 
     await tester.enterText(
@@ -1248,7 +1251,7 @@ void main() {
 
     await tester.tap(find.byTooltip('Choose Directory'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Create workspace in directory...'));
+    await tester.tap(find.text('Create project workspace...'));
     await tester.pumpAndSettle();
 
     await tester.tap(
