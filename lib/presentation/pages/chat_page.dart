@@ -154,6 +154,13 @@ class _ChatPageState extends State<ChatPage>
   bool _showScrollToFirstFab = false;
   bool _isProjectScopeTransitioning = false;
   Future<void>? _projectScopeTransitionTask;
+  // Session switch loading guard: true while selectSession is in flight.
+  // Used to show overlay and prevent re-entrant switches.
+  bool _isSessionSwitchInFlight = false;
+  // Per-session collapse state cache (up to 20 sessions, LRU-evicted).
+  // Stores the last expanded collapse group IDs for each session ID.
+  final Map<String, String?> _sessionCollapseHistoryCache = {};
+  final Map<String, String?> _sessionCollapseWorkCache = {};
   bool _isAppInForeground = true;
   bool _wasChatRouteCurrent = true;
   bool _isProgrammaticScrollInFlight = false;
@@ -804,16 +811,22 @@ class _ChatPageState extends State<ChatPage>
                       );
                     }
 
-                    if (!_isProjectScopeTransitioning) {
+                    if (!_isProjectScopeTransitioning &&
+                        !_isSessionSwitchInFlight) {
                       return content;
                     }
 
                     return Stack(
                       children: [
                         Positioned.fill(child: content),
-                        Positioned.fill(
-                          child: _buildProjectScopeLoadingOverlay(),
-                        ),
+                        if (_isProjectScopeTransitioning)
+                          Positioned.fill(
+                            child: _buildProjectScopeLoadingOverlay(),
+                          ),
+                        if (_isSessionSwitchInFlight)
+                          Positioned.fill(
+                            child: _buildSessionSwitchOverlay(),
+                          ),
                       ],
                     );
                   },

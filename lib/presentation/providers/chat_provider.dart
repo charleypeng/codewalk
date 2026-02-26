@@ -255,6 +255,10 @@ class ChatProvider extends ChangeNotifier {
   ChatComposerDraft? _activeSendDraft;
   _RejectedDraftEnvelope? _rejectedDraft;
   bool _interruptSendInFlight = false;
+  // One-shot guard: tracks the session+turn that last fired a final-message
+  // reconcile, preventing duplicate reconciles from repeated session.idle
+  // events within the same completion cycle.
+  String? _lastIdleReconcileSessionTurnKey;
 
   // Project and provider-related state
   String? _currentProjectId;
@@ -2054,9 +2058,10 @@ class ChatProvider extends ChangeNotifier {
       scopeId: scopeId,
     );
 
-    // Load messages for selected session
+    // Load messages for selected session. Insights are non-critical and run
+    // fire-and-forget so they don't block the caller's await chain.
     await loadMessages(session.id);
-    await loadSessionInsights(session.id, silent: true);
+    unawaited(loadSessionInsights(session.id, silent: true));
     _scheduleQueuedSendDrain(session.id, reason: 'session-selected');
   }
 
@@ -2642,6 +2647,9 @@ class ChatProvider extends ChangeNotifier {
       final streamGeneration = _messageStreamGeneration;
       final streamSessionId = sendSessionId;
       _activeMessageStreamSessionId = streamSessionId;
+      // Reset one-shot reconcile guard so the new turn can trigger a reconcile
+      // if the final message ends up missing.
+      _lastIdleReconcileSessionTurnKey = null;
 
       AppLogger.info(
         'Provider send subscribing stream session=$streamSessionId directory=${projectProvider.currentDirectory ?? "-"}',

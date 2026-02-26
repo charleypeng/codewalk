@@ -4603,7 +4603,7 @@ void main() {
     },
   );
 
-  testWidgets('resets collapsed history expansion when switching sessions', (
+  testWidgets('preserves collapsed history expansion when switching sessions', (
     WidgetTester tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1000, 900));
@@ -4712,8 +4712,9 @@ void main() {
     await provider.selectSession(sessionA);
     await tester.pumpAndSettle();
 
-    expect(find.text('reset old message a'), findsNothing);
-    expect(find.text('Show earlier messages'), findsOneWidget);
+    // Collapse state is preserved per session: history that was expanded
+    // before switching away should still be expanded on return.
+    expect(find.text('reset old message a'), findsOneWidget);
   });
 
   testWidgets(

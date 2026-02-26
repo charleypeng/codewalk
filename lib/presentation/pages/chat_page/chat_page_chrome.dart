@@ -60,6 +60,40 @@ extension _ChatPageChrome on _ChatPageState {
     );
   }
 
+  Widget _buildSessionSwitchOverlay() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return AbsorbPointer(
+      key: const ValueKey<String>('session_switch_loading_overlay'),
+      child: ColoredBox(
+        color: colorScheme.surface.withValues(alpha: 0.74),
+        child: Center(
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2.2),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Loading conversation...',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   double _toolbarHeightForDensity({
     required bool isMobile,
     required AppDensity density,
@@ -756,6 +790,20 @@ extension _ChatPageChrome on _ChatPageState {
       return;
     }
     await _switchProjectContext(projectId);
+  }
+
+  Future<void> _reopenProjectFromSelector(
+    BuildContext dialogContext,
+    String projectId,
+  ) async {
+    if (dialogContext.mounted) {
+      Navigator.of(dialogContext).pop();
+    }
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) {
+      return;
+    }
+    await _reopenProjectContext(projectId);
   }
 
   String _directoryLabel(String? directory) {

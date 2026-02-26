@@ -320,9 +320,13 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           // Defer completion marking when a preserved stream is still
           // draining for this session — onDone of that stream handles it.
           final hasPreserved = _hasPreservedStreamForSession(sessionId);
+          // Build a turn key combining session ID and message count so the
+          // guard resets automatically when new messages arrive in a new turn.
+          final idleTurnKey = '$sessionId:${_messages.length}';
           final shouldReconcileCurrentSession =
               sessionId == _currentSession?.id &&
               !hasPreserved &&
+              _lastIdleReconcileSessionTurnKey != idleTurnKey &&
               _sessionNeedsFinalMessageReconcileOnIdle(sessionId);
           AppLogger.info(
             'session.idle session=$sessionId isCurrent=${sessionId == _currentSession?.id} hasPreservedStream=$hasPreserved',
@@ -341,6 +345,9 @@ extension _ChatProviderEventReducerOps on ChatProvider {
               _notifyListeners();
             }
             if (shouldReconcileCurrentSession) {
+              // Mark one-shot so repeated session.idle events in the same
+              // turn do not trigger additional reconcile calls.
+              _lastIdleReconcileSessionTurnKey = idleTurnKey;
               unawaited(
                 refreshActiveSessionView(
                   reason: 'session-idle-final-reconcile',

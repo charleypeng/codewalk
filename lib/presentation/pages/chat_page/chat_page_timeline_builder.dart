@@ -531,9 +531,13 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                   }
 
                   // Animate only genuinely new entries at the tail.
+                  // Pass the message role for role-specific motion profiles.
                   final isNewEntry = animateNewEntries && index >= prevLength;
                   if (isNewEntry) {
-                    return MessageEntranceAnimation(child: child);
+                    final role = entry is _TimelineMessageEntry
+                        ? entry.message.role
+                        : null;
+                    return MessageEntranceAnimation(role: role, child: child);
                   }
                   return child;
                 },

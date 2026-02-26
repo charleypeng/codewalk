@@ -201,12 +201,10 @@ extension _ChatPageScaffold on _ChatPageState {
                       sessionAttentionFor: chatProvider.sessionAttentionFor,
                       isMobileLayout: isMobileLayout,
                       onSessionSelected: (session) async {
-                        await chatProvider.selectSession(session);
-                        // Close AFTER selectSession: during its awaits the
-                        // second tap's gesture events are fully processed
-                        // (including _handleDragCancel which may re-open the
-                        // drawer). Closing last ensures the drawer stays shut.
+                        // Close drawer immediately for instant visual feedback,
+                        // then start the async switch with re-entry guard.
                         _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
+                        await _handleSessionSwitch(session);
                       },
                       onSessionDeleted: (session) async {
                         await chatProvider.deleteSession(session.id);
@@ -415,5 +413,21 @@ extension _ChatPageScaffold on _ChatPageState {
         ],
       ),
     );
+  }
+
+  /// Guards against re-entrant session switches.
+  /// Shows _isSessionSwitchInFlight overlay for the duration of selectSession.
+  Future<void> _handleSessionSwitch(ChatSession session) async {
+    if (_isSessionSwitchInFlight) {
+      return;
+    }
+    _setState(() => _isSessionSwitchInFlight = true);
+    try {
+      await context.read<ChatProvider>().selectSession(session);
+    } finally {
+      if (mounted) {
+        _setState(() => _isSessionSwitchInFlight = false);
+      }
+    }
   }
 }
