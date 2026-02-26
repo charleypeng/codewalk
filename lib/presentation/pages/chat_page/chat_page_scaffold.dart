@@ -201,13 +201,11 @@ extension _ChatPageScaffold on _ChatPageState {
                       sessionAttentionFor: chatProvider.sessionAttentionFor,
                       isMobileLayout: isMobileLayout,
                       onSessionSelected: (session) async {
-                        // Close drawer immediately for instant visual feedback,
-                        // then start the async switch with re-entry guard.
-                        _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
+                        // Close AFTER selectSession: during its awaits the
+                        // second tap's gesture events are fully processed
+                        // (including _handleDragCancel which may re-open the
+                        // drawer). Closing last ensures the drawer stays shut.
                         await _handleSessionSwitch(session);
-                        // Belt-and-suspenders: close again after switch resolves
-                        // in case _handleDragCancel reopened the drawer during
-                        // the await chain.
                         _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
                       },
                       onSessionDeleted: (session) async {

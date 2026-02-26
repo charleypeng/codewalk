@@ -2017,7 +2017,7 @@ class ChatProvider extends ChangeNotifier {
   /// Select session
   Future<void> selectSession(ChatSession session) async {
     if (_currentSession?.id == session.id) {
-      await loadSessionInsights(session.id, silent: true);
+      unawaited(loadSessionInsights(session.id, silent: true));
       return;
     }
 
