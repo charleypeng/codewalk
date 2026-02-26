@@ -154,8 +154,9 @@ class _ChatPageState extends State<ChatPage>
   bool _showScrollToFirstFab = false;
   bool _isProjectScopeTransitioning = false;
   Future<void>? _projectScopeTransitionTask;
-  // Session switch loading guard: true while selectSession is in flight.
-  // Used to show overlay and prevent re-entrant switches.
+  // Re-entry guard: true while selectSession is in flight.
+  // Prevents double-tap from starting a concurrent session switch.
+  // Pure guard — no UI effect (ChatState.loading handles visual feedback).
   bool _isSessionSwitchInFlight = false;
   // Per-session collapse state cache (up to 20 sessions, LRU-evicted).
   // Stores the last expanded collapse group IDs for each session ID.
@@ -811,22 +812,16 @@ class _ChatPageState extends State<ChatPage>
                       );
                     }
 
-                    if (!_isProjectScopeTransitioning &&
-                        !_isSessionSwitchInFlight) {
+                    if (!_isProjectScopeTransitioning) {
                       return content;
                     }
 
                     return Stack(
                       children: [
                         Positioned.fill(child: content),
-                        if (_isProjectScopeTransitioning)
-                          Positioned.fill(
-                            child: _buildProjectScopeLoadingOverlay(),
-                          ),
-                        if (_isSessionSwitchInFlight)
-                          Positioned.fill(
-                            child: _buildSessionSwitchOverlay(),
-                          ),
+                        Positioned.fill(
+                          child: _buildProjectScopeLoadingOverlay(),
+                        ),
                       ],
                     );
                   },
