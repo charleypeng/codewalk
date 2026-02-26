@@ -610,10 +610,21 @@ void main() {
     });
 
     test(
-      'refreshActiveSessionView requests scroll-to-bottom callback',
+      'refreshActiveSessionView does not force scroll when session is idle',
       () async {
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.status',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_1',
+              'status': <String, dynamic>{'type': 'busy'},
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
 
         var scrollRequests = 0;
         provider.setScrollToBottomCallback(() {
@@ -625,7 +636,6 @@ void main() {
             id: 'msg_refresh_scroll',
             sessionId: 'ses_1',
             time: DateTime.fromMillisecondsSinceEpoch(2000),
-            completedTime: DateTime.fromMillisecondsSinceEpoch(2100),
             parts: const <MessagePart>[
               TextPart(
                 id: 'part_refresh_scroll',
@@ -641,7 +651,7 @@ void main() {
         // Flush microtask-coalesced scroll callback.
         await Future<void>.value();
 
-        expect(scrollRequests, 1);
+        expect(scrollRequests, 0);
       },
     );
 

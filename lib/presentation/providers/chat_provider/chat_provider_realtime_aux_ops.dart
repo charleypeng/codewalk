@@ -199,7 +199,7 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     _autoTitleQueuedSessionIds.remove(sessionId);
     _queuedSendBySessionId.remove(sessionId);
     _queuedDrainDeferredSessionIds.remove(sessionId);
-    _queuedRetryScheduledSessionIds.remove(sessionId);
+    _queuedRetryTimersBySessionId.remove(sessionId)?.cancel();
     _syncQueuedLocalUserMessageIds();
     if (_currentSession?.id == sessionId) {
       _currentSession = _sessions.firstOrNull;

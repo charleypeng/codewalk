@@ -122,6 +122,11 @@ class _ChatPageState extends State<ChatPage>
     milliseconds: 180,
   );
   static const double _composerStatusReservedHeight = 26;
+  static const Duration _finalAssistantRevealDuration = Duration(
+    milliseconds: 260,
+  );
+  static const double _finalAssistantRevealAlignment = 0.2;
+  static const int _maxFinalAssistantRevealAttempts = 8;
 
   final ScrollController _scrollController = ScrollController();
   final FocusNode _inputFocusNode = FocusNode(debugLabel: 'chat_input');
@@ -153,6 +158,16 @@ class _ChatPageState extends State<ChatPage>
   bool _wasChatRouteCurrent = true;
   bool _isProgrammaticScrollInFlight = false;
   int _scrollToBottomRequestToken = 0;
+  bool _wasCurrentSessionActivelyResponding = false;
+  bool _deferAssistantWorkCollapse = false;
+  bool _suppressPostCompletionAutoSnap = false;
+  bool _shouldRevealFinalAssistantOnCompletion = false;
+  String? _pendingFinalAssistantRevealMessageId;
+  String? _finalAssistantRevealSettledMessageId;
+  bool _finalAssistantRevealScheduled = false;
+  int _pendingFinalAssistantRevealAttempts = 0;
+  final Map<String, GlobalKey> _messageRevealAnchorKeysByMessageId =
+      <String, GlobalKey>{};
   ChatComposerDraft? _composerPrefilledDraft;
   int _composerPrefilledDraftVersion = 0;
   final Map<String, _FileExplorerContextState> _fileContextStates =
@@ -189,6 +204,7 @@ class _ChatPageState extends State<ChatPage>
   bool _cachedTimelineIsCompacting = false;
   bool _cachedTimelineIsResponding = false;
   bool _cachedTimelineShowRetry = false;
+  bool _cachedTimelineDeferAssistantWorkCollapse = false;
   String? _cachedTimelineExpandedGroupId;
   String? _cachedTimelineExpandedAssistantWorkGroupId;
   List<_TimelineEntry>? _cachedTimelineEntries;
@@ -684,6 +700,7 @@ class _ChatPageState extends State<ChatPage>
                 body: Consumer<ChatProvider>(
                   builder: (context, chatProvider, child) {
                     _syncSessionScrollState(chatProvider);
+                    _syncResponseViewportPolicy(chatProvider);
                     _syncChatRouteActivity(chatProvider);
                     _consumePendingUiNotice(chatProvider);
                     _consumeRejectedDraft(chatProvider);

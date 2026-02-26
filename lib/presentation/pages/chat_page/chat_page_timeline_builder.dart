@@ -202,6 +202,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                   );
                   return ChatInputWidget(
                     onSendMessage: (submission) async {
+                      _prepareForOutgoingUserMessage();
                       await chatProvider.submitMessageWithQueue(
                         submission.text,
                         attachments: submission.attachments,
@@ -289,12 +290,12 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                         switchOutCurve: AppAnimations.accelerateCurve,
                         transitionBuilder: (child, animation) =>
                             ScaleTransition(
-                          scale: animation,
-                          child: FadeTransition(
-                            opacity: animation,
-                            child: child,
-                          ),
-                        ),
+                              scale: animation,
+                              child: FadeTransition(
+                                opacity: animation,
+                                child: child,
+                              ),
+                            ),
                         child: showJumpToFirstFab
                             ? Padding(
                                 key: const ValueKey<String>(
@@ -323,7 +324,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                         key: const ValueKey<String>('jump_to_latest_fab'),
                         heroTag: 'jump_to_latest_fab',
                         tooltip: 'Go to latest message',
-                        onPressed: () => _scrollToBottom(force: true),
+                        onPressed: _jumpToLatestAndResumeAutoFollow,
                         backgroundColor: _hasUnreadMessagesBelow
                             ? colorScheme.primary
                             : colorScheme.surfaceContainerHigh,
@@ -456,6 +457,9 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           chatProvider.isCurrentSessionActivelyResponding,
       isCompactingContext: chatProvider.isCompactingContext,
     );
+    final finalAssistantRevealMessageId =
+        _resolveLatestSuccessfulAssistantMessageId(chatProvider.messages);
+    _pruneMessageRevealAnchorKeys(chatProvider.messages);
 
     // Determine which entries are new (for entrance animation.
     // Reset the baseline whenever the active session changes so that loading
@@ -490,8 +494,10 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                   Widget child;
                   if (entry is _TimelineMessageEntry) {
                     final message = entry.message;
-                    child = ChatMessageWidget(
-                      key: ValueKey<String>(entry.key),
+                    Widget messageWidget = ChatMessageWidget(
+                      key: ValueKey<String>(
+                        'chat_message_widget_${message.id}',
+                      ),
                       message: message,
                       activeReasoningPartKey: latestReasoningPartKey,
                       showThinkingBubbles: settingsProvider.showThinkingBubbles,
@@ -505,6 +511,16 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                           _handleMessageBackgroundLongPress(message),
                       onBackgroundLongPressEnd: () =>
                           _handleMessageBackgroundLongPressEnd(message),
+                    );
+                    if (finalAssistantRevealMessageId == message.id) {
+                      messageWidget = KeyedSubtree(
+                        key: _messageRevealAnchorKey(message.id),
+                        child: messageWidget,
+                      );
+                    }
+                    child = KeyedSubtree(
+                      key: ValueKey<String>(entry.key),
+                      child: messageWidget,
                     );
                   } else if (entry is _TimelineCollapsedHistoryEntry) {
                     child = _buildCollapsedHistoryEntry(entry);
@@ -547,6 +563,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
         isCompactingContext == _cachedTimelineIsCompacting &&
         isSessionActivelyResponding == _cachedTimelineIsResponding &&
         showRetryIndicator == _cachedTimelineShowRetry &&
+        _deferAssistantWorkCollapse ==
+            _cachedTimelineDeferAssistantWorkCollapse &&
         _expandedCollapsedHistoryGroupId == _cachedTimelineExpandedGroupId &&
         _expandedAssistantWorkGroupId ==
             _cachedTimelineExpandedAssistantWorkGroupId) {
@@ -641,6 +659,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     _cachedTimelineIsCompacting = isCompactingContext;
     _cachedTimelineIsResponding = isSessionActivelyResponding;
     _cachedTimelineShowRetry = showRetryIndicator;
+    _cachedTimelineDeferAssistantWorkCollapse = _deferAssistantWorkCollapse;
     _cachedTimelineExpandedGroupId = _expandedCollapsedHistoryGroupId;
     _cachedTimelineExpandedAssistantWorkGroupId = _expandedAssistantWorkGroupId;
     _cachedTimelineEntries = entries;
@@ -691,7 +710,10 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
 
       final finalAssistant = messages[assistantRunEnd - 1] as AssistantMessage;
       final workMessageCount = assistantRunEnd - assistantRunStart - 1;
+      final shouldDeferCurrentRunCollapse =
+          _deferAssistantWorkCollapse && assistantRunEnd == endExclusive;
       if (workMessageCount > 0 &&
+          !shouldDeferCurrentRunCollapse &&
           _isSuccessfulFinalAssistantMessage(finalAssistant)) {
         final workGroup = _CollapsedAssistantWorkGroup(
           startMessageId: messages[assistantRunStart].id,
@@ -830,7 +852,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     final mergedCost = _sumAssistantCost(messages);
 
     return AssistantMessage(
-      id: 'merged_tool_run_${first.id}_${last.id}',
+      id: 'merged_tool_run_${first.id}',
       sessionId: first.sessionId,
       time: first.time,
       parts: mergedParts,
@@ -900,5 +922,20 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
         message.error == null &&
         message.summary != true &&
         !_isMergeableAssistantToolOnlyMessage(message);
+  }
+
+  String? _resolveLatestSuccessfulAssistantMessageId(
+    List<ChatMessage> messages,
+  ) {
+    for (var index = messages.length - 1; index >= 0; index -= 1) {
+      final message = messages[index];
+      if (message is! AssistantMessage) {
+        continue;
+      }
+      if (_isSuccessfulFinalAssistantMessage(message)) {
+        return message.id;
+      }
+    }
+    return null;
   }
 }

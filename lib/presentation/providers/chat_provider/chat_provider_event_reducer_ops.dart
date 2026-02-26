@@ -99,6 +99,47 @@ extension _ChatProviderEventReducerOps on ChatProvider {
     return false;
   }
 
+  bool _sessionNeedsFinalMessageReconcileOnIdle(String sessionId) {
+    AssistantMessage? latestAssistant;
+    for (var index = _messages.length - 1; index >= 0; index -= 1) {
+      final message = _messages[index];
+      if (message.sessionId != sessionId || message is! AssistantMessage) {
+        continue;
+      }
+      latestAssistant = message;
+      break;
+    }
+
+    if (latestAssistant == null) {
+      return false;
+    }
+
+    if (!latestAssistant.isCompleted) {
+      return true;
+    }
+
+    var hasVisibleText = false;
+    var hasToolSurface = false;
+    for (final part in latestAssistant.parts) {
+      if (part is TextPart && part.text.trim().isNotEmpty) {
+        hasVisibleText = true;
+      }
+      if (part is ToolPart || part is PatchPart) {
+        hasToolSurface = true;
+      }
+    }
+
+    if (hasVisibleText) {
+      return false;
+    }
+
+    if (latestAssistant.error != null) {
+      return false;
+    }
+
+    return hasToolSurface || latestAssistant.parts.isEmpty;
+  }
+
   void _applyChatEvent(ChatEvent event) {
     if (_isEphemeralTitleEvent(event)) return;
     // Register event in dedup buffer so the global stream skips duplicates.
@@ -279,6 +320,10 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           // Defer completion marking when a preserved stream is still
           // draining for this session — onDone of that stream handles it.
           final hasPreserved = _hasPreservedStreamForSession(sessionId);
+          final shouldReconcileCurrentSession =
+              sessionId == _currentSession?.id &&
+              !hasPreserved &&
+              _sessionNeedsFinalMessageReconcileOnIdle(sessionId);
           AppLogger.info(
             'session.idle session=$sessionId isCurrent=${sessionId == _currentSession?.id} hasPreservedStream=$hasPreserved',
           );
@@ -294,6 +339,14 @@ extension _ChatProviderEventReducerOps on ChatProvider {
               _setState(ChatState.loaded);
             } else {
               _notifyListeners();
+            }
+            if (shouldReconcileCurrentSession) {
+              unawaited(
+                refreshActiveSessionView(
+                  reason: 'session-idle-final-reconcile',
+                  includeStatus: false,
+                ),
+              );
             }
           } else {
             final wasBusyBeforeIdle =
@@ -424,7 +477,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         _messages[partIndex] = _copyMessageWithParts(message, nextParts);
         _messagesVersion++;
         _notifyListeners();
-        if (!_isCompactingContext) {
+        if (!_isCompactingContext && isSessionActivelyResponding(sessionId)) {
           _scheduleScrollToBottom();
         }
         break;

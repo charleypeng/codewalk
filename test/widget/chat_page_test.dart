@@ -1138,6 +1138,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Workspace Feature'), findsOneWidget);
+    expect(find.byTooltip('Reopen Workspace Feature'), findsNothing);
     await tester.tap(
       find.byTooltip('Archive closed project Workspace Feature'),
     );
@@ -1145,6 +1146,67 @@ void main() {
 
     expect(provider.projectProvider.archivedProjectIds, contains('proj_ws'));
     expect(find.text('Workspace Feature'), findsNothing);
+  });
+
+  testWidgets('tapping closed project reopens it and closes selector', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_main',
+        name: 'Main',
+        path: '/repo/main',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_main',
+          name: 'Main',
+          path: '/repo/main',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+        Project(
+          id: 'proj_ws',
+          name: 'Workspace Feature',
+          path: '/repo/main/feature-a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+        ),
+      ],
+    );
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Choose Directory'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('project_selector_dialog_content')),
+      findsOneWidget,
+    );
+    expect(provider.projectProvider.currentProject?.id, 'proj_main');
+    expect(provider.projectProvider.openProjectIds, isNot(contains('proj_ws')));
+
+    await tester.tap(find.text('Workspace Feature'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('project_selector_dialog_content')),
+      findsNothing,
+    );
+    expect(provider.projectProvider.currentProject?.id, 'proj_ws');
+    expect(provider.projectProvider.currentDirectory, '/repo/main/feature-a');
+    expect(provider.projectProvider.openProjectIds, contains('proj_ws'));
   });
 
   testWidgets('shows basename directory and compact controls on mobile', (
@@ -3971,6 +4033,238 @@ void main() {
     expect(find.byTooltip('Go to latest message'), findsNothing);
   });
 
+  testWidgets(
+    'keeps jump-to-latest FAB hidden when short final response fits viewport',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_short_final_fab',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Short Final FAB Session',
+          ),
+        ],
+      );
+
+      final streamController = StreamController<Either<Failure, ChatMessage>>();
+      addTearDown(() async {
+        if (!streamController.isClosed) {
+          await streamController.close();
+        }
+      });
+      repository.sendMessageHandler = (_, _, _, _) => streamController.stream;
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      await provider.sendMessage('trigger short final response');
+      await tester.pump();
+
+      streamController.add(
+        Right(
+          AssistantMessage(
+            id: 'msg_short_final_tool_only',
+            sessionId: 'ses_short_final_fab',
+            time: DateTime.fromMillisecondsSinceEpoch(2100),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(2200),
+            parts: <MessagePart>[
+              ToolPart(
+                id: 'part_short_final_tool_only',
+                messageId: 'msg_short_final_tool_only',
+                sessionId: 'ses_short_final_fab',
+                callId: 'call_short_final_tool_only',
+                tool: 'bash',
+                state: ToolStateCompleted(
+                  input: const <String, dynamic>{'command': 'echo hi'},
+                  output: 'hi',
+                  time: ToolTime(
+                    start: DateTime.fromMillisecondsSinceEpoch(2100),
+                    end: DateTime.fromMillisecondsSinceEpoch(2150),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 60));
+
+      streamController.add(
+        Right(
+          AssistantMessage(
+            id: 'msg_short_final_answer',
+            sessionId: 'ses_short_final_fab',
+            time: DateTime.fromMillisecondsSinceEpoch(2300),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(2400),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_short_final_answer',
+                messageId: 'msg_short_final_answer',
+                sessionId: 'ses_short_final_fab',
+                text: 'ok',
+              ),
+            ],
+          ),
+        ),
+      );
+      await streamController.close();
+      await tester.pumpAndSettle();
+
+      expect(find.text('ok'), findsOneWidget);
+      expect(find.byTooltip('Go to latest message'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('jump_to_latest_fab')),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
+    'sending a follow-up invalidates previous final-message reveal jump',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_reveal_invalidation',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Reveal Invalidation Session',
+          ),
+        ],
+      );
+
+      final firstStream = StreamController<Either<Failure, ChatMessage>>();
+      final secondStream = StreamController<Either<Failure, ChatMessage>>();
+      addTearDown(() async {
+        if (!firstStream.isClosed) {
+          await firstStream.close();
+        }
+        if (!secondStream.isClosed) {
+          await secondStream.close();
+        }
+      });
+
+      var sendCalls = 0;
+      repository.sendMessageHandler = (_, _, _, _) {
+        sendCalls += 1;
+        if (sendCalls == 1) {
+          return firstStream.stream;
+        }
+        return secondStream.stream;
+      };
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      final chatInputFieldFinder = find.descendant(
+        of: find.byKey(const ValueKey<String>('composer_input_row')),
+        matching: find.byType(TextField),
+      );
+
+      await tester.enterText(chatInputFieldFinder, 'first prompt');
+      await tester.pump();
+      await tester.tap(find.byIcon(Symbols.send_rounded));
+      await tester.pump();
+
+      firstStream.add(
+        Right(
+          AssistantMessage(
+            id: 'msg_reveal_tool_only',
+            sessionId: 'ses_reveal_invalidation',
+            time: DateTime.fromMillisecondsSinceEpoch(2100),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(2200),
+            parts: <MessagePart>[
+              ToolPart(
+                id: 'part_reveal_tool_only',
+                messageId: 'msg_reveal_tool_only',
+                sessionId: 'ses_reveal_invalidation',
+                callId: 'call_reveal_tool_only',
+                tool: 'read',
+                state: ToolStateCompleted(
+                  input: const <String, dynamic>{'filePath': 'README.md'},
+                  output: 'ok',
+                  time: ToolTime(
+                    start: DateTime.fromMillisecondsSinceEpoch(2100),
+                    end: DateTime.fromMillisecondsSinceEpoch(2150),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      firstStream.add(
+        Right(
+          AssistantMessage(
+            id: 'msg_reveal_final',
+            sessionId: 'ses_reveal_invalidation',
+            time: DateTime.fromMillisecondsSinceEpoch(2300),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(2400),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_reveal_final',
+                messageId: 'msg_reveal_final',
+                sessionId: 'ses_reveal_invalidation',
+                text:
+                    'final response that triggers reveal positioning before the next user follow-up message is sent',
+              ),
+            ],
+          ),
+        ),
+      );
+      await firstStream.close();
+
+      // Do not settle fully: send follow-up while reveal callbacks from the
+      // previous assistant completion are still pending.
+      await tester.pump();
+      await tester.enterText(chatInputFieldFinder, 'follow-up right away');
+      await tester.pump();
+      await tester.tap(find.byIcon(Symbols.send_rounded));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 260));
+
+      expect(find.text('follow-up right away'), findsOneWidget);
+      expect(find.byTooltip('Go to latest message'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('jump_to_latest_fab')),
+        findsNothing,
+      );
+    },
+  );
+
   testWidgets('highlights jump FAB when new messages arrive below viewport', (
     WidgetTester tester,
   ) async {
@@ -4816,7 +5110,7 @@ void main() {
     await tester.tap(
       find.byKey(
         const ValueKey<String>(
-          'tool_chain_toggle_merged_tool_run_msg_merge_tool_1_msg_merge_tool_2_part_merge_tool_1',
+          'tool_chain_toggle_merged_tool_run_msg_merge_tool_1_part_merge_tool_1',
         ),
       ),
     );
@@ -5815,6 +6109,65 @@ void main() {
     final inputAfterFailure = tester.widget<TextField>(chatInputFieldFinder);
     expect(inputAfterFailure.controller?.text, 'keep this draft');
   });
+
+  testWidgets(
+    'restores composer draft even if provider leaves error state before rebuild',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_retry_draft_fast_clear',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Retry Draft Fast Clear Session',
+          ),
+        ],
+      );
+      final sendStream = StreamController<Either<Failure, ChatMessage>>();
+      addTearDown(() async {
+        await sendStream.close();
+      });
+      repository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      final chatInputFieldFinder = find.descendant(
+        of: find.byKey(const ValueKey<String>('composer_input_row')),
+        matching: find.byType(TextField),
+      );
+
+      await tester.enterText(chatInputFieldFinder, 'recover this quickly');
+      await tester.pump();
+      await tester.tap(find.byIcon(Symbols.send_rounded));
+      await tester.pump();
+
+      sendStream.add(const Left(ServerFailure('temporary send rejection')));
+      await tester.pump(const Duration(milliseconds: 20));
+
+      provider.clearError();
+      await tester.pumpAndSettle();
+
+      final inputAfterFailure = tester.widget<TextField>(chatInputFieldFinder);
+      expect(inputAfterFailure.controller?.text, 'recover this quickly');
+    },
+  );
 
   testWidgets('double ESC shows stop hint and aborts active response', (
     WidgetTester tester,

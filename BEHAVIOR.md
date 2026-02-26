@@ -137,8 +137,8 @@
 
 - **Given** the assistant executes tool calls during a response (file reads, commands, etc.)
 - **When** the assistant finishes the complete response
-- **Then** all tool call groups between the user message and the final assistant message collapse to keep the chat clean
-- **Then** collapse never happens while the assistant is still streaming
+- **Then** tool call groups collapse only after the final assistant message is rendered and visible
+- **Then** collapse never happens while the assistant is still streaming or while the final response is not yet visible
 - **Then** the user can manually re-expand any collapsed work group by tapping its Details toggle
 
 ### UI remains fluid during streaming
@@ -146,6 +146,20 @@
 - **Given** the assistant is streaming a long response
 - **When** text, code blocks, or tool calls render incrementally
 - **Then** the UI remains smooth without stuttering, freezing, or perceptible lag
+
+### Final response is revealed from the beginning
+
+- **Given** a response finishes after tool/work messages
+- **When** the final assistant message becomes available
+- **Then** the chat reveals the **start** of the final assistant message (not the end)
+- **Then** the reveal is anchored near the upper-center of the viewport to favor immediate reading
+
+### Post-completion reading remains stable
+
+- **Given** the final assistant response is already visible
+- **When** the user is reading without sending new input
+- **Then** the chat does not perform autonomous jump/scroll corrections
+- **Then** auto-follow resumes only after explicit user intent (e.g., sending a new message or tapping `Go to latest`)
 
 ---
 
@@ -512,7 +526,7 @@ If the assistant is streaming a response and the user switches to a different se
 
 ### Never collapse work groups during streaming
 
-Tool call work groups must only collapse after the assistant has fully completed its response. Premature collapse causes visual flicker and hides active work.
+Tool call work groups must only collapse after the assistant has fully completed its response **and** the final response is visible. Premature collapse causes visual flicker, aggressive auto-scroll, and hidden active work.
 
 ### Never show stale data after resume
 

@@ -707,6 +707,79 @@ void main() {
     );
 
     test(
+      'session.idle reconciles current session when latest assistant lacks final visible text',
+      () async {
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_tool_placeholder',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1100),
+            parts: <MessagePart>[
+              ToolPart(
+                id: 'part_tool_placeholder',
+                messageId: 'msg_tool_placeholder',
+                sessionId: 'ses_1',
+                callId: 'call_tool_placeholder',
+                tool: 'bash',
+                state: ToolStateRunning(
+                  input: const <String, dynamic>{
+                    'description': 'Running command',
+                    'command': 'ls',
+                  },
+                  time: DateTime.fromMillisecondsSinceEpoch(1100),
+                ),
+              ),
+            ],
+          ),
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.where((item) => item.id == 'ses_1').first,
+        );
+        await provider.initializeProviders();
+
+        final callsBeforeIdle = chatRepository.getMessagesCallCount;
+
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_tool_placeholder',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1100),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_tool_placeholder_final',
+                messageId: 'msg_tool_placeholder',
+                sessionId: 'ses_1',
+                text: 'final assistant response',
+              ),
+            ],
+          ),
+        ];
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.idle',
+            properties: <String, dynamic>{'sessionID': 'ses_1'},
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+
+        final latestAssistant = provider.messages.last as AssistantMessage;
+        expect(
+          (latestAssistant.parts.single as TextPart).text,
+          'final assistant response',
+        );
+        expect(
+          chatRepository.getMessagesCallCount,
+          greaterThan(callsBeforeIdle),
+        );
+      },
+    );
+
+    test(
       'non-current busy -> idle transition marks unread completion attention',
       () async {
         chatRepository.sessions.add(
@@ -1388,6 +1461,102 @@ void main() {
 
         expect(retried, isTrue);
         expect(sendCalls, 3);
+        expect(provider.currentSessionQueuedMessageCount, 0);
+      },
+    );
+
+    test(
+      'queued send keeps retrying while busy and dispatches after session settles',
+      () async {
+        final inProgressAssistant = AssistantMessage(
+          id: 'msg_busy_tail',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(9000),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_busy_tail',
+              messageId: 'msg_busy_tail',
+              sessionId: 'ses_1',
+              text: 'still running',
+            ),
+          ],
+        );
+        final settledAssistant = AssistantMessage(
+          id: 'msg_busy_tail',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(9000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(9050),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_busy_tail_done',
+              messageId: 'msg_busy_tail',
+              sessionId: 'ses_1',
+              text: 'done',
+            ),
+          ],
+        );
+        final assistantAfterQueuedRetry = AssistantMessage(
+          id: 'msg_after_busy_retry',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(9100),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(9150),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_after_busy_retry',
+              messageId: 'msg_after_busy_retry',
+              sessionId: 'ses_1',
+              text: 'queued follow-up delivered',
+            ),
+          ],
+        );
+
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          inProgressAssistant,
+        ];
+        chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+          'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
+        };
+
+        var sendCalls = 0;
+        chatRepository.sendMessageHandler = (_, _, _, _) {
+          sendCalls += 1;
+          return Stream<Either<Failure, ChatMessage>>.value(
+            Right(assistantAfterQueuedRetry),
+          );
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        expect(provider.isCurrentSessionActivelyResponding, isTrue);
+
+        await provider.submitMessageWithQueue(
+          'first follow-up after completion',
+        );
+
+        expect(provider.currentSessionQueuedMessageCount, 1);
+        expect(sendCalls, 0);
+
+        unawaited(
+          Future<void>.delayed(const Duration(milliseconds: 1350), () async {
+            chatRepository.sessionStatusById =
+                const <String, SessionStatusInfo>{
+                  'ses_1': SessionStatusInfo(type: SessionStatusType.idle),
+                };
+            chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+              settledAssistant,
+            ];
+            await provider.refreshActiveSessionView(
+              reason: 'queued-retry-settle',
+              includeStatus: true,
+            );
+          }),
+        );
+
+        await Future<void>.delayed(const Duration(milliseconds: 2600));
+
+        expect(sendCalls, 1);
         expect(provider.currentSessionQueuedMessageCount, 0);
       },
     );

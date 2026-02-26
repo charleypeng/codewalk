@@ -239,7 +239,7 @@ class ChatProvider extends ChangeNotifier {
       <String, ListQueue<_QueuedSendEnvelope>>{};
   final Set<String> _queuedDrainInFlightSessionIds = <String>{};
   final Set<String> _queuedDrainDeferredSessionIds = <String>{};
-  final Set<String> _queuedRetryScheduledSessionIds = <String>{};
+  final Map<String, Timer> _queuedRetryTimersBySessionId = <String, Timer>{};
   int _localMessageIdSequence = 0;
   bool _activeSessionRefreshInFlight = false;
   bool _isAbortingResponse = false;
@@ -377,8 +377,16 @@ class ChatProvider extends ChangeNotifier {
   // Microtask coalescing for scroll-to-bottom: prevents multiple scroll jumps
   // per frame when several events trigger scroll simultaneously.
   bool _scrollScheduled = false;
+  DateTime? _lastScrollScheduleAt;
+  static const Duration _scrollScheduleThrottle = Duration(milliseconds: 120);
 
   void _scheduleScrollToBottom() {
+    final now = DateTime.now();
+    final last = _lastScrollScheduleAt;
+    if (last != null && now.difference(last) < _scrollScheduleThrottle) {
+      return;
+    }
+    _lastScrollScheduleAt = now;
     if (_scrollScheduled) return;
     _scrollScheduled = true;
     scheduleMicrotask(() {
@@ -641,11 +649,14 @@ class ChatProvider extends ChangeNotifier {
   }
 
   void _clearQueuedSendState() {
+    for (final timer in _queuedRetryTimersBySessionId.values) {
+      timer.cancel();
+    }
     _queuedSendBySessionId.clear();
     _queuedLocalUserMessageIds.clear();
     _queuedDrainInFlightSessionIds.clear();
     _queuedDrainDeferredSessionIds.clear();
-    _queuedRetryScheduledSessionIds.clear();
+    _queuedRetryTimersBySessionId.clear();
   }
 
   String _nextLocalUserMessageId() {
@@ -1205,7 +1216,8 @@ class ChatProvider extends ChangeNotifier {
           _pruneQueuedLocalUserMessageIdsToVisibleUsers();
           notifyListeners();
           _scheduleAutoTitleRefresh(session.id);
-          if (!_isCompactingContext) {
+          if (!_isCompactingContext &&
+              isSessionActivelyResponding(session.id)) {
             _scheduleScrollToBottom();
           }
         },
@@ -2159,6 +2171,13 @@ class ChatProvider extends ChangeNotifier {
       );
       if (!_isSessionBusyForQueuedSend(sessionId)) {
         _scheduleQueuedSendDrain(sessionId, reason: 'queue-while-idle');
+      } else {
+        final hasLiveStreamForSession =
+            _activeMessageStreamSessionId == sessionId &&
+            _messageSubscription != null;
+        if (!hasLiveStreamForSession) {
+          _scheduleQueuedSendRetryOnce(sessionId);
+        }
       }
       return;
     }
@@ -2206,17 +2225,19 @@ class ChatProvider extends ChangeNotifier {
     if (normalizedSessionId.isEmpty) {
       return;
     }
-    if (!_queuedRetryScheduledSessionIds.add(normalizedSessionId)) {
+    if (_queuedRetryTimersBySessionId.containsKey(normalizedSessionId)) {
       return;
     }
 
-    unawaited(
-      Future<void>.delayed(const Duration(seconds: 1), () {
-        _queuedRetryScheduledSessionIds.remove(normalizedSessionId);
+    _queuedRetryTimersBySessionId[normalizedSessionId] = Timer(
+      const Duration(seconds: 1),
+      () {
+        _queuedRetryTimersBySessionId.remove(normalizedSessionId);
         if (_currentSession?.id != normalizedSessionId) {
           return;
         }
         if (_isSessionBusyForQueuedSend(normalizedSessionId)) {
+          _scheduleQueuedSendRetryOnce(normalizedSessionId);
           return;
         }
         if (queuedMessageCountForSession(normalizedSessionId) == 0) {
@@ -2227,7 +2248,7 @@ class ChatProvider extends ChangeNotifier {
           reason: 'retry-after-failure',
           allowRetrySchedule: false,
         );
-      }),
+      },
     );
   }
 

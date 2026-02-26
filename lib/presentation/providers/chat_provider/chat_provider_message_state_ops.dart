@@ -102,12 +102,9 @@ extension _ChatProviderMessageStateOps on ChatProvider {
       return;
     }
     _messagesVersion++;
-    // Notify and scroll after completion-triggered work collapse so the
-    // final assistant message stays visible on screen.
+    // Notify only. Final message reveal/collapse sequencing is coordinated
+    // by the chat viewport lifecycle on the page side.
     _notifyListeners();
-    if (!_isCompactingContext) {
-      _scheduleScrollToBottom();
-    }
   }
 
   void _prunePendingLocalUserMessageIdsToVisibleUsers() {
@@ -348,8 +345,12 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     _attemptPendingRemoteSelectionSync(reason: 'message-update');
     _scheduleAutoTitleRefresh(message.sessionId);
 
-    // Trigger auto-scroll (suppressed during compaction to avoid visual jumps).
-    if (!_isCompactingContext) {
+    // Trigger auto-scroll only while the current session is actively
+    // responding, or when a user message is added/replaced.
+    if (!_isCompactingContext &&
+        (message is UserMessage ||
+            (_currentSession?.id == message.sessionId &&
+                isSessionActivelyResponding(message.sessionId)))) {
       _scheduleScrollToBottom();
     }
   }

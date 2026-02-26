@@ -8,6 +8,7 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
 
     final nearBottom = _isNearBottom();
     if (nearBottom) {
+      _suppressPostCompletionAutoSnap = false;
       if (!_autoFollowToLatest ||
           _showScrollToLatestFab ||
           _hasUnreadMessagesBelow ||
