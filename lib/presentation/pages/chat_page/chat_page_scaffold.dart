@@ -420,17 +420,30 @@ extension _ChatPageScaffold on _ChatPageState {
   }
 
   /// Guards against re-entrant session switches.
-  /// Shows _isSessionSwitchInFlight overlay for the duration of selectSession.
+  /// The loading overlay only appears after a 300ms debounce so fast/cached
+  /// loads never flash it, preserving SWR-like instant switch perception.
   Future<void> _handleSessionSwitch(ChatSession session) async {
     if (_isSessionSwitchInFlight) {
       return;
     }
-    _setState(() => _isSessionSwitchInFlight = true);
+    // Set guard immediately (no rebuild) to block re-entry.
+    _isSessionSwitchInFlight = true;
+
+    // Debounce: only show the loading overlay if the switch is slow.
+    // Fast/cached loads complete before the timer fires.
+    final overlayTimer = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        _setState(() {}); // trigger rebuild → overlay becomes visible
+      }
+    });
+
     try {
       await context.read<ChatProvider>().selectSession(session);
     } finally {
+      overlayTimer.cancel();
+      _isSessionSwitchInFlight = false;
       if (mounted) {
-        _setState(() => _isSessionSwitchInFlight = false);
+        _setState(() {}); // ensure overlay is cleared
       }
     }
   }
