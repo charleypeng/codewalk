@@ -457,16 +457,23 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       isCompactingContext: chatProvider.isCompactingContext,
     );
 
-    // Determine which entries are new (for entrance animation).
-    // Compare against tracked length to detect growth since last build.
-    // Safe to read+write here because _buildMessageTimelineEntries is
-    // fully cached and deterministic within the same messagesVersion.
+    // Determine which entries are new (for entrance animation.
+    // Reset the baseline whenever the active session changes so that loading
+    // an existing conversation never animates its full history as "new".
+    final currentSessionId = chatProvider.currentSession?.id;
     final currentLength = timelineEntries.length;
+    final sessionChanged = currentSessionId != _animationBaselineSessionId;
+    if (sessionChanged) {
+      // Establish baseline for this session — existing messages are not new.
+      _animationBaselineSessionId = currentSessionId;
+      _previousTimelineLength = currentLength;
+    }
     final prevLength = _previousTimelineLength;
     if (currentLength != prevLength) {
       _previousTimelineLength = currentLength;
     }
-    final animateNewEntries = _autoFollowToLatest && currentLength > prevLength;
+    final animateNewEntries =
+        !sessionChanged && _autoFollowToLatest && currentLength > prevLength;
 
     return NotificationListener<ScrollMetricsNotification>(
       onNotification: _handleScrollMetricsChanged,
