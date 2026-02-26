@@ -103,6 +103,13 @@
 - **Then** the timeline updates in place without clearing to an empty skeleton first
 - **Then** collapsed history/work groups keep their per-session expansion state during switch and revalidation
 
+### Older history loads on demand at top reach
+
+- **Given** a conversation has older messages not yet loaded in the current viewport
+- **When** the user scrolls to the top threshold of the chat timeline
+- **Then** the app loads older message batches incrementally
+- **Then** the viewport anchor is restored after prepend so reading position stays stable (no sudden jump)
+
 ---
 
 ## Chat

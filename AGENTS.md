@@ -38,7 +38,7 @@ CodeWalk is a project that provides access to code agents from anywhere — desk
 | 017 | Android foreground service with `START_STICKY` — reliable monitoring that survives process death | 648–682 |
 | 018 | Dedicated Dio instance for SSE with isolated connection pool — prevent stream eviction by regular HTTP requests | 685–734 |
 | 019 | Defer `PATCH /config` during active server processing — prevent false abort from `Instance.dispose()` on server | 737–779 |
-| 020 | Session-level SWR cache with persisted LRU snapshots — instant reopen of long sessions with background revalidation | 782–829 |
+| 020 | Session-level SWR cache with persisted LRU snapshots — instant reopen of long sessions with background revalidation | 782–832 |
 
 ## 🚀 Project-Specific Flow: Android Build for Testing
 

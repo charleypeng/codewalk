@@ -81,6 +81,7 @@ lib/presentation/providers/settings_provider.dart # Experience settings, theme m
 lib/presentation/theme/brand_colors.dart              # BrandColor enum with 5 seed colors for non-dynamic-color themes
 lib/presentation/theme/app_shapes.dart                # AppShapes class with centralized MD3 shape constants
 lib/presentation/theme/app_theme.dart                 # Material You theme builder using AppShapes and color scheme
+lib/presentation/theme/app_animations.dart            # Animation duration tokens; includes userBubble (130 ms) and assistantBubble (180 ms)
 lib/presentation/utils/window_size_class.dart         # WindowSizeClass enum with MD3 breakpoints + BuildContext extension
 lib/presentation/services/desktop_tray_service_io.dart # Desktop tray lifecycle; selects tray icon per OS (macOS template PNG, Windows ICO, Linux PNG)
 lib/presentation/services/notification_service.dart    # Local notifications; Android uses `@drawable/ic_stat_codewalk` small icon
@@ -88,12 +89,13 @@ lib/presentation/services/android_foreground_monitor_service.dart # Android fore
 lib/presentation/services/android_background_alert_worker.dart # WorkManager-based background polling; fast probe (2m) for active sessions, tail probe (5m) after completion
 lib/presentation/services/android_background_alert_logic.dart # Pure logic for tail probe scheduling, alert planning, and snapshot state
 lib/presentation/services/android_battery_optimization_service.dart # Android battery optimization query/exemption request via MethodChannel
-lib/presentation/providers/chat_provider.dart     # Chat state/realtime/session facade; microtask coalescing, event dedup buffer, render gate, favorite models
+lib/presentation/providers/chat_provider.dart     # Chat state/realtime/session facade; cache-first per-session SWR restore, in-memory LRU message cache, persisted per-session snapshots, microtask coalescing, event dedup buffer, render gate, favorite models; includes `loadOlderMessages()` scaffold and keeps loadSessionInsights fire-and-forget on session switch
 lib/presentation/pages/onboarding_wizard_page.dart # 3-step onboarding wizard (Welcome, Server Setup, Ready); uses ServerSetupQuickGuide
 lib/presentation/pages/settings/sections/servers_settings_section.dart # Server profile CRUD; exports reusable ServerSetupQuickGuide widget
-lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade; WindowListener for desktop lifecycle; holds tool-chain expanded state map
+lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade; WindowListener for desktop lifecycle; holds tool-chain expanded state map; _isSessionSwitchInFlight guard, _sessionCollapseHistoryCache / _sessionCollapseWorkCache per-session collapse maps; top-reach history loading is coordinated with anchor-preserving restore
 lib/presentation/widgets/chat_input_widget.dart   # Composer/input orchestration facade
 lib/presentation/widgets/chat_message_widget.dart # Message bubble with build-skip cache, cached MarkdownStyleSheet; tool-chain expand/restore callbacks
+lib/presentation/widgets/message_entrance_animation.dart # Entrance animation wrapper; `role` parameter selects user (130 ms) or assistant (180 ms) motion profile from AppAnimations
 ```
 
 ## Chat Architecture
@@ -110,22 +112,22 @@ lib/presentation/widgets/chat_input_widget.dart
 
 ```text
 chat_page_lifecycle.dart
-chat_page_scroll_coordinator.dart
+chat_page_scroll_coordinator.dart                  # Handles top-scroll older-history trigger and viewport anchor restoration after prepend
 chat_page_workspace_controller.dart
 chat_page_shortcuts.dart
 chat_page_status_presenter.dart
 chat_page_selector_flow.dart               # ConstrainedBox wrapped in Flexible to prevent overflow at medium breakpoint
-chat_page_scaffold.dart
+chat_page_scaffold.dart                          # Session selection reordered to close-first; _handleSessionSwitch() guard prevents concurrent switches
 chat_page_file_explorer_controller.dart
 chat_page_file_viewer.dart
-chat_page_timeline_builder.dart
 chat_page_composer_status.dart
 chat_page_command_query.dart
-chat_page_runtime_support.dart
+chat_page_runtime_support.dart                   # _syncSessionScrollState saves/restores per-session collapse state via _sessionCollapseHistoryCache / _sessionCollapseWorkCache
 chat_page_chrome.dart
 chat_page_file_runtime.dart
 chat_page_composer_widgets.dart
 chat_page_model_selector_runtime.dart
+chat_page_timeline_builder.dart              # Passes `role` to MessageEntranceAnimation so each bubble uses the correct motion profile
 chat_page_timeline_runtime.dart              # Tool-chain expanded state key resolution (sessionId::messageId::startPartId)
 ```
 
@@ -136,7 +138,7 @@ chat_provider_core.dart
 chat_provider_session_ops.dart
 chat_provider_realtime_ops.dart
 chat_provider_realtime_aux_ops.dart
-chat_provider_event_reducer_ops.dart
+chat_provider_event_reducer_ops.dart             # Reconcile one-shot guard via _messageStreamGeneration; dedup key composition
 chat_provider_message_merge_ops.dart
 chat_provider_message_state_ops.dart
 chat_provider_selection_sync_ops.dart

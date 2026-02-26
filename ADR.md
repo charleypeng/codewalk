@@ -799,7 +799,7 @@ Adopt a cache-first SWR policy per session:
 2. Persist recent per-session message snapshots using ADR-016 file-backed storage (`ChatCachePayloadStore`) plus SharedPreferences metadata for recency and timestamps.
 3. On `selectSession`, restore cached messages immediately when available and trigger background `loadMessages(...preserveVisibleState: true)` revalidation.
 4. Keep full-fetch correctness path, but incrementally patch non-current session caches on `message.created` / `message.updated` via single-message fallback fetch.
-5. Prepare virtual-history loading structure by plumbing optional `limit` through the message read stack and adding provider-side `loadOlderMessages()` scaffolding (UI wiring deferred).
+5. Virtual History Loading: Implement top-scroll pagination by plumbing optional `limit` through the message read stack and adding a `loadOlderMessages()` flow. The UI maintains scroll anchor position across history injections to prevent layout shifts.
 
 ### Rationale
 
@@ -807,16 +807,18 @@ Adopt a cache-first SWR policy per session:
 - SWR keeps correctness by still revalidating against server state.
 - Per-session persistence extends ADR-016 beyond one snapshot and keeps cache useful across app restarts.
 - Event-assisted patching improves freshness for background sessions even without a server delta endpoint.
-- Optional `limit` plumbing reduces future risk when enabling virtual scrolling incrementally.
+- Top-scroll pagination enables browsing long histories without high initial memory/latency costs.
+- Anchor restoration ensures a smooth reading experience when prepending messages.
 
 ### Consequences
 
 - ✅ Session switching is significantly faster and more stable for long conversations.
 - ✅ Background revalidation keeps data fresh without forcing full UI reset.
 - ✅ Cache durability now covers multiple recent sessions, not only the last one.
-- ✅ Architecture is ready for incremental history loading in a future UI phase.
+- ✅ Support for seamless top-scroll pagination with stable scroll anchoring.
 - ⚠ Cache metadata/key management is more complex (LRU list + per-session timestamps).
-- ⚠ No true server-side delta endpoint yet; full-fetch fallback remains necessary for correctness.
+- ⚠ Scroll anchor restoration logic adds complexity to the ChatPage list controller.
+- ❌ No true server-side delta endpoint yet; full-fetch fallback remains necessary for correctness.
 
 ### Key Files
 
@@ -824,6 +826,7 @@ Adopt a cache-first SWR policy per session:
 - `lib/presentation/providers/chat_provider/chat_provider_cache_persistence_ops.dart`
 - `lib/presentation/providers/chat_provider/chat_provider_event_reducer_ops.dart`
 - `lib/presentation/providers/chat_provider/chat_provider_message_merge_ops.dart`
+- `lib/presentation/pages/chat_page/chat_page_scroll_coordinator.dart`
 - `lib/data/datasources/app_local_datasource.dart`
 - `lib/data/datasources/chat_remote_datasource.dart`
 - `lib/domain/usecases/get_chat_messages.dart`
