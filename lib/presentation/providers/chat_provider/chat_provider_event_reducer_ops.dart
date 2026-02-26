@@ -320,9 +320,10 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           // Defer completion marking when a preserved stream is still
           // draining for this session — onDone of that stream handles it.
           final hasPreserved = _hasPreservedStreamForSession(sessionId);
-          // Build a turn key combining session ID and message count so the
-          // guard resets automatically when new messages arrive in a new turn.
-          final idleTurnKey = '$sessionId:${_messages.length}';
+          // Build a turn key using the stream generation counter so the guard
+          // resets when a new send starts (_messageStreamGeneration increments
+          // per send) without being affected by messages from other sessions.
+          final idleTurnKey = '$sessionId:$_messageStreamGeneration';
           final shouldReconcileCurrentSession =
               sessionId == _currentSession?.id &&
               !hasPreserved &&

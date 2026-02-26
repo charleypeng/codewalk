@@ -205,6 +205,10 @@ extension _ChatPageScaffold on _ChatPageState {
                         // then start the async switch with re-entry guard.
                         _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
                         await _handleSessionSwitch(session);
+                        // Belt-and-suspenders: close again after switch resolves
+                        // in case _handleDragCancel reopened the drawer during
+                        // the await chain.
+                        _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
                       },
                       onSessionDeleted: (session) async {
                         await chatProvider.deleteSession(session.id);
