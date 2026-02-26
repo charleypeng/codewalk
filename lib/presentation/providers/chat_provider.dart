@@ -240,6 +240,7 @@ class ChatProvider extends ChangeNotifier {
   final Set<String> _queuedDrainInFlightSessionIds = <String>{};
   final Set<String> _queuedDrainDeferredSessionIds = <String>{};
   final Map<String, Timer> _queuedRetryTimersBySessionId = <String, Timer>{};
+  final Map<String, int> _queuedRetryAttemptsBySessionId = <String, int>{};
   int _localMessageIdSequence = 0;
   bool _activeSessionRefreshInFlight = false;
   bool _isAbortingResponse = false;
@@ -350,6 +351,7 @@ class ChatProvider extends ChangeNotifier {
   static const Duration _interruptSendPostAbortDelay = Duration(
     milliseconds: 120,
   );
+  static const int _queuedRetryMaxAttempts = 12;
 
   // Microtask coalescing: multiple calls within the same microtask frame
   // result in a single notifyListeners() invocation, reducing rebuild storms
@@ -377,16 +379,8 @@ class ChatProvider extends ChangeNotifier {
   // Microtask coalescing for scroll-to-bottom: prevents multiple scroll jumps
   // per frame when several events trigger scroll simultaneously.
   bool _scrollScheduled = false;
-  DateTime? _lastScrollScheduleAt;
-  static const Duration _scrollScheduleThrottle = Duration(milliseconds: 120);
 
   void _scheduleScrollToBottom() {
-    final now = DateTime.now();
-    final last = _lastScrollScheduleAt;
-    if (last != null && now.difference(last) < _scrollScheduleThrottle) {
-      return;
-    }
-    _lastScrollScheduleAt = now;
     if (_scrollScheduled) return;
     _scrollScheduled = true;
     scheduleMicrotask(() {
@@ -657,6 +651,7 @@ class ChatProvider extends ChangeNotifier {
     _queuedDrainInFlightSessionIds.clear();
     _queuedDrainDeferredSessionIds.clear();
     _queuedRetryTimersBySessionId.clear();
+    _queuedRetryAttemptsBySessionId.clear();
   }
 
   String _nextLocalUserMessageId() {
@@ -2229,20 +2224,34 @@ class ChatProvider extends ChangeNotifier {
       return;
     }
 
+    final nextAttempt =
+        (_queuedRetryAttemptsBySessionId[normalizedSessionId] ?? 0) + 1;
+    if (nextAttempt > _queuedRetryMaxAttempts) {
+      AppLogger.warn(
+        'Provider queued retry reached max attempts session=$normalizedSessionId queue=${queuedMessageCountForSession(normalizedSessionId)}',
+      );
+      _queuedRetryAttemptsBySessionId.remove(normalizedSessionId);
+      return;
+    }
+    _queuedRetryAttemptsBySessionId[normalizedSessionId] = nextAttempt;
+
     _queuedRetryTimersBySessionId[normalizedSessionId] = Timer(
       const Duration(seconds: 1),
       () {
         _queuedRetryTimersBySessionId.remove(normalizedSessionId);
         if (_currentSession?.id != normalizedSessionId) {
+          _queuedRetryAttemptsBySessionId.remove(normalizedSessionId);
+          return;
+        }
+        if (queuedMessageCountForSession(normalizedSessionId) == 0) {
+          _queuedRetryAttemptsBySessionId.remove(normalizedSessionId);
           return;
         }
         if (_isSessionBusyForQueuedSend(normalizedSessionId)) {
           _scheduleQueuedSendRetryOnce(normalizedSessionId);
           return;
         }
-        if (queuedMessageCountForSession(normalizedSessionId) == 0) {
-          return;
-        }
+        _queuedRetryAttemptsBySessionId.remove(normalizedSessionId);
         _scheduleQueuedSendDrain(
           normalizedSessionId,
           reason: 'retry-after-failure',
@@ -2331,6 +2340,7 @@ class ChatProvider extends ChangeNotifier {
 
       final queue = _queuedSendBySessionId[sessionId];
       if (queue == null || queue.isEmpty) {
+        _queuedRetryAttemptsBySessionId.remove(sessionId);
         _queuedSendBySessionId.remove(sessionId);
         _syncQueuedLocalUserMessageIds();
         _notifyListeners();
@@ -2340,6 +2350,7 @@ class ChatProvider extends ChangeNotifier {
       final queuedBatch = queue.toList(growable: false);
       final payload = _buildMergedQueuedPayload(queuedBatch);
       if (payload.text.isEmpty && payload.attachments.isEmpty) {
+        _queuedRetryAttemptsBySessionId.remove(sessionId);
         _queuedSendBySessionId.remove(sessionId);
         _syncQueuedLocalUserMessageIds();
         _notifyListeners();
@@ -2396,6 +2407,7 @@ class ChatProvider extends ChangeNotifier {
         return false;
       }
 
+      _queuedRetryAttemptsBySessionId.remove(sessionId);
       _queuedSendBySessionId.remove(sessionId);
       _syncQueuedLocalUserMessageIds();
       _notifyListeners();

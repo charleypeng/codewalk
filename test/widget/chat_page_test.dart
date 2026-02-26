@@ -4005,7 +4005,6 @@ void main() {
           id: 'msg_follow_1',
           sessionId: 'ses_follow',
           time: DateTime.fromMillisecondsSinceEpoch(3000),
-          completedTime: DateTime.fromMillisecondsSinceEpoch(3200),
           parts: const <MessagePart>[
             TextPart(
               id: 'part_follow_1',

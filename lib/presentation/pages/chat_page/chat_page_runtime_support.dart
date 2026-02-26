@@ -378,7 +378,9 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         stackTrace: stackTrace,
       );
     } finally {
-      _isProgrammaticScrollInFlight = false;
+      if (mounted) {
+        _isProgrammaticScrollInFlight = false;
+      }
     }
 
     if (!mounted || _pendingFinalAssistantRevealMessageId != messageId) {
