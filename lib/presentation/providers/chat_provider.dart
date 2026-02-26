@@ -341,6 +341,7 @@ class ChatProvider extends ChangeNotifier {
   static const Duration _sessionMessagesSnapshotTtl = Duration(days: 7);
   static const int _maxSessionMessageCacheEntries = 20;
   static const int _maxPersistedSessionMessageSnapshots = 8;
+  static const int _defaultOlderMessagesChunkSize = 200;
   static const int _maxRecentModels = 8;
   late final Duration _abortSuppressionWindow;
   static const Duration _remoteSelectionSyncThrottle = Duration(seconds: 2);
@@ -1221,7 +1222,8 @@ class ChatProvider extends ChangeNotifier {
           );
           _cacheSessionMessages(session.id, _messages);
           _messagesVersion++;
-          _hasMoreOldMessages = false;
+          _hasMoreOldMessages =
+              messages.length >= _defaultOlderMessagesChunkSize;
           _prunePendingLocalUserMessageIdsToVisibleUsers();
           _pruneQueuedLocalUserMessageIdsToVisibleUsers();
           notifyListeners();
@@ -1895,7 +1897,7 @@ class ChatProvider extends ChangeNotifier {
         _threadPermissionsVersion++;
         _messages = <ChatMessage>[];
         _isLoadingOlderMessages = false;
-        _hasMoreOldMessages = false;
+        _hasMoreOldMessages = messages.length >= _defaultOlderMessagesChunkSize;
         _messagesVersion++;
         await _clearLastSessionSnapshotBestEffort(
           serverId: serverId,
@@ -1952,6 +1954,8 @@ class ChatProvider extends ChangeNotifier {
             restoredCachedMessages.isNotEmpty) {
           _messages = List<ChatMessage>.from(restoredCachedMessages);
           _cacheSessionMessages(targetSession.id, _messages);
+          _hasMoreOldMessages =
+              restoredCachedMessages.length >= _defaultOlderMessagesChunkSize;
           _messagesVersion++;
           _setState(ChatState.loaded);
           unawaited(loadMessages(targetSession.id, preserveVisibleState: true));
@@ -2099,6 +2103,8 @@ class ChatProvider extends ChangeNotifier {
     if (restoredCachedMessages != null && restoredCachedMessages.isNotEmpty) {
       _messages = List<ChatMessage>.from(restoredCachedMessages);
       _cacheSessionMessages(session.id, _messages);
+      _hasMoreOldMessages =
+          restoredCachedMessages.length >= _defaultOlderMessagesChunkSize;
       _messagesVersion++;
       _setState(ChatState.loaded);
     } else {
@@ -2179,7 +2185,7 @@ class ChatProvider extends ChangeNotifier {
         );
         _cacheSessionMessages(sessionId, _messages);
         _messagesVersion++;
-        _hasMoreOldMessages = false;
+        _hasMoreOldMessages = messages.length >= _defaultOlderMessagesChunkSize;
         _prunePendingLocalUserMessageIdsToVisibleUsers();
         _pruneQueuedLocalUserMessageIdsToVisibleUsers();
         _scheduleAutoTitleRefresh(sessionId);
@@ -2193,7 +2199,9 @@ class ChatProvider extends ChangeNotifier {
     );
   }
 
-  Future<void> loadOlderMessages({int chunkSize = 200}) async {
+  Future<void> loadOlderMessages({
+    int chunkSize = _defaultOlderMessagesChunkSize,
+  }) async {
     final sessionId = _currentSession?.id;
     if (sessionId == null || sessionId.trim().isEmpty) {
       return;

@@ -1068,6 +1068,7 @@ class FakeChatRepository implements ChatRepository {
   String? lastGetSessionsDirectory;
   int getSessionsCallCount = 0;
   int getMessagesCallCount = 0;
+  int? lastGetMessagesLimit;
   int getSessionChildrenCallCount = 0;
   int getSessionTodoCallCount = 0;
   int getSessionDiffCallCount = 0;
@@ -1218,6 +1219,7 @@ class FakeChatRepository implements ChatRepository {
     int? limit,
   }) async {
     getMessagesCallCount += 1;
+    lastGetMessagesLimit = limit;
     if (getMessagesFailure != null) return Left(getMessagesFailure!);
     var output = List<ChatMessage>.from(
       messagesBySession[sessionId] ?? const [],

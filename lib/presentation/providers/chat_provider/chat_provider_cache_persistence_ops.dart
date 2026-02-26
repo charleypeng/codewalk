@@ -391,6 +391,8 @@ extension _ChatProviderCachePersistenceOps on ChatProvider {
       _messages = cachedMessages;
       _cacheSessionMessages(selectedSession.id, cachedMessages);
       _messagesVersion++;
+      _hasMoreOldMessages =
+          cachedMessages.length >= ChatProvider._defaultOlderMessagesChunkSize;
       _pendingLocalUserMessageIds.clear();
       _clearQueuedSendState();
       _setState(ChatState.loaded);

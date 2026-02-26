@@ -6,6 +6,9 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
       return;
     }
 
+    final userScrollDirection = _scrollController.position.userScrollDirection;
+    _maybeLoadOlderMessagesFromTop(userScrollDirection: userScrollDirection);
+
     final nearBottom = _isNearBottom();
     if (nearBottom) {
       _suppressPostCompletionAutoSnap = false;
@@ -28,7 +31,6 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
     }
 
     final shouldShowJumpToFirst = _shouldShowJumpToFirstFab();
-    final userScrollDirection = _scrollController.position.userScrollDirection;
     if (_autoFollowToLatest) {
       // Keep auto-follow enabled for content-size changes (new messages,
       // collapsed/expanded bubbles). We only opt out when the user actually
@@ -51,6 +53,78 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
         _showScrollToLatestFab = true;
         _showScrollToFirstFab = shouldShowJumpToFirst;
       });
+    }
+  }
+
+  void _maybeLoadOlderMessagesFromTop({
+    required ScrollDirection userScrollDirection,
+  }) {
+    final provider = _chatProvider;
+    if (provider == null ||
+        provider.currentSession == null ||
+        !provider.hasMoreOldMessages ||
+        provider.isLoadingOlderMessages ||
+        _olderMessagesAnchorRestoreInFlight) {
+      return;
+    }
+
+    final pixels = _scrollController.position.pixels;
+    if (pixels > _ChatPageState._olderMessagesTopLoadArmThreshold) {
+      _olderMessagesLoadTriggerArmed = true;
+      return;
+    }
+
+    if (!_olderMessagesLoadTriggerArmed) {
+      return;
+    }
+
+    if (userScrollDirection != ScrollDirection.forward) {
+      return;
+    }
+
+    if (pixels > _ChatPageState._olderMessagesTopLoadThreshold) {
+      return;
+    }
+
+    final maxBefore = _scrollController.position.maxScrollExtent;
+    _olderMessagesLoadTriggerArmed = false;
+    _olderMessagesAnchorRestoreInFlight = true;
+    unawaited(
+      _loadOlderMessagesAndRestoreAnchor(
+        provider: provider,
+        maxExtentBefore: maxBefore,
+      ),
+    );
+  }
+
+  Future<void> _loadOlderMessagesAndRestoreAnchor({
+    required ChatProvider provider,
+    required double maxExtentBefore,
+  }) async {
+    try {
+      await provider.loadOlderMessages();
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+
+      final maxAfter = _scrollController.position.maxScrollExtent;
+      final delta = maxAfter - maxExtentBefore;
+      if (delta <= 0) {
+        return;
+      }
+
+      final nextPixels = (_scrollController.position.pixels + delta).clamp(
+        _scrollController.position.minScrollExtent,
+        _scrollController.position.maxScrollExtent,
+      );
+      _scrollController.jumpTo(nextPixels);
+    } finally {
+      _olderMessagesAnchorRestoreInFlight = false;
     }
   }
 

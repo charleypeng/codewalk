@@ -96,6 +96,8 @@ class _ChatPageState extends State<ChatPage>
   static const double _filePaneBreakpoint = 1100;
   static const double _mediumSessionPaneWidth = 260;
   static const double _nearBottomThreshold = 200;
+  static const double _olderMessagesTopLoadThreshold = 72;
+  static const double _olderMessagesTopLoadArmThreshold = 220;
   static const double _jumpToFirstFabThreshold = 360;
   static const double _scrollToBottomEpsilon = 1;
   static const int _maxScrollToBottomPasses = 6;
@@ -165,6 +167,8 @@ class _ChatPageState extends State<ChatPage>
   bool _isAppInForeground = true;
   bool _wasChatRouteCurrent = true;
   bool _isProgrammaticScrollInFlight = false;
+  bool _olderMessagesLoadTriggerArmed = true;
+  bool _olderMessagesAnchorRestoreInFlight = false;
   int _scrollToBottomRequestToken = 0;
   bool _wasCurrentSessionActivelyResponding = false;
   bool _deferAssistantWorkCollapse = false;

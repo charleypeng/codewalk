@@ -160,7 +160,8 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       // Persist collapse state of the outgoing session before clearing.
       final outgoing = _trackedSessionId;
       if (outgoing != null) {
-        _sessionCollapseHistoryCache[outgoing] = _expandedCollapsedHistoryGroupId;
+        _sessionCollapseHistoryCache[outgoing] =
+            _expandedCollapsedHistoryGroupId;
         _sessionCollapseWorkCache[outgoing] = _expandedAssistantWorkGroupId;
         // Evict oldest entry when cache exceeds 20 sessions.
         if (_sessionCollapseHistoryCache.length > 20) {
@@ -179,11 +180,15 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         );
       }
       _pendingInitialScrollSessionId = sessionId;
+      _olderMessagesLoadTriggerArmed = true;
+      _olderMessagesAnchorRestoreInFlight = false;
       // Restore collapse state for the incoming session (null if not cached).
-      _expandedCollapsedHistoryGroupId =
-          sessionId != null ? _sessionCollapseHistoryCache[sessionId] : null;
-      _expandedAssistantWorkGroupId =
-          sessionId != null ? _sessionCollapseWorkCache[sessionId] : null;
+      _expandedCollapsedHistoryGroupId = sessionId != null
+          ? _sessionCollapseHistoryCache[sessionId]
+          : null;
+      _expandedAssistantWorkGroupId = sessionId != null
+          ? _sessionCollapseWorkCache[sessionId]
+          : null;
       _frozenCompactionBoundaryId = null;
       _wasCompactingContext = false;
       _nextFrozenCompactionBoundaryId = null;

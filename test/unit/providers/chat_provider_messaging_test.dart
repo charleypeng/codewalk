@@ -734,6 +734,64 @@ void main() {
     );
 
     test(
+      'loadOlderMessages requests incremental limit and updates hasMore',
+      () async {
+        final sessionId = 'ses_1';
+        final messages = List<ChatMessage>.generate(450, (index) {
+          final timestamp = DateTime.fromMillisecondsSinceEpoch(1000 + index);
+          if (index.isEven) {
+            return UserMessage(
+              id: 'msg_user_$index',
+              sessionId: sessionId,
+              time: timestamp,
+              parts: <MessagePart>[
+                TextPart(
+                  id: 'part_user_$index',
+                  messageId: 'msg_user_$index',
+                  sessionId: sessionId,
+                  text: 'u$index',
+                ),
+              ],
+            );
+          }
+          return AssistantMessage(
+            id: 'msg_assistant_$index',
+            sessionId: sessionId,
+            time: timestamp,
+            completedTime: timestamp,
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_assistant_$index',
+                messageId: 'msg_assistant_$index',
+                sessionId: sessionId,
+                text: 'a$index',
+              ),
+            ],
+          );
+        });
+        chatRepository.messagesBySession[sessionId] = messages;
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        final session = provider.sessions.firstWhere(
+          (item) => item.id == sessionId,
+        );
+        await provider.selectSession(session);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(provider.hasMoreOldMessages, isTrue);
+
+        await provider.loadOlderMessages(chunkSize: 100);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(chatRepository.lastGetMessagesLimit, 550);
+        expect(provider.messages.length, 450);
+        expect(provider.hasMoreOldMessages, isFalse);
+        expect(provider.isLoadingOlderMessages, isFalse);
+      },
+    );
+
+    test(
       'providers refresh exposes failed state and recovers on retry',
       () async {
         appRepository.providersResult = const Left(
