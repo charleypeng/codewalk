@@ -36,12 +36,16 @@ import '../services/android_foreground_monitor_service.dart';
 import '../services/notification_service.dart';
 import '../utils/file_explorer_logic.dart';
 import '../utils/reasoning_status_parser.dart';
+import '../theme/app_animations.dart';
+import '../utils/app_page_route.dart';
 import '../utils/session_title_formatter.dart';
 import '../utils/shortcut_binding_codec.dart';
 import '../utils/window_size_class.dart';
 import '../widgets/chat_input_widget.dart';
 import '../widgets/chat_message_widget.dart';
 import '../widgets/chat_session_list.dart';
+import '../widgets/chat_skeleton_shimmer.dart';
+import '../widgets/message_entrance_animation.dart';
 import '../widgets/permission_request_card.dart';
 import '../widgets/question_request_card.dart';
 import '../widgets/session_title_inline_editor.dart';
@@ -188,6 +192,9 @@ class _ChatPageState extends State<ChatPage>
   String? _cachedTimelineExpandedGroupId;
   String? _cachedTimelineExpandedAssistantWorkGroupId;
   List<_TimelineEntry>? _cachedTimelineEntries;
+
+  // Track timeline growth for message entrance animations (Phase 2.2).
+  int _previousTimelineLength = 0;
 
   // Cache for _resolveSessionContextUsage (O(N) double-scan of messages).
   int _cachedContextUsageMsgCount = -1;

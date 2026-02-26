@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../domain/entities/chat_session.dart';
+import '../theme/app_animations.dart';
 
 class SessionTodoListWidget extends StatefulWidget {
   const SessionTodoListWidget({
@@ -201,37 +202,46 @@ class _SessionTodoListWidgetState extends State<SessionTodoListWidget> {
             ),
           ),
         ),
-        if (!widget.collapsed)
-          Padding(
-            padding: const EdgeInsets.only(left: 4, top: 2),
-            child: needsScroll
-                ? ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: widget.maxVisibleItems * _itemHeight,
-                    ),
-                    child: Scrollbar(
-                      controller: _scrollController,
-                      thumbVisibility: true,
-                      child: ListView.builder(
-                        controller: _scrollController,
-                        itemCount: widget.todos.length,
-                        itemExtent: _itemHeight,
-                        padding: EdgeInsets.zero,
-                        itemBuilder: (context, index) {
-                          return _buildTodoItem(context, widget.todos[index]);
-                        },
-                      ),
-                    ),
-                  )
-                : Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: widget.todos
-                        .map((todo) {
-                          return _buildTodoItem(context, todo);
-                        })
-                        .toList(growable: false),
-                  ),
-          ),
+        AnimatedSize(
+          duration: AppAnimations.standard,
+          curve: AppAnimations.standardCurve,
+          alignment: Alignment.topCenter,
+          child: !widget.collapsed
+              ? Padding(
+                  padding: const EdgeInsets.only(left: 4, top: 2),
+                  child: needsScroll
+                      ? ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: widget.maxVisibleItems * _itemHeight,
+                          ),
+                          child: Scrollbar(
+                            controller: _scrollController,
+                            thumbVisibility: true,
+                            child: ListView.builder(
+                              controller: _scrollController,
+                              itemCount: widget.todos.length,
+                              itemExtent: _itemHeight,
+                              padding: EdgeInsets.zero,
+                              itemBuilder: (context, index) {
+                                return _buildTodoItem(
+                                  context,
+                                  widget.todos[index],
+                                );
+                              },
+                            ),
+                          ),
+                        )
+                      : Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: widget.todos
+                              .map((todo) {
+                                return _buildTodoItem(context, todo);
+                              })
+                              .toList(growable: false),
+                        ),
+                )
+              : const SizedBox.shrink(),
+        ),
       ],
     );
   }

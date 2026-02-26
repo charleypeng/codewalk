@@ -176,6 +176,19 @@ class AppTheme {
           ),
         ),
       ),
+      bottomSheetTheme: BottomSheetThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppShapes.extraLarge),
+          ),
+        ),
+        showDragHandle: true,
+      ),
+      dialogTheme: DialogThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppShapes.extraLarge),
+        ),
+      ),
     );
   }
 }

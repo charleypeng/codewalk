@@ -818,7 +818,7 @@ extension _ChatPageChrome on _ChatPageState {
       return;
     }
     await Navigator.of(context).push(
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (_) => SettingsPage(initialSectionId: initialSectionId),
       ),
     );

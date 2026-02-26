@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_constants.dart';
 import '../../domain/entities/server_profile.dart';
 import '../providers/app_provider.dart';
+import '../theme/app_animations.dart';
 import '../providers/settings_provider.dart';
 import '../services/local_opencode_server_runtime_types.dart';
 import 'settings/sections/servers_settings_section.dart';
@@ -419,7 +420,21 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
             child: Padding(
               padding: const EdgeInsets.all(AppConstants.defaultPadding),
               child: AnimatedSwitcher(
-                duration: AppConstants.shortAnimation,
+                duration: AppAnimations.emphasized,
+                switchInCurve: AppAnimations.emphasizedCurve,
+                switchOutCurve: AppAnimations.accelerateCurve,
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0.05, 0),
+                        end: Offset.zero,
+                      ).animate(animation),
+                      child: child,
+                    ),
+                  );
+                },
                 child: _buildStep(),
               ),
             ),

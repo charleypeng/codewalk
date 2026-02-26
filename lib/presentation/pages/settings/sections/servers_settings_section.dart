@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../domain/entities/server_profile.dart';
 import '../../../providers/app_provider.dart';
+import '../../../utils/app_page_route.dart';
 import '../../onboarding_wizard_page.dart';
 
 class ServersSettingsSection extends StatefulWidget {
@@ -388,7 +389,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
     ServerProfile? initialServerProfile,
   }) async {
     await Navigator.of(context).push(
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (_) => OnboardingWizardPage(
           onComplete: () => Navigator.of(context).pop(),
           showSkipAction: false,

@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../theme/app_animations.dart';
+import '../utils/app_page_route.dart';
 import '../utils/window_size_class.dart';
 import 'logs_page.dart';
 import 'onboarding_wizard_page.dart';
@@ -49,57 +51,73 @@ class _SettingsPageState extends State<SettingsPage> {
   DateTime? _lastEscapeAt;
   bool _hasPhysicalKeyboard = false;
 
+  _SettingsSection _section({
+    required String id,
+    required String title,
+    required String description,
+    required IconData icon,
+    required WidgetBuilder builder,
+  }) {
+    return _SettingsSection(
+      id: id,
+      title: title,
+      description: description,
+      icon: icon,
+      builder: builder,
+    );
+  }
+
   late final List<_SettingsSection> _sections = <_SettingsSection>[
-    _SettingsSection(
+    _section(
       id: 'servers',
       title: 'Servers',
       description: 'OpenCode servers and health routing',
       icon: Symbols.dns,
       builder: (_) => const ServersSettingsSection(),
     ),
-    _SettingsSection(
+    _section(
       id: 'appearance',
       title: 'Appearance',
       description: 'Density and timeline bubble visibility',
       icon: Symbols.tune_rounded,
       builder: (_) => const AppearanceSettingsSection(),
     ),
-    _SettingsSection(
+    _section(
       id: 'behavior',
       title: 'Behavior',
       description: 'Composer sync and concurrency safety',
       icon: Symbols.settings,
       builder: (_) => const BehaviorSettingsSection(),
     ),
-    _SettingsSection(
+    _section(
       id: 'notifications',
       title: 'Notifications',
       description: 'Per-category notify and sound controls',
       icon: Symbols.notifications_active,
       builder: (_) => const NotificationsSettingsSection(),
     ),
-    _SettingsSection(
+    _section(
       id: 'speech',
       title: 'Speech to text',
       description: 'Engine, silence timeout, and model options',
       icon: Symbols.mic_none_rounded,
       builder: (_) => const SpeechSettingsSection(),
     ),
-    _SettingsSection(
+    _section(
       id: 'logs',
       title: 'Logs',
       description: 'Runtime diagnostics and troubleshooting data',
       icon: Symbols.receipt_long_rounded,
       builder: (_) => const SizedBox.shrink(),
     ),
-    _SettingsSection(
+    _section(
       id: 'shortcuts',
       title: 'Shortcuts',
       description: 'Search and edit key bindings',
       icon: Symbols.keyboard_command_key_rounded,
       builder: (_) => const ShortcutsSettingsSection(),
     ),
-    _SettingsSection(
+    _section(
       id: 'about',
       title: 'About',
       description: 'Version, updates and links',
@@ -245,9 +263,32 @@ class _SettingsPageState extends State<SettingsPage> {
                   )
                 : null,
           ),
-          body: _showMobileDetail && section != null
-              ? section.builder(context)
-              : _buildSectionList(isSplit: false),
+          body: AnimatedSwitcher(
+            duration: AppAnimations.emphasized,
+            switchInCurve: AppAnimations.emphasizedCurve,
+            switchOutCurve: AppAnimations.accelerateCurve,
+            transitionBuilder: (child, animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0.04, 0),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
+              );
+            },
+            child: _showMobileDetail && section != null
+                ? KeyedSubtree(
+                    key: ValueKey<String>('section_${section.id}'),
+                    child: section.builder(context),
+                  )
+                : KeyedSubtree(
+                    key: const ValueKey<String>('section_list'),
+                    child: _buildSectionList(isSplit: false),
+                  ),
+          ),
         ),
       );
     }
@@ -259,9 +300,31 @@ class _SettingsPageState extends State<SettingsPage> {
           SizedBox(width: 320, child: _buildSectionList(isSplit: true)),
           const VerticalDivider(width: 1),
           Expanded(
-            child: section == null
-                ? const SizedBox.shrink()
-                : section.builder(context),
+            child: AnimatedSwitcher(
+              duration: AppAnimations.emphasized,
+              switchInCurve: AppAnimations.emphasizedCurve,
+              switchOutCurve: AppAnimations.accelerateCurve,
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0.04, 0),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: child,
+                  ),
+                );
+              },
+              child: section == null
+                  ? const SizedBox.shrink(
+                      key: ValueKey<String>('section_empty'),
+                    )
+                  : KeyedSubtree(
+                      key: ValueKey<String>('section_${section.id}'),
+                      child: section.builder(context),
+                    ),
+            ),
           ),
         ],
       ),
@@ -270,7 +333,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _openSetupWizard() async {
     await Navigator.of(context).push(
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (_) => OnboardingWizardPage(
           showSkipAction: false,
           onComplete: () => Navigator.of(context).pop(),
@@ -282,7 +345,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _openLogsPage() async {
     await Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (_) => const LogsPage()));
+    ).push(AppPageRoute(builder: (_) => const LogsPage()));
   }
 
   Widget _buildSectionList({required bool isSplit}) {

@@ -270,9 +270,13 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           right: 16,
           bottom: 16,
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 180),
-            switchInCurve: Curves.easeOut,
-            switchOutCurve: Curves.easeIn,
+            duration: AppAnimations.fabScale,
+            switchInCurve: AppAnimations.fabCurve,
+            switchOutCurve: AppAnimations.accelerateCurve,
+            transitionBuilder: (child, animation) => ScaleTransition(
+              scale: animation,
+              child: FadeTransition(opacity: animation, child: child),
+            ),
             child: showFab
                 ? Column(
                     key: const ValueKey<String>('message_jump_fabs_visible'),
@@ -280,9 +284,17 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 180),
-                        switchInCurve: Curves.easeOut,
-                        switchOutCurve: Curves.easeIn,
+                        duration: AppAnimations.fabScale,
+                        switchInCurve: AppAnimations.fabCurve,
+                        switchOutCurve: AppAnimations.accelerateCurve,
+                        transitionBuilder: (child, animation) =>
+                            ScaleTransition(
+                          scale: animation,
+                          child: FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          ),
+                        ),
                         child: showJumpToFirstFab
                             ? Padding(
                                 key: const ValueKey<String>(
@@ -339,7 +351,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     final settingsProvider = context.watch<SettingsProvider>();
     if (chatProvider.state == ChatState.loading &&
         chatProvider.messages.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const ChatSkeletonShimmer();
     }
 
     if (chatProvider.state == ChatState.error) {
@@ -372,56 +384,60 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     }
 
     if (chatProvider.currentSession == null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Symbols.chat_bubble_outline,
-              size: 64,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Select or create a conversation to start chatting',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+      return MessageEntranceAnimation(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Symbols.chat_bubble_outline,
+                size: 64,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: _createNewSession,
-              icon: const Icon(Symbols.add),
-              label: const Text('New Chat'),
-            ),
-          ],
+              const SizedBox(height: 16),
+              Text(
+                'Select or create a conversation to start chatting',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: _createNewSession,
+                icon: const Icon(Symbols.add),
+                label: const Text('New Chat'),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     if (chatProvider.messages.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Symbols.waving_hand,
-              size: 64,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Hello! I am your AI assistant',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'How can I help you?',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+      return MessageEntranceAnimation(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Symbols.waving_hand,
+                size: 64,
+                color: Theme.of(context).colorScheme.primary,
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              Text(
+                'Hello! I am your AI assistant',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'How can I help you?',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -441,6 +457,17 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       isCompactingContext: chatProvider.isCompactingContext,
     );
 
+    // Determine which entries are new (for entrance animation).
+    // Compare against tracked length to detect growth since last build.
+    // Safe to read+write here because _buildMessageTimelineEntries is
+    // fully cached and deterministic within the same messagesVersion.
+    final currentLength = timelineEntries.length;
+    final prevLength = _previousTimelineLength;
+    if (currentLength != prevLength) {
+      _previousTimelineLength = currentLength;
+    }
+    final animateNewEntries = _autoFollowToLatest && currentLength > prevLength;
+
     return NotificationListener<ScrollMetricsNotification>(
       onNotification: _handleScrollMetricsChanged,
       child: CustomScrollView(
@@ -453,9 +480,10 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final entry = timelineEntries[index];
+                  Widget child;
                   if (entry is _TimelineMessageEntry) {
                     final message = entry.message;
-                    return ChatMessageWidget(
+                    child = ChatMessageWidget(
                       key: ValueKey<String>(entry.key),
                       message: message,
                       activeReasoningPartKey: latestReasoningPartKey,
@@ -471,14 +499,20 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                       onBackgroundLongPressEnd: () =>
                           _handleMessageBackgroundLongPressEnd(message),
                     );
+                  } else if (entry is _TimelineCollapsedHistoryEntry) {
+                    child = _buildCollapsedHistoryEntry(entry);
+                  } else if (entry is _TimelineCollapsedAssistantWorkEntry) {
+                    child = _buildCollapsedAssistantWorkEntry(entry);
+                  } else {
+                    child = _buildRetryingMessageIndicator();
                   }
-                  if (entry is _TimelineCollapsedHistoryEntry) {
-                    return _buildCollapsedHistoryEntry(entry);
+
+                  // Animate only genuinely new entries at the tail.
+                  final isNewEntry = animateNewEntries && index >= prevLength;
+                  if (isNewEntry) {
+                    return MessageEntranceAnimation(child: child);
                   }
-                  if (entry is _TimelineCollapsedAssistantWorkEntry) {
-                    return _buildCollapsedAssistantWorkEntry(entry);
-                  }
-                  return _buildRetryingMessageIndicator();
+                  return child;
                 },
                 childCount: timelineEntries.length,
                 addAutomaticKeepAlives: false,
