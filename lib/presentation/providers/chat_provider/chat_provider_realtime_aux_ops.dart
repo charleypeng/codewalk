@@ -191,6 +191,8 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
 
   void _removeSessionById(String sessionId) {
     _sessions.removeWhere((item) => item.id == sessionId);
+    _removeSessionMessagesCache(sessionId);
+    unawaited(_clearSessionMessagesSnapshotBestEffort(sessionId));
     _removeSessionSelectionOverride(sessionId);
     _pendingRenameTitleBySessionId.remove(sessionId);
     _autoTitleConsolidatedSessionIds.remove(sessionId);
@@ -205,6 +207,8 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     if (_currentSession?.id == sessionId) {
       _currentSession = _sessions.firstOrNull;
       _messages = <ChatMessage>[];
+      _isLoadingOlderMessages = false;
+      _hasMoreOldMessages = false;
       _messagesVersion++;
       _pendingLocalUserMessageIds.clear();
       _applySelectionPriorityForCurrentSession();

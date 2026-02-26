@@ -104,6 +104,7 @@ abstract class ChatRemoteDataSource {
     String projectId,
     String sessionId, {
     String? directory,
+    int? limit,
   });
 
   /// Get message details
@@ -197,7 +198,7 @@ abstract class ChatRemoteDataSource {
 /// Chat remote data source implementation
 class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   const ChatRemoteDataSourceImpl({required this.dio, Dio? sseDio})
-      : _sseDio = sseDio;
+    : _sseDio = sseDio;
 
   final Dio dio;
 
@@ -656,11 +657,15 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     String projectId,
     String sessionId, {
     String? directory,
+    int? limit,
   }) async {
     try {
       final queryParams = <String, String>{};
       if (directory != null) {
         queryParams['directory'] = directory;
+      }
+      if (limit != null && limit > 0) {
+        queryParams['limit'] = '$limit';
       }
 
       final response = await dio.get(

@@ -89,6 +89,20 @@
 - **Then** the app automatically generates (or re-generates) a title based on the conversation content
 - **Then** title generation stops once the session has accumulated 3 or more user messages **and** 3 or more assistant messages — sufficient context has been established by that point
 
+### Session reopening is cache-first
+
+- **Given** the user already opened a session recently in the same server+project scope
+- **When** the user switches back to that session
+- **Then** cached messages are rendered immediately without waiting for a full network reload
+- **Then** the app revalidates the session in background (SWR) and merges newer server state when available
+
+### Long-session revalidation avoids forced viewport jumps
+
+- **Given** a cached session is visible and background revalidation finishes
+- **When** newer server messages are applied
+- **Then** the timeline updates in place without clearing to an empty skeleton first
+- **Then** collapsed history/work groups keep their per-session expansion state during switch and revalidation
+
 ---
 
 ## Chat

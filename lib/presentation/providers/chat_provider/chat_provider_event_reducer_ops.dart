@@ -442,10 +442,15 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         final info = properties['info'] as Map<String, dynamic>?;
         final sessionId = info?['sessionID'] as String?;
         final messageId = info?['id'] as String?;
-        if (sessionId != null &&
-            messageId != null &&
-            _currentSession?.id == sessionId) {
-          unawaited(_fetchMessageFallback(sessionId, messageId));
+        if (sessionId != null && messageId != null) {
+          final isCurrentSession = _currentSession?.id == sessionId;
+          unawaited(
+            _fetchMessageFallback(
+              sessionId,
+              messageId,
+              applyToCurrentSession: isCurrentSession,
+            ),
+          );
         }
         break;
       case 'message.part.updated':

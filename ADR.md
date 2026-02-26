@@ -776,3 +776,54 @@ Selection changes made during suppression are not lost — they are applied on t
 - `lib/presentation/providers/chat_provider/chat_provider_send_ops.dart`
 - `lib/presentation/providers/chat_provider/chat_provider_realtime_ops.dart`
 - `lib/data/datasources/chat_remote_datasource.dart`
+
+---
+
+## ADR-020: Session-Level SWR Cache with Persisted LRU Snapshots (2026-02-26)
+
+**Status**: Accepted
+
+**Related**: ADR-016 (Hybrid File-Backed Cache), ADR-003 (Realtime-First Sync Lifecycle)
+
+### Context
+
+Long conversations were reloading from scratch on every session switch. The provider cleared `_messages` before loading remote data, so switching to a large session frequently showed a blank/loading state and caused perceived stutter. Existing durable cache only restored a single "last session snapshot", which did not help when moving between multiple active sessions.
+
+Server APIs currently expose full message list reads (with optional `limit`) and single-message fetch, but no dedicated delta cursor/etag endpoint for historical chat synchronization.
+
+### Decision
+
+Adopt a cache-first SWR policy per session:
+
+1. Add an in-memory per-session LRU message cache in `ChatProvider` (20 entries).
+2. Persist recent per-session message snapshots using ADR-016 file-backed storage (`ChatCachePayloadStore`) plus SharedPreferences metadata for recency and timestamps.
+3. On `selectSession`, restore cached messages immediately when available and trigger background `loadMessages(...preserveVisibleState: true)` revalidation.
+4. Keep full-fetch correctness path, but incrementally patch non-current session caches on `message.created` / `message.updated` via single-message fallback fetch.
+5. Prepare virtual-history loading structure by plumbing optional `limit` through the message read stack and adding provider-side `loadOlderMessages()` scaffolding (UI wiring deferred).
+
+### Rationale
+
+- Cache-first restore removes unnecessary blank reloads for recently visited long sessions.
+- SWR keeps correctness by still revalidating against server state.
+- Per-session persistence extends ADR-016 beyond one snapshot and keeps cache useful across app restarts.
+- Event-assisted patching improves freshness for background sessions even without a server delta endpoint.
+- Optional `limit` plumbing reduces future risk when enabling virtual scrolling incrementally.
+
+### Consequences
+
+- ✅ Session switching is significantly faster and more stable for long conversations.
+- ✅ Background revalidation keeps data fresh without forcing full UI reset.
+- ✅ Cache durability now covers multiple recent sessions, not only the last one.
+- ✅ Architecture is ready for incremental history loading in a future UI phase.
+- ⚠ Cache metadata/key management is more complex (LRU list + per-session timestamps).
+- ⚠ No true server-side delta endpoint yet; full-fetch fallback remains necessary for correctness.
+
+### Key Files
+
+- `lib/presentation/providers/chat_provider.dart`
+- `lib/presentation/providers/chat_provider/chat_provider_cache_persistence_ops.dart`
+- `lib/presentation/providers/chat_provider/chat_provider_event_reducer_ops.dart`
+- `lib/presentation/providers/chat_provider/chat_provider_message_merge_ops.dart`
+- `lib/data/datasources/app_local_datasource.dart`
+- `lib/data/datasources/chat_remote_datasource.dart`
+- `lib/domain/usecases/get_chat_messages.dart`

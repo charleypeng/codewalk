@@ -32,6 +32,11 @@ class AppConstants {
   static const String lastSessionSnapshotKey = 'last_session_snapshot';
   static const String lastSessionSnapshotUpdatedAtKey =
       'last_session_snapshot_updated_at';
+  static const String sessionMessagesSnapshotKey = 'session_messages_snapshot';
+  static const String sessionMessagesSnapshotUpdatedAtKey =
+      'session_messages_snapshot_updated_at';
+  static const String sessionMessagesSnapshotIdsKey =
+      'session_messages_snapshot_ids';
   static const String currentSessionIdKey = 'current_session_id';
   static const String currentProjectIdKey = 'current_project_id';
   static const String openProjectIdsKey = 'open_project_ids';

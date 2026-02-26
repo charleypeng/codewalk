@@ -99,6 +99,7 @@ abstract class ChatRepository {
     String projectId,
     String sessionId, {
     String? directory,
+    int? limit,
   });
 
   /// Technical comment translated to English.

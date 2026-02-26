@@ -235,6 +235,56 @@ abstract class AppLocalDataSource {
   /// Technical comment translated to English.
   Future<void> clearLastSessionSnapshot({String? serverId, String? scopeId});
 
+  /// Persist per-session message snapshot for cache-first session switching.
+  Future<String?> getSessionMessagesSnapshot({
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  });
+
+  /// Persist per-session message snapshot for cache-first session switching.
+  Future<void> saveSessionMessagesSnapshot(
+    String snapshotJson, {
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  });
+
+  /// Read the update timestamp for a per-session message snapshot.
+  Future<int?> getSessionMessagesSnapshotUpdatedAt({
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  });
+
+  /// Save the update timestamp for a per-session message snapshot.
+  Future<void> saveSessionMessagesSnapshotUpdatedAt(
+    int epochMs, {
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  });
+
+  /// Remove per-session message snapshot and metadata.
+  Future<void> clearSessionMessagesSnapshot({
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  });
+
+  /// Ordered list of recently persisted per-session snapshots (LRU order).
+  Future<String?> getSessionMessagesSnapshotIds({
+    String? serverId,
+    String? scopeId,
+  });
+
+  /// Ordered list of recently persisted per-session snapshots (LRU order).
+  Future<void> saveSessionMessagesSnapshotIds(
+    String snapshotIdsJson, {
+    String? serverId,
+    String? scopeId,
+  });
+
   /// Technical comment translated to English.
   Future<void> clearChatContextCache({
     required String serverId,
@@ -372,6 +422,24 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
     }
     final encodedContext = Uri.encodeComponent(scopedContext);
     return '$base::$encodedServer::$encodedContext';
+  }
+
+  String _sessionScopedKey(
+    String base, {
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  }) {
+    final normalizedSessionId = sessionId.trim();
+    if (normalizedSessionId.isEmpty) {
+      return _scopedKey(base, serverId: serverId, scopeId: scopeId);
+    }
+    final encodedSession = Uri.encodeComponent(normalizedSessionId);
+    return _scopedKey(
+      '$base::$encodedSession',
+      serverId: serverId,
+      scopeId: scopeId,
+    );
   }
 
   Future<String?> _readLargeCachePayload(String key) async {
@@ -1185,10 +1253,153 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
   }
 
   @override
+  Future<String?> getSessionMessagesSnapshot({
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  }) async {
+    final key = _sessionScopedKey(
+      AppConstants.sessionMessagesSnapshotKey,
+      sessionId: sessionId,
+      serverId: serverId,
+      scopeId: scopeId,
+    );
+    return _readLargeCachePayload(key);
+  }
+
+  @override
+  Future<void> saveSessionMessagesSnapshot(
+    String snapshotJson, {
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  }) async {
+    final key = _sessionScopedKey(
+      AppConstants.sessionMessagesSnapshotKey,
+      sessionId: sessionId,
+      serverId: serverId,
+      scopeId: scopeId,
+    );
+    await _writeLargeCachePayload(key, snapshotJson);
+  }
+
+  @override
+  Future<int?> getSessionMessagesSnapshotUpdatedAt({
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  }) async {
+    return sharedPreferences.getInt(
+      _sessionScopedKey(
+        AppConstants.sessionMessagesSnapshotUpdatedAtKey,
+        sessionId: sessionId,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+  }
+
+  @override
+  Future<void> saveSessionMessagesSnapshotUpdatedAt(
+    int epochMs, {
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  }) async {
+    await sharedPreferences.setInt(
+      _sessionScopedKey(
+        AppConstants.sessionMessagesSnapshotUpdatedAtKey,
+        sessionId: sessionId,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+      epochMs,
+    );
+  }
+
+  @override
+  Future<void> clearSessionMessagesSnapshot({
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  }) async {
+    await _removeLargeCachePayload(
+      _sessionScopedKey(
+        AppConstants.sessionMessagesSnapshotKey,
+        sessionId: sessionId,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+    await sharedPreferences.remove(
+      _sessionScopedKey(
+        AppConstants.sessionMessagesSnapshotUpdatedAtKey,
+        sessionId: sessionId,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+  }
+
+  @override
+  Future<String?> getSessionMessagesSnapshotIds({
+    String? serverId,
+    String? scopeId,
+  }) async {
+    return sharedPreferences.getString(
+      _scopedKey(
+        AppConstants.sessionMessagesSnapshotIdsKey,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+  }
+
+  @override
+  Future<void> saveSessionMessagesSnapshotIds(
+    String snapshotIdsJson, {
+    String? serverId,
+    String? scopeId,
+  }) async {
+    await sharedPreferences.setString(
+      _scopedKey(
+        AppConstants.sessionMessagesSnapshotIdsKey,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+      snapshotIdsJson,
+    );
+  }
+
+  @override
   Future<void> clearChatContextCache({
     required String serverId,
     required String scopeId,
   }) async {
+    final snapshotIdsRaw = await getSessionMessagesSnapshotIds(
+      serverId: serverId,
+      scopeId: scopeId,
+    );
+    if (snapshotIdsRaw != null && snapshotIdsRaw.trim().isNotEmpty) {
+      try {
+        final decoded = json.decode(snapshotIdsRaw);
+        if (decoded is List) {
+          for (final id in decoded.whereType<String>()) {
+            if (id.trim().isEmpty) {
+              continue;
+            }
+            await clearSessionMessagesSnapshot(
+              sessionId: id,
+              serverId: serverId,
+              scopeId: scopeId,
+            );
+          }
+        }
+      } catch (_) {
+        // Ignore malformed snapshot ID payloads during cleanup.
+      }
+    }
+
     await _removeLargeCachePayload(
       _scopedKey(
         AppConstants.cachedSessionsKey,
@@ -1227,6 +1438,11 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
       ),
       _scopedKey(
         AppConstants.sessionSelectionOverridesKey,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+      _scopedKey(
+        AppConstants.sessionMessagesSnapshotIdsKey,
         serverId: serverId,
         scopeId: scopeId,
       ),

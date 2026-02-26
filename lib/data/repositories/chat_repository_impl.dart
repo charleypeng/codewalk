@@ -317,12 +317,14 @@ class ChatRepositoryImpl implements ChatRepository {
     String projectId,
     String sessionId, {
     String? directory,
+    int? limit,
   }) async {
     try {
       final messages = await remoteDataSource.getMessages(
         projectId,
         sessionId,
         directory: directory,
+        limit: limit,
       );
       return Right(messages.map((m) => m.toDomain()).toList());
     } on NotFoundException {

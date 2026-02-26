@@ -1,7 +1,11 @@
 part of '../chat_provider.dart';
 
 extension _ChatProviderMessageMergeOps on ChatProvider {
-  Future<void> _fetchMessageFallback(String sessionId, String messageId) async {
+  Future<void> _fetchMessageFallback(
+    String sessionId,
+    String messageId, {
+    bool applyToCurrentSession = true,
+  }) async {
     final result = await getChatMessage(
       GetChatMessageParams(
         projectId: projectProvider.currentProjectId,
@@ -10,11 +14,33 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
         directory: projectProvider.currentDirectory,
       ),
     );
-    result.fold((failure) {
-      AppLogger.warn(
-        'Message fallback fetch failed for $messageId: ${failure.toString()}',
-      );
-    }, _updateOrAddMessage);
+    result.fold(
+      (failure) {
+        AppLogger.warn(
+          'Message fallback fetch failed for $messageId: ${failure.toString()}',
+        );
+      },
+      (message) {
+        if (applyToCurrentSession && _currentSession?.id == sessionId) {
+          _updateOrAddMessage(message);
+        } else {
+          final cached =
+              _cachedSessionMessages(sessionId) ?? const <ChatMessage>[];
+          final next = List<ChatMessage>.from(cached);
+          final existingIndex = next.indexWhere(
+            (item) => item.id == message.id,
+          );
+          if (existingIndex == -1) {
+            next.add(message);
+          } else {
+            next[existingIndex] = message;
+          }
+          next.sort((a, b) => a.time.compareTo(b.time));
+          _cacheSessionMessages(sessionId, next);
+          unawaited(_persistSessionMessagesSnapshotBestEffort(sessionId, next));
+        }
+      },
+    );
   }
 
   bool _shouldSkipLocalUserAppendAsDuplicateEcho({

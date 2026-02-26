@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/data/datasources/app_local_datasource.dart';
@@ -177,6 +178,23 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
     return '$base::$serverId::$scopeId';
   }
 
+  String _sessionKey(
+    String base, {
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  }) {
+    final normalizedSessionId = sessionId.trim();
+    if (normalizedSessionId.isEmpty) {
+      return _key(base, serverId: serverId, scopeId: scopeId);
+    }
+    return _key(
+      '$base::$normalizedSessionId',
+      serverId: serverId,
+      scopeId: scopeId,
+    );
+  }
+
   @override
   Future<void> clearAll() async {
     serverHost = null;
@@ -295,6 +313,46 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
     }
     return scopedInts[_key(
       'last_session_snapshot_updated_at',
+      serverId: serverId,
+      scopeId: scopeId,
+    )];
+  }
+
+  @override
+  Future<String?> getSessionMessagesSnapshot({
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  }) async {
+    return scopedStrings[_sessionKey(
+      'session_messages_snapshot',
+      sessionId: sessionId,
+      serverId: serverId,
+      scopeId: scopeId,
+    )];
+  }
+
+  @override
+  Future<int?> getSessionMessagesSnapshotUpdatedAt({
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  }) async {
+    return scopedInts[_sessionKey(
+      'session_messages_snapshot_updated_at',
+      sessionId: sessionId,
+      serverId: serverId,
+      scopeId: scopeId,
+    )];
+  }
+
+  @override
+  Future<String?> getSessionMessagesSnapshotIds({
+    String? serverId,
+    String? scopeId,
+  }) async {
+    return scopedStrings[_key(
+      'session_messages_snapshot_ids',
       serverId: serverId,
       scopeId: scopeId,
     )];
@@ -575,6 +633,52 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
   }
 
   @override
+  Future<void> saveSessionMessagesSnapshot(
+    String snapshotJson, {
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  }) async {
+    scopedStrings[_sessionKey(
+          'session_messages_snapshot',
+          sessionId: sessionId,
+          serverId: serverId,
+          scopeId: scopeId,
+        )] =
+        snapshotJson;
+  }
+
+  @override
+  Future<void> saveSessionMessagesSnapshotUpdatedAt(
+    int epochMs, {
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  }) async {
+    scopedInts[_sessionKey(
+          'session_messages_snapshot_updated_at',
+          sessionId: sessionId,
+          serverId: serverId,
+          scopeId: scopeId,
+        )] =
+        epochMs;
+  }
+
+  @override
+  Future<void> saveSessionMessagesSnapshotIds(
+    String snapshotIdsJson, {
+    String? serverId,
+    String? scopeId,
+  }) async {
+    scopedStrings[_key(
+          'session_messages_snapshot_ids',
+          serverId: serverId,
+          scopeId: scopeId,
+        )] =
+        snapshotIdsJson;
+  }
+
+  @override
   Future<void> saveCurrentSessionId(
     String sessionId, {
     String? serverId,
@@ -828,6 +932,43 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
     required String serverId,
     required String scopeId,
   }) async {
+    final snapshotIdsRaw =
+        scopedStrings[_key(
+          'session_messages_snapshot_ids',
+          serverId: serverId,
+          scopeId: scopeId,
+        )];
+    if (snapshotIdsRaw != null && snapshotIdsRaw.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(snapshotIdsRaw);
+        if (decoded is List) {
+          for (final id in decoded.whereType<String>()) {
+            if (id.trim().isEmpty) {
+              continue;
+            }
+            scopedStrings.remove(
+              _sessionKey(
+                'session_messages_snapshot',
+                sessionId: id,
+                serverId: serverId,
+                scopeId: scopeId,
+              ),
+            );
+            scopedInts.remove(
+              _sessionKey(
+                'session_messages_snapshot_updated_at',
+                sessionId: id,
+                serverId: serverId,
+                scopeId: scopeId,
+              ),
+            );
+          }
+        }
+      } catch (_) {
+        // Ignore malformed stored snapshot IDs in tests.
+      }
+    }
+
     scopedStrings.remove(
       _key('cached_sessions', serverId: serverId, scopeId: scopeId),
     );
@@ -853,6 +994,13 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
     scopedStrings.remove(
       _key('session_selection_overrides', serverId: serverId, scopeId: scopeId),
     );
+    scopedStrings.remove(
+      _key(
+        'session_messages_snapshot_ids',
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
   }
 
   @override
@@ -871,6 +1019,30 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
     scopedInts.remove(
       _key(
         'last_session_snapshot_updated_at',
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+  }
+
+  @override
+  Future<void> clearSessionMessagesSnapshot({
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  }) async {
+    scopedStrings.remove(
+      _sessionKey(
+        'session_messages_snapshot',
+        sessionId: sessionId,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+    scopedInts.remove(
+      _sessionKey(
+        'session_messages_snapshot_updated_at',
+        sessionId: sessionId,
         serverId: serverId,
         scopeId: scopeId,
       ),
@@ -1043,12 +1215,17 @@ class FakeChatRepository implements ChatRepository {
     String projectId,
     String sessionId, {
     String? directory,
+    int? limit,
   }) async {
     getMessagesCallCount += 1;
     if (getMessagesFailure != null) return Left(getMessagesFailure!);
-    return Right(
-      List<ChatMessage>.from(messagesBySession[sessionId] ?? const []),
+    var output = List<ChatMessage>.from(
+      messagesBySession[sessionId] ?? const [],
     );
+    if (limit != null && limit > 0 && output.length > limit) {
+      output = output.sublist(output.length - limit);
+    }
+    return Right(output);
   }
 
   @override
@@ -1350,8 +1527,9 @@ class FakeChatRepository implements ChatRepository {
       directory: parent.directory,
     );
     sessions.insert(0, forked);
-    sessionChildrenById.putIfAbsent(parent.id, () => <ChatSession>[])
-      .add(forked);
+    sessionChildrenById
+        .putIfAbsent(parent.id, () => <ChatSession>[])
+        .add(forked);
     return Right(forked);
   }
 

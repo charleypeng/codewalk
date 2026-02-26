@@ -1,6 +1,232 @@
 part of '../chat_provider.dart';
 
 extension _ChatProviderCachePersistenceOps on ChatProvider {
+  void _cacheSessionMessages(String sessionId, List<ChatMessage> messages) {
+    final normalizedSessionId = sessionId.trim();
+    if (normalizedSessionId.isEmpty) {
+      return;
+    }
+    final filtered = messages
+        .where((message) => message.sessionId == normalizedSessionId)
+        .toList(growable: false);
+    if (filtered.isEmpty) {
+      _sessionMessagesLruCache.remove(normalizedSessionId);
+      return;
+    }
+
+    _sessionMessagesLruCache.remove(normalizedSessionId);
+    _sessionMessagesLruCache[normalizedSessionId] = filtered;
+    while (_sessionMessagesLruCache.length >
+        ChatProvider._maxSessionMessageCacheEntries) {
+      _sessionMessagesLruCache.remove(_sessionMessagesLruCache.keys.first);
+    }
+  }
+
+  List<ChatMessage>? _cachedSessionMessages(String sessionId) {
+    final normalizedSessionId = sessionId.trim();
+    if (normalizedSessionId.isEmpty) {
+      return null;
+    }
+    final cached = _sessionMessagesLruCache.remove(normalizedSessionId);
+    if (cached == null) {
+      return null;
+    }
+    _sessionMessagesLruCache[normalizedSessionId] = cached;
+    return List<ChatMessage>.from(cached);
+  }
+
+  void _removeSessionMessagesCache(String sessionId) {
+    final normalizedSessionId = sessionId.trim();
+    if (normalizedSessionId.isEmpty) {
+      return;
+    }
+    _sessionMessagesLruCache.remove(normalizedSessionId);
+  }
+
+  Future<void> _persistSessionMessagesSnapshotBestEffort(
+    String sessionId,
+    List<ChatMessage> messages, {
+    String? serverId,
+    String? scopeId,
+  }) async {
+    final normalizedSessionId = sessionId.trim();
+    if (normalizedSessionId.isEmpty) {
+      return;
+    }
+    final filteredMessages = messages
+        .where((message) => message.sessionId == normalizedSessionId)
+        .toList(growable: false);
+    if (filteredMessages.isEmpty) {
+      return;
+    }
+
+    try {
+      final resolvedServerId = serverId ?? await _resolveServerIdForStorage();
+      final resolvedScopeId = scopeId ?? _resolveContextScopeId();
+      final payload = <String, dynamic>{
+        'sessionId': normalizedSessionId,
+        'messages': filteredMessages
+            .map((message) => ChatMessageModel.fromDomain(message).toJson())
+            .toList(growable: false),
+      };
+      await localDataSource.saveSessionMessagesSnapshot(
+        json.encode(payload),
+        sessionId: normalizedSessionId,
+        serverId: resolvedServerId,
+        scopeId: resolvedScopeId,
+      );
+      await localDataSource.saveSessionMessagesSnapshotUpdatedAt(
+        DateTime.now().millisecondsSinceEpoch,
+        sessionId: normalizedSessionId,
+        serverId: resolvedServerId,
+        scopeId: resolvedScopeId,
+      );
+
+      await _touchPersistedSessionMessagesSnapshotId(
+        normalizedSessionId,
+        serverId: resolvedServerId,
+        scopeId: resolvedScopeId,
+      );
+    } catch (e, stackTrace) {
+      AppLogger.warn(
+        'Failed to persist per-session message snapshot session=$normalizedSessionId',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  Future<void> _touchPersistedSessionMessagesSnapshotId(
+    String sessionId, {
+    required String serverId,
+    required String scopeId,
+  }) async {
+    final existingRaw = await localDataSource.getSessionMessagesSnapshotIds(
+      serverId: serverId,
+      scopeId: scopeId,
+    );
+    var existing = <String>[];
+    if (existingRaw != null && existingRaw.trim().isNotEmpty) {
+      try {
+        final decoded = json.decode(existingRaw);
+        if (decoded is List) {
+          existing = decoded
+              .whereType<String>()
+              .map((id) => id.trim())
+              .where((id) => id.isNotEmpty)
+              .toList(growable: true);
+        }
+      } catch (_) {
+        existing = <String>[];
+      }
+    }
+
+    existing.remove(sessionId);
+    existing.add(sessionId);
+    while (existing.length >
+        ChatProvider._maxPersistedSessionMessageSnapshots) {
+      final removed = existing.removeAt(0);
+      await localDataSource.clearSessionMessagesSnapshot(
+        sessionId: removed,
+        serverId: serverId,
+        scopeId: scopeId,
+      );
+    }
+
+    await localDataSource.saveSessionMessagesSnapshotIds(
+      json.encode(existing),
+      serverId: serverId,
+      scopeId: scopeId,
+    );
+  }
+
+  Future<List<ChatMessage>?> _restoreSessionMessagesSnapshot(
+    String sessionId, {
+    required String serverId,
+    required String scopeId,
+  }) async {
+    final normalizedSessionId = sessionId.trim();
+    if (normalizedSessionId.isEmpty) {
+      return null;
+    }
+
+    try {
+      final snapshotJson = await localDataSource.getSessionMessagesSnapshot(
+        sessionId: normalizedSessionId,
+        serverId: serverId,
+        scopeId: scopeId,
+      );
+      if (snapshotJson == null || snapshotJson.trim().isEmpty) {
+        return null;
+      }
+
+      final updatedAtMs = await localDataSource
+          .getSessionMessagesSnapshotUpdatedAt(
+            sessionId: normalizedSessionId,
+            serverId: serverId,
+            scopeId: scopeId,
+          );
+      final isFresh =
+          updatedAtMs != null &&
+          DateTime.now().difference(
+                DateTime.fromMillisecondsSinceEpoch(updatedAtMs),
+              ) <=
+              ChatProvider._sessionMessagesSnapshotTtl;
+
+      final decoded = json.decode(snapshotJson);
+      if (decoded is! Map<String, dynamic>) {
+        return null;
+      }
+      final messagesJson = decoded['messages'];
+      if (messagesJson is! List) {
+        return null;
+      }
+      final messages = messagesJson
+          .whereType<Map<String, dynamic>>()
+          .map((item) => ChatMessageModel.fromJson(item).toDomain())
+          .where((message) => message.sessionId == normalizedSessionId)
+          .toList(growable: false);
+      if (messages.isEmpty) {
+        return null;
+      }
+
+      if (!isFresh) {
+        AppLogger.info(
+          'Per-session message snapshot is stale (> ${ChatProvider._sessionMessagesSnapshotTtl.inDays} days) session=$normalizedSessionId',
+        );
+      }
+      return messages;
+    } catch (e, stackTrace) {
+      AppLogger.warn(
+        'Failed to restore per-session message snapshot session=$normalizedSessionId',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
+  Future<List<ChatMessage>?> _restoreSessionMessagesFromCache(
+    String sessionId, {
+    required String serverId,
+    required String scopeId,
+  }) async {
+    final inMemory = _cachedSessionMessages(sessionId);
+    if (inMemory != null && inMemory.isNotEmpty) {
+      return inMemory;
+    }
+    final fromDisk = await _restoreSessionMessagesSnapshot(
+      sessionId,
+      serverId: serverId,
+      scopeId: scopeId,
+    );
+    if (fromDisk == null || fromDisk.isEmpty) {
+      return null;
+    }
+    _cacheSessionMessages(sessionId, fromDisk);
+    return fromDisk;
+  }
+
   void _sortSessionsInPlace() {
     _sessions.sort((a, b) {
       if (_sessionListSort == SessionListSort.oldest) {
@@ -163,6 +389,7 @@ extension _ChatProviderCachePersistenceOps on ChatProvider {
       _currentSession = selectedSession;
       _threadPermissionsVersion++;
       _messages = cachedMessages;
+      _cacheSessionMessages(selectedSession.id, cachedMessages);
       _messagesVersion++;
       _pendingLocalUserMessageIds.clear();
       _clearQueuedSendState();
@@ -223,6 +450,13 @@ extension _ChatProviderCachePersistenceOps on ChatProvider {
         serverId: resolvedServerId,
         scopeId: resolvedScopeId,
       );
+      _cacheSessionMessages(current.id, _messages);
+      await _persistSessionMessagesSnapshotBestEffort(
+        current.id,
+        _messages,
+        serverId: resolvedServerId,
+        scopeId: resolvedScopeId,
+      );
     } catch (e, stackTrace) {
       AppLogger.warn(
         'Failed to persist last session snapshot',
@@ -246,6 +480,57 @@ extension _ChatProviderCachePersistenceOps on ChatProvider {
     } catch (e, stackTrace) {
       AppLogger.warn(
         'Failed to clear last session snapshot',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  Future<void> _clearSessionMessagesSnapshotBestEffort(
+    String sessionId, {
+    String? serverId,
+    String? scopeId,
+  }) async {
+    final normalizedSessionId = sessionId.trim();
+    if (normalizedSessionId.isEmpty) {
+      return;
+    }
+    try {
+      final resolvedServerId = serverId ?? await _resolveServerIdForStorage();
+      final resolvedScopeId = scopeId ?? _resolveContextScopeId();
+      await localDataSource.clearSessionMessagesSnapshot(
+        sessionId: normalizedSessionId,
+        serverId: resolvedServerId,
+        scopeId: resolvedScopeId,
+      );
+
+      final snapshotIdsRaw = await localDataSource
+          .getSessionMessagesSnapshotIds(
+            serverId: resolvedServerId,
+            scopeId: resolvedScopeId,
+          );
+      if (snapshotIdsRaw != null && snapshotIdsRaw.trim().isNotEmpty) {
+        try {
+          final decoded = json.decode(snapshotIdsRaw);
+          if (decoded is List) {
+            final nextIds = decoded
+                .whereType<String>()
+                .map((id) => id.trim())
+                .where((id) => id.isNotEmpty && id != normalizedSessionId)
+                .toList(growable: false);
+            await localDataSource.saveSessionMessagesSnapshotIds(
+              json.encode(nextIds),
+              serverId: resolvedServerId,
+              scopeId: resolvedScopeId,
+            );
+          }
+        } catch (_) {
+          // Ignore malformed snapshot ID payloads during cleanup.
+        }
+      }
+    } catch (e, stackTrace) {
+      AppLogger.warn(
+        'Failed to clear per-session message snapshot session=$normalizedSessionId',
         error: e,
         stackTrace: stackTrace,
       );

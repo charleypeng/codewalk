@@ -243,6 +243,8 @@ class ChatProvider extends ChangeNotifier {
   final Map<String, int> _queuedRetryAttemptsBySessionId = <String, int>{};
   int _localMessageIdSequence = 0;
   bool _activeSessionRefreshInFlight = false;
+  bool _isLoadingOlderMessages = false;
+  bool _hasMoreOldMessages = false;
   bool _isAbortingResponse = false;
   bool _isCompactingContext = false;
   bool _isAppInForeground = true;
@@ -259,6 +261,8 @@ class ChatProvider extends ChangeNotifier {
   // reconcile, preventing duplicate reconciles from repeated session.idle
   // events within the same completion cycle.
   String? _lastIdleReconcileSessionTurnKey;
+  final LinkedHashMap<String, List<ChatMessage>> _sessionMessagesLruCache =
+      LinkedHashMap<String, List<ChatMessage>>();
 
   // Project and provider-related state
   String? _currentProjectId;
@@ -334,6 +338,9 @@ class ChatProvider extends ChangeNotifier {
 
   static const Duration _sessionsCacheTtl = Duration(days: 3);
   static const Duration _lastSessionSnapshotTtl = Duration(days: 7);
+  static const Duration _sessionMessagesSnapshotTtl = Duration(days: 7);
+  static const int _maxSessionMessageCacheEntries = 20;
+  static const int _maxPersistedSessionMessageSnapshots = 8;
   static const int _maxRecentModels = 8;
   late final Duration _abortSuppressionWindow;
   static const Duration _remoteSelectionSyncThrottle = Duration(seconds: 2);
@@ -430,6 +437,8 @@ class ChatProvider extends ChangeNotifier {
   String? get providersRefreshErrorMessage => _providersRefreshErrorMessage;
   bool get isProvidersRefreshInProgress =>
       _providersRefreshState == ChatProvidersRefreshState.loading;
+  bool get isLoadingOlderMessages => _isLoadingOlderMessages;
+  bool get hasMoreOldMessages => _hasMoreOldMessages;
 
   bool isSessionActivelyResponding(String sessionId) {
     final normalizedSessionId = sessionId.trim();
@@ -1210,11 +1219,16 @@ class ChatProvider extends ChangeNotifier {
             messages,
             sessionId: session.id,
           );
+          _cacheSessionMessages(session.id, _messages);
           _messagesVersion++;
+          _hasMoreOldMessages = false;
           _prunePendingLocalUserMessageIdsToVisibleUsers();
           _pruneQueuedLocalUserMessageIdsToVisibleUsers();
           notifyListeners();
           _scheduleAutoTitleRefresh(session.id);
+          unawaited(
+            _persistSessionMessagesSnapshotBestEffort(session.id, _messages),
+          );
           if (!_isCompactingContext &&
               isSessionActivelyResponding(session.id)) {
             _scheduleScrollToBottom();
@@ -1880,6 +1894,8 @@ class ChatProvider extends ChangeNotifier {
         _currentSession = null;
         _threadPermissionsVersion++;
         _messages = <ChatMessage>[];
+        _isLoadingOlderMessages = false;
+        _hasMoreOldMessages = false;
         _messagesVersion++;
         await _clearLastSessionSnapshotBestEffort(
           serverId: serverId,
@@ -1927,7 +1943,21 @@ class ChatProvider extends ChangeNotifier {
       }
 
       if (_messages.isEmpty) {
-        await loadMessages(targetSession.id);
+        final restoredCachedMessages = await _restoreSessionMessagesFromCache(
+          targetSession.id,
+          serverId: serverId,
+          scopeId: scopeId,
+        );
+        if (restoredCachedMessages != null &&
+            restoredCachedMessages.isNotEmpty) {
+          _messages = List<ChatMessage>.from(restoredCachedMessages);
+          _cacheSessionMessages(targetSession.id, _messages);
+          _messagesVersion++;
+          _setState(ChatState.loaded);
+          unawaited(loadMessages(targetSession.id, preserveVisibleState: true));
+        } else {
+          await loadMessages(targetSession.id);
+        }
       } else {
         unawaited(loadMessages(targetSession.id, preserveVisibleState: true));
       }
@@ -1987,6 +2017,8 @@ class ChatProvider extends ChangeNotifier {
     _currentSession = session;
     _threadPermissionsVersion++;
     _messages = <ChatMessage>[];
+    _isLoadingOlderMessages = false;
+    _hasMoreOldMessages = false;
     _messagesVersion++;
     _pendingLocalUserMessageIds.clear();
     _clearQueuedSendState();
@@ -2021,6 +2053,14 @@ class ChatProvider extends ChangeNotifier {
       return;
     }
 
+    final outgoingSessionId = _currentSession?.id;
+    if (outgoingSessionId != null && _messages.isNotEmpty) {
+      _cacheSessionMessages(outgoingSessionId, _messages);
+      unawaited(
+        _persistSessionMessagesSnapshotBestEffort(outgoingSessionId, _messages),
+      );
+    }
+
     // Invalidate any concurrent loadSessions() that captured a stale
     // persisted session ID before this switch updated memory/disk.
     _sessionsFetchId += 1;
@@ -2037,30 +2077,50 @@ class ChatProvider extends ChangeNotifier {
       'selectSession generation=$_messageStreamGeneration preserved=${_preservedMessageSubscriptions.length} target=${session.id}',
     );
 
-    // Clear current message list
-    _messages.clear();
-    _messagesVersion++;
+    // Save current session ID and try cache-first restore (SWR).
+    final serverId = await _resolveServerScopeId();
+    final scopeId = _resolveContextScopeId();
+
+    final restoredCachedMessages = await _restoreSessionMessagesFromCache(
+      session.id,
+      serverId: serverId,
+      scopeId: scopeId,
+    );
+
     _pendingLocalUserMessageIds.clear();
     _clearQueuedSendState();
     _clearRejectedDraft();
     _currentSession = session;
+    _isLoadingOlderMessages = false;
+    _hasMoreOldMessages = false;
     _clearSessionAttentionForSession(session.id);
     _threadPermissionsVersion++;
     _applySelectionPriorityForCurrentSession();
-    notifyListeners();
+    if (restoredCachedMessages != null && restoredCachedMessages.isNotEmpty) {
+      _messages = List<ChatMessage>.from(restoredCachedMessages);
+      _cacheSessionMessages(session.id, _messages);
+      _messagesVersion++;
+      _setState(ChatState.loaded);
+    } else {
+      _messages.clear();
+      _messagesVersion++;
+      notifyListeners();
+    }
 
-    // Save current session ID
-    final serverId = await _resolveServerScopeId();
-    final scopeId = _resolveContextScopeId();
     await _saveCurrentSessionId(
       session.id,
       serverId: serverId,
       scopeId: scopeId,
     );
 
-    // Load messages for selected session. Insights are non-critical and run
-    // fire-and-forget so they don't block the caller's await chain.
-    await loadMessages(session.id);
+    // SWR behavior: if cache exists, keep visible data and revalidate silently.
+    if (restoredCachedMessages != null && restoredCachedMessages.isNotEmpty) {
+      unawaited(loadMessages(session.id, preserveVisibleState: true));
+    } else {
+      await loadMessages(session.id);
+    }
+
+    // Insights are non-critical and run fire-and-forget.
     unawaited(loadSessionInsights(session.id, silent: true));
     _scheduleQueuedSendDrain(session.id, reason: 'session-selected');
   }
@@ -2117,15 +2177,73 @@ class ChatProvider extends ChangeNotifier {
           messages,
           sessionId: sessionId,
         );
+        _cacheSessionMessages(sessionId, _messages);
         _messagesVersion++;
+        _hasMoreOldMessages = false;
         _prunePendingLocalUserMessageIdsToVisibleUsers();
         _pruneQueuedLocalUserMessageIdsToVisibleUsers();
         _scheduleAutoTitleRefresh(sessionId);
         _setState(ChatState.loaded);
         unawaited(_persistLastSessionSnapshotBestEffort());
+        unawaited(
+          _persistSessionMessagesSnapshotBestEffort(sessionId, _messages),
+        );
         _scheduleQueuedSendDrain(sessionId, reason: 'load-messages');
       },
     );
+  }
+
+  Future<void> loadOlderMessages({int chunkSize = 200}) async {
+    final sessionId = _currentSession?.id;
+    if (sessionId == null || sessionId.trim().isEmpty) {
+      return;
+    }
+    if (_isLoadingOlderMessages || chunkSize <= 0) {
+      return;
+    }
+
+    _isLoadingOlderMessages = true;
+    _notifyListeners();
+    final requestedLimit = _messages.length + chunkSize;
+
+    try {
+      final result = await getChatMessages(
+        GetChatMessagesParams(
+          projectId: projectProvider.currentProjectId,
+          sessionId: sessionId,
+          directory: projectProvider.currentDirectory,
+          limit: requestedLimit,
+        ),
+      );
+
+      result.fold(
+        (failure) {
+          AppLogger.warn(
+            'Failed to load older messages for session=$sessionId: $failure',
+          );
+        },
+        (messages) {
+          if (_currentSession?.id != sessionId) {
+            return;
+          }
+          _messages = _mergeServerMessagesWithActiveLocalTail(
+            messages,
+            sessionId: sessionId,
+          );
+          _cacheSessionMessages(sessionId, _messages);
+          _messagesVersion++;
+          _hasMoreOldMessages = messages.length >= requestedLimit;
+          _notifyListeners();
+          unawaited(_persistLastSessionSnapshotBestEffort());
+          unawaited(
+            _persistSessionMessagesSnapshotBestEffort(sessionId, _messages),
+          );
+        },
+      );
+    } finally {
+      _isLoadingOlderMessages = false;
+      _notifyListeners();
+    }
   }
 
   Future<void> submitMessageWithQueue(
@@ -3187,6 +3305,9 @@ class ChatProvider extends ChangeNotifier {
     final previousMessages = List<ChatMessage>.from(_messages);
     final wasCurrent = previousCurrent?.id == sessionId;
 
+    _removeSessionMessagesCache(sessionId);
+    unawaited(_clearSessionMessagesSnapshotBestEffort(sessionId));
+
     _removeSessionById(sessionId);
     _sortSessionsInPlace();
 
@@ -3194,6 +3315,8 @@ class ChatProvider extends ChangeNotifier {
       _currentSession = _sessions.firstOrNull;
       _threadPermissionsVersion++;
       _messages = <ChatMessage>[];
+      _isLoadingOlderMessages = false;
+      _hasMoreOldMessages = false;
       _messagesVersion++;
     }
     notifyListeners();
@@ -3212,6 +3335,15 @@ class ChatProvider extends ChangeNotifier {
         _currentSession = previousCurrent;
         _threadPermissionsVersion++;
         _messages = previousMessages;
+        if (previousCurrent != null) {
+          _cacheSessionMessages(previousCurrent.id, previousMessages);
+          unawaited(
+            _persistSessionMessagesSnapshotBestEffort(
+              previousCurrent.id,
+              previousMessages,
+            ),
+          );
+        }
         _messagesVersion++;
         _sortSessionsInPlace();
         unawaited(_persistLastSessionSnapshotBestEffort());

@@ -179,6 +179,72 @@ void main() {
     );
 
     test(
+      'selectSession restores per-session snapshot cache before remote revalidation',
+      () async {
+        await provider.projectProvider.initializeProject();
+
+        final secondSession = ChatSession(
+          id: 'ses_2',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(2000),
+          title: 'Session 2',
+        );
+        chatRepository.sessions.add(secondSession);
+
+        final cachedMessage = AssistantMessage(
+          id: 'msg_cached_ses_2',
+          sessionId: secondSession.id,
+          time: DateTime.fromMillisecondsSinceEpoch(2020),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(2021),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_cached_ses_2',
+              messageId: 'msg_cached_ses_2',
+              sessionId: 'ses_2',
+              text: 'cached swr message',
+            ),
+          ],
+        );
+
+        chatRepository.messagesBySession[secondSession.id] = <ChatMessage>[
+          cachedMessage,
+        ];
+
+        await provider.loadSessions();
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        final firstSession = provider.sessions.firstWhere(
+          (session) => session.id != secondSession.id,
+        );
+
+        await provider.selectSession(secondSession);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        expect(provider.messages, hasLength(1));
+
+        chatRepository.getMessagesFailure = const NetworkFailure(
+          'offline',
+          503,
+        );
+
+        await provider.selectSession(firstSession);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        await provider.selectSession(secondSession);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(provider.currentSession?.id, secondSession.id);
+        expect(provider.state, ChatState.loaded);
+        expect(provider.messages, hasLength(1));
+        expect(
+          (provider.messages.single as AssistantMessage).parts
+              .whereType<TextPart>()
+              .single
+              .text,
+          'cached swr message',
+        );
+      },
+    );
+
+    test(
       'createNewSession selects created session in directory-scoped context',
       () async {
         final scopedRepository = FakeChatRepository(

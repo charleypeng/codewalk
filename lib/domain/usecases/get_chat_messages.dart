@@ -18,6 +18,7 @@ class GetChatMessages {
       params.projectId,
       params.sessionId,
       directory: params.directory,
+      limit: params.limit,
     );
   }
 }
@@ -28,9 +29,11 @@ class GetChatMessagesParams {
     required this.projectId,
     required this.sessionId,
     this.directory,
+    this.limit,
   });
 
   final String projectId;
   final String sessionId;
   final String? directory;
+  final int? limit;
 }
