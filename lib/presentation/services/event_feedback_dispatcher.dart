@@ -4,6 +4,7 @@ import '../../core/logging/app_logger.dart';
 import '../../domain/entities/chat_realtime.dart';
 import '../../domain/entities/experience_settings.dart';
 import '../providers/settings_provider.dart';
+import '../utils/chat_event_property_extractors.dart';
 import 'notification_service.dart';
 import 'sound_service.dart';
 
@@ -109,8 +110,8 @@ class EventFeedbackDispatcher {
     String? sessionTitleHint,
   }) {
     final properties = event.properties;
-    final sessionId = _extractSessionId(properties);
-    final directory = _extractDirectory(properties);
+    final sessionId = extractEventSessionId(properties);
+    final directory = extractEventDirectory(properties);
     final sessionTitle = _extractSessionTitle(
       properties,
       sessionTitleHint: sessionTitleHint,
@@ -151,59 +152,6 @@ class EventFeedbackDispatcher {
       default:
         return null;
     }
-  }
-
-  String? _extractDirectory(Map<String, dynamic> properties) {
-    final direct = properties['directory']?.toString().trim();
-    if (direct != null && direct.isNotEmpty) {
-      return direct;
-    }
-
-    final info = properties['info'];
-    if (info is Map) {
-      final nested = info['directory']?.toString().trim();
-      if (nested != null && nested.isNotEmpty) {
-        return nested;
-      }
-    }
-
-    final session = properties['session'];
-    if (session is Map) {
-      final nested = session['directory']?.toString().trim();
-      if (nested != null && nested.isNotEmpty) {
-        return nested;
-      }
-    }
-
-    final project = properties['project'];
-    if (project is Map) {
-      final nested = project['directory']?.toString().trim();
-      if (nested != null && nested.isNotEmpty) {
-        return nested;
-      }
-    }
-
-    return null;
-  }
-
-  String? _extractSessionId(Map<String, dynamic> properties) {
-    final direct = properties['sessionID']?.toString().trim();
-    if (direct != null && direct.isNotEmpty) {
-      return direct;
-    }
-
-    final info = properties['info'];
-    if (info is Map) {
-      final nested = info['sessionID']?.toString().trim();
-      if (nested != null && nested.isNotEmpty) {
-        return nested;
-      }
-      final nestedId = info['id']?.toString().trim();
-      if (nestedId != null && nestedId.isNotEmpty) {
-        return nestedId;
-      }
-    }
-    return null;
   }
 
   String? _extractSessionTitle(

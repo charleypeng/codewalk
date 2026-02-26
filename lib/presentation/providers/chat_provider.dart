@@ -46,6 +46,7 @@ import '../../domain/usecases/watch_chat_events.dart';
 import '../../domain/usecases/watch_global_chat_events.dart';
 import '../services/chat_title_generator.dart';
 import '../services/event_feedback_dispatcher.dart';
+import '../utils/chat_event_property_extractors.dart';
 import '../utils/session_title_formatter.dart';
 import 'project_provider.dart';
 import 'settings_provider.dart';

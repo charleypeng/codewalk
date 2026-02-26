@@ -238,22 +238,7 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
   }
 
   String? _extractEventSessionId(Map<String, dynamic> properties) {
-    final direct = properties['sessionID']?.toString().trim();
-    if (direct != null && direct.isNotEmpty) {
-      return direct;
-    }
-    final info = properties['info'];
-    if (info is Map) {
-      final nested = info['sessionID']?.toString().trim();
-      if (nested != null && nested.isNotEmpty) {
-        return nested;
-      }
-      final nestedId = info['id']?.toString().trim();
-      if (nestedId != null && nestedId.isNotEmpty) {
-        return nestedId;
-      }
-    }
-    return null;
+    return extractEventSessionId(properties);
   }
 
   String? _sessionTitleForNotification(String? sessionId) {
@@ -271,37 +256,7 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
   }
 
   String? _extractDirectoryFromEvent(ChatEvent event) {
-    final properties = event.properties;
-    final direct = properties['directory'] as String?;
-    if (direct != null && direct.trim().isNotEmpty) {
-      return direct.trim();
-    }
-
-    final info = properties['info'];
-    if (info is Map<String, dynamic>) {
-      final value = info['directory'] as String?;
-      if (value != null && value.trim().isNotEmpty) {
-        return value.trim();
-      }
-    }
-
-    final session = properties['session'];
-    if (session is Map<String, dynamic>) {
-      final value = session['directory'] as String?;
-      if (value != null && value.trim().isNotEmpty) {
-        return value.trim();
-      }
-    }
-
-    final project = properties['project'];
-    if (project is Map<String, dynamic>) {
-      final value = project['directory'] as String?;
-      if (value != null && value.trim().isNotEmpty) {
-        return value.trim();
-      }
-    }
-
-    return null;
+    return extractEventDirectory(event.properties);
   }
 
   Future<void> _clearPersistedContextCache(String contextKey) async {
