@@ -703,8 +703,8 @@ extension _ChatPageChrome on _ChatPageState {
     required BuildContext dialogContext,
     required Project project,
     required bool selected,
-    required VoidCallback onSwitch,
-    required VoidCallback onClose,
+    required VoidCallback? onSwitch,
+    required VoidCallback? onClose,
     required bool closeEnabled,
   }) {
     final path = _directoryLabel(project.path);
@@ -731,45 +731,72 @@ extension _ChatPageChrome on _ChatPageState {
     );
   }
 
+  Future<void> _runProjectSelectorDialogAction(
+    Future<void> Function() action,
+  ) async {
+    if (!mounted || _isProjectSelectorActionInFlight) {
+      return;
+    }
+    _setState(() {
+      _isProjectSelectorActionInFlight = true;
+    });
+    try {
+      await action();
+    } finally {
+      if (!mounted) {
+        return;
+      }
+      _setState(() {
+        _isProjectSelectorActionInFlight = false;
+      });
+    }
+  }
+
   Future<void> _openCreateWorkspaceFromSelector(
     BuildContext dialogContext,
   ) async {
-    if (dialogContext.mounted) {
-      Navigator.of(dialogContext).pop();
-    }
-    await Future<void>.delayed(Duration.zero);
-    if (!mounted) {
-      return;
-    }
-    await _createWorkspace();
+    await _runProjectSelectorDialogAction(() async {
+      if (dialogContext.mounted) {
+        Navigator.of(dialogContext).pop();
+      }
+      await Future<void>.delayed(Duration.zero);
+      if (!mounted) {
+        return;
+      }
+      await _createWorkspace();
+    });
   }
 
   Future<void> _switchProjectFromSelector(
     BuildContext dialogContext,
     String projectId,
   ) async {
-    if (dialogContext.mounted) {
-      Navigator.of(dialogContext).pop();
-    }
-    await Future<void>.delayed(Duration.zero);
-    if (!mounted) {
-      return;
-    }
-    await _switchProjectContext(projectId);
+    await _runProjectSelectorDialogAction(() async {
+      if (dialogContext.mounted) {
+        Navigator.of(dialogContext).pop();
+      }
+      await Future<void>.delayed(Duration.zero);
+      if (!mounted) {
+        return;
+      }
+      await _switchProjectContext(projectId);
+    });
   }
 
   Future<void> _reopenProjectFromSelector(
     BuildContext dialogContext,
     String projectId,
   ) async {
-    if (dialogContext.mounted) {
-      Navigator.of(dialogContext).pop();
-    }
-    await Future<void>.delayed(Duration.zero);
-    if (!mounted) {
-      return;
-    }
-    await _reopenProjectContext(projectId);
+    await _runProjectSelectorDialogAction(() async {
+      if (dialogContext.mounted) {
+        Navigator.of(dialogContext).pop();
+      }
+      await Future<void>.delayed(Duration.zero);
+      if (!mounted) {
+        return;
+      }
+      await _reopenProjectContext(projectId);
+    });
   }
 
   String _directoryLabel(String? directory) {

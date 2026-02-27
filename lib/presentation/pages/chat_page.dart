@@ -158,6 +158,7 @@ class _ChatPageState extends State<ChatPage>
   bool _showScrollToFirstFab = false;
   bool _isProjectScopeTransitioning = false;
   Future<void>? _projectScopeTransitionTask;
+  bool _isProjectSelectorActionInFlight = false;
   // Re-entry guard: true while selectSession is in flight.
   // Prevents double-tap from starting a concurrent session switch.
   // Pure guard — no UI effect (ChatState.loading handles visual feedback).

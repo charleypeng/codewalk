@@ -1315,6 +1315,71 @@ void main() {
     expect(provider.projectProvider.openProjectIds, contains('proj_ws'));
   });
 
+  testWidgets('tapping open project switches context and closes selector', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_main',
+        name: 'Main',
+        path: '/repo/main',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_main',
+          name: 'Main',
+          path: '/repo/main',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+        Project(
+          id: 'proj_ws',
+          name: 'Workspace Feature',
+          path: '/repo/main/feature-a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+        ),
+      ],
+    );
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Choose Directory'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Workspace Feature'));
+    await tester.pumpAndSettle();
+
+    expect(provider.projectProvider.currentProject?.id, 'proj_ws');
+    expect(provider.projectProvider.openProjectIds, contains('proj_ws'));
+
+    await tester.tap(find.byTooltip('Choose Directory'));
+    await tester.pumpAndSettle();
+
+    final selectorContent = find.byKey(
+      const ValueKey<String>('project_selector_dialog_content'),
+    );
+    expect(selectorContent, findsOneWidget);
+
+    await tester.tap(
+      find.descendant(of: selectorContent, matching: find.text('Main')).first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(selectorContent, findsNothing);
+    expect(provider.projectProvider.currentProject?.id, 'proj_main');
+    expect(provider.projectProvider.currentDirectory, '/repo/main');
+  });
+
   testWidgets('shows basename directory and compact controls on mobile', (
     WidgetTester tester,
   ) async {

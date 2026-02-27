@@ -114,6 +114,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
   }) {
     final colorScheme = Theme.of(dialogContext).colorScheme;
     final currentProject = projectProvider.currentProject;
+    final selectorActionInFlight = _isProjectSelectorActionInFlight;
     final currentDirectoryFull = _directoryLabel(
       projectProvider.currentDirectory,
     );
@@ -174,15 +175,19 @@ extension _ChatPageSelectorFlow on _ChatPageState {
               runSpacing: 8,
               children: [
                 FilledButton.tonalIcon(
-                  onPressed: () => unawaited(
-                    _openCreateWorkspaceFromSelector(dialogContext),
-                  ),
+                  onPressed: selectorActionInFlight
+                      ? null
+                      : () => unawaited(
+                          _openCreateWorkspaceFromSelector(dialogContext),
+                        ),
                   icon: const Icon(Symbols.add_box),
                   label: const Text('Open project folder...'),
                 ),
                 if (!FeatureFlags.refreshlessRealtime)
                   FilledButton.tonalIcon(
-                    onPressed: () => unawaited(projectProvider.loadProjects()),
+                    onPressed: selectorActionInFlight
+                        ? null
+                        : () => unawaited(projectProvider.loadProjects()),
                     icon: const Icon(Symbols.refresh_rounded),
                     label: const Text('Refresh projects'),
                   ),
@@ -200,10 +205,17 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                     dialogContext: dialogContext,
                     project: project,
                     selected: project.id == currentProject?.id,
-                    onSwitch: () => unawaited(
-                      _switchProjectFromSelector(dialogContext, project.id),
-                    ),
-                    onClose: () => unawaited(_closeProjectContext(project.id)),
+                    onSwitch: selectorActionInFlight
+                        ? null
+                        : () => unawaited(
+                            _switchProjectFromSelector(
+                              dialogContext,
+                              project.id,
+                            ),
+                          ),
+                    onClose: selectorActionInFlight
+                        ? null
+                        : () => unawaited(_closeProjectContext(project.id)),
                     closeEnabled:
                         projectProvider.openProjects.length > 1 ||
                         project.id != currentProject?.id,
@@ -220,12 +232,14 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 8,
                           ),
-                          onTap: () => unawaited(
-                            _reopenProjectFromSelector(
-                              dialogContext,
-                              project.id,
-                            ),
-                          ),
+                          onTap: selectorActionInFlight
+                              ? null
+                              : () => unawaited(
+                                  _reopenProjectFromSelector(
+                                    dialogContext,
+                                    project.id,
+                                  ),
+                                ),
                           leading: const Icon(Symbols.folder_off, size: 20),
                           title: Text(
                             displayName,
@@ -238,9 +252,11 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                           trailing: IconButton(
                             icon: const Icon(Symbols.delete_outline_rounded),
                             tooltip: 'Archive closed project $displayName',
-                            onPressed: () => unawaited(
-                              _archiveClosedProjectContext(project.id),
-                            ),
+                            onPressed: selectorActionInFlight
+                                ? null
+                                : () => unawaited(
+                                    _archiveClosedProjectContext(project.id),
+                                  ),
                           ),
                         );
                       },
