@@ -254,8 +254,11 @@ extension _ChatProviderCorePart on ChatProvider {
         _selectedModelId = null;
         _selectedVariantId = null;
         _recentModelKeys = <String>[];
+        _recentAgentNames = <String>[];
+        _recentVariantValuesByModel = <String, List<String>>{};
         _modelUsageCounts = <String, int>{};
         _selectedVariantByModel = <String, String>{};
+        _shortcutCycleStateByDomain.clear();
         _lastSyncedRemoteModelKey = null;
         _lastSyncedRemoteAgentName = null;
         _lastSyncedRemoteVariantKey = null;

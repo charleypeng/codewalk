@@ -198,6 +198,7 @@ ChatProvider buildChatProvider({
   DioClient? dioClient,
   Duration syncHealthCheckInterval = const Duration(seconds: 5),
   Duration abortSuppressionWindow = const Duration(milliseconds: 30),
+  Duration shortcutCycleWindow = const Duration(seconds: 2),
   SettingsProvider? settingsProvider,
 }) {
   return ChatProvider(
@@ -234,6 +235,7 @@ ChatProvider buildChatProvider({
     dioClient: dioClient,
     syncHealthCheckInterval: syncHealthCheckInterval,
     abortSuppressionWindow: abortSuppressionWindow,
+    shortcutCycleWindow: shortcutCycleWindow,
   );
 }
 

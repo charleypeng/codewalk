@@ -77,7 +77,7 @@ extension _ChatPageShortcuts on _ChatPageState {
         unawaited(_openSettingsPage(closeOnSelect: false));
         return;
       case ShortcutAction.cycleRecentModels:
-        unawaited(_cycleRecentModel(chatProvider));
+        unawaited(chatProvider.cycleRecentModelShortcut());
         return;
       case ShortcutAction.cycleVariant:
         unawaited(chatProvider.cycleVariant());
@@ -148,91 +148,9 @@ extension _ChatPageShortcuts on _ChatPageState {
     if (!_isDesktopRuntime) {
       return;
     }
-    final settingsProvider = _settingsProvider ?? context.read<SettingsProvider>();
+    final settingsProvider =
+        _settingsProvider ?? context.read<SettingsProvider>();
     await settingsProvider.persistDesktopPaneWidths();
     await windowManager.destroy();
-  }
-
-  Future<void> _cycleRecentModel(ChatProvider chatProvider) async {
-    final available = <({String providerId, String modelId})>[];
-    final seen = <String>{};
-
-    // Favorites first, then recents (excluding duplicates).
-    for (final favoriteKey in chatProvider.favoriteModelKeys) {
-      final providerId = _providerIdFromSelectorKey(favoriteKey);
-      final modelId = _modelIdFromSelectorKey(favoriteKey);
-      if (providerId == null || modelId == null) {
-        continue;
-      }
-      final provider = chatProvider.providers
-          .where((entry) => entry.id == providerId)
-          .firstOrNull;
-      if (provider == null || !provider.models.containsKey(modelId)) {
-        continue;
-      }
-      final selectorKey = _selectorEntryKey(providerId, modelId);
-      if (!seen.add(selectorKey)) {
-        continue;
-      }
-      available.add((providerId: providerId, modelId: modelId));
-    }
-
-    for (final recentModelKey in chatProvider.recentModelKeys) {
-      final providerId = _providerIdFromSelectorKey(recentModelKey);
-      final modelId = _modelIdFromSelectorKey(recentModelKey);
-      if (providerId == null || modelId == null) {
-        continue;
-      }
-      final provider = chatProvider.providers
-          .where((entry) => entry.id == providerId)
-          .firstOrNull;
-      if (provider == null || !provider.models.containsKey(modelId)) {
-        continue;
-      }
-      final selectorKey = _selectorEntryKey(providerId, modelId);
-      if (!seen.add(selectorKey)) {
-        continue;
-      }
-      available.add((providerId: providerId, modelId: modelId));
-    }
-
-    if (available.length < 2) {
-      final selectedProvider = chatProvider.selectedProvider;
-      if (selectedProvider != null) {
-        final modelIds = selectedProvider.models.keys.toList(growable: false)
-          ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-        for (final modelId in modelIds) {
-          final selectorKey = _selectorEntryKey(selectedProvider.id, modelId);
-          if (!seen.add(selectorKey)) {
-            continue;
-          }
-          available.add((providerId: selectedProvider.id, modelId: modelId));
-        }
-      }
-    }
-
-    if (available.isEmpty) {
-      return;
-    }
-
-    final selectedProviderId = chatProvider.selectedProviderId;
-    final selectedModelId = chatProvider.selectedModelId;
-    final currentKey = selectedProviderId == null || selectedModelId == null
-        ? null
-        : _selectorEntryKey(selectedProviderId, selectedModelId);
-    final currentIndex = currentKey == null
-        ? -1
-        : available.indexWhere(
-            (entry) =>
-                _selectorEntryKey(entry.providerId, entry.modelId) ==
-                currentKey,
-          );
-    final next = currentIndex == -1
-        ? available.first
-        : available[(currentIndex + 1) % available.length];
-    await chatProvider.setSelectedModelByProvider(
-      providerId: next.providerId,
-      modelId: next.modelId,
-    );
   }
 }

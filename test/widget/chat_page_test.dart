@@ -55,6 +55,31 @@ import 'package:simple_icons/simple_icons.dart';
 
 import '../support/fakes.dart';
 
+class _ConfigurableDelayFakeChatRepository extends FakeChatRepository {
+  _ConfigurableDelayFakeChatRepository({required super.sessions});
+
+  Completer<void>? getMessagesGate;
+
+  @override
+  Future<Either<Failure, List<ChatMessage>>> getMessages(
+    String projectId,
+    String sessionId, {
+    String? directory,
+    int? limit,
+  }) async {
+    final gate = getMessagesGate;
+    if (gate != null) {
+      await gate.future;
+    }
+    return super.getMessages(
+      projectId,
+      sessionId,
+      directory: directory,
+      limit: limit,
+    );
+  }
+}
+
 @Tags(<String>['slow'])
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -172,6 +197,86 @@ void main() {
       expect(find.text('Conversations'), findsNothing);
       expect(scaffoldState.isDrawerOpen, isFalse);
     });
+
+    testWidgets(
+      'mobile selection closes drawer immediately while conversation loads',
+      (WidgetTester tester) async {
+        await tester.binding.setSurfaceSize(const Size(500, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final repository = _ConfigurableDelayFakeChatRepository(
+          sessions: <ChatSession>[
+            ChatSession(
+              id: 'ses_1',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              title: 'Session 1',
+            ),
+            ChatSession(
+              id: 'ses_2',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(2000),
+              title: 'Session 2',
+            ),
+          ],
+        );
+        repository.messagesBySession['ses_1'] = <ChatMessage>[];
+        repository.messagesBySession['ses_2'] = <ChatMessage>[];
+
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test'
+          ..defaultServerId = 'srv_test'
+          ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 'srv_test',
+              'url': 'http://127.0.0.1:4096',
+              'label': 'Test Server',
+              'basicAuthEnabled': false,
+              'basicAuthUsername': '',
+              'basicAuthPassword': '',
+              'createdAt': 0,
+              'updatedAt': 0,
+            },
+          ]);
+        final provider = _buildChatProvider(
+          chatRepository: repository,
+          localDataSource: localDataSource,
+        );
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+        await tester.pumpWidget(_testApp(provider, appProvider));
+        await tester.pumpAndSettle();
+
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.firstWhere((session) => session.id == 'ses_1'),
+        );
+        await tester.pumpAndSettle();
+
+        repository.getMessagesGate = Completer<void>();
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('appbar_drawer_button')),
+        );
+        await tester.pumpAndSettle();
+
+        final scaffoldState = tester.state<ScaffoldState>(
+          find.byType(Scaffold).first,
+        );
+        expect(scaffoldState.isDrawerOpen, isTrue);
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('chat_session_tile_ses_2')),
+        );
+        await tester.pump();
+
+        expect(scaffoldState.isDrawerOpen, isFalse);
+        expect(provider.currentSession?.id, 'ses_2');
+
+        repository.getMessagesGate?.complete();
+        await tester.pumpAndSettle();
+      },
+    );
 
     testWidgets(
       'mobile opening settings from drawer keeps drawer closed after back',
@@ -3681,6 +3786,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(provider.selectedModelId, 'model_2');
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.keyM);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.keyM);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+
+    expect(provider.selectedModelId, 'model_1');
 
     await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
     await tester.sendKeyDownEvent(LogicalKeyboardKey.keyT);

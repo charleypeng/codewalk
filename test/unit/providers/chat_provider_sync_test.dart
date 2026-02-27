@@ -31,6 +31,7 @@ void main() {
       DioClient? dioClient,
       Duration syncHealthCheckInterval = const Duration(seconds: 5),
       Duration abortSuppressionWindow = const Duration(milliseconds: 30),
+      Duration shortcutCycleWindow = const Duration(seconds: 2),
       SettingsProvider? settingsProvider,
     }) {
       return buildChatProvider(
@@ -41,6 +42,7 @@ void main() {
         dioClient: dioClient,
         syncHealthCheckInterval: syncHealthCheckInterval,
         abortSuppressionWindow: abortSuppressionWindow,
+        shortcutCycleWindow: shortcutCycleWindow,
         settingsProvider: settingsProvider,
       );
     }
@@ -728,6 +730,145 @@ void main() {
       await provider.cycleAgent(reverse: true);
       expect(provider.selectedAgentName, 'build');
     });
+
+    test(
+      'cycleAgent follows Alt+Tab burst behavior and resets after timeout',
+      () async {
+        provider = buildProvider(
+          shortcutCycleWindow: const Duration(milliseconds: 120),
+        );
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'model_a': testModel('model_a')},
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a'],
+          ),
+        );
+        appRepository.agentsResult = const Right(<Agent>[
+          Agent(name: 'build', mode: 'primary', hidden: false, native: false),
+          Agent(name: 'plan', mode: 'primary', hidden: false, native: false),
+          Agent(name: 'support', mode: 'primary', hidden: false, native: false),
+        ]);
+
+        await provider.initializeProviders();
+        expect(provider.selectedAgentName, 'build');
+
+        await provider.setSelectedAgent('plan');
+        await provider.setSelectedAgent('support');
+        expect(provider.selectedAgentName, 'support');
+
+        await provider.cycleAgent();
+        expect(provider.selectedAgentName, 'plan');
+
+        await provider.cycleAgent();
+        expect(provider.selectedAgentName, 'build');
+
+        await Future<void>.delayed(const Duration(milliseconds: 150));
+        await provider.cycleAgent();
+        expect(provider.selectedAgentName, 'plan');
+      },
+    );
+
+    test('cycleRecentModelShortcut follows Alt+Tab burst behavior', () async {
+      provider = buildProvider(
+        shortcutCycleWindow: const Duration(milliseconds: 120),
+      );
+      appRepository.providersResult = Right(
+        ProvidersResponse(
+          providers: <Provider>[
+            Provider(
+              id: 'provider_a',
+              name: 'Provider A',
+              env: const <String>[],
+              models: <String, Model>{
+                'model_a': testModel('model_a'),
+                'model_b': testModel('model_b'),
+                'model_c': testModel('model_c'),
+              },
+            ),
+          ],
+          defaultModels: const <String, String>{'provider_a': 'model_a'},
+          connected: const <String>['provider_a'],
+        ),
+      );
+
+      await provider.initializeProviders();
+      expect(provider.selectedModelId, 'model_a');
+
+      await provider.setSelectedModelByProvider(
+        providerId: 'provider_a',
+        modelId: 'model_b',
+      );
+      await provider.setSelectedModelByProvider(
+        providerId: 'provider_a',
+        modelId: 'model_c',
+      );
+      expect(provider.selectedModelId, 'model_c');
+
+      await provider.cycleRecentModelShortcut();
+      expect(provider.selectedModelId, 'model_b');
+
+      await provider.cycleRecentModelShortcut();
+      expect(provider.selectedModelId, 'model_a');
+
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      await provider.cycleRecentModelShortcut();
+      expect(provider.selectedModelId, 'model_b');
+    });
+
+    test(
+      'cycleVariant follows Alt+Tab burst behavior when history exists',
+      () async {
+        provider = buildProvider(
+          shortcutCycleWindow: const Duration(milliseconds: 120),
+        );
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{
+                  'model_reasoning': testModel(
+                    'model_reasoning',
+                    variants: const <String, ModelVariant>{
+                      'low': ModelVariant(id: 'low', name: 'Low'),
+                      'medium': ModelVariant(id: 'medium', name: 'Medium'),
+                      'high': ModelVariant(id: 'high', name: 'High'),
+                    },
+                  ),
+                },
+              ),
+            ],
+            defaultModels: const <String, String>{
+              'provider_a': 'model_reasoning',
+            },
+            connected: const <String>['provider_a'],
+          ),
+        );
+
+        await provider.initializeProviders();
+        expect(provider.selectedVariantId, isNull);
+
+        await provider.setSelectedVariant('low');
+        await provider.setSelectedVariant('high');
+        expect(provider.selectedVariantId, 'high');
+
+        await provider.cycleVariant();
+        expect(provider.selectedVariantId, 'low');
+
+        await provider.cycleVariant();
+        expect(provider.selectedVariantId, isNull);
+      },
+    );
 
     test(
       'setSelectedModel and cycleVariant update selection and payload',

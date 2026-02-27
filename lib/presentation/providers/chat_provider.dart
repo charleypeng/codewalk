@@ -68,6 +68,7 @@ part 'chat_provider/chat_provider_selection_helpers.dart';
 part 'chat_provider/chat_provider_realtime_aux_ops.dart';
 part 'chat_provider/chat_provider_cache_persistence_ops.dart';
 part 'chat_provider/chat_provider_message_state_ops.dart';
+part 'chat_provider/chat_provider_shortcut_cycle_ops.dart';
 
 /// Chat state
 enum ChatState { initial, loading, loaded, error, sending }
@@ -133,6 +134,7 @@ class ChatProvider extends ChangeNotifier {
     int degradedFailureThreshold = 3,
     bool refreshlessRealtimeEnabled = FeatureFlags.refreshlessRealtime,
     Duration abortSuppressionWindow = const Duration(seconds: 8),
+    Duration shortcutCycleWindow = const Duration(seconds: 2),
   }) {
     _syncSignalStaleThreshold = syncSignalStaleThreshold;
     _syncHealthCheckInterval = syncHealthCheckInterval;
@@ -144,6 +146,7 @@ class ChatProvider extends ChangeNotifier {
     _degradedFailureThreshold = degradedFailureThreshold;
     _refreshlessRealtimeEnabled = refreshlessRealtimeEnabled;
     _abortSuppressionWindow = abortSuppressionWindow;
+    _shortcutCycleWindow = shortcutCycleWindow;
     _activeContextKey = _composeContextKey(
       _activeServerId,
       _resolveContextScopeId(),
@@ -278,6 +281,9 @@ class ChatProvider extends ChangeNotifier {
   String? _selectedAgentName;
   String? _selectedVariantId;
   List<String> _recentModelKeys = <String>[];
+  List<String> _recentAgentNames = <String>[];
+  Map<String, List<String>> _recentVariantValuesByModel =
+      <String, List<String>>{};
   List<String> _favoriteModelKeys = <String>[];
   Map<String, int> _modelUsageCounts = <String, int>{};
   Map<String, String> _selectedVariantByModel = <String, String>{};
@@ -330,6 +336,9 @@ class ChatProvider extends ChangeNotifier {
   late final int _foregroundResumeSyncIndicatorMaxCycles;
   late final int _degradedFailureThreshold;
   late final bool _refreshlessRealtimeEnabled;
+  late final Duration _shortcutCycleWindow;
+  final Map<_ShortcutCycleDomain, _ShortcutCycleState>
+  _shortcutCycleStateByDomain = <_ShortcutCycleDomain, _ShortcutCycleState>{};
 
   // Circular buffer of recent event dedup keys to prevent the global stream
   // from re-processing events already handled by the session stream.
@@ -343,6 +352,8 @@ class ChatProvider extends ChangeNotifier {
   static const int _maxPersistedSessionMessageSnapshots = 8;
   static const int _defaultOlderMessagesChunkSize = 200;
   static const int _maxRecentModels = 8;
+  static const int _maxRecentAgents = 8;
+  static const int _maxRecentVariantsPerModel = 8;
   late final Duration _abortSuppressionWindow;
   static const Duration _remoteSelectionSyncThrottle = Duration(seconds: 2);
   static const String _configCodewalkNamespace = 'codewalk';
@@ -1618,6 +1629,7 @@ class ChatProvider extends ChangeNotifier {
     if (provider == null) {
       return;
     }
+    final previousModelKey = _currentModelKey();
     _selectedProviderId = provider.id;
 
     String? nextModelId;
@@ -1650,6 +1662,8 @@ class ChatProvider extends ChangeNotifier {
     nextModelId ??= provider.models.keys.firstOrNull;
     _selectedModelId = nextModelId;
     _selectedVariantId = _resolveStoredVariantForSelection();
+    _recordModelSelectionRecency(previousModelKey: previousModelKey);
+    _recordVariantSelectionRecencyForCurrentModel();
     _storeCurrentSessionSelectionOverride();
     await _persistSelection();
     notifyListeners();
@@ -1663,9 +1677,12 @@ class ChatProvider extends ChangeNotifier {
     if (provider == null || !provider.models.containsKey(modelId)) {
       return;
     }
+    final previousModelKey = _currentModelKey();
     _selectedProviderId = providerId;
     _selectedModelId = modelId;
     _selectedVariantId = _resolveStoredVariantForSelection();
+    _recordModelSelectionRecency(previousModelKey: previousModelKey);
+    _recordVariantSelectionRecencyForCurrentModel();
     _storeCurrentSessionSelectionOverride();
     notifyListeners();
     await _persistSelection();
@@ -1677,6 +1694,32 @@ class ChatProvider extends ChangeNotifier {
       return;
     }
     await setSelectedModelByProvider(providerId: provider.id, modelId: modelId);
+  }
+
+  Future<void> cycleRecentModelShortcut() async {
+    final candidates = _availableModelCycleKeys();
+    if (candidates.isEmpty) {
+      return;
+    }
+
+    final currentModelKey = _currentModelKey();
+    final nextModelKey = _nextShortcutCycleTarget(
+      domain: _ShortcutCycleDomain.model,
+      currentKey: currentModelKey,
+      candidateKeys: candidates,
+      historyKeys: _recentModelKeys,
+    );
+    if (nextModelKey == null || nextModelKey == currentModelKey) {
+      return;
+    }
+
+    final providerId = _providerFromModelKey(nextModelKey);
+    final modelId = _modelFromModelKey(nextModelKey);
+    if (providerId == null || modelId == null) {
+      return;
+    }
+
+    await setSelectedModelByProvider(providerId: providerId, modelId: modelId);
   }
 
   Future<void> setSelectedAgent(String agentName) async {
@@ -1691,7 +1734,9 @@ class ChatProvider extends ChangeNotifier {
     if (_selectedAgentName == next) {
       return;
     }
+    final previousAgentName = _selectedAgentName;
     _selectedAgentName = next;
+    _recordAgentSelectionRecency(previousAgentName: previousAgentName);
     _storeCurrentSessionSelectionOverride();
     notifyListeners();
     await _persistSelection();
@@ -1706,6 +1751,7 @@ class ChatProvider extends ChangeNotifier {
     }
 
     final modelKey = _modelKey(providerId, modelId);
+    final previousVariantId = _selectedVariantId;
     if (variantId == null || variantId.trim().isEmpty) {
       _selectedVariantId = null;
       _selectedVariantByModel.remove(modelKey);
@@ -1717,6 +1763,10 @@ class ChatProvider extends ChangeNotifier {
       _selectedVariantByModel.remove(modelKey);
     }
 
+    _recordVariantSelectionRecencyForCurrentModel(
+      previousVariantId: previousVariantId,
+    );
+
     _storeCurrentSessionSelectionOverride();
     await _persistSelection();
     notifyListeners();
@@ -1727,49 +1777,55 @@ class ChatProvider extends ChangeNotifier {
     if (model == null || model.variants.isEmpty) {
       return;
     }
-    final variantIds = model.variants.keys.toList(growable: false);
-    final selectedVariant = _selectedVariantId;
-    if (selectedVariant == null) {
-      await setSelectedVariant(variantIds.first);
+    final currentModelKey = _currentModelKey();
+    if (currentModelKey == null) {
       return;
     }
-    final currentIndex = variantIds.indexOf(selectedVariant);
-    if (currentIndex == -1 || currentIndex >= variantIds.length - 1) {
-      await setSelectedVariant(null);
+    final nextVariantValue = _nextShortcutCycleTarget(
+      domain: _ShortcutCycleDomain.variant,
+      currentKey: _variantHistoryValue(_selectedVariantId),
+      candidateKeys: _availableVariantCycleValues(model),
+      historyKeys:
+          _recentVariantValuesByModel[currentModelKey] ?? const <String>[],
+    );
+    if (nextVariantValue == null) {
       return;
     }
-    await setSelectedVariant(variantIds[currentIndex + 1]);
+    final nextVariantId = _variantIdFromHistoryValue(nextVariantValue);
+    if (nextVariantId == _selectedVariantId) {
+      return;
+    }
+    await setSelectedVariant(nextVariantId);
   }
 
   /// Cycle to the next (or previous) selectable agent.
   /// Returns the name of the newly selected agent, or null when the list
   /// is empty and no cycling was performed.
   Future<String?> cycleAgent({bool reverse = false}) async {
-    final available = selectableAgents;
-    if (available.isEmpty) {
+    final candidates = selectableAgents
+        .map((agent) => agent.name.trim())
+        .where((name) => name.isNotEmpty)
+        .toList(growable: false);
+    if (candidates.isEmpty) {
       return null;
     }
 
-    final selected = _selectedAgentName;
-    if (selected == null) {
-      await setSelectedAgent(available.first.name);
-      return available.first.name;
-    }
-
-    final currentIndex = available.indexWhere(
-      (agent) => agent.name == selected,
+    final nextAgentName = _nextShortcutCycleTarget(
+      domain: _ShortcutCycleDomain.agent,
+      currentKey: _selectedAgentName,
+      candidateKeys: candidates,
+      historyKeys: _recentAgentNames,
+      reverse: reverse,
     );
-    if (currentIndex == -1) {
-      await setSelectedAgent(available.first.name);
-      return available.first.name;
+    if (nextAgentName == null) {
+      return null;
+    }
+    if (nextAgentName == _selectedAgentName) {
+      return nextAgentName;
     }
 
-    final delta = reverse ? -1 : 1;
-    final nextIndex =
-        (currentIndex + delta + available.length) % available.length;
-    final nextName = available[nextIndex].name;
-    await setSelectedAgent(nextName);
-    return nextName;
+    await setSelectedAgent(nextAgentName);
+    return nextAgentName;
   }
 
   bool isModelFavorite({required String providerId, required String modelId}) {

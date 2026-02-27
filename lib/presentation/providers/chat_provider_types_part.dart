@@ -194,3 +194,19 @@ class _SessionSelectionOverride {
   final String? variantId;
   final int updatedAtEpochMs;
 }
+
+enum _ShortcutCycleDomain { model, agent, variant }
+
+class _ShortcutCycleState {
+  const _ShortcutCycleState({
+    required this.snapshot,
+    required this.currentIndex,
+    required this.lastActivatedAt,
+    required this.reverse,
+  });
+
+  final List<String> snapshot;
+  final int currentIndex;
+  final DateTime lastActivatedAt;
+  final bool reverse;
+}
