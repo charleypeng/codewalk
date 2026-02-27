@@ -215,7 +215,8 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                           ),
                     onClose: selectorActionInFlight
                         ? null
-                        : () => unawaited(_closeProjectContext(project.id)),
+                        : () =>
+                              unawaited(_closeProjectFromSelector(project.id)),
                     closeEnabled:
                         projectProvider.openProjects.length > 1 ||
                         project.id != currentProject?.id,
@@ -255,7 +256,9 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                             onPressed: selectorActionInFlight
                                 ? null
                                 : () => unawaited(
-                                    _archiveClosedProjectContext(project.id),
+                                    _archiveClosedProjectFromSelector(
+                                      project.id,
+                                    ),
                                   ),
                           ),
                         );

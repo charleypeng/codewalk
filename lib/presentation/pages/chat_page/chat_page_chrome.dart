@@ -799,6 +799,18 @@ extension _ChatPageChrome on _ChatPageState {
     });
   }
 
+  Future<void> _closeProjectFromSelector(String projectId) async {
+    await _runProjectSelectorDialogAction(() async {
+      await _closeProjectContext(projectId);
+    });
+  }
+
+  Future<void> _archiveClosedProjectFromSelector(String projectId) async {
+    await _runProjectSelectorDialogAction(() async {
+      await _archiveClosedProjectContext(projectId);
+    });
+  }
+
   String _directoryLabel(String? directory) {
     final trimmed = directory?.trim();
     if (trimmed == null ||
