@@ -111,14 +111,12 @@ extension _ChatProviderShortcutCycleOps on ChatProvider {
       addModelKey(recentKey);
     }
 
-    if (candidates.length < 2) {
-      final provider = selectedProvider;
-      if (provider != null) {
-        final modelIds = provider.models.keys.toList(growable: false)
-          ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-        for (final modelId in modelIds) {
-          addModelKey(_modelKey(provider.id, modelId));
-        }
+    final provider = selectedProvider;
+    if (provider != null) {
+      final modelIds = provider.models.keys.toList(growable: false)
+        ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+      for (final modelId in modelIds) {
+        addModelKey(_modelKey(provider.id, modelId));
       }
     }
 
@@ -209,7 +207,11 @@ extension _ChatProviderShortcutCycleOps on ChatProvider {
 
     final hasEnoughHistory = history.length >= 2;
     final snapshot = hasEnoughHistory
-        ? _historySnapshotWithCurrentFirst(history, normalizedCurrent)
+        ? _prioritizedCycleSnapshot(
+            history: history,
+            candidates: candidates,
+            currentKey: normalizedCurrent,
+          )
         : candidates;
     if (snapshot.isEmpty) {
       _shortcutCycleStateByDomain.remove(domain);
@@ -280,16 +282,29 @@ extension _ChatProviderShortcutCycleOps on ChatProvider {
     return normalized;
   }
 
-  List<String> _historySnapshotWithCurrentFirst(
-    List<String> history,
-    String? currentKey,
-  ) {
-    final snapshot = List<String>.from(history);
-    if (currentKey == null || currentKey.isEmpty) {
-      return snapshot;
+  List<String> _prioritizedCycleSnapshot({
+    required List<String> history,
+    required List<String> candidates,
+    required String? currentKey,
+  }) {
+    final snapshot = <String>[];
+    final seen = <String>{};
+
+    void add(String? key) {
+      final normalized = key?.trim();
+      if (normalized == null || normalized.isEmpty || !seen.add(normalized)) {
+        return;
+      }
+      snapshot.add(normalized);
     }
-    snapshot.remove(currentKey);
-    snapshot.insert(0, currentKey);
+
+    add(currentKey);
+    for (final key in history) {
+      add(key);
+    }
+    for (final key in candidates) {
+      add(key);
+    }
     return snapshot;
   }
 

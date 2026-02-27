@@ -134,7 +134,7 @@ class ChatProvider extends ChangeNotifier {
     int degradedFailureThreshold = 3,
     bool refreshlessRealtimeEnabled = FeatureFlags.refreshlessRealtime,
     Duration abortSuppressionWindow = const Duration(seconds: 8),
-    Duration shortcutCycleWindow = const Duration(seconds: 2),
+    Duration shortcutCycleWindow = const Duration(seconds: 3),
   }) {
     _syncSignalStaleThreshold = syncSignalStaleThreshold;
     _syncHealthCheckInterval = syncHealthCheckInterval;

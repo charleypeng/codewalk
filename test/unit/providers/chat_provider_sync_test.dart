@@ -31,7 +31,7 @@ void main() {
       DioClient? dioClient,
       Duration syncHealthCheckInterval = const Duration(seconds: 5),
       Duration abortSuppressionWindow = const Duration(milliseconds: 30),
-      Duration shortcutCycleWindow = const Duration(seconds: 2),
+      Duration shortcutCycleWindow = const Duration(seconds: 3),
       SettingsProvider? settingsProvider,
     }) {
       return buildChatProvider(
@@ -776,6 +776,44 @@ void main() {
       },
     );
 
+    test(
+      'cycleAgent progresses to third candidate on repeated quick presses',
+      () async {
+        provider = buildProvider(
+          shortcutCycleWindow: const Duration(milliseconds: 120),
+        );
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'model_a': testModel('model_a')},
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a'],
+          ),
+        );
+        appRepository.agentsResult = const Right(<Agent>[
+          Agent(name: 'build', mode: 'primary', hidden: false, native: false),
+          Agent(name: 'plan', mode: 'primary', hidden: false, native: false),
+          Agent(name: 'support', mode: 'primary', hidden: false, native: false),
+        ]);
+
+        await provider.initializeProviders();
+        await provider.setSelectedAgent('plan');
+        expect(provider.selectedAgentName, 'plan');
+
+        await provider.cycleAgent();
+        expect(provider.selectedAgentName, 'build');
+
+        await provider.cycleAgent();
+        expect(provider.selectedAgentName, 'support');
+      },
+    );
+
     test('cycleRecentModelShortcut follows Alt+Tab burst behavior', () async {
       provider = buildProvider(
         shortcutCycleWindow: const Duration(milliseconds: 120),
@@ -822,6 +860,46 @@ void main() {
       await provider.cycleRecentModelShortcut();
       expect(provider.selectedModelId, 'model_b');
     });
+
+    test(
+      'cycleRecentModelShortcut progresses to third candidate on quick presses',
+      () async {
+        provider = buildProvider(
+          shortcutCycleWindow: const Duration(milliseconds: 120),
+        );
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{
+                  'model_a': testModel('model_a'),
+                  'model_b': testModel('model_b'),
+                  'model_c': testModel('model_c'),
+                },
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a'],
+          ),
+        );
+
+        await provider.initializeProviders();
+        await provider.setSelectedModelByProvider(
+          providerId: 'provider_a',
+          modelId: 'model_b',
+        );
+        expect(provider.selectedModelId, 'model_b');
+
+        await provider.cycleRecentModelShortcut();
+        expect(provider.selectedModelId, 'model_a');
+
+        await provider.cycleRecentModelShortcut();
+        expect(provider.selectedModelId, 'model_c');
+      },
+    );
 
     test(
       'cycleVariant follows Alt+Tab burst behavior when history exists',
