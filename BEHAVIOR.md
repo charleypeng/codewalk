@@ -73,6 +73,8 @@
 - **When** the user interacts with context options
 - **Then** the UI uses project/folder language only (no workspace distinction in this flow)
 - **Then** the action `Open project folder...` allows opening any folder as project context, including non-Git folders
+- **Then** tapping a project row switches/reopens that context immediately and closes the picker without requiring a secondary open action
+- **Then** selector actions are serialized so repeated rapid taps do not trigger overlapping switch/reopen/close/archive operations
 
 ### Conversations are grouped by project context
 

@@ -66,7 +66,7 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 - [ ] Add shortcut to enable/disable STT in Shortcuts.
 - [ ] In Settings > About, create an independent update system for new versions.
 - [ ] In About, add "check updates on open" option (default on), with toast and update button.
-- [ ] Reorganize the "Project Context" screen for a more dynamic visual UX; tapping a project opens it immediately and closes the dialog, removing the need for a separate open button next to trash. — `0cc892c`
+- [x] Reorganize the "Project Context" screen for a more dynamic visual UX; tapping a project opens it immediately and closes the dialog, removing the need for a separate open button next to trash. - Related commits: ee0b95b 725dda7
 - [x] Replace the current project selection dialog with an inline rich select/dropdown component. - Commit hash: 0cc892c
 - [x] Investigate and fix chat flicker and intermittent blank history on conversation open/update: stabilized tool-call rendering, fixed empty-session blink, and improved revalidation stability. - Related commits: 26c8448 9351919
 - [x] Load older history on top reach: implemented top-scroll trigger to fetch previous message batches. - Commit hash: 8b364fd
