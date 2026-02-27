@@ -247,15 +247,16 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     }
 
     if (_pendingInitialScrollSessionId == sessionId &&
-        chatProvider.messages.isNotEmpty &&
         chatProvider.state != ChatState.loading) {
       _pendingInitialScrollSessionId = null;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || _trackedSessionId != sessionId) {
-          return;
-        }
-        _scrollToBottom(force: true);
-      });
+      if (chatProvider.messages.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || _trackedSessionId != sessionId) {
+            return;
+          }
+          _scrollToBottom(force: true);
+        });
+      }
     }
   }
 
@@ -268,8 +269,22 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     final isResponding = chatProvider.isCurrentSessionActivelyResponding;
     final latestSuccessfulAssistantMessageId =
         _resolveLatestSuccessfulAssistantMessageId(chatProvider.messages);
+    final latestTimelineMessageId = chatProvider.messages.isEmpty
+        ? null
+        : chatProvider.messages.last.id;
 
     if (isResponding) {
+      final hasSettledFinalMessage =
+          _finalAssistantRevealSettledMessageId != null &&
+          _finalAssistantRevealSettledMessageId!.isNotEmpty;
+      final shouldIgnoreTransientRespondingPulse =
+          hasSettledFinalMessage &&
+          _pendingFinalAssistantRevealMessageId == null &&
+          !_deferAssistantWorkCollapse &&
+          latestTimelineMessageId == _finalAssistantRevealSettledMessageId;
+      if (shouldIgnoreTransientRespondingPulse) {
+        return;
+      }
       _wasCurrentSessionActivelyResponding = true;
       _deferAssistantWorkCollapse = true;
       _suppressPostCompletionAutoSnap = false;
@@ -320,7 +335,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
   GlobalKey _messageRevealAnchorKey(String messageId) {
     return _messageRevealAnchorKeysByMessageId.putIfAbsent(
       messageId,
-      () => GlobalKey(debugLabel: 'assistant_final_anchor_$messageId'),
+      () => GlobalKey(debugLabel: 'message_reveal_anchor_$messageId'),
     );
   }
 
@@ -332,6 +347,146 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     _messageRevealAnchorKeysByMessageId.removeWhere(
       (messageId, _) => !visibleMessageIds.contains(messageId),
     );
+  }
+
+  void _revealLatestMessageStartAfterReturn(
+    ChatProvider chatProvider, {
+    required String reason,
+  }) {
+    final sessionId = chatProvider.currentSession?.id;
+    if (sessionId == null ||
+        sessionId.isEmpty ||
+        chatProvider.messages.isEmpty) {
+      return;
+    }
+
+    final latestMessageId = chatProvider.messages.last.id;
+    _scrollToBottomRequestToken += 1;
+    _scheduleLatestMessageReturnReveal(
+      sessionId: sessionId,
+      messageId: latestMessageId,
+      reason: reason,
+    );
+  }
+
+  void _scheduleLatestMessageReturnReveal({
+    required String sessionId,
+    required String messageId,
+    required String reason,
+    int attempt = 0,
+  }) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(
+        _runLatestMessageReturnReveal(
+          sessionId: sessionId,
+          messageId: messageId,
+          reason: reason,
+          attempt: attempt,
+        ),
+      );
+    });
+  }
+
+  Future<void> _runLatestMessageReturnReveal({
+    required String sessionId,
+    required String messageId,
+    required String reason,
+    required int attempt,
+  }) async {
+    if (!mounted) {
+      return;
+    }
+
+    final chatProvider = _chatProvider;
+    if (chatProvider == null || chatProvider.currentSession?.id != sessionId) {
+      return;
+    }
+
+    if (chatProvider.isCurrentSessionActivelyResponding) {
+      _scrollToBottom(force: true);
+      return;
+    }
+
+    if (chatProvider.messages.isEmpty) {
+      return;
+    }
+
+    final latestMessageId = chatProvider.messages.last.id;
+    if (latestMessageId != messageId) {
+      _scheduleLatestMessageReturnReveal(
+        sessionId: sessionId,
+        messageId: latestMessageId,
+        reason: reason,
+      );
+      return;
+    }
+
+    if (!_scrollController.hasClients) {
+      if (attempt + 1 < _ChatPageState._maxReturnLatestRevealAttempts) {
+        _scheduleLatestMessageReturnReveal(
+          sessionId: sessionId,
+          messageId: messageId,
+          reason: reason,
+          attempt: attempt + 1,
+        );
+      }
+      return;
+    }
+
+    final anchorContext =
+        _messageRevealAnchorKeysByMessageId[messageId]?.currentContext;
+    if (anchorContext == null) {
+      if (attempt + 1 < _ChatPageState._maxReturnLatestRevealAttempts) {
+        _scheduleLatestMessageReturnReveal(
+          sessionId: sessionId,
+          messageId: messageId,
+          reason: reason,
+          attempt: attempt + 1,
+        );
+      }
+      return;
+    }
+
+    _isProgrammaticScrollInFlight = true;
+    try {
+      await Scrollable.ensureVisible(
+        anchorContext,
+        alignment: _ChatPageState._returnLatestRevealAlignment,
+        duration: Duration.zero,
+      );
+    } catch (error, stackTrace) {
+      AppLogger.debug(
+        'Failed to reveal latest message after $reason for session=$sessionId message=$messageId',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    } finally {
+      if (mounted) {
+        _isProgrammaticScrollInFlight = false;
+      }
+    }
+
+    if (!mounted || _chatProvider?.currentSession?.id != sessionId) {
+      return;
+    }
+
+    final shouldAutoFollow = _isNearBottom();
+    final shouldShowLatestFab = !shouldAutoFollow;
+    final shouldShowFirstFab =
+        shouldShowLatestFab && _shouldShowJumpToFirstFab();
+    if (_autoFollowToLatest == shouldAutoFollow &&
+        _showScrollToLatestFab == shouldShowLatestFab &&
+        !_hasUnreadMessagesBelow &&
+        _showScrollToFirstFab == shouldShowFirstFab) {
+      return;
+    }
+
+    _setState(() {
+      _autoFollowToLatest = shouldAutoFollow;
+      _showScrollToLatestFab = shouldShowLatestFab;
+      _hasUnreadMessagesBelow = false;
+      _showScrollToFirstFab = shouldShowFirstFab;
+    });
   }
 
   void _scheduleFinalAssistantReveal() {

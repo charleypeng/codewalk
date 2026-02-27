@@ -31,22 +31,22 @@ Concluded historical features were archived to `ROADMAP.archive.done.md` to keep
 
 ### Backlog Execution Packs
 
-- `ROADMAP.featQ.md` - Cross-platform UX and settings polish
+- `featQ` - Cross-platform UX and settings polish (tracked inline in this file)
 
 ### Next Recommended Feature
 
-- `featQ` - `ROADMAP.featQ.md` (NEXT: Cross-platform UX and settings polish)
+- `featQ` - inline in `ROADMAP.md` (NEXT: Cross-platform UX and settings polish)
 
 ### Backlog Pack Dependency Order
 
-1. `ROADMAP.featQ.md` (Cross-platform UX and settings polish - isolated track, can run anytime)
+1. `featQ` in `ROADMAP.md` (Cross-platform UX and settings polish - isolated track, can run anytime)
 
 Notes:
 - Features featA through featO have been completed and archived.
 
 ### Backlog Pack Execution Checklist
 
-- [~] `featQ` - `ROADMAP.featQ.md` (Cross-platform UX and settings polish)
+- [~] `featQ` - tracked in `ROADMAP.md` (Cross-platform UX and settings polish)
 
 Use the same status convention from Legend for active execution updates (`[~]`, `[x]`, `[/]`).
 
@@ -58,17 +58,27 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 
 - [ ] Investigate and fix conversation continuity when switching sessions/projects... - Related commits: acce617 9dcd773 1581c65 cdee253 1fcf33e 68baebe 61934e9 0ee474c df9ec9e 931d9a8
 - [x] Investigate and fix conversation-open click behavior: double-click freeze and sidebar sync. - Related commits: 204114e 09c1641 eccec6b dfa9754 b5cda81
-- [~] Ajustar ciclagem de atalhos para comportamento tipo Alt+Tab: hoje a ciclagem percorre lista de recentes/favoritos sem priorizar o último item anterior. Implementar primeira ação focada no último usado anterior para troca rápida entre dois itens, com avanço sequencial para demais recentes apenas em pressões subsequentes dentro de janela curta (ex.: 2s). DoD: 1) primeira ativação do atalho alterna para o último item anterior usado; 2) segunda/terceira ativações em sequência (janela temporal) avançam na lista de recentes; 3) comportamento consistente para agente, modelo e variante; 4) fallback previsível quando não houver histórico suficiente.
+- [x] Ajustar ciclagem de atalhos para comportamento tipo Alt+Tab: hoje a ciclagem percorre lista de recentes/favoritos sem priorizar o último item anterior. Implementar primeira ação focada no último usado anterior para troca rápida entre dois itens, com avanço sequencial para demais recentes apenas em pressões subsequentes dentro de janela curta (ex.: 2s). DoD: 1) primeira ativação do atalho alterna para o último item anterior usado; 2) segunda/terceira ativações em sequência (janela temporal) avançam na lista de recentes; 3) comportamento consistente para agente, modelo e variante; 4) fallback previsível quando não houver histórico suficiente. - Related commits: 2086730 c19d346
 - [ ] Canned answers manager for fast reply
 - [x] Substituir ícone lateral por badges flutuantes na lista de sessões: remover o ícone fixo à esquerda de cada sessão/conversa (que consome espaço no mobile) e adotar badges flutuantes compactos. Incluir sistema de badges de estado para indicar sessões que exigem atenção. DoD: 1) ícone lateral removido da lista de sessões no mobile; 2) badges flutuantes compactos sem prejuízo de legibilidade/tap target; 3) badges de atenção para estados relevantes (ex.: nova resposta, question pendente, erro/notificação); 4) estilo alinhado ao Material You (MD3) e consistente entre mobile/desktop. - Related commits: cda2973 06a8194 eae9883
 - [x] Exibir badge no menu hambúrguer para sessões fora de foco que exigem atenção: em cenário multi-sessão no mobile, mostrar indicador visual no ícone/menu hambúrguer quando houver sessão não focada com evento pendente (resposta concluída, question aguardando ação, erro/notificação relevante). DoD: 1) badge aparece quando qualquer sessão fora de foco tiver estado de atenção; 2) badge desaparece/atualiza ao consumir o evento ou focar a sessão; 3) diferenciação mínima de tipo de evento (ex.: dot/contador/estado) sem poluir UI; 4) estilo coerente com Material You (MD3) e boa visibilidade em telas pequenas. - Related commits: cda2973 06a8194 eae9883
 - [ ] In Settings > Shortcuts, review shortcut coverage and add missing options.
 - [ ] Add shortcut to enable/disable STT in Shortcuts.
-- [x] Reorganize the "Project Context" screen for a more dynamic visual UX; tapping a project opens it immediately and closes the dialog, removing the need for a separate open button next to trash. - Completed.
+- [ ] In Settings > About, create an independent update system for new versions.
+- [ ] In About, add "check updates on open" option (default on), with toast and update button.
+- [ ] Reorganize the "Project Context" screen for a more dynamic visual UX; tapping a project opens it immediately and closes the dialog, removing the need for a separate open button next to trash. — `0cc892c`
 - [x] Replace the current project selection dialog with an inline rich select/dropdown component. - Commit hash: 0cc892c
-- [x] Investigate and fix intermittent blank history on conversation open: restored sessions instantly with cache-first SWR and per-session LRU snapshot cache. - Commit hash: 26c8448
+- [x] Investigate and fix chat flicker and intermittent blank history on conversation open/update: stabilized tool-call rendering, fixed empty-session blink, and improved revalidation stability. - Related commits: 26c8448 9351919
 - [x] Load older history on top reach: implemented top-scroll trigger to fetch previous message batches. - Commit hash: 8b364fd
 - [ ] After returning from background, position the conversation at the start of the most recent message (top of text) instead of at the end.
 - [ ] In composer, adjust ArrowUp/ArrowDown without modifiers for multiline behavior before history navigation; with modifiers keep default editor behavior.
 - [ ] Plan the merge between the project selector and the conversations sidebar, grouping conversations by open projects to speed up navigation.
 - [ ] Allow pinning sessions in the Conversations sidebar.
+- [ ] Corrigir o erro ao tentar enviar mensagem após resposta do assistente: atualmente é preciso insistir no envio uma ou duas vezes e clicar em retry, mesmo com o servidor online.
+- [ ] Corrigir a tela principal quando não tem nenhum servidor configurado: a tela pisca rapidamente apresentando erro de conexão, mas não deveria procurar atualização se não há nenhum servidor cadastrado.
+- [ ] Suavizar a chegada de tool calls e novas mensagens, bem como o envio de novas mensagens pelo usuário: atualmente tudo aparece de uma vez, mas com animação de deslize a experiência fica mais atraente.
+- [ ] Restrict session title update service to main sessions only: subsessions do not need and must not use the dynamic title generation system.
+- [ ] Fix server health inconsistency: in the hamburger menu a red status dot appears, but in Settings the same server is shown as fully healthy.
+- [ ] Verify whether background notifications are working correctly on Android.
+- [ ] Shorten text in collapsed boxes for mobile: simplify label phrases, remove subtext, and use shorter show/hide button wording.
+- [ ] Speed up project switching using session-like caching methods: session switching is already fast, and project switching should follow a similar strategy for near-instant transitions.

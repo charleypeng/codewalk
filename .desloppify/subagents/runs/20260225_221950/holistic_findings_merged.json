@@ -1,0 +1,509 @@
+{
+  "assessments": {
+    "abstraction_fitness": {
+      "score": 44.5,
+      "components": [
+        "Abstraction Leverage",
+        "Indirection Cost",
+        "Interface Honesty"
+      ],
+      "component_scores": {
+        "Abstraction Leverage": 64.7,
+        "Indirection Cost": 64.9,
+        "Interface Honesty": 66.9
+      }
+    },
+    "cross_module_architecture": 45.5,
+    "design_coherence": 44.9,
+    "error_consistency": 36.7,
+    "test_strategy": 51.5
+  },
+  "dimension_notes": {
+    "cross_module_architecture": {
+      "evidence": [
+        "lib/presentation/providers/app_provider.dart concentrates multiple subsystem responsibilities in one provider: server profile CRUD/persistence, network client configuration, local runtime lifecycle, diagnostics, health polling, and UI notification state transitions.",
+        "lib/presentation/providers/settings_provider.dart combines UI-facing settings state with infrastructure concerns (Dio networking, package info/update checks, file system/open-file install flow, and server config synchronization), creating wide dependency fan-in at the presentation boundary.",
+        "Platform-specific file action flows in lib/presentation/services/file_part_action_service_io.dart and lib/presentation/services/file_part_action_service_web.dart replicate top-level decision orchestration (URL scheme routing and fallback behavior), increasing cross-platform drift risk."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change",
+      "confidence": "high",
+      "unreported_risk": ""
+    },
+    "abstraction_fitness": {
+      "evidence": [
+        "ChatProvider is split across many `part` files but remains a single mutable object with broad responsibilities and many injected use cases (`lib/presentation/providers/chat_provider.dart`).",
+        "Extension parts directly mutate shared private state (`_messages`, `_selectedModelId`, `_providers`, sync flags), so decomposition is organizational rather than contractual (`lib/presentation/providers/chat_provider/chat_provider_core.dart`, `lib/presentation/providers/chat_provider/chat_provider_message_state_ops.dart`).",
+        "ChatPage is similarly decomposed into many extensions over `_ChatPageState`, with each extension reading/writing shared UI/runtime fields (`lib/presentation/pages/chat_page.dart`, `lib/presentation/pages/chat_page/chat_page_file_runtime.dart`, `lib/presentation/pages/chat_page/chat_page_workspace_controller.dart`).",
+        "Message part handling requires coordinated edits in both model parsing and UI dispatch switches, which increases indirection cost for each new part type (`lib/data/models/chat_message_model.dart`, `lib/presentation/widgets/chat_message/chat_message_part_dispatch.dart`)."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change",
+      "confidence": "high",
+      "unreported_risk": "",
+      "sub_axes": {
+        "abstraction_leverage": 64.0,
+        "indirection_cost": 61.0,
+        "interface_honesty": 63.0
+      }
+    },
+    "test_strategy": {
+      "evidence": [
+        "No dedicated tests were found for `lib/core/di/injection_container.dart` (no `injection_container` test targets), despite startup wiring and `_loadLocalConfig()` fallback/JSON parsing behavior being runtime-critical.",
+        "No unit tests were found for `lib/presentation/utils/shortcut_binding_codec.dart` covering platform-modifier mapping (`mod` -> Cmd/Ctrl), token normalization, unknown token handling, or key-event serialization.",
+        "No direct tests were found for `lib/data/models/chat_realtime_model.dart` parser edge cases (payload-wrapped vs flat events, mixed key styles like `sessionID`/`messageID`, default fallbacks for malformed input).",
+        "`lib/domain/entities/server_profile.dart` serialization/deserialization behavior is exercised indirectly via provider/data-source tests, but entity-level contract tests are missing for `fromJson` defaults and `copyWith` invariants."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "unreported_risk": ""
+    },
+    "design_coherence": {
+      "evidence": [
+        "lib/presentation/pages/chat_page.dart centralizes many unrelated concerns in one state object (UI scaffolding, notification tap handling, background/foreground timers, file explorer caches, timeline compaction, keyboard shortcuts), while behavior is split across many `part` extensions that still mutate the same shared state.",
+        "lib/presentation/providers/chat_provider/chat_provider_core.dart::_initializeProvidersInternal combines provider fetch, remote-selection merge, model/provider prioritization heuristics, agent/variant resolution, and persistence writes in one long orchestration path.",
+        "lib/presentation/services/local_opencode_server_runtime_io.dart combines process lifecycle control, environment diagnostics, installation strategy orchestration, release download/extract, filesystem probing, and recommendation generation in a single concrete runtime class."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change",
+      "confidence": "high",
+      "unreported_risk": ""
+    },
+    "error_consistency": {
+      "evidence": [
+        "Multiple catch blocks swallow exceptions and return benign defaults without preserving cause/context, e.g. `android_background_alert_worker.dart` (`_fetchSessionStatusById`, `_fetchSessionMetadata`, `_fetchPermissionRequests`, `_fetchQuestionRequests`) and `settings_provider.dart` (`syncNotificationsFromServerConfig`, cleanup catches in `_installAndroid`).",
+        "Error signaling style is mixed across adjacent presentation/domain flows: thrown exceptions (`app_provider.dart` `normalizeServerUrl` throws `FormatException`), nullable error-string returns (`settings_provider.dart` `updateShortcut` returns `String?`), and `Either<Failure, T>` (`chat_provider.dart` `_runSessionInsightRequest`).",
+        "Failure modeling drops technical context at conversion boundaries: `failures.dart` stores only `message` and optional `code`, while `chat_provider.dart` maps unexpected exceptions into `UnknownFailure('Unexpected error...')` without retaining original exception/stack for downstream handling."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high",
+      "unreported_risk": ""
+    }
+  },
+  "findings": [
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "app_provider_multisubsystem_god_module",
+      "summary": "AppProvider is a coupling hotspot across runtime, networking, persistence, and UI state.",
+      "related_files": [
+        "lib/presentation/providers/app_provider.dart",
+        "lib/domain/repositories/chat_repository.dart",
+        "lib/core/logging/app_logger.dart"
+      ],
+      "evidence": [
+        "AppProvider imports and coordinates infrastructure services directly (runtime process control, health probes via Dio, local persistence) while also exposing UI state and view-facing actions.",
+        "Methods for server profile lifecycle, runtime diagnostics/start-stop, and health polling coexist in one class, so unrelated changes touch the same module.",
+        "Error/reporting behavior is also embedded through AppLogger calls, further centralizing cross-cutting concerns in a presentation provider."
+      ],
+      "suggestion": "Split AppProvider into orchestrated collaborators: e.g., ServerProfileManager, LocalServerRuntimeController, and ServerHealthMonitor; keep AppProvider as thin composition/state adapter. Move runtime/network orchestration behind domain-facing service interfaces and inject them.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "settings_provider_infrastructure_leakage",
+      "summary": "SettingsProvider crosses presentation, update/install, and remote-config boundaries directly.",
+      "related_files": [
+        "lib/presentation/providers/settings_provider.dart",
+        "lib/domain/entities/experience_settings.dart",
+        "lib/core/constants/app_constants.dart"
+      ],
+      "evidence": [
+        "SettingsProvider imports infrastructure APIs (Dio, dart:io, path_provider, open_filex, package_info_plus) and performs update check/download/install logic in the same class that manages UI settings toggles.",
+        "The provider also handles server-backed notification syncing and persistence concerns directly, combining distinct module boundaries in one type.",
+        "ExperienceSettings is a broad entity and the provider exposes/updates many orthogonal concerns through one mutable surface, increasing transitive coupling."
+      ],
+      "suggestion": "Extract UpdateManager and NotificationConfigSync services/use-cases from SettingsProvider, leaving the provider focused on presentation state mapping and user intents. Keep platform/file-install logic in dedicated infrastructure services with narrow interfaces.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "platform_file_action_orchestration_duplication",
+      "summary": "IO and Web file action services duplicate orchestration logic, inviting boundary drift.",
+      "related_files": [
+        "lib/presentation/services/file_part_action_service_io.dart",
+        "lib/presentation/services/file_part_action_service_web.dart"
+      ],
+      "evidence": [
+        "Both services implement similar top-level `handleFilePartAction` flow (parse URL, branch by scheme, fallback handling), but each keeps its own control path and messages.",
+        "Shared helpers exist, yet decision sequencing remains duplicated across platform modules, so behavior can diverge over time.",
+        "Cross-platform parity for attachment handling is enforced by convention instead of a single orchestration contract."
+      ],
+      "suggestion": "Move scheme-routing orchestration into one shared policy layer that returns platform intents (open-link/save-inline/open-local/unsupported), and keep io/web files as thin executors of platform-specific side effects only.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "chat_provider_part_decomposition_without_boundaries",
+      "summary": "ChatProvider part split adds indirection but not ownership boundaries",
+      "related_files": [
+        "lib/presentation/providers/chat_provider.dart",
+        "lib/presentation/providers/chat_provider/chat_provider_core.dart",
+        "lib/presentation/providers/chat_provider/chat_provider_message_state_ops.dart"
+      ],
+      "evidence": [
+        "`ChatProvider` aggregates many concerns (session lifecycle, provider/model selection, realtime sync, queueing, auto-title, cache) behind one class-level state bag.",
+        "Part extensions mutate the same private fields directly, so modules are tightly coupled through hidden shared state rather than explicit contracts.",
+        "Changing one concern can require understanding unrelated private invariants across multiple extension files."
+      ],
+      "suggestion": "Extract concern-focused collaborators (for example: `SessionStore`, `SelectionState`, `RealtimeCoordinator`, `MessageStateReducer`) as separate classes with explicit interfaces; keep `ChatProvider` as orchestration/composition only.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change"
+    },
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "chat_page_extension_mesh_over_single_state_object",
+      "summary": "ChatPage extensions create a distributed method mesh over one giant state object",
+      "related_files": [
+        "lib/presentation/pages/chat_page.dart",
+        "lib/presentation/pages/chat_page/chat_page_file_runtime.dart",
+        "lib/presentation/pages/chat_page/chat_page_workspace_controller.dart",
+        "lib/presentation/pages/chat_page/chat_page_lifecycle.dart"
+      ],
+      "evidence": [
+        "`_ChatPageState` owns a large set of mutable runtime/UI fields while behavior is spread across many extension part files.",
+        "Extensions read/write shared flags and timers (`_projectScopeTransitionTask`, `_backgroundRealtimeHoldTimer`, file-context maps), so file-level separation does not reduce coupling.",
+        "This structure raises navigation and change cost because behavior for one user flow is fragmented across multiple extension files."
+      ],
+      "suggestion": "Introduce explicit controller/state objects per concern (workspace context, file explorer runtime, foreground policy, composer status) and pass narrow dependencies into each, replacing extension-based access to the full `_ChatPageState`.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change"
+    },
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "message_part_type_handling_not_open_for_extension",
+      "summary": "Message part abstraction requires multi-file switch edits for new part types",
+      "related_files": [
+        "lib/data/models/chat_message_model.dart",
+        "lib/presentation/widgets/chat_message/chat_message_part_dispatch.dart",
+        "lib/presentation/widgets/chat_message/chat_message_info_parts.dart"
+      ],
+      "evidence": [
+        "`MessagePartModel.toDomain()` uses a large `switch (PartType)` with type-specific parsing and casting.",
+        "UI rendering repeats part-type branching in `_buildMessagePart()` with manual casts and special-case visibility rules.",
+        "Adding/changing a part type requires synchronized edits across parsing and rendering switches, increasing breakage risk."
+      ],
+      "suggestion": "Replace hard-coded switches with a `PartType` registry (parser + renderer adapter per part type) so extension points are localized and new part types do not require coordinated edits across unrelated files.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "chat_input_widget_wide_callback_and_flag_surface",
+      "summary": "ChatInputWidget exposes a wide parameter bag that couples caller and internals",
+      "related_files": [
+        "lib/presentation/widgets/chat_input_widget.dart",
+        "lib/presentation/pages/chat_page/chat_page_timeline_builder.dart"
+      ],
+      "evidence": [
+        "`ChatInputWidget` constructor carries many booleans/callbacks and behavior toggles (query handlers, stop handling, attachments, context item hooks, controller).",
+        "Call site in timeline builder must wire numerous lambdas and flags, which indicates low-cohesion API and high integration friction.",
+        "Feature growth is likely to keep expanding the constructor surface instead of using stable abstractions."
+      ],
+      "suggestion": "Introduce a cohesive input contract (for example `ChatComposerConfig` + `ChatComposerActions`) and collapse behavior toggles into typed policies, reducing call-site wiring and improving reuse/testing.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "startup_di_config_path_untested",
+      "summary": "Startup DI/config loading path has no focused tests for parsing/fallback behavior",
+      "related_files": [
+        "lib/core/di/injection_container.dart",
+        "test/unit/providers/app_provider_test.dart",
+        "test/unit/datasources/app_local_datasource_impl_test.dart"
+      ],
+      "evidence": [
+        "`init()` and `_loadLocalConfig()` perform runtime-critical profile decoding and base URL/auth selection, but there is no dedicated test target for injection container behavior.",
+        "Failure paths in profile JSON parsing are handled silently with fallback logic; regressions here can misconfigure networking at app startup.",
+        "Existing provider/data-source tests do not validate DI startup ordering and local-config bootstrap integration end-to-end."
+      ],
+      "suggestion": "Add focused tests for `injection_container.dart` that verify: valid profile selection by `activeServerId`, malformed JSON fallback, legacy config fallback, and auth propagation into `DioClient` during initialization.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "shortcut_codec_contract_untested",
+      "summary": "Shortcut codec parsing/serialization contract is untested and platform-sensitive",
+      "related_files": [
+        "lib/presentation/utils/shortcut_binding_codec.dart",
+        "lib/presentation/pages/chat_page/chat_page_shortcuts.dart",
+        "test/unit/providers/settings_provider_test.dart"
+      ],
+      "evidence": [
+        "The codec contains behavior-dependent branches (`mod` mapping by platform, modifier ordering, token normalization) without dedicated tests.",
+        "`fromKeyEvent` relies on `HardwareKeyboard` modifier state and key-label translation, which is fragile without deterministic tests.",
+        "Shortcut parsing result (`SingleActivator?`) directly affects command binding in chat/settings flows."
+      ],
+      "suggestion": "Create unit tests for codec round-trips (`normalize` + `parse` + `formatForDisplay`) and key-event serialization, including macOS/non-macOS `mod` behavior, unknown token rejection, and comma/special-key handling.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "realtime_model_api_variants_untested",
+      "summary": "Realtime event model parsing lacks tests for API shape variants and fallback defaults",
+      "related_files": [
+        "lib/data/models/chat_realtime_model.dart",
+        "lib/data/datasources/chat_remote_datasource.dart",
+        "test/unit/providers/chat_provider_realtime_test.dart"
+      ],
+      "evidence": [
+        "Model parsing supports multiple payload shapes (`payload` wrapper vs top-level fields) and mixed key conventions (`sessionID`, `messageID`, `callID`) but no direct model tests were found.",
+        "Several fields default silently to empty strings/idle states, which can mask upstream API drift if unvalidated.",
+        "Realtime behavior is high-impact and cross-module; parser regressions can degrade event handling without obvious runtime crashes."
+      ],
+      "suggestion": "Add table-driven tests for `ChatEventModel`, `SessionStatusModel`, `ChatPermissionRequestModel`, and `ChatQuestionRequestModel` covering valid payload variants, malformed payloads, mixed key casing, and explicit assertions on fallback/default behavior.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "chat_page_state_orchestrator_overload",
+      "summary": "ChatPage state owns too many responsibilities behind part-file splits",
+      "related_files": [
+        "lib/presentation/pages/chat_page.dart",
+        "lib/presentation/pages/chat_page/chat_page_file_runtime.dart",
+        "lib/presentation/pages/chat_page/chat_page_timeline_runtime.dart",
+        "lib/presentation/pages/chat_page/chat_page_model_selector_runtime.dart"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change",
+      "evidence": [
+        "The root state in chat_page.dart defines large cross-domain mutable state (scrolling, notifications, file context, composer status, compaction caches, keyboard flow) and many timers/controllers.",
+        "Runtime extensions in separate files still depend on and mutate the same monolithic private state, so decomposition is mostly physical-file split rather than ownership split."
+      ],
+      "suggestion": "Introduce dedicated controllers with explicit boundaries (for example TimelineController, FileExplorerController, ComposerStatusController, NotificationRoutingController) and have ChatPage compose them via a thin coordinator; move state and side effects out of `_ChatPageState` so each controller can be tested and evolved independently.",
+      "confidence": "high"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "provider_initialization_pipeline_mixes_policies_and_io",
+      "summary": "Provider init path mixes data loading, policy selection, and persistence side effects",
+      "related_files": [
+        "lib/presentation/providers/chat_provider/chat_provider_core.dart",
+        "lib/presentation/providers/chat_provider/chat_provider_event_reducer_ops.dart",
+        "lib/presentation/providers/chat_provider/chat_provider_realtime_aux_ops.dart"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "evidence": [
+        "_initializeProvidersInternal in chat_provider_core.dart performs multiple phases in one method: fetch providers, reconcile remote selection, choose provider/model by several fallback heuristics, resolve agent/variant, then persist selection state.",
+        "Adjacent provider extensions already handle realtime/event-reducer responsibilities, indicating ChatProvider has broad orchestration scope and weakly separated policy boundaries."
+      ],
+      "suggestion": "Split initialization into explicit pipeline stages with small units (`loadProviderSnapshot`, `resolveSelectionPolicy`, `applyRemoteOverrides`, `persistSelectionState`) and extract selection policy into a pure resolver object that returns a decision payload; keep side effects in a final apply step.",
+      "confidence": "high"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "local_runtime_service_has_god_class_shape",
+      "summary": "Local opencode runtime class bundles process control, install, and diagnostics",
+      "related_files": [
+        "lib/presentation/services/local_opencode_server_runtime_io.dart",
+        "lib/presentation/pages/settings/sections/servers_settings_section.dart"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "architectural_change",
+      "evidence": [
+        "_IoLocalOpencodeServerRuntime contains startup/shutdown, environment probing, dependency checks, install method strategy, GitHub release discovery, archive download/extract, and recommendation text assembly.",
+        "ServersSettingsSection consumes this operational surface as one feature, but the implementation boundary couples operational policies with low-level process and file/network primitives."
+      ],
+      "suggestion": "Decompose into focused collaborators: `LocalServerProcessManager`, `LocalServerEnvironmentProbe`, `LocalServerInstaller`, and `LocalServerRecommendationPolicy`; keep `LocalOpencodeServerRuntime` as a facade that coordinates these components.",
+      "confidence": "medium"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "silent_fallback_catches_across_runtime_paths",
+      "summary": "Several runtime/network paths swallow exceptions and return null/empty results, making failures indistinguishable from legitimate empty states.",
+      "related_files": [
+        "lib/presentation/services/android_background_alert_worker.dart",
+        "lib/presentation/providers/settings_provider.dart",
+        "lib/presentation/services/file_part_action_service_io.dart",
+        "lib/presentation/services/file_part_action_service_web.dart"
+      ],
+      "evidence": [
+        "`_fetchSessionStatusById` returns `null` on non-404 Dio errors and generic catch; callers cannot distinguish transport failure from unavailable status.",
+        "`_fetchSessionMetadata`, `_fetchPermissionRequests`, and `_fetchQuestionRequests` return empty structures on catch, collapsing failure into normal-empty semantics.",
+        "`syncNotificationsFromServerConfig` catches and ignores all errors; settings silently remain stale without surfaced state."
+      ],
+      "suggestion": "Adopt a single boundary pattern for these paths: return typed failure objects (or a shared Result) with cause metadata, and reserve empty collections for confirmed empty responses only.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "mixed_error_channels_in_user_flows",
+      "summary": "The same user-facing flow family mixes throws, nullable return-errors, and Either-based failures, increasing handling divergence and missed edge cases.",
+      "related_files": [
+        "lib/presentation/providers/app_provider.dart",
+        "lib/presentation/providers/settings_provider.dart",
+        "lib/presentation/providers/chat_provider.dart",
+        "lib/domain/repositories/chat_repository.dart"
+      ],
+      "evidence": [
+        "`app_provider.dart` `normalizeServerUrl` throws `FormatException` for invalid input.",
+        "`settings_provider.dart` `updateShortcut` uses `Future<String?>` where `null` means success and string means failure.",
+        "`chat_provider.dart` and `chat_repository.dart` predominantly use `Either<Failure, T>` for operational failures."
+      ],
+      "suggestion": "Standardize on one error transport per layer boundary (preferably `Either<Failure, T>` for async/domain-facing operations) and adapt throw/nullable APIs at edge adapters only.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "exception_context_lost_when_wrapping_unknown_failure",
+      "summary": "Unexpected exceptions are converted into generic failures/messages, reducing diagnosability and consistency of downstream behavior.",
+      "related_files": [
+        "lib/core/errors/failures.dart",
+        "lib/presentation/providers/chat_provider.dart",
+        "lib/presentation/pages/chat_page.dart"
+      ],
+      "evidence": [
+        "`Failure` types in `failures.dart` do not carry original cause/stack fields.",
+        "`_runSessionInsightRequest` catches any exception and returns `UnknownFailure('Unexpected error...')` with no structured propagation of cause.",
+        "`chat_page.dart` initialization catch logs and clears provider error, effectively suppressing actionable context in UI state."
+      ],
+      "suggestion": "Extend `Failure` with optional cause and stack metadata (or structured diagnostics id), and preserve these when wrapping unexpected exceptions.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "platform_variant_inconsistent_error_observability",
+      "summary": "IO and web attachment handlers diverge in error observability: IO logs rich context while web suppresses with `catch (_)`, yielding inconsistent operational visibility.",
+      "related_files": [
+        "lib/presentation/services/file_part_action_service_io.dart",
+        "lib/presentation/services/file_part_action_service_web.dart",
+        "lib/core/logging/app_logger.dart"
+      ],
+      "evidence": [
+        "IO path logs unexpected decode/save failures with `AppLogger.warn/info` and stack traces.",
+        "Web `_downloadInlineAttachment` and MIME inference catches use `catch (_)`, returning generic messages without logging.",
+        "Cross-platform behavior yields different diagnostics for equivalent attachment failures."
+      ],
+      "suggestion": "Align both variants to a shared error policy helper: same user-facing messages plus consistent structured logging (including platform + operation stage).",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "presentation_depends_on_data_models",
+      "summary": "Presentation provider depends on data DTOs, bypassing clean layer boundaries",
+      "related_files": [
+        "lib/presentation/providers/chat_provider.dart",
+        "lib/presentation/providers/chat_provider/chat_provider_cache_persistence_ops.dart",
+        "lib/presentation/providers/chat_provider/chat_provider_event_reducer_ops.dart"
+      ],
+      "evidence": [
+        "Presentation imports `chat_*_model.dart` directly.",
+        "Provider code serializes/deserializes via `ChatSessionModel`/`ChatMessageModel` and event DTO models."
+      ],
+      "suggestion": "Move JSON/DTO translation behind a data-facing mapper or cache/event adapter service; keep ChatProvider consuming domain entities and typed domain events only.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "dual_error_translation_stacks",
+      "summary": "Error handling uses conflicting translation strategies across repositories",
+      "related_files": [
+        "lib/data/datasources/chat_remote_datasource.dart",
+        "lib/data/repositories/chat_repository_impl.dart",
+        "lib/data/repositories/app_repository_impl.dart",
+        "lib/data/repositories/project_repository_impl.dart",
+        "lib/data/repositories/dio_exception_handler.dart"
+      ],
+      "evidence": [
+        "Chat datasource throws generic `ServerException` in many paths after `DioException`.",
+        "Chat repository maps custom exceptions, while app/project repositories map raw `DioException` via `DioExceptionHandler`."
+      ],
+      "suggestion": "Adopt one shared error-mapping contract (preferably at datasource boundary) that preserves status/context and is reused by all repositories.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change"
+    },
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "high_indirection_low_policy_usecases",
+      "summary": "Many pass-through use cases add indirection without adding policy",
+      "related_files": [
+        "lib/presentation/providers/chat_provider.dart",
+        "lib/domain/usecases/get_chat_sessions.dart",
+        "lib/domain/usecases/get_chat_messages.dart",
+        "lib/domain/usecases/get_chat_message.dart"
+      ],
+      "evidence": [
+        "Use cases frequently forward repository calls with parameter mapping only.",
+        "ChatProvider still coordinates extensive behavior directly despite broad use case surface."
+      ],
+      "suggestion": "Consolidate related use cases into cohesive application services (session/message/realtime facets) and reduce ChatProvider constructor surface to policy-bearing interfaces.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "non_injectable_time_and_scheduling",
+      "summary": "Direct clock and delay usage weakens deterministic testing of async flows",
+      "related_files": [
+        "lib/presentation/providers/chat_provider.dart",
+        "lib/presentation/providers/chat_provider/chat_provider_realtime_aux_ops.dart",
+        "lib/data/datasources/chat_remote_datasource.dart"
+      ],
+      "evidence": [
+        "Runtime decisions rely on direct `DateTime.now()` reads.",
+        "Retry/reconnect logic uses inline `Future.delayed` and `Timer(...)` scheduling."
+      ],
+      "suggestion": "Introduce injectable `Clock` and scheduler/delay abstractions for provider and datasource async policies, then drive timing behavior via controlled fakes in tests.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "provider_mixes_transport_cache_and_ui_policies",
+      "summary": "Provider extensions blend transport parsing, persistence, and UI state logic",
+      "related_files": [
+        "lib/presentation/providers/chat_provider/chat_provider_event_reducer_ops.dart",
+        "lib/presentation/providers/chat_provider/chat_provider_cache_persistence_ops.dart",
+        "lib/presentation/providers/chat_provider.dart"
+      ],
+      "evidence": [
+        "Event reducer parses low-level map payloads while mutating domain/session state and triggering feedback flows.",
+        "Cache extension encodes/decodes JSON DTOs and performs restoration decisions within presentation layer."
+      ],
+      "suggestion": "Extract event translation and cache codec concerns into dedicated collaborators; keep provider focused on state orchestration and user-intent commands.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    }
+  ],
+  "review_quality": {
+    "batch_count": 6,
+    "dimension_coverage": 0.333,
+    "evidence_density": 1.347,
+    "high_score_without_risk": 0,
+    "finding_pressure": 55.778,
+    "dimensions_with_findings": 5
+  }
+}

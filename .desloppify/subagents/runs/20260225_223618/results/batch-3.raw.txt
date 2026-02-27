@@ -1,0 +1,56 @@
+{
+  "batch": "Design Coherence — Mechanical Concern Signals",
+  "batch_index": 3,
+  "assessments": {
+    "design_coherence": 78.6
+  },
+  "dimension_notes": {
+    "design_coherence": {
+      "evidence": [
+        "`_initializeProvidersInternal` in `lib/presentation/providers/chat_provider/chat_provider_core.dart` combines provider fetch, failure-state transitions, remote/local selection merge logic, fallback heuristics, and persistence writes in one flow, indicating multiple responsibilities in a single unit.",
+        "`_buildSessionPanel` in `lib/presentation/pages/chat_page/chat_page_scaffold.dart` mutates `_sessionSearchController` during build, and `_buildDesktopFilePane` in `lib/presentation/pages/chat_page/chat_page_file_explorer_controller.dart` triggers reconciliation side effects during widget composition, blending render and orchestration concerns."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "findings": [
+    {
+      "dimension": "design_coherence",
+      "identifier": "provider_init_orchestration_blob",
+      "summary": "Provider initialization flow mixes fetching, selection policy, and persistence in one method",
+      "related_files": [
+        "lib/presentation/providers/chat_provider/chat_provider_core.dart",
+        "lib/presentation/providers/chat_provider/chat_provider_context_state_ops.dart",
+        "lib/presentation/providers/chat_provider/chat_provider_message_state_ops.dart"
+      ],
+      "evidence": [
+        "`_initializeProvidersInternal` performs network retrieval, remote/local override merge, provider/model/agent selection fallback chain, and persistence updates in a single long control path.",
+        "Selection and persistence logic overlap with dedicated state-op extensions, but orchestration remains concentrated in core, increasing change blast radius for model-selection behavior."
+      ],
+      "suggestion": "Split `_initializeProvidersInternal` into focused steps with explicit boundaries: `loadProviders()`, `resolveSelectionPolicy()`, and `persistSelectionState()`. Move selection policy into a dedicated coordinator/service that returns a typed selection result, then keep core method as orchestration only.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "build_phase_state_side_effects",
+      "summary": "Widget build paths include state mutation/reconciliation side effects",
+      "related_files": [
+        "lib/presentation/pages/chat_page/chat_page_scaffold.dart",
+        "lib/presentation/pages/chat_page/chat_page_file_explorer_controller.dart",
+        "lib/presentation/pages/chat_page/chat_page_file_runtime.dart"
+      ],
+      "evidence": [
+        "`_buildSessionPanel` writes `_sessionSearchController.value` when provider query differs, introducing imperative sync inside render composition.",
+        "`_buildDesktopFilePane` calls `_reconcileFileContextWithSessionDiff`, which mutates cached directory state and schedules async reload work, coupling rendering with runtime reconciliation."
+      ],
+      "suggestion": "Move controller synchronization and diff reconciliation into lifecycle/effect-style handlers (provider listeners, post-frame effects guarded by explicit change detection) so build methods are pure view composition and side effects execute in dedicated runtime hooks.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    }
+  ]
+}

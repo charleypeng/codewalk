@@ -159,6 +159,10 @@ extension _ChatPageLifecycle on _ChatPageState {
     AppLogger.debug(
       'Auto-following latest messages after $reason for session=${chatProvider.currentSession!.id}',
     );
-    _scrollToBottom(force: true);
+    if (chatProvider.isCurrentSessionActivelyResponding) {
+      _scrollToBottom(force: true);
+      return;
+    }
+    _revealLatestMessageStartAfterReturn(chatProvider, reason: reason);
   }
 }

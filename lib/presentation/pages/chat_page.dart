@@ -129,6 +129,8 @@ class _ChatPageState extends State<ChatPage>
   );
   static const double _finalAssistantRevealAlignment = 0.2;
   static const int _maxFinalAssistantRevealAttempts = 8;
+  static const double _returnLatestRevealAlignment = 0.0;
+  static const int _maxReturnLatestRevealAttempts = 8;
 
   final ScrollController _scrollController = ScrollController();
   final FocusNode _inputFocusNode = FocusNode(debugLabel: 'chat_input');
@@ -1008,8 +1010,7 @@ class _CollapsedHistoryGroup {
   final String compactionId;
   final String compactionLabel;
 
-  String get id =>
-      '${compactionId}_${startMessageId}_${endMessageId}_${createdAt.millisecondsSinceEpoch}';
+  String get id => '${compactionId}_${startMessageId}_${endMessageId}';
 }
 
 class _TimelineCollapsedAssistantWorkEntry extends _TimelineEntry {
@@ -1040,8 +1041,7 @@ class _CollapsedAssistantWorkGroup {
   final int messageCount;
   final DateTime createdAt;
 
-  String get id =>
-      '${finalMessageId}_${startMessageId}_${endMessageId}_${createdAt.millisecondsSinceEpoch}';
+  String get id => '${finalMessageId}_${startMessageId}_${endMessageId}';
 }
 
 class _TimelineRetryIndicatorEntry extends _TimelineEntry {

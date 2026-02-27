@@ -220,6 +220,12 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 8,
                           ),
+                          onTap: () => unawaited(
+                            _reopenProjectFromSelector(
+                              dialogContext,
+                              project.id,
+                            ),
+                          ),
                           leading: const Icon(Symbols.folder_off, size: 20),
                           title: Text(
                             displayName,
@@ -229,26 +235,12 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                             _directoryLabel(project.path),
                             overflow: TextOverflow.ellipsis,
                           ),
-                          trailing: Wrap(
-                            spacing: 2,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Symbols.undo_rounded),
-                                tooltip: 'Reopen $displayName',
-                                onPressed: () => unawaited(
-                                  _reopenProjectContext(project.id),
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Symbols.delete_outline_rounded,
-                                ),
-                                tooltip: 'Archive closed project $displayName',
-                                onPressed: () => unawaited(
-                                  _archiveClosedProjectContext(project.id),
-                                ),
-                              ),
-                            ],
+                          trailing: IconButton(
+                            icon: const Icon(Symbols.delete_outline_rounded),
+                            tooltip: 'Archive closed project $displayName',
+                            onPressed: () => unawaited(
+                              _archiveClosedProjectContext(project.id),
+                            ),
                           ),
                         );
                       },

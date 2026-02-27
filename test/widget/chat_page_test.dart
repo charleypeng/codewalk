@@ -45,6 +45,7 @@ import 'package:codewalk/presentation/providers/project_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:codewalk/presentation/utils/session_title_formatter.dart';
+import 'package:codewalk/presentation/widgets/chat_skeleton_shimmer.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5081,6 +5082,184 @@ void main() {
     },
   );
 
+  testWidgets('keeps expanded assistant work group after SWR revalidation', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    List<ChatMessage> buildMessages(int offsetMs) {
+      DateTime at(int value) =>
+          DateTime.fromMillisecondsSinceEpoch(value + offsetMs);
+
+      return <ChatMessage>[
+        UserMessage(
+          id: 'msg_work_revalidate_user',
+          sessionId: 'ses_assistant_work_revalidate',
+          time: at(1100),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_work_revalidate_user',
+              messageId: 'msg_work_revalidate_user',
+              sessionId: 'ses_assistant_work_revalidate',
+              text: 'Build this for me',
+            ),
+          ],
+        ),
+        AssistantMessage(
+          id: 'msg_work_revalidate_step_1',
+          sessionId: 'ses_assistant_work_revalidate',
+          time: at(1200),
+          completedTime: at(1210),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_work_revalidate_step_1',
+              messageId: 'msg_work_revalidate_step_1',
+              sessionId: 'ses_assistant_work_revalidate',
+              text: 'Working step 1',
+            ),
+          ],
+        ),
+        AssistantMessage(
+          id: 'msg_work_revalidate_step_2',
+          sessionId: 'ses_assistant_work_revalidate',
+          time: at(1300),
+          completedTime: at(1310),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_work_revalidate_step_2',
+              messageId: 'msg_work_revalidate_step_2',
+              sessionId: 'ses_assistant_work_revalidate',
+              text: 'Working step 2',
+            ),
+          ],
+        ),
+        AssistantMessage(
+          id: 'msg_work_revalidate_final',
+          sessionId: 'ses_assistant_work_revalidate',
+          time: at(1400),
+          completedTime: at(1410),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_work_revalidate_final',
+              messageId: 'msg_work_revalidate_final',
+              sessionId: 'ses_assistant_work_revalidate',
+              text: 'Final assistant response',
+            ),
+          ],
+        ),
+      ];
+    }
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_assistant_work_revalidate',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Assistant Work Revalidate',
+        ),
+      ],
+    );
+
+    repository.messagesBySession['ses_assistant_work_revalidate'] =
+        buildMessages(0);
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('timeline_collapsed_assistant_work_toggle'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Working step 1'), findsOneWidget);
+    expect(find.text('Working step 2'), findsOneWidget);
+
+    repository.messagesBySession['ses_assistant_work_revalidate'] =
+        buildMessages(5000);
+
+    await provider.loadMessages(
+      'ses_assistant_work_revalidate',
+      preserveVisibleState: true,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Working step 1'), findsOneWidget);
+    expect(find.text('Working step 2'), findsOneWidget);
+    expect(
+      find.byKey(
+        const ValueKey<String>('timeline_collapsed_assistant_work_header'),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets(
+    'keeps empty session placeholder visible during background refresh',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = _ConfigurableDelayFakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_empty_refresh',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Empty Refresh Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_empty_refresh'] = <ChatMessage>[];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Hello! I am your AI assistant'), findsOneWidget);
+
+      repository.getMessagesGate = Completer<void>();
+      final refreshFuture = provider.loadSessions();
+      await tester.pump();
+
+      expect(find.text('Hello! I am your AI assistant'), findsOneWidget);
+      expect(find.byType(ChatSkeletonShimmer), findsNothing);
+
+      repository.getMessagesGate?.complete();
+      await refreshFuture;
+      await tester.pumpAndSettle();
+
+      expect(find.text('Hello! I am your AI assistant'), findsOneWidget);
+      expect(find.byType(ChatSkeletonShimmer), findsNothing);
+    },
+  );
+
   testWidgets('merges consecutive assistant tool-only messages into one bubble', (
     WidgetTester tester,
   ) async {
@@ -5502,6 +5681,173 @@ void main() {
 
     expect(find.text('final after resume sync'), findsOneWidget);
     expect(find.text('draft before background'), findsNothing);
+  });
+
+  testWidgets('reveals latest message start when app resumes', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_resume_reveal',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Resume Reveal Session',
+        ),
+      ],
+    );
+    final longLatestText = List<String>.filled(
+      120,
+      'latest message should start at top after resume',
+    ).join(' ');
+    repository.messagesBySession['ses_resume_reveal'] = <ChatMessage>[
+      ..._threadMessages('ses_resume_reveal', 28),
+      AssistantMessage(
+        id: 'msg_resume_reveal_latest',
+        sessionId: 'ses_resume_reveal',
+        time: DateTime.fromMillisecondsSinceEpoch(35000),
+        completedTime: DateTime.fromMillisecondsSinceEpoch(35500),
+        parts: <MessagePart>[
+          TextPart(
+            id: 'part_resume_reveal_latest',
+            messageId: 'msg_resume_reveal_latest',
+            sessionId: 'ses_resume_reveal',
+            text: longLatestText,
+          ),
+        ],
+      ),
+    ];
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await tester.pumpAndSettle();
+
+    final listFinder = find.byKey(const ValueKey<String>('chat_message_list'));
+    final scrollableFinder = find.descendant(
+      of: listFinder,
+      matching: find.byType(Scrollable),
+    );
+    final scrollableBefore = tester.state<ScrollableState>(scrollableFinder);
+    expect(
+      scrollableBefore.position.maxScrollExtent -
+          scrollableBefore.position.pixels,
+      lessThanOrEqualTo(1),
+    );
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    final scrollableAfter = tester.state<ScrollableState>(scrollableFinder);
+    expect(
+      scrollableAfter.position.maxScrollExtent -
+          scrollableAfter.position.pixels,
+      greaterThan(120),
+    );
+    expect(find.byTooltip('Go to latest message'), findsOneWidget);
+  });
+
+  testWidgets('keeps latest follow when app resumes during active response', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_resume_streaming',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Resume Streaming Session',
+        ),
+      ],
+    );
+    repository.messagesBySession['ses_resume_streaming'] = _threadMessages(
+      'ses_resume_streaming',
+      40,
+    );
+
+    final streamController = StreamController<Either<Failure, ChatMessage>>();
+    addTearDown(() async {
+      if (!streamController.isClosed) {
+        await streamController.close();
+      }
+    });
+    repository.sendMessageHandler = (_, _, _, _) => streamController.stream;
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await provider.initializeProviders();
+    await tester.pumpAndSettle();
+
+    final listFinder = find.byKey(const ValueKey<String>('chat_message_list'));
+    final scrollableFinder = find.descendant(
+      of: listFinder,
+      matching: find.byType(Scrollable),
+    );
+
+    await provider.sendMessage('streaming while app resumes');
+    await tester.pump();
+    streamController.add(
+      Right(
+        AssistantMessage(
+          id: 'msg_resume_streaming_partial',
+          sessionId: 'ses_resume_streaming',
+          time: DateTime.fromMillisecondsSinceEpoch(60000),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_resume_streaming_partial',
+              messageId: 'msg_resume_streaming_partial',
+              sessionId: 'ses_resume_streaming',
+              text: 'partial assistant response while streaming',
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    final scrollableAfter = tester.state<ScrollableState>(scrollableFinder);
+    expect(
+      scrollableAfter.position.maxScrollExtent -
+          scrollableAfter.position.pixels,
+      lessThanOrEqualTo(1),
+    );
+    expect(find.byTooltip('Go to latest message'), findsNothing);
   });
 
   testWidgets(

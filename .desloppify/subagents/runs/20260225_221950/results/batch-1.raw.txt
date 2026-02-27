@@ -1,0 +1,77 @@
+{
+  "batch": "Architecture & Coupling",
+  "batch_index": 1,
+  "assessments": {
+    "cross_module_architecture": 68.4
+  },
+  "dimension_notes": {
+    "cross_module_architecture": {
+      "evidence": [
+        "lib/presentation/providers/app_provider.dart concentrates multiple subsystem responsibilities in one provider: server profile CRUD/persistence, network client configuration, local runtime lifecycle, diagnostics, health polling, and UI notification state transitions.",
+        "lib/presentation/providers/settings_provider.dart combines UI-facing settings state with infrastructure concerns (Dio networking, package info/update checks, file system/open-file install flow, and server config synchronization), creating wide dependency fan-in at the presentation boundary.",
+        "Platform-specific file action flows in lib/presentation/services/file_part_action_service_io.dart and lib/presentation/services/file_part_action_service_web.dart replicate top-level decision orchestration (URL scheme routing and fallback behavior), increasing cross-platform drift risk."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change",
+      "confidence": "high"
+    }
+  },
+  "findings": [
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "app_provider_multisubsystem_god_module",
+      "summary": "AppProvider is a coupling hotspot across runtime, networking, persistence, and UI state.",
+      "related_files": [
+        "lib/presentation/providers/app_provider.dart",
+        "lib/domain/repositories/chat_repository.dart",
+        "lib/core/logging/app_logger.dart"
+      ],
+      "evidence": [
+        "AppProvider imports and coordinates infrastructure services directly (runtime process control, health probes via Dio, local persistence) while also exposing UI state and view-facing actions.",
+        "Methods for server profile lifecycle, runtime diagnostics/start-stop, and health polling coexist in one class, so unrelated changes touch the same module.",
+        "Error/reporting behavior is also embedded through AppLogger calls, further centralizing cross-cutting concerns in a presentation provider."
+      ],
+      "suggestion": "Split AppProvider into orchestrated collaborators: e.g., ServerProfileManager, LocalServerRuntimeController, and ServerHealthMonitor; keep AppProvider as thin composition/state adapter. Move runtime/network orchestration behind domain-facing service interfaces and inject them.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "settings_provider_infrastructure_leakage",
+      "summary": "SettingsProvider crosses presentation, update/install, and remote-config boundaries directly.",
+      "related_files": [
+        "lib/presentation/providers/settings_provider.dart",
+        "lib/domain/entities/experience_settings.dart",
+        "lib/core/constants/app_constants.dart"
+      ],
+      "evidence": [
+        "SettingsProvider imports infrastructure APIs (Dio, dart:io, path_provider, open_filex, package_info_plus) and performs update check/download/install logic in the same class that manages UI settings toggles.",
+        "The provider also handles server-backed notification syncing and persistence concerns directly, combining distinct module boundaries in one type.",
+        "ExperienceSettings is a broad entity and the provider exposes/updates many orthogonal concerns through one mutable surface, increasing transitive coupling."
+      ],
+      "suggestion": "Extract UpdateManager and NotificationConfigSync services/use-cases from SettingsProvider, leaving the provider focused on presentation state mapping and user intents. Keep platform/file-install logic in dedicated infrastructure services with narrow interfaces.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change"
+    },
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "platform_file_action_orchestration_duplication",
+      "summary": "IO and Web file action services duplicate orchestration logic, inviting boundary drift.",
+      "related_files": [
+        "lib/presentation/services/file_part_action_service_io.dart",
+        "lib/presentation/services/file_part_action_service_web.dart"
+      ],
+      "evidence": [
+        "Both services implement similar top-level `handleFilePartAction` flow (parse URL, branch by scheme, fallback handling), but each keeps its own control path and messages.",
+        "Shared helpers exist, yet decision sequencing remains duplicated across platform modules, so behavior can diverge over time.",
+        "Cross-platform parity for attachment handling is enforced by convention instead of a single orchestration contract."
+      ],
+      "suggestion": "Move scheme-routing orchestration into one shared policy layer that returns platform intents (open-link/save-inline/open-local/unsupported), and keep io/web files as thin executors of platform-specific side effects only.",
+      "confidence": "medium",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    }
+  ]
+}

@@ -102,6 +102,7 @@
 - **When** newer server messages are applied
 - **Then** the timeline updates in place without clearing to an empty skeleton first
 - **Then** collapsed history/work groups keep their per-session expansion state during switch and revalidation
+- **Then** an already-selected empty session keeps its empty placeholder visible during background refresh (no loading skeleton blink)
 
 ### Older history loads on demand at top reach
 
@@ -161,6 +162,7 @@
 - **Then** tool call groups collapse only after the final assistant message is rendered and visible
 - **Then** collapse never happens while the assistant is still streaming or while the final response is not yet visible
 - **Then** the user can manually re-expand any collapsed work group by tapping its Details toggle
+- **Then** once a completed turn has settled, transient realtime status pulses do not auto re-open or rapidly re-collapse that same work group
 
 ### UI remains fluid during streaming
 
@@ -425,6 +427,16 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **When** the user presses `mod+m`
 - **Then** the app cycles through favorite models first, then recent models, applying the selection immediately
 
+### Alt+Tab-style shortcut cycling (model, agent, variant)
+
+- **Given** the user is using keyboard cycling shortcuts (`mod+m`, `mod+j`, `mod+shift+j`, `mod+t`)
+- **When** the user triggers one of these shortcuts
+- **Then** the first trigger behaves like Alt+Tab and switches to the previously used item in that domain (model, agent, or variant)
+- **Then** if the user triggers again within 3 seconds, cycling continues through a burst snapshot in recency order
+- **Then** the snapshot prioritizes the two most recent items first, but is **not limited to two** — third and later candidates are reachable with repeated quick presses
+- **Then** if the user waits more than 3 seconds between triggers, the burst session resets and the next trigger starts again from the previous-item hop
+- **Then** shortcut keybindings themselves do not change; only cycling behavior changes
+
 ### Agent selection
 
 - **Given** the connected server provides agents (specialized AI configurations)
@@ -548,6 +560,10 @@ If the assistant is streaming a response and the user switches to a different se
 ### Never collapse work groups during streaming
 
 Tool call work groups must only collapse after the assistant has fully completed its response **and** the final response is visible. Premature collapse causes visual flicker, aggressive auto-scroll, and hidden active work.
+
+### Never flicker settled work groups on sync jitter
+
+After a tool/work group settles for a completed turn, transient realtime sync/status jitter must not cause rapid open/close loops or repeated remount flashes.
 
 ### Never show stale data after resume
 

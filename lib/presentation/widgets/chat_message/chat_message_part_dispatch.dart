@@ -233,13 +233,6 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
       setState(() {
         _expanded = false;
       });
-      return;
-    }
-
-    if (oldWidget.autoCollapsed && !widget.autoCollapsed && !_expanded) {
-      setState(() {
-        _expanded = true;
-      });
     }
   }
 
@@ -429,8 +422,7 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ...widget.parts
-                            .map<Widget>(widget.partBuilder),
+                        ...widget.parts.map<Widget>(widget.partBuilder),
                         const SizedBox(height: 10),
                         Align(
                           alignment: Alignment.centerRight,

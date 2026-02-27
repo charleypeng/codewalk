@@ -1,0 +1,163 @@
+{
+  "batch": "Full Codebase Sweep",
+  "batch_index": 6,
+  "assessments": {
+    "cross_module_architecture": 72.0,
+    "error_consistency": 68.0,
+    "abstraction_fitness": 70.0,
+    "test_strategy": 79.0,
+    "design_coherence": 74.0
+  },
+  "dimension_notes": {
+    "cross_module_architecture": {
+      "evidence": [
+        "Presentation-layer provider imports data-layer models directly (`chat_provider.dart` imports `chat_message_model.dart`, `chat_session_model.dart`, `chat_realtime_model.dart`).",
+        "Provider extensions parse and serialize data DTOs in presentation (`chat_provider_cache_persistence_ops.dart` uses `ChatSessionModel.fromJson/fromDomain`, `ChatMessageModel.fromJson/fromDomain`).",
+        "Realtime event reducer in presentation reconstructs domain state via data models (`chat_provider_event_reducer_ops.dart` uses `ChatSessionModel.fromJson`, `SessionStatusModel.fromJson`, `MessagePartModel.fromJson`)."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change",
+      "confidence": "high"
+    },
+    "error_consistency": {
+      "evidence": [
+        "`chat_remote_datasource.dart` repeatedly collapses diverse Dio failures into generic `ServerException(...)`, often in broad catch blocks.",
+        "`chat_repository_impl.dart` maps custom datasource exceptions (`ServerException`, `NetworkException`, `ValidationException`) to failures.",
+        "`app_repository_impl.dart` and `project_repository_impl.dart` use a different error path (`DioExceptionHandler`), creating parallel and inconsistent translation strategies."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change",
+      "confidence": "high"
+    },
+    "abstraction_fitness": {
+      "evidence": [
+        "`ChatProvider` constructor takes a very wide dependency bag (many use cases/services), increasing orchestration burden and coupling.",
+        "Several use case classes are thin pass-through wrappers over repository calls with minimal policy (`get_chat_sessions.dart`, `get_chat_messages.dart`, `get_chat_message.dart`).",
+        "State and behavior remain concentrated in a very large provider (`chat_provider.dart` + part extensions), so added abstraction layers do not proportionally reduce complexity."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "medium",
+      "sub_axes": {
+        "abstraction_leverage": 66.0,
+        "indirection_cost": 72.0,
+        "interface_honesty": 74.0
+      }
+    },
+    "test_strategy": {
+      "evidence": [
+        "Core runtime logic depends on direct wall-clock calls (`DateTime.now()`) across provider operations (`chat_provider.dart` and provider part files).",
+        "Asynchronous behavior uses inline delays and timers (`chat_remote_datasource.dart` uses `Future.delayed`; `chat_provider_realtime_aux_ops.dart` uses `Timer(...)`).",
+        "These time/scheduling dependencies are not consistently abstracted behind injectable clock/scheduler interfaces, which raises determinism and flake risk for cross-module behavior tests."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "medium"
+    },
+    "design_coherence": {
+      "evidence": [
+        "Provider extensions mix multiple responsibilities: cache serialization, event protocol parsing, state mutation, and UI-facing notifications in the same feature surface.",
+        "`chat_provider_event_reducer_ops.dart` contains large event-type branching with parsing, merge policy, status updates, and side effects.",
+        "`chat_provider_cache_persistence_ops.dart` performs persistence encoding/decoding and state restoration inside presentation orchestration rather than dedicated mapper/service boundaries."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "confidence": "high"
+    }
+  },
+  "findings": [
+    {
+      "dimension": "cross_module_architecture",
+      "identifier": "presentation_depends_on_data_models",
+      "summary": "Presentation provider depends on data DTOs, bypassing clean layer boundaries",
+      "related_files": [
+        "lib/presentation/providers/chat_provider.dart",
+        "lib/presentation/providers/chat_provider/chat_provider_cache_persistence_ops.dart",
+        "lib/presentation/providers/chat_provider/chat_provider_event_reducer_ops.dart"
+      ],
+      "evidence": [
+        "Presentation imports `chat_*_model.dart` directly.",
+        "Provider code serializes/deserializes via `ChatSessionModel`/`ChatMessageModel` and event DTO models."
+      ],
+      "suggestion": "Move JSON/DTO translation behind a data-facing mapper or cache/event adapter service; keep ChatProvider consuming domain entities and typed domain events only.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change"
+    },
+    {
+      "dimension": "error_consistency",
+      "identifier": "dual_error_translation_stacks",
+      "summary": "Error handling uses conflicting translation strategies across repositories",
+      "related_files": [
+        "lib/data/datasources/chat_remote_datasource.dart",
+        "lib/data/repositories/chat_repository_impl.dart",
+        "lib/data/repositories/app_repository_impl.dart",
+        "lib/data/repositories/project_repository_impl.dart",
+        "lib/data/repositories/dio_exception_handler.dart"
+      ],
+      "evidence": [
+        "Chat datasource throws generic `ServerException` in many paths after `DioException`.",
+        "Chat repository maps custom exceptions, while app/project repositories map raw `DioException` via `DioExceptionHandler`."
+      ],
+      "suggestion": "Adopt one shared error-mapping contract (preferably at datasource boundary) that preserves status/context and is reused by all repositories.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change"
+    },
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "high_indirection_low_policy_usecases",
+      "summary": "Many pass-through use cases add indirection without adding policy",
+      "related_files": [
+        "lib/presentation/providers/chat_provider.dart",
+        "lib/domain/usecases/get_chat_sessions.dart",
+        "lib/domain/usecases/get_chat_messages.dart",
+        "lib/domain/usecases/get_chat_message.dart"
+      ],
+      "evidence": [
+        "Use cases frequently forward repository calls with parameter mapping only.",
+        "ChatProvider still coordinates extensive behavior directly despite broad use case surface."
+      ],
+      "suggestion": "Consolidate related use cases into cohesive application services (session/message/realtime facets) and reduce ChatProvider constructor surface to policy-bearing interfaces.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "test_strategy",
+      "identifier": "non_injectable_time_and_scheduling",
+      "summary": "Direct clock and delay usage weakens deterministic testing of async flows",
+      "related_files": [
+        "lib/presentation/providers/chat_provider.dart",
+        "lib/presentation/providers/chat_provider/chat_provider_realtime_aux_ops.dart",
+        "lib/data/datasources/chat_remote_datasource.dart"
+      ],
+      "evidence": [
+        "Runtime decisions rely on direct `DateTime.now()` reads.",
+        "Retry/reconnect logic uses inline `Future.delayed` and `Timer(...)` scheduling."
+      ],
+      "suggestion": "Introduce injectable `Clock` and scheduler/delay abstractions for provider and datasource async policies, then drive timing behavior via controlled fakes in tests.",
+      "confidence": "medium",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "provider_mixes_transport_cache_and_ui_policies",
+      "summary": "Provider extensions blend transport parsing, persistence, and UI state logic",
+      "related_files": [
+        "lib/presentation/providers/chat_provider/chat_provider_event_reducer_ops.dart",
+        "lib/presentation/providers/chat_provider/chat_provider_cache_persistence_ops.dart",
+        "lib/presentation/providers/chat_provider.dart"
+      ],
+      "evidence": [
+        "Event reducer parses low-level map payloads while mutating domain/session state and triggering feedback flows.",
+        "Cache extension encodes/decodes JSON DTOs and performs restoration decisions within presentation layer."
+      ],
+      "suggestion": "Extract event translation and cache codec concerns into dedicated collaborators; keep provider focused on state orchestration and user-intent commands.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor"
+    }
+  ]
+}

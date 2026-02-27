@@ -1,0 +1,75 @@
+{
+  "batch": "Design Coherence — Mechanical Concern Signals",
+  "batch_index": 4,
+  "assessments": {
+    "design_coherence": 66.8
+  },
+  "dimension_notes": {
+    "design_coherence": {
+      "evidence": [
+        "lib/presentation/pages/chat_page.dart centralizes many unrelated concerns in one state object (UI scaffolding, notification tap handling, background/foreground timers, file explorer caches, timeline compaction, keyboard shortcuts), while behavior is split across many `part` extensions that still mutate the same shared state.",
+        "lib/presentation/providers/chat_provider/chat_provider_core.dart::_initializeProvidersInternal combines provider fetch, remote-selection merge, model/provider prioritization heuristics, agent/variant resolution, and persistence writes in one long orchestration path.",
+        "lib/presentation/services/local_opencode_server_runtime_io.dart combines process lifecycle control, environment diagnostics, installation strategy orchestration, release download/extract, filesystem probing, and recommendation generation in a single concrete runtime class."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change",
+      "confidence": "high"
+    }
+  },
+  "findings": [
+    {
+      "dimension": "design_coherence",
+      "identifier": "chat_page_state_orchestrator_overload",
+      "summary": "ChatPage state owns too many responsibilities behind part-file splits",
+      "related_files": [
+        "lib/presentation/pages/chat_page.dart",
+        "lib/presentation/pages/chat_page/chat_page_file_runtime.dart",
+        "lib/presentation/pages/chat_page/chat_page_timeline_runtime.dart",
+        "lib/presentation/pages/chat_page/chat_page_model_selector_runtime.dart"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change",
+      "evidence": [
+        "The root state in chat_page.dart defines large cross-domain mutable state (scrolling, notifications, file context, composer status, compaction caches, keyboard flow) and many timers/controllers.",
+        "Runtime extensions in separate files still depend on and mutate the same monolithic private state, so decomposition is mostly physical-file split rather than ownership split."
+      ],
+      "suggestion": "Introduce dedicated controllers with explicit boundaries (for example TimelineController, FileExplorerController, ComposerStatusController, NotificationRoutingController) and have ChatPage compose them via a thin coordinator; move state and side effects out of `_ChatPageState` so each controller can be tested and evolved independently.",
+      "confidence": "high"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "provider_initialization_pipeline_mixes_policies_and_io",
+      "summary": "Provider init path mixes data loading, policy selection, and persistence side effects",
+      "related_files": [
+        "lib/presentation/providers/chat_provider/chat_provider_core.dart",
+        "lib/presentation/providers/chat_provider/chat_provider_event_reducer_ops.dart",
+        "lib/presentation/providers/chat_provider/chat_provider_realtime_aux_ops.dart"
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "multi_file_refactor",
+      "evidence": [
+        "_initializeProvidersInternal in chat_provider_core.dart performs multiple phases in one method: fetch providers, reconcile remote selection, choose provider/model by several fallback heuristics, resolve agent/variant, then persist selection state.",
+        "Adjacent provider extensions already handle realtime/event-reducer responsibilities, indicating ChatProvider has broad orchestration scope and weakly separated policy boundaries."
+      ],
+      "suggestion": "Split initialization into explicit pipeline stages with small units (`loadProviderSnapshot`, `resolveSelectionPolicy`, `applyRemoteOverrides`, `persistSelectionState`) and extract selection policy into a pure resolver object that returns a decision payload; keep side effects in a final apply step.",
+      "confidence": "high"
+    },
+    {
+      "dimension": "design_coherence",
+      "identifier": "local_runtime_service_has_god_class_shape",
+      "summary": "Local opencode runtime class bundles process control, install, and diagnostics",
+      "related_files": [
+        "lib/presentation/services/local_opencode_server_runtime_io.dart",
+        "lib/presentation/pages/settings/sections/servers_settings_section.dart"
+      ],
+      "impact_scope": "module",
+      "fix_scope": "architectural_change",
+      "evidence": [
+        "_IoLocalOpencodeServerRuntime contains startup/shutdown, environment probing, dependency checks, install method strategy, GitHub release discovery, archive download/extract, and recommendation text assembly.",
+        "ServersSettingsSection consumes this operational surface as one feature, but the implementation boundary couples operational policies with low-level process and file/network primitives."
+      ],
+      "suggestion": "Decompose into focused collaborators: `LocalServerProcessManager`, `LocalServerEnvironmentProbe`, `LocalServerInstaller`, and `LocalServerRecommendationPolicy`; keep `LocalOpencodeServerRuntime` as a facade that coordinates these components.",
+      "confidence": "medium"
+    }
+  ]
+}

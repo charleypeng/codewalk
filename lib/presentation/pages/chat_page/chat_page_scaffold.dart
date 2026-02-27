@@ -201,12 +201,17 @@ extension _ChatPageScaffold on _ChatPageState {
                       sessionAttentionFor: chatProvider.sessionAttentionFor,
                       isMobileLayout: isMobileLayout,
                       onSessionSelected: (session) async {
-                        // Close AFTER selectSession: during its awaits the
-                        // second tap's gesture events are fully processed
-                        // (including _handleDragCancel which may re-open the
-                        // drawer). Closing last ensures the drawer stays shut.
+                        if (closeOnSelect) {
+                          // Mobile drawer must react instantly even when
+                          // selectSession blocks on remote load.
+                          _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
+                          _startSessionSwitchFromList(
+                            session,
+                            closeOnSelect: closeOnSelect,
+                          );
+                          return;
+                        }
                         await _handleSessionSwitch(session);
-                        _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
                       },
                       onSessionDeleted: (session) async {
                         await chatProvider.deleteSession(session.id);
@@ -430,5 +435,26 @@ extension _ChatPageScaffold on _ChatPageState {
     } finally {
       _isSessionSwitchInFlight = false;
     }
+  }
+
+  void _startSessionSwitchFromList(
+    ChatSession session, {
+    required bool closeOnSelect,
+  }) {
+    unawaited(() async {
+      try {
+        await _handleSessionSwitch(session);
+      } catch (error, stackTrace) {
+        AppLogger.warn(
+          'Session switch failed from list',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      } finally {
+        // A rapid double-tap may trigger drag-cancel callbacks that try to
+        // re-open the drawer; close again after async switch settles.
+        _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
+      }
+    }());
   }
 }

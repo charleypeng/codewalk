@@ -1,0 +1,85 @@
+{
+  "batch": "Abstractions & Dependencies",
+  "batch_index": 2,
+  "assessments": {
+    "abstraction_fitness": 56.0
+  },
+  "dimension_notes": {
+    "abstraction_fitness": {
+      "evidence": [
+        "Chat page behavior is split across many part files but all extensions bind directly to `_ChatPageState` private state, indicating file-level split without boundary isolation (lib/presentation/pages/chat_page.dart:51-69, lib/presentation/pages/chat_page/chat_page_file_runtime.dart:3, lib/presentation/pages/chat_page/chat_page_workspace_controller.dart:3).",
+        "Cross-cutting orchestration remains interleaved in part extensions via direct `context.read<...>()`, timers, UI state flags, and async coordination in the same state surface (lib/presentation/pages/chat_page/chat_page_workspace_controller.dart:52-109, lib/presentation/pages/chat_page/chat_page_file_runtime.dart:57-120).",
+        "ChatProvider constructor injects a very wide dependency set and keeps broad mutable state in one class, while behavior is spread across extension parts that rely on hidden shared invariants (lib/presentation/providers/chat_provider.dart:54-70, 94-186, 188-210; lib/presentation/providers/chat_provider/chat_provider_core.dart:4-57; lib/presentation/providers/chat_provider/chat_provider_message_state_ops.dart:73-110).",
+        "Network abstraction is inconsistent: `DioClient` exposes mostly pass-through CRUD wrappers while other assigned modules create ad-hoc `Dio` instances and duplicate auth/baseUrl behavior (lib/core/network/dio_client.dart:187-258, lib/presentation/providers/app_provider.dart:903-942, lib/presentation/services/android_background_alert_worker.dart:357-372)."
+      ],
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change",
+      "confidence": "high",
+      "sub_axes": {
+        "abstraction_leverage": 52.0,
+        "indirection_cost": 41.0,
+        "interface_honesty": 55.0
+      }
+    }
+  },
+  "findings": [
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "abstraction_chat_page_partfile_state_coupling",
+      "summary": "ChatPage part-file decomposition adds navigation indirection but keeps a single implicit state contract, so abstractions are organizational rather than behavioral.",
+      "related_files": [
+        "lib/presentation/pages/chat_page.dart",
+        "lib/presentation/pages/chat_page/chat_page_file_runtime.dart",
+        "lib/presentation/pages/chat_page/chat_page_workspace_controller.dart",
+        "lib/presentation/pages/chat_page/chat_page_timeline_builder.dart"
+      ],
+      "evidence": [
+        "Main file declares many `part` segments under one `_ChatPageState` (chat_page.dart:51-69).",
+        "Part extensions directly mutate shared private fields and lifecycle flags (`_projectScopeTransitionTask`, `_fileDiffSignaturesByContext`, `_isProjectScopeTransitioning`) rather than consuming a narrow interface (chat_page_workspace_controller.dart:4-44, chat_page_file_runtime.dart:57-75).",
+        "Runtime orchestration and UI details coexist in same state surface through direct provider reads and file-pane logic (chat_page_workspace_controller.dart:52-109, chat_page_file_runtime.dart:24-55)."
+      ],
+      "suggestion": "Extract explicit controller objects (workspace transition controller, file runtime controller) with typed public contracts and move state ownership into those controllers so part files no longer depend on the full `_ChatPageState` surface.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change"
+    },
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "abstraction_chat_provider_hidden_invariants",
+      "summary": "ChatProvider combines broad orchestration, policy, and mutable state with extension-based implementation, creating hidden inter-file invariants and high indirection cost.",
+      "related_files": [
+        "lib/presentation/providers/chat_provider.dart",
+        "lib/presentation/providers/chat_provider/chat_provider_core.dart",
+        "lib/presentation/providers/chat_provider/chat_provider_message_state_ops.dart"
+      ],
+      "evidence": [
+        "Constructor accepts a large dependency surface (many use cases plus providers/services), indicating a widened abstraction boundary (chat_provider.dart:94-186).",
+        "Core selection/bootstrap logic mutates many shared fields (`_providers`, `_defaultModels`, `_selectedProviderId`, `_selectedModelId`) and persistence paths in one flow (chat_provider_core.dart:21-177).",
+        "Message-state operations require direct knowledge of provider internals (`_messages`, `_messagesVersion`, `_notifyListeners`, `_scheduleScrollToBottom`), reinforcing hidden coupling between parts (chat_provider_message_state_ops.dart:73-110)."
+      ],
+      "suggestion": "Split ChatProvider into cohesive services (selection policy, message state reducer, sync coordinator) behind explicit interfaces, with a thin facade provider delegating to them.",
+      "confidence": "high",
+      "impact_scope": "subsystem",
+      "fix_scope": "architectural_change"
+    },
+    {
+      "dimension": "abstraction_fitness",
+      "identifier": "abstraction_network_wrapper_leakage",
+      "summary": "The `DioClient` wrapper provides limited leverage because call sites bypass it with ad-hoc `Dio` creation, duplicating transport concerns and weakening interface honesty.",
+      "related_files": [
+        "lib/core/network/dio_client.dart",
+        "lib/presentation/providers/app_provider.dart",
+        "lib/presentation/services/android_background_alert_worker.dart"
+      ],
+      "evidence": [
+        "`DioClient` methods are mostly thin forwarding wrappers for HTTP verbs (`get/post/put/patch/delete`) (dio_client.dart:187-258).",
+        "AppProvider builds a separate `Dio` for health checks and manually applies auth headers (app_provider.dart:903-922).",
+        "Android background worker also builds its own `Dio` with separate headers/timeouts (android_background_alert_worker.dart:357-372)."
+      ],
+      "suggestion": "Either promote `DioClient` to a real transport policy abstraction (timeouts/auth/retry/health endpoint helpers) and migrate call sites, or remove pass-through methods and standardize explicit raw-Dio usage to reduce pseudo-abstraction.",
+      "confidence": "high",
+      "impact_scope": "module",
+      "fix_scope": "multi_file_refactor"
+    }
+  ]
+}

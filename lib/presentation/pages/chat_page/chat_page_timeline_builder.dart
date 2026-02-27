@@ -350,8 +350,13 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
 
   Widget _buildMessageList(ChatProvider chatProvider) {
     final settingsProvider = context.watch<SettingsProvider>();
+    final activeSessionId = chatProvider.currentSession?.id;
+    final isInitialSessionLoadPending =
+        activeSessionId != null &&
+        _pendingInitialScrollSessionId == activeSessionId;
     if (chatProvider.state == ChatState.loading &&
-        chatProvider.messages.isEmpty) {
+        chatProvider.messages.isEmpty &&
+        (chatProvider.currentSession == null || isInitialSessionLoadPending)) {
       return const ChatSkeletonShimmer();
     }
 
@@ -459,6 +464,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     );
     final finalAssistantRevealMessageId =
         _resolveLatestSuccessfulAssistantMessageId(chatProvider.messages);
+    final latestTimelineMessageId = chatProvider.messages.last.id;
     _pruneMessageRevealAnchorKeys(chatProvider.messages);
 
     // Determine which entries are new (for entrance animation.
@@ -512,7 +518,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                       onBackgroundLongPressEnd: () =>
                           _handleMessageBackgroundLongPressEnd(message),
                     );
-                    if (finalAssistantRevealMessageId == message.id) {
+                    if (finalAssistantRevealMessageId == message.id ||
+                        latestTimelineMessageId == message.id) {
                       messageWidget = KeyedSubtree(
                         key: _messageRevealAnchorKey(message.id),
                         child: messageWidget,
