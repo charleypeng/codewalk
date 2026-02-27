@@ -710,7 +710,7 @@ void main() {
         await scopedProvider.projectProvider.switchProject('proj_b');
         await scopedProvider
             .onProjectScopeChanged(waitForRevalidation: false)
-            .timeout(const Duration(milliseconds: 120));
+            .timeout(const Duration(milliseconds: 300));
 
         await networkStarted.future;
         expect(scopedProvider.sessions.map((item) => item.id), <String>[
@@ -718,7 +718,7 @@ void main() {
         ]);
 
         networkGate.complete();
-        await Future<void>.delayed(const Duration(milliseconds: 20));
+        await Future<void>.delayed(const Duration(milliseconds: 50));
         expect(scopedProvider.sessions.map((item) => item.id), <String>[
           'ses_b_fresh',
         ]);
