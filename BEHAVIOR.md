@@ -98,6 +98,14 @@
 - **Then** cached messages are rendered immediately without waiting for a full network reload
 - **Then** the app revalidates the session in background (SWR) and merges newer server state when available
 
+### Project switching is cache-first and non-blocking
+
+- **Given** the user switches project/directory context and that context has cached sessions
+- **When** the switch is triggered from the project context picker (open/reopen/close/switch)
+- **Then** the new context renders immediately from cached scope data without waiting for network revalidation
+- **Then** session list revalidation runs in background and refreshes to server state when the response arrives
+- **Then** if background revalidation fails, the cached visible state remains stable (no forced blank/loading fallback)
+
 ### Long-session revalidation avoids forced viewport jumps
 
 - **Given** a cached session is visible and background revalidation finishes
@@ -554,6 +562,10 @@ When a connection drops and reconnects (especially on mobile background/resume),
 ### Never corrupt state on rapid actions
 
 If the user taps rapidly (double-tap on sessions, fast project switching), the app processes one transition at a time. Concurrent transitions must never corrupt state or cause navigation errors.
+
+### Never block project context switches on remote refresh
+
+Switching project/directory context must complete from local scope snapshots when available. Server revalidation may run after the transition, but it must not keep the UI stuck in a transition/loading state.
 
 ### Never cancel responses on session switch
 

@@ -89,10 +89,10 @@ lib/presentation/services/android_foreground_monitor_service.dart # Android fore
 lib/presentation/services/android_background_alert_worker.dart # WorkManager-based background polling; fast probe (2m) for active sessions, tail probe (5m) after completion
 lib/presentation/services/android_background_alert_logic.dart # Pure logic for tail probe scheduling, alert planning, and snapshot state
 lib/presentation/services/android_battery_optimization_service.dart # Android battery optimization query/exemption request via MethodChannel
-lib/presentation/providers/chat_provider.dart     # Chat state/realtime/session facade; cache-first per-session SWR restore, in-memory LRU message cache, persisted per-session snapshots, microtask coalescing, event dedup buffer, render gate, favorite models; includes `loadOlderMessages()` scaffold and keeps loadSessionInsights fire-and-forget on session switch
+lib/presentation/providers/chat_provider.dart     # Chat state/realtime/session facade; cache-first per-session SWR restore, in-memory LRU message cache, persisted per-session snapshots, microtask coalescing, event dedup buffer, render gate, favorite models; project-switch SWR support via `onProjectScopeChanged(waitForRevalidation: false)` and `loadSessions(backgroundRevalidation: true)`; includes `loadOlderMessages()` scaffold and keeps loadSessionInsights fire-and-forget on session switch
 lib/presentation/pages/onboarding_wizard_page.dart # 3-step onboarding wizard (Welcome, Server Setup, Ready); uses ServerSetupQuickGuide
 lib/presentation/pages/settings/sections/servers_settings_section.dart # Server profile CRUD; exports reusable ServerSetupQuickGuide widget
-lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade; WindowListener for desktop lifecycle; holds tool-chain expanded state map; _isSessionSwitchInFlight guard, _sessionCollapseHistoryCache / _sessionCollapseWorkCache per-session collapse maps; top-reach history loading is coordinated with anchor-preserving restore
+lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade; WindowListener for desktop lifecycle; holds tool-chain expanded state map; _isSessionSwitchInFlight guard, _sessionCollapseHistoryCache / _sessionCollapseWorkCache per-session collapse maps; top-reach history loading is coordinated with anchor-preserving restore; workspace controller uses fast project-scope switch path
 lib/presentation/widgets/chat_input_widget.dart   # Composer/input orchestration facade
 lib/presentation/widgets/chat_message_widget.dart # Message bubble with build-skip cache, cached MarkdownStyleSheet; tool-chain expand/restore callbacks
 lib/presentation/widgets/message_entrance_animation.dart # Entrance animation wrapper; `role` parameter selects user (130 ms) or assistant (180 ms) motion profile from AppAnimations
@@ -227,9 +227,9 @@ test/unit/providers/                   # ChatProvider split tests (7 files, 125 
   chat_provider_messaging_test.dart    #   14 tests — sessions, sendMessage, draft restore
   chat_provider_realtime_test.dart     #   20 tests — title gen, SSE, abort, reconciliation
   chat_provider_session_ops_test.dart  #   25 tests — rename/share/fork/delete, insights, idle
-  chat_provider_project_test.dart      #   11 tests — permissions, questions, project scope, favorites
+  chat_provider_project_test.dart      #   11 tests — permissions, questions, project scope, favorites; project-switch SWR behavior
   chat_provider_concurrency_test.dart  #   26 tests — render gate, multi-session, abort suppression
-  chat_provider_test_support.dart      #   Shared utilities (RecordingDioClient, buildChatProvider, testModel)
+  chat_provider_test_support.dart      #   Shared utilities (RecordingDioClient, buildChatProvider, testModel); FakeChatRepository.getSessionsDelay
 test/widget/                           # Widget tests (includes icon assertions with Symbols.*)
 test/integration/                      # Integration tests
 test/presentation/                     # Presentation-focused tests (incl. window_size_class_test.dart)

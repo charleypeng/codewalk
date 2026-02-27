@@ -81,4 +81,4 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 - [ ] Fix server health inconsistency: in the hamburger menu a red status dot appears, but in Settings the same server is shown as fully healthy.
 - [ ] Verify whether background notifications are working correctly on Android.
 - [ ] Shorten text in collapsed boxes for mobile: simplify label phrases, remove subtext, and use shorter show/hide button wording.
-- [ ] Speed up project switching using session-like caching methods: session switching is already fast, and project switching should follow a similar strategy for near-instant transitions.
+- [x] Speed up project switching using session-like caching methods: session switching is already fast, and project switching should follow a similar strategy for near-instant transitions. - Related commits: f432a33 facd736

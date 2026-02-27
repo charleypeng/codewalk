@@ -789,6 +789,8 @@ Selection changes made during suppression are not lost — they are applied on t
 
 Long conversations were reloading from scratch on every session switch. The provider cleared `_messages` before loading remote data, so switching to a large session frequently showed a blank/loading state and caused perceived stutter. Existing durable cache only restored a single "last session snapshot", which did not help when moving between multiple active sessions.
 
+The "project-switch fast cache-first SWR path" (commits `f432a33`, `facd736`) optimizes the workspace transition by allowing immediate UI restoration from the per-session cache while revalidation occurs in the background.
+
 Server APIs currently expose full message list reads (with optional `limit`) and single-message fetch, but no dedicated delta cursor/etag endpoint for historical chat synchronization.
 
 ### Decision
@@ -798,13 +800,15 @@ Adopt a cache-first SWR policy per session:
 1. Add an in-memory per-session LRU message cache in `ChatProvider` (20 entries).
 2. Persist recent per-session message snapshots using ADR-016 file-backed storage (`ChatCachePayloadStore`) plus SharedPreferences metadata for recency and timestamps.
 3. On `selectSession`, restore cached messages immediately when available and trigger background `loadMessages(...preserveVisibleState: true)` revalidation.
-4. Keep full-fetch correctness path, but incrementally patch non-current session caches on `message.created` / `message.updated` via single-message fallback fetch.
-5. Virtual History Loading: Implement top-scroll pagination by plumbing optional `limit` through the message read stack and adding a `loadOlderMessages()` flow. The UI maintains scroll anchor position across history injections to prevent layout shifts.
+4. Project Switch Fast-Path: During workspace/project transitions (`serverId::directory`), prioritize restoring the last known session snapshot for that context from cache immediately, bypassing the full "loading" state if valid data exists.
+5. Keep full-fetch correctness path, but incrementally patch non-current session caches on `message.created` / `message.updated` via single-message fallback fetch.
+6. Virtual History Loading: Implement top-scroll pagination by plumbing optional `limit` through the message read stack and adding a `loadOlderMessages()` flow. The UI maintains scroll anchor position across history injections to prevent layout shifts.
 
 ### Rationale
 
 - Cache-first restore removes unnecessary blank reloads for recently visited long sessions.
 - SWR keeps correctness by still revalidating against server state.
+- Project-switch fast-path specifically targets the latency-sensitive workspace transition, where waiting for network before showing *any* chat history creates high friction.
 - Per-session persistence extends ADR-016 beyond one snapshot and keeps cache useful across app restarts.
 - Event-assisted patching improves freshness for background sessions even without a server delta endpoint.
 - Top-scroll pagination enables browsing long histories without high initial memory/latency costs.
@@ -816,6 +820,7 @@ Adopt a cache-first SWR policy per session:
 - ✅ Background revalidation keeps data fresh without forcing full UI reset.
 - ✅ Cache durability now covers multiple recent sessions, not only the last one.
 - ✅ Support for seamless top-scroll pagination with stable scroll anchoring.
+- ✅ Workspace transitions (project switches) feel instantaneous when cached session data exists.
 - ⚠ Cache metadata/key management is more complex (LRU list + per-session timestamps).
 - ⚠ Scroll anchor restoration logic adds complexity to the ChatPage list controller.
 - ❌ No true server-side delta endpoint yet; full-fetch fallback remains necessary for correctness.
@@ -830,3 +835,4 @@ Adopt a cache-first SWR policy per session:
 - `lib/data/datasources/app_local_datasource.dart`
 - `lib/data/datasources/chat_remote_datasource.dart`
 - `lib/domain/usecases/get_chat_messages.dart`
+- `lib/presentation/providers/chat_provider/chat_provider_context_state_ops.dart`
