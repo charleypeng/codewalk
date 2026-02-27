@@ -1,7 +1,10 @@
 part of '../chat_provider.dart';
 
 extension _ChatProviderSessionOps on ChatProvider {
-  Future<void> _switchContext({required String reason}) async {
+  Future<void> _switchContext({
+    required String reason,
+    bool waitForRevalidation = true,
+  }) async {
     _storeCurrentContextSnapshot();
 
     _providersFetchId += 1;
@@ -100,12 +103,21 @@ extension _ChatProviderSessionOps on ChatProvider {
       }),
     );
 
+    final useFastProjectTransition =
+        reason == 'project' && !waitForRevalidation;
     final contextMarkedDirty = _dirtyContextKeys.remove(nextContextKey);
     if (contextMarkedDirty || _sessions.isEmpty) {
+      if (useFastProjectTransition) {
+        unawaited(loadSessions(preserveVisibleState: true));
+        return;
+      }
       await loadSessions();
       return;
     }
 
     await loadLastSession(serverId: serverId, scopeId: nextScope);
+    if (useFastProjectTransition) {
+      unawaited(loadSessions(preserveVisibleState: true));
+    }
   }
 }

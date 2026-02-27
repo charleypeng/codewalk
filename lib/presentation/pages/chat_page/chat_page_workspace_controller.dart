@@ -60,7 +60,7 @@ extension _ChatPageWorkspaceController on _ChatPageState {
       if (!changed) {
         return;
       }
-      await chatProvider.onProjectScopeChanged();
+      await chatProvider.onProjectScopeChanged(waitForRevalidation: false);
     });
   }
 
@@ -78,7 +78,7 @@ extension _ChatPageWorkspaceController on _ChatPageState {
       if (!switched) {
         return;
       }
-      await chatProvider.onProjectScopeChanged();
+      await chatProvider.onProjectScopeChanged(waitForRevalidation: false);
     });
   }
 
@@ -90,7 +90,9 @@ extension _ChatPageWorkspaceController on _ChatPageState {
       if (!changed || !wasActiveProject) {
         return;
       }
-      await context.read<ChatProvider>().onProjectScopeChanged();
+      await context.read<ChatProvider>().onProjectScopeChanged(
+        waitForRevalidation: false,
+      );
     });
   }
 
@@ -105,7 +107,7 @@ extension _ChatPageWorkspaceController on _ChatPageState {
       if (!changed) {
         return;
       }
-      await chatProvider.onProjectScopeChanged();
+      await chatProvider.onProjectScopeChanged(waitForRevalidation: false);
     });
   }
 

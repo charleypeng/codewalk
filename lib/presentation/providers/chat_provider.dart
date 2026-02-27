@@ -1564,8 +1564,11 @@ class ChatProvider extends ChangeNotifier {
     return 'legacy';
   }
 
-  Future<void> onProjectScopeChanged() async {
-    await _switchContext(reason: 'project');
+  Future<void> onProjectScopeChanged({bool waitForRevalidation = true}) async {
+    await _switchContext(
+      reason: 'project',
+      waitForRevalidation: waitForRevalidation,
+    );
   }
 
   /// Reset provider state and reload server-scoped data.
@@ -1851,11 +1854,14 @@ class ChatProvider extends ChangeNotifier {
   }
 
   /// Load session list
-  Future<void> loadSessions() async {
+  Future<void> loadSessions({bool preserveVisibleState = false}) async {
     if (_state == ChatState.loading) return;
     final fetchId = ++_sessionsFetchId;
 
-    _setState(ChatState.loading);
+    final canKeepVisibleState = preserveVisibleState && _sessions.isNotEmpty;
+    if (!canKeepVisibleState) {
+      _setState(ChatState.loading);
+    }
     clearError();
 
     final serverId = await _resolveServerScopeId();
@@ -1874,56 +1880,99 @@ class ChatProvider extends ChangeNotifier {
         preferredSessionId: storedSessionId,
       );
 
-      // Then fetch latest data from server
-      final result = await getChatSessions(
-        GetChatSessionsParams(directory: projectProvider.currentDirectory),
-      );
+      Future<void> revalidateFromServer({
+        required bool preserveVisibleDataOnFailure,
+      }) async {
+        final result = await getChatSessions(
+          GetChatSessionsParams(directory: projectProvider.currentDirectory),
+        );
 
-      if (fetchId != _sessionsFetchId) {
-        return;
-      }
-
-      if (result.isLeft()) {
         if (fetchId != _sessionsFetchId) {
           return;
         }
-        final failure = result.fold((f) => f, (_) => null);
-        if (failure != null) {
-          _handleFailure(failure);
+
+        if (result.isLeft()) {
+          if (fetchId != _sessionsFetchId) {
+            return;
+          }
+          final failure = result.fold((f) => f, (_) => null);
+          if (failure != null) {
+            if (preserveVisibleDataOnFailure) {
+              AppLogger.warn(
+                'Background session revalidation failed for scope=$scopeId',
+                error: failure,
+              );
+              _setState(ChatState.loaded);
+            } else {
+              _handleFailure(failure);
+            }
+          }
+          return;
         }
+
+        final sessions = result.fold((_) => <ChatSession>[], (value) => value);
+        final filteredSessions = _filterSessionsForCurrentContext(sessions);
+        if (fetchId != _sessionsFetchId) {
+          return;
+        }
+        _sessions = filteredSessions;
+        _threadPermissionsVersion++;
+        _sessionVisibleLimit = 40;
+        _sortSessionsInPlace();
+        _pruneSessionAttentionStateToKnownSessions();
+        _setState(ChatState.loaded);
+
+        await _saveCachedSessions(
+          filteredSessions,
+          serverId: serverId,
+          scopeId: scopeId,
+        );
+
+        if (fetchId != _sessionsFetchId) {
+          return;
+        }
+
+        await loadLastSession(
+          serverId: serverId,
+          scopeId: scopeId,
+          storedSessionId: storedSessionId,
+        );
+        await refreshSessionStatusSnapshot();
+      }
+
+      final canRevalidateInBackground =
+          preserveVisibleState && _sessions.isNotEmpty;
+      if (canRevalidateInBackground) {
+        unawaited(
+          revalidateFromServer(preserveVisibleDataOnFailure: true).catchError((
+            Object error,
+            StackTrace stackTrace,
+          ) {
+            if (fetchId != _sessionsFetchId) {
+              return;
+            }
+            AppLogger.warn(
+              'Background session revalidation threw unexpectedly',
+              error: error,
+              stackTrace: stackTrace,
+            );
+          }),
+        );
         return;
       }
 
-      final sessions = result.fold((_) => <ChatSession>[], (value) => value);
-      final filteredSessions = _filterSessionsForCurrentContext(sessions);
-      if (fetchId != _sessionsFetchId) {
-        return;
-      }
-      _sessions = filteredSessions;
-      _threadPermissionsVersion++;
-      _sessionVisibleLimit = 40;
-      _sortSessionsInPlace();
-      _pruneSessionAttentionStateToKnownSessions();
-      _setState(ChatState.loaded);
-
-      await _saveCachedSessions(
-        filteredSessions,
-        serverId: serverId,
-        scopeId: scopeId,
-      );
-
-      if (fetchId != _sessionsFetchId) {
-        return;
-      }
-
-      await loadLastSession(
-        serverId: serverId,
-        scopeId: scopeId,
-        storedSessionId: storedSessionId,
-      );
-      await refreshSessionStatusSnapshot();
+      await revalidateFromServer(preserveVisibleDataOnFailure: false);
     } catch (e, stackTrace) {
       if (fetchId != _sessionsFetchId) {
+        return;
+      }
+      if (preserveVisibleState && _sessions.isNotEmpty) {
+        AppLogger.warn(
+          'Failed to load session list during background refresh',
+          error: e,
+          stackTrace: stackTrace,
+        );
+        _setState(ChatState.loaded);
         return;
       }
       AppLogger.error(

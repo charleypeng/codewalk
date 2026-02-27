@@ -1075,6 +1075,7 @@ class FakeChatRepository implements ChatRepository {
   int getSessionStatusCallCount = 0;
 
   // Optional delay hooks for concurrency verification in tests.
+  Future<void> Function()? getSessionsDelay;
   Future<void> Function()? getSessionChildrenDelay;
   Future<void> Function()? getSessionTodoDelay;
   Future<void> Function()? getSessionDiffDelay;
@@ -1253,6 +1254,7 @@ class FakeChatRepository implements ChatRepository {
   }) async {
     getSessionsCallCount += 1;
     lastGetSessionsDirectory = directory;
+    if (getSessionsDelay != null) await getSessionsDelay!();
     if (getSessionsFailure != null) return Left(getSessionsFailure!);
     var list = List<ChatSession>.from(sessions);
     if (rootsOnly == true) {
