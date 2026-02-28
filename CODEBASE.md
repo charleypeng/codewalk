@@ -140,12 +140,12 @@ chat_provider_realtime_ops.dart
 chat_provider_realtime_aux_ops.dart
 chat_provider_event_reducer_ops.dart             # Reconcile one-shot guard via _messageStreamGeneration; dedup key composition
 chat_provider_message_merge_ops.dart
-chat_provider_message_state_ops.dart
+chat_provider_message_state_ops.dart             # Message state mutations; auto-title scheduling guard skips subsessions
 chat_provider_selection_sync_ops.dart
 chat_provider_selection_helpers.dart
 chat_provider_context_state_ops.dart
 chat_provider_preference_ops.dart
-chat_provider_auto_title_ops.dart
+chat_provider_auto_title_ops.dart               # Auto-title execution (main/root sessions only); runtime guard in `_runAutoTitlePass` skips subsessions
 chat_provider_error_policy.dart
 chat_provider_cache_persistence_ops.dart
 chat_provider_abort_policy_ops.dart
@@ -225,7 +225,7 @@ test/unit/providers/                   # ChatProvider split tests (7 files, 125 
   chat_provider_init_test.dart         #   12 tests — initialization, config sync, model/agent selection
   chat_provider_sync_test.dart         #   17 tests — deferred sync, cycle, scope, overrides, variant sync
   chat_provider_messaging_test.dart    #   14 tests — sessions, sendMessage, draft restore
-  chat_provider_realtime_test.dart     #   20 tests — title gen, SSE, abort, reconciliation
+  chat_provider_realtime_test.dart     #   21 tests — title gen (main sessions only), SSE, abort, reconciliation
   chat_provider_session_ops_test.dart  #   25 tests — rename/share/fork/delete, insights, idle
   chat_provider_project_test.dart      #   11 tests — permissions, questions, project scope, favorites; project-switch SWR behavior
   chat_provider_concurrency_test.dart  #   26 tests — render gate, multi-session, abort suppression

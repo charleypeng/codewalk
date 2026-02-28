@@ -77,7 +77,7 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 - [x] Corrigir o erro ao tentar enviar mensagem após resposta do assistente (hidden response until session switch/retry): implemented async send stale-ID protection and idle final-reconcile bypass during abort suppression. - Related commits: 745c0a8 f1faf4a
 - [ ] Corrigir a tela principal quando não tem nenhum servidor configurado: a tela pisca rapidamente apresentando erro de conexão, mas não deveria procurar atualização se não há nenhum servidor cadastrado.
 - [ ] Suavizar a chegada de tool calls e novas mensagens, bem como o envio de novas mensagens pelo usuário: atualmente tudo aparece de uma vez, mas com animação de deslize a experiência fica mais atraente.
-- [ ] Restrict session title update service to main sessions only: subsessions do not need and must not use the dynamic title generation system.
+- [x] Restrict session title update service to main sessions only: subsessions do not need and must not use the dynamic title generation system. - Commit hash: 4d9ac2e
 - [ ] Fix server health inconsistency: in the hamburger menu a red status dot appears, but in Settings the same server is shown as fully healthy.
 - [ ] Verify whether background notifications are working correctly on Android.
 - [ ] Shorten text in collapsed boxes for mobile: simplify label phrases, remove subtext, and use shorter show/hide button wording.
