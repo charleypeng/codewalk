@@ -24,6 +24,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-018: Dedicated SSE Dio Instance for Connection Pool Isolation
 - ADR-019: Defer Config-Mutating API Calls During Active Server Processing
 - ADR-020: Session-Level SWR Cache with Persisted LRU Snapshots
+- ADR-021: Context-Scoped Draft State for Project-Switch SWR
 
 ---
 
@@ -839,3 +840,47 @@ Adopt a cache-first SWR policy per session:
 - `lib/data/datasources/chat_remote_datasource.dart`
 - `lib/domain/usecases/get_chat_messages.dart`
 - `lib/presentation/providers/chat_provider/chat_provider_context_state_ops.dart`
+
+---
+
+## ADR-021: Context-Scoped Draft State for Project-Switch SWR (2026-02-28)
+
+**Status**: Accepted
+
+**Related**: ADR-002 (Context Isolation), ADR-020 (Session-Level SWR Cache)
+
+### Context
+
+After adopting draft-first New Chat with lazy session bootstrap, project-switch fast-path (`waitForRevalidation: false`) could carry draft-only state into another `serverId::directory` context. In this leaked state, `loadLastSession()` could incorrectly short-circuit for the target context, leaving it in an empty draft flow instead of restoring that context's session/snapshot via SWR.
+
+### Decision
+
+Treat draft-related composer/session bootstrap state as context-scoped snapshot data:
+
+1. `_ChatContextSnapshot` now includes `isNewChatDraftActive`, `activeSendDraft`, and `rejectedDraft`.
+2. `_storeCurrentContextSnapshot()` persists this draft state per active context key.
+3. `_restoreContextSnapshot()` restores draft state for known contexts and resets to non-draft for new contexts.
+4. `_switchContext()` clears transient `_lazySessionBootstrapTask` to avoid in-flight bootstrap futures crossing context boundaries.
+5. `createNewSession()` guards against post-await context changes and discards stale results from old contexts.
+
+### Rationale
+
+- Project scope in CodeWalk is `serverId::directory`; draft state must follow the same isolation boundary as sessions and selections.
+- Fast project switching must remain cache-first and non-blocking without letting ephemeral draft flags block target-context restore.
+- Async session bootstrap must not write stale results after a context switch.
+
+### Consequences
+
+- ✅ Prevents cross-project draft leakage during fast project switches.
+- ✅ Preserves draft-first UX inside the originating context while restoring normal SWR behavior in other contexts.
+- ✅ Adds regression coverage for project-switch + draft round-trip behavior.
+- ⚠ Snapshot payload grows slightly with draft-related fields.
+- ❌ Draft bootstrap tasks are intentionally not resumed across context switches.
+
+### Key Files
+
+- `lib/presentation/providers/chat_provider_types_part.dart`
+- `lib/presentation/providers/chat_provider/chat_provider_preference_ops.dart`
+- `lib/presentation/providers/chat_provider/chat_provider_session_ops.dart`
+- `lib/presentation/providers/chat_provider.dart`
+- `test/unit/providers/chat_provider_project_test.dart`

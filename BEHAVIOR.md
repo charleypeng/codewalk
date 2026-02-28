@@ -122,6 +122,14 @@
 - **Then** session list revalidation runs in background and refreshes to server state when the response arrives
 - **Then** if background revalidation fails, the cached visible state remains stable (no forced blank/loading fallback)
 
+### New Chat draft state is isolated per project context
+
+- **Given** the user starts `New Chat` draft mode in project A (no active session yet)
+- **When** the user switches to project B
+- **Then** project B must not inherit draft mode from project A
+- **Then** project B restores its own cached/current session state via project-switch SWR
+- **Then** when the user returns to project A, draft mode is restored only for project A
+
 ### Long-session revalidation avoids forced viewport jumps
 
 - **Given** a cached session is visible and background revalidation finishes
