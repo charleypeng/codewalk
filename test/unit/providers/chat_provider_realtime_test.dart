@@ -767,7 +767,9 @@ void main() {
         );
         await Future<void>.delayed(const Duration(milliseconds: 80));
 
-        final latestAssistant = provider.messages.last as AssistantMessage;
+        final latestAssistant = provider.messages
+            .whereType<AssistantMessage>()
+            .last;
         expect(
           (latestAssistant.parts.single as TextPart).text,
           'final assistant response',
@@ -775,6 +777,87 @@ void main() {
         expect(
           chatRepository.getMessagesCallCount,
           greaterThan(callsBeforeIdle),
+        );
+      },
+    );
+
+    test(
+      'session.idle final reconcile is not blocked by abort suppression window',
+      () async {
+        provider = buildProvider(
+          abortSuppressionWindow: const Duration(seconds: 1),
+        );
+
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
+          yield Right(
+            AssistantMessage(
+              id: 'msg_abort_window_tool_only',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(2100),
+              parts: <MessagePart>[
+                ToolPart(
+                  id: 'part_abort_window_tool_only',
+                  messageId: 'msg_abort_window_tool_only',
+                  sessionId: 'ses_1',
+                  callId: 'call_abort_window_tool_only',
+                  tool: 'bash',
+                  state: ToolStateRunning(
+                    input: const <String, dynamic>{
+                      'description': 'Running command',
+                      'command': 'pwd',
+                    },
+                    time: DateTime.fromMillisecondsSinceEpoch(2100),
+                  ),
+                ),
+              ],
+            ),
+          );
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.initializeProviders();
+
+        await provider.sendMessage('trigger abort-suppression reconcile');
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        final callsBeforeIdle = chatRepository.getMessagesCallCount;
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_abort_window_tool_only',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(2100),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(2200),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_abort_window_final',
+                messageId: 'msg_abort_window_tool_only',
+                sessionId: 'ses_1',
+                text: 'final response after abort suppression',
+              ),
+            ],
+          ),
+        ];
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.idle',
+            properties: <String, dynamic>{'sessionID': 'ses_1'},
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+
+        expect(
+          chatRepository.getMessagesCallCount,
+          greaterThan(callsBeforeIdle),
+        );
+        final latestAssistant = provider.messages
+            .whereType<AssistantMessage>()
+            .last;
+        expect(
+          (latestAssistant.parts.single as TextPart).text,
+          'final response after abort suppression',
         );
       },
     );

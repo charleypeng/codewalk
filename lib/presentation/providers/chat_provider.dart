@@ -1185,6 +1185,7 @@ class ChatProvider extends ChangeNotifier {
   Future<void> refreshActiveSessionView({
     String reason = 'manual',
     bool includeStatus = true,
+    bool allowDuringAbortSuppression = false,
   }) async {
     final session = _currentSession;
     if (session == null) {
@@ -1193,7 +1194,8 @@ class ChatProvider extends ChangeNotifier {
     // During abort suppression, polling already delivered fresh data.
     // Loading from server risks showing stale abort content that the
     // suppression window is designed to hide.
-    if (_isAbortSuppressionActiveForSession(session.id)) {
+    if (!allowDuringAbortSuppression &&
+        _isAbortSuppressionActiveForSession(session.id)) {
       AppLogger.info(
         'Skipping active session refresh during abort suppression session=${session.id} reason=$reason',
       );

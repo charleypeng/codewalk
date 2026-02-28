@@ -823,10 +823,44 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       var messageCompleted = false;
       String? activeAssistantMessageId;
       var fallbackCompletionWatchStarted = false;
+      final knownAssistantMessageIds = <String>{};
+      var hasKnownAssistantBaseline = false;
       // Timestamp used to distinguish new messages from stale ones.
       // Without per-send SSE, resolveAssistantMessageId must skip
       // completed messages from previous sends.
       final sendStartMs = DateTime.now().millisecondsSinceEpoch;
+
+      Future<void> loadKnownAssistantMessageIds() async {
+        try {
+          final response = await dio.get(
+            '/session/$sessionId/message',
+            queryParameters: queryParams.isNotEmpty ? queryParams : null,
+          );
+          if (response.statusCode != 200) {
+            return;
+          }
+          final list = response.data as List<dynamic>? ?? const <dynamic>[];
+          for (final raw in list) {
+            if (raw is! Map) {
+              continue;
+            }
+            final item = Map<String, dynamic>.from(raw);
+            final infoRaw = item['info'];
+            final info = infoRaw is Map<String, dynamic> ? infoRaw : item;
+            final role = info['role'] as String?;
+            final id = info['id'] as String?;
+            if (role == 'assistant' && id != null && id.isNotEmpty) {
+              knownAssistantMessageIds.add(id);
+            }
+          }
+          hasKnownAssistantBaseline = true;
+        } catch (error) {
+          AppLogger.warn(
+            'Failed to load known assistant message IDs before async send',
+            error: error,
+          );
+        }
+      }
 
       int extractCreatedTimeMs(dynamic timeValue) {
         if (timeValue is Map<String, dynamic>) {
@@ -882,13 +916,16 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
             if (role != 'assistant' || id == null || id.isEmpty) {
               continue;
             }
+            if (knownAssistantMessageIds.contains(id)) {
+              continue;
+            }
 
             final created = extractCreatedTimeMs(info['time']);
             final timeMap = info['time'];
             final completedMs = timeMap is Map<String, dynamic>
                 ? (timeMap['completed'] as num?)?.toInt()
                 : null;
-            final isCompleted = completedMs != null;
+            final isCompleted = completedMs != null && completedMs > 0;
 
             if (!isCompleted) {
               // In-progress message — likely from the current send.
@@ -896,7 +933,8 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
                 incompleteCreated = created;
                 incompleteId = id;
               }
-            } else if (created >= sendStartMs - 2000) {
+            } else if (!hasKnownAssistantBaseline ||
+                created >= sendStartMs - 2000) {
               // Completed AFTER send started — fresh, not stale.
               if (created >= freshCompletedCreated) {
                 freshCompletedCreated = created;
@@ -1031,6 +1069,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       // and the provider-level SSE + polling handle message delivery.
 
       // Use async send endpoint to avoid cross-session abort coupling.
+      await loadKnownAssistantMessageIds();
       final response = await dio.post(
         '/session/$sessionId/prompt_async',
         data: input.toJson(),
@@ -1039,6 +1078,17 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
       if (response.statusCode != 204 && response.statusCode != 200) {
         throw const ServerException('Failed to send message');
+      }
+
+      final responseData = response.data;
+      if (responseData is Map) {
+        final payload = Map<String, dynamic>.from(responseData);
+        final infoRaw = payload['info'];
+        final info = infoRaw is Map<String, dynamic> ? infoRaw : payload;
+        final responseMessageId = info['id'] as String?;
+        if (responseMessageId != null && responseMessageId.trim().isNotEmpty) {
+          activeAssistantMessageId = responseMessageId.trim();
+        }
       }
 
       AppLogger.info('Async send request accepted for session=$sessionId');

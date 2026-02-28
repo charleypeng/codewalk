@@ -353,6 +353,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
                 refreshActiveSessionView(
                   reason: 'session-idle-final-reconcile',
                   includeStatus: false,
+                  allowDuringAbortSuppression: true,
                 ),
               );
             }
