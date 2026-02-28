@@ -501,6 +501,46 @@ void main() {
       },
     );
 
+    test('sendMessage lazily creates a new session from draft state', () async {
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+
+      final previousSessionId = provider.currentSession?.id;
+      expect(previousSessionId, isNotNull);
+
+      await provider.beginNewChatDraft();
+      expect(provider.currentSession, isNull);
+
+      final started = await provider.sendMessage('direct lazy draft send');
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      expect(started, isTrue);
+      expect(provider.currentSession, isNotNull);
+      expect(provider.currentSession?.id, isNot(previousSessionId));
+      expect(chatRepository.lastSendSessionId, provider.currentSession?.id);
+    });
+
+    test(
+      'sendMessageWithInterrupt lazily creates a session when draft is active',
+      () async {
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+
+        final previousSessionId = provider.currentSession?.id;
+        expect(previousSessionId, isNotNull);
+
+        await provider.beginNewChatDraft();
+        expect(provider.currentSession, isNull);
+
+        await provider.sendMessageWithInterrupt('interrupt lazy draft send');
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(provider.currentSession, isNotNull);
+        expect(provider.currentSession?.id, isNot(previousSessionId));
+        expect(chatRepository.lastSendSessionId, provider.currentSession?.id);
+      },
+    );
+
     test(
       'switching sessions ignores in-flight stream updates from previous session',
       () async {
