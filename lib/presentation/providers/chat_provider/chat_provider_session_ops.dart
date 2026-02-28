@@ -50,6 +50,7 @@ extension _ChatProviderSessionOps on ChatProvider {
     final serverId = await _resolveServerScopeId();
     final nextScope = _resolveContextScopeId();
     final nextContextKey = _composeContextKey(serverId, nextScope);
+    _lazySessionBootstrapTask = null;
     _activeContextKey = nextContextKey;
     _currentProjectId = projectProvider.currentProjectId;
     _restoreContextSnapshot(nextContextKey);

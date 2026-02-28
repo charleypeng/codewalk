@@ -2198,6 +2198,7 @@ class ChatProvider extends ChangeNotifier {
 
   /// Create new session
   Future<void> createNewSession({String? parentId, String? title}) async {
+    final contextKeyAtStart = _activeContextKey;
     _isNewChatDraftActive = false;
     final projectId = projectProvider.currentProjectId;
     final directory = projectProvider.currentDirectory;
@@ -2214,6 +2215,13 @@ class ChatProvider extends ChangeNotifier {
         directory: directory,
       ),
     );
+
+    if (contextKeyAtStart != _activeContextKey) {
+      AppLogger.info(
+        'Ignoring createNewSession result after context switch from=$contextKeyAtStart to=$_activeContextKey',
+      );
+      return;
+    }
 
     if (result.isLeft()) {
       final failure = result.fold((value) => value, (_) => null);

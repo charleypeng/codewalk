@@ -98,6 +98,9 @@ class _ChatContextSnapshot {
     required this.sessionListFilter,
     required this.sessionListSort,
     required this.sessionVisibleLimit,
+    required this.isNewChatDraftActive,
+    required this.activeSendDraft,
+    required this.rejectedDraft,
   });
 
   final List<ChatSession> sessions;
@@ -115,6 +118,9 @@ class _ChatContextSnapshot {
   final SessionListFilter sessionListFilter;
   final SessionListSort sessionListSort;
   final int sessionVisibleLimit;
+  final bool isNewChatDraftActive;
+  final ChatComposerDraft? activeSendDraft;
+  final _RejectedDraftEnvelope? rejectedDraft;
 }
 
 class _AutoTitleCandidateMessage {

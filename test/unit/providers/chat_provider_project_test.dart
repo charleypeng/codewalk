@@ -726,6 +726,124 @@ void main() {
     );
 
     test(
+      'project switch fast-path does not leak draft mode across contexts',
+      () async {
+        final scopedRepository = FakeChatRepository(
+          sessions: <ChatSession>[
+            ChatSession(
+              id: 'ses_a',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              title: 'Session A',
+            ),
+          ],
+        );
+        final scopedLocal = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test';
+        final scopedProvider = ChatProvider(
+          sendChatMessage: SendChatMessage(scopedRepository),
+          getChatSessions: GetChatSessions(scopedRepository),
+          createChatSession: CreateChatSession(scopedRepository),
+          getChatMessages: GetChatMessages(scopedRepository),
+          getChatMessage: GetChatMessage(scopedRepository),
+          getAgents: GetAgents(appRepository),
+          getProviders: GetProviders(appRepository),
+          deleteChatSession: DeleteChatSession(scopedRepository),
+          updateChatSession: UpdateChatSession(scopedRepository),
+          shareChatSession: ShareChatSession(scopedRepository),
+          unshareChatSession: UnshareChatSession(scopedRepository),
+          forkChatSession: ForkChatSession(scopedRepository),
+          getSessionStatus: GetSessionStatus(scopedRepository),
+          getSessionChildren: GetSessionChildren(scopedRepository),
+          getSessionTodo: GetSessionTodo(scopedRepository),
+          getSessionDiff: GetSessionDiff(scopedRepository),
+          watchChatEvents: WatchChatEvents(scopedRepository),
+          watchGlobalChatEvents: WatchGlobalChatEvents(scopedRepository),
+          listPendingPermissions: ListPendingPermissions(scopedRepository),
+          replyPermission: ReplyPermission(scopedRepository),
+          listPendingQuestions: ListPendingQuestions(scopedRepository),
+          replyQuestion: ReplyQuestion(scopedRepository),
+          rejectQuestion: RejectQuestion(scopedRepository),
+          projectProvider: ProjectProvider(
+            projectRepository: FakeProjectRepository(
+              currentProject: Project(
+                id: 'proj_a',
+                name: 'Project A',
+                path: '/repo/a',
+                createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+              ),
+              projects: <Project>[
+                Project(
+                  id: 'proj_a',
+                  name: 'Project A',
+                  path: '/repo/a',
+                  createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+                ),
+                Project(
+                  id: 'proj_b',
+                  name: 'Project B',
+                  path: '/repo/b',
+                  createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+                ),
+              ],
+            ),
+            localDataSource: scopedLocal,
+          ),
+          localDataSource: scopedLocal,
+        );
+
+        await scopedProvider.projectProvider.initializeProject();
+        await scopedProvider.initializeProviders();
+        await scopedProvider.loadSessions();
+        expect(scopedProvider.currentSession?.id, 'ses_a');
+
+        await scopedProvider.beginNewChatDraft();
+        expect(scopedProvider.isDraftingNewChat, isTrue);
+        expect(scopedProvider.currentSession, isNull);
+
+        scopedRepository.sessions
+          ..clear()
+          ..add(
+            ChatSession(
+              id: 'ses_b',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(2000),
+              title: 'Session B',
+            ),
+          );
+
+        await scopedProvider.projectProvider.switchProject('proj_b');
+        await scopedProvider
+            .onProjectScopeChanged(waitForRevalidation: false)
+            .timeout(const Duration(milliseconds: 300));
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(scopedProvider.isDraftingNewChat, isFalse);
+        expect(scopedProvider.currentSession?.id, 'ses_b');
+
+        scopedRepository.sessions
+          ..clear()
+          ..add(
+            ChatSession(
+              id: 'ses_a',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              title: 'Session A',
+            ),
+          );
+
+        await scopedProvider.projectProvider.switchProject('proj_a');
+        await scopedProvider
+            .onProjectScopeChanged(waitForRevalidation: false)
+            .timeout(const Duration(milliseconds: 300));
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(scopedProvider.isDraftingNewChat, isTrue);
+        expect(scopedProvider.currentSession, isNull);
+      },
+    );
+
+    test(
       'filters mixed session list to active directory when server returns unscoped data',
       () async {
         final scopedRepository = FakeChatRepository(

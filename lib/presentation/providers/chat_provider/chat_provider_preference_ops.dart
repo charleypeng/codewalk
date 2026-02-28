@@ -18,6 +18,9 @@ extension _ChatProviderPreferenceOps on ChatProvider {
       sessionListFilter: _sessionListFilter,
       sessionListSort: _sessionListSort,
       sessionVisibleLimit: _sessionVisibleLimit,
+      isNewChatDraftActive: _isNewChatDraftActive,
+      activeSendDraft: _activeSendDraft,
+      rejectedDraft: _rejectedDraft,
     );
   }
 
@@ -40,6 +43,9 @@ extension _ChatProviderPreferenceOps on ChatProvider {
       _sessionListFilter = SessionListFilter.active;
       _sessionListSort = SessionListSort.recent;
       _sessionVisibleLimit = 40;
+      _isNewChatDraftActive = false;
+      _clearActiveSendDraft();
+      _clearRejectedDraft();
       _threadPermissionsVersion++;
       return;
     }
@@ -70,6 +76,9 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     _sessionListFilter = snapshot.sessionListFilter;
     _sessionListSort = snapshot.sessionListSort;
     _sessionVisibleLimit = snapshot.sessionVisibleLimit;
+    _isNewChatDraftActive = snapshot.isNewChatDraftActive;
+    _activeSendDraft = snapshot.activeSendDraft;
+    _rejectedDraft = snapshot.rejectedDraft;
     _pruneSessionAttentionStateToKnownSessions();
     _threadPermissionsVersion++;
   }
