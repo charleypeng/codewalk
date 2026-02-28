@@ -9,4 +9,14 @@ class FeatureFlags {
     'CODEWALK_REFRESHLESS_ENABLED',
     defaultValue: true,
   );
+
+  /// Use session-idle-aware completion reconciliation for prompt_async sends.
+  ///
+  /// When enabled, datasource send completion waits for session status to
+  /// become idle and then resolves the final assistant message from server
+  /// history, avoiding stale message-id selection races.
+  static const bool promptAsyncIdleCompletion = bool.fromEnvironment(
+    'CODEWALK_PROMPT_ASYNC_IDLE_COMPLETION',
+    defaultValue: true,
+  );
 }

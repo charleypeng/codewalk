@@ -959,6 +959,64 @@ void main() {
     );
 
     test(
+      'session.idle triggers final reconcile when send is still marked in-progress',
+      () async {
+        final sendController =
+            StreamController<Either<Failure, ChatMessage>>.broadcast();
+        chatRepository.sendMessageHandler = (_, _, _, _) =>
+            sendController.stream;
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.initializeProviders();
+
+        await provider.sendMessage('trigger sending-state reconcile');
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        final callsBeforeIdle = chatRepository.getMessagesCallCount;
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_idle_reconcile_final',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(3100),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(3200),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_idle_reconcile_final',
+                messageId: 'msg_idle_reconcile_final',
+                sessionId: 'ses_1',
+                text: 'final response resolved on idle',
+              ),
+            ],
+          ),
+        ];
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.idle',
+            properties: <String, dynamic>{'sessionID': 'ses_1'},
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+
+        expect(
+          chatRepository.getMessagesCallCount,
+          greaterThan(callsBeforeIdle),
+        );
+        final latestAssistant = provider.messages
+            .whereType<AssistantMessage>()
+            .last;
+        expect(
+          (latestAssistant.parts.single as TextPart).text,
+          'final response resolved on idle',
+        );
+
+        await sendController.close();
+      },
+    );
+
+    test(
       'non-current busy -> idle transition marks unread completion attention',
       () async {
         chatRepository.sessions.add(

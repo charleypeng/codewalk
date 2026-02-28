@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 
+import '../../core/config/feature_flags.dart';
 import '../../core/errors/exceptions.dart';
 import '../../core/logging/app_logger.dart';
 import '../models/chat_message_model.dart';
@@ -823,6 +824,23 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         _traceFinalSend(sessionId: sessionId, event: event, details: combined);
       }
 
+      void emitCompletionMetric({
+        required String mode,
+        required String outcome,
+        DateTime? startedAt,
+        String? details,
+      }) {
+        final elapsedMs = startedAt == null
+            ? -1
+            : DateTime.now().difference(startedAt).inMilliseconds;
+        final suffix = details == null || details.trim().isEmpty
+            ? ''
+            : ' ${details.trim()}';
+        AppLogger.info(
+          'CW_METRIC prompt_async_completion session=$sessionId messageId=${input.messageId ?? "-"} mode=$mode outcome=$outcome elapsedMs=$elapsedMs$suffix',
+        );
+      }
+
       final queryParams = <String, String>{};
       if (directory != null) {
         queryParams['directory'] = directory;
@@ -1024,6 +1042,245 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         }
       }
 
+      bool isBusyStatusType(String? type) {
+        final normalized = type?.trim().toLowerCase();
+        return normalized == 'busy' || normalized == 'retry';
+      }
+
+      Future<SessionStatusModel?> loadCurrentSessionStatus() async {
+        try {
+          final response = await dio.get(
+            '/session/status',
+            queryParameters: queryParams.isNotEmpty ? queryParams : null,
+          );
+          if (response.statusCode != 200 || response.data is! Map) {
+            return null;
+          }
+          final map = Map<String, dynamic>.from(response.data as Map);
+          final rawStatus = map[sessionId];
+          if (rawStatus is! Map) {
+            return null;
+          }
+          return SessionStatusModel.fromJson(
+            Map<String, dynamic>.from(rawStatus),
+          );
+        } catch (_) {
+          return null;
+        }
+      }
+
+      Future<List<Map<String, dynamic>>> loadSessionMessageEntries() async {
+        try {
+          final response = await dio.get(
+            '/session/$sessionId/message',
+            queryParameters: queryParams.isNotEmpty ? queryParams : null,
+          );
+          if (response.statusCode != 200) {
+            return const <Map<String, dynamic>>[];
+          }
+          final list = response.data as List<dynamic>? ?? const <dynamic>[];
+          return list
+              .whereType<Map>()
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList(growable: false);
+        } catch (_) {
+          return const <Map<String, dynamic>>[];
+        }
+      }
+
+      ChatMessageModel? toChatMessageModel(Map<String, dynamic> entry) {
+        final infoRaw = entry['info'];
+        final info = infoRaw is Map<String, dynamic>
+            ? infoRaw
+            : (infoRaw is Map ? Map<String, dynamic>.from(infoRaw) : null);
+        if (info == null || info.isEmpty) {
+          return null;
+        }
+        final parts = (entry['parts'] as List<dynamic>?) ?? const <dynamic>[];
+        return ChatMessageModel.fromJson({...info, 'parts': parts});
+      }
+
+      String? selectAssistantMessageIdFromEntries(
+        List<Map<String, dynamic>> entries,
+      ) {
+        if (entries.isEmpty) {
+          return null;
+        }
+
+        final assistantCandidates = <Map<String, dynamic>>[];
+        for (final entry in entries) {
+          final infoRaw = entry['info'];
+          final info = infoRaw is Map<String, dynamic>
+              ? infoRaw
+              : (infoRaw is Map ? Map<String, dynamic>.from(infoRaw) : null);
+          if (info == null) {
+            continue;
+          }
+          final role = info['role'] as String?;
+          final id = info['id'] as String?;
+          if (role != 'assistant' || id == null || id.isEmpty) {
+            continue;
+          }
+
+          final created = extractCreatedTimeMs(info['time']);
+          final completedMs = info['time'] is Map<String, dynamic>
+              ? ((info['time'] as Map<String, dynamic>)['completed'] as num?)
+                    ?.toInt()
+              : null;
+          assistantCandidates.add(<String, dynamic>{
+            'id': id,
+            'created': created,
+            'completedMs': completedMs ?? 0,
+          });
+        }
+
+        if (assistantCandidates.isEmpty) {
+          return null;
+        }
+
+        assistantCandidates.sort(
+          (a, b) => (a['created'] as int).compareTo(b['created'] as int),
+        );
+
+        final freshestLeewayMs = sendStartMs - 5000;
+        final freshestUnknown = assistantCandidates.lastWhere((candidate) {
+          final id = candidate['id'] as String;
+          final created = candidate['created'] as int;
+          return !knownAssistantMessageIds.contains(id) &&
+              (created <= 0 || created >= freshestLeewayMs);
+        }, orElse: () => const <String, dynamic>{});
+        if (freshestUnknown.isNotEmpty) {
+          return freshestUnknown['id'] as String;
+        }
+
+        if (activeAssistantMessageId != null &&
+            activeAssistantMessageId!.isNotEmpty) {
+          final matchesActive = assistantCandidates.any(
+            (candidate) => candidate['id'] == activeAssistantMessageId,
+          );
+          if (matchesActive) {
+            return activeAssistantMessageId;
+          }
+        }
+
+        final newestUnknown = assistantCandidates.lastWhere(
+          (candidate) =>
+              !knownAssistantMessageIds.contains(candidate['id'] as String),
+          orElse: () => const <String, dynamic>{},
+        );
+        if (newestUnknown.isNotEmpty) {
+          return newestUnknown['id'] as String;
+        }
+
+        return assistantCandidates.last['id'] as String;
+      }
+
+      Future<ChatMessageModel?> resolveAssistantMessageFromSessionIdle(
+        String reason,
+      ) async {
+        // Prefer OpenCode-like completion semantics: prompt_async accepts the
+        // request, then session transitions to idle when the turn is finished.
+        const statusPollAttempts = 180;
+        const statusPollInterval = Duration(seconds: 1);
+        const settleListAttempts = 24;
+        const settleListInterval = Duration(milliseconds: 500);
+
+        var sawBusy = false;
+        for (var attempt = 0; attempt < statusPollAttempts; attempt += 1) {
+          if (messageCompleted || eventController.isClosed) {
+            return null;
+          }
+          final status = await loadCurrentSessionStatus();
+          if (isBusyStatusType(status?.type)) {
+            sawBusy = true;
+          }
+          final isIdle = !isBusyStatusType(status?.type);
+          if (!isIdle) {
+            await Future<void>.delayed(statusPollInterval);
+            continue;
+          }
+
+          var candidateMessageId = activeAssistantMessageId;
+          for (
+            var settleAttempt = 0;
+            settleAttempt < settleListAttempts;
+            settleAttempt += 1
+          ) {
+            if (messageCompleted || eventController.isClosed) {
+              return null;
+            }
+            final entries = await loadSessionMessageEntries();
+            final selectedId = selectAssistantMessageIdFromEntries(entries);
+            if (selectedId != null && selectedId.isNotEmpty) {
+              candidateMessageId = selectedId;
+              break;
+            }
+            await Future<void>.delayed(settleListInterval);
+          }
+
+          if (candidateMessageId == null || candidateMessageId.isEmpty) {
+            // If no assistant candidate is visible yet, keep waiting for idle
+            // convergence to avoid concluding too early on stale snapshots.
+            if (!sawBusy) {
+              await Future<void>.delayed(statusPollInterval);
+              continue;
+            }
+            trace(
+              'fallback-watch-idle-no-candidate',
+              details: 'reason=$reason idleAttempt=${attempt + 1}',
+            );
+            return null;
+          }
+
+          ChatMessageModel? completed;
+          for (
+            var completionAttempt = 0;
+            completionAttempt < 60;
+            completionAttempt += 1
+          ) {
+            completed = await _getCompleteMessage(
+              projectId,
+              sessionId,
+              candidateMessageId,
+              directory: directory,
+            );
+            if (completed?.completedTime != null) {
+              break;
+            }
+            await Future<void>.delayed(const Duration(seconds: 1));
+          }
+          if (completed != null) {
+            return completed;
+          }
+
+          final entries = await loadSessionMessageEntries();
+          for (final entry in entries.reversed) {
+            final infoRaw = entry['info'];
+            final info = infoRaw is Map<String, dynamic>
+                ? infoRaw
+                : (infoRaw is Map ? Map<String, dynamic>.from(infoRaw) : null);
+            if (info == null) {
+              continue;
+            }
+            if ((info['id'] as String?) != candidateMessageId) {
+              continue;
+            }
+            final parsed = toChatMessageModel(entry);
+            if (parsed != null) {
+              return parsed;
+            }
+          }
+
+          return null;
+        }
+
+        trace(
+          'fallback-watch-idle-timeout',
+          details: 'reason=$reason attempts=$statusPollAttempts',
+        );
+        return null;
+      }
+
       Future<ChatMessageModel?> pollCompleteMessage(
         String messageId, {
         int maxAttempts = 120,
@@ -1102,38 +1359,57 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
             return;
           }
 
-          var fallbackMessageId = activeAssistantMessageId;
-          for (
-            var attempt = 0;
-            (fallbackMessageId == null || fallbackMessageId.isEmpty) &&
-                attempt < 30;
-            attempt += 1
-          ) {
-            fallbackMessageId = await resolveAssistantMessageId();
-            if (fallbackMessageId != null && fallbackMessageId.isNotEmpty) {
-              break;
+          final mode = FeatureFlags.promptAsyncIdleCompletion
+              ? 'idle'
+              : 'polling';
+          final startedAt = DateTime.now();
+          ChatMessageModel? completed;
+          if (FeatureFlags.promptAsyncIdleCompletion) {
+            trace('fallback-watch-mode-idle', details: 'reason=$reason');
+            completed = await resolveAssistantMessageFromSessionIdle(reason);
+          } else {
+            var fallbackMessageId = activeAssistantMessageId;
+            for (
+              var attempt = 0;
+              (fallbackMessageId == null || fallbackMessageId.isEmpty) &&
+                  attempt < 30;
+              attempt += 1
+            ) {
+              fallbackMessageId = await resolveAssistantMessageId();
+              if (fallbackMessageId != null && fallbackMessageId.isNotEmpty) {
+                break;
+              }
+              await Future<void>.delayed(const Duration(seconds: 2));
             }
-            await Future<void>.delayed(const Duration(seconds: 2));
-          }
 
-          if (fallbackMessageId == null || fallbackMessageId.isEmpty) {
-            AppLogger.warn(
-              'Completion fallback aborted: message ID unresolved reason=$reason',
+            if (fallbackMessageId == null || fallbackMessageId.isEmpty) {
+              AppLogger.warn(
+                'Completion fallback aborted: message ID unresolved reason=$reason',
+              );
+              trace('fallback-watch-no-message-id', details: 'reason=$reason');
+              emitCompletionMetric(
+                mode: mode,
+                outcome: 'no_message_id',
+                startedAt: startedAt,
+                details: 'reason=$reason',
+              );
+              messageCompleted = true;
+              maybeCloseEventController(
+                delay: const Duration(milliseconds: 200),
+              );
+              return;
+            }
+
+            AppLogger.info(
+              'Starting completion fallback reason=$reason id=$fallbackMessageId',
             );
-            trace('fallback-watch-no-message-id', details: 'reason=$reason');
-            messageCompleted = true;
-            maybeCloseEventController(delay: const Duration(milliseconds: 200));
-            return;
+            trace(
+              'fallback-watch-start-poll',
+              details: 'reason=$reason fallbackMessageId=$fallbackMessageId',
+            );
+            completed = await pollCompleteMessage(fallbackMessageId);
           }
 
-          AppLogger.info(
-            'Starting completion fallback reason=$reason id=$fallbackMessageId',
-          );
-          trace(
-            'fallback-watch-start-poll',
-            details: 'reason=$reason fallbackMessageId=$fallbackMessageId',
-          );
-          final completed = await pollCompleteMessage(fallbackMessageId);
           if (completed != null && !eventController.isClosed) {
             eventController.add(completed);
             trace(
@@ -1141,7 +1417,22 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
               details:
                   'messageId=${completed.id} completed=${completed.completedTime?.millisecondsSinceEpoch ?? 0}',
             );
+            emitCompletionMetric(
+              mode: mode,
+              outcome: 'completed',
+              startedAt: startedAt,
+              details: 'assistantMessageId=${completed.id}',
+            );
+          } else {
+            trace('fallback-watch-no-message', details: 'reason=$reason');
+            emitCompletionMetric(
+              mode: mode,
+              outcome: 'no_message',
+              startedAt: startedAt,
+              details: 'reason=$reason',
+            );
           }
+
           messageCompleted = true;
           maybeCloseEventController(delay: const Duration(milliseconds: 200));
         }());

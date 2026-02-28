@@ -264,6 +264,9 @@ class ChatProvider extends ChangeNotifier {
   // reconcile, preventing duplicate reconciles from repeated session.idle
   // events within the same completion cycle.
   String? _lastIdleReconcileSessionTurnKey;
+  int _idleReconcileEvaluations = 0;
+  int _idleReconcileTriggers = 0;
+  int _idleReconcileSkips = 0;
   final LinkedHashMap<String, List<ChatMessage>> _sessionMessagesLruCache =
       LinkedHashMap<String, List<ChatMessage>>();
 

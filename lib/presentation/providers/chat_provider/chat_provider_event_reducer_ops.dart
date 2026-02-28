@@ -100,6 +100,17 @@ extension _ChatProviderEventReducerOps on ChatProvider {
   }
 
   bool _sessionNeedsFinalMessageReconcileOnIdle(String sessionId) {
+    if (_currentSession?.id == sessionId) {
+      final hasPendingLocalForSession = _messages.whereType<UserMessage>().any(
+        (message) =>
+            message.sessionId == sessionId &&
+            _pendingLocalUserMessageIds.contains(message.id),
+      );
+      if (_state == ChatState.sending || hasPendingLocalForSession) {
+        return true;
+      }
+    }
+
     AssistantMessage? latestAssistant;
     for (var index = _messages.length - 1; index >= 0; index -= 1) {
       final message = _messages[index];
@@ -138,6 +149,24 @@ extension _ChatProviderEventReducerOps on ChatProvider {
     }
 
     return hasToolSurface || latestAssistant.parts.isEmpty;
+  }
+
+  void _recordIdleReconcileTelemetry({
+    required String sessionId,
+    required bool triggered,
+    required String decision,
+    required bool isCurrent,
+    required bool hasPreserved,
+  }) {
+    _idleReconcileEvaluations += 1;
+    if (triggered) {
+      _idleReconcileTriggers += 1;
+    } else {
+      _idleReconcileSkips += 1;
+    }
+    AppLogger.info(
+      'CW_METRIC idle_reconcile eval=$_idleReconcileEvaluations triggers=$_idleReconcileTriggers skips=$_idleReconcileSkips session=$sessionId decision=$decision current=$isCurrent preserved=$hasPreserved generation=$_messageStreamGeneration',
+    );
   }
 
   void _applyChatEvent(ChatEvent event) {
@@ -313,6 +342,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       case 'session.idle':
         final sessionId = properties['sessionID'] as String?;
         if (sessionId != null) {
+          final isCurrentSession = sessionId == _currentSession?.id;
           final previousStatusType = _sessionStatusById[sessionId]?.type;
           _sessionStatusById[sessionId] = const SessionStatusInfo(
             type: SessionStatusType.idle,
@@ -325,24 +355,45 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           // per send) without being affected by messages from other sessions.
           final idleTurnKey = '$sessionId:$_messageStreamGeneration';
           final shouldReconcileCurrentSession =
-              sessionId == _currentSession?.id &&
+              isCurrentSession &&
               !hasPreserved &&
               _lastIdleReconcileSessionTurnKey != idleTurnKey &&
               _sessionNeedsFinalMessageReconcileOnIdle(sessionId);
+          String reconcileDecision;
+          if (!isCurrentSession) {
+            reconcileDecision = 'non_current_session';
+          } else if (hasPreserved) {
+            reconcileDecision = 'preserved_stream';
+          } else if (_lastIdleReconcileSessionTurnKey == idleTurnKey) {
+            reconcileDecision = 'already_reconciled_turn';
+          } else if (shouldReconcileCurrentSession) {
+            reconcileDecision = 'triggered';
+          } else {
+            reconcileDecision = 'not_needed';
+          }
+          if (isCurrentSession) {
+            _recordIdleReconcileTelemetry(
+              sessionId: sessionId,
+              triggered: shouldReconcileCurrentSession,
+              decision: reconcileDecision,
+              isCurrent: isCurrentSession,
+              hasPreserved: hasPreserved,
+            );
+          }
           _traceFinal(
             'event-session-idle',
             sessionId: sessionId,
             details:
-                'isCurrent=${sessionId == _currentSession?.id} hasPreserved=$hasPreserved shouldReconcile=$shouldReconcileCurrentSession idleTurnKey=$idleTurnKey lastIdleTurn=${_lastIdleReconcileSessionTurnKey ?? "-"}',
+                'isCurrent=$isCurrentSession hasPreserved=$hasPreserved shouldReconcile=$shouldReconcileCurrentSession decision=$reconcileDecision idleTurnKey=$idleTurnKey lastIdleTurn=${_lastIdleReconcileSessionTurnKey ?? "-"}',
           );
           AppLogger.info(
-            'session.idle session=$sessionId isCurrent=${sessionId == _currentSession?.id} hasPreservedStream=$hasPreserved',
+            'session.idle session=$sessionId isCurrent=$isCurrentSession hasPreservedStream=$hasPreserved decision=$reconcileDecision',
           );
           if (!hasPreserved) {
             _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
           }
           _sessionErrorAttentionIds.remove(sessionId);
-          if (sessionId == _currentSession?.id) {
+          if (isCurrentSession) {
             _clearSessionAttentionForSession(sessionId);
             _activeMessageStreamSessionId = null;
             _clearActiveSendDraft();
