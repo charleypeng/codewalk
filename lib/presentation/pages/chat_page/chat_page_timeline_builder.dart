@@ -230,7 +230,9 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                     sentMessageHistory: sentMessageHistory,
                     prefilledDraft: _composerPrefilledDraft,
                     prefilledDraftVersion: _composerPrefilledDraftVersion,
-                    enabled: chatProvider.currentSession != null,
+                    enabled:
+                        chatProvider.currentSession != null ||
+                        chatProvider.isDraftingNewChat,
                     isResponding: chatProvider.canAbortActiveResponse,
                     focusNode: _inputFocusNode,
                     controller: _chatInputController,

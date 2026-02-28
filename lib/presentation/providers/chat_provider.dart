@@ -258,6 +258,8 @@ class ChatProvider extends ChangeNotifier {
   int _messageStreamGeneration = 0;
   String? _activeMessageStreamSessionId;
   ChatComposerDraft? _activeSendDraft;
+  bool _isNewChatDraftActive = false;
+  Future<void>? _lazySessionBootstrapTask;
   _RejectedDraftEnvelope? _rejectedDraft;
   bool _interruptSendInFlight = false;
   // One-shot guard: tracks the session+turn that last fired a final-message
@@ -489,6 +491,7 @@ class ChatProvider extends ChangeNotifier {
       _providersRefreshState == ChatProvidersRefreshState.loading;
   bool get isLoadingOlderMessages => _isLoadingOlderMessages;
   bool get hasMoreOldMessages => _hasMoreOldMessages;
+  bool get isDraftingNewChat => _isNewChatDraftActive;
 
   bool isSessionActivelyResponding(String sessionId) {
     final normalizedSessionId = sessionId.trim();
@@ -2085,6 +2088,15 @@ class ChatProvider extends ChangeNotifier {
             scopeId: scopeId,
           );
 
+      if (_isNewChatDraftActive && _currentSession == null) {
+        _messages = <ChatMessage>[];
+        _isLoadingOlderMessages = false;
+        _hasMoreOldMessages = false;
+        _messagesVersion++;
+        _setState(ChatState.loaded);
+        return;
+      }
+
       // Prefer the in-memory session over the persisted ID to avoid reverting
       // a session switch that already updated _currentSession but whose
       // persistence write is still in flight.
@@ -2155,7 +2167,38 @@ class ChatProvider extends ChangeNotifier {
   }
 
   /// Create new session
+  Future<void> beginNewChatDraft() async {
+    final outgoingSessionId = _currentSession?.id;
+    if (outgoingSessionId != null && _messages.isNotEmpty) {
+      _cacheSessionMessages(outgoingSessionId, _messages);
+      unawaited(
+        _persistSessionMessagesSnapshotBestEffort(outgoingSessionId, _messages),
+      );
+    }
+
+    _lazySessionBootstrapTask = null;
+    _currentSession = null;
+    _isNewChatDraftActive = true;
+    _threadPermissionsVersion++;
+    _messages = <ChatMessage>[];
+    _isLoadingOlderMessages = false;
+    _hasMoreOldMessages = false;
+    _messagesVersion++;
+    _pendingLocalUserMessageIds.clear();
+    _clearQueuedSendState();
+    _clearRejectedDraft();
+    _sessionInsightsError = null;
+
+    final serverId = await _resolveServerScopeId();
+    final scopeId = _resolveContextScopeId();
+    await _saveCurrentSessionId('', serverId: serverId, scopeId: scopeId);
+
+    _setState(ChatState.loaded);
+  }
+
+  /// Create new session
   Future<void> createNewSession({String? parentId, String? title}) async {
+    _isNewChatDraftActive = false;
     final projectId = projectProvider.currentProjectId;
     final directory = projectProvider.currentDirectory;
     _setState(ChatState.loading);
@@ -2224,6 +2267,7 @@ class ChatProvider extends ChangeNotifier {
 
   /// Select session
   Future<void> selectSession(ChatSession session) async {
+    _isNewChatDraftActive = false;
     if (_currentSession?.id == session.id) {
       unawaited(loadSessionInsights(session.id, silent: true));
       return;
@@ -2436,8 +2480,16 @@ class ChatProvider extends ChangeNotifier {
         ? const <FileInputPart>[]
         : attachments;
     final session = _currentSession;
-    if (session == null ||
-        (trimmedText.isEmpty && effectiveAttachments.isEmpty)) {
+    if (trimmedText.isEmpty && effectiveAttachments.isEmpty) {
+      return;
+    }
+
+    if (session == null) {
+      await sendMessage(
+        trimmedText,
+        attachments: effectiveAttachments,
+        shellMode: shellMode,
+      );
       return;
     }
 
@@ -2854,8 +2906,15 @@ class ChatProvider extends ChangeNotifier {
     final effectiveAttachments = shellMode
         ? const <FileInputPart>[]
         : attachments;
-    if (_currentSession == null ||
-        (trimmedText.isEmpty && effectiveAttachments.isEmpty)) {
+    if (trimmedText.isEmpty && effectiveAttachments.isEmpty) {
+      return;
+    }
+    if (_currentSession == null) {
+      await sendMessage(
+        trimmedText,
+        attachments: effectiveAttachments,
+        shellMode: shellMode,
+      );
       return;
     }
     if (_interruptSendInFlight) {
@@ -2977,13 +3036,29 @@ class ChatProvider extends ChangeNotifier {
     final hasSessionOverride =
         normalizedSessionOverride != null &&
         normalizedSessionOverride.isNotEmpty;
-    if ((!hasSessionOverride && _currentSession == null) ||
-        (trimmedText.isEmpty && effectiveAttachments.isEmpty)) {
+    if (trimmedText.isEmpty && effectiveAttachments.isEmpty) {
       return false;
     }
 
+    if (!hasSessionOverride && _currentSession == null) {
+      final inFlight = _lazySessionBootstrapTask;
+      if (inFlight != null) {
+        await inFlight;
+      } else {
+        _lazySessionBootstrapTask = createNewSession();
+        try {
+          await _lazySessionBootstrapTask;
+        } finally {
+          _lazySessionBootstrapTask = null;
+        }
+      }
+      if (_currentSession == null) {
+        return false;
+      }
+    }
+
     final sendSessionId = hasSessionOverride
-        ? normalizedSessionOverride!
+        ? normalizedSessionOverride
         : _currentSession!.id;
     AppLogger.info(
       'Provider send start session=$sendSessionId agent=${_selectedAgentName ?? "-"} provider=${_selectedProviderId ?? "-"} model=${_selectedModelId ?? "-"} variant=${_selectedVariantId ?? "auto"}',

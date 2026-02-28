@@ -471,6 +471,37 @@ void main() {
     );
 
     test(
+      'submitMessageWithQueue lazily creates a new session from draft state',
+      () async {
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+
+        final initialSessionCount = chatRepository.sessions.length;
+        final previousSessionId = provider.currentSession?.id;
+        expect(previousSessionId, isNotNull);
+
+        await provider.beginNewChatDraft();
+        expect(provider.currentSession, isNull);
+
+        await provider.submitMessageWithQueue('start from lazy draft');
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(provider.currentSession, isNotNull);
+        expect(provider.currentSession?.id, isNot(previousSessionId));
+        expect(chatRepository.sessions.length, initialSessionCount + 1);
+        expect(chatRepository.lastSendSessionId, provider.currentSession?.id);
+
+        final textParts =
+            chatRepository.lastSendInput?.parts
+                .whereType<TextInputPart>()
+                .toList(growable: false) ??
+            const <TextInputPart>[];
+        expect(textParts, hasLength(1));
+        expect(textParts.first.text, 'start from lazy draft');
+      },
+    );
+
+    test(
       'switching sessions ignores in-flight stream updates from previous session',
       () async {
         chatRepository.sessions.add(

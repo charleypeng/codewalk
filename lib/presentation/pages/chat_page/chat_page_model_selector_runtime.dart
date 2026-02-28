@@ -1001,8 +1001,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
   Future<void> _createNewSession() async {
     final chatProvider = context.read<ChatProvider>();
 
-    // Technical comment translated to English.
-    await chatProvider.createNewSession();
+    await chatProvider.beginNewChatDraft();
     if (!mounted) {
       return;
     }
