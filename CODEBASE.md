@@ -52,7 +52,7 @@ codewalk/
 lib/main.dart                                # Runtime entry; DI, providers, DynamicColorBuilder with user theme prefs; syncs dynamic color availability to SettingsProvider via postFrameCallback
 lib/presentation/pages/app_shell_page.dart   # Root shell; gates onboarding wizard, mounts ChatPage and desktop tray behavior; triggers startup update toast via `addPostFrameCallback` + `UpdateCheckResult` when `checkUpdatesOnOpen` is enabled; reacts to `UpdateInstallState` transitions (downloading/done/failed) to show progress snackbars and trigger `startInstall()`
 lib/presentation/pages/onboarding_wizard_page.dart # First-run wizard shown when no server is configured
-lib/presentation/pages/chat_page.dart         # Main chat/session/file UI entry; uses WindowSizeClass for responsive layout
+lib/presentation/pages/chat_page.dart         # Main chat/session/file UI entry; uses WindowSizeClass for responsive layout; guards startup logic against no-active-server state; timeline empty state includes CTA to setup wizard
 .github/workflows/ci.yml                      # CI workflow entry
 .github/workflows/release.yml                 # Release workflow entry
 ```
@@ -75,7 +75,7 @@ lib/data/cache/chat_cache_payload_store_io.dart   # IO implementation: hybrid fi
 lib/data/cache/chat_cache_payload_store_stub.dart # Non-IO platforms: disabled payload store (returns null)
 lib/data/repositories/*.dart                      # Domain repository implementations
 lib/domain/usecases/*.dart                        # Application use cases consumed by providers
-lib/presentation/providers/app_provider.dart      # Server profiles, health polling, local runtime state
+lib/presentation/providers/app_provider.dart      # Server profiles, health polling, local runtime state; guards health polling/connection when no active server profile is set
 lib/presentation/providers/project_provider.dart  # Project/worktree context selection and persistence
 lib/presentation/providers/settings_provider.dart # Experience settings, theme mode, dynamic color, AMOLED dark toggle, brand seed, contrast, composer tips visibility, sounds, update checks, desktop pane widths; exposes `dynamicColorAvailable` (bool) and `updateDynamicColorAvailability()` for runtime platform signal; `setCheckUpdatesOnOpen()` setter and `_performStartupUpdateCheck()` private method drive the startup update toast; `UpdateInstallState` enum (idle/downloading/installing/done/failed) and `startInstall()` manage APK download + install lifecycle via `open_filex`
 lib/presentation/theme/brand_colors.dart              # BrandColor enum with 5 seed colors for non-dynamic-color themes
@@ -92,7 +92,7 @@ lib/presentation/services/android_battery_optimization_service.dart # Android ba
 lib/presentation/providers/chat_provider.dart     # Chat state/realtime/session facade; cache-first per-session SWR restore, in-memory LRU message cache, persisted per-session snapshots, microtask coalescing, event dedup buffer, render gate, favorite models; project-switch SWR support via `onProjectScopeChanged(waitForRevalidation: false)` and `loadSessions(backgroundRevalidation: true)`; includes `loadOlderMessages()` scaffold and keeps loadSessionInsights fire-and-forget on session switch; idle final-message reconcile can bypass abort-suppression only for targeted `session-idle-final-reconcile`
 lib/presentation/pages/onboarding_wizard_page.dart # 3-step onboarding wizard (Welcome, Server Setup, Ready); uses ServerSetupQuickGuide
 lib/presentation/pages/settings/sections/servers_settings_section.dart # Server profile CRUD; exports reusable ServerSetupQuickGuide widget
-lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade; WindowListener for desktop lifecycle; holds tool-chain expanded state map; _isSessionSwitchInFlight guard, _sessionCollapseHistoryCache / _sessionCollapseWorkCache per-session collapse maps; top-reach history loading is coordinated with anchor-preserving restore; workspace controller uses fast project-scope switch path
+lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade; WindowListener for desktop lifecycle; guards startup (checkConnection/loadSessions) against no-active-server; holds tool-chain expanded state map; _isSessionSwitchInFlight guard, _sessionCollapseHistoryCache / _sessionCollapseWorkCache per-session collapse maps; top-reach history loading is coordinated with anchor-preserving restore; workspace controller uses fast project-scope switch path
 lib/presentation/widgets/chat_input_widget.dart   # Composer/input orchestration facade
 lib/presentation/widgets/chat_message_widget.dart # Message bubble with build-skip cache, cached MarkdownStyleSheet; tool-chain expand/restore callbacks
 lib/presentation/widgets/message_entrance_animation.dart # Entrance animation wrapper; `role` parameter selects user (130 ms) or assistant (180 ms) motion profile from AppAnimations
@@ -127,7 +127,7 @@ chat_page_chrome.dart
 chat_page_file_runtime.dart
 chat_page_composer_widgets.dart
 chat_page_model_selector_runtime.dart
-chat_page_timeline_builder.dart              # Passes `role` to MessageEntranceAnimation so each bubble uses the correct motion profile
+chat_page_timeline_builder.dart              # Renders empty state with no-server CTA to wizard; passes `role` to MessageEntranceAnimation so each bubble uses the correct motion profile
 chat_page_timeline_runtime.dart              # Tool-chain expanded state key resolution (sessionId::messageId::startPartId)
 ```
 

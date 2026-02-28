@@ -64,8 +64,8 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 - [x] Exibir badge no menu hambúrguer para sessões fora de foco que exigem atenção: em cenário multi-sessão no mobile, mostrar indicador visual no ícone/menu hambúrguer quando houver sessão não focada com evento pendente (resposta concluída, question aguardando ação, erro/notificação relevante). DoD: 1) badge aparece quando qualquer sessão fora de foco tiver estado de atenção; 2) badge desaparece/atualiza ao consumir o evento ou focar a sessão; 3) diferenciação mínima de tipo de evento (ex.: dot/contador/estado) sem poluir UI; 4) estilo coerente com Material You (MD3) e boa visibilidade em telas pequenas. - Related commits: cda2973 06a8194 eae9883
 - [ ] In Settings > Shortcuts, review shortcut coverage and add missing options.
 - [ ] Add shortcut to enable/disable STT in Shortcuts.
-- [ ] In Settings > About, create an independent update system for new versions.
-- [ ] In About, add "check updates on open" option (default on), with toast and update button.
+- [x] In Settings > About, create an independent update system for new versions.
+- [x] In About, add "check updates on open" option (default on), with toast and update button.
 - [x] Reorganize the "Project Context" screen for a more dynamic visual UX; tapping a project opens it immediately and closes the dialog, removing the need for a separate open button next to trash. - Related commits: ee0b95b 725dda7
 - [x] Replace the current project selection dialog with an inline rich select/dropdown component. - Commit hash: 0cc892c
 - [x] Investigate and fix chat flicker and intermittent blank history on conversation open/update: stabilized tool-call rendering, fixed empty-session blink, and improved revalidation stability. - Related commits: 26c8448 9351919
@@ -75,7 +75,7 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 - [ ] Plan the merge between the project selector and the conversations sidebar, grouping conversations by open projects to speed up navigation.
 - [ ] Allow pinning sessions in the Conversations sidebar.
 - [x] Corrigir o erro ao tentar enviar mensagem após resposta do assistente (hidden response until session switch/retry): implemented async send stale-ID protection and idle final-reconcile bypass during abort suppression. - Related commits: 745c0a8 f1faf4a
-- [ ] Corrigir a tela principal quando não tem nenhum servidor configurado: a tela pisca rapidamente apresentando erro de conexão, mas não deveria procurar atualização se não há nenhum servidor cadastrado.
+- [x] Corrigir a tela principal quando não tem nenhum servidor configurado: a tela pisca rapidamente apresentando erro de conexão, mas não deveria procurar atualização se não há nenhum servidor cadastrado: skipped startup connection checks when no server exists; added no-server empty state + direct setup wizard button. - Commit hash: 6e35dff
 - [ ] Suavizar a chegada de tool calls e novas mensagens, bem como o envio de novas mensagens pelo usuário: atualmente tudo aparece de uma vez, mas com animação de deslize a experiência fica mais atraente.
 - [x] Restrict session title update service to main sessions only: subsessions do not need and must not use the dynamic title generation system. - Commit hash: 4d9ac2e
 - [ ] Fix server health inconsistency: in the hamburger menu a red status dot appears, but in Settings the same server is shown as fully healthy.

@@ -23,8 +23,11 @@ This document contains only active architectural decisions that represent the cu
 - ADR-017: Android Foreground Service for Reliable Background Monitoring
 - ADR-018: Dedicated SSE Dio Instance for Connection Pool Isolation
 - ADR-019: Defer Config-Mutating API Calls During Active Server Processing
+- ADR-020: Session-Level SWR Cache with Persisted LRU Snapshots
 
 ---
+
+
 
 ## ADR-001: Multi-Server Orchestration, Scoped Persistence, and Secure Credential Storage (2026-02-19)
 

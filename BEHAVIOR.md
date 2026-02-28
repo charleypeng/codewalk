@@ -19,6 +19,14 @@
 - **When** the user tries to access any feature
 - **Then** the app blocks access — configuring a server is a prerequisite for all functionality
 
+### No-server chat state is stable and actionable
+
+- **Given** no server is configured and the chat screen is visible (for example, onboarding was skipped/dismissed)
+- **When** the screen initializes
+- **Then** startup connection checks are skipped (no transient connection-error flicker)
+- **Then** the main area shows a dedicated empty state with `No server configured yet`
+- **Then** a `Set up server` button opens the setup wizard directly in the server-connection flow
+
 ---
 
 ## Servers
