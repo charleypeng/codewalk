@@ -7315,6 +7315,48 @@ void main() {
       expect(find.text('Task 1/1 Todo'), findsNothing);
     },
   );
+
+  testWidgets(
+    'shows setup CTA when no server is configured and opens wizard directly',
+    (WidgetTester tester) async {
+      final localDataSource = InMemoryAppLocalDataSource();
+      final chatRepository = FakeChatRepository();
+      final appRepository = FakeAppRepository()
+        ..checkConnectionResult = const Left(
+          NetworkFailure('server should not be checked'),
+        );
+      final provider = _buildChatProvider(
+        chatRepository: chatRepository,
+        appRepository: appRepository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(
+        localDataSource: localDataSource,
+        appRepository: appRepository,
+      );
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await _pumpUiFrames(tester);
+
+      expect(find.text('No server configured yet'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('no_server_setup_button')),
+        findsOneWidget,
+      );
+      expect(find.text('server should not be checked'), findsNothing);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('no_server_setup_button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('step_server_setup')),
+        findsOneWidget,
+      );
+      expect(find.text('Server connection'), findsOneWidget);
+    },
+  );
 }
 
 Future<void> _pumpUiFrames(WidgetTester tester) async {

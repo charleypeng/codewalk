@@ -50,6 +50,7 @@ import '../widgets/permission_request_card.dart';
 import '../widgets/question_request_card.dart';
 import '../widgets/session_title_inline_editor.dart';
 import '../widgets/session_todo_list_widget.dart';
+import 'onboarding_wizard_page.dart';
 import 'settings_page.dart';
 
 part 'chat_page_types_part.dart';
@@ -457,6 +458,10 @@ class _ChatPageState extends State<ChatPage>
     try {
       await appProvider.initialize();
       await projectProvider.initializeProject();
+      if (appProvider.activeServer == null) {
+        chatProvider.clearError();
+        return;
+      }
       await appProvider.checkConnection(
         directory: projectProvider.currentDirectory,
       );

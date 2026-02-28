@@ -390,6 +390,63 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     }
 
     if (chatProvider.currentSession == null) {
+      final appProvider = context.watch<AppProvider>();
+      final hasConfiguredServer = appProvider.activeServer != null;
+      if (!hasConfiguredServer) {
+        return MessageEntranceAnimation(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Symbols.dns_rounded,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No server configured yet',
+                    style: Theme.of(context).textTheme.titleMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Add a server to start chatting.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    key: const ValueKey<String>('no_server_setup_button'),
+                    onPressed: () {
+                      unawaited(
+                        Navigator.of(context).push(
+                          AppPageRoute(
+                            builder: (_) => OnboardingWizardPage(
+                              showSkipAction: false,
+                              initialFlow: SetupWizardInitialFlow.connectServer,
+                              onComplete: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Symbols.add),
+                    label: const Text('Set up server'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+
       return MessageEntranceAnimation(
         child: Center(
           child: Column(

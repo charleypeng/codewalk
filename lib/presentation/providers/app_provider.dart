@@ -158,11 +158,11 @@ class AppProvider extends ChangeNotifier {
     _applyActiveServerToClient();
     _bindLocalServerRuntimeEvents();
     _initialized = true;
-    unawaited(refreshServerHealth());
-    unawaited(runLocalServerDiagnostics(notify: false));
-    if (_enableHealthPolling) {
-      _startHealthPolling();
+    if (_serverProfiles.isNotEmpty) {
+      unawaited(refreshServerHealth());
     }
+    unawaited(runLocalServerDiagnostics(notify: false));
+    _syncHealthPollingLifecycle();
     notifyListeners();
   }
 
@@ -354,6 +354,7 @@ class AppProvider extends ChangeNotifier {
     }
     await _persistServerProfiles();
     _applyActiveServerToClient();
+    _syncHealthPollingLifecycle();
     await refreshServerHealth(serverId: profile.id);
     _errorMessage = '';
     notifyListeners();
@@ -432,11 +433,14 @@ class AppProvider extends ChangeNotifier {
       _isConnected = false;
       _appInfo = null;
       _applyActiveServerToClient();
+      _syncHealthPollingLifecycle();
       await _persistServerProfiles();
       _errorMessage = '';
       notifyListeners();
       return true;
     }
+
+    _syncHealthPollingLifecycle();
 
     if (_defaultServerId == id) {
       _defaultServerId = _serverProfiles.first.id;
@@ -965,6 +969,12 @@ class AppProvider extends ChangeNotifier {
 
   Future<void> checkConnection({String? directory}) async {
     await initialize();
+    if (activeServer == null) {
+      _isConnected = false;
+      _errorMessage = '';
+      notifyListeners();
+      return;
+    }
     final result = await _checkConnection(directory: directory);
     result.fold(
       (failure) {
@@ -1066,6 +1076,18 @@ class AppProvider extends ChangeNotifier {
     _healthTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       unawaited(refreshServerHealth());
     });
+  }
+
+  void _syncHealthPollingLifecycle() {
+    if (!_enableHealthPolling || _serverProfiles.isEmpty) {
+      _healthTimer?.cancel();
+      _healthTimer = null;
+      return;
+    }
+    if (_healthTimer?.isActive == true) {
+      return;
+    }
+    _startHealthPolling();
   }
 
   void _setStatus(AppStatus status) {

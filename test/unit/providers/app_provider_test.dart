@@ -95,6 +95,21 @@ void main() {
       },
     );
 
+    test(
+      'checkConnection skips remote call when no server is configured',
+      () async {
+        repository.checkConnectionResult = const Left(
+          NetworkFailure('should not be used without server'),
+        );
+
+        await provider.initialize();
+        await provider.checkConnection();
+
+        expect(provider.isConnected, isFalse);
+        expect(provider.errorMessage, isEmpty);
+      },
+    );
+
     test('addServerProfile rejects duplicates after normalization', () async {
       await provider.initialize();
       final created = await provider.addServerProfile(
