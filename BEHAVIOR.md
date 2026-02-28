@@ -187,6 +187,20 @@
 - **Then** the chat reveals the **start** of the final assistant message (not the end)
 - **Then** the reveal is anchored near the upper-center of the viewport to favor immediate reading
 
+### Final response reconcile is resilient to transient abort suppression
+
+- **Given** the assistant turn ends and `session.idle` arrives while a short abort-suppression window is still active
+- **When** the latest assistant message still has only tool/work surface content (no final visible text yet)
+- **Then** the app still runs a targeted final-message reconcile for the active session
+- **Then** the final assistant response becomes visible without requiring the user to switch sessions and return
+
+### Async send completion ignores stale assistant IDs
+
+- **Given** async send fallback needs to resolve the assistant message ID from session history
+- **When** older assistant messages already exist in that history
+- **Then** the client excludes pre-send known assistant IDs and prioritizes in-progress/fresh IDs from the current turn
+- **Then** if baseline prefetch fails, a timestamp guard is kept as fallback to avoid stale completion selection
+
 ### Post-completion reading remains stable
 
 - **Given** the final assistant response is already visible

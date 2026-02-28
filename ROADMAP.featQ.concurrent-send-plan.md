@@ -1,8 +1,8 @@
 # Concurrent Send While Responding - Technical Plan
 
-> **Status**: Planning (implementation-ready)
+> **Status**: In progress (async send stale-ID protection and idle bypass implemented)
 > **Feature**: featQ / Group 3 / Item 27
-> **Scope**: Allow a new user message while assistant is still streaming in the same session
+> **Scope**: Allow a new user message while assistant is still streaming in the same session (Core abort suppression fixes in 745c0a8, f1faf4a)
 
 ---
 

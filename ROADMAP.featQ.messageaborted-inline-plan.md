@@ -1,8 +1,8 @@
 # MessageAborted Inline UX Plan
 
-> **Status**: Planning (implementation-ready)
+> **Status**: In progress (async send stale-ID protection and idle bypass implemented)
 > **Feature**: featQ / Group 3 / MessageAborted inline feedback
-> **Related Task**: `ROADMAP.featQ.md` item about replacing toast+retry for MessageAborted
+> **Related Task**: `ROADMAP.featQ.md` item about replacing toast+retry for MessageAborted (Implemented in 745c0a8, f1faf4a)
 
 ## Objective
 

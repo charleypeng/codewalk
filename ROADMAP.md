@@ -56,7 +56,7 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 
 #### `featQ` Cross-platform UX and settings polish
 
-- [ ] Investigate and fix conversation continuity when switching sessions/projects... - Related commits: acce617 9dcd773 1581c65 cdee253 1fcf33e 68baebe 61934e9 0ee474c df9ec9e 931d9a8
+- [x] Investigate and fix conversation continuity when switching sessions/projects (hidden response until session switch/retry): implemented async send stale-ID protection and idle final-reconcile bypass during abort suppression. - Related commits: acce617 9dcd773 1581c65 cdee253 1fcf33e 68baebe 61934e9 0ee474c df9ec9e 931d9a8 745c0a8 f1faf4a
 - [x] Investigate and fix conversation-open click behavior: double-click freeze and sidebar sync. - Related commits: 204114e 09c1641 eccec6b dfa9754 b5cda81
 - [x] Ajustar ciclagem de atalhos para comportamento tipo Alt+Tab: hoje a ciclagem percorre lista de recentes/favoritos sem priorizar o último item anterior. Implementar primeira ação focada no último usado anterior para troca rápida entre dois itens, com avanço sequencial para demais recentes apenas em pressões subsequentes dentro de janela curta (ex.: 2s). DoD: 1) primeira ativação do atalho alterna para o último item anterior usado; 2) segunda/terceira ativações em sequência (janela temporal) avançam na lista de recentes; 3) comportamento consistente para agente, modelo e variante; 4) fallback previsível quando não houver histórico suficiente. - Related commits: 2086730 c19d346
 - [ ] Canned answers manager for fast reply
@@ -74,7 +74,7 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 - [ ] In composer, adjust ArrowUp/ArrowDown without modifiers for multiline behavior before history navigation; with modifiers keep default editor behavior.
 - [ ] Plan the merge between the project selector and the conversations sidebar, grouping conversations by open projects to speed up navigation.
 - [ ] Allow pinning sessions in the Conversations sidebar.
-- [ ] Corrigir o erro ao tentar enviar mensagem após resposta do assistente: atualmente é preciso insistir no envio uma ou duas vezes e clicar em retry, mesmo com o servidor online.
+- [x] Corrigir o erro ao tentar enviar mensagem após resposta do assistente (hidden response until session switch/retry): implemented async send stale-ID protection and idle final-reconcile bypass during abort suppression. - Related commits: 745c0a8 f1faf4a
 - [ ] Corrigir a tela principal quando não tem nenhum servidor configurado: a tela pisca rapidamente apresentando erro de conexão, mas não deveria procurar atualização se não há nenhum servidor cadastrado.
 - [ ] Suavizar a chegada de tool calls e novas mensagens, bem como o envio de novas mensagens pelo usuário: atualmente tudo aparece de uma vez, mas com animação de deslize a experiência fica mais atraente.
 - [ ] Restrict session title update service to main sessions only: subsessions do not need and must not use the dynamic title generation system.
