@@ -142,6 +142,11 @@ extension _ChatProviderAutoTitleOps on ChatProvider {
       return;
     }
 
+    final parentId = session.parentId?.trim();
+    if (parentId != null && parentId.isNotEmpty) {
+      return;
+    }
+
     if (!await _isAutoTitleEnabledForActiveServer()) {
       return;
     }

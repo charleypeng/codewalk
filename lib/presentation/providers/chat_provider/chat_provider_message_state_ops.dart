@@ -56,6 +56,11 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     if (titleGenerator == null || sessionId.isEmpty) {
       return;
     }
+    final session = _sessionById(sessionId);
+    final parentId = session?.parentId?.trim();
+    if (parentId != null && parentId.isNotEmpty) {
+      return;
+    }
     if (_autoTitleConsolidatedSessionIds.contains(sessionId)) {
       return;
     }

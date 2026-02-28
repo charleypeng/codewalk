@@ -147,6 +147,102 @@ void main() {
       },
     );
 
+    test('does not generate AI titles for subsessions', () async {
+      localDataSource.serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'srv_test',
+          'url': 'http://127.0.0.1:4096',
+          'createdAt': 1,
+          'updatedAt': 1,
+          'aiGeneratedTitlesEnabled': true,
+        },
+      ]);
+
+      chatRepository.sessions.insert(
+        0,
+        ChatSession(
+          id: 'ses_child',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(2000),
+          title: 'Child session',
+          parentId: 'ses_1',
+        ),
+      );
+      chatRepository.messagesBySession['ses_child'] = <ChatMessage>[];
+
+      final titleGenerator = _FakeChatTitleGenerator();
+      final providerWithAutoTitle = ChatProvider(
+        sendChatMessage: SendChatMessage(chatRepository),
+        abortChatSession: AbortChatSession(chatRepository),
+        getChatSessions: GetChatSessions(chatRepository),
+        createChatSession: CreateChatSession(chatRepository),
+        getChatMessages: GetChatMessages(chatRepository),
+        getChatMessage: GetChatMessage(chatRepository),
+        getAgents: GetAgents(appRepository),
+        getProviders: GetProviders(appRepository),
+        deleteChatSession: DeleteChatSession(chatRepository),
+        updateChatSession: UpdateChatSession(chatRepository),
+        shareChatSession: ShareChatSession(chatRepository),
+        unshareChatSession: UnshareChatSession(chatRepository),
+        forkChatSession: ForkChatSession(chatRepository),
+        getSessionStatus: GetSessionStatus(chatRepository),
+        getSessionChildren: GetSessionChildren(chatRepository),
+        getSessionTodo: GetSessionTodo(chatRepository),
+        getSessionDiff: GetSessionDiff(chatRepository),
+        watchChatEvents: WatchChatEvents(chatRepository),
+        watchGlobalChatEvents: WatchGlobalChatEvents(chatRepository),
+        listPendingPermissions: ListPendingPermissions(chatRepository),
+        replyPermission: ReplyPermission(chatRepository),
+        listPendingQuestions: ListPendingQuestions(chatRepository),
+        replyQuestion: ReplyQuestion(chatRepository),
+        rejectQuestion: RejectQuestion(chatRepository),
+        projectProvider: ProjectProvider(
+          projectRepository: FakeProjectRepository(),
+          localDataSource: localDataSource,
+        ),
+        localDataSource: localDataSource,
+        titleGenerator: titleGenerator,
+      );
+
+      chatRepository.sendMessageHandler = (_, sessionId, _, _) async* {
+        yield Right(
+          AssistantMessage(
+            id: 'msg_assistant_subsession',
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(3000),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(3100),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_assistant_subsession',
+                messageId: 'msg_assistant_subsession',
+                sessionId: 'ses_child',
+                text: 'reply',
+              ),
+            ],
+          ),
+        );
+      };
+
+      await providerWithAutoTitle.projectProvider.initializeProject();
+      await providerWithAutoTitle.loadSessions();
+      await providerWithAutoTitle.selectSession(
+        providerWithAutoTitle.sessions.firstWhere(
+          (session) => session.id == 'ses_child',
+        ),
+      );
+      await providerWithAutoTitle.sendMessage('hello');
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+
+      expect(titleGenerator.callCount, 0);
+      expect(
+        chatRepository.sessions
+            .where((session) => session.id == 'ses_child')
+            .first
+            .title,
+        'Child session',
+      );
+    });
+
     test(
       'generates title after each user/assistant turn until 3+3 messages',
       () async {
