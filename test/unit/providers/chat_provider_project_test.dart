@@ -695,6 +695,14 @@ void main() {
           }
           await networkGate.future;
         };
+        final messagesGate = Completer<void>();
+        final messagesStarted = Completer<void>();
+        scopedRepository.getMessagesDelay = () async {
+          if (!messagesStarted.isCompleted) {
+            messagesStarted.complete();
+          }
+          await messagesGate.future;
+        };
 
         scopedRepository.sessions
           ..clear()
@@ -713,10 +721,12 @@ void main() {
             .timeout(const Duration(milliseconds: 300));
 
         await networkStarted.future;
+        await messagesStarted.future;
         expect(scopedProvider.sessions.map((item) => item.id), <String>[
           'ses_b_cached',
         ]);
 
+        messagesGate.complete();
         networkGate.complete();
         await Future<void>.delayed(const Duration(milliseconds: 50));
         expect(scopedProvider.sessions.map((item) => item.id), <String>[
@@ -1082,6 +1092,134 @@ void main() {
         await scopedProvider.projectProvider.switchProject('proj_a');
         await scopedProvider.onProjectScopeChanged();
 
+        expect(scopedProvider.sessions.first.id, 'ses_a_new');
+      },
+    );
+
+    test(
+      'dirty inactive context keeps cached sessions visible during fast switch',
+      () async {
+        final scopedRepository = FakeChatRepository(
+          sessions: <ChatSession>[
+            ChatSession(
+              id: 'ses_a_old',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              title: 'Session A Old',
+            ),
+          ],
+        );
+        final scopedLocal = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test';
+        final scopedProvider = ChatProvider(
+          sendChatMessage: SendChatMessage(scopedRepository),
+          getChatSessions: GetChatSessions(scopedRepository),
+          createChatSession: CreateChatSession(scopedRepository),
+          getChatMessages: GetChatMessages(scopedRepository),
+          getChatMessage: GetChatMessage(scopedRepository),
+          getAgents: GetAgents(appRepository),
+          getProviders: GetProviders(appRepository),
+          deleteChatSession: DeleteChatSession(scopedRepository),
+          updateChatSession: UpdateChatSession(scopedRepository),
+          shareChatSession: ShareChatSession(scopedRepository),
+          unshareChatSession: UnshareChatSession(scopedRepository),
+          forkChatSession: ForkChatSession(scopedRepository),
+          getSessionStatus: GetSessionStatus(scopedRepository),
+          getSessionChildren: GetSessionChildren(scopedRepository),
+          getSessionTodo: GetSessionTodo(scopedRepository),
+          getSessionDiff: GetSessionDiff(scopedRepository),
+          watchChatEvents: WatchChatEvents(scopedRepository),
+          watchGlobalChatEvents: WatchGlobalChatEvents(scopedRepository),
+          listPendingPermissions: ListPendingPermissions(scopedRepository),
+          replyPermission: ReplyPermission(scopedRepository),
+          listPendingQuestions: ListPendingQuestions(scopedRepository),
+          replyQuestion: ReplyQuestion(scopedRepository),
+          rejectQuestion: RejectQuestion(scopedRepository),
+          projectProvider: ProjectProvider(
+            projectRepository: FakeProjectRepository(
+              currentProject: Project(
+                id: 'proj_a',
+                name: 'Project A',
+                path: '/repo/a',
+                createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+              ),
+              projects: <Project>[
+                Project(
+                  id: 'proj_a',
+                  name: 'Project A',
+                  path: '/repo/a',
+                  createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+                ),
+                Project(
+                  id: 'proj_b',
+                  name: 'Project B',
+                  path: '/repo/b',
+                  createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+                ),
+              ],
+            ),
+            localDataSource: scopedLocal,
+          ),
+          localDataSource: scopedLocal,
+        );
+
+        await scopedProvider.projectProvider.initializeProject();
+        await scopedProvider.initializeProviders();
+        await scopedProvider.loadSessions();
+        expect(scopedProvider.sessions.first.id, 'ses_a_old');
+
+        scopedRepository.sessions
+          ..clear()
+          ..add(
+            ChatSession(
+              id: 'ses_b',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(2000),
+              title: 'Session B',
+            ),
+          );
+        await scopedProvider.projectProvider.switchProject('proj_b');
+        await scopedProvider.onProjectScopeChanged(waitForRevalidation: false);
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+        expect(scopedProvider.sessions.first.id, 'ses_b');
+
+        scopedRepository.emitGlobalEvent(
+          const ChatEvent(
+            type: 'session.updated',
+            properties: <String, dynamic>{'directory': '/repo/a'},
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        final revalidationGate = Completer<void>();
+        final revalidationStarted = Completer<void>();
+        scopedRepository.getSessionsDelay = () async {
+          if (!revalidationStarted.isCompleted) {
+            revalidationStarted.complete();
+          }
+          await revalidationGate.future;
+        };
+        scopedRepository.sessions
+          ..clear()
+          ..add(
+            ChatSession(
+              id: 'ses_a_new',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(3000),
+              title: 'Session A New',
+            ),
+          );
+
+        await scopedProvider.projectProvider.switchProject('proj_a');
+        await scopedProvider
+            .onProjectScopeChanged(waitForRevalidation: false)
+            .timeout(const Duration(milliseconds: 300));
+
+        await revalidationStarted.future;
+        expect(scopedProvider.sessions.first.id, 'ses_a_old');
+
+        revalidationGate.complete();
+        await Future<void>.delayed(const Duration(milliseconds: 60));
         expect(scopedProvider.sessions.first.id, 'ses_a_new');
       },
     );

@@ -1069,6 +1069,7 @@ class FakeChatRepository implements ChatRepository {
   int getSessionsCallCount = 0;
   int getMessagesCallCount = 0;
   int? lastGetMessagesLimit;
+  final List<int?> getMessagesRequestedLimits = <int?>[];
   int getSessionChildrenCallCount = 0;
   int getSessionTodoCallCount = 0;
   int getSessionDiffCallCount = 0;
@@ -1076,6 +1077,7 @@ class FakeChatRepository implements ChatRepository {
 
   // Optional delay hooks for concurrency verification in tests.
   Future<void> Function()? getSessionsDelay;
+  Future<void> Function()? getMessagesDelay;
   Future<void> Function()? getSessionChildrenDelay;
   Future<void> Function()? getSessionTodoDelay;
   Future<void> Function()? getSessionDiffDelay;
@@ -1099,6 +1101,13 @@ class FakeChatRepository implements ChatRepository {
     String? directory,
   )?
   updateSessionHandler;
+  Future<Either<Failure, List<ChatMessage>>> Function(
+    String projectId,
+    String sessionId, {
+    String? directory,
+    int? limit,
+  })?
+  getMessagesHandler;
 
   Failure? getSessionsFailure;
   Failure? createSessionFailure;
@@ -1221,6 +1230,12 @@ class FakeChatRepository implements ChatRepository {
   }) async {
     getMessagesCallCount += 1;
     lastGetMessagesLimit = limit;
+    getMessagesRequestedLimits.add(limit);
+    if (getMessagesDelay != null) await getMessagesDelay!();
+    final handler = getMessagesHandler;
+    if (handler != null) {
+      return handler(projectId, sessionId, directory: directory, limit: limit);
+    }
     if (getMessagesFailure != null) return Left(getMessagesFailure!);
     var output = List<ChatMessage>.from(
       messagesBySession[sessionId] ?? const [],

@@ -1227,6 +1227,7 @@ class ChatProvider extends ChangeNotifier {
     String reason = 'manual',
     bool includeStatus = true,
     bool allowDuringAbortSuppression = false,
+    bool preferDelta = true,
   }) async {
     final session = _currentSession;
     if (session == null) {
@@ -1264,11 +1265,16 @@ class ChatProvider extends ChangeNotifier {
     );
 
     try {
+      final cachedMessages = List<ChatMessage>.from(
+        _messages.where((message) => message.sessionId == session.id),
+      );
+      final canUseDelta = preferDelta && cachedMessages.isNotEmpty;
       final messagesResult = await getChatMessages(
         GetChatMessagesParams(
           projectId: projectProvider.currentProjectId,
           sessionId: session.id,
           directory: projectProvider.currentDirectory,
+          limit: canUseDelta ? _defaultOlderMessagesChunkSize : null,
         ),
       );
 
@@ -1287,14 +1293,25 @@ class ChatProvider extends ChangeNotifier {
           if (_currentSession?.id != session.id) {
             return;
           }
+          var serverMessagesForMerge = messages;
+          var requiresFullFetch = false;
+          if (canUseDelta) {
+            final deltaResult = _mergeServerTailWithCachedMessages(
+              serverMessages: messages,
+              cachedMessages: cachedMessages,
+              sessionId: session.id,
+            );
+            serverMessagesForMerge = deltaResult.messages;
+            requiresFullFetch = deltaResult.requiresFullFetch;
+          }
           _messages = _mergeServerMessagesWithActiveLocalTail(
-            messages,
+            serverMessagesForMerge,
             sessionId: session.id,
           );
           _cacheSessionMessages(session.id, _messages);
           _messagesVersion++;
           _hasMoreOldMessages =
-              messages.length >= _defaultOlderMessagesChunkSize;
+              serverMessagesForMerge.length >= _defaultOlderMessagesChunkSize;
           _prunePendingLocalUserMessageIdsToVisibleUsers();
           _pruneQueuedLocalUserMessageIdsToVisibleUsers();
           notifyListeners();
@@ -1310,6 +1327,16 @@ class ChatProvider extends ChangeNotifier {
           if (!_isCompactingContext &&
               isSessionActivelyResponding(session.id)) {
             _scheduleScrollToBottom();
+          }
+          if (requiresFullFetch && _currentSession?.id == session.id) {
+            unawaited(
+              refreshActiveSessionView(
+                reason: '$reason:delta-fallback',
+                includeStatus: false,
+                allowDuringAbortSuppression: allowDuringAbortSuppression,
+                preferDelta: false,
+              ),
+            );
           }
         },
       );
@@ -2359,6 +2386,7 @@ class ChatProvider extends ChangeNotifier {
   Future<void> loadMessages(
     String sessionId, {
     bool preserveVisibleState = false,
+    bool preferDelta = true,
   }) async {
     final fetchId = ++_messagesFetchId;
     // Sync project ID from ProjectProvider; projectId is optional for the new API
@@ -2368,6 +2396,11 @@ class ChatProvider extends ChangeNotifier {
         preserveVisibleState &&
         _currentSession?.id == sessionId &&
         _messages.isNotEmpty;
+    final cachedMessages = canKeepVisibleState
+        ? List<ChatMessage>.from(
+            _messages.where((message) => message.sessionId == sessionId),
+          )
+        : const <ChatMessage>[];
     if (!canKeepVisibleState) {
       _setState(ChatState.loading);
     }
@@ -2377,6 +2410,9 @@ class ChatProvider extends ChangeNotifier {
         projectId: projectProvider.currentProjectId,
         sessionId: sessionId,
         directory: projectProvider.currentDirectory,
+        limit: canKeepVisibleState && preferDelta
+            ? _defaultOlderMessagesChunkSize
+            : null,
       ),
     );
 
@@ -2403,13 +2439,25 @@ class ChatProvider extends ChangeNotifier {
         if (fetchId != _messagesFetchId || _currentSession?.id != sessionId) {
           return;
         }
+        var serverMessagesForMerge = messages;
+        var requiresFullFetch = false;
+        if (canKeepVisibleState && preferDelta && cachedMessages.isNotEmpty) {
+          final deltaResult = _mergeServerTailWithCachedMessages(
+            serverMessages: messages,
+            cachedMessages: cachedMessages,
+            sessionId: sessionId,
+          );
+          serverMessagesForMerge = deltaResult.messages;
+          requiresFullFetch = deltaResult.requiresFullFetch;
+        }
         _messages = _mergeServerMessagesWithActiveLocalTail(
-          messages,
+          serverMessagesForMerge,
           sessionId: sessionId,
         );
         _cacheSessionMessages(sessionId, _messages);
         _messagesVersion++;
-        _hasMoreOldMessages = messages.length >= _defaultOlderMessagesChunkSize;
+        _hasMoreOldMessages =
+            serverMessagesForMerge.length >= _defaultOlderMessagesChunkSize;
         _prunePendingLocalUserMessageIdsToVisibleUsers();
         _pruneQueuedLocalUserMessageIdsToVisibleUsers();
         _scheduleAutoTitleRefresh(sessionId);
@@ -2419,6 +2467,15 @@ class ChatProvider extends ChangeNotifier {
           _persistSessionMessagesSnapshotBestEffort(sessionId, _messages),
         );
         _scheduleQueuedSendDrain(sessionId, reason: 'load-messages');
+        if (requiresFullFetch && _currentSession?.id == sessionId) {
+          unawaited(
+            loadMessages(
+              sessionId,
+              preserveVisibleState: true,
+              preferDelta: false,
+            ),
+          );
+        }
       },
     );
   }

@@ -863,6 +863,93 @@ void main() {
     );
 
     test(
+      'loadMessages preserveVisibleState fetches tail first and falls back to full fetch when needed',
+      () async {
+        final sessionId = 'ses_1';
+        final baseMessages = <ChatMessage>[
+          AssistantMessage(
+            id: 'base_1',
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1001),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_base_1',
+                messageId: 'base_1',
+                sessionId: 'ses_1',
+                text: 'base 1',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'base_2',
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(2000),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(2001),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_base_2',
+                messageId: 'base_2',
+                sessionId: 'ses_1',
+                text: 'base 2',
+              ),
+            ],
+          ),
+        ];
+        chatRepository.messagesBySession[sessionId] = List<ChatMessage>.from(
+          baseMessages,
+        );
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        final session = provider.sessions.firstWhere(
+          (item) => item.id == sessionId,
+        );
+        await provider.selectSession(session);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        final latestTail = <ChatMessage>[
+          AssistantMessage(
+            id: 'fresh_1',
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(3000),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(3001),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_fresh_1',
+                messageId: 'fresh_1',
+                sessionId: 'ses_1',
+                text: 'fresh 1',
+              ),
+            ],
+          ),
+        ];
+        final fullHistory = <ChatMessage>[...baseMessages, ...latestTail];
+        var requestNumber = 0;
+        chatRepository.getMessagesRequestedLimits.clear();
+        chatRepository.getMessagesHandler =
+            (String _, String __, {String? directory, int? limit}) async {
+              requestNumber += 1;
+              if (requestNumber == 1) {
+                return Right(latestTail);
+              }
+              return Right(fullHistory);
+            };
+
+        await provider.loadMessages(sessionId, preserveVisibleState: true);
+        await Future<void>.delayed(const Duration(milliseconds: 60));
+
+        expect(chatRepository.getMessagesRequestedLimits, hasLength(2));
+        expect(chatRepository.getMessagesRequestedLimits.first, isNotNull);
+        expect(chatRepository.getMessagesRequestedLimits.last, isNull);
+        expect(
+          provider.messages.map((message) => message.id).toList(),
+          <String>['base_1', 'base_2', 'fresh_1'],
+        );
+      },
+    );
+
+    test(
       'providers refresh exposes failed state and recovers on retry',
       () async {
         appRepository.providersResult = const Left(

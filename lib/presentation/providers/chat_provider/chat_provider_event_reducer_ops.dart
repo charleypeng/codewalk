@@ -742,8 +742,9 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       return;
     }
 
-    _contextSnapshots.remove(targetContextKey);
-    unawaited(_clearPersistedContextCache(targetContextKey));
+    AppLogger.debug(
+      'Marked inactive context dirty and kept cache for SWR restore context=$targetContextKey event=$type',
+    );
   }
 
   bool _tryApplyGlobalEventIncremental(ChatEvent event) {

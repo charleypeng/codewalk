@@ -203,6 +203,62 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     return (messages: merged, reconciledLocalIds: reconciledLocalIds);
   }
 
+  ({List<ChatMessage> messages, bool requiresFullFetch})
+  _mergeServerTailWithCachedMessages({
+    required List<ChatMessage> serverMessages,
+    required List<ChatMessage> cachedMessages,
+    required String sessionId,
+  }) {
+    final serverForSession = serverMessages
+        .where((message) => message.sessionId == sessionId)
+        .toList(growable: false);
+    if (serverForSession.isEmpty) {
+      return (messages: serverMessages, requiresFullFetch: false);
+    }
+
+    final cachedForSession = cachedMessages
+        .where((message) => message.sessionId == sessionId)
+        .toList(growable: false);
+    if (cachedForSession.isEmpty) {
+      return (messages: serverForSession, requiresFullFetch: false);
+    }
+
+    final cachedIndexById = <String, int>{
+      for (var index = 0; index < cachedForSession.length; index += 1)
+        cachedForSession[index].id: index,
+    };
+
+    var overlapServerIndex = -1;
+    var overlapCachedIndex = -1;
+    for (var index = 0; index < serverForSession.length; index += 1) {
+      final cachedIndex = cachedIndexById[serverForSession[index].id];
+      if (cachedIndex == null) {
+        continue;
+      }
+      overlapServerIndex = index;
+      overlapCachedIndex = cachedIndex;
+      break;
+    }
+
+    if (overlapServerIndex == -1 || overlapCachedIndex == -1) {
+      return (messages: serverForSession, requiresFullFetch: true);
+    }
+
+    final prefix = cachedForSession
+        .take(overlapCachedIndex)
+        .toList(growable: false);
+    final merged = <ChatMessage>[...prefix, ...serverForSession];
+    final deduplicated = <ChatMessage>[];
+    final seen = <String>{};
+    for (final message in merged) {
+      if (seen.add(message.id)) {
+        deduplicated.add(message);
+      }
+    }
+
+    return (messages: deduplicated, requiresFullFetch: false);
+  }
+
   List<ChatMessage> _mergeServerMessagesWithActiveLocalTail(
     List<ChatMessage> serverMessages, {
     required String sessionId,

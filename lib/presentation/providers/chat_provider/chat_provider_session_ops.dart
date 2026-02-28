@@ -5,6 +5,8 @@ extension _ChatProviderSessionOps on ChatProvider {
     required String reason,
     bool waitForRevalidation = true,
   }) async {
+    final useFastProjectTransition =
+        reason == 'project' && !waitForRevalidation;
     _storeCurrentContextSnapshot();
 
     _providersFetchId += 1;
@@ -22,16 +24,30 @@ extension _ChatProviderSessionOps on ChatProvider {
         reason: 'context-switch-$reason',
       );
     }
-    await _cancelSubscriptionSafely(
-      _eventSubscription,
-      label: 'realtime event',
-    );
-    await _cancelSubscriptionSafely(
-      _globalEventSubscription,
-      label: 'global event',
-    );
+    final eventSubscription = _eventSubscription;
+    final globalEventSubscription = _globalEventSubscription;
     _eventSubscription = null;
     _globalEventSubscription = null;
+    if (useFastProjectTransition) {
+      unawaited(
+        _cancelSubscriptionSafely(eventSubscription, label: 'realtime event'),
+      );
+      unawaited(
+        _cancelSubscriptionSafely(
+          globalEventSubscription,
+          label: 'global event',
+        ),
+      );
+    } else {
+      await _cancelSubscriptionSafely(
+        eventSubscription,
+        label: 'realtime event',
+      );
+      await _cancelSubscriptionSafely(
+        globalEventSubscription,
+        label: 'global event',
+      );
+    }
     _consecutiveRealtimeFailures = 0;
     _lastRealtimeSignalAt = null;
     _degradedMode = false;
@@ -104,21 +120,22 @@ extension _ChatProviderSessionOps on ChatProvider {
       }),
     );
 
-    final useFastProjectTransition =
-        reason == 'project' && !waitForRevalidation;
     final contextMarkedDirty = _dirtyContextKeys.remove(nextContextKey);
-    if (contextMarkedDirty || _sessions.isEmpty) {
-      if (useFastProjectTransition) {
+    if (useFastProjectTransition) {
+      if (contextMarkedDirty || _sessions.isEmpty) {
         unawaited(loadSessions(preserveVisibleState: true));
         return;
       }
+      unawaited(loadLastSession(serverId: serverId, scopeId: nextScope));
+      unawaited(loadSessions(preserveVisibleState: true));
+      return;
+    }
+
+    if (contextMarkedDirty || _sessions.isEmpty) {
       await loadSessions();
       return;
     }
 
     await loadLastSession(serverId: serverId, scopeId: nextScope);
-    if (useFastProjectTransition) {
-      unawaited(loadSessions(preserveVisibleState: true));
-    }
   }
 }
