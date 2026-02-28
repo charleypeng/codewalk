@@ -131,6 +131,7 @@ class _ChatPageState extends State<ChatPage>
   static const int _maxFinalAssistantRevealAttempts = 8;
   static const double _returnLatestRevealAlignment = 0.0;
   static const int _maxReturnLatestRevealAttempts = 8;
+  static const String _traceFinalPrefix = 'CW_TRACE_FINAL';
 
   final ScrollController _scrollController = ScrollController();
   final FocusNode _inputFocusNode = FocusNode(debugLabel: 'chat_input');
@@ -178,6 +179,20 @@ class _ChatPageState extends State<ChatPage>
   bool _suppressPostCompletionAutoSnap = false;
   bool _shouldRevealFinalAssistantOnCompletion = false;
   String? _pendingFinalAssistantRevealMessageId;
+
+  void _traceFinalUi(String event, {String? details}) {
+    final provider = _chatProvider;
+    final sessionId = provider?.currentSession?.id ?? '-';
+    final messages = provider?.messages ?? const <ChatMessage>[];
+    final lastMessageId = messages.isEmpty ? '-' : messages.last.id;
+    final suffix = details == null || details.trim().isEmpty
+        ? ''
+        : ' details=${details.trim()}';
+    AppLogger.info(
+      '$_traceFinalPrefix ui event=$event session=$sessionId responding=${provider?.isCurrentSessionActivelyResponding ?? false} state=${provider?.state.name ?? "-"} messages=${messages.length} last=$lastMessageId pendingFinal=${_pendingFinalAssistantRevealMessageId ?? "-"} settledFinal=${_finalAssistantRevealSettledMessageId ?? "-"} deferCollapse=$_deferAssistantWorkCollapse autoFollow=$_autoFollowToLatest$suffix',
+    );
+  }
+
   String? _finalAssistantRevealSettledMessageId;
   bool _finalAssistantRevealScheduled = false;
   int _pendingFinalAssistantRevealAttempts = 0;

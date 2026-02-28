@@ -723,9 +723,21 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       final workMessageCount = assistantRunEnd - assistantRunStart - 1;
       final shouldDeferCurrentRunCollapse =
           _deferAssistantWorkCollapse && assistantRunEnd == endExclusive;
+      if (assistantRunEnd == endExclusive) {
+        _traceFinalUi(
+          'timeline-current-assistant-run',
+          details:
+              'finalAssistantId=${finalAssistant.id} completed=${finalAssistant.isCompleted} workMessageCount=$workMessageCount shouldDeferCurrentRunCollapse=$shouldDeferCurrentRunCollapse',
+        );
+      }
       if (workMessageCount > 0 &&
           !shouldDeferCurrentRunCollapse &&
           _isSuccessfulFinalAssistantMessage(finalAssistant)) {
+        _traceFinalUi(
+          'timeline-collapse-assistant-work-run',
+          details:
+              'workMessageCount=$workMessageCount finalAssistantId=${finalAssistant.id} assistantRunStart=$assistantRunStart assistantRunEnd=$assistantRunEnd',
+        );
         final workGroup = _CollapsedAssistantWorkGroup(
           startMessageId: messages[assistantRunStart].id,
           endMessageId: messages[assistantRunEnd - 2].id,
@@ -749,13 +761,34 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           );
         }
         entries.add(_TimelineMessageEntry(finalAssistant));
+        if (assistantRunEnd == endExclusive) {
+          _traceFinalUi(
+            'timeline-current-assistant-run-collapsed',
+            details:
+                'finalAssistantId=${finalAssistant.id} workGroupId=${workGroup.id}',
+          );
+        }
       } else {
+        if (shouldDeferCurrentRunCollapse) {
+          _traceFinalUi(
+            'timeline-defer-assistant-work-collapse',
+            details:
+                'workMessageCount=$workMessageCount finalAssistantId=${finalAssistant.id} endExclusive=$endExclusive',
+          );
+        }
         _appendRangeWithAssistantToolMerging(
           entries: entries,
           messages: messages,
           startIndex: assistantRunStart,
           endExclusive: assistantRunEnd,
         );
+        if (assistantRunEnd == endExclusive) {
+          _traceFinalUi(
+            'timeline-current-assistant-run-not-collapsed',
+            details:
+                'finalAssistantId=${finalAssistant.id} workMessageCount=$workMessageCount',
+          );
+        }
       }
 
       index = assistantRunEnd;

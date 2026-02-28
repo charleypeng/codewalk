@@ -3284,31 +3284,52 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final anthropicTile = tester.widget<ListTile>(
-        find.byKey(
-          const ValueKey<String>(
-            'model_selector_item_anthropic_claude-sonnet-4-5',
-          ),
-        ),
+      Finder modelSelectorTileFinder({
+        required String providerId,
+        required String modelId,
+      }) {
+        return find.byWidgetPredicate((widget) {
+          if (widget is! ListTile) {
+            return false;
+          }
+          final key = widget.key;
+          return key ==
+                  ValueKey<String>(
+                    'model_selector_item_${providerId}_$modelId',
+                  ) ||
+              key ==
+                  ValueKey<String>(
+                    'model_selector_recent_${providerId}_$modelId',
+                  ) ||
+              key ==
+                  ValueKey<String>('model_selector_fav_${providerId}_$modelId');
+        });
+      }
+
+      final anthropicTileFinder = modelSelectorTileFinder(
+        providerId: 'anthropic',
+        modelId: 'claude-sonnet-4-5',
       );
+      expect(anthropicTileFinder, findsOneWidget);
+      final anthropicTile = tester.widget<ListTile>(anthropicTileFinder);
       final anthropicLeadingIcon = anthropicTile.leading as Icon?;
       expect(anthropicLeadingIcon?.icon, SimpleIcons.claude);
 
-      final googleClaudeTile = tester.widget<ListTile>(
-        find.byKey(
-          const ValueKey<String>(
-            'model_selector_item_google_claude-opus-via-google',
-          ),
-        ),
+      final googleClaudeTileFinder = modelSelectorTileFinder(
+        providerId: 'google',
+        modelId: 'claude-opus-via-google',
       );
+      expect(googleClaudeTileFinder, findsOneWidget);
+      final googleClaudeTile = tester.widget<ListTile>(googleClaudeTileFinder);
       final googleClaudeLeadingIcon = googleClaudeTile.leading as Icon?;
       expect(googleClaudeLeadingIcon?.icon, SimpleIcons.claude);
 
-      final googleTile = tester.widget<ListTile>(
-        find.byKey(
-          const ValueKey<String>('model_selector_item_google_gemini-2.5-pro'),
-        ),
+      final googleTileFinder = modelSelectorTileFinder(
+        providerId: 'google',
+        modelId: 'gemini-2.5-pro',
       );
+      expect(googleTileFinder, findsOneWidget);
+      final googleTile = tester.widget<ListTile>(googleTileFinder);
       final googleLeadingIcon = googleTile.leading as Icon?;
       expect(googleLeadingIcon?.icon, SimpleIcons.googlegemini);
 

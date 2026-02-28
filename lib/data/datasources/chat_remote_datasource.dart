@@ -200,12 +200,27 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   const ChatRemoteDataSourceImpl({required this.dio, Dio? sseDio})
     : _sseDio = sseDio;
 
+  static const String _traceFinalPrefix = 'CW_TRACE_FINAL';
+
   final Dio dio;
 
   /// Dedicated Dio for SSE streams, isolated from the regular HTTP pool.
   /// Falls back to [dio] when not provided (tests, web).
   final Dio? _sseDio;
   Dio get _effectiveSseDio => _sseDio ?? dio;
+
+  void _traceFinalSend({
+    required String sessionId,
+    required String event,
+    String? details,
+  }) {
+    final suffix = details == null || details.trim().isEmpty
+        ? ''
+        : ' details=${details.trim()}';
+    AppLogger.info(
+      '$_traceFinalPrefix datasource event=$event session=$sessionId$suffix',
+    );
+  }
 
   @override
   Future<List<ChatSessionModel>> getSessions({
@@ -800,15 +815,29 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   }) async* {
     final eventController = StreamController<ChatMessageModel>();
     try {
+      void trace(String event, {String? details}) {
+        final baseDetails = 'messageId=${input.messageId ?? "-"}';
+        final combined = details == null || details.trim().isEmpty
+            ? baseDetails
+            : '$baseDetails ${details.trim()}';
+        _traceFinalSend(sessionId: sessionId, event: event, details: combined);
+      }
+
       final queryParams = <String, String>{};
       if (directory != null) {
         queryParams['directory'] = directory;
       }
+      final sendStartMs = DateTime.now().millisecondsSinceEpoch;
 
       AppLogger.info(
         'Chat send start session=$sessionId provider=${input.providerId} model=${input.modelId} variant=${input.variant ?? "auto"} directory=${directory ?? "-"}',
       );
       AppLogger.info('Request messageID=${input.messageId ?? "<none>"}');
+      trace(
+        'send-start',
+        details:
+            'provider=${input.providerId} model=${input.modelId} variant=${input.variant ?? "auto"} mode=${input.mode ?? "-"} parts=${input.parts.length} sendStartMs=$sendStartMs',
+      );
 
       if (input.mode == 'shell') {
         final shellMessage = await _sendShellCommand(
@@ -828,7 +857,6 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       // Timestamp used to distinguish new messages from stale ones.
       // Without per-send SSE, resolveAssistantMessageId must skip
       // completed messages from previous sends.
-      final sendStartMs = DateTime.now().millisecondsSinceEpoch;
 
       Future<void> loadKnownAssistantMessageIds() async {
         try {
@@ -854,10 +882,18 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
             }
           }
           hasKnownAssistantBaseline = true;
+          trace(
+            'known-assistant-baseline-loaded',
+            details: 'count=${knownAssistantMessageIds.length}',
+          );
         } catch (error) {
           AppLogger.warn(
             'Failed to load known assistant message IDs before async send',
             error: error,
+          );
+          trace(
+            'known-assistant-baseline-failed',
+            details: 'error=${error.runtimeType}',
           );
         }
       }
@@ -877,6 +913,10 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       Future<String?> resolveAssistantMessageId() async {
         if (activeAssistantMessageId != null &&
             activeAssistantMessageId!.isNotEmpty) {
+          trace(
+            'resolve-assistant-id-reuse-active',
+            details: 'activeAssistantMessageId=$activeAssistantMessageId',
+          );
           return activeAssistantMessageId;
         }
 
@@ -897,11 +937,16 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
           // Prefer incomplete messages (from current send) over completed
           // ones (from previous sends). Without per-send SSE, the latest
-          // completed message belongs to an earlier request.
+          // completed message can belong to an earlier request.
           String? incompleteId;
           var incompleteCreated = -1;
           String? freshCompletedId;
           var freshCompletedCreated = -1;
+          var knownIdFilteredCount = 0;
+          var staleTimeFilteredCount = 0;
+
+          // Accept a small skew between client and server clocks.
+          const freshnessLeewayMs = 5000;
 
           for (final raw in list) {
             if (raw is! Map) {
@@ -917,10 +962,21 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
               continue;
             }
             if (knownAssistantMessageIds.contains(id)) {
+              knownIdFilteredCount += 1;
               continue;
             }
 
             final created = extractCreatedTimeMs(info['time']);
+            final hasCreatedTime = created > 0;
+            final isFreshByTime = hasKnownAssistantBaseline
+                ? (!hasCreatedTime ||
+                      created >= sendStartMs - freshnessLeewayMs)
+                : (hasCreatedTime &&
+                      created >= sendStartMs - freshnessLeewayMs);
+            if (!isFreshByTime) {
+              staleTimeFilteredCount += 1;
+              continue;
+            }
             final timeMap = info['time'];
             final completedMs = timeMap is Map<String, dynamic>
                 ? (timeMap['completed'] as num?)?.toInt()
@@ -933,18 +989,21 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
                 incompleteCreated = created;
                 incompleteId = id;
               }
-            } else if (hasKnownAssistantBaseline ||
-                created >= sendStartMs - 2000) {
+            } else {
               // Completed AFTER send started — fresh, not stale.
               if (created >= freshCompletedCreated) {
                 freshCompletedCreated = created;
                 freshCompletedId = id;
               }
             }
-            // Completed before sendStartMs → stale, skip.
           }
 
           final candidateId = incompleteId ?? freshCompletedId;
+          trace(
+            'resolve-assistant-id-candidates',
+            details:
+                'knownBaseline=$hasKnownAssistantBaseline knownCount=${knownAssistantMessageIds.length} knownFiltered=$knownIdFilteredCount staleFiltered=$staleTimeFilteredCount incompleteId=${incompleteId ?? "-"} freshCompletedId=${freshCompletedId ?? "-"} candidate=${candidateId ?? "-"}',
+          );
           if (candidateId != null) {
             activeAssistantMessageId = candidateId;
             AppLogger.info(
@@ -974,6 +1033,12 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         );
         ChatMessageModel? latest;
         for (var attempt = 0; attempt < maxAttempts; attempt += 1) {
+          if (attempt == 0 || (attempt + 1) % 10 == 0) {
+            trace(
+              'poll-complete-attempt',
+              details: 'messageId=$messageId attempt=${attempt + 1}',
+            );
+          }
           final fetched = await _getCompleteMessage(
             projectId,
             sessionId,
@@ -983,6 +1048,11 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           if (fetched != null) {
             latest = fetched;
             if (fetched.completedTime != null) {
+              trace(
+                'poll-complete-success',
+                details:
+                    'messageId=$messageId attempt=${attempt + 1} completed=${fetched.completedTime?.millisecondsSinceEpoch ?? 0}',
+              );
               AppLogger.info(
                 'Assistant message completed via polling id=$messageId attempt=${attempt + 1}',
               );
@@ -997,6 +1067,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           await Future<void>.delayed(const Duration(seconds: 1));
         }
         AppLogger.warn('Polling ended without completion id=$messageId');
+        trace('poll-complete-timeout', details: 'messageId=$messageId');
         return latest;
       }
 
@@ -1005,6 +1076,10 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           if (eventController.isClosed || !messageCompleted) {
             return;
           }
+          trace(
+            'event-controller-close',
+            details: 'delayMs=${delay.inMilliseconds}',
+          );
           eventController.close();
         });
       }
@@ -1045,6 +1120,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
             AppLogger.warn(
               'Completion fallback aborted: message ID unresolved reason=$reason',
             );
+            trace('fallback-watch-no-message-id', details: 'reason=$reason');
             messageCompleted = true;
             maybeCloseEventController(delay: const Duration(milliseconds: 200));
             return;
@@ -1053,9 +1129,18 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           AppLogger.info(
             'Starting completion fallback reason=$reason id=$fallbackMessageId',
           );
+          trace(
+            'fallback-watch-start-poll',
+            details: 'reason=$reason fallbackMessageId=$fallbackMessageId',
+          );
           final completed = await pollCompleteMessage(fallbackMessageId);
           if (completed != null && !eventController.isClosed) {
             eventController.add(completed);
+            trace(
+              'fallback-watch-emitted-message',
+              details:
+                  'messageId=${completed.id} completed=${completed.completedTime?.millisecondsSinceEpoch ?? 0}',
+            );
           }
           messageCompleted = true;
           maybeCloseEventController(delay: const Duration(milliseconds: 200));
@@ -1070,6 +1155,11 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
       // Use async send endpoint to avoid cross-session abort coupling.
       await loadKnownAssistantMessageIds();
+      trace(
+        'prompt-async-request',
+        details:
+            'knownBaseline=$hasKnownAssistantBaseline knownCount=${knownAssistantMessageIds.length}',
+      );
       final response = await dio.post(
         '/session/$sessionId/prompt_async',
         data: input.toJson(),
@@ -1077,6 +1167,10 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       );
 
       if (response.statusCode != 204 && response.statusCode != 200) {
+        trace(
+          'prompt-async-unexpected-status',
+          details: 'status=${response.statusCode}',
+        );
         throw const ServerException('Failed to send message');
       }
 
@@ -1088,10 +1182,15 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         final responseMessageId = info['id'] as String?;
         if (responseMessageId != null && responseMessageId.trim().isNotEmpty) {
           activeAssistantMessageId = responseMessageId.trim();
+          trace(
+            'prompt-async-response-message-id',
+            details: 'activeAssistantMessageId=$activeAssistantMessageId',
+          );
         }
       }
 
       AppLogger.info('Async send request accepted for session=$sessionId');
+      trace('prompt-async-accepted', details: 'status=${response.statusCode}');
 
       // Polling delivers the response; provider-level SSE handles realtime.
       startFallbackCompletionWatch(
@@ -1100,9 +1199,17 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       );
 
       await for (final message in eventController.stream) {
+        trace(
+          'event-controller-yield',
+          details:
+              'messageId=${message.id} role=${message.role} completed=${message.completedTime?.millisecondsSinceEpoch ?? 0} parts=${message.parts.length}',
+        );
         yield message;
       }
     } on DioException catch (e) {
+      AppLogger.info(
+        'CW_TRACE_FINAL datasource event=dio-exception session=$sessionId status=${e.response?.statusCode ?? -1} messageId=${input.messageId ?? "-"}',
+      );
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Session not found');
       }
@@ -1112,9 +1219,15 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       throw const ServerException('Failed to send message');
     } catch (e) {
       AppLogger.error('Message send exception', error: e);
+      AppLogger.info(
+        'CW_TRACE_FINAL datasource event=send-exception session=$sessionId messageId=${input.messageId ?? "-"} error=${e.runtimeType}',
+      );
       throw const ServerException('Failed to send message');
     } finally {
       AppLogger.info('Chat send flow finalized for session=$sessionId');
+      AppLogger.info(
+        'CW_TRACE_FINAL datasource event=send-finalized session=$sessionId messageId=${input.messageId ?? "-"} eventControllerClosed=${eventController.isClosed}',
+      );
       if (!eventController.isClosed) {
         eventController.close();
       }

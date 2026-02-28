@@ -316,6 +316,9 @@ class ChatProvider extends ChangeNotifier {
   bool _isForegroundActive = true;
   bool _degradedMode = false;
   bool _isForegroundResumeSyncing = false;
+  bool _foregroundResumeReconcileInFlight = false;
+  bool _realtimeSubscriptionRestartInFlight = false;
+  bool _realtimeSubscriptionRestartQueued = false;
   bool _recoverableSyncAlertEscalated = false;
   DateTime? _degradedModeStartedAt;
   int _consecutiveRealtimeFailures = 0;
@@ -367,6 +370,7 @@ class ChatProvider extends ChangeNotifier {
   static const String _remoteAbortNoticeMessage =
       'What you want to do different?';
   static const String _remoteAbortInlineErrorName = 'MessageAborted';
+  static const String _traceFinalPrefix = 'CW_TRACE_FINAL';
   static const Duration _interruptSendStatusPollInterval = Duration(
     milliseconds: 120,
   );
@@ -410,6 +414,37 @@ class ChatProvider extends ChangeNotifier {
       _scrollScheduled = false;
       _scrollToBottomCallback?.call();
     });
+  }
+
+  void _traceFinal(String event, {String? sessionId, String? details}) {
+    final currentSessionId = _currentSession?.id;
+    final normalizedSessionId = (sessionId ?? currentSessionId ?? '-').trim();
+    final effectiveSessionId = normalizedSessionId.isEmpty
+        ? '-'
+        : normalizedSessionId;
+    final statusLabel =
+        _sessionStatusById[effectiveSessionId]?.type.name ?? '-';
+    final abortSuppressed =
+        effectiveSessionId == '-' ||
+            _abortSuppressionSessionId != effectiveSessionId ||
+            _abortSuppressionStartedAt == null
+        ? false
+        : DateTime.now().difference(_abortSuppressionStartedAt!) <=
+              _abortSuppressionWindow;
+    final preserved = effectiveSessionId == '-'
+        ? false
+        : _hasPreservedStreamForSession(effectiveSessionId);
+    final queueSize = effectiveSessionId == '-'
+        ? 0
+        : queuedMessageCountForSession(effectiveSessionId);
+    final lastMessage = _messages.isEmpty ? '-' : _messages.last.id;
+    final suffix = details == null || details.trim().isEmpty
+        ? ''
+        : ' details=${details.trim()}';
+
+    AppLogger.info(
+      '$_traceFinalPrefix provider event=$event session=$effectiveSessionId current=${currentSessionId ?? "-"} state=${_state.name} status=$statusLabel activeStream=${_activeMessageStreamSessionId ?? "-"} hasSub=${_messageSubscription != null} preserved=$preserved abortSuppressed=$abortSuppressed messages=${_messages.length} last=$lastMessage queue=$queueSize$suffix',
+    );
   }
 
   // Getters
@@ -1196,6 +1231,12 @@ class ChatProvider extends ChangeNotifier {
     // suppression window is designed to hide.
     if (!allowDuringAbortSuppression &&
         _isAbortSuppressionActiveForSession(session.id)) {
+      _traceFinal(
+        'refresh-active-skip-abort-suppression',
+        sessionId: session.id,
+        details:
+            'reason=$reason includeStatus=$includeStatus allowDuringAbortSuppression=$allowDuringAbortSuppression',
+      );
       AppLogger.info(
         'Skipping active session refresh during abort suppression session=${session.id} reason=$reason',
       );
@@ -1206,6 +1247,12 @@ class ChatProvider extends ChangeNotifier {
     }
 
     _activeSessionRefreshInFlight = true;
+    _traceFinal(
+      'refresh-active-start',
+      sessionId: session.id,
+      details:
+          'reason=$reason includeStatus=$includeStatus allowDuringAbortSuppression=$allowDuringAbortSuppression',
+    );
     AppLogger.debug(
       'Refreshing active session view reason=$reason session=${session.id}',
     );
@@ -1221,6 +1268,11 @@ class ChatProvider extends ChangeNotifier {
 
       messagesResult.fold(
         (failure) {
+          _traceFinal(
+            'refresh-active-failure',
+            sessionId: session.id,
+            details: 'reason=$reason failure=${failure.runtimeType}',
+          );
           AppLogger.warn(
             'Failed to refresh active session messages for ${session.id}: $failure',
           );
@@ -1240,6 +1292,11 @@ class ChatProvider extends ChangeNotifier {
           _prunePendingLocalUserMessageIdsToVisibleUsers();
           _pruneQueuedLocalUserMessageIdsToVisibleUsers();
           notifyListeners();
+          _traceFinal(
+            'refresh-active-merged',
+            sessionId: session.id,
+            details: 'reason=$reason mergedMessages=${_messages.length}',
+          );
           _scheduleAutoTitleRefresh(session.id);
           unawaited(
             _persistSessionMessagesSnapshotBestEffort(session.id, _messages),
@@ -1256,6 +1313,11 @@ class ChatProvider extends ChangeNotifier {
       }
     } finally {
       _activeSessionRefreshInFlight = false;
+      _traceFinal(
+        'refresh-active-finished',
+        sessionId: session.id,
+        details: 'reason=$reason includeStatus=$includeStatus',
+      );
     }
   }
 
@@ -2378,6 +2440,12 @@ class ChatProvider extends ChangeNotifier {
 
     final sessionId = session.id;
     final hasQueuedMessages = queuedMessageCountForSession(sessionId) > 0;
+    _traceFinal(
+      'submit-message-with-queue',
+      sessionId: sessionId,
+      details:
+          'textLen=${trimmedText.length} attachments=${effectiveAttachments.length} shellMode=$shellMode hasQueued=$hasQueuedMessages busy=${_isSessionBusyForQueuedSend(sessionId)}',
+    );
     if (_isSessionBusyForQueuedSend(sessionId) || hasQueuedMessages) {
       final localMessageId = _appendLocalUserMessage(
         sessionId: sessionId,
@@ -2402,6 +2470,11 @@ class ChatProvider extends ChangeNotifier {
       AppLogger.info(
         'Provider queued message session=$sessionId size=${queue.length}',
       );
+      _traceFinal(
+        'queue-message-enqueued',
+        sessionId: sessionId,
+        details: 'size=${queue.length} localMessageId=$localMessageId',
+      );
       if (!_isSessionBusyForQueuedSend(sessionId)) {
         _scheduleQueuedSendDrain(sessionId, reason: 'queue-while-idle');
       } else {
@@ -2409,12 +2482,22 @@ class ChatProvider extends ChangeNotifier {
             _activeMessageStreamSessionId == sessionId &&
             _messageSubscription != null;
         if (!hasLiveStreamForSession) {
+          _traceFinal(
+            'queue-message-retry-scheduled',
+            sessionId: sessionId,
+            details: 'reason=no-live-stream-while-busy',
+          );
           _scheduleQueuedSendRetryOnce(sessionId);
         }
       }
       return;
     }
 
+    _traceFinal(
+      'submit-message-direct-send',
+      sessionId: sessionId,
+      details: 'textLen=${trimmedText.length}',
+    );
     await sendMessage(
       trimmedText,
       attachments: effectiveAttachments,
@@ -2440,8 +2523,19 @@ class ChatProvider extends ChangeNotifier {
     required String reason,
     bool allowRetrySchedule = true,
   }) {
+    _traceFinal(
+      'queue-drain-schedule',
+      sessionId: sessionId,
+      details:
+          'reason=$reason allowRetrySchedule=$allowRetrySchedule inFlight=${_queuedDrainInFlightSessionIds.contains(sessionId)}',
+    );
     if (_queuedDrainInFlightSessionIds.contains(sessionId)) {
       _queuedDrainDeferredSessionIds.add(sessionId);
+      _traceFinal(
+        'queue-drain-deferred',
+        sessionId: sessionId,
+        details: 'reason=$reason',
+      );
       return;
     }
     unawaited(
@@ -2459,6 +2553,10 @@ class ChatProvider extends ChangeNotifier {
       return;
     }
     if (_queuedRetryTimersBySessionId.containsKey(normalizedSessionId)) {
+      _traceFinal(
+        'queue-retry-already-scheduled',
+        sessionId: normalizedSessionId,
+      );
       return;
     }
 
@@ -2468,28 +2566,59 @@ class ChatProvider extends ChangeNotifier {
       AppLogger.warn(
         'Provider queued retry reached max attempts session=$normalizedSessionId queue=${queuedMessageCountForSession(normalizedSessionId)}',
       );
+      _traceFinal(
+        'queue-retry-max-attempts',
+        sessionId: normalizedSessionId,
+        details: 'attempt=$nextAttempt max=$_queuedRetryMaxAttempts',
+      );
       _queuedRetryAttemptsBySessionId.remove(normalizedSessionId);
       return;
     }
     _queuedRetryAttemptsBySessionId[normalizedSessionId] = nextAttempt;
+    _traceFinal(
+      'queue-retry-scheduled',
+      sessionId: normalizedSessionId,
+      details: 'attempt=$nextAttempt',
+    );
 
     _queuedRetryTimersBySessionId[normalizedSessionId] = Timer(
       const Duration(seconds: 1),
       () {
         _queuedRetryTimersBySessionId.remove(normalizedSessionId);
+        _traceFinal(
+          'queue-retry-fired',
+          sessionId: normalizedSessionId,
+          details: 'attempt=$nextAttempt',
+        );
         if (_currentSession?.id != normalizedSessionId) {
           _queuedRetryAttemptsBySessionId.remove(normalizedSessionId);
+          _traceFinal(
+            'queue-retry-cancelled-session-changed',
+            sessionId: normalizedSessionId,
+          );
           return;
         }
         if (queuedMessageCountForSession(normalizedSessionId) == 0) {
           _queuedRetryAttemptsBySessionId.remove(normalizedSessionId);
+          _traceFinal(
+            'queue-retry-cancelled-empty-queue',
+            sessionId: normalizedSessionId,
+          );
           return;
         }
         if (_isSessionBusyForQueuedSend(normalizedSessionId)) {
+          _traceFinal(
+            'queue-retry-rescheduled-busy',
+            sessionId: normalizedSessionId,
+          );
           _scheduleQueuedSendRetryOnce(normalizedSessionId);
           return;
         }
         _queuedRetryAttemptsBySessionId.remove(normalizedSessionId);
+        _traceFinal(
+          'queue-retry-drain-trigger',
+          sessionId: normalizedSessionId,
+        );
         _scheduleQueuedSendDrain(
           normalizedSessionId,
           reason: 'retry-after-failure',
@@ -2563,16 +2692,37 @@ class ChatProvider extends ChangeNotifier {
     required String reason,
     bool allowRetrySchedule = true,
   }) async {
+    _traceFinal(
+      'queue-drain-start',
+      sessionId: sessionId,
+      details:
+          'reason=$reason allowRetrySchedule=$allowRetrySchedule inFlight=${_queuedDrainInFlightSessionIds.contains(sessionId)}',
+    );
     if (_queuedDrainInFlightSessionIds.contains(sessionId)) {
+      _traceFinal(
+        'queue-drain-skip-inflight',
+        sessionId: sessionId,
+        details: 'reason=$reason',
+      );
       return false;
     }
     _queuedDrainInFlightSessionIds.add(sessionId);
 
     try {
       if (_currentSession?.id != sessionId) {
+        _traceFinal(
+          'queue-drain-skip-session-changed',
+          sessionId: sessionId,
+          details: 'reason=$reason current=${_currentSession?.id ?? "-"}',
+        );
         return false;
       }
       if (_isSessionBusyForQueuedSend(sessionId)) {
+        _traceFinal(
+          'queue-drain-skip-busy',
+          sessionId: sessionId,
+          details: 'reason=$reason',
+        );
         return false;
       }
 
@@ -2582,6 +2732,11 @@ class ChatProvider extends ChangeNotifier {
         _queuedSendBySessionId.remove(sessionId);
         _syncQueuedLocalUserMessageIds();
         _notifyListeners();
+        _traceFinal(
+          'queue-drain-noop-empty',
+          sessionId: sessionId,
+          details: 'reason=$reason',
+        );
         return false;
       }
 
@@ -2592,6 +2747,11 @@ class ChatProvider extends ChangeNotifier {
         _queuedSendBySessionId.remove(sessionId);
         _syncQueuedLocalUserMessageIds();
         _notifyListeners();
+        _traceFinal(
+          'queue-drain-noop-empty-payload',
+          sessionId: sessionId,
+          details: 'reason=$reason batch=${queuedBatch.length}',
+        );
         return false;
       }
 
@@ -2617,6 +2777,12 @@ class ChatProvider extends ChangeNotifier {
       AppLogger.info(
         'Provider draining queued batch session=$sessionId reason=$reason count=${queuedBatch.length}',
       );
+      _traceFinal(
+        'queue-drain-dispatch',
+        sessionId: sessionId,
+        details:
+            'reason=$reason batch=${queuedBatch.length} payloadTextLen=${payload.text.length} attachments=${payload.attachments.length}',
+      );
       var sendStarted = false;
       try {
         sendStarted = await sendMessage(
@@ -2638,6 +2804,12 @@ class ChatProvider extends ChangeNotifier {
         AppLogger.warn(
           'Provider queued batch dispatch failed session=$sessionId reason=$reason',
         );
+        _traceFinal(
+          'queue-drain-dispatch-failed',
+          sessionId: sessionId,
+          details:
+              'reason=$reason allowRetrySchedule=$allowRetrySchedule batch=${queuedBatch.length}',
+        );
         if (allowRetrySchedule) {
           _scheduleQueuedSendRetryOnce(sessionId);
         }
@@ -2649,6 +2821,11 @@ class ChatProvider extends ChangeNotifier {
       _queuedSendBySessionId.remove(sessionId);
       _syncQueuedLocalUserMessageIds();
       _notifyListeners();
+      _traceFinal(
+        'queue-drain-dispatch-ok',
+        sessionId: sessionId,
+        details: 'reason=$reason batch=${queuedBatch.length}',
+      );
       return true;
     } finally {
       _queuedDrainInFlightSessionIds.remove(sessionId);
@@ -2659,6 +2836,7 @@ class ChatProvider extends ChangeNotifier {
           _currentSession?.id == sessionId &&
           !_isSessionBusyForQueuedSend(sessionId) &&
           queuedMessageCountForSession(sessionId) > 0) {
+        _traceFinal('queue-drain-run-deferred', sessionId: sessionId);
         _scheduleQueuedSendDrain(sessionId, reason: 'deferred');
       }
     }
@@ -2726,12 +2904,18 @@ class ChatProvider extends ChangeNotifier {
 
   Future<void> _awaitInterruptSendSessionReady(String sessionId) async {
     var settled = false;
+    _traceFinal('interrupt-await-start', sessionId: sessionId);
     for (
       var attempt = 0;
       attempt < _interruptSendStatusMaxAttempts;
       attempt += 1
     ) {
       if (_currentSession?.id != sessionId) {
+        _traceFinal(
+          'interrupt-await-cancelled-session-changed',
+          sessionId: sessionId,
+          details: 'attempt=$attempt current=${_currentSession?.id ?? "-"}',
+        );
         return;
       }
 
@@ -2743,9 +2927,20 @@ class ChatProvider extends ChangeNotifier {
       final hasActiveLocalStream =
           _activeMessageStreamSessionId == sessionId &&
           _messageSubscription != null;
+      _traceFinal(
+        'interrupt-await-check',
+        sessionId: sessionId,
+        details:
+            'attempt=$attempt status=${statusType?.name ?? "-"} hasBusyStatus=$hasBusyStatus hasActiveLocalStream=$hasActiveLocalStream isAborting=$_isAbortingResponse',
+      );
 
       if (!hasBusyStatus && !hasActiveLocalStream && !_isAbortingResponse) {
         settled = true;
+        _traceFinal(
+          'interrupt-await-settled',
+          sessionId: sessionId,
+          details: 'attempt=$attempt',
+        );
         break;
       }
 
@@ -2756,6 +2951,7 @@ class ChatProvider extends ChangeNotifier {
       AppLogger.warn(
         'Provider interrupt-and-send proceeding without settled status session=$sessionId',
       );
+      _traceFinal('interrupt-await-timeout', sessionId: sessionId);
     }
 
     await Future<void>.delayed(_interruptSendPostAbortDelay);
@@ -2789,12 +2985,19 @@ class ChatProvider extends ChangeNotifier {
     AppLogger.info(
       'Provider send start session=$sendSessionId agent=${_selectedAgentName ?? "-"} provider=${_selectedProviderId ?? "-"} model=${_selectedModelId ?? "-"} variant=${_selectedVariantId ?? "auto"}',
     );
+    _traceFinal(
+      'send-start',
+      sessionId: sendSessionId,
+      details:
+          'textLen=${trimmedText.length} attachments=${effectiveAttachments.length} shell=$shellMode sessionOverride=$hasSessionOverride',
+    );
     _setActiveSendDraft(
       trimmedText,
       attachments: effectiveAttachments,
       shellMode: shellMode,
     );
     _setState(ChatState.sending);
+    _traceFinal('send-state-sending', sessionId: sendSessionId);
 
     try {
       // Sync project ID from ProjectProvider
@@ -2822,6 +3025,12 @@ class ChatProvider extends ChangeNotifier {
 
       _pendingLocalUserMessageIds.add(activeLocalMessageId);
       notifyListeners();
+      _traceFinal(
+        'send-local-user-appended',
+        sessionId: sendSessionId,
+        details:
+            'localMessageId=$activeLocalMessageId appendOptimistic=$appendOptimisticMessage',
+      );
       _scheduleAutoTitleRefresh(sendSessionId);
       unawaited(_persistLastSessionSnapshotBestEffort());
 
@@ -2872,6 +3081,12 @@ class ChatProvider extends ChangeNotifier {
           _messageSubscription != null &&
           _activeMessageStreamSessionId != null &&
           _activeMessageStreamSessionId != sendSessionId;
+      _traceFinal(
+        'send-cancel-previous-subscription',
+        sessionId: sendSessionId,
+        details:
+            'preserveOtherSession=$hasOtherSessionActiveStream previousActive=${_activeMessageStreamSessionId ?? "-"}',
+      );
       await _cancelActiveMessageSubscription(
         reason: 'start-send',
         invalidateGeneration: true,
@@ -2883,6 +3098,11 @@ class ChatProvider extends ChangeNotifier {
       // Reset one-shot reconcile guard so the new turn can trigger a reconcile
       // if the final message ends up missing.
       _lastIdleReconcileSessionTurnKey = null;
+      _traceFinal(
+        'send-stream-ready',
+        sessionId: streamSessionId,
+        details: 'generation=$streamGeneration',
+      );
 
       AppLogger.info(
         'Provider send subscribing stream session=$streamSessionId directory=${projectProvider.currentDirectory ?? "-"}',
@@ -2904,42 +3124,80 @@ class ChatProvider extends ChangeNotifier {
                 AppLogger.debug(
                   'Ignoring stale send stream event generation=$streamGeneration active=$_messageStreamGeneration',
                 );
+                _traceFinal(
+                  'send-stream-event-ignored-stale-generation',
+                  sessionId: streamSessionId,
+                  details:
+                      'eventGeneration=$streamGeneration active=$_messageStreamGeneration',
+                );
                 return;
               }
-              result.fold((failure) {
-                if (_shouldSuppressAbortError(
-                  sessionId: streamSessionId,
-                  message: failure.message,
-                )) {
-                  AppLogger.info(
-                    'Suppressing expected abort failure session=$streamSessionId',
+              result.fold(
+                (failure) {
+                  _traceFinal(
+                    'send-stream-failure-event',
+                    sessionId: streamSessionId,
+                    details:
+                        'failure=${failure.runtimeType} message=${failure.message}',
                   );
-                  _clearActiveSendDraft();
-                  _errorMessage = null;
-                  if (_currentSession?.id == streamSessionId) {
-                    _setState(ChatState.loaded);
-                  } else {
-                    _notifyListeners();
+                  if (_shouldSuppressAbortError(
+                    sessionId: streamSessionId,
+                    message: failure.message,
+                  )) {
+                    AppLogger.info(
+                      'Suppressing expected abort failure session=$streamSessionId',
+                    );
+                    _traceFinal(
+                      'send-stream-failure-suppressed',
+                      sessionId: streamSessionId,
+                    );
+                    _clearActiveSendDraft();
+                    _errorMessage = null;
+                    if (_currentSession?.id == streamSessionId) {
+                      _setState(ChatState.loaded);
+                    } else {
+                      _notifyListeners();
+                    }
+                    return;
                   }
-                  return;
-                }
-                _stashRejectedDraftForRetry(sessionId: streamSessionId);
-                if (_currentSession?.id != streamSessionId) {
-                  AppLogger.warn(
-                    'Background send stream failure session=$streamSessionId message=${failure.message}',
+                  _stashRejectedDraftForRetry(sessionId: streamSessionId);
+                  if (_currentSession?.id != streamSessionId) {
+                    AppLogger.warn(
+                      'Background send stream failure session=$streamSessionId message=${failure.message}',
+                    );
+                    _traceFinal(
+                      'send-stream-failure-background-session',
+                      sessionId: streamSessionId,
+                    );
+                    _sessionStatusById[streamSessionId] =
+                        const SessionStatusInfo(type: SessionStatusType.idle);
+                    _sessionUnreadCompletionIds.remove(streamSessionId);
+                    _sessionErrorAttentionIds.add(streamSessionId);
+                    _notifyListeners();
+                    return;
+                  }
+                  _handleFailure(failure);
+                },
+                (message) {
+                  final completed = message is AssistantMessage
+                      ? message.isCompleted
+                      : false;
+                  _traceFinal(
+                    'send-stream-message-event',
+                    sessionId: streamSessionId,
+                    details:
+                        'messageId=${message.id} role=${message.role} completed=$completed parts=${message.parts.length}',
                   );
-                  _sessionStatusById[streamSessionId] = const SessionStatusInfo(
-                    type: SessionStatusType.idle,
-                  );
-                  _sessionUnreadCompletionIds.remove(streamSessionId);
-                  _sessionErrorAttentionIds.add(streamSessionId);
-                  _notifyListeners();
-                  return;
-                }
-                _handleFailure(failure);
-              }, _updateOrAddMessage);
+                  _updateOrAddMessage(message);
+                },
+              );
             },
             onError: (error) {
+              _traceFinal(
+                'send-stream-onerror',
+                sessionId: streamSessionId,
+                details: 'error=$error',
+              );
               _preservedMessageSubscriptions.remove(sendSubscription);
               if (streamGeneration != _messageStreamGeneration) {
                 if (identical(_messageSubscription, sendSubscription)) {
@@ -2955,6 +3213,12 @@ class ChatProvider extends ChangeNotifier {
                 );
                 AppLogger.info(
                   'Stale send stream error — finalized session=$streamSessionId generation=$streamGeneration active=$_messageStreamGeneration',
+                );
+                _traceFinal(
+                  'send-stream-onerror-stale-generation-finalized',
+                  sessionId: streamSessionId,
+                  details:
+                      'eventGeneration=$streamGeneration active=$_messageStreamGeneration',
                 );
                 return;
               }
@@ -2981,6 +3245,12 @@ class ChatProvider extends ChangeNotifier {
               );
             },
             onDone: () {
+              _traceFinal(
+                'send-stream-ondone',
+                sessionId: streamSessionId,
+                details:
+                    'eventGeneration=$streamGeneration active=$_messageStreamGeneration',
+              );
               _preservedMessageSubscriptions.remove(sendSubscription);
               if (streamGeneration != _messageStreamGeneration) {
                 if (identical(_messageSubscription, sendSubscription)) {
@@ -2997,6 +3267,10 @@ class ChatProvider extends ChangeNotifier {
                 AppLogger.info(
                   'Stale send stream done — finalized session=$streamSessionId generation=$streamGeneration active=$_messageStreamGeneration',
                 );
+                _traceFinal(
+                  'send-stream-ondone-stale-generation-finalized',
+                  sessionId: streamSessionId,
+                );
                 return;
               }
               if (identical(_messageSubscription, sendSubscription)) {
@@ -3011,6 +3285,10 @@ class ChatProvider extends ChangeNotifier {
               // (e.g. due to half-open TCP after background resume) is
               // suppressed while the datasource polling fallback completes.
               _startAbortSuppression(streamSessionId);
+              _traceFinal(
+                'send-stream-ondone-start-abort-suppression',
+                sessionId: streamSessionId,
+              );
               AppLogger.info(
                 'Provider send stream finished session=$streamSessionId',
               );
@@ -3048,6 +3326,10 @@ class ChatProvider extends ChangeNotifier {
           );
       _messageSubscription = sendSubscription;
       AppLogger.info('Provider send stream subscription attached');
+      _traceFinal(
+        'send-stream-subscription-attached',
+        sessionId: streamSessionId,
+      );
       return true;
     } catch (error, stackTrace) {
       final streamSessionId = _activeMessageStreamSessionId ?? sendSessionId;
@@ -3057,6 +3339,11 @@ class ChatProvider extends ChangeNotifier {
         'Provider send setup failed',
         error: error,
         stackTrace: stackTrace,
+      );
+      _traceFinal(
+        'send-setup-failed',
+        sessionId: streamSessionId,
+        details: 'error=$error',
       );
       if (_shouldSuppressAbortError(
         sessionId: streamSessionId,

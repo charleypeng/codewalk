@@ -329,6 +329,12 @@ extension _ChatProviderEventReducerOps on ChatProvider {
               !hasPreserved &&
               _lastIdleReconcileSessionTurnKey != idleTurnKey &&
               _sessionNeedsFinalMessageReconcileOnIdle(sessionId);
+          _traceFinal(
+            'event-session-idle',
+            sessionId: sessionId,
+            details:
+                'isCurrent=${sessionId == _currentSession?.id} hasPreserved=$hasPreserved shouldReconcile=$shouldReconcileCurrentSession idleTurnKey=$idleTurnKey lastIdleTurn=${_lastIdleReconcileSessionTurnKey ?? "-"}',
+          );
           AppLogger.info(
             'session.idle session=$sessionId isCurrent=${sessionId == _currentSession?.id} hasPreservedStream=$hasPreserved',
           );
@@ -349,6 +355,12 @@ extension _ChatProviderEventReducerOps on ChatProvider {
               // Mark one-shot so repeated session.idle events in the same
               // turn do not trigger additional reconcile calls.
               _lastIdleReconcileSessionTurnKey = idleTurnKey;
+              _traceFinal(
+                'event-session-idle-trigger-reconcile',
+                sessionId: sessionId,
+                details:
+                    'reason=session-idle-final-reconcile allowDuringAbortSuppression=true',
+              );
               unawaited(
                 refreshActiveSessionView(
                   reason: 'session-idle-final-reconcile',
@@ -374,6 +386,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         if (sessionId == null) {
           break;
         }
+        _traceFinal('event-session-error', sessionId: sessionId);
 
         if (sessionId != _currentSession?.id) {
           _sessionStatusById[sessionId] = const SessionStatusInfo(
@@ -413,6 +426,11 @@ extension _ChatProviderEventReducerOps on ChatProvider {
             ? messageFromRawError
             : 'Session error';
         final code = data['code']?.toString() ?? error?['code']?.toString();
+        _traceFinal(
+          'event-session-error-current-session-payload',
+          sessionId: sessionId,
+          details: 'code=${code ?? "-"} message=$message',
+        );
         AppLogger.info(
           'session.error current session=$sessionId message=$message code=$code hasPreservedStream=${_hasPreservedStreamForSession(sessionId)}',
         );
@@ -445,6 +463,12 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         final messageId = info?['id'] as String?;
         if (sessionId != null && messageId != null) {
           final isCurrentSession = _currentSession?.id == sessionId;
+          _traceFinal(
+            'event-${event.type}-fallback-fetch',
+            sessionId: sessionId,
+            details:
+                'messageId=$messageId applyToCurrentSession=$isCurrentSession',
+          );
           unawaited(
             _fetchMessageFallback(
               sessionId,

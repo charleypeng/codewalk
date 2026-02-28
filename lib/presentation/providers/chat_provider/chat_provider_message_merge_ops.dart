@@ -6,6 +6,12 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     String messageId, {
     bool applyToCurrentSession = true,
   }) async {
+    _traceFinal(
+      'fetch-message-fallback-start',
+      sessionId: sessionId,
+      details:
+          'messageId=$messageId applyToCurrentSession=$applyToCurrentSession',
+    );
     final result = await getChatMessage(
       GetChatMessageParams(
         projectId: projectProvider.currentProjectId,
@@ -19,10 +25,30 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
         AppLogger.warn(
           'Message fallback fetch failed for $messageId: ${failure.toString()}',
         );
+        _traceFinal(
+          'fetch-message-fallback-failure',
+          sessionId: sessionId,
+          details: 'messageId=$messageId failure=${failure.runtimeType}',
+        );
       },
       (message) {
+        final isAssistant = message is AssistantMessage;
+        final isCompleted = isAssistant
+            ? (message as AssistantMessage).isCompleted
+            : false;
+        _traceFinal(
+          'fetch-message-fallback-success',
+          sessionId: sessionId,
+          details:
+              'messageId=${message.id} role=${message.role.name} assistantCompleted=$isCompleted applyToCurrentSession=$applyToCurrentSession',
+        );
         if (applyToCurrentSession && _currentSession?.id == sessionId) {
           _updateOrAddMessage(message);
+          _traceFinal(
+            'fetch-message-fallback-applied-current',
+            sessionId: sessionId,
+            details: 'messageId=${message.id}',
+          );
         } else {
           final cached =
               _cachedSessionMessages(sessionId) ?? const <ChatMessage>[];
@@ -38,6 +64,11 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
           next.sort((a, b) => a.time.compareTo(b.time));
           _cacheSessionMessages(sessionId, next);
           unawaited(_persistSessionMessagesSnapshotBestEffort(sessionId, next));
+          _traceFinal(
+            'fetch-message-fallback-applied-cache',
+            sessionId: sessionId,
+            details: 'messageId=${message.id} cachedCount=${next.length}',
+          );
         }
       },
     );

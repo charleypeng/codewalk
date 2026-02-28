@@ -69,6 +69,10 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     }
     try {
       await subscription.cancel().timeout(const Duration(seconds: 2));
+    } on TimeoutException {
+      AppLogger.info(
+        'Cancel $label subscription timed out; continuing with generation guard',
+      );
     } catch (error) {
       AppLogger.warn('Failed to cancel $label subscription', error: error);
     }

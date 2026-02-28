@@ -283,8 +283,17 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
           !_deferAssistantWorkCollapse &&
           latestTimelineMessageId == _finalAssistantRevealSettledMessageId;
       if (shouldIgnoreTransientRespondingPulse) {
+        _traceFinalUi(
+          'viewport-policy-ignore-transient-responding-pulse',
+          details: 'latestTimelineMessageId=${latestTimelineMessageId ?? "-"}',
+        );
         return;
       }
+      _traceFinalUi(
+        'viewport-policy-responding',
+        details:
+            'latestTimelineMessageId=${latestTimelineMessageId ?? "-"} latestSuccessfulAssistantMessageId=${latestSuccessfulAssistantMessageId ?? "-"}',
+      );
       _wasCurrentSessionActivelyResponding = true;
       _deferAssistantWorkCollapse = true;
       _suppressPostCompletionAutoSnap = false;
@@ -306,14 +315,28 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       if (shouldRevealFinalAssistant) {
         _pendingFinalAssistantRevealMessageId =
             latestSuccessfulAssistantMessageId;
+        _traceFinalUi(
+          'viewport-policy-finished-schedule-final-reveal',
+          details:
+              'latestSuccessfulAssistantMessageId=${latestSuccessfulAssistantMessageId ?? "-"}',
+        );
         _scheduleFinalAssistantReveal();
       } else {
+        _traceFinalUi(
+          'viewport-policy-finished-without-final-reveal',
+          details:
+              'latestSuccessfulAssistantMessageId=${latestSuccessfulAssistantMessageId ?? "-"}',
+        );
         _pendingFinalAssistantRevealMessageId = null;
       }
       return;
     }
 
     if (_pendingFinalAssistantRevealMessageId != null) {
+      _traceFinalUi(
+        'viewport-policy-pending-final-reveal-reschedule',
+        details: 'pending=${_pendingFinalAssistantRevealMessageId ?? "-"}',
+      );
       _scheduleFinalAssistantReveal();
       return;
     }
@@ -324,6 +347,11 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         latestSuccessfulAssistantMessageId.isNotEmpty &&
         latestSuccessfulAssistantMessageId !=
             _finalAssistantRevealSettledMessageId) {
+      _traceFinalUi(
+        'viewport-policy-post-completion-resume-reveal',
+        details:
+            'latestSuccessfulAssistantMessageId=$latestSuccessfulAssistantMessageId settled=${_finalAssistantRevealSettledMessageId ?? "-"}',
+      );
       _deferAssistantWorkCollapse = true;
       _pendingFinalAssistantRevealMessageId =
           latestSuccessfulAssistantMessageId;
@@ -492,9 +520,11 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
   void _scheduleFinalAssistantReveal() {
     final messageId = _pendingFinalAssistantRevealMessageId;
     if (_finalAssistantRevealScheduled) {
+      _traceFinalUi('final-reveal-skip-already-scheduled');
       return;
     }
     if (messageId == null || messageId.isEmpty) {
+      _traceFinalUi('final-reveal-skip-missing-message-id');
       return;
     }
 
@@ -504,8 +534,13 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       if (!mounted ||
           !_shouldRevealFinalAssistantOnCompletion ||
           _pendingFinalAssistantRevealMessageId != messageId) {
+        _traceFinalUi(
+          'final-reveal-cancelled-before-run',
+          details: 'messageId=$messageId',
+        );
         return;
       }
+      _traceFinalUi('final-reveal-run', details: 'messageId=$messageId');
       unawaited(_revealFinalAssistantMessageStart(messageId));
     });
   }
@@ -514,10 +549,19 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     if (!mounted ||
         !_shouldRevealFinalAssistantOnCompletion ||
         _pendingFinalAssistantRevealMessageId != messageId) {
+      _traceFinalUi(
+        'final-reveal-ignored-gate',
+        details: 'messageId=$messageId',
+      );
       return;
     }
 
     if (!_scrollController.hasClients) {
+      _traceFinalUi(
+        'final-reveal-no-scroll-clients',
+        details:
+            'messageId=$messageId attempt=$_pendingFinalAssistantRevealAttempts',
+      );
       _pendingFinalAssistantRevealAttempts += 1;
       if (_pendingFinalAssistantRevealAttempts <
           _ChatPageState._maxFinalAssistantRevealAttempts) {
@@ -531,6 +575,11 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     final anchorContext =
         _messageRevealAnchorKeysByMessageId[messageId]?.currentContext;
     if (anchorContext == null) {
+      _traceFinalUi(
+        'final-reveal-no-anchor',
+        details:
+            'messageId=$messageId attempt=$_pendingFinalAssistantRevealAttempts',
+      );
       _pendingFinalAssistantRevealAttempts += 1;
       if (_pendingFinalAssistantRevealAttempts <
           _ChatPageState._maxFinalAssistantRevealAttempts) {
@@ -555,6 +604,10 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         error: error,
         stackTrace: stackTrace,
       );
+      _traceFinalUi(
+        'final-reveal-scroll-error',
+        details: 'messageId=$messageId error=${error.runtimeType}',
+      );
     } finally {
       if (mounted) {
         _isProgrammaticScrollInFlight = false;
@@ -562,6 +615,10 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     }
 
     if (!mounted || _pendingFinalAssistantRevealMessageId != messageId) {
+      _traceFinalUi(
+        'final-reveal-cancelled-after-scroll',
+        details: 'messageId=$messageId',
+      );
       return;
     }
 
@@ -569,6 +626,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
   }
 
   void _finalizeFinalAssistantReveal(String messageId) {
+    _traceFinalUi('final-reveal-finalize', details: 'messageId=$messageId');
     final shouldShowLatestFab =
         _scrollController.hasClients && !_isNearBottom();
     _setState(() {

@@ -113,118 +113,149 @@ extension _ChatProviderRealtimeOps on ChatProvider {
   }
 
   Future<void> _resumeRealtimeAfterForeground() async {
-    AppLogger.info('sync_resume_reconcile_start');
-    await _startRealtimeEventSubscription();
-    await _loadPendingInteractions();
-    await loadSessions();
-    await refreshActiveSessionView(reason: 'foreground-resume');
-    final currentSessionId = _currentSession?.id;
-    if (currentSessionId != null) {
-      await loadSessionInsights(currentSessionId, silent: true);
+    if (_foregroundResumeReconcileInFlight) {
+      AppLogger.info('sync_resume_reconcile_skip reason=in-flight');
+      return;
     }
-    await _syncSelectionFromRemote(reason: 'foreground-resume', force: true);
-    AppLogger.info('sync_resume_reconcile_complete');
+    _foregroundResumeReconcileInFlight = true;
+
+    AppLogger.info('sync_resume_reconcile_start');
+    try {
+      await _startRealtimeEventSubscription();
+      await _loadPendingInteractions();
+      await loadSessions();
+      await refreshActiveSessionView(reason: 'foreground-resume');
+      final currentSessionId = _currentSession?.id;
+      if (currentSessionId != null) {
+        await loadSessionInsights(currentSessionId, silent: true);
+      }
+      await _syncSelectionFromRemote(reason: 'foreground-resume', force: true);
+      AppLogger.info('sync_resume_reconcile_complete');
+    } finally {
+      _foregroundResumeReconcileInFlight = false;
+    }
   }
 
   Future<void> _startRealtimeEventSubscription() async {
-    final generation = ++_eventStreamGeneration;
-    final previousSubscription = _eventSubscription;
-    final previousGlobalSubscription = _globalEventSubscription;
-    _eventSubscription = null;
-    _globalEventSubscription = null;
-    await _cancelSubscriptionSafely(
-      previousSubscription,
-      label: 'realtime event',
-    );
-    await _cancelSubscriptionSafely(
-      previousGlobalSubscription,
-      label: 'global event',
-    );
-    _setSyncState(ChatSyncState.reconnecting, reason: 'subscription-start');
-    _startSyncHealthMonitor();
-
-    final directory = projectProvider.currentDirectory;
-    final newSubscription = watchChatEvents(directory: directory).listen(
-      (result) {
-        if (generation != _eventStreamGeneration) {
-          return;
-        }
-        result.fold(
-          (failure) {
-            _handleRealtimeStreamFailure(
-              source: 'session-stream-failure',
-              error: failure,
-            );
-          },
-          (event) {
-            _markRealtimeSignal(source: 'session-stream');
-            _applyChatEvent(event);
-          },
-        );
-      },
-      onError: (error) {
-        if (generation != _eventStreamGeneration) {
-          return;
-        }
-        _handleRealtimeStreamFailure(
-          source: 'session-stream-exception',
-          error: error,
-        );
-      },
-      onDone: () {
-        if (generation != _eventStreamGeneration) {
-          return;
-        }
-        _handleRealtimeStreamFailure(source: 'session-stream-done');
-      },
-    );
-
-    if (generation != _eventStreamGeneration) {
-      await newSubscription.cancel();
+    if (_realtimeSubscriptionRestartInFlight) {
+      _realtimeSubscriptionRestartQueued = true;
+      AppLogger.info('sync_subscription_restart_queued');
       return;
     }
 
-    _eventSubscription = newSubscription;
+    _realtimeSubscriptionRestartInFlight = true;
+    try {
+      do {
+        _realtimeSubscriptionRestartQueued = false;
 
-    final globalSubscription = watchGlobalChatEvents().listen(
-      (result) {
-        if (generation != _eventStreamGeneration) {
-          return;
-        }
-        result.fold(
-          (failure) {
-            _handleRealtimeStreamFailure(
-              source: 'global-stream-failure',
-              error: failure,
+        final generation = ++_eventStreamGeneration;
+        final previousSubscription = _eventSubscription;
+        final previousGlobalSubscription = _globalEventSubscription;
+        _eventSubscription = null;
+        _globalEventSubscription = null;
+        await _cancelSubscriptionSafely(
+          previousSubscription,
+          label: 'realtime event',
+        );
+        await _cancelSubscriptionSafely(
+          previousGlobalSubscription,
+          label: 'global event',
+        );
+        _setSyncState(ChatSyncState.reconnecting, reason: 'subscription-start');
+        _startSyncHealthMonitor();
+
+        final directory = projectProvider.currentDirectory;
+        final newSubscription = watchChatEvents(directory: directory).listen(
+          (result) {
+            if (generation != _eventStreamGeneration) {
+              return;
+            }
+            result.fold(
+              (failure) {
+                _handleRealtimeStreamFailure(
+                  source: 'session-stream-failure',
+                  error: failure,
+                );
+              },
+              (event) {
+                _markRealtimeSignal(source: 'session-stream');
+                _applyChatEvent(event);
+              },
             );
           },
-          (event) {
-            _markRealtimeSignal(source: 'global-stream');
-            _handleGlobalEvent(event);
+          onError: (error) {
+            if (generation != _eventStreamGeneration) {
+              return;
+            }
+            _handleRealtimeStreamFailure(
+              source: 'session-stream-exception',
+              error: error,
+            );
+          },
+          onDone: () {
+            if (generation != _eventStreamGeneration) {
+              return;
+            }
+            _handleRealtimeStreamFailure(source: 'session-stream-done');
           },
         );
-      },
-      onError: (error) {
-        if (generation != _eventStreamGeneration) {
-          return;
-        }
-        _handleRealtimeStreamFailure(
-          source: 'global-stream-exception',
-          error: error,
-        );
-      },
-      onDone: () {
-        if (generation != _eventStreamGeneration) {
-          return;
-        }
-        _handleRealtimeStreamFailure(source: 'global-stream-done');
-      },
-    );
 
-    if (generation != _eventStreamGeneration) {
-      await globalSubscription.cancel();
-      return;
+        if (generation != _eventStreamGeneration) {
+          await _cancelSubscriptionSafely(
+            newSubscription,
+            label: 'realtime event (stale generation)',
+          );
+          continue;
+        }
+
+        _eventSubscription = newSubscription;
+
+        final globalSubscription = watchGlobalChatEvents().listen(
+          (result) {
+            if (generation != _eventStreamGeneration) {
+              return;
+            }
+            result.fold(
+              (failure) {
+                _handleRealtimeStreamFailure(
+                  source: 'global-stream-failure',
+                  error: failure,
+                );
+              },
+              (event) {
+                _markRealtimeSignal(source: 'global-stream');
+                _handleGlobalEvent(event);
+              },
+            );
+          },
+          onError: (error) {
+            if (generation != _eventStreamGeneration) {
+              return;
+            }
+            _handleRealtimeStreamFailure(
+              source: 'global-stream-exception',
+              error: error,
+            );
+          },
+          onDone: () {
+            if (generation != _eventStreamGeneration) {
+              return;
+            }
+            _handleRealtimeStreamFailure(source: 'global-stream-done');
+          },
+        );
+
+        if (generation != _eventStreamGeneration) {
+          await _cancelSubscriptionSafely(
+            globalSubscription,
+            label: 'global event (stale generation)',
+          );
+          continue;
+        }
+        _globalEventSubscription = globalSubscription;
+      } while (_realtimeSubscriptionRestartQueued);
+    } finally {
+      _realtimeSubscriptionRestartInFlight = false;
     }
-    _globalEventSubscription = globalSubscription;
   }
 }
