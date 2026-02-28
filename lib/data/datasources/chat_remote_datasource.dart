@@ -933,7 +933,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
                 incompleteCreated = created;
                 incompleteId = id;
               }
-            } else if (!hasKnownAssistantBaseline ||
+            } else if (hasKnownAssistantBaseline ||
                 created >= sendStartMs - 2000) {
               // Completed AFTER send started — fresh, not stale.
               if (created >= freshCompletedCreated) {
