@@ -63,6 +63,13 @@
 - **When** the user interacts with sessions
 - **Then** the user can **create**, **rename**, **archive**, **fork**, and **delete** sessions
 
+### New Chat opens as draft immediately
+
+- **Given** a connected server and the chat screen is open
+- **When** the user taps `New Chat` (or uses the equivalent shortcut/command)
+- **Then** the composer opens immediately in a draft state without waiting for remote session creation
+- **Then** the session is created lazily on the first send action
+
 ### Fork creates an independent copy
 
 - **Given** an existing session with conversation history
@@ -139,6 +146,12 @@
 - **Given** a connected server and an active session
 - **When** the user sends a message
 - **Then** the message is sent to the OpenCode server and the assistant's response streams back via SSE, rendering in real time as text arrives
+
+### First send from draft bootstraps a session automatically
+
+- **Given** `New Chat` is in draft state (no active session yet)
+- **When** the user sends the first message
+- **Then** the client creates a new session automatically and sends that message in the same action
 
 ### User can cancel a response
 

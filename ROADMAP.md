@@ -82,3 +82,4 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 - [ ] Verify whether background notifications are working correctly on Android.
 - [ ] Shorten text in collapsed boxes for mobile: simplify label phrases, remove subtext, and use shorter show/hide button wording.
 - [x] Speed up project switching using session-like caching methods: session switching is already fast, and project switching should follow a similar strategy for near-instant transitions. - Related commits: f432a33 facd736
+- [x] Make New Chat open instantly: switched to draft-first flow and deferred remote session creation to first send, with regression coverage across queue/direct/interrupt send paths. - Related commits: 280c8a2 a788a3f
