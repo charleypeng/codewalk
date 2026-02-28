@@ -61,4 +61,8 @@ android/key.properties
 *.aab
 *.exe
 *.dmg
-*.ipascorecard.png
+*.ipa
+
+# Local quality/scanner artifacts
+scorecard.png
+.desloppify/*
