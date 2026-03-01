@@ -3881,6 +3881,47 @@ void main() {
     expect(input.focusNode?.hasFocus, isTrue);
   });
 
+  testWidgets('New Chat draft does not show select-or-create empty state', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_new_chat_draft_empty_state',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'New Chat Draft Empty State',
+        ),
+      ],
+    );
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('New Chat').first);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Select or create a conversation to start chatting'),
+      findsNothing,
+    );
+    expect(find.text('How can I help you?'), findsOneWidget);
+  });
+
   testWidgets('desktop shortcut focuses composer with mod+l', (
     WidgetTester tester,
   ) async {

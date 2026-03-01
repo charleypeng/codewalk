@@ -391,7 +391,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       );
     }
 
-    if (chatProvider.currentSession == null) {
+    if (chatProvider.currentSession == null &&
+        !chatProvider.isDraftingNewChat) {
       final appProvider = context.watch<AppProvider>();
       final hasConfiguredServer = appProvider.activeServer != null;
       if (!hasConfiguredServer) {

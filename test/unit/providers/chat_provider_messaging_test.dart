@@ -542,6 +542,57 @@ void main() {
     );
 
     test(
+      'loadSessions keeps New Chat draft active when cached snapshot exists',
+      () async {
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+
+        final existingSession = provider.sessions.first;
+        final snapshotMessage = AssistantMessage(
+          id: 'msg_snapshot_restore_guard',
+          sessionId: existingSession.id,
+          time: DateTime.fromMillisecondsSinceEpoch(1010),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1020),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_snapshot_restore_guard',
+              messageId: 'msg_snapshot_restore_guard',
+              sessionId: 'ses_1',
+              text: 'cached snapshot message',
+            ),
+          ],
+        );
+
+        await localDataSource.saveLastSessionSnapshot(
+          jsonEncode(<String, dynamic>{
+            'session': ChatSessionModel.fromDomain(existingSession).toJson(),
+            'messages': <Map<String, dynamic>>[
+              ChatMessageModel.fromDomain(snapshotMessage).toJson(),
+            ],
+          }),
+          serverId: 'srv_test',
+          scopeId: '/tmp',
+        );
+        await localDataSource.saveLastSessionSnapshotUpdatedAt(
+          DateTime.now().millisecondsSinceEpoch,
+          serverId: 'srv_test',
+          scopeId: '/tmp',
+        );
+
+        await provider.beginNewChatDraft();
+        expect(provider.isDraftingNewChat, isTrue);
+        expect(provider.currentSession, isNull);
+
+        await provider.loadSessions();
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(provider.isDraftingNewChat, isTrue);
+        expect(provider.currentSession, isNull);
+        expect(provider.messages, isEmpty);
+      },
+    );
+
+    test(
       'switching sessions ignores in-flight stream updates from previous session',
       () async {
         chatRepository.sessions.add(
@@ -946,6 +997,79 @@ void main() {
           provider.messages.map((message) => message.id).toList(),
           <String>['base_1', 'base_2', 'fresh_1'],
         );
+      },
+    );
+
+    test(
+      'refreshActiveSessionView schedules scroll callback when latest message changes',
+      () async {
+        const sessionId = 'ses_1';
+        final toolOnlyMessage = AssistantMessage(
+          id: 'msg_tool_only_before_final',
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(2000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(2010),
+          parts: <MessagePart>[
+            ToolPart(
+              id: 'part_tool_only_before_final',
+              messageId: 'msg_tool_only_before_final',
+              sessionId: sessionId,
+              callId: 'call_tool_only_before_final',
+              tool: 'bash',
+              state: ToolStateCompleted(
+                input: const <String, dynamic>{'command': 'pwd'},
+                output: '/tmp',
+                time: ToolTime(
+                  start: DateTime.fromMillisecondsSinceEpoch(2000),
+                  end: DateTime.fromMillisecondsSinceEpoch(2005),
+                ),
+              ),
+            ),
+          ],
+        );
+        chatRepository.messagesBySession[sessionId] = <ChatMessage>[
+          toolOnlyMessage,
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        final session = provider.sessions.firstWhere(
+          (item) => item.id == sessionId,
+        );
+        await provider.selectSession(session);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        var scrollToBottomRequests = 0;
+        provider.setScrollToBottomCallback(() {
+          scrollToBottomRequests += 1;
+        });
+
+        chatRepository.messagesBySession[sessionId] = <ChatMessage>[
+          toolOnlyMessage,
+          AssistantMessage(
+            id: 'msg_final_after_tools',
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(2100),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(2110),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_final_after_tools',
+                messageId: 'msg_final_after_tools',
+                sessionId: sessionId,
+                text: 'final response after tool calls',
+              ),
+            ],
+          ),
+        ];
+
+        await provider.refreshActiveSessionView(
+          reason: 'session-idle-final-reconcile',
+          includeStatus: false,
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(provider.messages.last.id, 'msg_final_after_tools');
+        expect(scrollToBottomRequests, greaterThan(0));
       },
     );
 

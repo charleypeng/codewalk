@@ -1337,6 +1337,7 @@ class ChatProvider extends ChangeNotifier {
       final cachedMessages = List<ChatMessage>.from(
         _messages.where((message) => message.sessionId == session.id),
       );
+      final previousLatestSessionMessage = cachedMessages.lastOrNull;
       final canUseDelta = preferDelta && cachedMessages.isNotEmpty;
       final messagesResult = await getChatMessages(
         GetChatMessagesParams(
@@ -1396,8 +1397,13 @@ class ChatProvider extends ChangeNotifier {
           final hasActiveLocalStream =
               _activeMessageStreamSessionId == session.id &&
               _messageSubscription != null;
+          final latestSessionMessage = _messages.lastOrNull;
+          final latestSessionMessageChanged =
+              latestSessionMessage != previousLatestSessionMessage;
           if (!_isCompactingContext &&
-              (hasActiveLocalStream || _state == ChatState.sending)) {
+              (hasActiveLocalStream ||
+                  _state == ChatState.sending ||
+                  latestSessionMessageChanged)) {
             _scheduleScrollToBottom();
           }
           if (requiresFullFetch && _currentSession?.id == session.id) {
@@ -2187,7 +2193,9 @@ class ChatProvider extends ChangeNotifier {
             scopeId: scopeId,
           );
 
-      if (_isNewChatDraftActive && _currentSession == null) {
+      if (_isNewChatDraftActive) {
+        _currentSession = null;
+        _threadPermissionsVersion++;
         _messages = <ChatMessage>[];
         _isLoadingOlderMessages = false;
         _hasMoreOldMessages = false;
