@@ -121,6 +121,15 @@
 - **Then** the new context renders immediately from cached scope data without waiting for network revalidation
 - **Then** session list revalidation runs in background and refreshes to server state when the response arrives
 - **Then** if background revalidation fails, the cached visible state remains stable (no forced blank/loading fallback)
+- **Then** when returning to a recently visited project that was marked dirty by global events, the previously cached session list remains visible immediately and is revalidated in background
+- **Then** project-switch transition teardown uses bounded cancellation time, so the `Loading project context...` blocker is brief and does not wait for long stream cancellation timeouts
+
+### Active session SWR prefers delta-like refresh
+
+- **Given** the active session already has cached messages visible
+- **When** background revalidation runs after project/session switch
+- **Then** the client first fetches a limited recent tail window (delta-like refresh) instead of full history
+- **Then** if the fetched tail has no safe overlap with local cache, the client automatically falls back to a full fetch to guarantee correctness
 
 ### New Chat draft state is isolated per project context
 
