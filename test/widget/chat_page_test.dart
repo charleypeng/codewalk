@@ -1053,9 +1053,20 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(1000, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_attach_image_only',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Attachment Session',
+        ),
+      ],
+    );
     final localDataSource = InMemoryAppLocalDataSource()
       ..activeServerId = 'srv_test';
     final provider = _buildChatProvider(
+      chatRepository: repository,
       localDataSource: localDataSource,
       providersResponse: ProvidersResponse(
         providers: <Provider>[
@@ -1082,6 +1093,9 @@ void main() {
 
     await tester.pumpWidget(_testApp(provider, appProvider));
     await tester.pumpAndSettle();
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await tester.pumpAndSettle();
 
     expect(find.byTooltip('Add attachment'), findsOneWidget);
     expect(
@@ -1091,8 +1105,6 @@ void main() {
       ),
       findsNothing,
     );
-    await tester.tap(find.byTooltip('New Chat').first);
-    await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Add attachment'));
     await tester.pumpAndSettle();
     expect(find.text('Select Images'), findsOneWidget);
@@ -1105,9 +1117,20 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(1000, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_attach_image_pdf',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Attachment Session',
+          ),
+        ],
+      );
       final localDataSource = InMemoryAppLocalDataSource()
         ..activeServerId = 'srv_test';
       final provider = _buildChatProvider(
+        chatRepository: repository,
         localDataSource: localDataSource,
         providersResponse: ProvidersResponse(
           providers: <Provider>[
@@ -1134,10 +1157,11 @@ void main() {
 
       await tester.pumpWidget(_testApp(provider, appProvider));
       await tester.pumpAndSettle();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
 
       expect(find.byTooltip('Add attachment'), findsOneWidget);
-      await tester.tap(find.byTooltip('New Chat').first);
-      await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Add attachment'));
       await tester.pumpAndSettle();
       expect(find.text('Select Images'), findsOneWidget);
@@ -4425,6 +4449,133 @@ void main() {
     expect(find.byTooltip('Go to latest message'), findsNothing);
   });
 
+  testWidgets('keeps following busy tool/system updates before final idle', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_busy_tool_follow',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Busy Tool Follow Session',
+        ),
+      ],
+    );
+    final baseMessages = _threadMessages('ses_busy_tool_follow', 40);
+    repository.messagesBySession['ses_busy_tool_follow'] = List<ChatMessage>.of(
+      baseMessages,
+    );
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await tester.pumpAndSettle();
+
+    final listFinder = find.byKey(const ValueKey<String>('chat_message_list'));
+    final scrollableFinder = find.descendant(
+      of: listFinder,
+      matching: find.byType(Scrollable),
+    );
+    final scrollableBefore = tester.state<ScrollableState>(scrollableFinder);
+    expect(
+      scrollableBefore.position.maxScrollExtent -
+          scrollableBefore.position.pixels,
+      lessThanOrEqualTo(1),
+    );
+
+    final busyToolAndSystemUpdate = AssistantMessage(
+      id: 'msg_busy_tool_follow',
+      sessionId: 'ses_busy_tool_follow',
+      time: DateTime.fromMillisecondsSinceEpoch(60000),
+      completedTime: DateTime.fromMillisecondsSinceEpoch(61000),
+      parts: <MessagePart>[
+        ToolPart(
+          id: 'part_busy_tool_follow_tool',
+          messageId: 'msg_busy_tool_follow',
+          sessionId: 'ses_busy_tool_follow',
+          callId: 'call_busy_tool_follow_tool',
+          tool: 'bash',
+          state: ToolStateCompleted(
+            input: const <String, dynamic>{
+              'description': 'Collecting details',
+              'command': 'git status --short',
+            },
+            output: 'M lib/presentation/providers/chat_provider.dart',
+            time: ToolTime(
+              start: DateTime.fromMillisecondsSinceEpoch(60000),
+              end: DateTime.fromMillisecondsSinceEpoch(60500),
+            ),
+          ),
+        ),
+        TextPart(
+          id: 'part_busy_tool_follow_text',
+          messageId: 'msg_busy_tool_follow',
+          sessionId: 'ses_busy_tool_follow',
+          text: List<String>.filled(
+            240,
+            'system update should keep viewport following while busy',
+          ).join(' '),
+        ),
+      ],
+    );
+
+    repository.messagesBySession['ses_busy_tool_follow'] = <ChatMessage>[
+      ...baseMessages,
+      busyToolAndSystemUpdate,
+    ];
+
+    repository.emitEvent(
+      const ChatEvent(
+        type: 'session.status',
+        properties: <String, dynamic>{
+          'sessionID': 'ses_busy_tool_follow',
+          'status': <String, dynamic>{'type': 'busy'},
+        },
+      ),
+    );
+    repository.emitEvent(
+      const ChatEvent(
+        type: 'message.updated',
+        properties: <String, dynamic>{
+          'info': <String, dynamic>{
+            'id': 'msg_busy_tool_follow',
+            'sessionID': 'ses_busy_tool_follow',
+          },
+        },
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.pumpAndSettle();
+
+    final scrollableAfter = tester.state<ScrollableState>(scrollableFinder);
+    expect(
+      scrollableAfter.position.maxScrollExtent -
+          scrollableAfter.position.pixels,
+      lessThanOrEqualTo(1),
+    );
+    expect(find.byTooltip('Go to latest message'), findsNothing);
+    expect(
+      find.textContaining('system update should keep viewport following'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets(
     'keeps jump-to-latest FAB hidden when short final response fits viewport',
     (WidgetTester tester) async {
@@ -7679,6 +7830,7 @@ AppProvider _buildAppProvider({
   required InMemoryAppLocalDataSource localDataSource,
   FakeAppRepository? appRepository,
 }) {
+  _ensureActiveServerProfile(localDataSource);
   final repository = appRepository ?? FakeAppRepository();
   final provider = AppProvider(
     getAppInfo: GetAppInfo(repository),
@@ -7689,6 +7841,31 @@ AppProvider _buildAppProvider({
   );
   unawaited(provider.initialize());
   return provider;
+}
+
+void _ensureActiveServerProfile(InMemoryAppLocalDataSource localDataSource) {
+  final activeServerId = localDataSource.activeServerId?.trim();
+  if (activeServerId == null || activeServerId.isEmpty) {
+    return;
+  }
+  final existingProfilesJson = localDataSource.serverProfilesJson;
+  if (existingProfilesJson != null && existingProfilesJson.trim().isNotEmpty) {
+    return;
+  }
+
+  localDataSource.defaultServerId ??= activeServerId;
+  localDataSource.serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+    <String, dynamic>{
+      'id': activeServerId,
+      'url': 'http://127.0.0.1:4096',
+      'label': 'Test Server',
+      'basicAuthEnabled': false,
+      'basicAuthUsername': '',
+      'basicAuthPassword': '',
+      'createdAt': 0,
+      'updatedAt': 0,
+    },
+  ]);
 }
 
 Model _model(

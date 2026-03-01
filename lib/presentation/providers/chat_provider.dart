@@ -514,7 +514,12 @@ class ChatProvider extends ChangeNotifier {
       return hasBusyStatus;
     }
 
-    return hasActiveStream || (hasBusyStatus && hasInProgressAssistant);
+    // Keep the active session in responding mode for the entire busy/retry
+    // turn, even during tool-only phases where no in-progress assistant text
+    // part exists yet. Busy/retry is the authoritative signal during the
+    // current turn; stale in-progress assistant messages without busy status
+    // must not force responding mode.
+    return hasActiveStream || hasBusyStatus;
   }
 
   bool get isCurrentSessionActivelyResponding {
