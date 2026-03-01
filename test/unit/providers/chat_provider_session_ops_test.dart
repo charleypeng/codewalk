@@ -654,7 +654,7 @@ void main() {
     });
 
     test(
-      'refreshActiveSessionView does not force scroll when session is idle',
+      'refreshActiveSessionView scrolls when latest message changes even if session is idle',
       () async {
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
@@ -689,7 +689,7 @@ void main() {
         // Flush microtask-coalesced scroll callback.
         await Future<void>.value();
 
-        expect(scrollRequests, 0);
+        expect(scrollRequests, 1);
       },
     );
 
