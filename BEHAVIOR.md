@@ -228,6 +228,13 @@
 - **When** text, code blocks, or tool calls render incrementally
 - **Then** the UI remains smooth without stuttering, freezing, or perceptible lag
 
+### Tool-only busy turns keep live follow behavior
+
+- **Given** the active session is still busy/retrying during a multi-step tool turn
+- **When** the latest assistant chunk is completed but the turn still emits tool/patch updates
+- **Then** the chat keeps active follow/reveal behavior for that same turn
+- **Then** idle/background status snapshots without live tool/patch updates do not trigger autonomous jumps
+
 ### Final response is revealed from the beginning
 
 - **Given** a response finishes after tool/work messages

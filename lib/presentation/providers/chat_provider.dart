@@ -499,6 +499,10 @@ class ChatProvider extends ChangeNotifier {
       return false;
     }
     final isCurrentSession = _currentSession?.id == normalizedSessionId;
+    final hasInProgressAssistant = _messages.whereType<AssistantMessage>().any(
+      (message) =>
+          message.sessionId == normalizedSessionId && !message.isCompleted,
+    );
     final status = _sessionStatusById[normalizedSessionId]?.type;
     final hasBusyStatus =
         status == SessionStatusType.busy || status == SessionStatusType.retry;
@@ -522,6 +526,10 @@ class ChatProvider extends ChangeNotifier {
       return true;
     }
 
+    if (hasInProgressAssistant) {
+      return true;
+    }
+
     ChatMessage? latestSessionMessage;
     for (var index = _messages.length - 1; index >= 0; index -= 1) {
       final candidate = _messages[index];
@@ -539,11 +547,9 @@ class ChatProvider extends ChangeNotifier {
       (part) => part is ToolPart || part is PatchPart,
     );
 
-    // Keep the active session in responding mode for the entire busy/retry
-    // turn when the latest assistant chunk is still in progress, or when it
-    // carries tool-surface work. This avoids false idle transitions between
-    // tool steps while preserving active response controls during busy turns.
-    return !latestSessionMessage.isCompleted || hasToolSurfacePart;
+    // Keep the active session in responding mode for busy tool-only turns
+    // where step chunks can be emitted as completed assistant messages.
+    return hasToolSurfacePart;
   }
 
   bool get isCurrentSessionActivelyResponding {
