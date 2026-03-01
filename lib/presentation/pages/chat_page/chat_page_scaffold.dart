@@ -73,12 +73,6 @@ extension _ChatPageScaffold on _ChatPageState {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildSidebarNavigation(closeOnSelect: closeOnSelect),
-            _buildProjectGroupsCard(
-              chatProvider: chatProvider,
-              projectProvider: projectProvider,
-              closeOnSelect: closeOnSelect,
-              isMobileLayout: isMobileLayout,
-            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
               child: Card(
@@ -93,6 +87,15 @@ extension _ChatPageScaffold on _ChatPageState {
                               'Conversations',
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
+                          ),
+                          IconButton(
+                            key: const ValueKey<String>(
+                              'conversations_project_context_button',
+                            ),
+                            icon: const Icon(Symbols.folder_open),
+                            onPressed: () =>
+                                unawaited(_openProjectSelectorDialog()),
+                            tooltip: 'Project Context',
                           ),
                           IconButton(
                             icon: const Icon(Symbols.add),
@@ -197,20 +200,194 @@ extension _ChatPageScaffold on _ChatPageState {
               ),
             ),
             Expanded(
-              child: Column(
-                children: [
-                  Expanded(
-                    child: ChatSessionList(
-                      sessions: chatProvider.visibleSessions,
+              child: _buildGroupedConversationsList(
+                chatProvider: chatProvider,
+                projectProvider: projectProvider,
+                closeOnSelect: closeOnSelect,
+                isMobileLayout: isMobileLayout,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildGroupedConversationsList({
+    required ChatProvider chatProvider,
+    required ProjectProvider projectProvider,
+    required bool closeOnSelect,
+    required bool isMobileLayout,
+  }) {
+    final openProjects = projectProvider.openProjects;
+    final currentProjectId = projectProvider.currentProject?.id;
+    final openProjectIds = openProjects.map((project) => project.id).toSet();
+    _projectGroupExpandedById.removeWhere(
+      (projectId, _) => !openProjectIds.contains(projectId),
+    );
+
+    return ListView.separated(
+      padding: EdgeInsets.fromLTRB(
+        isMobileLayout ? 8 : 12,
+        0,
+        isMobileLayout ? 8 : 12,
+        8,
+      ),
+      itemCount: openProjects.length,
+      separatorBuilder: (_, __) => SizedBox(height: isMobileLayout ? 6 : 8),
+      itemBuilder: (context, index) {
+        final project = openProjects[index];
+        final selected = project.id == currentProjectId;
+        return _buildProjectGroupTile(
+          chatProvider: chatProvider,
+          project: project,
+          selected: selected,
+          closeOnSelect: closeOnSelect,
+          isMobileLayout: isMobileLayout,
+        );
+      },
+    );
+  }
+
+  bool _isProjectGroupExpanded({
+    required String projectId,
+    required bool selected,
+  }) {
+    return _projectGroupExpandedById[projectId] ?? selected;
+  }
+
+  void _toggleProjectGroupExpanded({
+    required String projectId,
+    required bool selected,
+  }) {
+    final current = _isProjectGroupExpanded(
+      projectId: projectId,
+      selected: selected,
+    );
+    _setState(() {
+      _projectGroupExpandedById[projectId] = !current;
+    });
+  }
+
+  Widget _buildProjectGroupTile({
+    required ChatProvider chatProvider,
+    required Project project,
+    required bool selected,
+    required bool closeOnSelect,
+    required bool isMobileLayout,
+  }) {
+    final scopeId = _scopeIdForProject(project);
+    final sessions = chatProvider.visibleSessionsForScopeId(scopeId);
+    final preview = sessions.take(6).toList(growable: false);
+    final hasSnapshot = chatProvider.hasSnapshotForScopeId(scopeId);
+    final expanded = _isProjectGroupExpanded(
+      projectId: project.id,
+      selected: selected,
+    );
+    final displayName = _projectDisplayLabel(project);
+    final subtitle = _directoryLabel(project.path);
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Column(
+        children: [
+          ListTile(
+            key: ValueKey<String>('project_group_tile_${project.id}'),
+            dense: _useDenseListTiles(context),
+            visualDensity: isMobileLayout ? VisualDensity.compact : null,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: isMobileLayout ? 6 : 8,
+            ),
+            leading: const Icon(Symbols.folder_open, size: 20),
+            title: Text(displayName, overflow: TextOverflow.ellipsis),
+            subtitle: subtitle == displayName
+                ? null
+                : Text(subtitle, overflow: TextOverflow.ellipsis),
+            selected: selected,
+            onTap: () {
+              if (selected) {
+                _toggleProjectGroupExpanded(
+                  projectId: project.id,
+                  selected: selected,
+                );
+                return;
+              }
+              unawaited(
+                _switchProjectFromGroup(
+                  projectId: project.id,
+                  closeOnSelect: closeOnSelect,
+                ),
+              );
+            },
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!selected && !hasSnapshot)
+                  Tooltip(
+                    message: 'No cached conversations yet',
+                    child: Icon(
+                      Symbols.cloud_off,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                  ),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: selected
+                        ? Theme.of(context).colorScheme.primaryContainer
+                        : Theme.of(context).colorScheme.surfaceContainerHighest,
+                  ),
+                  child: Text(
+                    '${sessions.length}',
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                ),
+                const SizedBox(width: 2),
+                IconButton(
+                  key: ValueKey<String>('project_group_expand_${project.id}'),
+                  icon: Icon(
+                    expanded ? Symbols.expand_less : Symbols.expand_more,
+                  ),
+                  tooltip: expanded ? 'Collapse group' : 'Expand group',
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 32,
+                    height: 32,
+                  ),
+                  onPressed: () => _toggleProjectGroupExpanded(
+                    projectId: project.id,
+                    selected: selected,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (expanded) ...[
+            if (selected)
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  isMobileLayout ? 4 : 8,
+                  0,
+                  isMobileLayout ? 4 : 8,
+                  8,
+                ),
+                child: Column(
+                  children: [
+                    ChatSessionList(
+                      sessions: sessions,
                       currentSession: chatProvider.currentSession,
                       isSessionActive: chatProvider.isSessionActivelyResponding,
                       sessionAttentionFor: chatProvider.sessionAttentionFor,
                       isMobileLayout: isMobileLayout,
                       onSessionSelected: (session) async {
                         if (closeOnSelect) {
-                          // Allow the gesture arena to fully settle the tap and cancel any drags
-                          // before we instruct the drawer to close. This prevents the drawer's
-                          // drag-cancel from overriding our close command and snapping back open.
                           unawaited(
                             Future.delayed(
                               const Duration(milliseconds: 50),
@@ -221,8 +398,6 @@ extension _ChatPageScaffold on _ChatPageState {
                               },
                             ),
                           );
-                          // Await the switch so ChatSessionList's in-flight guard
-                          // stays active, preventing double-taps.
                           await _handleSessionSwitch(session);
                           return;
                         }
@@ -261,218 +436,83 @@ extension _ChatPageScaffold on _ChatPageState {
                         );
                         _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
                       },
-                    ),
-                  ),
-                  if (chatProvider.canLoadMoreSessions)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-                      child: OutlinedButton.icon(
-                        onPressed: chatProvider.loadMoreSessions,
-                        icon: const Icon(Symbols.expand_more),
-                        label: const Text('Load more'),
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: EdgeInsets.fromLTRB(
+                        isMobileLayout ? 4 : 8,
+                        0,
+                        isMobileLayout ? 4 : 8,
+                        isMobileLayout ? 4 : 8,
                       ),
                     ),
-                ],
+                    if (chatProvider.canLoadMoreSessions)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                        child: OutlinedButton.icon(
+                          onPressed: chatProvider.loadMoreSessions,
+                          icon: const Icon(Symbols.expand_more),
+                          label: const Text('Load more'),
+                        ),
+                      ),
+                  ],
+                ),
+              )
+            else if (preview.isNotEmpty)
+              Padding(
+                padding: EdgeInsets.fromLTRB(isMobileLayout ? 12 : 20, 0, 8, 8),
+                child: Column(
+                  children: [
+                    for (final session in preview)
+                      ListTile(
+                        key: ValueKey<String>(
+                          'project_group_session_preview_${project.id}_${session.id}',
+                        ),
+                        dense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                        ),
+                        visualDensity: VisualDensity.compact,
+                        leading: const Icon(Symbols.chat_bubble, size: 16),
+                        title: Text(
+                          _sessionDisplayTitle(session),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        onTap: () => unawaited(
+                          _openSessionFromProjectGroup(
+                            projectId: project.id,
+                            sessionId: session.id,
+                            closeOnSelect: closeOnSelect,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              )
+            else
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  isMobileLayout ? 12 : 20,
+                  0,
+                  8,
+                  12,
+                ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    hasSnapshot
+                        ? 'No conversations in this project.'
+                        : 'Open project to load conversations.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
               ),
-            ),
           ],
-        );
-      },
-    );
-  }
-
-  Widget _buildProjectGroupsCard({
-    required ChatProvider chatProvider,
-    required ProjectProvider projectProvider,
-    required bool closeOnSelect,
-    required bool isMobileLayout,
-  }) {
-    final openProjects = projectProvider.openProjects;
-    final currentProjectId = projectProvider.currentProject?.id;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Projects',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ),
-                  IconButton(
-                    key: const ValueKey<String>('project_groups_open_folder'),
-                    icon: const Icon(Symbols.add_box),
-                    tooltip: 'Open project folder...',
-                    onPressed: () => unawaited(_createWorkspace()),
-                  ),
-                  if (!FeatureFlags.refreshlessRealtime)
-                    IconButton(
-                      key: const ValueKey<String>('project_groups_refresh'),
-                      icon: const Icon(Symbols.refresh),
-                      tooltip: 'Refresh projects',
-                      onPressed: () =>
-                          unawaited(projectProvider.loadProjects()),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'Conversations grouped by open project context.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 8),
-              for (var index = 0; index < openProjects.length; index += 1) ...[
-                _buildProjectGroupTile(
-                  chatProvider: chatProvider,
-                  projectProvider: projectProvider,
-                  project: openProjects[index],
-                  selected: openProjects[index].id == currentProjectId,
-                  closeOnSelect: closeOnSelect,
-                  isMobileLayout: isMobileLayout,
-                ),
-                if (index < openProjects.length - 1)
-                  const Divider(height: 1, indent: 8, endIndent: 8),
-              ],
-            ],
-          ),
-        ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildProjectGroupTile({
-    required ChatProvider chatProvider,
-    required ProjectProvider projectProvider,
-    required Project project,
-    required bool selected,
-    required bool closeOnSelect,
-    required bool isMobileLayout,
-  }) {
-    final scopeId = _scopeIdForProject(project);
-    final sessions = chatProvider.visibleSessionsForScopeId(scopeId);
-    final preview = sessions.take(selected ? 2 : 1).toList(growable: false);
-    final hasSnapshot = chatProvider.hasSnapshotForScopeId(scopeId);
-    final displayName = _projectDisplayLabel(project);
-    final subtitle = _directoryLabel(project.path);
-    final canClose = projectProvider.openProjects.length > 1 || !selected;
-
-    return Column(
-      children: [
-        ListTile(
-          key: ValueKey<String>('project_group_tile_${project.id}'),
-          dense: _useDenseListTiles(context),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-          leading: Icon(
-            selected ? Symbols.radio_button_checked : Symbols.folder_open,
-            size: 20,
-          ),
-          title: Text(displayName, overflow: TextOverflow.ellipsis),
-          subtitle: subtitle == displayName
-              ? null
-              : Text(subtitle, overflow: TextOverflow.ellipsis),
-          selected: selected,
-          onTap: () => unawaited(
-            _switchProjectFromGroup(
-              projectId: project.id,
-              closeOnSelect: closeOnSelect,
-            ),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (!selected && !hasSnapshot)
-                Tooltip(
-                  message: 'No cached conversations yet',
-                  child: Icon(
-                    Symbols.cloud_off,
-                    size: 16,
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
-                ),
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  color: selected
-                      ? Theme.of(context).colorScheme.primaryContainer
-                      : Theme.of(context).colorScheme.surfaceContainerHighest,
-                ),
-                child: Text(
-                  '${sessions.length}',
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-              ),
-              const SizedBox(width: 2),
-              IconButton(
-                key: ValueKey<String>('project_group_close_${project.id}'),
-                icon: const Icon(Symbols.close_rounded),
-                tooltip: 'Close $displayName',
-                onPressed: canClose
-                    ? () => unawaited(_closeProjectContext(project.id))
-                    : null,
-              ),
-            ],
-          ),
-        ),
-        if (preview.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 8, 6),
-            child: Column(
-              children: [
-                for (final session in preview)
-                  ListTile(
-                    key: ValueKey<String>(
-                      'project_group_session_preview_${project.id}_${session.id}',
-                    ),
-                    dense: true,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 6),
-                    visualDensity: VisualDensity.compact,
-                    leading: const Icon(Symbols.chat_bubble, size: 16),
-                    title: Text(
-                      _sessionDisplayTitle(session),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    onTap: () => unawaited(
-                      _openSessionFromProjectGroup(
-                        projectId: project.id,
-                        sessionId: session.id,
-                        closeOnSelect: closeOnSelect,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          )
-        else if (!selected)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 8, 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                hasSnapshot
-                    ? 'No conversations in this project.'
-                    : 'Open project to load conversations.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-          ),
-        if (!isMobileLayout && !selected && !hasSnapshot)
-          const SizedBox(height: 2),
-      ],
     );
   }
 
@@ -481,6 +521,19 @@ extension _ChatPageScaffold on _ChatPageState {
     required bool closeOnSelect,
   }) async {
     await _switchProjectContext(projectId);
+    if (!mounted) {
+      return;
+    }
+    final openProjects = context.read<ProjectProvider>().openProjects;
+    final openProjectIds = openProjects.map((item) => item.id).toSet();
+    _setState(() {
+      _projectGroupExpandedById.removeWhere(
+        (id, _) => !openProjectIds.contains(id),
+      );
+      for (final id in openProjectIds) {
+        _projectGroupExpandedById[id] = id == projectId;
+      }
+    });
     _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
   }
 

@@ -169,6 +169,7 @@ class _ChatPageState extends State<ChatPage>
   // Stores the last expanded collapse group IDs for each session ID.
   final Map<String, String?> _sessionCollapseHistoryCache = {};
   final Map<String, String?> _sessionCollapseWorkCache = {};
+  final Map<String, bool> _projectGroupExpandedById = <String, bool>{};
   bool _isAppInForeground = true;
   bool _wasChatRouteCurrent = true;
   bool _isProgrammaticScrollInFlight = false;

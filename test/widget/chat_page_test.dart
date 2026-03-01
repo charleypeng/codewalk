@@ -1204,7 +1204,7 @@ void main() {
     expect(find.byIcon(Symbols.close_rounded), findsOneWidget);
   });
 
-  testWidgets('renders grouped project sidebar card', (
+  testWidgets('renders grouped project conversation headers', (
     WidgetTester tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1000, 900));
@@ -1236,17 +1236,91 @@ void main() {
     await tester.pumpWidget(_testApp(provider, appProvider));
     await tester.pumpAndSettle();
 
-    expect(find.text('Projects'), findsOneWidget);
-    expect(
-      find.text('Conversations grouped by open project context.'),
-      findsOneWidget,
-    );
     expect(
       find.byKey(const ValueKey<String>('project_group_tile_proj_a')),
       findsOneWidget,
     );
     expect(
-      find.byKey(const ValueKey<String>('project_groups_open_folder')),
+      find.byKey(const ValueKey<String>('project_group_expand_proj_a')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(
+        const ValueKey<String>('conversations_project_context_button'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('project_group_close_proj_a')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('active project group can collapse and expand', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_group',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Grouped Session',
+        ),
+      ],
+    );
+    repository.messagesBySession['ses_group'] = <ChatMessage>[];
+
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+      projectRepository: FakeProjectRepository(
+        currentProject: Project(
+          id: 'proj_a',
+          name: 'Project A',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+        projects: <Project>[
+          Project(
+            id: 'proj_a',
+            name: 'Project A',
+            path: '/repo/a',
+            createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+          ),
+        ],
+      ),
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    final expandButton = find.byKey(
+      const ValueKey<String>('project_group_expand_proj_a'),
+    );
+    expect(expandButton, findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('chat_session_tile_ses_group')),
+      findsOneWidget,
+    );
+
+    await tester.tap(expandButton);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey<String>('chat_session_tile_ses_group')),
+      findsNothing,
+    );
+
+    await tester.tap(expandButton);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey<String>('chat_session_tile_ses_group')),
       findsOneWidget,
     );
   });
@@ -1294,7 +1368,17 @@ void main() {
     await tester.pumpWidget(_testApp(provider, appProvider));
     await tester.pumpAndSettle();
 
+    IconData expandIconFor(String projectId) {
+      final button = tester.widget<IconButton>(
+        find.byKey(ValueKey<String>('project_group_expand_$projectId')),
+      );
+      final icon = button.icon as Icon;
+      return icon.icon!;
+    }
+
     expect(provider.projectProvider.currentProject?.id, 'proj_a');
+    expect(expandIconFor('proj_a'), Symbols.expand_less);
+    expect(expandIconFor('proj_b'), Symbols.expand_more);
     expect(
       find.byKey(const ValueKey<String>('project_group_tile_proj_b')),
       findsOneWidget,
@@ -1306,6 +1390,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(provider.projectProvider.currentProject?.id, 'proj_b');
+    expect(expandIconFor('proj_a'), Symbols.expand_more);
+    expect(expandIconFor('proj_b'), Symbols.expand_less);
   });
 
   testWidgets('closed project can be archived from closed list', (

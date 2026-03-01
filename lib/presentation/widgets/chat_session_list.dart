@@ -21,6 +21,9 @@ class ChatSessionList extends StatefulWidget {
     this.onSessionShareToggled,
     this.onSessionArchiveToggled,
     this.onSessionForked,
+    this.shrinkWrap = false,
+    this.physics,
+    this.padding = const EdgeInsets.fromLTRB(8, 0, 8, 8),
   });
 
   final List<ChatSession> sessions;
@@ -36,6 +39,9 @@ class ChatSessionList extends StatefulWidget {
   final Future<bool> Function(ChatSession session, bool archived)?
   onSessionArchiveToggled;
   final Future<void> Function(ChatSession session)? onSessionForked;
+  final bool shrinkWrap;
+  final ScrollPhysics? physics;
+  final EdgeInsetsGeometry padding;
 
   @override
   State<ChatSessionList> createState() => _ChatSessionListState();
@@ -142,7 +148,9 @@ class _ChatSessionListState extends State<ChatSessionList> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+      padding: widget.padding,
+      shrinkWrap: widget.shrinkWrap,
+      physics: widget.physics,
       itemCount: _cachedVisibleRows.length,
       itemBuilder: (context, index) {
         final row = _cachedVisibleRows[index];
