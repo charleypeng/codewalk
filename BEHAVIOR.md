@@ -70,6 +70,20 @@
 - **Then** the composer opens immediately in a draft state without waiting for remote session creation
 - **Then** the session is created lazily on the first send action
 
+### New Chat draft is not replaced by background refreshes
+
+- **Given** the user is in `New Chat` draft mode (no active session selected yet)
+- **When** session snapshots, SWR revalidation, or realtime events from other sessions arrive
+- **Then** draft mode remains active and the app does not auto-switch back to another session
+- **Then** draft mode remains visible until the user sends the first message or explicitly selects another session
+
+### New Chat draft skips the select-or-create empty state
+
+- **Given** `New Chat` draft mode is active
+- **When** the chat timeline is rendered
+- **Then** the app does not show `Select or create a conversation to start chatting`
+- **Then** the draft-ready chat view remains visible so the user can start typing/sending immediately
+
 ### Fork creates an independent copy
 
 - **Given** an existing session with conversation history
@@ -248,6 +262,13 @@
 - **When** the latest assistant message still has only tool/work surface content (no final visible text yet)
 - **Then** the app still runs a targeted final-message reconcile for the active session
 - **Then** the final assistant response becomes visible without requiring the user to switch sessions and return
+
+### Final response reconcile triggers latest-message reveal
+
+- **Given** a tool/work-heavy turn finishes and the final assistant text is applied by active-session revalidation
+- **When** the latest session message changes during reconcile
+- **Then** the timeline schedules a latest-message reveal/scroll update for that active session
+- **Then** the user sees the final response immediately without needing a manual session switch
 
 ### Async send completion ignores stale assistant IDs
 

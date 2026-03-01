@@ -56,7 +56,7 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 
 #### `featQ` Cross-platform UX and settings polish
 
-- [x] Investigate and fix conversation continuity when switching sessions/projects (hidden response until session switch/retry): implemented async send stale-ID protection and idle final-reconcile bypass during abort suppression. - Related commits: acce617 9dcd773 1581c65 cdee253 1fcf33e 68baebe 61934e9 0ee474c df9ec9e 931d9a8 745c0a8 f1faf4a
+- [x] Investigate and fix conversation continuity when switching sessions/projects (hidden response until session switch/retry): implemented async send stale-ID protection and idle final-reconcile bypass during abort suppression. - Related commits: acce617 9dcd773 1581c65 cdee253 1fcf33e 68baebe 61934e9 0ee474c df9ec9e 931d9a8 745c0a8 f1faf4a 4074734
 - [x] Investigate and fix conversation-open click behavior: double-click freeze and sidebar sync. - Related commits: 204114e 09c1641 eccec6b dfa9754 b5cda81
 - [x] Ajustar ciclagem de atalhos para comportamento tipo Alt+Tab: hoje a ciclagem percorre lista de recentes/favoritos sem priorizar o último item anterior. Implementar primeira ação focada no último usado anterior para troca rápida entre dois itens, com avanço sequencial para demais recentes apenas em pressões subsequentes dentro de janela curta (ex.: 2s). DoD: 1) primeira ativação do atalho alterna para o último item anterior usado; 2) segunda/terceira ativações em sequência (janela temporal) avançam na lista de recentes; 3) comportamento consistente para agente, modelo e variante; 4) fallback previsível quando não houver histórico suficiente. - Related commits: 2086730 c19d346
 - [ ] Canned answers manager for fast reply
@@ -68,13 +68,13 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 - [x] In About, add "check updates on open" option (default on), with toast and update button.
 - [x] Reorganize the "Project Context" screen for a more dynamic visual UX; tapping a project opens it immediately and closes the dialog, removing the need for a separate open button next to trash. - Related commits: ee0b95b 725dda7
 - [x] Replace the current project selection dialog with an inline rich select/dropdown component. - Commit hash: 0cc892c
-- [x] Investigate and fix chat flicker and intermittent blank history on conversation open/update: stabilized tool-call rendering, fixed empty-session blink, and improved revalidation stability. - Related commits: 26c8448 9351919
+- [x] Investigate and fix chat flicker and intermittent blank history on conversation open/update: stabilized tool-call rendering, fixed empty-session blink, and improved revalidation stability. - Related commits: 26c8448 9351919 4074734
 - [x] Load older history on top reach: implemented top-scroll trigger to fetch previous message batches. - Commit hash: 8b364fd
 - [ ] After returning from background, position the conversation at the start of the most recent message (top of text) instead of at the end.
 - [ ] In composer, adjust ArrowUp/ArrowDown without modifiers for multiline behavior before history navigation; with modifiers keep default editor behavior.
 - [x] Plan the merge between the project selector and the conversations sidebar, grouping conversations by open projects to speed up navigation. - Commit hash: d9e5ec4
 - [ ] Allow pinning sessions in the Conversations sidebar.
-- [x] Corrigir o erro ao tentar enviar mensagem após resposta do assistente (hidden response until session switch/retry): implemented async send stale-ID protection and idle final-reconcile bypass during abort suppression. - Related commits: 745c0a8 f1faf4a
+- [x] Corrigir o erro ao tentar enviar mensagem após resposta do assistente (hidden response until session switch/retry): implemented async send stale-ID protection and idle final-reconcile bypass during abort suppression. - Related commits: 745c0a8 f1faf4a 4074734
 - [x] Corrigir a tela principal quando não tem nenhum servidor configurado: a tela pisca rapidamente apresentando erro de conexão, mas não deveria procurar atualização se não há nenhum servidor cadastrado: skipped startup connection checks when no server exists; added no-server empty state + direct setup wizard button. - Commit hash: 6e35dff
 - [ ] Suavizar a chegada de tool calls e novas mensagens, bem como o envio de novas mensagens pelo usuário: atualmente tudo aparece de uma vez, mas com animação de deslize a experiência fica mais atraente.
 - [x] Restrict session title update service to main sessions only: subsessions do not need and must not use the dynamic title generation system. - Commit hash: 4d9ac2e
@@ -83,5 +83,5 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 - [x] Shorten text in collapsed boxes for mobile: simplify label phrases, remove subtext, and use shorter show/hide button wording. - Commit hash: 98af822
 - [x] Speed up project switching using session-like caching methods: session switching is already fast, and project switching should follow a similar strategy for near-instant transitions. - Related commits: f432a33 facd736
 - [x] Make New Chat open instantly: switched to draft-first flow and deferred remote session creation to first send, with regression coverage across queue/direct/interrupt send paths. - Related commits: 280c8a2 a788a3f
-- [x] Fix SWR regression where New Chat draft mode leaked across project switches: draft state is now context-scoped (`serverId::directory`), lazy bootstrap is cleared on context transition, and async session creation ignores stale post-switch results. - Commit hash: 5e45544
+- [x] Fix SWR regression where New Chat draft mode leaked across project switches: draft state is now context-scoped (`serverId::directory`), lazy bootstrap is cleared on context transition, and async session creation ignores stale post-switch results. - Related commits: 5e45544 4074734
 - [x] Reduce repeated "Loading project context..." stalls on recently visited projects: fast switch now uses bounded subscription cancellation, preserves inactive-context cache on dirty global events, and applies delta-like tail revalidation with full-fetch fallback for active cached sessions. - Related commits: d34dff5 62cb6e2
