@@ -413,8 +413,10 @@ The hamburger icon has exactly three states — only one can be active at a time
   2. The sync state is recoverable (reconnecting, delayed, or degraded — not failed)
   3. The Android foreground service is NOT running
 - **Red dot badge**: shown when an urgent condition persists beyond the grace period:
-  - Server health is `unhealthy` or `offline`, OR
+  - Active server health probe is `unhealthy` (including offline probe failures), OR
   - Recoverable sync alert has escalated (unresolved for too long)
+
+Transient connectivity blips that do not escalate are surfaced via loading/sync states, not as urgent red health alerts.
 
 Non-urgent (blue/gray) dot badges are never shown on the hamburger icon.
 
