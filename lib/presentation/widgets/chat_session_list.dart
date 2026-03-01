@@ -45,7 +45,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
   final Set<String> _expandedParentIds = <String>{};
   String? _cachedTreeSignature;
   List<_SessionTreeRow> _cachedVisibleRows = const <_SessionTreeRow>[];
-  bool _sessionSelectionInFlight = false;
+  String? _loadingSessionId;
 
   @override
   void initState() {
@@ -252,17 +252,17 @@ class _ChatSessionListState extends State<ChatSessionList> {
 
   Future<void> _handleSessionSelected(ChatSession session) async {
     final callback = widget.onSessionSelected;
-    if (callback == null || _sessionSelectionInFlight) {
+    if (callback == null || _loadingSessionId != null) {
       return;
     }
 
-    _sessionSelectionInFlight = true;
+    _loadingSessionId = session.id;
     setState(() {});
 
     try {
       await callback(session);
     } finally {
-      _sessionSelectionInFlight = false;
+      _loadingSessionId = null;
       if (mounted) {
         setState(() {});
       }
@@ -279,6 +279,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
   }) {
     final isSelected = widget.currentSession?.id == session.id;
     final isSessionActive = widget.isSessionActive?.call(session.id) ?? false;
+    final isLoading = _loadingSessionId == session.id;
     final sessionAttention =
         widget.sessionAttentionFor?.call(session.id) ??
         SessionAttentionState(isActive: isSessionActive);
@@ -319,20 +320,20 @@ class _ChatSessionListState extends State<ChatSessionList> {
                 ),
                 leading: showLeadingIcon
                     ? CircleAvatar(
-                        backgroundColor: isSelected
+                        backgroundColor: isSelected || isLoading
                             ? colorScheme.primary
                             : colorScheme.surfaceContainerHighest,
                         child: AnimatedSwitcher(
                           duration: const Duration(milliseconds: 220),
                           switchInCurve: Curves.easeOutCubic,
                           switchOutCurve: Curves.easeInCubic,
-                          child: isSessionActive
+                          child: (isSessionActive || isLoading)
                               ? Icon(
                                   Symbols.sync_rounded,
                                   key: ValueKey<String>(
                                     'chat_session_loading_${session.id}',
                                   ),
-                                  color: isSelected
+                                  color: isSelected || isLoading
                                       ? colorScheme.onPrimary
                                       : colorScheme.primary,
                                   size: 20,
@@ -576,7 +577,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
                     ),
                   ],
                 ),
-                onTap: _sessionSelectionInFlight
+                onTap: _loadingSessionId != null
                     ? null
                     : () async {
                         await _handleSessionSelected(session);

@@ -202,13 +202,22 @@ extension _ChatPageScaffold on _ChatPageState {
                       isMobileLayout: isMobileLayout,
                       onSessionSelected: (session) async {
                         if (closeOnSelect) {
-                          // Mobile drawer must react instantly even when
-                          // selectSession blocks on remote load.
-                          _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
-                          _startSessionSwitchFromList(
-                            session,
-                            closeOnSelect: closeOnSelect,
+                          // Allow the gesture arena to fully settle the tap and cancel any drags
+                          // before we instruct the drawer to close. This prevents the drawer's
+                          // drag-cancel from overriding our close command and snapping back open.
+                          unawaited(
+                            Future.delayed(
+                              const Duration(milliseconds: 50),
+                              () {
+                                _closeDrawerIfNeeded(
+                                  closeOnSelect: closeOnSelect,
+                                );
+                              },
+                            ),
                           );
+                          // Await the switch so ChatSessionList's in-flight guard
+                          // stays active, preventing double-taps.
+                          await _handleSessionSwitch(session);
                           return;
                         }
                         await _handleSessionSwitch(session);
@@ -435,26 +444,5 @@ extension _ChatPageScaffold on _ChatPageState {
     } finally {
       _isSessionSwitchInFlight = false;
     }
-  }
-
-  void _startSessionSwitchFromList(
-    ChatSession session, {
-    required bool closeOnSelect,
-  }) {
-    unawaited(() async {
-      try {
-        await _handleSessionSwitch(session);
-      } catch (error, stackTrace) {
-        AppLogger.warn(
-          'Session switch failed from list',
-          error: error,
-          stackTrace: stackTrace,
-        );
-      } finally {
-        // A rapid double-tap may trigger drag-cancel callbacks that try to
-        // re-open the drawer; close again after async switch settles.
-        _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
-      }
-    }());
   }
 }

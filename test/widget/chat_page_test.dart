@@ -269,7 +269,10 @@ void main() {
         await tester.tap(
           find.byKey(const ValueKey<String>('chat_session_tile_ses_2')),
         );
-        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 60));
+        await tester.pump(
+          const Duration(milliseconds: 500),
+        ); // Finish drawer close animation
 
         expect(scaffoldState.isDrawerOpen, isFalse);
         expect(provider.currentSession?.id, 'ses_2');
