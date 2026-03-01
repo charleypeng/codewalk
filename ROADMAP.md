@@ -72,7 +72,7 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 - [x] Load older history on top reach: implemented top-scroll trigger to fetch previous message batches. - Commit hash: 8b364fd
 - [ ] After returning from background, position the conversation at the start of the most recent message (top of text) instead of at the end.
 - [ ] In composer, adjust ArrowUp/ArrowDown without modifiers for multiline behavior before history navigation; with modifiers keep default editor behavior.
-- [ ] Plan the merge between the project selector and the conversations sidebar, grouping conversations by open projects to speed up navigation.
+- [x] Plan the merge between the project selector and the conversations sidebar, grouping conversations by open projects to speed up navigation. - Commit hash: d9e5ec4
 - [ ] Allow pinning sessions in the Conversations sidebar.
 - [x] Corrigir o erro ao tentar enviar mensagem após resposta do assistente (hidden response until session switch/retry): implemented async send stale-ID protection and idle final-reconcile bypass during abort suppression. - Related commits: 745c0a8 f1faf4a
 - [x] Corrigir a tela principal quando não tem nenhum servidor configurado: a tela pisca rapidamente apresentando erro de conexão, mas não deveria procurar atualização se não há nenhum servidor cadastrado: skipped startup connection checks when no server exists; added no-server empty state + direct setup wizard button. - Commit hash: 6e35dff

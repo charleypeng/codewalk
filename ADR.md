@@ -25,6 +25,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-019: Defer Config-Mutating API Calls During Active Server Processing
 - ADR-020: Session-Level SWR Cache with Persisted LRU Snapshots
 - ADR-021: Context-Scoped Draft State for Project-Switch SWR
+- ADR-022: Unified Project Context Controls with Sidebar Session Previews
 
 ---
 
@@ -884,3 +885,44 @@ Treat draft-related composer/session bootstrap state as context-scoped snapshot 
 - `lib/presentation/providers/chat_provider/chat_provider_session_ops.dart`
 - `lib/presentation/providers/chat_provider.dart`
 - `test/unit/providers/chat_provider_project_test.dart`
+
+---
+
+## ADR-022: Unified Project Context Controls with Sidebar Session Previews (2026-03-01)
+
+**Status**: Accepted
+
+**Related**: ADR-002 (Context Isolation), ADR-020 (Session-Level SWR Cache), ADR-021 (Context-Scoped Draft State)
+
+### Context
+
+Project context controls and conversations navigation were split across separate UI surfaces (project selector in the app bar and sessions in the sidebar). This separation increased navigation friction, especially on mobile. Users needed a unified navigation point that keeps project switching and conversation access together while preserving strict context isolation.
+
+### Decision
+
+1. Merge project context controls into the conversations sidebar for both mobile drawer and desktop sidebar layouts.
+2. Add per-project conversation previews in the sidebar using active context sessions plus cached snapshots from previously visited contexts.
+3. Keep session ownership and active state strictly scoped by `serverId::scopeId`; selecting a conversation from another project always triggers context switch first.
+4. Reuse existing context-switch fast path and background revalidation strategy; no change to server API contracts.
+
+### Rationale
+
+- A single navigation surface reduces context-switch cognitive overhead.
+- Snapshot-backed previews improve perceived speed when moving between projects.
+- Preserving `serverId::scopeId` ownership avoids cross-project state leakage and protects existing invariants.
+- Reusing existing SWR/cache behavior minimizes migration risk.
+
+### Consequences
+
+- ✅ Faster project/session navigation from one sidebar workflow.
+- ✅ Better mobile/desktop consistency for context controls.
+- ✅ No architectural break in context isolation semantics.
+- ⚠ Sidebar UI/state management becomes more complex (project rows + previews + actions).
+- ⚠ Preview availability depends on existing snapshots for non-active contexts.
+
+### Key Files
+
+- `lib/presentation/pages/chat_page/chat_page_scaffold.dart`
+- `lib/presentation/providers/chat_provider.dart`
+- `lib/presentation/pages/chat_page/chat_page_workspace_controller.dart`
+- `test/widget/chat_page_test.dart`

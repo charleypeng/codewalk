@@ -95,9 +95,10 @@
 
 - **Given** the user has conversations from multiple project directories
 - **When** the Conversations sidebar is rendered
-- **Then** sessions are grouped under project headers by directory context
-- **Then** the active project group is shown first and expanded by default
-- **Then** users can collapse/expand each project group independently
+- **Then** the sidebar shows a dedicated `Projects` card above the conversations list with one row per open project
+- **Then** each project row shows a conversation count derived from that project's visible sessions (active scope or cached snapshot)
+- **Then** tapping a project row switches context directly from the sidebar (no modal required)
+- **Then** when snapshot data exists, the sidebar shows compact session previews for that project; when not available, it shows a "Open project to load conversations" hint
 
 ### Auto-generated session titles
 
