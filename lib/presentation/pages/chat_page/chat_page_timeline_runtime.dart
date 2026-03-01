@@ -209,12 +209,10 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
   ) {
     final colorScheme = Theme.of(context).colorScheme;
     final group = entry.group;
-    final actionLabel = entry.expanded
-        ? 'Hide work messages'
-        : 'Show work messages';
-    final actionIcon = entry.expanded
-        ? Symbols.unfold_less_rounded
-        : Symbols.unfold_more_rounded;
+    final actionLabel = entry.expanded ? 'Hide' : 'Show';
+    final titleLabel = group.messageCount == 1
+        ? '1 work message'
+        : '${group.messageCount} work messages';
 
     return Padding(
       key: ValueKey<String>(entry.key),
@@ -241,7 +239,7 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Icon(
                       Symbols.account_tree_rounded,
@@ -251,15 +249,17 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Work messages are collapsed',
+                        titleLabel,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 8),
-                    TextButton.icon(
+                    TextButton(
                       key: const ValueKey<String>(
                         'timeline_collapsed_assistant_work_toggle',
                       ),
@@ -267,17 +267,9 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
                         groupId: group.id,
                         expanded: !entry.expanded,
                       ),
-                      icon: Icon(actionIcon, size: 16),
-                      label: Text(actionLabel),
+                      child: Text(actionLabel),
                     ),
                   ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${group.messageCount} assistant work messages hidden before final response',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
                 ),
               ],
             ),

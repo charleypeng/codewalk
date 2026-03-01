@@ -5344,6 +5344,13 @@ void main() {
         ),
         findsOneWidget,
       );
+      expect(find.text('2 work messages'), findsOneWidget);
+      expect(
+        find.textContaining(
+          'assistant work messages hidden before final response',
+        ),
+        findsNothing,
+      );
       expect(find.text('Working step 1'), findsNothing);
       expect(find.text('Working step 2'), findsNothing);
       expect(find.text('Final assistant response'), findsOneWidget);
@@ -5667,6 +5674,7 @@ void main() {
       ),
       findsOneWidget,
     );
+    expect(find.text('2 work messages'), findsOneWidget);
     expect(find.text('Final assistant answer'), findsOneWidget);
 
     await tester.tap(
