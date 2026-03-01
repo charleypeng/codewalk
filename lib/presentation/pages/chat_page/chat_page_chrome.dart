@@ -617,16 +617,13 @@ extension _ChatPageChrome on _ChatPageState {
     if (health == ServerHealthStatus.unhealthy) {
       return true;
     }
-    if (health == ServerHealthStatus.unknown) {
-      return false;
-    }
-    if (!FeatureFlags.refreshlessRealtime) {
-      return !appProvider.isConnected;
-    }
+    // Keep the urgent red badge aligned with server-health semantics shown in
+    // Settings. Connectivity blips can still surface through sync/loading UI,
+    // but they should not masquerade as an unhealthy server.
     if (_isRecoverableSyncState(chatProvider: chatProvider)) {
       return chatProvider.isRecoverableSyncAlertEscalated;
     }
-    return !appProvider.isConnected;
+    return false;
   }
 
   void _resetServerAlertGraceState() {
