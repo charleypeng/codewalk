@@ -499,10 +499,6 @@ class ChatProvider extends ChangeNotifier {
       return false;
     }
     final isCurrentSession = _currentSession?.id == normalizedSessionId;
-    final hasInProgressAssistant = _messages.whereType<AssistantMessage>().any(
-      (message) =>
-          message.sessionId == normalizedSessionId && !message.isCompleted,
-    );
     final status = _sessionStatusById[normalizedSessionId]?.type;
     final hasBusyStatus =
         status == SessionStatusType.busy || status == SessionStatusType.retry;
@@ -514,12 +510,40 @@ class ChatProvider extends ChangeNotifier {
       return hasBusyStatus;
     }
 
+    if (hasActiveStream) {
+      return true;
+    }
+
+    if (!hasBusyStatus) {
+      return false;
+    }
+
+    if (_state == ChatState.sending) {
+      return true;
+    }
+
+    ChatMessage? latestSessionMessage;
+    for (var index = _messages.length - 1; index >= 0; index -= 1) {
+      final candidate = _messages[index];
+      if (candidate.sessionId == normalizedSessionId) {
+        latestSessionMessage = candidate;
+        break;
+      }
+    }
+
+    if (latestSessionMessage is! AssistantMessage) {
+      return false;
+    }
+
+    final hasToolSurfacePart = latestSessionMessage.parts.any(
+      (part) => part is ToolPart || part is PatchPart,
+    );
+
     // Keep the active session in responding mode for the entire busy/retry
-    // turn, even during tool-only phases where no in-progress assistant text
-    // part exists yet. Busy/retry is the authoritative signal during the
-    // current turn; stale in-progress assistant messages without busy status
-    // must not force responding mode.
-    return hasActiveStream || hasBusyStatus;
+    // turn when the latest assistant chunk is still in progress, or when it
+    // carries tool-surface work. This avoids false idle transitions between
+    // tool steps while preserving active response controls during busy turns.
+    return !latestSessionMessage.isCompleted || hasToolSurfacePart;
   }
 
   bool get isCurrentSessionActivelyResponding {
@@ -1363,8 +1387,11 @@ class ChatProvider extends ChangeNotifier {
           unawaited(
             _persistSessionMessagesSnapshotBestEffort(session.id, _messages),
           );
+          final hasActiveLocalStream =
+              _activeMessageStreamSessionId == session.id &&
+              _messageSubscription != null;
           if (!_isCompactingContext &&
-              isSessionActivelyResponding(session.id)) {
+              (hasActiveLocalStream || _state == ChatState.sending)) {
             _scheduleScrollToBottom();
           }
           if (requiresFullFetch && _currentSession?.id == session.id) {

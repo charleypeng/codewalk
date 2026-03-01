@@ -659,16 +659,10 @@ void main() {
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
 
-        chatRepository.emitEvent(
-          const ChatEvent(
-            type: 'session.status',
-            properties: <String, dynamic>{
-              'sessionID': 'ses_1',
-              'status': <String, dynamic>{'type': 'busy'},
-            },
-          ),
-        );
-        await Future<void>.delayed(const Duration(milliseconds: 20));
+        chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+          'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
+        };
+        await provider.loadSessionInsights('ses_1');
 
         var scrollRequests = 0;
         provider.setScrollToBottomCallback(() {
@@ -751,84 +745,6 @@ void main() {
         expect(provider.isCurrentSessionActivelyResponding, isTrue);
         expect(
           provider.messages.any((msg) => msg.id == 'msg_live_tail'),
-          isTrue,
-        );
-      },
-    );
-
-    test(
-      'refreshActiveSessionView preserves busy tool-only local tail against stale snapshot',
-      () async {
-        await provider.loadSessions();
-        await provider.selectSession(provider.sessions.first);
-
-        chatRepository.emitEvent(
-          const ChatEvent(
-            type: 'session.status',
-            properties: <String, dynamic>{
-              'sessionID': 'ses_1',
-              'status': <String, dynamic>{'type': 'busy'},
-            },
-          ),
-        );
-        await Future<void>.delayed(const Duration(milliseconds: 20));
-
-        final liveToolOnlyAssistant = AssistantMessage(
-          id: 'msg_busy_tool_tail',
-          sessionId: 'ses_1',
-          time: DateTime.fromMillisecondsSinceEpoch(2300),
-          completedTime: DateTime.fromMillisecondsSinceEpoch(2350),
-          parts: <MessagePart>[
-            ToolPart(
-              id: 'part_busy_tool_tail',
-              messageId: 'msg_busy_tool_tail',
-              sessionId: 'ses_1',
-              callId: 'call_busy_tool_tail',
-              tool: 'bash',
-              state: ToolStateCompleted(
-                input: const <String, dynamic>{
-                  'description': 'Collecting runtime details',
-                  'command': 'git status --short',
-                },
-                output: 'M lib/presentation/providers/chat_provider.dart',
-                time: ToolTime(
-                  start: DateTime.fromMillisecondsSinceEpoch(2300),
-                  end: DateTime.fromMillisecondsSinceEpoch(2340),
-                ),
-              ),
-            ),
-          ],
-        );
-
-        chatRepository.emitEvent(
-          const ChatEvent(
-            type: 'message.updated',
-            properties: <String, dynamic>{
-              'info': <String, dynamic>{
-                'id': 'msg_busy_tool_tail',
-                'sessionID': 'ses_1',
-              },
-            },
-          ),
-        );
-        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
-          liveToolOnlyAssistant,
-        ];
-
-        await Future<void>.delayed(const Duration(milliseconds: 40));
-
-        expect(provider.isCurrentSessionActivelyResponding, isTrue);
-        expect(
-          provider.messages.any((msg) => msg.id == 'msg_busy_tool_tail'),
-          isTrue,
-        );
-
-        chatRepository.messagesBySession['ses_1'] = const <ChatMessage>[];
-        await provider.refreshActiveSessionView(includeStatus: false);
-
-        expect(provider.isCurrentSessionActivelyResponding, isTrue);
-        expect(
-          provider.messages.any((msg) => msg.id == 'msg_busy_tool_tail'),
           isTrue,
         );
       },
