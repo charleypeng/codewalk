@@ -1204,6 +1204,110 @@ void main() {
     expect(find.byIcon(Symbols.close_rounded), findsOneWidget);
   });
 
+  testWidgets('renders grouped project sidebar card', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: FakeProjectRepository(
+        currentProject: Project(
+          id: 'proj_a',
+          name: 'Project A',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+        projects: <Project>[
+          Project(
+            id: 'proj_a',
+            name: 'Project A',
+            path: '/repo/a',
+            createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+          ),
+        ],
+      ),
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Projects'), findsOneWidget);
+    expect(
+      find.text('Conversations grouped by open project context.'),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('project_group_tile_proj_a')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('project_groups_open_folder')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('project group tile switches project context', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    await localDataSource.saveOpenProjectIdsJson(
+      jsonEncode(<String>['proj_a', 'proj_b']),
+      serverId: 'srv_test',
+    );
+
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: FakeProjectRepository(
+        currentProject: Project(
+          id: 'proj_a',
+          name: 'Project A',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+        projects: <Project>[
+          Project(
+            id: 'proj_a',
+            name: 'Project A',
+            path: '/repo/a',
+            createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+          ),
+          Project(
+            id: 'proj_b',
+            name: 'Project B',
+            path: '/repo/b',
+            createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+          ),
+        ],
+      ),
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    expect(provider.projectProvider.currentProject?.id, 'proj_a');
+    expect(
+      find.byKey(const ValueKey<String>('project_group_tile_proj_b')),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('project_group_tile_proj_b')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(provider.projectProvider.currentProject?.id, 'proj_b');
+  });
+
   testWidgets('closed project can be archived from closed list', (
     WidgetTester tester,
   ) async {

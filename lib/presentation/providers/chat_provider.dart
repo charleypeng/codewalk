@@ -778,8 +778,42 @@ class ChatProvider extends ChangeNotifier {
   }
 
   List<ChatSession> get visibleSessions {
+    return _buildVisibleSessionsFrom(_sessions);
+  }
+
+  List<ChatSession> visibleSessionsForScopeId(String scopeId) {
+    final normalizedScopeId = scopeId.trim();
+    if (normalizedScopeId.isEmpty) {
+      return const <ChatSession>[];
+    }
+    final contextKey = _composeContextKey(_activeServerId, normalizedScopeId);
+    if (contextKey == _activeContextKey) {
+      return visibleSessions;
+    }
+    final snapshot = _contextSnapshots[contextKey];
+    if (snapshot == null) {
+      return const <ChatSession>[];
+    }
+    return _buildVisibleSessionsFrom(snapshot.sessions);
+  }
+
+  bool hasSnapshotForScopeId(String scopeId) {
+    final normalizedScopeId = scopeId.trim();
+    if (normalizedScopeId.isEmpty) {
+      return false;
+    }
+    final contextKey = _composeContextKey(_activeServerId, normalizedScopeId);
+    if (contextKey == _activeContextKey) {
+      return true;
+    }
+    return _contextSnapshots.containsKey(contextKey);
+  }
+
+  List<ChatSession> _buildVisibleSessionsFrom(
+    List<ChatSession> sourceSessions,
+  ) {
     final query = _sessionSearchQuery.trim().toLowerCase();
-    final filtered = _sessions
+    final filtered = sourceSessions
         .where((session) {
           final archived = session.archived;
           switch (_sessionListFilter) {
