@@ -29,15 +29,18 @@ extension _ChatProviderSessionOps on ChatProvider {
     _eventSubscription = null;
     _globalEventSubscription = null;
     if (useFastProjectTransition) {
-      unawaited(
-        _cancelSubscriptionSafely(eventSubscription, label: 'realtime event'),
-      );
-      unawaited(
+      await Future.wait<void>(<Future<void>>[
+        _cancelSubscriptionSafely(
+          eventSubscription,
+          label: 'realtime event',
+          timeout: const Duration(milliseconds: 100),
+        ),
         _cancelSubscriptionSafely(
           globalEventSubscription,
           label: 'global event',
+          timeout: const Duration(milliseconds: 100),
         ),
-      );
+      ], eagerError: false);
     } else {
       await _cancelSubscriptionSafely(
         eventSubscription,

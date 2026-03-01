@@ -63,12 +63,13 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
   Future<void> _cancelSubscriptionSafely(
     StreamSubscription<dynamic>? subscription, {
     required String label,
+    Duration timeout = const Duration(seconds: 2),
   }) async {
     if (subscription == null) {
       return;
     }
     try {
-      await subscription.cancel().timeout(const Duration(seconds: 2));
+      await subscription.cancel().timeout(timeout);
     } on TimeoutException {
       AppLogger.info(
         'Cancel $label subscription timed out; continuing with generation guard',
