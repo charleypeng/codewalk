@@ -246,8 +246,7 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
     );
     return _CollapsibleToolContent(
       text: textForRender,
-      collapsedMaxLines:
-          _ChatMessageWidgetState._collapsedToolDetailMaxLines,
+      collapsedMaxLines: _ChatMessageWidgetState._collapsedToolDetailMaxLines,
       toolName: toolName,
       lineKeyPrefix: lineKeyPrefix,
       textStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -573,6 +572,7 @@ class _ToolPartDetailsToggleState extends State<_ToolPartDetailsToggle> {
     if (!widget.hasDetails) {
       return const SizedBox.shrink();
     }
+    final compactLayout = MediaQuery.sizeOf(context).width < 600;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -593,7 +593,7 @@ class _ToolPartDetailsToggleState extends State<_ToolPartDetailsToggle> {
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             ),
             child: Text(
-              _expanded ? 'Hide' : 'Details',
+              _expanded ? 'Hide' : (compactLayout ? 'Show' : 'Details'),
               style: Theme.of(context).textTheme.labelSmall,
             ),
           ),
@@ -764,6 +764,7 @@ class _CollapsibleToolContentState extends State<_CollapsibleToolContent> {
   @override
   Widget build(BuildContext context) {
     final isDiff = _isDiffContent(widget.toolName, widget.text);
+    final compactLayout = MediaQuery.sizeOf(context).width < 600;
 
     Widget contentWidget;
 
@@ -817,7 +818,9 @@ class _CollapsibleToolContentState extends State<_CollapsibleToolContent> {
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             ),
             child: Text(
-              _expanded ? 'Show less' : 'Show more',
+              _expanded
+                  ? (compactLayout ? 'Less' : 'Show less')
+                  : (compactLayout ? 'More' : 'Show more'),
               style:
                   widget.toggleTextStyle ??
                   Theme.of(context).textTheme.labelSmall,

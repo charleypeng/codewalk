@@ -9,6 +9,7 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
     required String partKey,
     required bool isLatestReasoningPart,
   }) {
+    final compactLayout = MediaQuery.sizeOf(context).width < 600;
     if (parseReasoningStatusLabel(part.text) != null) {
       return const SizedBox.shrink();
     }
@@ -42,7 +43,7 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
               ),
               const SizedBox(width: 8),
               Text(
-                'Thinking Process',
+                compactLayout ? 'Thinking' : 'Thinking Process',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
                   color: Theme.of(context).colorScheme.primary,
@@ -266,6 +267,7 @@ class _CollapsibleReasoningContentState
 
   @override
   Widget build(BuildContext context) {
+    final compactLayout = MediaQuery.sizeOf(context).width < 600;
     final textWidget = Text(
       widget.text,
       key: ValueKey<String>('thinking_content_text_${widget.partKey}'),
@@ -318,7 +320,11 @@ class _CollapsibleReasoningContentState
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             ),
-            child: Text(_expanded ? 'Show less' : 'Show more'),
+            child: Text(
+              _expanded
+                  ? (compactLayout ? 'Less' : 'Show less')
+                  : (compactLayout ? 'More' : 'Show more'),
+            ),
           ),
         ),
       ],

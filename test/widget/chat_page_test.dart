@@ -7285,7 +7285,7 @@ void main() {
       await _pumpUiFrames(tester);
 
       expect(find.text('Tasks (1)'), findsOneWidget);
-      expect(find.text('Task 1/1 Todo'), findsNothing);
+      expect(find.text('1/1 in progress'), findsNothing);
       expect(settingsProvider.taskListCollapsed, isFalse);
 
       await tester.pumpWidget(
@@ -7298,7 +7298,7 @@ void main() {
       );
       await _pumpUiFrames(tester);
 
-      expect(find.text('Task 1/1 Todo'), findsOneWidget);
+      expect(find.text('1/1 in progress'), findsOneWidget);
       expect(find.text('Tasks (1)'), findsNothing);
       expect(settingsProvider.taskListCollapsed, isFalse);
 
@@ -7313,7 +7313,7 @@ void main() {
       await _pumpUiFrames(tester);
 
       expect(find.text('Tasks (1)'), findsOneWidget);
-      expect(find.text('Task 1/1 Todo'), findsNothing);
+      expect(find.text('1/1 in progress'), findsNothing);
       expect(settingsProvider.taskListCollapsed, isFalse);
     },
   );
@@ -7384,7 +7384,7 @@ void main() {
       await _pumpUiFrames(tester);
 
       expect(settingsProvider.taskListCollapsed, isTrue);
-      expect(find.text('Task 1/1 Todo'), findsOneWidget);
+      expect(find.text('1/1 in progress'), findsOneWidget);
 
       await tester.pumpWidget(
         _testApp(
@@ -7396,7 +7396,7 @@ void main() {
       );
       await _pumpUiFrames(tester);
 
-      expect(find.text('Task 1/1 Todo'), findsOneWidget);
+      expect(find.text('1/1 in progress'), findsOneWidget);
 
       await tester.pumpWidget(
         _testApp(
@@ -7409,7 +7409,7 @@ void main() {
       await _pumpUiFrames(tester);
 
       expect(settingsProvider.taskListCollapsed, isTrue);
-      expect(find.text('Task 1/1 Todo'), findsOneWidget);
+      expect(find.text('1/1 in progress'), findsOneWidget);
       expect(find.text('Tasks (1)'), findsNothing);
     },
   );
@@ -7487,8 +7487,8 @@ void main() {
       );
       await _pumpUiFrames(tester);
 
-      expect(find.text('Task 1/1 Todo'), findsOneWidget);
-      await tester.tap(find.text('Task 1/1 Todo'));
+      expect(find.text('1/1 in progress'), findsOneWidget);
+      await tester.tap(find.text('1/1 in progress'));
       await _pumpUiFrames(tester);
 
       expect(settingsProvider.taskListCollapsed, isFalse);
@@ -7505,7 +7505,7 @@ void main() {
 
       expect(settingsProvider.taskListCollapsed, isFalse);
       expect(find.text('Tasks (1)'), findsOneWidget);
-      expect(find.text('Task 1/1 Todo'), findsNothing);
+      expect(find.text('1/1 in progress'), findsNothing);
     },
   );
 

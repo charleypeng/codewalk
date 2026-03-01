@@ -100,14 +100,24 @@ class _SessionTodoListWidgetState extends State<SessionTodoListWidget> {
     }
   }
 
-  String _collapsedSummary() {
+  bool _isCompactLayout(BuildContext context) {
+    return MediaQuery.sizeOf(context).width < 600;
+  }
+
+  String _collapsedSummary({required bool compact}) {
     final todos = widget.todos;
     final inProgressIndex = todos.indexWhere((t) => t.status == 'in_progress');
     if (inProgressIndex >= 0) {
       final task = todos[inProgressIndex];
+      if (compact) {
+        return '${inProgressIndex + 1}/${todos.length} in progress';
+      }
       return 'Task ${inProgressIndex + 1}/${todos.length} ${task.content}';
     }
     final completedCount = todos.where((t) => t.status == 'completed').length;
+    if (compact) {
+      return '$completedCount/${todos.length} done';
+    }
     return 'Tasks $completedCount/${todos.length} completed';
   }
 
@@ -132,6 +142,7 @@ class _SessionTodoListWidgetState extends State<SessionTodoListWidget> {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final needsScroll = widget.todos.length > widget.maxVisibleItems;
+    final compactLayout = _isCompactLayout(context);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -160,7 +171,7 @@ class _SessionTodoListWidgetState extends State<SessionTodoListWidget> {
                     Flexible(
                       child: Text(
                         widget.collapsed
-                            ? _collapsedSummary()
+                            ? _collapsedSummary(compact: compactLayout)
                             : 'Tasks (${widget.todos.length})',
                         style: textTheme.labelMedium?.copyWith(
                           color: colorScheme.onSurfaceVariant,

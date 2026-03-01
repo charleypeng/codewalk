@@ -948,6 +948,76 @@ void main() {
     expect(find.textContaining('Running command'), findsOneWidget);
   });
 
+  testWidgets('uses compact collapsed labels for tool chains on mobile', (
+    WidgetTester tester,
+  ) async {
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.reset);
+
+    final message = AssistantMessage(
+      id: 'msg_tool_chain_mobile',
+      sessionId: 'ses_tool_chain_mobile',
+      time: DateTime.fromMillisecondsSinceEpoch(1000),
+      completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+      parts: <MessagePart>[
+        ToolPart(
+          id: 'part_tool_chain_mobile_1',
+          messageId: 'msg_tool_chain_mobile',
+          sessionId: 'ses_tool_chain_mobile',
+          callId: 'call_chain_mobile_1',
+          tool: 'bash',
+          state: ToolStateCompleted(
+            input: const <String, dynamic>{'command': 'pwd'},
+            output: '/tmp/project',
+            time: ToolTime(
+              start: DateTime.fromMillisecondsSinceEpoch(1000),
+              end: DateTime.fromMillisecondsSinceEpoch(1050),
+            ),
+          ),
+        ),
+        ToolPart(
+          id: 'part_tool_chain_mobile_2',
+          messageId: 'msg_tool_chain_mobile',
+          sessionId: 'ses_tool_chain_mobile',
+          callId: 'call_chain_mobile_2',
+          tool: 'read',
+          state: ToolStateCompleted(
+            input: const <String, dynamic>{'filePath': 'README.md'},
+            output: 'Intro',
+            time: ToolTime(
+              start: DateTime.fromMillisecondsSinceEpoch(1060),
+              end: DateTime.fromMillisecondsSinceEpoch(1100),
+            ),
+          ),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: ChatMessageWidget(message: message)),
+      ),
+    );
+
+    expect(find.text('2 calls'), findsOneWidget);
+    expect(find.text('Running command • Reading file'), findsNothing);
+    expect(find.text('Show'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>(
+          'tool_chain_toggle_msg_tool_chain_mobile_part_tool_chain_mobile_1',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Hide'), findsNWidgets(2));
+    expect(find.textContaining('Running command'), findsOneWidget);
+    expect(find.textContaining('Reading file'), findsOneWidget);
+  });
+
   testWidgets(
     'keeps tool chain expanded while responding and collapses after completion',
     (WidgetTester tester) async {

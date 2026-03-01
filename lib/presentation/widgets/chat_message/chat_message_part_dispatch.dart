@@ -214,6 +214,10 @@ class _CollapsibleToolChain extends StatefulWidget {
 class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
   late bool _expanded;
 
+  bool _isCompactLayout(BuildContext context) {
+    return MediaQuery.sizeOf(context).width < 600;
+  }
+
   void _toggleExpanded() {
     setState(() {
       _expanded = !_expanded;
@@ -236,11 +240,30 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
     }
   }
 
-  String _buildCollapsedPrimaryLabel() {
+  String _buildCollapsedPrimaryLabel({required bool compact}) {
     final toolParts = widget.parts.whereType<ToolPart>().toList(
       growable: false,
     );
     final patchCount = widget.parts.whereType<PatchPart>().length;
+
+    if (compact) {
+      if (toolParts.isEmpty) {
+        if (patchCount > 0) {
+          return patchCount == 1 ? '1 patch' : '$patchCount patches';
+        }
+        return 'Tool run';
+      }
+
+      final callLabel = toolParts.length == 1
+          ? '1 call'
+          : '${toolParts.length} calls';
+      if (patchCount <= 0) {
+        return callLabel;
+      }
+      final patchLabel = patchCount == 1 ? '1 patch' : '$patchCount patches';
+      return '$callLabel • $patchLabel';
+    }
+
     final toolDescriptions = toolParts
         .map(widget.toolDescriptionLabelBuilder)
         .map((label) => label.trim())
@@ -339,7 +362,10 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
     final colorScheme = Theme.of(context).colorScheme;
     final disableAnimations =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-    final collapsedPrimaryLabel = _buildCollapsedPrimaryLabel();
+    final compactLayout = _isCompactLayout(context);
+    final collapsedPrimaryLabel = _buildCollapsedPrimaryLabel(
+      compact: compactLayout,
+    );
     final collapsedSecondaryLabelRaw = _buildCollapsedSecondaryLabel();
     final collapsedSecondaryLabel =
         collapsedSecondaryLabelRaw != null &&
@@ -377,7 +403,8 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
                       ),
                     ),
                     if (_expanded ||
-                        (collapsedSecondaryLabel != null &&
+                        (!compactLayout &&
+                            collapsedSecondaryLabel != null &&
                             collapsedSecondaryLabel.isNotEmpty)) ...[
                       const SizedBox(height: 2),
                       Text(
@@ -405,7 +432,9 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
                     vertical: 2,
                   ),
                 ),
-                child: Text(_expanded ? 'Hide' : 'Details'),
+                child: Text(
+                  _expanded ? 'Hide' : (compactLayout ? 'Show' : 'Details'),
+                ),
               ),
             ],
           ),

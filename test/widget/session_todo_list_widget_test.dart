@@ -94,6 +94,47 @@ void main() {
     expect(find.text('Tasks 1/2 completed'), findsOneWidget);
   });
 
+  testWidgets('uses compact collapsed summary on mobile for in-progress item', (
+    WidgetTester tester,
+  ) async {
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(390, 844);
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(buildWidget(collapsed: true));
+
+    expect(find.text('2/3 in progress'), findsOneWidget);
+    expect(find.text('Task 2/3 Write API endpoints'), findsNothing);
+  });
+
+  testWidgets(
+    'uses compact completed summary on mobile when none in progress',
+    (WidgetTester tester) async {
+      tester.view.devicePixelRatio = 1.0;
+      tester.view.physicalSize = const Size(390, 844);
+      addTearDown(tester.view.reset);
+
+      const mixed = <SessionTodo>[
+        SessionTodo(
+          id: '1',
+          content: 'First',
+          status: 'completed',
+          priority: 'medium',
+        ),
+        SessionTodo(
+          id: '2',
+          content: 'Second',
+          status: 'pending',
+          priority: 'low',
+        ),
+      ];
+      await tester.pumpWidget(buildWidget(items: mixed, collapsed: true));
+
+      expect(find.text('1/2 done'), findsOneWidget);
+      expect(find.text('Tasks 1/2 completed'), findsNothing);
+    },
+  );
+
   testWidgets('calls onToggleCollapsed when header tapped', (
     WidgetTester tester,
   ) async {
