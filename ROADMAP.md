@@ -80,7 +80,7 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 - [x] Restrict session title update service to main sessions only: subsessions do not need and must not use the dynamic title generation system. - Commit hash: 4d9ac2e
 - [x] Fix server health inconsistency: in the hamburger menu a red status dot appears, but in Settings the same server is shown as fully healthy. - Commit hash: dbce4a8
 - [ ] Verify whether background notifications are working correctly on Android.
-- [ ] Shorten text in collapsed boxes for mobile: simplify label phrases, remove subtext, and use shorter show/hide button wording.
+- [x] Shorten text in collapsed boxes for mobile: simplify label phrases, remove subtext, and use shorter show/hide button wording. - Commit hash: 98af822
 - [x] Speed up project switching using session-like caching methods: session switching is already fast, and project switching should follow a similar strategy for near-instant transitions. - Related commits: f432a33 facd736
 - [x] Make New Chat open instantly: switched to draft-first flow and deferred remote session creation to first send, with regression coverage across queue/direct/interrupt send paths. - Related commits: 280c8a2 a788a3f
 - [x] Fix SWR regression where New Chat draft mode leaked across project switches: draft state is now context-scoped (`serverId::directory`), lazy bootstrap is cleared on context transition, and async session creation ignores stale post-switch results. - Commit hash: 5e45544

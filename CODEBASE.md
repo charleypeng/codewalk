@@ -94,7 +94,8 @@ lib/presentation/pages/onboarding_wizard_page.dart # 3-step onboarding wizard (W
 lib/presentation/pages/settings/sections/servers_settings_section.dart # Server profile CRUD; exports reusable ServerSetupQuickGuide widget
 lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade; WindowListener for desktop lifecycle; guards startup (checkConnection/loadSessions) against no-active-server; holds tool-chain expanded state map; _isSessionSwitchInFlight guard, _sessionCollapseHistoryCache / _sessionCollapseWorkCache per-session collapse maps; top-reach history loading is coordinated with anchor-preserving restore; workspace controller uses fast project-scope switch path
 lib/presentation/widgets/chat_input_widget.dart   # Composer/input orchestration facade
-lib/presentation/widgets/chat_message_widget.dart # Message bubble with build-skip cache, cached MarkdownStyleSheet; tool-chain expand/restore callbacks
+lib/presentation/widgets/chat_message_widget.dart # Message bubble with build-skip cache, cached MarkdownStyleSheet; compact (<600dp) collapsed-copy variants for reasoning/tool-chain/tool-content toggles; tool-chain expand/restore callbacks
+lib/presentation/widgets/session_todo_list_widget.dart # Session task panel with progress bar and keyboard-aware collapse; compact mobile collapsed summaries use count-first wording (`x/y in progress`, `x/y done`)
 lib/presentation/widgets/message_entrance_animation.dart # Entrance animation wrapper; `role` parameter selects user (130 ms) or assistant (180 ms) motion profile from AppAnimations
 ```
 
@@ -230,7 +231,7 @@ test/unit/providers/                   # ChatProvider split tests (7 files, 127 
   chat_provider_project_test.dart      #   13 tests — permissions, questions, project scope, favorites; project-switch SWR behavior + draft isolation + dirty-context cache retention
   chat_provider_concurrency_test.dart  #   26 tests — render gate, multi-session, abort suppression
   chat_provider_test_support.dart      #   Shared utilities (RecordingDioClient, buildChatProvider, testModel); FakeChatRepository.getSessionsDelay
-test/widget/                           # Widget tests (includes icon assertions with Symbols.*)
+test/widget/                           # Widget tests (includes icon assertions with Symbols.* and explicit compact/mobile collapsed-copy coverage for chat message and session todo surfaces)
 test/integration/                      # Integration tests
 test/presentation/                     # Presentation-focused tests (incl. window_size_class_test.dart)
 test/support/                          # Test helpers/fakes

@@ -214,6 +214,14 @@
 - **Then** the user can manually re-expand any collapsed work group by tapping its Details toggle
 - **Then** once a completed turn has settled, transient realtime status pulses do not auto re-open or rapidly re-collapse that same work group
 
+### Compact mobile collapsed copy is concise
+
+- **Given** the app is rendered on a compact viewport (mobile width)
+- **When** reasoning and tool-call boxes are collapsed
+- **Then** headers/toggles use short labels (`Thinking`, `Show`, `Hide`, `More`, `Less`) to reduce visual noise
+- **Then** collapsed tool-call groups use count-first summaries (for example, `2 calls`) and hide secondary helper subtext in the collapsed state
+- **Then** expanded content and desktop wording remain unchanged
+
 ### UI remains fluid during streaming
 
 - **Given** the assistant is streaming a long response
@@ -393,6 +401,14 @@ The app uses a dual-engine strategy with automatic fallback:
 - **Then** a single thin, full-width progress bar appears directly below the task header (same position in both states)
 - **Then** the progress value represents completed tasks divided by total tasks
 - **Then** progress changes animate smoothly with an ease-in-out transition between values
+
+### Compact mobile collapsed task summaries are count-first
+
+- **Given** the session task panel is collapsed on a compact viewport (mobile width)
+- **When** at least one task is in progress
+- **Then** the header summary uses compact count-first text (`x/y in progress`) without including task content text
+- **When** no task is in progress
+- **Then** the header summary uses compact completion text (`x/y done`)
 
 ---
 
