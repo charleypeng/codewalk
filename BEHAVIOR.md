@@ -289,6 +289,7 @@
 - **Then** when `session.idle` appears before any `busy` signal right after send, completion waits for a short guard window before accepting idle-only candidates
 - **Then** if idle reconciliation still has no fresh assistant candidate, the client keeps waiting and escalates to direct message polling before concluding the turn, avoiding false "completed" states without assistant output
 - **Then** when a stale `session.idle` from a previous turn arrives while the current send stream is still active, the app suppresses turn-complete feedback/reconcile for that stale idle and keeps the current turn in-flight
+- **Then** once that active send stream finishes, any deferred stale-idle reconcile is executed exactly once to fetch and reveal the final assistant message without requiring a session switch
 
 ### Post-completion reading remains stable
 
