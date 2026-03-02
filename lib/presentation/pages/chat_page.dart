@@ -128,7 +128,7 @@ class _ChatPageState extends State<ChatPage>
   static const Duration _finalAssistantRevealDuration = Duration(
     milliseconds: 260,
   );
-  static const double _finalAssistantRevealAlignment = 0.2;
+  static const double _finalAssistantRevealAlignment = 0.0;
   static const int _maxFinalAssistantRevealAttempts = 8;
   static const double _returnLatestRevealAlignment = 0.0;
   static const int _maxReturnLatestRevealAttempts = 8;
@@ -166,9 +166,8 @@ class _ChatPageState extends State<ChatPage>
   // Pure guard — no UI effect (ChatState.loading handles visual feedback).
   bool _isSessionSwitchInFlight = false;
   // Per-session collapse state cache (up to 20 sessions, LRU-evicted).
-  // Stores the last expanded collapse group IDs for each session ID.
+  // Stores the last expanded history group ID for each session ID.
   final Map<String, String?> _sessionCollapseHistoryCache = {};
-  final Map<String, String?> _sessionCollapseWorkCache = {};
   final Map<String, bool> _projectGroupExpandedById = <String, bool>{};
   bool _isAppInForeground = true;
   bool _wasChatRouteCurrent = true;

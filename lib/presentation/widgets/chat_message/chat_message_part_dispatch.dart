@@ -227,13 +227,13 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
   @override
   void initState() {
     super.initState();
-    _expanded = !widget.autoCollapsed;
+    _expanded = false;
   }
 
   @override
   void didUpdateWidget(covariant _CollapsibleToolChain oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!oldWidget.autoCollapsed && widget.autoCollapsed && _expanded) {
+    if (widget.autoCollapsed && _expanded) {
       setState(() {
         _expanded = false;
       });

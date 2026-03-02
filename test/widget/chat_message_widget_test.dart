@@ -688,6 +688,14 @@ void main() {
     expect(find.text('Tool Call: bash'), findsNothing);
     expect(find.text('Running command'), findsOneWidget);
     expect(find.text('Done'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('tool_part_details_button_part_tool_completed'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
     expect(
       find.byWidgetPredicate(
         (widget) =>
@@ -757,6 +765,14 @@ void main() {
     expect(find.text('Tool Call: bash'), findsNothing);
     expect(find.text('Running command'), findsOneWidget);
     expect(find.text('Needs attention'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('tool_part_details_button_part_tool_error'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
     expect(
       find.byWidgetPredicate(
         (widget) =>
@@ -825,6 +841,16 @@ void main() {
 
     expect(find.text('Done'), findsNothing);
     expect(find.byIcon(Symbols.check_circle_outline_rounded), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>(
+          'tool_part_details_button_part_tool_mobile_status',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
     expect(
       find.byWidgetPredicate(
         (widget) =>
@@ -1019,7 +1045,7 @@ void main() {
   });
 
   testWidgets(
-    'keeps tool chain expanded while responding and collapses after completion',
+    'keeps tool details collapsed while responding and collapses chain after completion',
     (WidgetTester tester) async {
       final message = AssistantMessage(
         id: 'msg_tool_chain_streaming',
@@ -1095,8 +1121,38 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.textContaining('Running command'), findsOneWidget);
-      expect(find.textContaining('Reading file'), findsOneWidget);
+      expect(find.text('Details'), findsNWidgets(2));
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is RichText &&
+              widget.key == const ValueKey<String>('tool_command_text'),
+        ),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>(
+            'tool_part_details_button_part_tool_chain_streaming_1',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>(
+            'tool_part_details_button_part_tool_chain_streaming_2',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('tool_command_text')),
+        findsNWidgets(2),
+      );
 
       await tester.pumpWidget(
         MaterialApp(
@@ -1121,6 +1177,14 @@ void main() {
       expect(find.text('Details'), findsOneWidget);
       expect(find.textContaining('Running command'), findsOneWidget);
       expect(find.textContaining('Reading file'), findsOneWidget);
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'tool_part_details_button_part_tool_chain_streaming_1',
+          ),
+        ),
+        findsNothing,
+      );
     },
   );
 
@@ -1161,6 +1225,16 @@ void main() {
     );
 
     expect(find.text('Checking project status in real time'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>(
+          'tool_part_details_button_part_tool_running_description',
+        ),
+      ),
+    );
+    await tester.pump();
+
     expect(
       find.byKey(
         const ValueKey<String>(
@@ -1797,6 +1871,13 @@ void main() {
       ),
     );
 
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('tool_part_details_button_tool_diff_1'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
     // Expandir para ver diff colorizado
     await tester.tap(find.text('Show more'));
     await tester.pumpAndSettle();
@@ -1850,6 +1931,13 @@ void main() {
         ),
       ),
     );
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('tool_part_details_button_tool_diff_styled_1'),
+      ),
+    );
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Show more'));
     await tester.pumpAndSettle();
@@ -1927,6 +2015,13 @@ void main() {
         ),
       );
 
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>('tool_part_details_button_tool_diff_input_1'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
       await tester.tap(find.text('Show more').first);
       await tester.pumpAndSettle();
 
@@ -1981,6 +2076,15 @@ void main() {
         ),
       ),
     );
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>(
+          'tool_part_details_button_tool_diff_input_success_1',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Show more').first);
     await tester.pumpAndSettle();
@@ -2057,15 +2161,25 @@ void main() {
       ),
     );
 
-    Future<void> expandIfNeeded() async {
-      final showMore = find.text('Show more');
-      if (showMore.evaluate().isNotEmpty) {
-        await tester.tap(showMore);
+    Future<void> ensureToolDetailsExpanded() async {
+      final detailsFinder = find.text('Details');
+      if (detailsFinder.evaluate().isNotEmpty) {
+        await tester.tap(detailsFinder.first);
         await tester.pumpAndSettle();
       }
     }
 
-    await expandIfNeeded();
+    await ensureToolDetailsExpanded();
+
+    Future<void> expandToolOutputIfCollapsed() async {
+      final showMoreFinder = find.text('Show more');
+      if (showMoreFinder.evaluate().isNotEmpty) {
+        await tester.tap(showMoreFinder.first);
+        await tester.pumpAndSettle();
+      }
+    }
+
+    await expandToolOutputIfCollapsed();
 
     final scaledHeight = tester
         .getSize(
@@ -2078,15 +2192,15 @@ void main() {
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
-              id: 'msg_diff_scaler',
+              id: 'msg_diff_scaler_default',
               sessionId: 'ses_diff',
               time: DateTime.fromMillisecondsSinceEpoch(1000),
               parts: <MessagePart>[
                 ToolPart(
-                  id: 'tool_diff_scaler',
-                  messageId: 'msg_diff_scaler',
+                  id: 'tool_diff_scaler_default',
+                  messageId: 'msg_diff_scaler_default',
                   sessionId: 'ses_diff',
-                  callId: 'call_diff_scaler',
+                  callId: 'call_diff_scaler_default',
                   tool: 'apply_patch',
                   state: ToolStateCompleted(
                     input: const <String, dynamic>{},
@@ -2103,7 +2217,10 @@ void main() {
         ),
       ),
     );
-    await expandIfNeeded();
+
+    await tester.tap(find.text('Details').first);
+    await tester.pumpAndSettle();
+    await expandToolOutputIfCollapsed();
 
     final defaultHeight = tester
         .getSize(
@@ -2153,6 +2270,13 @@ void main() {
       ),
     );
 
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('tool_part_details_button_tool_diff_2'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
     await tester.tap(find.text('Show more'));
     await tester.pumpAndSettle();
 
@@ -2201,6 +2325,13 @@ void main() {
       ),
     );
 
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('tool_part_details_button_tool_diff_3'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
     // Texto plano, sem expansão necessária (2 linhas)
     expect(find.text(plainOutput), findsOneWidget);
     expect(find.text('Show more'), findsNothing);
@@ -2241,6 +2372,13 @@ void main() {
         ),
       ),
     );
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('tool_part_details_button_tool_diff_4'),
+      ),
+    );
+    await tester.pumpAndSettle();
 
     // Expandir
     await tester.tap(find.text('Show more'));
@@ -2295,6 +2433,13 @@ index abc123..def456 100644
       ),
     );
 
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('tool_part_details_button_tool_diff_5'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
     // Expandir
     await tester.tap(find.text('Show more'));
     await tester.pumpAndSettle();
@@ -2347,6 +2492,13 @@ index abc123..def456 100644
         ),
       ),
     );
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('tool_part_details_button_tool_edit_input'),
+      ),
+    );
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Show more'));
     await tester.pumpAndSettle();
@@ -2564,6 +2716,13 @@ index abc123..def456 100644
     );
 
     await tester.tap(
+      find.byKey(
+        const ValueKey<String>('tool_part_details_button_part_tool_height_cap'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
       find.byKey(const ValueKey<String>('tool_content_toggle_button')),
     );
     await tester.pumpAndSettle();
@@ -2610,6 +2769,13 @@ index abc123..def456 100644
       ),
     );
 
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('tool_part_details_button_part_huge_tool'),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(

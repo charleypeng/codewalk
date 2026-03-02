@@ -162,14 +162,10 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       if (outgoing != null) {
         _sessionCollapseHistoryCache[outgoing] =
             _expandedCollapsedHistoryGroupId;
-        _sessionCollapseWorkCache[outgoing] = _expandedAssistantWorkGroupId;
         // Evict oldest entry when cache exceeds 20 sessions.
         if (_sessionCollapseHistoryCache.length > 20) {
           _sessionCollapseHistoryCache.remove(
             _sessionCollapseHistoryCache.keys.first,
-          );
-          _sessionCollapseWorkCache.remove(
-            _sessionCollapseWorkCache.keys.first,
           );
         }
       }
@@ -186,9 +182,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _expandedCollapsedHistoryGroupId = sessionId != null
           ? _sessionCollapseHistoryCache[sessionId]
           : null;
-      _expandedAssistantWorkGroupId = sessionId != null
-          ? _sessionCollapseWorkCache[sessionId]
-          : null;
+      _expandedAssistantWorkGroupId = null;
       _frozenCompactionBoundaryId = null;
       _wasCompactingContext = false;
       _nextFrozenCompactionBoundaryId = null;
@@ -308,7 +302,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _wasCurrentSessionActivelyResponding = false;
       final shouldRevealFinalAssistant =
           _shouldRevealFinalAssistantOnCompletion && _autoFollowToLatest;
-      _deferAssistantWorkCollapse = shouldRevealFinalAssistant;
+      _deferAssistantWorkCollapse = false;
       _suppressPostCompletionAutoSnap = shouldRevealFinalAssistant;
       _finalAssistantRevealSettledMessageId = null;
       _pendingFinalAssistantRevealAttempts = 0;
@@ -352,7 +346,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         details:
             'latestSuccessfulAssistantMessageId=$latestSuccessfulAssistantMessageId settled=${_finalAssistantRevealSettledMessageId ?? "-"}',
       );
-      _deferAssistantWorkCollapse = true;
+      _deferAssistantWorkCollapse = false;
       _pendingFinalAssistantRevealMessageId =
           latestSuccessfulAssistantMessageId;
       _pendingFinalAssistantRevealAttempts = 0;
