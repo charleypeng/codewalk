@@ -208,6 +208,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   static const Duration _idleSettleListInterval = Duration(seconds: 1);
   static const int _resolveAssistantIdAttempts = 12;
   static const Duration _resolveAssistantIdRetryDelay = Duration(seconds: 2);
+  static const int _knownAssistantIdsCacheMaxSessions = 64;
 
   final Dio dio;
 
@@ -220,8 +221,28 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   Map<String, String> _withMessageTailLimit(Map<String, String> queryParams) {
     final merged = Map<String, String>.from(queryParams);
+    // Intentionally force a bounded tail to avoid data-heavy full history fetches
+    // during prompt_async completion reconciliation.
     merged['limit'] = '$_assistantMessageTailLimit';
     return merged;
+  }
+
+  void _cacheKnownAssistantIds(String sessionId, Set<String> ids) {
+    if (ids.isEmpty) {
+      _knownAssistantIdsCacheBySession.remove(sessionId);
+      return;
+    }
+    _knownAssistantIdsCacheBySession.remove(sessionId);
+    _knownAssistantIdsCacheBySession[sessionId] = Set<String>.from(ids);
+    while (_knownAssistantIdsCacheBySession.length >
+        _knownAssistantIdsCacheMaxSessions) {
+      final oldestSessionId = _knownAssistantIdsCacheBySession.keys.first;
+      _knownAssistantIdsCacheBySession.remove(oldestSessionId);
+    }
+  }
+
+  void _invalidateKnownAssistantIdsCache(String sessionId) {
+    _knownAssistantIdsCacheBySession.remove(sessionId);
   }
 
   void _traceFinalSend({
@@ -926,9 +947,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
             }
           }
           hasKnownAssistantBaseline = true;
-          _knownAssistantIdsCacheBySession[sessionId] = Set<String>.from(
-            knownAssistantMessageIds,
-          );
+          _cacheKnownAssistantIds(sessionId, knownAssistantMessageIds);
           trace(
             'known-assistant-baseline-loaded',
             details: 'count=${knownAssistantMessageIds.length}',
@@ -1091,9 +1110,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           if (candidateId != null) {
             activeAssistantMessageId = candidateId;
             knownAssistantMessageIds.add(candidateId);
-            _knownAssistantIdsCacheBySession[sessionId] = Set<String>.from(
-              knownAssistantMessageIds,
-            );
+            _cacheKnownAssistantIds(sessionId, knownAssistantMessageIds);
             AppLogger.info(
               'Resolved assistant message ID from session list: $candidateId',
             );
@@ -1515,6 +1532,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
                 startedAt: startedAt,
                 details: 'reason=$reason',
               );
+              _invalidateKnownAssistantIdsCache(sessionId);
               messageCompleted = true;
               maybeCloseEventController(
                 delay: const Duration(milliseconds: 200),
@@ -1535,9 +1553,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           if (completed != null && !eventController.isClosed) {
             eventController.add(completed);
             knownAssistantMessageIds.add(completed.id);
-            _knownAssistantIdsCacheBySession[sessionId] = Set<String>.from(
-              knownAssistantMessageIds,
-            );
+            _cacheKnownAssistantIds(sessionId, knownAssistantMessageIds);
             trace(
               'fallback-watch-emitted-message',
               details:
@@ -1557,6 +1573,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
               startedAt: startedAt,
               details: 'reason=$reason',
             );
+            _invalidateKnownAssistantIdsCache(sessionId);
           }
 
           messageCompleted = true;
