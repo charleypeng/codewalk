@@ -287,6 +287,7 @@
 - **Then** the client excludes pre-send known assistant IDs and prioritizes in-progress/fresh IDs from the current turn
 - **Then** if baseline prefetch fails, a timestamp guard is kept as fallback to avoid stale completion selection
 - **Then** when `session.idle` appears before any `busy` signal right after send, completion waits for a short guard window before accepting idle-only candidates
+- **Then** if idle reconciliation still has no fresh assistant candidate, the client keeps waiting and escalates to direct message polling before concluding the turn, avoiding false "completed" states without assistant output
 
 ### Post-completion reading remains stable
 
