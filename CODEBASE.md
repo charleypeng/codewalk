@@ -320,10 +320,10 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
   recent event keys built by `_composeEventDeduplicationKey` (in `chat_provider_event_reducer_ops.dart`).
   `_isRecentlyProcessedEvent` and `_tryApplyGlobalEventIncremental` use this buffer to skip
   duplicates arriving on the global SSE stream.
-- **Busy-window optimistic user dedup guard** (`chat_provider_message_merge_ops.dart`):
-  `_shouldSkipLocalUserAppendAsDuplicateEcho` now blocks transient optimistic/local user re-append
-  during active-stream refresh windows by checking signature overlap + bounded echo-time window
-  against the latest server user message.
+- **ChatProvider local message reconciliation**:
+  - `ChatProvider` generates optimistic local user IDs with a server-compatible `msg_*` format (replacing the old `local_user_*` prefix).
+  - `sendMessage` forwards `ChatInput.messageId` using this optimistic ID to ensure exact client/server message reconciliation.
+  - `_shouldSkipLocalUserAppendAsDuplicateEcho` dedupe guard (in `chat_provider_message_merge_ops.dart`) now relies on `_pendingLocalUserMessageIds` tracking membership instead of hardcoded prefix checks.
 - **Pending replacement hardening** (`chat_provider_message_state_ops.dart`):
   `_updateOrAddMessage` handles pending-local replacement when a server user message arrives with
   an already-present server ID, preventing local/server duplicate-ID coexistence and preserving a

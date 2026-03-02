@@ -219,6 +219,14 @@
 - **When** the send fails (network error, server error, etc.)
 - **Then** the message text is returned to the composer input — the user's text is never lost
 
+### Optimistic user message ID is stable end-to-end
+
+- **Given** the user sends a message in an active session
+- **When** the client appends the optimistic user bubble and dispatches `prompt_async`
+- **Then** the client uses a server-compatible `msg_*` ID for that optimistic user message
+- **Then** the same ID is forwarded as `messageID` in the send payload
+- **Then** server echoes for that turn reconcile by exact ID first, preventing transient duplicate user bubbles during refresh/realtime merges
+
 ### Tool call work groups collapse after completion
 
 - **Given** the assistant executes tool calls during a response (file reads, commands, etc.)
