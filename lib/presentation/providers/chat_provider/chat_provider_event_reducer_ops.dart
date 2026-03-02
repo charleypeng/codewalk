@@ -151,6 +151,12 @@ extension _ChatProviderEventReducerOps on ChatProvider {
     return hasToolSurface || latestAssistant.parts.isEmpty;
   }
 
+  bool _hasInFlightSendTurnForSession(String sessionId) {
+    return _currentSession?.id == sessionId &&
+        _activeMessageStreamSessionId == sessionId &&
+        (_state == ChatState.sending || _messageSubscription != null);
+  }
+
   void _recordIdleReconcileTelemetry({
     required String sessionId,
     required bool triggered,
@@ -188,8 +194,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
     final suppressCurrentIdleFeedback =
         event.type == 'session.idle' &&
         eventSessionId != null &&
-        eventSessionId == _activeMessageStreamSessionId &&
-        (_state == ChatState.sending || _messageSubscription != null);
+        _hasInFlightSendTurnForSession(eventSessionId);
     if (!isSessionLifecycle || eventSessionId == _currentSession?.id) {
       if (suppressCurrentIdleFeedback) {
         _traceFinal(
@@ -355,10 +360,9 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         final sessionId = properties['sessionID'] as String?;
         if (sessionId != null) {
           final isCurrentSession = sessionId == _currentSession?.id;
-          final hasActiveCurrentSendTurn =
-              isCurrentSession &&
-              _activeMessageStreamSessionId == sessionId &&
-              (_state == ChatState.sending || _messageSubscription != null);
+          final hasActiveCurrentSendTurn = _hasInFlightSendTurnForSession(
+            sessionId,
+          );
           if (hasActiveCurrentSendTurn) {
             _recordIdleReconcileTelemetry(
               sessionId: sessionId,
