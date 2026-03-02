@@ -78,7 +78,7 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     required UserMessage localMessage,
     required List<ChatMessage> mergedMessages,
   }) {
-    if (!localMessage.id.startsWith('local_user_')) {
+    if (!_pendingLocalUserMessageIds.contains(localMessage.id)) {
       return false;
     }
     if (_queuedLocalUserMessageIds.contains(localMessage.id)) {

@@ -757,7 +757,7 @@ class ChatProvider extends ChangeNotifier {
 
   String _nextLocalUserMessageId() {
     _localMessageIdSequence += 1;
-    return 'local_user_${DateTime.now().microsecondsSinceEpoch}_${_localMessageIdSequence}';
+    return 'msg_${DateTime.now().microsecondsSinceEpoch}_${_localMessageIdSequence}';
   }
 
   bool get _isExperimentalMultiDeviceSyncEnabled {
@@ -3246,7 +3246,6 @@ class ChatProvider extends ChangeNotifier {
             )
           : resolvedLocalMessageId;
 
-      _pendingLocalUserMessageIds.add(activeLocalMessageId);
       notifyListeners();
       _traceFinal(
         'send-local-user-appended',
@@ -3295,6 +3294,7 @@ class ChatProvider extends ChangeNotifier {
         providerId: _selectedProviderId ?? 'anthropic',
         modelId: _selectedModelId ?? 'claude-3-5-sonnet-20241022',
         variant: _selectedVariantId,
+        messageId: activeLocalMessageId,
         mode: shellMode ? 'shell' : selectedAgentForSend,
         parts: inputParts,
       );
