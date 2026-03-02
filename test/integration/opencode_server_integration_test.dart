@@ -274,6 +274,62 @@ void main() {
     );
 
     test(
+      'ChatRemoteDataSource does not complete a new send with stale previous assistant message',
+      () async {
+        server.preserveMessageHistoryOnPromptAsync = true;
+
+        final remote = ChatRemoteDataSourceImpl(
+          dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
+        );
+
+        final firstTurnMessages = await remote
+            .sendMessage(
+              'default',
+              'ses_1',
+              const ChatInputModel(
+                messageId: 'msg_user_first_turn',
+                providerId: 'mock-provider',
+                modelId: 'mock-model',
+                parts: <ChatInputPartModel>[
+                  ChatInputPartModel(type: 'text', text: 'first turn'),
+                ],
+              ),
+            )
+            .toList();
+
+        final firstAssistant = firstTurnMessages.last;
+        expect(firstAssistant.completedTime, isNotNull);
+
+        server.forceEmptySessionMessageListResponses = 1;
+        server.promptAsyncSeedDelayMs = 1500;
+
+        final secondTurnMessages = await remote
+            .sendMessage(
+              'default',
+              'ses_1',
+              const ChatInputModel(
+                messageId: 'msg_user_second_turn',
+                providerId: 'mock-provider',
+                modelId: 'mock-model',
+                parts: <ChatInputPartModel>[
+                  ChatInputPartModel(type: 'text', text: 'second turn'),
+                ],
+              ),
+            )
+            .toList();
+
+        final secondAssistant = secondTurnMessages.last;
+        expect(secondAssistant.id, isNot(firstAssistant.id));
+        expect(secondAssistant.completedTime, isNotNull);
+        expect(
+          secondAssistant.completedTime!.millisecondsSinceEpoch,
+          greaterThan(firstAssistant.completedTime!.millisecondsSinceEpoch),
+        );
+        expect(server.promptAsyncRequestCount, 2);
+      },
+    );
+
+    test(
       'ChatRemoteDataSource sendMessage forwards directory to event and message fetch',
       () async {
         server.streamMessageUpdates = true;

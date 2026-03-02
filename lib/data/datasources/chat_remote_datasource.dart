@@ -872,6 +872,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       var fallbackCompletionWatchStarted = false;
       final knownAssistantMessageIds = <String>{};
       var hasKnownAssistantBaseline = false;
+      const freshnessLeewayMs = 5000;
       // Timestamp used to distinguish new messages from stale ones.
       // Without per-send SSE, resolveAssistantMessageId must skip
       // completed messages from previous sends.
@@ -928,6 +929,34 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         return 0;
       }
 
+      bool isFreshAssistantCandidate({
+        required String messageId,
+        required int createdMs,
+        required int completedMs,
+      }) {
+        if (activeAssistantMessageId != null &&
+            activeAssistantMessageId == messageId) {
+          return true;
+        }
+        if (completedMs > 0) {
+          return completedMs >= sendStartMs - freshnessLeewayMs;
+        }
+        if (createdMs > 0) {
+          return createdMs >= sendStartMs - freshnessLeewayMs;
+        }
+        return false;
+      }
+
+      bool isFreshAssistantMessageModel(ChatMessageModel message) {
+        final createdMs = message.time.millisecondsSinceEpoch;
+        final completedMs = message.completedTime?.millisecondsSinceEpoch ?? 0;
+        return isFreshAssistantCandidate(
+          messageId: message.id,
+          createdMs: createdMs,
+          completedMs: completedMs,
+        );
+      }
+
       Future<String?> resolveAssistantMessageId() async {
         if (activeAssistantMessageId != null &&
             activeAssistantMessageId!.isNotEmpty) {
@@ -963,9 +992,6 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           var knownIdFilteredCount = 0;
           var staleTimeFilteredCount = 0;
 
-          // Accept a small skew between client and server clocks.
-          const freshnessLeewayMs = 5000;
-
           for (final raw in list) {
             if (raw is! Map) {
               continue;
@@ -986,11 +1012,12 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
             final created = extractCreatedTimeMs(info['time']);
             final hasCreatedTime = created > 0;
-            final isFreshByTime = hasKnownAssistantBaseline
-                ? (!hasCreatedTime ||
-                      created >= sendStartMs - freshnessLeewayMs)
-                : (hasCreatedTime &&
-                      created >= sendStartMs - freshnessLeewayMs);
+            final matchesActiveAssistantId =
+                activeAssistantMessageId != null &&
+                activeAssistantMessageId == id;
+            final isFreshByTime = hasCreatedTime
+                ? created >= sendStartMs - freshnessLeewayMs
+                : matchesActiveAssistantId;
             if (!isFreshByTime) {
               staleTimeFilteredCount += 1;
               continue;
@@ -1142,37 +1169,38 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           (a, b) => (a['created'] as int).compareTo(b['created'] as int),
         );
 
-        final freshestLeewayMs = sendStartMs - 5000;
+        if (activeAssistantMessageId != null &&
+            activeAssistantMessageId!.isNotEmpty) {
+          final activeCandidate = assistantCandidates.firstWhere(
+            (candidate) => candidate['id'] == activeAssistantMessageId,
+            orElse: () => const <String, dynamic>{},
+          );
+          if (activeCandidate.isNotEmpty &&
+              isFreshAssistantCandidate(
+                messageId: activeCandidate['id'] as String,
+                createdMs: activeCandidate['created'] as int,
+                completedMs: activeCandidate['completedMs'] as int,
+              )) {
+            return activeAssistantMessageId;
+          }
+        }
+
         final freshestUnknown = assistantCandidates.lastWhere((candidate) {
           final id = candidate['id'] as String;
-          final created = candidate['created'] as int;
-          return !knownAssistantMessageIds.contains(id) &&
-              (created <= 0 || created >= freshestLeewayMs);
+          if (knownAssistantMessageIds.contains(id)) {
+            return false;
+          }
+          return isFreshAssistantCandidate(
+            messageId: id,
+            createdMs: candidate['created'] as int,
+            completedMs: candidate['completedMs'] as int,
+          );
         }, orElse: () => const <String, dynamic>{});
         if (freshestUnknown.isNotEmpty) {
           return freshestUnknown['id'] as String;
         }
 
-        if (activeAssistantMessageId != null &&
-            activeAssistantMessageId!.isNotEmpty) {
-          final matchesActive = assistantCandidates.any(
-            (candidate) => candidate['id'] == activeAssistantMessageId,
-          );
-          if (matchesActive) {
-            return activeAssistantMessageId;
-          }
-        }
-
-        final newestUnknown = assistantCandidates.lastWhere(
-          (candidate) =>
-              !knownAssistantMessageIds.contains(candidate['id'] as String),
-          orElse: () => const <String, dynamic>{},
-        );
-        if (newestUnknown.isNotEmpty) {
-          return newestUnknown['id'] as String;
-        }
-
-        return assistantCandidates.last['id'] as String;
+        return null;
       }
 
       Future<ChatMessageModel?> resolveAssistantMessageFromSessionIdle(
@@ -1184,6 +1212,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         const statusPollInterval = Duration(seconds: 1);
         const settleListAttempts = 24;
         const settleListInterval = Duration(milliseconds: 500);
+        const idleBeforeBusyGrace = Duration(seconds: 3);
 
         var sawBusy = false;
         for (var attempt = 0; attempt < statusPollAttempts; attempt += 1) {
@@ -1196,6 +1225,19 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           }
           final isIdle = !isBusyStatusType(status?.type);
           if (!isIdle) {
+            await Future<void>.delayed(statusPollInterval);
+            continue;
+          }
+
+          final elapsedSinceSendMs =
+              DateTime.now().millisecondsSinceEpoch - sendStartMs;
+          if (!sawBusy &&
+              elapsedSinceSendMs < idleBeforeBusyGrace.inMilliseconds) {
+            trace(
+              'fallback-watch-idle-before-busy-grace',
+              details:
+                  'reason=$reason idleAttempt=${attempt + 1} elapsedMs=$elapsedSinceSendMs',
+            );
             await Future<void>.delayed(statusPollInterval);
             continue;
           }
@@ -1250,10 +1292,20 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
             await Future<void>.delayed(const Duration(seconds: 1));
           }
           if (completed != null) {
+            if (!isFreshAssistantMessageModel(completed)) {
+              trace(
+                'fallback-watch-reject-stale-complete',
+                details:
+                    'reason=$reason candidateId=${completed.id} createdMs=${completed.time.millisecondsSinceEpoch} completedMs=${completed.completedTime?.millisecondsSinceEpoch ?? 0} sendStartMs=$sendStartMs',
+              );
+              await Future<void>.delayed(statusPollInterval);
+              continue;
+            }
             return completed;
           }
 
           final entries = await loadSessionMessageEntries();
+          var rejectedStaleEntry = false;
           for (final entry in entries.reversed) {
             final infoRaw = entry['info'];
             final info = infoRaw is Map<String, dynamic>
@@ -1267,8 +1319,22 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
             }
             final parsed = toChatMessageModel(entry);
             if (parsed != null) {
+              if (!isFreshAssistantMessageModel(parsed)) {
+                rejectedStaleEntry = true;
+                trace(
+                  'fallback-watch-reject-stale-entry',
+                  details:
+                      'reason=$reason candidateId=${parsed.id} createdMs=${parsed.time.millisecondsSinceEpoch} completedMs=${parsed.completedTime?.millisecondsSinceEpoch ?? 0} sendStartMs=$sendStartMs',
+                );
+                continue;
+              }
               return parsed;
             }
+          }
+
+          if (rejectedStaleEntry) {
+            await Future<void>.delayed(statusPollInterval);
+            continue;
           }
 
           return null;

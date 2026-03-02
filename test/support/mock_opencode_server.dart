@@ -12,6 +12,9 @@ class MockOpenCodeServer {
   bool sendMessageValidationError = false;
   bool promptAsyncSupported = true;
   bool streamMessageUpdates = false;
+  bool preserveMessageHistoryOnPromptAsync = false;
+  int promptAsyncSeedDelayMs = 0;
+  int forceEmptySessionMessageListResponses = 0;
   String? requiredEventDirectory;
   String? requiredMessageDirectory;
   String? requiredProjectDirectory;
@@ -50,6 +53,8 @@ class MockOpenCodeServer {
   final Map<String, Map<String, dynamic>> _worktreesById =
       <String, Map<String, dynamic>>{};
   String _currentProjectId = 'proj_1';
+  int _assistantMessageCounter = 0;
+  String? _latestAssistantMessageId;
 
   Future<void> start() async {
     _seedData();
@@ -94,8 +99,13 @@ class MockOpenCodeServer {
     lastQuestionReplyPayload = null;
     lastQuestionRejectRequestId = null;
     promptAsyncSupported = true;
+    preserveMessageHistoryOnPromptAsync = false;
+    promptAsyncSeedDelayMs = 0;
+    forceEmptySessionMessageListResponses = 0;
     promptAsyncRequestCount = 0;
     messageRequestCount = 0;
+    _assistantMessageCounter = 0;
+    _latestAssistantMessageId = null;
     sessionStatusById = <String, Map<String, dynamic>>{
       'ses_1': <String, dynamic>{'type': 'idle'},
     };
@@ -180,9 +190,11 @@ class MockOpenCodeServer {
 
   void _seedAssistantMessageForSession(String sessionId) {
     final createdAt = DateTime.now().millisecondsSinceEpoch;
+    _assistantMessageCounter += 1;
+    final messageId = 'msg_ai_$_assistantMessageCounter';
     final immediate = <String, dynamic>{
       'info': <String, dynamic>{
-        'id': 'msg_ai_1',
+        'id': messageId,
         'sessionID': sessionId,
         'role': 'assistant',
         'time': <String, dynamic>{
@@ -192,8 +204,8 @@ class MockOpenCodeServer {
       },
       'parts': <dynamic>[
         <String, dynamic>{
-          'id': 'prt_ai_working',
-          'messageID': 'msg_ai_1',
+          'id': 'prt_${messageId}_working',
+          'messageID': messageId,
           'sessionID': sessionId,
           'type': 'text',
           'text': streamMessageUpdates ? 'working' : 'done',
@@ -201,10 +213,14 @@ class MockOpenCodeServer {
       ],
     };
 
-    _messagesBySession[sessionId] = <Map<String, dynamic>>[immediate];
-    _messageDetails['msg_ai_1'] = <String, dynamic>{
+    final previousMessages =
+        _messagesBySession[sessionId] ?? <Map<String, dynamic>>[];
+    _messagesBySession[sessionId] = preserveMessageHistoryOnPromptAsync
+        ? <Map<String, dynamic>>[...previousMessages, immediate]
+        : <Map<String, dynamic>>[immediate];
+    _messageDetails[messageId] = <String, dynamic>{
       'info': <String, dynamic>{
-        'id': 'msg_ai_1',
+        'id': messageId,
         'sessionID': sessionId,
         'role': 'assistant',
         'time': <String, dynamic>{
@@ -214,14 +230,15 @@ class MockOpenCodeServer {
       },
       'parts': <dynamic>[
         <String, dynamic>{
-          'id': 'prt_ai_done',
-          'messageID': 'msg_ai_1',
+          'id': 'prt_${messageId}_done',
+          'messageID': messageId,
           'sessionID': sessionId,
           'type': 'text',
           'text': 'done',
         },
       ],
     };
+    _latestAssistantMessageId = messageId;
   }
 
   Future<void> _handleRequest(HttpRequest request) async {
@@ -500,19 +517,24 @@ class MockOpenCodeServer {
       if (streamMessageUpdates) {
         // Wait until send endpoint creates message payload to avoid racing.
         var waitCycles = 0;
-        while (!_messageDetails.containsKey('msg_ai_1') && waitCycles < 60) {
+        while ((_latestAssistantMessageId == null ||
+                !_messageDetails.containsKey(_latestAssistantMessageId)) &&
+            waitCycles < 60) {
           waitCycles += 1;
           await Future<void>.delayed(const Duration(milliseconds: 10));
         }
 
-        final event = <String, dynamic>{
-          'type': 'message.updated',
-          'properties': <String, dynamic>{
-            'info': <String, dynamic>{'id': 'msg_ai_1', 'sessionID': 'ses_1'},
-          },
-        };
-        request.response.write('data: ${jsonEncode(event)}\n\n');
-        await request.response.flush();
+        final messageId = _latestAssistantMessageId;
+        if (messageId != null) {
+          final event = <String, dynamic>{
+            'type': 'message.updated',
+            'properties': <String, dynamic>{
+              'info': <String, dynamic>{'id': messageId, 'sessionID': 'ses_1'},
+            },
+          };
+          request.response.write('data: ${jsonEncode(event)}\n\n');
+          await request.response.flush();
+        }
       }
 
       final scriptedForConnection =
@@ -831,7 +853,16 @@ class MockOpenCodeServer {
         return;
       }
 
-      _seedAssistantMessageForSession(sessionId);
+      if (promptAsyncSeedDelayMs > 0) {
+        unawaited(
+          Future<void>.delayed(
+            Duration(milliseconds: promptAsyncSeedDelayMs),
+            () => _seedAssistantMessageForSession(sessionId),
+          ),
+        );
+      } else {
+        _seedAssistantMessageForSession(sessionId);
+      }
       request.response.statusCode = 204;
       await request.response.close();
       return;
@@ -874,6 +905,15 @@ class MockOpenCodeServer {
       final sessionId = segments[1];
 
       if (method == 'GET') {
+        if (forceEmptySessionMessageListResponses > 0) {
+          forceEmptySessionMessageListResponses -= 1;
+          await _writeJson(
+            request.response,
+            200,
+            const <Map<String, dynamic>>[],
+          );
+          return;
+        }
         await _writeJson(
           request.response,
           200,
@@ -896,7 +936,7 @@ class MockOpenCodeServer {
 
         _seedAssistantMessageForSession(sessionId);
         final immediate =
-            _messagesBySession[sessionId]?.first ?? <String, dynamic>{};
+            _messagesBySession[sessionId]?.last ?? <String, dynamic>{};
         await _writeJson(request.response, 200, immediate);
         return;
       }

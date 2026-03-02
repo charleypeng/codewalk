@@ -41,6 +41,7 @@ CodeWalk is a project that provides access to code agents from anywhere — desk
 | 020 | Session-level SWR cache with persisted LRU snapshots — instant reopen of long sessions with background revalidation | 786–842 |
 | 021 | Context-scoped New Chat draft state — prevent cross-project draft leakage during fast SWR switches | 847–887 |
 | 022 | Unified project context controls with sidebar session previews — integrated navigation while preserving `serverId::scopeId` ownership | 891–928 |
+| 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web | 933–964 |
 
 ## 🚀 Project-Specific Flow: Android Build for Testing
 

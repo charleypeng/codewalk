@@ -26,6 +26,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-020: Session-Level SWR Cache with Persisted LRU Snapshots
 - ADR-021: Context-Scoped Draft State for Project-Switch SWR
 - ADR-022: Unified Project Context Controls with Sidebar Session Previews
+- ADR-023: Official OpenCode Contract-First Compatibility Policy
 
 ---
 
@@ -926,3 +927,38 @@ Project context controls and conversations navigation were split across separate
 - `lib/presentation/providers/chat_provider.dart`
 - `lib/presentation/pages/chat_page/chat_page_workspace_controller.dart`
 - `test/widget/chat_page_test.dart`
+
+---
+
+## ADR-023: Official OpenCode Contract-First Compatibility Policy (2026-03-02)
+
+**Status**: Accepted
+
+### Context
+
+CodeWalk's behavior must stay synchronized with official OpenCode server API and event semantics to prevent regressions and fragmentation. Lifecycle drift in areas like `prompt_async`, session state (`idle`/`busy`), and configuration mutation timing often causes subtle bugs that are difficult to debug when the client deviates from standard server expectations.
+
+### Decision
+
+1. **Contract First**: CodeWalk must follow official OpenCode server API/event semantics as the primary development constraint.
+2. **Core Compatibility**: Client behavior must remain compatible with official OpenCode CLI and Web for core chat lifecycle semantics before adding app-specific behavior.
+3. **Explicit Divergence**: Any intentional divergence from official semantics requires an explicit ADR exception including rationale, risk analysis, feature flag/rollback plan, and comprehensive tests.
+4. **CI Enforcement**: Contract-breaking changes must be blocked in CI (hard fail) unless a documented ADR exception is approved.
+5. **Evolution Policy**: Prefer additive and non-breaking evolution of the contract. Any removals or breaking semantic changes require a coordinated migration plan.
+
+### Rationale
+
+- **Regression Prevention**: Standardizing on the official contract reduces regressions caused by client/server lifecycle drift (e.g., `prompt_async` handling, session status transitions).
+- **Ecosystem Alignment**: Ensures CodeWalk remains a first-class citizen in the OpenCode ecosystem, supporting features like cross-client session continuity.
+- **Predictability**: Developers can rely on documented server behavior instead of guessing app-specific side effects.
+- **Stability**: Hard-failing CI for contract breaks prevents accidental drift in high-velocity development.
+
+### Consequences
+
+- ✅ Significantly reduces regressions stemming from client-side lifecycle assumptions.
+- ✅ Ensures long-term compatibility with official OpenCode server updates.
+- ✅ Simplifies debugging by aligning client state transitions with server-authoritative events.
+- ⚠️ May introduce friction when implementing app-specific optimizations that require non-standard API usage.
+- ❌ Increases maintenance overhead for contract validation and CI enforcement.
+
+Related: ADR-003, ADR-018, ADR-019, ADR-022.
