@@ -872,6 +872,8 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       var fallbackCompletionWatchStarted = false;
       final knownAssistantMessageIds = <String>{};
       var hasKnownAssistantBaseline = false;
+      // Accept a small skew between client and server clocks when correlating
+      // assistant messages to the current send.
       const freshnessLeewayMs = 5000;
       // Timestamp used to distinguish new messages from stale ones.
       // Without per-send SSE, resolveAssistantMessageId must skip
@@ -932,13 +934,13 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       bool isFreshAssistantCandidate({
         required String messageId,
         required int createdMs,
-        required int completedMs,
+        required int? completedMs,
       }) {
         if (activeAssistantMessageId != null &&
             activeAssistantMessageId == messageId) {
           return true;
         }
-        if (completedMs > 0) {
+        if (completedMs != null && completedMs > 0) {
           return completedMs >= sendStartMs - freshnessLeewayMs;
         }
         if (createdMs > 0) {
@@ -949,7 +951,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
       bool isFreshAssistantMessageModel(ChatMessageModel message) {
         final createdMs = message.time.millisecondsSinceEpoch;
-        final completedMs = message.completedTime?.millisecondsSinceEpoch ?? 0;
+        final completedMs = message.completedTime?.millisecondsSinceEpoch;
         return isFreshAssistantCandidate(
           messageId: message.id,
           createdMs: createdMs,
@@ -1179,7 +1181,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
               isFreshAssistantCandidate(
                 messageId: activeCandidate['id'] as String,
                 createdMs: activeCandidate['created'] as int,
-                completedMs: activeCandidate['completedMs'] as int,
+                completedMs: activeCandidate['completedMs'] as int?,
               )) {
             return activeAssistantMessageId;
           }
@@ -1193,7 +1195,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           return isFreshAssistantCandidate(
             messageId: id,
             createdMs: candidate['created'] as int,
-            completedMs: candidate['completedMs'] as int,
+            completedMs: candidate['completedMs'] as int?,
           );
         }, orElse: () => const <String, dynamic>{});
         if (freshestUnknown.isNotEmpty) {
