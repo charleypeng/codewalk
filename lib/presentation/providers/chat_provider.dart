@@ -3246,6 +3246,7 @@ class ChatProvider extends ChangeNotifier {
             )
           : resolvedLocalMessageId;
 
+      _pendingLocalUserMessageIds.add(activeLocalMessageId);
       notifyListeners();
       _traceFinal(
         'send-local-user-appended',
