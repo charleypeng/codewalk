@@ -67,7 +67,6 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
             key: ValueKey<String>('tool_part_details_toggle_${part.id}'),
             partId: part.id,
             hasDetails: hasDetails,
-            initiallyExpanded: false,
             details: _buildToolStateDetails(context, part.state, part.tool),
           ),
         ],
@@ -544,13 +543,11 @@ class _ToolPartDetailsToggle extends StatefulWidget {
     required this.partId,
     required this.hasDetails,
     required this.details,
-    this.initiallyExpanded = false,
   });
 
   final String partId;
   final bool hasDetails;
   final Widget details;
-  final bool initiallyExpanded;
 
   @override
   State<_ToolPartDetailsToggle> createState() => _ToolPartDetailsToggleState();
