@@ -137,7 +137,7 @@ chat_page_timeline_runtime.dart              # Tool-chain expanded state key res
 ```text
 chat_provider_core.dart
 chat_provider_session_ops.dart
-chat_provider_realtime_ops.dart
+chat_provider_realtime_ops.dart           # Realtime event handling; suppresses `session.idle` events during active send streams to prevent stale idle from closing subsequent turns before completion feedback or final-reconcile can occur
 chat_provider_realtime_aux_ops.dart
 chat_provider_event_reducer_ops.dart             # Reconcile one-shot guard via _messageStreamGeneration; dedup key composition
 chat_provider_message_merge_ops.dart
