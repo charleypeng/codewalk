@@ -995,7 +995,7 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 20));
 
         expect(chatRepository.lastSendInput?.variant, 'high');
-        expect(chatRepository.lastSendInput?.messageId, startsWith('msg_'));
+        expect(chatRepository.lastSendInput?.messageId, isNull);
       },
     );
 

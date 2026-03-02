@@ -1895,22 +1895,21 @@ void main() {
       },
     );
 
-    test('sendMessage forwards stable local messageId to server', () async {
+    test('sendMessage does not forward local messageId to server', () async {
       final now = DateTime.now();
       String? echoedMessageId;
 
       chatRepository.sendMessageHandler = (_, _, input, _) async* {
         echoedMessageId = input.messageId;
-        final serverMessageId = input.messageId ?? 'msg_server_user_1';
         yield Right(
           UserMessage(
-            id: serverMessageId,
+            id: 'msg_server_user_1',
             sessionId: 'ses_1',
             time: now.add(const Duration(seconds: 1)),
             parts: <MessagePart>[
               TextPart(
                 id: 'prt_user_server_1',
-                messageId: serverMessageId,
+                messageId: 'msg_server_user_1',
                 sessionId: 'ses_1',
                 text: 'hello stable id',
               ),
@@ -1926,12 +1925,13 @@ void main() {
       await provider.sendMessage('hello stable id');
       await Future<void>.delayed(const Duration(milliseconds: 30));
 
-      expect(echoedMessageId, startsWith('msg_'));
+      // messageId must not be sent to the server.
+      expect(echoedMessageId, isNull);
       expect(provider.state, ChatState.loaded);
-      // Reconciliation by exact message ID deduplicates the optimistic message.
+      // Reconciliation by content signature deduplicates the optimistic message.
       expect(provider.messages.whereType<UserMessage>(), hasLength(1));
       final userMessage = provider.messages.single as UserMessage;
-      expect(userMessage.id, echoedMessageId);
+      expect(userMessage.id, 'msg_server_user_1');
       expect((userMessage.parts.single as TextPart).text, 'hello stable id');
     });
 
@@ -2152,7 +2152,7 @@ void main() {
           chatRepository.lastSendInput?.parts.single,
           const TextInputPart(text: 'hello with persistence failure'),
         );
-        expect(chatRepository.lastSendInput?.messageId, startsWith('msg_'));
+        expect(chatRepository.lastSendInput?.messageId, isNull);
         final assistant = resilientProvider.messages.last as AssistantMessage;
         expect((assistant.parts.single as TextPart).text, 'resilient answer');
       },

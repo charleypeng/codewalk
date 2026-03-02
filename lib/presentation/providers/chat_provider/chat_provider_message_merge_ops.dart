@@ -74,11 +74,20 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     );
   }
 
+  // Determines whether a locally-appended optimistic user bubble should be
+  // suppressed because the server has already echoed it in the merged message list.
+  //
+  // INVARIANT — the prefix check on line below is load-bearing (see ADR-023 Pitfall P-001):
+  // Only messages with the `local_user_*` prefix are candidates for echo suppression.
+  // If the optimistic ID ever uses a server-format prefix (e.g. `msg_*`), this guard
+  // returns `false` immediately, the bubble is treated as a confirmed server message,
+  // and subsequent SSE reconciliation silently discards assistant responses. The prefix
+  // must always match what `_nextLocalUserMessageId()` produces. (Regression: b0660a2)
   bool _shouldSkipLocalUserAppendAsDuplicateEcho({
     required UserMessage localMessage,
     required List<ChatMessage> mergedMessages,
   }) {
-    if (!_pendingLocalUserMessageIds.contains(localMessage.id)) {
+    if (!localMessage.id.startsWith('local_user_')) {
       return false;
     }
     if (_queuedLocalUserMessageIds.contains(localMessage.id)) {

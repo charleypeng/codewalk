@@ -757,9 +757,19 @@ class ChatProvider extends ChangeNotifier {
     _queuedRetryAttemptsBySessionId.clear();
   }
 
+  // Generates a unique ID for optimistic (locally-appended) user messages.
+  //
+  // INVARIANT — do NOT change the prefix or format (see ADR-023 Pitfall P-001):
+  // The `local_user_*` prefix is load-bearing. The SSE merge logic uses it to
+  // identify optimistic bubbles eligible for duplicate-echo suppression
+  // (`_shouldSkipLocalUserAppendAsDuplicateEcho`). If the prefix is changed to
+  // any server-format value (e.g. `msg_*`), the prefix check short-circuits and
+  // the bubble is treated as a confirmed server message. This silently breaks
+  // reconciliation for all conversation turns after the first — the UI stays
+  // stuck even though the assistant response arrives. (Regression: b0660a2)
   String _nextLocalUserMessageId() {
     _localMessageIdSequence += 1;
-    return 'msg_${DateTime.now().microsecondsSinceEpoch}_${_localMessageIdSequence}';
+    return 'local_user_${DateTime.now().microsecondsSinceEpoch}_${_localMessageIdSequence}';
   }
 
   bool get _isExperimentalMultiDeviceSyncEnabled {
@@ -3288,7 +3298,13 @@ class ChatProvider extends ChangeNotifier {
         ),
       );
 
-      // Create chat input
+      // Create chat input.
+      //
+      // INVARIANT — do NOT add a `messageId` field here (see ADR-023 Pitfall P-001):
+      // The server must assign its own canonical ID for the user message. Forwarding
+      // the local optimistic ID as `messageId` in the payload causes the SSE event
+      // stream to fail reconciliation for all turns after the first — assistant
+      // responses are received but silently discarded. (Regression: b0660a2)
       final inputParts = <ChatInputPart>[
         if (trimmedText.isNotEmpty) TextInputPart(text: trimmedText),
         ...effectiveAttachments,
@@ -3297,7 +3313,6 @@ class ChatProvider extends ChangeNotifier {
         providerId: _selectedProviderId ?? 'anthropic',
         modelId: _selectedModelId ?? 'claude-3-5-sonnet-20241022',
         variant: _selectedVariantId,
-        messageId: activeLocalMessageId,
         mode: shellMode ? 'shell' : selectedAgentForSend,
         parts: inputParts,
       );

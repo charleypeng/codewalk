@@ -220,13 +220,18 @@
 - **When** the send fails (network error, server error, etc.)
 - **Then** the message text is returned to the composer input — the user's text is never lost
 
-### Optimistic user message ID is stable end-to-end
+### Optimistic user message ID uses local prefix — never server format
 
 - **Given** the user sends a message in an active session
 - **When** the client appends the optimistic user bubble and dispatches `prompt_async`
-- **Then** the client uses a server-compatible `msg_*` ID for that optimistic user message
-- **Then** the same ID is forwarded as `messageID` in the send payload
-- **Then** server echoes for that turn reconcile by exact ID first, preventing transient duplicate user bubbles during refresh/realtime merges
+- **Then** the client assigns the optimistic message a `local_user_<timestamp>_<seq>` ID — it intentionally does NOT use a server-format ID (`msg_*` or similar)
+- **Then** the `messageId` field is NOT forwarded in the `prompt_async` send payload — the server assigns its own canonical ID
+- **Then** duplicate detection for the server echo uses a content-signature match (normalized text), gated by the `local_user_` prefix check
+- **Then** once the server echo arrives, the local optimistic bubble is dropped and replaced by the server-authoritative message
+
+> **INVARIANT — do not violate**: The `local_user_*` prefix and the absence of `messageId` in the send payload are load-bearing contracts.
+> Changing the prefix to any server-format value (e.g. `msg_*`) or forwarding `messageId` in the payload causes the SSE event stream to fail reconciliation for all turns after the first — assistant responses are received but silently discarded, and the UI stays stuck on the previous state.
+> This regression was introduced and reverted in commit `b0660a2`. See ADR-023 "Known Pitfalls" for the full incident analysis.
 
 ### Tool call work groups collapse after completion
 

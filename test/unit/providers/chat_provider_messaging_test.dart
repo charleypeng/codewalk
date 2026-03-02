@@ -367,7 +367,7 @@ void main() {
           chatRepository.lastSendInput?.parts.single,
           const TextInputPart(text: 'hello provider'),
         );
-        expect(chatRepository.lastSendInput?.messageId, startsWith('msg_'));
+        expect(chatRepository.lastSendInput?.messageId, isNull);
         expect(
           chatRepository.lastSendDirectory,
           provider.projectProvider.currentProject?.path,
