@@ -940,11 +940,16 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
             activeAssistantMessageId == messageId) {
           return true;
         }
+        final canUseClockLeeway =
+            hasKnownAssistantBaseline && knownAssistantMessageIds.isNotEmpty;
+        final freshnessThreshold = canUseClockLeeway
+            ? sendStartMs - freshnessLeewayMs
+            : sendStartMs;
         if (completedMs != null && completedMs > 0) {
-          return completedMs >= sendStartMs - freshnessLeewayMs;
+          return completedMs >= freshnessThreshold;
         }
         if (createdMs > 0) {
-          return createdMs >= sendStartMs - freshnessLeewayMs;
+          return createdMs >= freshnessThreshold;
         }
         return false;
       }
@@ -1017,8 +1022,14 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
             final matchesActiveAssistantId =
                 activeAssistantMessageId != null &&
                 activeAssistantMessageId == id;
+            final canUseClockLeeway =
+                hasKnownAssistantBaseline &&
+                knownAssistantMessageIds.isNotEmpty;
+            final freshnessThreshold = canUseClockLeeway
+                ? sendStartMs - freshnessLeewayMs
+                : sendStartMs;
             final isFreshByTime = hasCreatedTime
-                ? created >= sendStartMs - freshnessLeewayMs
+                ? created >= freshnessThreshold
                 : matchesActiveAssistantId;
             if (!isFreshByTime) {
               staleTimeFilteredCount += 1;
@@ -1265,15 +1276,13 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           if (candidateMessageId == null || candidateMessageId.isEmpty) {
             // If no assistant candidate is visible yet, keep waiting for idle
             // convergence to avoid concluding too early on stale snapshots.
-            if (!sawBusy) {
-              await Future<void>.delayed(statusPollInterval);
-              continue;
-            }
             trace(
               'fallback-watch-idle-no-candidate',
-              details: 'reason=$reason idleAttempt=${attempt + 1}',
+              details:
+                  'reason=$reason idleAttempt=${attempt + 1} sawBusy=$sawBusy',
             );
-            return null;
+            await Future<void>.delayed(statusPollInterval);
+            continue;
           }
 
           ChatMessageModel? completed;
@@ -1339,7 +1348,13 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
             continue;
           }
 
-          return null;
+          trace(
+            'fallback-watch-idle-candidate-not-ready',
+            details:
+                'reason=$reason idleAttempt=${attempt + 1} candidateId=$candidateMessageId',
+          );
+          await Future<void>.delayed(statusPollInterval);
+          continue;
         }
 
         trace(
@@ -1435,7 +1450,16 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           if (FeatureFlags.promptAsyncIdleCompletion) {
             trace('fallback-watch-mode-idle', details: 'reason=$reason');
             completed = await resolveAssistantMessageFromSessionIdle(reason);
-          } else {
+          }
+
+          if (completed == null) {
+            if (FeatureFlags.promptAsyncIdleCompletion) {
+              trace(
+                'fallback-watch-idle-escalate-poll',
+                details: 'reason=$reason',
+              );
+            }
+
             var fallbackMessageId = activeAssistantMessageId;
             for (
               var attempt = 0;

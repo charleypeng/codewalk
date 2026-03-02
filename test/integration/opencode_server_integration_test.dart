@@ -330,6 +330,64 @@ void main() {
     );
 
     test(
+      'ChatRemoteDataSource keeps waiting when idle appears before fresh assistant candidate',
+      () async {
+        server.preserveMessageHistoryOnPromptAsync = true;
+
+        final remote = ChatRemoteDataSourceImpl(
+          dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
+        );
+
+        final firstTurnMessages = await remote
+            .sendMessage(
+              'default',
+              'ses_1',
+              const ChatInputModel(
+                messageId: 'msg_user_first_guarded_turn',
+                providerId: 'mock-provider',
+                modelId: 'mock-model',
+                parts: <ChatInputPartModel>[
+                  ChatInputPartModel(type: 'text', text: 'first guarded turn'),
+                ],
+              ),
+            )
+            .toList();
+
+        final firstAssistant = firstTurnMessages.last;
+        expect(firstAssistant.completedTime, isNotNull);
+
+        server.simulateBusyThenIdleOnPromptAsync = true;
+        server.promptAsyncBusyDurationMs = 200;
+        server.promptAsyncSeedDelayMs = 2200;
+        server.forceEmptySessionMessageListResponses = 3;
+
+        final secondTurnMessages = await remote
+            .sendMessage(
+              'default',
+              'ses_1',
+              const ChatInputModel(
+                messageId: 'msg_user_second_guarded_turn',
+                providerId: 'mock-provider',
+                modelId: 'mock-model',
+                parts: <ChatInputPartModel>[
+                  ChatInputPartModel(type: 'text', text: 'second guarded turn'),
+                ],
+              ),
+            )
+            .toList();
+
+        final secondAssistant = secondTurnMessages.last;
+        expect(secondAssistant.id, isNot(firstAssistant.id));
+        expect(secondAssistant.completedTime, isNotNull);
+        expect(
+          secondAssistant.completedTime!.millisecondsSinceEpoch,
+          greaterThan(firstAssistant.completedTime!.millisecondsSinceEpoch),
+        );
+        expect(server.promptAsyncRequestCount, 2);
+      },
+    );
+
+    test(
       'ChatRemoteDataSource sendMessage forwards directory to event and message fetch',
       () async {
         server.streamMessageUpdates = true;

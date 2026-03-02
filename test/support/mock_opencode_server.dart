@@ -15,6 +15,8 @@ class MockOpenCodeServer {
   bool preserveMessageHistoryOnPromptAsync = false;
   int promptAsyncSeedDelayMs = 0;
   int forceEmptySessionMessageListResponses = 0;
+  bool simulateBusyThenIdleOnPromptAsync = false;
+  int promptAsyncBusyDurationMs = 300;
   String? requiredEventDirectory;
   String? requiredMessageDirectory;
   String? requiredProjectDirectory;
@@ -102,6 +104,8 @@ class MockOpenCodeServer {
     preserveMessageHistoryOnPromptAsync = false;
     promptAsyncSeedDelayMs = 0;
     forceEmptySessionMessageListResponses = 0;
+    simulateBusyThenIdleOnPromptAsync = false;
+    promptAsyncBusyDurationMs = 300;
     promptAsyncRequestCount = 0;
     messageRequestCount = 0;
     _assistantMessageCounter = 0;
@@ -851,6 +855,18 @@ class MockOpenCodeServer {
           'error': 'invalid',
         });
         return;
+      }
+
+      if (simulateBusyThenIdleOnPromptAsync) {
+        sessionStatusById[sessionId] = <String, dynamic>{'type': 'busy'};
+        unawaited(
+          Future<void>.delayed(
+            Duration(milliseconds: promptAsyncBusyDurationMs),
+            () {
+              sessionStatusById[sessionId] = <String, dynamic>{'type': 'idle'};
+            },
+          ),
+        );
       }
 
       if (promptAsyncSeedDelayMs > 0) {
