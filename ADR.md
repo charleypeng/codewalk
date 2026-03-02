@@ -961,4 +961,24 @@ CodeWalk's behavior must stay synchronized with official OpenCode server API and
 - ⚠️ May introduce friction when implementing app-specific optimizations that require non-standard API usage.
 - ❌ Increases maintenance overhead for contract validation and CI enforcement.
 
+### Reference Sources
+
+These references are the first source of truth before implementing client behavior changes.
+
+- **Local Docs**:
+  - `ai-docs/opencode_server.md`
+  - `ai-docs/opencode_web.md`
+  - `ai-docs/opencode_models.md`
+- **Official Docs**:
+  - https://opencode.ai/docs/server/
+  - https://opencode.ai/docs/web/
+  - https://opencode.ai/docs/cli/
+- **GitHub Sources (Canonical Behavior)**:
+  - https://github.com/anomalyco/opencode
+  - https://github.com/anomalyco/opencode/tree/dev/packages/opencode
+  - https://github.com/anomalyco/opencode/tree/dev/packages/opencode/src/cli
+  - https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/server/server.ts
+  - https://github.com/anomalyco/opencode/tree/dev/packages/app
+  - https://github.com/anomalyco/opencode/tree/dev/packages/opencode/src/cli/cmd/tui
+
 Related: ADR-003, ADR-018, ADR-019, ADR-022.

@@ -13,6 +13,14 @@ CodeWalk is a project that provides access to code agents from anywhere — desk
 - In this project specifically, we do NOT use `make precommit` directly — prefer splitting into `make check` and `make android`.
 - Key base documentation is in ./ai-docs; always run at least one `ls` in that folder to know what exists.
 
+## 🛡 Supreme Rule: ADR-023 Compliance First
+
+This rule is **supreme** for any app behavior change and overrides conflicting local guidance.
+
+- Any behavior modification must first verify alignment with **ADR-023** and official OpenCode references (docs and source), using `ai-docs/opencode_server.md`, `ai-docs/opencode_web.md`, and `ai-docs/opencode_models.md` as mandatory local anchors.
+- If full alignment is not possible, the change is blocked unless there is an explicit ADR exception with rationale, risk analysis, rollback/feature-flag plan, and regression tests.
+- Every behavior change must prove non-regression: it must not introduce regressions in the modified flow or in related core flows of the app.
+
 ## 📐 ADR Quick Reference (details in `ADR.md`)
 
 > **Mandatory sync**: When creating, updating, or superseding an ADR, the adrkeeper/`adr` skill MUST update this table (description + line ranges). Superseded ADRs get the prefix "⚠️ SUPERSEDED —".
@@ -41,7 +49,7 @@ CodeWalk is a project that provides access to code agents from anywhere — desk
 | 020 | Session-level SWR cache with persisted LRU snapshots — instant reopen of long sessions with background revalidation | 786–842 |
 | 021 | Context-scoped New Chat draft state — prevent cross-project draft leakage during fast SWR switches | 847–887 |
 | 022 | Unified project context controls with sidebar session previews — integrated navigation while preserving `serverId::scopeId` ownership | 891–928 |
-| 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web | 933–964 |
+| 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web | 933–984 |
 
 ## 🚀 Project-Specific Flow: Android Build for Testing
 
