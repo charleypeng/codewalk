@@ -159,7 +159,8 @@
 - **Given** a cached session is visible and background revalidation finishes
 - **When** newer server messages are applied
 - **Then** the timeline updates in place without clearing to an empty skeleton first
-- **Then** collapsed history/work groups keep their per-session expansion state during switch and revalidation
+- **Then** collapsed history groups keep their per-session expansion state during switch and revalidation
+- **Then** assistant work/tool-call groups return collapsed after session return or revalidation (manual expansion is not restored)
 - **Then** an already-selected empty session keeps its empty placeholder visible during background refresh (no loading skeleton blink)
 
 ### Older history loads on demand at top reach
@@ -231,8 +232,9 @@
 
 - **Given** the assistant executes tool calls during a response (file reads, commands, etc.)
 - **When** the assistant finishes the complete response
-- **Then** tool call groups collapse only after the final assistant message is rendered and visible
-- **Then** collapse never happens while the assistant is still streaming or while the final response is not yet visible
+- **Then** tool-call chains and tool-detail sections start collapsed by default
+- **Then** collapse never happens while the assistant is still streaming
+- **Then** manual expansion is temporary and is not restored after return/revalidation
 - **Then** the user can manually re-expand any collapsed work group by tapping its Details toggle
 - **Then** once a completed turn has settled, transient realtime status pulses do not auto re-open or rapidly re-collapse that same work group
 
@@ -262,7 +264,7 @@
 - **Given** a response finishes after tool/work messages
 - **When** the final assistant message becomes available
 - **Then** the chat reveals the **start** of the final assistant message (not the end)
-- **Then** the reveal is anchored near the upper-center of the viewport to favor immediate reading
+- **Then** the reveal is anchored at the top of the viewport so reading starts from the first line
 
 ### Final response reconcile is resilient to transient abort suppression
 
@@ -284,6 +286,7 @@
 - **When** older assistant messages already exist in that history
 - **Then** the client excludes pre-send known assistant IDs and prioritizes in-progress/fresh IDs from the current turn
 - **Then** if baseline prefetch fails, a timestamp guard is kept as fallback to avoid stale completion selection
+- **Then** when `session.idle` appears before any `busy` signal right after send, completion waits for a short guard window before accepting idle-only candidates
 
 ### Post-completion reading remains stable
 

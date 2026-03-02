@@ -2,7 +2,7 @@
 
 ## Project Snapshot
 
-- Flutter client for OpenCode-compatible servers.
+- Flutter client for OpenCode-compatible servers (ADR-023: contract-first compatibility policy).
 - Architecture follows `presentation -> domain -> data` with `get_it` + `provider`.
 - Multi-platform targets in repo: Android, Linux, macOS, Windows, Web.
 - Chat stack is decomposed into orchestrators plus focused cluster modules.
@@ -66,7 +66,7 @@ lib/core/network/dio_sse_adapter.dart              # Conditional export: routes 
 lib/core/network/dio_sse_adapter_io.dart           # IO platforms: configures IOHttpClientAdapter with separate HttpClient for SSE (2h idle, 4 max connections)
 lib/core/network/dio_sse_adapter_stub.dart         # Web platform: no-op (browser manages connections natively)
 lib/data/datasources/app_remote_datasource.dart   # App bootstrap/config/providers/agents API access
-lib/data/datasources/chat_remote_datasource.dart  # Chat/session/message/realtime API access; accepts optional `sseDio` for SSE stream isolation; sendMessage uses polling + provider-level SSE only (no per-send SSE) to prevent server-side abort on disconnect; async completion fallback preloads known assistant IDs and keeps timestamp guard fallback to avoid stale message-id selection
+lib/data/datasources/chat_remote_datasource.dart  # Chat/session/message/realtime API access; accepts optional `sseDio` for SSE stream isolation; sendMessage uses polling + provider-level SSE only (no per-send SSE) to prevent server-side abort on disconnect; async completion (`prompt_async`) fallback preloads known assistant IDs and keeps timestamp guard fallback to avoid stale message-id selection
 lib/data/datasources/project_remote_datasource.dart # Project/worktree/file API access
 lib/data/datasources/app_local_datasource.dart    # Persistent settings, profiles, cache, credentials, favorite models; uses ChatCachePayloadStore hybrid store with shared_preferences fallback for large payloads
 lib/data/cache/chat_cache_payload_store.dart      # Factory with conditional import for platform-specific store
