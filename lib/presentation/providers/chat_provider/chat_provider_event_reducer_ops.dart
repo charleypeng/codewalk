@@ -185,16 +185,28 @@ extension _ChatProviderEventReducerOps on ChatProvider {
     // Sub-agent child sessions should not trigger user-facing sounds.
     final isSessionLifecycle =
         event.type == 'session.idle' || event.type == 'session.error';
+    final suppressCurrentIdleFeedback =
+        event.type == 'session.idle' &&
+        eventSessionId != null &&
+        eventSessionId == _activeMessageStreamSessionId &&
+        (_state == ChatState.sending || _messageSubscription != null);
     if (!isSessionLifecycle || eventSessionId == _currentSession?.id) {
-      final sessionTitleHint = _sessionTitleForNotification(eventSessionId);
-      unawaited(
-        eventFeedbackDispatcher?.handle(
-          event,
-          sessionTitleHint: sessionTitleHint,
-          isAppInForeground: _isAppInForeground,
-          currentSessionId: _currentSession?.id,
-        ),
-      );
+      if (suppressCurrentIdleFeedback) {
+        _traceFinal(
+          'event-session-idle-feedback-suppressed-active-send',
+          sessionId: eventSessionId,
+        );
+      } else {
+        final sessionTitleHint = _sessionTitleForNotification(eventSessionId);
+        unawaited(
+          eventFeedbackDispatcher?.handle(
+            event,
+            sessionTitleHint: sessionTitleHint,
+            isAppInForeground: _isAppInForeground,
+            currentSessionId: _currentSession?.id,
+          ),
+        );
+      }
     }
     final properties = event.properties;
     if (event.type != 'server.connected' &&
@@ -343,6 +355,30 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         final sessionId = properties['sessionID'] as String?;
         if (sessionId != null) {
           final isCurrentSession = sessionId == _currentSession?.id;
+          final hasActiveCurrentSendTurn =
+              isCurrentSession &&
+              _activeMessageStreamSessionId == sessionId &&
+              (_state == ChatState.sending || _messageSubscription != null);
+          if (hasActiveCurrentSendTurn) {
+            _recordIdleReconcileTelemetry(
+              sessionId: sessionId,
+              triggered: false,
+              decision: 'active_stream',
+              isCurrent: true,
+              hasPreserved: false,
+            );
+            _traceFinal(
+              'event-session-idle',
+              sessionId: sessionId,
+              details:
+                  'isCurrent=true hasPreserved=false shouldReconcile=false decision=active_stream idleTurnKey=${sessionId}:$_messageStreamGeneration lastIdleTurn=${_lastIdleReconcileSessionTurnKey ?? "-"}',
+            );
+            AppLogger.info(
+              'session.idle session=$sessionId isCurrent=true hasPreservedStream=false decision=active_stream',
+            );
+            _attemptPendingRemoteSelectionSync(reason: 'event-session.idle');
+            break;
+          }
           final previousStatusType = _sessionStatusById[sessionId]?.type;
           _sessionStatusById[sessionId] = const SessionStatusInfo(
             type: SessionStatusType.idle,
@@ -362,6 +398,8 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           String reconcileDecision;
           if (!isCurrentSession) {
             reconcileDecision = 'non_current_session';
+          } else if (hasActiveCurrentSendTurn) {
+            reconcileDecision = 'active_stream';
           } else if (hasPreserved) {
             reconcileDecision = 'preserved_stream';
           } else if (_lastIdleReconcileSessionTurnKey == idleTurnKey) {

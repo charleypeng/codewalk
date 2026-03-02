@@ -959,7 +959,7 @@ void main() {
     );
 
     test(
-      'session.idle triggers final reconcile when send is still marked in-progress',
+      'session.idle is ignored while current send stream is in-flight',
       () async {
         final sendController =
             StreamController<Either<Failure, ChatMessage>>.broadcast();
@@ -1000,17 +1000,9 @@ void main() {
         );
         await Future<void>.delayed(const Duration(milliseconds: 80));
 
-        expect(
-          chatRepository.getMessagesCallCount,
-          greaterThan(callsBeforeIdle),
-        );
-        final latestAssistant = provider.messages
-            .whereType<AssistantMessage>()
-            .last;
-        expect(
-          (latestAssistant.parts.single as TextPart).text,
-          'final response resolved on idle',
-        );
+        expect(chatRepository.getMessagesCallCount, equals(callsBeforeIdle));
+        expect(provider.state, ChatState.sending);
+        expect(provider.isCurrentSessionActivelyResponding, isTrue);
 
         await sendController.close();
       },
