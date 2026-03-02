@@ -198,10 +198,16 @@ abstract class ChatRemoteDataSource {
 
 /// Chat remote data source implementation
 class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
-  const ChatRemoteDataSourceImpl({required this.dio, Dio? sseDio})
-    : _sseDio = sseDio;
+  ChatRemoteDataSourceImpl({required this.dio, Dio? sseDio}) : _sseDio = sseDio;
 
   static const String _traceFinalPrefix = 'CW_TRACE_FINAL';
+  static const int _assistantMessageTailLimit = 120;
+  static const int _idleStatusPollAttempts = 90;
+  static const Duration _idleStatusPollInterval = Duration(seconds: 2);
+  static const int _idleSettleListAttempts = 12;
+  static const Duration _idleSettleListInterval = Duration(seconds: 1);
+  static const int _resolveAssistantIdAttempts = 12;
+  static const Duration _resolveAssistantIdRetryDelay = Duration(seconds: 2);
 
   final Dio dio;
 
@@ -209,6 +215,14 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   /// Falls back to [dio] when not provided (tests, web).
   final Dio? _sseDio;
   Dio get _effectiveSseDio => _sseDio ?? dio;
+  final Map<String, Set<String>> _knownAssistantIdsCacheBySession =
+      <String, Set<String>>{};
+
+  Map<String, String> _withMessageTailLimit(Map<String, String> queryParams) {
+    final merged = Map<String, String>.from(queryParams);
+    merged['limit'] = '$_assistantMessageTailLimit';
+    return merged;
+  }
 
   void _traceFinalSend({
     required String sessionId,
@@ -870,8 +884,10 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       var messageCompleted = false;
       String? activeAssistantMessageId;
       var fallbackCompletionWatchStarted = false;
-      final knownAssistantMessageIds = <String>{};
-      var hasKnownAssistantBaseline = false;
+      final knownAssistantMessageIds = <String>{
+        ...?_knownAssistantIdsCacheBySession[sessionId],
+      };
+      var hasKnownAssistantBaseline = knownAssistantMessageIds.isNotEmpty;
       // Accept a small skew between client and server clocks when correlating
       // assistant messages to the current send.
       const freshnessLeewayMs = 5000;
@@ -880,10 +896,17 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       // completed messages from previous sends.
 
       Future<void> loadKnownAssistantMessageIds() async {
+        if (hasKnownAssistantBaseline) {
+          trace(
+            'known-assistant-baseline-cache-hit',
+            details: 'count=${knownAssistantMessageIds.length}',
+          );
+          return;
+        }
         try {
           final response = await dio.get(
             '/session/$sessionId/message',
-            queryParameters: queryParams.isNotEmpty ? queryParams : null,
+            queryParameters: _withMessageTailLimit(queryParams),
           );
           if (response.statusCode != 200) {
             return;
@@ -903,6 +926,9 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
             }
           }
           hasKnownAssistantBaseline = true;
+          _knownAssistantIdsCacheBySession[sessionId] = Set<String>.from(
+            knownAssistantMessageIds,
+          );
           trace(
             'known-assistant-baseline-loaded',
             details: 'count=${knownAssistantMessageIds.length}',
@@ -977,7 +1003,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         try {
           final response = await dio.get(
             '/session/$sessionId/message',
-            queryParameters: queryParams.isNotEmpty ? queryParams : null,
+            queryParameters: _withMessageTailLimit(queryParams),
           );
 
           if (response.statusCode != 200) {
@@ -1064,6 +1090,10 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           );
           if (candidateId != null) {
             activeAssistantMessageId = candidateId;
+            knownAssistantMessageIds.add(candidateId);
+            _knownAssistantIdsCacheBySession[sessionId] = Set<String>.from(
+              knownAssistantMessageIds,
+            );
             AppLogger.info(
               'Resolved assistant message ID from session list: $candidateId',
             );
@@ -1113,7 +1143,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         try {
           final response = await dio.get(
             '/session/$sessionId/message',
-            queryParameters: queryParams.isNotEmpty ? queryParams : null,
+            queryParameters: _withMessageTailLimit(queryParams),
           );
           if (response.statusCode != 200) {
             return const <Map<String, dynamic>>[];
@@ -1221,10 +1251,10 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       ) async {
         // Prefer OpenCode-like completion semantics: prompt_async accepts the
         // request, then session transitions to idle when the turn is finished.
-        const statusPollAttempts = 180;
-        const statusPollInterval = Duration(seconds: 1);
-        const settleListAttempts = 24;
-        const settleListInterval = Duration(milliseconds: 500);
+        const statusPollAttempts = _idleStatusPollAttempts;
+        const statusPollInterval = _idleStatusPollInterval;
+        const settleListAttempts = _idleSettleListAttempts;
+        const settleListInterval = _idleSettleListInterval;
         const idleBeforeBusyGrace = Duration(seconds: 3);
 
         var sawBusy = false;
@@ -1464,14 +1494,14 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
             for (
               var attempt = 0;
               (fallbackMessageId == null || fallbackMessageId.isEmpty) &&
-                  attempt < 30;
+                  attempt < _resolveAssistantIdAttempts;
               attempt += 1
             ) {
               fallbackMessageId = await resolveAssistantMessageId();
               if (fallbackMessageId != null && fallbackMessageId.isNotEmpty) {
                 break;
               }
-              await Future<void>.delayed(const Duration(seconds: 2));
+              await Future<void>.delayed(_resolveAssistantIdRetryDelay);
             }
 
             if (fallbackMessageId == null || fallbackMessageId.isEmpty) {
@@ -1504,6 +1534,10 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
           if (completed != null && !eventController.isClosed) {
             eventController.add(completed);
+            knownAssistantMessageIds.add(completed.id);
+            _knownAssistantIdsCacheBySession[sessionId] = Set<String>.from(
+              knownAssistantMessageIds,
+            );
             trace(
               'fallback-watch-emitted-message',
               details:

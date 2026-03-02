@@ -274,6 +274,36 @@ void main() {
     );
 
     test(
+      'ChatRemoteDataSource requests bounded message-list tails in prompt_async flow',
+      () async {
+        server.streamMessageUpdates = true;
+
+        final remote = ChatRemoteDataSourceImpl(
+          dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
+        );
+
+        final messages = await remote
+            .sendMessage(
+              'default',
+              'ses_1',
+              const ChatInputModel(
+                messageId: 'msg_user_tail_limit',
+                providerId: 'mock-provider',
+                modelId: 'mock-model',
+                parts: <ChatInputPartModel>[
+                  ChatInputPartModel(type: 'text', text: 'tail limit please'),
+                ],
+              ),
+            )
+            .toList();
+
+        expect(messages, isNotEmpty);
+        expect(server.sessionMessageListRequestCount, greaterThan(0));
+        expect(server.lastSessionMessageListLimit, '120');
+      },
+    );
+
+    test(
       'ChatRemoteDataSource does not complete a new send with stale previous assistant message',
       () async {
         server.preserveMessageHistoryOnPromptAsync = true;

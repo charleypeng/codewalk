@@ -23,6 +23,9 @@ class MockOpenCodeServer {
   Map<String, dynamic>? lastSendMessagePayload;
   int promptAsyncRequestCount = 0;
   int messageRequestCount = 0;
+  int sessionStatusRequestCount = 0;
+  int sessionMessageListRequestCount = 0;
+  String? lastSessionMessageListLimit;
   int eventConnectionCount = 0;
   int globalEventConnectionCount = 0;
   int eventCloseDelayMs = 900;
@@ -108,6 +111,9 @@ class MockOpenCodeServer {
     promptAsyncBusyDurationMs = 300;
     promptAsyncRequestCount = 0;
     messageRequestCount = 0;
+    sessionStatusRequestCount = 0;
+    sessionMessageListRequestCount = 0;
+    lastSessionMessageListLimit = null;
     _assistantMessageCounter = 0;
     _latestAssistantMessageId = null;
     sessionStatusById = <String, Map<String, dynamic>>{
@@ -588,6 +594,7 @@ class MockOpenCodeServer {
         segments[0] == 'session' &&
         segments[1] == 'status' &&
         method == 'GET') {
+      sessionStatusRequestCount += 1;
       await _writeJson(request.response, 200, sessionStatusById);
       return;
     }
@@ -921,6 +928,8 @@ class MockOpenCodeServer {
       final sessionId = segments[1];
 
       if (method == 'GET') {
+        sessionMessageListRequestCount += 1;
+        lastSessionMessageListLimit = request.uri.queryParameters['limit'];
         if (forceEmptySessionMessageListResponses > 0) {
           forceEmptySessionMessageListResponses -= 1;
           await _writeJson(
