@@ -296,6 +296,14 @@
 - **Then** when a stale `session.idle` from a previous turn arrives while the current send stream is still active, the app suppresses turn-complete feedback/reconcile for that stale idle and keeps the current turn in-flight
 - **Then** once that active send stream finishes, any deferred stale-idle reconcile is executed exactly once to fetch and reveal the final assistant message without requiring a session switch
 
+### Async send completion keeps data usage bounded
+
+- **Given** async send reconciliation needs periodic `GET /session/{id}/message` lookups
+- **When** the client fetches message history during fallback/idle completion resolution
+- **Then** requests use a bounded tail limit (`limit=120`) instead of full-history list fetches to reduce transfer volume on mobile networks
+- **Then** known assistant IDs are cached per session with a bounded LRU-like cap (64 sessions) to avoid repeated baseline fetches and unbounded memory growth
+- **Then** if completion ends without a resolvable assistant message (`no_message_id` or `no_message`), the session cache entry is invalidated to avoid carrying stale baseline state into the next send
+
 ### Post-completion reading remains stable
 
 - **Given** the final assistant response is already visible

@@ -66,7 +66,7 @@ lib/core/network/dio_sse_adapter.dart              # Conditional export: routes 
 lib/core/network/dio_sse_adapter_io.dart           # IO platforms: configures IOHttpClientAdapter with separate HttpClient for SSE (2h idle, 4 max connections)
 lib/core/network/dio_sse_adapter_stub.dart         # Web platform: no-op (browser manages connections natively)
 lib/data/datasources/app_remote_datasource.dart   # App bootstrap/config/providers/agents API access
-lib/data/datasources/chat_remote_datasource.dart  # Chat/session/message/realtime API access; accepts optional `sseDio` for SSE stream isolation; sendMessage uses polling + provider-level SSE only (no per-send SSE) to prevent server-side abort on disconnect; async completion (`prompt_async`) fallback escalates to polling and uses stricter staleness guards when no-candidate/empty-baseline scenarios occur to prevent early finalization
+lib/data/datasources/chat_remote_datasource.dart  # Chat/session/message/realtime API access; accepts optional `sseDio` for SSE stream isolation; sendMessage uses polling + provider-level SSE only (no per-send SSE) to prevent server-side abort on disconnect; async completion (`prompt_async`) fallback escalates to polling and uses stricter staleness guards when no-candidate/empty-baseline scenarios occur to prevent early finalization; bounds message-list tail fetches (`limit=120`); uses bounded per-session assistant-id cache (64-session cap + invalidation on unresolved completion); reduced idle/fallback polling cadence
 lib/data/datasources/project_remote_datasource.dart # Project/worktree/file API access
 lib/data/datasources/app_local_datasource.dart    # Persistent settings, profiles, cache, credentials, favorite models; uses ChatCachePayloadStore hybrid store with shared_preferences fallback for large payloads
 lib/data/cache/chat_cache_payload_store.dart      # Factory with conditional import for platform-specific store
@@ -232,9 +232,9 @@ test/unit/providers/                   # ChatProvider split tests (7 files, 127 
   chat_provider_concurrency_test.dart  #   26 tests — render gate, multi-session, abort suppression
   chat_provider_test_support.dart      #   Shared utilities (RecordingDioClient, buildChatProvider, testModel); FakeChatRepository.getSessionsDelay
 test/widget/                           # Widget tests (includes icon assertions with Symbols.* and explicit compact/mobile collapsed-copy coverage for chat message and session todo surfaces)
-test/integration/                      # Integration tests
+test/integration/                      # Integration tests; includes data-usage optimization coverage in `opencode_server_integration_test.dart`
 test/presentation/                     # Presentation-focused tests (incl. window_size_class_test.dart)
-test/support/                          # Test helpers/fakes
+test/support/                          # Test helpers/fakes; `mock_opencode_server.dart` includes extra counters for usage optimization tracking
 tool/ci/check_analyze_budget.sh        # Analyzer issue budget gate (default: 186)
 tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 .github/workflows/ci.yml               # CI executes analyze + tests + coverage gate
