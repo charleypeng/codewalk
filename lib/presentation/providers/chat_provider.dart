@@ -266,6 +266,8 @@ class ChatProvider extends ChangeNotifier {
   // reconcile, preventing duplicate reconciles from repeated session.idle
   // events within the same completion cycle.
   String? _lastIdleReconcileSessionTurnKey;
+  final Map<String, String> _deferredIdleReconcileTurnKeyBySessionId =
+      <String, String>{};
   int _idleReconcileEvaluations = 0;
   int _idleReconcileTriggers = 0;
   int _idleReconcileSkips = 0;
@@ -3322,6 +3324,7 @@ class ChatProvider extends ChangeNotifier {
       // Reset one-shot reconcile guard so the new turn can trigger a reconcile
       // if the final message ends up missing.
       _lastIdleReconcileSessionTurnKey = null;
+      _deferredIdleReconcileTurnKeyBySessionId.remove(streamSessionId);
       _traceFinal(
         'send-stream-ready',
         sessionId: streamSessionId,
@@ -3422,6 +3425,7 @@ class ChatProvider extends ChangeNotifier {
                 sessionId: streamSessionId,
                 details: 'error=$error',
               );
+              _deferredIdleReconcileTurnKeyBySessionId.remove(streamSessionId);
               _preservedMessageSubscriptions.remove(sendSubscription);
               if (streamGeneration != _messageStreamGeneration) {
                 if (identical(_messageSubscription, sendSubscription)) {
@@ -3475,6 +3479,10 @@ class ChatProvider extends ChangeNotifier {
                 details:
                     'eventGeneration=$streamGeneration active=$_messageStreamGeneration',
               );
+              final deferredIdleTurnKey =
+                  _deferredIdleReconcileTurnKeyBySessionId.remove(
+                    streamSessionId,
+                  );
               _preservedMessageSubscriptions.remove(sendSubscription);
               if (streamGeneration != _messageStreamGeneration) {
                 if (identical(_messageSubscription, sendSubscription)) {
@@ -3526,6 +3534,24 @@ class ChatProvider extends ChangeNotifier {
                   sessionId: streamSessionId,
                 );
                 _setState(ChatState.loaded);
+                if (deferredIdleTurnKey != null &&
+                    deferredIdleTurnKey.isNotEmpty &&
+                    _lastIdleReconcileSessionTurnKey != deferredIdleTurnKey) {
+                  _lastIdleReconcileSessionTurnKey = deferredIdleTurnKey;
+                  _traceFinal(
+                    'send-stream-ondone-run-deferred-idle-reconcile',
+                    sessionId: streamSessionId,
+                    details:
+                        'turnKey=$deferredIdleTurnKey reason=session-idle-deferred-reconcile',
+                  );
+                  unawaited(
+                    refreshActiveSessionView(
+                      reason: 'session-idle-deferred-reconcile',
+                      includeStatus: false,
+                      allowDuringAbortSuppression: true,
+                    ),
+                  );
+                }
                 unawaited(_persistLastSessionSnapshotBestEffort());
                 unawaited(loadSessionInsights(streamSessionId, silent: true));
               } else {

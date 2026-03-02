@@ -359,11 +359,13 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       case 'session.idle':
         final sessionId = properties['sessionID'] as String?;
         if (sessionId != null) {
+          final idleTurnKey = '$sessionId:$_messageStreamGeneration';
           final isCurrentSession = sessionId == _currentSession?.id;
           final hasActiveCurrentSendTurn = _hasInFlightSendTurnForSession(
             sessionId,
           );
           if (hasActiveCurrentSendTurn) {
+            _deferredIdleReconcileTurnKeyBySessionId[sessionId] = idleTurnKey;
             _recordIdleReconcileTelemetry(
               sessionId: sessionId,
               triggered: false,
@@ -375,7 +377,12 @@ extension _ChatProviderEventReducerOps on ChatProvider {
               'event-session-idle',
               sessionId: sessionId,
               details:
-                  'isCurrent=true hasPreserved=false shouldReconcile=false decision=active_stream idleTurnKey=${sessionId}:$_messageStreamGeneration lastIdleTurn=${_lastIdleReconcileSessionTurnKey ?? "-"}',
+                  'isCurrent=true hasPreserved=false shouldReconcile=false decision=active_stream idleTurnKey=$idleTurnKey lastIdleTurn=${_lastIdleReconcileSessionTurnKey ?? "-"}',
+            );
+            _traceFinal(
+              'event-session-idle-defer-reconcile',
+              sessionId: sessionId,
+              details: 'turnKey=$idleTurnKey',
             );
             AppLogger.info(
               'session.idle session=$sessionId isCurrent=true hasPreservedStream=false decision=active_stream',
@@ -393,7 +400,6 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           // Build a turn key using the stream generation counter so the guard
           // resets when a new send starts (_messageStreamGeneration increments
           // per send) without being affected by messages from other sessions.
-          final idleTurnKey = '$sessionId:$_messageStreamGeneration';
           final shouldReconcileCurrentSession =
               isCurrentSession &&
               !hasPreserved &&

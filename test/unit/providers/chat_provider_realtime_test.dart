@@ -1005,6 +1005,20 @@ void main() {
         expect(provider.isCurrentSessionActivelyResponding, isTrue);
 
         await sendController.close();
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+
+        expect(
+          chatRepository.getMessagesCallCount,
+          greaterThan(callsBeforeIdle),
+        );
+        expect(provider.state, ChatState.loaded);
+        final latestAssistant = provider.messages
+            .whereType<AssistantMessage>()
+            .last;
+        expect(
+          (latestAssistant.parts.single as TextPart).text,
+          'final response resolved on idle',
+        );
       },
     );
 
