@@ -3425,7 +3425,10 @@ class ChatProvider extends ChangeNotifier {
                 sessionId: streamSessionId,
                 details: 'error=$error',
               );
-              _deferredIdleReconcileTurnKeyBySessionId.remove(streamSessionId);
+              final deferredIdleTurnKey =
+                  _deferredIdleReconcileTurnKeyBySessionId.remove(
+                    streamSessionId,
+                  );
               _preservedMessageSubscriptions.remove(sendSubscription);
               if (streamGeneration != _messageStreamGeneration) {
                 if (identical(_messageSubscription, sendSubscription)) {
@@ -3466,6 +3469,30 @@ class ChatProvider extends ChangeNotifier {
                 _sessionErrorAttentionIds.add(streamSessionId);
                 _notifyListeners();
                 return;
+              }
+              if (deferredIdleTurnKey != null &&
+                  deferredIdleTurnKey.isNotEmpty &&
+                  _lastIdleReconcileSessionTurnKey != deferredIdleTurnKey) {
+                _lastIdleReconcileSessionTurnKey = deferredIdleTurnKey;
+                _traceFinal(
+                  'send-stream-onerror-run-deferred-idle-reconcile',
+                  sessionId: streamSessionId,
+                  details:
+                      'turnKey=$deferredIdleTurnKey reason=session-idle-deferred-reconcile-onerror',
+                );
+                unawaited(
+                  refreshActiveSessionView(
+                    reason: 'session-idle-deferred-reconcile-onerror',
+                    includeStatus: false,
+                    allowDuringAbortSuppression: true,
+                  ).catchError((Object reconcileError, StackTrace stackTrace) {
+                    AppLogger.warn(
+                      'Deferred idle reconcile after send stream error failed session=$streamSessionId',
+                      error: reconcileError,
+                      stackTrace: stackTrace,
+                    );
+                  }),
+                );
               }
               _setError(
                 'Failed to send message: $error',
@@ -3549,7 +3576,16 @@ class ChatProvider extends ChangeNotifier {
                       reason: 'session-idle-deferred-reconcile',
                       includeStatus: false,
                       allowDuringAbortSuppression: true,
-                    ),
+                    ).catchError((
+                      Object reconcileError,
+                      StackTrace stackTrace,
+                    ) {
+                      AppLogger.warn(
+                        'Deferred idle reconcile after send stream completion failed session=$streamSessionId',
+                        error: reconcileError,
+                        stackTrace: stackTrace,
+                      );
+                    }),
                   );
                 }
                 unawaited(_persistLastSessionSnapshotBestEffort());
