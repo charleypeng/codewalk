@@ -271,7 +271,6 @@ class _CollapsibleToolChain extends StatefulWidget {
 
 class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
   late bool _expanded;
-  late bool _expandedByUser;
 
   bool _isCompactLayout(BuildContext context) {
     return MediaQuery.sizeOf(context).width < 600;
@@ -280,9 +279,6 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
   void _toggleExpanded() {
     setState(() {
       _expanded = !_expanded;
-      if (_expanded) {
-        _expandedByUser = true;
-      }
     });
   }
 
@@ -290,7 +286,6 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
   void initState() {
     super.initState();
     _expanded = false;
-    _expandedByUser = false;
   }
 
   @override
@@ -298,7 +293,7 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
     super.didUpdateWidget(oldWidget);
     final autoCollapseActivated =
         !oldWidget.autoCollapsed && widget.autoCollapsed;
-    if (autoCollapseActivated && _expanded && !_expandedByUser) {
+    if (autoCollapseActivated && _expanded) {
       setState(() {
         _expanded = false;
       });
