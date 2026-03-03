@@ -9,6 +9,7 @@ import 'package:markdown/markdown.dart' as md;
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../theme/app_shapes.dart';
+import 'message_entrance_animation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/logging/app_logger.dart';
@@ -84,6 +85,20 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   ValueChanged<ToolPart>? _lastTaskToolNavigate;
   double _lastVisualDensityVertical = 0;
   double _lastVisualDensityHorizontal = 0;
+  final Set<String> _seenPartIds = <String>{};
+  final Set<String> _newlyArrivedPartIds = <String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _seedPartAnimationBaseline(widget.message);
+  }
+
+  @override
+  void didUpdateWidget(covariant ChatMessageWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _refreshPartAnimationState(oldWidget.message, widget.message);
+  }
 
   /// Whether the current rebuild can be skipped (inputs unchanged).
   bool _canSkipRebuild() {
@@ -177,6 +192,37 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   VoidCallback? get onBackgroundLongPressEnd => widget.onBackgroundLongPressEnd;
   ValueChanged<SubtaskPart>? get onSubtaskNavigate => widget.onSubtaskNavigate;
   ValueChanged<ToolPart>? get onTaskToolNavigate => widget.onTaskToolNavigate;
+
+  void _seedPartAnimationBaseline(ChatMessage currentMessage) {
+    _seenPartIds
+      ..clear()
+      ..addAll(currentMessage.parts.map((part) => part.id));
+    _newlyArrivedPartIds.clear();
+  }
+
+  void _refreshPartAnimationState(
+    ChatMessage previousMessage,
+    ChatMessage currentMessage,
+  ) {
+    if (previousMessage.id != currentMessage.id) {
+      _seedPartAnimationBaseline(currentMessage);
+      return;
+    }
+
+    final currentPartIds = currentMessage.parts.map((part) => part.id).toSet();
+    _newlyArrivedPartIds
+      ..clear()
+      ..addAll(
+        currentPartIds.where((partId) => !_seenPartIds.contains(partId)),
+      );
+    _seenPartIds
+      ..clear()
+      ..addAll(currentPartIds);
+  }
+
+  bool _shouldAnimatePartArrival(MessagePart part) {
+    return _newlyArrivedPartIds.contains(part.id);
+  }
 
   // -- Shared utilities used by 3+ part clusters --
 

@@ -1,4 +1,5 @@
 import 'package:codewalk/domain/entities/chat_message.dart';
+import 'package:codewalk/presentation/widgets/message_entrance_animation.dart';
 import 'package:codewalk/presentation/widgets/chat_message_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +7,123 @@ import 'package:material_symbols_icons/symbols.dart';
 
 @Tags(<String>['slow'])
 void main() {
+  testWidgets('does not animate part entrances for initial history render', (
+    WidgetTester tester,
+  ) async {
+    final message = AssistantMessage(
+      id: 'msg_initial_parts',
+      sessionId: 'ses_initial_parts',
+      time: DateTime.fromMillisecondsSinceEpoch(1000),
+      parts: <MessagePart>[
+        ToolPart(
+          id: 'part_initial_tool',
+          messageId: 'msg_initial_parts',
+          sessionId: 'ses_initial_parts',
+          callId: 'call_initial_tool',
+          tool: 'bash',
+          state: ToolStateRunning(
+            input: const <String, dynamic>{'command': 'pwd'},
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+          ),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: message,
+            isSessionActivelyResponding: true,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(PartEntranceAnimation), findsNothing);
+  });
+
+  testWidgets('animates newly appended tool parts in the same message', (
+    WidgetTester tester,
+  ) async {
+    var message = AssistantMessage(
+      id: 'msg_streaming_parts',
+      sessionId: 'ses_streaming_parts',
+      time: DateTime.fromMillisecondsSinceEpoch(1000),
+      parts: <MessagePart>[
+        ToolPart(
+          id: 'part_stream_tool_1',
+          messageId: 'msg_streaming_parts',
+          sessionId: 'ses_streaming_parts',
+          callId: 'call_stream_tool_1',
+          tool: 'bash',
+          state: ToolStateRunning(
+            input: const <String, dynamic>{'command': 'ls'},
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+          ),
+        ),
+      ],
+    );
+    late StateSetter setHostState;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, setState) {
+              setHostState = setState;
+              return ChatMessageWidget(
+                message: message,
+                isSessionActivelyResponding: true,
+              );
+            },
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(PartEntranceAnimation), findsNothing);
+
+    setHostState(() {
+      message = AssistantMessage(
+        id: 'msg_streaming_parts',
+        sessionId: 'ses_streaming_parts',
+        time: DateTime.fromMillisecondsSinceEpoch(1000),
+        parts: <MessagePart>[
+          ToolPart(
+            id: 'part_stream_tool_1',
+            messageId: 'msg_streaming_parts',
+            sessionId: 'ses_streaming_parts',
+            callId: 'call_stream_tool_1',
+            tool: 'bash',
+            state: ToolStateCompleted(
+              input: const <String, dynamic>{'command': 'ls'},
+              output: 'README.md',
+              time: ToolTime(
+                start: DateTime.fromMillisecondsSinceEpoch(1000),
+                end: DateTime.fromMillisecondsSinceEpoch(1200),
+              ),
+            ),
+          ),
+          ToolPart(
+            id: 'part_stream_tool_2',
+            messageId: 'msg_streaming_parts',
+            sessionId: 'ses_streaming_parts',
+            callId: 'call_stream_tool_2',
+            tool: 'read',
+            state: ToolStateRunning(
+              input: const <String, dynamic>{'filePath': 'README.md'},
+              time: DateTime.fromMillisecondsSinceEpoch(1201),
+            ),
+          ),
+        ],
+      );
+    });
+    await tester.pump();
+
+    expect(find.byType(PartEntranceAnimation), findsOneWidget);
+  });
+
   testWidgets('hides step blocks from assistant message body', (
     WidgetTester tester,
   ) async {

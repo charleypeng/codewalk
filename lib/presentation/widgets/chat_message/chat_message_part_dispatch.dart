@@ -3,6 +3,34 @@ part of '../chat_message_widget.dart';
 /// Part dispatch: routes each [MessagePart] to its specific builder,
 /// handles safe rendering, and manages collapsible tool chains.
 extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
+  Widget _wrapWithPartEntranceIfNeeded({
+    required MessagePart part,
+    required Widget child,
+  }) {
+    if (!_shouldAnimatePartArrival(part)) {
+      return child;
+    }
+    return PartEntranceAnimation(
+      key: ValueKey<String>('part_entrance_${message.id}_${part.id}'),
+      child: child,
+    );
+  }
+
+  Widget _buildAnimatedMessagePartSafely(
+    BuildContext context,
+    MessagePart part, {
+    required String? latestReasoningPartId,
+    required String? activeReasoningPartKey,
+  }) {
+    final built = _buildMessagePartSafely(
+      context,
+      part,
+      latestReasoningPartId: latestReasoningPartId,
+      activeReasoningPartKey: activeReasoningPartKey,
+    );
+    return _wrapWithPartEntranceIfNeeded(part: part, child: built);
+  }
+
   Widget _buildMessagePart(
     BuildContext context,
     MessagePart part, {
@@ -120,7 +148,7 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
         !showToolCallBubbles) {
       return message.parts
           .map<Widget>(
-            (part) => _buildMessagePartSafely(
+            (part) => _buildAnimatedMessagePartSafely(
               context,
               part,
               latestReasoningPartId: latestReasoningPartId,
@@ -136,7 +164,7 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
     if (allToolSurfaceParts.isEmpty) {
       return message.parts
           .map<Widget>(
-            (part) => _buildMessagePartSafely(
+            (part) => _buildAnimatedMessagePartSafely(
               context,
               part,
               latestReasoningPartId: latestReasoningPartId,
@@ -147,6 +175,7 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
     }
 
     final chainStartPartId = allToolSurfaceParts.first.id;
+    final animateToolChain = allToolSurfaceParts.any(_shouldAnimatePartArrival);
     final rendered = <Widget>[];
     var insertedCollapsedToolChain = false;
     for (final part in message.parts) {
@@ -154,29 +183,37 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
         if (insertedCollapsedToolChain) {
           continue;
         }
-        rendered.add(
-          _CollapsibleToolChain(
-            key: ValueKey<String>('tool_chain_${message.id}_$chainStartPartId'),
-            messageId: message.id,
-            startPartId: chainStartPartId,
-            autoCollapsed: shouldAutoCollapseToolChains,
-            toolDescriptionLabelBuilder: _resolveToolDescriptionLabel,
-            toolTypeLabelBuilder: _resolveToolTypeLabel,
-            parts: allToolSurfaceParts,
-            partBuilder: (toolPart) => _buildMessagePart(
-              context,
-              toolPart,
-              latestReasoningPartId: latestReasoningPartId,
-              activeReasoningPartKey: activeReasoningPartKey,
-            ),
+        final chainWidget = _CollapsibleToolChain(
+          key: ValueKey<String>('tool_chain_${message.id}_$chainStartPartId'),
+          messageId: message.id,
+          startPartId: chainStartPartId,
+          autoCollapsed: shouldAutoCollapseToolChains,
+          toolDescriptionLabelBuilder: _resolveToolDescriptionLabel,
+          toolTypeLabelBuilder: _resolveToolTypeLabel,
+          parts: allToolSurfaceParts,
+          partBuilder: (toolPart) => _buildMessagePart(
+            context,
+            toolPart,
+            latestReasoningPartId: latestReasoningPartId,
+            activeReasoningPartKey: activeReasoningPartKey,
           ),
+        );
+        rendered.add(
+          animateToolChain
+              ? PartEntranceAnimation(
+                  key: ValueKey<String>(
+                    'tool_chain_entrance_${message.id}_$chainStartPartId',
+                  ),
+                  child: chainWidget,
+                )
+              : chainWidget,
         );
         insertedCollapsedToolChain = true;
         continue;
       }
 
       rendered.add(
-        _buildMessagePartSafely(
+        _buildAnimatedMessagePartSafely(
           context,
           part,
           latestReasoningPartId: latestReasoningPartId,

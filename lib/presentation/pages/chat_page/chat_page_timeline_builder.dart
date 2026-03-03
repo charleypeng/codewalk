@@ -971,7 +971,11 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                     final role = entry is _TimelineMessageEntry
                         ? entry.message.role
                         : null;
-                    return MessageEntranceAnimation(role: role, child: child);
+                    return MessageEntranceAnimation(
+                      role: role,
+                      staggerIndex: index - prevLength,
+                      child: child,
+                    );
                   }
                   return child;
                 },
