@@ -274,6 +274,26 @@
 - **When** text, code blocks, or tool calls render incrementally
 - **Then** the UI remains smooth without stuttering, freezing, or perceptible lag
 
+### New chat content enters progressively
+
+- **Given** the chat timeline receives new tail messages in the active session
+- **When** those entries are rendered
+- **Then** each new entry uses a short one-shot entrance transition with bounded stagger for clustered arrivals
+- **Then** existing history does not replay entrance animations when reopening or switching sessions
+
+### Streamed tool parts animate inside visible assistant bubbles
+
+- **Given** an assistant bubble is already visible and new tool/patch parts are appended during streaming
+- **When** those parts arrive
+- **Then** only newly appended parts use a short entrance transition inside the existing bubble
+- **Then** already-rendered parts do not restart their entrance animation on unrelated rebuilds
+
+### Reduced-motion accessibility disables entrance motion
+
+- **Given** the platform or app accessibility settings request reduced motion (`disableAnimations`)
+- **When** new messages or streamed parts are rendered
+- **Then** entrance motion is skipped and content appears immediately without slide transitions
+
 ### Tool-only busy turns keep live follow behavior
 
 - **Given** the active session is still busy/retrying during a multi-step tool turn

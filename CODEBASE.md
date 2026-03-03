@@ -311,55 +311,19 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 - **`AppShellPage` reactions**: Observes `installState` transitions; shows snackbars for downloading, done, and failed states; the startup update toast "Install" action calls `startInstall()`.
 - **`AboutSettingsSection` controls**: Renders inline progress indicators and retry/install buttons reflecting `installState`; delegates to `settings.startInstall()`.
 
-### Performance Architecture
+### Performance & Animations
 
-- **ChatProvider microtask coalescing**: `_notifyScheduled` / `_scrollScheduled` flags gate
-  `scheduleMicrotask` so that multiple state mutations within the same frame produce only one
-  `notifyListeners()` / scroll-to-bottom call.
-- **Event dedup buffer**: `_recentEventIds` (circular `Queue<String>`) in ChatProvider stores
-  recent event keys built by `_composeEventDeduplicationKey` (in `chat_provider_event_reducer_ops.dart`).
-  `_isRecentlyProcessedEvent` and `_tryApplyGlobalEventIncremental` use this buffer to skip
-  duplicates arriving on the global SSE stream.
-- **ChatProvider local message reconciliation**:
-  - `ChatProvider` generates optimistic local user IDs with a server-compatible `msg_*` format (replacing the old `local_user_*` prefix).
-  - `sendMessage` forwards `ChatInput.messageId` using this optimistic ID to ensure exact client/server message reconciliation.
-  - `_shouldSkipLocalUserAppendAsDuplicateEcho` dedupe guard (in `chat_provider_message_merge_ops.dart`) now relies on `_pendingLocalUserMessageIds` tracking membership instead of hardcoded prefix checks.
-- **Pending replacement hardening** (`chat_provider_message_state_ops.dart`):
-  `_updateOrAddMessage` handles pending-local replacement when a server user message arrives with
-  an already-present server ID, preventing local/server duplicate-ID coexistence and preserving a
-  single canonical user bubble.
-- **Realtime regression coverage** (`test/unit/providers/chat_provider_realtime_test.dart`):
-  added guard tests for active-stream refresh reconciliation and the late stream user-update path
-  to keep user-message dedup stable under snapshot/stream races.
-- **Render gate**: `_hasPendingRenderFlush` in ChatProvider suppresses `notifyListeners()` while
-  the app is in background. SSE data keeps accumulating in internal fields, but widgets do not
-  rebuild until the app returns to foreground and flushes the pending notification via
-  `setForegroundActive(true)`.
-- **Desktop window lifecycle**: `_ChatPageState` mixes in `WindowListener` (from `window_manager`)
-  to handle focus/blur/minimize/restore on desktop platforms. These events drive
-  `_applyForegroundPolicy`, which coordinates with the ChatProvider render gate and
-  `_handleReturnToChat` to pause/resume UI rebuilds and SSE refresh on window state changes.
-- **App resume reconciliation**: On `AppLifecycleState.resumed` with an active chat route,
-  `ChatPage` triggers `provider.refreshActiveSessionView(reason: 'app-lifecycle-resumed')`
-  to reconcile missed updates. `_lastResumeRefreshAt` dedupe guard skips immediate
-  reconnect-triggered refresh shortly after resume.
-- **ChatMessageWidget build-skip cache**: Converted from `StatelessWidget` to `StatefulWidget`;
-  completed messages short-circuit `build()` by returning a cached widget tree.
-  `MarkdownStyleSheet` is cached in `_cachedMarkdownStyleSheet` and invalidated only on
-  brightness change.
-- **Tool-call chain expansion persistence**: `_ChatPageState` stores expansion state in
-  `_toolChainExpandedStateByKey`, keyed by `sessionId::messageId::startPartId`.
-  `ChatMessageWidget` restores and updates this parent-managed state through
-  `resolveToolChainExpanded` and `onToolChainExpandedChanged` callbacks, preserving
-  collapsed/expanded tool-call chains when switching sessions and revisiting messages.
-- **ChatPage (_ChatPageState) derived-data caches**: The page state holds per-build caches that
-  skip recomputation when message list identity has not changed:
-  - `_cachedTimelineEntries` — timeline entry list (used by `chat_page_timeline_builder.dart`)
-  - `_cachedHighlightTheme` / `_cachedHighlightBrightness` — syntax highlight theme
-  - `_cachedContextUsage` — session context/token usage snapshot (used by `chat_page_status_presenter.dart`)
-  - `_cachedReasoningKeyResult` — reasoning effort key (used by `chat_page_timeline_runtime.dart`)
-  - `_cachedProgressStageResult` — assistant progress stage (used by `chat_page_timeline_runtime.dart`)
-  - `_cachedSentHistory` — sent message history (used by `chat_page_composer_widgets.dart`)
+- **Performance Architecture**:
+  - **ChatProvider microtask coalescing**: `_notifyScheduled` / `_scrollScheduled` flags gate `scheduleMicrotask` so that multiple state mutations within the same frame produce only one `notifyListeners()` / scroll-to-bottom call.
+  - **Event dedup buffer**: `_recentEventIds` (circular `Queue<String>`) in ChatProvider stores recent event keys built by `_composeEventDeduplicationKey`.
+  - **Render gate**: `_hasPendingRenderFlush` in ChatProvider suppresses `notifyListeners()` while the app is in background.
+  - **ChatMessageWidget build-skip cache**: Converted from `StatelessWidget` to `StatefulWidget`; completed messages short-circuit `build()` by returning a cached widget tree.
+
+- **Chat Entrance Animations**:
+  - **Staggered Message Entrance**: Tail message entrance is coordinated via `chat_page_timeline_builder.dart` and `message_entrance_animation.dart`.
+  - **In-bubble Part Entrance**: Streamed part entrance is handled in-bubble via `chat_message_widget.dart`, `chat_message_part_dispatch.dart`, and `PartEntranceAnimation`.
+  - **Animation tokens**: `AppAnimations` defines userBubble (130 ms) and assistantBubble (180 ms) motion profiles.
+  - **Regression Coverage**: `test/widget/chat_message_widget_test.dart` ensures stable animation behavior and part-dispatch logic.
 
 ### Material You Design System
 

@@ -77,7 +77,7 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 - [ ] Allow pinning sessions in the Conversations sidebar.
 - [x] Corrigir o erro ao tentar enviar mensagem após resposta do assistente (hidden response until session switch/retry): implemented async send stale-ID protection and idle final-reconcile bypass during abort suppression. - Related commits: 745c0a8 f1faf4a 4074734 5156e1f f0fda55 92656f3 6443d2e f6376f6 617380f 0bd4c8d
 - [x] Corrigir a tela principal quando não tem nenhum servidor configurado: a tela pisca rapidamente apresentando erro de conexão, mas não deveria procurar atualização se não há nenhum servidor cadastrado: skipped startup connection checks when no server exists; added no-server empty state + direct setup wizard button. - Commit hash: 6e35dff
-- [ ] Suavizar a chegada de tool calls e novas mensagens, bem como o envio de novas mensagens pelo usuário: atualmente tudo aparece de uma vez, mas com animação de deslize a experiência fica mais atraente.
+- [x] Suavizar a chegada de tool calls e novas mensagens, bem como o envio de novas mensagens pelo usuário: message/tool arrivals now animate progressively (tail stagger + in-bubble streamed part entrance, reduced-motion respected). - Related commits: 1d41261 cd6ee19
 - [x] Restrict session title update service to main sessions only: subsessions do not need and must not use the dynamic title generation system. - Commit hash: 4d9ac2e
 - [x] Fix server health inconsistency: in the hamburger menu a red status dot appears, but in Settings the same server is shown as fully healthy. - Commit hash: dbce4a8
 - [ ] Verify whether background notifications are working correctly on Android.
