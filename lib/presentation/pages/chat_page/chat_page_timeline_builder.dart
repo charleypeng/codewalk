@@ -273,7 +273,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
 
   Widget _buildSubConversationReturnButton(ChatProvider chatProvider) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+      padding: const EdgeInsets.all(8),
       child: SizedBox(
         width: double.infinity,
         child: FilledButton.icon(
@@ -311,7 +311,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     final visited = <String>{};
     while (true) {
       if (!visited.add(cursor.id)) {
-        return cursor;
+        return null;
       }
       final parentId = cursor.parentId?.trim();
       if (parentId == null || parentId.isEmpty) {
@@ -333,7 +333,14 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     if (target == null) {
       final sessionId = chatProvider.currentSession?.id;
       if (sessionId != null && sessionId.isNotEmpty) {
-        await chatProvider.loadSessionInsights(sessionId, silent: true);
+        try {
+          await chatProvider.loadSessionInsights(sessionId, silent: true);
+        } catch (_) {
+          _showSubConversationNotice(
+            'Failed to refresh sub-conversations. Please try again.',
+          );
+          return;
+        }
       }
       target = _resolveSubConversationForPart(chatProvider, part);
     }
@@ -381,6 +388,9 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     }
 
     final partSessionId = part.sessionId.trim();
+    // Server payloads are not guaranteed to map subtask.sessionId to a child
+    // conversation ID. Prefer exact session-id match when available and fall
+    // back to deterministic ordering only when direct mapping is unavailable.
     if (partSessionId.isNotEmpty && partSessionId != currentSessionId) {
       for (final session in candidates) {
         if (session.id == partSessionId) {
