@@ -61,7 +61,8 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     if (_autoFollowToLatest &&
         !_isProgrammaticScrollInFlight &&
         !_suppressPostCompletionAutoSnap &&
-        contentShrank) {
+        contentShrank &&
+        _isNearBottom()) {
       final gap = _distanceToBottom();
       if (gap > _ChatPageState._scrollToBottomEpsilon) {
         _scrollController.jumpTo(currentMax);

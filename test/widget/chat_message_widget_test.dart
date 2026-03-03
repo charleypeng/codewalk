@@ -1306,6 +1306,101 @@ void main() {
     },
   );
 
+  testWidgets('keeps completed tool chain expanded after parent rebuild', (
+    WidgetTester tester,
+  ) async {
+    final message = AssistantMessage(
+      id: 'msg_tool_chain_rebuild',
+      sessionId: 'ses_tool_chain_rebuild',
+      time: DateTime.fromMillisecondsSinceEpoch(1000),
+      completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+      parts: <MessagePart>[
+        ToolPart(
+          id: 'part_tool_chain_rebuild_1',
+          messageId: 'msg_tool_chain_rebuild',
+          sessionId: 'ses_tool_chain_rebuild',
+          callId: 'call_tool_chain_rebuild_1',
+          tool: 'bash',
+          state: ToolStateCompleted(
+            input: const <String, dynamic>{'command': 'pwd'},
+            output: '/tmp/project',
+            time: ToolTime(
+              start: DateTime.fromMillisecondsSinceEpoch(1000),
+              end: DateTime.fromMillisecondsSinceEpoch(1050),
+            ),
+          ),
+        ),
+        ToolPart(
+          id: 'part_tool_chain_rebuild_2',
+          messageId: 'msg_tool_chain_rebuild',
+          sessionId: 'ses_tool_chain_rebuild',
+          callId: 'call_tool_chain_rebuild_2',
+          tool: 'read',
+          state: ToolStateCompleted(
+            input: const <String, dynamic>{'filePath': 'README.md'},
+            output: 'Intro',
+            time: ToolTime(
+              start: DateTime.fromMillisecondsSinceEpoch(1060),
+              end: DateTime.fromMillisecondsSinceEpoch(1100),
+            ),
+          ),
+        ),
+      ],
+    );
+
+    Widget buildWidget() {
+      return MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: message,
+            isSessionActivelyResponding: false,
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(buildWidget());
+
+    expect(
+      find.byKey(
+        const ValueKey<String>(
+          'tool_part_details_button_part_tool_chain_rebuild_1',
+        ),
+      ),
+      findsNothing,
+    );
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>(
+          'tool_chain_toggle_msg_tool_chain_rebuild_part_tool_chain_rebuild_1',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(
+        const ValueKey<String>(
+          'tool_part_details_button_part_tool_chain_rebuild_1',
+        ),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.pumpWidget(buildWidget());
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(
+        const ValueKey<String>(
+          'tool_part_details_button_part_tool_chain_rebuild_1',
+        ),
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('uses input description while tool is running', (
     WidgetTester tester,
   ) async {
