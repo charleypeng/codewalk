@@ -59,7 +59,24 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              if (isTaskTool && onNavigateToSubConversation != null) ...[
+                TextButton(
+                  key: ValueKey<String>('task_tool_open_session_${part.id}'),
+                  onPressed: onNavigateToSubConversation,
+                  style: TextButton.styleFrom(
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                  ),
+                  child: const Text('View'),
+                ),
+                const SizedBox(width: 6),
+              ],
+              const SizedBox(width: 6),
               _buildToolStatusChip(
                 context,
                 part.state.status,
@@ -68,18 +85,6 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
             ],
           ),
           const SizedBox(height: 8),
-          if (isTaskTool && onNavigateToSubConversation != null) ...[
-            Align(
-              alignment: Alignment.centerLeft,
-              child: FilledButton.tonalIcon(
-                key: ValueKey<String>('task_tool_open_session_${part.id}'),
-                onPressed: onNavigateToSubConversation,
-                icon: const Icon(Symbols.open_in_new_rounded, size: 16),
-                label: const Text('Open sub-conversation'),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
           _ToolPartDetailsToggle(
             key: ValueKey<String>('tool_part_details_toggle_${part.id}'),
             partId: part.id,

@@ -108,26 +108,60 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
     final model = part.model == null
         ? ''
         : ' • ${part.model!.providerId}/${part.model!.modelId}';
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildInfoContainer(
-          context,
-          icon: Symbols.task,
-          title: 'Subtask (${part.agent})',
-          subtitle: '${part.description}$model',
-        ),
-        if (onNavigate != null)
-          Padding(
-            padding: const EdgeInsets.only(left: 12, top: 4, bottom: 6),
-            child: FilledButton.tonalIcon(
-              key: ValueKey<String>('subtask_open_session_${part.id}'),
-              onPressed: onNavigate,
-              icon: const Icon(Symbols.open_in_new_rounded, size: 16),
-              label: const Text('Open sub-conversation'),
+    if (onNavigate == null) {
+      return _buildInfoContainer(
+        context,
+        icon: Symbols.task,
+        title: 'Subtask (${part.agent})',
+        subtitle: '${part.description}$model',
+      );
+    }
+
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: AppShapes.borderSmall,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Symbols.task, size: 16, color: colorScheme.primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Subtask (${part.agent})',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${part.description}$model',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
             ),
           ),
-      ],
+          const SizedBox(width: 8),
+          TextButton(
+            key: ValueKey<String>('subtask_open_session_${part.id}'),
+            onPressed: onNavigate,
+            style: TextButton.styleFrom(
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            ),
+            child: const Text('View'),
+          ),
+        ],
+      ),
     );
   }
 
