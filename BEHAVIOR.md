@@ -243,6 +243,23 @@
 - **Then** the user can manually re-expand any collapsed work group by tapping its Details toggle
 - **Then** once a completed turn has settled, transient realtime status pulses do not auto re-open or rapidly re-collapse that same work group
 
+### Sub-conversation threads are view-only
+
+- **Given** the user opens a child thread from a subtask/task bubble in the main conversation
+- **When** the child thread is active (`parentId` is set)
+- **Then** composer input is replaced by a full-width `Return to main conversation` action
+- **Then** message send/audio controls and agent/model/effort selectors are not interactive in the child thread
+- **Then** the locked model chip reflects the child-thread metadata (not the parent selection)
+- **Then** the effort chip is shown only when an explicit child-thread variant is known
+
+### Sub-conversation navigation is deterministic
+
+- **Given** assistant output contains a `SubtaskPart` or `task` tool bubble in the main conversation
+- **When** the user taps `Open sub-conversation`
+- **Then** navigation prefers explicit child-session IDs from the part payload
+- **Then** if explicit IDs are unavailable, fallback mapping uses anchor order for the same part type (`SubtaskPart`→subtask anchors, `task` tool→task anchors) against child sessions sorted by creation time
+- **Then** if no mapping can be resolved, the app keeps the current session and shows non-blocking feedback
+
 ### Compact mobile collapsed copy is concise
 
 - **Given** the app is rendered on a compact viewport (mobile width)

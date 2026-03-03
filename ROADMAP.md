@@ -71,7 +71,7 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 - [x] Investigate and fix chat flicker and intermittent blank history on conversation open/update: stabilized tool-call rendering, fixed empty-session blink, and improved revalidation stability. - Related commits: 26c8448 9351919 4074734
 - [x] Load older history on top reach: implemented top-scroll trigger to fetch previous message batches. - Commit hash: 8b364fd
 - [x] After returning from background, position the conversation at the start of the most recent message (top of text) instead of at the end. - Related commits: 440c7d9 59584d4
-- [ ] Quando a tool call bubble for do tipo task, oferecer botão para pular para a subconversa, e na subconversa, mostrar um botão para retornar para a conversa principal
+- [x] Quando a tool call bubble for do tipo task, oferecer botão para pular para a subconversa, e na subconversa, mostrar um botão para retornar para a conversa principal: implemented open-subconversation actions on `SubtaskPart` + `task` bubbles, read-only child thread with return CTA, and deterministic child-session resolution fallback hardened for mixed/reordered anchors. - Related commits: 900f3f6 37d9e3e b86256f 9a15889 2d5438a
 - [ ] In composer, adjust ArrowUp/ArrowDown without modifiers for multiline behavior before history navigation; with modifiers keep default editor behavior.
 - [x] Plan the merge between the project selector and the conversations sidebar, grouping conversations by open projects to speed up navigation. - Commit hash: d9e5ec4
 - [ ] Allow pinning sessions in the Conversations sidebar.
