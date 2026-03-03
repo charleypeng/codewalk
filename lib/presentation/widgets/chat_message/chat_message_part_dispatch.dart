@@ -280,7 +280,9 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
   void _toggleExpanded() {
     setState(() {
       _expanded = !_expanded;
-      _expandedByUser = _expanded;
+      if (_expanded) {
+        _expandedByUser = true;
+      }
     });
   }
 
