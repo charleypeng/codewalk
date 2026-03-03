@@ -3428,6 +3428,23 @@ void main() {
             ),
           ],
         ),
+        AssistantMessage(
+          id: 'msg_child_assistant',
+          sessionId: 'ses_child_subtask_nav',
+          time: DateTime.fromMillisecondsSinceEpoch(1350),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1360),
+          providerId: 'provider_1',
+          modelId: 'model_1',
+          mode: 'reviewer',
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_child_assistant',
+              messageId: 'msg_child_assistant',
+              sessionId: 'ses_child_subtask_nav',
+              text: 'Child assistant output',
+            ),
+          ],
+        ),
       ];
       repository.sessionChildrenById[rootSession.id] = <ChatSession>[
         childSession,
@@ -3438,7 +3455,33 @@ void main() {
       final provider = _buildChatProvider(
         chatRepository: repository,
         localDataSource: localDataSource,
-        includeVariants: true,
+        providersResponse: ProvidersResponse(
+          providers: <Provider>[
+            Provider(
+              id: 'provider_1',
+              name: 'Provider 1',
+              env: const <String>[],
+              models: <String, Model>{
+                'model_1': _model(
+                  'model_1',
+                  variants: const <String, ModelVariant>{
+                    'low': ModelVariant(id: 'low', name: 'Low'),
+                    'high': ModelVariant(id: 'high', name: 'High'),
+                  },
+                ),
+                'model_2': _model(
+                  'model_2',
+                  variants: const <String, ModelVariant>{
+                    'low': ModelVariant(id: 'low', name: 'Low'),
+                    'high': ModelVariant(id: 'high', name: 'High'),
+                  },
+                ),
+              },
+            ),
+          ],
+          defaultModels: const <String, String>{'provider_1': 'model_1'},
+          connected: const <String>['provider_1'],
+        ),
       );
       final appProvider = _buildAppProvider(localDataSource: localDataSource);
 
@@ -3446,9 +3489,18 @@ void main() {
       await tester.pumpAndSettle();
 
       await provider.loadSessions();
+      await provider.initializeProviders();
       await provider.selectSession(rootSession);
+      await provider.setSelectedModelByProvider(
+        providerId: 'provider_1',
+        modelId: 'model_2',
+      );
+      await provider.setSelectedVariant('high');
       await provider.loadSessionInsights(rootSession.id, silent: true);
       await tester.pumpAndSettle();
+
+      expect(find.text('model_2'), findsOneWidget);
+      expect(find.text('High'), findsOneWidget);
 
       expect(
         find.byKey(
@@ -3487,6 +3539,8 @@ void main() {
         find.byKey(const ValueKey<String>('variant_selector_button_readonly')),
         findsOneWidget,
       );
+      expect(find.text('model_1'), findsOneWidget);
+      expect(find.text('Auto (server)'), findsOneWidget);
 
       await tester.tap(
         find.byKey(const ValueKey<String>('model_selector_button_readonly')),
@@ -3508,6 +3562,115 @@ void main() {
       );
       expect(
         find.byKey(const ValueKey<String>('agent_selector_button')),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'task tool bubble opens matching sub-conversation from parent session',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final rootSession = ChatSession(
+        id: 'ses_root_task_tool_nav',
+        workspaceId: 'default',
+        time: DateTime.fromMillisecondsSinceEpoch(1000),
+        title: 'Root Session',
+      );
+      final childSession = ChatSession(
+        id: 'ses_child_task_tool_nav',
+        workspaceId: 'default',
+        time: DateTime.fromMillisecondsSinceEpoch(1100),
+        title: 'Child Session',
+        parentId: rootSession.id,
+      );
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[rootSession, childSession],
+      );
+      repository.messagesBySession[rootSession.id] = <ChatMessage>[
+        AssistantMessage(
+          id: 'msg_root_task_tool',
+          sessionId: rootSession.id,
+          time: DateTime.fromMillisecondsSinceEpoch(1200),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1210),
+          parts: <MessagePart>[
+            ToolPart(
+              id: 'part_root_task_tool',
+              messageId: 'msg_root_task_tool',
+              sessionId: rootSession.id,
+              callId: 'call_root_task_tool',
+              tool: 'task',
+              state: ToolStateCompleted(
+                input: const <String, dynamic>{
+                  'childSessionID': 'ses_child_task_tool_nav',
+                },
+                output: 'created',
+                time: ToolTime(
+                  start: DateTime.fromMillisecondsSinceEpoch(1200),
+                  end: DateTime.fromMillisecondsSinceEpoch(1205),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ];
+      repository.messagesBySession[childSession.id] = <ChatMessage>[
+        UserMessage(
+          id: 'msg_child_task_tool',
+          sessionId: childSession.id,
+          time: DateTime.fromMillisecondsSinceEpoch(1300),
+          parts: <MessagePart>[
+            TextPart(
+              id: 'part_child_task_tool',
+              messageId: 'msg_child_task_tool',
+              sessionId: childSession.id,
+              text: 'Child thread',
+            ),
+          ],
+        ),
+      ];
+      repository.sessionChildrenById[rootSession.id] = <ChatSession>[
+        childSession,
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(rootSession);
+      await provider.loadSessionInsights(rootSession.id, silent: true);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('task_tool_open_session_part_root_task_tool'),
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>('task_tool_open_session_part_root_task_tool'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(provider.currentSession?.id, childSession.id);
+      expect(
+        find.byKey(
+          const ValueKey<String>('subconversation_return_main_button'),
+        ),
         findsOneWidget,
       );
     },

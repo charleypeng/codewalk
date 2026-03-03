@@ -8,6 +8,16 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final selectedModel = chatProvider.selectedModel;
+    final lockedSubConversationSelection = isSubConversation
+        ? _resolveLockedSubConversationSelection(chatProvider)
+        : null;
+    final selectedModelLabel =
+        lockedSubConversationSelection?.modelLabel ??
+        selectedModel?.name ??
+        'Select model';
+    final selectedVariantLabel =
+        lockedSubConversationSelection?.variantLabel ??
+        chatProvider.selectedVariantLabel;
     final selectedAgent = chatProvider.selectedAgentName;
     final selectableAgents = chatProvider.selectableAgents;
     final selectedAgentEntry = _selectedAgentEntry(chatProvider);
@@ -69,7 +79,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                   : const ValueKey<String>('model_selector_button'),
               side: BorderSide.none,
               shape: const StadiumBorder(),
-              label: Text(selectedModel?.name ?? 'Select model'),
+              label: Text(selectedModelLabel),
               onPressed: isSubConversation || chatProvider.providers.isEmpty
                   ? null
                   : () => unawaited(_openModelSelector(chatProvider)),
@@ -104,7 +114,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                     unawaited(chatProvider.retryProvidersRefresh()),
               ),
             ),
-          if (variants.isNotEmpty)
+          if (isSubConversation || variants.isNotEmpty)
             Tooltip(
               message: isSubConversation
                   ? 'Effort locked in sub-conversation'
@@ -118,7 +128,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                       : const ValueKey<String>('variant_selector_button'),
                   side: BorderSide.none,
                   shape: const StadiumBorder(),
-                  label: Text(chatProvider.selectedVariantLabel),
+                  label: Text(selectedVariantLabel),
                   onPressed: isSubConversation
                       ? null
                       : () => unawaited(
@@ -144,6 +154,253 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
         ],
       ),
     );
+  }
+
+  _LockedSubConversationSelection _resolveLockedSubConversationSelection(
+    ChatProvider chatProvider,
+  ) {
+    final modelHint = _resolveSubConversationModelHint(chatProvider);
+    final model = modelHint == null
+        ? null
+        : _resolveModelByProviderAndId(
+            chatProvider,
+            providerId: modelHint.providerId,
+            modelId: modelHint.modelId,
+          );
+    final modelLabel =
+        model?.name ??
+        (modelHint == null
+            ? 'Server-selected model'
+            : '${modelHint.providerId}/${modelHint.modelId}');
+
+    final variantHint = _resolveSubConversationVariantHint(chatProvider);
+    final normalizedVariantHint = variantHint?.trim();
+    final variantLabel =
+        (normalizedVariantHint == null || normalizedVariantHint.isEmpty)
+        ? 'Auto (server)'
+        : model?.variants[normalizedVariantHint]?.name ?? normalizedVariantHint;
+
+    return _LockedSubConversationSelection(
+      modelLabel: modelLabel,
+      variantLabel: variantLabel,
+    );
+  }
+
+  _SubConversationModelHint? _resolveSubConversationModelHint(
+    ChatProvider chatProvider,
+  ) {
+    for (final message in chatProvider.messages.reversed) {
+      if (message is AssistantMessage) {
+        final providerId = message.providerId?.trim();
+        final modelId = message.modelId?.trim();
+        if (providerId != null &&
+            providerId.isNotEmpty &&
+            modelId != null &&
+            modelId.isNotEmpty) {
+          return _SubConversationModelHint(
+            providerId: providerId,
+            modelId: modelId,
+          );
+        }
+      }
+      for (final part in message.parts.reversed) {
+        if (part is SubtaskPart && part.model != null) {
+          final providerId = part.model!.providerId.trim();
+          final modelId = part.model!.modelId.trim();
+          if (providerId.isNotEmpty && modelId.isNotEmpty) {
+            return _SubConversationModelHint(
+              providerId: providerId,
+              modelId: modelId,
+            );
+          }
+        }
+        if (part is ToolPart) {
+          final hint = _extractModelHintFromToolPart(part);
+          if (hint != null) {
+            return hint;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  Model? _resolveModelByProviderAndId(
+    ChatProvider chatProvider, {
+    required String providerId,
+    required String modelId,
+  }) {
+    for (final provider in chatProvider.providers) {
+      if (provider.id == providerId) {
+        return provider.models[modelId];
+      }
+    }
+    return null;
+  }
+
+  _SubConversationModelHint? _extractModelHintFromToolPart(ToolPart part) {
+    final maps = _toolStateDataMaps(part);
+    for (final data in maps) {
+      final modelRaw = data['model'];
+      if (modelRaw is Map) {
+        final modelMap = modelRaw.map(
+          (key, value) => MapEntry(key.toString(), value),
+        );
+        final providerId = _firstMapString(modelMap, const <String>[
+          'providerID',
+          'providerId',
+          'provider',
+        ]);
+        final modelId = _firstMapString(modelMap, const <String>[
+          'modelID',
+          'modelId',
+          'id',
+        ]);
+        if (providerId != null &&
+            providerId.isNotEmpty &&
+            modelId != null &&
+            modelId.isNotEmpty) {
+          return _SubConversationModelHint(
+            providerId: providerId,
+            modelId: modelId,
+          );
+        }
+      }
+
+      final providerId = _findStringByKeyCandidates(data, const <String>[
+        'providerID',
+        'providerId',
+        'provider',
+      ]);
+      final modelId = _findStringByKeyCandidates(data, const <String>[
+        'modelID',
+        'modelId',
+      ]);
+      if (providerId != null &&
+          providerId.isNotEmpty &&
+          modelId != null &&
+          modelId.isNotEmpty) {
+        return _SubConversationModelHint(
+          providerId: providerId,
+          modelId: modelId,
+        );
+      }
+    }
+    return null;
+  }
+
+  String? _resolveSubConversationVariantHint(ChatProvider chatProvider) {
+    for (final message in chatProvider.messages.reversed) {
+      for (final part in message.parts.reversed) {
+        if (part is! ToolPart) {
+          continue;
+        }
+        final maps = _toolStateDataMaps(part);
+        for (final data in maps) {
+          final variant = _findStringByKeyCandidates(data, const <String>[
+            'variant',
+            'variantID',
+            'variantId',
+            'effort',
+          ]);
+          if (variant != null && variant.isNotEmpty) {
+            return variant;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  List<Map<String, dynamic>> _toolStateDataMaps(ToolPart part) {
+    switch (part.state.status) {
+      case ToolStatus.running:
+        final state = part.state as ToolStateRunning;
+        return <Map<String, dynamic>>[
+          state.input,
+          if (state.metadata != null) state.metadata!,
+        ];
+      case ToolStatus.completed:
+        final state = part.state as ToolStateCompleted;
+        return <Map<String, dynamic>>[
+          state.input,
+          if (state.metadata != null) state.metadata!,
+        ];
+      case ToolStatus.error:
+        final state = part.state as ToolStateError;
+        return <Map<String, dynamic>>[
+          state.input,
+          if (state.metadata != null) state.metadata!,
+        ];
+      case ToolStatus.pending:
+        return const <Map<String, dynamic>>[];
+    }
+  }
+
+  String? _firstMapString(Map<String, dynamic> map, List<String> keys) {
+    for (final key in keys) {
+      final raw = map[key];
+      if (raw is String && raw.trim().isNotEmpty) {
+        return raw.trim();
+      }
+    }
+    return null;
+  }
+
+  String? _findStringByKeyCandidates(
+    Map<String, dynamic> data,
+    List<String> keys,
+  ) {
+    String? resolved;
+    final normalizedCandidates = keys
+        .map(
+          (key) =>
+              key.trim().toLowerCase().replaceAll('_', '').replaceAll('-', ''),
+        )
+        .toSet();
+
+    void visit(dynamic value, {String? key}) {
+      if (resolved != null || value == null) {
+        return;
+      }
+      if (value is String) {
+        if (key == null) {
+          return;
+        }
+        final normalizedKey = key
+            .trim()
+            .toLowerCase()
+            .replaceAll('_', '')
+            .replaceAll('-', '');
+        if (normalizedCandidates.contains(normalizedKey)) {
+          final trimmed = value.trim();
+          if (trimmed.isNotEmpty) {
+            resolved = trimmed;
+          }
+        }
+        return;
+      }
+      if (value is Map) {
+        for (final entry in value.entries) {
+          visit(entry.value, key: entry.key.toString());
+          if (resolved != null) {
+            return;
+          }
+        }
+        return;
+      }
+      if (value is Iterable) {
+        for (final item in value) {
+          visit(item, key: key);
+          if (resolved != null) {
+            return;
+          }
+        }
+      }
+    }
+
+    visit(data);
+    return resolved;
   }
 
   Agent? _selectedAgentEntry(ChatProvider chatProvider) {
@@ -1067,4 +1324,24 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
       ),
     ];
   }
+}
+
+class _LockedSubConversationSelection {
+  const _LockedSubConversationSelection({
+    required this.modelLabel,
+    required this.variantLabel,
+  });
+
+  final String modelLabel;
+  final String variantLabel;
+}
+
+class _SubConversationModelHint {
+  const _SubConversationModelHint({
+    required this.providerId,
+    required this.modelId,
+  });
+
+  final String providerId;
+  final String modelId;
 }

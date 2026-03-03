@@ -18,10 +18,17 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
         if (!showToolCallBubbles) {
           return const SizedBox.shrink();
         }
-        if (_isTodoToolPart(part as ToolPart)) {
+        final toolPart = part as ToolPart;
+        if (_isTodoToolPart(toolPart)) {
           return const SizedBox.shrink();
         }
-        return _buildToolPart(context, part);
+        return _buildToolPart(
+          context,
+          toolPart,
+          onNavigateToSubConversation: onTaskToolNavigate == null
+              ? null
+              : () => onTaskToolNavigate!(toolPart),
+        );
       case PartType.agent:
         return _buildAgentPart(context, part as AgentPart);
       case PartType.reasoning:
@@ -185,12 +192,19 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
     if (part.type == PartType.tool && _isTodoToolPart(part as ToolPart)) {
       return false;
     }
+    if (part.type == PartType.tool && _isTaskToolPart(part as ToolPart)) {
+      return false;
+    }
     return part.type == PartType.tool || part.type == PartType.patch;
   }
 
   bool _isTodoToolPart(ToolPart part) {
     final normalized = _normalizeToolName(part.tool);
     return normalized == 'todowrite' || normalized == 'todoread';
+  }
+
+  bool _isTaskToolPart(ToolPart part) {
+    return _normalizeToolName(part.tool) == 'task';
   }
 }
 

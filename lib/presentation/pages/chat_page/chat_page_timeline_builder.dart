@@ -325,11 +325,33 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     }
   }
 
-  Future<void> _openSubConversationFromPart(
+  Future<void> _openSubConversationFromSubtaskPart(
     ChatProvider chatProvider,
     SubtaskPart part,
   ) async {
-    var target = _resolveSubConversationForPart(chatProvider, part);
+    await _openSubConversationByResolver(
+      chatProvider,
+      resolveTarget: () =>
+          _resolveSubConversationForSubtaskPart(chatProvider, part),
+    );
+  }
+
+  Future<void> _openSubConversationFromTaskToolPart(
+    ChatProvider chatProvider,
+    ToolPart part,
+  ) async {
+    await _openSubConversationByResolver(
+      chatProvider,
+      resolveTarget: () =>
+          _resolveSubConversationForTaskToolPart(chatProvider, part),
+    );
+  }
+
+  Future<void> _openSubConversationByResolver(
+    ChatProvider chatProvider, {
+    required ChatSession? Function() resolveTarget,
+  }) async {
+    var target = resolveTarget();
     if (target == null) {
       final sessionId = chatProvider.currentSession?.id;
       if (sessionId != null && sessionId.isNotEmpty) {
@@ -337,7 +359,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           await chatProvider.loadSessionInsights(sessionId, silent: true);
         } on Exception catch (error, stackTrace) {
           AppLogger.warn(
-            'Failed to refresh sub-conversations while opening subtask',
+            'Failed to refresh sub-conversations while opening task',
             error: error,
             stackTrace: stackTrace,
           );
@@ -347,7 +369,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           return;
         }
       }
-      target = _resolveSubConversationForPart(chatProvider, part);
+      target = resolveTarget();
     }
 
     if (target == null) {
@@ -360,7 +382,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     await _handleSessionSwitch(target);
   }
 
-  ChatSession? _resolveSubConversationForPart(
+  ChatSession? _resolveSubConversationForSubtaskPart(
     ChatProvider chatProvider,
     SubtaskPart part,
   ) {
@@ -368,9 +390,51 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     if (currentSessionId == null || currentSessionId.isEmpty) {
       return null;
     }
+    final candidates = _collectChildSessionCandidates(
+      chatProvider,
+      currentSessionId: currentSessionId,
+    );
+    if (candidates.isEmpty) {
+      return null;
+    }
+    return _resolveSubConversationFromCandidatesByPartOrder(
+      chatProvider,
+      candidates: candidates,
+      targetPartId: part.id,
+      explicitSessionIds: <String>[part.sessionId],
+    );
+  }
 
+  ChatSession? _resolveSubConversationForTaskToolPart(
+    ChatProvider chatProvider,
+    ToolPart part,
+  ) {
+    final currentSessionId = chatProvider.currentSession?.id;
+    if (currentSessionId == null || currentSessionId.isEmpty) {
+      return null;
+    }
+    final candidates = _collectChildSessionCandidates(
+      chatProvider,
+      currentSessionId: currentSessionId,
+    );
+    if (candidates.isEmpty) {
+      return null;
+    }
+    return _resolveSubConversationFromCandidatesByPartOrder(
+      chatProvider,
+      candidates: candidates,
+      targetPartId: part.id,
+      explicitSessionIds: _extractChildSessionIdsFromTaskToolPart(part),
+    );
+  }
+
+  List<ChatSession> _collectChildSessionCandidates(
+    ChatProvider chatProvider, {
+    required String currentSessionId,
+  }) {
     final candidates = <ChatSession>[];
     final seenIds = <String>{};
+
     void addCandidate(ChatSession session) {
       if (!seenIds.add(session.id)) {
         return;
@@ -387,53 +451,153 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
         addCandidate(session);
       }
     }
+    return candidates;
+  }
 
-    if (candidates.isEmpty) {
-      return null;
-    }
+  ChatSession? _resolveSubConversationFromCandidatesByPartOrder(
+    ChatProvider chatProvider, {
+    required List<ChatSession> candidates,
+    required String targetPartId,
+    required Iterable<String> explicitSessionIds,
+  }) {
+    final sortedCandidates = List<ChatSession>.from(candidates)
+      ..sort((a, b) => a.time.compareTo(b.time));
 
-    final partSessionId = part.sessionId.trim();
-    // Server payloads are not guaranteed to map subtask.sessionId to a child
-    // conversation ID. Prefer exact session-id match when available and fall
-    // back to deterministic ordering only when direct mapping is unavailable.
-    if (partSessionId.isNotEmpty && partSessionId != currentSessionId) {
-      for (final session in candidates) {
-        if (session.id == partSessionId) {
+    for (final sessionId in explicitSessionIds) {
+      final normalizedSessionId = sessionId.trim();
+      if (normalizedSessionId.isEmpty) {
+        continue;
+      }
+      for (final session in sortedCandidates) {
+        if (session.id == normalizedSessionId) {
           return session;
         }
       }
     }
 
-    candidates.sort((a, b) => a.time.compareTo(b.time));
-    if (candidates.length == 1) {
-      return candidates.first;
+    if (sortedCandidates.length == 1) {
+      return sortedCandidates.first;
     }
 
-    var subtaskIndex = 0;
-    int? selectedSubtaskIndex;
+    var taskIndex = 0;
+    int? selectedTaskIndex;
     for (final message in chatProvider.messages) {
       for (final messagePart in message.parts) {
-        if (messagePart is! SubtaskPart) {
+        if (!_isSubConversationAnchorPart(messagePart)) {
           continue;
         }
-        if (messagePart.id == part.id) {
-          selectedSubtaskIndex = subtaskIndex;
+        if (messagePart.id == targetPartId) {
+          selectedTaskIndex = taskIndex;
           break;
         }
-        subtaskIndex += 1;
+        taskIndex += 1;
       }
-      if (selectedSubtaskIndex != null) {
+      if (selectedTaskIndex != null) {
         break;
       }
     }
 
-    if (selectedSubtaskIndex != null &&
-        selectedSubtaskIndex >= 0 &&
-        selectedSubtaskIndex < candidates.length) {
-      return candidates[selectedSubtaskIndex];
+    if (selectedTaskIndex != null &&
+        selectedTaskIndex >= 0 &&
+        selectedTaskIndex < sortedCandidates.length) {
+      return sortedCandidates[selectedTaskIndex];
     }
 
-    return candidates.last;
+    return sortedCandidates.last;
+  }
+
+  bool _isSubConversationAnchorPart(MessagePart part) {
+    if (part is SubtaskPart) {
+      return true;
+    }
+    if (part is ToolPart) {
+      return _normalizeToolNameForSubConversation(part.tool) == 'task';
+    }
+    return false;
+  }
+
+  String _normalizeToolNameForSubConversation(String rawToolName) {
+    final normalized = rawToolName.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return 'tool';
+    }
+    final separatorIndex = normalized.lastIndexOf('.');
+    final compactName = separatorIndex >= 0
+        ? normalized.substring(separatorIndex + 1)
+        : normalized;
+    return compactName.replaceAll('-', '_');
+  }
+
+  List<String> _extractChildSessionIdsFromTaskToolPart(ToolPart part) {
+    final ids = <String>[];
+    final seen = <String>{};
+
+    bool shouldCaptureKey(String key) {
+      final normalized = key
+          .trim()
+          .toLowerCase()
+          .replaceAll('_', '')
+          .replaceAll('-', '');
+      const candidateKeys = <String>{
+        'childsessionid',
+        'childsession',
+        'subsessionid',
+        'subsession',
+        'subconversationid',
+        'subconversation',
+        'sessionid',
+      };
+      return candidateKeys.contains(normalized);
+    }
+
+    void visit(dynamic value, {String? key}) {
+      if (value == null) {
+        return;
+      }
+      if (value is String) {
+        if (key != null && shouldCaptureKey(key)) {
+          final normalized = value.trim();
+          if (normalized.isNotEmpty && seen.add(normalized)) {
+            ids.add(normalized);
+          }
+        }
+        return;
+      }
+      if (value is Map) {
+        for (final entry in value.entries) {
+          final entryKey = entry.key.toString();
+          visit(entry.value, key: entryKey);
+        }
+        return;
+      }
+      if (value is Iterable) {
+        for (final item in value) {
+          visit(item, key: key);
+        }
+      }
+    }
+
+    switch (part.state.status) {
+      case ToolStatus.running:
+        final state = part.state as ToolStateRunning;
+        visit(state.input);
+        visit(state.metadata);
+        break;
+      case ToolStatus.completed:
+        final state = part.state as ToolStateCompleted;
+        visit(state.input);
+        visit(state.metadata);
+        break;
+      case ToolStatus.error:
+        final state = part.state as ToolStateError;
+        visit(state.input);
+        visit(state.metadata);
+        break;
+      case ToolStatus.pending:
+        break;
+    }
+
+    return ids;
   }
 
   void _showSubConversationNotice(String message) {
@@ -770,7 +934,18 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                       onSubtaskNavigate: isSubConversation
                           ? null
                           : (part) => unawaited(
-                              _openSubConversationFromPart(chatProvider, part),
+                              _openSubConversationFromSubtaskPart(
+                                chatProvider,
+                                part,
+                              ),
+                            ),
+                      onTaskToolNavigate: isSubConversation
+                          ? null
+                          : (part) => unawaited(
+                              _openSubConversationFromTaskToolPart(
+                                chatProvider,
+                                part,
+                              ),
                             ),
                     );
                     if (finalAssistantRevealMessageId == message.id ||

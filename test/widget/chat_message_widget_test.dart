@@ -2855,4 +2855,54 @@ index abc123..def456 100644
 
     expect(tappedSubtask?.id, 'part_subtask_nav');
   });
+
+  testWidgets('renders task tool navigation action when callback is provided', (
+    WidgetTester tester,
+  ) async {
+    ToolPart? tappedToolPart;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: AssistantMessage(
+              id: 'msg_task_tool_nav',
+              sessionId: 'ses_task_tool_nav',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: <MessagePart>[
+                ToolPart(
+                  id: 'part_task_tool_nav',
+                  messageId: 'msg_task_tool_nav',
+                  sessionId: 'ses_task_tool_nav',
+                  callId: 'call_task_tool_nav',
+                  tool: 'task',
+                  state: ToolStateCompleted(
+                    input: const <String, dynamic>{
+                      'description': 'Open generated child conversation',
+                    },
+                    output: 'done',
+                    time: ToolTime(
+                      start: DateTime.fromMillisecondsSinceEpoch(1000),
+                      end: DateTime.fromMillisecondsSinceEpoch(1010),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            onTaskToolNavigate: (part) {
+              tappedToolPart = part;
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('task_tool_open_session_part_task_tool_nav'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tappedToolPart?.id, 'part_task_tool_nav');
+  });
 }

@@ -3,12 +3,17 @@ part of '../chat_message_widget.dart';
 /// Tool part rendering: status chip, details toggle, command/output sections,
 /// and diff visualization.
 extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
-  Widget _buildToolPart(BuildContext context, ToolPart part) {
+  Widget _buildToolPart(
+    BuildContext context,
+    ToolPart part, {
+    VoidCallback? onNavigateToSubConversation,
+  }) {
     final isCompactToolStatus = MediaQuery.sizeOf(context).width < 600;
     final colorScheme = Theme.of(context).colorScheme;
     final presentation = _toolPresentation(part.tool);
     final descriptionLabel = _resolveToolDescriptionLabel(part);
     final typeLabel = _resolveToolTypeLabel(part);
+    final isTaskTool = _normalizeToolName(part.tool) == 'task';
     final hasDetails = part.state.status != ToolStatus.pending;
 
     return Container(
@@ -63,6 +68,18 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
             ],
           ),
           const SizedBox(height: 8),
+          if (isTaskTool && onNavigateToSubConversation != null) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.tonalIcon(
+                key: ValueKey<String>('task_tool_open_session_${part.id}'),
+                onPressed: onNavigateToSubConversation,
+                icon: const Icon(Symbols.open_in_new_rounded, size: 16),
+                label: const Text('Open sub-conversation'),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
           _ToolPartDetailsToggle(
             key: ValueKey<String>('tool_part_details_toggle_${part.id}'),
             partId: part.id,
