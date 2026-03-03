@@ -1,7 +1,13 @@
 part of '../chat_page.dart';
 
 extension _ChatPageTimelineRuntime on _ChatPageState {
-  Widget _buildInteractionPrompts(ChatProvider chatProvider) {
+  Widget _buildInteractionPrompts(
+    ChatProvider chatProvider, {
+    bool allowInteraction = true,
+  }) {
+    if (!allowInteraction) {
+      return const SizedBox.shrink();
+    }
     final permissionRequests = chatProvider.currentThreadPermissionRequests;
     final currentSessionId = chatProvider.currentSession?.id;
     final questionRequest = chatProvider.currentQuestionRequest;

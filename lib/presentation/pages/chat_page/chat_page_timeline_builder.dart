@@ -8,6 +8,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     required double horizontalPadding,
     required double verticalPadding,
   }) {
+    final currentSession = chatProvider.currentSession;
+    final isSubConversation = _isSubConversationSession(currentSession);
     final selectedModel = chatProvider.selectedModel;
     final supportsImages = _supportsImageAttachments(selectedModel);
     final supportsPdf = _supportsPdfAttachments(selectedModel);
@@ -185,77 +187,247 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
               // Message list
               Expanded(child: _buildMessageViewport(chatProvider)),
 
-              _buildInteractionPrompts(chatProvider),
+              _buildInteractionPrompts(
+                chatProvider,
+                allowInteraction: !isSubConversation,
+              ),
 
               _buildComposerReasoningStatusSlot(composerStatus),
 
               _buildModelControls(
                 chatProvider,
                 attachmentsEnabled: attachmentsEnabled,
+                isSubConversation: isSubConversation,
               ),
 
               // Input field
-              Builder(
-                builder: (context) {
-                  final sentMessageHistory = _collectSentMessageHistory(
-                    chatProvider.messages,
-                  );
-                  return ChatInputWidget(
-                    onSendMessage: (submission) async {
-                      _prepareForOutgoingUserMessage();
-                      await chatProvider.submitMessageWithQueue(
-                        submission.text,
-                        attachments: submission.attachments,
-                        shellMode: submission.mode == ChatComposerMode.shell,
-                      );
-                      // Clear file line references after sending.
-                      if (_fileContextItems.isNotEmpty) {
-                        _setState(() {
-                          _fileContextItems.clear();
-                        });
-                      }
-                      _scrollToBottom(force: true);
-                    },
-                    onStopRequested: () async {
-                      await _requestStopActiveResponse(chatProvider);
-                    },
-                    onStopHintRequested: _showComposerStopHint,
-                    onMentionQuery: _queryMentionSuggestions,
-                    onSlashQuery: _querySlashSuggestions,
-                    onBuiltinSlashCommand: (commandName) =>
-                        _handleBuiltinSlashCommand(
-                          commandName: commandName,
-                          chatProvider: chatProvider,
-                        ),
-                    sentMessageHistory: sentMessageHistory,
-                    prefilledDraft: _composerPrefilledDraft,
-                    prefilledDraftVersion: _composerPrefilledDraftVersion,
-                    enabled:
-                        chatProvider.currentSession != null ||
-                        chatProvider.isDraftingNewChat,
-                    isResponding: chatProvider.canAbortActiveResponse,
-                    focusNode: _inputFocusNode,
-                    controller: _chatInputController,
-                    showAttachmentButton: attachmentsEnabled,
-                    showInlineAttachmentButton: false,
-                    allowImageAttachment: supportsImages,
-                    allowPdfAttachment: supportsPdf,
-                    contextItems: _fileContextItems,
-                    onRemoveContextItem: (index) {
-                      if (index >= 0 && index < _fileContextItems.length) {
-                        _setState(() {
-                          _fileContextItems.removeAt(index);
-                        });
-                      }
-                    },
-                  );
-                },
-              ),
+              if (isSubConversation)
+                _buildSubConversationReturnButton(chatProvider)
+              else
+                Builder(
+                  builder: (context) {
+                    final sentMessageHistory = _collectSentMessageHistory(
+                      chatProvider.messages,
+                    );
+                    return ChatInputWidget(
+                      onSendMessage: (submission) async {
+                        _prepareForOutgoingUserMessage();
+                        await chatProvider.submitMessageWithQueue(
+                          submission.text,
+                          attachments: submission.attachments,
+                          shellMode: submission.mode == ChatComposerMode.shell,
+                        );
+                        if (_fileContextItems.isNotEmpty) {
+                          _setState(() {
+                            _fileContextItems.clear();
+                          });
+                        }
+                        _scrollToBottom(force: true);
+                      },
+                      onStopRequested: () async {
+                        await _requestStopActiveResponse(chatProvider);
+                      },
+                      onStopHintRequested: _showComposerStopHint,
+                      onMentionQuery: _queryMentionSuggestions,
+                      onSlashQuery: _querySlashSuggestions,
+                      onBuiltinSlashCommand: (commandName) =>
+                          _handleBuiltinSlashCommand(
+                            commandName: commandName,
+                            chatProvider: chatProvider,
+                          ),
+                      sentMessageHistory: sentMessageHistory,
+                      prefilledDraft: _composerPrefilledDraft,
+                      prefilledDraftVersion: _composerPrefilledDraftVersion,
+                      enabled:
+                          chatProvider.currentSession != null ||
+                          chatProvider.isDraftingNewChat,
+                      isResponding: chatProvider.canAbortActiveResponse,
+                      focusNode: _inputFocusNode,
+                      controller: _chatInputController,
+                      showAttachmentButton: attachmentsEnabled,
+                      showInlineAttachmentButton: false,
+                      allowImageAttachment: supportsImages,
+                      allowPdfAttachment: supportsPdf,
+                      contextItems: _fileContextItems,
+                      onRemoveContextItem: (index) {
+                        if (index >= 0 && index < _fileContextItems.length) {
+                          _setState(() {
+                            _fileContextItems.removeAt(index);
+                          });
+                        }
+                      },
+                    );
+                  },
+                ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  bool _isSubConversationSession(ChatSession? session) {
+    final parentId = session?.parentId?.trim();
+    return parentId != null && parentId.isNotEmpty;
+  }
+
+  Widget _buildSubConversationReturnButton(ChatProvider chatProvider) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+      child: SizedBox(
+        width: double.infinity,
+        child: FilledButton.icon(
+          key: const ValueKey<String>('subconversation_return_main_button'),
+          onPressed: () => unawaited(_returnToMainConversation(chatProvider)),
+          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+          icon: const Icon(Symbols.arrow_back_rounded),
+          label: const Text('Return to main conversation'),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _returnToMainConversation(ChatProvider chatProvider) async {
+    final mainConversation = _resolveMainConversation(chatProvider);
+    if (mainConversation == null) {
+      _showSubConversationNotice('Main conversation is not available yet.');
+      return;
+    }
+    if (chatProvider.currentSession?.id == mainConversation.id) {
+      return;
+    }
+    await _handleSessionSwitch(mainConversation);
+  }
+
+  ChatSession? _resolveMainConversation(ChatProvider chatProvider) {
+    final currentSession = chatProvider.currentSession;
+    if (currentSession == null) {
+      return null;
+    }
+    final sessionById = <String, ChatSession>{
+      for (final session in chatProvider.sessions) session.id: session,
+    };
+    var cursor = currentSession;
+    final visited = <String>{};
+    while (true) {
+      if (!visited.add(cursor.id)) {
+        return cursor;
+      }
+      final parentId = cursor.parentId?.trim();
+      if (parentId == null || parentId.isEmpty) {
+        return cursor;
+      }
+      final parent = sessionById[parentId];
+      if (parent == null) {
+        return null;
+      }
+      cursor = parent;
+    }
+  }
+
+  Future<void> _openSubConversationFromPart(
+    ChatProvider chatProvider,
+    SubtaskPart part,
+  ) async {
+    var target = _resolveSubConversationForPart(chatProvider, part);
+    if (target == null) {
+      final sessionId = chatProvider.currentSession?.id;
+      if (sessionId != null && sessionId.isNotEmpty) {
+        await chatProvider.loadSessionInsights(sessionId, silent: true);
+      }
+      target = _resolveSubConversationForPart(chatProvider, part);
+    }
+
+    if (target == null) {
+      _showSubConversationNotice('No sub-conversation found for this task.');
+      return;
+    }
+    if (chatProvider.currentSession?.id == target.id) {
+      return;
+    }
+    await _handleSessionSwitch(target);
+  }
+
+  ChatSession? _resolveSubConversationForPart(
+    ChatProvider chatProvider,
+    SubtaskPart part,
+  ) {
+    final currentSessionId = chatProvider.currentSession?.id;
+    if (currentSessionId == null || currentSessionId.isEmpty) {
+      return null;
+    }
+
+    final candidates = <ChatSession>[];
+    final seenIds = <String>{};
+    void addCandidate(ChatSession session) {
+      if (!seenIds.add(session.id)) {
+        return;
+      }
+      candidates.add(session);
+    }
+
+    for (final child in chatProvider.currentSessionChildren) {
+      addCandidate(child);
+    }
+    for (final session in chatProvider.sessions) {
+      final parentId = session.parentId?.trim();
+      if (parentId == currentSessionId) {
+        addCandidate(session);
+      }
+    }
+
+    if (candidates.isEmpty) {
+      return null;
+    }
+
+    final partSessionId = part.sessionId.trim();
+    if (partSessionId.isNotEmpty && partSessionId != currentSessionId) {
+      for (final session in candidates) {
+        if (session.id == partSessionId) {
+          return session;
+        }
+      }
+    }
+
+    candidates.sort((a, b) => a.time.compareTo(b.time));
+    if (candidates.length == 1) {
+      return candidates.first;
+    }
+
+    var subtaskIndex = 0;
+    int? selectedSubtaskIndex;
+    for (final message in chatProvider.messages) {
+      for (final messagePart in message.parts) {
+        if (messagePart is! SubtaskPart) {
+          continue;
+        }
+        if (messagePart.id == part.id) {
+          selectedSubtaskIndex = subtaskIndex;
+          break;
+        }
+        subtaskIndex += 1;
+      }
+      if (selectedSubtaskIndex != null) {
+        break;
+      }
+    }
+
+    if (selectedSubtaskIndex != null &&
+        selectedSubtaskIndex >= 0 &&
+        selectedSubtaskIndex < candidates.length) {
+      return candidates[selectedSubtaskIndex];
+    }
+
+    return candidates.last;
+  }
+
+  void _showSubConversationNotice(String message) {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Widget _buildMessageViewport(ChatProvider chatProvider) {
@@ -352,6 +524,9 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
 
   Widget _buildMessageList(ChatProvider chatProvider) {
     final settingsProvider = context.watch<SettingsProvider>();
+    final isSubConversation = _isSubConversationSession(
+      chatProvider.currentSession,
+    );
     final activeSessionId = chatProvider.currentSession?.id;
     final isInitialSessionLoadPending =
         activeSessionId != null &&
@@ -577,6 +752,11 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                           _handleMessageBackgroundLongPress(message),
                       onBackgroundLongPressEnd: () =>
                           _handleMessageBackgroundLongPressEnd(message),
+                      onSubtaskNavigate: isSubConversation
+                          ? null
+                          : (part) => unawaited(
+                              _openSubConversationFromPart(chatProvider, part),
+                            ),
                     );
                     if (finalAssistantRevealMessageId == message.id ||
                         latestTimelineMessageId == message.id) {

@@ -100,15 +100,34 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
     );
   }
 
-  Widget _buildSubtaskPart(BuildContext context, SubtaskPart part) {
+  Widget _buildSubtaskPart(
+    BuildContext context,
+    SubtaskPart part, {
+    VoidCallback? onNavigate,
+  }) {
     final model = part.model == null
         ? ''
         : ' • ${part.model!.providerId}/${part.model!.modelId}';
-    return _buildInfoContainer(
-      context,
-      icon: Symbols.task,
-      title: 'Subtask (${part.agent})',
-      subtitle: '${part.description}$model',
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildInfoContainer(
+          context,
+          icon: Symbols.task,
+          title: 'Subtask (${part.agent})',
+          subtitle: '${part.description}$model',
+        ),
+        if (onNavigate != null)
+          Padding(
+            padding: const EdgeInsets.only(left: 12, top: 4, bottom: 6),
+            child: FilledButton.tonalIcon(
+              key: ValueKey<String>('subtask_open_session_${part.id}'),
+              onPressed: onNavigate,
+              icon: const Icon(Symbols.open_in_new_rounded, size: 16),
+              label: const Text('Open sub-conversation'),
+            ),
+          ),
+      ],
     );
   }
 

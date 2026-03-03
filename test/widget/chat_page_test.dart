@@ -3375,6 +3375,246 @@ void main() {
   });
 
   testWidgets(
+    'sub-conversation is read-only and supports return to main conversation',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final rootSession = ChatSession(
+        id: 'ses_root_subtask_nav',
+        workspaceId: 'default',
+        time: DateTime.fromMillisecondsSinceEpoch(1000),
+        title: 'Root Session',
+      );
+      final childSession = ChatSession(
+        id: 'ses_child_subtask_nav',
+        workspaceId: 'default',
+        time: DateTime.fromMillisecondsSinceEpoch(1100),
+        title: 'Child Session',
+        parentId: rootSession.id,
+      );
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[rootSession, childSession],
+      );
+      repository.messagesBySession[rootSession.id] = <ChatMessage>[
+        AssistantMessage(
+          id: 'msg_root_subtask',
+          sessionId: rootSession.id,
+          time: DateTime.fromMillisecondsSinceEpoch(1200),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1210),
+          parts: const <MessagePart>[
+            SubtaskPart(
+              id: 'part_root_subtask',
+              messageId: 'msg_root_subtask',
+              sessionId: 'ses_root_subtask_nav',
+              prompt: 'inspect',
+              description: 'Open child thread',
+              agent: 'reviewer',
+            ),
+          ],
+        ),
+      ];
+      repository.messagesBySession[childSession.id] = <ChatMessage>[
+        UserMessage(
+          id: 'msg_child_text',
+          sessionId: 'ses_child_subtask_nav',
+          time: DateTime.fromMillisecondsSinceEpoch(1300),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_child_text',
+              messageId: 'msg_child_text',
+              sessionId: 'ses_child_subtask_nav',
+              text: 'Child thread context',
+            ),
+          ],
+        ),
+      ];
+      repository.sessionChildrenById[rootSession.id] = <ChatSession>[
+        childSession,
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+        includeVariants: true,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(rootSession);
+      await provider.loadSessionInsights(rootSession.id, silent: true);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('subtask_open_session_part_root_subtask'),
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>('subtask_open_session_part_root_subtask'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(provider.currentSession?.id, childSession.id);
+      expect(
+        find.byKey(
+          const ValueKey<String>('subconversation_return_main_button'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('composer_input_row')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('agent_selector_button')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('model_selector_button_readonly')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('variant_selector_button_readonly')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('model_selector_button_readonly')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Search model or provider'), findsNothing);
+
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>('subconversation_return_main_button'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(provider.currentSession?.id, rootSession.id);
+      expect(
+        find.byKey(const ValueKey<String>('composer_input_row')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('agent_selector_button')),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'desktop model, variant, and agent shortcuts are blocked in sub-conversations',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final rootSession = ChatSession(
+        id: 'ses_root_shortcuts_sub',
+        workspaceId: 'default',
+        time: DateTime.fromMillisecondsSinceEpoch(1000),
+        title: 'Root Session',
+      );
+      final childSession = ChatSession(
+        id: 'ses_child_shortcuts_sub',
+        workspaceId: 'default',
+        time: DateTime.fromMillisecondsSinceEpoch(1100),
+        title: 'Child Session',
+        parentId: rootSession.id,
+      );
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[rootSession, childSession],
+      );
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+        providersResponse: ProvidersResponse(
+          providers: <Provider>[
+            Provider(
+              id: 'provider_1',
+              name: 'Provider 1',
+              env: const <String>[],
+              models: <String, Model>{
+                'model_1': _model(
+                  'model_1',
+                  variants: const <String, ModelVariant>{
+                    'low': ModelVariant(id: 'low', name: 'Low'),
+                    'high': ModelVariant(id: 'high', name: 'High'),
+                  },
+                ),
+                'model_2': _model(
+                  'model_2',
+                  variants: const <String, ModelVariant>{
+                    'low': ModelVariant(id: 'low', name: 'Low'),
+                    'high': ModelVariant(id: 'high', name: 'High'),
+                  },
+                ),
+              },
+            ),
+          ],
+          defaultModels: const <String, String>{'provider_1': 'model_1'},
+          connected: const <String>['provider_1'],
+        ),
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.initializeProviders();
+      await provider.selectSession(childSession);
+      await provider.setSelectedModelByProvider(
+        providerId: 'provider_1',
+        modelId: 'model_1',
+      );
+      await tester.pumpAndSettle();
+
+      expect(provider.selectedModelId, 'model_1');
+      expect(provider.selectedVariantId, isNull);
+      expect(provider.selectedAgentName, 'build');
+
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.keyM);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.keyM);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.keyT);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.keyT);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.keyJ);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.keyJ);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pumpAndSettle();
+
+      expect(provider.selectedModelId, 'model_1');
+      expect(provider.selectedVariantId, isNull);
+      expect(provider.selectedAgentName, 'build');
+    },
+  );
+
+  testWidgets(
     'uses provider brand icons for selected model and model selector items',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));

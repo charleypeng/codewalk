@@ -58,6 +58,8 @@ extension _ChatPageShortcuts on _ChatPageState {
 
   void _invokeShortcutAction(ShortcutAction action) {
     final chatProvider = _chatProvider ?? context.read<ChatProvider>();
+    final parentId = chatProvider.currentSession?.parentId?.trim();
+    final isSubConversation = parentId != null && parentId.isNotEmpty;
     switch (action) {
       case ShortcutAction.newChat:
         _createNewSession();
@@ -77,18 +79,30 @@ extension _ChatPageShortcuts on _ChatPageState {
         unawaited(_openSettingsPage(closeOnSelect: false));
         return;
       case ShortcutAction.cycleRecentModels:
+        if (isSubConversation) {
+          return;
+        }
         unawaited(chatProvider.cycleRecentModelShortcut());
         return;
       case ShortcutAction.cycleVariant:
+        if (isSubConversation) {
+          return;
+        }
         unawaited(chatProvider.cycleVariant());
         return;
       case ShortcutAction.escape:
         _handleEscape();
         return;
       case ShortcutAction.cycleAgentForward:
+        if (isSubConversation) {
+          return;
+        }
         unawaited(chatProvider.cycleAgent());
         return;
       case ShortcutAction.cycleAgentBackward:
+        if (isSubConversation) {
+          return;
+        }
         unawaited(chatProvider.cycleAgent(reverse: true));
         return;
       case ShortcutAction.quitApp:

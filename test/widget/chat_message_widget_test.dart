@@ -2814,4 +2814,45 @@ index abc123..def456 100644
 
     expect(find.text('Invalid link format'), findsOneWidget);
   });
+
+  testWidgets('renders subtask navigation action when callback is provided', (
+    WidgetTester tester,
+  ) async {
+    SubtaskPart? tappedSubtask;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: AssistantMessage(
+              id: 'msg_subtask_nav',
+              sessionId: 'ses_subtask_nav',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: const <MessagePart>[
+                SubtaskPart(
+                  id: 'part_subtask_nav',
+                  messageId: 'msg_subtask_nav',
+                  sessionId: 'ses_subtask_nav',
+                  prompt: 'Open child',
+                  description: 'Inspect sub-conversation',
+                  agent: 'reviewer',
+                ),
+              ],
+            ),
+            onSubtaskNavigate: (part) {
+              tappedSubtask = part;
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>('subtask_open_session_part_subtask_nav'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tappedSubtask?.id, 'part_subtask_nav');
+  });
 }

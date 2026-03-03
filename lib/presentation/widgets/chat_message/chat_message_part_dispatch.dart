@@ -53,7 +53,14 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
         }
         return _buildPatchPart(context, part as PatchPart);
       case PartType.subtask:
-        return _buildSubtaskPart(context, part as SubtaskPart);
+        final subtaskPart = part as SubtaskPart;
+        return _buildSubtaskPart(
+          context,
+          subtaskPart,
+          onNavigate: onSubtaskNavigate == null
+              ? null
+              : () => onSubtaskNavigate!(subtaskPart),
+        );
       case PartType.retry:
         return _buildRetryPart(context, part as RetryPart);
       case PartType.compaction:

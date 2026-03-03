@@ -4,6 +4,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
   Widget _buildModelControls(
     ChatProvider chatProvider, {
     required bool attachmentsEnabled,
+    required bool isSubConversation,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final selectedModel = chatProvider.selectedModel;
@@ -29,42 +30,47 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
         runSpacing: 8,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Tooltip(
-            message: 'Choose agent',
-            child: Builder(
-              key: _agentSelectorChipKey,
-              builder: (chipContext) => ActionChip(
-                key: const ValueKey<String>('agent_selector_button'),
-                side: BorderSide.none,
-                shape: const StadiumBorder(),
-                backgroundColor: selectedAgentColor?.withValues(alpha: 0.16),
-                label: Text(
-                  selectedAgent == null
-                      ? 'Select agent'
-                      : _formatAgentLabel(selectedAgent),
-                  style: selectedAgentColor == null
+          if (!isSubConversation)
+            Tooltip(
+              message: 'Choose agent',
+              child: Builder(
+                key: _agentSelectorChipKey,
+                builder: (chipContext) => ActionChip(
+                  key: const ValueKey<String>('agent_selector_button'),
+                  side: BorderSide.none,
+                  shape: const StadiumBorder(),
+                  backgroundColor: selectedAgentColor?.withValues(alpha: 0.16),
+                  label: Text(
+                    selectedAgent == null
+                        ? 'Select agent'
+                        : _formatAgentLabel(selectedAgent),
+                    style: selectedAgentColor == null
+                        ? null
+                        : TextStyle(color: selectedAgentColor),
+                  ),
+                  onPressed: selectableAgents.isEmpty
                       ? null
-                      : TextStyle(color: selectedAgentColor),
-                ),
-                onPressed: selectableAgents.isEmpty
-                    ? null
-                    : () => unawaited(
-                        _openAgentQuickSelector(
-                          chatProvider,
-                          anchorContext: chipContext,
+                      : () => unawaited(
+                          _openAgentQuickSelector(
+                            chatProvider,
+                            anchorContext: chipContext,
+                          ),
                         ),
-                      ),
+                ),
               ),
             ),
-          ),
           Tooltip(
-            message: 'Choose model',
+            message: isSubConversation
+                ? 'Model locked in sub-conversation'
+                : 'Choose model',
             child: ActionChip(
-              key: const ValueKey<String>('model_selector_button'),
+              key: isSubConversation
+                  ? const ValueKey<String>('model_selector_button_readonly')
+                  : const ValueKey<String>('model_selector_button'),
               side: BorderSide.none,
               shape: const StadiumBorder(),
               label: Text(selectedModel?.name ?? 'Select model'),
-              onPressed: chatProvider.providers.isEmpty
+              onPressed: isSubConversation || chatProvider.providers.isEmpty
                   ? null
                   : () => unawaited(_openModelSelector(chatProvider)),
             ),
@@ -100,23 +106,31 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
             ),
           if (variants.isNotEmpty)
             Tooltip(
-              message: 'Choose effort',
+              message: isSubConversation
+                  ? 'Effort locked in sub-conversation'
+                  : 'Choose effort',
               child: Builder(
                 builder: (chipContext) => ActionChip(
-                  key: const ValueKey<String>('variant_selector_button'),
+                  key: isSubConversation
+                      ? const ValueKey<String>(
+                          'variant_selector_button_readonly',
+                        )
+                      : const ValueKey<String>('variant_selector_button'),
                   side: BorderSide.none,
                   shape: const StadiumBorder(),
                   label: Text(chatProvider.selectedVariantLabel),
-                  onPressed: () => unawaited(
-                    _openVariantQuickSelector(
-                      chatProvider,
-                      anchorContext: chipContext,
-                    ),
-                  ),
+                  onPressed: isSubConversation
+                      ? null
+                      : () => unawaited(
+                          _openVariantQuickSelector(
+                            chatProvider,
+                            anchorContext: chipContext,
+                          ),
+                        ),
                 ),
               ),
             ),
-          if (attachmentsEnabled)
+          if (attachmentsEnabled && !isSubConversation)
             Tooltip(
               message: 'Add attachment',
               child: IconButton(

@@ -41,6 +41,7 @@ class ChatMessageWidget extends StatefulWidget {
     this.isQueuedUserMessage = false,
     this.onBackgroundLongPress,
     this.onBackgroundLongPressEnd,
+    this.onSubtaskNavigate,
   });
 
   final ChatMessage message;
@@ -51,6 +52,7 @@ class ChatMessageWidget extends StatefulWidget {
   final bool isQueuedUserMessage;
   final VoidCallback? onBackgroundLongPress;
   final VoidCallback? onBackgroundLongPressEnd;
+  final ValueChanged<SubtaskPart>? onSubtaskNavigate;
 
   @override
   State<ChatMessageWidget> createState() => _ChatMessageWidgetState();
@@ -76,6 +78,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   bool _lastShowToolCalls = true;
   bool _lastResponding = false;
   bool _lastQueued = false;
+  bool _lastHasSubtaskNavigate = false;
   double _lastVisualDensityVertical = 0;
   double _lastVisualDensityHorizontal = 0;
 
@@ -96,6 +99,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         widget.showToolCallBubbles == _lastShowToolCalls &&
         widget.isSessionActivelyResponding == _lastResponding &&
         widget.isQueuedUserMessage == _lastQueued &&
+        (widget.onSubtaskNavigate != null) == _lastHasSubtaskNavigate &&
         density.vertical == _lastVisualDensityVertical &&
         density.horizontal == _lastVisualDensityHorizontal;
   }
@@ -111,6 +115,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     _lastShowToolCalls = widget.showToolCallBubbles;
     _lastResponding = widget.isSessionActivelyResponding;
     _lastQueued = widget.isQueuedUserMessage;
+    _lastHasSubtaskNavigate = widget.onSubtaskNavigate != null;
     _lastVisualDensityVertical = density.vertical;
     _lastVisualDensityHorizontal = density.horizontal;
   }
@@ -165,6 +170,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   bool get isQueuedUserMessage => widget.isQueuedUserMessage;
   VoidCallback? get onBackgroundLongPress => widget.onBackgroundLongPress;
   VoidCallback? get onBackgroundLongPressEnd => widget.onBackgroundLongPressEnd;
+  ValueChanged<SubtaskPart>? get onSubtaskNavigate => widget.onSubtaskNavigate;
 
   // -- Shared utilities used by 3+ part clusters --
 
