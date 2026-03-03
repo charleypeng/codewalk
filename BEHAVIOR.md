@@ -241,6 +241,8 @@
 - **Then** collapse never happens while the assistant is still streaming
 - **Then** manual expansion is temporary and is not restored after return/revalidation
 - **Then** the user can manually re-expand any collapsed work group by tapping its Details toggle
+- **Then** once manually expanded, a completed tool-call group stays expanded during normal timeline rebuilds (scroll state updates, background refresh, and other parent re-renders) so the user can keep reading without involuntary collapse
+- **Then** automatic collapse is only applied when collapse mode is activated for that rendered group, not on every subsequent rebuild
 - **Then** once a completed turn has settled, transient realtime status pulses do not auto re-open or rapidly re-collapse that same work group
 
 ### Sub-conversation threads are view-only
