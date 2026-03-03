@@ -9,6 +9,7 @@ import 'package:markdown/markdown.dart' as md;
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../theme/app_shapes.dart';
+import '../theme/app_animations.dart';
 import 'message_entrance_animation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -87,6 +88,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   double _lastVisualDensityHorizontal = 0;
   final Set<String> _seenPartIds = <String>{};
   final Set<String> _newlyArrivedPartIds = <String>{};
+  final Map<String, Timer> _partAnimationTimers = <String, Timer>{};
 
   @override
   void initState() {
@@ -98,6 +100,15 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   void didUpdateWidget(covariant ChatMessageWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     _refreshPartAnimationState(oldWidget.message, widget.message);
+  }
+
+  @override
+  void dispose() {
+    for (final timer in _partAnimationTimers.values) {
+      timer.cancel();
+    }
+    _partAnimationTimers.clear();
+    super.dispose();
   }
 
   /// Whether the current rebuild can be skipped (inputs unchanged).
@@ -194,6 +205,10 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   ValueChanged<ToolPart>? get onTaskToolNavigate => widget.onTaskToolNavigate;
 
   void _seedPartAnimationBaseline(ChatMessage currentMessage) {
+    for (final timer in _partAnimationTimers.values) {
+      timer.cancel();
+    }
+    _partAnimationTimers.clear();
     _seenPartIds
       ..clear()
       ..addAll(currentMessage.parts.map((part) => part.id));
@@ -210,14 +225,41 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     }
 
     final currentPartIds = currentMessage.parts.map((part) => part.id).toSet();
-    _newlyArrivedPartIds
-      ..clear()
-      ..addAll(
-        currentPartIds.where((partId) => !_seenPartIds.contains(partId)),
-      );
+    for (final partId in currentPartIds.where(
+      (partId) => !_seenPartIds.contains(partId),
+    )) {
+      _markPartForEntranceAnimation(partId);
+    }
+    for (final partId
+        in _newlyArrivedPartIds
+            .where((partId) => !currentPartIds.contains(partId))
+            .toList(growable: false)) {
+      _partAnimationTimers.remove(partId)?.cancel();
+      _newlyArrivedPartIds.remove(partId);
+    }
     _seenPartIds
       ..clear()
       ..addAll(currentPartIds);
+  }
+
+  void _markPartForEntranceAnimation(String partId) {
+    if (_newlyArrivedPartIds.contains(partId)) {
+      return;
+    }
+    _newlyArrivedPartIds.add(partId);
+    _partAnimationTimers[partId]?.cancel();
+    _partAnimationTimers[partId] = Timer(
+      AppAnimations.messagePart + AppAnimations.fast,
+      () {
+        _partAnimationTimers.remove(partId);
+        if (!mounted) {
+          return;
+        }
+        if (_newlyArrivedPartIds.remove(partId)) {
+          setState(() {});
+        }
+      },
+    );
   }
 
   bool _shouldAnimatePartArrival(MessagePart part) {

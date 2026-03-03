@@ -186,6 +186,7 @@ class _PartEntranceAnimationState extends State<PartEntranceAnimation>
   late final AnimationController _controller;
   late final Animation<double> _opacity;
   late final Animation<Offset> _slide;
+  bool _startScheduled = false;
   bool _completed = false;
 
   @override
@@ -223,12 +224,13 @@ class _PartEntranceAnimationState extends State<PartEntranceAnimation>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_completed && _controller.value == 0) {
+    if (!_completed && _controller.value == 0 && !_startScheduled) {
       if (!AppAnimations.enabled(context)) {
         setState(() {
           _completed = true;
         });
       } else {
+        _startScheduled = true;
         _controller.forward();
       }
     }
