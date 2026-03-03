@@ -3537,10 +3537,10 @@ void main() {
       );
       expect(
         find.byKey(const ValueKey<String>('variant_selector_button_readonly')),
-        findsOneWidget,
+        findsNothing,
       );
       expect(find.text('model_1'), findsOneWidget);
-      expect(find.text('Auto (server)'), findsOneWidget);
+      expect(find.text('Auto (server)'), findsNothing);
 
       await tester.tap(
         find.byKey(const ValueKey<String>('model_selector_button_readonly')),

@@ -271,6 +271,12 @@ class _ChatPageState extends State<ChatPage>
   String? _cachedSentHistoryLastMsgId;
   List<String>? _cachedSentHistory;
 
+  // Cache for locked sub-conversation model/variant labels.
+  String? _cachedLockedSubConversationSessionId;
+  int _cachedLockedSubConversationMessagesVersion = -1;
+  int _cachedLockedSubConversationProviderCatalogSignature = -1;
+  _LockedSubConversationSelection? _cachedLockedSubConversationSelection;
+
   // Cached highlight theme to avoid re-creating the Map<String, TextStyle>
   // spread on every _resolveHighlightTheme() call, which forces the
   // HighlightView to re-parse when it detects a "changed" theme reference.

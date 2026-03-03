@@ -80,8 +80,8 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   bool _lastShowToolCalls = true;
   bool _lastResponding = false;
   bool _lastQueued = false;
-  bool _lastHasSubtaskNavigate = false;
-  bool _lastHasTaskToolNavigate = false;
+  ValueChanged<SubtaskPart>? _lastSubtaskNavigate;
+  ValueChanged<ToolPart>? _lastTaskToolNavigate;
   double _lastVisualDensityVertical = 0;
   double _lastVisualDensityHorizontal = 0;
 
@@ -102,8 +102,8 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         widget.showToolCallBubbles == _lastShowToolCalls &&
         widget.isSessionActivelyResponding == _lastResponding &&
         widget.isQueuedUserMessage == _lastQueued &&
-        (widget.onSubtaskNavigate != null) == _lastHasSubtaskNavigate &&
-        (widget.onTaskToolNavigate != null) == _lastHasTaskToolNavigate &&
+        identical(widget.onSubtaskNavigate, _lastSubtaskNavigate) &&
+        identical(widget.onTaskToolNavigate, _lastTaskToolNavigate) &&
         density.vertical == _lastVisualDensityVertical &&
         density.horizontal == _lastVisualDensityHorizontal;
   }
@@ -119,8 +119,8 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     _lastShowToolCalls = widget.showToolCallBubbles;
     _lastResponding = widget.isSessionActivelyResponding;
     _lastQueued = widget.isQueuedUserMessage;
-    _lastHasSubtaskNavigate = widget.onSubtaskNavigate != null;
-    _lastHasTaskToolNavigate = widget.onTaskToolNavigate != null;
+    _lastSubtaskNavigate = widget.onSubtaskNavigate;
+    _lastTaskToolNavigate = widget.onTaskToolNavigate;
     _lastVisualDensityVertical = density.vertical;
     _lastVisualDensityHorizontal = density.horizontal;
   }

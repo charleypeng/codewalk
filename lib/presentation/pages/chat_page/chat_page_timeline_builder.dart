@@ -402,6 +402,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       candidates: candidates,
       targetPartId: part.id,
       explicitSessionIds: <String>[part.sessionId],
+      anchorMatcher: (messagePart) => messagePart is SubtaskPart,
     );
   }
 
@@ -425,6 +426,9 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       candidates: candidates,
       targetPartId: part.id,
       explicitSessionIds: _extractChildSessionIdsFromTaskToolPart(part),
+      anchorMatcher: (messagePart) =>
+          messagePart is ToolPart &&
+          _normalizeToolNameForSubConversation(messagePart.tool) == 'task',
     );
   }
 
@@ -459,13 +463,16 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     required List<ChatSession> candidates,
     required String targetPartId,
     required Iterable<String> explicitSessionIds,
+    required bool Function(MessagePart part) anchorMatcher,
   }) {
     final sortedCandidates = List<ChatSession>.from(candidates)
       ..sort((a, b) => a.time.compareTo(b.time));
+    final candidateIds = sortedCandidates.map((session) => session.id).toSet();
 
     for (final sessionId in explicitSessionIds) {
       final normalizedSessionId = sessionId.trim();
-      if (normalizedSessionId.isEmpty) {
+      if (normalizedSessionId.isEmpty ||
+          !candidateIds.contains(normalizedSessionId)) {
         continue;
       }
       for (final session in sortedCandidates) {
@@ -483,7 +490,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     int? selectedTaskIndex;
     for (final message in chatProvider.messages) {
       for (final messagePart in message.parts) {
-        if (!_isSubConversationAnchorPart(messagePart)) {
+        if (!anchorMatcher(messagePart)) {
           continue;
         }
         if (messagePart.id == targetPartId) {
@@ -504,16 +511,6 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     }
 
     return sortedCandidates.last;
-  }
-
-  bool _isSubConversationAnchorPart(MessagePart part) {
-    if (part is SubtaskPart) {
-      return true;
-    }
-    if (part is ToolPart) {
-      return _normalizeToolNameForSubConversation(part.tool) == 'task';
-    }
-    return false;
   }
 
   String _normalizeToolNameForSubConversation(String rawToolName) {

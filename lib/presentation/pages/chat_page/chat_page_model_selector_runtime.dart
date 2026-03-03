@@ -15,9 +15,9 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
         lockedSubConversationSelection?.modelLabel ??
         selectedModel?.name ??
         'Select model';
-    final selectedVariantLabel =
-        lockedSubConversationSelection?.variantLabel ??
-        chatProvider.selectedVariantLabel;
+    final selectedVariantLabel = isSubConversation
+        ? lockedSubConversationSelection?.variantLabel
+        : chatProvider.selectedVariantLabel;
     final selectedAgent = chatProvider.selectedAgentName;
     final selectableAgents = chatProvider.selectableAgents;
     final selectedAgentEntry = _selectedAgentEntry(chatProvider);
@@ -114,7 +114,8 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                     unawaited(chatProvider.retryProvidersRefresh()),
               ),
             ),
-          if (isSubConversation || variants.isNotEmpty)
+          if ((isSubConversation && selectedVariantLabel != null) ||
+              variants.isNotEmpty)
             Tooltip(
               message: isSubConversation
                   ? 'Effort locked in sub-conversation'
@@ -128,7 +129,9 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                       : const ValueKey<String>('variant_selector_button'),
                   side: BorderSide.none,
                   shape: const StadiumBorder(),
-                  label: Text(selectedVariantLabel),
+                  label: Text(
+                    selectedVariantLabel ?? chatProvider.selectedVariantLabel,
+                  ),
                   onPressed: isSubConversation
                       ? null
                       : () => unawaited(
@@ -159,6 +162,18 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
   _LockedSubConversationSelection _resolveLockedSubConversationSelection(
     ChatProvider chatProvider,
   ) {
+    final sessionId = chatProvider.currentSession?.id;
+    final messagesVersion = chatProvider.messagesVersion;
+    final providerCatalogSignature = _providerCatalogSignature(chatProvider);
+    final cachedSelection = _cachedLockedSubConversationSelection;
+    if (cachedSelection != null &&
+        sessionId == _cachedLockedSubConversationSessionId &&
+        messagesVersion == _cachedLockedSubConversationMessagesVersion &&
+        providerCatalogSignature ==
+            _cachedLockedSubConversationProviderCatalogSignature) {
+      return cachedSelection;
+    }
+
     final modelHint = _resolveSubConversationModelHint(chatProvider);
     final model = modelHint == null
         ? null
@@ -177,13 +192,27 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
     final normalizedVariantHint = variantHint?.trim();
     final variantLabel =
         (normalizedVariantHint == null || normalizedVariantHint.isEmpty)
-        ? 'Auto (server)'
+        ? null
         : model?.variants[normalizedVariantHint]?.name ?? normalizedVariantHint;
 
-    return _LockedSubConversationSelection(
+    final resolvedSelection = _LockedSubConversationSelection(
       modelLabel: modelLabel,
       variantLabel: variantLabel,
     );
+    _cachedLockedSubConversationSessionId = sessionId;
+    _cachedLockedSubConversationMessagesVersion = messagesVersion;
+    _cachedLockedSubConversationProviderCatalogSignature =
+        providerCatalogSignature;
+    _cachedLockedSubConversationSelection = resolvedSelection;
+    return resolvedSelection;
+  }
+
+  int _providerCatalogSignature(ChatProvider chatProvider) {
+    var signature = chatProvider.providers.length;
+    for (final provider in chatProvider.providers) {
+      signature = Object.hash(signature, provider.id, provider.models.length);
+    }
+    return signature;
   }
 
   _SubConversationModelHint? _resolveSubConversationModelHint(
@@ -1333,7 +1362,7 @@ class _LockedSubConversationSelection {
   });
 
   final String modelLabel;
-  final String variantLabel;
+  final String? variantLabel;
 }
 
 class _SubConversationModelHint {
