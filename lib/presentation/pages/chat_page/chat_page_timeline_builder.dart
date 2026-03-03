@@ -335,7 +335,12 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       if (sessionId != null && sessionId.isNotEmpty) {
         try {
           await chatProvider.loadSessionInsights(sessionId, silent: true);
-        } catch (_) {
+        } on Exception catch (error, stackTrace) {
+          AppLogger.warn(
+            'Failed to refresh sub-conversations while opening subtask',
+            error: error,
+            stackTrace: stackTrace,
+          );
           _showSubConversationNotice(
             'Failed to refresh sub-conversations. Please try again.',
           );
