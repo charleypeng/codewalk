@@ -393,9 +393,12 @@ class ChatRepositoryImpl implements ChatRepository {
     } on ValidationException {
       AppLogger.warn('Repository send failed: validation error');
       yield const Left(ValidationFailure('Invalid input parameters'));
-    } on ServerException {
+    } on ServerException catch (e) {
       AppLogger.warn('Repository send failed: server error');
-      yield const Left(ServerFailure('Failed to send message'));
+      final message = e.message.trim().isEmpty
+          ? 'Failed to send message'
+          : e.message.trim();
+      yield Left(ServerFailure(message, e.code));
     } on NetworkException {
       AppLogger.warn('Repository send failed: network error');
       yield const Left(NetworkFailure('Network connection failed'));

@@ -1077,6 +1077,34 @@ void main() {
       },
     );
 
+    test('current session retry status enqueues a one-shot notice', () async {
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+
+      chatRepository.emitEvent(
+        const ChatEvent(
+          type: 'session.status',
+          properties: <String, dynamic>{
+            'sessionID': 'ses_1',
+            'status': <String, dynamic>{
+              'type': 'retry',
+              'attempt': 2,
+              'message': 'Provider is retrying upstream call',
+            },
+          },
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+
+      final notice = provider.consumePendingUiNotice();
+      expect(notice, isNotNull);
+      expect(notice!.type, ChatUiNoticeType.serverError);
+      expect(notice.message, 'Provider is retrying upstream call');
+      expect(provider.consumePendingUiNotice(), isNull);
+    });
+
     test(
       'question.asked marks out-of-focus pending interaction attention',
       () async {
@@ -1833,8 +1861,15 @@ void main() {
       );
       await Future<void>.delayed(const Duration(milliseconds: 40));
 
-      expect(provider.state, ChatState.error);
-      expect(provider.errorMessage, 'Rate limit exceeded');
+      expect(provider.state, ChatState.loaded);
+      expect(provider.errorMessage, isNull);
+      final inlineErrorMessage = provider.messages.last as AssistantMessage;
+      expect(inlineErrorMessage.error, isNotNull);
+      expect(inlineErrorMessage.error!.name, 'Rate limit exceeded');
+      expect(
+        inlineErrorMessage.error!.message,
+        'Rate limit exceeded. Wait a moment and try again.',
+      );
     });
 
     test(

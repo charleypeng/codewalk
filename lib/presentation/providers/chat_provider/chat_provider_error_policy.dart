@@ -39,6 +39,51 @@ extension _ChatProviderErrorPolicy on ChatProvider {
     _setState(ChatState.error);
   }
 
+  void _enqueueUiNotice({
+    required ChatUiNoticeType type,
+    required String message,
+    String? actionLabel,
+  }) {
+    final normalizedMessage = message.trim();
+    if (normalizedMessage.isEmpty) {
+      return;
+    }
+    _pendingUiNotice = ChatUiNotice(
+      id: DateTime.now().microsecondsSinceEpoch,
+      type: type,
+      message: normalizedMessage,
+      actionLabel: actionLabel,
+    );
+  }
+
+  void _presentServerErrorForCurrentSession({
+    required String sessionId,
+    required String rawMessage,
+    String? code,
+    int? statusCode,
+  }) {
+    if (_currentSession?.id != sessionId) {
+      return;
+    }
+    final display = formatServerErrorForDisplay(
+      rawMessage: rawMessage,
+      code: code,
+      statusCode: statusCode,
+    );
+    _sessionStatusById[sessionId] = const SessionStatusInfo(
+      type: SessionStatusType.idle,
+    );
+    _clearSessionAttentionForSession(sessionId);
+    _errorMessage = null;
+    _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
+    _appendInlineServerErrorMessage(sessionId: sessionId, error: display);
+    _enqueueUiNotice(
+      type: ChatUiNoticeType.serverError,
+      message: display.message,
+    );
+    _setState(ChatState.loaded);
+  }
+
   bool _isAbortSuppressionActiveForSession(String? sessionId) {
     if (sessionId == null ||
         _abortSuppressionSessionId == null ||
@@ -47,8 +92,7 @@ extension _ChatProviderErrorPolicy on ChatProvider {
       return false;
     }
     final startedAt = _abortSuppressionStartedAt!;
-    if (DateTime.now().difference(startedAt) >
-        _abortSuppressionWindow) {
+    if (DateTime.now().difference(startedAt) > _abortSuppressionWindow) {
       _clearAbortSuppression();
       return false;
     }
@@ -61,10 +105,7 @@ extension _ChatProviderErrorPolicy on ChatProvider {
     if (normalizedCode.contains('abort') || normalizedCode.contains('cancel')) {
       return true;
     }
-    return normalizedMessage.contains('aborted') ||
-        normalizedMessage.contains('abort') ||
-        normalizedMessage.contains('cancelled') ||
-        normalizedMessage.contains('canceled');
+    return isAbortLikeError(message: normalizedMessage);
   }
 
   bool _shouldSuppressAbortError({

@@ -646,6 +646,23 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     }
   }
 
+  void _handleSendFailure(Failure failure, {required String sessionId}) {
+    if (_currentSession?.id != sessionId) {
+      _handleFailure(failure);
+      return;
+    }
+    final statusCode = switch (failure) {
+      ServerFailure(code: final code) => code,
+      NetworkFailure(code: final code) => code,
+      _ => null,
+    };
+    _presentServerErrorForCurrentSession(
+      sessionId: sessionId,
+      rawMessage: failure.message,
+      statusCode: statusCode,
+    );
+  }
+
   ChatSession? _sessionById(String sessionId) {
     return _sessions.where((session) => session.id == sessionId).firstOrNull;
   }

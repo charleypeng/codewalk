@@ -72,7 +72,8 @@ extension _ChatPageComposerStatus on _ChatPageState {
                 _ComposerStatusPresentation._receivingTips[_currentTipIndex],
               )
             : const _ComposerStatusPresentation.receiving(),
-      _AssistantProgressStage.retrying => null,
+      _AssistantProgressStage.retrying =>
+        const _ComposerStatusPresentation.retrying(),
     };
   }
 }

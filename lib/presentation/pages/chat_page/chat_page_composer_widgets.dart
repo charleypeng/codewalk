@@ -253,6 +253,12 @@ extension _ChatPageComposerWidgets on _ChatPageState {
         size: 15,
         color: colorScheme.primary,
       ),
+      _ComposerStatusType.retrying => Icon(
+        Symbols.sync_rounded,
+        key: const ValueKey<String>('composer_reasoning_status_icon_retrying'),
+        size: 15,
+        color: colorScheme.error,
+      ),
       _ComposerStatusType.queued => Icon(
         Symbols.schedule_send,
         key: const ValueKey<String>('composer_reasoning_status_icon_queue'),

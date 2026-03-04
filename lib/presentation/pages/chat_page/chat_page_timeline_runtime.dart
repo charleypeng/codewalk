@@ -68,10 +68,12 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
         return 'Status: Busy';
       case SessionStatusType.retry:
         final attempt = status.attempt ?? 0;
-        if (attempt > 0) {
-          return 'Status: Retry #$attempt';
+        final base = attempt > 0 ? 'Status: Retry #$attempt' : 'Status: Retry';
+        final detail = status.message?.trim();
+        if (detail == null || detail.isEmpty) {
+          return base;
         }
-        return 'Status: Retry';
+        return '$base - $detail';
       case SessionStatusType.idle:
         return 'Status: Idle';
     }

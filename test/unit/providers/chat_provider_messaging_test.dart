@@ -397,6 +397,35 @@ void main() {
       expect(rejectedDraft?.shellMode, isFalse);
     });
 
+    test(
+      'send network failure is surfaced as inline connection error',
+      () async {
+        final sendStream = StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          await sendStream.close();
+        });
+        chatRepository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('network fail now');
+        sendStream.add(const Left(NetworkFailure('Network connection failed')));
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        expect(provider.state, ChatState.loaded);
+        expect(provider.errorMessage, isNull);
+        final inlineErrorMessage = provider.messages.last as AssistantMessage;
+        expect(inlineErrorMessage.error, isNotNull);
+        expect(inlineErrorMessage.error!.name, 'Connection failed');
+        expect(
+          inlineErrorMessage.error!.message,
+          'Unable to reach the server. Check connection and server status.',
+        );
+      },
+    );
+
     test('send failure in background does not queue draft restore', () async {
       final sendStream = StreamController<Either<Failure, ChatMessage>>();
       addTearDown(() async {

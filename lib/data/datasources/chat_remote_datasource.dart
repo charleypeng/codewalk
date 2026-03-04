@@ -842,6 +842,76 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     }
   }
 
+  ServerException _serverExceptionFromDio(
+    DioException exception, {
+    required String fallbackMessage,
+  }) {
+    final statusCode = exception.response?.statusCode;
+    final extractedMessage = _extractServerMessage(exception.response?.data);
+    final message = extractedMessage.isEmpty
+        ? _fallbackServerMessageForStatus(
+            statusCode: statusCode,
+            fallbackMessage: fallbackMessage,
+          )
+        : extractedMessage;
+    return ServerException(message, statusCode);
+  }
+
+  String _fallbackServerMessageForStatus({
+    required int? statusCode,
+    required String fallbackMessage,
+  }) {
+    return switch (statusCode) {
+      401 ||
+      403 => 'Authentication failed. Reconnect the provider and try again.',
+      429 => 'Rate limit exceeded. Wait a moment and try again.',
+      _ when statusCode != null && statusCode >= 500 =>
+        'Provider temporarily unavailable. Try again shortly.',
+      _ => fallbackMessage,
+    };
+  }
+
+  String _extractServerMessage(dynamic payload) {
+    if (payload == null) {
+      return '';
+    }
+    if (payload is String) {
+      final trimmed = payload.trim();
+      if (trimmed.isEmpty) {
+        return '';
+      }
+      try {
+        final decoded = jsonDecode(trimmed);
+        return _extractServerMessage(decoded);
+      } catch (_) {
+        return trimmed;
+      }
+    }
+    if (payload is Map) {
+      final map = Map<String, dynamic>.from(payload);
+      final direct = map['message']?.toString().trim();
+      if (direct != null && direct.isNotEmpty) {
+        return direct;
+      }
+      final errorPayload = map['error'];
+      final nestedError = _extractServerMessage(errorPayload);
+      if (nestedError.isNotEmpty) {
+        return nestedError;
+      }
+      final dataPayload = map['data'];
+      final nestedData = _extractServerMessage(dataPayload);
+      if (nestedData.isNotEmpty) {
+        return nestedData;
+      }
+      final detail = map['detail']?.toString().trim();
+      if (detail != null && detail.isNotEmpty) {
+        return detail;
+      }
+      return '';
+    }
+    return payload.toString().trim();
+  }
+
   @override
   Stream<ChatMessageModel> sendMessage(
     String projectId,
@@ -1471,6 +1541,20 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         });
       }
 
+      void emitPromptAsyncFailure({
+        required String message,
+        required String reason,
+      }) {
+        if (eventController.isClosed) {
+          return;
+        }
+        trace(
+          'fallback-watch-failure',
+          details: 'reason=$reason message=$message',
+        );
+        eventController.addError(ServerException(message));
+      }
+
       void startFallbackCompletionWatch({
         required String reason,
         Duration initialDelay = const Duration(seconds: 12),
@@ -1533,6 +1617,10 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
                 details: 'reason=$reason',
               );
               _invalidateKnownAssistantIdsCache(sessionId);
+              emitPromptAsyncFailure(
+                message: 'No response from server. Please try again.',
+                reason: 'no_message_id',
+              );
               messageCompleted = true;
               maybeCloseEventController(
                 delay: const Duration(milliseconds: 200),
@@ -1574,6 +1662,10 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
               details: 'reason=$reason',
             );
             _invalidateKnownAssistantIdsCache(sessionId);
+            emitPromptAsyncFailure(
+              message: 'No response from model. Please try again.',
+              reason: 'no_message',
+            );
           }
 
           messageCompleted = true;
@@ -1650,13 +1742,21 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (e.response?.statusCode == 400) {
         throw const ValidationException('Invalid message format');
       }
-      throw const ServerException('Failed to send message');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to send message',
+      );
     } catch (e) {
       AppLogger.error('Message send exception', error: e);
       AppLogger.info(
         'CW_TRACE_FINAL datasource event=send-exception session=$sessionId messageId=${input.messageId ?? "-"} error=${e.runtimeType}',
       );
-      throw const ServerException('Failed to send message');
+      if (e is ServerException ||
+          e is NotFoundException ||
+          e is ValidationException) {
+        rethrow;
+      }
+      throw ServerException('Failed to send message');
     } finally {
       AppLogger.info('Chat send flow finalized for session=$sessionId');
       AppLogger.info(

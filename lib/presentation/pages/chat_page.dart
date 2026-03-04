@@ -35,6 +35,7 @@ import '../services/android_background_alert_worker.dart';
 import '../services/android_foreground_monitor_service.dart';
 import '../services/notification_service.dart';
 import '../utils/file_explorer_logic.dart';
+import '../utils/chat_abort_message.dart';
 import '../utils/reasoning_status_parser.dart';
 import '../theme/app_animations.dart';
 import '../utils/app_page_route.dart';
@@ -152,6 +153,7 @@ class _ChatPageState extends State<ChatPage>
   SettingsProvider? _settingsProvider;
   String? _lastServerId;
   bool? _lastServerConnectionState;
+  ServerHealthStatus _lastActiveServerHealthStatus = ServerHealthStatus.unknown;
   String? _trackedSessionId;
   String? _pendingInitialScrollSessionId;
   bool _autoFollowToLatest = true;
@@ -314,6 +316,10 @@ class _ChatPageState extends State<ChatPage>
       _appProvider = nextAppProvider;
       _lastServerId = nextAppProvider.activeServerId;
       _lastServerConnectionState = nextAppProvider.isConnected;
+      final initialActiveServer = nextAppProvider.activeServer;
+      _lastActiveServerHealthStatus = initialActiveServer == null
+          ? ServerHealthStatus.unknown
+          : nextAppProvider.healthFor(initialActiveServer.id);
       _appProvider?.addListener(_handleAppProviderChange);
     }
     if (di.sl.isRegistered<NotificationService>()) {
@@ -489,15 +495,27 @@ class _ChatPageState extends State<ChatPage>
     }
     final currentServerId = appProvider.activeServerId;
     final currentConnected = appProvider.isConnected;
+    final activeServer = appProvider.activeServer;
+    final currentHealth = activeServer == null
+        ? ServerHealthStatus.unknown
+        : appProvider.healthFor(activeServer.id);
     final serverChanged = currentServerId != _lastServerId;
 
     if (serverChanged) {
       _lastServerId = currentServerId;
       _lastServerConnectionState = currentConnected;
+      _lastActiveServerHealthStatus = currentHealth;
       if (currentServerId != null) {
         unawaited(_handleServerScopeChange());
       }
       return;
+    }
+
+    final previousHealth = _lastActiveServerHealthStatus;
+    _lastActiveServerHealthStatus = currentHealth;
+    if (previousHealth == ServerHealthStatus.healthy &&
+        currentHealth == ServerHealthStatus.unhealthy) {
+      _showServerUnhealthyNotice();
     }
 
     final wasConnected = _lastServerConnectionState;
@@ -505,6 +523,26 @@ class _ChatPageState extends State<ChatPage>
     if (wasConnected == false && currentConnected) {
       unawaited(_handleServerReconnected());
     }
+  }
+
+  void _showServerUnhealthyNotice() {
+    if (!mounted) {
+      return;
+    }
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) {
+      return;
+    }
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      const SnackBar(
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 4),
+        content: Text(
+          'Active server is unhealthy. Sends will try once and fail fast until recovery.',
+        ),
+      ),
+    );
   }
 
   Future<void> _handleServerReconnected() async {
@@ -1080,7 +1118,14 @@ class _TimelineRetryIndicatorEntry extends _TimelineEntry {
 
 enum _AssistantProgressStage { thinking, receiving, retrying }
 
-enum _ComposerStatusType { dynamicReasoning, receiving, stopHint, tip, queued }
+enum _ComposerStatusType {
+  dynamicReasoning,
+  receiving,
+  retrying,
+  stopHint,
+  tip,
+  queued,
+}
 
 class _ComposerStatusPresentation {
   const _ComposerStatusPresentation._({
@@ -1093,6 +1138,12 @@ class _ComposerStatusPresentation {
 
   const _ComposerStatusPresentation.receiving()
     : this._(type: _ComposerStatusType.receiving, label: 'Reasoning...');
+
+  const _ComposerStatusPresentation.retrying()
+    : this._(
+        type: _ComposerStatusType.retrying,
+        label: 'Retrying model request...',
+      );
 
   const _ComposerStatusPresentation.stopHint()
     : this._(type: _ComposerStatusType.stopHint, label: 'Double ESC to stop');

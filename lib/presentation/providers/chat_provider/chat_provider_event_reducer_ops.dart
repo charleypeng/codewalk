@@ -297,6 +297,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         final sessionId = properties['sessionID'] as String?;
         final statusMap = properties['status'];
         if (sessionId != null && statusMap is Map<String, dynamic>) {
+          final previousStatusType = _sessionStatusById[sessionId]?.type;
           final status = SessionStatusModel.fromJson(statusMap).toDomain();
           _sessionStatusById[sessionId] = status;
           if (status.type == SessionStatusType.retry &&
@@ -311,6 +312,16 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           }
           if (sessionId == _currentSession?.id) {
             _clearSessionAttentionForSession(sessionId);
+            if (status.type == SessionStatusType.retry &&
+                previousStatusType != SessionStatusType.retry) {
+              final retryMessage = status.message?.trim();
+              _enqueueUiNotice(
+                type: ChatUiNoticeType.serverError,
+                message: retryMessage != null && retryMessage.isNotEmpty
+                    ? retryMessage
+                    : 'Model is retrying. Send will fail if retries do not recover.',
+              );
+            }
           }
           _notifyListeners();
           _attemptPendingRemoteSelectionSync(reason: 'event-session.status');
@@ -525,6 +536,14 @@ extension _ChatProviderEventReducerOps on ChatProvider {
             ? messageFromRawError
             : 'Session error';
         final code = data['code']?.toString() ?? error?['code']?.toString();
+        final statusCodeRaw =
+            data['statusCode'] ??
+            data['status'] ??
+            error?['statusCode'] ??
+            error?['status'];
+        final statusCode = statusCodeRaw is num
+            ? statusCodeRaw.toInt()
+            : int.tryParse(statusCodeRaw?.toString() ?? '');
         _traceFinal(
           'event-session-error-current-session-payload',
           sessionId: sessionId,
@@ -553,7 +572,12 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           _setState(ChatState.loaded);
           break;
         }
-        _setError(message);
+        _presentServerErrorForCurrentSession(
+          sessionId: sessionId,
+          rawMessage: message,
+          code: code,
+          statusCode: statusCode,
+        );
         break;
       case 'message.updated':
       case 'message.created':

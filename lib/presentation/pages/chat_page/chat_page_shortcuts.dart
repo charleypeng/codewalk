@@ -145,12 +145,10 @@ extension _ChatPageShortcuts on _ChatPageState {
     if (stopped || !mounted) {
       return;
     }
+    final rawMessage =
+        chatProvider.errorMessage ?? 'Failed to stop current response';
     messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          chatProvider.errorMessage ?? 'Failed to stop current response',
-        ),
-      ),
+      SnackBar(content: Text(normalizeAbortMessageForDisplay(rawMessage))),
     );
   }
 

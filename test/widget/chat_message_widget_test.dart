@@ -1,4 +1,5 @@
 import 'package:codewalk/domain/entities/chat_message.dart';
+import 'package:codewalk/presentation/utils/chat_abort_message.dart';
 import 'package:codewalk/presentation/widgets/message_entrance_animation.dart';
 import 'package:codewalk/presentation/widgets/chat_message_widget.dart';
 import 'package:flutter/material.dart';
@@ -166,6 +167,32 @@ void main() {
     expect(find.text('Step started'), findsNothing);
     expect(find.text('Step finished'), findsNothing);
     expect(find.text('Final answer'), findsOneWidget);
+  });
+
+  testWidgets('normalizes abort technical text in assistant error bubble', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: AssistantMessage(
+              id: 'msg_abort_error',
+              sessionId: 'ses_abort_error',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: const <MessagePart>[],
+              error: const MessageError(
+                name: 'UnknownError',
+                message: 'The operation was aborted.',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text(kChatAbortNoticeMessage), findsOneWidget);
+    expect(find.text('The operation was aborted.'), findsNothing);
   });
 
   testWidgets('shows step metadata in assistant info popup', (

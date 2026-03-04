@@ -46,7 +46,9 @@ import '../../domain/usecases/watch_chat_events.dart';
 import '../../domain/usecases/watch_global_chat_events.dart';
 import '../services/chat_title_generator.dart';
 import '../services/event_feedback_dispatcher.dart';
+import '../utils/chat_abort_message.dart';
 import '../utils/chat_event_property_extractors.dart';
+import '../utils/chat_server_error_formatter.dart';
 import '../utils/session_title_formatter.dart';
 import 'project_provider.dart';
 import 'settings_provider.dart';
@@ -88,7 +90,7 @@ enum SessionListFilter { active, archived, all }
 
 enum SessionListSort { recent, oldest, title }
 
-enum ChatUiNoticeType { remoteAbort }
+enum ChatUiNoticeType { remoteAbort, serverError }
 
 /// Chat provider
 class ChatProvider extends ChangeNotifier {
@@ -375,8 +377,7 @@ class ChatProvider extends ChangeNotifier {
   static const String _configSessionSelectionsKey = 'sessionSelections';
   static const String _configSyncAgentName = '__codewalk';
   static const String _remoteAutoVariantValue = '__auto__';
-  static const String _remoteAbortNoticeMessage =
-      'What you want to do different?';
+  static const String _remoteAbortNoticeMessage = kChatAbortNoticeMessage;
   static const String _remoteAbortInlineErrorName = 'MessageAborted';
   static const String _traceFinalPrefix = 'CW_TRACE_FINAL';
   static const Duration _interruptSendStatusPollInterval = Duration(
@@ -2839,16 +2840,34 @@ class ChatProvider extends ChangeNotifier {
 
     final nextAttempt =
         (_queuedRetryAttemptsBySessionId[normalizedSessionId] ?? 0) + 1;
-    if (nextAttempt > _queuedRetryMaxAttempts) {
+    final sessionStatusType = _sessionStatusById[normalizedSessionId]?.type;
+    final maxAttempts = sessionStatusType == SessionStatusType.retry
+        ? 1
+        : _queuedRetryMaxAttempts;
+    if (nextAttempt > maxAttempts) {
       AppLogger.warn(
         'Provider queued retry reached max attempts session=$normalizedSessionId queue=${queuedMessageCountForSession(normalizedSessionId)}',
       );
       _traceFinal(
         'queue-retry-max-attempts',
         sessionId: normalizedSessionId,
-        details: 'attempt=$nextAttempt max=$_queuedRetryMaxAttempts',
+        details: 'attempt=$nextAttempt max=$maxAttempts',
       );
       _queuedRetryAttemptsBySessionId.remove(normalizedSessionId);
+      final hadQueuedMessages =
+          queuedMessageCountForSession(normalizedSessionId) > 0;
+      _queuedSendBySessionId.remove(normalizedSessionId);
+      _syncQueuedLocalUserMessageIds();
+      if (hadQueuedMessages && _currentSession?.id == normalizedSessionId) {
+        _presentServerErrorForCurrentSession(
+          sessionId: normalizedSessionId,
+          rawMessage: maxAttempts == 1
+              ? 'Server is retrying and this send did not complete.'
+              : 'Failed to send message after multiple retries.',
+        );
+      } else {
+        _notifyListeners();
+      }
       return;
     }
     _queuedRetryAttemptsBySessionId[normalizedSessionId] = nextAttempt;
@@ -3483,7 +3502,7 @@ class ChatProvider extends ChangeNotifier {
                     _notifyListeners();
                     return;
                   }
-                  _handleFailure(failure);
+                  _handleSendFailure(failure, sessionId: streamSessionId);
                 },
                 (message) {
                   final completed = message is AssistantMessage
@@ -3574,9 +3593,9 @@ class ChatProvider extends ChangeNotifier {
                   }),
                 );
               }
-              _setError(
-                'Failed to send message: $error',
+              _presentServerErrorForCurrentSession(
                 sessionId: streamSessionId,
+                rawMessage: error.toString(),
               );
             },
             onDone: () {

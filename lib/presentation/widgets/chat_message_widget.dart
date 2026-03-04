@@ -16,6 +16,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/logging/app_logger.dart';
 import '../../domain/entities/chat_message.dart';
 import '../services/file_part_action_service.dart' as file_part_action;
+import '../utils/chat_abort_message.dart';
 import '../utils/diff_parser.dart';
 import '../utils/reasoning_status_parser.dart';
 
@@ -341,10 +342,14 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   }
 
   Widget _buildErrorInfo(BuildContext context, MessageError error) {
-    final normalizedErrorName = error.name.trim().toLowerCase();
-    final isInlineAbortError =
-        normalizedErrorName.contains('abort') ||
-        normalizedErrorName.contains('cancel');
+    final isInlineAbortError = isAbortLikeError(
+      name: error.name,
+      message: error.message,
+    );
+    final displayMessage = normalizeAbortMessageForDisplay(
+      error.message,
+      name: error.name,
+    );
     final title = isInlineAbortError ? null : error.name;
 
     return Container(
@@ -378,7 +383,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                     ),
                   ),
                 Text(
-                  error.message,
+                  displayMessage,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     fontWeight: isInlineAbortError
                         ? FontWeight.w600
