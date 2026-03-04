@@ -21,6 +21,7 @@ A native (really fast!!) cross-platform client for [OpenCode](https://github.com
 - Project context support for both Git repositories and non-Git folders
 - Per-project New Chat draft isolation with lazy session bootstrap
 - Multi-server profile management (health checks, default/active switching, auth)
+- Install and Run OpenCode Server directly from Settings
 - Model/provider selection with variants, favorites, and reasoning controls
 - In-app update flow with auto-check, startup notification, and direct install
 - Desktop productivity shortcuts, including Alt+Tab-style session cycling
