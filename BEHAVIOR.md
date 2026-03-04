@@ -257,8 +257,9 @@
 
 - **Given** the user opens a child thread from a subtask/task bubble in the main conversation
 - **When** the child thread is active (`parentId` is set)
-- **Then** composer input is replaced by a full-width `Return to main conversation` action
-- **Then** message send/audio controls and agent/model/effort selectors are not interactive in the child thread
+- **Then** composer input is replaced by a footer return control (`Return to main conversation`)
+- **Then** while that child thread is actively responding, the same footer shows a side `Stop` action that aborts the active response without leaving the child thread
+- **Then** message send/audio controls and agent/model/effort selectors remain non-interactive in the child thread
 - **Then** the locked model chip reflects the child-thread metadata (not the parent selection)
 - **Then** the effort chip is shown only when an explicit child-thread variant is known
 
