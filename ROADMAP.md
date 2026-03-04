@@ -62,4 +62,4 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 - [ ] In composer, adjust ArrowUp/ArrowDown without modifiers for multiline behavior before history navigation; with modifiers keep default editor behavior.
 - [ ] Allow pinning sessions in the Conversations sidebar.
 - [ ] Verify whether background notifications are working correctly on Android.
-- [~] Reduce spacing in the Conversations list on desktop.
+- [x] Reduce spacing in the Conversations list on desktop - Related commits: d2b084e, 0574884

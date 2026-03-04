@@ -537,6 +537,13 @@ Non-urgent (blue/gray) dot badges are never shown on the hamburger icon.
 - **When** the user navigates the app
 - **Then** the session list is always visible alongside the chat in a split-view layout
 
+### Desktop conversations list is denser than mobile
+
+- **Given** the Conversations sidebar is rendered on desktop
+- **When** project groups and session rows are shown
+- **Then** desktop uses compact spacing between project groups and conversation rows to increase visible item density
+- **Then** mobile keeps its original touch-friendly spacing
+
 ### Desktop: system tray
 
 - **Given** the app is running on Linux, macOS, or Windows

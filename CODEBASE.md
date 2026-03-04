@@ -96,6 +96,7 @@ lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade
 lib/presentation/widgets/chat_input_widget.dart   # Composer/input orchestration facade
 lib/presentation/widgets/chat_message_widget.dart # Message bubble with build-skip cache, cached MarkdownStyleSheet; compact (<600dp) collapsed-copy variants for reasoning/tool-chain/tool-content toggles; completed tool-chain groups preserve user expansion through ordinary parent rebuilds (no involuntary collapse-on-scroll); includes `SubtaskPart`/`task` navigation callbacks and stable rebuild gating keyed by callback identity
 lib/presentation/widgets/session_todo_list_widget.dart # Session task panel with progress bar and keyboard-aware collapse; compact mobile collapsed summaries use count-first wording (`x/y in progress`, `x/y done`)
+lib/presentation/widgets/chat_session_list.dart    # Chat session list widget; uses responsive vertical tile padding (1 on desktop, 3 on mobile) for information density
 lib/presentation/widgets/message_entrance_animation.dart # Entrance animation wrapper; `role` parameter selects user (130 ms) or assistant (180 ms) motion profile from AppAnimations
 ```
 
@@ -118,7 +119,7 @@ chat_page_workspace_controller.dart
 chat_page_shortcuts.dart
 chat_page_status_presenter.dart
 chat_page_selector_flow.dart               # ConstrainedBox wrapped in Flexible to prevent overflow at medium breakpoint
-chat_page_scaffold.dart                          # Session selection reordered to close-first; _handleSessionSwitch() guard prevents concurrent switches; conversations sidebar includes project groups card with open-project controls and session previews
+chat_page_scaffold.dart                          # Session selection reordered to close-first; _handleSessionSwitch() guard prevents concurrent switches; conversations sidebar includes project groups card with open-project controls and session previews; applies compact desktop spacing and passes responsive row spacing to ChatSessionList
 chat_page_file_explorer_controller.dart
 chat_page_file_viewer.dart
 chat_page_composer_status.dart
@@ -231,7 +232,7 @@ test/unit/providers/                   # ChatProvider split tests (7 files, 127 
   chat_provider_project_test.dart      #   13 tests — permissions, questions, project scope, favorites; project-switch SWR behavior + draft isolation + dirty-context cache retention
   chat_provider_concurrency_test.dart  #   26 tests — render gate, multi-session, abort suppression
   chat_provider_test_support.dart      #   Shared utilities (RecordingDioClient, buildChatProvider, testModel); FakeChatRepository.getSessionsDelay
-test/widget/                           # Widget tests (includes icon assertions with Symbols.* and explicit compact/mobile collapsed-copy coverage for chat message and session todo surfaces)
+test/widget/                           # Widget tests (includes icon assertions with Symbols.* and explicit compact/mobile collapsed-copy coverage for chat message and session todo surfaces, plus desktop/mobile spacing coverage for ChatSessionList)
 test/integration/                      # Integration tests; includes data-usage optimization coverage in `opencode_server_integration_test.dart`
 test/presentation/                     # Presentation-focused tests (incl. window_size_class_test.dart)
 test/support/                          # Test helpers/fakes; `mock_opencode_server.dart` includes extra counters for usage optimization tracking
