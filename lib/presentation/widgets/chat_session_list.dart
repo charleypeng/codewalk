@@ -24,6 +24,7 @@ class ChatSessionList extends StatefulWidget {
     this.shrinkWrap = false,
     this.physics,
     this.padding = const EdgeInsets.fromLTRB(8, 0, 8, 8),
+    this.verticalTilePadding = 3,
   });
 
   final List<ChatSession> sessions;
@@ -42,6 +43,7 @@ class ChatSessionList extends StatefulWidget {
   final bool shrinkWrap;
   final ScrollPhysics? physics;
   final EdgeInsetsGeometry padding;
+  final double verticalTilePadding;
 
   @override
   State<ChatSessionList> createState() => _ChatSessionListState();
@@ -303,7 +305,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
 
     return Padding(
       key: ValueKey<String>('chat_session_tile_${session.id}'),
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: EdgeInsets.symmetric(vertical: widget.verticalTilePadding),
       child: Semantics(
         label: 'Chat session: ${session.title}',
         selected: isSelected,

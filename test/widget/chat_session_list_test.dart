@@ -302,4 +302,45 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('desktop layout applies compact vertical tile padding', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatSessionList(
+            sessions: <ChatSession>[session()],
+            isMobileLayout: false,
+            verticalTilePadding: 1,
+          ),
+        ),
+      ),
+    );
+
+    final tilePadding = tester.widget<Padding>(
+      find.byKey(const ValueKey<String>('chat_session_tile_ses_1')),
+    );
+    expect(tilePadding.padding, const EdgeInsets.symmetric(vertical: 1));
+  });
+
+  testWidgets('mobile layout keeps default vertical tile padding', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatSessionList(
+            sessions: <ChatSession>[session()],
+            isMobileLayout: true,
+          ),
+        ),
+      ),
+    );
+
+    final tilePadding = tester.widget<Padding>(
+      find.byKey(const ValueKey<String>('chat_session_tile_ses_1')),
+    );
+    expect(tilePadding.padding, const EdgeInsets.symmetric(vertical: 3));
+  });
 }

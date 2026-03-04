@@ -227,14 +227,9 @@ extension _ChatPageScaffold on _ChatPageState {
     );
 
     return ListView.separated(
-      padding: EdgeInsets.fromLTRB(
-        isMobileLayout ? 8 : 12,
-        0,
-        isMobileLayout ? 8 : 12,
-        8,
-      ),
+      padding: EdgeInsets.fromLTRB(8, 0, 8, isMobileLayout ? 8 : 6),
       itemCount: openProjects.length,
-      separatorBuilder: (_, __) => SizedBox(height: isMobileLayout ? 6 : 8),
+      separatorBuilder: (_, __) => SizedBox(height: isMobileLayout ? 6 : 4),
       itemBuilder: (context, index) {
         final project = openProjects[index];
         final selected = project.id == currentProjectId;
@@ -372,12 +367,7 @@ extension _ChatPageScaffold on _ChatPageState {
           if (expanded) ...[
             if (selected)
               Padding(
-                padding: EdgeInsets.fromLTRB(
-                  isMobileLayout ? 4 : 8,
-                  0,
-                  isMobileLayout ? 4 : 8,
-                  8,
-                ),
+                padding: EdgeInsets.fromLTRB(4, 0, 4, 8),
                 child: Column(
                   children: [
                     ChatSessionList(
@@ -439,11 +429,12 @@ extension _ChatPageScaffold on _ChatPageState {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       padding: EdgeInsets.fromLTRB(
-                        isMobileLayout ? 4 : 8,
+                        isMobileLayout ? 4 : 4,
                         0,
-                        isMobileLayout ? 4 : 8,
+                        isMobileLayout ? 4 : 4,
                         isMobileLayout ? 4 : 8,
                       ),
+                      verticalTilePadding: isMobileLayout ? 3 : 1,
                     ),
                     if (chatProvider.canLoadMoreSessions)
                       Padding(
