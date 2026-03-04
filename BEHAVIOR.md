@@ -114,6 +114,14 @@
 - **Then** tapping a project row switches context directly from the sidebar (no modal required)
 - **Then** when snapshot data exists, the sidebar shows compact session previews for that project; when not available, it shows a "Open project to load conversations" hint
 
+### Session pinning is context-scoped and sort-stable
+
+- **Given** the user is viewing conversations in a specific server + project context
+- **When** the user pins or unpins a session from the conversations list
+- **Then** pin state is persisted locally for that exact context only (no cross-server/cross-project leakage)
+- **Then** pinned sessions are always ordered before unpinned sessions, independent of the selected sort mode (recent, oldest, or title)
+- **Then** standard list filters (for example active vs archived) still apply first; pinning only changes ordering within the currently visible set
+
 ### Auto-generated session titles
 
 - **Given** a new session with no custom title
