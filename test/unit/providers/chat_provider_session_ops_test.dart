@@ -288,6 +288,27 @@ void main() {
       },
     );
 
+    test(
+      'initializeProviders restores pinned sessions before list load',
+      () async {
+        final serverIdForScope =
+            localDataSource.activeServerId ?? provider.activeServerId;
+        final scopeId =
+            provider.projectProvider.currentDirectory ??
+            provider.projectProvider.currentProjectId;
+        await localDataSource.savePinnedSessionsJson(
+          json.encode(<String>['ses_1']),
+          serverId: serverIdForScope,
+          scopeId: scopeId,
+        );
+
+        await provider.initializeProviders();
+        await provider.loadSessions();
+
+        expect(provider.isSessionPinned('ses_1'), isTrue);
+      },
+    );
+
     test('loadSessions surfaces mapped failure state', () async {
       chatRepository.getSessionsFailure = const NetworkFailure('no network');
 

@@ -48,14 +48,13 @@ extension _ChatProviderCorePart on ChatProvider {
       }
 
       await _refreshAgents(serverId: serverId, scopeId: scopeId);
+      await _loadModelPreferenceState(serverId: serverId, scopeId: scopeId);
+      await _loadSessionSelectionOverridesState(
+        serverId: serverId,
+        scopeId: scopeId,
+      );
 
       if (_providers.isNotEmpty) {
-        await _loadModelPreferenceState(serverId: serverId, scopeId: scopeId);
-        await _loadSessionSelectionOverridesState(
-          serverId: serverId,
-          scopeId: scopeId,
-        );
-
         _RemoteChatSelection? remoteSelection;
         if (_isExperimentalMultiDeviceSyncEnabled) {
           remoteSelection = await _loadRemoteChatSelection();

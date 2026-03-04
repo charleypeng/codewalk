@@ -78,7 +78,6 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     _sessionListFilter = snapshot.sessionListFilter;
     _sessionListSort = snapshot.sessionListSort;
     _pinnedSessionIds = Set<String>.from(snapshot.pinnedSessionIds);
-    _prunePinnedSessionIdsToKnownSessions();
     _sessionVisibleLimit = snapshot.sessionVisibleLimit;
     _isNewChatDraftActive = snapshot.isNewChatDraftActive;
     _activeSendDraft = snapshot.activeSendDraft;
@@ -147,11 +146,15 @@ extension _ChatProviderPreferenceOps on ChatProvider {
               .where((value) => value.trim().isNotEmpty)
               .toSet();
         }
-      } catch (_) {
+      } catch (error, stackTrace) {
+        AppLogger.warn(
+          'Failed to restore pinned sessions preferences',
+          error: error,
+          stackTrace: stackTrace,
+        );
         _pinnedSessionIds = <String>{};
       }
     }
-    _prunePinnedSessionIdsToKnownSessions();
 
     final usageJson = await localDataSource.getModelUsageCountsJson(
       serverId: serverId,

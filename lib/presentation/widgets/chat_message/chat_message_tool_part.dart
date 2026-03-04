@@ -347,6 +347,7 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
         borderRadius: AppShapes.borderExtraSmall,
       ),
       child: RichText(
+        key: const ValueKey<String>('tool_command_text'),
         textScaler: MediaQuery.textScalerOf(context),
         text: TextSpan(
           style: Theme.of(

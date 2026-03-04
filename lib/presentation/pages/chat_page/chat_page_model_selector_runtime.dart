@@ -114,8 +114,9 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                     unawaited(chatProvider.retryProvidersRefresh()),
               ),
             ),
-          if ((isSubConversation && selectedVariantLabel != null) ||
-              variants.isNotEmpty)
+          if (isSubConversation
+              ? selectedVariantLabel != null
+              : variants.isNotEmpty)
             Tooltip(
               message: isSubConversation
                   ? 'Effort locked in sub-conversation'
