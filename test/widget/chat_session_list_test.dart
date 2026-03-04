@@ -74,6 +74,35 @@ void main() {
     expect(calls, 1);
   });
 
+  testWidgets('pin action calls callback and shows pinned indicator', (
+    tester,
+  ) async {
+    var calls = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatSessionList(
+            sessions: <ChatSession>[session()],
+            pinnedSessionIds: const <String>{'ses_1'},
+            onSessionPinToggled: (item) async {
+              calls += 1;
+            },
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byIcon(Symbols.push_pin), findsOneWidget);
+
+    await tester.tap(find.byIcon(Symbols.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Unpin'));
+    await tester.pumpAndSettle();
+
+    expect(calls, 1);
+  });
+
   testWidgets('archive and delete actions call callbacks', (tester) async {
     var archivedCalls = 0;
     var deleteCalls = 0;

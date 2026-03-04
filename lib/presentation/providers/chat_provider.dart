@@ -292,6 +292,7 @@ class ChatProvider extends ChangeNotifier {
   Map<String, List<String>> _recentVariantValuesByModel =
       <String, List<String>>{};
   List<String> _favoriteModelKeys = <String>[];
+  Set<String> _pinnedSessionIds = <String>{};
   Map<String, int> _modelUsageCounts = <String, int>{};
   Map<String, String> _selectedVariantByModel = <String, String>{};
   String _activeServerId = 'legacy';
@@ -483,6 +484,7 @@ class ChatProvider extends ChangeNotifier {
       List<String>.unmodifiable(_recentModelKeys);
   List<String> get favoriteModelKeys =>
       List<String>.unmodifiable(_favoriteModelKeys);
+  Set<String> get pinnedSessionIds => UnmodifiableSetView(_pinnedSessionIds);
   Map<String, int> get modelUsageCounts =>
       Map<String, int>.unmodifiable(_modelUsageCounts);
   String get activeServerId => _activeServerId;
@@ -841,7 +843,10 @@ class ChatProvider extends ChangeNotifier {
     if (snapshot == null) {
       return const <ChatSession>[];
     }
-    return _buildVisibleSessionsFrom(snapshot.sessions);
+    return _buildVisibleSessionsFrom(
+      snapshot.sessions,
+      pinnedSessionIds: snapshot.pinnedSessionIds,
+    );
   }
 
   bool hasSnapshotForScopeId(String scopeId) {
@@ -857,8 +862,10 @@ class ChatProvider extends ChangeNotifier {
   }
 
   List<ChatSession> _buildVisibleSessionsFrom(
-    List<ChatSession> sourceSessions,
-  ) {
+    List<ChatSession> sourceSessions, {
+    Set<String>? pinnedSessionIds,
+  }) {
+    final effectivePinnedSessionIds = pinnedSessionIds ?? _pinnedSessionIds;
     final query = _sessionSearchQuery.trim().toLowerCase();
     final filtered = sourceSessions
         .where((session) {
@@ -887,18 +894,13 @@ class ChatProvider extends ChangeNotifier {
         .toList(growable: false);
 
     final sorted = List<ChatSession>.from(filtered)
-      ..sort((a, b) {
-        switch (_sessionListSort) {
-          case SessionListSort.oldest:
-            return a.time.compareTo(b.time);
-          case SessionListSort.title:
-            return (a.title ?? '').toLowerCase().compareTo(
-              (b.title ?? '').toLowerCase(),
-            );
-          case SessionListSort.recent:
-            return b.time.compareTo(a.time);
-        }
-      });
+      ..sort(
+        (a, b) => _compareSessionsForSidebarOrder(
+          a,
+          b,
+          pinnedSessionIds: effectivePinnedSessionIds,
+        ),
+      );
 
     final limited = sorted.length <= _sessionVisibleLimit
         ? sorted
@@ -908,6 +910,40 @@ class ChatProvider extends ChangeNotifier {
       visibleSessions: limited,
       sortedFilteredSessions: sorted,
     );
+  }
+
+  int _compareSessionsForSidebarOrder(
+    ChatSession a,
+    ChatSession b, {
+    Set<String>? pinnedSessionIds,
+  }) {
+    final effectivePinnedSessionIds = pinnedSessionIds ?? _pinnedSessionIds;
+    final aPinned = effectivePinnedSessionIds.contains(a.id);
+    final bPinned = effectivePinnedSessionIds.contains(b.id);
+    if (aPinned != bPinned) {
+      return aPinned ? -1 : 1;
+    }
+
+    switch (_sessionListSort) {
+      case SessionListSort.oldest:
+        return a.time.compareTo(b.time);
+      case SessionListSort.title:
+        return (a.title ?? '').toLowerCase().compareTo(
+          (b.title ?? '').toLowerCase(),
+        );
+      case SessionListSort.recent:
+        return b.time.compareTo(a.time);
+    }
+  }
+
+  void _prunePinnedSessionIdsToKnownSessions() {
+    if (_pinnedSessionIds.isEmpty) {
+      return;
+    }
+    final knownSessionIds = _sessions.map((session) => session.id).toSet();
+    _pinnedSessionIds = _pinnedSessionIds
+        .where((id) => knownSessionIds.contains(id))
+        .toSet();
   }
 
   List<ChatSession> _includeVisibleSessionAncestors({
@@ -2022,6 +2058,14 @@ class ChatProvider extends ChangeNotifier {
     return _favoriteModelKeys.contains(_modelKey(providerId, modelId));
   }
 
+  bool isSessionPinned(String sessionId) {
+    final normalizedSessionId = sessionId.trim();
+    if (normalizedSessionId.isEmpty) {
+      return false;
+    }
+    return _pinnedSessionIds.contains(normalizedSessionId);
+  }
+
   /// Toggle a model as favorite (local-only, no remote sync).
   Future<void> toggleModelFavorite({
     required String providerId,
@@ -2038,6 +2082,26 @@ class ChatProvider extends ChangeNotifier {
     final scopeId = _resolveContextScopeId();
     await _persistModelPreferenceState(serverId: serverId, scopeId: scopeId);
     notifyListeners();
+  }
+
+  Future<void> toggleSessionPinned(ChatSession session) async {
+    final sessionId = session.id.trim();
+    if (sessionId.isEmpty) {
+      return;
+    }
+
+    if (_pinnedSessionIds.contains(sessionId)) {
+      _pinnedSessionIds.remove(sessionId);
+    } else {
+      _pinnedSessionIds.add(sessionId);
+    }
+
+    _sortSessionsInPlace();
+    notifyListeners();
+
+    final serverId = await _resolveServerScopeId();
+    final scopeId = _resolveContextScopeId();
+    await _persistModelPreferenceState(serverId: serverId, scopeId: scopeId);
   }
 
   /// Load session list
@@ -2105,6 +2169,7 @@ class ChatProvider extends ChangeNotifier {
         _sessions = filteredSessions;
         _threadPermissionsVersion++;
         _sessionVisibleLimit = 40;
+        _prunePinnedSessionIdsToKnownSessions();
         _sortSessionsInPlace();
         _pruneSessionAttentionStateToKnownSessions();
         _setState(ChatState.loaded);

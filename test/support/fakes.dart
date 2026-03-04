@@ -149,6 +149,7 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
   String? sessionSelectionOverridesJson;
   String? recentModelsJson;
   String? favoriteModelsJson;
+  String? pinnedSessionsJson;
   String? modelUsageCountsJson;
   String? themeMode;
   String? experienceSettingsJson;
@@ -212,6 +213,7 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
     sessionSelectionOverridesJson = null;
     recentModelsJson = null;
     favoriteModelsJson = null;
+    pinnedSessionsJson = null;
     modelUsageCountsJson = null;
     themeMode = null;
     experienceSettingsJson = null;
@@ -467,6 +469,19 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
     if (serverId == null && scopeId == null) return favoriteModelsJson;
     return scopedStrings[_key(
       'favorite_models',
+      serverId: serverId,
+      scopeId: scopeId,
+    )];
+  }
+
+  @override
+  Future<String?> getPinnedSessionsJson({
+    String? serverId,
+    String? scopeId,
+  }) async {
+    if (serverId == null && scopeId == null) return pinnedSessionsJson;
+    return scopedStrings[_key(
+      'pinned_sessions',
       serverId: serverId,
       scopeId: scopeId,
     )];
@@ -864,6 +879,24 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
           scopeId: scopeId,
         )] =
         favoriteModelsJson;
+  }
+
+  @override
+  Future<void> savePinnedSessionsJson(
+    String pinnedSessionsJson, {
+    String? serverId,
+    String? scopeId,
+  }) async {
+    if (serverId == null && scopeId == null) {
+      this.pinnedSessionsJson = pinnedSessionsJson;
+      return;
+    }
+    scopedStrings[_key(
+          'pinned_sessions',
+          serverId: serverId,
+          scopeId: scopeId,
+        )] =
+        pinnedSessionsJson;
   }
 
   @override

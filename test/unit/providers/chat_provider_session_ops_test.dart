@@ -2,6 +2,7 @@
 library;
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/core/network/dio_client.dart';
@@ -219,6 +220,71 @@ void main() {
         expect(provider.sessions, isEmpty);
         expect(provider.currentSession, isNull);
         expect(provider.messages, isEmpty);
+      },
+    );
+
+    test('toggleSessionPinned updates scoped pin state and persists', () async {
+      await provider.loadSessions();
+      final session = provider.sessions.first;
+
+      await provider.toggleSessionPinned(session);
+
+      expect(provider.isSessionPinned(session.id), isTrue);
+      final scopeId =
+          provider.projectProvider.currentDirectory ??
+          provider.projectProvider.currentProjectId;
+      final pinnedJson = await localDataSource.getPinnedSessionsJson(
+        serverId: provider.activeServerId,
+        scopeId: scopeId,
+      );
+      expect(pinnedJson, isNotNull);
+      final decoded = json.decode(pinnedJson!);
+      expect(decoded, isA<List<dynamic>>());
+      expect(decoded as List<dynamic>, contains(session.id));
+
+      await provider.toggleSessionPinned(session);
+      expect(provider.isSessionPinned(session.id), isFalse);
+    });
+
+    test(
+      'visibleSessions keeps pinned sessions first across sort modes',
+      () async {
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_2',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(2000),
+            title: 'Session 2',
+          ),
+        );
+
+        await provider.loadSessions();
+        expect(
+          provider.visibleSessions.map((session) => session.id).toList(),
+          <String>['ses_2', 'ses_1'],
+        );
+
+        final ses1 = provider.sessions
+            .where((session) => session.id == 'ses_1')
+            .first;
+        await provider.toggleSessionPinned(ses1);
+
+        expect(
+          provider.visibleSessions.map((session) => session.id).toList(),
+          <String>['ses_1', 'ses_2'],
+        );
+
+        provider.setSessionListSort(SessionListSort.oldest);
+        expect(
+          provider.visibleSessions.map((session) => session.id).toList(),
+          <String>['ses_1', 'ses_2'],
+        );
+
+        provider.setSessionListSort(SessionListSort.title);
+        expect(
+          provider.visibleSessions.map((session) => session.id).toList(),
+          <String>['ses_1', 'ses_2'],
+        );
       },
     );
 

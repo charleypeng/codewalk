@@ -20,7 +20,9 @@ class ChatSessionList extends StatefulWidget {
     this.onSessionRenamed,
     this.onSessionShareToggled,
     this.onSessionArchiveToggled,
+    this.onSessionPinToggled,
     this.onSessionForked,
+    this.pinnedSessionIds = const <String>{},
     this.shrinkWrap = false,
     this.physics,
     this.padding = const EdgeInsets.fromLTRB(8, 0, 8, 8),
@@ -39,7 +41,9 @@ class ChatSessionList extends StatefulWidget {
   final Future<bool> Function(ChatSession session)? onSessionShareToggled;
   final Future<bool> Function(ChatSession session, bool archived)?
   onSessionArchiveToggled;
+  final Future<void> Function(ChatSession session)? onSessionPinToggled;
   final Future<void> Function(ChatSession session)? onSessionForked;
+  final Set<String> pinnedSessionIds;
   final bool shrinkWrap;
   final ScrollPhysics? physics;
   final EdgeInsetsGeometry padding;
@@ -131,6 +135,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
       sessions: widget.sessions,
       roots: roots,
       expandedParentIds: _expandedParentIds,
+      pinnedSessionIds: widget.pinnedSessionIds,
     );
     if (_cachedTreeSignature != signature) {
       _cachedTreeSignature = signature;
@@ -232,6 +237,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
     required List<ChatSession> sessions,
     required List<ChatSession> roots,
     required Set<String> expandedParentIds,
+    required Set<String> pinnedSessionIds,
   }) {
     final expanded = expandedParentIds.toList(growable: false)..sort();
     final buffer = StringBuffer()
@@ -250,6 +256,8 @@ class _ChatSessionListState extends State<ChatSessionList> {
         ..write(session.archived)
         ..write(':')
         ..write(session.shared)
+        ..write(':')
+        ..write(pinnedSessionIds.contains(session.id))
         ..write(';');
     }
     return buffer.toString();
@@ -299,6 +307,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
     );
     final showLeadingIcon = !widget.isMobileLayout;
     final colorScheme = Theme.of(context).colorScheme;
+    final isPinned = widget.pinnedSessionIds.contains(session.id);
     final childLabel = childCount == 1
         ? '1 sub-conversation'
         : '$childCount sub-conversations';
@@ -473,6 +482,16 @@ class _ChatSessionListState extends State<ChatSessionList> {
                                   )
                                 : colorScheme.onSurfaceVariant,
                           ),
+                        if (isPinned)
+                          Icon(
+                            Symbols.push_pin,
+                            size: 12,
+                            color: isSelected
+                                ? colorScheme.onSecondaryContainer.withValues(
+                                    alpha: 0.7,
+                                  )
+                                : colorScheme.onSurfaceVariant,
+                          ),
                         if (session.archived)
                           Icon(
                             Symbols.archive,
@@ -508,6 +527,9 @@ class _ChatSessionListState extends State<ChatSessionList> {
                       case 'archive':
                         _toggleArchive(context, session);
                         break;
+                      case 'pin':
+                        _togglePinned(context, session);
+                        break;
                       case 'fork':
                         _forkSession(context, session);
                         break;
@@ -517,6 +539,16 @@ class _ChatSessionListState extends State<ChatSessionList> {
                     }
                   },
                   itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'pin',
+                      child: Row(
+                        children: [
+                          const Icon(Symbols.push_pin),
+                          const SizedBox(width: 8),
+                          Text(isPinned ? 'Unpin' : 'Pin'),
+                        ],
+                      ),
+                    ),
                     const PopupMenuItem(
                       value: 'rename',
                       child: Row(
@@ -820,6 +852,26 @@ class _ChatSessionListState extends State<ChatSessionList> {
       SnackBar(
         content: Text(
           archive ? 'Conversation archived' : 'Conversation unarchived',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _togglePinned(BuildContext context, ChatSession session) async {
+    final callback = widget.onSessionPinToggled;
+    if (callback == null) {
+      return;
+    }
+
+    final wasPinned = widget.pinnedSessionIds.contains(session.id);
+    await callback(session);
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          wasPinned ? 'Conversation unpinned' : 'Conversation pinned',
         ),
       ),
     );

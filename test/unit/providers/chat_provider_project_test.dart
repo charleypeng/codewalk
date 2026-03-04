@@ -463,6 +463,111 @@ void main() {
       },
     );
 
+    test('pinned sessions stay isolated per project scope', () async {
+      final scopedRepository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_a',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Session A',
+          ),
+        ],
+      );
+      final scopedLocal = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final scopedProvider = ChatProvider(
+        sendChatMessage: SendChatMessage(scopedRepository),
+        getChatSessions: GetChatSessions(scopedRepository),
+        createChatSession: CreateChatSession(scopedRepository),
+        getChatMessages: GetChatMessages(scopedRepository),
+        getChatMessage: GetChatMessage(scopedRepository),
+        getAgents: GetAgents(appRepository),
+        getProviders: GetProviders(appRepository),
+        deleteChatSession: DeleteChatSession(scopedRepository),
+        updateChatSession: UpdateChatSession(scopedRepository),
+        shareChatSession: ShareChatSession(scopedRepository),
+        unshareChatSession: UnshareChatSession(scopedRepository),
+        forkChatSession: ForkChatSession(scopedRepository),
+        getSessionStatus: GetSessionStatus(scopedRepository),
+        getSessionChildren: GetSessionChildren(scopedRepository),
+        getSessionTodo: GetSessionTodo(scopedRepository),
+        getSessionDiff: GetSessionDiff(scopedRepository),
+        watchChatEvents: WatchChatEvents(scopedRepository),
+        watchGlobalChatEvents: WatchGlobalChatEvents(scopedRepository),
+        listPendingPermissions: ListPendingPermissions(scopedRepository),
+        replyPermission: ReplyPermission(scopedRepository),
+        listPendingQuestions: ListPendingQuestions(scopedRepository),
+        replyQuestion: ReplyQuestion(scopedRepository),
+        rejectQuestion: RejectQuestion(scopedRepository),
+        projectProvider: ProjectProvider(
+          projectRepository: FakeProjectRepository(
+            currentProject: Project(
+              id: 'proj_a',
+              name: 'Project A',
+              path: '/repo/a',
+              createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+            ),
+            projects: <Project>[
+              Project(
+                id: 'proj_a',
+                name: 'Project A',
+                path: '/repo/a',
+                createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+              ),
+              Project(
+                id: 'proj_b',
+                name: 'Project B',
+                path: '/repo/b',
+                createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+              ),
+            ],
+          ),
+          localDataSource: scopedLocal,
+        ),
+        localDataSource: scopedLocal,
+      );
+
+      await scopedProvider.projectProvider.initializeProject();
+      await scopedProvider.initializeProviders();
+      await scopedProvider.loadSessions();
+
+      final projectASession = scopedProvider.sessions.first;
+      await scopedProvider.toggleSessionPinned(projectASession);
+      expect(scopedProvider.isSessionPinned('ses_a'), isTrue);
+
+      scopedRepository.sessions
+        ..clear()
+        ..add(
+          ChatSession(
+            id: 'ses_b',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(2000),
+            title: 'Session B',
+          ),
+        );
+      await scopedProvider.projectProvider.switchProject('proj_b');
+      await scopedProvider.onProjectScopeChanged();
+
+      expect(scopedProvider.isSessionPinned('ses_a'), isFalse);
+      expect(scopedProvider.isSessionPinned('ses_b'), isFalse);
+
+      scopedRepository.sessions
+        ..clear()
+        ..add(
+          ChatSession(
+            id: 'ses_a',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Session A',
+          ),
+        );
+      await scopedProvider.projectProvider.switchProject('proj_a');
+      await scopedProvider.onProjectScopeChanged();
+
+      expect(scopedProvider.isSessionPinned('ses_a'), isTrue);
+    });
+
     test(
       'switching project restores last session for each directory automatically',
       () async {

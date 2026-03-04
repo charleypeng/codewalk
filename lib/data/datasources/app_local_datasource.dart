@@ -123,6 +123,16 @@ abstract class AppLocalDataSource {
     String? scopeId,
   });
 
+  /// Retrieve locally-persisted pinned session IDs (scoped).
+  Future<String?> getPinnedSessionsJson({String? serverId, String? scopeId});
+
+  /// Save locally-persisted pinned session IDs (scoped).
+  Future<void> savePinnedSessionsJson(
+    String pinnedSessionsJson, {
+    String? serverId,
+    String? scopeId,
+  });
+
   /// Technical comment translated to English.
   Future<String?> getModelUsageCountsJson({String? serverId, String? scopeId});
 
@@ -963,6 +973,36 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
   }
 
   @override
+  Future<String?> getPinnedSessionsJson({
+    String? serverId,
+    String? scopeId,
+  }) async {
+    return sharedPreferences.getString(
+      _scopedKey(
+        AppConstants.pinnedSessionsKey,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+  }
+
+  @override
+  Future<void> savePinnedSessionsJson(
+    String pinnedSessionsJson, {
+    String? serverId,
+    String? scopeId,
+  }) async {
+    await sharedPreferences.setString(
+      _scopedKey(
+        AppConstants.pinnedSessionsKey,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+      pinnedSessionsJson,
+    );
+  }
+
+  @override
   Future<String?> getModelUsageCountsJson({
     String? serverId,
     String? scopeId,
@@ -1443,6 +1483,11 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
       ),
       _scopedKey(
         AppConstants.sessionMessagesSnapshotIdsKey,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+      _scopedKey(
+        AppConstants.pinnedSessionsKey,
         serverId: serverId,
         scopeId: scopeId,
       ),

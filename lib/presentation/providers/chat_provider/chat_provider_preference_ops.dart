@@ -17,6 +17,7 @@ extension _ChatProviderPreferenceOps on ChatProvider {
       sessionSearchQuery: _sessionSearchQuery,
       sessionListFilter: _sessionListFilter,
       sessionListSort: _sessionListSort,
+      pinnedSessionIds: Set<String>.from(_pinnedSessionIds),
       sessionVisibleLimit: _sessionVisibleLimit,
       isNewChatDraftActive: _isNewChatDraftActive,
       activeSendDraft: _activeSendDraft,
@@ -42,6 +43,7 @@ extension _ChatProviderPreferenceOps on ChatProvider {
       _sessionSearchQuery = '';
       _sessionListFilter = SessionListFilter.active;
       _sessionListSort = SessionListSort.recent;
+      _pinnedSessionIds = <String>{};
       _sessionVisibleLimit = 40;
       _isNewChatDraftActive = false;
       _clearActiveSendDraft();
@@ -75,6 +77,8 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     _sessionSearchQuery = snapshot.sessionSearchQuery;
     _sessionListFilter = snapshot.sessionListFilter;
     _sessionListSort = snapshot.sessionListSort;
+    _pinnedSessionIds = Set<String>.from(snapshot.pinnedSessionIds);
+    _prunePinnedSessionIdsToKnownSessions();
     _sessionVisibleLimit = snapshot.sessionVisibleLimit;
     _isNewChatDraftActive = snapshot.isNewChatDraftActive;
     _activeSendDraft = snapshot.activeSendDraft;
@@ -89,6 +93,7 @@ extension _ChatProviderPreferenceOps on ChatProvider {
   }) async {
     _recentModelKeys = <String>[];
     _favoriteModelKeys = <String>[];
+    _pinnedSessionIds = <String>{};
     _modelUsageCounts = <String, int>{};
     _selectedVariantByModel = <String, String>{};
 
@@ -128,6 +133,25 @@ extension _ChatProviderPreferenceOps on ChatProvider {
         _favoriteModelKeys = <String>[];
       }
     }
+
+    final pinnedJson = await localDataSource.getPinnedSessionsJson(
+      serverId: serverId,
+      scopeId: scopeId,
+    );
+    if (pinnedJson != null && pinnedJson.trim().isNotEmpty) {
+      try {
+        final decoded = json.decode(pinnedJson);
+        if (decoded is List<dynamic>) {
+          _pinnedSessionIds = decoded
+              .whereType<String>()
+              .where((value) => value.trim().isNotEmpty)
+              .toSet();
+        }
+      } catch (_) {
+        _pinnedSessionIds = <String>{};
+      }
+    }
+    _prunePinnedSessionIdsToKnownSessions();
 
     final usageJson = await localDataSource.getModelUsageCountsJson(
       serverId: serverId,
@@ -182,6 +206,11 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     );
     await localDataSource.saveFavoriteModelsJson(
       json.encode(_favoriteModelKeys),
+      serverId: serverId,
+      scopeId: scopeId,
+    );
+    await localDataSource.savePinnedSessionsJson(
+      json.encode(_pinnedSessionIds.toList(growable: false)),
       serverId: serverId,
       scopeId: scopeId,
     );

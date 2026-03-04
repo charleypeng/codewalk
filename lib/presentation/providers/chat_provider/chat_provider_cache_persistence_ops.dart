@@ -228,17 +228,7 @@ extension _ChatProviderCachePersistenceOps on ChatProvider {
   }
 
   void _sortSessionsInPlace() {
-    _sessions.sort((a, b) {
-      if (_sessionListSort == SessionListSort.oldest) {
-        return a.time.compareTo(b.time);
-      }
-      if (_sessionListSort == SessionListSort.title) {
-        return (a.title ?? '').toLowerCase().compareTo(
-          (b.title ?? '').toLowerCase(),
-        );
-      }
-      return b.time.compareTo(a.time);
-    });
+    _sessions.sort((a, b) => _compareSessionsForSidebarOrder(a, b));
   }
 
   Future<void> _loadCachedSessions({

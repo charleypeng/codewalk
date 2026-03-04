@@ -196,6 +196,15 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
 
   void _removeSessionById(String sessionId) {
     _sessions.removeWhere((item) => item.id == sessionId);
+    final wasPinned = _pinnedSessionIds.remove(sessionId);
+    if (wasPinned) {
+      unawaited(
+        _persistModelPreferenceState(
+          serverId: _activeServerId,
+          scopeId: _resolveContextScopeId(),
+        ),
+      );
+    }
     _removeSessionMessagesCache(sessionId);
     unawaited(_clearSessionMessagesSnapshotBestEffort(sessionId));
     _removeSessionSelectionOverride(sessionId);

@@ -373,6 +373,7 @@ extension _ChatPageScaffold on _ChatPageState {
                     ChatSessionList(
                       sessions: sessions,
                       currentSession: chatProvider.currentSession,
+                      pinnedSessionIds: chatProvider.pinnedSessionIds,
                       isSessionActive: chatProvider.isSessionActivelyResponding,
                       sessionAttentionFor: chatProvider.sessionAttentionFor,
                       isMobileLayout: isMobileLayout,
@@ -407,6 +408,9 @@ extension _ChatPageScaffold on _ChatPageState {
                           session,
                           archived,
                         );
+                      },
+                      onSessionPinToggled: (session) {
+                        return chatProvider.toggleSessionPinned(session);
                       },
                       onSessionForked: (session) async {
                         final created = await chatProvider.forkSession(session);

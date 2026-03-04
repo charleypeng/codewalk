@@ -97,6 +97,7 @@ class _ChatContextSnapshot {
     required this.sessionSearchQuery,
     required this.sessionListFilter,
     required this.sessionListSort,
+    required this.pinnedSessionIds,
     required this.sessionVisibleLimit,
     required this.isNewChatDraftActive,
     required this.activeSendDraft,
@@ -117,6 +118,7 @@ class _ChatContextSnapshot {
   final String sessionSearchQuery;
   final SessionListFilter sessionListFilter;
   final SessionListSort sessionListSort;
+  final Set<String> pinnedSessionIds;
   final int sessionVisibleLimit;
   final bool isNewChatDraftActive;
   final ChatComposerDraft? activeSendDraft;
