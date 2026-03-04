@@ -1,7 +1,11 @@
 # CodeWalk
 
 <p align="center"><img src="demo-desktop.gif" alt="CodeWalk desktop demo" /></p>
-<p align="center"><video src="demo-mobile.mp4" controls muted playsinline></video></p>
+<p align="center">https://github.com/user-attachments/assets/032f64e2-e8ee-4024-b49a-ca95a774653f</p>
+
+
+
+
 
 ![CodeWalk Logo](assets/images/logo.256.png)
 
