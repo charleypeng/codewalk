@@ -14,7 +14,7 @@ The commercial license is required **only** for organizations whose Annual Reven
 - **"Software"** means CodeWalk and all associated source code, documentation, and assets distributed in this repository.
 - **"Organization"** means the legal entity (corporation, LLC, partnership, or equivalent) using the Software.
 - **"Annual Revenue"** means the Organization's total consolidated revenue in its most recently completed fiscal year, as reported in audited financial statements or equivalent filings.
-- **"Revenue Threshold"** means USD 500,000,000 (five hundred million United States dollars).
+- **"Revenue Threshold"** means USD 1,000,000 (one million United States dollars).
 
 ## 3. When This License Applies
 

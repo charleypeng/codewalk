@@ -1,25 +1,26 @@
 # CodeWalk
 
+<p align="center"><img src="demo-desktop.gif" alt="CodeWalk desktop demo" /></p>
+<p align="center"><video src="demo-mobile.mp4" controls muted playsinline></video></p>
+
 ![CodeWalk Logo](assets/images/logo.256.png)
 
 A native (really fast!!) cross-platform client for [OpenCode](https://github.com/anomalyco/opencode) server mode. Built with Flutter, it provides a conversational interface for session-based AI coding interactions over HTTP APIs and streaming events.
 
 ## Highlights
 
-- AI chat interface with streaming responses and realtime event sync (SSE)
-- Multi-server profile management (add, edit, remove, switch, health checks)
-- Multi-provider and model selection with variant/reasoning effort controls
-- Session lifecycle (create, rename, archive, fork, share, delete)
-- Project/workspace context switching with directory-scoped state isolation
-- Worktree management (create, reset, delete)
-- Image and PDF attachments with model capability gating
-- Speech-to-text voice input
-- Interactive permission and question prompts from the server
-- Chat-first layout with responsive sidebar (mobile drawer, desktop split view)
-- Desktop keyboard shortcuts (`Ctrl/Cmd + N`, `Ctrl/Cmd + R`, `Ctrl/Cmd + L`, `Esc`)
-- Markdown rendering with syntax highlighting and text selection
-- Material Design 3 theming
-- Cross-platform: Linux, Windows, macOS, Web, Android
+- Realtime AI chat with streaming responses (SSE) and robust turn reconciliation
+- Instant session reopen with SWR snapshots and background revalidation
+- Load older message history by scrolling to the top of chat
+- Project-centric sidebar with conversations grouped by open projects
+- Project context support for both Git repositories and non-Git folders
+- Per-project New Chat draft isolation with lazy session bootstrap
+- Multi-server profile management (health checks, default/active switching, auth)
+- Model/provider selection with variants, favorites, and reasoning controls
+- In-app update flow with auto-check, startup notification, and direct install
+- Desktop productivity shortcuts, including Alt+Tab-style session cycling
+- Interactive server permission/question prompts with attention badges
+- Responsive Material 3 experience across Linux, Windows, macOS, Web, and Android
 
 ## Install in One Command
 
@@ -139,7 +140,7 @@ For full technical details, see [CODEBASE.md](CODEBASE.md).
 This project is dual-licensed:
 
 - **Open Source:** [GNU Affero General Public License v3.0 (AGPLv3)](LICENSE) -- free for everyone.
-- **Commercial:** A [separate commercial license](LICENSE-COMMERCIAL.md) is available for organizations with annual revenue exceeding USD 500M that wish to use the software without AGPLv3 obligations.
+- **Commercial:** A [separate commercial license](LICENSE-COMMERCIAL.md) is available for organizations with annual revenue exceeding USD 1M that wish to use the software without AGPLv3 obligations.
 
 ## Origin and Acknowledgment
 

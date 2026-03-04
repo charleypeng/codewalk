@@ -12,7 +12,7 @@ Description: Build an objective baseline of the current fork (code, docs, endpoi
 Completed baseline inventory, deletion/retention policies, rollback checkpoints, and dependency governance for subsequent features.
 Commits: b9de67f, 7d7e6f6, 3640fb2, d307731, c96f53c
 
-### Feature 002: Licensing Migration to AGPLv3 + Commercial (>500M Revenue)
+### Feature 002: Licensing Migration to AGPLv3 + Commercial (>1M Revenue)
 Description: Replace MIT with a compliant AGPLv3 setup and add a separate commercial license track for organizations above the revenue threshold.
 
 Completed legal migration to AGPLv3 with commercial license track, notices, and dependency license validation.
