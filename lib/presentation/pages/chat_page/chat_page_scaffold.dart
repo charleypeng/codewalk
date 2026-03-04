@@ -429,9 +429,9 @@ extension _ChatPageScaffold on _ChatPageState {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       padding: EdgeInsets.fromLTRB(
-                        isMobileLayout ? 4 : 4,
+                        4,
                         0,
-                        isMobileLayout ? 4 : 4,
+                        4,
                         isMobileLayout ? 4 : 8,
                       ),
                       verticalTilePadding: isMobileLayout ? 3 : 1,
