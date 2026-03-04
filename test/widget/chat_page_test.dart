@@ -3524,6 +3524,10 @@ void main() {
         findsOneWidget,
       );
       expect(
+        find.byKey(const ValueKey<String>('subconversation_stop_button')),
+        findsNothing,
+      );
+      expect(
         find.byKey(const ValueKey<String>('composer_input_row')),
         findsNothing,
       );
@@ -3564,6 +3568,85 @@ void main() {
         find.byKey(const ValueKey<String>('agent_selector_button')),
         findsOneWidget,
       );
+    },
+  );
+
+  testWidgets(
+    'sub-conversation footer keeps stop beside return while response is active',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final rootSession = ChatSession(
+        id: 'ses_root_sub_stop',
+        workspaceId: 'default',
+        time: DateTime.fromMillisecondsSinceEpoch(1000),
+        title: 'Root Session',
+      );
+      final childSession = ChatSession(
+        id: 'ses_child_sub_stop',
+        workspaceId: 'default',
+        time: DateTime.fromMillisecondsSinceEpoch(1100),
+        title: 'Child Session',
+        parentId: rootSession.id,
+      );
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[rootSession, childSession],
+      );
+      repository.messagesBySession[childSession.id] = <ChatMessage>[
+        AssistantMessage(
+          id: 'msg_child_sub_stop',
+          sessionId: childSession.id,
+          time: DateTime.fromMillisecondsSinceEpoch(1200),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_child_sub_stop',
+              messageId: 'msg_child_sub_stop',
+              sessionId: 'ses_child_sub_stop',
+              text: 'Still generating...',
+            ),
+          ],
+        ),
+      ];
+      repository.sessionStatusById = const <String, SessionStatusInfo>{
+        'ses_child_sub_stop': SessionStatusInfo(type: SessionStatusType.busy),
+      };
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(childSession);
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('subconversation_return_main_button'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('subconversation_stop_button')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('subconversation_stop_button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(repository.abortSessionCallCount, 1);
+      expect(repository.lastAbortSessionId, childSession.id);
     },
   );
 

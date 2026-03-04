@@ -272,17 +272,46 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
   }
 
   Widget _buildSubConversationReturnButton(ChatProvider chatProvider) {
+    final canStopResponse = chatProvider.canAbortActiveResponse;
+
     return Padding(
       padding: const EdgeInsets.all(8),
-      child: SizedBox(
-        width: double.infinity,
-        child: FilledButton.icon(
-          key: const ValueKey<String>('subconversation_return_main_button'),
-          onPressed: () => unawaited(_returnToMainConversation(chatProvider)),
-          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-          icon: const Icon(Symbols.arrow_back_rounded),
-          label: const Text('Return to main conversation'),
-        ),
+      child: Row(
+        children: [
+          Expanded(
+            child: FilledButton.icon(
+              key: const ValueKey<String>('subconversation_return_main_button'),
+              onPressed: () =>
+                  unawaited(_returnToMainConversation(chatProvider)),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(52),
+              ),
+              icon: const Icon(Symbols.arrow_back_rounded),
+              label: const Text('Return to main conversation'),
+            ),
+          ),
+          if (canStopResponse) ...[
+            const SizedBox(width: 8),
+            SizedBox.square(
+              dimension: 52,
+              child: FilledButton(
+                key: const ValueKey<String>('subconversation_stop_button'),
+                onPressed: () =>
+                    unawaited(_requestStopActiveResponse(chatProvider)),
+                style: FilledButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  backgroundColor: const Color(0xFF424242),
+                  foregroundColor: Theme.of(context).colorScheme.error,
+                ),
+                child: Icon(
+                  Symbols.stop_rounded,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -714,6 +743,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     }
 
     if (chatProvider.state == ChatState.error) {
+      final rawErrorMessage = chatProvider.errorMessage ?? 'An error occurred';
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -725,7 +755,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
             ),
             const SizedBox(height: 16),
             Text(
-              chatProvider.errorMessage ?? 'An error occurred',
+              normalizeAbortMessageForDisplay(rawErrorMessage),
               style: Theme.of(context).textTheme.titleMedium,
               textAlign: TextAlign.center,
             ),
