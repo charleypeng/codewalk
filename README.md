@@ -46,17 +46,11 @@ Install using the `install.cat` pattern:
 
 Run the same command again any time to update/reinstall to the latest GitHub release.
 
-Installers automatically select the best artifact for your OS/CPU:
-
-- Linux: `x64` and `arm64`
-- Windows: `x64` and `arm64` (ARM64 falls back to x64 when needed)
-- macOS: `x64` and `arm64`
-
-Release assets are published per OS/architecture (no universal desktop archive).
+Installers automatically pick the right release for your platform.
 
 - Android
 
-  Open this link in your Android browser to auto-download the best APK for your device:
+  Open this in your Android browser to download the APK:
   [install.cat/verseles/codewalk](https://install.cat/verseles/codewalk)
 
 ### Uninstall
