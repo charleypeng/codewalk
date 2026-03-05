@@ -11,6 +11,8 @@ import 'package:provider/provider.dart';
 
 import '../../core/di/injection_container.dart' as di;
 import '../../core/logging/app_logger.dart';
+import '../../data/datasources/app_local_datasource.dart';
+import '../../domain/entities/canned_answer.dart';
 import '../../domain/entities/chat_composer_draft.dart';
 import '../../domain/entities/chat_session.dart';
 import '../../domain/entities/experience_settings.dart';
@@ -30,12 +32,13 @@ part 'chat_input/chat_input_suggestion_popover.dart';
 part 'chat_input/chat_input_attachment_controller.dart';
 part 'chat_input/chat_input_send_controller.dart';
 part 'chat_input/chat_input_speech_controller.dart';
+part 'chat_input/chat_input_canned_controller.dart';
 
 enum ChatComposerMode { normal, shell }
 
 enum ChatComposerSuggestionType { file, agent }
 
-enum ChatComposerPopoverType { none, mention, slash }
+enum ChatComposerPopoverType { none, mention, slash, canned }
 
 class ChatInputController {
   _ChatInputWidgetState? _state;
@@ -218,6 +221,9 @@ class ChatInputWidget extends StatefulWidget {
     this.allowImageAttachment = true,
     this.allowPdfAttachment = true,
     this.controller,
+    this.cannedAnswersDataSource,
+    this.cannedAnswersServerId,
+    this.cannedAnswersScopeId,
     this.contextItems = const <FileInputPart>[],
     this.onRemoveContextItem,
   });
@@ -241,6 +247,9 @@ class ChatInputWidget extends StatefulWidget {
   final bool allowImageAttachment;
   final bool allowPdfAttachment;
   final ChatInputController? controller;
+  final AppLocalDataSource? cannedAnswersDataSource;
+  final String? cannedAnswersServerId;
+  final String? cannedAnswersScopeId;
   // File line references added as context for the next message.
   final List<FileInputPart> contextItems;
   final void Function(int index)? onRemoveContextItem;
@@ -279,6 +288,8 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
       <ChatComposerMentionSuggestion>[];
   List<ChatComposerSlashCommandSuggestion> _slashSuggestions =
       <ChatComposerSlashCommandSuggestion>[];
+  List<CannedAnswer> _globalCannedAnswers = <CannedAnswer>[];
+  List<CannedAnswer> _projectCannedAnswers = <CannedAnswer>[];
   int _activeSuggestionIndex = 0;
   String _activeMentionQuery = '';
   String _activeSlashQuery = '';
@@ -352,6 +363,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   void initState() {
     super.initState();
     widget.controller?._attach(this);
+    unawaited(_loadCannedAnswers());
   }
 
   @override
@@ -372,6 +384,10 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     if (!identical(oldWidget.controller, widget.controller)) {
       oldWidget.controller?._detach(this);
       widget.controller?._attach(this);
+    }
+    if (oldWidget.cannedAnswersServerId != widget.cannedAnswersServerId ||
+        oldWidget.cannedAnswersScopeId != widget.cannedAnswersScopeId) {
+      unawaited(_loadCannedAnswers());
     }
     if (widget.prefilledDraftVersion != oldWidget.prefilledDraftVersion) {
       final prefilledDraft = widget.prefilledDraft;
@@ -449,6 +465,8 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
         return _mentionSuggestions.length;
       case ChatComposerPopoverType.slash:
         return _slashSuggestions.length;
+      case ChatComposerPopoverType.canned:
+        return _visibleCannedAnswers.length;
       case ChatComposerPopoverType.none:
         return 0;
     }
@@ -653,6 +671,22 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     });
   }
 
+  Widget _buildComposerPopover({
+    required ColorScheme colorScheme,
+    required double maxHeight,
+  }) {
+    if (_popoverType == ChatComposerPopoverType.canned) {
+      return _buildCannedAnswersPopover(
+        colorScheme: colorScheme,
+        maxHeight: maxHeight,
+      );
+    }
+    return _buildSuggestionPopover(
+      colorScheme: colorScheme,
+      maxHeight: maxHeight,
+    );
+  }
+
   IconData _mentionIconForToken(String value) {
     if (value.contains('/') || value.contains('.')) {
       return Symbols.insert_drive_file;
@@ -855,7 +889,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
               Padding(
                 key: const ValueKey<String>('composer_popover_row'),
                 padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
-                child: _buildSuggestionPopover(
+                child: _buildComposerPopover(
                   colorScheme: colorScheme,
                   maxHeight: _popoverMaxHeight(context),
                 ),
@@ -902,6 +936,29 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 2),
+                                  child: IconButton.filledTonal(
+                                    onPressed: widget.enabled
+                                        ? _toggleCannedPopover
+                                        : null,
+                                    tooltip: 'Canned answers',
+                                    style: IconButton.styleFrom(
+                                      minimumSize: const Size(40, 40),
+                                      maximumSize: const Size(40, 40),
+                                      padding: EdgeInsets.zero,
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                      visualDensity: Theme.of(
+                                        context,
+                                      ).visualDensity,
+                                    ),
+                                    icon: const Icon(
+                                      Symbols.quickreply_rounded,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
                                 Expanded(
                                   child: TextField(
                                     controller: _controller,

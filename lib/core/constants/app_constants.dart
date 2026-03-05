@@ -25,6 +25,7 @@ class AppConstants {
   static const String recentModelsKey = 'recent_models';
   static const String favoriteModelsKey = 'favorite_models';
   static const String pinnedSessionsKey = 'pinned_sessions';
+  static const String cannedAnswersKey = 'canned_answers';
   static const String modelUsageCountsKey = 'model_usage_counts';
   static const String themeKey = 'theme_mode';
   static const String lastSessionIdKey = 'last_session_id';

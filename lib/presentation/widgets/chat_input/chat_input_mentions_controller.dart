@@ -15,6 +15,10 @@ extension _ChatInputMentionsController on _ChatInputWidgetState {
         final suggestion = _slashSuggestions[_activeSuggestionIndex];
         await _applySlashSuggestion(suggestion);
         return;
+      case ChatComposerPopoverType.canned:
+        final answer = _visibleCannedAnswers[_activeSuggestionIndex];
+        await _applyCannedAnswer(answer);
+        return;
       case ChatComposerPopoverType.none:
         return;
     }

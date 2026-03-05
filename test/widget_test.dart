@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:codewalk/domain/entities/chat_composer_draft.dart';
 import 'package:codewalk/domain/entities/chat_session.dart';
@@ -8,6 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
+
+import 'support/fakes.dart';
 
 Widget _buildChatInputHarness({
   required ChatInputWidget child,
@@ -52,6 +55,101 @@ void main() {
 
     expect(sentSubmission?.text, 'hello');
     expect(sentSubmission?.mode, ChatComposerMode.normal);
+  });
+
+  testWidgets('canned answers button is visible', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (_) {},
+          cannedAnswersDataSource: InMemoryAppLocalDataSource(),
+        ),
+      ),
+    );
+
+    expect(find.byTooltip('Canned answers'), findsOneWidget);
+  });
+
+  testWidgets('canned append inserts text at current cursor', (
+    WidgetTester tester,
+  ) async {
+    final localDataSource = InMemoryAppLocalDataSource();
+    await localDataSource.saveCannedAnswersJson(
+      jsonEncode([
+        {
+          'id': 'append-1',
+          'text': 'XYZ',
+          'insertMode': 'append',
+          'scopeMode': 'global',
+          'updatedAtEpochMs': 1,
+        },
+      ]),
+    );
+
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (_) {},
+          cannedAnswersDataSource: localDataSource,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.showKeyboard(find.byType(TextField));
+    tester.testTextInput.updateEditingValue(
+      const TextEditingValue(
+        text: 'ab',
+        selection: TextSelection.collapsed(offset: 1),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Canned answers'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('XYZ').first);
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.controller!.text, 'aXYZb');
+    expect(field.focusNode?.hasFocus, isTrue);
+  });
+
+  testWidgets('canned replace mode replaces current composer text', (
+    WidgetTester tester,
+  ) async {
+    final localDataSource = InMemoryAppLocalDataSource();
+    await localDataSource.saveCannedAnswersJson(
+      jsonEncode([
+        {
+          'id': 'replace-1',
+          'text': 'Replacement text',
+          'insertMode': 'replace',
+          'scopeMode': 'global',
+          'updatedAtEpochMs': 2,
+        },
+      ]),
+    );
+
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (_) {},
+          cannedAnswersDataSource: localDataSource,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'old text');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Canned answers'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Replacement text').first);
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.controller!.text, 'Replacement text');
   });
 
   testWidgets(

@@ -209,6 +209,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                     final sentMessageHistory = _collectSentMessageHistory(
                       chatProvider.messages,
                     );
+                    final projectProvider = context.read<ProjectProvider>();
                     return ChatInputWidget(
                       onSendMessage: (submission) async {
                         _prepareForOutgoingUserMessage();
@@ -248,6 +249,9 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                       showInlineAttachmentButton: false,
                       allowImageAttachment: supportsImages,
                       allowPdfAttachment: supportsPdf,
+                      cannedAnswersDataSource: di.sl(),
+                      cannedAnswersServerId: projectProvider.activeServerId,
+                      cannedAnswersScopeId: projectProvider.currentScopeId,
                       contextItems: _fileContextItems,
                       onRemoveContextItem: (index) {
                         if (index >= 0 && index < _fileContextItems.length) {

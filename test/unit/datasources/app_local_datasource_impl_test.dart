@@ -252,4 +252,32 @@ void main() {
       );
     },
   );
+
+  test('stores canned answers separately for global and project scope', () async {
+    final prefs = await SharedPreferences.getInstance();
+    final dataSource = AppLocalDataSourceImpl(sharedPreferences: prefs);
+
+    await dataSource.saveCannedAnswersJson('[{"id":"g"}]');
+    await dataSource.saveCannedAnswersJson(
+      '[{"id":"p"}]',
+      serverId: 'srv-1',
+      scopeId: '/repo/demo',
+    );
+
+    final global = await dataSource.getCannedAnswersJson();
+    final scoped = await dataSource.getCannedAnswersJson(
+      serverId: 'srv-1',
+      scopeId: '/repo/demo',
+    );
+
+    expect(global, '[{"id":"g"}]');
+    expect(scoped, '[{"id":"p"}]');
+    expect(prefs.getString(AppConstants.cannedAnswersKey), '[{"id":"g"}]');
+    expect(
+      prefs.getString(
+        '${AppConstants.cannedAnswersKey}::${Uri.encodeComponent('srv-1')}::${Uri.encodeComponent('/repo/demo')}',
+      ),
+      '[{"id":"p"}]',
+    );
+  });
 }

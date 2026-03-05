@@ -150,6 +150,7 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
   String? recentModelsJson;
   String? favoriteModelsJson;
   String? pinnedSessionsJson;
+  String? cannedAnswersJson;
   String? modelUsageCountsJson;
   String? themeMode;
   String? experienceSettingsJson;
@@ -214,6 +215,7 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
     recentModelsJson = null;
     favoriteModelsJson = null;
     pinnedSessionsJson = null;
+    cannedAnswersJson = null;
     modelUsageCountsJson = null;
     themeMode = null;
     experienceSettingsJson = null;
@@ -482,6 +484,19 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
     if (serverId == null && scopeId == null) return pinnedSessionsJson;
     return scopedStrings[_key(
       'pinned_sessions',
+      serverId: serverId,
+      scopeId: scopeId,
+    )];
+  }
+
+  @override
+  Future<String?> getCannedAnswersJson({
+    String? serverId,
+    String? scopeId,
+  }) async {
+    if (serverId == null && scopeId == null) return cannedAnswersJson;
+    return scopedStrings[_key(
+      'canned_answers',
       serverId: serverId,
       scopeId: scopeId,
     )];
@@ -897,6 +912,24 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
           scopeId: scopeId,
         )] =
         pinnedSessionsJson;
+  }
+
+  @override
+  Future<void> saveCannedAnswersJson(
+    String cannedAnswersJson, {
+    String? serverId,
+    String? scopeId,
+  }) async {
+    if (serverId == null && scopeId == null) {
+      this.cannedAnswersJson = cannedAnswersJson;
+      return;
+    }
+    scopedStrings[_key(
+          'canned_answers',
+          serverId: serverId,
+          scopeId: scopeId,
+        )] =
+        cannedAnswersJson;
   }
 
   @override

@@ -133,6 +133,16 @@ abstract class AppLocalDataSource {
     String? scopeId,
   });
 
+  /// Retrieve locally-persisted canned answers JSON (scoped).
+  Future<String?> getCannedAnswersJson({String? serverId, String? scopeId});
+
+  /// Save locally-persisted canned answers JSON (scoped).
+  Future<void> saveCannedAnswersJson(
+    String cannedAnswersJson, {
+    String? serverId,
+    String? scopeId,
+  });
+
   /// Technical comment translated to English.
   Future<String?> getModelUsageCountsJson({String? serverId, String? scopeId});
 
@@ -999,6 +1009,36 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
         scopeId: scopeId,
       ),
       pinnedSessionsJson,
+    );
+  }
+
+  @override
+  Future<String?> getCannedAnswersJson({
+    String? serverId,
+    String? scopeId,
+  }) async {
+    return sharedPreferences.getString(
+      _scopedKey(
+        AppConstants.cannedAnswersKey,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+  }
+
+  @override
+  Future<void> saveCannedAnswersJson(
+    String cannedAnswersJson, {
+    String? serverId,
+    String? scopeId,
+  }) async {
+    await sharedPreferences.setString(
+      _scopedKey(
+        AppConstants.cannedAnswersKey,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+      cannedAnswersJson,
     );
   }
 
