@@ -1077,7 +1077,7 @@ void main() {
       },
     );
 
-    test('current session retry status enqueues a one-shot notice', () async {
+    test('current session retry status keeps notice queue empty', () async {
       await provider.projectProvider.initializeProject();
       await provider.loadSessions();
       await provider.selectSession(provider.sessions.first);
@@ -1098,12 +1098,51 @@ void main() {
       );
       await Future<void>.delayed(const Duration(milliseconds: 40));
 
-      final notice = provider.consumePendingUiNotice();
-      expect(notice, isNotNull);
-      expect(notice!.type, ChatUiNoticeType.serverError);
-      expect(notice.message, 'Provider is retrying upstream call');
       expect(provider.consumePendingUiNotice(), isNull);
     });
+
+    test(
+      'non-current retry status does not flag conversation as error',
+      () async {
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_2',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1500),
+            title: 'Session 2',
+          ),
+        );
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.where((item) => item.id == 'ses_1').first,
+        );
+        await provider.initializeProviders();
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.status',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_2',
+              'status': <String, dynamic>{
+                'type': 'retry',
+                'attempt': 1,
+                'message': 'Transient upstream retry',
+              },
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        final attention = provider.sessionAttentionFor('ses_2');
+        expect(attention.hasError, isFalse);
+        expect(
+          provider.outOfFocusAttentionKind,
+          isNot(SessionAttentionKind.error),
+        );
+      },
+    );
 
     test(
       'question.asked marks out-of-focus pending interaction attention',

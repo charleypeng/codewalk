@@ -581,9 +581,7 @@ class ChatProvider extends ChangeNotifier {
     return SessionAttentionState(
       isActive: isSessionActivelyResponding(normalizedSessionId),
       hasPendingInteraction: hasPendingPermission || hasPendingQuestion,
-      hasError:
-          statusType == SessionStatusType.retry ||
-          _sessionErrorAttentionIds.contains(normalizedSessionId),
+      hasError: _sessionErrorAttentionIds.contains(normalizedSessionId),
       hasUnreadCompletion: _sessionUnreadCompletionIds.contains(
         normalizedSessionId,
       ),
@@ -663,16 +661,12 @@ class ChatProvider extends ChangeNotifier {
   }
 
   void _syncAttentionFromStatusMap(Map<String, SessionStatusInfo> statusMap) {
-    final currentSessionId = _currentSession?.id;
     for (final entry in statusMap.entries) {
       final sessionId = entry.key;
       final statusType = entry.value.type;
       switch (statusType) {
         case SessionStatusType.retry:
           _sessionUnreadCompletionIds.remove(sessionId);
-          if (sessionId != currentSessionId) {
-            _sessionErrorAttentionIds.add(sessionId);
-          }
           break;
         case SessionStatusType.busy:
           _sessionUnreadCompletionIds.remove(sessionId);

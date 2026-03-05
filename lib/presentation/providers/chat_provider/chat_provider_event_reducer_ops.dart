@@ -297,31 +297,14 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         final sessionId = properties['sessionID'] as String?;
         final statusMap = properties['status'];
         if (sessionId != null && statusMap is Map<String, dynamic>) {
-          final previousStatusType = _sessionStatusById[sessionId]?.type;
           final status = SessionStatusModel.fromJson(statusMap).toDomain();
           _sessionStatusById[sessionId] = status;
-          if (status.type == SessionStatusType.retry &&
-              sessionId != _currentSession?.id) {
-            _sessionErrorAttentionIds.add(sessionId);
-          } else {
-            _sessionErrorAttentionIds.remove(sessionId);
-          }
           if (status.type == SessionStatusType.busy ||
               status.type == SessionStatusType.retry) {
             _sessionUnreadCompletionIds.remove(sessionId);
           }
           if (sessionId == _currentSession?.id) {
             _clearSessionAttentionForSession(sessionId);
-            if (status.type == SessionStatusType.retry &&
-                previousStatusType != SessionStatusType.retry) {
-              final retryMessage = status.message?.trim();
-              _enqueueUiNotice(
-                type: ChatUiNoticeType.serverError,
-                message: retryMessage != null && retryMessage.isNotEmpty
-                    ? retryMessage
-                    : 'Model is retrying. Send will fail if retries do not recover.',
-              );
-            }
           }
           _notifyListeners();
           _attemptPendingRemoteSelectionSync(reason: 'event-session.status');
