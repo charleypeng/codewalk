@@ -673,6 +673,20 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **When** the setting is saved
 - **Then** it persists locally (survives app restart) via SharedPreferences / SecureStorage
 
+### Automatic update checks while app is open
+
+- **Given** `Check for updates on open` is enabled
+- **When** the app remains open
+- **Then** a silent update check runs at startup and repeats every 1 hour while the app process is alive
+- **Then** the automatic check never shows a manual spinner/up-to-date confirmation; it only surfaces UI when a newer, non-dismissed version is found
+
+### Desktop update install snackbars
+
+- **Given** an update install is started on desktop (Linux, macOS, Windows)
+- **When** the installer script is running
+- **Then** the app shows an indefinite loading snackbar (`Installing update...`) until the install state settles
+- **Then** on success, the app shows a completion warning snackbar with a `Restart` action so the user can relaunch into the new version
+
 ---
 
 ## Notifications
