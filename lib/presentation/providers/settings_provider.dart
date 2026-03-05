@@ -801,6 +801,8 @@ class SettingsProvider extends ChangeNotifier {
 
   /// Resets in-memory state to defaults (used after clearAll during app reset).
   void resetToDefaults() {
+    _automaticUpdateCheckTimer?.cancel();
+    _automaticUpdateCheckTimer = null;
     _settings = ExperienceSettings.defaults();
     _updateCheckResult = null;
     _dismissedUpdateVersion = null;
