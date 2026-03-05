@@ -6,7 +6,7 @@
 - Architecture follows `presentation -> domain -> data` with `get_it` + `provider`.
 - Multi-platform targets in repo: Android, Linux, macOS, Windows, Web.
 - Chat stack is decomposed into orchestrators plus focused cluster modules.
-- Material icon convention in UI/tests now uses `Symbols.*` (`material_symbols_icons`) instead of `Icons.*`.
+- Material icon migration in UI/tests is mostly on `Symbols.*` (`material_symbols_icons`), with a small remaining `Icons.*` usage in notifications settings UI.
 - Theme system follows Material You (MD3): user-controlled theme mode, dynamic color toggle, AMOLED dark toggle, brand color seeds, contrast level, and responsive window size classes.
 
 ## Folder Structure
@@ -29,7 +29,7 @@ codewalk/
 │       │   └── chat_page/              # ChatPage decomposed clusters (18 modules)
 │       ├── providers/                  # App/Chat/Project/Settings state orchestration
 │       │   ├── chat_provider.dart      # Chat provider orchestrator/facade
-│       │   └── chat_provider/          # ChatProvider decomposed clusters (15 modules)
+│       │   └── chat_provider/          # ChatProvider decomposed clusters (16 modules)
 │       ├── widgets/
 │       │   ├── chat_message_widget.dart # StatefulWidget with build-skip cache for messages
 │       │   ├── chat_input_widget.dart  # Chat input orchestrator/facade
@@ -147,6 +147,7 @@ chat_provider_selection_sync_ops.dart
 chat_provider_selection_helpers.dart
 chat_provider_context_state_ops.dart
 chat_provider_preference_ops.dart
+chat_provider_shortcut_cycle_ops.dart
 chat_provider_auto_title_ops.dart               # Auto-title execution (main/root sessions only); runtime guard in `_runAutoTitlePass` skips subsessions
 chat_provider_error_policy.dart
 chat_provider_cache_persistence_ops.dart
@@ -223,7 +224,7 @@ flutter run -d chrome
 
 ```text
 test/unit/                             # Unit tests
-test/unit/providers/                   # ChatProvider split tests (7 files, 127 tests, parallelized with -j 12)
+test/unit/providers/                   # ChatProvider split tests (7 files, 129 tests, parallelized with -j 12)
   chat_provider_init_test.dart         #   12 tests — initialization, config sync, model/agent selection
   chat_provider_sync_test.dart         #   17 tests — deferred sync, cycle, scope, overrides, variant sync
   chat_provider_messaging_test.dart    #   15 tests — sessions, sendMessage, draft restore; delta-like SWR fallback coverage
@@ -248,7 +249,7 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 - Sensitive server credentials are persisted through `flutter_secure_storage` (v10.0.0) via `AppLocalDataSource`.
 - Platform folders currently present: `android/`, `linux/`, `macos/`, `web/`, `windows/`.
 - Android build targets Java 17 (`sourceCompatibility`, `targetCompatibility`, `jvmTarget`).
-- featM icon migration completed in `lib/presentation/**` and `test/widget/**`: Material icons moved from `Icons.*` to `Symbols.*` (`material_symbols_icons`).
+- featM icon migration is largely complete in `lib/presentation/**` and `test/widget/**`; one notifications settings widget still uses `Icons.*` while the rest has moved to `Symbols.*` (`material_symbols_icons`).
 
 ### Queued Send Flow
 
