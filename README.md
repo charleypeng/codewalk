@@ -25,6 +25,7 @@ A native (really fast!!) cross-platform client for [OpenCode](https://github.com
 - Model/provider selection with variants, favorites, and reasoning controls
 - In-app update flow with auto-check, startup notification, and direct install
 - Desktop productivity shortcuts, including Alt+Tab-style session cycling
+- Mobile external-keyboard send keeps composer focus for rapid follow-up input
 - Interactive server permission/question prompts with attention badges
 - Responsive Material 3 experience across Linux, Windows, macOS, Web, and Android
 

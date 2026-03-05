@@ -589,6 +589,13 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **Then** the task list panel automatically collapses to free space for the chat and composer
 - **Then** when the keyboard is dismissed, the panel returns to its previous state (expanded or collapsed)
 
+### Mobile physical-keyboard send keeps composer focus
+
+- **Given** the app is running on mobile with an external physical keyboard and the software keyboard is not visible
+- **When** the user sends a message from the composer
+- **Then** the composer input keeps focus so the user can continue typing immediately
+- **Then** if the software keyboard is visible, send still dismisses it after submit
+
 ---
 
 ## Provider and Model Selection
