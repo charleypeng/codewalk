@@ -324,7 +324,16 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     return defaultTargetPlatform != TargetPlatform.android;
   }
 
-  bool get _shouldHideKeyboardAfterSend => !_isDesktopPlatform;
+  bool get _isSoftwareKeyboardVisible {
+    final mediaQueryInsetBottom = MediaQuery.maybeOf(
+      context,
+    )?.viewInsets.bottom;
+    final viewInsetBottom = View.maybeOf(context)?.viewInsets.bottom;
+    return (mediaQueryInsetBottom ?? 0) > 0 || (viewInsetBottom ?? 0) > 0;
+  }
+
+  bool get _shouldHideKeyboardAfterSend =>
+      !_isDesktopPlatform && _isSoftwareKeyboardVisible;
 
   SpeechInputService get _nativeSpeechService =>
       _nativeSpeechServiceInstance ??= di.sl<SttSpeechInputService>();
