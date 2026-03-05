@@ -495,5 +495,29 @@ void main() {
       expect(provider.soundSourceFor(SoundCategory.permissions), isNull);
       expect(provider.soundLabelFor(SoundCategory.permissions), isNull);
     });
+
+    test(
+      'starts and stops automatic update timer with setting toggle',
+      () async {
+        final local = InMemoryAppLocalDataSource();
+        final provider = SettingsProvider(
+          localDataSource: local,
+          dioClient: DioClient(),
+          soundService: _FakeSoundService(),
+        );
+        await provider.initialize();
+
+        expect(provider.hasAutomaticUpdateCheckTimer, isTrue);
+
+        await provider.setCheckUpdatesOnOpen(false);
+        expect(provider.hasAutomaticUpdateCheckTimer, isFalse);
+
+        await provider.setCheckUpdatesOnOpen(true);
+        expect(provider.hasAutomaticUpdateCheckTimer, isTrue);
+
+        provider.dispose();
+        expect(provider.hasAutomaticUpdateCheckTimer, isFalse);
+      },
+    );
   });
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -26,7 +27,7 @@ class _AppShellPageState extends State<AppShellPage> {
   // the preference). Resets on app restart, unlike skipOnboardingWizard.
   bool _wizardDismissedThisSession = false;
   // Ensures the startup update toast is shown at most once per session.
-  bool _shownStartupUpdateToast = false;
+  String? _shownStartupUpdateVersion;
   // Guards for install-state SnackBars so they are shown at most once each.
   bool _shownProgressSnackBar = false;
   bool _shownDoneSnackBar = false;
@@ -106,11 +107,11 @@ class _AppShellPageState extends State<AppShellPage> {
         // Flag is set here (not in the callback) to prevent multiple
         // addPostFrameCallback registrations across rebuilds.
         final updateResult = settingsProvider.updateCheckResult;
-        if (!_shownStartupUpdateToast &&
-            settingsProvider.pendingStartupUpdateToast &&
+        if (settingsProvider.pendingStartupUpdateToast &&
             updateResult != null &&
-            updateResult.isNewer) {
-          _shownStartupUpdateToast = true;
+            updateResult.isNewer &&
+            updateResult.latestVersion != _shownStartupUpdateVersion) {
+          _shownStartupUpdateVersion = updateResult.latestVersion;
           settingsProvider.acknowledgeStartupUpdateToast();
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _showUpdateToast(context, settingsProvider, updateResult);
@@ -133,11 +134,18 @@ class _AppShellPageState extends State<AppShellPage> {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               _showDownloadingSnackBar(context, settingsProvider);
             });
+          } else if (installState == UpdateInstallState.installing &&
+              !_shownProgressSnackBar &&
+              _isDesktopRuntime) {
+            _shownProgressSnackBar = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _showInstallingSnackBar(context);
+            });
           } else if (installState == UpdateInstallState.done &&
               !_shownDoneSnackBar) {
             _shownDoneSnackBar = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              _showDoneSnackBar(context);
+              _showDoneSnackBar(context, settingsProvider);
             });
           } else if (installState == UpdateInstallState.failed &&
               !_shownFailedSnackBar) {
@@ -152,6 +160,12 @@ class _AppShellPageState extends State<AppShellPage> {
       },
     );
   }
+
+  bool get _isDesktopRuntime =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.linux ||
+          defaultTargetPlatform == TargetPlatform.macOS ||
+          defaultTargetPlatform == TargetPlatform.windows);
 
   /// Shows a one-time SnackBar when a startup update check finds a newer version.
   /// The action triggers the in-app install flow instead of opening a browser.
@@ -168,6 +182,26 @@ class _AppShellPageState extends State<AppShellPage> {
         action: SnackBarAction(
           label: 'Install',
           onPressed: () => unawaited(settingsProvider.startInstall()),
+        ),
+      ),
+    );
+  }
+
+  void _showInstallingSnackBar(BuildContext context) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        duration: Duration(days: 1),
+        content: Row(
+          children: [
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 12),
+            Text('Installing update...'),
+          ],
         ),
       ),
     );
@@ -203,13 +237,28 @@ class _AppShellPageState extends State<AppShellPage> {
   }
 
   /// Shows a SnackBar confirming the desktop update was applied.
-  void _showDoneSnackBar(BuildContext context) {
+  void _showDoneSnackBar(
+    BuildContext context,
+    SettingsProvider settingsProvider,
+  ) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    final isDesktop = _isDesktopRuntime;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Update installed. Restart the app to apply.'),
-        duration: Duration(seconds: 8),
+      SnackBar(
+        content: Text(
+          isDesktop
+              ? 'Update installed. Restart is required to apply the new version.'
+              : 'Update installed. Restart the app to apply.',
+        ),
+        duration: const Duration(seconds: 10),
+        action: isDesktop
+            ? SnackBarAction(
+                label: 'Restart',
+                onPressed: () =>
+                    unawaited(settingsProvider.restartDesktopApp()),
+              )
+            : null,
       ),
     );
   }

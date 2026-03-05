@@ -56,6 +56,7 @@ class SettingsProvider extends ChangeNotifier {
   double _installProgress = 0.0;
   bool _initialized = false;
   Future<void>? _initFuture;
+  Timer? _automaticUpdateCheckTimer;
 
   // Whether the platform actually provided a dynamic color scheme at runtime.
   // Set from main.dart's DynamicColorBuilder callback.
@@ -163,8 +164,20 @@ class SettingsProvider extends ChangeNotifier {
     if (_settings.checkUpdatesOnOpen) {
       unawaited(_performStartupUpdateCheck());
     }
+    _configureAutomaticUpdateChecks();
     _initialized = true;
     notifyListeners();
+  }
+
+  void _configureAutomaticUpdateChecks() {
+    _automaticUpdateCheckTimer?.cancel();
+    _automaticUpdateCheckTimer = null;
+    if (!_settings.checkUpdatesOnOpen) {
+      return;
+    }
+    _automaticUpdateCheckTimer = Timer.periodic(const Duration(hours: 1), (_) {
+      unawaited(_performStartupUpdateCheck());
+    });
   }
 
   /// Silently checks for updates on startup. No spinner, no "up to date" state.
@@ -463,8 +476,22 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(checkUpdatesOnOpen: value);
+    _configureAutomaticUpdateChecks();
     notifyListeners();
     await _persist();
+  }
+
+  @visibleForTesting
+  bool get hasAutomaticUpdateCheckTimer => _automaticUpdateCheckTimer != null;
+
+  @visibleForTesting
+  void debugSetInstallStateForTesting(
+    UpdateInstallState state, {
+    double progress = 0.0,
+  }) {
+    _installState = state;
+    _installProgress = progress;
+    notifyListeners();
   }
 
   Future<void> setSherpaLanguageCode(String languageCode) async {
@@ -793,7 +820,8 @@ class SettingsProvider extends ChangeNotifier {
   /// Resetting to idle first lets AppShellPage clear its SnackBar guards on retry.
   Future<void> startInstall() async {
     if (_installState == UpdateInstallState.downloading ||
-        _installState == UpdateInstallState.installing) return;
+        _installState == UpdateInstallState.installing)
+      return;
     final result = _updateCheckResult;
     if (result == null) return;
 
@@ -841,7 +869,11 @@ class SettingsProvider extends ChangeNotifier {
       notifyListeners();
       await OpenFilex.open(destPath);
     } catch (error, stackTrace) {
-      AppLogger.warn('APK download failed', error: error, stackTrace: stackTrace);
+      AppLogger.warn(
+        'APK download failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
       // Clean up partial file so a retry does not open a corrupt APK.
       if (destPath != null) {
         try {
@@ -864,15 +896,15 @@ class SettingsProvider extends ChangeNotifier {
       // Wrap in a timeout so a stalled network does not hang indefinitely.
       ProcessResult processResult;
       if (isWindows) {
-        processResult = await Process.run(
-          'powershell',
-          ['-c', 'irm install.cat/verseles/codewalk | iex'],
-        ).timeout(const Duration(minutes: 5));
+        processResult = await Process.run('powershell', [
+          '-c',
+          'irm install.cat/verseles/codewalk | iex',
+        ]).timeout(const Duration(minutes: 5));
       } else {
-        processResult = await Process.run(
-          'sh',
-          ['-c', 'curl -fsSL install.cat/verseles/codewalk | sh'],
-        ).timeout(const Duration(minutes: 5));
+        processResult = await Process.run('sh', [
+          '-c',
+          'curl -fsSL install.cat/verseles/codewalk | sh',
+        ]).timeout(const Duration(minutes: 5));
       }
       _installState = processResult.exitCode == 0
           ? UpdateInstallState.done
@@ -881,10 +913,38 @@ class SettingsProvider extends ChangeNotifier {
         AppLogger.warn('Desktop install failed: ${processResult.stderr}');
       }
     } catch (error, stackTrace) {
-      AppLogger.warn('Desktop install failed', error: error, stackTrace: stackTrace);
+      AppLogger.warn(
+        'Desktop install failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
       _installState = UpdateInstallState.failed;
     }
     notifyListeners();
+  }
+
+  Future<void> restartDesktopApp() async {
+    final isDesktop =
+        !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.linux ||
+            defaultTargetPlatform == TargetPlatform.macOS ||
+            defaultTargetPlatform == TargetPlatform.windows);
+    if (!isDesktop) {
+      return;
+    }
+    try {
+      final executable = Platform.resolvedExecutable;
+      final args = List<String>.from(Platform.executableArguments);
+      await Process.start(executable, args, mode: ProcessStartMode.detached);
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Desktop restart relaunch failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    } finally {
+      exit(0);
+    }
   }
 
   Future<void> _persist() async {
@@ -996,5 +1056,12 @@ class SettingsProvider extends ChangeNotifier {
     } catch (_) {
       // Server sync is best-effort; local value remains source of truth.
     }
+  }
+
+  @override
+  void dispose() {
+    _automaticUpdateCheckTimer?.cancel();
+    _automaticUpdateCheckTimer = null;
+    super.dispose();
   }
 }

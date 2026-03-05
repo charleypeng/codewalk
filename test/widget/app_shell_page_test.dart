@@ -35,6 +35,7 @@ import 'package:codewalk/presentation/providers/project_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart' hide Provider;
@@ -170,6 +171,65 @@ void main() {
       expect(find.text('Conversations'), findsOneWidget);
     },
   );
+
+  testWidgets('desktop install flow shows installing and restart snackbars', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test'
+      ..defaultServerId = 'srv_test'
+      ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+        <String, dynamic>{
+          'id': 'srv_test',
+          'url': 'http://127.0.0.1:4096',
+          'label': 'Test Server',
+          'basicAuthEnabled': false,
+          'basicAuthUsername': '',
+          'basicAuthPassword': '',
+          'createdAt': 0,
+          'updatedAt': 0,
+        },
+      ]);
+    final settingsProvider = SettingsProvider(
+      localDataSource: localDataSource,
+      dioClient: DioClient(),
+      soundService: SoundService(),
+    );
+    await settingsProvider.initialize();
+    addTearDown(settingsProvider.dispose);
+
+    await tester.pumpWidget(
+      _testAppWithSettings(
+        _buildChatProvider(localDataSource: localDataSource),
+        _buildAppProvider(localDataSource: localDataSource),
+        settingsProvider,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    settingsProvider.debugSetInstallStateForTesting(
+      UpdateInstallState.installing,
+    );
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Installing update...'), findsOneWidget);
+
+    settingsProvider.debugSetInstallStateForTesting(UpdateInstallState.done);
+    await tester.pump();
+    await tester.pump();
+    expect(
+      find.text(
+        'Update installed. Restart is required to apply the new version.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Restart'), findsOneWidget);
+  });
 }
 
 Widget _testApp(ChatProvider chatProvider, AppProvider appProvider) {
@@ -179,6 +239,24 @@ Widget _testApp(ChatProvider chatProvider, AppProvider appProvider) {
     soundService: SoundService(),
   );
   unawaited(settingsProvider.initialize());
+  return MultiProvider(
+    providers: [
+      ChangeNotifierProvider<ChatProvider>.value(value: chatProvider),
+      ChangeNotifierProvider<AppProvider>.value(value: appProvider),
+      ChangeNotifierProvider<ProjectProvider>.value(
+        value: chatProvider.projectProvider,
+      ),
+      ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
+    ],
+    child: const MaterialApp(home: AppShellPage()),
+  );
+}
+
+Widget _testAppWithSettings(
+  ChatProvider chatProvider,
+  AppProvider appProvider,
+  SettingsProvider settingsProvider,
+) {
   return MultiProvider(
     providers: [
       ChangeNotifierProvider<ChatProvider>.value(value: chatProvider),
