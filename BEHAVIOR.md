@@ -232,6 +232,16 @@
 - **When** the send fails (network error, server error, etc.)
 - **Then** the message text is returned to the composer input — the user's text is never lost
 
+### Composer supports canned answers with scoped storage
+
+- **Given** the user is composing a message
+- **When** the user taps the `Canned answers` button on the left side of the composer bubble
+- **Then** the app opens an inline canned-answers popover above the input without forcing a keyboard hide
+- **Then** selecting an item inserts canned text according to item mode: `Append at cursor` inserts at current selection, `Replace` overwrites composer text
+- **Then** long-pressing a canned item opens edit/delete actions
+- **Then** add/edit supports an optional label, required text, insertion mode, and scope mode (`Global` or `Project-only`)
+- **Then** global items are available across all contexts, while project-only items are restricted to the active `serverId::scopeId` context
+
 ### Optimistic user message ID uses local prefix — never server format
 
 - **Given** the user sends a message in an active session

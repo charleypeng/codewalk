@@ -19,6 +19,7 @@ A native (really fast!!) cross-platform client for [OpenCode](https://github.com
 - Load older message history by scrolling to the top of chat
 - Project-centric sidebar with conversations grouped by open projects
 - Context-scoped conversation pinning to keep priority sessions at top
+- Canned answers popover in composer with global/project scope and append/replace insertion
 - Project context support for both Git repositories and non-Git folders
 - Per-project New Chat draft isolation with lazy session bootstrap
 - Multi-server profile management (health checks, default/active switching, auth)
