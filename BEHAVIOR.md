@@ -221,6 +221,10 @@
 - **When** the user taps `Send now`
 - **Then** the app performs the same stop behavior as `Stop` for the active response
 - **Then** as soon as the session becomes ready, the app sends the full queued batch as one payload
+- **Then** abort-side `session.error` events that belong to this handoff are treated as expected control flow, not as user-facing failures
+- **Then** the app must not play error sounds, show error notifications, or append abort error bubbles during this handoff
+- **Then** the replacement queued send keeps the session in active-response state until the new turn settles
+- **Then** the timeline must not duplicate the consolidated queued user bubble during the handoff
 
 ### Failed send returns message to composer
 
@@ -589,9 +593,9 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **Then** the task list panel automatically collapses to free space for the chat and composer
 - **Then** when the keyboard is dismissed, the panel returns to its previous state (expanded or collapsed)
 
-### Mobile physical-keyboard send keeps composer focus
+### Physical-keyboard send keeps composer focus
 
-- **Given** the app is running on mobile with an external physical keyboard and the software keyboard is not visible
+- **Given** the app is running with a physical keyboard available (desktop, or mobile with external keyboard)
 - **When** the user sends a message from the composer
 - **Then** the composer input keeps focus so the user can continue typing immediately
 
