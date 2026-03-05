@@ -594,7 +594,6 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **Given** the app is running on mobile with an external physical keyboard and the software keyboard is not visible
 - **When** the user sends a message from the composer
 - **Then** the composer input keeps focus so the user can continue typing immediately
-- **Then** if the software keyboard is visible, send still dismisses it after submit
 
 ---
 

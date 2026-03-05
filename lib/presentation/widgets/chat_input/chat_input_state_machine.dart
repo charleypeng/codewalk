@@ -51,6 +51,10 @@ extension _ChatInputStateMachine on _ChatInputWidgetState {
           _mode != draftModeAtSendStart;
 
       if (!draftChangedDuringSend) {
+        final shouldHideKeyboardAfterSend = _shouldHideKeyboardAfterSend;
+        if (shouldHideKeyboardAfterSend) {
+          _suppressEnsureInputFocus = true;
+        }
         _controller.clear();
         _setState(() {
           _isComposing = false;
@@ -61,8 +65,9 @@ extension _ChatInputStateMachine on _ChatInputWidgetState {
           _slashSuggestions = <ChatComposerSlashCommandSuggestion>[];
           _activeSuggestionIndex = 0;
         });
-        if (_shouldHideKeyboardAfterSend) {
+        if (shouldHideKeyboardAfterSend) {
           _effectiveFocusNode.unfocus();
+          FocusManager.instance.primaryFocus?.unfocus();
           unawaited(
             SystemChannels.textInput.invokeMethod<void>('TextInput.hide'),
           );

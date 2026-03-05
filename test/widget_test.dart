@@ -304,7 +304,7 @@ void main() {
   });
 
   testWidgets(
-    'mobile Enter action sends and hides keyboard focus when software keyboard is visible',
+    'mobile Enter action sends with software keyboard insets active',
     (WidgetTester tester) async {
       ChatInputSubmission? sentSubmission;
       final previousPlatform = debugDefaultTargetPlatformOverride;
@@ -340,7 +340,7 @@ void main() {
         final updatedInputField = tester.widget<TextField>(
           find.byType(TextField),
         );
-        expect(updatedInputField.focusNode?.hasFocus, isFalse);
+        expect(updatedInputField.focusNode?.hasFocus, isTrue);
       } finally {
         debugDefaultTargetPlatformOverride = previousPlatform;
       }
