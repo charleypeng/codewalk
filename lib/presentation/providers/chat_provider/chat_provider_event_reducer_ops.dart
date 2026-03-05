@@ -175,6 +175,29 @@ extension _ChatProviderEventReducerOps on ChatProvider {
     );
   }
 
+  ({String message, String? code}) _extractSessionErrorMessageAndCode(
+    Map<String, dynamic> properties,
+  ) {
+    final rawError = properties['error'];
+    final error = rawError is Map ? Map<String, dynamic>.from(rawError) : null;
+    final dataRaw = error?['data'];
+    final data = dataRaw is Map
+        ? Map<String, dynamic>.from(dataRaw)
+        : const <String, dynamic>{};
+    final messageFromData = data['message']?.toString().trim();
+    final messageFromError = error?['message']?.toString().trim();
+    final messageFromRawError = rawError is String ? rawError.trim() : null;
+    final message = (messageFromData != null && messageFromData.isNotEmpty)
+        ? messageFromData
+        : (messageFromError != null && messageFromError.isNotEmpty)
+        ? messageFromError
+        : (messageFromRawError != null && messageFromRawError.isNotEmpty)
+        ? messageFromRawError
+        : 'Session error';
+    final code = data['code']?.toString() ?? error?['code']?.toString();
+    return (message: message, code: code);
+  }
+
   void _applyChatEvent(ChatEvent event) {
     if (_isEphemeralTitleEvent(event)) return;
     // Register event in dedup buffer so the global stream skips duplicates.
@@ -195,10 +218,30 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         event.type == 'session.idle' &&
         eventSessionId != null &&
         _hasInFlightSendTurnForSession(eventSessionId);
+    final suppressCurrentErrorFeedback =
+        event.type == 'session.error' &&
+        eventSessionId != null &&
+        (() {
+          final payload = _extractSessionErrorMessageAndCode(event.properties);
+          if (_shouldSuppressAbortError(
+            sessionId: eventSessionId,
+            message: payload.message,
+            code: payload.code,
+          )) {
+            return true;
+          }
+          return _hasInFlightSendTurnForSession(eventSessionId) &&
+              _isRemoteAbortError(message: payload.message, code: payload.code);
+        })();
     if (!isSessionLifecycle || eventSessionId == _currentSession?.id) {
       if (suppressCurrentIdleFeedback) {
         _traceFinal(
           'event-session-idle-feedback-suppressed-active-send',
+          sessionId: eventSessionId,
+        );
+      } else if (suppressCurrentErrorFeedback) {
+        _traceFinal(
+          'event-session-error-feedback-suppressed-expected-abort',
           sessionId: eventSessionId,
         );
       } else {
@@ -500,6 +543,9 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           break;
         }
 
+        final payload = _extractSessionErrorMessageAndCode(properties);
+        final message = payload.message;
+        final code = payload.code;
         final rawError = properties['error'];
         final error = rawError is Map
             ? Map<String, dynamic>.from(rawError)
@@ -508,17 +554,6 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         final data = dataRaw is Map
             ? Map<String, dynamic>.from(dataRaw)
             : const <String, dynamic>{};
-        final messageFromData = data['message']?.toString().trim();
-        final messageFromError = error?['message']?.toString().trim();
-        final messageFromRawError = rawError is String ? rawError.trim() : null;
-        final message = (messageFromData != null && messageFromData.isNotEmpty)
-            ? messageFromData
-            : (messageFromError != null && messageFromError.isNotEmpty)
-            ? messageFromError
-            : (messageFromRawError != null && messageFromRawError.isNotEmpty)
-            ? messageFromRawError
-            : 'Session error';
-        final code = data['code']?.toString() ?? error?['code']?.toString();
         final statusCodeRaw =
             data['statusCode'] ??
             data['status'] ??
@@ -535,24 +570,44 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         AppLogger.info(
           'session.error current session=$sessionId message=$message code=$code hasPreservedStream=${_hasPreservedStreamForSession(sessionId)}',
         );
-        if (_shouldSuppressAbortError(sessionId: sessionId, message: message)) {
-          _sessionStatusById[sessionId] = const SessionStatusInfo(
-            type: SessionStatusType.idle,
-          );
+        final hasActiveCurrentSendTurn = _hasInFlightSendTurnForSession(
+          sessionId,
+        );
+        if (_shouldSuppressAbortError(
+          sessionId: sessionId,
+          message: message,
+          code: code,
+        )) {
+          if (!hasActiveCurrentSendTurn) {
+            _sessionStatusById[sessionId] = const SessionStatusInfo(
+              type: SessionStatusType.idle,
+            );
+          }
           _clearSessionAttentionForSession(sessionId);
           _errorMessage = null;
-          _setState(ChatState.loaded);
+          if (!hasActiveCurrentSendTurn) {
+            _setState(ChatState.loaded);
+          }
           break;
         }
         if (_isRemoteAbortError(message: message, code: code)) {
-          _sessionStatusById[sessionId] = const SessionStatusInfo(
-            type: SessionStatusType.idle,
-          );
+          if (!hasActiveCurrentSendTurn) {
+            _sessionStatusById[sessionId] = const SessionStatusInfo(
+              type: SessionStatusType.idle,
+            );
+          }
           _clearSessionAttentionForSession(sessionId);
           _errorMessage = null;
-          _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
-          _appendInlineAbortMessage(sessionId: sessionId);
-          _setState(ChatState.loaded);
+          if (!hasActiveCurrentSendTurn) {
+            _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
+            final isQueueTransition =
+                _queuedDrainInFlightSessionIds.contains(sessionId) ||
+                queuedMessageCountForSession(sessionId) > 0;
+            if (!isQueueTransition) {
+              _appendInlineAbortMessage(sessionId: sessionId);
+            }
+            _setState(ChatState.loaded);
+          }
           break;
         }
         _presentServerErrorForCurrentSession(

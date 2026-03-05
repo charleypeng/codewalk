@@ -1695,6 +1695,109 @@ void main() {
     );
 
     test(
+      'sendQueuedNow keeps replacement stream active when abort-like session.error arrives',
+      () async {
+        final firstStreamController =
+            StreamController<Either<Failure, ChatMessage>>();
+        final secondStreamController =
+            StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          await firstStreamController.close();
+          await secondStreamController.close();
+        });
+
+        var sendCalls = 0;
+        chatRepository.sendMessageHandler = (_, _, _, _) {
+          sendCalls += 1;
+          if (sendCalls == 1) {
+            return firstStreamController.stream;
+          }
+          return secondStreamController.stream;
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('initial prompt');
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        await provider.submitMessageWithQueue('queued follow-up');
+
+        final sentNow = await provider.sendQueuedNow();
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.error',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_1',
+              'error': <String, dynamic>{
+                'data': <String, dynamic>{'code': 'aborted'},
+              },
+            },
+          ),
+        );
+
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(sentNow, isTrue);
+        expect(provider.state, ChatState.sending);
+        expect(provider.errorMessage, isNull);
+
+        final errorBubbles = provider.messages
+            .whereType<AssistantMessage>()
+            .where((message) => message.error != null)
+            .toList(growable: false);
+        expect(errorBubbles, isEmpty);
+      },
+    );
+
+    test(
+      'sendQueuedNow suppresses abort-like errors identified by code-only payload',
+      () async {
+        final streamController =
+            StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          await streamController.close();
+        });
+        chatRepository.sendMessageHandler = (_, _, _, _) =>
+            streamController.stream;
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('stop me');
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        final stopped = await provider.abortActiveResponse();
+        expect(stopped, isTrue);
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.error',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_1',
+              'error': <String, dynamic>{
+                'data': <String, dynamic>{'code': 'request_aborted'},
+              },
+            },
+          ),
+        );
+
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(provider.state, ChatState.loaded);
+        expect(provider.errorMessage, isNull);
+        final errorBubbles = provider.messages
+            .whereType<AssistantMessage>()
+            .where((message) => message.error != null)
+            .toList(growable: false);
+        expect(errorBubbles, isEmpty);
+      },
+    );
+
+    test(
       'queued merged payload stays queued after send setup failure and can retry',
       () async {
         final firstStreamController =

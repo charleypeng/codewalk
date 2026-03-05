@@ -111,10 +111,12 @@ extension _ChatProviderErrorPolicy on ChatProvider {
   bool _shouldSuppressAbortError({
     required String? sessionId,
     required String message,
+    String? code,
   }) {
     if (!_isAbortSuppressionActiveForSession(sessionId)) {
       return false;
     }
-    return _isAbortLikeMessage(message);
+    return _isRemoteAbortError(message: message, code: code) ||
+        _isAbortLikeMessage(message);
   }
 }
