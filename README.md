@@ -56,8 +56,8 @@ Release assets are published per OS/architecture (no universal desktop archive).
 
 - Android
 
-  Download the latest APK directly:
-  [codewalk-android-arm64.apk](https://github.com/verseles/codewalk/releases/latest/download/codewalk-android-arm64.apk)
+  Open this link in your Android browser to auto-download the best APK for your device:
+  [install.cat/verseles/codewalk](https://install.cat/verseles/codewalk)
 
 ### Uninstall
 
