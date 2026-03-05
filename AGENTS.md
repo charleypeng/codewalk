@@ -1,6 +1,6 @@
 # CodeWalk - Project-Specific Rules
 
-> ⚠️ **Base**: All rules from the main `/AGENTS.md` apply. This file contains only CodeWalk-specific items.
+> ⚠️ **Base**: All rules from the main `/AGENTS.md` apply. This file contains only CodeWalk-specific items. In case on conflict, this file is priority.
 
 ## Project Context
 
@@ -12,6 +12,7 @@ CodeWalk is a project that provides access to code agents from anywhere — desk
 
 - In this project specifically, we do NOT use `make precommit` directly — prefer splitting into `make check` and `make android`.
 - Key base documentation is in ./ai-docs; always run at least one `ls` in that folder to know what exists.
+- `BEHAVIOR.md` MUST be read before creating any execution plan.
 
 ## 🛡 Supreme Rule: ADR-023 Compliance First
 
@@ -27,29 +28,71 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 
 | ADR | What / Why | Lines |
 |-----|------------|-------|
-| 001 | Multi-server with profiles, scoped persistence, and secure credentials — prevent cross-server leakage | 29–62 |
-| 002 | Context isolation `serverId::directory` with serialized transition queue — prevent race conditions on project switch | 64–99 |
-| 003 | Realtime-first sync with degraded fallback and platform-aware background policy — maintain live UX without losing offline data | 102–147 |
-| 004 | Chat with slim orchestrators and decomposed part-file clusters — maintainability on high-change surfaces | 150–183 |
-| 005 | Composer pipeline for multimodal input, triggers (`@!/`) and send/stop — rich composition without breaking flow | 186–219 |
-| 006 | Speech input with `SpeechInputService`, Sherpa (Linux) and native STT (Android) — pluggable by platform | 222–257 |
-| 007 | Modular settings with typed `SettingsProvider` + `ExperienceSettings` — unified persistence desktop/mobile | 260–294 |
-| 008 | Context-scoped file explorer with quick-open and diff-aware refresh — fast navigation without unnecessary reloads | 297–330 |
-| 009 | Title generation via internal `title` agent — eliminate external dependency for session titles | 333–364 |
-| 010 | Split CI pipeline: quality on push, release on tag, smoke on minor-tag — fast feedback without expensive builds | 367–400 |
-| 011 | Unified server setup wizard (onboarding + settings) — guide new users and consolidate setup flow | 403–438 |
-| 012 | Migration to Material Symbols via `material_symbols_icons` — broader icon coverage aligned with MD3 | 442–474 |
-| 013 | MD3 `WindowSizeClass` with 5 breakpoint tiers — consistent responsive layout without magic numbers | 477–518 |
-| 014 | Centralized design tokens (`AppShapes` + `BrandColor`) — MD3 shape scale and fallback colors without scattered hex values | 521–564 |
-| 015 | Platform-specific icon pipeline (tray, notification, macOS) via `make icons` — reproducible assets per target | 567–608 |
-| 016 | Hybrid file-backed cache for large chat payloads — eliminate SharedPreferences size limits | 611–646 |
-| 017 | Android foreground service with `START_STICKY` — reliable monitoring that survives process death | 648–682 |
-| 018 | Dedicated Dio instance for SSE with isolated connection pool — prevent stream eviction by regular HTTP requests | 685–734 |
-| 019 | Defer `PATCH /config` during active server processing — prevent false abort from `Instance.dispose()` on server | 737–779 |
-| 020 | Session-level SWR cache with persisted LRU snapshots — instant reopen of long sessions with background revalidation | 786–842 |
-| 021 | Context-scoped New Chat draft state — prevent cross-project draft leakage during fast SWR switches | 847–887 |
-| 022 | Unified project context controls with sidebar session previews — integrated navigation while preserving `serverId::scopeId` ownership | 891–928 |
-| 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web | 933–984 |
+| 001 | Multi-server with profiles, scoped persistence, and secure credentials — prevent cross-server leakage | 35–69 |
+| 002 | Context isolation `serverId::directory` with serialized transition queue — prevent race conditions on project switch | 70–107 |
+| 003 | Realtime-first sync with degraded fallback and platform-aware background policy — maintain live UX without losing offline data | 108–155 |
+| 004 | Chat with slim orchestrators and decomposed part-file clusters — maintainability on high-change surfaces | 156–191 |
+| 005 | Composer pipeline for multimodal input, triggers (`@!/`) and send/stop — rich composition without breaking flow | 192–227 |
+| 006 | Speech input with `SpeechInputService`, Sherpa (Linux) and native STT (Android) — pluggable by platform | 228–265 |
+| 007 | Modular settings with typed `SettingsProvider` + `ExperienceSettings` — unified persistence desktop/mobile | 266–302 |
+| 008 | Context-scoped file explorer with quick-open and diff-aware refresh — fast navigation without unnecessary reloads | 303–338 |
+| 009 | Title generation via internal `title` agent — eliminate external dependency for session titles | 339–372 |
+| 010 | Split CI pipeline: quality on push, release on tag, smoke on minor-tag — fast feedback without expensive builds | 373–408 |
+| 011 | Unified server setup wizard (onboarding + settings) — guide new users and consolidate setup flow | 409–447 |
+| 012 | Migration to Material Symbols via `material_symbols_icons` — broader icon coverage aligned with MD3 | 448–482 |
+| 013 | MD3 `WindowSizeClass` with 5 breakpoint tiers — consistent responsive layout without magic numbers | 483–526 |
+| 014 | Centralized design tokens (`AppShapes` + `BrandColor`) — MD3 shape scale and fallback colors without scattered hex values | 527–572 |
+| 015 | Platform-specific icon pipeline (tray, notification, macOS) via `make icons` — reproducible assets per target | 573–616 |
+| 016 | Hybrid file-backed cache for large chat payloads — eliminate SharedPreferences size limits | 617–653 |
+| 017 | Android foreground service with `START_STICKY` — reliable monitoring that survives process death | 654–690 |
+| 018 | Dedicated Dio instance for SSE with isolated connection pool — prevent stream eviction by regular HTTP requests | 691–742 |
+| 019 | Defer `PATCH /config` during active server processing — prevent false abort from `Instance.dispose()` on server | 743–787 |
+| 020 | Session-level SWR cache with persisted LRU snapshots — instant reopen of long sessions with background revalidation | 788–847 |
+| 021 | Context-scoped New Chat draft state — prevent cross-project draft leakage during fast SWR switches | 848–891 |
+| 022 | Unified project context controls with sidebar session previews — integrated navigation while preserving `serverId::scopeId` ownership | 892–932 |
+| 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web | 933–1007 |
+
+## 🗺 CODEBASE Quick Reference (details in `CODEBASE.md`)
+
+> **Mandatory sync**: When sections are added/removed/renamed in `CODEBASE.md`, update this table in the same change (title + line ranges).
+
+| CODEBASE Topic | Lines |
+|----------------|-------|
+| Project Snapshot | 3–11 |
+| Folder Structure | 12–48 |
+| Entry Points | 49–59 |
+| Core Modules | 60–102 |
+| Chat Architecture | 103–169 |
+| Data & Domain Layers | 170–181 |
+| Key API/DataSource locations | 182–201 |
+| Main Commands | 202–222 |
+| Testing/Quality Gates | 223–244 |
+| Notes | 245–352 |
+
+## ⚙️ Makefile Quick Reference (details in `Makefile`)
+
+> **Mandatory sync**: When `Makefile` targets are added/removed/renamed/reordered, update this table in the same change (topic + line ranges).
+
+| Makefile Topic | Lines |
+|----------------|-------|
+| Help and command index (`help`) | 20–46 |
+| Dependencies and codegen (`deps`, `gen`) | 47–55 |
+| Tray template preparation (`tray-prepare`) | 56–68 |
+| Platform tray icons (`icons-tray`) | 69–91 |
+| App icon generation (`icons-app`) | 92–136 |
+| Icon validation checks (`icons-check`) | 137–208 |
+| Analyze and test flows (`analyze`, `test*`, `coverage`, `smoke`) | 209–248 |
+| Desktop build and delivery (`desktop`) | 249–267 |
+| Android build and Telegram upload (`android`) | 268–302 |
+| Release/version flow (`release`) | 303–326 |
+| Cleanup (`clean`) | 327–329 |
+
+## 📌 Line-Scoped Read Policy (`ADR.md`, `CODEBASE.md`, and `Makefile`)
+
+- For requests tied to architecture, code map, or build-command topics, use the quick-reference tables in this file first and read only the mapped line range(s) from `ADR.md`, `CODEBASE.md`, or `Makefile`.
+- If multiple topics are needed, read only the union of the relevant ranges instead of scanning full files.
+- Only read full `ADR.md`, `CODEBASE.md`, or `Makefile` when the requested subject is missing from the tables or the line map is known to be stale.
+- Any edit to `ADR.md`, `CODEBASE.md`, or `Makefile` MUST include a same-task sync in `AGENTS.md` to keep topic titles and line ranges accurate.
 
 ## 🚀 Project-Specific Flow: Android Build for Testing
 
@@ -59,7 +102,7 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 - **Once the user can test**: Run `make android` as soon as possible — it compiles and sends the APK to Telegram. Run after every task involving code. Preferably background and async.
 - **Before commit**: If no code changed since the last check, another `make check` is not needed.
 
-### Mandatory flow when explicitly requested by the user
+### Mandatory flow when explicitly requested by the user OR the user just say "flow"
 
 - When the user explicitly asks, follow this order without skipping steps:
   1. implement the change;
