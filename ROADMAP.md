@@ -61,5 +61,5 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 - [x] Add shortcut to enable/disable STT in Shortcuts. - Related commits: 0f69c4a af8ac74
 - [x] In composer, adjust ArrowUp/ArrowDown without modifiers for multiline behavior before history navigation; with modifiers keep default editor behavior. - Related commits: c9cd435
 - [x] Allow pinning sessions in the Conversations sidebar. - Commit hash: unknown
-- [ ] Verify whether background notifications are working correctly on Android.
+- [x] Verify whether background notifications are working correctly on Android. - Related commits: d80f98e
 - [x] Reduce spacing in the Conversations list on desktop - Related commits: d2b084e, 0574884

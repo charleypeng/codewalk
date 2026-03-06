@@ -709,12 +709,14 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 
 ### Background alerts (Android)
 
-- **Given** the app is running on Android and goes to background
-- **When** the assistant finishes a response, a permission request arrives, or a question prompt arrives
-- **Then** the app delivers a local notification via a combination of:
-  - A persistent foreground notification (always visible while the app process is alive)
-  - A WorkManager background worker that polls for active session state at regular intervals
-  - A short-lived one-off probe scheduled when the app moves to background
+- **Given** the app is running on Android and `Background alerts on Android` is enabled
+- **When** the app goes to background without a known active response
+- **Then** the app relies on sparse WorkManager checks only; it does not start an immediate fast probe just because the screen was left
+- **When** the app goes to background with a known active response
+- **Then** the app may keep realtime alive briefly, schedule low-data probes every 3 minutes, and run one 5-minute tail probe after the active work settles
+- **Then** the worker fetches only the minimum data needed for completion, error, permission, and question alerts; session metadata is fetched only when needed to label a notification
+- **When** the user disables Android background alerts in Settings
+- **Then** no Android background checks run and the persistent monitor notification is removed
 - **Then** notifications are intended to fire only while the app is in the background; while in foreground, the user receives real-time updates directly in the chat UI
 
 ### Background alerts (Desktop)
@@ -732,8 +734,10 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 ### Android persistent notification
 
 - **Given** the app is running on Android
-- **When** the app is active or in background
-- **Then** a persistent notification is shown in the notification drawer, keeping the app process alive and enabling reliable alert delivery
+- **When** a known active response is being temporarily monitored after the app moves to background
+- **Then** a persistent notification is shown in the notification drawer for that temporary live-monitor window only
+- **When** Android background alerts are disabled or there is no active live-monitor window
+- **Then** the persistent monitor notification is not shown
 
 ---
 
@@ -742,8 +746,9 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 ### Android foreground service
 
 - **Given** the app is running on Android during a long operation
-- **When** the app goes to background
-- **Then** a foreground service keeps the app alive so the operation is not killed by the system
+- **When** the app goes to background while a known response is still active and temporary live monitoring is enabled
+- **Then** a foreground service keeps the app alive for that short monitoring window
+- **Then** the foreground service is not used as an always-on idle monitor
 
 ### Battery optimization prompt
 

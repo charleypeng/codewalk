@@ -84,9 +84,9 @@ lib/presentation/theme/app_theme.dart                 # Material You theme build
 lib/presentation/theme/app_animations.dart            # Animation duration tokens; includes userBubble (130 ms) and assistantBubble (180 ms)
 lib/presentation/utils/window_size_class.dart         # WindowSizeClass enum with MD3 breakpoints + BuildContext extension
 lib/presentation/services/desktop_tray_service_io.dart # Desktop tray lifecycle; selects tray icon per OS (macOS template PNG, Windows ICO, Linux PNG)
-lib/presentation/services/notification_service.dart    # Local notifications; Android uses `@drawable/ic_stat_codewalk` small icon
-lib/presentation/services/android_foreground_monitor_service.dart # Android foreground service via MethodChannel; keeps background monitoring active
-lib/presentation/services/android_background_alert_worker.dart # WorkManager-based background polling; fast probe (2m) for active sessions, tail probe (5m) after completion
+lib/presentation/services/notification_service.dart    # Local notifications; Android uses `@drawable/ic_stat_codewalk` small icon and no longer drives foreground monitor state
+lib/presentation/services/android_foreground_monitor_service.dart # Android foreground service via MethodChannel; active only during temporary live monitoring for known background work
+lib/presentation/services/android_background_alert_worker.dart # WorkManager-based background polling; 3m active probes, 5m tail probe, and low-data title-cached notification fetches
 lib/presentation/services/android_background_alert_logic.dart # Pure logic for tail probe scheduling, alert planning, and snapshot state
 lib/presentation/services/android_battery_optimization_service.dart # Android battery optimization query/exemption request via MethodChannel
 lib/presentation/providers/chat_provider.dart     # Chat state/realtime/session facade; cache-first per-session SWR restore, in-memory LRU message cache, persisted per-session snapshots, microtask coalescing, event dedup buffer, render gate, favorite models; project-switch SWR support via `onProjectScopeChanged(waitForRevalidation: false)` and `loadSessions(backgroundRevalidation: true)`; non-active contexts marked dirty by global events keep cache for immediate restore-on-return, while background revalidation refreshes state; active-session SWR uses limited-tail (delta-like) refresh with overlap merge and full-fetch fallback; includes `loadOlderMessages()` scaffold and keeps loadSessionInsights fire-and-forget on session switch; idle final-message reconcile can bypass abort-suppression only for targeted `session-idle-final-reconcile`; New Chat uses draft-first flow (`beginNewChatDraft`) with lazy session bootstrap on first send, and draft state is now context-scoped inside `_ChatContextSnapshot` to prevent cross-project leakage during fast switches; includes cross-scope helpers `visibleSessionsForScopeId` and `hasSnapshotForScopeId`
@@ -264,8 +264,8 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 - **Dart bridge** (`android_foreground_monitor_service.dart`): Calls `codewalk/system`
   channel methods (`updateForegroundNotification`, `stopForegroundService`) and keeps
   service state idempotent from Flutter side.
-- **Notification integration** (`notification_service.dart`): Syncs active-session counts
-  with the foreground monitor so background alert reliability status remains visible.
+- **Runtime policy** (`settings_provider.dart` + `chat_page_lifecycle.dart`): Gates Android
+  monitoring behind the master setting and known active work; disabling it cancels probes and stops the monitor notification.
 - **Battery optimization UX** (`android_battery_optimization_service.dart` +
   `notifications_settings_section.dart`): Queries and requests optimization exemption from
   Settings to reduce background task interruptions on Android.
