@@ -59,7 +59,7 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 - [x] Canned answers manager for fast reply - Related commits: 8cf00e0 4fe89be
 - [ ] In Settings > Shortcuts, review shortcut coverage and add missing options.
 - [ ] Add shortcut to enable/disable STT in Shortcuts.
-- [ ] In composer, adjust ArrowUp/ArrowDown without modifiers for multiline behavior before history navigation; with modifiers keep default editor behavior.
+- [x] In composer, adjust ArrowUp/ArrowDown without modifiers for multiline behavior before history navigation; with modifiers keep default editor behavior. - Related commits: c9cd435
 - [x] Allow pinning sessions in the Conversations sidebar. - Commit hash: unknown
 - [ ] Verify whether background notifications are working correctly on Android.
 - [x] Reduce spacing in the Conversations list on desktop - Related commits: d2b084e, 0574884

@@ -389,9 +389,12 @@
 ### Message history navigation
 
 - **Given** the user has sent previous messages in the session
-- **When** the user presses the up arrow key while the cursor is at the beginning of the input (or down arrow at the end)
+- **When** the user presses the up/down arrow key in the desktop composer
+- **Then** normal multiline editor movement takes priority first — explicit newlines and soft-wrapped lines consume ArrowUp/ArrowDown while the caret can still move vertically inside the current draft/history entry
+- **Then** once the caret is already on the first visual line (`ArrowUp`) or last visual line (`ArrowDown`), the composer resumes sent-message history navigation
 - **Then** the composer cycles through previously sent messages
-- **Then** if the cursor is not already at the boundary, the first key press moves it there; the second press begins cycling
+- **Then** for single-line history entries, if the cursor is not already at the start/end boundary, the first key press moves it there; the second press continues cycling
+- **Then** ArrowUp/ArrowDown with modifier keys (`Shift`, `Ctrl`, `Alt`, `Meta`) stay with the text field's default editing behavior and do not trigger history navigation
 
 ### File and agent mentions with @
 
