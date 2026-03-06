@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/core/network/dio_client.dart';
+import 'package:codewalk/data/models/chat_message_model.dart';
 import 'package:codewalk/domain/entities/chat_message.dart';
 import 'package:codewalk/domain/entities/chat_realtime.dart';
 import 'package:codewalk/domain/entities/chat_session.dart';
@@ -78,6 +79,321 @@ void main() {
       defaultSettingsProvider = fixtures.defaultSettingsProvider;
       provider = buildProvider();
     });
+
+    Future<void> settleUntil(
+      bool Function() predicate, {
+      int maxTicks = 40,
+      String? reason,
+    }) async {
+      for (var tick = 0; tick < maxTicks; tick += 1) {
+        if (predicate()) {
+          return;
+        }
+        await pumpEventQueue();
+      }
+      fail(reason ?? 'Condition was not met before event queue settled.');
+    }
+
+    test(
+      'replays optimistic echo and assistant delta using current SSE baseline',
+      () async {
+        final sendStream = StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          if (!sendStream.isClosed) {
+            await sendStream.close();
+          }
+        });
+        chatRepository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        final started = await provider.sendMessage('contract replay prompt');
+        expect(started, isTrue);
+
+        await settleUntil(
+          () => provider.messages.whereType<UserMessage>().length == 1,
+          reason: 'Expected optimistic local user message to be appended.',
+        );
+
+        final localUser = provider.messages.single as UserMessage;
+        expect(localUser.id, startsWith('local_user_'));
+        expect(
+          (localUser.parts.single as TextPart).text,
+          'contract replay prompt',
+        );
+
+        final serverUserEcho = UserMessage(
+          id: 'msg_user_server',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1100),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'prt_user_server',
+              messageId: 'msg_user_server',
+              sessionId: 'ses_1',
+              text: 'contract replay prompt',
+            ),
+          ],
+        );
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          serverUserEcho,
+        ];
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'message.created',
+            properties: <String, dynamic>{
+              'info': <String, dynamic>{
+                'sessionID': 'ses_1',
+                'id': 'msg_user_server',
+              },
+            },
+          ),
+        );
+
+        await settleUntil(
+          () => provider.messages.whereType<UserMessage>().length == 2,
+          reason: 'Expected optimistic and echoed user messages to be visible.',
+        );
+
+        final userMessagesAfterEcho = provider.messages
+            .whereType<UserMessage>()
+            .toList();
+        expect(userMessagesAfterEcho, hasLength(2));
+        expect(
+          userMessagesAfterEcho.map((message) => message.id),
+          containsAll(<String>[localUser.id, 'msg_user_server']),
+        );
+
+        final assistantDraft = AssistantMessage(
+          id: 'msg_assistant_contract',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1200),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'prt_assistant_contract',
+              messageId: 'msg_assistant_contract',
+              sessionId: 'ses_1',
+              text: 'Draft answer',
+            ),
+          ],
+        );
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          serverUserEcho,
+          assistantDraft,
+        ];
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'message.created',
+            properties: <String, dynamic>{
+              'info': <String, dynamic>{
+                'sessionID': 'ses_1',
+                'id': 'msg_assistant_contract',
+              },
+            },
+          ),
+        );
+
+        await settleUntil(
+          () =>
+              provider.messages.whereType<AssistantMessage>().length == 1 &&
+              !(provider.messages.last as AssistantMessage).isCompleted,
+          reason: 'Expected draft assistant message to be loaded from replay.',
+        );
+
+        final draftAssistant = provider.messages.last as AssistantMessage;
+        expect(provider.messages.whereType<AssistantMessage>(), hasLength(1));
+        expect((draftAssistant.parts.single as TextPart).text, 'Draft answer');
+        expect(draftAssistant.isCompleted, isFalse);
+
+        final assistantCompleted = AssistantMessage(
+          id: 'msg_assistant_contract',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1200),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1500),
+          parts: <MessagePart>[
+            const TextPart(
+              id: 'prt_assistant_contract',
+              messageId: 'msg_assistant_contract',
+              sessionId: 'ses_1',
+              text: 'Draft answer completed',
+            ),
+            ToolPart(
+              id: 'tool_assistant_contract',
+              messageId: 'msg_assistant_contract',
+              sessionId: 'ses_1',
+              callId: 'call_assistant_contract',
+              tool: 'bash',
+              state: ToolStateCompleted(
+                input: const <String, dynamic>{'command': 'pwd'},
+                output: '/workspace',
+                time: ToolTime(
+                  start: DateTime.fromMillisecondsSinceEpoch(1300),
+                  end: DateTime.fromMillisecondsSinceEpoch(1400),
+                ),
+              ),
+            ),
+          ],
+        );
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          serverUserEcho,
+          assistantCompleted,
+        ];
+        chatRepository.emitEvent(
+          ChatEvent(
+            type: 'message.part.updated',
+            properties: <String, dynamic>{
+              'part': MessagePartModel.fromDomain(
+                assistantCompleted.parts.first,
+              ).toJson(),
+              'delta': ' completed',
+            },
+          ),
+        );
+
+        await settleUntil(
+          () =>
+              provider.messages.last is AssistantMessage &&
+              (provider.messages.last as AssistantMessage).isCompleted,
+          reason: 'Expected assistant completion replay to land.',
+        );
+        await sendStream.close();
+        await settleUntil(
+          () => provider.state == ChatState.loaded,
+          reason:
+              'Expected provider to leave sending state after stream close.',
+        );
+        await provider.refreshActiveSessionView(
+          reason: 'contract-replay-test',
+          includeStatus: false,
+        );
+        await settleUntil(
+          () => provider.messages.length == 3,
+          reason: 'Expected replay baseline to remain stable after refresh.',
+        );
+
+        expect(provider.state, ChatState.loaded);
+        expect(provider.messages, hasLength(3));
+
+        final finalUserMessages = provider.messages
+            .whereType<UserMessage>()
+            .toList();
+        expect(finalUserMessages, hasLength(2));
+        expect(
+          finalUserMessages.map((message) => message.id),
+          containsAll(<String>[localUser.id, 'msg_user_server']),
+        );
+
+        final finalAssistant = provider.messages.last as AssistantMessage;
+        final textParts = finalAssistant.parts.whereType<TextPart>().toList();
+        final toolParts = finalAssistant.parts.whereType<ToolPart>().toList();
+        expect(finalAssistant.id, 'msg_assistant_contract');
+        expect(finalAssistant.isCompleted, isTrue);
+        expect(textParts, hasLength(1));
+        expect(textParts.single.text, 'Draft answer completed');
+        expect(toolParts, hasLength(1));
+        expect(toolParts.single.id, 'tool_assistant_contract');
+      },
+    );
+
+    test(
+      'send stream keeps one assistant message while parts evolve across updates',
+      () async {
+        final assistantStreaming = AssistantMessage(
+          id: 'msg_assistant_stream_parts',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(2000),
+          parts: <MessagePart>[
+            const TextPart(
+              id: 'prt_stream_text',
+              messageId: 'msg_assistant_stream_parts',
+              sessionId: 'ses_1',
+              text: 'Inspecting files',
+            ),
+            ToolPart(
+              id: 'tool_stream_part',
+              messageId: 'msg_assistant_stream_parts',
+              sessionId: 'ses_1',
+              callId: 'call_stream_part',
+              tool: 'bash',
+              state: ToolStateRunning(
+                input: const <String, dynamic>{'command': 'ls'},
+                time: DateTime.fromMillisecondsSinceEpoch(2001),
+              ),
+            ),
+          ],
+        );
+        final assistantCompleted = AssistantMessage(
+          id: 'msg_assistant_stream_parts',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(2000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(2300),
+          parts: <MessagePart>[
+            const TextPart(
+              id: 'prt_stream_text',
+              messageId: 'msg_assistant_stream_parts',
+              sessionId: 'ses_1',
+              text: 'Inspecting files complete',
+            ),
+            ToolPart(
+              id: 'tool_stream_part',
+              messageId: 'msg_assistant_stream_parts',
+              sessionId: 'ses_1',
+              callId: 'call_stream_part',
+              tool: 'bash',
+              state: ToolStateCompleted(
+                input: const <String, dynamic>{'command': 'ls'},
+                output: 'README.md\nlib',
+                time: ToolTime(
+                  start: DateTime.fromMillisecondsSinceEpoch(2001),
+                  end: DateTime.fromMillisecondsSinceEpoch(2200),
+                ),
+              ),
+            ),
+          ],
+        );
+
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
+          yield Right(assistantStreaming);
+          await pumpEventQueue();
+          yield Right(assistantCompleted);
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('show files');
+        await settleUntil(
+          () =>
+              provider.state == ChatState.loaded &&
+              provider.messages.whereType<AssistantMessage>().length == 1,
+          reason:
+              'Expected assistant stream updates to finish deterministically.',
+        );
+
+        expect(provider.state, ChatState.loaded);
+        expect(provider.messages.whereType<UserMessage>(), hasLength(1));
+        expect(provider.messages.whereType<AssistantMessage>(), hasLength(1));
+
+        final assistant = provider.messages.last as AssistantMessage;
+        final assistantPartIds = assistant.parts
+            .map((part) => part.id)
+            .toList();
+        expect(assistantPartIds.toSet().length, assistantPartIds.length);
+        expect(assistant.parts.whereType<TextPart>(), hasLength(1));
+        expect(assistant.parts.whereType<ToolPart>(), hasLength(1));
+        expect(
+          assistant.parts.whereType<TextPart>().single.text,
+          'Inspecting files complete',
+        );
+        expect(
+          assistant.parts.whereType<ToolPart>().single.state.status,
+          ToolStatus.completed,
+        );
+      },
+    );
 
     test(
       'does not generate AI titles when server toggle is disabled',

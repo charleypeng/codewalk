@@ -125,6 +125,71 @@ void main() {
     expect(find.byType(PartEntranceAnimation), findsOneWidget);
   });
 
+  testWidgets(
+    'preserves expanded tool details when message instance is replaced with same part id',
+    (WidgetTester tester) async {
+      AssistantMessage messageWithTool(String output) {
+        return AssistantMessage(
+          id: 'msg_tool_persist',
+          sessionId: 'ses_tool_persist',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          parts: <MessagePart>[
+            ToolPart(
+              id: 'tool_persist',
+              messageId: 'msg_tool_persist',
+              sessionId: 'ses_tool_persist',
+              callId: 'call_tool_persist',
+              tool: 'bash',
+              state: ToolStateCompleted(
+                input: const <String, dynamic>{'command': 'pwd'},
+                output: output,
+                time: ToolTime(
+                  start: DateTime.fromMillisecondsSinceEpoch(1000),
+                  end: DateTime.fromMillisecondsSinceEpoch(1100),
+                ),
+              ),
+            ),
+          ],
+        );
+      }
+
+      var message = messageWithTool('/workspace');
+      late StateSetter setHostState;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                setHostState = setState;
+                return ChatMessageWidget(message: message);
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>('tool_part_details_button_tool_persist'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('/workspace'), findsOneWidget);
+      expect(find.text('Hide'), findsOneWidget);
+
+      setHostState(() {
+        message = messageWithTool('/workspace/updated');
+      });
+      await tester.pumpAndSettle();
+
+      expect(find.text('/workspace/updated'), findsOneWidget);
+      expect(find.text('Hide'), findsOneWidget);
+      expect(find.text('Details'), findsNothing);
+    },
+  );
+
   testWidgets('hides step blocks from assistant message body', (
     WidgetTester tester,
   ) async {
