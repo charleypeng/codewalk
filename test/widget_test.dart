@@ -1,14 +1,20 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:codewalk/core/di/injection_container.dart' as di;
+import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/domain/entities/chat_composer_draft.dart';
 import 'package:codewalk/domain/entities/chat_session.dart';
+import 'package:codewalk/presentation/providers/settings_provider.dart';
+import 'package:codewalk/presentation/services/sound_service.dart';
+import 'package:codewalk/presentation/services/speech_input_service_stt.dart';
 import 'package:codewalk/presentation/widgets/chat_input_widget.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
 
 import 'support/fakes.dart';
 
@@ -16,6 +22,7 @@ Widget _buildChatInputHarness({
   required ChatInputWidget child,
   MediaQueryData? mediaQueryData,
   double? width,
+  SettingsProvider? settingsProvider,
 }) {
   final content = width == null ? child : SizedBox(width: width, child: child);
   Widget home = Scaffold(
@@ -24,7 +31,44 @@ Widget _buildChatInputHarness({
   if (mediaQueryData != null) {
     home = MediaQuery(data: mediaQueryData, child: home);
   }
+  if (settingsProvider != null) {
+    home = ChangeNotifierProvider<SettingsProvider>.value(
+      value: settingsProvider,
+      child: home,
+    );
+  }
   return MaterialApp(home: home);
+}
+
+class _FakeSttSpeechInputService extends SttSpeechInputService {
+  int startCount = 0;
+  int stopCount = 0;
+  bool _listening = false;
+
+  @override
+  bool get isListening => _listening;
+
+  @override
+  Future<bool> initialize() async => true;
+
+  @override
+  Future<void> startListening({
+    required void Function(String text, bool isFinal) onResult,
+    required void Function(String status) onStatus,
+    required void Function() onError,
+    Duration? pauseFor,
+    String? localeId,
+  }) async {
+    startCount += 1;
+    _listening = true;
+    onStatus('listening');
+  }
+
+  @override
+  Future<void> stopListening() async {
+    stopCount += 1;
+    _listening = false;
+  }
 }
 
 void main() {
@@ -70,6 +114,62 @@ void main() {
     );
 
     expect(find.byTooltip('Canned answers'), findsOneWidget);
+  });
+
+  testWidgets('external voice toggle is ignored when composer is disabled', (
+    WidgetTester tester,
+  ) async {
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..experienceSettingsJson = '{"checkUpdatesOnOpen": false}';
+    final settingsProvider = SettingsProvider(
+      localDataSource: localDataSource,
+      dioClient: DioClient(),
+      soundService: SoundService(),
+    );
+    await settingsProvider.initialize();
+    addTearDown(settingsProvider.dispose);
+
+    final previousStt = di.sl.isRegistered<SttSpeechInputService>()
+        ? di.sl<SttSpeechInputService>()
+        : null;
+    if (di.sl.isRegistered<SttSpeechInputService>()) {
+      di.sl.unregister<SttSpeechInputService>();
+    }
+    final fakeStt = _FakeSttSpeechInputService();
+    di.sl.registerSingleton<SttSpeechInputService>(fakeStt);
+    addTearDown(() {
+      if (di.sl.isRegistered<SttSpeechInputService>()) {
+        di.sl.unregister<SttSpeechInputService>();
+      }
+      if (previousStt != null) {
+        di.sl.registerSingleton<SttSpeechInputService>(previousStt);
+      }
+    });
+
+    final controller = ChatInputController();
+    final focusNode = FocusNode();
+    addTearDown(focusNode.dispose);
+
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        settingsProvider: settingsProvider,
+        child: ChatInputWidget(
+          controller: controller,
+          focusNode: focusNode,
+          enabled: false,
+          onSendMessage: (_) {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(controller.canToggleVoiceInput, isFalse);
+
+    await controller.toggleVoiceInput();
+    await tester.pump();
+
+    expect(fakeStt.startCount, 0);
+    expect(focusNode.hasFocus, isFalse);
   });
 
   testWidgets('canned append inserts text at current cursor', (

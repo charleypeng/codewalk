@@ -144,6 +144,9 @@ extension _ChatPageShortcuts on _ChatPageState {
   }
 
   Future<void> _toggleVoiceInputShortcut() async {
+    if (!_chatInputController.canToggleVoiceInput) {
+      return;
+    }
     _chatInputController.focusInput();
     await _chatInputController.toggleVoiceInput();
   }

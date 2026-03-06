@@ -59,6 +59,9 @@ class ChatInputController {
   }
 
   Future<void> toggleVoiceInput() async {
+    if (!canToggleVoiceInput) {
+      return;
+    }
     await _state?._toggleVoiceInputFromExternal();
   }
 
