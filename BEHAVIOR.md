@@ -448,6 +448,8 @@ Additional commands may be provided by the connected OpenCode server and merged 
 - **Given** the user activates voice input
 - **When** the user speaks
 - **Then** the speech is converted to text and inserted into the composer input
+- **Then** keyboard shortcut activation uses the same start/stop flow as the microphone button
+- **Then** if the composer is disabled, keyboard shortcut activation is ignored and voice input does not start
 
 ### Cross-platform support
 
@@ -590,6 +592,7 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 | `mod+n` | New conversation | |
 | `mod+r` | Refresh data | |
 | `mod+l` | Focus composer input | |
+| `alt+s` / `option+s` | Start or stop voice input | `Option` label on macOS |
 | `mod+p` | Quick-open project file | |
 | `mod+,` | Open Settings | |
 | `mod+m` | Cycle recent/favorite models | |
@@ -598,6 +601,13 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 | `mod+shift+j` | Previous agent | |
 | `Escape` | Close drawer / focus input | Double-press stops active response |
 | `mod+q` | Quit app | Desktop only; bypasses close-to-tray |
+
+### Single `Escape` restores composer focus when available
+
+- **Given** no drawer, dialog, or composer popover owns the `Escape` key
+- **When** the user presses `Escape` once and the composer is not currently focused
+- **Then** the composer input becomes focused
+- **Then** if the composer already owns focus, composer-level `Escape` handling keeps priority (for example popover close, shell exit, or double-`Escape` stop while responding)
 
 ### Mobile keyboard collapses the task panel
 
