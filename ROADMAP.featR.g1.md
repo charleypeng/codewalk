@@ -2,7 +2,7 @@
 feature: "featR g1 - Contract Safety Net and Test Harness"
 group: "featR.g1"
 dependency: "None (Base group)"
-status: "Pending"
+status: "Delivered"
 ---
 
 # featR g1 - Contract Safety Net and Test Harness
@@ -38,8 +38,8 @@ Later groups will fundamentally change the send lifecycle, optimistic reconcilia
 -   `lib/presentation/providers/chat_provider/chat_provider_event_reducer_ops.dart`
 -   `lib/presentation/widgets/chat_message_widget.dart`
 -   `lib/presentation/widgets/chat_message/chat_message_tool_part.dart`
--   `test/presentation/providers/chat_provider_test.dart`
--   `test/presentation/widgets/chat_message_widget_test.dart`
+-   `test/unit/providers/chat_provider_realtime_test.dart`
+-   `test/widget/chat_message_widget_test.dart`
 
 ## Official OpenCode Reference Targets
 -   `packages/app/src/context/sync.tsx`
@@ -58,14 +58,19 @@ Later groups will fundamentally change the send lifecycle, optimistic reconcilia
 -   **No Polling Changes**: Keep the `10s` health polling exactly as it is.
 
 ## Acceptance Checklist / Definition of Done
--   [ ] `make check` passes with new tests.
--   [ ] Provider replay tests cover optimistic replacement and stream appending.
--   [ ] Widget tests cover tool-call expansion state preservation.
--   [ ] Test seams do not expose private state to production logic unnecessarily.
+-   [x] `make check` passes with new tests.
+-   [x] Provider replay tests cover optimistic replacement and stream appending.
+-   [x] Widget tests cover tool-call expansion state preservation.
+-   [x] Test seams do not expose private state to production logic unnecessarily.
+
+## Implementation Notes
+-   Added realtime regression tests that lock the current SSE replay baseline before later parity groups change provider behavior.
+-   Added deterministic event-queue settling in tests so the new coverage does not depend on fixed-duration sleeps.
+-   Added a widget regression test that preserves expanded tool details when a message instance is replaced with the same tool-part ID.
 
 ## Validation and Test Plan
--   Run `flutter test test/presentation/providers/chat_provider_test.dart`.
--   Run `flutter test test/presentation/widgets/chat_message_widget_test.dart`.
+-   Run `flutter test test/unit/providers/chat_provider_realtime_test.dart`.
+-   Run `flutter test test/widget/chat_message_widget_test.dart`.
 -   Verify that manually breaking the provider's merge logic triggers a test failure.
 
 ## Docs / ADR / CODEBASE Follow-up
