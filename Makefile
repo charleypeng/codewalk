@@ -120,7 +120,12 @@ icons-app:
 		'Keywords=AI;Code;Assistant;OpenCode;' \
 		> linux/runner/resources/com.verseles.codewalk.desktop
 	magick -size 1024x1024 xc:none \( assets/images/original.png -gravity center -crop 84%x84%+0+0 +repage -resize 860x860\! \) -gravity center -composite -define icon:auto-resize=256,128,64,48,32,24,16 windows/runner/resources/app_icon.ico
-	magick assets/images/original.png -gravity center -crop 84%x84%+0+0 +repage -resize 1024x1024\! -strip -define png:compression-level=9 \( -size 1024x1024 xc:none -fill white -draw "roundrectangle 0,0 1023,1023 180,180" \) -compose CopyOpacity -composite assets/images/macos_appicon_source.png
+	# Keep a visual inset on macOS so the launcher icon matches native Dock sizing.
+	magick -size 1024x1024 xc:none \
+		\( assets/images/original.png -gravity center -crop 84%x84%+0+0 +repage -resize 860x860\! \) \
+		-gravity center -composite \
+		\( -size 1024x1024 xc:none -fill white -draw "roundrectangle 82,82 941,941 152,152" \) \
+		-compose CopyOpacity -composite -strip -define png:compression-level=9 assets/images/macos_appicon_source.png
 	magick assets/images/macos_appicon_source.png -resize 16x16\! -strip -define png:compression-level=9 macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_16.png
 	magick assets/images/macos_appicon_source.png -resize 32x32\! -strip -define png:compression-level=9 macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_32.png
 	magick assets/images/macos_appicon_source.png -resize 64x64\! -strip -define png:compression-level=9 macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_64.png
