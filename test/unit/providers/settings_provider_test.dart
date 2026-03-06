@@ -217,9 +217,11 @@ void main() {
       await first.initialize();
 
       expect(first.keepDesktopRunningInTray, isTrue);
+      expect(first.androidBackgroundAlertsEnabled, isTrue);
       expect(first.keepMobileRealtimeForShortPeriod, isTrue);
 
       await first.setKeepDesktopRunningInTray(false);
+      await first.setAndroidBackgroundAlertsEnabled(false);
       await first.setKeepMobileRealtimeForShortPeriod(false);
 
       final second = SettingsProvider(
@@ -230,6 +232,7 @@ void main() {
       await second.initialize();
 
       expect(second.keepDesktopRunningInTray, isFalse);
+      expect(second.androidBackgroundAlertsEnabled, isFalse);
       expect(second.keepMobileRealtimeForShortPeriod, isFalse);
     });
 

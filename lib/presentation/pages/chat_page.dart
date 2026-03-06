@@ -31,14 +31,15 @@ import '../providers/app_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/project_provider.dart';
 import '../providers/settings_provider.dart';
+import '../services/android_background_alert_logic.dart';
 import '../services/android_background_alert_worker.dart';
 import '../services/android_foreground_monitor_service.dart';
 import '../services/notification_service.dart';
-import '../utils/file_explorer_logic.dart';
-import '../utils/chat_abort_message.dart';
-import '../utils/reasoning_status_parser.dart';
 import '../theme/app_animations.dart';
 import '../utils/app_page_route.dart';
+import '../utils/chat_abort_message.dart';
+import '../utils/file_explorer_logic.dart';
+import '../utils/reasoning_status_parser.dart';
 import '../utils/session_title_formatter.dart';
 import '../utils/shortcut_binding_codec.dart';
 import '../utils/window_size_class.dart';
@@ -329,9 +330,7 @@ class _ChatPageState extends State<ChatPage>
         _notificationService = nextNotificationService;
         _notificationTapSubscription = nextNotificationService
             .onNotificationTapped
-            .listen((payload) {
-              _scheduleNotificationTap(payload);
-            });
+            .listen(_scheduleNotificationTap);
         final pendingPayload = nextNotificationService.consumePendingTap();
         if (pendingPayload != null) {
           _scheduleNotificationTap(pendingPayload);
@@ -1159,7 +1158,7 @@ class _CollapsedHistoryGroup {
   final String compactionId;
   final String compactionLabel;
 
-  String get id => '${compactionId}_${startMessageId}_${endMessageId}';
+  String get id => '${compactionId}_${startMessageId}_$endMessageId';
 }
 
 class _TimelineCollapsedAssistantWorkEntry extends _TimelineEntry {
@@ -1190,7 +1189,7 @@ class _CollapsedAssistantWorkGroup {
   final int messageCount;
   final DateTime createdAt;
 
-  String get id => '${finalMessageId}_${startMessageId}_${endMessageId}';
+  String get id => '${finalMessageId}_${startMessageId}_$endMessageId';
 }
 
 class _TimelineRetryIndicatorEntry extends _TimelineEntry {

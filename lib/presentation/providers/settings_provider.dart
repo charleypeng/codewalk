@@ -5,14 +5,16 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:open_filex/open_filex.dart';
-import 'package:path_provider/path_provider.dart';
-
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../core/logging/app_logger.dart';
 import '../../core/network/dio_client.dart';
 import '../../data/datasources/app_local_datasource.dart';
 import '../../domain/entities/experience_settings.dart';
+import '../services/android_background_alert_logic.dart';
+import '../services/android_background_alert_worker.dart';
+import '../services/android_foreground_monitor_service.dart';
 import '../services/sound_service.dart';
 import '../services/update_check_service.dart';
 import '../utils/shortcut_binding_codec.dart';
@@ -86,8 +88,12 @@ class SettingsProvider extends ChangeNotifier {
       _settings.desktopCloseBehavior;
   bool get keepDesktopRunningInTray =>
       _settings.desktopCloseBehavior != DesktopCloseBehavior.close;
+  bool get androidBackgroundAlertsEnabled =>
+      _settings.androidBackgroundAlertsEnabled;
   bool get keepMobileRealtimeForShortPeriod =>
       _settings.keepMobileRealtimeForShortPeriod;
+  bool get shouldMonitorAndroidBackgroundAlerts =>
+      shouldRunAndroidBackgroundAlerts(_settings);
   bool get enableExperimentalMultiDeviceSync =>
       _settings.enableExperimentalMultiDeviceSync;
   SpeechToTextEngine get speechToTextEngine => _settings.speechToTextEngine;
@@ -164,6 +170,7 @@ class SettingsProvider extends ChangeNotifier {
     if (_settings.checkUpdatesOnOpen) {
       unawaited(_performStartupUpdateCheck());
     }
+    unawaited(_syncAndroidBackgroundAlertRuntime());
     _configureAutomaticUpdateChecks();
     _initialized = true;
     notifyListeners();
@@ -425,6 +432,16 @@ class SettingsProvider extends ChangeNotifier {
     );
   }
 
+  Future<void> setAndroidBackgroundAlertsEnabled(bool enabled) async {
+    if (_settings.androidBackgroundAlertsEnabled == enabled) {
+      return;
+    }
+    _settings = _settings.copyWith(androidBackgroundAlertsEnabled: enabled);
+    notifyListeners();
+    await _persist();
+    await _syncAndroidBackgroundAlertRuntime();
+  }
+
   Future<void> setKeepMobileRealtimeForShortPeriod(bool enabled) async {
     if (_settings.keepMobileRealtimeForShortPeriod == enabled) {
       return;
@@ -524,6 +541,7 @@ class SettingsProvider extends ChangeNotifier {
     _settings = _settings.copyWith(notifications: next);
     notifyListeners();
     await _persist();
+    await _syncAndroidBackgroundAlertRuntime();
     await _syncNotificationToServer(category, value);
   }
 
@@ -813,6 +831,7 @@ class SettingsProvider extends ChangeNotifier {
     _installProgress = 0.0;
     _initialized = false;
     _initFuture = null;
+    unawaited(_syncAndroidBackgroundAlertRuntime());
     notifyListeners();
   }
 
@@ -822,10 +841,13 @@ class SettingsProvider extends ChangeNotifier {
   /// Resetting to idle first lets AppShellPage clear its SnackBar guards on retry.
   Future<void> startInstall() async {
     if (_installState == UpdateInstallState.downloading ||
-        _installState == UpdateInstallState.installing)
+        _installState == UpdateInstallState.installing) {
       return;
+    }
     final result = _updateCheckResult;
-    if (result == null) return;
+    if (result == null) {
+      return;
+    }
 
     // Reset to idle so AppShellPage observers can clear their snackbar guards.
     _installState = UpdateInstallState.idle;
@@ -1029,6 +1051,18 @@ class SettingsProvider extends ChangeNotifier {
       _settings = _settings.copyWith(notifications: nextNotifications);
       notifyListeners();
       unawaited(_persist());
+      unawaited(_syncAndroidBackgroundAlertRuntime());
+    }
+  }
+
+  Future<void> _syncAndroidBackgroundAlertRuntime() async {
+    final enabled = shouldRunAndroidBackgroundAlerts(_settings);
+    await AndroidBackgroundAlertWorker.syncRegistration(enabled: enabled);
+    if (!enabled) {
+      await AndroidForegroundMonitorService.sync(
+        enabled: false,
+        activeSessionCount: 0,
+      );
     }
   }
 

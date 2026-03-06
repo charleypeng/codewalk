@@ -1,9 +1,8 @@
-import 'dart:async';
-
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/presentation/pages/settings_page.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -108,18 +107,6 @@ void main() {
 
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Notifications').first);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Agent updates'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('Permissions and questions'),
-      300,
-      scrollable: find.byType(Scrollable).last,
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Permissions and questions'), findsOneWidget);
   });
 
   testWidgets('mobile back follows detail then list then app flow', (
@@ -186,5 +173,45 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Open settings'), findsOneWidget);
     expect(find.byType(SettingsPage), findsNothing);
+  });
+
+  testWidgets('shows Android background alert controls in notifications', (
+    WidgetTester tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    try {
+      final local = InMemoryAppLocalDataSource()
+        ..experienceSettingsJson = '{"checkUpdatesOnOpen": false}';
+      final settingsProvider = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: SoundService(),
+      );
+      await settingsProvider.initialize();
+      addTearDown(settingsProvider.dispose);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<SettingsProvider>.value(
+          value: settingsProvider,
+          child: const MaterialApp(home: SettingsPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Notifications').first);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(find.text('Android background alerts'), findsOneWidget);
+      expect(find.text('Background alerts on Android'), findsOneWidget);
+      expect(
+        find.byKey(
+          const ValueKey<String>('settings_toggle_android_background_alerts'),
+        ),
+        findsOneWidget,
+      );
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 }

@@ -41,22 +41,35 @@ class AndroidBackgroundAlertWorker {
   static const Duration tailProbeInterval = kBackgroundTailProbeInterval;
 
   static Future<void> ensureRegistered() async {
+    await syncRegistrationFromPersistedSettings();
+  }
+
+  static Future<void> syncRegistrationFromPersistedSettings() async {
     if (!_isAndroidRuntime()) {
       return;
     }
 
+    final prefs = await SharedPreferences.getInstance();
+    await syncRegistration(
+      enabled: shouldRunAndroidBackgroundAlerts(
+        _readExperienceSettingsFromPrefs(prefs),
+      ),
+    );
+  }
+
+  static Future<void> syncRegistration({required bool enabled}) async {
+    if (!_isAndroidRuntime()) {
+      return;
+    }
+
+    await _ensureInitialized();
     if (!_initialized) {
-      try {
-        await Workmanager().initialize(codewalkBackgroundAlertDispatcher);
-        _initialized = true;
-      } catch (error, stackTrace) {
-        AppLogger.warn(
-          'Failed to initialize Android background alert worker',
-          error: error,
-          stackTrace: stackTrace,
-        );
-        return;
-      }
+      return;
+    }
+
+    if (!enabled) {
+      await _cancelScheduledTasks();
+      return;
     }
 
     try {
@@ -76,12 +89,10 @@ class AndroidBackgroundAlertWorker {
         stackTrace: stackTrace,
       );
     }
-
-    await scheduleProbe();
   }
 
   static Future<void> scheduleProbe({
-    Duration initialDelay = const Duration(minutes: 1),
+    Duration initialDelay = activeSessionProbeInterval,
     bool ensureInitialized = true,
   }) async {
     if (!_isAndroidRuntime()) {
@@ -89,13 +100,55 @@ class AndroidBackgroundAlertWorker {
     }
 
     if (ensureInitialized && !_initialized) {
-      await ensureRegistered();
+      await _ensureInitialized();
       if (!_initialized) {
         return;
       }
     }
 
+    final prefs = await SharedPreferences.getInstance();
+    if (!shouldRunAndroidBackgroundAlerts(
+      _readExperienceSettingsFromPrefs(prefs),
+    )) {
+      await _cancelScheduledTasks();
+      return;
+    }
+
     await _registerOneOffTask(initialDelay: initialDelay);
+  }
+
+  static Future<void> _ensureInitialized() async {
+    if (_initialized) {
+      return;
+    }
+
+    try {
+      await Workmanager().initialize(codewalkBackgroundAlertDispatcher);
+      _initialized = true;
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to initialize Android background alert worker',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  static Future<void> _cancelScheduledTasks() async {
+    if (!_initialized) {
+      return;
+    }
+
+    try {
+      await Workmanager().cancelByUniqueName(_backgroundAlertWorkUniqueName);
+      await Workmanager().cancelByUniqueName(_backgroundAlertOneOffUniqueName);
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to cancel Android background alert tasks',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   static Future<void> _registerOneOffTask({
@@ -174,6 +227,11 @@ class AndroidBackgroundAlertWorker {
     }
 
     final prefs = await SharedPreferences.getInstance();
+    if (!shouldRunAndroidBackgroundAlerts(
+      _readExperienceSettingsFromPrefs(prefs),
+    )) {
+      return;
+    }
     final snapshotKey = _backgroundAlertSnapshotStorageKey(normalizedServerId);
     final existingSnapshotRaw = prefs.getString(snapshotKey);
     var existingSnapshot = BackgroundAlertSnapshot.empty();
@@ -195,6 +253,10 @@ class AndroidBackgroundAlertWorker {
     final primedSnapshot = BackgroundAlertSnapshot(
       sessionStatusById: normalizedStatusById,
       sessionUpdatedAtById: normalizedUpdatedAtById,
+      sessionTitleById: {
+        ...existingSnapshot.sessionTitleById,
+        ...normalizedTitleById,
+      },
       notifiedPermissionRequestIds:
           existingSnapshot.notifiedPermissionRequestIds,
       notifiedQuestionRequestIds: existingSnapshot.notifiedQuestionRequestIds,
@@ -229,18 +291,26 @@ class _AndroidBackgroundAlertRunner {
 
   final BackgroundAlertPlanner _planner;
   final _BackgroundNotificationDispatcher _notificationDispatcher;
-  static final FlutterSecureStorage _secureStorage = FlutterSecureStorage();
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   Future<bool> run({required String taskName}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final settings = _readSettings(prefs);
+      if (!shouldRunAndroidBackgroundAlerts(settings)) {
+        await AndroidBackgroundAlertWorker.syncRegistration(enabled: false);
+        AppLogger.debug(
+          'background_alert_worker skipped ($taskName): disabled in settings',
+        );
+        return true;
+      }
+
       final server = await _resolveServerConfig(prefs);
       if (server == null) {
         AppLogger.debug('background_alert_worker skipped (no active server)');
         return true;
       }
 
-      final settings = _readSettings(prefs);
       final dio = _createDioClient(server);
       final snapshotKey = _snapshotStorageKey(server.serverId);
       final previousSnapshot = _readSnapshot(prefs, snapshotKey);
@@ -253,25 +323,58 @@ class _AndroidBackgroundAlertRunner {
         return true;
       }
 
-      final sessionMetadata = await _fetchSessionMetadata(dio);
-      final permissionRequests = await _fetchPermissionRequests(dio);
-      final questionRequests = await _fetchQuestionRequests(dio);
-
+      final permissionEnabled =
+          settings.notifications[NotificationCategory.permissions] ?? true;
+      final permissionRequests = permissionEnabled
+          ? await _fetchPermissionRequests(dio)
+          : const <BackgroundInteractionRequest>[];
+      final questionRequests = permissionEnabled
+          ? await _fetchQuestionRequests(dio)
+          : const <BackgroundInteractionRequest>[];
+      final cachedTitles = Map<String, String>.from(
+        previousSnapshot.sessionTitleById,
+      );
       final currentState = BackgroundPollingState(
         sessionStatusById: statusById,
-        sessionUpdatedAtById: sessionMetadata.updatedAtBySessionId,
-        sessionTitleById: sessionMetadata.titleBySessionId,
+        sessionUpdatedAtById: Map<String, int>.from(
+          previousSnapshot.sessionUpdatedAtById,
+        ),
+        sessionTitleById: cachedTitles,
         permissionRequests: permissionRequests,
         questionRequests: questionRequests,
       );
 
       final nowEpochMs = DateTime.now().millisecondsSinceEpoch;
-      final plan = _planner.plan(
+      var plan = _planner.plan(
         previous: previousSnapshot,
         current: currentState,
         settings: settings,
         nowEpochMs: nowEpochMs,
       );
+
+      if (_shouldRefreshSessionTitles(
+        signals: plan.signals,
+        cachedTitles: cachedTitles,
+      )) {
+        final sessionMetadata = await _fetchSessionMetadata(dio);
+        final refreshedTitles = <String, String>{
+          ...cachedTitles,
+          ...sessionMetadata.titleBySessionId,
+        };
+        final refreshedState = BackgroundPollingState(
+          sessionStatusById: statusById,
+          sessionUpdatedAtById: sessionMetadata.updatedAtBySessionId,
+          sessionTitleById: refreshedTitles,
+          permissionRequests: permissionRequests,
+          questionRequests: questionRequests,
+        );
+        plan = _planner.plan(
+          previous: previousSnapshot,
+          current: refreshedState,
+          settings: settings,
+          nowEpochMs: nowEpochMs,
+        );
+      }
 
       if (!plan.baselineOnly) {
         for (final signal in plan.signals) {
@@ -373,23 +476,7 @@ class _AndroidBackgroundAlertRunner {
   }
 
   ExperienceSettings _readSettings(SharedPreferences prefs) {
-    final raw = prefs.getString(AppConstants.experienceSettingsKey);
-    if (raw == null || raw.trim().isEmpty) {
-      return ExperienceSettings.defaults();
-    }
-
-    try {
-      final decoded = jsonDecode(raw);
-      if (decoded is Map<String, dynamic>) {
-        return ExperienceSettings.fromJson(decoded);
-      }
-      if (decoded is Map) {
-        return ExperienceSettings.fromJson(Map<String, dynamic>.from(decoded));
-      }
-    } catch (_) {
-      // Falls back to defaults.
-    }
-    return ExperienceSettings.defaults();
+    return _readExperienceSettingsFromPrefs(prefs);
   }
 
   BackgroundAlertSnapshot _readSnapshot(SharedPreferences prefs, String key) {
@@ -746,6 +833,18 @@ class _AndroidBackgroundAlertRunner {
       return const <BackgroundInteractionRequest>[];
     }
   }
+
+  bool _shouldRefreshSessionTitles({
+    required List<BackgroundAlertSignal> signals,
+    required Map<String, String> cachedTitles,
+  }) {
+    for (final signal in signals) {
+      if (!cachedTitles.containsKey(signal.sessionId)) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
 
 class _BackgroundNotificationDispatcher {
@@ -938,6 +1037,26 @@ bool _isAndroidRuntime() {
     return false;
   }
   return defaultTargetPlatform == TargetPlatform.android;
+}
+
+ExperienceSettings _readExperienceSettingsFromPrefs(SharedPreferences prefs) {
+  final raw = prefs.getString(AppConstants.experienceSettingsKey);
+  if (raw == null || raw.trim().isEmpty) {
+    return ExperienceSettings.defaults();
+  }
+
+  try {
+    final decoded = jsonDecode(raw);
+    if (decoded is Map<String, dynamic>) {
+      return ExperienceSettings.fromJson(decoded);
+    }
+    if (decoded is Map) {
+      return ExperienceSettings.fromJson(Map<String, dynamic>.from(decoded));
+    }
+  } catch (_) {
+    // Falls back to defaults.
+  }
+  return ExperienceSettings.defaults();
 }
 
 String _backgroundAlertSnapshotStorageKey(String serverId) {

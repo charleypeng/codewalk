@@ -39,7 +39,7 @@ void main() {
       }
 
       if (_isAndroidRuntime()) {
-        await AndroidBackgroundAlertWorker.ensureRegistered();
+        await AndroidBackgroundAlertWorker.syncRegistrationFromPersistedSettings();
       }
 
       // Initialize dependency injection

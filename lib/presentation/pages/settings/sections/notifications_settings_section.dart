@@ -22,8 +22,6 @@ class NotificationsSettingsSection extends StatefulWidget {
 
 class _NotificationsSettingsSectionState
     extends State<NotificationsSettingsSection> {
-  static const int _mobileBackgroundHoldMinutes = 3;
-
   final NotificationSoundSourceService _soundSourceService =
       createNotificationSoundSourceService();
   final AndroidBatteryOptimizationService _batteryOptimizationService =
@@ -98,6 +96,10 @@ class _NotificationsSettingsSectionState
             const SizedBox(height: 16),
             _buildSyncInfoCard(settingsProvider),
             const SizedBox(height: 16),
+            if (_isAndroidPlatform) ...[
+              _buildAndroidBackgroundAlertsCard(settingsProvider),
+              const SizedBox(height: 16),
+            ],
             _buildCategoryCard(
               context: context,
               settingsProvider: settingsProvider,
@@ -124,7 +126,8 @@ class _NotificationsSettingsSectionState
               subtitle: 'When a session reports a failure',
               icon: Symbols.error_outline,
             ),
-            if (_isDesktopPlatform || _isMobilePlatform) ...[
+            if (_isDesktopPlatform ||
+                (_isMobilePlatform && !_isAndroidPlatform)) ...[
               const SizedBox(height: 16),
               _buildBackgroundBehaviorCard(settingsProvider),
             ],
@@ -148,6 +151,72 @@ class _NotificationsSettingsSectionState
             const SizedBox(width: 10),
             Expanded(
               child: Text(text, style: Theme.of(context).textTheme.bodySmall),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAndroidBackgroundAlertsCard(SettingsProvider settingsProvider) {
+    final enabled = settingsProvider.androidBackgroundAlertsEnabled;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.defaultPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Android background alerts',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Use low-data background monitoring for response completions, permission requests, questions, and errors while the app is not on screen.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            SwitchListTile.adaptive(
+              key: const ValueKey<String>(
+                'settings_toggle_android_background_alerts',
+              ),
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Background alerts on Android'),
+              subtitle: const Text(
+                'Turn off all Android background checks and hide the persistent monitor notification.',
+              ),
+              value: enabled,
+              onChanged: (value) => unawaited(
+                settingsProvider.setAndroidBackgroundAlertsEnabled(value),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SwitchListTile.adaptive(
+              key: const ValueKey<String>(
+                'settings_toggle_keep_mobile_realtime',
+              ),
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Keep alerts live for 3 min'),
+              subtitle: const Text(
+                'When a response is already running, keep realtime active briefly after leaving the app.',
+              ),
+              value: settingsProvider.keepMobileRealtimeForShortPeriod,
+              onChanged: enabled
+                  ? (value) => unawaited(
+                      settingsProvider.setKeepMobileRealtimeForShortPeriod(
+                        value,
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(height: 8),
+            AnimatedOpacity(
+              opacity: enabled ? 1 : 0.6,
+              duration: const Duration(milliseconds: 180),
+              child: IgnorePointer(
+                ignoring: !enabled,
+                child: _buildBatteryOptimizationPrompt(),
+              ),
             ),
           ],
         ),
@@ -226,9 +295,7 @@ class _NotificationsSettingsSectionState
               const SizedBox(height: 12),
               SwitchListTile.adaptive(
                 contentPadding: EdgeInsets.zero,
-                title: Text(
-                  'Keep alerts live for $_mobileBackgroundHoldMinutes min',
-                ),
+                title: const Text('Keep alerts live for 3 min'),
                 subtitle: const Text(
                   'When a response is running, keep realtime active briefly after you leave the app.',
                 ),

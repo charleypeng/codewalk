@@ -439,6 +439,7 @@ class ExperienceSettings {
       taskListCollapsed: false,
       showComposerTips: true,
       desktopCloseBehavior: DesktopCloseBehavior.tray,
+      androidBackgroundAlertsEnabled: true,
       keepMobileRealtimeForShortPeriod: true,
       enableExperimentalMultiDeviceSync: false,
       themeMode: ThemeModeOption.system,
@@ -471,6 +472,7 @@ class ExperienceSettings {
     required this.taskListCollapsed,
     required this.showComposerTips,
     required this.desktopCloseBehavior,
+    required this.androidBackgroundAlertsEnabled,
     required this.keepMobileRealtimeForShortPeriod,
     this.enableExperimentalMultiDeviceSync = false,
     this.themeMode = ThemeModeOption.system,
@@ -503,6 +505,7 @@ class ExperienceSettings {
   final bool taskListCollapsed;
   final bool showComposerTips;
   final DesktopCloseBehavior desktopCloseBehavior;
+  final bool androidBackgroundAlertsEnabled;
   final bool keepMobileRealtimeForShortPeriod;
   final bool enableExperimentalMultiDeviceSync;
   final ThemeModeOption themeMode;
@@ -535,6 +538,7 @@ class ExperienceSettings {
     bool? taskListCollapsed,
     bool? showComposerTips,
     DesktopCloseBehavior? desktopCloseBehavior,
+    bool? androidBackgroundAlertsEnabled,
     bool? keepMobileRealtimeForShortPeriod,
     bool? enableExperimentalMultiDeviceSync,
     ThemeModeOption? themeMode,
@@ -571,6 +575,8 @@ class ExperienceSettings {
       taskListCollapsed: taskListCollapsed ?? this.taskListCollapsed,
       showComposerTips: showComposerTips ?? this.showComposerTips,
       desktopCloseBehavior: desktopCloseBehavior ?? this.desktopCloseBehavior,
+      androidBackgroundAlertsEnabled:
+          androidBackgroundAlertsEnabled ?? this.androidBackgroundAlertsEnabled,
       keepMobileRealtimeForShortPeriod:
           keepMobileRealtimeForShortPeriod ??
           this.keepMobileRealtimeForShortPeriod,
@@ -649,6 +655,7 @@ class ExperienceSettings {
       'desktopCloseBehavior': desktopCloseBehaviorKey(desktopCloseBehavior),
       'keepDesktopRunningInTray':
           desktopCloseBehavior != DesktopCloseBehavior.close,
+      'androidBackgroundAlertsEnabled': androidBackgroundAlertsEnabled,
       'keepMobileRealtimeForShortPeriod': keepMobileRealtimeForShortPeriod,
       'enableExperimentalMultiDeviceSync': enableExperimentalMultiDeviceSync,
       'themeMode': themeModeOptionKey(themeMode),
@@ -695,6 +702,8 @@ class ExperienceSettings {
     var taskListCollapsed = defaults.taskListCollapsed;
     var showComposerTips = defaults.showComposerTips;
     var desktopCloseBehavior = defaults.desktopCloseBehavior;
+    var androidBackgroundAlertsEnabled =
+        defaults.androidBackgroundAlertsEnabled;
     var keepMobileRealtimeForShortPeriod =
         defaults.keepMobileRealtimeForShortPeriod;
     var enableExperimentalMultiDeviceSync =
@@ -864,6 +873,12 @@ class ExperienceSettings {
       keepMobileRealtimeForShortPeriod = keepMobileRealtimeForShortPeriodJson;
     }
 
+    final androidBackgroundAlertsEnabledJson =
+        json['androidBackgroundAlertsEnabled'];
+    if (androidBackgroundAlertsEnabledJson is bool) {
+      androidBackgroundAlertsEnabled = androidBackgroundAlertsEnabledJson;
+    }
+
     final enableExperimentalMultiDeviceSyncJson =
         json['enableExperimentalMultiDeviceSync'];
     if (enableExperimentalMultiDeviceSyncJson is bool) {
@@ -888,7 +903,7 @@ class ExperienceSettings {
       useDynamicColor = useDynamicColorJson;
     }
 
-    int? customColorSeed = defaults.customColorSeed;
+    var customColorSeed = defaults.customColorSeed;
     final customColorSeedJson = json['customColorSeed'];
     if (customColorSeedJson is num) {
       customColorSeed = customColorSeedJson.toInt();
@@ -953,6 +968,7 @@ class ExperienceSettings {
       taskListCollapsed: taskListCollapsed,
       showComposerTips: showComposerTips,
       desktopCloseBehavior: desktopCloseBehavior,
+      androidBackgroundAlertsEnabled: androidBackgroundAlertsEnabled,
       keepMobileRealtimeForShortPeriod: keepMobileRealtimeForShortPeriod,
       enableExperimentalMultiDeviceSync: enableExperimentalMultiDeviceSync,
       themeMode: themeMode,

@@ -30,11 +30,30 @@ void main() {
   });
 
   test('uses two-minute fast probe cadence', () {
-    expect(kBackgroundFastProbeInterval, const Duration(minutes: 2));
+    expect(kBackgroundFastProbeInterval, const Duration(minutes: 3));
   });
 
   test('uses five-minute tail probe cadence', () {
     expect(kBackgroundTailProbeInterval, const Duration(minutes: 5));
+  });
+
+  test('background alerts require master switch and one notification category', () {
+    final defaults = ExperienceSettings.defaults();
+    expect(shouldRunAndroidBackgroundAlerts(defaults), isTrue);
+
+    final disabledMaster = defaults.copyWith(
+      androidBackgroundAlertsEnabled: false,
+    );
+    expect(shouldRunAndroidBackgroundAlerts(disabledMaster), isFalse);
+
+    final disabledCategories = defaults.copyWith(
+      notifications: const <NotificationCategory, bool>{
+        NotificationCategory.agent: false,
+        NotificationCategory.permissions: false,
+        NotificationCategory.errors: false,
+      },
+    );
+    expect(shouldRunAndroidBackgroundAlerts(disabledCategories), isFalse);
   });
 
   test('schedules tail probe only when active sessions just ended', () {
@@ -143,6 +162,7 @@ void main() {
     const previous = BackgroundAlertSnapshot(
       sessionStatusById: <String, String>{'ses_1': 'busy'},
       sessionUpdatedAtById: <String, int>{'ses_1': 100},
+      sessionTitleById: <String, String>{'ses_1': 'Build feature'},
       notifiedPermissionRequestIds: <String>[],
       notifiedQuestionRequestIds: <String>[],
       lastPolledAtEpochMs: 100,
@@ -173,6 +193,7 @@ void main() {
     const previous = BackgroundAlertSnapshot(
       sessionStatusById: <String, String>{'ses_1': 'busy'},
       sessionUpdatedAtById: <String, int>{'ses_1': 100},
+      sessionTitleById: <String, String>{'ses_1': 'Build feature'},
       notifiedPermissionRequestIds: <String>[],
       notifiedQuestionRequestIds: <String>[],
       lastPolledAtEpochMs: 100,
@@ -202,6 +223,7 @@ void main() {
     const previous = BackgroundAlertSnapshot(
       sessionStatusById: <String, String>{'ses_1': 'idle'},
       sessionUpdatedAtById: <String, int>{'ses_1': 100},
+      sessionTitleById: <String, String>{'ses_1': 'Build feature'},
       notifiedPermissionRequestIds: <String>['perm_seen'],
       notifiedQuestionRequestIds: <String>['q_seen'],
       lastPolledAtEpochMs: 100,
@@ -241,6 +263,7 @@ void main() {
     const previous = BackgroundAlertSnapshot(
       sessionStatusById: <String, String>{'ses_1': 'busy'},
       sessionUpdatedAtById: <String, int>{'ses_1': 100},
+      sessionTitleById: <String, String>{'ses_1': 'Build feature'},
       notifiedPermissionRequestIds: <String>[],
       notifiedQuestionRequestIds: <String>[],
       lastPolledAtEpochMs: 100,

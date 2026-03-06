@@ -11,6 +11,8 @@ extension _ChatPageLifecycle on _ChatPageState {
       return;
     }
 
+    final settingsProvider = _settingsProvider;
+
     void scheduleAndroidProbe(Duration delay) {
       if (!_isMobileRuntime) {
         return;
@@ -19,6 +21,37 @@ extension _ChatPageLifecycle on _ChatPageState {
         AndroidBackgroundAlertWorker.scheduleProbe(initialDelay: delay),
       );
     }
+
+    void syncAndroidForegroundMonitor({
+      required bool enabled,
+      required int activeSessionCount,
+    }) {
+      if (!_isMobileRuntime) {
+        return;
+      }
+      unawaited(
+        AndroidForegroundMonitorService.sync(
+          enabled: enabled,
+          activeSessionCount: activeSessionCount,
+        ),
+      );
+    }
+
+    final statusById = <String, String>{};
+    for (final entry in provider.sessionStatusById.entries) {
+      final sessionId = entry.key.trim();
+      if (sessionId.isEmpty) {
+        continue;
+      }
+      statusById[sessionId] = entry.value.type.name;
+    }
+    final activeSessionCount = countActiveBackgroundSessions(statusById);
+    final hasActiveSession = activeSessionCount > 0;
+    final backgroundAlertsEnabled =
+        _isMobileRuntime &&
+        shouldRunAndroidBackgroundAlerts(
+          settingsProvider?.settings ?? ExperienceSettings.defaults(),
+        );
 
     void primeAndroidBackgroundSnapshot() {
       if (!_isMobileRuntime) {
@@ -29,19 +62,6 @@ extension _ChatPageLifecycle on _ChatPageState {
       if (serverId.isEmpty) {
         return;
       }
-
-      final statusById = <String, String>{};
-      for (final entry in provider.sessionStatusById.entries) {
-        final sessionId = entry.key.trim();
-        if (sessionId.isEmpty) {
-          continue;
-        }
-        statusById[sessionId] = entry.value.type.name;
-      }
-
-      final hasActiveSession = statusById.values.any((status) {
-        return status == 'busy' || status == 'retry';
-      });
       if (!hasActiveSession) {
         return;
       }
@@ -80,13 +100,22 @@ extension _ChatPageLifecycle on _ChatPageState {
 
     if (_isAppInForeground) {
       AppLogger.debug('foreground_policy reason=$reason mode=active');
+      syncAndroidForegroundMonitor(enabled: false, activeSessionCount: 0);
       unawaited(provider.setForegroundActive(true));
+      return;
+    }
+
+    if (!backgroundAlertsEnabled) {
+      AppLogger.debug(
+        'foreground_policy reason=$reason mode=background-disabled',
+      );
+      syncAndroidForegroundMonitor(enabled: false, activeSessionCount: 0);
+      unawaited(provider.setForegroundActive(false));
       return;
     }
 
     primeAndroidBackgroundSnapshot();
 
-    final settingsProvider = _settingsProvider;
     final keepDesktopRealtime =
         _isDesktopRuntime &&
         (settingsProvider?.desktopCloseBehavior != DesktopCloseBehavior.close);
@@ -102,10 +131,16 @@ extension _ChatPageLifecycle on _ChatPageState {
         provider.isCurrentSessionActivelyResponding;
     if (keepMobileRealtimeTemporarily) {
       AppLogger.debug('foreground_policy reason=$reason mode=mobile-hold');
-      unawaited(provider.setForegroundActive(true));
-      scheduleAndroidProbe(
-        AndroidBackgroundAlertWorker.activeSessionProbeInterval,
+      syncAndroidForegroundMonitor(
+        enabled: hasActiveSession,
+        activeSessionCount: activeSessionCount,
       );
+      unawaited(provider.setForegroundActive(true));
+      if (hasActiveSession) {
+        scheduleAndroidProbe(
+          AndroidBackgroundAlertWorker.activeSessionProbeInterval,
+        );
+      }
       _backgroundRealtimeHoldTimer = Timer(
         _ChatPageState._mobileBackgroundRealtimeHoldDuration,
         () {
@@ -113,6 +148,7 @@ extension _ChatPageLifecycle on _ChatPageState {
             return;
           }
           AppLogger.debug('foreground_policy mode=mobile-hold-expired');
+          syncAndroidForegroundMonitor(enabled: false, activeSessionCount: 0);
           unawaited(provider.setForegroundActive(false));
         },
       );
@@ -120,8 +156,13 @@ extension _ChatPageLifecycle on _ChatPageState {
     }
 
     AppLogger.debug('foreground_policy reason=$reason mode=paused');
+    syncAndroidForegroundMonitor(enabled: false, activeSessionCount: 0);
     unawaited(provider.setForegroundActive(false));
-    scheduleAndroidProbe(const Duration(minutes: 1));
+    if (hasActiveSession) {
+      scheduleAndroidProbe(
+        AndroidBackgroundAlertWorker.activeSessionProbeInterval,
+      );
+    }
   }
 
   Future<void> _handleServerScopeChange() async {

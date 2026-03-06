@@ -1,7 +1,14 @@
 import '../../domain/entities/experience_settings.dart';
 
-const Duration kBackgroundFastProbeInterval = Duration(minutes: 2);
+const Duration kBackgroundFastProbeInterval = Duration(minutes: 3);
 const Duration kBackgroundTailProbeInterval = Duration(minutes: 5);
+
+bool shouldRunAndroidBackgroundAlerts(ExperienceSettings settings) {
+  if (!settings.androidBackgroundAlertsEnabled) {
+    return false;
+  }
+  return settings.notifications.values.any((enabled) => enabled);
+}
 
 bool hasActiveBackgroundSessions(Map<String, String> sessionStatusById) {
   for (final rawStatus in sessionStatusById.values) {
@@ -11,6 +18,17 @@ bool hasActiveBackgroundSessions(Map<String, String> sessionStatusById) {
     }
   }
   return false;
+}
+
+int countActiveBackgroundSessions(Map<String, String> sessionStatusById) {
+  var count = 0;
+  for (final rawStatus in sessionStatusById.values) {
+    final normalized = rawStatus.trim().toLowerCase();
+    if (normalized == 'busy' || normalized == 'retry') {
+      count += 1;
+    }
+  }
+  return count;
 }
 
 bool shouldScheduleBackgroundTailProbe({
@@ -56,6 +74,7 @@ class BackgroundAlertSnapshot {
   const BackgroundAlertSnapshot({
     required this.sessionStatusById,
     required this.sessionUpdatedAtById,
+    required this.sessionTitleById,
     required this.notifiedPermissionRequestIds,
     required this.notifiedQuestionRequestIds,
     required this.lastPolledAtEpochMs,
@@ -65,6 +84,7 @@ class BackgroundAlertSnapshot {
     return const BackgroundAlertSnapshot(
       sessionStatusById: <String, String>{},
       sessionUpdatedAtById: <String, int>{},
+      sessionTitleById: <String, String>{},
       notifiedPermissionRequestIds: <String>[],
       notifiedQuestionRequestIds: <String>[],
       lastPolledAtEpochMs: 0,
@@ -74,6 +94,7 @@ class BackgroundAlertSnapshot {
   factory BackgroundAlertSnapshot.fromJson(Map<String, dynamic> json) {
     final statusRaw = json['sessionStatusById'];
     final updatedRaw = json['sessionUpdatedAtById'];
+    final titleRaw = json['sessionTitleById'];
     final permissionRaw = json['notifiedPermissionRequestIds'];
     final questionRaw = json['notifiedQuestionRequestIds'];
     final polledRaw = json['lastPolledAtEpochMs'];
@@ -100,6 +121,17 @@ class BackgroundAlertSnapshot {
       });
     }
 
+    final titleMap = <String, String>{};
+    if (titleRaw is Map) {
+      titleRaw.forEach((key, value) {
+        final sessionId = key.toString().trim();
+        final title = value.toString().trim();
+        if (sessionId.isNotEmpty && title.isNotEmpty) {
+          titleMap[sessionId] = title;
+        }
+      });
+    }
+
     List<String> parseIds(dynamic raw) {
       if (raw is! List) {
         return const <String>[];
@@ -114,6 +146,7 @@ class BackgroundAlertSnapshot {
     return BackgroundAlertSnapshot(
       sessionStatusById: statusMap,
       sessionUpdatedAtById: updatedMap,
+      sessionTitleById: titleMap,
       notifiedPermissionRequestIds: parseIds(permissionRaw),
       notifiedQuestionRequestIds: parseIds(questionRaw),
       lastPolledAtEpochMs: polledRaw is num ? polledRaw.toInt() : 0,
@@ -122,12 +155,14 @@ class BackgroundAlertSnapshot {
 
   final Map<String, String> sessionStatusById;
   final Map<String, int> sessionUpdatedAtById;
+  final Map<String, String> sessionTitleById;
   final List<String> notifiedPermissionRequestIds;
   final List<String> notifiedQuestionRequestIds;
   final int lastPolledAtEpochMs;
 
   bool get hasHistory {
     return sessionStatusById.isNotEmpty ||
+        sessionTitleById.isNotEmpty ||
         notifiedPermissionRequestIds.isNotEmpty ||
         notifiedQuestionRequestIds.isNotEmpty ||
         lastPolledAtEpochMs > 0;
@@ -137,6 +172,7 @@ class BackgroundAlertSnapshot {
     return <String, dynamic>{
       'sessionStatusById': sessionStatusById,
       'sessionUpdatedAtById': sessionUpdatedAtById,
+      'sessionTitleById': sessionTitleById,
       'notifiedPermissionRequestIds': notifiedPermissionRequestIds,
       'notifiedQuestionRequestIds': notifiedQuestionRequestIds,
       'lastPolledAtEpochMs': lastPolledAtEpochMs,
@@ -203,6 +239,7 @@ class BackgroundAlertPlanner {
     final nextSnapshot = BackgroundAlertSnapshot(
       sessionStatusById: normalizedStatuses,
       sessionUpdatedAtById: Map<String, int>.from(current.sessionUpdatedAtById),
+      sessionTitleById: Map<String, String>.from(current.sessionTitleById),
       notifiedPermissionRequestIds: _mergeSeenIds(
         previous.notifiedPermissionRequestIds,
         permissionIds,
