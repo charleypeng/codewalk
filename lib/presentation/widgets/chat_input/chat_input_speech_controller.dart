@@ -1,6 +1,15 @@
 part of '../chat_input_widget.dart';
 
 extension _ChatInputSpeechController on _ChatInputWidgetState {
+  void _focusInputFromExternal() {
+    _ensureInputFocus();
+  }
+
+  Future<void> _toggleVoiceInputFromExternal() async {
+    _ensureInputFocus();
+    await _toggleVoiceInput();
+  }
+
   Future<void> _toggleVoiceInput() async {
     if (_isStartingListening) {
       return;

@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:codewalk/core/config/feature_flags.dart';
+import 'package:codewalk/core/di/injection_container.dart' as di;
 import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/core/network/dio_client.dart';
+import 'package:codewalk/data/datasources/app_local_datasource.dart';
 import 'package:codewalk/domain/entities/agent.dart';
 import 'package:codewalk/domain/entities/chat_message.dart';
 import 'package:codewalk/domain/entities/chat_realtime.dart';
@@ -740,6 +742,7 @@ void main() {
       expect(find.text('Keyboard shortcuts'), findsOneWidget);
       expect(find.textContaining('Ctrl/Cmd'), findsNothing);
       expect(find.text('Ctrl+N'), findsOneWidget);
+      expect(find.text('Alt+S'), findsOneWidget);
       expect(find.text('Ctrl+P'), findsOneWidget);
       expect(find.text('Ctrl+,'), findsOneWidget);
       expect(find.text('Ctrl+M'), findsOneWidget);
@@ -7954,6 +7957,7 @@ void main() {
         soundService: SoundService(),
       );
       await settingsProvider.initialize();
+      await settingsProvider.setCheckUpdatesOnOpen(false);
       addTearDown(settingsProvider.dispose);
 
       await tester.pumpWidget(
@@ -8049,6 +8053,7 @@ void main() {
         soundService: SoundService(),
       );
       await settingsProvider.initialize();
+      await settingsProvider.setCheckUpdatesOnOpen(false);
       addTearDown(settingsProvider.dispose);
 
       await tester.pumpWidget(
@@ -8145,6 +8150,7 @@ void main() {
         soundService: SoundService(),
       );
       await settingsProvider.initialize();
+      await settingsProvider.setCheckUpdatesOnOpen(false);
       addTearDown(settingsProvider.dispose);
 
       await tester.pumpWidget(
@@ -8249,6 +8255,11 @@ Widget _testApp(
   SettingsProvider? settingsProvider,
   MediaQueryData? mediaQueryData,
 }) {
+  if (di.sl.isRegistered<AppLocalDataSource>()) {
+    di.sl.unregister<AppLocalDataSource>();
+  }
+  di.sl.registerSingleton<AppLocalDataSource>(provider.localDataSource);
+
   final effectiveSettingsProvider =
       settingsProvider ??
       SettingsProvider(
@@ -8257,6 +8268,10 @@ Widget _testApp(
         soundService: SoundService(),
       );
   if (settingsProvider == null) {
+    addTearDown(effectiveSettingsProvider.dispose);
+    _disableAutomaticUpdateChecksForTest(
+      provider.localDataSource as InMemoryAppLocalDataSource,
+    );
     unawaited(effectiveSettingsProvider.initialize());
   }
 
@@ -8278,6 +8293,17 @@ Widget _testApp(
     ],
     child: MaterialApp(home: home),
   );
+}
+
+void _disableAutomaticUpdateChecksForTest(
+  InMemoryAppLocalDataSource localDataSource,
+) {
+  final raw = localDataSource.experienceSettingsJson;
+  final settingsJson = raw == null || raw.trim().isEmpty
+      ? <String, dynamic>{}
+      : (jsonDecode(raw) as Map).cast<String, dynamic>();
+  settingsJson['checkUpdatesOnOpen'] = false;
+  localDataSource.experienceSettingsJson = jsonEncode(settingsJson);
 }
 
 ChatProvider _buildChatProvider({

@@ -48,8 +48,18 @@ class ChatInputController {
 
   bool get hasDraftContent => _state?._hasDraftContent ?? false;
 
+  bool get canToggleVoiceInput => _state?._canToggleVoiceInput ?? false;
+
   void openAttachmentOptions() {
     _state?._openAttachmentOptionsFromExternal();
+  }
+
+  void focusInput() {
+    _state?._focusInputFromExternal();
+  }
+
+  Future<void> toggleVoiceInput() async {
+    await _state?._toggleVoiceInputFromExternal();
   }
 
   void _attach(_ChatInputWidgetState state) {
@@ -314,6 +324,8 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
       _controller.text.trim().isNotEmpty ||
       _attachments.isNotEmpty ||
       widget.contextItems.isNotEmpty;
+
+  bool get _canToggleVoiceInput => widget.enabled && !_isStartingListening;
 
   bool get _isDesktopPlatform {
     return kIsWeb ||

@@ -11,6 +11,7 @@ extension _ChatPageShortcuts on _ChatPageState {
     final actions = <ShortcutAction>[
       ShortcutAction.newChat,
       ShortcutAction.focusInput,
+      ShortcutAction.toggleVoiceInput,
       ShortcutAction.quickOpen,
       ShortcutAction.openSettings,
       ShortcutAction.cycleRecentModels,
@@ -71,6 +72,9 @@ extension _ChatPageShortcuts on _ChatPageState {
         return;
       case ShortcutAction.focusInput:
         _focusInput();
+        return;
+      case ShortcutAction.toggleVoiceInput:
+        unawaited(_toggleVoiceInputShortcut());
         return;
       case ShortcutAction.quickOpen:
         _openQuickFileDialogFromCurrentContext();
@@ -137,6 +141,11 @@ extension _ChatPageShortcuts on _ChatPageState {
 
     _lastGlobalEscapeAt = null;
     _focusInput();
+  }
+
+  Future<void> _toggleVoiceInputShortcut() async {
+    _chatInputController.focusInput();
+    await _chatInputController.toggleVoiceInput();
   }
 
   Future<void> _requestStopActiveResponse(ChatProvider chatProvider) async {

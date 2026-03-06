@@ -14,13 +14,15 @@ void main() {
   testWidgets('hides shortcuts on mobile and opens notifications section', (
     WidgetTester tester,
   ) async {
-    final local = InMemoryAppLocalDataSource();
+    final local = InMemoryAppLocalDataSource()
+      ..experienceSettingsJson = '{"checkUpdatesOnOpen": false}';
     final settingsProvider = SettingsProvider(
       localDataSource: local,
       dioClient: DioClient(),
       soundService: SoundService(),
     );
-    unawaited(settingsProvider.initialize());
+    await settingsProvider.initialize();
+    addTearDown(settingsProvider.dispose);
 
     await tester.pumpWidget(
       ChangeNotifierProvider<SettingsProvider>.value(
@@ -123,13 +125,15 @@ void main() {
   testWidgets('mobile back follows detail then list then app flow', (
     WidgetTester tester,
   ) async {
-    final local = InMemoryAppLocalDataSource();
+    final local = InMemoryAppLocalDataSource()
+      ..experienceSettingsJson = '{"checkUpdatesOnOpen": false}';
     final settingsProvider = SettingsProvider(
       localDataSource: local,
       dioClient: DioClient(),
       soundService: SoundService(),
     );
-    unawaited(settingsProvider.initialize());
+    await settingsProvider.initialize();
+    addTearDown(settingsProvider.dispose);
 
     await tester.pumpWidget(
       ChangeNotifierProvider<SettingsProvider>.value(

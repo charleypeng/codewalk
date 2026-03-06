@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:codewalk/core/di/injection_container.dart' as di;
 import 'package:codewalk/core/network/dio_client.dart';
+import 'package:codewalk/data/datasources/app_local_datasource.dart';
 import 'package:codewalk/domain/entities/provider.dart';
 import 'package:codewalk/domain/usecases/check_connection.dart';
 import 'package:codewalk/domain/usecases/create_chat_session.dart';
@@ -177,8 +179,9 @@ void main() {
   ) async {
     await tester.binding.setSurfaceSize(const Size(1200, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
+    final previousPlatform = debugDefaultTargetPlatformOverride;
     debugDefaultTargetPlatformOverride = TargetPlatform.linux;
-    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    addTearDown(() => debugDefaultTargetPlatformOverride = previousPlatform);
 
     final localDataSource = InMemoryAppLocalDataSource()
       ..activeServerId = 'srv_test'
@@ -201,6 +204,7 @@ void main() {
       soundService: SoundService(),
     );
     await settingsProvider.initialize();
+    await settingsProvider.setCheckUpdatesOnOpen(false);
     addTearDown(settingsProvider.dispose);
 
     await tester.pumpWidget(
@@ -229,16 +233,32 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Restart'), findsOneWidget);
+    debugDefaultTargetPlatformOverride = previousPlatform;
   });
 }
 
 Widget _testApp(ChatProvider chatProvider, AppProvider appProvider) {
+  if (di.sl.isRegistered<AppLocalDataSource>()) {
+    di.sl.unregister<AppLocalDataSource>();
+  }
+  di.sl.registerSingleton<AppLocalDataSource>(chatProvider.localDataSource);
+
+  final localDataSource =
+      chatProvider.localDataSource as InMemoryAppLocalDataSource;
+  final rawSettings = localDataSource.experienceSettingsJson;
+  final settingsJson = rawSettings == null || rawSettings.trim().isEmpty
+      ? <String, dynamic>{}
+      : (jsonDecode(rawSettings) as Map).cast<String, dynamic>();
+  settingsJson['checkUpdatesOnOpen'] = false;
+  localDataSource.experienceSettingsJson = jsonEncode(settingsJson);
+
   final settingsProvider = SettingsProvider(
     localDataSource: chatProvider.localDataSource,
     dioClient: DioClient(),
     soundService: SoundService(),
   );
   unawaited(settingsProvider.initialize());
+  addTearDown(settingsProvider.dispose);
   return MultiProvider(
     providers: [
       ChangeNotifierProvider<ChatProvider>.value(value: chatProvider),
@@ -257,6 +277,11 @@ Widget _testAppWithSettings(
   AppProvider appProvider,
   SettingsProvider settingsProvider,
 ) {
+  if (di.sl.isRegistered<AppLocalDataSource>()) {
+    di.sl.unregister<AppLocalDataSource>();
+  }
+  di.sl.registerSingleton<AppLocalDataSource>(chatProvider.localDataSource);
+
   return MultiProvider(
     providers: [
       ChangeNotifierProvider<ChatProvider>.value(value: chatProvider),

@@ -686,6 +686,10 @@ class _ChatPageState extends State<ChatPage>
 
         addShortcut(ShortcutAction.newChat, const _NewSessionIntent());
         addShortcut(ShortcutAction.focusInput, const _FocusInputIntent());
+        addShortcut(
+          ShortcutAction.toggleVoiceInput,
+          const _ToggleVoiceInputIntent(),
+        );
         addShortcut(ShortcutAction.quickOpen, const _QuickOpenIntent());
         addShortcut(ShortcutAction.openSettings, const _OpenSettingsIntent());
         addShortcut(
@@ -707,6 +711,12 @@ class _ChatPageState extends State<ChatPage>
           _FocusInputIntent: CallbackAction<_FocusInputIntent>(
             onInvoke: (_) {
               _focusInput();
+              return null;
+            },
+          ),
+          _ToggleVoiceInputIntent: CallbackAction<_ToggleVoiceInputIntent>(
+            onInvoke: (_) {
+              unawaited(_toggleVoiceInputShortcut());
               return null;
             },
           ),
@@ -764,6 +774,11 @@ class _ChatPageState extends State<ChatPage>
             actions: actionMap,
             child: Focus(
               autofocus: true,
+              onKeyEvent: (_, event) {
+                return _handleGlobalShortcutKeyEvent(event)
+                    ? KeyEventResult.handled
+                    : KeyEventResult.ignored;
+              },
               child: Scaffold(
                 key: _scaffoldKey,
                 backgroundColor: Theme.of(context).colorScheme.surface,
@@ -913,6 +928,10 @@ class _ChatPageState extends State<ChatPage>
       if (!FeatureFlags.refreshlessRealtime)
         (action: ShortcutAction.refresh, description: 'Refresh chat data'),
       (action: ShortcutAction.focusInput, description: 'Focus message input'),
+      (
+        action: ShortcutAction.toggleVoiceInput,
+        description: 'Start or stop voice input',
+      ),
       (action: ShortcutAction.quickOpen, description: 'Quick open files'),
       (action: ShortcutAction.openSettings, description: 'Open settings'),
       (

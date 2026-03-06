@@ -12,6 +12,10 @@ class _FocusInputIntent extends Intent {
   const _FocusInputIntent();
 }
 
+class _ToggleVoiceInputIntent extends Intent {
+  const _ToggleVoiceInputIntent();
+}
+
 class _QuickOpenIntent extends Intent {
   const _QuickOpenIntent();
 }

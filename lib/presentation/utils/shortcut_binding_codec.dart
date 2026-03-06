@@ -103,7 +103,8 @@ class ShortcutBindingCodec {
               defaultTargetPlatform == TargetPlatform.macOS ? 'Cmd' : 'Ctrl',
             'ctrl' => 'Ctrl',
             'meta' => 'Cmd',
-            'alt' => 'Alt',
+            'alt' =>
+              defaultTargetPlatform == TargetPlatform.macOS ? 'Option' : 'Alt',
             'shift' => 'Shift',
             'escape' => 'Esc',
             'enter' => 'Enter',
