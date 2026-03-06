@@ -268,6 +268,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   );
   final TextEditingController _controller = TextEditingController();
   final FocusNode _internalFocusNode = FocusNode();
+  final GlobalKey _textFieldKey = GlobalKey(debugLabel: 'composer_text_field');
   final List<FileInputPart> _attachments = <FileInputPart>[];
   final RegExp _mentionTriggerPattern = RegExp(r'(^|\s)@([^\s@]*)$');
   final RegExp _slashTriggerPattern = RegExp(r'^/(\S*)$');
@@ -620,12 +621,20 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     }
 
     if (_isDesktopPlatform && logicalKey == LogicalKeyboardKey.arrowUp) {
+      if (_hasArrowNavigationModifierPressed() ||
+          _shouldDeferArrowKeyToTextField(moveUp: true)) {
+        return KeyEventResult.ignored;
+      }
       if (_navigateHistoryUp()) {
         return KeyEventResult.handled;
       }
     }
 
     if (_isDesktopPlatform && logicalKey == LogicalKeyboardKey.arrowDown) {
+      if (_hasArrowNavigationModifierPressed() ||
+          _shouldDeferArrowKeyToTextField(moveUp: false)) {
+        return KeyEventResult.ignored;
+      }
       if (_navigateHistoryDown()) {
         return KeyEventResult.handled;
       }
@@ -660,6 +669,37 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
       return length;
     }
     return value.selection.baseOffset.clamp(0, length).toInt();
+  }
+
+  bool _hasArrowNavigationModifierPressed() {
+    final keyboard = HardwareKeyboard.instance;
+    return keyboard.isAltPressed ||
+        keyboard.isControlPressed ||
+        keyboard.isMetaPressed ||
+        keyboard.isShiftPressed;
+  }
+
+  EditableTextState? _editableTextState() {
+    final context = _textFieldKey.currentContext;
+    if (context == null) {
+      return null;
+    }
+
+    EditableTextState? result;
+
+    void visit(Element element) {
+      if (result != null) {
+        return;
+      }
+      if (element is StatefulElement && element.state is EditableTextState) {
+        result = element.state as EditableTextState;
+        return;
+      }
+      element.visitChildElements(visit);
+    }
+
+    context.visitChildElements(visit);
+    return result;
   }
 
   void _closePopover() {
@@ -961,6 +1001,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                                 ),
                                 Expanded(
                                   child: TextField(
+                                    key: _textFieldKey,
                                     controller: _controller,
                                     focusNode: _effectiveFocusNode,
                                     enabled: widget.enabled,

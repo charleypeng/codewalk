@@ -1,6 +1,35 @@
 part of '../chat_input_widget.dart';
 
 extension _ChatInputHistoryController on _ChatInputWidgetState {
+  bool _shouldDeferArrowKeyToTextField({required bool moveUp}) {
+    final selection = _controller.selection;
+    if (!selection.isValid) {
+      return false;
+    }
+
+    if (!selection.isCollapsed) {
+      return true;
+    }
+
+    final editableTextState = _editableTextState();
+    final renderEditable = editableTextState?.renderEditable;
+    if (renderEditable == null || !renderEditable.hasSize) {
+      return false;
+    }
+
+    final currentPosition = TextPosition(
+      offset: selection.extentOffset.clamp(0, _controller.text.length).toInt(),
+      affinity: selection.affinity,
+    );
+    final nextPosition = moveUp
+        ? renderEditable.getTextPositionAbove(currentPosition)
+        : renderEditable.getTextPositionBelow(currentPosition);
+    final currentLine = renderEditable.getLineAtOffset(currentPosition);
+    final nextLine = renderEditable.getLineAtOffset(nextPosition);
+    return currentLine.baseOffset != nextLine.baseOffset ||
+        currentLine.extentOffset != nextLine.extentOffset;
+  }
+
   bool _navigateHistoryUp() {
     final history = widget.sentMessageHistory;
     if (history.isEmpty) {

@@ -15,9 +15,11 @@ import 'support/fakes.dart';
 Widget _buildChatInputHarness({
   required ChatInputWidget child,
   MediaQueryData? mediaQueryData,
+  double? width,
 }) {
+  final content = width == null ? child : SizedBox(width: width, child: child);
   Widget home = Scaffold(
-    body: Align(alignment: Alignment.bottomCenter, child: child),
+    body: Align(alignment: Alignment.bottomCenter, child: content),
   );
   if (mediaQueryData != null) {
     home = MediaQuery(data: mediaQueryData, child: home);
@@ -554,6 +556,186 @@ void main() {
         await tester.pumpAndSettle();
         textField = tester.widget<TextField>(find.byType(TextField));
         expect(textField.controller!.text, '');
+      } finally {
+        debugDefaultTargetPlatformOverride = previousPlatform;
+      }
+    },
+  );
+
+  testWidgets(
+    'desktop ArrowUp keeps multiline editor movement before sent-message history',
+    (WidgetTester tester) async {
+      final previousPlatform = debugDefaultTargetPlatformOverride;
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      try {
+        await tester.pumpWidget(
+          _buildChatInputHarness(
+            child: ChatInputWidget(
+              onSendMessage: (_) {},
+              sentMessageHistory: const <String>['third prompt'],
+            ),
+          ),
+        );
+
+        await tester.showKeyboard(find.byType(TextField));
+        tester.testTextInput.updateEditingValue(
+          const TextEditingValue(
+            text: 'first line\nsecond line',
+            selection: TextSelection.collapsed(offset: 22),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+        await tester.pumpAndSettle();
+
+        var textField = tester.widget<TextField>(find.byType(TextField));
+        expect(textField.controller!.text, 'first line\nsecond line');
+        expect(textField.controller!.selection.baseOffset, lessThan(22));
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+        await tester.pumpAndSettle();
+
+        textField = tester.widget<TextField>(find.byType(TextField));
+        expect(textField.controller!.text, 'third prompt');
+      } finally {
+        debugDefaultTargetPlatformOverride = previousPlatform;
+      }
+    },
+  );
+
+  testWidgets(
+    'desktop ArrowDown keeps multiline editor movement before sent-message history restore',
+    (WidgetTester tester) async {
+      final previousPlatform = debugDefaultTargetPlatformOverride;
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      try {
+        await tester.pumpWidget(
+          _buildChatInputHarness(
+            child: ChatInputWidget(
+              onSendMessage: (_) {},
+              sentMessageHistory: const <String>[
+                'older prompt',
+                'first line\nsecond line',
+              ],
+            ),
+          ),
+        );
+
+        await tester.showKeyboard(find.byType(TextField));
+        await tester.pumpAndSettle();
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+        await tester.pumpAndSettle();
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+        await tester.pumpAndSettle();
+
+        var textField = tester.widget<TextField>(find.byType(TextField));
+        expect(textField.controller!.text, 'first line\nsecond line');
+        expect(textField.controller!.selection.baseOffset, lessThan(22));
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+        await tester.pumpAndSettle();
+
+        textField = tester.widget<TextField>(find.byType(TextField));
+        expect(textField.controller!.text, 'first line\nsecond line');
+        expect(textField.controller!.selection.baseOffset, 22);
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+        await tester.pumpAndSettle();
+
+        textField = tester.widget<TextField>(find.byType(TextField));
+        expect(textField.controller!.text, '');
+      } finally {
+        debugDefaultTargetPlatformOverride = previousPlatform;
+      }
+    },
+  );
+
+  testWidgets(
+    'desktop ArrowUp respects soft-wrapped multiline movement before history',
+    (WidgetTester tester) async {
+      final previousPlatform = debugDefaultTargetPlatformOverride;
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      try {
+        await tester.pumpWidget(
+          _buildChatInputHarness(
+            width: 220,
+            child: ChatInputWidget(
+              onSendMessage: (_) {},
+              sentMessageHistory: const <String>['third prompt'],
+            ),
+          ),
+        );
+
+        await tester.showKeyboard(find.byType(TextField));
+        tester.testTextInput.updateEditingValue(
+          const TextEditingValue(
+            text:
+                'This is a long composer line that should wrap before history navigation',
+            selection: TextSelection.collapsed(offset: 71),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+        await tester.pumpAndSettle();
+
+        final textField = tester.widget<TextField>(find.byType(TextField));
+        expect(
+          textField.controller!.text,
+          'This is a long composer line that should wrap before history navigation',
+        );
+        expect(textField.controller!.selection.baseOffset, lessThan(71));
+      } finally {
+        debugDefaultTargetPlatformOverride = previousPlatform;
+      }
+    },
+  );
+
+  testWidgets(
+    'desktop ArrowUp and ArrowDown with modifiers keep text field behavior',
+    (WidgetTester tester) async {
+      final previousPlatform = debugDefaultTargetPlatformOverride;
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      try {
+        await tester.pumpWidget(
+          _buildChatInputHarness(
+            child: ChatInputWidget(
+              onSendMessage: (_) {},
+              sentMessageHistory: const <String>['third prompt'],
+            ),
+          ),
+        );
+
+        await tester.showKeyboard(find.byType(TextField));
+        await tester.pumpAndSettle();
+
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+        await tester.pumpAndSettle();
+
+        var textField = tester.widget<TextField>(find.byType(TextField));
+        expect(textField.controller!.text, '');
+
+        tester.testTextInput.updateEditingValue(
+          const TextEditingValue(
+            text: 'first line\nsecond line',
+            selection: TextSelection.collapsed(offset: 0),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+        await tester.pumpAndSettle();
+
+        textField = tester.widget<TextField>(find.byType(TextField));
+        expect(textField.controller!.text, 'first line\nsecond line');
+        expect(textField.controller!.selection.baseOffset, 0);
       } finally {
         debugDefaultTargetPlatformOverride = previousPlatform;
       }
