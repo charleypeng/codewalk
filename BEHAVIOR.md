@@ -599,8 +599,9 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 | `mod+t` | Cycle model variants | |
 | `mod+j` | Next agent | |
 | `mod+shift+j` | Previous agent | |
+| `mod+w` | Close app | On desktop, follows close-to-tray/minimize/close settings; on Android and iOS it exits the app surface |
 | `Escape` | Close drawer / focus input | Double-press stops active response |
-| `mod+q` | Quit app | Desktop only; bypasses close-to-tray |
+| `mod+q` | Force-exit app | On desktop, bypasses close-to-tray/minimize; on Android and iOS it exits the app surface |
 
 ### Single `Escape` restores composer focus when available
 

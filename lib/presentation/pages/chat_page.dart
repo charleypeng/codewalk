@@ -675,6 +675,11 @@ class _ChatPageState extends State<ChatPage>
             : settingsProvider.desktopPaneWidth(DesktopPane.conversations);
         final mainContentWidth = isLargeDesktop ? 960.0 : double.infinity;
         const refreshlessEnabled = FeatureFlags.refreshlessRealtime;
+        final availableShortcutActions = shortcutActionsForRuntime(
+          isWeb: kIsWeb,
+          targetPlatform: defaultTargetPlatform,
+          refreshlessRealtimeEnabled: refreshlessEnabled,
+        );
         final shortcutMap = <ShortcutActivator, Intent>{};
         void addShortcut(ShortcutAction action, Intent intent) {
           final binding = settingsProvider.bindingFor(action);
@@ -684,23 +689,6 @@ class _ChatPageState extends State<ChatPage>
           }
         }
 
-        addShortcut(ShortcutAction.newChat, const _NewSessionIntent());
-        addShortcut(ShortcutAction.focusInput, const _FocusInputIntent());
-        addShortcut(
-          ShortcutAction.toggleVoiceInput,
-          const _ToggleVoiceInputIntent(),
-        );
-        addShortcut(ShortcutAction.quickOpen, const _QuickOpenIntent());
-        addShortcut(ShortcutAction.openSettings, const _OpenSettingsIntent());
-        addShortcut(
-          ShortcutAction.cycleRecentModels,
-          const _CycleRecentModelsIntent(),
-        );
-        addShortcut(ShortcutAction.cycleVariant, const _CycleVariantIntent());
-        addShortcut(ShortcutAction.escape, const _EscapeIntent());
-        if (_isDesktopRuntime) {
-          addShortcut(ShortcutAction.quitApp, const _QuitAppIntent());
-        }
         final actionMap = <Type, Action<Intent>>{
           _NewSessionIntent: CallbackAction<_NewSessionIntent>(
             onInvoke: (_) {
@@ -750,22 +738,66 @@ class _ChatPageState extends State<ChatPage>
               return null;
             },
           ),
-          if (_isDesktopRuntime)
-            _QuitAppIntent: CallbackAction<_QuitAppIntent>(
-              onInvoke: (_) {
-                unawaited(_quitDesktopApp());
-                return null;
-              },
-            ),
-        };
-        if (!refreshlessEnabled) {
-          addShortcut(ShortcutAction.refresh, const _RefreshIntent());
-          actionMap[_RefreshIntent] = CallbackAction<_RefreshIntent>(
+          _CloseAppIntent: CallbackAction<_CloseAppIntent>(
             onInvoke: (_) {
-              _refreshData();
+              unawaited(_closeAppShortcut());
               return null;
             },
-          );
+          ),
+          _QuitAppIntent: CallbackAction<_QuitAppIntent>(
+            onInvoke: (_) {
+              unawaited(_quitAppShortcut());
+              return null;
+            },
+          ),
+        };
+        for (final action in availableShortcutActions) {
+          switch (action) {
+            case ShortcutAction.newChat:
+              addShortcut(action, const _NewSessionIntent());
+              break;
+            case ShortcutAction.refresh:
+              actionMap[_RefreshIntent] = CallbackAction<_RefreshIntent>(
+                onInvoke: (_) {
+                  _refreshData();
+                  return null;
+                },
+              );
+              addShortcut(action, const _RefreshIntent());
+              break;
+            case ShortcutAction.focusInput:
+              addShortcut(action, const _FocusInputIntent());
+              break;
+            case ShortcutAction.toggleVoiceInput:
+              addShortcut(action, const _ToggleVoiceInputIntent());
+              break;
+            case ShortcutAction.quickOpen:
+              addShortcut(action, const _QuickOpenIntent());
+              break;
+            case ShortcutAction.openSettings:
+              addShortcut(action, const _OpenSettingsIntent());
+              break;
+            case ShortcutAction.cycleRecentModels:
+              addShortcut(action, const _CycleRecentModelsIntent());
+              break;
+            case ShortcutAction.cycleVariant:
+              addShortcut(action, const _CycleVariantIntent());
+              break;
+            case ShortcutAction.escape:
+              addShortcut(action, const _EscapeIntent());
+              break;
+            case ShortcutAction.cycleAgentForward:
+            case ShortcutAction.cycleAgentBackward:
+              // Handled by the global key-event loop to keep direction-specific
+              // behavior centralized with the other chat actions.
+              break;
+            case ShortcutAction.closeApp:
+              addShortcut(action, const _CloseAppIntent());
+              break;
+            case ShortcutAction.quitApp:
+              addShortcut(action, const _QuitAppIntent());
+              break;
+          }
         }
 
         return Shortcuts(
@@ -920,36 +952,69 @@ class _ChatPageState extends State<ChatPage>
     );
   }
 
-  List<({String shortcut, String description})> _desktopShortcutHints(
+  List<({String shortcut, String description})> _keyboardShortcutHints(
     SettingsProvider settingsProvider,
   ) {
     final entries = <({ShortcutAction action, String description})>[
-      (action: ShortcutAction.newChat, description: 'New conversation'),
-      if (!FeatureFlags.refreshlessRealtime)
-        (action: ShortcutAction.refresh, description: 'Refresh chat data'),
-      (action: ShortcutAction.focusInput, description: 'Focus message input'),
-      (
-        action: ShortcutAction.toggleVoiceInput,
-        description: 'Start or stop voice input',
-      ),
-      (action: ShortcutAction.quickOpen, description: 'Quick open files'),
-      (action: ShortcutAction.openSettings, description: 'Open settings'),
-      (
-        action: ShortcutAction.cycleRecentModels,
-        description: 'Cycle recent models',
-      ),
-      (action: ShortcutAction.cycleVariant, description: 'Cycle model variant'),
-      (action: ShortcutAction.cycleAgentForward, description: 'Next agent'),
-      (
-        action: ShortcutAction.cycleAgentBackward,
-        description: 'Previous agent',
-      ),
-      (
-        action: ShortcutAction.escape,
-        description: 'Focus input (or close drawer when open)',
-      ),
-      if (_isDesktopRuntime)
-        (action: ShortcutAction.quitApp, description: 'Quit application'),
+      for (final action in shortcutActionsForRuntime(
+        isWeb: kIsWeb,
+        targetPlatform: defaultTargetPlatform,
+        refreshlessRealtimeEnabled: FeatureFlags.refreshlessRealtime,
+      ))
+        switch (action) {
+          ShortcutAction.newChat => (
+            action: action,
+            description: 'New conversation',
+          ),
+          ShortcutAction.refresh => (
+            action: action,
+            description: 'Refresh chat data',
+          ),
+          ShortcutAction.focusInput => (
+            action: action,
+            description: 'Focus message input',
+          ),
+          ShortcutAction.toggleVoiceInput => (
+            action: action,
+            description: 'Start or stop voice input',
+          ),
+          ShortcutAction.quickOpen => (
+            action: action,
+            description: 'Quick open files',
+          ),
+          ShortcutAction.openSettings => (
+            action: action,
+            description: 'Open settings',
+          ),
+          ShortcutAction.cycleRecentModels => (
+            action: action,
+            description: 'Cycle recent models',
+          ),
+          ShortcutAction.cycleVariant => (
+            action: action,
+            description: 'Cycle model variant',
+          ),
+          ShortcutAction.escape => (
+            action: action,
+            description: 'Focus input (or close drawer when open)',
+          ),
+          ShortcutAction.cycleAgentForward => (
+            action: action,
+            description: 'Next agent',
+          ),
+          ShortcutAction.cycleAgentBackward => (
+            action: action,
+            description: 'Previous agent',
+          ),
+          ShortcutAction.closeApp => (
+            action: action,
+            description: 'Close app using platform close behavior',
+          ),
+          ShortcutAction.quitApp => (
+            action: action,
+            description: 'Force-exit the app',
+          ),
+        },
     ];
 
     final hints = entries

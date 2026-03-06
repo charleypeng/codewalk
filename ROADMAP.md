@@ -57,7 +57,7 @@ Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wav
 #### `featQ` Cross-platform UX and settings polish
 
 - [x] Canned answers manager for fast reply - Related commits: 8cf00e0 4fe89be
-- [ ] In Settings > Shortcuts, review shortcut coverage and add missing options.
+- [x] In Settings > Shortcuts, review shortcut coverage and add missing options.
 - [x] Add shortcut to enable/disable STT in Shortcuts. - Related commits: 0f69c4a af8ac74
 - [x] In composer, adjust ArrowUp/ArrowDown without modifiers for multiline behavior before history navigation; with modifiers keep default editor behavior. - Related commits: c9cd435
 - [x] Allow pinning sessions in the Conversations sidebar. - Commit hash: unknown

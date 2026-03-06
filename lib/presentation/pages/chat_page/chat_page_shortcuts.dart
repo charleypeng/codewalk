@@ -8,25 +8,11 @@ extension _ChatPageShortcuts on _ChatPageState {
   }
 
   List<ShortcutAction> _activeShortcutActions() {
-    final actions = <ShortcutAction>[
-      ShortcutAction.newChat,
-      ShortcutAction.focusInput,
-      ShortcutAction.toggleVoiceInput,
-      ShortcutAction.quickOpen,
-      ShortcutAction.openSettings,
-      ShortcutAction.cycleRecentModels,
-      ShortcutAction.cycleVariant,
-      ShortcutAction.escape,
-      ShortcutAction.cycleAgentForward,
-      ShortcutAction.cycleAgentBackward,
-    ];
-    if (!FeatureFlags.refreshlessRealtime) {
-      actions.insert(1, ShortcutAction.refresh);
-    }
-    if (_isDesktopRuntime) {
-      actions.add(ShortcutAction.quitApp);
-    }
-    return actions;
+    return shortcutActionsForRuntime(
+      isWeb: kIsWeb,
+      targetPlatform: defaultTargetPlatform,
+      refreshlessRealtimeEnabled: FeatureFlags.refreshlessRealtime,
+    );
   }
 
   bool _handleGlobalShortcutKeyEvent(KeyEvent event) {
@@ -109,8 +95,11 @@ extension _ChatPageShortcuts on _ChatPageState {
         }
         unawaited(chatProvider.cycleAgent(reverse: true));
         return;
+      case ShortcutAction.closeApp:
+        unawaited(_closeAppShortcut());
+        return;
       case ShortcutAction.quitApp:
-        unawaited(_quitDesktopApp());
+        unawaited(_quitAppShortcut());
         return;
     }
   }
@@ -164,17 +153,30 @@ extension _ChatPageShortcuts on _ChatPageState {
     );
   }
 
-  /// Force-quit the desktop app, bypassing close-to-tray.
-  /// Uses destroy() instead of close() so setPreventClose stays active
-  /// and the X-button close-to-tray behavior is never broken.
-  /// Flushes pending settings to disk before destroying the window.
-  Future<void> _quitDesktopApp() async {
-    if (!_isDesktopRuntime) {
-      return;
-    }
+  Future<void> _closeAppShortcut() async {
     final settingsProvider =
         _settingsProvider ?? context.read<SettingsProvider>();
     await settingsProvider.persistDesktopPaneWidths();
-    await windowManager.destroy();
+    if (_isDesktopRuntime) {
+      await windowManager.close();
+      return;
+    }
+    if (!kIsWeb) {
+      await SystemNavigator.pop();
+    }
+  }
+
+  /// Force-exit the app, bypassing soft-close behavior when supported.
+  Future<void> _quitAppShortcut() async {
+    final settingsProvider =
+        _settingsProvider ?? context.read<SettingsProvider>();
+    await settingsProvider.persistDesktopPaneWidths();
+    if (_isDesktopRuntime) {
+      await windowManager.destroy();
+      return;
+    }
+    if (!kIsWeb) {
+      await SystemNavigator.pop();
+    }
   }
 }

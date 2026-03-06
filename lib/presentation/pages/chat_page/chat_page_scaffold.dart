@@ -612,7 +612,7 @@ extension _ChatPageScaffold on _ChatPageState {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  for (final hint in _desktopShortcutHints(settingsProvider))
+                  for (final hint in _keyboardShortcutHints(settingsProvider))
                     _buildShortcutHint(hint.shortcut, hint.description),
                 ],
               ),

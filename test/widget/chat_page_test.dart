@@ -49,6 +49,7 @@ import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:codewalk/presentation/utils/session_title_formatter.dart';
 import 'package:codewalk/presentation/widgets/chat_skeleton_shimmer.dart';
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -4411,7 +4412,7 @@ void main() {
     expect(find.text('How can I help you?'), findsOneWidget);
   });
 
-  testWidgets('desktop shortcut focuses composer with mod+l', (
+  testWidgets('keyboard shortcut focuses composer with mod+l on desktop', (
     WidgetTester tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1000, 900));
@@ -4424,6 +4425,54 @@ void main() {
           workspaceId: 'default',
           time: DateTime.fromMillisecondsSinceEpoch(1000),
           title: 'Focus Shortcut Session',
+        ),
+      ],
+    );
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await tester.pumpAndSettle();
+
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.keyL);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.keyL);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+
+    final chatInputFieldFinder = find.descendant(
+      of: find.byKey(const ValueKey<String>('composer_input_row')),
+      matching: find.byType(TextField),
+    );
+    final input = tester.widget<TextField>(chatInputFieldFinder);
+    expect(input.focusNode?.hasFocus, isTrue);
+  });
+
+  testWidgets('keyboard shortcut focuses composer with mod+l on mobile', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_focus_shortcut_mobile',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Mobile Focus Shortcut Session',
         ),
       ],
     );

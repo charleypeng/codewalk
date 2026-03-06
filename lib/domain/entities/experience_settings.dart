@@ -18,6 +18,7 @@ enum ShortcutAction {
   escape,
   cycleAgentForward,
   cycleAgentBackward,
+  closeApp,
   quitApp,
 }
 
@@ -128,13 +129,82 @@ const List<ShortcutDefinition> kShortcutDefinitions = <ShortcutDefinition>[
     defaultBinding: 'mod+shift+j',
   ),
   ShortcutDefinition(
+    action: ShortcutAction.closeApp,
+    group: 'Application',
+    label: 'Close application',
+    description: 'Soft-close the app using platform close behavior',
+    defaultBinding: 'mod+w',
+  ),
+  ShortcutDefinition(
     action: ShortcutAction.quitApp,
     group: 'Application',
     label: 'Quit application',
-    description: 'Close the application (bypass close-to-tray)',
+    description: 'Force-exit the app (bypass soft-close behavior)',
     defaultBinding: 'mod+q',
   ),
 ];
+
+bool shortcutActionSupportedInRuntime(
+  ShortcutAction action, {
+  required bool isWeb,
+  required TargetPlatform targetPlatform,
+  required bool refreshlessRealtimeEnabled,
+}) {
+  if (isWeb) {
+    return switch (action) {
+      ShortcutAction.closeApp || ShortcutAction.quitApp => false,
+      ShortcutAction.refresh => !refreshlessRealtimeEnabled,
+      _ => true,
+    };
+  }
+
+  return switch (action) {
+    ShortcutAction.refresh => !refreshlessRealtimeEnabled,
+    ShortcutAction.closeApp ||
+    ShortcutAction.quitApp => switch (targetPlatform) {
+      TargetPlatform.android ||
+      TargetPlatform.iOS ||
+      TargetPlatform.linux ||
+      TargetPlatform.macOS ||
+      TargetPlatform.windows => true,
+      _ => false,
+    },
+    _ => true,
+  };
+}
+
+List<ShortcutAction> shortcutActionsForRuntime({
+  required bool isWeb,
+  required TargetPlatform targetPlatform,
+  required bool refreshlessRealtimeEnabled,
+}) {
+  return kShortcutDefinitions
+      .where(
+        (definition) => shortcutActionSupportedInRuntime(
+          definition.action,
+          isWeb: isWeb,
+          targetPlatform: targetPlatform,
+          refreshlessRealtimeEnabled: refreshlessRealtimeEnabled,
+        ),
+      )
+      .map((definition) => definition.action)
+      .toList(growable: false);
+}
+
+List<ShortcutDefinition> shortcutDefinitionsForRuntime({
+  required bool isWeb,
+  required TargetPlatform targetPlatform,
+  required bool refreshlessRealtimeEnabled,
+}) {
+  final visibleActions = shortcutActionsForRuntime(
+    isWeb: isWeb,
+    targetPlatform: targetPlatform,
+    refreshlessRealtimeEnabled: refreshlessRealtimeEnabled,
+  ).toSet();
+  return kShortcutDefinitions
+      .where((definition) => visibleActions.contains(definition.action))
+      .toList(growable: false);
+}
 
 String notificationCategoryKey(NotificationCategory category) {
   return switch (category) {
@@ -205,6 +275,7 @@ String shortcutActionKey(ShortcutAction action) {
     ShortcutAction.escape => 'escape',
     ShortcutAction.cycleAgentForward => 'cycle_agent_forward',
     ShortcutAction.cycleAgentBackward => 'cycle_agent_backward',
+    ShortcutAction.closeApp => 'close_app',
     ShortcutAction.quitApp => 'quit_app',
   };
 }
@@ -222,6 +293,7 @@ ShortcutAction? shortcutActionFromKey(String value) {
     'escape' => ShortcutAction.escape,
     'cycle_agent_forward' => ShortcutAction.cycleAgentForward,
     'cycle_agent_backward' => ShortcutAction.cycleAgentBackward,
+    'close_app' => ShortcutAction.closeApp,
     'quit_app' => ShortcutAction.quitApp,
     _ => null,
   };
