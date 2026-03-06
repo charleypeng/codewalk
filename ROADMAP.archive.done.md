@@ -242,7 +242,6 @@ Items moved from `ROADMAP.md` pending backlog to reduce active-file noise.
 - [x] Analisar como reduzir o consumo de dados do App em conexões limitadas como 5G: bounded message-tail fetches, reduced prompt_async fallback polling cadence, bounded/invalidated assistant-id cache, regression test coverage - Related commits: 710efc3 9ae1b1d
 - [x] Fix involuntary collapse of expanded tool-call groups while reading: completed tool chains now stay expanded across ordinary parent rebuilds, and shrink auto-snap only jumps when the viewport is near bottom to avoid forced scroll-to-bottom while users review expanded content. - Related commits: 9e31a02 554f7f0 36b621c
 
-
 ### Feature featA: Sync hardening and remote config safety
 **Status**: Completed (2026-02-14)
 
@@ -334,3 +333,64 @@ Full Material You design system revamp across four phases: dynamic color engine,
 
 Resolved all prioritized technical debt: regression fixes, scope guards, draft UX restoration, dead code elimination (~210 lines removed), and analyzer warning cleanup (0 warnings).
 **Commits**: 00583f0, 4aa38ca, beb5265, 70bcbc6, 51757e8
+
+## Archive - 2026-03-06 (Archived backlog and completed featQ items)
+
+## Execution Protocol
+
+1. Trigger command pattern: `implement feat XXX now` (example: `implement feat 006 now`).
+2. During execution:
+   - mark active tasks as `[~]`,
+   - mark completed tasks as `[x]`,
+   - mark blocked tasks as `[/]` with blocker reason.
+3. Complete all tasks in `ROADMAP.featXXX.md` before moving to the next feature unless a blocker is explicit.
+4. After full completion of a feature, summarize implementation in `ROADMAP.md` and keep only necessary long-form notes.
+
+## Task List
+
+Concluded historical features were archived to `ROADMAP.archive.done.md` to keep this file focused on active backlog execution.
+
+## Legend
+
+- [x] Done
+- [~] In progress now
+- [/] Partially done but blocked
+- [!] Won't do (with reason)
+- [ ] Not started
+
+## Pending Backlog
+
+### Backlog Execution Packs
+
+- `featQ` - Cross-platform UX and settings polish (tracked inline in this file)
+
+### Next Recommended Feature
+
+- `featQ` - inline in `ROADMAP.md` (NEXT: Cross-platform UX and settings polish)
+
+### Backlog Pack Dependency Order
+
+1. `featQ` in `ROADMAP.md` (Cross-platform UX and settings polish - isolated track, can run anytime)
+
+Notes:
+- Features featA through featO have been completed and archived.
+
+### Backlog Pack Execution Checklist
+
+- [~] `featQ` - tracked in `ROADMAP.md` (Cross-platform UX and settings polish)
+
+Use the same status convention from Legend for active execution updates (`[~]`, `[x]`, `[/]`).
+
+Completed backlog items moved to `ROADMAP.archive.done.md` (section: Backlog Wave Completed Items).
+
+### Open Backlog by Pack
+
+#### `featQ` Cross-platform UX and settings polish
+
+- [x] Canned answers manager for fast reply - Related commits: 8cf00e0 4fe89be
+- [x] In Settings > Shortcuts, review shortcut coverage and add missing options.
+- [x] Add shortcut to enable/disable STT in Shortcuts. - Related commits: 0f69c4a af8ac74
+- [x] In composer, adjust ArrowUp/ArrowDown without modifiers for multiline behavior before history navigation; with modifiers keep default editor behavior. - Related commits: c9cd435
+- [x] Allow pinning sessions in the Conversations sidebar. - Commit hash: unknown
+- [x] Verify whether background notifications are working correctly on Android. - Related commits: d80f98e
+- [x] Reduce spacing in the Conversations list on desktop - Related commits: d2b084e, 0574884
