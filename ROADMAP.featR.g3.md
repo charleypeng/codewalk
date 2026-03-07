@@ -11,7 +11,7 @@ status: "Delivered"
 - **make check**: Passed
 - **Android Build**: Produced
 - **Caption**: `featR g3: child thread composer parity`
-- **Commit**: `b8aee9c`
+- **Commit**: `b8aee9c`, `ac91163`
 - **Review**: `LGTM`
 
 ## Objective
