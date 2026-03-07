@@ -144,7 +144,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                 ),
               ),
             ),
-          if (attachmentsEnabled && !isSubConversation)
+          if (attachmentsEnabled)
             Tooltip(
               message: 'Add attachment',
               child: IconButton(

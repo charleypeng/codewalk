@@ -187,10 +187,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
               // Message list
               Expanded(child: _buildMessageViewport(chatProvider)),
 
-              _buildInteractionPrompts(
-                chatProvider,
-                allowInteraction: !isSubConversation,
-              ),
+              _buildInteractionPrompts(chatProvider),
 
               _buildComposerReasoningStatusSlot(composerStatus),
 
@@ -202,67 +199,66 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
 
               // Input field
               if (isSubConversation)
-                _buildSubConversationReturnButton(chatProvider)
-              else
-                Builder(
-                  builder: (context) {
-                    final sentMessageHistory = _collectSentMessageHistory(
-                      chatProvider.messages,
-                    );
-                    final projectProvider = context.read<ProjectProvider>();
-                    return ChatInputWidget(
-                      onSendMessage: (submission) async {
-                        _prepareForOutgoingUserMessage();
-                        await chatProvider.submitMessageWithQueue(
-                          submission.text,
-                          attachments: submission.attachments,
-                          shellMode: submission.mode == ChatComposerMode.shell,
-                        );
-                        if (_fileContextItems.isNotEmpty) {
-                          _setState(() {
-                            _fileContextItems.clear();
-                          });
-                        }
-                        _scrollToBottom(force: true);
-                      },
-                      onStopRequested: () async {
-                        await _requestStopActiveResponse(chatProvider);
-                      },
-                      onStopHintRequested: _showComposerStopHint,
-                      onMentionQuery: _queryMentionSuggestions,
-                      onSlashQuery: _querySlashSuggestions,
-                      onBuiltinSlashCommand: (commandName) =>
-                          _handleBuiltinSlashCommand(
-                            commandName: commandName,
-                            chatProvider: chatProvider,
-                          ),
-                      sentMessageHistory: sentMessageHistory,
-                      prefilledDraft: _composerPrefilledDraft,
-                      prefilledDraftVersion: _composerPrefilledDraftVersion,
-                      enabled:
-                          chatProvider.currentSession != null ||
-                          chatProvider.isDraftingNewChat,
-                      isResponding: chatProvider.canAbortActiveResponse,
-                      focusNode: _inputFocusNode,
-                      controller: _chatInputController,
-                      showAttachmentButton: attachmentsEnabled,
-                      showInlineAttachmentButton: false,
-                      allowImageAttachment: supportsImages,
-                      allowPdfAttachment: supportsPdf,
-                      cannedAnswersDataSource: di.sl(),
-                      cannedAnswersServerId: projectProvider.activeServerId,
-                      cannedAnswersScopeId: projectProvider.currentScopeId,
-                      contextItems: _fileContextItems,
-                      onRemoveContextItem: (index) {
-                        if (index >= 0 && index < _fileContextItems.length) {
-                          _setState(() {
-                            _fileContextItems.removeAt(index);
-                          });
-                        }
-                      },
-                    );
-                  },
-                ),
+                _buildSubConversationReturnButton(chatProvider),
+              Builder(
+                builder: (context) {
+                  final sentMessageHistory = _collectSentMessageHistory(
+                    chatProvider.messages,
+                  );
+                  final projectProvider = context.read<ProjectProvider>();
+                  return ChatInputWidget(
+                    onSendMessage: (submission) async {
+                      _prepareForOutgoingUserMessage();
+                      await chatProvider.submitMessageWithQueue(
+                        submission.text,
+                        attachments: submission.attachments,
+                        shellMode: submission.mode == ChatComposerMode.shell,
+                      );
+                      if (_fileContextItems.isNotEmpty) {
+                        _setState(() {
+                          _fileContextItems.clear();
+                        });
+                      }
+                      _scrollToBottom(force: true);
+                    },
+                    onStopRequested: () async {
+                      await _requestStopActiveResponse(chatProvider);
+                    },
+                    onStopHintRequested: _showComposerStopHint,
+                    onMentionQuery: _queryMentionSuggestions,
+                    onSlashQuery: _querySlashSuggestions,
+                    onBuiltinSlashCommand: (commandName) =>
+                        _handleBuiltinSlashCommand(
+                          commandName: commandName,
+                          chatProvider: chatProvider,
+                        ),
+                    sentMessageHistory: sentMessageHistory,
+                    prefilledDraft: _composerPrefilledDraft,
+                    prefilledDraftVersion: _composerPrefilledDraftVersion,
+                    enabled:
+                        chatProvider.currentSession != null ||
+                        chatProvider.isDraftingNewChat,
+                    isResponding: chatProvider.canAbortActiveResponse,
+                    focusNode: _inputFocusNode,
+                    controller: _chatInputController,
+                    showAttachmentButton: attachmentsEnabled,
+                    showInlineAttachmentButton: false,
+                    allowImageAttachment: supportsImages,
+                    allowPdfAttachment: supportsPdf,
+                    cannedAnswersDataSource: di.sl(),
+                    cannedAnswersServerId: projectProvider.activeServerId,
+                    cannedAnswersScopeId: projectProvider.currentScopeId,
+                    contextItems: _fileContextItems,
+                    onRemoveContextItem: (index) {
+                      if (index >= 0 && index < _fileContextItems.length) {
+                        _setState(() {
+                          _fileContextItems.removeAt(index);
+                        });
+                      }
+                    },
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -276,46 +272,17 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
   }
 
   Widget _buildSubConversationReturnButton(ChatProvider chatProvider) {
-    final canStopResponse = chatProvider.canAbortActiveResponse;
-
     return Padding(
       padding: const EdgeInsets.all(8),
-      child: Row(
-        children: [
-          Expanded(
-            child: FilledButton.icon(
-              key: const ValueKey<String>('subconversation_return_main_button'),
-              onPressed: () =>
-                  unawaited(_returnToMainConversation(chatProvider)),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(52),
-              ),
-              icon: const Icon(Symbols.arrow_back_rounded),
-              label: const Text('Return to main conversation'),
-            ),
-          ),
-          if (canStopResponse) ...[
-            const SizedBox(width: 8),
-            SizedBox.square(
-              dimension: 52,
-              child: FilledButton(
-                key: const ValueKey<String>('subconversation_stop_button'),
-                onPressed: () =>
-                    unawaited(_requestStopActiveResponse(chatProvider)),
-                style: FilledButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  backgroundColor: const Color(0xFF424242),
-                  foregroundColor: Theme.of(context).colorScheme.error,
-                ),
-                child: Icon(
-                  Symbols.stop_rounded,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-              ),
-            ),
-          ],
-        ],
+      child: SizedBox(
+        width: double.infinity,
+        child: FilledButton.icon(
+          key: const ValueKey<String>('subconversation_return_main_button'),
+          onPressed: () => unawaited(_returnToMainConversation(chatProvider)),
+          style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+          icon: const Icon(Symbols.arrow_back_rounded),
+          label: const Text('Return to main conversation'),
+        ),
       ),
     );
   }

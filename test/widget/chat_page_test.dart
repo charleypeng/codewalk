@@ -933,7 +933,9 @@ void main() {
         expect(find.text('Thinking Process'), findsOneWidget);
         expect(
           find.byKey(
-            const ValueKey<String>('tool_part_details_button_part_display_tool'),
+            const ValueKey<String>(
+              'tool_part_details_button_part_display_tool',
+            ),
           ),
           findsOneWidget,
         );
@@ -950,7 +952,9 @@ void main() {
         expect(find.text('Thinking Process'), findsNothing);
         expect(
           find.byKey(
-            const ValueKey<String>('tool_part_details_button_part_display_tool'),
+            const ValueKey<String>(
+              'tool_part_details_button_part_display_tool',
+            ),
           ),
           findsOneWidget,
         );
@@ -966,7 +970,9 @@ void main() {
 
         expect(
           find.byKey(
-            const ValueKey<String>('tool_part_details_button_part_display_tool'),
+            const ValueKey<String>(
+              'tool_part_details_button_part_display_tool',
+            ),
           ),
           findsNothing,
         );
@@ -3373,7 +3379,7 @@ void main() {
   });
 
   testWidgets(
-    'sub-conversation is read-only and supports return to main conversation',
+    'sub-conversation shows composer parity and keeps sends scoped to the child session',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -3447,6 +3453,26 @@ void main() {
       repository.sessionChildrenById[rootSession.id] = <ChatSession>[
         childSession,
       ];
+      repository.sendMessageHandler = (_, sessionId, _, _) {
+        final reply = AssistantMessage(
+          id: 'msg_child_help_reply',
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(1400),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1410),
+          providerId: 'provider_1',
+          modelId: 'model_1',
+          mode: 'reviewer',
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_child_help_reply',
+              messageId: 'msg_child_help_reply',
+              sessionId: 'ses_child_subtask_nav',
+              text: 'Child help reply',
+            ),
+          ],
+        );
+        return Stream<Either<Failure, ChatMessage>>.value(Right(reply));
+      };
 
       final localDataSource = InMemoryAppLocalDataSource()
         ..activeServerId = 'srv_test';
@@ -3462,6 +3488,7 @@ void main() {
               models: <String, Model>{
                 'model_1': _model(
                   'model_1',
+                  attachment: true,
                   variants: const <String, ModelVariant>{
                     'low': ModelVariant(id: 'low', name: 'Low'),
                     'high': ModelVariant(id: 'high', name: 'High'),
@@ -3469,6 +3496,7 @@ void main() {
                 ),
                 'model_2': _model(
                   'model_2',
+                  attachment: true,
                   variants: const <String, ModelVariant>{
                     'low': ModelVariant(id: 'low', name: 'Low'),
                     'high': ModelVariant(id: 'high', name: 'High'),
@@ -3522,12 +3550,8 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.byKey(const ValueKey<String>('subconversation_stop_button')),
-        findsNothing,
-      );
-      expect(
         find.byKey(const ValueKey<String>('composer_input_row')),
-        findsNothing,
+        findsOneWidget,
       );
       expect(
         find.byKey(const ValueKey<String>('agent_selector_button')),
@@ -3543,12 +3567,29 @@ void main() {
       );
       expect(find.text('model_1'), findsOneWidget);
       expect(find.text('Auto (server)'), findsNothing);
+      expect(find.byIcon(Symbols.attach_file_rounded), findsOneWidget);
+      expect(find.byIcon(Symbols.mic_none_rounded), findsOneWidget);
 
       await tester.tap(
         find.byKey(const ValueKey<String>('model_selector_button_readonly')),
       );
       await tester.pumpAndSettle();
       expect(find.text('Search model or provider'), findsNothing);
+
+      final childComposerField = find.descendant(
+        of: find.byKey(const ValueKey<String>('composer_input_row')),
+        matching: find.byType(TextField),
+      );
+      await tester.enterText(childComposerField, 'child help');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Symbols.send_rounded));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(repository.lastSendSessionId, childSession.id);
+      expect(find.text('child help'), findsOneWidget);
+      expect(find.text('Child help reply'), findsOneWidget);
 
       await tester.tap(
         find.byKey(
@@ -3566,11 +3607,13 @@ void main() {
         find.byKey(const ValueKey<String>('agent_selector_button')),
         findsOneWidget,
       );
+      expect(find.text('child help'), findsNothing);
+      expect(find.text('Child help reply'), findsNothing);
     },
   );
 
   testWidgets(
-    'sub-conversation footer keeps stop beside return while response is active',
+    'sub-conversation keeps return control while composer stop is active',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -3634,12 +3677,22 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.byKey(const ValueKey<String>('subconversation_stop_button')),
+        find.byKey(const ValueKey<String>('composer_input_row')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('composer_input_row')),
+          matching: find.byIcon(Symbols.stop_rounded),
+        ),
         findsOneWidget,
       );
 
       await tester.tap(
-        find.byKey(const ValueKey<String>('subconversation_stop_button')),
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('composer_input_row')),
+          matching: find.byIcon(Symbols.stop_rounded),
+        ),
       );
       await tester.pumpAndSettle();
 

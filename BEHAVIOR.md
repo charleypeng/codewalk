@@ -267,13 +267,14 @@
 - **Then** automatic collapse is only applied when collapse mode is activated for that rendered group, not on every subsequent rebuild
 - **Then** once a completed turn has settled, transient realtime status pulses do not auto re-open or rapidly re-collapse that same work group
 
-### Sub-conversation threads are view-only
+### Sub-conversation threads keep a full composer with parent return
 
 - **Given** the user opens a child thread from a subtask/task bubble in the main conversation
 - **When** the child thread is active (`parentId` is set)
-- **Then** composer input is replaced by a footer return control (`Return to main conversation`)
-- **Then** while that child thread is actively responding, the same footer shows a side `Stop` action that aborts the active response without leaving the child thread
-- **Then** message send/audio controls and agent/model/effort selectors remain non-interactive in the child thread
+- **Then** the full chat composer remains available inside the child thread, including text send, slash input, attachments, and voice input
+- **Then** a dedicated `Return to main conversation` control remains visible so the user can navigate back to the parent thread at any time
+- **Then** when that child thread is actively responding, the same composer stop behavior remains available without leaving the child thread
+- **Then** agent/model/effort selectors remain non-interactive in the child thread
 - **Then** the locked model chip reflects the child-thread metadata (not the parent selection)
 - **Then** the effort chip is shown only when an explicit child-thread variant is known
 
