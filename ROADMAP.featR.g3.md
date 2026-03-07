@@ -2,10 +2,17 @@
 feature: "featR g3 - Child Thread Composer Parity"
 group: "featR.g3"
 dependency: "featR.g1 (g2 preferred)"
-status: "Pending"
+status: "Delivered"
 ---
 
 # featR g3 - Child Thread Composer Parity
+
+## Delivery Status
+- **make check**: Passed
+- **Android Build**: Produced
+- **Caption**: `featR g3: child thread composer parity`
+- **Commit**: `b8aee9c`
+- **Review**: `LGTM`
 
 ## Objective
 Enable the full chat composer in child/sub-conversation sessions, removing the "view-only" restriction to match OpenCode Web capabilities.
@@ -54,10 +61,10 @@ CodeWalk currently treats sub-conversations (threads) as read-only views. Howeve
 -   **No Lifecycle Hacks**: Avoid adding temporary "wait for thread" hacks; rely on the existing provider lifecycle.
 
 ## Acceptance Checklist / Definition of Done
--   [ ] Opening a sub-conversation shows the full chat input bar.
--   [ ] Sending a prompt in a sub-conversation works and receives a stream.
--   [ ] Attachments and voice input work correctly in the sub-conversation.
--   [ ] Navigating back to the parent session works after sending a message in a child session.
+-   [x] Opening a sub-conversation shows the full chat input bar.
+-   [x] Sending a prompt in a sub-conversation works and receives a stream.
+-   [x] Attachments and voice input work correctly in the sub-conversation.
+-   [x] Navigating back to the parent session works after sending a message in a child session.
 
 ## Validation and Test Plan
 -   Manual test: Open a thread, send "/help", verify the response appears *inside* the thread.
