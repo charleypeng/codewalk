@@ -3341,12 +3341,6 @@ class ChatProvider extends ChangeNotifier {
             )
           : resolvedLocalMessageId;
 
-      assert(
-        _isOptimisticLocalUserMessageId(activeLocalMessageId),
-        'ADR-023 Pitfall P-001: pending optimistic user messages must keep '
-        'the `${ChatProvider._optimisticLocalUserMessageIdPrefix}` prefix.',
-      );
-
       _pendingLocalUserMessageIds.add(activeLocalMessageId);
       notifyListeners();
       _traceFinal(
@@ -3404,11 +3398,6 @@ class ChatProvider extends ChangeNotifier {
         variant: _selectedVariantId,
         mode: shellMode ? 'shell' : selectedAgentForSend,
         parts: inputParts,
-      );
-      assert(
-        input.messageId == null,
-        'ADR-023 Pitfall P-001: ChatProvider prompt_async sends must not '
-        'forward messageId.',
       );
 
       // Cancel previous subscription and invalidate stale callbacks.

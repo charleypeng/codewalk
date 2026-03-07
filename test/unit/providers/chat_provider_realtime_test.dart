@@ -488,8 +488,20 @@ void main() {
           refreshedAssistant.parts.whereType<ToolPart>().single.state.status,
           ToolStatus.running,
         );
+        final refreshedUsers = provider.messages
+            .whereType<UserMessage>()
+            .toList();
+        expect(refreshedUsers, hasLength(2));
         expect(
-          provider.messages.whereType<UserMessage>().map(
+          refreshedUsers.map((message) => message.id),
+          contains('msg_user_stream_refresh'),
+        );
+        expect(
+          refreshedUsers.any((message) => message.id.startsWith('local_user_')),
+          isTrue,
+        );
+        expect(
+          refreshedUsers.map(
             (message) => (message.parts.first as TextPart).text,
           ),
           everyElement(equals('inspect repo')),
