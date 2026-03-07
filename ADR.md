@@ -989,6 +989,8 @@ Related: ADR-003, ADR-018, ADR-019, ADR-022.
 
 **Summary**: Using a server-format ID (e.g. `msg_*`) for the optimistic user bubble, or forwarding `messageId` in the `prompt_async` send payload, breaks SSE event stream reconciliation for all conversation turns after the first — the UI update is silently discarded even though audio/notifications fire normally.
 
+**Status (g4 update)**: g4 delivery maintains the provider-side `local_user_*` optimistic ID contract and does not forward `messageId` in `prompt_async`. This is the ADR-023-compliant baseline for CodeWalk until/unless a future ADR exception or upstream proof justifies official provider-side ID parity. Commits `5cabcf0` and `a066026` added regression coverage protecting refresh/reconcile from hiding active tool/work UI during optimistic echo replay.
+
 **Symptom**: The app plays the "response completed" sound and notification for turns 2+, but the UI stays stuck on the previous state (e.g. "Reasoning...") — the new assistant response is received by the SSE stream but the UI update is silently discarded during merge. The session recovers only after a manual switch and return.
 
 **Root cause**: The SSE merge logic uses the `local_user_*` prefix to identify optimistic bubbles that are candidates for duplicate-echo suppression. When the optimistic ID looks like a server message (`msg_*`), the prefix check short-circuits to `false` and the bubble is treated as a confirmed server message. On the next server event, the merge finds a conflict between the retained "server-looking" local message and the real server echo, causing the UI update for subsequent turns to be silently discarded.

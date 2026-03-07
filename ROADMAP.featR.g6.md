@@ -26,7 +26,7 @@ After the major send/reconciliation changes in g4 and g5, many CodeWalk-specific
 -   Reducing/removing leftover logic for abort suppression and deferred idle reconciliation.
 -   Aligning `message.part.delta` and event-reducer logic with official Web patterns.
 -   Correcting the scope of "Pending Interactions" (e.g., whether permissions/questions are aggregated across root vs child threads).
--   Removing extra "dedup" heuristics that are redundant after g4's stable IDs.
+-   Removing extra "dedup" heuristics that are redundant after g4's safe reconciliation baseline.
 -   Auditing and simplifying the SSE (Dio) infrastructure to ensure it is contract-equivalent.
 
 ## Out of Scope

@@ -249,10 +249,11 @@
 - **Then** the client assigns the optimistic message a `local_user_<timestamp>_<seq>` ID — it intentionally does NOT use a server-format ID (`msg_*` or similar)
 - **Then** the `messageId` field is NOT forwarded in the `prompt_async` send payload — the server assigns its own canonical ID
 - **Then** duplicate detection for the server echo uses a content-signature match (normalized text), gated by the `local_user_` prefix check
-- **Then** once the server echo arrives, the local optimistic bubble is dropped and replaced by the server-authoritative message
+- **Then** server-echo replay may temporarily coexist with the optimistic bubble during an active turn, but reconciliation must never hide in-flight tool/work output or block the final assistant reveal
 
 > **INVARIANT — do not violate**: The `local_user_*` prefix and the absence of `messageId` in the send payload are load-bearing contracts.
 > Changing the prefix to any server-format value (e.g. `msg_*`) or forwarding `messageId` in the payload causes the SSE event stream to fail reconciliation for all turns after the first — assistant responses are received and audio/notifications fire, but the UI update is silently discarded and the UI stays stuck on the previous state.
+> Active refresh/reconcile must preserve visible tool/work output for the current turn until the final assistant response is available.
 > This regression was introduced and reverted in commit `b0660a2`. See ADR-023 "Known Pitfalls" for the full incident analysis.
 
 ### Tool call work groups collapse after completion

@@ -19,7 +19,7 @@ CodeWalk currently implements a complex "send-while-busy" queue, including the a
 3.  **Informative Only**: `BEHAVIOR.md` (Ignore references to "local queueing" or "Send now").
 
 ## Dependencies / Execution Order
--   **Dependencies**: **featR.g4** (Stable ID-based reconciliation makes it safe to remove the local queue).
+-   **Dependencies**: **featR.g4** (Delivered safe reconciliation baseline and ADR-023-compliant optimistic replay contract).
 -   **Order**: Land this before g6 to clear the path for realtime lifecycle cleanup.
 
 ## In Scope
