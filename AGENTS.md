@@ -9,7 +9,7 @@ CodeWalk is a project that provides access to code agents from anywhere — desk
 - **Every implementation must be designed for both mobile and desktop**. Preferably unified and responsive. **Priority: mobile UX, modern look, Material You**.
 - After completing a change, verify whether it requires new tests or updates to existing tests.
 - For visual adjustments, confirm with the user the exact block/screen referenced before changing; avoid assumptions.
-- **Every completed work step MUST have a very descriptive commit message** so the change is easy to track, audit, and revert without guessing.
+- **Every completed work step MUST have a very descriptive commit message** so the change is easy to track, audit, and revert without guessing. If the user already authorized the work itself, create that commit automatically without waiting for an extra confirmation.
 
 - In this project specifically, we do NOT use `make precommit` directly — prefer splitting into `make check` and `make android`.
 - Key base documentation is in ./ai-docs; always run at least one `ls` in that folder to know what exists.
