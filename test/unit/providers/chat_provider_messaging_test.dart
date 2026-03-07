@@ -500,7 +500,7 @@ void main() {
     );
 
     test(
-      'submitMessageWithQueue lazily creates a new session from draft state',
+      'submitMessage lazily creates a new session from draft state',
       () async {
         await provider.projectProvider.initializeProject();
         await provider.loadSessions();
@@ -512,7 +512,7 @@ void main() {
         await provider.beginNewChatDraft();
         expect(provider.currentSession, isNull);
 
-        await provider.submitMessageWithQueue('start from lazy draft');
+        await provider.submitMessage('start from lazy draft');
         await Future<void>.delayed(const Duration(milliseconds: 20));
 
         expect(provider.currentSession, isNotNull);
@@ -548,27 +548,6 @@ void main() {
       expect(provider.currentSession?.id, isNot(previousSessionId));
       expect(chatRepository.lastSendSessionId, provider.currentSession?.id);
     });
-
-    test(
-      'sendMessageWithInterrupt lazily creates a session when draft is active',
-      () async {
-        await provider.projectProvider.initializeProject();
-        await provider.loadSessions();
-
-        final previousSessionId = provider.currentSession?.id;
-        expect(previousSessionId, isNotNull);
-
-        await provider.beginNewChatDraft();
-        expect(provider.currentSession, isNull);
-
-        await provider.sendMessageWithInterrupt('interrupt lazy draft send');
-        await Future<void>.delayed(const Duration(milliseconds: 20));
-
-        expect(provider.currentSession, isNotNull);
-        expect(provider.currentSession?.id, isNot(previousSessionId));
-        expect(chatRepository.lastSendSessionId, provider.currentSession?.id);
-      },
-    );
 
     test(
       'loadSessions keeps New Chat draft active when cached snapshot exists',

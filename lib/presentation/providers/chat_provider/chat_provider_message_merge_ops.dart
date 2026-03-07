@@ -90,10 +90,6 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     if (!_isOptimisticLocalUserMessageId(localMessage.id)) {
       return false;
     }
-    if (_queuedLocalUserMessageIds.contains(localMessage.id)) {
-      return false;
-    }
-
     final localSignature = _normalizedUserMessageSignature(localMessage);
     if (localSignature.isNotEmpty) {
       for (final serverMessage in mergedMessages) {

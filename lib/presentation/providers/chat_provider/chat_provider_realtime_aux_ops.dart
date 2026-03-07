@@ -213,11 +213,6 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     _autoTitleLastSignatureBySessionId.remove(sessionId);
     _autoTitleInFlightSessionIds.remove(sessionId);
     _autoTitleQueuedSessionIds.remove(sessionId);
-    _queuedSendBySessionId.remove(sessionId);
-    _queuedDrainDeferredSessionIds.remove(sessionId);
-    _queuedRetryTimersBySessionId.remove(sessionId)?.cancel();
-    _queuedRetryAttemptsBySessionId.remove(sessionId);
-    _syncQueuedLocalUserMessageIds();
     if (_currentSession?.id == sessionId) {
       _currentSession = _sessions.firstOrNull;
       _messages = <ChatMessage>[];

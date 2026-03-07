@@ -61,7 +61,6 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     }
     _messagesVersion++;
     _pendingLocalUserMessageIds.clear();
-    _clearQueuedSendState();
     _sessionStatusById = snapshot.sessionStatusById;
     _pendingPermissionsBySession = snapshot.pendingPermissionsBySession;
     _pendingQuestionsBySession = snapshot.pendingQuestionsBySession;

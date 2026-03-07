@@ -1207,7 +1207,6 @@ enum _ComposerStatusType {
   retrying,
   stopHint,
   tip,
-  queued,
 }
 
 class _ComposerStatusPresentation {
@@ -1233,12 +1232,6 @@ class _ComposerStatusPresentation {
 
   const _ComposerStatusPresentation.tip(String label)
     : this._(type: _ComposerStatusType.tip, label: label);
-
-  const _ComposerStatusPresentation.queued(int count)
-    : this._(
-        type: _ComposerStatusType.queued,
-        label: count == 1 ? '1 message queued' : '$count messages queued',
-      );
 
   static const List<String> _receivingTips = [
     'Tip: Use @ to mention files in your prompt',

@@ -1279,9 +1279,7 @@ void main() {
 
     await tester.tap(
       find.byKey(
-        const ValueKey<String>(
-          'tool_chain_toggle_msg_tool_chain_call_chain_1',
-        ),
+        const ValueKey<String>('tool_chain_toggle_msg_tool_chain_call_chain_1'),
       ),
     );
     await tester.pumpAndSettle();
@@ -1616,7 +1614,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const ValueKey<String>('tool_command_text')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('tool_command_text')),
+        findsOneWidget,
+      );
 
       setHostState(() {
         message = buildMessage(includeSecondTool: true);
@@ -1985,37 +1986,6 @@ void main() {
     expect(find.text('You'), findsOneWidget);
     expect(find.text('Assistant'), findsNothing);
     expect(find.text('Assistant text'), findsOneWidget);
-  });
-
-  testWidgets('shows queued badge for queued user message', (
-    WidgetTester tester,
-  ) async {
-    final userMessage = UserMessage(
-      id: 'msg_user_queued_badge',
-      sessionId: 'ses_user_queued_badge',
-      time: DateTime.fromMillisecondsSinceEpoch(1000),
-      parts: const <MessagePart>[
-        TextPart(
-          id: 'part_user_queued_badge',
-          messageId: 'msg_user_queued_badge',
-          sessionId: 'ses_user_queued_badge',
-          text: 'Queued message body',
-        ),
-      ],
-    );
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: ChatMessageWidget(
-            message: userMessage,
-            isQueuedUserMessage: true,
-          ),
-        ),
-      ),
-    );
-
-    expect(find.text('Queued'), findsOneWidget);
   });
 
   testWidgets('uses narrower max width for user bubbles on wide layouts', (

@@ -41,7 +41,6 @@ class ChatMessageWidget extends StatefulWidget {
     this.showThinkingBubbles = true,
     this.showToolCallBubbles = true,
     this.isSessionActivelyResponding = false,
-    this.isQueuedUserMessage = false,
     this.onBackgroundLongPress,
     this.onBackgroundLongPressEnd,
     this.onSubtaskNavigate,
@@ -53,7 +52,6 @@ class ChatMessageWidget extends StatefulWidget {
   final bool showThinkingBubbles;
   final bool showToolCallBubbles;
   final bool isSessionActivelyResponding;
-  final bool isQueuedUserMessage;
   final VoidCallback? onBackgroundLongPress;
   final VoidCallback? onBackgroundLongPressEnd;
   final ValueChanged<SubtaskPart>? onSubtaskNavigate;
@@ -82,7 +80,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   bool _lastShowThinking = true;
   bool _lastShowToolCalls = true;
   bool _lastResponding = false;
-  bool _lastQueued = false;
   int _lastLocalUiStateVersion = 0;
   ValueChanged<SubtaskPart>? _lastSubtaskNavigate;
   ValueChanged<ToolPart>? _lastTaskToolNavigate;
@@ -104,17 +101,15 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     return '$prefix:$_stableIdentitySequence';
   }
 
-  String _stableToolIdentity({
-    required String partId,
-    required String callId,
-  }) {
+  String _stableToolIdentity({required String partId, required String callId}) {
     final partKey = 'tool:part:$partId';
     final normalizedCallId = callId.trim();
 
     if (normalizedCallId.isNotEmpty) {
       final callKey = 'tool:call:$normalizedCallId';
       final existing =
-          _stableIdentityByCallKey[callKey] ?? _stableIdentityByPartKey[partKey];
+          _stableIdentityByCallKey[callKey] ??
+          _stableIdentityByPartKey[partKey];
       if (existing != null) {
         _stableIdentityByPartKey[partKey] = existing;
         _stableIdentityByCallKey[callKey] = existing;
@@ -133,17 +128,15 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     );
   }
 
-  String _stablePatchIdentity({
-    required String partId,
-    required String hash,
-  }) {
+  String _stablePatchIdentity({required String partId, required String hash}) {
     final partKey = 'patch:part:$partId';
     final normalizedHash = hash.trim();
 
     if (normalizedHash.isNotEmpty) {
       final hashKey = 'patch:hash:$normalizedHash';
       final existing =
-          _stableIdentityByHashKey[hashKey] ?? _stableIdentityByPartKey[partKey];
+          _stableIdentityByHashKey[hashKey] ??
+          _stableIdentityByPartKey[partKey];
       if (existing != null) {
         _stableIdentityByPartKey[partKey] = existing;
         _stableIdentityByHashKey[hashKey] = existing;
@@ -209,7 +202,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         widget.showThinkingBubbles == _lastShowThinking &&
         widget.showToolCallBubbles == _lastShowToolCalls &&
         widget.isSessionActivelyResponding == _lastResponding &&
-        widget.isQueuedUserMessage == _lastQueued &&
         _localUiStateVersion == _lastLocalUiStateVersion &&
         identical(widget.onSubtaskNavigate, _lastSubtaskNavigate) &&
         identical(widget.onTaskToolNavigate, _lastTaskToolNavigate) &&
@@ -227,7 +219,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     _lastShowThinking = widget.showThinkingBubbles;
     _lastShowToolCalls = widget.showToolCallBubbles;
     _lastResponding = widget.isSessionActivelyResponding;
-    _lastQueued = widget.isQueuedUserMessage;
     _lastLocalUiStateVersion = _localUiStateVersion;
     _lastSubtaskNavigate = widget.onSubtaskNavigate;
     _lastTaskToolNavigate = widget.onTaskToolNavigate;
@@ -282,7 +273,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   bool get showThinkingBubbles => widget.showThinkingBubbles;
   bool get showToolCallBubbles => widget.showToolCallBubbles;
   bool get isSessionActivelyResponding => widget.isSessionActivelyResponding;
-  bool get isQueuedUserMessage => widget.isQueuedUserMessage;
   VoidCallback? get onBackgroundLongPress => widget.onBackgroundLongPress;
   VoidCallback? get onBackgroundLongPressEnd => widget.onBackgroundLongPressEnd;
   ValueChanged<SubtaskPart>? get onSubtaskNavigate => widget.onSubtaskNavigate;

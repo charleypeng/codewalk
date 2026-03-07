@@ -209,7 +209,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                   return ChatInputWidget(
                     onSendMessage: (submission) async {
                       _prepareForOutgoingUserMessage();
-                      await chatProvider.submitMessageWithQueue(
+                      await chatProvider.submitMessage(
                         submission.text,
                         attachments: submission.attachments,
                         shellMode: submission.mode == ChatComposerMode.shell,
@@ -922,9 +922,6 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                       showToolCallBubbles: settingsProvider.showToolCallBubbles,
                       isSessionActivelyResponding:
                           chatProvider.isCurrentSessionActivelyResponding,
-                      isQueuedUserMessage:
-                          message.role == MessageRole.user &&
-                          chatProvider.isQueuedUserMessage(message.id),
                       onBackgroundLongPress: () =>
                           _handleMessageBackgroundLongPress(message),
                       onBackgroundLongPressEnd: () =>

@@ -125,19 +125,6 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     );
   }
 
-  void _pruneQueuedLocalUserMessageIdsToVisibleUsers() {
-    if (_queuedLocalUserMessageIds.isEmpty) {
-      return;
-    }
-    final visibleUserIds = _messages
-        .whereType<UserMessage>()
-        .map((message) => message.id)
-        .toSet();
-    _queuedLocalUserMessageIds.removeWhere(
-      (id) => !visibleUserIds.contains(id),
-    );
-  }
-
   UserMessage _buildLocalUserMessage({
     required String localMessageId,
     required String sessionId,
@@ -201,64 +188,6 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     return localMessageId;
   }
 
-  String _consolidateQueuedLocalUserMessages({
-    required String sessionId,
-    required List<_QueuedSendEnvelope> queuedBatch,
-    required String mergedText,
-    required List<FileInputPart> mergedAttachments,
-    required bool shellMode,
-  }) {
-    final queuedLocalIds = queuedBatch
-        .map((item) => item.localMessageId)
-        .where((id) => id.isNotEmpty)
-        .toList(growable: false);
-    final queuedLocalIdSet = queuedLocalIds.toSet();
-    final anchorLocalId =
-        queuedLocalIds.firstOrNull ?? _nextLocalUserMessageId();
-
-    var insertionIndex = -1;
-    for (var index = 0; index < _messages.length; index += 1) {
-      final message = _messages[index];
-      if (message is! UserMessage) {
-        continue;
-      }
-      if (message.sessionId != sessionId) {
-        continue;
-      }
-      if (!queuedLocalIdSet.contains(message.id)) {
-        continue;
-      }
-      insertionIndex = index;
-      break;
-    }
-
-    _messages.removeWhere(
-      (message) =>
-          message is UserMessage &&
-          message.sessionId == sessionId &&
-          queuedLocalIdSet.contains(message.id),
-    );
-
-    final consolidatedMessage = _buildLocalUserMessage(
-      localMessageId: anchorLocalId,
-      sessionId: sessionId,
-      time: DateTime.now(),
-      text: mergedText,
-      attachments: mergedAttachments,
-      shellMode: shellMode,
-    );
-    if (insertionIndex < 0 || insertionIndex > _messages.length) {
-      _messages.add(consolidatedMessage);
-    } else {
-      _messages.insert(insertionIndex, consolidatedMessage);
-    }
-    _messagesVersion++;
-    _pendingLocalUserMessageIds.removeWhere(queuedLocalIdSet.contains);
-    _pendingLocalUserMessageIds.add(anchorLocalId);
-    _queuedLocalUserMessageIds.removeWhere(queuedLocalIdSet.contains);
-    return anchorLocalId;
-  }
-
   void _updateOrAddMessage(ChatMessage message) {
     final currentSessionId = _currentSession?.id;
     if (currentSessionId == null || message.sessionId != currentSessionId) {
@@ -279,7 +208,6 @@ extension _ChatProviderMessageStateOps on ChatProvider {
         if (existingIncomingIndex != -1 &&
             existingIncomingIndex != pendingLocalIndex) {
           _pendingLocalUserMessageIds.remove(previousId);
-          _queuedLocalUserMessageIds.remove(previousId);
           _messages[existingIncomingIndex] = message;
           _messages.removeAt(pendingLocalIndex);
           _messagesVersion++;
@@ -290,7 +218,6 @@ extension _ChatProviderMessageStateOps on ChatProvider {
           return;
         }
         _pendingLocalUserMessageIds.remove(previousId);
-        _queuedLocalUserMessageIds.remove(previousId);
         _messages[pendingLocalIndex] = message;
         _messagesVersion++;
         _notifyListeners();
@@ -308,7 +235,6 @@ extension _ChatProviderMessageStateOps on ChatProvider {
       _messagesVersion++;
       if (message is UserMessage) {
         _pendingLocalUserMessageIds.remove(message.id);
-        _queuedLocalUserMessageIds.remove(message.id);
       }
       AppLogger.debug(
         'Updated message: ${message.id}, parts=${message.parts.length}',

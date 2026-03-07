@@ -65,22 +65,6 @@ class _RejectedDraftEnvelope {
   final ChatComposerDraft draft;
 }
 
-class _QueuedSendEnvelope {
-  const _QueuedSendEnvelope({
-    required this.sessionId,
-    required this.localMessageId,
-    required this.text,
-    required this.attachments,
-    required this.shellMode,
-  });
-
-  final String sessionId;
-  final String localMessageId;
-  final String text;
-  final List<FileInputPart> attachments;
-  final bool shellMode;
-}
-
 class _ChatContextSnapshot {
   const _ChatContextSnapshot({
     required this.sessions,

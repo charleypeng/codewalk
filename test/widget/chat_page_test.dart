@@ -7636,7 +7636,7 @@ void main() {
     expect(repository.lastAbortSessionId, 'ses_stop');
   });
 
-  testWidgets('responding composer queues follow-up without auto-abort', (
+  testWidgets('responding composer sends follow-up without auto-abort', (
     WidgetTester tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(1000, 900));
@@ -7714,18 +7714,11 @@ void main() {
     await tester.tap(find.byIcon(Symbols.send_rounded));
     await tester.pump();
 
-    for (
-      var i = 0;
-      i < 20 && provider.currentSessionQueuedMessageCount == 0;
-      i++
-    ) {
-      await tester.pump(const Duration(milliseconds: 80));
-    }
+    await tester.pump(const Duration(milliseconds: 80));
 
     expect(repository.abortSessionCallCount, 0);
     expect(repository.lastAbortSessionId, isNull);
-    expect(sendCalls, 1);
-    expect(provider.currentSessionQueuedMessageCount, greaterThan(0));
+    expect(sendCalls, 2);
   });
 
   testWidgets('restores composer draft automatically when send is rejected', (

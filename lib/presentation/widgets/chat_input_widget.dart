@@ -775,7 +775,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     final sendSemanticsLabel = showStopAction
         ? 'Stop response'
         : (widget.isResponding
-              ? 'Queue message while response is running'
+              ? 'Send message while response is running'
               : 'Send message');
     final showPopover = _popoverType != ChatComposerPopoverType.none;
     const composerBackgroundColor = Colors.transparent;

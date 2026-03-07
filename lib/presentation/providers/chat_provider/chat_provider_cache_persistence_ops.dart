@@ -388,7 +388,6 @@ extension _ChatProviderCachePersistenceOps on ChatProvider {
       _hasMoreOldMessages =
           cachedMessages.length >= ChatProvider._defaultOlderMessagesChunkSize;
       _pendingLocalUserMessageIds.clear();
-      _clearQueuedSendState();
       _setState(ChatState.loaded);
 
       if (!isFresh) {

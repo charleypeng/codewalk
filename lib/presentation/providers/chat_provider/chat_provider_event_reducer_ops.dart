@@ -600,12 +600,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           _errorMessage = null;
           if (!hasActiveCurrentSendTurn) {
             _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
-            final isQueueTransition =
-                _queuedDrainInFlightSessionIds.contains(sessionId) ||
-                queuedMessageCountForSession(sessionId) > 0;
-            if (!isQueueTransition) {
-              _appendInlineAbortMessage(sessionId: sessionId);
-            }
+            _appendInlineAbortMessage(sessionId: sessionId);
             _setState(ChatState.loaded);
           }
           break;

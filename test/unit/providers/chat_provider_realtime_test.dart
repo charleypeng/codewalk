@@ -1753,28 +1753,24 @@ void main() {
     );
 
     test(
-      'sendMessageWithInterrupt aborts in-flight response and sends follow-up',
+      'submitMessage sends a follow-up while a response is active without aborting',
       () async {
         final firstStreamController =
             StreamController<Either<Failure, ChatMessage>>();
-        var firstStreamCancelled = false;
-        firstStreamController.onCancel = () {
-          firstStreamCancelled = true;
-        };
         addTearDown(() async {
           await firstStreamController.close();
         });
-        final assistantAfterInterrupt = AssistantMessage(
-          id: 'msg_after_interrupt_provider',
+        final assistantAfterFollowUp = AssistantMessage(
+          id: 'msg_after_busy_follow_up',
           sessionId: 'ses_1',
           time: DateTime.fromMillisecondsSinceEpoch(3000),
           completedTime: DateTime.fromMillisecondsSinceEpoch(3200),
           parts: const <MessagePart>[
             TextPart(
-              id: 'part_after_interrupt_provider',
-              messageId: 'msg_after_interrupt_provider',
+              id: 'part_after_busy_follow_up',
+              messageId: 'msg_after_busy_follow_up',
               sessionId: 'ses_1',
-              text: 'interrupt ok',
+              text: 'follow-up delivered',
             ),
           ],
         );
@@ -1786,7 +1782,7 @@ void main() {
             return firstStreamController.stream;
           }
           return Stream<Either<Failure, ChatMessage>>.value(
-            Right(assistantAfterInterrupt),
+            Right(assistantAfterFollowUp),
           );
         };
 
@@ -1797,11 +1793,10 @@ void main() {
         await provider.sendMessage('initial prompt');
         await Future<void>.delayed(const Duration(milliseconds: 10));
 
-        await provider.sendMessageWithInterrupt('follow-up prompt');
+        await provider.submitMessage('follow-up prompt');
         await Future<void>.delayed(const Duration(milliseconds: 50));
 
-        expect(chatRepository.abortSessionCallCount, 1);
-        expect(firstStreamCancelled, isTrue);
+        expect(chatRepository.abortSessionCallCount, 0);
         expect(sendCalls, 2);
         expect(provider.state, ChatState.loaded);
 
@@ -1817,81 +1812,7 @@ void main() {
     );
 
     test(
-      'sendMessageWithInterrupt waits for busy status to settle before follow-up send',
-      () async {
-        final firstStreamController =
-            StreamController<Either<Failure, ChatMessage>>();
-        addTearDown(() async {
-          await firstStreamController.close();
-        });
-        final assistantAfterSettledInterrupt = AssistantMessage(
-          id: 'msg_after_settled_interrupt',
-          sessionId: 'ses_1',
-          time: DateTime.fromMillisecondsSinceEpoch(3500),
-          completedTime: DateTime.fromMillisecondsSinceEpoch(3600),
-          parts: const <MessagePart>[
-            TextPart(
-              id: 'part_after_settled_interrupt',
-              messageId: 'msg_after_settled_interrupt',
-              sessionId: 'ses_1',
-              text: 'reply after settle',
-            ),
-          ],
-        );
-
-        var sendCalls = 0;
-        DateTime? secondSendAt;
-        chatRepository.sendMessageHandler = (_, _, _, _) {
-          sendCalls += 1;
-          if (sendCalls == 1) {
-            return firstStreamController.stream;
-          }
-          secondSendAt = DateTime.now();
-          return Stream<Either<Failure, ChatMessage>>.value(
-            Right(assistantAfterSettledInterrupt),
-          );
-        };
-        chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
-          'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
-        };
-
-        await provider.projectProvider.initializeProject();
-        await provider.loadSessions();
-        await provider.selectSession(provider.sessions.first);
-
-        await provider.sendMessage('initial prompt');
-        await Future<void>.delayed(const Duration(milliseconds: 10));
-
-        final statusCallsBefore = chatRepository.getSessionStatusCallCount;
-        final interruptRequestedAt = DateTime.now();
-        unawaited(
-          Future<void>.delayed(const Duration(milliseconds: 220), () {
-            chatRepository.sessionStatusById =
-                const <String, SessionStatusInfo>{
-                  'ses_1': SessionStatusInfo(type: SessionStatusType.idle),
-                };
-          }),
-        );
-
-        await provider.sendMessageWithInterrupt('follow-up prompt');
-        await Future<void>.delayed(const Duration(milliseconds: 60));
-
-        expect(chatRepository.abortSessionCallCount, 1);
-        expect(sendCalls, 2);
-        expect(
-          chatRepository.getSessionStatusCallCount,
-          greaterThan(statusCallsBefore),
-        );
-        expect(secondSendAt, isNotNull);
-        expect(
-          secondSendAt!.difference(interruptRequestedAt).inMilliseconds,
-          greaterThanOrEqualTo(120),
-        );
-      },
-    );
-
-    test(
-      'sendMessageWithInterrupt ignores stop failure and continues sending',
+      'submitMessage keeps busy follow-ups as separate sends instead of batching',
       () async {
         final firstStreamController =
             StreamController<Either<Failure, ChatMessage>>();
@@ -1899,111 +1820,35 @@ void main() {
           await firstStreamController.close();
         });
 
-        final assistantAfterInterruptFailure = AssistantMessage(
-          id: 'msg_after_interrupt_stop_failure',
-          sessionId: 'ses_1',
-          time: DateTime.fromMillisecondsSinceEpoch(4000),
-          completedTime: DateTime.fromMillisecondsSinceEpoch(4100),
-          parts: const <MessagePart>[
-            TextPart(
-              id: 'part_after_interrupt_stop_failure',
-              messageId: 'msg_after_interrupt_stop_failure',
-              sessionId: 'ses_1',
-              text: 'continued after stop failure',
-            ),
-          ],
-        );
-
-        var sendCalls = 0;
-        chatRepository.sendMessageHandler = (_, _, _, _) {
-          sendCalls += 1;
-          if (sendCalls == 1) {
-            return firstStreamController.stream;
-          }
-          return Stream<Either<Failure, ChatMessage>>.value(
-            Right(assistantAfterInterruptFailure),
-          );
-        };
-        chatRepository.abortSessionFailure = const ServerFailure(
-          'abort failed',
-        );
-
-        await provider.projectProvider.initializeProject();
-        await provider.loadSessions();
-        await provider.selectSession(provider.sessions.first);
-
-        await provider.sendMessage('initial prompt');
-        await Future<void>.delayed(const Duration(milliseconds: 10));
-
-        await provider.sendMessageWithInterrupt('follow-up prompt');
-        await Future<void>.delayed(const Duration(milliseconds: 50));
-
-        expect(chatRepository.abortSessionCallCount, 1);
-        expect(sendCalls, 2);
-        expect(provider.state, ChatState.loaded);
-        expect(provider.errorMessage, isNull);
-
-        final sentFollowUp = provider.messages.whereType<UserMessage>().any((
-          message,
-        ) {
-          return message.parts.whereType<TextPart>().any(
-            (part) => part.text == 'follow-up prompt',
-          );
-        });
-        expect(sentFollowUp, isTrue);
-
-        final rejectedDraft = provider.consumeRejectedDraft(sessionId: 'ses_1');
-        expect(rejectedDraft, isNull);
-      },
-    );
-
-    test(
-      'submitMessageWithQueue merges all queued messages into one dispatch after stream completion',
-      () async {
-        final firstStreamController =
-            StreamController<Either<Failure, ChatMessage>>();
-        addTearDown(() async {
-          await firstStreamController.close();
-        });
-
-        final assistantInitial = AssistantMessage(
-          id: 'msg_initial_queue_seed',
-          sessionId: 'ses_1',
-          time: DateTime.fromMillisecondsSinceEpoch(5000),
-          completedTime: DateTime.fromMillisecondsSinceEpoch(5100),
-          parts: const <MessagePart>[
-            TextPart(
-              id: 'part_initial_queue_seed',
-              messageId: 'msg_initial_queue_seed',
-              sessionId: 'ses_1',
-              text: 'initial response',
-            ),
-          ],
-        );
-
-        final assistantAfterQueueDrain = AssistantMessage(
-          id: 'msg_after_queue_drain',
+        final assistantAfterFollowUp = AssistantMessage(
+          id: 'msg_after_unbatched_follow_up',
           sessionId: 'ses_1',
           time: DateTime.fromMillisecondsSinceEpoch(5200),
           completedTime: DateTime.fromMillisecondsSinceEpoch(5300),
           parts: const <MessagePart>[
             TextPart(
-              id: 'part_after_queue_drain',
-              messageId: 'msg_after_queue_drain',
+              id: 'part_after_unbatched_follow_up',
+              messageId: 'msg_after_unbatched_follow_up',
               sessionId: 'ses_1',
-              text: 'queued response delivered',
+              text: 'latest follow-up delivered',
             ),
           ],
         );
 
         var sendCalls = 0;
-        chatRepository.sendMessageHandler = (_, _, _, _) {
+        final sentTexts = <String>[];
+        chatRepository.sendMessageHandler = (_, _, input, _) {
           sendCalls += 1;
+          final text = input.parts
+              .whereType<TextInputPart>()
+              .map((part) => part.text)
+              .join('\n');
+          sentTexts.add(text);
           if (sendCalls == 1) {
             return firstStreamController.stream;
           }
           return Stream<Either<Failure, ChatMessage>>.value(
-            Right(assistantAfterQueueDrain),
+            Right(assistantAfterFollowUp),
           );
         };
 
@@ -2014,238 +1859,74 @@ void main() {
         await provider.sendMessage('initial prompt');
         await Future<void>.delayed(const Duration(milliseconds: 10));
 
-        await provider.submitMessageWithQueue('queued follow-up');
-        await provider.submitMessageWithQueue('queued follow-up two');
+        await provider.submitMessage('follow-up one');
+        await provider.submitMessage('follow-up two');
+        await Future<void>.delayed(const Duration(milliseconds: 50));
 
-        expect(sendCalls, 1);
-        expect(provider.currentSessionQueuedMessageCount, 2);
-        final queuedFollowUpVisible = provider.messages
-            .whereType<UserMessage>()
-            .any((message) {
-              return message.parts.whereType<TextPart>().any(
-                (part) => part.text == 'queued follow-up',
-              );
-            });
-        expect(queuedFollowUpVisible, isTrue);
-        final queuedFollowUpTwoVisible = provider.messages
-            .whereType<UserMessage>()
-            .any((message) {
-              return message.parts.whereType<TextPart>().any(
-                (part) => part.text == 'queued follow-up two',
-              );
-            });
-        expect(queuedFollowUpTwoVisible, isTrue);
+        expect(chatRepository.abortSessionCallCount, 0);
+        expect(sendCalls, 3);
+        expect(sentTexts, <String>[
+          'initial prompt',
+          'follow-up one',
+          'follow-up two',
+        ]);
+      },
+    );
 
-        firstStreamController.add(Right(assistantInitial));
+    test('submitMessage preserves shell mode for busy follow-ups', () async {
+      final firstStreamController =
+          StreamController<Either<Failure, ChatMessage>>();
+      addTearDown(() async {
         await firstStreamController.close();
-        await Future<void>.delayed(const Duration(milliseconds: 140));
-
-        expect(sendCalls, 2);
-        expect(provider.currentSessionQueuedMessageCount, 0);
-        final dispatchedQueuedText = chatRepository.lastSendInput?.parts
-            .whereType<TextInputPart>()
-            .map((part) => part.text)
-            .join('\n');
-        expect(dispatchedQueuedText, 'queued follow-up\nqueued follow-up two');
-      },
-    );
-
-    test(
-      'submitMessageWithQueue preserves shell intent in mixed-mode merged payload',
-      () async {
-        final firstStreamController =
-            StreamController<Either<Failure, ChatMessage>>();
-        addTearDown(() async {
-          await firstStreamController.close();
-        });
-
-        final assistantInitial = AssistantMessage(
-          id: 'msg_initial_queue_mixed',
-          sessionId: 'ses_1',
-          time: DateTime.fromMillisecondsSinceEpoch(7000),
-          completedTime: DateTime.fromMillisecondsSinceEpoch(7100),
-          parts: const <MessagePart>[
-            TextPart(
-              id: 'part_initial_queue_mixed',
-              messageId: 'msg_initial_queue_mixed',
-              sessionId: 'ses_1',
-              text: 'initial response',
-            ),
-          ],
-        );
-
-        final assistantAfterQueueDrain = AssistantMessage(
-          id: 'msg_after_queue_mixed',
-          sessionId: 'ses_1',
-          time: DateTime.fromMillisecondsSinceEpoch(7200),
-          completedTime: DateTime.fromMillisecondsSinceEpoch(7300),
-          parts: const <MessagePart>[
-            TextPart(
-              id: 'part_after_queue_mixed',
-              messageId: 'msg_after_queue_mixed',
-              sessionId: 'ses_1',
-              text: 'queued response delivered',
-            ),
-          ],
-        );
-
-        var sendCalls = 0;
-        chatRepository.sendMessageHandler = (_, _, _, _) {
-          sendCalls += 1;
-          if (sendCalls == 1) {
-            return firstStreamController.stream;
-          }
-          return Stream<Either<Failure, ChatMessage>>.value(
-            Right(assistantAfterQueueDrain),
-          );
-        };
-
-        await provider.projectProvider.initializeProject();
-        await provider.loadSessions();
-        await provider.selectSession(provider.sessions.first);
-
-        await provider.sendMessage('initial prompt');
-        await Future<void>.delayed(const Duration(milliseconds: 10));
-
-        await provider.submitMessageWithQueue('normal follow-up');
-        await provider.submitMessageWithQueue('ls -la', shellMode: true);
-
-        firstStreamController.add(Right(assistantInitial));
-        await firstStreamController.close();
-        await Future<void>.delayed(const Duration(milliseconds: 140));
-
-        final dispatchedQueuedText = chatRepository.lastSendInput?.parts
-            .whereType<TextInputPart>()
-            .map((part) => part.text)
-            .join('\n');
-        expect(dispatchedQueuedText, 'normal follow-up\n!ls -la');
-      },
-    );
-
-    test(
-      'sendQueuedNow aborts current response and dispatches queued messages as one payload',
-      () async {
-        final firstStreamController =
-            StreamController<Either<Failure, ChatMessage>>();
-        var firstStreamCancelled = false;
-        firstStreamController.onCancel = () {
-          firstStreamCancelled = true;
-        };
-        addTearDown(() async {
-          await firstStreamController.close();
-        });
-
-        final assistantAfterSendNow = AssistantMessage(
-          id: 'msg_after_send_now',
-          sessionId: 'ses_1',
-          time: DateTime.fromMillisecondsSinceEpoch(6200),
-          completedTime: DateTime.fromMillisecondsSinceEpoch(6300),
-          parts: const <MessagePart>[
-            TextPart(
-              id: 'part_after_send_now',
-              messageId: 'msg_after_send_now',
-              sessionId: 'ses_1',
-              text: 'send-now response',
-            ),
-          ],
-        );
-
-        var sendCalls = 0;
-        chatRepository.sendMessageHandler = (_, _, _, _) {
-          sendCalls += 1;
-          if (sendCalls == 1) {
-            return firstStreamController.stream;
-          }
-          return Stream<Either<Failure, ChatMessage>>.value(
-            Right(assistantAfterSendNow),
-          );
-        };
-
-        await provider.projectProvider.initializeProject();
-        await provider.loadSessions();
-        await provider.selectSession(provider.sessions.first);
-
-        await provider.sendMessage('initial prompt');
-        await Future<void>.delayed(const Duration(milliseconds: 10));
-        await provider.submitMessageWithQueue('queued follow-up');
-        await provider.submitMessageWithQueue('queued follow-up two');
-
-        final sentNow = await provider.sendQueuedNow();
-        await Future<void>.delayed(const Duration(milliseconds: 120));
-
-        expect(sentNow, isTrue);
-        expect(chatRepository.abortSessionCallCount, 1);
-        expect(firstStreamCancelled, isTrue);
-        expect(sendCalls, 2);
-        expect(provider.currentSessionQueuedMessageCount, 0);
-        final dispatchedQueuedText = chatRepository.lastSendInput?.parts
-            .whereType<TextInputPart>()
-            .map((part) => part.text)
-            .join('\n');
-        expect(dispatchedQueuedText, 'queued follow-up\nqueued follow-up two');
-      },
-    );
-
-    test(
-      'sendQueuedNow keeps replacement stream active when abort-like session.error arrives',
-      () async {
-        final firstStreamController =
-            StreamController<Either<Failure, ChatMessage>>();
-        final secondStreamController =
-            StreamController<Either<Failure, ChatMessage>>();
-        addTearDown(() async {
-          await firstStreamController.close();
-          await secondStreamController.close();
-        });
-
-        var sendCalls = 0;
-        chatRepository.sendMessageHandler = (_, _, _, _) {
-          sendCalls += 1;
-          if (sendCalls == 1) {
-            return firstStreamController.stream;
-          }
-          return secondStreamController.stream;
-        };
-
-        await provider.projectProvider.initializeProject();
-        await provider.loadSessions();
-        await provider.selectSession(provider.sessions.first);
-
-        await provider.sendMessage('initial prompt');
-        await Future<void>.delayed(const Duration(milliseconds: 10));
-        await provider.submitMessageWithQueue('queued follow-up');
-
-        final sentNow = await provider.sendQueuedNow();
-        await Future<void>.delayed(const Duration(milliseconds: 40));
-
-        chatRepository.emitEvent(
-          const ChatEvent(
-            type: 'session.error',
-            properties: <String, dynamic>{
-              'sessionID': 'ses_1',
-              'error': <String, dynamic>{
-                'data': <String, dynamic>{'code': 'aborted'},
-              },
-            },
+      });
+      final assistantAfterShellFollowUp = AssistantMessage(
+        id: 'msg_after_busy_shell_follow_up',
+        sessionId: 'ses_1',
+        time: DateTime.fromMillisecondsSinceEpoch(7200),
+        completedTime: DateTime.fromMillisecondsSinceEpoch(7300),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'part_after_busy_shell_follow_up',
+            messageId: 'msg_after_busy_shell_follow_up',
+            sessionId: 'ses_1',
+            text: 'shell follow-up delivered',
           ),
+        ],
+      );
+
+      var sendCalls = 0;
+      chatRepository.sendMessageHandler = (_, _, _, _) {
+        sendCalls += 1;
+        if (sendCalls == 1) {
+          return firstStreamController.stream;
+        }
+        return Stream<Either<Failure, ChatMessage>>.value(
+          Right(assistantAfterShellFollowUp),
         );
+      };
 
-        await Future<void>.delayed(const Duration(milliseconds: 40));
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
 
-        expect(sentNow, isTrue);
-        expect(provider.state, ChatState.sending);
-        expect(provider.errorMessage, isNull);
+      await provider.sendMessage('initial prompt');
+      await Future<void>.delayed(const Duration(milliseconds: 10));
 
-        final errorBubbles = provider.messages
-            .whereType<AssistantMessage>()
-            .where((message) => message.error != null)
-            .toList(growable: false);
-        expect(errorBubbles, isEmpty);
-      },
-    );
+      await provider.submitMessage('ls -la', shellMode: true);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(chatRepository.abortSessionCallCount, 0);
+      expect(sendCalls, 2);
+      final dispatchedText = chatRepository.lastSendInput?.parts
+          .whereType<TextInputPart>()
+          .map((part) => part.text)
+          .join('\n');
+      expect(dispatchedText, 'ls -la');
+      expect(chatRepository.lastSendInput?.mode, 'shell');
+    });
 
     test(
-      'sendQueuedNow suppresses abort-like errors identified by code-only payload',
+      'abortActiveResponse suppresses abort-like errors identified by code-only payload',
       () async {
         final streamController =
             StreamController<Either<Failure, ChatMessage>>();
@@ -2286,183 +1967,6 @@ void main() {
             .where((message) => message.error != null)
             .toList(growable: false);
         expect(errorBubbles, isEmpty);
-      },
-    );
-
-    test(
-      'queued merged payload stays queued after send setup failure and can retry',
-      () async {
-        final firstStreamController =
-            StreamController<Either<Failure, ChatMessage>>();
-        addTearDown(() async {
-          await firstStreamController.close();
-        });
-
-        final assistantInitial = AssistantMessage(
-          id: 'msg_initial_queue_retry',
-          sessionId: 'ses_1',
-          time: DateTime.fromMillisecondsSinceEpoch(8000),
-          completedTime: DateTime.fromMillisecondsSinceEpoch(8100),
-          parts: const <MessagePart>[
-            TextPart(
-              id: 'part_initial_queue_retry',
-              messageId: 'msg_initial_queue_retry',
-              sessionId: 'ses_1',
-              text: 'initial response',
-            ),
-          ],
-        );
-
-        final assistantAfterRetry = AssistantMessage(
-          id: 'msg_after_queue_retry',
-          sessionId: 'ses_1',
-          time: DateTime.fromMillisecondsSinceEpoch(8200),
-          completedTime: DateTime.fromMillisecondsSinceEpoch(8300),
-          parts: const <MessagePart>[
-            TextPart(
-              id: 'part_after_queue_retry',
-              messageId: 'msg_after_queue_retry',
-              sessionId: 'ses_1',
-              text: 'queued response delivered',
-            ),
-          ],
-        );
-
-        var sendCalls = 0;
-        var failNextDispatch = true;
-        chatRepository.sendMessageHandler = (_, _, _, _) {
-          sendCalls += 1;
-          if (sendCalls == 1) {
-            return firstStreamController.stream;
-          }
-          if (failNextDispatch) {
-            failNextDispatch = false;
-            throw Exception('send setup failed');
-          }
-          return Stream<Either<Failure, ChatMessage>>.value(
-            Right(assistantAfterRetry),
-          );
-        };
-
-        await provider.projectProvider.initializeProject();
-        await provider.loadSessions();
-        await provider.selectSession(provider.sessions.first);
-
-        await provider.sendMessage('initial prompt');
-        await Future<void>.delayed(const Duration(milliseconds: 10));
-
-        await provider.submitMessageWithQueue('queued follow-up');
-        await provider.submitMessageWithQueue('queued follow-up two');
-
-        firstStreamController.add(Right(assistantInitial));
-        await firstStreamController.close();
-        await Future<void>.delayed(const Duration(milliseconds: 160));
-
-        expect(sendCalls, 2);
-        expect(provider.currentSessionQueuedMessageCount, 1);
-
-        final retried = await provider.sendQueuedNow();
-        await Future<void>.delayed(const Duration(milliseconds: 120));
-
-        expect(retried, isTrue);
-        expect(sendCalls, 3);
-        expect(provider.currentSessionQueuedMessageCount, 0);
-      },
-    );
-
-    test(
-      'queued send keeps retrying while busy and dispatches after session settles',
-      () async {
-        final inProgressAssistant = AssistantMessage(
-          id: 'msg_busy_tail',
-          sessionId: 'ses_1',
-          time: DateTime.fromMillisecondsSinceEpoch(9000),
-          parts: const <MessagePart>[
-            TextPart(
-              id: 'part_busy_tail',
-              messageId: 'msg_busy_tail',
-              sessionId: 'ses_1',
-              text: 'still running',
-            ),
-          ],
-        );
-        final settledAssistant = AssistantMessage(
-          id: 'msg_busy_tail',
-          sessionId: 'ses_1',
-          time: DateTime.fromMillisecondsSinceEpoch(9000),
-          completedTime: DateTime.fromMillisecondsSinceEpoch(9050),
-          parts: const <MessagePart>[
-            TextPart(
-              id: 'part_busy_tail_done',
-              messageId: 'msg_busy_tail',
-              sessionId: 'ses_1',
-              text: 'done',
-            ),
-          ],
-        );
-        final assistantAfterQueuedRetry = AssistantMessage(
-          id: 'msg_after_busy_retry',
-          sessionId: 'ses_1',
-          time: DateTime.fromMillisecondsSinceEpoch(9100),
-          completedTime: DateTime.fromMillisecondsSinceEpoch(9150),
-          parts: const <MessagePart>[
-            TextPart(
-              id: 'part_after_busy_retry',
-              messageId: 'msg_after_busy_retry',
-              sessionId: 'ses_1',
-              text: 'queued follow-up delivered',
-            ),
-          ],
-        );
-
-        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
-          inProgressAssistant,
-        ];
-        chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
-          'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
-        };
-
-        var sendCalls = 0;
-        chatRepository.sendMessageHandler = (_, _, _, _) {
-          sendCalls += 1;
-          return Stream<Either<Failure, ChatMessage>>.value(
-            Right(assistantAfterQueuedRetry),
-          );
-        };
-
-        await provider.projectProvider.initializeProject();
-        await provider.loadSessions();
-        await provider.selectSession(provider.sessions.first);
-
-        expect(provider.isCurrentSessionActivelyResponding, isTrue);
-
-        await provider.submitMessageWithQueue(
-          'first follow-up after completion',
-        );
-
-        expect(provider.currentSessionQueuedMessageCount, 1);
-        expect(sendCalls, 0);
-
-        unawaited(
-          Future<void>.delayed(const Duration(milliseconds: 1350), () async {
-            chatRepository.sessionStatusById =
-                const <String, SessionStatusInfo>{
-                  'ses_1': SessionStatusInfo(type: SessionStatusType.idle),
-                };
-            chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
-              settledAssistant,
-            ];
-            await provider.refreshActiveSessionView(
-              reason: 'queued-retry-settle',
-              includeStatus: true,
-            );
-          }),
-        );
-
-        await Future<void>.delayed(const Duration(milliseconds: 2600));
-
-        expect(sendCalls, 1);
-        expect(provider.currentSessionQueuedMessageCount, 0);
       },
     );
 
