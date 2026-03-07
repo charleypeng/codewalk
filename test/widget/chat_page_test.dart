@@ -6581,6 +6581,156 @@ void main() {
   );
 
   testWidgets(
+    'refresh keeps visible tool operations during optimistic echo reconcile',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_refresh_tool_reconcile',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Refresh Tool Reconcile',
+          ),
+        ],
+      );
+      final streamController = StreamController<Either<Failure, ChatMessage>>();
+      addTearDown(() async {
+        if (!streamController.isClosed) {
+          await streamController.close();
+        }
+      });
+      repository.sendMessageHandler = (_, _, _, _) => streamController.stream;
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      final chatInputFieldFinder = find.descendant(
+        of: find.byKey(const ValueKey<String>('composer_input_row')),
+        matching: find.byType(TextField),
+      );
+
+      await tester.enterText(chatInputFieldFinder, 'inspect repo');
+      await tester.pump();
+      await tester.tap(find.byIcon(Symbols.send_rounded));
+      await tester.pump();
+
+      final assistantStreaming = AssistantMessage(
+        id: 'msg_widget_tool_refresh_stream',
+        sessionId: 'ses_refresh_tool_reconcile',
+        time: DateTime.fromMillisecondsSinceEpoch(1200),
+        parts: <MessagePart>[
+          ToolPart(
+            id: 'part_widget_tool_refresh_stream',
+            messageId: 'msg_widget_tool_refresh_stream',
+            sessionId: 'ses_refresh_tool_reconcile',
+            callId: 'call_widget_tool_refresh_stream',
+            tool: 'bash',
+            state: ToolStateRunning(
+              input: const <String, dynamic>{
+                'description': 'Running command',
+                'command': 'ls',
+              },
+              time: DateTime.fromMillisecondsSinceEpoch(1200),
+            ),
+          ),
+        ],
+      );
+      streamController.add(Right(assistantStreaming));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 40));
+
+      expect(find.text('Details'), findsOneWidget);
+      await tester.tap(find.text('Details'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 40));
+      expect(find.text('Running command'), findsOneWidget);
+
+      final serverUserEcho = UserMessage(
+        id: 'msg_widget_user_refresh_stream',
+        sessionId: 'ses_refresh_tool_reconcile',
+        time: DateTime.fromMillisecondsSinceEpoch(1100),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'part_widget_user_refresh_stream',
+            messageId: 'msg_widget_user_refresh_stream',
+            sessionId: 'ses_refresh_tool_reconcile',
+            text: 'inspect repo',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_refresh_tool_reconcile'] =
+          <ChatMessage>[serverUserEcho, assistantStreaming];
+
+      await provider.refreshActiveSessionView(
+        reason: 'widget-stream-refresh',
+        includeStatus: false,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 40));
+
+      expect(find.text('Running command'), findsOneWidget);
+
+      repository.messagesBySession['ses_refresh_tool_reconcile'] =
+          <ChatMessage>[
+            serverUserEcho,
+            AssistantMessage(
+              id: 'msg_widget_tool_refresh_stream',
+              sessionId: 'ses_refresh_tool_reconcile',
+              time: DateTime.fromMillisecondsSinceEpoch(1200),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(1400),
+              parts: <MessagePart>[
+                ToolPart(
+                  id: 'part_widget_tool_refresh_stream',
+                  messageId: 'msg_widget_tool_refresh_stream',
+                  sessionId: 'ses_refresh_tool_reconcile',
+                  callId: 'call_widget_tool_refresh_stream',
+                  tool: 'bash',
+                  state: ToolStateCompleted(
+                    input: const <String, dynamic>{'command': 'ls'},
+                    output: 'README.md\nlib',
+                    time: ToolTime(
+                      start: DateTime.fromMillisecondsSinceEpoch(1200),
+                      end: DateTime.fromMillisecondsSinceEpoch(1350),
+                    ),
+                  ),
+                ),
+                const TextPart(
+                  id: 'part_widget_tool_refresh_stream_final',
+                  messageId: 'msg_widget_tool_refresh_stream',
+                  sessionId: 'ses_refresh_tool_reconcile',
+                  text: 'repo inspected',
+                ),
+              ],
+            ),
+          ];
+      await provider.refreshActiveSessionView(
+        reason: 'widget-final-stream-refresh',
+        includeStatus: false,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+
+      expect(find.text('repo inspected'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'updates final assistant bubble after message.updated with same id',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));

@@ -379,6 +379,7 @@ class ChatProvider extends ChangeNotifier {
   static const String _remoteAutoVariantValue = '__auto__';
   static const String _remoteAbortNoticeMessage = kChatAbortNoticeMessage;
   static const String _remoteAbortInlineErrorName = 'MessageAborted';
+  static const String _optimisticLocalUserMessageIdPrefix = 'local_user_';
   static const String _traceFinalPrefix = 'CW_TRACE_FINAL';
   static const Duration _interruptSendStatusPollInterval = Duration(
     milliseconds: 120,
@@ -764,9 +765,13 @@ class ChatProvider extends ChangeNotifier {
   // the bubble is treated as a confirmed server message. This silently breaks
   // reconciliation for all conversation turns after the first — the UI stays
   // stuck even though the assistant response arrives. (Regression: b0660a2)
+  bool _isOptimisticLocalUserMessageId(String messageId) {
+    return messageId.trim().startsWith(_optimisticLocalUserMessageIdPrefix);
+  }
+
   String _nextLocalUserMessageId() {
     _localMessageIdSequence += 1;
-    return 'local_user_${DateTime.now().microsecondsSinceEpoch}_${_localMessageIdSequence}';
+    return '${_optimisticLocalUserMessageIdPrefix}${DateTime.now().microsecondsSinceEpoch}_${_localMessageIdSequence}';
   }
 
   bool get _isExperimentalMultiDeviceSyncEnabled {
@@ -3336,6 +3341,12 @@ class ChatProvider extends ChangeNotifier {
             )
           : resolvedLocalMessageId;
 
+      assert(
+        _isOptimisticLocalUserMessageId(activeLocalMessageId),
+        'ADR-023 Pitfall P-001: pending optimistic user messages must keep '
+        'the `${ChatProvider._optimisticLocalUserMessageIdPrefix}` prefix.',
+      );
+
       _pendingLocalUserMessageIds.add(activeLocalMessageId);
       notifyListeners();
       _traceFinal(
@@ -3393,6 +3404,11 @@ class ChatProvider extends ChangeNotifier {
         variant: _selectedVariantId,
         mode: shellMode ? 'shell' : selectedAgentForSend,
         parts: inputParts,
+      );
+      assert(
+        input.messageId == null,
+        'ADR-023 Pitfall P-001: ChatProvider prompt_async sends must not '
+        'forward messageId.',
       );
 
       // Cancel previous subscription and invalidate stale callbacks.

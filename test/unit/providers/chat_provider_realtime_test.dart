@@ -396,6 +396,170 @@ void main() {
     );
 
     test(
+      'refresh keeps active tool stream visible while replay reconciles optimistic echo',
+      () async {
+        final sendStream = StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          if (!sendStream.isClosed) {
+            await sendStream.close();
+          }
+        });
+        chatRepository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        final started = await provider.sendMessage('inspect repo');
+        expect(started, isTrue);
+
+        await settleUntil(
+          () => provider.messages.whereType<UserMessage>().length == 1,
+          reason: 'Expected optimistic local user message to be appended.',
+        );
+
+        final serverUserEcho = UserMessage(
+          id: 'msg_user_stream_refresh',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1100),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'prt_user_stream_refresh',
+              messageId: 'msg_user_stream_refresh',
+              sessionId: 'ses_1',
+              text: 'inspect repo',
+            ),
+          ],
+        );
+        final assistantStreaming = AssistantMessage(
+          id: 'msg_tool_refresh_stream',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1200),
+          parts: <MessagePart>[
+            ToolPart(
+              id: 'part_tool_refresh_stream',
+              messageId: 'msg_tool_refresh_stream',
+              sessionId: 'ses_1',
+              callId: 'call_tool_refresh_stream',
+              tool: 'bash',
+              state: ToolStateRunning(
+                input: const <String, dynamic>{
+                  'description': 'Running command',
+                  'command': 'ls',
+                },
+                time: DateTime.fromMillisecondsSinceEpoch(1200),
+              ),
+            ),
+          ],
+        );
+
+        sendStream.add(Right(assistantStreaming));
+        await settleUntil(
+          () =>
+              provider.messages.whereType<AssistantMessage>().length == 1 &&
+              !(provider.messages.last as AssistantMessage).isCompleted,
+          reason:
+              'Expected tool-only streaming assistant message to stay visible.',
+        );
+
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          serverUserEcho,
+          assistantStreaming,
+        ];
+        await provider.refreshActiveSessionView(
+          reason: 'g4-streaming-tool-refresh',
+          includeStatus: false,
+        );
+
+        await settleUntil(
+          () =>
+              provider.messages.whereType<AssistantMessage>().length == 1 &&
+              provider.messages.whereType<AssistantMessage>().single.id ==
+                  'msg_tool_refresh_stream',
+          reason: 'Expected refresh to preserve the active tool stream.',
+        );
+
+        final refreshedAssistant = provider.messages
+            .whereType<AssistantMessage>()
+            .single;
+        expect(refreshedAssistant.isCompleted, isFalse);
+        expect(refreshedAssistant.parts.whereType<ToolPart>(), hasLength(1));
+        expect(
+          refreshedAssistant.parts.whereType<ToolPart>().single.state.status,
+          ToolStatus.running,
+        );
+        expect(
+          provider.messages.whereType<UserMessage>().map(
+            (message) => (message.parts.first as TextPart).text,
+          ),
+          everyElement(equals('inspect repo')),
+        );
+
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          serverUserEcho,
+          AssistantMessage(
+            id: 'msg_tool_refresh_stream',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1200),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1400),
+            parts: <MessagePart>[
+              ToolPart(
+                id: 'part_tool_refresh_stream',
+                messageId: 'msg_tool_refresh_stream',
+                sessionId: 'ses_1',
+                callId: 'call_tool_refresh_stream',
+                tool: 'bash',
+                state: ToolStateCompleted(
+                  input: const <String, dynamic>{'command': 'ls'},
+                  output: 'README.md\nlib',
+                  time: ToolTime(
+                    start: DateTime.fromMillisecondsSinceEpoch(1200),
+                    end: DateTime.fromMillisecondsSinceEpoch(1350),
+                  ),
+                ),
+              ),
+              const TextPart(
+                id: 'part_tool_refresh_stream_final',
+                messageId: 'msg_tool_refresh_stream',
+                sessionId: 'ses_1',
+                text: 'repo inspected',
+              ),
+            ],
+          ),
+        ];
+        await provider.refreshActiveSessionView(
+          reason: 'g4-final-tool-refresh',
+          includeStatus: false,
+        );
+
+        await settleUntil(
+          () =>
+              provider.messages.whereType<AssistantMessage>().length == 1 &&
+              provider.messages
+                  .whereType<AssistantMessage>()
+                  .single
+                  .isCompleted,
+          reason:
+              'Expected idle reconcile to reveal the final assistant response.',
+        );
+
+        final finalAssistant = provider.messages
+            .whereType<AssistantMessage>()
+            .single;
+        expect(finalAssistant.parts.whereType<ToolPart>(), hasLength(1));
+        expect(
+          finalAssistant.parts.whereType<TextPart>().single.text,
+          'repo inspected',
+        );
+        await sendStream.close();
+        await settleUntil(
+          () => provider.state == ChatState.loaded,
+          reason: 'Expected provider to leave sending state after refresh.',
+        );
+      },
+    );
+
+    test(
       'does not generate AI titles when server toggle is disabled',
       () async {
         final titleGenerator = _FakeChatTitleGenerator();
