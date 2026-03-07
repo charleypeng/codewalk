@@ -1544,6 +1544,109 @@ void main() {
     },
   );
 
+  testWidgets(
+    'keeps a manually opened tool visible when streaming transitions from single tool to multi-tool chain',
+    (WidgetTester tester) async {
+      AssistantMessage buildMessage({required bool includeSecondTool}) {
+        return AssistantMessage(
+          id: 'msg_tool_chain_transition',
+          sessionId: 'ses_tool_chain_transition',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          parts: <MessagePart>[
+            ToolPart(
+              id: 'part_tool_chain_transition_1',
+              messageId: 'msg_tool_chain_transition',
+              sessionId: 'ses_tool_chain_transition',
+              callId: 'call_chain_transition_1',
+              tool: 'bash',
+              state: ToolStateCompleted(
+                input: const <String, dynamic>{'command': 'pwd'},
+                output: '/tmp/project',
+                time: ToolTime(
+                  start: DateTime.fromMillisecondsSinceEpoch(1000),
+                  end: DateTime.fromMillisecondsSinceEpoch(1050),
+                ),
+              ),
+            ),
+            if (includeSecondTool)
+              ToolPart(
+                id: 'part_tool_chain_transition_2',
+                messageId: 'msg_tool_chain_transition',
+                sessionId: 'ses_tool_chain_transition',
+                callId: 'call_chain_transition_2',
+                tool: 'read',
+                state: ToolStateCompleted(
+                  input: const <String, dynamic>{'filePath': 'README.md'},
+                  output: 'hello',
+                  time: ToolTime(
+                    start: DateTime.fromMillisecondsSinceEpoch(1060),
+                    end: DateTime.fromMillisecondsSinceEpoch(1100),
+                  ),
+                ),
+              ),
+          ],
+        );
+      }
+
+      var message = buildMessage(includeSecondTool: false);
+      late StateSetter setHostState;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                setHostState = setState;
+                return ChatMessageWidget(
+                  message: message,
+                  isSessionActivelyResponding: true,
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>(
+            'tool_part_details_button_part_tool_chain_transition_1',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey<String>('tool_command_text')), findsOneWidget);
+
+      setHostState(() {
+        message = buildMessage(includeSecondTool: true);
+      });
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'tool_chain_toggle_msg_tool_chain_transition_call_chain_transition_1',
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Hide'), findsNWidgets(3));
+      expect(
+        find.byKey(const ValueKey<String>('tool_command_text')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'tool_part_details_button_part_tool_chain_transition_1',
+          ),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
   testWidgets('keeps completed tool chain expanded after parent rebuild', (
     WidgetTester tester,
   ) async {

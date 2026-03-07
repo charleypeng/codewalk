@@ -95,6 +95,9 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
             key: ValueKey<String>(
               'tool_part_details_toggle_$toolIdentityToken',
             ),
+            expanded: _isToolDetailsExpanded(toolIdentityToken),
+            onExpandedChanged: (expanded) =>
+                _setToolDetailsExpanded(toolIdentityToken, expanded),
             partId: part.id,
             hasDetails: hasDetails,
             details: _buildToolStateDetails(context, part.state, part.tool),
@@ -567,34 +570,24 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
   }
 }
 
-class _ToolPartDetailsToggle extends StatefulWidget {
+class _ToolPartDetailsToggle extends StatelessWidget {
   const _ToolPartDetailsToggle({
     super.key,
+    required this.expanded,
+    required this.onExpandedChanged,
     required this.partId,
     required this.hasDetails,
     required this.details,
   });
 
+  final bool expanded;
+  final ValueChanged<bool> onExpandedChanged;
   final String partId;
   final bool hasDetails;
   final Widget details;
-
-  @override
-  State<_ToolPartDetailsToggle> createState() => _ToolPartDetailsToggleState();
-}
-
-class _ToolPartDetailsToggleState extends State<_ToolPartDetailsToggle> {
-  late bool _expanded;
-
-  @override
-  void initState() {
-    super.initState();
-    _expanded = false;
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (!widget.hasDetails) {
+    if (!hasDetails) {
       return const SizedBox.shrink();
     }
     final compactLayout = MediaQuery.sizeOf(context).width < 600;
@@ -602,23 +595,19 @@ class _ToolPartDetailsToggleState extends State<_ToolPartDetailsToggle> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (_expanded) widget.details,
+        if (expanded) details,
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(
-            key: ValueKey<String>('tool_part_details_button_${widget.partId}'),
-            onPressed: () {
-              setState(() {
-                _expanded = !_expanded;
-              });
-            },
+            key: ValueKey<String>('tool_part_details_button_$partId'),
+            onPressed: () => onExpandedChanged(!expanded),
             style: TextButton.styleFrom(
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             ),
             child: Text(
-              _expanded ? 'Hide' : (compactLayout ? 'Show' : 'Details'),
+              expanded ? 'Hide' : (compactLayout ? 'Show' : 'Details'),
               style: Theme.of(context).textTheme.labelSmall,
             ),
           ),

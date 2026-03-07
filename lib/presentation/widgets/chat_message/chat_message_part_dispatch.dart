@@ -182,8 +182,16 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
         }
         final chainWidget = _CollapsibleToolChain(
           key: ValueKey<String>('tool_chain_${message.id}_$chainIdentityToken'),
+          expanded: _resolveToolChainExpanded(
+            chainIdentityToken,
+            allToolSurfaceParts,
+          ),
           messageId: message.id,
           startPartId: chainStartPartId,
+          onExpandedChanged: (expanded) => _setToolChainExpanded(
+            chainIdentityToken,
+            expanded,
+          ),
           toolDescriptionLabelBuilder: _resolveToolDescriptionLabel,
           toolTypeLabelBuilder: _resolveToolTypeLabel,
           parts: allToolSurfaceParts,
@@ -259,52 +267,40 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
   }
 }
 
-class _CollapsibleToolChain extends StatefulWidget {
+class _CollapsibleToolChain extends StatelessWidget {
   const _CollapsibleToolChain({
     super.key,
+    required this.expanded,
     required this.messageId,
     required this.startPartId,
+    required this.onExpandedChanged,
     required this.toolDescriptionLabelBuilder,
     required this.toolTypeLabelBuilder,
     required this.parts,
     required this.partBuilder,
   });
 
+  final bool expanded;
   final String messageId;
   final String startPartId;
+  final ValueChanged<bool> onExpandedChanged;
   final String Function(ToolPart part) toolDescriptionLabelBuilder;
   final String Function(ToolPart part) toolTypeLabelBuilder;
   final List<MessagePart> parts;
   final Widget Function(MessagePart part) partBuilder;
-
-  @override
-  State<_CollapsibleToolChain> createState() => _CollapsibleToolChainState();
-}
-
-class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
-  late bool _expanded;
-
   bool _isCompactLayout(BuildContext context) {
     return MediaQuery.sizeOf(context).width < 600;
   }
 
   void _toggleExpanded() {
-    setState(() {
-      _expanded = !_expanded;
-    });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _expanded = false;
+    onExpandedChanged(!expanded);
   }
 
   String _buildCollapsedPrimaryLabel({required bool compact}) {
-    final toolParts = widget.parts.whereType<ToolPart>().toList(
+    final toolParts = parts.whereType<ToolPart>().toList(
       growable: false,
     );
-    final patchCount = widget.parts.whereType<PatchPart>().length;
+    final patchCount = parts.whereType<PatchPart>().length;
 
     if (compact) {
       if (toolParts.isEmpty) {
@@ -325,7 +321,7 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
     }
 
     final toolDescriptions = toolParts
-        .map(widget.toolDescriptionLabelBuilder)
+        .map(toolDescriptionLabelBuilder)
         .map((label) => label.trim())
         .where((label) => label.isNotEmpty)
         .toList(growable: false);
@@ -357,9 +353,9 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
   }
 
   String? _buildCollapsedSecondaryLabel() {
-    final toolTypes = widget.parts
+    final toolTypes = parts
         .whereType<ToolPart>()
-        .map(widget.toolTypeLabelBuilder)
+        .map(toolTypeLabelBuilder)
         .map((label) => label.trim())
         .where((label) => label.isNotEmpty)
         .toList(growable: false);
@@ -384,11 +380,10 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
   }
 
   String _buildExpandedSummaryLabel() {
-    final toolParts = widget.parts.whereType<ToolPart>().toList(
+    final toolParts = parts.whereType<ToolPart>().toList(
       growable: false,
     );
-    final patchCount = widget.parts.whereType<PatchPart>().length;
-
+    final patchCount = parts.whereType<PatchPart>().length;
     if (toolParts.isEmpty) {
       return patchCount == 1 ? '1 patch' : '$patchCount patches';
     }
@@ -419,6 +414,7 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
 
   @override
   Widget build(BuildContext context) {
+    final _expanded = expanded;
     final colorScheme = Theme.of(context).colorScheme;
     final disableAnimations =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
@@ -436,7 +432,7 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
 
     return Container(
       key: ValueKey<String>(
-        'tool_chain_container_${widget.messageId}_${widget.startPartId}',
+        'tool_chain_container_${messageId}_$startPartId',
       ),
       margin: const EdgeInsets.symmetric(vertical: 4),
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
@@ -481,7 +477,7 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
               ),
               TextButton(
                 key: ValueKey<String>(
-                  'tool_chain_toggle_${widget.messageId}_${widget.startPartId}',
+                  'tool_chain_toggle_${messageId}_$startPartId',
                 ),
                 onPressed: _toggleExpanded,
                 style: TextButton.styleFrom(
@@ -511,13 +507,13 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ...widget.parts.map<Widget>(widget.partBuilder),
+                        ...parts.map<Widget>(partBuilder),
                         const SizedBox(height: 10),
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton.icon(
                             key: ValueKey<String>(
-                              'tool_chain_bottom_toggle_${widget.messageId}_${widget.startPartId}',
+                              'tool_chain_bottom_toggle_${messageId}_$startPartId',
                             ),
                             onPressed: _toggleExpanded,
                             style: TextButton.styleFrom(

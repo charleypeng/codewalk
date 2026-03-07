@@ -83,6 +83,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   bool _lastShowToolCalls = true;
   bool _lastResponding = false;
   bool _lastQueued = false;
+  int _lastLocalUiStateVersion = 0;
   ValueChanged<SubtaskPart>? _lastSubtaskNavigate;
   ValueChanged<ToolPart>? _lastTaskToolNavigate;
   double _lastVisualDensityVertical = 0;
@@ -93,7 +94,10 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   final Map<String, String> _stableIdentityByPartKey = <String, String>{};
   final Map<String, String> _stableIdentityByCallKey = <String, String>{};
   final Map<String, String> _stableIdentityByHashKey = <String, String>{};
+  final Map<String, bool> _toolChainExpandedById = <String, bool>{};
+  final Map<String, bool> _toolDetailsExpandedById = <String, bool>{};
   int _stableIdentitySequence = 0;
+  int _localUiStateVersion = 0;
 
   String _nextStableIdentity(String prefix) {
     _stableIdentitySequence += 1;
@@ -206,6 +210,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         widget.showToolCallBubbles == _lastShowToolCalls &&
         widget.isSessionActivelyResponding == _lastResponding &&
         widget.isQueuedUserMessage == _lastQueued &&
+        _localUiStateVersion == _lastLocalUiStateVersion &&
         identical(widget.onSubtaskNavigate, _lastSubtaskNavigate) &&
         identical(widget.onTaskToolNavigate, _lastTaskToolNavigate) &&
         density.vertical == _lastVisualDensityVertical &&
@@ -223,6 +228,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     _lastShowToolCalls = widget.showToolCallBubbles;
     _lastResponding = widget.isSessionActivelyResponding;
     _lastQueued = widget.isQueuedUserMessage;
+    _lastLocalUiStateVersion = _localUiStateVersion;
     _lastSubtaskNavigate = widget.onSubtaskNavigate;
     _lastTaskToolNavigate = widget.onTaskToolNavigate;
     _lastVisualDensityVertical = density.vertical;
@@ -290,7 +296,10 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     _stableIdentityByPartKey.clear();
     _stableIdentityByCallKey.clear();
     _stableIdentityByHashKey.clear();
+    _toolChainExpandedById.clear();
+    _toolDetailsExpandedById.clear();
     _stableIdentitySequence = 0;
+    _localUiStateVersion = 0;
     _seenPartIds
       ..clear()
       ..addAll(currentMessage.parts.map(_partIdentityToken));
@@ -346,6 +355,48 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
 
   bool _shouldAnimatePartArrival(MessagePart part) {
     return _newlyArrivedPartIds.contains(_partIdentityToken(part));
+  }
+
+  bool _isToolDetailsExpanded(String toolIdentityToken) {
+    return _toolDetailsExpandedById[toolIdentityToken] ?? false;
+  }
+
+  void _setToolDetailsExpanded(String toolIdentityToken, bool expanded) {
+    final previous = _toolDetailsExpandedById[toolIdentityToken];
+    if (previous == expanded) {
+      return;
+    }
+    setState(() {
+      _toolDetailsExpandedById[toolIdentityToken] = expanded;
+      _localUiStateVersion += 1;
+    });
+  }
+
+  bool _resolveToolChainExpanded(
+    String chainIdentityToken,
+    List<MessagePart> parts,
+  ) {
+    final explicit = _toolChainExpandedById[chainIdentityToken];
+    if (explicit != null) {
+      return explicit;
+    }
+    for (final toolPart in parts.whereType<ToolPart>()) {
+      if (_isToolDetailsExpanded(_partIdentityToken(toolPart))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void _setToolChainExpanded(String chainIdentityToken, bool expanded) {
+    final previous = _toolChainExpandedById[chainIdentityToken];
+    if (previous == expanded) {
+      return;
+    }
+    setState(() {
+      _toolChainExpandedById[chainIdentityToken] = expanded;
+      _localUiStateVersion += 1;
+    });
   }
 
   // -- Shared utilities used by 3+ part clusters --
