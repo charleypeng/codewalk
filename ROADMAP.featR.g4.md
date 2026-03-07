@@ -11,7 +11,7 @@ status: "Implemented"
 - **make check**: Passed
 - **Android Build**: Produced
 - **Caption**: `featR g4: optimistic message reconciliation parity`
-- **Commit**: (Pending)
+- **Commit**: e0a090f, d6d6166
 
 ## Objective
 Align optimistic send IDs and message reconciliation logic with the official OpenCode/Web contract. Eliminate local heuristics like `local_user_*` in favor of official `messageId` handling.
