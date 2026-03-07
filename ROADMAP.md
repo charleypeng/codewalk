@@ -1,11 +1,21 @@
-# ROADMAP
+---
+feature: "featR"
+spec: |
+  OpenCode parity convergence plan for optimistic reconciliation, child-session
+  composition, send/stop lifecycle, realtime cleanup, and final convergence
+  sweep.
+---
 
-## featR
+## Task List
 
-1. `featR g1 - Contract Safety Net and Test Harness` — `ROADMAP.featR.g1.md`
-2. `featR g2 - Tool Call UI Stabilization and Parity` — `ROADMAP.featR.g2.md`
-3. `featR g3 - Child Thread Composer Parity` — `ROADMAP.featR.g3.md`
-4. `featR g4 - Optimistic Message IDs and Reconciliation` — `ROADMAP.featR.g4.md`
-5. `featR g5 - Send, Stop, and Queue Parity` — `ROADMAP.featR.g5.md`
-6. `featR g6 - Realtime Lifecycle and Pending Interaction Convergence` — `ROADMAP.featR.g6.md`
-7. `featR g7 - Ancillary Parity Cleanup and Final Convergence Sweep` — `ROADMAP.featR.g7.md`
+### Feature 1: featR - OpenCode parity convergence
+
+Description: Compact tracker for featR steps. Visit the referenced `ROADMAP.featR.gX.md` file for the full implementation brief of each step.
+
+- [x] 1.01 Contract Safety Net and Test Harness - Related commits: be52f3e bd578cb - File: `ROADMAP.featR.g1.md`
+- [x] 1.02 Tool Call UI Stabilization and Parity - Related commits: 34f7723 6ae21cc 1ae7a82 - File: `ROADMAP.featR.g2.md`
+- [ ] 1.03 Child Thread Composer Parity - File: `ROADMAP.featR.g3.md`
+- [x] 1.04 Optimistic Message IDs and Reconciliation - Commit hash: e0a090f - File: `ROADMAP.featR.g4.md`
+- [ ] 1.05 Send, Stop, and Queue Parity - File: `ROADMAP.featR.g5.md`
+- [ ] 1.06 Realtime Lifecycle and Pending Interaction Convergence - File: `ROADMAP.featR.g6.md`
+- [ ] 1.07 Ancillary Parity Cleanup and Final Convergence Sweep - File: `ROADMAP.featR.g7.md`
