@@ -2,7 +2,7 @@
 feature: "featR g2 - Tool Call UI Stabilization and Parity"
 group: "featR.g2"
 dependency: "featR.g1"
-status: "Pending"
+status: "Delivered"
 ---
 
 # featR g2 - Tool Call UI Stabilization and Parity
@@ -55,10 +55,10 @@ The current tool-call UI suffers from "jumping" or flickering when stream update
 -   **No Flicker**: The primary goal is 0px of unexpected layout shift.
 
 ## Acceptance Checklist / Definition of Done
--   [ ] Tool calls are closed by default on app launch and session switch.
--   [ ] Expanding a tool call manually stays expanded even as new messages arrive in the timeline.
--   [ ] 0 flicker or layout shift during active tool-call streaming.
--   [ ] `make check` passes.
+-   [x] Tool calls are closed by default on app launch and session switch.
+-   [x] Expanding a tool call manually stays expanded even as new messages arrive in the timeline.
+-   [x] 0 flicker or layout shift during active tool-call streaming.
+-   [x] `make check` passes.
 
 ## Validation and Test Plan
 -   Use the g1 test harness to simulate a tool call receiving 10 incremental `stdout` chunks.
