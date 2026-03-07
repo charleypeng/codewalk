@@ -2,7 +2,7 @@
 feature: "featR g5 - Send, Stop, and Queue Parity"
 group: "featR.g5"
 dependency: "featR.g4"
-status: "In Progress"
+status: "Completed"
 ---
 
 # featR g5 - Send, Stop, and Queue Parity
@@ -55,12 +55,12 @@ CodeWalk currently implements a complex local "send-while-busy" queue, including
 -   **Strict ADR-023 Compliance**: Every behavior change must be verified against the official contract to prevent semantic drift.
 
 ## Acceptance Checklist / Definition of Done
--   [ ] Sending while busy follows official server-authoritative queue behavior.
--   [ ] Local "queued" placeholders and client-only queue orchestration are removed.
--   [ ] "Send now" is completely removed from the UI and logic.
--   [ ] Stop button reliably aborts only the active server-side task.
--   [ ] Chat lifecycle UI is driven by server events, not custom client bookkeeping.
--   [ ] `make check` passes.
+- [x] Sending while busy follows official server-authoritative queue behavior.
+- [x] Local "queued" placeholders and client-only queue orchestration are removed.
+- [x] "Send now" is completely removed from the UI and logic.
+- [x] Stop button reliably aborts only the active server-side task.
+- [x] Chat lifecycle UI is driven by server events, not custom client bookkeeping.
+- [x] `make check` passes.
 
 ## Validation and Test Plan
 -   Regression coverage for send-while-busy, stop/abort, and queue visibility behavior.
