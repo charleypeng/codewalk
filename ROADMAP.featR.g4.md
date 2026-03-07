@@ -2,16 +2,10 @@
 feature: "featR g4 - Optimistic Message IDs and Reconciliation"
 group: "featR.g4"
 dependency: "featR.g1"
-status: "Implemented"
+status: "Pending"
 ---
 
 # featR g4 - Optimistic Message IDs and Reconciliation
-
-## Delivery Status
-- **make check**: Passed
-- **Android Build**: Produced
-- **Caption**: `featR g4: optimistic message reconciliation parity`
-- **Commit**: e0a090f, d6d6166
 
 ## Objective
 Align optimistic send IDs and message reconciliation logic with the official OpenCode/Web contract. Eliminate local heuristics like `local_user_*` in favor of official `messageId` handling.
@@ -59,12 +53,12 @@ CodeWalk currently uses custom prefixes and signature-based heuristics to match 
 -   **No Dual Paths**: Do not keep the old heuristic as a "fallback". If the ID-based path fails, fix the ID generation, don't fall back to fuzzy matching.
 -   **No Stale Workarounds**: The future agent must not preserve any "signature-based" matching just because it exists today.
 -   **Fidelity First**: If the official contract requires a specific ID format (e.g., client-generated UUID), use it exactly.
-## Acceptance Checklist / Definition of Done
-- [x] Messages are reconciled via `messageId` only.
-- [x] Rapid-fire sending does not result in duplicated bubbles.
-- [x] `local_user_*` logic is completely removed from the codebase.
-- [x] `make check` (with g1 replay tests) passes 100%.
 
+## Acceptance Checklist / Definition of Done
+-   [ ] Messages are reconciled via `messageId` only.
+-   [ ] Rapid-fire sending does not result in duplicated bubbles.
+-   [ ] `local_user_*` logic is completely removed from the codebase.
+-   [ ] `make check` (with g1 replay tests) passes 100%.
 
 ## Validation and Test Plan
 -   Use the g1 harness to simulate: `Local Prompt (ID: A)` -> `Server Echo (ID: A)` -> `Server Stream (ID: A)`.

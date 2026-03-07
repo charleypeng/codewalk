@@ -987,20 +987,21 @@ Related: ADR-003, ADR-018, ADR-019, ADR-022.
 
 #### Pitfall P-001: Optimistic user message ID format (regression `b0660a2`, 2026-03-02)
 
-**Summary**: CodeWalk uses official ascending `msg_*` optimistic user IDs and forwards `messageId` in send payloads. Message reconciliation is performed by exact `messageID` match only.
+**Summary**: Using a server-format ID (e.g. `msg_*`) for the optimistic user bubble, or forwarding `messageId` in the `prompt_async` send payload, breaks SSE event stream reconciliation for all conversation turns after the first — the UI update is silently discarded even though audio/notifications fire normally.
 
-**Note**: Regression `b0660a2` occurred because server-format IDs (`msg_*`) were introduced while the legacy heuristic merge path still expected `local_user_*` prefixes. The correct fix is implementing exact-ID reconciliation, not reverting to local-only IDs.
+**Symptom**: The app plays the "response completed" sound and notification for turns 2+, but the UI stays stuck on the previous state (e.g. "Reasoning...") — the new assistant response is received by the SSE stream but the UI update is silently discarded during merge. The session recovers only after a manual switch and return.
 
-**Contract Guidance**:
-1. Optimistic user message IDs MUST follow official ascending `msg_*` format.
-2. The `messageId` field MUST be forwarded in the `prompt_async` send payload.
-3. Message reconciliation MUST use exact `messageId` matching.
+**Root cause**: The SSE merge logic uses the `local_user_*` prefix to identify optimistic bubbles that are candidates for duplicate-echo suppression. When the optimistic ID looks like a server message (`msg_*`), the prefix check short-circuits to `false` and the bubble is treated as a confirmed server message. On the next server event, the merge finds a conflict between the retained "server-looking" local message and the real server echo, causing the UI update for subsequent turns to be silently discarded.
+
+**Invariant — do not violate**:
+1. Optimistic user message IDs MUST use the `local_user_<timestamp>_<seq>` format.
+2. The `messageId` field MUST NOT be forwarded in the `prompt_async` send payload.
+3. Duplicate detection MUST use content-signature matching gated by the `local_user_` prefix check.
 
 **Code locations** (see comments in source for details):
 - `lib/presentation/providers/chat_provider.dart`:
   - `_nextLocalUserMessageId()`
-  - `sendMessage()` → `ChatInput` construction (includes `messageId`)
+  - `sendMessage()` → `ChatInput` construction (no `messageId` field)
 - `lib/presentation/providers/chat_provider/chat_provider_message_merge_ops.dart` → `_shouldSkipLocalUserAppendAsDuplicateEcho()`
-
 
 **See also**: BEHAVIOR.md § "Optimistic user message ID uses local prefix — never server format".
