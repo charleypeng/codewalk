@@ -662,56 +662,52 @@ void main() {
       },
     );
 
-    test(
-      'switching sessions keeps in-flight stream alive to avoid unintended abort',
-      () async {
-        chatRepository.sessions.add(
-          ChatSession(
-            id: 'ses_2',
-            workspaceId: 'default',
-            time: DateTime.fromMillisecondsSinceEpoch(1500),
-            title: 'Session 2',
-          ),
-        );
+    test('switching sessions cancels the previous in-flight stream', () async {
+      chatRepository.sessions.add(
+        ChatSession(
+          id: 'ses_2',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1500),
+          title: 'Session 2',
+        ),
+      );
 
-        final streamController =
-            StreamController<Either<Failure, ChatMessage>>();
-        var streamCancelled = false;
-        streamController.onCancel = () {
-          streamCancelled = true;
-        };
-        addTearDown(() async {
-          await streamController.close();
-        });
+      final streamController = StreamController<Either<Failure, ChatMessage>>();
+      var streamCancelled = false;
+      streamController.onCancel = () {
+        streamCancelled = true;
+      };
+      addTearDown(() async {
+        await streamController.close();
+      });
 
-        chatRepository.sendMessageHandler = (_, _, _, _) {
-          return streamController.stream;
-        };
+      chatRepository.sendMessageHandler = (_, _, _, _) {
+        return streamController.stream;
+      };
 
-        await provider.projectProvider.initializeProject();
-        await provider.loadSessions();
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
 
-        final session1 = provider.sessions
-            .where((item) => item.id == 'ses_1')
-            .first;
-        final session2 = provider.sessions
-            .where((item) => item.id == 'ses_2')
-            .first;
+      final session1 = provider.sessions
+          .where((item) => item.id == 'ses_1')
+          .first;
+      final session2 = provider.sessions
+          .where((item) => item.id == 'ses_2')
+          .first;
 
-        await provider.selectSession(session1);
-        await provider.sendMessage('keep stream alive');
-        await Future<void>.delayed(const Duration(milliseconds: 20));
+      await provider.selectSession(session1);
+      await provider.sendMessage('keep stream alive');
+      await Future<void>.delayed(const Duration(milliseconds: 20));
 
-        await provider.selectSession(session2);
-        await Future<void>.delayed(const Duration(milliseconds: 20));
+      await provider.selectSession(session2);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
 
-        expect(provider.currentSession?.id, 'ses_2');
-        expect(streamCancelled, isFalse);
-      },
-    );
+      expect(provider.currentSession?.id, 'ses_2');
+      expect(streamCancelled, isTrue);
+    });
 
     test(
-      'switching back to a session reloads messages from server instead of stale stream',
+      'switching back to a session reloads messages from server after canceling the stale stream',
       () async {
         chatRepository.sessions.add(
           ChatSession(
@@ -772,7 +768,7 @@ void main() {
         await provider.selectSession(session2);
         await Future<void>.delayed(const Duration(milliseconds: 20));
 
-        // Stream callbacks are silenced (stale generation) but stream is alive.
+        // Stream callbacks stay irrelevant after the session switch.
         streamController.add(
           Right(
             AssistantMessage(
@@ -797,8 +793,8 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 20));
 
         expect(provider.currentSession?.id, 'ses_1');
-        // Stream subscription is preserved (not cancelled).
-        expect(streamCancelled, isFalse);
+        // The previous stream subscription is canceled on switch.
+        expect(streamCancelled, isTrue);
         // Messages come from server, not from the stale stream.
         final assistant = provider.messages
             .whereType<AssistantMessage>()
@@ -810,7 +806,7 @@ void main() {
     );
 
     test(
-      'sending in another session does not cancel previous session stream',
+      'sending in another session cancels the previous session stream',
       () async {
         chatRepository.sessions.add(
           ChatSession(
@@ -859,7 +855,7 @@ void main() {
         await provider.sendMessage('second session prompt');
         await Future<void>.delayed(const Duration(milliseconds: 20));
 
-        expect(firstStreamCancelled, isFalse);
+        expect(firstStreamCancelled, isTrue);
       },
     );
 

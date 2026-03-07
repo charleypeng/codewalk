@@ -21,7 +21,7 @@ extension _ChatProviderAbortPolicyOps on ChatProvider {
 
   void _appendInlineAbortMessage({required String sessionId}) {
     AppLogger.info(
-      'appendInlineAbortMessage session=$sessionId isCurrent=${_currentSession?.id == sessionId} hasPreservedStream=${_hasPreservedStreamForSession(sessionId)}',
+      'appendInlineAbortMessage session=$sessionId isCurrent=${_currentSession?.id == sessionId}',
     );
     if (_currentSession?.id != sessionId) {
       return;

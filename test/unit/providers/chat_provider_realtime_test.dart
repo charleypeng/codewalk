@@ -1295,7 +1295,7 @@ void main() {
     );
 
     test(
-      'session.idle reconciles current session when latest assistant lacks final visible text',
+      'session.idle no longer triggers fallback refresh for current session completion',
       () async {
         chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
           AssistantMessage(
@@ -1330,23 +1330,6 @@ void main() {
 
         final callsBeforeIdle = chatRepository.getMessagesCallCount;
 
-        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
-          AssistantMessage(
-            id: 'msg_tool_placeholder',
-            sessionId: 'ses_1',
-            time: DateTime.fromMillisecondsSinceEpoch(1100),
-            completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
-            parts: const <MessagePart>[
-              TextPart(
-                id: 'part_tool_placeholder_final',
-                messageId: 'msg_tool_placeholder',
-                sessionId: 'ses_1',
-                text: 'final assistant response',
-              ),
-            ],
-          ),
-        ];
-
         chatRepository.emitEvent(
           const ChatEvent(
             type: 'session.idle',
@@ -1358,19 +1341,13 @@ void main() {
         final latestAssistant = provider.messages
             .whereType<AssistantMessage>()
             .last;
-        expect(
-          (latestAssistant.parts.single as TextPart).text,
-          'final assistant response',
-        );
-        expect(
-          chatRepository.getMessagesCallCount,
-          greaterThan(callsBeforeIdle),
-        );
+        expect(latestAssistant.isCompleted, isTrue);
+        expect(chatRepository.getMessagesCallCount, equals(callsBeforeIdle));
       },
     );
 
     test(
-      'session.idle final reconcile is not blocked by abort suppression window',
+      'session.idle does not bypass lifecycle cleanup rules during abort suppression',
       () async {
         provider = buildProvider(
           abortSuppressionWindow: const Duration(seconds: 1),
@@ -1411,22 +1388,6 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 30));
 
         final callsBeforeIdle = chatRepository.getMessagesCallCount;
-        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
-          AssistantMessage(
-            id: 'msg_abort_window_tool_only',
-            sessionId: 'ses_1',
-            time: DateTime.fromMillisecondsSinceEpoch(2100),
-            completedTime: DateTime.fromMillisecondsSinceEpoch(2200),
-            parts: const <MessagePart>[
-              TextPart(
-                id: 'part_abort_window_final',
-                messageId: 'msg_abort_window_tool_only',
-                sessionId: 'ses_1',
-                text: 'final response after abort suppression',
-              ),
-            ],
-          ),
-        ];
 
         chatRepository.emitEvent(
           const ChatEvent(
@@ -1436,22 +1397,16 @@ void main() {
         );
         await Future<void>.delayed(const Duration(milliseconds: 80));
 
-        expect(
-          chatRepository.getMessagesCallCount,
-          greaterThan(callsBeforeIdle),
-        );
+        expect(chatRepository.getMessagesCallCount, equals(callsBeforeIdle));
         final latestAssistant = provider.messages
             .whereType<AssistantMessage>()
             .last;
-        expect(
-          (latestAssistant.parts.single as TextPart).text,
-          'final response after abort suppression',
-        );
+        expect(latestAssistant.isCompleted, isTrue);
       },
     );
 
     test(
-      'session.idle is ignored while current send stream is in-flight',
+      'session.idle updates status but does not tear down an in-flight send stream',
       () async {
         final sendController =
             StreamController<Either<Failure, ChatMessage>>.broadcast();
@@ -1467,22 +1422,6 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 30));
 
         final callsBeforeIdle = chatRepository.getMessagesCallCount;
-        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
-          AssistantMessage(
-            id: 'msg_idle_reconcile_final',
-            sessionId: 'ses_1',
-            time: DateTime.fromMillisecondsSinceEpoch(3100),
-            completedTime: DateTime.fromMillisecondsSinceEpoch(3200),
-            parts: const <MessagePart>[
-              TextPart(
-                id: 'part_idle_reconcile_final',
-                messageId: 'msg_idle_reconcile_final',
-                sessionId: 'ses_1',
-                text: 'final response resolved on idle',
-              ),
-            ],
-          ),
-        ];
 
         chatRepository.emitEvent(
           const ChatEvent(
@@ -1493,23 +1432,41 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 80));
 
         expect(chatRepository.getMessagesCallCount, equals(callsBeforeIdle));
+        expect(provider.currentSessionStatus?.type, SessionStatusType.idle);
         expect(provider.state, ChatState.sending);
         expect(provider.isCurrentSessionActivelyResponding, isTrue);
+
+        sendController.add(
+          Right(
+            AssistantMessage(
+              id: 'msg_idle_reconcile_final',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(3100),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(3200),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_idle_reconcile_final',
+                  messageId: 'msg_idle_reconcile_final',
+                  sessionId: 'ses_1',
+                  text: 'final response resolved on stream',
+                ),
+              ],
+            ),
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
 
         await sendController.close();
         await Future<void>.delayed(const Duration(milliseconds: 80));
 
-        expect(
-          chatRepository.getMessagesCallCount,
-          greaterThan(callsBeforeIdle),
-        );
+        expect(chatRepository.getMessagesCallCount, equals(callsBeforeIdle));
         expect(provider.state, ChatState.loaded);
         final latestAssistant = provider.messages
             .whereType<AssistantMessage>()
             .last;
         expect(
           (latestAssistant.parts.single as TextPart).text,
-          'final response resolved on idle',
+          'final response resolved on stream',
         );
       },
     );

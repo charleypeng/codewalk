@@ -16,14 +16,7 @@ extension _ChatProviderSessionOps on ChatProvider {
     await _cancelActiveMessageSubscription(
       reason: 'context-switch',
       invalidateGeneration: true,
-      preserveActiveStream: reason == 'project',
     );
-    // Drain preserved subscriptions for non-project scope switches.
-    if (reason != 'project') {
-      await _cancelPreservedMessageSubscriptions(
-        reason: 'context-switch-$reason',
-      );
-    }
     final eventSubscription = _eventSubscription;
     final globalEventSubscription = _globalEventSubscription;
     _eventSubscription = null;

@@ -8,8 +8,7 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
     if (!allowInteraction) {
       return const SizedBox.shrink();
     }
-    final permissionRequests = chatProvider.currentThreadPermissionRequests;
-    final currentSessionId = chatProvider.currentSession?.id;
+    final permissionRequests = chatProvider.currentSessionPermissions;
     final questionRequest = chatProvider.currentQuestionRequest;
     if (permissionRequests.isEmpty && questionRequest == null) {
       return const SizedBox.shrink();
@@ -24,11 +23,6 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
             ),
             request: permissionRequest,
             busy: chatProvider.isRespondingInteraction,
-            originBadgeLabel:
-                currentSessionId != null &&
-                    permissionRequest.sessionId != currentSessionId
-                ? 'Subagent'
-                : null,
             onDecide: (reply) {
               unawaited(
                 chatProvider.respondPermissionRequest(

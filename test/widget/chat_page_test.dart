@@ -3279,7 +3279,7 @@ void main() {
             'interaction_permission_request_perm_mirror_1',
           ),
         ),
-        findsOneWidget,
+        findsNothing,
       );
       expect(
         find.byKey(
@@ -3287,21 +3287,8 @@ void main() {
         ),
         findsNothing,
       );
-      expect(find.text('Subagent'), findsOneWidget);
-
-      await tester.tap(find.text('Allow Once').first);
-      await tester.pumpAndSettle();
-
-      expect(repository.lastPermissionRequestId, 'perm_mirror_1');
-      expect(
-        find.byKey(
-          const ValueKey<String>(
-            'interaction_permission_request_perm_mirror_1',
-          ),
-        ),
-        findsNothing,
-      );
       expect(find.text('Subagent'), findsNothing);
+      expect(repository.lastPermissionRequestId, isNull);
     },
   );
 

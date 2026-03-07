@@ -1,61 +1,16 @@
 part of '../chat_provider.dart';
 
 extension _ChatProviderRealtimeOps on ChatProvider {
-  Future<void> _cancelPreservedMessageSubscriptions({
-    required String reason,
-  }) async {
-    if (_preservedMessageSubscriptions.isEmpty) {
-      return;
-    }
-    final preserved = List<StreamSubscription<dynamic>>.from(
-      _preservedMessageSubscriptions.keys,
-    );
-    _preservedMessageSubscriptions.clear();
-    for (final subscription in preserved) {
-      await _cancelSubscriptionSafely(
-        subscription,
-        label: 'preserved message stream ($reason)',
-      );
-    }
-  }
-
-  /// Whether a preserved (background) stream subscription is still draining
-  /// for [sessionId]. Used by the event reducer to defer completion marking.
-  bool _hasPreservedStreamForSession(String sessionId) {
-    return _preservedMessageSubscriptions.containsValue(sessionId);
-  }
-
   Future<void> _cancelActiveMessageSubscription({
     required String reason,
     bool invalidateGeneration = false,
-    bool preserveActiveStream = false,
   }) async {
     final active = _messageSubscription;
-    if (preserveActiveStream && active != null) {
-      final preservedSessionId = _activeMessageStreamSessionId ?? '';
-      if (preservedSessionId.isEmpty) {
-        AppLogger.warn(
-          'Preserving stream with unknown session ID reason=$reason',
-        );
-      }
-      _preservedMessageSubscriptions[active] = preservedSessionId;
-      // Detach from active tracking so the new session starts clean.
-      _messageSubscription = null;
-      _activeMessageStreamSessionId = null;
-      if (invalidateGeneration) {
-        _messageStreamGeneration += 1;
-      }
-      AppLogger.info('Keeping active message stream reason=$reason');
-      return;
-    }
     if (invalidateGeneration) {
       _messageStreamGeneration += 1;
     }
     _messageSubscription = null;
     _activeMessageStreamSessionId = null;
-    if (active != null) {
-      _preservedMessageSubscriptions.remove(active);
-    }
     await _cancelSubscriptionSafely(active, label: 'message stream ($reason)');
   }
 

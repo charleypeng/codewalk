@@ -198,23 +198,16 @@ class ChatProvider extends ChangeNotifier {
   // builder can short-circuit its cache check in O(1) instead of computing
   // Object.hashAll over all messages+parts (O(N*M)) on every build.
   int _messagesVersion = 0;
-  // Monotonic counter bumped on every mutation to the four inputs of
-  // currentThreadPermissionRequests (_pendingPermissionsBySession,
-  // _sessionChildrenById, _sessions, _currentSession) so the getter can
-  // short-circuit its BFS traversal + collection allocation in O(1).
+  // Monotonic counter bumped on every mutation that affects the visible
+  // current-session permission list so the getter can reuse the same immutable
+  // snapshot between rebuilds.
   int _threadPermissionsVersion = 0;
   int _cachedThreadPermissionsAtVersion = -1;
   List<ChatPermissionRequest> _cachedThreadPermissionRequests = const [];
-  int _cachedChildMapAtVersion = -1;
-  Map<String, List<String>> _cachedChildSessionIdsByParent = const {};
   String? _errorMessage;
   StreamSubscription<dynamic>? _messageSubscription;
   StreamSubscription<dynamic>? _eventSubscription;
   StreamSubscription<dynamic>? _globalEventSubscription;
-  // Maps preserved stream subscriptions to their originating session ID so
-  // the event reducer can check whether a session still has an active stream.
-  final Map<StreamSubscription<dynamic>, String>
-  _preservedMessageSubscriptions = <StreamSubscription<dynamic>, String>{};
   int _eventStreamGeneration = 0;
   Timer? _globalRefreshDebounce;
   bool _isRespondingInteraction = false;
@@ -256,15 +249,6 @@ class ChatProvider extends ChangeNotifier {
   bool _isNewChatDraftActive = false;
   Future<void>? _lazySessionBootstrapTask;
   _RejectedDraftEnvelope? _rejectedDraft;
-  // One-shot guard: tracks the session+turn that last fired a final-message
-  // reconcile, preventing duplicate reconciles from repeated session.idle
-  // events within the same completion cycle.
-  String? _lastIdleReconcileSessionTurnKey;
-  final Map<String, String> _deferredIdleReconcileTurnKeyBySessionId =
-      <String, String>{};
-  int _idleReconcileEvaluations = 0;
-  int _idleReconcileTriggers = 0;
-  int _idleReconcileSkips = 0;
   final LinkedHashMap<String, List<ChatMessage>> _sessionMessagesLruCache =
       LinkedHashMap<String, List<ChatMessage>>();
 
@@ -424,16 +408,13 @@ class ChatProvider extends ChangeNotifier {
         ? false
         : DateTime.now().difference(_abortSuppressionStartedAt!) <=
               _abortSuppressionWindow;
-    final preserved = effectiveSessionId == '-'
-        ? false
-        : _hasPreservedStreamForSession(effectiveSessionId);
     final lastMessage = _messages.isEmpty ? '-' : _messages.last.id;
     final suffix = details == null || details.trim().isEmpty
         ? ''
         : ' details=${details.trim()}';
 
     AppLogger.info(
-      '$_traceFinalPrefix provider event=$event session=$effectiveSessionId current=${currentSessionId ?? "-"} state=${_state.name} status=$statusLabel activeStream=${_activeMessageStreamSessionId ?? "-"} hasSub=${_messageSubscription != null} preserved=$preserved abortSuppressed=$abortSuppressed messages=${_messages.length} last=$lastMessage$suffix',
+      '$_traceFinalPrefix provider event=$event session=$effectiveSessionId current=${currentSessionId ?? "-"} state=${_state.name} status=$statusLabel activeStream=${_activeMessageStreamSessionId ?? "-"} hasSub=${_messageSubscription != null} abortSuppressed=$abortSuppressed messages=${_messages.length} last=$lastMessage$suffix',
     );
   }
 
@@ -737,9 +718,6 @@ class ChatProvider extends ChangeNotifier {
     if (_hasLocalActiveSelectionSyncWork) {
       return true;
     }
-    if (_preservedMessageSubscriptions.isNotEmpty) {
-      return true;
-    }
     if (_hasAnyActiveAbortSuppression) {
       return true;
     }
@@ -974,107 +952,18 @@ class ChatProvider extends ChangeNotifier {
       return _cachedThreadPermissionRequests;
     }
 
-    final currentSessionId = _currentSession?.id;
-    if (currentSessionId == null || currentSessionId.isEmpty) {
+    final visiblePermissions = this.currentSessionPermissions;
+    if (visiblePermissions.isEmpty) {
       _cachedThreadPermissionsAtVersion = _threadPermissionsVersion;
       _cachedThreadPermissionRequests = const <ChatPermissionRequest>[];
       return _cachedThreadPermissionRequests;
     }
 
-    final orderedSessionIds = <String>[
-      currentSessionId,
-      ..._orderedCurrentSessionDescendantIds(),
-    ];
-    final seenRequestIds = <String>{};
-    final collected = <ChatPermissionRequest>[];
-
-    for (final sessionId in orderedSessionIds) {
-      final sessionRequests = _pendingPermissionsBySession[sessionId];
-      if (sessionRequests == null || sessionRequests.isEmpty) {
-        continue;
-      }
-      for (final request in sessionRequests) {
-        if (seenRequestIds.add(request.id)) {
-          collected.add(request);
-        }
-      }
-    }
-
     _cachedThreadPermissionsAtVersion = _threadPermissionsVersion;
     _cachedThreadPermissionRequests = List<ChatPermissionRequest>.unmodifiable(
-      collected,
+      visiblePermissions,
     );
     return _cachedThreadPermissionRequests;
-  }
-
-  List<String> _orderedCurrentSessionDescendantIds() {
-    final currentSessionId = _currentSession?.id;
-    if (currentSessionId == null || currentSessionId.isEmpty) {
-      return const <String>[];
-    }
-
-    final childIdsByParent = _childSessionIdsByParent();
-    if (childIdsByParent.isEmpty) {
-      return const <String>[];
-    }
-
-    final visited = <String>{currentSessionId};
-    final orderedDescendants = <String>[];
-    final queue = ListQueue<String>()..add(currentSessionId);
-
-    while (queue.isNotEmpty) {
-      final parentId = queue.removeFirst();
-      final childIds = childIdsByParent[parentId] ?? const <String>[];
-      for (final childId in childIds) {
-        if (!visited.add(childId)) {
-          continue;
-        }
-        orderedDescendants.add(childId);
-        queue.add(childId);
-      }
-    }
-
-    return orderedDescendants;
-  }
-
-  Map<String, List<String>> _childSessionIdsByParent() {
-    if (_cachedChildMapAtVersion == _threadPermissionsVersion) {
-      return _cachedChildSessionIdsByParent;
-    }
-
-    final output = <String, List<String>>{};
-
-    void appendChild({required String parentId, required String childId}) {
-      if (parentId.isEmpty || childId.isEmpty || parentId == childId) {
-        return;
-      }
-      final children = output.putIfAbsent(parentId, () => <String>[]);
-      if (!children.contains(childId)) {
-        children.add(childId);
-      }
-    }
-
-    for (final session in _sessions) {
-      final parentId = session.parentId?.trim();
-      if (parentId == null || parentId.isEmpty) {
-        continue;
-      }
-      appendChild(parentId: parentId, childId: session.id);
-    }
-
-    for (final entry in _sessionChildrenById.entries) {
-      final parentId = entry.key.trim();
-      if (parentId.isEmpty) {
-        continue;
-      }
-      for (final child in entry.value) {
-        appendChild(parentId: parentId, childId: child.id);
-      }
-    }
-
-    _cachedChildMapAtVersion = _threadPermissionsVersion;
-    _cachedChildSessionIdsByParent = output;
-    return output;
   }
 
   List<ChatSession> get currentSessionChildren {
@@ -2400,14 +2289,10 @@ class ChatProvider extends ChangeNotifier {
 
     await _cancelActiveMessageSubscription(
       reason: 'session-switch',
-      // Invalidate generation so preserved stream callbacks become stale and
-      // return early — prevents cross-session message corruption. Messages
-      // are reloaded from server when the user switches back.
       invalidateGeneration: true,
-      preserveActiveStream: true,
     );
     AppLogger.info(
-      'selectSession generation=$_messageStreamGeneration preserved=${_preservedMessageSubscriptions.length} target=${session.id}',
+      'selectSession generation=$_messageStreamGeneration target=${session.id}',
     );
 
     // Save current session ID and try cache-first restore (SWR).
@@ -2776,28 +2661,18 @@ class ChatProvider extends ChangeNotifier {
       );
 
       // Cancel previous subscription and invalidate stale callbacks.
-      final hasOtherSessionActiveStream =
-          _messageSubscription != null &&
-          _activeMessageStreamSessionId != null &&
-          _activeMessageStreamSessionId != sendSessionId;
       _traceFinal(
         'send-cancel-previous-subscription',
         sessionId: sendSessionId,
-        details:
-            'preserveOtherSession=$hasOtherSessionActiveStream previousActive=${_activeMessageStreamSessionId ?? "-"}',
+        details: 'previousActive=${_activeMessageStreamSessionId ?? "-"}',
       );
       await _cancelActiveMessageSubscription(
         reason: 'start-send',
         invalidateGeneration: true,
-        preserveActiveStream: hasOtherSessionActiveStream,
       );
       final streamGeneration = _messageStreamGeneration;
       final streamSessionId = sendSessionId;
       _activeMessageStreamSessionId = streamSessionId;
-      // Reset one-shot reconcile guard so the new turn can trigger a reconcile
-      // if the final message ends up missing.
-      _lastIdleReconcileSessionTurnKey = null;
-      _deferredIdleReconcileTurnKeyBySessionId.remove(streamSessionId);
       _traceFinal(
         'send-stream-ready',
         sessionId: streamSessionId,
@@ -2898,11 +2773,6 @@ class ChatProvider extends ChangeNotifier {
                 sessionId: streamSessionId,
                 details: 'error=$error',
               );
-              final deferredIdleTurnKey =
-                  _deferredIdleReconcileTurnKeyBySessionId.remove(
-                    streamSessionId,
-                  );
-              _preservedMessageSubscriptions.remove(sendSubscription);
               if (streamGeneration != _messageStreamGeneration) {
                 if (identical(_messageSubscription, sendSubscription)) {
                   _messageSubscription = null;
@@ -2943,30 +2813,6 @@ class ChatProvider extends ChangeNotifier {
                 _notifyListeners();
                 return;
               }
-              if (deferredIdleTurnKey != null &&
-                  deferredIdleTurnKey.isNotEmpty &&
-                  _lastIdleReconcileSessionTurnKey != deferredIdleTurnKey) {
-                _lastIdleReconcileSessionTurnKey = deferredIdleTurnKey;
-                _traceFinal(
-                  'send-stream-onerror-run-deferred-idle-reconcile',
-                  sessionId: streamSessionId,
-                  details:
-                      'turnKey=$deferredIdleTurnKey reason=session-idle-deferred-reconcile-onerror',
-                );
-                unawaited(
-                  refreshActiveSessionView(
-                    reason: 'session-idle-deferred-reconcile-onerror',
-                    includeStatus: false,
-                    allowDuringAbortSuppression: true,
-                  ).catchError((Object reconcileError, StackTrace stackTrace) {
-                    AppLogger.warn(
-                      'Deferred idle reconcile after send stream error failed session=$streamSessionId',
-                      error: reconcileError,
-                      stackTrace: stackTrace,
-                    );
-                  }),
-                );
-              }
               _presentServerErrorForCurrentSession(
                 sessionId: streamSessionId,
                 rawMessage: error.toString(),
@@ -2979,11 +2825,6 @@ class ChatProvider extends ChangeNotifier {
                 details:
                     'eventGeneration=$streamGeneration active=$_messageStreamGeneration',
               );
-              final deferredIdleTurnKey =
-                  _deferredIdleReconcileTurnKeyBySessionId.remove(
-                    streamSessionId,
-                  );
-              _preservedMessageSubscriptions.remove(sendSubscription);
               if (streamGeneration != _messageStreamGeneration) {
                 if (identical(_messageSubscription, sendSubscription)) {
                   _messageSubscription = null;
@@ -3034,33 +2875,6 @@ class ChatProvider extends ChangeNotifier {
                   sessionId: streamSessionId,
                 );
                 _setState(ChatState.loaded);
-                if (deferredIdleTurnKey != null &&
-                    deferredIdleTurnKey.isNotEmpty &&
-                    _lastIdleReconcileSessionTurnKey != deferredIdleTurnKey) {
-                  _lastIdleReconcileSessionTurnKey = deferredIdleTurnKey;
-                  _traceFinal(
-                    'send-stream-ondone-run-deferred-idle-reconcile',
-                    sessionId: streamSessionId,
-                    details:
-                        'turnKey=$deferredIdleTurnKey reason=session-idle-deferred-reconcile',
-                  );
-                  unawaited(
-                    refreshActiveSessionView(
-                      reason: 'session-idle-deferred-reconcile',
-                      includeStatus: false,
-                      allowDuringAbortSuppression: true,
-                    ).catchError((
-                      Object reconcileError,
-                      StackTrace stackTrace,
-                    ) {
-                      AppLogger.warn(
-                        'Deferred idle reconcile after send stream completion failed session=$streamSessionId',
-                        error: reconcileError,
-                        stackTrace: stackTrace,
-                      );
-                    }),
-                  );
-                }
                 unawaited(_persistLastSessionSnapshotBestEffort());
                 unawaited(loadSessionInsights(streamSessionId, silent: true));
               } else {
@@ -3542,7 +3356,6 @@ class ChatProvider extends ChangeNotifier {
         invalidateGeneration: true,
       ),
     );
-    unawaited(_cancelPreservedMessageSubscriptions(reason: 'dispose'));
     _eventStreamGeneration += 1;
     _eventSubscription?.cancel();
     _globalEventSubscription?.cancel();

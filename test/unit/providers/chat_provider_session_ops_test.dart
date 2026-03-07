@@ -635,7 +635,7 @@ void main() {
     });
 
     test(
-      'session.idle does not clear active stream activity for current session',
+      'session.idle keeps current send stream responsive until stream teardown',
       () async {
         final sendStream = StreamController<Either<Failure, ChatMessage>>();
         addTearDown(() async {
@@ -659,10 +659,7 @@ void main() {
         );
         await Future<void>.delayed(const Duration(milliseconds: 30));
 
-        expect(
-          provider.currentSessionStatus?.type,
-          isNot(SessionStatusType.idle),
-        );
+        expect(provider.currentSessionStatus?.type, SessionStatusType.idle);
         expect(provider.isCurrentSessionActivelyResponding, isTrue);
         expect(provider.canAbortActiveResponse, isTrue);
       },

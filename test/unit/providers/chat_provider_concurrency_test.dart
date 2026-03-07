@@ -191,7 +191,7 @@ void main() {
 
     group('multi-session concurrency', () {
       test(
-        'selectSession invalidates generation so preserved stream callbacks are stale',
+        'selectSession invalidates generation so stale send stream callbacks are ignored',
         () async {
           chatRepository.sessions.add(
             ChatSession(
@@ -257,72 +257,69 @@ void main() {
         },
       );
 
-      test(
-        'preserved stream onDone with stale generation does not set session idle',
-        () async {
-          chatRepository.sessions.add(
-            ChatSession(
-              id: 'ses_2',
-              workspaceId: 'default',
-              time: DateTime.fromMillisecondsSinceEpoch(1500),
-              title: 'Session 2',
-            ),
-          );
+      test('canceled stale stream onDone does not set session idle', () async {
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_2',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1500),
+            title: 'Session 2',
+          ),
+        );
 
-          final streamController =
-              StreamController<Either<Failure, ChatMessage>>();
-          addTearDown(() async {
-            if (!streamController.isClosed) {
-              await streamController.close();
-            }
-          });
+        final streamController =
+            StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          if (!streamController.isClosed) {
+            await streamController.close();
+          }
+        });
 
-          chatRepository.sendMessageHandler =
-              (projectId, sessionId, input, directory) {
-                return streamController.stream;
-              };
+        chatRepository.sendMessageHandler =
+            (projectId, sessionId, input, directory) {
+              return streamController.stream;
+            };
 
-          await provider.projectProvider.initializeProject();
-          await provider.loadSessions();
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
 
-          final session1 = provider.sessions
-              .where((item) => item.id == 'ses_1')
-              .first;
-          final session2 = provider.sessions
-              .where((item) => item.id == 'ses_2')
-              .first;
+        final session1 = provider.sessions
+            .where((item) => item.id == 'ses_1')
+            .first;
+        final session2 = provider.sessions
+            .where((item) => item.id == 'ses_2')
+            .first;
 
-          // Pre-set busy status for ses_1 so it persists through init.
-          chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
-            'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
-          };
+        // Pre-set busy status for ses_1 so it persists through init.
+        chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+          'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
+        };
 
-          await provider.selectSession(session1);
-          await provider.initializeProviders();
-          await provider.sendMessage('send in A');
-          await Future<void>.delayed(const Duration(milliseconds: 20));
+        await provider.selectSession(session1);
+        await provider.initializeProviders();
+        await provider.sendMessage('send in A');
+        await Future<void>.delayed(const Duration(milliseconds: 20));
 
-          await provider.selectSession(session2);
-          await Future<void>.delayed(const Duration(milliseconds: 20));
+        await provider.selectSession(session2);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
 
-          // Close stream A (onDone fires) — generation is stale so provider
-          // should NOT mark session A as idle or change state.
-          await streamController.close();
-          await Future<void>.delayed(const Duration(milliseconds: 40));
+        // Close stream A (onDone fires) — generation is stale so provider
+        // should NOT mark session A as idle or change state.
+        await streamController.close();
+        await Future<void>.delayed(const Duration(milliseconds: 40));
 
-          // Session B is still current and state is not unexpectedly loaded.
-          expect(provider.currentSession?.id, 'ses_2');
-          // Session A was not set to idle by the stale onDone; the busy status
-          // from the event persists.
-          expect(
-            provider.sessionStatusById['ses_1']?.type,
-            SessionStatusType.busy,
-          );
-        },
-      );
+        // Session B is still current and state is not unexpectedly loaded.
+        expect(provider.currentSession?.id, 'ses_2');
+        // Session A was not set to idle by the stale onDone; the busy status
+        // from the event persists.
+        expect(
+          provider.sessionStatusById['ses_1']?.type,
+          SessionStatusType.busy,
+        );
+      });
 
       test(
-        'session.idle defers completion when preserved stream exists',
+        'session.idle for a non-current session does not disrupt the current session',
         () async {
           chatRepository.sessions.add(
             ChatSession(
@@ -360,9 +357,7 @@ void main() {
           await provider.selectSession(session2);
           await Future<void>.delayed(const Duration(milliseconds: 20));
 
-          // Emit session.idle for session A while preserved stream is alive.
-          // The event reducer should NOT mark incomplete messages as completed
-          // because the preserved stream has not finished yet.
+          // Emit session.idle for session A after switching away from it.
           chatRepository.emitEvent(
             const ChatEvent(
               type: 'session.idle',
@@ -384,7 +379,7 @@ void main() {
       );
 
       test(
-        'session.error non-current defers completion when preserved stream exists',
+        'session.error for a non-current session keeps the current session stable',
         () async {
           chatRepository.sessions.add(
             ChatSession(
@@ -422,8 +417,7 @@ void main() {
           await provider.selectSession(session2);
           await Future<void>.delayed(const Duration(milliseconds: 20));
 
-          // Emit session.error for non-current session A while preserved
-          // stream is still draining.
+          // Emit session.error for non-current session A after switching away.
           chatRepository.emitEvent(
             const ChatEvent(
               type: 'session.error',
@@ -449,7 +443,7 @@ void main() {
       );
 
       test(
-        'selectSession preserves stream subscription and increments generation',
+        'selectSession cancels the active stream subscription and increments generation',
         () async {
           chatRepository.sessions.add(
             ChatSession(
@@ -491,8 +485,8 @@ void main() {
           await provider.selectSession(session2);
           await Future<void>.delayed(const Duration(milliseconds: 20));
 
-          // Stream should NOT be cancelled (preserved).
-          expect(streamCancelled, isFalse);
+          // Stream should be cancelled when the user leaves the session.
+          expect(streamCancelled, isTrue);
 
           // Messages delivered on the stale stream should be ignored.
           streamController.add(
@@ -517,8 +511,8 @@ void main() {
           // Session B message list should remain empty.
           expect(provider.currentSession?.id, 'ses_2');
           expect(provider.messages, isEmpty);
-          // Stream is still alive.
-          expect(streamCancelled, isFalse);
+          // Stream stays canceled after the switch.
+          expect(streamCancelled, isTrue);
         },
       );
     });

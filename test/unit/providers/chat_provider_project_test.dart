@@ -212,7 +212,7 @@ void main() {
 
         expect(
           provider.currentThreadPermissionRequests.map((item) => item.id),
-          <String>['perm_root_1', 'perm_sub_1'],
+          <String>['perm_root_1'],
         );
         final currentSessionId = provider.currentSession?.id;
         final subagentRequestIds = provider.currentThreadPermissionRequests
@@ -220,7 +220,7 @@ void main() {
             .map((item) => item.id)
             .toList(growable: false);
 
-        expect(subagentRequestIds, <String>['perm_sub_1']);
+        expect(subagentRequestIds, isEmpty);
       },
     );
 
@@ -459,7 +459,7 @@ void main() {
         await scopedProvider.onProjectScopeChanged();
         await Future<void>.delayed(const Duration(milliseconds: 20));
 
-        expect(streamCancelled, isFalse);
+        expect(streamCancelled, isTrue);
       },
     );
 
