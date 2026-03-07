@@ -43,10 +43,26 @@ extension _ChatProviderMessageStateOps on ChatProvider {
   }
 
   void _sortMessagesForTimeline(List<ChatMessage> messages) {
-    if (!messages.every(_hasOfficialTimelineMessageId)) {
+    final allOfficialIds = messages.every(_hasOfficialTimelineMessageId);
+    if (allOfficialIds) {
+      messages.sort((a, b) => a.id.compareTo(b.id));
       return;
     }
-    messages.sort((a, b) => a.id.compareTo(b.id));
+
+    final hasPendingOptimisticUser = messages.any(
+      (message) => _pendingLocalUserMessageIds.contains(message.id),
+    );
+    if (hasPendingOptimisticUser) {
+      return;
+    }
+
+    messages.sort((a, b) {
+      final byTime = a.time.compareTo(b.time);
+      if (byTime != 0) {
+        return byTime;
+      }
+      return a.id.compareTo(b.id);
+    });
   }
 
   String _extractAutoTitleText(ChatMessage message) {
