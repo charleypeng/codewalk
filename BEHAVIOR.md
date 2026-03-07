@@ -258,10 +258,14 @@
 ### Tool call work groups collapse after completion
 
 - **Given** the assistant executes tool calls during a response (file reads, commands, etc.)
+- **When** tool updates are still arriving for the active response
+- **Then** manual expansion of a visible tool call or tool-call chain is preserved while the response is still streaming
+- **Then** if a single visible tool block grows into a multi-tool chain during that same active response, the user-open state is carried into the grouped view instead of snapping shut
 - **When** the assistant finishes the complete response
 - **Then** tool-call chains and tool-detail sections start collapsed by default
 - **Then** collapse never happens while the assistant is still streaming
 - **Then** manual expansion is temporary and is not restored after return/revalidation
+- **Then** when the final completed assistant-work group is compacted for the finished response, that completed group is shown collapsed by default even if a streaming-era tool block was manually expanded earlier in the turn
 - **Then** the user can manually re-expand any collapsed work group by tapping its Details toggle
 - **Then** once manually expanded, a completed tool-call group stays expanded during normal timeline rebuilds (scroll state updates, background refresh, and other parent re-renders) so the user can keep reading without involuntary collapse
 - **Then** automatic collapse is only applied when collapse mode is activated for that rendered group, not on every subsequent rebuild
