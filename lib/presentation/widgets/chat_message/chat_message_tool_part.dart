@@ -3,6 +3,10 @@ part of '../chat_message_widget.dart';
 /// Tool part rendering: status chip, details toggle, command/output sections,
 /// and diff visualization.
 extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
+  String _toolPartIdentityToken(ToolPart part) {
+    return _partIdentityToken(part);
+  }
+
   Widget _buildToolPart(
     BuildContext context,
     ToolPart part, {
@@ -15,8 +19,10 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
     final typeLabel = _resolveToolTypeLabel(part);
     final isTaskTool = _normalizeToolName(part.tool) == 'task';
     final hasDetails = part.state.status != ToolStatus.pending;
+    final toolIdentityToken = _toolPartIdentityToken(part);
 
     return Container(
+      key: ValueKey<String>('tool_part_container_$toolIdentityToken'),
       margin: const EdgeInsets.symmetric(vertical: 4),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -86,7 +92,9 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
           ),
           const SizedBox(height: 8),
           _ToolPartDetailsToggle(
-            key: ValueKey<String>('tool_part_details_toggle_${part.id}'),
+            key: ValueKey<String>(
+              'tool_part_details_toggle_$toolIdentityToken',
+            ),
             partId: part.id,
             hasDetails: hasDetails,
             details: _buildToolStateDetails(context, part.state, part.tool),

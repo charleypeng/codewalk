@@ -933,9 +933,7 @@ void main() {
         expect(find.text('Thinking Process'), findsOneWidget);
         expect(
           find.byKey(
-            const ValueKey<String>(
-              'tool_chain_toggle_msg_display_toggles_part_display_tool',
-            ),
+            const ValueKey<String>('tool_part_details_button_part_display_tool'),
           ),
           findsOneWidget,
         );
@@ -952,9 +950,7 @@ void main() {
         expect(find.text('Thinking Process'), findsNothing);
         expect(
           find.byKey(
-            const ValueKey<String>(
-              'tool_chain_toggle_msg_display_toggles_part_display_tool',
-            ),
+            const ValueKey<String>('tool_part_details_button_part_display_tool'),
           ),
           findsOneWidget,
         );
@@ -970,9 +966,7 @@ void main() {
 
         expect(
           find.byKey(
-            const ValueKey<String>(
-              'tool_chain_toggle_msg_display_toggles_part_display_tool',
-            ),
+            const ValueKey<String>('tool_part_details_button_part_display_tool'),
           ),
           findsNothing,
         );
@@ -5954,7 +5948,7 @@ void main() {
       await tester.tap(
         find.byKey(
           const ValueKey<String>(
-            'tool_chain_toggle_msg_tool_state_a_part_tool_state_a_1',
+            'tool_chain_toggle_msg_tool_state_a_call_tool_state_a_1',
           ),
         ),
       );
@@ -6419,7 +6413,7 @@ void main() {
     await tester.tap(
       find.byKey(
         const ValueKey<String>(
-          'tool_chain_toggle_merged_tool_run_msg_merge_tool_1_part_merge_tool_1',
+          'tool_chain_toggle_merged_tool_run_msg_merge_tool_1_call_merge_tool_1',
         ),
       ),
     );

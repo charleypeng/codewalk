@@ -190,6 +190,153 @@ void main() {
     },
   );
 
+  testWidgets(
+    'preserves expanded tool details when stream replacement keeps call id but changes part id',
+    (WidgetTester tester) async {
+      AssistantMessage messageWithTool({
+        required String partId,
+        required String output,
+      }) {
+        return AssistantMessage(
+          id: 'msg_tool_callid_persist',
+          sessionId: 'ses_tool_callid_persist',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          parts: <MessagePart>[
+            ToolPart(
+              id: partId,
+              messageId: 'msg_tool_callid_persist',
+              sessionId: 'ses_tool_callid_persist',
+              callId: 'call_tool_callid_persist',
+              tool: 'bash',
+              state: ToolStateCompleted(
+                input: const <String, dynamic>{'command': 'pwd'},
+                output: output,
+                time: ToolTime(
+                  start: DateTime.fromMillisecondsSinceEpoch(1000),
+                  end: DateTime.fromMillisecondsSinceEpoch(1100),
+                ),
+              ),
+            ),
+          ],
+        );
+      }
+
+      var message = messageWithTool(
+        partId: 'tool_callid_persist_1',
+        output: '/workspace',
+      );
+      late StateSetter setHostState;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                setHostState = setState;
+                return ChatMessageWidget(message: message);
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>(
+            'tool_part_details_button_tool_callid_persist_1',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('/workspace'), findsOneWidget);
+      expect(find.text('Hide'), findsOneWidget);
+
+      setHostState(() {
+        message = messageWithTool(
+          partId: 'tool_callid_persist_2',
+          output: '/workspace/updated',
+        );
+      });
+      await tester.pumpAndSettle();
+
+      expect(find.text('/workspace/updated'), findsOneWidget);
+      expect(find.text('Hide'), findsOneWidget);
+      expect(find.text('Details'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'preserves expanded tool details when call id appears after first render',
+    (WidgetTester tester) async {
+      AssistantMessage messageWithTool({
+        required String callId,
+        required String output,
+      }) {
+        return AssistantMessage(
+          id: 'msg_tool_late_callid',
+          sessionId: 'ses_tool_late_callid',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          parts: <MessagePart>[
+            ToolPart(
+              id: 'tool_late_callid',
+              messageId: 'msg_tool_late_callid',
+              sessionId: 'ses_tool_late_callid',
+              callId: callId,
+              tool: 'bash',
+              state: ToolStateCompleted(
+                input: const <String, dynamic>{'command': 'pwd'},
+                output: output,
+                time: ToolTime(
+                  start: DateTime.fromMillisecondsSinceEpoch(1000),
+                  end: DateTime.fromMillisecondsSinceEpoch(1100),
+                ),
+              ),
+            ),
+          ],
+        );
+      }
+
+      var message = messageWithTool(callId: '', output: '/workspace');
+      late StateSetter setHostState;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                setHostState = setState;
+                return ChatMessageWidget(message: message);
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>('tool_part_details_button_tool_late_callid'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('/workspace'), findsOneWidget);
+      expect(find.text('Hide'), findsOneWidget);
+
+      setHostState(() {
+        message = messageWithTool(
+          callId: 'call_tool_late_callid',
+          output: '/workspace/updated',
+        );
+      });
+      await tester.pumpAndSettle();
+
+      expect(find.text('/workspace/updated'), findsOneWidget);
+      expect(find.text('Hide'), findsOneWidget);
+      expect(find.text('Details'), findsNothing);
+    },
+  );
+
   testWidgets('hides step blocks from assistant message body', (
     WidgetTester tester,
   ) async {
@@ -1133,7 +1280,7 @@ void main() {
     await tester.tap(
       find.byKey(
         const ValueKey<String>(
-          'tool_chain_toggle_msg_tool_chain_part_tool_chain_1',
+          'tool_chain_toggle_msg_tool_chain_call_chain_1',
         ),
       ),
     );
@@ -1174,7 +1321,7 @@ void main() {
     await tester.tap(
       find.byKey(
         const ValueKey<String>(
-          'tool_chain_bottom_toggle_msg_tool_chain_part_tool_chain_1',
+          'tool_chain_bottom_toggle_msg_tool_chain_call_chain_1',
         ),
       ),
     );
@@ -1243,7 +1390,7 @@ void main() {
     await tester.tap(
       find.byKey(
         const ValueKey<String>(
-          'tool_chain_toggle_msg_tool_chain_mobile_part_tool_chain_mobile_1',
+          'tool_chain_toggle_msg_tool_chain_mobile_call_chain_mobile_1',
         ),
       ),
     );
@@ -1255,7 +1402,7 @@ void main() {
   });
 
   testWidgets(
-    'keeps tool details collapsed while responding and collapses chain after completion',
+    'keeps multi-tool chain closed by default while responding and preserves manual expansion after completion',
     (WidgetTester tester) async {
       final message = AssistantMessage(
         id: 'msg_tool_chain_streaming',
@@ -1310,10 +1457,10 @@ void main() {
       expect(
         find.byKey(
           const ValueKey<String>(
-            'tool_chain_toggle_msg_tool_chain_streaming_part_tool_chain_streaming_1',
+            'tool_chain_toggle_msg_tool_chain_streaming_call_chain_streaming_1',
           ),
         ),
-        findsNothing,
+        findsOneWidget,
       );
       expect(
         find.byKey(
@@ -1321,17 +1468,9 @@ void main() {
             'tool_part_details_button_part_tool_chain_streaming_1',
           ),
         ),
-        findsOneWidget,
+        findsNothing,
       );
-      expect(
-        find.byKey(
-          const ValueKey<String>(
-            'tool_part_details_button_part_tool_chain_streaming_2',
-          ),
-        ),
-        findsOneWidget,
-      );
-      expect(find.text('Details'), findsNWidgets(2));
+      expect(find.text('Details'), findsOneWidget);
 
       expect(
         find.byWidgetPredicate(
@@ -1341,6 +1480,15 @@ void main() {
         ),
         findsNothing,
       );
+
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>(
+            'tool_chain_toggle_msg_tool_chain_streaming_call_chain_streaming_1',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
 
       await tester.tap(
         find.byKey(
@@ -1379,21 +1527,19 @@ void main() {
       expect(
         find.byKey(
           const ValueKey<String>(
-            'tool_chain_toggle_msg_tool_chain_streaming_part_tool_chain_streaming_1',
+            'tool_chain_toggle_msg_tool_chain_streaming_call_chain_streaming_1',
           ),
         ),
         findsOneWidget,
       );
-      expect(find.text('Details'), findsOneWidget);
-      expect(find.textContaining('Running command'), findsOneWidget);
-      expect(find.textContaining('Reading file'), findsOneWidget);
+      expect(find.text('Hide'), findsNWidgets(4));
       expect(
         find.byKey(
           const ValueKey<String>(
             'tool_part_details_button_part_tool_chain_streaming_1',
           ),
         ),
-        findsNothing,
+        findsOneWidget,
       );
     },
   );
@@ -1465,7 +1611,7 @@ void main() {
     await tester.tap(
       find.byKey(
         const ValueKey<String>(
-          'tool_chain_toggle_msg_tool_chain_rebuild_part_tool_chain_rebuild_1',
+          'tool_chain_toggle_msg_tool_chain_rebuild_call_tool_chain_rebuild_1',
         ),
       ),
     );
@@ -1669,7 +1815,7 @@ void main() {
     await tester.tap(
       find.byKey(
         const ValueKey<String>(
-          'tool_chain_toggle_msg_tool_chain_remount_part_tool_chain_remount_1',
+          'tool_chain_toggle_msg_tool_chain_remount_call_chain_remount_1',
         ),
       ),
     );

@@ -90,6 +90,83 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   final Set<String> _seenPartIds = <String>{};
   final Set<String> _newlyArrivedPartIds = <String>{};
   final Map<String, Timer> _partAnimationTimers = <String, Timer>{};
+  final Map<String, String> _stableIdentityByPartKey = <String, String>{};
+  final Map<String, String> _stableIdentityByCallKey = <String, String>{};
+  final Map<String, String> _stableIdentityByHashKey = <String, String>{};
+  int _stableIdentitySequence = 0;
+
+  String _nextStableIdentity(String prefix) {
+    _stableIdentitySequence += 1;
+    return '$prefix:$_stableIdentitySequence';
+  }
+
+  String _stableToolIdentity({
+    required String partId,
+    required String callId,
+  }) {
+    final partKey = 'tool:part:$partId';
+    final normalizedCallId = callId.trim();
+
+    if (normalizedCallId.isNotEmpty) {
+      final callKey = 'tool:call:$normalizedCallId';
+      final existing =
+          _stableIdentityByCallKey[callKey] ?? _stableIdentityByPartKey[partKey];
+      if (existing != null) {
+        _stableIdentityByPartKey[partKey] = existing;
+        _stableIdentityByCallKey[callKey] = existing;
+        return existing;
+      }
+
+      final created = _nextStableIdentity('tool');
+      _stableIdentityByPartKey[partKey] = created;
+      _stableIdentityByCallKey[callKey] = created;
+      return created;
+    }
+
+    return _stableIdentityByPartKey.putIfAbsent(
+      partKey,
+      () => _nextStableIdentity('tool'),
+    );
+  }
+
+  String _stablePatchIdentity({
+    required String partId,
+    required String hash,
+  }) {
+    final partKey = 'patch:part:$partId';
+    final normalizedHash = hash.trim();
+
+    if (normalizedHash.isNotEmpty) {
+      final hashKey = 'patch:hash:$normalizedHash';
+      final existing =
+          _stableIdentityByHashKey[hashKey] ?? _stableIdentityByPartKey[partKey];
+      if (existing != null) {
+        _stableIdentityByPartKey[partKey] = existing;
+        _stableIdentityByHashKey[hashKey] = existing;
+        return existing;
+      }
+
+      final created = _nextStableIdentity('patch');
+      _stableIdentityByPartKey[partKey] = created;
+      _stableIdentityByHashKey[hashKey] = created;
+      return created;
+    }
+
+    return _stableIdentityByPartKey.putIfAbsent(
+      partKey,
+      () => _nextStableIdentity('patch'),
+    );
+  }
+
+  String _partIdentityToken(MessagePart part) {
+    if (part case ToolPart(:final callId, :final id)) {
+      return _stableToolIdentity(partId: id, callId: callId);
+    }
+    if (part case PatchPart(:final hash, :final id)) {
+      return _stablePatchIdentity(partId: id, hash: hash);
+    }
+    return '${part.type.name}:${part.id}';
+  }
 
   @override
   void initState() {
@@ -210,9 +287,13 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       timer.cancel();
     }
     _partAnimationTimers.clear();
+    _stableIdentityByPartKey.clear();
+    _stableIdentityByCallKey.clear();
+    _stableIdentityByHashKey.clear();
+    _stableIdentitySequence = 0;
     _seenPartIds
       ..clear()
-      ..addAll(currentMessage.parts.map((part) => part.id));
+      ..addAll(currentMessage.parts.map(_partIdentityToken));
     _newlyArrivedPartIds.clear();
   }
 
@@ -225,7 +306,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       return;
     }
 
-    final currentPartIds = currentMessage.parts.map((part) => part.id).toSet();
+    final currentPartIds = currentMessage.parts.map(_partIdentityToken).toSet();
     for (final partId in currentPartIds.where(
       (partId) => !_seenPartIds.contains(partId),
     )) {
@@ -264,7 +345,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   }
 
   bool _shouldAnimatePartArrival(MessagePart part) {
-    return _newlyArrivedPartIds.contains(part.id);
+    return _newlyArrivedPartIds.contains(_partIdentityToken(part));
   }
 
   // -- Shared utilities used by 3+ part clusters --

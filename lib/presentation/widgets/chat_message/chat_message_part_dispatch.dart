@@ -11,7 +11,9 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
       return child;
     }
     return PartEntranceAnimation(
-      key: ValueKey<String>('part_entrance_${message.id}_${part.id}'),
+      key: ValueKey<String>(
+        'part_entrance_${message.id}_${_partIdentityToken(part)}',
+      ),
       child: child,
     );
   }
@@ -139,13 +141,7 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
     final assistantMessage = message is AssistantMessage
         ? message as AssistantMessage
         : null;
-    final shouldAutoCollapseToolChains =
-        assistantMessage != null &&
-        assistantMessage.isCompleted &&
-        !isSessionActivelyResponding;
-    if (assistantMessage == null ||
-        !shouldAutoCollapseToolChains ||
-        !showToolCallBubbles) {
+    if (assistantMessage == null || !showToolCallBubbles) {
       return message.parts
           .map<Widget>(
             (part) => _buildAnimatedMessagePartSafely(
@@ -161,7 +157,7 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
     final allToolSurfaceParts = message.parts
         .where(_isToolSurfacePart)
         .toList(growable: false);
-    if (allToolSurfaceParts.isEmpty) {
+    if (allToolSurfaceParts.length < 2) {
       return message.parts
           .map<Widget>(
             (part) => _buildAnimatedMessagePartSafely(
@@ -174,7 +170,8 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
           .toList(growable: false);
     }
 
-    final chainStartPartId = allToolSurfaceParts.first.id;
+    final chainIdentityToken = _partIdentityToken(allToolSurfaceParts.first);
+    final chainStartPartId = _toolSurfacePartPublicKey(allToolSurfaceParts.first);
     final animateToolChain = allToolSurfaceParts.any(_shouldAnimatePartArrival);
     final rendered = <Widget>[];
     var insertedCollapsedToolChain = false;
@@ -184,10 +181,9 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
           continue;
         }
         final chainWidget = _CollapsibleToolChain(
-          key: ValueKey<String>('tool_chain_${message.id}_$chainStartPartId'),
+          key: ValueKey<String>('tool_chain_${message.id}_$chainIdentityToken'),
           messageId: message.id,
           startPartId: chainStartPartId,
-          autoCollapsed: shouldAutoCollapseToolChains,
           toolDescriptionLabelBuilder: _resolveToolDescriptionLabel,
           toolTypeLabelBuilder: _resolveToolTypeLabel,
           parts: allToolSurfaceParts,
@@ -202,7 +198,7 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
           animateToolChain
               ? PartEntranceAnimation(
                   key: ValueKey<String>(
-                    'tool_chain_entrance_${message.id}_$chainStartPartId',
+                    'tool_chain_entrance_${message.id}_$chainIdentityToken',
                   ),
                   child: chainWidget,
                 )
@@ -235,6 +231,24 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
     return part.type == PartType.tool || part.type == PartType.patch;
   }
 
+  String _toolSurfacePartPublicKey(MessagePart part) {
+    if (part case ToolPart(:final callId, :final id)) {
+      final normalizedCallId = callId.trim();
+      if (normalizedCallId.isNotEmpty) {
+        return normalizedCallId;
+      }
+      return id;
+    }
+    if (part case PatchPart(:final hash, :final id)) {
+      final normalizedHash = hash.trim();
+      if (normalizedHash.isNotEmpty) {
+        return normalizedHash;
+      }
+      return id;
+    }
+    return part.id;
+  }
+
   bool _isTodoToolPart(ToolPart part) {
     final normalized = _normalizeToolName(part.tool);
     return normalized == 'todowrite' || normalized == 'todoread';
@@ -250,7 +264,6 @@ class _CollapsibleToolChain extends StatefulWidget {
     super.key,
     required this.messageId,
     required this.startPartId,
-    required this.autoCollapsed,
     required this.toolDescriptionLabelBuilder,
     required this.toolTypeLabelBuilder,
     required this.parts,
@@ -259,7 +272,6 @@ class _CollapsibleToolChain extends StatefulWidget {
 
   final String messageId;
   final String startPartId;
-  final bool autoCollapsed;
   final String Function(ToolPart part) toolDescriptionLabelBuilder;
   final String Function(ToolPart part) toolTypeLabelBuilder;
   final List<MessagePart> parts;
@@ -286,18 +298,6 @@ class _CollapsibleToolChainState extends State<_CollapsibleToolChain> {
   void initState() {
     super.initState();
     _expanded = false;
-  }
-
-  @override
-  void didUpdateWidget(covariant _CollapsibleToolChain oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final autoCollapseActivated =
-        !oldWidget.autoCollapsed && widget.autoCollapsed;
-    if (autoCollapseActivated && _expanded) {
-      setState(() {
-        _expanded = false;
-      });
-    }
   }
 
   String _buildCollapsedPrimaryLabel({required bool compact}) {
