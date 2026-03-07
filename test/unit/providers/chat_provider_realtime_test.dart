@@ -98,12 +98,16 @@ void main() {
       'replays optimistic echo and assistant delta using current SSE baseline',
       () async {
         final sendStream = StreamController<Either<Failure, ChatMessage>>();
+        String? optimisticMessageId;
         addTearDown(() async {
           if (!sendStream.isClosed) {
             await sendStream.close();
           }
         });
-        chatRepository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
+        chatRepository.sendMessageHandler = (_, _, input, _) {
+          optimisticMessageId = input.messageId;
+          return sendStream.stream;
+        };
 
         await provider.projectProvider.initializeProject();
         await provider.loadSessions();
@@ -118,20 +122,21 @@ void main() {
         );
 
         final localUser = provider.messages.single as UserMessage;
-        expect(localUser.id, startsWith('local_user_'));
+        expect(localUser.id, startsWith('msg_'));
+        expect(localUser.id, optimisticMessageId);
         expect(
           (localUser.parts.single as TextPart).text,
           'contract replay prompt',
         );
 
         final serverUserEcho = UserMessage(
-          id: 'msg_user_server',
+          id: optimisticMessageId!,
           sessionId: 'ses_1',
           time: DateTime.fromMillisecondsSinceEpoch(1100),
-          parts: const <MessagePart>[
+          parts: <MessagePart>[
             TextPart(
               id: 'prt_user_server',
-              messageId: 'msg_user_server',
+              messageId: optimisticMessageId!,
               sessionId: 'ses_1',
               text: 'contract replay prompt',
             ),
@@ -141,30 +146,28 @@ void main() {
           serverUserEcho,
         ];
         chatRepository.emitEvent(
-          const ChatEvent(
+          ChatEvent(
             type: 'message.created',
             properties: <String, dynamic>{
               'info': <String, dynamic>{
                 'sessionID': 'ses_1',
-                'id': 'msg_user_server',
+                'id': optimisticMessageId,
               },
             },
           ),
         );
 
         await settleUntil(
-          () => provider.messages.whereType<UserMessage>().length == 2,
-          reason: 'Expected optimistic and echoed user messages to be visible.',
+          () => provider.messages.whereType<UserMessage>().length == 1,
+          reason:
+              'Expected server echo to replace the optimistic user message.',
         );
 
         final userMessagesAfterEcho = provider.messages
             .whereType<UserMessage>()
             .toList();
-        expect(userMessagesAfterEcho, hasLength(2));
-        expect(
-          userMessagesAfterEcho.map((message) => message.id),
-          containsAll(<String>[localUser.id, 'msg_user_server']),
-        );
+        expect(userMessagesAfterEcho, hasLength(1));
+        expect(userMessagesAfterEcho.single.id, optimisticMessageId);
 
         final assistantDraft = AssistantMessage(
           id: 'msg_assistant_contract',
@@ -269,21 +272,18 @@ void main() {
           includeStatus: false,
         );
         await settleUntil(
-          () => provider.messages.length == 3,
+          () => provider.messages.length == 2,
           reason: 'Expected replay baseline to remain stable after refresh.',
         );
 
         expect(provider.state, ChatState.loaded);
-        expect(provider.messages, hasLength(3));
+        expect(provider.messages, hasLength(2));
 
         final finalUserMessages = provider.messages
             .whereType<UserMessage>()
             .toList();
-        expect(finalUserMessages, hasLength(2));
-        expect(
-          finalUserMessages.map((message) => message.id),
-          containsAll(<String>[localUser.id, 'msg_user_server']),
-        );
+        expect(finalUserMessages, hasLength(1));
+        expect(finalUserMessages.single.id, optimisticMessageId);
 
         final finalAssistant = provider.messages.last as AssistantMessage;
         final textParts = finalAssistant.parts.whereType<TextPart>().toList();
@@ -2334,19 +2334,7 @@ void main() {
       'sendMessage replaces optimistic local user message with server user message',
       () async {
         final now = DateTime.now();
-        final serverUserMessage = UserMessage(
-          id: 'msg_server_user_1',
-          sessionId: 'ses_1',
-          time: now.add(const Duration(seconds: 1)),
-          parts: const <MessagePart>[
-            TextPart(
-              id: 'prt_user_server_1',
-              messageId: 'msg_server_user_1',
-              sessionId: 'ses_1',
-              text: 'hello dedupe',
-            ),
-          ],
-        );
+        String? messageId;
         final assistantCompleted = AssistantMessage(
           id: 'msg_assistant_dedupe',
           sessionId: 'ses_1',
@@ -2362,8 +2350,23 @@ void main() {
           ],
         );
 
-        chatRepository.sendMessageHandler = (_, _, _, _) async* {
-          yield Right(serverUserMessage);
+        chatRepository.sendMessageHandler = (_, _, input, _) async* {
+          messageId = input.messageId;
+          yield Right(
+            UserMessage(
+              id: messageId!,
+              sessionId: 'ses_1',
+              time: now.add(const Duration(seconds: 1)),
+              parts: <MessagePart>[
+                TextPart(
+                  id: 'prt_user_server_1',
+                  messageId: messageId!,
+                  sessionId: 'ses_1',
+                  text: 'hello dedupe',
+                ),
+              ],
+            ),
+          );
           await Future<void>.delayed(const Duration(milliseconds: 1));
           yield Right(assistantCompleted);
         };
@@ -2377,7 +2380,7 @@ void main() {
 
         expect(provider.state, ChatState.loaded);
         expect(provider.messages.length, 2);
-        expect(provider.messages.first.id, 'msg_server_user_1');
+        expect(provider.messages.first.id, messageId);
         expect((provider.messages.first as UserMessage).parts, hasLength(1));
         expect(
           ((provider.messages.first as UserMessage).parts.first as TextPart)
@@ -2388,7 +2391,7 @@ void main() {
       },
     );
 
-    test('sendMessage does not forward local messageId to server', () async {
+    test('sendMessage forwards optimistic messageId to server', () async {
       final now = DateTime.now();
       String? echoedMessageId;
 
@@ -2396,13 +2399,13 @@ void main() {
         echoedMessageId = input.messageId;
         yield Right(
           UserMessage(
-            id: 'msg_server_user_1',
+            id: echoedMessageId!,
             sessionId: 'ses_1',
             time: now.add(const Duration(seconds: 1)),
             parts: <MessagePart>[
               TextPart(
                 id: 'prt_user_server_1',
-                messageId: 'msg_server_user_1',
+                messageId: echoedMessageId!,
                 sessionId: 'ses_1',
                 text: 'hello stable id',
               ),
@@ -2418,13 +2421,11 @@ void main() {
       await provider.sendMessage('hello stable id');
       await Future<void>.delayed(const Duration(milliseconds: 30));
 
-      // messageId must not be sent to the server.
-      expect(echoedMessageId, isNull);
+      expect(echoedMessageId, startsWith('msg_'));
       expect(provider.state, ChatState.loaded);
-      // Reconciliation by content signature deduplicates the optimistic message.
       expect(provider.messages.whereType<UserMessage>(), hasLength(1));
       final userMessage = provider.messages.single as UserMessage;
-      expect(userMessage.id, 'msg_server_user_1');
+      expect(userMessage.id, echoedMessageId);
       expect((userMessage.parts.single as TextPart).text, 'hello stable id');
     });
 
@@ -2432,21 +2433,7 @@ void main() {
       'sendMessage dedupes optimistic attachment message when server file URL differs',
       () async {
         final now = DateTime.now();
-        final serverUserMessage = UserMessage(
-          id: 'msg_server_user_attachment_1',
-          sessionId: 'ses_1',
-          time: now.add(const Duration(seconds: 1)),
-          parts: const <MessagePart>[
-            FilePart(
-              id: 'prt_user_server_file_1',
-              messageId: 'msg_server_user_attachment_1',
-              sessionId: 'ses_1',
-              url: 'file:///tmp/uploaded/image.png',
-              mime: 'image/png',
-              filename: 'image.png',
-            ),
-          ],
-        );
+        String? messageId;
         final assistantCompleted = AssistantMessage(
           id: 'msg_assistant_attachment_dedupe',
           sessionId: 'ses_1',
@@ -2462,8 +2449,25 @@ void main() {
           ],
         );
 
-        chatRepository.sendMessageHandler = (_, _, _, _) async* {
-          yield Right(serverUserMessage);
+        chatRepository.sendMessageHandler = (_, _, input, _) async* {
+          messageId = input.messageId;
+          yield Right(
+            UserMessage(
+              id: messageId!,
+              sessionId: 'ses_1',
+              time: now.add(const Duration(seconds: 1)),
+              parts: <MessagePart>[
+                FilePart(
+                  id: 'prt_user_server_file_1',
+                  messageId: messageId!,
+                  sessionId: 'ses_1',
+                  url: 'file:///tmp/uploaded/image.png',
+                  mime: 'image/png',
+                  filename: 'image.png',
+                ),
+              ],
+            ),
+          );
           await Future<void>.delayed(const Duration(milliseconds: 1));
           yield Right(assistantCompleted);
         };
@@ -2486,7 +2490,7 @@ void main() {
 
         expect(provider.state, ChatState.loaded);
         expect(provider.messages.length, 2);
-        expect(provider.messages.first.id, 'msg_server_user_attachment_1');
+        expect(provider.messages.first.id, messageId);
         expect((provider.messages.first as UserMessage).parts, hasLength(1));
         final firstPart =
             (provider.messages.first as UserMessage).parts.first as FilePart;
@@ -2645,7 +2649,7 @@ void main() {
           chatRepository.lastSendInput?.parts.single,
           const TextInputPart(text: 'hello with persistence failure'),
         );
-        expect(chatRepository.lastSendInput?.messageId, isNull);
+        expect(chatRepository.lastSendInput?.messageId, startsWith('msg_'));
         final assistant = resilientProvider.messages.last as AssistantMessage;
         expect((assistant.parts.single as TextPart).text, 'resilient answer');
       },
@@ -2654,30 +2658,26 @@ void main() {
     test(
       'refreshActiveSessionView does not duplicate user message reconciled by exact id',
       () async {
-        // Simulate the duplication bug: the local optimistic user message has a
-        // different ID than the server-echoed version. During an active stream,
-        // _mergeServerMessagesWithActiveLocalTail must not re-append the local
-        // message after _mergeServerMessagesWithPendingLocalUsers reconciled it.
         final now = DateTime.now();
         final streamController =
             StreamController<Either<Failure, ChatMessage>>();
+        String? optimisticMessageId;
         addTearDown(() async {
           await streamController.close();
         });
 
-        chatRepository.sendMessageHandler = (_, _, _, _) {
-          // Emit the server user message echo, then keep the stream open
-          // (simulating an in-progress assistant response / tool calls).
+        chatRepository.sendMessageHandler = (_, _, input, _) {
+          optimisticMessageId = input.messageId;
           streamController.add(
             Right(
               UserMessage(
-                id: 'msg_server_user',
+                id: optimisticMessageId!,
                 sessionId: 'ses_1',
                 time: now.add(const Duration(seconds: 1)),
-                parts: const <MessagePart>[
+                parts: <MessagePart>[
                   TextPart(
                     id: 'prt_server_user',
-                    messageId: 'msg_server_user',
+                    messageId: optimisticMessageId!,
                     sessionId: 'ses_1',
                     text: 'hello dedup active',
                   ),
@@ -2685,7 +2685,6 @@ void main() {
               ),
             ),
           );
-          // Emit a partial (in-progress) assistant to keep session "active".
           streamController.add(
             Right(
               AssistantMessage(
@@ -2714,22 +2713,17 @@ void main() {
         await provider.sendMessage('hello dedup active');
         await Future<void>.delayed(const Duration(milliseconds: 30));
 
-        // Verify the stream is still open and the session is actively
-        // responding (prerequisite for the tail preservation code path).
         expect(provider.isCurrentSessionActivelyResponding, isTrue);
 
-        // Set up messagesBySession to return the server-side view (different
-        // user message ID, same text). This is what refreshActiveSessionView
-        // will fetch from getChatMessages.
         chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
           UserMessage(
-            id: 'msg_server_user',
+            id: optimisticMessageId!,
             sessionId: 'ses_1',
             time: now.add(const Duration(seconds: 1)),
-            parts: const <MessagePart>[
+            parts: <MessagePart>[
               TextPart(
                 id: 'prt_server_user',
-                messageId: 'msg_server_user',
+                messageId: optimisticMessageId!,
                 sessionId: 'ses_1',
                 text: 'hello dedup active',
               ),
@@ -2755,7 +2749,6 @@ void main() {
         await provider.refresh();
         await Future<void>.delayed(const Duration(milliseconds: 10));
 
-        // There must be exactly one UserMessage (the server version).
         final userMessages = provider.messages
             .whereType<UserMessage>()
             .toList();
@@ -2764,9 +2757,8 @@ void main() {
           hasLength(1),
           reason: 'User message was duplicated during active session refresh',
         );
-        expect(userMessages.single.id, 'msg_server_user');
+        expect(userMessages.single.id, optimisticMessageId);
 
-        // Assistant tail message must also stay de-duplicated after refresh.
         final assistantMessages = provider.messages
             .whereType<AssistantMessage>()
             .toList();
@@ -2790,11 +2782,13 @@ void main() {
         final now = DateTime.now();
         final streamController =
             StreamController<Either<Failure, ChatMessage>>();
+        String? optimisticMessageId;
         addTearDown(() async {
           await streamController.close();
         });
 
-        chatRepository.sendMessageHandler = (_, _, _, _) {
+        chatRepository.sendMessageHandler = (_, _, input, _) {
+          optimisticMessageId = input.messageId;
           return streamController.stream;
         };
 
@@ -2809,13 +2803,13 @@ void main() {
 
         chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
           UserMessage(
-            id: 'msg_server_user_partial',
+            id: optimisticMessageId!,
             sessionId: 'ses_1',
             time: now.add(const Duration(seconds: 1)),
-            parts: const <MessagePart>[
+            parts: <MessagePart>[
               TextPart(
                 id: 'prt_server_user_partial',
-                messageId: 'msg_server_user_partial',
+                messageId: optimisticMessageId!,
                 sessionId: 'ses_1',
                 text: 'hello duplicate',
               ),
@@ -2846,18 +2840,18 @@ void main() {
           reason:
               'Transient duplicate user bubble appeared during busy snapshot merge',
         );
-        expect(userMessages.single.id, 'msg_server_user_partial');
+        expect(userMessages.single.id, optimisticMessageId);
 
         streamController.add(
           Right(
             UserMessage(
-              id: 'msg_server_user_partial',
+              id: optimisticMessageId!,
               sessionId: 'ses_1',
               time: now.add(const Duration(seconds: 1)),
-              parts: const <MessagePart>[
+              parts: <MessagePart>[
                 TextPart(
                   id: 'prt_server_user_full',
-                  messageId: 'msg_server_user_partial',
+                  messageId: optimisticMessageId!,
                   sessionId: 'ses_1',
                   text: 'hello duplicate placeholder',
                 ),
@@ -2873,7 +2867,7 @@ void main() {
           hasLength(1),
           reason: 'Duplicate user bubble persisted after stream user update',
         );
-        expect(userMessages.single.id, 'msg_server_user_partial');
+        expect(userMessages.single.id, optimisticMessageId);
         expect(
           (userMessages.single.parts.single as TextPart).text,
           'hello duplicate placeholder',
@@ -2887,11 +2881,13 @@ void main() {
         final now = DateTime.now();
         final streamController =
             StreamController<Either<Failure, ChatMessage>>();
+        String? optimisticMessageId;
         addTearDown(() async {
           await streamController.close();
         });
 
-        chatRepository.sendMessageHandler = (_, _, _, _) {
+        chatRepository.sendMessageHandler = (_, _, input, _) {
+          optimisticMessageId = input.messageId;
           return streamController.stream;
         };
 
@@ -2909,13 +2905,13 @@ void main() {
         streamController.add(
           Right(
             UserMessage(
-              id: 'msg_server_user_late',
+              id: optimisticMessageId!,
               sessionId: 'ses_1',
               time: now.add(const Duration(seconds: 1)),
-              parts: const <MessagePart>[
+              parts: <MessagePart>[
                 TextPart(
                   id: 'prt_server_user_late',
-                  messageId: 'msg_server_user_late',
+                  messageId: optimisticMessageId!,
                   sessionId: 'ses_1',
                   text: 'hello late echo',
                 ),
@@ -2929,36 +2925,33 @@ void main() {
             .whereType<UserMessage>()
             .toList();
         expect(userMessages, hasLength(1));
-        expect(userMessages.single.id, 'msg_server_user_late');
+        expect(userMessages.single.id, optimisticMessageId);
       },
     );
 
     test(
-      'refreshActiveSessionView does not duplicate user message when content-signature match fails (empty server parts)',
+      'refreshActiveSessionView keeps single user message when the server echo is initially empty',
       () async {
-        // Scenario: server echoes a UserMessage with empty parts during an
-        // active session. The content-signature reconciliation fails but the
-        // tail-append guard must still prevent re-adding the local copy.
         final now = DateTime.now();
         final streamController =
             StreamController<Either<Failure, ChatMessage>>();
+        String? optimisticMessageId;
         addTearDown(() async {
           await streamController.close();
         });
 
-        chatRepository.sendMessageHandler = (_, _, _, _) {
-          // Emit user echo with empty parts (simulates the race).
+        chatRepository.sendMessageHandler = (_, _, input, _) {
+          optimisticMessageId = input.messageId;
           streamController.add(
             Right(
               UserMessage(
-                id: 'msg_server_user_empty',
+                id: optimisticMessageId!,
                 sessionId: 'ses_1',
                 time: now.add(const Duration(seconds: 1)),
                 parts: const <MessagePart>[],
               ),
             ),
           );
-          // Emit partial assistant to keep session active.
           streamController.add(
             Right(
               AssistantMessage(
@@ -2988,10 +2981,9 @@ void main() {
 
         expect(provider.isCurrentSessionActivelyResponding, isTrue);
 
-        // Server view returns the empty-parts user message.
         chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
           UserMessage(
-            id: 'msg_server_user_empty',
+            id: optimisticMessageId!,
             sessionId: 'ses_1',
             time: now.add(const Duration(seconds: 1)),
             parts: const <MessagePart>[],
@@ -3014,8 +3006,6 @@ void main() {
         await provider.refresh();
         await Future<void>.delayed(const Duration(milliseconds: 10));
 
-        // Must not duplicate: either the local message was replaced by
-        // time-proximity (Fix 2) or the tail guard skips it (Fix 1).
         final userMessages = provider.messages
             .whereType<UserMessage>()
             .toList();
@@ -3031,28 +3021,26 @@ void main() {
     test(
       'refreshActiveSessionView does not duplicate shell-mode user message with ! prefix',
       () async {
-        // Scenario: local message text is '!ls -la' (shell mode), server echoes
-        // 'ls -la' (without !). The shell-aware signature normalization must
-        // reconcile them so no duplicate appears.
         final now = DateTime.now();
         final streamController =
             StreamController<Either<Failure, ChatMessage>>();
+        String? optimisticMessageId;
         addTearDown(() async {
           await streamController.close();
         });
 
-        chatRepository.sendMessageHandler = (_, _, _, _) {
-          // Server echoes the user message without the leading '!'.
+        chatRepository.sendMessageHandler = (_, _, input, _) {
+          optimisticMessageId = input.messageId;
           streamController.add(
             Right(
               UserMessage(
-                id: 'msg_server_user_shell',
+                id: optimisticMessageId!,
                 sessionId: 'ses_1',
                 time: now.add(const Duration(seconds: 1)),
-                parts: const <MessagePart>[
+                parts: <MessagePart>[
                   TextPart(
                     id: 'prt_server_user_shell',
-                    messageId: 'msg_server_user_shell',
+                    messageId: optimisticMessageId!,
                     sessionId: 'ses_1',
                     text: 'ls -la',
                   ),
@@ -3091,13 +3079,13 @@ void main() {
 
         chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
           UserMessage(
-            id: 'msg_server_user_shell',
+            id: optimisticMessageId!,
             sessionId: 'ses_1',
             time: now.add(const Duration(seconds: 1)),
-            parts: const <MessagePart>[
+            parts: <MessagePart>[
               TextPart(
                 id: 'prt_server_user_shell',
-                messageId: 'msg_server_user_shell',
+                messageId: optimisticMessageId!,
                 sessionId: 'ses_1',
                 text: 'ls -la',
               ),
@@ -3130,34 +3118,33 @@ void main() {
           reason:
               'Shell-mode user message duplicated during active session refresh',
         );
-        expect(userMessages.single.id, 'msg_server_user_shell');
+        expect(userMessages.single.id, optimisticMessageId);
       },
     );
 
     test(
-      'tail-append loop skips pending local user message when server has content-equivalent message',
+      'tail-append loop skips pending optimistic user message when server already has the same id',
       () async {
-        // Scenario: content-signature reconciliation succeeds for the message
-        // text but reconciledLocalIds is somehow not propagated (edge case).
-        // The tail-append guard must independently prevent the duplication.
         final now = DateTime.now();
         final streamController =
             StreamController<Either<Failure, ChatMessage>>();
+        String? optimisticMessageId;
         addTearDown(() async {
           await streamController.close();
         });
 
-        chatRepository.sendMessageHandler = (_, _, _, _) {
+        chatRepository.sendMessageHandler = (_, _, input, _) {
+          optimisticMessageId = input.messageId;
           streamController.add(
             Right(
               UserMessage(
-                id: 'msg_server_user_tail',
+                id: optimisticMessageId!,
                 sessionId: 'ses_1',
                 time: now.add(const Duration(seconds: 1)),
-                parts: const <MessagePart>[
+                parts: <MessagePart>[
                   TextPart(
                     id: 'prt_server_user_tail',
-                    messageId: 'msg_server_user_tail',
+                    messageId: optimisticMessageId!,
                     sessionId: 'ses_1',
                     text: 'hello tail guard',
                   ),
@@ -3196,13 +3183,13 @@ void main() {
 
         chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
           UserMessage(
-            id: 'msg_server_user_tail',
+            id: optimisticMessageId!,
             sessionId: 'ses_1',
             time: now.add(const Duration(seconds: 1)),
-            parts: const <MessagePart>[
+            parts: <MessagePart>[
               TextPart(
                 id: 'prt_server_user_tail',
-                messageId: 'msg_server_user_tail',
+                messageId: optimisticMessageId!,
                 sessionId: 'ses_1',
                 text: 'hello tail guard',
               ),
@@ -3210,9 +3197,6 @@ void main() {
           ),
         ];
 
-        // Refresh — server has user message but no assistant yet. The local
-        // tail must keep the in-progress assistant but NOT re-add the local
-        // user message that matches the server version by content.
         await provider.refresh();
         await Future<void>.delayed(const Duration(milliseconds: 10));
 
@@ -3225,9 +3209,8 @@ void main() {
           reason:
               'Pending local user message leaked through tail-append despite server content match',
         );
-        expect(userMessages.single.id, 'msg_server_user_tail');
+        expect(userMessages.single.id, optimisticMessageId);
 
-        // The streamed assistant must still be preserved in the local tail.
         final assistantMessages = provider.messages
             .whereType<AssistantMessage>()
             .toList();

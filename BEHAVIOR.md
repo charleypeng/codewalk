@@ -242,18 +242,14 @@
 - **Then** add/edit supports an optional label, required text, insertion mode, and scope mode (`Global` or `Project-only`)
 - **Then** global items are available across all contexts, while project-only items are restricted to the active `serverId::scopeId` context
 
-### Optimistic user message ID uses local prefix — never server format
+### Optimistic user messages use official message IDs
 
 - **Given** the user sends a message in an active session
 - **When** the client appends the optimistic user bubble and dispatches `prompt_async`
-- **Then** the client assigns the optimistic message a `local_user_<timestamp>_<seq>` ID — it intentionally does NOT use a server-format ID (`msg_*` or similar)
-- **Then** the `messageId` field is NOT forwarded in the `prompt_async` send payload — the server assigns its own canonical ID
-- **Then** duplicate detection for the server echo uses a content-signature match (normalized text), gated by the `local_user_` prefix check
-- **Then** once the server echo arrives, the local optimistic bubble is dropped and replaced by the server-authoritative message
-
-> **INVARIANT — do not violate**: The `local_user_*` prefix and the absence of `messageId` in the send payload are load-bearing contracts.
-> Changing the prefix to any server-format value (e.g. `msg_*`) or forwarding `messageId` in the payload causes the SSE event stream to fail reconciliation for all turns after the first — assistant responses are received and audio/notifications fire, but the UI update is silently discarded and the UI stays stuck on the previous state.
-> This regression was introduced and reverted in commit `b0660a2`. See ADR-023 "Known Pitfalls" for the full incident analysis.
+- **Then** the client assigns the optimistic message a server-compatible ascending `msg_*` ID that matches the official OpenCode/Web `messageID` shape
+- **Then** the same `messageId` is forwarded in the `prompt_async` payload so the server echo and follow-up updates target that exact message
+- **Then** reconciliation uses `messageId` only — content-signature and local-prefix heuristics are not used
+- **Then** once the server echo or refresh arrives, the optimistic user bubble is updated in place instead of duplicating in the timeline
 
 ### Tool call work groups collapse after completion
 

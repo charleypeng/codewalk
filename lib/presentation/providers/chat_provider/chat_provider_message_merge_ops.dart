@@ -61,7 +61,7 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
           } else {
             next[existingIndex] = message;
           }
-          next.sort((a, b) => a.time.compareTo(b.time));
+          _sortMessagesForTimeline(next);
           _cacheSessionMessages(sessionId, next);
           unawaited(_persistSessionMessagesSnapshotBestEffort(sessionId, next));
           _traceFinal(
@@ -74,82 +74,8 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     );
   }
 
-  // Determines whether a locally-appended optimistic user bubble should be
-  // suppressed because the server has already echoed it in the merged message list.
-  //
-  // INVARIANT — the prefix check on line below is load-bearing (see ADR-023 Pitfall P-001):
-  // Only messages with the `local_user_*` prefix are candidates for echo suppression.
-  // If the optimistic ID ever uses a server-format prefix (e.g. `msg_*`), this guard
-  // returns `false` immediately, the bubble is treated as a confirmed server message,
-  // and subsequent SSE reconciliation silently discards assistant responses. The prefix
-  // must always match what `_nextLocalUserMessageId()` produces. (Regression: b0660a2)
-  bool _shouldSkipLocalUserAppendAsDuplicateEcho({
-    required UserMessage localMessage,
-    required List<ChatMessage> mergedMessages,
-  }) {
-    if (!localMessage.id.startsWith('local_user_')) {
-      return false;
-    }
-    if (_queuedLocalUserMessageIds.contains(localMessage.id)) {
-      return false;
-    }
-
-    final localSignature = _normalizedUserMessageSignature(localMessage);
-    if (localSignature.isNotEmpty) {
-      for (final serverMessage in mergedMessages) {
-        if (serverMessage is! UserMessage) {
-          continue;
-        }
-        final serverSignature = _normalizedUserMessageSignature(serverMessage);
-        if (serverSignature.isNotEmpty && serverSignature == localSignature) {
-          return true;
-        }
-      }
-    }
-
-    UserMessage? latestServerUserMessage;
-    var hasInProgressAssistant = false;
-    for (final message in mergedMessages) {
-      if (message is UserMessage) {
-        latestServerUserMessage = message;
-      } else if (message is AssistantMessage && !message.isCompleted) {
-        hasInProgressAssistant = true;
-      }
-    }
-
-    if (!hasInProgressAssistant || latestServerUserMessage == null) {
-      return false;
-    }
-
-    final latestServerSignature = _normalizedUserMessageSignature(
-      latestServerUserMessage,
-    );
-    if (localSignature.isNotEmpty && latestServerSignature.isNotEmpty) {
-      final sharesPrefix =
-          localSignature.startsWith(latestServerSignature) ||
-          latestServerSignature.startsWith(localSignature);
-      if (!sharesPrefix) {
-        return false;
-      }
-    }
-
-    final earliestEchoTime = localMessage.time.subtract(
-      const Duration(seconds: 2),
-    );
-    final latestEchoTime = localMessage.time.add(const Duration(seconds: 45));
-    final serverTime = latestServerUserMessage.time;
-    if (serverTime.isBefore(earliestEchoTime) ||
-        serverTime.isAfter(latestEchoTime)) {
-      return false;
-    }
-
-    return true;
-  }
-
-  /// Merges server messages with any pending local user messages that haven't
-  /// been echoed by the server yet. Returns both the merged list and the set of
-  /// local IDs that were reconciled (matched to a server message by content
-  /// signature), so callers can avoid re-adding them during tail preservation.
+  /// Merges server messages with pending optimistic user messages by exact
+  /// `messageId`. Server-authoritative messages always win when IDs overlap.
   ({List<ChatMessage> messages, Set<String> reconciledLocalIds})
   _mergeServerMessagesWithPendingLocalUsers(List<ChatMessage> serverMessages) {
     final emptyResult = (
@@ -185,6 +111,7 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     }
 
     if (_pendingLocalUserMessageIds.isEmpty) {
+      _sortMessagesForTimeline(merged);
       return (messages: merged, reconciledLocalIds: reconciledLocalIds);
     }
 
@@ -195,20 +122,14 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
       if (!_pendingLocalUserMessageIds.contains(message.id)) {
         continue;
       }
-      if (_shouldSkipLocalUserAppendAsDuplicateEcho(
-        localMessage: message,
-        mergedMessages: merged,
-      )) {
-        reconciledLocalIds.add(message.id);
-        _pendingLocalUserMessageIds.remove(message.id);
-        continue;
-      }
       if (existingIds.contains(message.id)) {
         continue;
       }
       merged.add(message);
+      existingIds.add(message.id);
     }
 
+    _sortMessagesForTimeline(merged);
     return (messages: merged, reconciledLocalIds: reconciledLocalIds);
   }
 
@@ -265,6 +186,8 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
       }
     }
 
+    _sortMessagesForTimeline(deduplicated);
+
     return (messages: deduplicated, requiresFullFetch: false);
   }
 
@@ -313,18 +236,11 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
       if (existingIds.contains(message.id)) {
         continue;
       }
-      if (message is UserMessage &&
-          _shouldSkipLocalUserAppendAsDuplicateEcho(
-            localMessage: message,
-            mergedMessages: merged,
-          )) {
-        _pendingLocalUserMessageIds.remove(message.id);
-        continue;
-      }
       merged.add(message);
       existingIds.add(message.id);
     }
 
+    _sortMessagesForTimeline(merged);
     return merged;
   }
 }

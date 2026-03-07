@@ -29,6 +29,26 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     );
   }
 
+  bool _hasOfficialTimelineMessageId(ChatMessage message) {
+    final id = message.id;
+    if (!id.startsWith('msg_') || id.length != 30) {
+      return false;
+    }
+
+    final timestampSegment = id.substring(4, 16);
+    final randomSegment = id.substring(16);
+    final isHexTimestamp = RegExp(r'^[0-9a-f]{12}$').hasMatch(timestampSegment);
+    final isBase62Suffix = RegExp(r'^[0-9A-Za-z]{14}$').hasMatch(randomSegment);
+    return isHexTimestamp && isBase62Suffix;
+  }
+
+  void _sortMessagesForTimeline(List<ChatMessage> messages) {
+    if (!messages.every(_hasOfficialTimelineMessageId)) {
+      return;
+    }
+    messages.sort((a, b) => a.id.compareTo(b.id));
+  }
+
   String _extractAutoTitleText(ChatMessage message) {
     if (message is AssistantMessage && message.summary == true) {
       return '';
@@ -185,7 +205,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     required List<FileInputPart> attachments,
     required bool shellMode,
   }) {
-    final localMessageId = _nextLocalUserMessageId();
+    final localMessageId = _nextOptimisticMessageId();
     _messages.add(
       _buildLocalUserMessage(
         localMessageId: localMessageId,
@@ -214,7 +234,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
         .toList(growable: false);
     final queuedLocalIdSet = queuedLocalIds.toSet();
     final anchorLocalId =
-        queuedLocalIds.firstOrNull ?? _nextLocalUserMessageId();
+        queuedLocalIds.firstOrNull ?? _nextOptimisticMessageId();
 
     var insertionIndex = -1;
     for (var index = 0; index < _messages.length; index += 1) {
@@ -273,25 +293,10 @@ extension _ChatProviderMessageStateOps on ChatProvider {
       final pendingLocalIndex = _findPendingLocalUserMessageIndex(message);
       if (pendingLocalIndex != -1) {
         final previousId = _messages[pendingLocalIndex].id;
-        final existingIncomingIndex = _messages.indexWhere(
-          (item) => item.id == message.id,
-        );
-        if (existingIncomingIndex != -1 &&
-            existingIncomingIndex != pendingLocalIndex) {
-          _pendingLocalUserMessageIds.remove(previousId);
-          _queuedLocalUserMessageIds.remove(previousId);
-          _messages[existingIncomingIndex] = message;
-          _messages.removeAt(pendingLocalIndex);
-          _messagesVersion++;
-          _notifyListeners();
-          _attemptPendingRemoteSelectionSync(reason: 'message-user-deduped');
-          _scheduleAutoTitleRefresh(message.sessionId);
-          _scheduleScrollToBottom();
-          return;
-        }
         _pendingLocalUserMessageIds.remove(previousId);
         _queuedLocalUserMessageIds.remove(previousId);
         _messages[pendingLocalIndex] = message;
+        _sortMessagesForTimeline(_messages);
         _messagesVersion++;
         _notifyListeners();
         _attemptPendingRemoteSelectionSync(reason: 'message-user-replaced');
@@ -305,6 +310,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     if (index != -1) {
       // Update existing message
       _messages[index] = message;
+      _sortMessagesForTimeline(_messages);
       _messagesVersion++;
       if (message is UserMessage) {
         _pendingLocalUserMessageIds.remove(message.id);
@@ -316,6 +322,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     } else {
       // Add new message
       _messages.add(message);
+      _sortMessagesForTimeline(_messages);
       _messagesVersion++;
       AppLogger.debug('Added new message: ${message.id}, role=${message.role}');
     }
@@ -425,128 +432,6 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     return false;
   }
 
-  String _normalizedUserMessageSignature(UserMessage message) {
-    final textSignature = _normalizedUserTextSignature(message);
-    final fileSignature = _normalizedUserFileSignature(message);
-    if (fileSignature.isEmpty) {
-      return textSignature;
-    }
-    if (textSignature.isEmpty) {
-      return fileSignature;
-    }
-    return '$textSignature\n$fileSignature'.trim();
-  }
-
-  String _normalizedUserTextSignature(UserMessage message) {
-    return message.parts
-        .whereType<TextPart>()
-        .map((part) {
-          final text = part.text.trim();
-          // Strip leading '!' shell-mode prefix for signature comparison so
-          // that local '!cmd' matches server-echoed 'cmd'.
-          return text.startsWith('!') ? text.substring(1).trim() : text;
-        })
-        .where((text) => text.isNotEmpty)
-        .join('\n');
-  }
-
-  String _normalizedUserFileSignature(UserMessage message) {
-    final fileSignatures =
-        message.parts
-            .whereType<FilePart>()
-            .map(_normalizedFilePartSignature)
-            .where((value) => value.isNotEmpty)
-            .toList(growable: false)
-          ..sort();
-    if (fileSignatures.isNotEmpty) {
-      return fileSignatures.join('\n');
-    }
-    return _normalizedUserFileMimeSignature(message);
-  }
-
-  String _normalizedUserFileMimeSignature(UserMessage message) {
-    final mimeSignatures =
-        message.parts
-            .whereType<FilePart>()
-            .map((part) => part.mime.trim().toLowerCase())
-            .where((value) => value.isNotEmpty)
-            .toList(growable: false)
-          ..sort();
-    return mimeSignatures.join('\n');
-  }
-
-  String _normalizedFilePartSignature(FilePart part) {
-    final mime = part.mime.trim().toLowerCase();
-    final sourcePath = (part.fileSource?.path ?? part.symbolSource?.path ?? '')
-        .trim();
-    final normalizedSourcePath = sourcePath.toLowerCase();
-    final normalizedFilename = (part.filename ?? '').trim().toLowerCase();
-    final normalizedUrlHint = _normalizedFileUrlHint(part.url);
-    final reference = normalizedSourcePath.isNotEmpty
-        ? normalizedSourcePath
-        : normalizedFilename.isNotEmpty
-        ? normalizedFilename
-        : normalizedUrlHint;
-    if (mime.isEmpty && reference.isEmpty) {
-      return '';
-    }
-    return '$mime|$reference';
-  }
-
-  String _normalizedFileUrlHint(String url) {
-    final normalized = url.trim().toLowerCase();
-    if (normalized.isEmpty) {
-      return '';
-    }
-    if (normalized.startsWith('data:')) {
-      final delimiter = normalized.indexOf(';');
-      final commaDelimiter = normalized.indexOf(',');
-      final endIndex = switch ((delimiter, commaDelimiter)) {
-        (>= 0, >= 0) => delimiter < commaDelimiter ? delimiter : commaDelimiter,
-        (>= 0, _) => delimiter,
-        (_, >= 0) => commaDelimiter,
-        _ => normalized.length,
-      };
-      return normalized.substring(0, endIndex);
-    }
-
-    final parsed = Uri.tryParse(normalized);
-    if (parsed == null) {
-      return normalized;
-    }
-    if (parsed.pathSegments.isNotEmpty) {
-      final basename = parsed.pathSegments.last.trim();
-      if (basename.isNotEmpty) {
-        return basename;
-      }
-    }
-    final withoutQuery = parsed.replace(query: '', fragment: '').toString();
-    return withoutQuery.trim();
-  }
-
-  bool _isLikelyPendingLocalUserMatch({
-    required UserMessage pending,
-    required UserMessage incoming,
-  }) {
-    final pendingText = _normalizedUserTextSignature(pending);
-    final incomingText = _normalizedUserTextSignature(incoming);
-    if (pendingText != incomingText) {
-      return false;
-    }
-
-    final pendingFileCount = pending.parts.whereType<FilePart>().length;
-    final incomingFileCount = incoming.parts.whereType<FilePart>().length;
-    if (pendingFileCount == 0 || incomingFileCount == 0) {
-      return false;
-    }
-    if (pendingFileCount != incomingFileCount) {
-      return false;
-    }
-
-    return _normalizedUserFileMimeSignature(pending) ==
-        _normalizedUserFileMimeSignature(incoming);
-  }
-
   int _findPendingLocalUserMessageIndex(UserMessage incoming) {
     for (var index = 0; index < _messages.length; index += 1) {
       final current = _messages[index];
@@ -563,69 +448,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
         return index;
       }
     }
-
-    final incomingSignature = _normalizedUserMessageSignature(incoming);
-    if (incomingSignature.isEmpty) {
-      // Server echoed with empty parts — fall back to time-proximity-only
-      // match when there is exactly one pending local user message for the
-      // same session (avoids ambiguity with multiple pending messages).
-      return _findSolePendingLocalUserByTimeProximity(incoming);
-    }
-
-    var bestMatchIndex = -1;
-    Duration? bestMatchDelta;
-    for (var index = 0; index < _messages.length; index += 1) {
-      final current = _messages[index];
-      if (current is! UserMessage) {
-        continue;
-      }
-      if (!_pendingLocalUserMessageIds.contains(current.id)) {
-        continue;
-      }
-      if (current.sessionId != incoming.sessionId) {
-        continue;
-      }
-      final currentSignature = _normalizedUserMessageSignature(current);
-      if (currentSignature != incomingSignature) {
-        if (!_isLikelyPendingLocalUserMatch(
-          pending: current,
-          incoming: incoming,
-        )) {
-          continue;
-        }
-      }
-      final delta = incoming.time.difference(current.time).abs();
-      if (delta > const Duration(minutes: 5)) {
-        continue;
-      }
-      if (bestMatchDelta == null || delta < bestMatchDelta) {
-        bestMatchDelta = delta;
-        bestMatchIndex = index;
-      }
-    }
-    return bestMatchIndex;
-  }
-
-  /// Matches a server [UserMessage] (with empty content signature) to a pending
-  /// local user message using only time proximity and session ID. Only returns
-  /// a match when exactly one pending candidate exists for the session to avoid
-  /// ambiguous replacements.
-  int _findSolePendingLocalUserByTimeProximity(UserMessage incoming) {
-    int candidateIndex = -1;
-    for (var index = 0; index < _messages.length; index += 1) {
-      final current = _messages[index];
-      if (current is! UserMessage) continue;
-      if (!_pendingLocalUserMessageIds.contains(current.id)) continue;
-      if (current.sessionId != incoming.sessionId) continue;
-      final delta = incoming.time.difference(current.time).abs();
-      if (delta > const Duration(minutes: 5)) continue;
-      if (candidateIndex != -1) {
-        // Multiple candidates — ambiguous, don't guess.
-        return -1;
-      }
-      candidateIndex = index;
-    }
-    return candidateIndex;
+    return -1;
   }
 
   void _handleFailure(Failure failure) {

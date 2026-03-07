@@ -50,7 +50,7 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | 020 | Session-level SWR cache with persisted LRU snapshots — instant reopen of long sessions with background revalidation | 788–847 |
 | 021 | Context-scoped New Chat draft state — prevent cross-project draft leakage during fast SWR switches | 848–891 |
 | 022 | Unified project context controls with sidebar session previews — integrated navigation while preserving `serverId::scopeId` ownership | 892–932 |
-| 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web | 933–1007 |
+| 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web | 933–965 |
 
 ## 🗺 CODEBASE Quick Reference (details in `CODEBASE.md`)
 
