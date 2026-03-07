@@ -335,39 +335,6 @@
 - **Then** the chat reveals the **start** of the final assistant message (not the end)
 - **Then** the reveal is anchored at the top of the viewport so reading starts from the first line
 
-### Final response reconcile is resilient to transient abort suppression
-
-- **Given** the assistant turn ends and `session.idle` arrives while a short abort-suppression window is still active
-- **When** the latest assistant message still has only tool/work surface content (no final visible text yet)
-- **Then** the app still runs a targeted final-message reconcile for the active session
-- **Then** the final assistant response becomes visible without requiring the user to switch sessions and return
-
-### Final response reconcile triggers latest-message reveal
-
-- **Given** a tool/work-heavy turn finishes and the final assistant text is applied by active-session revalidation
-- **When** the latest session message changes during reconcile
-- **Then** the timeline schedules a latest-message reveal/scroll update for that active session
-- **Then** the user sees the final response immediately without needing a manual session switch
-
-### Async send completion ignores stale assistant IDs
-
-- **Given** async send fallback needs to resolve the assistant message ID from session history
-- **When** older assistant messages already exist in that history
-- **Then** the client excludes pre-send known assistant IDs and prioritizes in-progress/fresh IDs from the current turn
-- **Then** if baseline prefetch fails, a timestamp guard is kept as fallback to avoid stale completion selection
-- **Then** when `session.idle` appears before any `busy` signal right after send, completion waits for a short guard window before accepting idle-only candidates
-- **Then** if idle reconciliation still has no fresh assistant candidate, the client keeps waiting and escalates to direct message polling before concluding the turn, avoiding false "completed" states without assistant output
-- **Then** when a stale `session.idle` from a previous turn arrives while the current send stream is still active, the app suppresses turn-complete feedback/reconcile for that stale idle and keeps the current turn in-flight
-- **Then** once that active send stream finishes, any deferred stale-idle reconcile is executed exactly once to fetch and reveal the final assistant message without requiring a session switch
-
-### Async send completion keeps data usage bounded
-
-- **Given** async send reconciliation needs periodic `GET /session/{id}/message` lookups
-- **When** the client fetches message history during fallback/idle completion resolution
-- **Then** requests use a bounded tail limit (`limit=120`) instead of full-history list fetches to reduce transfer volume on mobile networks
-- **Then** known assistant IDs are cached per session with a bounded LRU-like cap (64 sessions) to avoid repeated baseline fetches and unbounded memory growth
-- **Then** if completion ends without a resolvable assistant message (`no_message_id` or `no_message`), the session cache entry is invalidated to avoid carrying stale baseline state into the next send
-
 ### Post-completion reading remains stable
 
 - **Given** the final assistant response is already visible
@@ -479,9 +446,11 @@ The app uses a dual-engine strategy with automatic fallback:
 - **Then** an interactive card appears in the chat with three response options:
   - **Allow Once** — approves the action for this single occurrence
   - **Always** — approves the action permanently for this session
-  - **Reject** — denies the action
+- **Reject** — denies the action
 - **Then** the server waits for the user's response before proceeding
+- **Then** the visible permission card is scoped to the owning session only; switching to another session does not surface that request there
 - **When** the user allows (once or always), the server continues the operation
+- **Then** the resolved permission request is removed from the local pending state immediately
 - **When** the user rejects, the server receives a rejection and the session pauses — the assistant stops and waits for the user to send a new message before continuing
 
 ### Question prompts
@@ -490,6 +459,9 @@ The app uses a dual-engine strategy with automatic fallback:
 - **When** the server sends a question prompt
 - **Then** an interactive card appears with the question and selectable options
 - **Then** the server waits for the user's response before proceeding
+- **Then** the visible question card is scoped to the owning session only; switching to another session does not surface that question there
+- **When** the user replies or rejects the question
+- **Then** the resolved question request is removed from the local pending state immediately
 
 ---
 
@@ -791,6 +763,10 @@ Server tokens, API keys, and credentials must never appear in logs, error screen
 ### Never auto-approve permissions
 
 Permission requests from the server always require explicit user action (approve or deny). The app must never approve automatically.
+
+### Never leak pending prompts across sessions
+
+Permission and question cards must stay attached to their owning session. Switching sessions must never show a pending interaction from a different session.
 
 ### Never show false aborts
 
