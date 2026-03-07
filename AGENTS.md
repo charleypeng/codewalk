@@ -31,27 +31,27 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 |-----|------------|-------|
 | 001 | Multi-server with profiles, scoped persistence, and secure credentials — prevent cross-server leakage | 35–69 |
 | 002 | Context isolation `serverId::directory` with serialized transition queue — prevent race conditions on project switch | 70–107 |
-| 003 | Realtime-first sync with degraded fallback and platform-aware background policy — maintain live UX without losing offline data | 108–155 |
-| 004 | Chat with slim orchestrators and decomposed part-file clusters — maintainability on high-change surfaces | 156–191 |
-| 005 | Composer pipeline for multimodal input, triggers (`@!/`) and send/stop — rich composition without breaking flow | 192–227 |
-| 006 | Speech input with `SpeechInputService`, Sherpa (Linux) and native STT (Android) — pluggable by platform | 228–265 |
-| 007 | Modular settings with typed `SettingsProvider` + `ExperienceSettings` — unified persistence desktop/mobile | 266–302 |
-| 008 | Context-scoped file explorer with quick-open and diff-aware refresh — fast navigation without unnecessary reloads | 303–338 |
-| 009 | Title generation via internal `title` agent — eliminate external dependency for session titles | 339–372 |
-| 010 | Split CI pipeline: quality on push, release on tag, smoke on minor-tag — fast feedback without expensive builds | 373–408 |
-| 011 | Unified server setup wizard (onboarding + settings) — guide new users and consolidate setup flow | 409–447 |
-| 012 | Migration to Material Symbols via `material_symbols_icons` — broader icon coverage aligned with MD3 | 448–482 |
-| 013 | MD3 `WindowSizeClass` with 5 breakpoint tiers — consistent responsive layout without magic numbers | 483–526 |
-| 014 | Centralized design tokens (`AppShapes` + `BrandColor`) — MD3 shape scale and fallback colors without scattered hex values | 527–572 |
-| 015 | Platform-specific icon pipeline (tray, notification, macOS) via `make icons` — reproducible assets per target | 573–616 |
-| 016 | Hybrid file-backed cache for large chat payloads — eliminate SharedPreferences size limits | 617–653 |
-| 017 | Android foreground service with `START_STICKY` — reliable monitoring that survives process death | 654–690 |
-| 018 | Dedicated Dio instance for SSE with isolated connection pool — prevent stream eviction by regular HTTP requests | 691–742 |
-| 019 | Defer `PATCH /config` during active server processing — prevent false abort from `Instance.dispose()` on server | 743–787 |
-| 020 | Session-level SWR cache with persisted LRU snapshots — instant reopen of long sessions with background revalidation | 788–847 |
-| 021 | Context-scoped New Chat draft state — prevent cross-project draft leakage during fast SWR switches | 848–891 |
-| 022 | Unified project context controls with sidebar session previews — integrated navigation while preserving `serverId::scopeId` ownership | 892–932 |
-| 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web | 933–1014 |
+| 003 | Realtime-first sync with degraded fallback and platform-aware background policy — maintain live UX without losing offline data | 108–156 |
+| 004 | Chat with slim orchestrators and decomposed part-file clusters — maintainability on high-change surfaces | 157–192 |
+| 005 | Composer pipeline for multimodal input, triggers (`@!/`) and send/stop — rich composition without breaking flow | 193–229 |
+| 006 | Speech input with `SpeechInputService`, Sherpa (Linux) and native STT (Android) — pluggable by platform | 230–267 |
+| 007 | Modular settings with typed `SettingsProvider` + `ExperienceSettings` — unified persistence desktop/mobile | 268–304 |
+| 008 | Context-scoped file explorer with quick-open and diff-aware refresh — fast navigation without unnecessary reloads | 305–340 |
+| 009 | Title generation via internal `title` agent — eliminate external dependency for session titles | 341–374 |
+| 010 | Split CI pipeline: quality on push, release on tag, smoke on minor-tag — fast feedback without expensive builds | 375–410 |
+| 011 | Unified server setup wizard (onboarding + settings) — guide new users and consolidate setup flow | 411–449 |
+| 012 | Migration to Material Symbols via `material_symbols_icons` — broader icon coverage aligned with MD3 | 450–484 |
+| 013 | MD3 `WindowSizeClass` with 5 breakpoint tiers — consistent responsive layout without magic numbers | 485–528 |
+| 014 | Centralized design tokens (`AppShapes` + `BrandColor`) — MD3 shape scale and fallback colors without scattered hex values | 529–574 |
+| 015 | Platform-specific icon pipeline (tray, notification, macOS) via `make icons` — reproducible assets per target | 575–618 |
+| 016 | Hybrid file-backed cache for large chat payloads — eliminate SharedPreferences size limits | 619–655 |
+| 017 | Android foreground service with `START_STICKY` — reliable monitoring that survives process death | 656–692 |
+| 018 | Dedicated Dio instance for SSE with isolated connection pool — prevent stream eviction by regular HTTP requests | 693–744 |
+| 019 | Defer `PATCH /config` during active server processing — prevent false abort from `Instance.dispose()` on server | 745–789 |
+| 020 | Session-level SWR cache with persisted LRU snapshots — instant reopen of long sessions with background revalidation | 790–849 |
+| 021 | Context-scoped New Chat draft state — prevent cross-project draft leakage during fast SWR switches | 850–893 |
+| 022 | Unified project context controls with sidebar session previews — integrated navigation while preserving `serverId::scopeId` ownership | 894–934 |
+| 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web | 935–1011 |
 
 ## 🗺 CODEBASE Quick Reference (details in `CODEBASE.md`)
 

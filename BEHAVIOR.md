@@ -200,31 +200,27 @@
 - **When** the user taps the cancel/stop button
 - **Then** the response generation stops and the partial response remains visible
 
-### Sending while processing enqueues messages
+### Sending while processing uses direct follow-up sends
+
+- **Given** the assistant is actively streaming a response and the user has typed a new prompt
+- **When** the user taps the primary composer action
+- **Then** the app sends that prompt immediately through the normal async send path without locally batching or draining other drafts
+- **Then** the app does not auto-abort the active response as part of that send action
+
+### Busy-state UI does not invent local queue lifecycle
 
 - **Given** the assistant is actively streaming a response
-- **When** the user sends one or more new messages
-- **Then** each new message is shown in the timeline immediately as queued (with `Queued` state)
-- **Then** the app does not interrupt the running response automatically
+- **When** the user interacts with the composer and timeline
+- **Then** the app does not show a client-invented `Queued` message state for follow-up prompts
+- **Then** the app does not expose a `Send now` action or any local queue-dispatch control
+- **Then** busy/idle feedback comes from the active server-backed lifecycle rather than local queue bookkeeping
 
-### Queued messages are batched into one send
+### Stop remains an explicit abort action
 
-- **Given** there are multiple queued messages for the same session
-- **When** the queue is dispatched (either on first idle opportunity or via `Send now`)
-- **Then** all queued message texts are merged and sent as a single payload
-- **Then** each original queued message becomes one line in that payload (simple `\n` line breaks between messages)
-- **Then** the individual queued messages are removed from the timeline and replaced by the single consolidated message
-
-### Send now forces immediate queued dispatch
-
-- **Given** there are queued messages while the assistant is still processing
-- **When** the user taps `Send now`
-- **Then** the app performs the same stop behavior as `Stop` for the active response
-- **Then** as soon as the session becomes ready, the app sends the full queued batch as one payload
-- **Then** abort-side `session.error` events that belong to this handoff are treated as expected control flow, not as user-facing failures
-- **Then** the app must not play error sounds, show error notifications, or append abort error bubbles during this handoff
-- **Then** the replacement queued send keeps the session in active-response state until the new turn settles
-- **Then** the timeline must not duplicate the consolidated queued user bubble during the handoff
+- **Given** the assistant is actively streaming a response and the composer has no pending draft to send
+- **When** the user taps `Stop`
+- **Then** the app calls the session abort endpoint for the active session
+- **Then** the current response stops and any partial assistant output remains visible
 
 ### Failed send returns message to composer
 

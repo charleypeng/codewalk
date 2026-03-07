@@ -115,7 +115,7 @@ The app requires realtime-first behavior for session/message coherence, but it m
 
 ### Decision
 
-Use realtime streams as the primary sync mechanism, automatically enter degraded polling when signals fail/stale, and apply platform-aware background policies (desktop tray continuity, mobile hold/fallback strategy). Active message-response streams are preserved (not cancelled) during session navigation to maintain in-flight response continuity. Preserved streams are tracked in a dedicated set and drained on every context switch to prevent connection leaks. A generation counter (`_messageStreamGeneration`) invalidates stale preserved-stream callbacks, preventing cross-session state mutation.
+Use realtime streams as the primary sync mechanism, automatically enter degraded polling when signals fail/stale, and apply platform-aware background policies (desktop tray continuity, mobile hold/fallback strategy). Active message-response streams are preserved (not cancelled) during session navigation to maintain in-flight response continuity. Preserved streams are tracked in a dedicated set and drained on every context switch to prevent connection leaks. A generation counter (`_messageStreamGeneration`) invalidates stale preserved-stream callbacks, preventing cross-session state mutation. Session lifecycle remains server-authoritative: follow-up prompts ride the standard async send path, and the client does not invent local queued/batched send phases.
 
 ### Rationale
 
@@ -128,6 +128,7 @@ Use realtime streams as the primary sync mechanism, automatically enter degraded
 - ✅ Maintains near-live UX under normal connectivity.
 - ✅ Preserves functional sync under stream degradation.
 - ✅ Preserves in-flight AI responses during session navigation, matching OpenCode Web continuity behavior.
+- ✅ Keeps busy/idle/send lifecycle aligned with upstream server events instead of local queue orchestration.
 - ⚠ Lifecycle orchestration becomes more stateful and timing-sensitive.
 - ⚠ Generation-based invalidation is required to prevent stale preserved streams from mutating current session state; all preserved subscriptions must be drained on context switches.
 - ❌ Continuous background streaming is not guaranteed on mobile.
@@ -199,7 +200,7 @@ The composer must combine text and attachments, support power triggers (`@`, `!`
 
 ### Decision
 
-Implement a state-driven composer pipeline with multimodal submission contracts, mention/slash trigger controllers, shell-mode trigger (`!`), and guarded send/stop interactions.
+Implement a state-driven composer pipeline with multimodal submission contracts, mention/slash trigger controllers, shell-mode trigger (`!`), and guarded send/stop interactions. Busy-session follow-up prompts use the same direct async send path as normal turns; the composer does not maintain a client-side queued/send-now subsystem, and `Stop` remains a separate explicit abort action when no draft is ready to send.
 
 ### Rationale
 
@@ -211,6 +212,7 @@ Implement a state-driven composer pipeline with multimodal submission contracts,
 
 - ✅ Supports rich prompt composition in a single interaction surface.
 - ✅ Improves power-user speed via trigger-based flows.
+- ✅ Allows direct follow-up sends during active responses without coupling them to implicit aborts or local batching.
 - ⚠ State transitions are denser and require strict event handling.
 - ❌ Shell mode and attachments are intentionally mutually exclusive at send time.
 

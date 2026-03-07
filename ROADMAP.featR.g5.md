@@ -2,32 +2,32 @@
 feature: "featR g5 - Send, Stop, and Queue Parity"
 group: "featR.g5"
 dependency: "featR.g4"
-status: "Pending"
+status: "In Progress"
 ---
 
 # featR g5 - Send, Stop, and Queue Parity
 
 ## Objective
-Simplify the send lifecycle by removing custom CodeWalk queueing, "Send now" batching, and abort-suppression hacks. Align directly with the official OpenCode Web send/stop contract.
+Align CodeWalk's send/stop behavior with official OpenCode semantics: preserve the convenience of sending while busy only when it matches server-authoritative queueing, while removing all client-invented queue lifecycle, local batching, and handoff hacks.
 
 ## Why This Group Exists
-CodeWalk currently implements a complex "send-while-busy" queue, including the ability to "Send now" (which batches newlines) and various abort-suppression mechanisms. These are local product divergences that add significant state complexity. The official OpenCode Web client uses a much simpler "single active request" or "server-side handled concurrency" model. Removing these local workarounds reduces technical debt and eliminates a major category of "stuck state" bugs.
+CodeWalk currently implements a complex local "send-while-busy" queue, including the ability to "Send now" (which batches newlines) and various abort-suppression mechanisms. These client-side inventions add significant state complexity and diverge from the server-authoritative model. By removing local queue orchestration and batching hacks while preserving real server-backed queueing, we reduce technical debt and align with the official OpenCode contract without losing the core convenience of the "send while busy" flow.
 
 ## Source of Truth / Baseline Hierarchy
-1.  **Primary Authority**: OpenCode Web (`packages/app/src/components/prompt-input/submit.ts`, `packages/app/src/pages/session/composer/session-composer-state.ts`).
-2.  **Corroboration**: OpenCode CLI TUI component behavior.
-3.  **Informative Only**: `BEHAVIOR.md` (Ignore references to "local queueing" or "Send now").
+1.  **Primary Authority**: ADR-023 and official OpenCode references (OpenCode Web/CLI).
+2.  **Corroboration**: OpenCode Web (`packages/app/src/components/prompt-input/submit.ts`, `packages/app/src/pages/session/composer/session-composer-state.ts`).
+3.  **Informative Only**: `BEHAVIOR.md` (Ignore references to local queueing hacks or "Send now").
 
 ## Dependencies / Execution Order
 -   **Dependencies**: **featR.g4** (Delivered safe reconciliation baseline and ADR-023-compliant optimistic replay contract).
 -   **Order**: Land this before g6 to clear the path for realtime lifecycle cleanup.
 
 ## In Scope
--   Removing the local `Queued` timeline state and UI indicators.
--   Removing the "Send now" feature and its newline-batching logic.
--   Simplifying the "Stop" button to directly call the server's abort/stop endpoint for the session.
--   Removing abort-suppression "handoff" logic.
--   Aligning the "busy" state with the server's actual session status.
+-   Removing local "Queued" timeline state placeholders and client-only queue orchestration.
+-   Removing the "Send now" feature and all associated newline-draining/prompt-batching logic.
+-   Mapping the "Stop" button directly to the official session abort contract (no local heuristics).
+-   Simplifying the chat lifecycle so busy/idle/processing/queued UI comes directly from server events.
+-   Preserving send-while-busy behavior ONLY if/when handled by the server's authoritative queue.
 
 ## Out of Scope
 -   Changing the polling frequency (see g7).
@@ -40,33 +40,36 @@ CodeWalk currently implements a complex "send-while-busy" queue, including the a
 -   `lib/data/datasources/chat_remote_datasource.dart`
 
 ## Official OpenCode Reference Targets
--   `packages/app/src/components/prompt-input/submit.ts` (Check what happens when a user sends while the app is already "processing").
+-   `packages/app/src/components/prompt-input/submit.ts` (Verify how the server handles prompts sent while "busy").
 
 ## Detailed Implementation Plan
-1.  **Deconstruct Local Queue**: Identify all places where `timeline.add(QueuedMessage)` is called. Replace this with a direct "Send or Error" flow that matches the official client.
-2.  **Retire "Send now"**: Delete the `Send now` UI action and the associated newline-draining logic in the send controller.
-3.  **Abort Contract Alignment**: Map the UI "Stop" action to a clean session-abort call. Remove any local "wait for abort before sending next" heuristics if they aren't source-justified.
-4.  **Simplify Lifecycle State**: In `ChatProvider`, reduce the lifecycle to a simple `idle -> sending -> processing -> idle` state machine, leaning on server echoes to drive the timeline rather than local state-keeping.
-5.  **Remove Batching**: Delete any logic that tries to combine multiple pending prompts into a single payload.
+1.  **Remove Local Queue Orchestration**: Identify and remove all logic where the client invents its own "Queued" state or manages a local queue timeline.
+2.  **Delete "Send now" and Batching**: Remove the `Send now` UI action and any logic that drains newlines or batches multiple prompts into a single local payload.
+3.  **Map Stop to Server Abort**: Simplify the "Stop" action to call the official session abort endpoint directly. Do not locally discard queued work unless upstream behavior requires it.
+4.  **Simplify Lifecycle to Server Events**: Drive the UI (busy, idle, processing, queued) using official server status transitions and events rather than custom client bookkeeping or handoff hacks.
+5.  **Validate Server-Authoritative Queueing**: Ensure that if a prompt is accepted by the server while busy, its state in CodeWalk reflects the actual server-side pending/queued status.
 
 ## Guardrails / Anti-goals
--   **No Backward Compatibility**: Do not keep the old queue "just in case". It is a source of bugs and MUST be deleted.
--   **Delete, Don't Flag**: Favor deleting the code over wrapping it in feature flags.
--   **Fidelity over "Smartness"**: If CodeWalk's current queueing was meant to be "smarter" than the web client, discard that smartness in favor of parity.
+-   **No Client-Side Invention**: The client must not invent lifecycle states that don't exist in the server contract.
+-   **Fidelity over "Smartness"**: Discard any local "smart" batching or queueing hacks in favor of official contract parity.
+-   **Strict ADR-023 Compliance**: Every behavior change must be verified against the official contract to prevent semantic drift.
 
 ## Acceptance Checklist / Definition of Done
--   [ ] No "Queued" messages appear in the timeline; sending while busy either errors or follows official server behavior.
+-   [ ] Sending while busy follows official server-authoritative queue behavior.
+-   [ ] Local "queued" placeholders and client-only queue orchestration are removed.
 -   [ ] "Send now" is completely removed from the UI and logic.
--   [ ] Stop button reliably terminates the current server-side task.
+-   [ ] Stop button reliably aborts only the active server-side task.
+-   [ ] Chat lifecycle UI is driven by server events, not custom client bookkeeping.
 -   [ ] `make check` passes.
 
 ## Validation and Test Plan
--   Use g1 tests to verify that sending multiple prompts follows the new simplified flow without state deadlock.
--   Manual test: Click "Stop" during a long generation; verify the stream terminates and the composer re-enables.
+-   Regression coverage for send-while-busy, stop/abort, and queue visibility behavior.
+-   Verify that sending multiple prompts follows the server's real queueing model without local state drift.
+-   Manual test: Trigger a long generation, send a follow-up, and verify the UI correctly reflects the server-side queue status.
 
 ## Docs / ADR / CODEBASE Follow-up
--   Update `CODEBASE.md` to reflect the removal of the queueing module.
--   Update `ADR` if the send lifecycle was previously documented as a custom architecture.
+-   Update `CODEBASE.md` to reflect the simplified send/lifecycle architecture.
+-   Ensure any custom send-lifecycle documentation in `ADR.md` is updated or superseded.
 
 ## Mandatory `flow` Execution Block
 1.  Implement the change;
@@ -74,8 +77,8 @@ CodeWalk currently implements a complex "send-while-busy" queue, including the a
 3.  Commit;
 4.  Run reviewer for all code commits in the group;
 5.  Fix accepted review findings and repeat reviewer until no accepted findings remain;
-6.  Run `HEY_CAPTION="featR g5: simplified send/stop queue parity" make android`;
+6.  Run `HEY_CAPTION="featR g5: server-authoritative send/stop/queue parity" make android`;
 7.  Only then notify the user with the final report.
 
 ## Suggested HEY_CAPTION
-"featR g5: Send, Stop, and Queue Parity"
+"featR g5: Server-Authoritative Send, Stop, and Queue Parity"

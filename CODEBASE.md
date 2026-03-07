@@ -138,7 +138,7 @@ chat_page_timeline_runtime.dart              # Tool-chain expanded state key res
 ```text
 chat_provider_core.dart
 chat_provider_session_ops.dart
-chat_provider_realtime_ops.dart           # Realtime event handling; suppresses `session.idle` events during active send streams (deferred per turn key) to prevent stale idle from closing subsequent turns before completion feedback or final-reconcile can occur; runs deferred reconcile on stream end/error path
+chat_provider_realtime_ops.dart           # Realtime event handling; defers stale `session.idle` reconciliation until the active send stream settles so server-driven lifecycle stays authoritative across follow-up sends
 chat_provider_realtime_aux_ops.dart
 chat_provider_event_reducer_ops.dart             # Reconcile one-shot guard via _messageStreamGeneration; dedup key composition
 chat_provider_message_merge_ops.dart
@@ -251,11 +251,11 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 - Android build targets Java 17 (`sourceCompatibility`, `targetCompatibility`, `jvmTarget`).
 - featM icon migration is largely complete in `lib/presentation/**` and `test/widget/**`; one notifications settings widget still uses `Icons.*` while the rest has moved to `Symbols.*` (`material_symbols_icons`).
 
-### Queued Send Flow
+### Direct Follow-up Send Flow
 
-- **Provider queue state + drain/send-now**: `chat_provider.dart` tracks per-session queued envelopes/local queued IDs and drains them as a merged batch; `sendQueuedNow()` can stop active response and force immediate drain.
-- **Composer queued status + action**: `chat_page_composer_status.dart` prioritizes queued-count status, and `chat_page_composer_widgets.dart` renders queued UI with a `Send now` action.
-- **Queued message badge**: `chat_message_widget.dart` + `chat_message_content.dart` expose/render `isQueuedUserMessage` with a `Queued` badge in user message bubbles.
+- **Provider send path**: `chat_provider.dart` routes new and follow-up turns through the same `sendMessage()` / `prompt_async` path; local queued-envelope drain and `Send now` orchestration were removed in featR g5.
+- **Composer action swap**: `chat_input_widget.dart` shows `Stop` only when the session is responding and the composer has no sendable draft; once text/attachments exist, the primary action switches back to direct send.
+- **Server-backed feedback**: `chat_page_composer_status.dart` and `chat_page_composer_widgets.dart` present reasoning/receiving/retrying state from the active turn without inventing a client-side queued lifecycle.
 
 ### Android Background Monitoring
 
