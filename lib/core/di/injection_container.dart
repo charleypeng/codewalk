@@ -32,11 +32,13 @@ import '../../domain/usecases/get_session_todo.dart';
 import '../../domain/usecases/list_pending_permissions.dart';
 import '../../domain/usecases/list_pending_questions.dart';
 import '../../domain/usecases/reject_question.dart';
+import '../../domain/usecases/revert_chat_message.dart';
 import '../../domain/usecases/reply_permission.dart';
 import '../../domain/usecases/reply_question.dart';
 import '../../domain/usecases/send_chat_message.dart';
 import '../../domain/usecases/share_chat_session.dart';
 import '../../domain/usecases/summarize_chat_session.dart';
+import '../../domain/usecases/unrevert_chat_messages.dart';
 import '../../domain/usecases/unshare_chat_session.dart';
 import '../../domain/usecases/update_chat_session.dart';
 import '../../domain/usecases/update_server_config.dart';
@@ -152,6 +154,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => ListPendingQuestions(sl()));
   sl.registerLazySingleton(() => ReplyQuestion(sl()));
   sl.registerLazySingleton(() => RejectQuestion(sl()));
+  sl.registerLazySingleton(() => RevertChatMessage(sl()));
+  sl.registerLazySingleton(() => UnrevertChatMessages(sl()));
 
   // State management
   sl.registerFactory(
@@ -190,6 +194,8 @@ Future<void> init() async {
       listPendingQuestions: sl(),
       replyQuestion: sl(),
       rejectQuestion: sl(),
+      revertChatMessage: sl(),
+      unrevertChatMessages: sl(),
       projectProvider: sl(),
       localDataSource: sl(),
       settingsProvider: sl(),

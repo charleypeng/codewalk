@@ -31,10 +31,12 @@ import 'package:codewalk/domain/usecases/get_session_todo.dart';
 import 'package:codewalk/domain/usecases/list_pending_permissions.dart';
 import 'package:codewalk/domain/usecases/list_pending_questions.dart';
 import 'package:codewalk/domain/usecases/reject_question.dart';
+import 'package:codewalk/domain/usecases/revert_chat_message.dart';
 import 'package:codewalk/domain/usecases/reply_permission.dart';
 import 'package:codewalk/domain/usecases/reply_question.dart';
 import 'package:codewalk/domain/usecases/send_chat_message.dart';
 import 'package:codewalk/domain/usecases/share_chat_session.dart';
+import 'package:codewalk/domain/usecases/unrevert_chat_messages.dart';
 import 'package:codewalk/domain/usecases/unshare_chat_session.dart';
 import 'package:codewalk/domain/usecases/update_chat_session.dart';
 import 'package:codewalk/domain/usecases/watch_chat_events.dart';
@@ -89,6 +91,128 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('ChatPage responsive shell', () {
+    testWidgets('toolbar shows undo and redo before display toggles', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(1400, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..defaultServerId = 'srv_test'
+        ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'srv_test',
+            'url': 'http://127.0.0.1:4096',
+            'label': 'Test Server',
+            'basicAuthEnabled': false,
+            'basicAuthUsername': '',
+            'basicAuthPassword': '',
+            'createdAt': 0,
+            'updatedAt': 0,
+          },
+        ]);
+      final provider = _buildChatProvider(localDataSource: localDataSource);
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('appbar_undo_button')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('appbar_redo_button')),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .getTopLeft(
+              find.byKey(const ValueKey<String>('appbar_undo_button')),
+            )
+            .dx,
+        lessThan(
+          tester
+              .getTopLeft(
+                find.byKey(
+                  const ValueKey<String>('appbar_display_toggles_button'),
+                ),
+              )
+              .dx,
+        ),
+      );
+      expect(
+        tester
+            .getTopLeft(
+              find.byKey(const ValueKey<String>('appbar_redo_button')),
+            )
+            .dx,
+        lessThan(
+          tester
+              .getTopLeft(
+                find.byKey(
+                  const ValueKey<String>('appbar_display_toggles_button'),
+                ),
+              )
+              .dx,
+        ),
+      );
+    });
+
+    testWidgets('slash thinking suggestion toggles Thinking bubbles setting', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(900, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await di.sl.reset();
+      di.sl.registerLazySingleton<DioClient>(DioClient.new);
+      addTearDown(() => di.sl.reset());
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..defaultServerId = 'srv_test'
+        ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'srv_test',
+            'url': 'http://127.0.0.1:4096',
+            'label': 'Test Server',
+            'basicAuthEnabled': false,
+            'basicAuthUsername': '',
+            'basicAuthPassword': '',
+            'createdAt': 0,
+            'updatedAt': 0,
+          },
+        ]);
+      final provider = _buildChatProvider(localDataSource: localDataSource);
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      final settingsProvider = tester
+          .element(find.byType(ChatPage))
+          .read<SettingsProvider>();
+      final initial = settingsProvider.showThinkingBubbles;
+
+      await provider.beginNewChatDraft();
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).last, '/thinking');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+
+      final suggestion = find.descendant(
+        of: find.byKey(const ValueKey<String>('composer_popover_panel_slash')),
+        matching: find.text('/thinking'),
+      );
+      expect(suggestion, findsOneWidget);
+      await tester.tap(suggestion);
+      await tester.pumpAndSettle();
+
+      expect(settingsProvider.showThinkingBubbles, isNot(initial));
+    });
+
     testWidgets('shows drawer on mobile width', (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(500, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -8731,6 +8855,8 @@ ChatProvider _buildChatProvider({
     listPendingQuestions: ListPendingQuestions(chatRepo),
     replyQuestion: ReplyQuestion(chatRepo),
     rejectQuestion: RejectQuestion(chatRepo),
+    revertChatMessage: RevertChatMessage(chatRepo),
+    unrevertChatMessages: UnrevertChatMessages(chatRepo),
     projectProvider: ProjectProvider(
       projectRepository: projectRepository ?? FakeProjectRepository(),
       localDataSource: localDataSource,

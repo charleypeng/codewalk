@@ -223,6 +223,59 @@ void main() {
       },
     );
 
+    test('undoLastTurn reverts latest persisted user message', () async {
+      chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+        UserMessage(
+          id: 'msg_user_1',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_user_1',
+              messageId: 'msg_user_1',
+              sessionId: 'ses_1',
+              text: 'hello',
+            ),
+          ],
+        ),
+        AssistantMessage(
+          id: 'msg_assistant_1',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1100),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_assistant_1',
+              messageId: 'msg_assistant_1',
+              sessionId: 'ses_1',
+              text: 'hi',
+            ),
+          ],
+        ),
+      ];
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+
+      final ok = await provider.undoLastTurn();
+
+      expect(ok, isTrue);
+      expect(chatRepository.lastRevertProjectId, 'default');
+      expect(chatRepository.lastRevertSessionId, 'ses_1');
+      expect(chatRepository.lastRevertMessageId, 'msg_user_1');
+    });
+
+    test('redoLastTurn forwards current session to unrevert flow', () async {
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+
+      final ok = await provider.redoLastTurn();
+
+      expect(ok, isTrue);
+      expect(chatRepository.lastUnrevertProjectId, 'default');
+      expect(chatRepository.lastUnrevertSessionId, 'ses_1');
+    });
+
     test('toggleSessionPinned updates scoped pin state and persists', () async {
       await provider.loadSessions();
       final session = provider.sessions.first;

@@ -1183,6 +1183,15 @@ class FakeChatRepository implements ChatRepository {
   Failure? shareSessionFailure;
   Failure? unshareSessionFailure;
   Failure? forkSessionFailure;
+  Failure? revertMessageFailure;
+  Failure? unrevertMessagesFailure;
+  String? lastRevertProjectId;
+  String? lastRevertSessionId;
+  String? lastRevertMessageId;
+  String? lastRevertDirectory;
+  String? lastUnrevertProjectId;
+  String? lastUnrevertSessionId;
+  String? lastUnrevertDirectory;
   Failure? sessionStatusFailure;
   Failure? sessionChildrenFailure;
   Failure? sessionTodoFailure;
@@ -1447,7 +1456,16 @@ class FakeChatRepository implements ChatRepository {
     String sessionId,
     String messageId, {
     String? directory,
-  }) async => const Right(null);
+  }) async {
+    lastRevertProjectId = projectId;
+    lastRevertSessionId = sessionId;
+    lastRevertMessageId = messageId;
+    lastRevertDirectory = directory;
+    if (revertMessageFailure != null) {
+      return Left(revertMessageFailure!);
+    }
+    return const Right(null);
+  }
 
   @override
   Future<Either<Failure, List<ChatPermissionRequest>>> listPermissions({
@@ -1623,7 +1641,15 @@ class FakeChatRepository implements ChatRepository {
     String projectId,
     String sessionId, {
     String? directory,
-  }) async => const Right(null);
+  }) async {
+    lastUnrevertProjectId = projectId;
+    lastUnrevertSessionId = sessionId;
+    lastUnrevertDirectory = directory;
+    if (unrevertMessagesFailure != null) {
+      return Left(unrevertMessagesFailure!);
+    }
+    return const Right(null);
+  }
 
   @override
   Future<Either<Failure, ChatSession>> updateSession(

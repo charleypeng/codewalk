@@ -153,11 +153,15 @@ extension _ChatPageCommandQuery on _ChatPageState {
       case 'new':
         await _createNewSession();
         return true;
+      case 'models':
       case 'model':
         if (chatProvider.providers.isEmpty) {
           return true;
         }
         await _openModelSelector(chatProvider);
+        return true;
+      case 'sessions':
+        await _openSessionsSurface();
         return true;
       case 'agent':
         if (!mounted || chatProvider.selectableAgents.isEmpty) {
@@ -193,8 +197,86 @@ extension _ChatPageCommandQuery on _ChatPageState {
         }
         await _compactCurrentSession(chatProvider);
         return true;
+      case 'thinking':
+        await _toggleThinkingBubbles();
+        return true;
+      case 'undo':
+        await _triggerHistoryAction(
+          chatProvider,
+          action: _HistoryToolbarAction.undo,
+        );
+        return true;
+      case 'redo':
+        await _triggerHistoryAction(
+          chatProvider,
+          action: _HistoryToolbarAction.redo,
+        );
+        return true;
       default:
         return false;
     }
+  }
+
+  Future<void> _openSessionsSurface() async {
+    if (!mounted) {
+      return;
+    }
+    final settingsProvider = context.read<SettingsProvider>();
+    final sizeClass = context.windowSizeClass;
+    final conversationsVisible = settingsProvider.isDesktopPaneVisible(
+      DesktopPane.conversations,
+    );
+
+    if (sizeClass.isCompact ||
+        (sizeClass == WindowSizeClass.medium && !conversationsVisible)) {
+      _scaffoldKey.currentState?.openDrawer();
+      return;
+    }
+
+    if (sizeClass == WindowSizeClass.medium) {
+      return;
+    }
+
+    if (!conversationsVisible) {
+      await settingsProvider.setDesktopPaneVisible(
+        DesktopPane.conversations,
+        true,
+      );
+    }
+  }
+
+  Future<void> _toggleThinkingBubbles() async {
+    if (!mounted) {
+      return;
+    }
+    final settingsProvider = context.read<SettingsProvider>();
+    await settingsProvider.setShowThinkingBubbles(
+      !settingsProvider.showThinkingBubbles,
+    );
+  }
+
+  Future<void> _triggerHistoryAction(
+    ChatProvider chatProvider, {
+    required _HistoryToolbarAction action,
+  }) async {
+    if (!mounted) {
+      return;
+    }
+
+    final success = switch (action) {
+      _HistoryToolbarAction.undo => await chatProvider.undoLastTurn(),
+      _HistoryToolbarAction.redo => await chatProvider.redoLastTurn(),
+    };
+    if (success || !mounted) {
+      return;
+    }
+
+    final message = switch (action) {
+      _HistoryToolbarAction.undo => 'Nothing to undo in this session',
+      _HistoryToolbarAction.redo => 'Nothing to redo in this session',
+    };
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }

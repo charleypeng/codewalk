@@ -1323,9 +1323,15 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
         isBuiltin: true,
       ),
       ChatComposerSlashCommandSuggestion(
-        name: 'model',
+        name: 'models',
         source: 'builtin',
         description: 'Open model selector',
+        isBuiltin: true,
+      ),
+      ChatComposerSlashCommandSuggestion(
+        name: 'sessions',
+        source: 'builtin',
+        description: 'Open conversations list',
         isBuiltin: true,
       ),
       ChatComposerSlashCommandSuggestion(
@@ -1350,6 +1356,24 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
         name: 'compact',
         source: 'builtin',
         description: 'Compact current session context',
+        isBuiltin: true,
+      ),
+      ChatComposerSlashCommandSuggestion(
+        name: 'thinking',
+        source: 'builtin',
+        description: 'Toggle thinking bubbles',
+        isBuiltin: true,
+      ),
+      ChatComposerSlashCommandSuggestion(
+        name: 'undo',
+        source: 'builtin',
+        description: 'Undo the latest user turn',
+        isBuiltin: true,
+      ),
+      ChatComposerSlashCommandSuggestion(
+        name: 'redo',
+        source: 'builtin',
+        description: 'Redo the latest undone turn',
         isBuiltin: true,
       ),
     ];

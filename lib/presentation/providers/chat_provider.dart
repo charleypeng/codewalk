@@ -35,11 +35,13 @@ import '../../domain/usecases/get_session_todo.dart';
 import '../../domain/usecases/list_pending_permissions.dart';
 import '../../domain/usecases/list_pending_questions.dart';
 import '../../domain/usecases/reject_question.dart';
+import '../../domain/usecases/revert_chat_message.dart';
 import '../../domain/usecases/reply_permission.dart';
 import '../../domain/usecases/reply_question.dart';
 import '../../domain/usecases/send_chat_message.dart';
 import '../../domain/usecases/share_chat_session.dart';
 import '../../domain/usecases/summarize_chat_session.dart';
+import '../../domain/usecases/unrevert_chat_messages.dart';
 import '../../domain/usecases/unshare_chat_session.dart';
 import '../../domain/usecases/update_chat_session.dart';
 import '../../domain/usecases/watch_chat_events.dart';
@@ -120,6 +122,8 @@ class ChatProvider extends ChangeNotifier {
     required this.listPendingQuestions,
     required this.replyQuestion,
     required this.rejectQuestion,
+    this.revertChatMessage,
+    this.unrevertChatMessages,
     required this.projectProvider,
     required this.localDataSource,
     this.settingsProvider,
@@ -183,6 +187,8 @@ class ChatProvider extends ChangeNotifier {
   final ListPendingQuestions listPendingQuestions;
   final ReplyQuestion replyQuestion;
   final RejectQuestion rejectQuestion;
+  final RevertChatMessage? revertChatMessage;
+  final UnrevertChatMessages? unrevertChatMessages;
   final ProjectProvider projectProvider;
   final AppLocalDataSource localDataSource;
   final SettingsProvider? settingsProvider;
@@ -3231,6 +3237,90 @@ class ChatProvider extends ChangeNotifier {
       (updated) {
         _applySessionLocally(updated);
         unawaited(_persistSessionCacheBestEffort());
+        notifyListeners();
+        return true;
+      },
+    );
+  }
+
+  String? get latestRevertibleMessageId {
+    final sessionId = _currentSession?.id;
+    if (sessionId == null) {
+      return null;
+    }
+    for (var index = _messages.length - 1; index >= 0; index -= 1) {
+      final message = _messages[index];
+      if (message.sessionId != sessionId || message is! UserMessage) {
+        continue;
+      }
+      if (_isOptimisticLocalUserMessageId(message.id)) {
+        continue;
+      }
+      return message.id;
+    }
+    return null;
+  }
+
+  bool get canUndoCurrentSession => latestRevertibleMessageId != null;
+
+  bool get canRedoCurrentSession => _currentSession != null;
+
+  Future<bool> undoLastTurn() async {
+    final session = _currentSession;
+    final messageId = latestRevertibleMessageId;
+    final useCase = revertChatMessage;
+    if (session == null || messageId == null || useCase == null) {
+      return false;
+    }
+
+    final result = await useCase(
+      RevertChatMessageParams(
+        projectId: projectProvider.currentProjectId,
+        sessionId: session.id,
+        messageId: messageId,
+        directory: projectProvider.currentDirectory,
+      ),
+    );
+
+    return result.fold(
+      (failure) {
+        _handleFailure(failure);
+        notifyListeners();
+        return false;
+      },
+      (_) async {
+        await refreshActiveSessionView(reason: 'undo-success');
+        await loadSessionInsights(session.id, silent: true);
+        notifyListeners();
+        return true;
+      },
+    );
+  }
+
+  Future<bool> redoLastTurn() async {
+    final session = _currentSession;
+    final useCase = unrevertChatMessages;
+    if (session == null || useCase == null) {
+      return false;
+    }
+
+    final result = await useCase(
+      UnrevertChatMessagesParams(
+        projectId: projectProvider.currentProjectId,
+        sessionId: session.id,
+        directory: projectProvider.currentDirectory,
+      ),
+    );
+
+    return result.fold(
+      (failure) {
+        _handleFailure(failure);
+        notifyListeners();
+        return false;
+      },
+      (_) async {
+        await refreshActiveSessionView(reason: 'redo-success');
+        await loadSessionInsights(session.id, silent: true);
         notifyListeners();
         return true;
       },

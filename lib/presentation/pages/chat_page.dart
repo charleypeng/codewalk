@@ -84,6 +84,8 @@ enum _DisplayToggleAction {
   composerTips,
 }
 
+enum _HistoryToolbarAction { undo, redo }
+
 /// Chat page
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key, this.projectId});

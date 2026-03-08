@@ -249,6 +249,40 @@ extension _ChatPageChrome on _ChatPageState {
             },
             icon: const Icon(Symbols.view_sidebar),
           ),
+        Consumer<ChatProvider>(
+          builder: (context, chatProvider, _) {
+            return IconButton(
+              key: const ValueKey<String>('appbar_undo_button'),
+              icon: const Icon(Symbols.undo_rounded),
+              tooltip: 'Undo',
+              onPressed: chatProvider.canUndoCurrentSession
+                  ? () => unawaited(
+                      _triggerHistoryAction(
+                        chatProvider,
+                        action: _HistoryToolbarAction.undo,
+                      ),
+                    )
+                  : null,
+            );
+          },
+        ),
+        Consumer<ChatProvider>(
+          builder: (context, chatProvider, _) {
+            return IconButton(
+              key: const ValueKey<String>('appbar_redo_button'),
+              icon: const Icon(Symbols.redo_rounded),
+              tooltip: 'Redo',
+              onPressed: chatProvider.canRedoCurrentSession
+                  ? () => unawaited(
+                      _triggerHistoryAction(
+                        chatProvider,
+                        action: _HistoryToolbarAction.redo,
+                      ),
+                    )
+                  : null,
+            );
+          },
+        ),
         PopupMenuButton<_DisplayToggleAction>(
           key: const ValueKey<String>('appbar_display_toggles_button'),
           tooltip: 'Display toggles',

@@ -4,7 +4,9 @@ import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/domain/usecases/create_chat_session.dart';
 import 'package:codewalk/domain/usecases/delete_chat_session.dart';
 import 'package:codewalk/domain/usecases/get_chat_sessions.dart';
+import 'package:codewalk/domain/usecases/revert_chat_message.dart';
 import 'package:codewalk/domain/usecases/send_chat_message.dart';
+import 'package:codewalk/domain/usecases/unrevert_chat_messages.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -117,5 +119,47 @@ void main() {
       expect(result.isRight(), isTrue);
       expect(repository.sessions, isEmpty);
     });
+
+    test(
+      'RevertChatMessage forwards project, session, message, and directory',
+      () async {
+        final useCase = RevertChatMessage(repository);
+
+        final result = await useCase(
+          const RevertChatMessageParams(
+            projectId: 'default',
+            sessionId: 'ses_1',
+            messageId: 'msg_user_1',
+            directory: '/tmp/project',
+          ),
+        );
+
+        expect(result.isRight(), isTrue);
+        expect(repository.lastRevertProjectId, 'default');
+        expect(repository.lastRevertSessionId, 'ses_1');
+        expect(repository.lastRevertMessageId, 'msg_user_1');
+        expect(repository.lastRevertDirectory, '/tmp/project');
+      },
+    );
+
+    test(
+      'UnrevertChatMessages forwards project, session, and directory',
+      () async {
+        final useCase = UnrevertChatMessages(repository);
+
+        final result = await useCase(
+          const UnrevertChatMessagesParams(
+            projectId: 'default',
+            sessionId: 'ses_1',
+            directory: '/tmp/project',
+          ),
+        );
+
+        expect(result.isRight(), isTrue);
+        expect(repository.lastUnrevertProjectId, 'default');
+        expect(repository.lastUnrevertSessionId, 'ses_1');
+        expect(repository.lastUnrevertDirectory, '/tmp/project');
+      },
+    );
   });
 }

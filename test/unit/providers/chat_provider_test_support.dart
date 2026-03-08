@@ -24,10 +24,12 @@ import 'package:codewalk/domain/usecases/get_session_todo.dart';
 import 'package:codewalk/domain/usecases/list_pending_permissions.dart';
 import 'package:codewalk/domain/usecases/list_pending_questions.dart';
 import 'package:codewalk/domain/usecases/reject_question.dart';
+import 'package:codewalk/domain/usecases/revert_chat_message.dart';
 import 'package:codewalk/domain/usecases/reply_permission.dart';
 import 'package:codewalk/domain/usecases/reply_question.dart';
 import 'package:codewalk/domain/usecases/send_chat_message.dart';
 import 'package:codewalk/domain/usecases/share_chat_session.dart';
+import 'package:codewalk/domain/usecases/unrevert_chat_messages.dart';
 import 'package:codewalk/domain/usecases/unshare_chat_session.dart';
 import 'package:codewalk/domain/usecases/update_chat_session.dart';
 import 'package:codewalk/domain/usecases/watch_chat_events.dart';
@@ -226,6 +228,8 @@ ChatProvider buildChatProvider({
     listPendingQuestions: ListPendingQuestions(chatRepository),
     replyQuestion: ReplyQuestion(chatRepository),
     rejectQuestion: RejectQuestion(chatRepository),
+    revertChatMessage: RevertChatMessage(chatRepository),
+    unrevertChatMessages: UnrevertChatMessages(chatRepository),
     projectProvider: ProjectProvider(
       projectRepository: FakeProjectRepository(),
       localDataSource: localDataSource,
