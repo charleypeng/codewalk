@@ -189,8 +189,9 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   /// Whether the current rebuild can be skipped (inputs unchanged).
   bool _canSkipRebuild() {
     final msg = widget.message;
-    final isCompleted = msg is AssistantMessage && msg.isCompleted;
-    if (!isCompleted) return false;
+    final isStableMessage =
+        msg is UserMessage || (msg is AssistantMessage && msg.isCompleted);
+    if (!isStableMessage) return false;
 
     final partCount = msg.parts.length;
     final lastPartId = msg.parts.isNotEmpty ? msg.parts.last.id : null;
