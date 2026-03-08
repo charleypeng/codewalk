@@ -89,7 +89,7 @@ lib/presentation/services/android_foreground_monitor_service.dart # Android fore
 lib/presentation/services/android_background_alert_worker.dart # WorkManager-based background polling; 3m active probes, 5m tail probe, and low-data title-cached notification fetches
 lib/presentation/services/android_background_alert_logic.dart # Pure logic for tail probe scheduling, alert planning, and snapshot state
 lib/presentation/services/android_battery_optimization_service.dart # Android battery optimization query/exemption request via MethodChannel
-lib/presentation/providers/chat_provider.dart     # Chat state/realtime/session facade; cache-first per-session SWR restore, in-memory LRU message cache, persisted per-session snapshots, microtask coalescing, event dedup buffer, render gate, favorite models; project-switch SWR support via `onProjectScopeChanged(waitForRevalidation: false)` and `loadSessions(backgroundRevalidation: true)`; non-active contexts marked dirty by global events keep cache for immediate restore-on-return, while background revalidation refreshes state; active-session SWR uses limited-tail (delta-like) refresh with overlap merge and full-fetch fallback; message merge / refresh behavior has regression coverage protecting active tool/work visibility during optimistic echo replay and refresh/reconcile; includes `loadOlderMessages()` scaffold and keeps loadSessionInsights fire-and-forget on session switch; idle final-message reconcile can bypass abort-suppression only for targeted `session-idle-final-reconcile`; New Chat uses draft-first flow (`beginNewChatDraft`) with lazy session bootstrap on first send, and draft state is now context-scoped inside `_ChatContextSnapshot` to prevent cross-project leakage during fast switches; keeps provider-side optimistic user IDs on the local `local_user_*` contract for `prompt_async` sends; includes cross-scope helpers `visibleSessionsForScopeId` and `hasSnapshotForScopeId`
+lib/presentation/providers/chat_provider.dart     # Chat state/realtime/session facade; cache-first per-session SWR restore, in-memory LRU message cache, persisted per-session snapshots, microtask coalescing, event dedup buffer, render gate, favorite models; drives timeline visibility, undo/redo availability, and composer draft restoration from the SessionRevert boundary; project-switch SWR support via `onProjectScopeChanged(waitForRevalidation: false)` and `loadSessions(backgroundRevalidation: true)`; non-active contexts marked dirty by global events keep cache for immediate restore-on-return, while background revalidation refreshes state; active-session SWR uses limited-tail (delta-like) refresh with overlap merge and full-fetch fallback; message merge / refresh behavior has regression coverage protecting active tool/work visibility during optimistic echo replay and refresh/reconcile; includes `loadOlderMessages()` scaffold and keeps loadSessionInsights fire-and-forget on session switch; idle final-message reconcile can bypass abort-suppression only for targeted `session-idle-final-reconcile`; New Chat uses draft-first flow (`beginNewChatDraft`) with lazy session bootstrap on first send, and draft state is now context-scoped inside `_ChatContextSnapshot` to prevent cross-project leakage during fast switches; keeps provider-side optimistic user IDs on the local `local_user_*` contract for `prompt_async` sends; includes cross-scope helpers `visibleSessionsForScopeId` and `hasSnapshotForScopeId`
 lib/presentation/pages/onboarding_wizard_page.dart # 3-step onboarding wizard (Welcome, Server Setup, Ready); uses ServerSetupQuickGuide
 lib/presentation/pages/settings/sections/servers_settings_section.dart # Server profile CRUD; exports reusable ServerSetupQuickGuide widget
 lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade; WindowListener for desktop lifecycle; guards startup (checkConnection/loadSessions) against no-active-server; holds tool-chain expanded state map; _isSessionSwitchInFlight guard, _sessionCollapseHistoryCache / _sessionCollapseWorkCache per-session collapse maps; top-reach history loading is coordinated with anchor-preserving restore; workspace controller uses fast project-scope switch path
@@ -124,7 +124,7 @@ chat_page_file_explorer_controller.dart
 chat_page_file_viewer.dart
 chat_page_composer_status.dart
 chat_page_command_query.dart
-chat_page_runtime_support.dart                   # _syncSessionScrollState saves/restores per-session collapse state via _sessionCollapseHistoryCache / _sessionCollapseWorkCache; shrink auto-snap only runs when viewport remains near bottom to avoid forced jumps while reading expanded history
+chat_page_runtime_support.dart                   # _syncSessionScrollState saves/restores per-session collapse state via _sessionCollapseHistoryCache / _sessionCollapseWorkCache; shrink auto-snap only runs when viewport remains near bottom to avoid forced jumps while reading expanded history; coordinates scroll state with revert-boundary transitions
 chat_page_chrome.dart
 chat_page_file_runtime.dart
 chat_page_composer_widgets.dart
@@ -137,7 +137,7 @@ chat_page_timeline_runtime.dart              # Tool-chain expanded state key res
 
 ```text
 chat_provider_core.dart
-chat_provider_session_ops.dart
+chat_provider_session_ops.dart           # Implements undo/redo turn logic (revert latest user message, advance revert boundary, and restore composer drafts)
 chat_provider_realtime_ops.dart           # Realtime event handling; defers stale `session.idle` reconciliation until the active send stream settles so server-driven lifecycle stays authoritative across follow-up sends
 chat_provider_realtime_aux_ops.dart
 chat_provider_event_reducer_ops.dart             # Reconcile one-shot guard via _messageStreamGeneration; dedup key composition
@@ -158,7 +158,7 @@ chat_provider_abort_policy_ops.dart
 
 ```text
 chat_input_state_machine.dart
-chat_input_history_controller.dart
+chat_input_history_controller.dart             # Local command/prompt history and external draft restoration/clear support for undo/redo parity
 chat_input_mentions_controller.dart
 chat_input_commands_controller.dart
 chat_input_suggestion_popover.dart
@@ -229,11 +229,11 @@ test/unit/providers/                   # ChatProvider split tests (7 files, 129 
   chat_provider_sync_test.dart         #   17 tests — deferred sync, cycle, scope, overrides, variant sync
   chat_provider_messaging_test.dart    #   15 tests — sessions, sendMessage, draft restore; delta-like SWR fallback coverage
   chat_provider_realtime_test.dart     #   21 tests — title gen (main sessions only), SSE, abort, reconciliation
-  chat_provider_session_ops_test.dart  #   25 tests — rename/share/fork/delete, insights, idle
+  chat_provider_session_ops_test.dart  #   25 tests — rename/share/fork/delete, insights, undo/redo parity (regression coverage), idle
   chat_provider_project_test.dart      #   13 tests — permissions, questions, project scope, favorites; project-switch SWR behavior + draft isolation + dirty-context cache retention
   chat_provider_concurrency_test.dart  #   26 tests — render gate, multi-session, abort suppression
   chat_provider_test_support.dart      #   Shared utilities (RecordingDioClient, buildChatProvider, testModel); FakeChatRepository.getSessionsDelay
-test/widget/                           # Widget tests (includes icon assertions with Symbols.* and explicit compact/mobile collapsed-copy coverage for chat message and session todo surfaces, plus desktop/mobile spacing coverage for ChatSessionList)
+test/widget/                           # Widget tests (includes icon assertions with Symbols.* and explicit compact/mobile collapsed-copy coverage for chat message and session todo surfaces, plus desktop/mobile spacing coverage for ChatSessionList; includes toolbar undo/redo and slash-command parity coverage)
 test/integration/                      # Integration tests; includes data-usage optimization coverage in `opencode_server_integration_test.dart`
 test/presentation/                     # Presentation-focused tests (incl. window_size_class_test.dart)
 test/support/                          # Test helpers/fakes; `mock_opencode_server.dart` includes extra counters for usage optimization tracking

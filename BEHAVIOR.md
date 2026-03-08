@@ -231,6 +231,17 @@
 - **When** the send fails (network error, server error, etc.)
 - **Then** the message text is returned to the composer input — the user's text is never lost
 
+### Undo and redo reflect immediately in the current client
+
+- **Given** the active session has at least one persisted user turn
+- **When** the user triggers `Undo` from the toolbar or `/undo` from the composer
+- **Then** the current client immediately hides the reverted user turn and every later turn from the visible timeline without waiting for another client or a manual refresh
+- **Then** the reverted user prompt is restored into the composer so the user can edit or resend it locally
+- **When** the user triggers `Redo` from the toolbar or `/redo`
+- **Then** the visible timeline immediately restores the next reverted turn (or all reverted turns when the revert boundary is fully cleared)
+- **Then** a full redo clears the composer draft that had been restored by undo
+- **Then** timeline visibility and undo/redo availability are driven by the server-authoritative session revert boundary, aligned with official OpenCode Web semantics
+
 ### Composer supports canned answers with scoped storage
 
 - **Given** the user is composing a message
