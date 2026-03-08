@@ -7489,6 +7489,54 @@ void main() {
     },
   );
 
+  testWidgets(
+    'shows recoverable current-session error card instead of full-screen retry',
+    (WidgetTester tester) async {
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_recoverable_error',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Recoverable Error Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_recoverable_error'] = <ChatMessage>[];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      repository.getMessagesFailure = const NetworkFailure(
+        'idle reconnect failed',
+      );
+      await provider.loadMessages('ses_recoverable_error');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not refresh this conversation'), findsOneWidget);
+      expect(find.text('Keep working'), findsOneWidget);
+      expect(find.text('Retry refresh'), findsOneWidget);
+      expect(find.text('Retry'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('chat_message_list')),
+        findsNothing,
+      );
+    },
+  );
+
   testWidgets('shows inline abort message without retry snackbar', (
     WidgetTester tester,
   ) async {

@@ -713,7 +713,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       return const ChatSkeletonShimmer();
     }
 
-    if (chatProvider.state == ChatState.error) {
+    if (chatProvider.state == ChatState.error &&
+        chatProvider.currentSession == null) {
       final rawErrorMessage = chatProvider.errorMessage ?? 'An error occurred';
       return Center(
         child: Column(
@@ -739,6 +740,65 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
               child: const Text('Retry'),
             ),
           ],
+        ),
+      );
+    }
+
+    if (chatProvider.state == ChatState.error &&
+        chatProvider.currentSession != null &&
+        chatProvider.messages.isEmpty) {
+      final rawErrorMessage = chatProvider.errorMessage ?? 'An error occurred';
+      return Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Symbols.sync_problem,
+                    size: 36,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Could not refresh this conversation',
+                    style: Theme.of(context).textTheme.titleMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    normalizeAbortMessageForDisplay(rawErrorMessage),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      OutlinedButton(
+                        onPressed: chatProvider.clearError,
+                        child: const Text('Keep working'),
+                      ),
+                      FilledButton(
+                        onPressed: () {
+                          chatProvider.clearError();
+                          chatProvider.refresh();
+                        },
+                        child: const Text('Retry refresh'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       );
     }
