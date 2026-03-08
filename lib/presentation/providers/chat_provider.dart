@@ -210,6 +210,8 @@ class ChatProvider extends ChangeNotifier {
   int _threadPermissionsVersion = 0;
   int _cachedThreadPermissionsAtVersion = -1;
   List<ChatPermissionRequest> _cachedThreadPermissionRequests = const [];
+  int _cachedThreadQuestionsAtVersion = -1;
+  List<ChatQuestionRequest> _cachedThreadQuestionRequests = const [];
   String? _errorMessage;
   StreamSubscription<dynamic>? _messageSubscription;
   StreamSubscription<dynamic>? _eventSubscription;
@@ -1001,9 +1003,15 @@ class ChatProvider extends ChangeNotifier {
   }
 
   List<ChatQuestionRequest> get currentThreadQuestionRequests {
+    if (_cachedThreadQuestionsAtVersion == _threadPermissionsVersion) {
+      return _cachedThreadQuestionRequests;
+    }
+
     final currentSessionId = _currentSession?.id;
     if (currentSessionId == null || currentSessionId.isEmpty) {
-      return const <ChatQuestionRequest>[];
+      _cachedThreadQuestionsAtVersion = _threadPermissionsVersion;
+      _cachedThreadQuestionRequests = const <ChatQuestionRequest>[];
+      return _cachedThreadQuestionRequests;
     }
 
     final orderedSessionIds = <String>[
@@ -1025,7 +1033,11 @@ class ChatProvider extends ChangeNotifier {
       }
     }
 
-    return List<ChatQuestionRequest>.unmodifiable(collected);
+    _cachedThreadQuestionsAtVersion = _threadPermissionsVersion;
+    _cachedThreadQuestionRequests = List<ChatQuestionRequest>.unmodifiable(
+      collected,
+    );
+    return _cachedThreadQuestionRequests;
   }
 
   List<String> _orderedCurrentSessionDescendantIds() {
