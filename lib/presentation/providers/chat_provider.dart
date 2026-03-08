@@ -205,6 +205,10 @@ class ChatProvider extends ChangeNotifier {
   // builder can short-circuit its cache check in O(1) instead of computing
   // Object.hashAll over all messages+parts (O(N*M)) on every build.
   int _messagesVersion = 0;
+  int _cachedVisibleMessagesVersion = -1;
+  String? _cachedVisibleMessagesSessionId;
+  String? _cachedVisibleMessagesRevertId;
+  List<ChatMessage> _cachedVisibleMessages = const <ChatMessage>[];
   // Monotonic counter bumped on every mutation that affects the visible
   // current-session permission list so the getter can reuse the same immutable
   // snapshot between rebuilds.
@@ -480,19 +484,41 @@ class ChatProvider extends ChangeNotifier {
   List<ChatMessage> _visibleMessagesForCurrentSession() {
     final session = _currentSession;
     final revertMessageId = session?.revert?.messageId.trim();
+    final sessionId = session?.id;
+    if (_cachedVisibleMessagesVersion == _messagesVersion &&
+        _cachedVisibleMessagesSessionId == sessionId &&
+        _cachedVisibleMessagesRevertId == revertMessageId) {
+      return _cachedVisibleMessages;
+    }
     if (session == null || revertMessageId == null || revertMessageId.isEmpty) {
-      return List<ChatMessage>.unmodifiable(_messages);
+      _cachedVisibleMessagesVersion = _messagesVersion;
+      _cachedVisibleMessagesSessionId = sessionId;
+      _cachedVisibleMessagesRevertId = revertMessageId;
+      _cachedVisibleMessages = List<ChatMessage>.unmodifiable(_messages);
+      return _cachedVisibleMessages;
     }
     final boundaryIndex = _messages.indexWhere(
       (message) =>
           message.sessionId == session.id && message.id == revertMessageId,
     );
     if (boundaryIndex <= 0) {
-      return boundaryIndex == 0
+      _cachedVisibleMessagesVersion = _messagesVersion;
+      _cachedVisibleMessagesSessionId = sessionId;
+      _cachedVisibleMessagesRevertId = revertMessageId;
+      _cachedVisibleMessages = boundaryIndex == -1
+          ? const <ChatMessage>[]
+          : boundaryIndex == 0
           ? const <ChatMessage>[]
           : List<ChatMessage>.unmodifiable(_messages);
+      return _cachedVisibleMessages;
     }
-    return List<ChatMessage>.unmodifiable(_messages.sublist(0, boundaryIndex));
+    _cachedVisibleMessagesVersion = _messagesVersion;
+    _cachedVisibleMessagesSessionId = sessionId;
+    _cachedVisibleMessagesRevertId = revertMessageId;
+    _cachedVisibleMessages = List<ChatMessage>.unmodifiable(
+      _messages.sublist(0, boundaryIndex),
+    );
+    return _cachedVisibleMessages;
   }
 
   void _queueHistoryComposerSync({
