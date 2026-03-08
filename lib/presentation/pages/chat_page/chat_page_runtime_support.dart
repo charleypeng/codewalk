@@ -198,6 +198,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _finalAssistantRevealScheduled = false;
       _pendingFinalAssistantRevealAttempts = 0;
       _messageRevealAnchorKeysByMessageId.clear();
+      _clearReturnRevealBaseline();
       if (!_autoFollowToLatest ||
           _showScrollToLatestFab ||
           _hasUnreadMessagesBelow ||
@@ -238,6 +239,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _finalAssistantRevealScheduled = false;
       _pendingFinalAssistantRevealAttempts = 0;
       _messageRevealAnchorKeysByMessageId.clear();
+      _clearReturnRevealBaseline();
       return;
     }
 
@@ -408,6 +410,50 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         ),
       );
     });
+  }
+
+  void _captureReturnRevealBaseline(ChatProvider? chatProvider) {
+    final sessionId = chatProvider?.currentSession?.id;
+    if (sessionId == null || sessionId.isEmpty) {
+      _clearReturnRevealBaseline();
+      return;
+    }
+
+    final messages = chatProvider?.messages ?? const <ChatMessage>[];
+    _returnRevealBaselineSessionId = sessionId;
+    _returnRevealBaselineMessageCount = messages.length;
+    _returnRevealBaselineLatestMessageId = messages.isEmpty
+        ? null
+        : messages.last.id;
+    _returnRevealBaselineLatestSuccessfulAssistantMessageId =
+        _resolveLatestSuccessfulAssistantMessageId(messages);
+  }
+
+  void _clearReturnRevealBaseline() {
+    _returnRevealBaselineSessionId = null;
+    _returnRevealBaselineMessageCount = 0;
+    _returnRevealBaselineLatestMessageId = null;
+    _returnRevealBaselineLatestSuccessfulAssistantMessageId = null;
+  }
+
+  bool _shouldRevealLatestMessageAfterReturn(ChatProvider chatProvider) {
+    final sessionId = chatProvider.currentSession?.id;
+    if (sessionId == null || sessionId.isEmpty) {
+      return false;
+    }
+    if (_returnRevealBaselineSessionId != sessionId) {
+      return false;
+    }
+
+    final messages = chatProvider.messages;
+    final latestMessageId = messages.isEmpty ? null : messages.last.id;
+    final latestSuccessfulAssistantMessageId =
+        _resolveLatestSuccessfulAssistantMessageId(messages);
+
+    return _returnRevealBaselineMessageCount != messages.length ||
+        _returnRevealBaselineLatestMessageId != latestMessageId ||
+        _returnRevealBaselineLatestSuccessfulAssistantMessageId !=
+            latestSuccessfulAssistantMessageId;
   }
 
   Future<void> _runLatestMessageReturnReveal({

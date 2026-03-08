@@ -179,6 +179,9 @@ extension _ChatPageLifecycle on _ChatPageState {
     if (_wasChatRouteCurrent == isCurrent) {
       return;
     }
+    if (!isCurrent) {
+      _captureReturnRevealBaseline(chatProvider);
+    }
     _wasChatRouteCurrent = isCurrent;
     chatProvider.setChatRouteActive(isCurrent);
     if (isCurrent) {
@@ -201,9 +204,15 @@ extension _ChatPageLifecycle on _ChatPageState {
       'Auto-following latest messages after $reason for session=${chatProvider.currentSession!.id}',
     );
     if (chatProvider.isCurrentSessionActivelyResponding) {
+      _captureReturnRevealBaseline(chatProvider);
       _scrollToBottom(force: true);
       return;
     }
+    if (!_shouldRevealLatestMessageAfterReturn(chatProvider)) {
+      _captureReturnRevealBaseline(chatProvider);
+      return;
+    }
+    _captureReturnRevealBaseline(chatProvider);
     _revealLatestMessageStartAfterReturn(chatProvider, reason: reason);
   }
 }

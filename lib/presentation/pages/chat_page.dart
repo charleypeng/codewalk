@@ -202,6 +202,10 @@ class _ChatPageState extends State<ChatPage>
   int _pendingFinalAssistantRevealAttempts = 0;
   final Map<String, GlobalKey> _messageRevealAnchorKeysByMessageId =
       <String, GlobalKey>{};
+  String? _returnRevealBaselineSessionId;
+  int _returnRevealBaselineMessageCount = 0;
+  String? _returnRevealBaselineLatestMessageId;
+  String? _returnRevealBaselineLatestSuccessfulAssistantMessageId;
   ChatComposerDraft? _composerPrefilledDraft;
   int _composerPrefilledDraftVersion = 0;
   final Map<String, _FileExplorerContextState> _fileContextStates =

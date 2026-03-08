@@ -6884,7 +6884,90 @@ void main() {
     expect(find.text('draft before background'), findsNothing);
   });
 
-  testWidgets('reveals latest message start when app resumes', (
+  testWidgets(
+    'does not yank latest message into reveal position when app resumes without new content',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_resume_reveal',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Resume Reveal Session',
+          ),
+        ],
+      );
+      final longLatestText = List<String>.filled(
+        120,
+        'latest message should start at top after resume',
+      ).join(' ');
+      repository.messagesBySession['ses_resume_reveal'] = <ChatMessage>[
+        ..._threadMessages('ses_resume_reveal', 28),
+        AssistantMessage(
+          id: 'msg_resume_reveal_latest',
+          sessionId: 'ses_resume_reveal',
+          time: DateTime.fromMillisecondsSinceEpoch(35000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(35500),
+          parts: <MessagePart>[
+            TextPart(
+              id: 'part_resume_reveal_latest',
+              messageId: 'msg_resume_reveal_latest',
+              sessionId: 'ses_resume_reveal',
+              text: longLatestText,
+            ),
+          ],
+        ),
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      final listFinder = find.byKey(
+        const ValueKey<String>('chat_message_list'),
+      );
+      final scrollableFinder = find.descendant(
+        of: listFinder,
+        matching: find.byType(Scrollable),
+      );
+      final scrollableBefore = tester.state<ScrollableState>(scrollableFinder);
+      expect(
+        scrollableBefore.position.maxScrollExtent -
+            scrollableBefore.position.pixels,
+        lessThanOrEqualTo(1),
+      );
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      final scrollableAfter = tester.state<ScrollableState>(scrollableFinder);
+      expect(
+        scrollableAfter.position.maxScrollExtent -
+            scrollableAfter.position.pixels,
+        lessThanOrEqualTo(1),
+      );
+      expect(find.byTooltip('Go to latest message'), findsNothing);
+    },
+  );
+
+  testWidgets('keeps latest follow when app resumes after new final content', (
     WidgetTester tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
@@ -6893,34 +6976,17 @@ void main() {
     final repository = FakeChatRepository(
       sessions: <ChatSession>[
         ChatSession(
-          id: 'ses_resume_reveal',
+          id: 'ses_resume_reveal_changed',
           workspaceId: 'default',
           time: DateTime.fromMillisecondsSinceEpoch(1000),
-          title: 'Resume Reveal Session',
+          title: 'Resume Reveal Changed Session',
         ),
       ],
     );
-    final longLatestText = List<String>.filled(
-      120,
-      'latest message should start at top after resume',
-    ).join(' ');
-    repository.messagesBySession['ses_resume_reveal'] = <ChatMessage>[
-      ..._threadMessages('ses_resume_reveal', 28),
-      AssistantMessage(
-        id: 'msg_resume_reveal_latest',
-        sessionId: 'ses_resume_reveal',
-        time: DateTime.fromMillisecondsSinceEpoch(35000),
-        completedTime: DateTime.fromMillisecondsSinceEpoch(35500),
-        parts: <MessagePart>[
-          TextPart(
-            id: 'part_resume_reveal_latest',
-            messageId: 'msg_resume_reveal_latest',
-            sessionId: 'ses_resume_reveal',
-            text: longLatestText,
-          ),
-        ],
-      ),
-    ];
+    repository.messagesBySession['ses_resume_reveal_changed'] = _threadMessages(
+      'ses_resume_reveal_changed',
+      28,
+    );
 
     final localDataSource = InMemoryAppLocalDataSource()
       ..activeServerId = 'srv_test';
@@ -6951,17 +7017,41 @@ void main() {
 
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
     await tester.pump();
+
+    final longLatestText = List<String>.filled(
+      120,
+      'latest message should start at top after resume when new content arrived',
+    ).join(' ');
+    repository.messagesBySession['ses_resume_reveal_changed'] = <ChatMessage>[
+      ..._threadMessages('ses_resume_reveal_changed', 28),
+      AssistantMessage(
+        id: 'msg_resume_reveal_changed_latest',
+        sessionId: 'ses_resume_reveal_changed',
+        time: DateTime.fromMillisecondsSinceEpoch(35000),
+        completedTime: DateTime.fromMillisecondsSinceEpoch(35500),
+        parts: <MessagePart>[
+          TextPart(
+            id: 'part_resume_reveal_changed_latest',
+            messageId: 'msg_resume_reveal_changed_latest',
+            sessionId: 'ses_resume_reveal_changed',
+            text: longLatestText,
+          ),
+        ],
+      ),
+    ];
+
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 120));
     await tester.pumpAndSettle();
 
     final scrollableAfter = tester.state<ScrollableState>(scrollableFinder);
     expect(
       scrollableAfter.position.maxScrollExtent -
           scrollableAfter.position.pixels,
-      greaterThan(120),
+      lessThanOrEqualTo(1),
     );
-    expect(find.byTooltip('Go to latest message'), findsOneWidget);
+    expect(find.byTooltip('Go to latest message'), findsNothing);
   });
 
   testWidgets('keeps latest follow when app resumes during active response', (
