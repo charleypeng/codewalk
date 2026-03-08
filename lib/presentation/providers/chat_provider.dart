@@ -491,33 +491,41 @@ class ChatProvider extends ChangeNotifier {
       return _cachedVisibleMessages;
     }
     if (session == null || revertMessageId == null || revertMessageId.isEmpty) {
-      _cachedVisibleMessagesVersion = _messagesVersion;
-      _cachedVisibleMessagesSessionId = sessionId;
-      _cachedVisibleMessagesRevertId = revertMessageId;
-      _cachedVisibleMessages = List<ChatMessage>.unmodifiable(_messages);
-      return _cachedVisibleMessages;
+      return _cacheVisibleMessages(
+        sessionId: sessionId,
+        revertMessageId: revertMessageId,
+        messages: List<ChatMessage>.unmodifiable(_messages),
+      );
     }
     final boundaryIndex = _messages.indexWhere(
       (message) =>
           message.sessionId == session.id && message.id == revertMessageId,
     );
     if (boundaryIndex <= 0) {
-      _cachedVisibleMessagesVersion = _messagesVersion;
-      _cachedVisibleMessagesSessionId = sessionId;
-      _cachedVisibleMessagesRevertId = revertMessageId;
-      _cachedVisibleMessages = boundaryIndex == -1
-          ? const <ChatMessage>[]
-          : boundaryIndex == 0
-          ? const <ChatMessage>[]
-          : List<ChatMessage>.unmodifiable(_messages);
-      return _cachedVisibleMessages;
+      return _cacheVisibleMessages(
+        sessionId: sessionId,
+        revertMessageId: revertMessageId,
+        messages: const <ChatMessage>[],
+      );
     }
+    return _cacheVisibleMessages(
+      sessionId: sessionId,
+      revertMessageId: revertMessageId,
+      messages: List<ChatMessage>.unmodifiable(
+        _messages.sublist(0, boundaryIndex),
+      ),
+    );
+  }
+
+  List<ChatMessage> _cacheVisibleMessages({
+    required String? sessionId,
+    required String? revertMessageId,
+    required List<ChatMessage> messages,
+  }) {
     _cachedVisibleMessagesVersion = _messagesVersion;
     _cachedVisibleMessagesSessionId = sessionId;
     _cachedVisibleMessagesRevertId = revertMessageId;
-    _cachedVisibleMessages = List<ChatMessage>.unmodifiable(
-      _messages.sublist(0, boundaryIndex),
-    );
+    _cachedVisibleMessages = messages;
     return _cachedVisibleMessages;
   }
 
