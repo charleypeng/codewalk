@@ -536,8 +536,9 @@ extension _ChatProviderMessageStateOps on ChatProvider {
       return _findSolePendingLocalUserByTimeProximity(incoming);
     }
 
-    var bestMatchIndex = -1;
-    Duration? bestMatchDelta;
+    var earliestExactSignatureMatchIndex = -1;
+    var bestLikelyMatchIndex = -1;
+    Duration? bestLikelyMatchDelta;
     for (var index = 0; index < _messages.length; index += 1) {
       final current = _messages[index];
       if (current is! UserMessage) {
@@ -550,24 +551,29 @@ extension _ChatProviderMessageStateOps on ChatProvider {
         continue;
       }
       final currentSignature = _normalizedUserMessageSignature(current);
-      if (currentSignature != incomingSignature) {
-        if (!_isLikelyPendingLocalUserMatch(
-          pending: current,
-          incoming: incoming,
-        )) {
-          continue;
-        }
-      }
       final delta = incoming.time.difference(current.time).abs();
       if (delta > const Duration(minutes: 5)) {
         continue;
       }
-      if (bestMatchDelta == null || delta < bestMatchDelta) {
-        bestMatchDelta = delta;
-        bestMatchIndex = index;
+      if (currentSignature == incomingSignature) {
+        earliestExactSignatureMatchIndex = index;
+        continue;
+      }
+      if (!_isLikelyPendingLocalUserMatch(
+        pending: current,
+        incoming: incoming,
+      )) {
+        continue;
+      }
+      if (bestLikelyMatchDelta == null || delta < bestLikelyMatchDelta) {
+        bestLikelyMatchDelta = delta;
+        bestLikelyMatchIndex = index;
       }
     }
-    return bestMatchIndex;
+    if (earliestExactSignatureMatchIndex != -1) {
+      return earliestExactSignatureMatchIndex;
+    }
+    return bestLikelyMatchIndex;
   }
 
   /// Matches a server [UserMessage] (with empty content signature) to a pending

@@ -2732,6 +2732,91 @@ void main() {
     );
 
     test(
+      'refreshActiveSessionView preserves later optimistic turn when same-text overlap is ambiguous',
+      () async {
+        final firstStream = StreamController<Either<Failure, ChatMessage>>();
+        final secondStream = StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          await firstStream.close();
+          await secondStream.close();
+        });
+
+        var sendCalls = 0;
+        chatRepository.sendMessageHandler = (_, _, _, _) {
+          sendCalls += 1;
+          return sendCalls == 1 ? firstStream.stream : secondStream.stream;
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('same duplicate text');
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        await provider.sendMessage('same duplicate text');
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        final localUsersBeforeRefresh = provider.messages
+            .whereType<UserMessage>()
+            .toList();
+        expect(localUsersBeforeRefresh, hasLength(2));
+
+        final now = DateTime.now();
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          UserMessage(
+            id: 'msg_server_same_text_first',
+            sessionId: 'ses_1',
+            time: now.add(const Duration(seconds: 1)),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_server_same_text_first',
+                messageId: 'msg_server_same_text_first',
+                sessionId: 'ses_1',
+                text: 'same duplicate text',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_server_same_text_partial',
+            sessionId: 'ses_1',
+            time: now.add(const Duration(seconds: 2)),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_server_same_text_partial',
+                messageId: 'msg_server_same_text_partial',
+                sessionId: 'ses_1',
+                text: 'still working...',
+              ),
+            ],
+          ),
+        ];
+
+        await provider.refreshActiveSessionView(
+          reason: 'ambiguous-same-text-optimistic-overlap',
+          includeStatus: false,
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        final userMessages = provider.messages
+            .whereType<UserMessage>()
+            .toList();
+        expect(
+          userMessages,
+          hasLength(2),
+          reason:
+              'Ambiguous same-text optimistic overlap should preserve the still-unconfirmed local turn',
+        );
+        expect(userMessages.first.id, 'msg_server_same_text_first');
+        expect(
+          userMessages.last.id.startsWith('local_user_'),
+          isTrue,
+          reason:
+              'The later optimistic turn must stay visible until the server echoes it explicitly',
+        );
+      },
+    );
+
+    test(
       'refreshActiveSessionView does not duplicate shell-mode user message with ! prefix',
       () async {
         // Scenario: local message text is '!ls -la' (shell mode), server echoes

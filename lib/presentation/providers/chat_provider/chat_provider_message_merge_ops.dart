@@ -25,6 +25,7 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     String messageId, {
     bool applyToCurrentSession = true,
   }) async {
+    _messageFallbackDebounceById.remove(messageId)?.cancel();
     _traceFinal(
       'fetch-message-fallback-start',
       sessionId: sessionId,
@@ -203,11 +204,38 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
       return (messages: merged, reconciledLocalIds: reconciledLocalIds);
     }
 
+    final reconciledLocalSignatureCounts = <String, int>{};
+    for (final message in _messages) {
+      if (message is! UserMessage) {
+        continue;
+      }
+      if (!reconciledLocalIds.contains(message.id)) {
+        continue;
+      }
+      final signature = _normalizedUserMessageSignature(message);
+      if (signature.isEmpty) {
+        continue;
+      }
+      reconciledLocalSignatureCounts.update(
+        signature,
+        (count) => count + 1,
+        ifAbsent: () => 1,
+      );
+    }
+
     for (final message in _messages) {
       if (message is! UserMessage) {
         continue;
       }
       if (!_pendingLocalUserMessageIds.contains(message.id)) {
+        continue;
+      }
+      final localSignature = _normalizedUserMessageSignature(message);
+      final signatureAlreadyReconciledThisPass =
+          localSignature.isNotEmpty &&
+          (reconciledLocalSignatureCounts[localSignature] ?? 0) > 0;
+      if (signatureAlreadyReconciledThisPass) {
+        merged.add(message);
         continue;
       }
       if (_shouldSkipLocalUserAppendAsDuplicateEcho(
@@ -312,6 +340,8 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
       var matchedCachedIndex = -1;
       Duration? matchedDelta;
       var sawAmbiguousEmptySignatureCandidate = false;
+      var sawAmbiguousSignatureCandidate = false;
+      var matchedCandidateCount = 0;
 
       for (
         var cachedIndex = 0;
@@ -358,13 +388,20 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
           continue;
         }
 
+        matchedCandidateCount += 1;
+        if (matchedCandidateCount > 1) {
+          sawAmbiguousSignatureCandidate = true;
+          break;
+        }
+
         if (matchedDelta == null || delta < matchedDelta) {
           matchedCachedIndex = cachedIndex;
           matchedDelta = delta;
         }
       }
 
-      if (sawAmbiguousEmptySignatureCandidate) {
+      if (sawAmbiguousEmptySignatureCandidate ||
+          sawAmbiguousSignatureCandidate) {
         continue;
       }
       if (matchedCachedIndex != -1) {
