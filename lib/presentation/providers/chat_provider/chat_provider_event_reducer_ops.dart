@@ -718,6 +718,10 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       return;
     }
 
+    if (_tryApplyGlobalEventToInactiveSnapshot(targetContextKey, event)) {
+      return;
+    }
+
     AppLogger.debug(
       'Marked inactive context dirty and kept cache for SWR restore context=$targetContextKey event=$type',
     );
@@ -771,6 +775,93 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       refreshStatus: refreshSessions || refreshActiveSession,
       refreshActiveSession: refreshActiveSession,
     );
+  }
+
+  bool _tryApplyGlobalEventToInactiveSnapshot(
+    String contextKey,
+    ChatEvent event,
+  ) {
+    final snapshot = _contextSnapshots[contextKey];
+    if (snapshot == null) {
+      return false;
+    }
+
+    List<ChatSession>? nextSessions;
+    switch (event.type) {
+      case 'session.created':
+      case 'session.updated':
+        final info = event.properties['info'];
+        if (info is! Map<String, dynamic>) {
+          return false;
+        }
+        final incomingSession = ChatSessionModel.fromJson(info).toDomain();
+        if (incomingSession.id.isEmpty ||
+            _isEphemeralTitleSession(incomingSession)) {
+          return false;
+        }
+        nextSessions = List<ChatSession>.from(snapshot.sessions);
+        final existingIndex = nextSessions.indexWhere(
+          (session) => session.id == incomingSession.id,
+        );
+        if (existingIndex == -1) {
+          nextSessions.add(incomingSession);
+        } else {
+          nextSessions[existingIndex] = _mergeSessionFromEventInfo(
+            incoming: incomingSession,
+            existing: nextSessions[existingIndex],
+            info: info,
+          );
+        }
+        break;
+      case 'session.deleted':
+        final sessionId =
+            (event.properties['info'] is Map<String, dynamic>
+                ? (event.properties['info'] as Map<String, dynamic>)['id']
+                      as String?
+                : null) ??
+            event.properties['sessionID'] as String? ??
+            event.properties['id'] as String?;
+        if (sessionId == null || sessionId.trim().isEmpty) {
+          return false;
+        }
+        nextSessions = snapshot.sessions
+            .where((session) => session.id != sessionId)
+            .toList(growable: false);
+        if (nextSessions.length == snapshot.sessions.length) {
+          return false;
+        }
+        break;
+      default:
+        return false;
+    }
+
+    if (listEquals(snapshot.sessions, nextSessions)) {
+      return false;
+    }
+
+    _contextSnapshots[contextKey] = _ChatContextSnapshot(
+      sessions: nextSessions,
+      currentSession: snapshot.currentSession,
+      messages: snapshot.messages,
+      sessionStatusById: snapshot.sessionStatusById,
+      pendingPermissionsBySession: snapshot.pendingPermissionsBySession,
+      pendingQuestionsBySession: snapshot.pendingQuestionsBySession,
+      sessionUnreadCompletionIds: snapshot.sessionUnreadCompletionIds,
+      sessionErrorAttentionIds: snapshot.sessionErrorAttentionIds,
+      sessionChildrenById: snapshot.sessionChildrenById,
+      sessionTodoById: snapshot.sessionTodoById,
+      sessionDiffById: snapshot.sessionDiffById,
+      sessionSearchQuery: snapshot.sessionSearchQuery,
+      sessionListFilter: snapshot.sessionListFilter,
+      sessionListSort: snapshot.sessionListSort,
+      pinnedSessionIds: snapshot.pinnedSessionIds,
+      sessionVisibleLimit: snapshot.sessionVisibleLimit,
+      isNewChatDraftActive: snapshot.isNewChatDraftActive,
+      activeSendDraft: snapshot.activeSendDraft,
+      rejectedDraft: snapshot.rejectedDraft,
+    );
+    _notifyListeners();
+    return true;
   }
 
   void _scheduleCurrentContextRefresh({
