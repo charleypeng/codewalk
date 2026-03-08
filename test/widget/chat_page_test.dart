@@ -160,6 +160,201 @@ void main() {
       );
     });
 
+    testWidgets(
+      'toolbar undo hides reverted tail and restores composer draft',
+      (WidgetTester tester) async {
+        await tester.binding.setSurfaceSize(const Size(1400, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final repository = FakeChatRepository(
+          sessions: <ChatSession>[
+            ChatSession(
+              id: 'ses_1',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              title: 'Undo Session',
+            ),
+          ],
+        );
+        repository.messagesBySession['ses_1'] = <ChatMessage>[
+          UserMessage(
+            id: 'msg_user_1',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_user_1',
+                messageId: 'msg_user_1',
+                sessionId: 'ses_1',
+                text: 'undo me',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_assistant_1',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1100),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_assistant_1',
+                messageId: 'msg_assistant_1',
+                sessionId: 'ses_1',
+                text: 'assistant reply',
+              ),
+            ],
+          ),
+        ];
+
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test'
+          ..defaultServerId = 'srv_test'
+          ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 'srv_test',
+              'url': 'http://127.0.0.1:4096',
+              'label': 'Test Server',
+              'basicAuthEnabled': false,
+              'basicAuthUsername': '',
+              'basicAuthPassword': '',
+              'createdAt': 0,
+              'updatedAt': 0,
+            },
+          ]);
+        final provider = _buildChatProvider(
+          localDataSource: localDataSource,
+          chatRepository: repository,
+        );
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+        await tester.pumpWidget(_testApp(provider, appProvider));
+        await tester.pumpAndSettle();
+
+        expect(find.text('undo me'), findsOneWidget);
+        expect(find.text('assistant reply'), findsOneWidget);
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('appbar_undo_button')),
+        );
+        await tester.pump();
+        await tester.pumpAndSettle();
+
+        expect(find.text('undo me'), findsNothing);
+        expect(find.text('assistant reply'), findsNothing);
+        expect(find.byType(TextField), findsWidgets);
+        expect(
+          tester
+              .widget<TextField>(find.byType(TextField).last)
+              .controller
+              ?.text,
+          'undo me',
+        );
+      },
+    );
+
+    testWidgets('slash redo restores reverted tail and clears composer draft', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(900, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_1',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Redo Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_1'] = <ChatMessage>[
+        UserMessage(
+          id: 'msg_user_1',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_user_1',
+              messageId: 'msg_user_1',
+              sessionId: 'ses_1',
+              text: 'redo me',
+            ),
+          ],
+        ),
+        AssistantMessage(
+          id: 'msg_assistant_1',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1100),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_assistant_1',
+              messageId: 'msg_assistant_1',
+              sessionId: 'ses_1',
+              text: 'assistant restored',
+            ),
+          ],
+        ),
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..defaultServerId = 'srv_test'
+        ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'srv_test',
+            'url': 'http://127.0.0.1:4096',
+            'label': 'Test Server',
+            'basicAuthEnabled': false,
+            'basicAuthUsername': '',
+            'basicAuthPassword': '',
+            'createdAt': 0,
+            'updatedAt': 0,
+          },
+        ]);
+      final provider = _buildChatProvider(
+        localDataSource: localDataSource,
+        chatRepository: repository,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('appbar_undo_button')),
+      );
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.text('redo me'), findsNothing);
+      expect(
+        tester.widget<TextField>(find.byType(TextField).last).controller?.text,
+        'redo me',
+      );
+
+      await tester.enterText(find.byType(TextField).last, '/redo');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+
+      final suggestion = find.descendant(
+        of: find.byKey(const ValueKey<String>('composer_popover_panel_slash')),
+        matching: find.text('/redo'),
+      );
+      expect(suggestion, findsOneWidget);
+      await tester.tap(suggestion);
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.text('redo me'), findsOneWidget);
+      expect(find.text('assistant restored'), findsOneWidget);
+      expect(
+        tester.widget<TextField>(find.byType(TextField).last).controller?.text,
+        isEmpty,
+      );
+    });
+
     testWidgets('slash thinking suggestion toggles Thinking bubbles setting', (
       WidgetTester tester,
     ) async {

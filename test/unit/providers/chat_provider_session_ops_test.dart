@@ -10,6 +10,7 @@ import 'package:codewalk/domain/entities/chat_message.dart';
 import 'package:codewalk/domain/entities/chat_realtime.dart';
 import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/domain/entities/provider.dart';
+import 'package:codewalk/domain/entities/session.dart';
 import 'package:codewalk/presentation/providers/chat_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:dartz/dartz.dart';
@@ -263,9 +264,106 @@ void main() {
       expect(chatRepository.lastRevertProjectId, 'default');
       expect(chatRepository.lastRevertSessionId, 'ses_1');
       expect(chatRepository.lastRevertMessageId, 'msg_user_1');
+      expect(provider.currentSessionRevert?.messageId, 'msg_user_1');
+      expect(provider.messages, isEmpty);
+
+      final pendingSync = provider.consumePendingHistoryComposerSync(
+        sessionId: 'ses_1',
+      );
+      expect(pendingSync, isNotNull);
+      expect(pendingSync!.clear, isFalse);
+      expect(pendingSync.draft?.text, 'hello');
     });
 
-    test('redoLastTurn forwards current session to unrevert flow', () async {
+    test(
+      'redoLastTurn advances revert boundary before full unrevert',
+      () async {
+        chatRepository.sessions[0] = chatRepository.sessions[0].copyWith(
+          revert: const SessionRevert(messageId: 'msg_user_1'),
+        );
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          UserMessage(
+            id: 'msg_user_1',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_user_1',
+                messageId: 'msg_user_1',
+                sessionId: 'ses_1',
+                text: 'hello',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_assistant_1',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1100),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_assistant_1',
+                messageId: 'msg_assistant_1',
+                sessionId: 'ses_1',
+                text: 'hi',
+              ),
+            ],
+          ),
+          UserMessage(
+            id: 'msg_user_2',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1300),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_user_2',
+                messageId: 'msg_user_2',
+                sessionId: 'ses_1',
+                text: 'second',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_assistant_2',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1400),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1500),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_assistant_2',
+                messageId: 'msg_assistant_2',
+                sessionId: 'ses_1',
+                text: 'again',
+              ),
+            ],
+          ),
+        ];
+
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        final ok = await provider.redoLastTurn();
+
+        expect(ok, isTrue);
+        expect(chatRepository.lastRevertProjectId, 'default');
+        expect(chatRepository.lastRevertSessionId, 'ses_1');
+        expect(chatRepository.lastRevertMessageId, 'msg_user_2');
+        expect(chatRepository.lastUnrevertSessionId, isNull);
+        expect(provider.currentSessionRevert?.messageId, 'msg_user_2');
+        expect(
+          provider.messages.map((message) => message.id).toList(),
+          <String>['msg_user_1', 'msg_assistant_1'],
+        );
+        expect(
+          provider.consumePendingHistoryComposerSync(sessionId: 'ses_1'),
+          isNull,
+        );
+      },
+    );
+
+    test('redoLastTurn clears revert boundary on full unrevert flow', () async {
+      chatRepository.sessions[0] = chatRepository.sessions[0].copyWith(
+        revert: const SessionRevert(messageId: 'msg_user_1'),
+      );
       await provider.loadSessions();
       await provider.selectSession(provider.sessions.first);
 
@@ -274,6 +372,13 @@ void main() {
       expect(ok, isTrue);
       expect(chatRepository.lastUnrevertProjectId, 'default');
       expect(chatRepository.lastUnrevertSessionId, 'ses_1');
+      expect(provider.currentSessionRevert, isNull);
+
+      final pendingSync = provider.consumePendingHistoryComposerSync(
+        sessionId: 'ses_1',
+      );
+      expect(pendingSync, isNotNull);
+      expect(pendingSync!.clear, isTrue);
     });
 
     test('toggleSessionPinned updates scoped pin state and persists', () async {
