@@ -835,6 +835,7 @@ class _ChatPageState extends State<ChatPage>
                     _syncResponseViewportPolicy(chatProvider);
                     _syncChatRouteActivity(chatProvider);
                     _consumePendingUiNotice(chatProvider);
+                    _consumePendingHistoryComposerSync(chatProvider);
                     _consumeRejectedDraft(chatProvider);
                     late final Widget content;
                     if (isMobile) {

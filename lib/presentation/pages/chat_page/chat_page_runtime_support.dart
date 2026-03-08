@@ -155,6 +155,43 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     });
   }
 
+  void _consumePendingHistoryComposerSync(ChatProvider chatProvider) {
+    if (!_isChatScreenActive()) {
+      return;
+    }
+    final currentSessionId = chatProvider.currentSession?.id;
+    if (currentSessionId == null || currentSessionId.isEmpty) {
+      return;
+    }
+    final pending = chatProvider.consumePendingHistoryComposerSync(
+      sessionId: currentSessionId,
+    );
+    if (pending == null) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      if (pending.clear) {
+        _chatInputController.clearDraft();
+      }
+      final draft = pending.draft;
+      if (draft != null) {
+        _setState(() {
+          _composerPrefilledDraft = draft;
+          _composerPrefilledDraftVersion += 1;
+        });
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        _inputFocusNode.requestFocus();
+      });
+    });
+  }
+
   void _syncSessionScrollState(ChatProvider chatProvider) {
     final sessionId = chatProvider.currentSession?.id;
     if (sessionId != _trackedSessionId) {

@@ -1,5 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 import '../../domain/entities/chat_session.dart';
+import '../../domain/entities/session.dart';
 
 part 'chat_session_model.g.dart';
 
@@ -16,6 +17,10 @@ class ChatSessionModel {
         : SessionShareModel.fromJson(shareMap);
     final rawPath = json['path'];
     final pathMap = rawPath is Map ? Map<String, dynamic>.from(rawPath) : null;
+    final rawRevert = json['revert'];
+    final revertMap = rawRevert is Map
+        ? Map<String, dynamic>.from(rawRevert)
+        : null;
 
     String? readNonEmptyTitle() {
       final candidates = <dynamic>[
@@ -59,6 +64,7 @@ class ChatSessionModel {
       summary: _summaryFromJson(json['summary']),
       path: pathMap == null ? null : SessionPathModel.fromJson(pathMap),
       share: share,
+      revert: revertMap == null ? null : SessionRevertModel.fromJson(revertMap),
     );
   }
   const ChatSessionModel({
@@ -73,6 +79,7 @@ class ChatSessionModel {
     this.summary,
     this.path,
     this.share,
+    this.revert,
   });
 
   final String id;
@@ -88,6 +95,7 @@ class ChatSessionModel {
   final String? summary;
   final SessionPathModel? path;
   final SessionShareModel? share;
+  final SessionRevertModel? revert;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{'id': id, 'time': time.toJson()};
@@ -114,6 +122,9 @@ class ChatSessionModel {
     }
     if (share != null) {
       map['share'] = share!.toJson();
+    }
+    if (revert != null) {
+      map['revert'] = revert!.toJson();
     }
     return map;
   }
@@ -148,6 +159,7 @@ class ChatSessionModel {
       shareUrl: share?.url,
       summary: summary,
       path: path?.toDomain(),
+      revert: revert?.toDomain(),
     );
   }
 
@@ -173,6 +185,9 @@ class ChatSessionModel {
       share: session.shareUrl == null
           ? null
           : SessionShareModel(url: session.shareUrl!),
+      revert: session.revert == null
+          ? null
+          : SessionRevertModel.fromDomain(session.revert!),
     );
   }
 }
@@ -246,6 +261,55 @@ class SessionPathModel {
 
   static SessionPathModel fromDomain(SessionPath path) {
     return SessionPathModel(root: path.root, workspace: path.workspace);
+  }
+}
+
+@JsonSerializable()
+class SessionRevertModel {
+  factory SessionRevertModel.fromJson(Map<String, dynamic> json) {
+    return SessionRevertModel(
+      messageId:
+          (json['messageID'] as String?) ??
+          (json['messageId'] as String?) ??
+          '',
+      partId: (json['partID'] as String?) ?? (json['partId'] as String?),
+      snapshot: json['snapshot'] as String?,
+      diff: json['diff'] as String?,
+    );
+  }
+
+  const SessionRevertModel({
+    required this.messageId,
+    this.partId,
+    this.snapshot,
+    this.diff,
+  });
+
+  @JsonKey(name: 'messageID')
+  final String messageId;
+  @JsonKey(name: 'partID')
+  final String? partId;
+  final String? snapshot;
+  final String? diff;
+
+  Map<String, dynamic> toJson() => _$SessionRevertModelToJson(this);
+
+  SessionRevert toDomain() {
+    return SessionRevert(
+      messageId: messageId,
+      partId: partId,
+      snapshot: snapshot,
+      diff: diff,
+    );
+  }
+
+  static SessionRevertModel fromDomain(SessionRevert revert) {
+    return SessionRevertModel(
+      messageId: revert.messageId,
+      partId: revert.partId,
+      snapshot: revert.snapshot,
+      diff: revert.diff,
+    );
   }
 }
 

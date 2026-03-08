@@ -19,6 +19,7 @@ import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/chat_realtime.dart';
 import '../../domain/entities/chat_session.dart';
 import '../../domain/entities/provider.dart';
+import '../../domain/entities/session.dart';
 import '../../domain/usecases/abort_chat_session.dart';
 import '../../domain/usecases/create_chat_session.dart';
 import '../../domain/usecases/delete_chat_session.dart';
@@ -258,6 +259,8 @@ class ChatProvider extends ChangeNotifier {
   bool _isNewChatDraftActive = false;
   Future<void>? _lazySessionBootstrapTask;
   _RejectedDraftEnvelope? _rejectedDraft;
+  _HistoryComposerSync? _pendingHistoryComposerSync;
+  int _historyComposerSyncToken = 0;
   final LinkedHashMap<String, List<ChatMessage>> _sessionMessagesLruCache =
       LinkedHashMap<String, List<ChatMessage>>();
 
@@ -436,7 +439,9 @@ class ChatProvider extends ChangeNotifier {
   bool get isLoadingSessionInsights => _isLoadingSessionInsights;
   String? get sessionInsightsError => _sessionInsightsError;
   ChatSession? get currentSession => _currentSession;
-  List<ChatMessage> get messages => _messages;
+  List<ChatMessage> get messages => _visibleMessagesForCurrentSession();
+  List<ChatMessage> get rawMessages =>
+      List<ChatMessage>.unmodifiable(_messages);
   int get messagesVersion => _messagesVersion;
   String? get errorMessage => _errorMessage;
   ChatUiNotice? get pendingUiNotice => _pendingUiNotice;
@@ -468,6 +473,148 @@ class ChatProvider extends ChangeNotifier {
   bool get isLoadingOlderMessages => _isLoadingOlderMessages;
   bool get hasMoreOldMessages => _hasMoreOldMessages;
   bool get isDraftingNewChat => _isNewChatDraftActive;
+  SessionRevert? get currentSessionRevert => _currentSession?.revert;
+  int get pendingHistoryComposerSyncToken =>
+      _pendingHistoryComposerSync?.token ?? 0;
+
+  List<ChatMessage> _visibleMessagesForCurrentSession() {
+    final session = _currentSession;
+    final revertMessageId = session?.revert?.messageId.trim();
+    if (session == null || revertMessageId == null || revertMessageId.isEmpty) {
+      return List<ChatMessage>.unmodifiable(_messages);
+    }
+    final boundaryIndex = _messages.indexWhere(
+      (message) =>
+          message.sessionId == session.id && message.id == revertMessageId,
+    );
+    if (boundaryIndex <= 0) {
+      return boundaryIndex == 0
+          ? const <ChatMessage>[]
+          : List<ChatMessage>.unmodifiable(_messages);
+    }
+    return List<ChatMessage>.unmodifiable(_messages.sublist(0, boundaryIndex));
+  }
+
+  void _queueHistoryComposerSync({
+    required String sessionId,
+    ChatComposerDraft? draft,
+    bool clear = false,
+  }) {
+    _pendingHistoryComposerSync = _HistoryComposerSync(
+      token: ++_historyComposerSyncToken,
+      sessionId: sessionId,
+      draft: draft,
+      clear: clear,
+    );
+  }
+
+  _HistoryComposerSync? consumePendingHistoryComposerSync({String? sessionId}) {
+    final pending = _pendingHistoryComposerSync;
+    if (pending == null) {
+      return null;
+    }
+    final expectedSessionId = sessionId?.trim();
+    if (expectedSessionId != null &&
+        expectedSessionId.isNotEmpty &&
+        pending.sessionId != expectedSessionId) {
+      return null;
+    }
+    _pendingHistoryComposerSync = null;
+    return pending;
+  }
+
+  void _applyCurrentSessionRevert(SessionRevert? revert) {
+    final session = _currentSession;
+    if (session == null) {
+      return;
+    }
+    final updatedSession = session.copyWith(revert: revert);
+    _currentSession = updatedSession;
+    final sessionIndex = _sessions.indexWhere((item) => item.id == session.id);
+    if (sessionIndex != -1) {
+      _sessions[sessionIndex] = updatedSession;
+    }
+    _messagesVersion++;
+    unawaited(_persistSessionCacheBestEffort());
+  }
+
+  ChatComposerDraft? _buildComposerDraftFromUserMessage(UserMessage message) {
+    final textParts = message.parts.whereType<TextPart>().toList(
+      growable: false,
+    );
+    final fileParts = message.parts.whereType<FilePart>().toList(
+      growable: false,
+    );
+    final joinedText = textParts.map((part) => part.text).join('\n').trim();
+    final shellMode = joinedText.startsWith('!');
+    final normalizedText = shellMode
+        ? joinedText.substring(1).trimLeft()
+        : joinedText;
+    final attachments = shellMode
+        ? const <FileInputPart>[]
+        : List<FileInputPart>.unmodifiable(
+            fileParts.map(
+              (part) => FileInputPart(
+                mime: part.mime,
+                url: part.url,
+                filename: part.filename,
+                source: part.fileSource == null
+                    ? null
+                    : FileInputSource(
+                        path: part.fileSource!.path,
+                        text: FileInputSourceText(
+                          value: part.fileSource!.text.value,
+                          start: part.fileSource!.text.start,
+                          end: part.fileSource!.text.end,
+                        ),
+                        type: part.fileSource!.type,
+                      ),
+              ),
+            ),
+          );
+    final draft = ChatComposerDraft(
+      text: normalizedText,
+      attachments: attachments,
+      shellMode: shellMode,
+    );
+    return draft.hasContent ? draft : null;
+  }
+
+  UserMessage? _findUserMessageById(String messageId) {
+    for (var index = _messages.length - 1; index >= 0; index -= 1) {
+      final message = _messages[index];
+      if (message.id == messageId && message is UserMessage) {
+        return message;
+      }
+    }
+    return null;
+  }
+
+  String? _nextRedoBoundaryMessageId() {
+    final session = _currentSession;
+    final revertMessageId = session?.revert?.messageId.trim();
+    if (session == null || revertMessageId == null || revertMessageId.isEmpty) {
+      return null;
+    }
+    final boundaryIndex = _messages.indexWhere(
+      (message) =>
+          message.sessionId == session.id && message.id == revertMessageId,
+    );
+    if (boundaryIndex == -1) {
+      return null;
+    }
+    for (var index = boundaryIndex + 1; index < _messages.length; index += 1) {
+      final candidate = _messages[index];
+      if (candidate.sessionId != session.id || candidate is! UserMessage) {
+        continue;
+      }
+      if (_isOptimisticLocalUserMessageId(candidate.id)) {
+        continue;
+      }
+      return candidate.id;
+    }
+    return null;
+  }
 
   bool isSessionActivelyResponding(String sessionId) {
     final normalizedSessionId = sessionId.trim();
@@ -3373,8 +3520,9 @@ class ChatProvider extends ChangeNotifier {
     if (sessionId == null) {
       return null;
     }
-    for (var index = _messages.length - 1; index >= 0; index -= 1) {
-      final message = _messages[index];
+    final visibleMessages = messages;
+    for (var index = visibleMessages.length - 1; index >= 0; index -= 1) {
+      final message = visibleMessages[index];
       if (message.sessionId != sessionId || message is! UserMessage) {
         continue;
       }
@@ -3388,7 +3536,7 @@ class ChatProvider extends ChangeNotifier {
 
   bool get canUndoCurrentSession => latestRevertibleMessageId != null;
 
-  bool get canRedoCurrentSession => _currentSession != null;
+  bool get canRedoCurrentSession => currentSessionRevert != null;
 
   Future<bool> undoLastTurn() async {
     final session = _currentSession;
@@ -3397,6 +3545,11 @@ class ChatProvider extends ChangeNotifier {
     if (session == null || messageId == null || useCase == null) {
       return false;
     }
+
+    final revertedMessage = _findUserMessageById(messageId);
+    final restoredDraft = revertedMessage == null
+        ? null
+        : _buildComposerDraftFromUserMessage(revertedMessage);
 
     final result = await useCase(
       RevertChatMessageParams(
@@ -3414,6 +3567,8 @@ class ChatProvider extends ChangeNotifier {
         return false;
       },
       (_) async {
+        _applyCurrentSessionRevert(SessionRevert(messageId: messageId));
+        _queueHistoryComposerSync(sessionId: session.id, draft: restoredDraft);
         await refreshActiveSessionView(reason: 'undo-success');
         await loadSessionInsights(session.id, silent: true);
         notifyListeners();
@@ -3424,8 +3579,45 @@ class ChatProvider extends ChangeNotifier {
 
   Future<bool> redoLastTurn() async {
     final session = _currentSession;
+    if (session == null || currentSessionRevert == null) {
+      return false;
+    }
+
+    final nextRevertMessageId = _nextRedoBoundaryMessageId();
+    if (nextRevertMessageId != null) {
+      final useCase = revertChatMessage;
+      if (useCase == null) {
+        return false;
+      }
+      final result = await useCase(
+        RevertChatMessageParams(
+          projectId: projectProvider.currentProjectId,
+          sessionId: session.id,
+          messageId: nextRevertMessageId,
+          directory: projectProvider.currentDirectory,
+        ),
+      );
+
+      return result.fold(
+        (failure) {
+          _handleFailure(failure);
+          notifyListeners();
+          return false;
+        },
+        (_) async {
+          _applyCurrentSessionRevert(
+            SessionRevert(messageId: nextRevertMessageId),
+          );
+          await refreshActiveSessionView(reason: 'redo-success');
+          await loadSessionInsights(session.id, silent: true);
+          notifyListeners();
+          return true;
+        },
+      );
+    }
+
     final useCase = unrevertChatMessages;
-    if (session == null || useCase == null) {
+    if (useCase == null) {
       return false;
     }
 
@@ -3444,6 +3636,8 @@ class ChatProvider extends ChangeNotifier {
         return false;
       },
       (_) async {
+        _applyCurrentSessionRevert(null);
+        _queueHistoryComposerSync(sessionId: session.id, clear: true);
         await refreshActiveSessionView(reason: 'redo-success');
         await loadSessionInsights(session.id, silent: true);
         notifyListeners();

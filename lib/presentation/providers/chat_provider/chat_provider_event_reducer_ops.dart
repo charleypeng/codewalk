@@ -54,6 +54,9 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         shareUrl: incoming.shareUrl,
       );
     }
+    if (info.containsKey('revert')) {
+      merged = merged.copyWith(revert: incoming.revert);
+    }
     return merged;
   }
 
@@ -244,8 +247,12 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           }
           _upsertSession(nextSession);
           if (_currentSession?.id == nextSession.id) {
+            final previousRevert = _currentSession?.revert;
             _currentSession = nextSession;
             _threadPermissionsVersion++;
+            if (previousRevert != nextSession.revert) {
+              _messagesVersion++;
+            }
           }
           _notifyListeners();
         }

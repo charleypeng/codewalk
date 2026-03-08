@@ -65,6 +65,20 @@ class _RejectedDraftEnvelope {
   final ChatComposerDraft draft;
 }
 
+class _HistoryComposerSync {
+  const _HistoryComposerSync({
+    required this.token,
+    required this.sessionId,
+    this.draft,
+    this.clear = false,
+  });
+
+  final int token;
+  final String sessionId;
+  final ChatComposerDraft? draft;
+  final bool clear;
+}
+
 class _ChatContextSnapshot {
   const _ChatContextSnapshot({
     required this.sessions,

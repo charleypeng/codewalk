@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import 'session.dart';
+
 /// Technical comment translated to English.
 class ChatSession extends Equatable {
   const ChatSession({
@@ -14,6 +16,7 @@ class ChatSession extends Equatable {
     this.shareUrl,
     this.summary,
     this.path,
+    this.revert,
   });
 
   /// Technical comment translated to English.
@@ -45,6 +48,8 @@ class ChatSession extends Equatable {
   /// Technical comment translated to English.
   final SessionPath? path;
 
+  final SessionRevert? revert;
+
   bool get archived => archivedAt != null;
 
   @override
@@ -60,6 +65,7 @@ class ChatSession extends Equatable {
     shareUrl,
     summary,
     path,
+    revert,
   ];
 
   /// Technical comment translated to English.
@@ -75,6 +81,7 @@ class ChatSession extends Equatable {
     Object? shareUrl = _unset,
     Object? summary = _unset,
     Object? path = _unset,
+    Object? revert = _unset,
   }) {
     final nextShareUrl = identical(shareUrl, _unset)
         ? this.shareUrl
@@ -99,6 +106,9 @@ class ChatSession extends Equatable {
       shareUrl: nextShareUrl,
       summary: identical(summary, _unset) ? this.summary : summary as String?,
       path: identical(path, _unset) ? this.path : path as SessionPath?,
+      revert: identical(revert, _unset)
+          ? this.revert
+          : revert as SessionRevert?,
     );
   }
 

@@ -58,6 +58,10 @@ class ChatInputController {
     _state?._focusInputFromExternal();
   }
 
+  void clearDraft() {
+    _state?._clearDraftFromExternal();
+  }
+
   Future<void> toggleVoiceInput() async {
     if (!canToggleVoiceInput) {
       return;
@@ -473,6 +477,20 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
 
   void _setState(VoidCallback fn) {
     setState(fn);
+  }
+
+  void _clearDraftFromExternal() {
+    _controller.clear();
+    _setState(() {
+      _isComposing = false;
+      _attachments.clear();
+      _mode = ChatComposerMode.normal;
+      _popoverType = ChatComposerPopoverType.none;
+      _mentionSuggestions = <ChatComposerMentionSuggestion>[];
+      _slashSuggestions = <ChatComposerSlashCommandSuggestion>[];
+      _activeSuggestionIndex = 0;
+    });
+    _ensureInputFocus();
   }
 
   int get _activeSuggestionsCount {

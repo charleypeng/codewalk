@@ -23,6 +23,9 @@ ChatSessionModel _$ChatSessionModelFromJson(Map<String, dynamic> json) =>
       share: json['share'] == null
           ? null
           : SessionShareModel.fromJson(json['share'] as Map<String, dynamic>),
+      revert: json['revert'] == null
+          ? null
+          : SessionRevertModel.fromJson(json['revert'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$ChatSessionModelToJson(ChatSessionModel instance) =>
@@ -38,6 +41,7 @@ Map<String, dynamic> _$ChatSessionModelToJson(ChatSessionModel instance) =>
       'summary': instance.summary,
       'path': instance.path,
       'share': instance.share,
+      'revert': instance.revert,
     };
 
 SessionTimeModel _$SessionTimeModelFromJson(Map<String, dynamic> json) =>
@@ -68,6 +72,22 @@ SessionPathModel _$SessionPathModelFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$SessionPathModelToJson(SessionPathModel instance) =>
     <String, dynamic>{'root': instance.root, 'workspace': instance.workspace};
+
+SessionRevertModel _$SessionRevertModelFromJson(Map<String, dynamic> json) =>
+    SessionRevertModel(
+      messageId: json['messageID'] as String,
+      partId: json['partID'] as String?,
+      snapshot: json['snapshot'] as String?,
+      diff: json['diff'] as String?,
+    );
+
+Map<String, dynamic> _$SessionRevertModelToJson(SessionRevertModel instance) =>
+    <String, dynamic>{
+      'messageID': instance.messageId,
+      'partID': instance.partId,
+      'snapshot': instance.snapshot,
+      'diff': instance.diff,
+    };
 
 ChatInputModel _$ChatInputModelFromJson(Map<String, dynamic> json) =>
     ChatInputModel(
