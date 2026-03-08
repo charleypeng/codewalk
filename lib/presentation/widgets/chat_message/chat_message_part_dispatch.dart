@@ -171,7 +171,9 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
     }
 
     final chainIdentityToken = _partIdentityToken(allToolSurfaceParts.first);
-    final chainStartPartId = _toolSurfacePartPublicKey(allToolSurfaceParts.first);
+    final chainStartPartId = _toolSurfacePartPublicKey(
+      allToolSurfaceParts.first,
+    );
     final animateToolChain = allToolSurfaceParts.any(_shouldAnimatePartArrival);
     final rendered = <Widget>[];
     var insertedCollapsedToolChain = false;
@@ -188,10 +190,8 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
           ),
           messageId: message.id,
           startPartId: chainStartPartId,
-          onExpandedChanged: (expanded) => _setToolChainExpanded(
-            chainIdentityToken,
-            expanded,
-          ),
+          onExpandedChanged: (expanded) =>
+              _setToolChainExpanded(chainIdentityToken, expanded),
           toolDescriptionLabelBuilder: _resolveToolDescriptionLabel,
           toolTypeLabelBuilder: _resolveToolTypeLabel,
           parts: allToolSurfaceParts,
@@ -297,9 +297,7 @@ class _CollapsibleToolChain extends StatelessWidget {
   }
 
   String _buildCollapsedPrimaryLabel({required bool compact}) {
-    final toolParts = parts.whereType<ToolPart>().toList(
-      growable: false,
-    );
+    final toolParts = parts.whereType<ToolPart>().toList(growable: false);
     final patchCount = parts.whereType<PatchPart>().length;
 
     if (compact) {
@@ -379,10 +377,36 @@ class _CollapsibleToolChain extends StatelessWidget {
     return '${unique.take(2).join(' • ')} • +${unique.length - 2} types';
   }
 
+  String? _buildCollapsedProgressLabel() {
+    final toolParts = parts.whereType<ToolPart>().toList(growable: false);
+    if (toolParts.isEmpty) {
+      return null;
+    }
+
+    final pending = toolParts
+        .where((part) => part.state.status == ToolStatus.pending)
+        .length;
+    final running = toolParts
+        .where((part) => part.state.status == ToolStatus.running)
+        .length;
+    final failed = toolParts
+        .where((part) => part.state.status == ToolStatus.error)
+        .length;
+
+    if (pending == 0 && running == 0 && failed == 0) {
+      return null;
+    }
+
+    final summaryParts = <String>[
+      if (running > 0) '$running running',
+      if (pending > 0) '$pending queued',
+      if (failed > 0) '$failed needs attention',
+    ];
+    return summaryParts.join(' • ');
+  }
+
   String _buildExpandedSummaryLabel() {
-    final toolParts = parts.whereType<ToolPart>().toList(
-      growable: false,
-    );
+    final toolParts = parts.whereType<ToolPart>().toList(growable: false);
     final patchCount = parts.whereType<PatchPart>().length;
     if (toolParts.isEmpty) {
       return patchCount == 1 ? '1 patch' : '$patchCount patches';
@@ -422,6 +446,7 @@ class _CollapsibleToolChain extends StatelessWidget {
     final collapsedPrimaryLabel = _buildCollapsedPrimaryLabel(
       compact: compactLayout,
     );
+    final collapsedProgressLabel = _buildCollapsedProgressLabel();
     final collapsedSecondaryLabelRaw = _buildCollapsedSecondaryLabel();
     final collapsedSecondaryLabel =
         collapsedSecondaryLabelRaw != null &&
@@ -431,9 +456,7 @@ class _CollapsibleToolChain extends StatelessWidget {
         : null;
 
     return Container(
-      key: ValueKey<String>(
-        'tool_chain_container_${messageId}_$startPartId',
-      ),
+      key: ValueKey<String>('tool_chain_container_${messageId}_$startPartId'),
       margin: const EdgeInsets.symmetric(vertical: 4),
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
@@ -459,6 +482,8 @@ class _CollapsibleToolChain extends StatelessWidget {
                       ),
                     ),
                     if (_expanded ||
+                        (collapsedProgressLabel != null &&
+                            collapsedProgressLabel.isNotEmpty) ||
                         (!compactLayout &&
                             collapsedSecondaryLabel != null &&
                             collapsedSecondaryLabel.isNotEmpty)) ...[
@@ -466,7 +491,8 @@ class _CollapsibleToolChain extends StatelessWidget {
                       Text(
                         _expanded
                             ? _buildExpandedSummaryLabel()
-                            : collapsedSecondaryLabel!,
+                            : collapsedProgressLabel ??
+                                  collapsedSecondaryLabel!,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),

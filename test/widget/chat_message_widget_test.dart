@@ -1865,6 +1865,61 @@ void main() {
     expect(find.textContaining('Reading project docs'), findsOneWidget);
   });
 
+  testWidgets('shows collapsed progress summary for active multi-tool chains', (
+    WidgetTester tester,
+  ) async {
+    final message = AssistantMessage(
+      id: 'msg_tool_summary_progress',
+      sessionId: 'ses_tool_summary_progress',
+      time: DateTime.fromMillisecondsSinceEpoch(1000),
+      parts: <MessagePart>[
+        ToolPart(
+          id: 'part_tool_summary_progress_1',
+          messageId: 'msg_tool_summary_progress',
+          sessionId: 'ses_tool_summary_progress',
+          callId: 'call_tool_summary_progress_1',
+          tool: 'bash',
+          state: ToolStateRunning(
+            input: const <String, dynamic>{
+              'description': 'Inspecting repository state',
+              'command': 'git status --short',
+            },
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+          ),
+        ),
+        ToolPart(
+          id: 'part_tool_summary_progress_2',
+          messageId: 'msg_tool_summary_progress',
+          sessionId: 'ses_tool_summary_progress',
+          callId: 'call_tool_summary_progress_2',
+          tool: 'read',
+          state: const ToolStatePending(),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: message,
+            isSessionActivelyResponding: true,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('1 running • 1 queued'), findsOneWidget);
+    expect(
+      find.byKey(
+        const ValueKey<String>(
+          'tool_part_details_button_part_tool_summary_progress_1',
+        ),
+      ),
+      findsNothing,
+    );
+  });
+
   testWidgets('resets tool-chain expansion after widget remount', (
     WidgetTester tester,
   ) async {
