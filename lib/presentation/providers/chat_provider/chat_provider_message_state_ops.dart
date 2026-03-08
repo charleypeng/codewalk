@@ -29,6 +29,44 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     );
   }
 
+  MessagePart? _mergeIncrementalPartUpdate({
+    required MessagePart existingPart,
+    required MessagePart incomingPart,
+    required String delta,
+  }) {
+    if (delta.isEmpty) {
+      return incomingPart;
+    }
+
+    if (existingPart is TextPart && incomingPart is TextPart) {
+      final mergedText = incomingPart.text.startsWith(existingPart.text)
+          ? incomingPart.text
+          : '${existingPart.text}$delta';
+      return TextPart(
+        id: incomingPart.id,
+        messageId: incomingPart.messageId,
+        sessionId: incomingPart.sessionId,
+        text: mergedText,
+        time: incomingPart.time,
+      );
+    }
+
+    if (existingPart is ReasoningPart && incomingPart is ReasoningPart) {
+      final mergedText = incomingPart.text.startsWith(existingPart.text)
+          ? incomingPart.text
+          : '${existingPart.text}$delta';
+      return ReasoningPart(
+        id: incomingPart.id,
+        messageId: incomingPart.messageId,
+        sessionId: incomingPart.sessionId,
+        text: mergedText,
+        time: incomingPart.time,
+      );
+    }
+
+    return null;
+  }
+
   String _extractAutoTitleText(ChatMessage message) {
     if (message is AssistantMessage && message.summary == true) {
       return '';

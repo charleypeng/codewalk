@@ -450,6 +450,38 @@ void main() {
     );
 
     test(
+      'treats busy session with latest user message as actively responding',
+      () async {
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          UserMessage(
+            id: 'msg_user_pending_turn',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_user_pending_turn',
+                messageId: 'msg_user_pending_turn',
+                sessionId: 'ses_1',
+                text: 'still waiting',
+              ),
+            ],
+          ),
+        ];
+        chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+          'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
+        };
+
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.loadSessionInsights('ses_1');
+
+        expect(provider.currentSessionStatus?.type, SessionStatusType.busy);
+        expect(provider.isCurrentSessionActivelyResponding, isTrue);
+        expect(provider.canAbortActiveResponse, isTrue);
+      },
+    );
+
+    test(
       'treats busy tool-only assistant turn as actively responding',
       () async {
         final toolOnlyAssistant = AssistantMessage(

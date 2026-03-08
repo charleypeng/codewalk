@@ -507,8 +507,16 @@ class ChatProvider extends ChangeNotifier {
       }
     }
 
-    if (latestSessionMessage is! AssistantMessage) {
+    if (latestSessionMessage == null) {
       return false;
+    }
+
+    if (latestSessionMessage is UserMessage) {
+      return true;
+    }
+
+    if (latestSessionMessage is! AssistantMessage) {
+      return true;
     }
 
     final hasToolSurfacePart = latestSessionMessage.parts.any(

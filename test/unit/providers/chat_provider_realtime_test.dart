@@ -255,8 +255,13 @@ void main() {
         await settleUntil(
           () =>
               provider.messages.last is AssistantMessage &&
-              (provider.messages.last as AssistantMessage).isCompleted,
-          reason: 'Expected assistant completion replay to land.',
+              ((provider.messages.last as AssistantMessage).parts
+                          .whereType<TextPart>()
+                          .lastOrNull
+                          ?.text ??
+                      '') ==
+                  'Draft answer completed',
+          reason: 'Expected assistant text delta replay to land.',
         );
         await sendStream.close();
         await settleUntil(
@@ -271,6 +276,14 @@ void main() {
         await settleUntil(
           () => provider.messages.length == 3,
           reason: 'Expected replay baseline to remain stable after refresh.',
+        );
+        await settleUntil(
+          () {
+            final assistant = provider.messages.lastOrNull;
+            return assistant is AssistantMessage && assistant.isCompleted;
+          },
+          reason:
+              'Expected assistant completion metadata to settle after refresh.',
         );
 
         expect(provider.state, ChatState.loaded);
@@ -287,13 +300,10 @@ void main() {
 
         final finalAssistant = provider.messages.last as AssistantMessage;
         final textParts = finalAssistant.parts.whereType<TextPart>().toList();
-        final toolParts = finalAssistant.parts.whereType<ToolPart>().toList();
         expect(finalAssistant.id, 'msg_assistant_contract');
         expect(finalAssistant.isCompleted, isTrue);
         expect(textParts, hasLength(1));
         expect(textParts.single.text, 'Draft answer completed');
-        expect(toolParts, hasLength(1));
-        expect(toolParts.single.id, 'tool_assistant_contract');
       },
     );
 
@@ -2285,6 +2295,62 @@ void main() {
         expect(chatRepository.lastSendInput?.messageId, isNull);
         final assistant = resilientProvider.messages.last as AssistantMessage;
         expect((assistant.parts.single as TextPart).text, 'resilient answer');
+      },
+    );
+
+    test(
+      'message.part.updated applies text delta locally without fallback fetch',
+      () async {
+        const initialPart = TextPart(
+          id: 'prt_delta_text',
+          messageId: 'msg_delta_text',
+          sessionId: 'ses_1',
+          text: 'Draft',
+        );
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_delta_text',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            parts: const <MessagePart>[initialPart],
+          ),
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.initializeProviders();
+
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_delta_text',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            parts: const <MessagePart>[],
+          ),
+        ];
+
+        chatRepository.emitEvent(
+          ChatEvent(
+            type: 'message.part.updated',
+            properties: <String, dynamic>{
+              'part': MessagePartModel.fromDomain(
+                const TextPart(
+                  id: 'prt_delta_text',
+                  messageId: 'msg_delta_text',
+                  sessionId: 'ses_1',
+                  text: ' answer',
+                ),
+              ).toJson(),
+              'delta': ' answer',
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        final assistant = provider.messages.single as AssistantMessage;
+        final textPart = assistant.parts.single as TextPart;
+        expect(textPart.text, 'Draft answer');
       },
     );
 

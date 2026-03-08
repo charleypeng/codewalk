@@ -482,7 +482,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         break;
       case 'message.part.updated':
         final partMap = properties['part'] as Map<String, dynamic>?;
-        final part = partMap == null
+        var part = partMap == null
             ? null
             : MessagePartModel.fromJson(partMap).toDomain();
         final sessionId = part?.sessionId;
@@ -495,29 +495,54 @@ extension _ChatProviderEventReducerOps on ChatProvider {
 
         final partIndex = _messages.indexWhere((item) => item.id == messageId);
         final delta = properties['delta'] as String?;
-        if (part == null ||
-            partIndex == -1 ||
-            (delta != null && delta.isNotEmpty)) {
+        if (part == null || partIndex == -1) {
           unawaited(_fetchMessageFallback(sessionId, messageId));
           break;
         }
+        final incomingPart = part;
+        MessagePart resolvedPart = incomingPart;
         final message = _messages[partIndex];
         final nextParts = List<MessagePart>.from(message.parts);
         final existingPartIndex = nextParts.indexWhere(
-          (item) => item.id == part.id,
+          (item) => item.id == incomingPart.id,
         );
         if (existingPartIndex == -1) {
-          nextParts.add(part);
-        } else {
-          if (nextParts[existingPartIndex] == part) {
+          if (delta != null && delta.isNotEmpty) {
+            unawaited(_fetchMessageFallback(sessionId, messageId));
             break;
           }
-          nextParts[existingPartIndex] = part;
+          nextParts.add(incomingPart);
+        } else {
+          if (delta != null && delta.isNotEmpty) {
+            final mergedPart = _mergeIncrementalPartUpdate(
+              existingPart: nextParts[existingPartIndex],
+              incomingPart: incomingPart,
+              delta: delta,
+            );
+            if (mergedPart == null) {
+              unawaited(_fetchMessageFallback(sessionId, messageId));
+              break;
+            }
+            resolvedPart = mergedPart;
+          }
+          if (nextParts[existingPartIndex] == resolvedPart) {
+            break;
+          }
+          nextParts[existingPartIndex] = resolvedPart;
         }
         _messages[partIndex] = _copyMessageWithParts(message, nextParts);
         _messagesVersion++;
         _notifyListeners();
-        if (!_isCompactingContext && isSessionActivelyResponding(sessionId)) {
+        final shouldAutoScroll =
+            existingPartIndex == -1 ||
+            resolvedPart is TextPart ||
+            resolvedPart is ReasoningPart;
+        if (delta != null && delta.isNotEmpty && message is AssistantMessage) {
+          _scheduleDebouncedMessageFallback(sessionId, messageId);
+        }
+        if (!_isCompactingContext &&
+            shouldAutoScroll &&
+            isSessionActivelyResponding(sessionId)) {
           _scheduleScrollToBottom();
         }
         break;
