@@ -8,9 +8,9 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
     if (!allowInteraction) {
       return const SizedBox.shrink();
     }
-    final permissionRequests = chatProvider.currentSessionPermissions;
-    final questionRequest = chatProvider.currentQuestionRequest;
-    if (permissionRequests.isEmpty && questionRequest == null) {
+    final permissionRequests = chatProvider.currentThreadPermissionRequests;
+    final questionRequests = chatProvider.currentThreadQuestionRequests;
+    if (permissionRequests.isEmpty && questionRequests.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -23,6 +23,10 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
             ),
             request: permissionRequest,
             busy: chatProvider.isRespondingInteraction,
+            originBadgeLabel: _interactionOriginBadgeLabel(
+              chatProvider,
+              sourceSessionId: permissionRequest.sessionId,
+            ),
             onDecide: (reply) {
               unawaited(
                 chatProvider.respondPermissionRequest(
@@ -32,10 +36,17 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
               );
             },
           ),
-        if (questionRequest != null)
+        for (final questionRequest in questionRequests)
           QuestionRequestCard(
+            key: ValueKey<String>(
+              'interaction_question_request_${questionRequest.id}',
+            ),
             request: questionRequest,
             busy: chatProvider.isRespondingInteraction,
+            originBadgeLabel: _interactionOriginBadgeLabel(
+              chatProvider,
+              sourceSessionId: questionRequest.sessionId,
+            ),
             onSubmit: (answers) {
               unawaited(
                 chatProvider.submitQuestionAnswers(
@@ -54,6 +65,48 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
           ),
       ],
     );
+  }
+
+  Widget _buildInlinePermissionPromptEntry(
+    _TimelinePermissionPromptEntry entry,
+    ChatProvider chatProvider,
+  ) {
+    return PermissionRequestCard(
+      key: ValueKey<String>('timeline_permission_request_${entry.request.id}'),
+      request: entry.request,
+      busy: chatProvider.isRespondingInteraction,
+      originBadgeLabel: _interactionOriginBadgeLabel(
+        chatProvider,
+        sourceSessionId: entry.request.sessionId,
+      ),
+      onDecide: (reply) {
+        unawaited(
+          chatProvider.respondPermissionRequest(
+            requestId: entry.request.id,
+            reply: reply,
+          ),
+        );
+      },
+    );
+  }
+
+  String? _interactionOriginBadgeLabel(
+    ChatProvider chatProvider, {
+    required String sourceSessionId,
+  }) {
+    final normalizedSessionId = sourceSessionId.trim();
+    final currentSessionId = chatProvider.currentSession?.id?.trim();
+    if (normalizedSessionId.isEmpty ||
+        normalizedSessionId == currentSessionId) {
+      return null;
+    }
+
+    for (final session in chatProvider.sessions) {
+      if (session.id == normalizedSessionId) {
+        return _sessionDisplayTitle(session);
+      }
+    }
+    return 'Subsession';
   }
 
   String _sessionStatusLabel(SessionStatusInfo status) {

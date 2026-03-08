@@ -55,6 +55,7 @@ class PermissionRequestCard extends StatelessWidget {
                   key: ValueKey<String>(
                     'permission_request_origin_badge_${request.id}',
                   ),
+                  constraints: const BoxConstraints(maxWidth: 160),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
                     vertical: 3,
@@ -77,11 +78,16 @@ class PermissionRequestCard extends StatelessWidget {
                         color: colorScheme.onSecondaryContainer,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        originLabel,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: colorScheme.onSecondaryContainer,
-                          fontWeight: FontWeight.w600,
+                      Flexible(
+                        child: Text(
+                          originLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: colorScheme.onSecondaryContainer,
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                       ),
                     ],

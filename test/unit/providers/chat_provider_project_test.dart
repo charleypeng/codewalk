@@ -212,7 +212,7 @@ void main() {
 
         expect(
           provider.currentThreadPermissionRequests.map((item) => item.id),
-          <String>['perm_root_1'],
+          <String>['perm_root_1', 'perm_sub_1'],
         );
         final currentSessionId = provider.currentSession?.id;
         final subagentRequestIds = provider.currentThreadPermissionRequests
@@ -220,7 +220,90 @@ void main() {
             .map((item) => item.id)
             .toList(growable: false);
 
-        expect(subagentRequestIds, isEmpty);
+        expect(subagentRequestIds, <String>['perm_sub_1']);
+      },
+    );
+
+    test(
+      'collects current-thread questions including subagent descendants',
+      () async {
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_child_1',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(900),
+            title: 'Child Session',
+            parentId: 'ses_1',
+          ),
+        );
+
+        chatRepository.pendingQuestions = const <ChatQuestionRequest>[
+          ChatQuestionRequest(
+            id: 'q_root_1',
+            sessionId: 'ses_1',
+            questions: <ChatQuestionInfo>[
+              ChatQuestionInfo(
+                question: 'Approve root?',
+                header: 'Root',
+                options: <ChatQuestionOption>[
+                  ChatQuestionOption(label: 'Yes', description: 'Continue'),
+                ],
+              ),
+            ],
+          ),
+          ChatQuestionRequest(
+            id: 'q_sub_1',
+            sessionId: 'ses_child_1',
+            questions: <ChatQuestionInfo>[
+              ChatQuestionInfo(
+                question: 'Approve child?',
+                header: 'Child',
+                options: <ChatQuestionOption>[
+                  ChatQuestionOption(label: 'Yes', description: 'Continue'),
+                ],
+              ),
+            ],
+          ),
+          ChatQuestionRequest(
+            id: 'q_other_1',
+            sessionId: 'ses_unrelated',
+            questions: <ChatQuestionInfo>[
+              ChatQuestionInfo(
+                question: 'Ignore other?',
+                header: 'Other',
+                options: <ChatQuestionOption>[
+                  ChatQuestionOption(label: 'Yes', description: 'Continue'),
+                ],
+              ),
+            ],
+          ),
+        ];
+
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'model_a': testModel('model_a')},
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a'],
+          ),
+        );
+
+        await provider.initializeProviders();
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.where((item) => item.id == 'ses_1').first,
+        );
+
+        expect(
+          provider.currentThreadQuestionRequests.map((item) => item.id),
+          <String>['q_root_1', 'q_sub_1'],
+        );
       },
     );
 

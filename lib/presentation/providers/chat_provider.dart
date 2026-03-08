@@ -967,18 +967,129 @@ class ChatProvider extends ChangeNotifier {
       return _cachedThreadPermissionRequests;
     }
 
-    final visiblePermissions = this.currentSessionPermissions;
-    if (visiblePermissions.isEmpty) {
+    final currentSessionId = _currentSession?.id;
+    if (currentSessionId == null || currentSessionId.isEmpty) {
       _cachedThreadPermissionsAtVersion = _threadPermissionsVersion;
       _cachedThreadPermissionRequests = const <ChatPermissionRequest>[];
       return _cachedThreadPermissionRequests;
     }
 
+    final orderedSessionIds = <String>[
+      currentSessionId,
+      ..._orderedCurrentSessionDescendantIds(),
+    ];
+    final seenRequestIds = <String>{};
+    final collected = <ChatPermissionRequest>[];
+
+    for (final sessionId in orderedSessionIds) {
+      final sessionRequests = _pendingPermissionsBySession[sessionId];
+      if (sessionRequests == null || sessionRequests.isEmpty) {
+        continue;
+      }
+      for (final request in sessionRequests) {
+        if (seenRequestIds.add(request.id)) {
+          collected.add(request);
+        }
+      }
+    }
+
     _cachedThreadPermissionsAtVersion = _threadPermissionsVersion;
     _cachedThreadPermissionRequests = List<ChatPermissionRequest>.unmodifiable(
-      visiblePermissions,
+      collected,
     );
     return _cachedThreadPermissionRequests;
+  }
+
+  List<ChatQuestionRequest> get currentThreadQuestionRequests {
+    final currentSessionId = _currentSession?.id;
+    if (currentSessionId == null || currentSessionId.isEmpty) {
+      return const <ChatQuestionRequest>[];
+    }
+
+    final orderedSessionIds = <String>[
+      currentSessionId,
+      ..._orderedCurrentSessionDescendantIds(),
+    ];
+    final seenRequestIds = <String>{};
+    final collected = <ChatQuestionRequest>[];
+
+    for (final sessionId in orderedSessionIds) {
+      final sessionRequests = _pendingQuestionsBySession[sessionId];
+      if (sessionRequests == null || sessionRequests.isEmpty) {
+        continue;
+      }
+      for (final request in sessionRequests) {
+        if (seenRequestIds.add(request.id)) {
+          collected.add(request);
+        }
+      }
+    }
+
+    return List<ChatQuestionRequest>.unmodifiable(collected);
+  }
+
+  List<String> _orderedCurrentSessionDescendantIds() {
+    final currentSessionId = _currentSession?.id;
+    if (currentSessionId == null || currentSessionId.isEmpty) {
+      return const <String>[];
+    }
+
+    final childIdsByParent = _childSessionIdsByParent();
+    if (childIdsByParent.isEmpty) {
+      return const <String>[];
+    }
+
+    final visited = <String>{currentSessionId};
+    final orderedDescendants = <String>[];
+    final queue = ListQueue<String>()..add(currentSessionId);
+
+    while (queue.isNotEmpty) {
+      final parentId = queue.removeFirst();
+      final childIds = childIdsByParent[parentId] ?? const <String>[];
+      for (final childId in childIds) {
+        if (!visited.add(childId)) {
+          continue;
+        }
+        orderedDescendants.add(childId);
+        queue.add(childId);
+      }
+    }
+
+    return orderedDescendants;
+  }
+
+  Map<String, List<String>> _childSessionIdsByParent() {
+    final output = <String, List<String>>{};
+
+    void appendChild({required String parentId, required String childId}) {
+      if (parentId.isEmpty || childId.isEmpty || parentId == childId) {
+        return;
+      }
+      final children = output.putIfAbsent(parentId, () => <String>[]);
+      if (!children.contains(childId)) {
+        children.add(childId);
+      }
+    }
+
+    for (final session in _sessions) {
+      final parentId = session.parentId?.trim();
+      if (parentId == null || parentId.isEmpty) {
+        continue;
+      }
+      appendChild(parentId: parentId, childId: session.id);
+    }
+
+    for (final entry in _sessionChildrenById.entries) {
+      final parentId = entry.key.trim();
+      if (parentId.isEmpty) {
+        continue;
+      }
+      for (final child in entry.value) {
+        appendChild(parentId: parentId, childId: child.id);
+      }
+    }
+
+    return output;
   }
 
   List<ChatSession> get currentSessionChildren {
@@ -1531,6 +1642,7 @@ class ChatProvider extends ChangeNotifier {
           _pendingQuestionsBySession[sessionId] = filtered;
         }
       }
+      _threadPermissionsVersion++;
     });
     notifyListeners();
   }
@@ -1559,6 +1671,7 @@ class ChatProvider extends ChangeNotifier {
           _pendingQuestionsBySession[sessionId] = filtered;
         }
       }
+      _threadPermissionsVersion++;
     });
     notifyListeners();
   }

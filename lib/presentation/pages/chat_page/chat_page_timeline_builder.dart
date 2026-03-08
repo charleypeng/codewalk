@@ -926,6 +926,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     );
     final showMessageProgressIndicator =
         progressStage == _AssistantProgressStage.retrying;
+    final interactionPermissions = chatProvider.currentThreadPermissionRequests;
     final timelineEntries = _buildMessageTimelineEntries(
       messages: chatProvider.messages,
       messagesVersion: chatProvider.messagesVersion,
@@ -933,6 +934,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       isSessionActivelyResponding:
           chatProvider.isCurrentSessionActivelyResponding,
       isCompactingContext: chatProvider.isCompactingContext,
+      interactionPermissions: interactionPermissions,
     );
     final finalAssistantRevealMessageId =
         _resolveLatestSuccessfulAssistantMessageId(chatProvider.messages);
@@ -1018,6 +1020,11 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                     child = _buildCollapsedHistoryEntry(entry);
                   } else if (entry is _TimelineCollapsedAssistantWorkEntry) {
                     child = _buildCollapsedAssistantWorkEntry(entry);
+                  } else if (entry is _TimelinePermissionPromptEntry) {
+                    child = _buildInlinePermissionPromptEntry(
+                      entry,
+                      chatProvider,
+                    );
                   } else {
                     child = _buildRetryingMessageIndicator();
                   }
@@ -1058,12 +1065,17 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     required bool showRetryIndicator,
     required bool isSessionActivelyResponding,
     required bool isCompactingContext,
+    required List<ChatPermissionRequest> interactionPermissions,
   }) {
+    final permissionPromptSignature = interactionPermissions
+        .map((request) => '${request.id}:${request.sessionId}')
+        .join('|');
     if (_cachedTimelineEntries != null &&
         messagesVersion == _cachedTimelineMessagesVersion &&
         isCompactingContext == _cachedTimelineIsCompacting &&
         isSessionActivelyResponding == _cachedTimelineIsResponding &&
         showRetryIndicator == _cachedTimelineShowRetry &&
+        permissionPromptSignature == _cachedTimelinePermissionPromptSignature &&
         _deferAssistantWorkCollapse ==
             _cachedTimelineDeferAssistantWorkCollapse &&
         _expandedCollapsedHistoryGroupId == _cachedTimelineExpandedGroupId &&
@@ -1151,6 +1163,10 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       );
     }
 
+    for (final request in interactionPermissions) {
+      entries.add(_TimelinePermissionPromptEntry(request: request));
+    }
+
     if (showRetryIndicator) {
       entries.add(const _TimelineRetryIndicatorEntry());
     }
@@ -1160,6 +1176,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     _cachedTimelineIsCompacting = isCompactingContext;
     _cachedTimelineIsResponding = isSessionActivelyResponding;
     _cachedTimelineShowRetry = showRetryIndicator;
+    _cachedTimelinePermissionPromptSignature = permissionPromptSignature;
     _cachedTimelineDeferAssistantWorkCollapse = _deferAssistantWorkCollapse;
     _cachedTimelineExpandedGroupId = _expandedCollapsedHistoryGroupId;
     _cachedTimelineExpandedAssistantWorkGroupId = _expandedAssistantWorkGroupId;

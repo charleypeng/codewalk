@@ -651,6 +651,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           sessionQuestions[existingIndex] = question;
         }
         _pendingQuestionsBySession[question.sessionId] = sessionQuestions;
+        _threadPermissionsVersion++;
         _notifyListeners();
         break;
       case 'question.replied':
@@ -672,6 +673,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         } else {
           _pendingQuestionsBySession[sessionId] = filtered;
         }
+        _threadPermissionsVersion++;
         _notifyListeners();
         break;
       default:

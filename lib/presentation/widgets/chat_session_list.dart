@@ -297,15 +297,12 @@ class _ChatSessionListState extends State<ChatSessionList> {
   }) {
     final isSelected = widget.currentSession?.id == session.id;
     final isSessionActive = widget.isSessionActive?.call(session.id) ?? false;
-    final isLoading = _loadingSessionId == session.id;
     final sessionAttention =
         widget.sessionAttentionFor?.call(session.id) ??
         SessionAttentionState(isActive: isSessionActive);
     final floatingBadgeKind = _resolveFloatingBadgeKind(
       attention: sessionAttention,
-      isMobileLayout: widget.isMobileLayout,
     );
-    final showLeadingIcon = !widget.isMobileLayout;
     final colorScheme = Theme.of(context).colorScheme;
     final isPinned = widget.pinnedSessionIds.contains(session.id);
     final childLabel = childCount == 1
@@ -337,41 +334,6 @@ class _ChatSessionListState extends State<ChatSessionList> {
                   4,
                   0,
                 ),
-                leading: showLeadingIcon
-                    ? CircleAvatar(
-                        backgroundColor: isSelected || isLoading
-                            ? colorScheme.primary
-                            : colorScheme.surfaceContainerHighest,
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 220),
-                          switchInCurve: Curves.easeOutCubic,
-                          switchOutCurve: Curves.easeInCubic,
-                          child: (isSessionActive || isLoading)
-                              ? Icon(
-                                  Symbols.sync_rounded,
-                                  key: ValueKey<String>(
-                                    'chat_session_loading_${session.id}',
-                                  ),
-                                  color: isSelected || isLoading
-                                      ? colorScheme.onPrimary
-                                      : colorScheme.primary,
-                                  size: 20,
-                                )
-                              : Icon(
-                                  session.archived
-                                      ? Symbols.archive
-                                      : Symbols.chat,
-                                  key: ValueKey<String>(
-                                    'chat_session_idle_${session.id}',
-                                  ),
-                                  color: isSelected
-                                      ? colorScheme.onPrimary
-                                      : colorScheme.onSurfaceVariant,
-                                  size: 20,
-                                ),
-                        ),
-                      )
-                    : null,
                 title: Row(
                   children: [
                     if (hasChildren)
@@ -645,13 +607,9 @@ class _ChatSessionListState extends State<ChatSessionList> {
 
   SessionAttentionKind _resolveFloatingBadgeKind({
     required SessionAttentionState attention,
-    required bool isMobileLayout,
   }) {
     final primaryKind = attention.primaryKind;
     if (primaryKind == SessionAttentionKind.none) {
-      return SessionAttentionKind.none;
-    }
-    if (!isMobileLayout && primaryKind == SessionAttentionKind.active) {
       return SessionAttentionKind.none;
     }
     return primaryKind;

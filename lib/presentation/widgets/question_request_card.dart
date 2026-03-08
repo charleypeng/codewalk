@@ -23,12 +23,14 @@ class QuestionRequestCard extends StatefulWidget {
     required this.busy,
     required this.onSubmit,
     required this.onReject,
+    this.originBadgeLabel,
   });
 
   final ChatQuestionRequest request;
   final bool busy;
   final ValueChanged<List<List<String>>> onSubmit;
   final VoidCallback onReject;
+  final String? originBadgeLabel;
 
   @override
   State<QuestionRequestCard> createState() => _QuestionRequestCardState();
@@ -506,6 +508,11 @@ class _QuestionRequestCardState extends State<QuestionRequestCard> {
         .clamp(220.0, 560.0)
         .toDouble();
     final colorScheme = Theme.of(context).colorScheme;
+    final normalizedOriginLabel = widget.originBadgeLabel?.trim();
+    final originLabel =
+        normalizedOriginLabel == null || normalizedOriginLabel.isEmpty
+        ? null
+        : normalizedOriginLabel;
 
     final card = Container(
       width: double.infinity,
@@ -533,6 +540,51 @@ class _QuestionRequestCardState extends State<QuestionRequestCard> {
                     ),
                   ),
                 ),
+                if (originLabel != null)
+                  Container(
+                    key: ValueKey<String>(
+                      'question_request_origin_badge_${widget.request.id}',
+                    ),
+                    constraints: const BoxConstraints(maxWidth: 160),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.secondaryContainer.withValues(
+                        alpha: 0.7,
+                      ),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.55,
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Symbols.support_agent_rounded,
+                          size: 12,
+                          color: colorScheme.onSecondaryContainer,
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            originLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: colorScheme.onSecondaryContainer,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: 10),

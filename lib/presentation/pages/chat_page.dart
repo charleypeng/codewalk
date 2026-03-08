@@ -244,6 +244,7 @@ class _ChatPageState extends State<ChatPage>
   bool _cachedTimelineIsCompacting = false;
   bool _cachedTimelineIsResponding = false;
   bool _cachedTimelineShowRetry = false;
+  String _cachedTimelinePermissionPromptSignature = '';
   bool _cachedTimelineDeferAssistantWorkCollapse = false;
   String? _cachedTimelineExpandedGroupId;
   String? _cachedTimelineExpandedAssistantWorkGroupId;
@@ -1132,6 +1133,15 @@ class _TimelineMessageEntry extends _TimelineEntry {
 
   @override
   String get key => 'timeline_msg_${message.id}';
+}
+
+class _TimelinePermissionPromptEntry extends _TimelineEntry {
+  const _TimelinePermissionPromptEntry({required this.request});
+
+  final ChatPermissionRequest request;
+
+  @override
+  String get key => 'timeline_permission_prompt_${request.id}';
 }
 
 class _TimelineCollapsedHistoryEntry extends _TimelineEntry {

@@ -455,11 +455,13 @@ The app uses a dual-engine strategy with automatic fallback:
 - **Given** the server needs user approval to perform an action (e.g., execute a command, write a file)
 - **When** the server sends a permission request
 - **Then** an interactive card appears in the chat with three response options:
-  - **Allow Once** — approves the action for this single occurrence
-  - **Always** — approves the action permanently for this session
+- **Allow Once** — approves the action for this single occurrence
+- **Always** — approves the action permanently for this session
 - **Reject** — denies the action
 - **Then** the server waits for the user's response before proceeding
-- **Then** the visible permission card is scoped to the owning session only; switching to another session does not surface that request there
+- **Then** the owning session always shows its own permission card
+- **Then** when the user is viewing the main/root session of that same thread, descendant sub-session permission cards are mirrored there as well with a source badge that identifies where they came from
+- **Then** switching to an unrelated session does not surface that request there
 - **When** the user allows (once or always), the server continues the operation
 - **Then** the resolved permission request is removed from the local pending state immediately
 - **When** the user rejects, the server receives a rejection and the session pauses — the assistant stops and waits for the user to send a new message before continuing
@@ -470,7 +472,9 @@ The app uses a dual-engine strategy with automatic fallback:
 - **When** the server sends a question prompt
 - **Then** an interactive card appears with the question and selectable options
 - **Then** the server waits for the user's response before proceeding
-- **Then** the visible question card is scoped to the owning session only; switching to another session does not surface that question there
+- **Then** the owning session always shows its own question card
+- **Then** when the user is viewing the main/root session of that same thread, descendant sub-session question cards are mirrored there as well with a source badge that identifies where they came from
+- **Then** switching to an unrelated session does not surface that question there
 - **When** the user replies or rejects the question
 - **Then** the resolved question request is removed from the local pending state immediately
 
@@ -555,6 +559,7 @@ Non-urgent (blue/gray) dot badges are never shown on the hamburger icon.
 - **Given** the Conversations sidebar is rendered on desktop
 - **When** project groups and session rows are shown
 - **Then** desktop uses compact spacing between project groups and conversation rows to increase visible item density
+- **Then** conversation rows use floating attention badges instead of a dedicated leading session icon so more horizontal space stays available for the title and metadata
 - **Then** mobile keeps its original touch-friendly spacing
 
 ### Desktop: system tray
@@ -777,7 +782,7 @@ Permission requests from the server always require explicit user action (approve
 
 ### Never leak pending prompts across sessions
 
-Permission and question cards must stay attached to their owning session. Switching sessions must never show a pending interaction from a different session.
+Permission and question cards must remain owned by their originating session. The app may mirror descendant thread prompts into the active main/root session for visibility, but it must never surface pending interactions in unrelated sessions.
 
 ### Never show false aborts
 

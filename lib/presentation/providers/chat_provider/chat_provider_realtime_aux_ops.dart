@@ -171,6 +171,7 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
               .add(item);
         }
         _pendingQuestionsBySession = grouped;
+        _threadPermissionsVersion++;
       },
     );
 

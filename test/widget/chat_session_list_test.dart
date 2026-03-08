@@ -139,7 +139,7 @@ void main() {
     expect(deleteCalls, 1);
   });
 
-  testWidgets('renders loading indicator for active session rows', (
+  testWidgets('renders floating active badge for active session rows', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -153,11 +153,16 @@ void main() {
       ),
     );
 
-    expect(find.byIcon(Symbols.sync_rounded), findsOneWidget);
-    expect(find.byIcon(Symbols.chat), findsNothing);
+    expect(find.byType(CircleAvatar), findsNothing);
+    expect(
+      find.byKey(
+        const ValueKey<String>('chat_session_attention_badge_active_ses_1'),
+      ),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('mobile layout uses floating badge instead of leading icon', (
+  testWidgets('mobile layout uses floating badge without leading icon', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -351,6 +356,7 @@ void main() {
       find.byKey(const ValueKey<String>('chat_session_tile_ses_1')),
     );
     expect(tilePadding.padding, const EdgeInsets.symmetric(vertical: 1));
+    expect(find.byType(CircleAvatar), findsNothing);
   });
 
   testWidgets('mobile layout keeps default vertical tile padding', (

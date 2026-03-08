@@ -25,7 +25,7 @@ void main() {
           body: PermissionRequestCard(
             request: request,
             busy: false,
-            originBadgeLabel: 'Subagent',
+            originBadgeLabel: 'Child Session',
             onDecide: (reply) => decided = reply,
           ),
         ),
@@ -33,7 +33,7 @@ void main() {
     );
 
     expect(find.textContaining('Permission request:'), findsOneWidget);
-    expect(find.text('Subagent'), findsOneWidget);
+    expect(find.text('Child Session'), findsOneWidget);
     await tester.tap(find.text('Allow Once'));
     await tester.pump();
     expect(decided, 'once');
@@ -67,6 +67,7 @@ void main() {
           body: QuestionRequestCard(
             request: request,
             busy: false,
+            originBadgeLabel: 'Child Session',
             onSubmit: (answers) => submitted = answers,
             onReject: () => rejected = true,
           ),
@@ -75,6 +76,7 @@ void main() {
     );
 
     expect(find.text('Continue'), findsOneWidget);
+    expect(find.text('Child Session'), findsOneWidget);
     await tester.tap(find.text('Yes'));
     await tester.pump();
     await tester.tap(find.text('Review Answers'));

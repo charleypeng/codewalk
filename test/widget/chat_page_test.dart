@@ -3331,7 +3331,7 @@ void main() {
   });
 
   testWidgets(
-    'shows subagent permission requests once in interaction prompt area',
+    'shows subagent permission requests in main prompt and timeline',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -3403,6 +3403,26 @@ void main() {
             'interaction_permission_request_perm_mirror_1',
           ),
         ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>('timeline_permission_request_perm_mirror_1'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Sub Session'), findsWidgets);
+
+      await tester.tap(find.text('Allow Once').first);
+      await tester.pumpAndSettle();
+
+      expect(repository.lastPermissionRequestId, 'perm_mirror_1');
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'interaction_permission_request_perm_mirror_1',
+          ),
+        ),
         findsNothing,
       );
       expect(
@@ -3411,10 +3431,83 @@ void main() {
         ),
         findsNothing,
       );
-      expect(find.text('Subagent'), findsNothing);
-      expect(repository.lastPermissionRequestId, isNull);
     },
   );
+
+  testWidgets('shows subagent question requests in main interaction prompt', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_root_q',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Root Session',
+        ),
+        ChatSession(
+          id: 'ses_sub_q',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(900),
+          title: 'Sub Session',
+          parentId: 'ses_root_q',
+        ),
+      ],
+    );
+    repository.pendingQuestions = const <ChatQuestionRequest>[
+      ChatQuestionRequest(
+        id: 'q_sub_prompt_1',
+        sessionId: 'ses_sub_q',
+        questions: <ChatQuestionInfo>[
+          ChatQuestionInfo(
+            question: 'Proceed from child?',
+            header: 'Child Check',
+            options: <ChatQuestionOption>[
+              ChatQuestionOption(label: 'Yes', description: 'Continue'),
+              ChatQuestionOption(label: 'No', description: 'Stop'),
+            ],
+            custom: false,
+          ),
+        ],
+      ),
+    ];
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.initializeProviders();
+    await provider.loadSessions();
+    await provider.selectSession(
+      provider.sessions.where((session) => session.id == 'ses_root_q').first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(
+        const ValueKey<String>('interaction_question_request_q_sub_prompt_1'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Sub Session'), findsOneWidget);
+
+    await tester.tap(find.text('Review Answers'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Submit Answers'));
+    await tester.pumpAndSettle();
+
+    expect(repository.lastQuestionReplyRequestId, 'q_sub_prompt_1');
+  });
 
   testWidgets('shows model selector with search and quick reasoning selector', (
     WidgetTester tester,
