@@ -113,6 +113,7 @@
 - **Then** each project row shows a conversation count derived from that project's visible sessions (active scope or cached snapshot)
 - **Then** tapping a project row switches context directly from the sidebar (no modal required)
 - **Then** when snapshot data exists, the sidebar shows compact session previews for that project; when not available, it shows a "Open project to load conversations" hint
+- **Then** inactive project snapshots are patched by global `session.created`, `session.updated`, and `session.deleted` events so remote session renames and count changes can appear before the user returns to that project
 
 ### Session pinning is context-scoped and sort-stable
 
@@ -170,6 +171,8 @@
 - **Then** collapsed history groups keep their per-session expansion state during switch and revalidation
 - **Then** assistant work/tool-call groups return collapsed after session return or revalidation (manual expansion is not restored)
 - **Then** an already-selected empty session keeps its empty placeholder visible during background refresh (no loading skeleton blink)
+- **Then** returning from background or focus with no new chat content does not yank the latest message to the top of the viewport just because the route resumed
+- **Then** if refreshed content arrives while the user was already pinned to the latest message, the viewport stays pinned instead of forcing a synthetic reveal jump
 
 ### Older history loads on demand at top reach
 
@@ -258,6 +261,7 @@
 - **When** tool updates are still arriving for the active response
 - **Then** manual expansion of a visible tool call or tool-call chain is preserved while the response is still streaming
 - **Then** if a single visible tool block grows into a multi-tool chain during that same active response, the user-open state is carried into the grouped view instead of snapping shut
+- **Then** collapsed multi-tool chains surface an active progress summary (for example `1 running • 1 queued`) while the response is still in flight
 - **When** the assistant finishes the complete response
 - **Then** tool-call chains and tool-detail sections start collapsed by default
 - **Then** collapse never happens while the assistant is still streaming
@@ -327,6 +331,13 @@
 - **When** the latest assistant chunk is completed but the turn still emits tool/patch updates
 - **Then** the chat keeps active follow/reveal behavior for that same turn
 - **Then** idle/background status snapshots without live tool/patch updates do not trigger autonomous jumps
+
+### Recoverable current-session refresh failures stay scoped
+
+- **Given** the user is already inside a selected session
+- **When** that session refresh fails before any messages load
+- **Then** the chat surface shows a scoped recovery card for that session instead of replacing the whole chat view with the old global `Retry` takeover
+- **Then** the scoped recovery actions keep the user in context with `Keep working` and `Retry refresh`
 
 ### Final response is revealed from the beginning
 

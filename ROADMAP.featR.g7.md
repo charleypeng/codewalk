@@ -2,16 +2,16 @@
 feature: "featR g7 - Ancillary Parity Cleanup and Final Convergence Sweep"
 group: "featR.g7"
 dependency: "featR.g1-g6"
-status: "Pending"
+status: "Completed"
 ---
 
 # featR g7 - Ancillary Parity Cleanup and Final Convergence Sweep
 
 ## Objective
-Finalize the convergence wave by cleaning up minor drifts, removing all dead code/stale comments from the transition, and updating project documentation to reflect the new aligned state.
+Finalize the convergence wave by fixing the remaining post-g6 chat regressions: idle viewport yanks, disappearing optimistic user turns, grouped tool-progress visibility, stale inactive session previews, and recoverable long-idle refresh failures.
 
 ## Why This Group Exists
-This is the "housekeeping" group that ensures no technical debt remains from the featR transition. It closes the loop on low-priority drifts and explicitly validates that items we *chose* not to change (like polling frequency) remain correct. It also ensures that a future developer reading the code won't be confused by stale comments referencing "local queueing" or other removed features.
+This group started as a small cleanup bucket, but the real post-g6 repro sweep showed a final cluster of load-bearing regressions that crossed provider reconciliation, viewport policy, grouped tool-progress UI, and inactive snapshot freshness. The group therefore became the symptom-oriented convergence sweep for the remaining user-visible chat issues instead of a low-risk housekeeping pass.
 
 ## Source of Truth / Baseline Hierarchy
 1.  **Primary Authority**: OpenCode Web (Final comparison).
@@ -23,50 +23,70 @@ This is the "housekeeping" group that ensures no technical debt remains from the
 -   **Order**: MUST be the absolute final group.
 
 ## In Scope
--   A final audit of minor UI drifts (status icons, retry button placement, etc.).
--   Removing all remaining "workaround" code, stale comments (`// TODO: convergence`, etc.), and obsolete feature flags.
--   Explicitly validating that `10s` health polling is correct/aligned.
--   Updating `ADR.md` and `CODEBASE.md` to remove any mention of the removed architectures (queueing, heuristic reconciliation).
--   Deleting unused settings or flags introduced for the transition.
+-   Preserve optimistic user bubbles across refresh replay, including repeated same-text turns that arrive before canonical echo reconciliation settles.
+-   Keep busy latest-user and tool-only turns visibly active while `message.part.updated` deltas settle locally.
+-   Reduce safe rebuild churn in stable message widgets during background updates and typing.
+-   Refresh inactive session snapshots from global session events so cross-device project previews stay fresh.
+-   Keep recoverable current-session refresh failures scoped to the current chat surface instead of escalating to the old full-screen retry takeover.
+-   Stop idle and status-only resume/route-return viewport yanks.
+-   Keep collapsed grouped tool runs visibly active while work is still running or queued.
 
 ## Out of Scope
--   Introducing any new features or product behavior.
--   Fundamental architectural changes.
+-   Introducing unrelated new product features outside the reported regressions.
+-   Server/API contract changes or any ADR-023 exception.
+-   Broad architecture rewrites beyond the proven symptom clusters.
 
 ## Primary CodeWalk File Targets
--   Any file touched in g1-g6 that still contains "transition" notes.
--   `lib/presentation/providers/app_provider.dart`
--   `ADR.md`
--   `CODEBASE.md`
+-   `lib/presentation/providers/chat_provider.dart`
+-   `lib/presentation/providers/chat_provider/chat_provider_event_reducer_ops.dart`
+-   `lib/presentation/providers/chat_provider/chat_provider_message_merge_ops.dart`
+-   `lib/presentation/providers/chat_provider/chat_provider_message_state_ops.dart`
+-   `lib/presentation/pages/chat_page.dart`
+-   `lib/presentation/pages/chat_page/chat_page_lifecycle.dart`
+-   `lib/presentation/pages/chat_page/chat_page_runtime_support.dart`
+-   `lib/presentation/pages/chat_page/chat_page_timeline_builder.dart`
+-   `lib/presentation/widgets/chat_message_widget.dart`
+-   `lib/presentation/widgets/chat_message/chat_message_part_dispatch.dart`
 -   `BEHAVIOR.md`
 
 ## Official OpenCode Reference Targets
--   OpenCode Web (Global final check).
+-   `ai-docs/opencode_server.md`
+-   `ai-docs/opencode_web.md`
+-   `ai-docs/opencode_models.md`
 
-## Detailed Implementation Plan
-1.  **Gap Audit**: Perform a final side-by-side check of CodeWalk vs OpenCode Web for minor visual or behavioral inconsistencies. Fix any remaining low-risk items.
-2.  **Stale Comment Sweep**: Run a codebase-wide `grep` for "workaround", "local", "convergence", "parity", and "featR". Delete or update comments to reflect the new permanent reality.
-3.  **Confirm Alignment Items**: Explicitly check the `10s` polling interval. If it matches the server's expected health check frequency, document it as "Aligned - Do Not Change".
-4.  **Documentation Sync**: Delegate to `adrkeeper` and `codemapper` to update their respective files, ensuring all architectural descriptions match the post-convergence state.
-5.  **Final Cleanup**: Delete any dead code (methods, classes, constants) that were left orphaned by the removal of the send queue or heuristic reconciliation.
+## Delivered Steps
+1.  `14d4c04` — preserve optimistic user turns across refresh replay.
+2.  `aad66fa` — keep busy turns active while delta updates settle.
+3.  `fa67fd8` — reduce stable message rebuild churn during background updates.
+4.  `00d331b` — refresh inactive session snapshots from global events.
+5.  `2b9460a` — keep recoverable refresh failures inside the current session.
+6.  `6b9464f` — stop idle and status-only viewport yanks.
+7.  `9db5d9e` — keep active tool work visible inside grouped messages.
+8.  `2c5802c` — preserve repeated identical optimistic turns during refresh replay after review.
 
 ## Guardrails / Anti-goals
--   **No "Golden Hammer"**: Do not change things that are already aligned just for the sake of "cleaning".
--   **Deletion Preference**: If a comment or flag is questionable, DELETE IT.
--   **Docs Integrity**: Ensure `ADR.md` and `CODEBASE.md` are 100% accurate before finishing.
+-   **ADR-023 First**: Keep `local_user_*`, no-`messageId` send semantics, and contract-first reconciliation intact.
+-   **No Culprit Forcing**: Fix only the symptom clusters proven by tests, traces, or direct repro.
+-   **Scoped Recovery**: Preserve visible session state whenever the current session can recover without a blocking reset.
 
 ## Acceptance Checklist / Definition of Done
--   [ ] All major and minor parity gaps identified in the featR plan are closed.
--   [ ] Codebase is free of stale transition comments and feature flags.
--   [ ] `ADR.md` and `CODEBASE.md` are fully updated and accurate.
--   [ ] `make check` passes.
+-   [x] Idle/status-only jumps no longer yank the viewport during resume/return without new content.
+-   [x] Optimistic user turns survive refresh replay and repeated same-text reconciliation cases.
+-   [x] Busy tool-only and latest-user turns remain visibly active while local deltas settle.
+-   [x] Inactive session previews/counts refresh from global events.
+-   [x] Recoverable current-session refresh failures stay scoped to the session surface.
+-   [x] Grouped tool work shows active collapsed progress while still running.
+-   [x] `make check` passes.
 
 ## Validation and Test Plan
--   Final full manual pass of the app on Android and Desktop.
--   Final run of the g1 test harness to ensure zero regressions after cleanup.
+-   Focused provider regressions for optimistic reconciliation, busy-state semantics, delta merge behavior, inactive snapshot patching, and ambiguous same-text overlap.
+-   Focused widget regressions for scoped recovery UI, idle resume/route-return stability, and grouped tool-progress visibility.
+-   Full `make check` before each code checkpoint and again before the final review-fix commit.
 
 ## Docs / ADR / CODEBASE Follow-up
--   This group *is* the follow-up. Ensure all docs are synchronized.
+-   `ROADMAP.md` and `BEHAVIOR.md` updated to reflect the delivered chat behavior.
+-   `ADR.md` unchanged because no architectural decision changed.
+-   `CODEBASE.md` unchanged because the work did not alter structure or ownership boundaries.
 
 ## Mandatory `flow` Execution Block
 1.  Implement the change;
@@ -78,4 +98,4 @@ This is the "housekeeping" group that ensures no technical debt remains from the
 7.  Only then notify the user with the final report.
 
 ## Suggested HEY_CAPTION
-"featR g7: Final Convergence Sweep and Cleanup"
+"featR g7: stabilize chat jumps, optimistic replay, and grouped tool progress"
