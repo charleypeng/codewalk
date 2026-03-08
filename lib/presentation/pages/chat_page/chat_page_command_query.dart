@@ -271,10 +271,13 @@ extension _ChatPageCommandQuery on _ChatPageState {
       return;
     }
 
-    final message = switch (action) {
-      _HistoryToolbarAction.undo => 'Nothing to undo in this session',
-      _HistoryToolbarAction.redo => 'Nothing to redo in this session',
-    };
+    final providerMessage = chatProvider.errorMessage?.trim();
+    final message = providerMessage != null && providerMessage.isNotEmpty
+        ? providerMessage
+        : switch (action) {
+            _HistoryToolbarAction.undo => 'Nothing to undo in this session',
+            _HistoryToolbarAction.redo => 'Nothing to redo in this session',
+          };
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
