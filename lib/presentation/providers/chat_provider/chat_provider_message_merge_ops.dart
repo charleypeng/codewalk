@@ -1,6 +1,25 @@
 part of '../chat_provider.dart';
 
 extension _ChatProviderMessageMergeOps on ChatProvider {
+  void _scheduleDebouncedMessageFallback(
+    String sessionId,
+    String messageId, {
+    bool applyToCurrentSession = true,
+    Duration delay = const Duration(milliseconds: 120),
+  }) {
+    _messageFallbackDebounceById.remove(messageId)?.cancel();
+    _messageFallbackDebounceById[messageId] = Timer(delay, () {
+      _messageFallbackDebounceById.remove(messageId);
+      unawaited(
+        _fetchMessageFallback(
+          sessionId,
+          messageId,
+          applyToCurrentSession: applyToCurrentSession,
+        ),
+      );
+    });
+  }
+
   Future<void> _fetchMessageFallback(
     String sessionId,
     String messageId, {
@@ -246,6 +265,17 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     }
 
     if (overlapServerIndex == -1 || overlapCachedIndex == -1) {
+      final optimisticOverlap = _findOptimisticTailOverlap(
+        serverForSession: serverForSession,
+        cachedForSession: cachedForSession,
+      );
+      if (optimisticOverlap != null) {
+        overlapServerIndex = optimisticOverlap.serverIndex;
+        overlapCachedIndex = optimisticOverlap.cachedIndex;
+      }
+    }
+
+    if (overlapServerIndex == -1 || overlapCachedIndex == -1) {
       return (messages: serverForSession, requiresFullFetch: true);
     }
 
@@ -262,6 +292,87 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     }
 
     return (messages: deduplicated, requiresFullFetch: false);
+  }
+
+  ({int serverIndex, int cachedIndex})? _findOptimisticTailOverlap({
+    required List<ChatMessage> serverForSession,
+    required List<ChatMessage> cachedForSession,
+  }) {
+    for (
+      var serverIndex = 0;
+      serverIndex < serverForSession.length;
+      serverIndex += 1
+    ) {
+      final serverMessage = serverForSession[serverIndex];
+      if (serverMessage is! UserMessage) {
+        continue;
+      }
+
+      final serverSignature = _normalizedUserMessageSignature(serverMessage);
+      var matchedCachedIndex = -1;
+      Duration? matchedDelta;
+      var sawAmbiguousEmptySignatureCandidate = false;
+
+      for (
+        var cachedIndex = 0;
+        cachedIndex < cachedForSession.length;
+        cachedIndex += 1
+      ) {
+        final cachedMessage = cachedForSession[cachedIndex];
+        if (cachedMessage is! UserMessage) {
+          continue;
+        }
+        final isOptimisticCandidate =
+            _pendingLocalUserMessageIds.contains(cachedMessage.id) ||
+            _isOptimisticLocalUserMessageId(cachedMessage.id);
+        if (!isOptimisticCandidate) {
+          continue;
+        }
+
+        final delta = serverMessage.time.difference(cachedMessage.time).abs();
+        if (delta > const Duration(minutes: 5)) {
+          continue;
+        }
+
+        if (serverSignature.isEmpty) {
+          if (!_pendingLocalUserMessageIds.contains(cachedMessage.id)) {
+            continue;
+          }
+          if (matchedCachedIndex != -1) {
+            sawAmbiguousEmptySignatureCandidate = true;
+            break;
+          }
+          matchedCachedIndex = cachedIndex;
+          matchedDelta = delta;
+          continue;
+        }
+
+        final cachedSignature = _normalizedUserMessageSignature(cachedMessage);
+        final signaturesMatch =
+            cachedSignature == serverSignature ||
+            _isLikelyPendingLocalUserMatch(
+              pending: cachedMessage,
+              incoming: serverMessage,
+            );
+        if (!signaturesMatch) {
+          continue;
+        }
+
+        if (matchedDelta == null || delta < matchedDelta) {
+          matchedCachedIndex = cachedIndex;
+          matchedDelta = delta;
+        }
+      }
+
+      if (sawAmbiguousEmptySignatureCandidate) {
+        continue;
+      }
+      if (matchedCachedIndex != -1) {
+        return (serverIndex: serverIndex, cachedIndex: matchedCachedIndex);
+      }
+    }
+
+    return null;
   }
 
   List<ChatMessage> _mergeServerMessagesWithActiveLocalTail(

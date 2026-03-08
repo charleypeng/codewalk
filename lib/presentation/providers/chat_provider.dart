@@ -210,6 +210,7 @@ class ChatProvider extends ChangeNotifier {
   StreamSubscription<dynamic>? _globalEventSubscription;
   int _eventStreamGeneration = 0;
   Timer? _globalRefreshDebounce;
+  final Map<String, Timer> _messageFallbackDebounceById = <String, Timer>{};
   bool _isRespondingInteraction = false;
   Map<String, SessionStatusInfo> _sessionStatusById =
       <String, SessionStatusInfo>{};
@@ -3360,6 +3361,10 @@ class ChatProvider extends ChangeNotifier {
     _eventSubscription?.cancel();
     _globalEventSubscription?.cancel();
     _globalRefreshDebounce?.cancel();
+    for (final timer in _messageFallbackDebounceById.values) {
+      timer.cancel();
+    }
+    _messageFallbackDebounceById.clear();
     _syncHealthTimer?.cancel();
     _degradedPollingTimer?.cancel();
     _foregroundResumeSyncTimer?.cancel();
