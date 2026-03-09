@@ -715,8 +715,11 @@ class _CollapsibleToolContentState extends State<_CollapsibleToolContent> {
     if (widget.text.trim().isEmpty) {
       return false;
     }
+    if (widget.text.length > 160) {
+      return true;
+    }
     final lineCount = '\n'.allMatches(widget.text).length + 1;
-    return lineCount > widget.collapsedMaxLines || widget.text.length > 160;
+    return lineCount > widget.collapsedMaxLines;
   }
 
   /// Hybrid detection: tool name + content heuristic.
@@ -821,22 +824,15 @@ class _CollapsibleToolContentState extends State<_CollapsibleToolContent> {
   Widget build(BuildContext context) {
     final isDiff = _isDiffContent(widget.toolName, widget.text);
 
-    Widget contentWidget;
-
-    if (isDiff) {
-      // Diff should maintain visual semantics in both collapsed and expanded.
-      contentWidget = _buildColorizedDiffContent(context, widget.text);
-    } else {
-      // Not diff — original behavior
-      contentWidget = Text(
+    if (!_canExpand) {
+      if (isDiff) {
+        return _buildColorizedDiffContent(context, widget.text);
+      }
+      return Text(
         widget.text,
         key: const ValueKey<String>('tool_content_text'),
         style: widget.textStyle,
       );
-    }
-
-    if (!_canExpand) {
-      return contentWidget;
     }
 
     final maxHeight = _expandedToolViewportHeight(context);
@@ -867,6 +863,12 @@ class _CollapsibleToolContentState extends State<_CollapsibleToolContent> {
         ),
       );
     }
+
+    final contentWidget = Text(
+      widget.text,
+      key: const ValueKey<String>('tool_content_text'),
+      style: widget.textStyle,
+    );
 
     return ConstrainedBox(
       constraints: BoxConstraints(maxHeight: maxHeight),
