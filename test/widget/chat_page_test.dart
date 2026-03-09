@@ -251,6 +251,19 @@ void main() {
         ),
         findsOneWidget,
       );
+      final undoRect = tester.getRect(
+        find.byKey(
+          const ValueKey<String>('chat_message_undo_button_msg_user_2'),
+        ),
+      );
+      final bubbleRect = tester.getRect(
+        find.byKey(const ValueKey<String>('message_bubble_msg_user_2')),
+      );
+      expect(undoRect.center.dx, lessThan(bubbleRect.left));
+      expect(
+        (undoRect.center.dy - bubbleRect.center.dy).abs(),
+        lessThanOrEqualTo(1.0),
+      );
       expect(
         find.byKey(
           const ValueKey<String>('chat_message_undo_button_msg_user_1'),
