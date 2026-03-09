@@ -40,7 +40,9 @@ class ChatMessageWidget extends StatefulWidget {
     this.activeReasoningPartKey,
     this.showThinkingBubbles = true,
     this.showToolCallBubbles = true,
+    this.showInlineUndoAction = false,
     this.isSessionActivelyResponding = false,
+    this.onInlineUndo,
     this.onBackgroundLongPress,
     this.onBackgroundLongPressEnd,
     this.onSubtaskNavigate,
@@ -51,7 +53,9 @@ class ChatMessageWidget extends StatefulWidget {
   final String? activeReasoningPartKey;
   final bool showThinkingBubbles;
   final bool showToolCallBubbles;
+  final bool showInlineUndoAction;
   final bool isSessionActivelyResponding;
+  final VoidCallback? onInlineUndo;
   final VoidCallback? onBackgroundLongPress;
   final VoidCallback? onBackgroundLongPressEnd;
   final ValueChanged<SubtaskPart>? onSubtaskNavigate;
@@ -79,8 +83,10 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   String? _lastReasoningKey;
   bool _lastShowThinking = true;
   bool _lastShowToolCalls = true;
+  bool _lastShowInlineUndoAction = false;
   bool _lastResponding = false;
   int _lastLocalUiStateVersion = 0;
+  VoidCallback? _lastInlineUndoAction;
   ValueChanged<SubtaskPart>? _lastSubtaskNavigate;
   ValueChanged<ToolPart>? _lastTaskToolNavigate;
   double _lastVisualDensityVertical = 0;
@@ -202,8 +208,10 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         widget.activeReasoningPartKey == _lastReasoningKey &&
         widget.showThinkingBubbles == _lastShowThinking &&
         widget.showToolCallBubbles == _lastShowToolCalls &&
+        widget.showInlineUndoAction == _lastShowInlineUndoAction &&
         widget.isSessionActivelyResponding == _lastResponding &&
         _localUiStateVersion == _lastLocalUiStateVersion &&
+        identical(widget.onInlineUndo, _lastInlineUndoAction) &&
         identical(widget.onSubtaskNavigate, _lastSubtaskNavigate) &&
         identical(widget.onTaskToolNavigate, _lastTaskToolNavigate) &&
         density.vertical == _lastVisualDensityVertical &&
@@ -219,8 +227,10 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     _lastReasoningKey = widget.activeReasoningPartKey;
     _lastShowThinking = widget.showThinkingBubbles;
     _lastShowToolCalls = widget.showToolCallBubbles;
+    _lastShowInlineUndoAction = widget.showInlineUndoAction;
     _lastResponding = widget.isSessionActivelyResponding;
     _lastLocalUiStateVersion = _localUiStateVersion;
+    _lastInlineUndoAction = widget.onInlineUndo;
     _lastSubtaskNavigate = widget.onSubtaskNavigate;
     _lastTaskToolNavigate = widget.onTaskToolNavigate;
     _lastVisualDensityVertical = density.vertical;
@@ -273,7 +283,9 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   String? get activeReasoningPartKey => widget.activeReasoningPartKey;
   bool get showThinkingBubbles => widget.showThinkingBubbles;
   bool get showToolCallBubbles => widget.showToolCallBubbles;
+  bool get showInlineUndoAction => widget.showInlineUndoAction;
   bool get isSessionActivelyResponding => widget.isSessionActivelyResponding;
+  VoidCallback? get onInlineUndo => widget.onInlineUndo;
   VoidCallback? get onBackgroundLongPress => widget.onBackgroundLongPress;
   VoidCallback? get onBackgroundLongPressEnd => widget.onBackgroundLongPressEnd;
   ValueChanged<SubtaskPart>? get onSubtaskNavigate => widget.onSubtaskNavigate;

@@ -939,6 +939,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     final finalAssistantRevealMessageId =
         _resolveLatestSuccessfulAssistantMessageId(chatProvider.messages);
     final latestTimelineMessageId = chatProvider.messages.last.id;
+    final latestRevertibleMessageId = chatProvider.latestRevertibleMessageId;
     _pruneMessageRevealAnchorKeys(chatProvider.messages);
 
     // Determine which entries are new (for entrance animation.
@@ -982,8 +983,21 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                       activeReasoningPartKey: latestReasoningPartKey,
                       showThinkingBubbles: settingsProvider.showThinkingBubbles,
                       showToolCallBubbles: settingsProvider.showToolCallBubbles,
+                      showInlineUndoAction:
+                          message is UserMessage &&
+                          message.id == latestRevertibleMessageId,
                       isSessionActivelyResponding:
                           chatProvider.isCurrentSessionActivelyResponding,
+                      onInlineUndo:
+                          message is UserMessage &&
+                              message.id == latestRevertibleMessageId
+                          ? () => unawaited(
+                              _triggerHistoryAction(
+                                chatProvider,
+                                action: _HistoryToolbarAction.undo,
+                              ),
+                            )
+                          : null,
                       onBackgroundLongPress: () =>
                           _handleMessageBackgroundLongPress(message),
                       onBackgroundLongPressEnd: () =>

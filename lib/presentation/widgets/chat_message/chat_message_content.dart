@@ -123,6 +123,27 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
                                         fontSize: 11,
                                       ),
                                 ),
+                                if (isUser && showInlineUndoAction) ...[
+                                  const SizedBox(width: 6),
+                                  Tooltip(
+                                    message: 'Undo this turn',
+                                    child: IconButton(
+                                      key: ValueKey<String>(
+                                        'chat_message_undo_button_${message.id}',
+                                      ),
+                                      icon: const Icon(Symbols.undo_rounded),
+                                      visualDensity: VisualDensity.compact,
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(
+                                        minWidth: 32,
+                                        minHeight: 32,
+                                      ),
+                                      splashRadius: 18,
+                                      tooltip: 'Undo this turn',
+                                      onPressed: onInlineUndo,
+                                    ),
+                                  ),
+                                ],
                                 const Spacer(),
                                 if (!isUser && message is AssistantMessage)
                                   _buildAssistantInfo(
