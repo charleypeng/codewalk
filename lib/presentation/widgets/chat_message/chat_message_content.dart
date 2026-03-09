@@ -71,7 +71,7 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
             );
             final bubbleMaxWidth = isUser ? userMaxWidth : assistantMaxWidth;
 
-            return ConstrainedBox(
+            final bubble = ConstrainedBox(
               key: ValueKey<String>('message_bubble_${message.id}'),
               constraints: BoxConstraints(maxWidth: bubbleMaxWidth),
               child: _BubbleTouchHoldLayer(
@@ -123,27 +123,6 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
                                         fontSize: 11,
                                       ),
                                 ),
-                                if (isUser && showInlineUndoAction) ...[
-                                  const SizedBox(width: 6),
-                                  Tooltip(
-                                    message: 'Undo this turn',
-                                    child: IconButton(
-                                      key: ValueKey<String>(
-                                        'chat_message_undo_button_${message.id}',
-                                      ),
-                                      icon: const Icon(Symbols.undo_rounded),
-                                      visualDensity: VisualDensity.compact,
-                                      padding: EdgeInsets.zero,
-                                      constraints: const BoxConstraints(
-                                        minWidth: 32,
-                                        minHeight: 32,
-                                      ),
-                                      splashRadius: 18,
-                                      tooltip: 'Undo this turn',
-                                      onPressed: onInlineUndo,
-                                    ),
-                                  ),
-                                ],
                                 const Spacer(),
                                 if (!isUser && message is AssistantMessage)
                                   _buildAssistantInfo(
@@ -183,6 +162,39 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
                   ),
                 ),
               ),
+            );
+
+            if (!isUser || !showInlineUndoAction) {
+              return bubble;
+            }
+
+            // Keep the undo control tied to the latest user turn while leaving
+            // the bubble header free for message metadata and content.
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Tooltip(
+                  message: 'Undo this turn',
+                  child: IconButton(
+                    key: ValueKey<String>(
+                      'chat_message_undo_button_${message.id}',
+                    ),
+                    icon: const Icon(Symbols.undo_rounded),
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                    ),
+                    splashRadius: 18,
+                    tooltip: 'Undo this turn',
+                    onPressed: onInlineUndo,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                bubble,
+              ],
             );
           },
         ),
