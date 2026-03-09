@@ -937,7 +937,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       interactionPermissions: interactionPermissions,
     );
     final finalAssistantRevealMessageId =
-        _resolveLatestSuccessfulAssistantMessageId(chatProvider.messages);
+        _resolveLatestRevealableAssistantMessageId(chatProvider.messages);
     final latestTimelineMessageId = chatProvider.messages.last.id;
     final latestRevertibleMessageId = chatProvider.latestRevertibleMessageId;
     _pruneMessageRevealAnchorKeys(chatProvider.messages);
@@ -1489,17 +1489,21 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
         !_isMergeableAssistantToolOnlyMessage(message);
   }
 
-  String? _resolveLatestSuccessfulAssistantMessageId(
+  String? _resolveLatestRevealableAssistantMessageId(
     List<ChatMessage> messages,
   ) {
     for (var index = messages.length - 1; index >= 0; index -= 1) {
       final message = messages[index];
+      if (message is UserMessage) {
+        return null;
+      }
       if (message is! AssistantMessage) {
         continue;
       }
-      if (_isSuccessfulFinalAssistantMessage(message)) {
-        return message.id;
+      if (message.summary == true) {
+        continue;
       }
+      return message.id;
     }
     return null;
   }

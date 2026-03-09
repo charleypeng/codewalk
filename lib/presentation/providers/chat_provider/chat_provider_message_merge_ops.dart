@@ -304,7 +304,7 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     }
 
     if (overlapServerIndex == -1 || overlapCachedIndex == -1) {
-      return (messages: serverForSession, requiresFullFetch: true);
+      return (messages: cachedForSession, requiresFullFetch: true);
     }
 
     final prefix = cachedForSession

@@ -301,8 +301,8 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     }
 
     final isResponding = chatProvider.isCurrentSessionActivelyResponding;
-    final latestSuccessfulAssistantMessageId =
-        _resolveLatestSuccessfulAssistantMessageId(chatProvider.messages);
+    final latestRevealableAssistantMessageId =
+        _resolveLatestRevealableAssistantMessageId(chatProvider.messages);
     final latestTimelineMessageId = chatProvider.messages.isEmpty
         ? null
         : chatProvider.messages.last.id;
@@ -326,7 +326,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _traceFinalUi(
         'viewport-policy-responding',
         details:
-            'latestTimelineMessageId=${latestTimelineMessageId ?? "-"} latestSuccessfulAssistantMessageId=${latestSuccessfulAssistantMessageId ?? "-"}',
+            'latestTimelineMessageId=${latestTimelineMessageId ?? "-"} latestRevealableAssistantMessageId=${latestRevealableAssistantMessageId ?? "-"}',
       );
       _wasCurrentSessionActivelyResponding = true;
       _deferAssistantWorkCollapse = true;
@@ -348,18 +348,18 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _pendingFinalAssistantRevealAttempts = 0;
       if (shouldRevealFinalAssistant) {
         _pendingFinalAssistantRevealMessageId =
-            latestSuccessfulAssistantMessageId;
+            latestRevealableAssistantMessageId;
         _traceFinalUi(
           'viewport-policy-finished-schedule-final-reveal',
           details:
-              'latestSuccessfulAssistantMessageId=${latestSuccessfulAssistantMessageId ?? "-"}',
+              'latestRevealableAssistantMessageId=${latestRevealableAssistantMessageId ?? "-"}',
         );
         _scheduleFinalAssistantReveal();
       } else {
         _traceFinalUi(
           'viewport-policy-finished-without-final-reveal',
           details:
-              'latestSuccessfulAssistantMessageId=${latestSuccessfulAssistantMessageId ?? "-"}',
+              'latestRevealableAssistantMessageId=${latestRevealableAssistantMessageId ?? "-"}',
         );
         _pendingFinalAssistantRevealMessageId = null;
       }
@@ -377,18 +377,18 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
 
     if (_shouldRevealFinalAssistantOnCompletion &&
         _suppressPostCompletionAutoSnap &&
-        latestSuccessfulAssistantMessageId != null &&
-        latestSuccessfulAssistantMessageId.isNotEmpty &&
-        latestSuccessfulAssistantMessageId !=
+        latestRevealableAssistantMessageId != null &&
+        latestRevealableAssistantMessageId.isNotEmpty &&
+        latestRevealableAssistantMessageId !=
             _finalAssistantRevealSettledMessageId) {
       _traceFinalUi(
         'viewport-policy-post-completion-resume-reveal',
         details:
-            'latestSuccessfulAssistantMessageId=$latestSuccessfulAssistantMessageId settled=${_finalAssistantRevealSettledMessageId ?? "-"}',
+            'latestRevealableAssistantMessageId=$latestRevealableAssistantMessageId settled=${_finalAssistantRevealSettledMessageId ?? "-"}',
       );
       _deferAssistantWorkCollapse = false;
       _pendingFinalAssistantRevealMessageId =
-          latestSuccessfulAssistantMessageId;
+          latestRevealableAssistantMessageId;
       _pendingFinalAssistantRevealAttempts = 0;
       _scheduleFinalAssistantReveal();
     }
@@ -462,15 +462,15 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     _returnRevealBaselineLatestMessageId = messages.isEmpty
         ? null
         : messages.last.id;
-    _returnRevealBaselineLatestSuccessfulAssistantMessageId =
-        _resolveLatestSuccessfulAssistantMessageId(messages);
+    _returnRevealBaselineLatestRevealableAssistantMessageId =
+        _resolveLatestRevealableAssistantMessageId(messages);
   }
 
   void _clearReturnRevealBaseline() {
     _returnRevealBaselineSessionId = null;
     _returnRevealBaselineMessageCount = 0;
     _returnRevealBaselineLatestMessageId = null;
-    _returnRevealBaselineLatestSuccessfulAssistantMessageId = null;
+    _returnRevealBaselineLatestRevealableAssistantMessageId = null;
   }
 
   bool _shouldRevealLatestMessageAfterReturn(ChatProvider chatProvider) {
@@ -484,13 +484,13 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
 
     final messages = chatProvider.messages;
     final latestMessageId = messages.isEmpty ? null : messages.last.id;
-    final latestSuccessfulAssistantMessageId =
-        _resolveLatestSuccessfulAssistantMessageId(messages);
+    final latestRevealableAssistantMessageId =
+        _resolveLatestRevealableAssistantMessageId(messages);
 
     return _returnRevealBaselineMessageCount != messages.length ||
         _returnRevealBaselineLatestMessageId != latestMessageId ||
-        _returnRevealBaselineLatestSuccessfulAssistantMessageId !=
-            latestSuccessfulAssistantMessageId;
+        _returnRevealBaselineLatestRevealableAssistantMessageId !=
+            latestRevealableAssistantMessageId;
   }
 
   Future<void> _runLatestMessageReturnReveal({

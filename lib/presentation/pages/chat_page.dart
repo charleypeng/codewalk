@@ -207,7 +207,7 @@ class _ChatPageState extends State<ChatPage>
   String? _returnRevealBaselineSessionId;
   int _returnRevealBaselineMessageCount = 0;
   String? _returnRevealBaselineLatestMessageId;
-  String? _returnRevealBaselineLatestSuccessfulAssistantMessageId;
+  String? _returnRevealBaselineLatestRevealableAssistantMessageId;
   ChatComposerDraft? _composerPrefilledDraft;
   int _composerPrefilledDraftVersion = 0;
   final Map<String, _FileExplorerContextState> _fileContextStates =

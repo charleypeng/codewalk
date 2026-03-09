@@ -1730,7 +1730,7 @@ class ChatProvider extends ChangeNotifier {
               _messageSubscription != null;
           final latestSessionMessage = _messages.lastOrNull;
           final latestSessionMessageChanged =
-              latestSessionMessage != previousLatestSessionMessage;
+              latestSessionMessage?.id != previousLatestSessionMessage?.id;
           if (!_isCompactingContext &&
               (hasActiveLocalStream ||
                   _state == ChatState.sending ||

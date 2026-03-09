@@ -7502,6 +7502,236 @@ void main() {
     },
   );
 
+  testWidgets(
+    'delta refresh keeps visible history stable until fallback full fetch resolves',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      const sessionId = 'ses_delta_no_overlap';
+      final repository = _ConfigurableDelayFakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: sessionId,
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Delta No Overlap Session',
+          ),
+        ],
+      );
+
+      final initialMessages = List<ChatMessage>.generate(250, (index) {
+        final messageId = 'msg_cached_$index';
+        return UserMessage(
+          id: messageId,
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(index * 1000),
+          parts: <MessagePart>[
+            TextPart(
+              id: 'part_cached_$index',
+              messageId: messageId,
+              sessionId: sessionId,
+              text: 'cached message $index',
+            ),
+          ],
+        );
+      });
+      final refreshedMessages = List<ChatMessage>.generate(250, (index) {
+        final messageId = 'msg_server_$index';
+        return UserMessage(
+          id: messageId,
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(300000 + index * 1000),
+          parts: <MessagePart>[
+            TextPart(
+              id: 'part_server_$index',
+              messageId: messageId,
+              sessionId: sessionId,
+              text: 'server message $index',
+            ),
+          ],
+        );
+      });
+      repository.messagesBySession[sessionId] = List<ChatMessage>.of(
+        initialMessages,
+      );
+
+      final fullFetchGate = Completer<void>();
+      repository.getMessagesHandler =
+          (_, requestedSessionId, {String? directory, int? limit}) async {
+            final output = List<ChatMessage>.from(
+              repository.messagesBySession[requestedSessionId] ?? const [],
+            );
+            if (limit == null) {
+              await fullFetchGate.future;
+              return Right(output);
+            }
+            if (limit > 0 && output.length > limit) {
+              return Right(output.sublist(output.length - limit));
+            }
+            return Right(output);
+          };
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      expect(provider.messages.length, 250);
+      expect(provider.messages.last.id, 'msg_cached_249');
+
+      repository.messagesBySession[sessionId] = List<ChatMessage>.of(
+        refreshedMessages,
+      );
+
+      await provider.refreshActiveSessionView(
+        reason: 'delta-no-overlap',
+        includeStatus: false,
+      );
+      await tester.pump();
+
+      expect(provider.messages.length, 250);
+      expect(provider.messages.last.id, 'msg_cached_249');
+
+      fullFetchGate.complete();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 40));
+      await tester.pumpAndSettle();
+
+      expect(provider.messages.length, 250);
+      expect(provider.messages.last.id, 'msg_server_249');
+    },
+  );
+
+  testWidgets(
+    'tool-only turn completion keeps viewport pinned instead of revealing older assistant history',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      const sessionId = 'ses_tool_only_reveal_guard';
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: sessionId,
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Tool Only Reveal Guard',
+          ),
+        ],
+      );
+
+      final seededMessages = _threadMessages(sessionId, 40);
+      seededMessages[10] = AssistantMessage(
+        id: 'msg_previous_successful_assistant',
+        sessionId: sessionId,
+        time: DateTime.fromMillisecondsSinceEpoch(10500),
+        completedTime: DateTime.fromMillisecondsSinceEpoch(10600),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'part_previous_successful_assistant',
+            messageId: 'msg_previous_successful_assistant',
+            sessionId: sessionId,
+            text: 'older successful assistant anchor',
+          ),
+        ],
+      );
+      repository.messagesBySession[sessionId] = seededMessages;
+
+      final streamController = StreamController<Either<Failure, ChatMessage>>();
+      addTearDown(() async {
+        if (!streamController.isClosed) {
+          await streamController.close();
+        }
+      });
+      repository.sendMessageHandler = (_, _, _, _) => streamController.stream;
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      final listFinder = find.byKey(
+        const ValueKey<String>('chat_message_list'),
+      );
+      final scrollableFinder = find.descendant(
+        of: listFinder,
+        matching: find.byType(Scrollable),
+      );
+      final scrollableBefore = tester.state<ScrollableState>(scrollableFinder);
+      expect(
+        scrollableBefore.position.maxScrollExtent -
+            scrollableBefore.position.pixels,
+        lessThanOrEqualTo(1),
+      );
+
+      await provider.sendMessage('run tool only step');
+      await tester.pump();
+
+      streamController.add(
+        Right(
+          AssistantMessage(
+            id: 'msg_tool_only_tail',
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(60000),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(60100),
+            parts: <MessagePart>[
+              ToolPart(
+                id: 'part_tool_only_tail',
+                messageId: 'msg_tool_only_tail',
+                sessionId: sessionId,
+                callId: 'call_tool_only_tail',
+                tool: 'bash',
+                state: ToolStateCompleted(
+                  input: const <String, dynamic>{'command': 'pwd'},
+                  output: '/tmp/tool-only-tail',
+                  time: ToolTime(
+                    start: DateTime.fromMillisecondsSinceEpoch(60000),
+                    end: DateTime.fromMillisecondsSinceEpoch(60080),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      await streamController.close();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 260));
+      await tester.pumpAndSettle();
+
+      final scrollableAfter = tester.state<ScrollableState>(scrollableFinder);
+      expect(
+        scrollableAfter.position.maxScrollExtent -
+            scrollableAfter.position.pixels,
+        lessThanOrEqualTo(1),
+      );
+      expect(find.byTooltip('Go to latest message'), findsNothing);
+      expect(find.text('run tool only step'), findsOneWidget);
+    },
+  );
+
   testWidgets('refreshes active session message list when app resumes', (
     WidgetTester tester,
   ) async {
