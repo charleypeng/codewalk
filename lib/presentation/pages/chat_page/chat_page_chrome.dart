@@ -254,7 +254,7 @@ extension _ChatPageChrome on _ChatPageState {
             return IconButton(
               key: const ValueKey<String>('appbar_undo_button'),
               icon: const Icon(Symbols.undo_rounded),
-              tooltip: 'Undo',
+              tooltip: 'Undo last turn',
               onPressed: chatProvider.canUndoCurrentSession
                   ? () => unawaited(
                       _triggerHistoryAction(
@@ -271,7 +271,7 @@ extension _ChatPageChrome on _ChatPageState {
             return IconButton(
               key: const ValueKey<String>('appbar_redo_button'),
               icon: const Icon(Symbols.redo_rounded),
-              tooltip: 'Redo',
+              tooltip: 'Redo last undone turn',
               onPressed: chatProvider.canRedoCurrentSession
                   ? () => unawaited(
                       _triggerHistoryAction(

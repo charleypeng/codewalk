@@ -1367,13 +1367,13 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
       ChatComposerSlashCommandSuggestion(
         name: 'undo',
         source: 'builtin',
-        description: 'Undo the latest user turn',
+        description: 'Undo the last visible user turn',
         isBuiltin: true,
       ),
       ChatComposerSlashCommandSuggestion(
         name: 'redo',
         source: 'builtin',
-        description: 'Redo the latest undone turn',
+        description: 'Redo the last undone turn',
         isBuiltin: true,
       ),
     ];

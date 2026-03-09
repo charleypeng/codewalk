@@ -234,6 +234,7 @@
 ### Undo and redo reflect immediately in the current client
 
 - **Given** the active session has at least one persisted user turn
+- **Then** the latest visible revertible user bubble exposes an inline `Undo this turn` action that triggers the same undo flow as the toolbar and `/undo`
 - **When** the user triggers `Undo` from the toolbar or `/undo` from the composer
 - **Then** the current client immediately hides the reverted user turn and every later turn from the visible timeline without waiting for another client or a manual refresh
 - **Then** the reverted user prompt is restored into the composer so the user can edit or resend it locally
@@ -242,6 +243,7 @@
 - **When** the user triggers `Redo` from the toolbar or `/redo`
 - **Then** the visible timeline immediately restores the next reverted turn (or all reverted turns when the revert boundary is fully cleared)
 - **Then** a full redo clears the composer draft that had been restored by undo
+- **Then** toolbar and slash-command wording stays explicit about operating on the last turn so the inline bubble action, toolbar actions, and composer actions describe the same behavior
 - **Then** timeline visibility and undo/redo availability are driven by the server-authoritative session revert boundary, aligned with official OpenCode Web semantics
 
 ### Composer supports canned answers with scoped storage

@@ -126,6 +126,8 @@ void main() {
         find.byKey(const ValueKey<String>('appbar_redo_button')),
         findsOneWidget,
       );
+      expect(find.byTooltip('Undo last turn'), findsOneWidget);
+      expect(find.byTooltip('Redo last undone turn'), findsOneWidget);
       expect(
         tester
             .getTopLeft(
@@ -157,6 +159,122 @@ void main() {
               )
               .dx,
         ),
+      );
+    });
+
+    testWidgets('latest visible user bubble exposes inline undo action', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(1400, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_1',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Inline Undo Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_1'] = <ChatMessage>[
+        UserMessage(
+          id: 'msg_user_1',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_user_1',
+              messageId: 'msg_user_1',
+              sessionId: 'ses_1',
+              text: 'first prompt',
+            ),
+          ],
+        ),
+        AssistantMessage(
+          id: 'msg_assistant_1',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1100),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_assistant_1',
+              messageId: 'msg_assistant_1',
+              sessionId: 'ses_1',
+              text: 'first reply',
+            ),
+          ],
+        ),
+        UserMessage(
+          id: 'msg_user_2',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1300),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_user_2',
+              messageId: 'msg_user_2',
+              sessionId: 'ses_1',
+              text: 'latest prompt',
+            ),
+          ],
+        ),
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..defaultServerId = 'srv_test'
+        ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'srv_test',
+            'url': 'http://127.0.0.1:4096',
+            'label': 'Test Server',
+            'basicAuthEnabled': false,
+            'basicAuthUsername': '',
+            'basicAuthPassword': '',
+            'createdAt': 0,
+            'updatedAt': 0,
+          },
+        ]);
+      final provider = _buildChatProvider(
+        localDataSource: localDataSource,
+        chatRepository: repository,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('chat_message_undo_button_msg_user_2'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>('chat_message_undo_button_msg_user_1'),
+        ),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>('chat_message_undo_button_msg_user_2'),
+        ),
+      );
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('chat_message_widget_msg_user_2')),
+        findsNothing,
+      );
+      expect(find.text('first prompt'), findsOneWidget);
+      expect(find.text('first reply'), findsOneWidget);
+      expect(
+        tester.widget<TextField>(find.byType(TextField).last).controller?.text,
+        'latest prompt',
       );
     });
 
