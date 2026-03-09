@@ -381,6 +381,164 @@ void main() {
       expect(pendingSync!.clear, isTrue);
     });
 
+    test(
+      'sendMessage after undo keeps replacement branch visible through stale refresh',
+      () async {
+        final sendStream = StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          await sendStream.close();
+        });
+        chatRepository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          UserMessage(
+            id: 'msg_user_1',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_user_1',
+                messageId: 'msg_user_1',
+                sessionId: 'ses_1',
+                text: 'first prompt',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_assistant_1',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1100),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_assistant_1',
+                messageId: 'msg_assistant_1',
+                sessionId: 'ses_1',
+                text: 'first answer',
+              ),
+            ],
+          ),
+          UserMessage(
+            id: 'msg_user_2',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1300),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_user_2',
+                messageId: 'msg_user_2',
+                sessionId: 'ses_1',
+                text: 'second prompt',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_assistant_2',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1400),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1500),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_assistant_2',
+                messageId: 'msg_assistant_2',
+                sessionId: 'ses_1',
+                text: 'second answer',
+              ),
+            ],
+          ),
+        ];
+
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        final undone = await provider.undoLastTurn();
+        expect(undone, isTrue);
+        expect(
+          provider.messages.map((message) => message.id).toList(),
+          <String>['msg_user_1', 'msg_assistant_1'],
+        );
+
+        final started = await provider.sendMessage('branch prompt');
+        expect(started, isTrue);
+        expect(provider.currentSessionRevert, isNull);
+        expect(provider.canRedoCurrentSession, isFalse);
+        expect(
+          provider.messages.any(
+            (message) =>
+                message is UserMessage &&
+                message.parts.whereType<TextPart>().any(
+                  (part) => part.text == 'branch prompt',
+                ),
+          ),
+          isTrue,
+        );
+        expect(
+          provider.messages.any((message) => message.id == 'msg_user_2'),
+          isFalse,
+        );
+        expect(
+          provider.messages.any((message) => message.id == 'msg_assistant_2'),
+          isFalse,
+        );
+
+        await provider.refreshActiveSessionView(includeStatus: false);
+
+        expect(
+          provider.messages.map((message) => message.id).toList(),
+          hasLength(3),
+        );
+        expect(
+          provider.messages.any(
+            (message) =>
+                message is UserMessage &&
+                message.parts.whereType<TextPart>().any(
+                  (part) => part.text == 'branch prompt',
+                ),
+          ),
+          isTrue,
+        );
+        expect(
+          provider.messages.any((message) => message.id == 'msg_user_2'),
+          isFalse,
+        );
+        expect(
+          provider.messages.any((message) => message.id == 'msg_assistant_2'),
+          isFalse,
+        );
+
+        sendStream.add(
+          Right(
+            AssistantMessage(
+              id: 'msg_branch_reply',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(2000),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(2100),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_branch_reply',
+                  messageId: 'msg_branch_reply',
+                  sessionId: 'ses_1',
+                  text: 'branch answer',
+                ),
+              ],
+            ),
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(
+          provider.messages.any((message) => message.id == 'msg_branch_reply'),
+          isTrue,
+        );
+        expect(
+          provider.messages.any((message) => message.id == 'msg_user_2'),
+          isFalse,
+        );
+        expect(
+          provider.messages.any((message) => message.id == 'msg_assistant_2'),
+          isFalse,
+        );
+      },
+    );
+
     test('toggleSessionPinned updates scoped pin state and persists', () async {
       await provider.loadSessions();
       final session = provider.sessions.first;

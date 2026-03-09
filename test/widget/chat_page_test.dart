@@ -239,8 +239,16 @@ void main() {
         await tester.pump();
         await tester.pumpAndSettle();
 
-        expect(find.text('undo me'), findsNothing);
-        expect(find.text('assistant reply'), findsNothing);
+        expect(
+          find.byKey(const ValueKey<String>('chat_message_widget_msg_user_1')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(
+            const ValueKey<String>('chat_message_widget_msg_assistant_1'),
+          ),
+          findsNothing,
+        );
         expect(find.byType(TextField), findsWidgets);
         expect(
           tester
@@ -252,11 +260,154 @@ void main() {
       },
     );
 
+    testWidgets(
+      'undo then send keeps replacement branch visible during stale refresh',
+      (WidgetTester tester) async {
+        await tester.binding.setSurfaceSize(const Size(1400, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final sendStream = StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          await sendStream.close();
+        });
+
+        final repository = FakeChatRepository(
+          sessions: <ChatSession>[
+            ChatSession(
+              id: 'ses_1',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              title: 'Branch Session',
+            ),
+          ],
+        );
+        repository.messagesBySession['ses_1'] = <ChatMessage>[
+          UserMessage(
+            id: 'msg_user_1',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_user_1',
+                messageId: 'msg_user_1',
+                sessionId: 'ses_1',
+                text: 'first prompt',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_assistant_1',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1100),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_assistant_1',
+                messageId: 'msg_assistant_1',
+                sessionId: 'ses_1',
+                text: 'first answer',
+              ),
+            ],
+          ),
+          UserMessage(
+            id: 'msg_user_2',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1300),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_user_2',
+                messageId: 'msg_user_2',
+                sessionId: 'ses_1',
+                text: 'second prompt',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_assistant_2',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1400),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1500),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_assistant_2',
+                messageId: 'msg_assistant_2',
+                sessionId: 'ses_1',
+                text: 'second answer',
+              ),
+            ],
+          ),
+        ];
+        repository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
+
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test'
+          ..defaultServerId = 'srv_test'
+          ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 'srv_test',
+              'url': 'http://127.0.0.1:4096',
+              'label': 'Test Server',
+              'basicAuthEnabled': false,
+              'basicAuthUsername': '',
+              'basicAuthPassword': '',
+              'createdAt': 0,
+              'updatedAt': 0,
+            },
+          ]);
+        final provider = _buildChatProvider(
+          localDataSource: localDataSource,
+          chatRepository: repository,
+        );
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+        await tester.pumpWidget(_testApp(provider, appProvider));
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('appbar_undo_button')),
+        );
+        await tester.pump();
+        await tester.pumpAndSettle();
+
+        expect(find.text('second answer'), findsNothing);
+        expect(
+          tester
+              .widget<TextField>(find.byType(TextField).last)
+              .controller
+              ?.text,
+          'second prompt',
+        );
+
+        await tester.enterText(find.byType(TextField).last, 'branch prompt');
+        await tester.pump();
+        await tester.tap(find.byIcon(Symbols.send_rounded));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50));
+
+        expect(find.text('first prompt'), findsOneWidget);
+        expect(find.text('first answer'), findsOneWidget);
+        expect(find.text('branch prompt'), findsOneWidget);
+        expect(find.text('second prompt'), findsNothing);
+        expect(find.text('second answer'), findsNothing);
+
+        await provider.refreshActiveSessionView(includeStatus: false);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50));
+
+        expect(find.text('branch prompt'), findsOneWidget);
+        expect(find.text('second prompt'), findsNothing);
+        expect(find.text('second answer'), findsNothing);
+      },
+    );
+
     testWidgets('slash redo restores reverted tail and clears composer draft', (
       WidgetTester tester,
     ) async {
       await tester.binding.setSurfaceSize(const Size(900, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
+      await di.sl.reset();
+      di.sl.registerLazySingleton<DioClient>(DioClient.new);
+      addTearDown(() => di.sl.reset());
 
       final repository = FakeChatRepository(
         sessions: <ChatSession>[
@@ -328,7 +479,10 @@ void main() {
       await tester.pump();
       await tester.pumpAndSettle();
 
-      expect(find.text('redo me'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('chat_message_widget_msg_user_1')),
+        findsNothing,
+      );
       expect(
         tester.widget<TextField>(find.byType(TextField).last).controller?.text,
         'redo me',
