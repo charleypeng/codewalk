@@ -237,6 +237,8 @@
 - **When** the user triggers `Undo` from the toolbar or `/undo` from the composer
 - **Then** the current client immediately hides the reverted user turn and every later turn from the visible timeline without waiting for another client or a manual refresh
 - **Then** the reverted user prompt is restored into the composer so the user can edit or resend it locally
+- **When** the user sends a new prompt after `Undo` instead of triggering `Redo`
+- **Then** the client treats that send as a replacement branch immediately: the abandoned reverted tail stays hidden, `Redo` is no longer available for that branch, and stale refreshes must not resurrect the reverted tail visually
 - **When** the user triggers `Redo` from the toolbar or `/redo`
 - **Then** the visible timeline immediately restores the next reverted turn (or all reverted turns when the revert boundary is fully cleared)
 - **Then** a full redo clears the composer draft that had been restored by undo
