@@ -647,12 +647,65 @@ class _DiffLineVisualStyle {
 }
 
 class _CollapsibleToolContentState extends State<_CollapsibleToolContent> {
-  bool _expanded = false;
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _scheduleAutoScrollToLatest(forceJump: true);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant _CollapsibleToolContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text) {
+      _scheduleAutoScrollToLatest(forceJump: false);
+    }
+  }
 
   double _expandedToolViewportHeight(BuildContext context) {
     final viewportHeight = MediaQuery.sizeOf(context).height;
     final responsiveCap = viewportHeight * 0.4;
     return math.min(300.0, responsiveCap.clamp(180.0, 300.0));
+  }
+
+  void _scheduleAutoScrollToLatest({required bool forceJump}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+      final maxScrollExtent = _scrollController.position.maxScrollExtent;
+      if (maxScrollExtent <= 0) {
+        return;
+      }
+      final distanceToBottom =
+          maxScrollExtent - _scrollController.position.pixels;
+      if (!forceJump && distanceToBottom > 24) {
+        return;
+      }
+      final disableAnimations =
+          MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+      if (forceJump || disableAnimations) {
+        _scrollController.jumpTo(maxScrollExtent);
+        return;
+      }
+      unawaited(
+        _scrollController
+            .animateTo(
+              maxScrollExtent,
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+            )
+            .catchError((_) {}),
+      );
+    });
   }
 
   bool get _canExpand {
@@ -751,26 +804,12 @@ class _CollapsibleToolContentState extends State<_CollapsibleToolContent> {
   /// Per-line diff rendering to ensure visible background colors.
   Widget _buildColorizedDiffContent(BuildContext context, String text) {
     final lines = text.split('\n');
-    final maxVisibleLines = _expanded ? lines.length : widget.collapsedMaxLines;
-    final visibleLines = lines.take(maxVisibleLines).toList(growable: false);
-    final hasHiddenLines = lines.length > visibleLines.length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (var i = 0; i < visibleLines.length; i++)
-          _buildDiffLine(context, index: i, line: visibleLines[i]),
-        if (!_expanded && hasHiddenLines)
-          Padding(
-            padding: const EdgeInsets.only(left: 6, top: 2),
-            child: Text(
-              '...',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontFamily: 'monospace',
-              ),
-            ),
-          ),
+        for (var i = 0; i < lines.length; i++)
+          _buildDiffLine(context, index: i, line: lines[i]),
       ],
     );
   }
@@ -778,7 +817,6 @@ class _CollapsibleToolContentState extends State<_CollapsibleToolContent> {
   @override
   Widget build(BuildContext context) {
     final isDiff = _isDiffContent(widget.toolName, widget.text);
-    final compactLayout = MediaQuery.sizeOf(context).width < 600;
 
     Widget contentWidget;
 
@@ -790,8 +828,6 @@ class _CollapsibleToolContentState extends State<_CollapsibleToolContent> {
       contentWidget = Text(
         widget.text,
         key: const ValueKey<String>('tool_content_text'),
-        maxLines: _expanded ? null : widget.collapsedMaxLines,
-        overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
         style: widget.textStyle,
       );
     }
@@ -800,48 +836,21 @@ class _CollapsibleToolContentState extends State<_CollapsibleToolContent> {
       return contentWidget;
     }
 
-    final contentViewport = _expanded
-        ? ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: _expandedToolViewportHeight(context),
-            ),
-            child: SingleChildScrollView(
-              key: const ValueKey<String>('tool_content_expanded_scroll'),
-              primary: false,
-              child: contentWidget,
-            ),
-          )
-        : contentWidget;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        contentViewport,
-        Align(
-          alignment: Alignment.center,
-          child: TextButton(
-            key: const ValueKey<String>('tool_content_toggle_button'),
-            onPressed: () {
-              setState(() {
-                _expanded = !_expanded;
-              });
-            },
-            style: TextButton.styleFrom(
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            ),
-            child: Text(
-              _expanded
-                  ? (compactLayout ? 'Less' : 'Show less')
-                  : (compactLayout ? 'More' : 'Show more'),
-              style:
-                  widget.toggleTextStyle ??
-                  Theme.of(context).textTheme.labelSmall,
-            ),
-          ),
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: _expandedToolViewportHeight(context),
+      ),
+      child: Scrollbar(
+        key: ValueKey<String>('tool_content_scrollbar_${widget.lineKeyPrefix}'),
+        controller: _scrollController,
+        thumbVisibility: true,
+        child: SingleChildScrollView(
+          key: ValueKey<String>('tool_content_scroll_${widget.lineKeyPrefix}'),
+          controller: _scrollController,
+          primary: false,
+          child: contentWidget,
         ),
-      ],
+      ),
     );
   }
 }

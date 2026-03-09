@@ -1066,19 +1066,13 @@ void main() {
     var outputText = tester.widget<Text>(
       find.byKey(const ValueKey<String>('tool_content_text')),
     );
-    expect(outputText.maxLines, 2);
-    expect(find.text('Show more'), findsOneWidget);
-
-    await tester.tap(
-      find.byKey(const ValueKey<String>('tool_content_toggle_button')),
-    );
-    await tester.pumpAndSettle();
-
-    outputText = tester.widget<Text>(
-      find.byKey(const ValueKey<String>('tool_content_text')),
-    );
     expect(outputText.maxLines, isNull);
-    expect(find.text('Show less'), findsOneWidget);
+    expect(
+      find.byKey(
+        const ValueKey<String>('tool_content_scroll_tool_output_diff'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('tool error output starts collapsed and can expand', (
@@ -1143,19 +1137,11 @@ void main() {
     var outputText = tester.widget<Text>(
       find.byKey(const ValueKey<String>('tool_content_text')),
     );
-    expect(outputText.maxLines, 2);
-    expect(find.text('Show more'), findsOneWidget);
-
-    await tester.tap(
-      find.byKey(const ValueKey<String>('tool_content_toggle_button')),
-    );
-    await tester.pumpAndSettle();
-
-    outputText = tester.widget<Text>(
-      find.byKey(const ValueKey<String>('tool_content_text')),
-    );
     expect(outputText.maxLines, isNull);
-    expect(find.text('Show less'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('tool_content_scroll_tool_error_diff')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('mobile tool status chip shows icon without label text', (
@@ -2457,10 +2443,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Expandir para ver diff colorizado
-    await tester.tap(find.text('Show more'));
-    await tester.pumpAndSettle();
-
     // Linhas de diff colorizadas devem estar presentes
     expect(
       find.byKey(const ValueKey<String>('diff_line_container_0')),
@@ -2516,9 +2498,6 @@ void main() {
         const ValueKey<String>('tool_part_details_button_tool_diff_styled_1'),
       ),
     );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Show more'));
     await tester.pumpAndSettle();
 
     final addContainer = tester.widget<Container>(
@@ -2601,9 +2580,6 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Show more').first);
-      await tester.pumpAndSettle();
-
       expect(
         find.byKey(const ValueKey<String>('diff_line_container_0')),
         findsNothing,
@@ -2663,9 +2639,6 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Show more').first);
     await tester.pumpAndSettle();
 
     expect(
@@ -2751,11 +2724,12 @@ void main() {
     await ensureToolDetailsExpanded();
 
     Future<void> expandToolOutputIfCollapsed() async {
-      final showMoreFinder = find.text('Show more');
-      if (showMoreFinder.evaluate().isNotEmpty) {
-        await tester.tap(showMoreFinder.first);
-        await tester.pumpAndSettle();
-      }
+      expect(
+        find.byKey(
+          const ValueKey<String>('tool_content_scroll_tool_output_diff'),
+        ),
+        findsOneWidget,
+      );
     }
 
     await expandToolOutputIfCollapsed();
@@ -2856,9 +2830,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Show more'));
-    await tester.pumpAndSettle();
-
     // Deve colorizar mesmo sendo bash
     expect(
       find.byKey(const ValueKey<String>('diff_line_container_0')),
@@ -2911,9 +2882,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Texto plano, sem expansão necessária (2 linhas)
+    // Texto plano curto permanece sem viewport interno dedicado.
     expect(find.text(plainOutput), findsOneWidget);
-    expect(find.text('Show more'), findsNothing);
+    expect(
+      find.byKey(
+        const ValueKey<String>('tool_content_scroll_tool_output_diff'),
+      ),
+      findsNothing,
+    );
   });
 
   testWidgets('preserves content when collapsing and expanding diff', (
@@ -2959,15 +2935,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Expandir
-    await tester.tap(find.text('Show more'));
-    await tester.pumpAndSettle();
-    expect(find.text('Show less'), findsOneWidget);
-
-    // Colapsar
-    await tester.tap(find.text('Show less'));
-    await tester.pumpAndSettle();
-    expect(find.text('Show more'), findsOneWidget);
+    expect(
+      find.byKey(
+        const ValueKey<String>('tool_content_scroll_tool_output_diff'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('tool_output_diff_text_2')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('renders colorized diff for edit tool', (tester) async {
@@ -3017,10 +2994,6 @@ index abc123..def456 100644
         const ValueKey<String>('tool_part_details_button_tool_diff_5'),
       ),
     );
-    await tester.pumpAndSettle();
-
-    // Expandir
-    await tester.tap(find.text('Show more'));
     await tester.pumpAndSettle();
 
     // Diff por linha deve estar presente
@@ -3077,9 +3050,6 @@ index abc123..def456 100644
         const ValueKey<String>('tool_part_details_button_tool_edit_input'),
       ),
     );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Show more'));
     await tester.pumpAndSettle();
 
     expect(
@@ -3301,13 +3271,10 @@ index abc123..def456 100644
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(
-      find.byKey(const ValueKey<String>('tool_content_toggle_button')),
-    );
-    await tester.pumpAndSettle();
-
     final viewportSize = tester.getSize(
-      find.byKey(const ValueKey<String>('tool_content_expanded_scroll')),
+      find.byKey(
+        const ValueKey<String>('tool_content_scroll_tool_output_diff'),
+      ),
     );
     expect(viewportSize.height, lessThanOrEqualTo(300));
   });

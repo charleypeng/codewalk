@@ -1,6 +1,15 @@
 part of '../chat_page.dart';
 
 extension _ChatPageScrollCoordinator on _ChatPageState {
+  bool _hasActiveUserScrollActivity() {
+    if (!_scrollController.hasClients) {
+      return false;
+    }
+    final activity = _scrollController.position.activity;
+    return activity is DragScrollActivity ||
+        activity is BallisticScrollActivity;
+  }
+
   void _handleScrollChanged() {
     if (!_scrollController.hasClients) {
       return;
@@ -75,6 +84,10 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
     }
 
     if (!_olderMessagesLoadTriggerArmed) {
+      return;
+    }
+
+    if (!_hasActiveUserScrollActivity()) {
       return;
     }
 
