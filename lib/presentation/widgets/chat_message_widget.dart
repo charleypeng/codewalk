@@ -197,6 +197,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     final isStableMessage =
         msg is UserMessage || (msg is AssistantMessage && msg.isCompleted);
     if (!isStableMessage) return false;
+    if (widget.showInlineUndoAction) return false;
 
     final partCount = msg.parts.length;
     final lastPartId = msg.parts.isNotEmpty ? msg.parts.last.id : null;
