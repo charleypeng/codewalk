@@ -86,7 +86,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   bool _lastShowInlineUndoAction = false;
   bool _lastResponding = false;
   int _lastLocalUiStateVersion = 0;
-  VoidCallback? _lastInlineUndoAction;
   ValueChanged<SubtaskPart>? _lastSubtaskNavigate;
   ValueChanged<ToolPart>? _lastTaskToolNavigate;
   double _lastVisualDensityVertical = 0;
@@ -211,7 +210,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         widget.showInlineUndoAction == _lastShowInlineUndoAction &&
         widget.isSessionActivelyResponding == _lastResponding &&
         _localUiStateVersion == _lastLocalUiStateVersion &&
-        identical(widget.onInlineUndo, _lastInlineUndoAction) &&
         identical(widget.onSubtaskNavigate, _lastSubtaskNavigate) &&
         identical(widget.onTaskToolNavigate, _lastTaskToolNavigate) &&
         density.vertical == _lastVisualDensityVertical &&
@@ -230,7 +228,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     _lastShowInlineUndoAction = widget.showInlineUndoAction;
     _lastResponding = widget.isSessionActivelyResponding;
     _lastLocalUiStateVersion = _localUiStateVersion;
-    _lastInlineUndoAction = widget.onInlineUndo;
     _lastSubtaskNavigate = widget.onSubtaskNavigate;
     _lastTaskToolNavigate = widget.onTaskToolNavigate;
     _lastVisualDensityVertical = density.vertical;
