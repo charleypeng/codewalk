@@ -184,8 +184,8 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
                     visualDensity: VisualDensity.compact,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(
-                      minWidth: 36,
-                      minHeight: 36,
+                      minWidth: 48,
+                      minHeight: 48,
                     ),
                     splashRadius: 18,
                     tooltip: 'Undo this turn',
@@ -193,7 +193,7 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
                   ),
                 ),
                 const SizedBox(width: 8),
-                bubble,
+                Flexible(fit: FlexFit.loose, child: bubble),
               ],
             );
           },
