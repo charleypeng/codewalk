@@ -286,6 +286,8 @@
 - **Then** once manually expanded, a completed tool-call group stays expanded during normal timeline rebuilds (scroll state updates, background refresh, and other parent re-renders) so the user can keep reading without involuntary collapse
 - **Then** automatic collapse is only applied when collapse mode is activated for that rendered group, not on every subsequent rebuild
 - **Then** once a completed turn has settled, transient realtime status pulses do not auto re-open or rapidly re-collapse that same work group
+- **Then** long tool output is rendered inside a bounded inner viewport with its own scrollbar so tool growth does not keep stretching the outer chat timeline while the user is reading
+- **Then** when tool output continues updating inside that bounded viewport, the inner scroll may follow the latest tail only while the user is already near the bottom of that tool output; it must not yank the main chat viewport
 
 ### Sub-conversation threads keep a full composer with parent return
 
@@ -822,6 +824,10 @@ Tool call work groups must only collapse after the assistant has fully completed
 ### Never flicker settled work groups on sync jitter
 
 After a tool/work group settles for a completed turn, transient realtime sync/status jitter must not cause rapid open/close loops or repeated remount flashes.
+
+### Never misread viewport shrink as top-history intent
+
+Top-history loading must only trigger from real upward user scrolling. Content shrink from collapse, re-layout, or other viewport-clamp side effects must never be interpreted as intent to load older messages, because that causes jumps into old history and then snap-back recovery.
 
 ### Never show stale data after resume
 

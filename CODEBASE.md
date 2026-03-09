@@ -114,7 +114,7 @@ lib/presentation/widgets/chat_input_widget.dart
 
 ```text
 chat_page_lifecycle.dart
-chat_page_scroll_coordinator.dart                  # Handles top-scroll older-history trigger and viewport anchor restoration after prepend
+chat_page_scroll_coordinator.dart                  # Handles top-scroll older-history trigger (requires real active user scroll activity so layout shrink/collapse cannot falsely load older history) and viewport anchor restoration after prepend
 chat_page_workspace_controller.dart
 chat_page_shortcuts.dart
 chat_page_status_presenter.dart
@@ -131,6 +131,12 @@ chat_page_composer_widgets.dart
 chat_page_model_selector_runtime.dart        # New Chat action opens draft mode immediately via provider `beginNewChatDraft()`; child-thread selector labels are memoized and locked to sub-conversation metadata (model shown, variant shown only when explicit)
 chat_page_timeline_builder.dart              # Renders empty state with no-server CTA to wizard; passes `role` to MessageEntranceAnimation so each bubble uses the correct motion profile; composer stays enabled during draft-first New Chat (`currentSession != null || isDraftingNewChat`) and in sub-conversation sessions; sub-conversation model/agent selection remains session-context aware/locked; child-thread footer keeps `Return to main conversation` visible (stop behavior managed by composer)
 chat_page_timeline_runtime.dart              # Tool-chain expanded state key resolution (sessionId::messageId::startPartId)
+```
+
+### Chat message widgets
+
+```text
+lib/presentation/widgets/chat_message/chat_message_tool_part.dart   # Renders long tool outputs in a bounded internal scroll viewport; large diffs use lazy rendering so tool growth does not destabilize the outer chat timeline
 ```
 
 ### `lib/presentation/providers/chat_provider/` clusters (current)
