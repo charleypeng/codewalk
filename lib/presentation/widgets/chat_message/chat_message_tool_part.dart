@@ -677,6 +677,11 @@ class _CollapsibleToolContentState extends State<_CollapsibleToolContent> {
   }
 
   void _scheduleAutoScrollToLatest({required bool forceJump}) {
+    final disableAnimations = WidgetsBinding
+        .instance
+        .platformDispatcher
+        .accessibilityFeatures
+        .disableAnimations;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_scrollController.hasClients) {
         return;
@@ -690,8 +695,6 @@ class _CollapsibleToolContentState extends State<_CollapsibleToolContent> {
       if (!forceJump && distanceToBottom > 24) {
         return;
       }
-      final disableAnimations =
-          MediaQuery.maybeOf(context)?.disableAnimations ?? false;
       if (forceJump || disableAnimations) {
         _scrollController.jumpTo(maxScrollExtent);
         return;
@@ -836,16 +839,43 @@ class _CollapsibleToolContentState extends State<_CollapsibleToolContent> {
       return contentWidget;
     }
 
+    final maxHeight = _expandedToolViewportHeight(context);
+    final scrollKey = ValueKey<String>(
+      'tool_content_scroll_${widget.lineKeyPrefix}',
+    );
+    final scrollbarKey = ValueKey<String>(
+      'tool_content_scrollbar_${widget.lineKeyPrefix}',
+    );
+
+    if (isDiff) {
+      final lines = widget.text.split('\n');
+      return ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxHeight),
+        child: Scrollbar(
+          key: scrollbarKey,
+          controller: _scrollController,
+          thumbVisibility: true,
+          child: ListView.builder(
+            key: scrollKey,
+            controller: _scrollController,
+            primary: false,
+            shrinkWrap: true,
+            itemCount: lines.length,
+            itemBuilder: (context, index) =>
+                _buildDiffLine(context, index: index, line: lines[index]),
+          ),
+        ),
+      );
+    }
+
     return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxHeight: _expandedToolViewportHeight(context),
-      ),
+      constraints: BoxConstraints(maxHeight: maxHeight),
       child: Scrollbar(
-        key: ValueKey<String>('tool_content_scrollbar_${widget.lineKeyPrefix}'),
+        key: scrollbarKey,
         controller: _scrollController,
         thumbVisibility: true,
         child: SingleChildScrollView(
-          key: ValueKey<String>('tool_content_scroll_${widget.lineKeyPrefix}'),
+          key: scrollKey,
           controller: _scrollController,
           primary: false,
           child: contentWidget,
