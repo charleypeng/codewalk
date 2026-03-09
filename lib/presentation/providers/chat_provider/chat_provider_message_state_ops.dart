@@ -245,6 +245,10 @@ extension _ChatProviderMessageStateOps on ChatProvider {
         );
         if (existingIncomingIndex != -1 &&
             existingIncomingIndex != pendingLocalIndex) {
+          _setPendingReplacementBranchRootMessage(
+            sessionId: message.sessionId,
+            messageId: message.id,
+          );
           _pendingLocalUserMessageIds.remove(previousId);
           _messages[existingIncomingIndex] = message;
           _messages.removeAt(pendingLocalIndex);
@@ -255,6 +259,10 @@ extension _ChatProviderMessageStateOps on ChatProvider {
           _scheduleScrollToBottom();
           return;
         }
+        _setPendingReplacementBranchRootMessage(
+          sessionId: message.sessionId,
+          messageId: message.id,
+        );
         _pendingLocalUserMessageIds.remove(previousId);
         _messages[pendingLocalIndex] = message;
         _messagesVersion++;

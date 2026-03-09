@@ -208,6 +208,7 @@ class ChatProvider extends ChangeNotifier {
   int _cachedVisibleMessagesVersion = -1;
   String? _cachedVisibleMessagesSessionId;
   String? _cachedVisibleMessagesRevertId;
+  String? _cachedVisibleMessagesBranchKey;
   List<ChatMessage> _cachedVisibleMessages = const <ChatMessage>[];
   // Monotonic counter bumped on every mutation that affects the visible
   // current-session permission list so the getter can reuse the same immutable
@@ -264,6 +265,7 @@ class ChatProvider extends ChangeNotifier {
   Future<void>? _lazySessionBootstrapTask;
   _RejectedDraftEnvelope? _rejectedDraft;
   _HistoryComposerSync? _pendingHistoryComposerSync;
+  _PendingReplacementBranch? _pendingReplacementBranch;
   int _historyComposerSyncToken = 0;
   final LinkedHashMap<String, List<ChatMessage>> _sessionMessagesLruCache =
       LinkedHashMap<String, List<ChatMessage>>();
@@ -485,15 +487,32 @@ class ChatProvider extends ChangeNotifier {
     final session = _currentSession;
     final revertMessageId = session?.revert?.messageId.trim();
     final sessionId = session?.id;
+    final pendingBranch = _visiblePendingReplacementBranch;
+    final pendingBranchKey = pendingBranch?.cacheKey;
     if (_cachedVisibleMessagesVersion == _messagesVersion &&
         _cachedVisibleMessagesSessionId == sessionId &&
-        _cachedVisibleMessagesRevertId == revertMessageId) {
+        _cachedVisibleMessagesRevertId == revertMessageId &&
+        _cachedVisibleMessagesBranchKey == pendingBranchKey) {
       return _cachedVisibleMessages;
+    }
+    if (pendingBranch != null) {
+      return _cacheVisibleMessages(
+        sessionId: sessionId,
+        revertMessageId: revertMessageId,
+        pendingBranchKey: pendingBranchKey,
+        messages: List<ChatMessage>.unmodifiable(
+          _applyPendingReplacementBranchToMessages(
+            _messages,
+            branch: pendingBranch,
+          ),
+        ),
+      );
     }
     if (session == null || revertMessageId == null || revertMessageId.isEmpty) {
       return _cacheVisibleMessages(
         sessionId: sessionId,
         revertMessageId: revertMessageId,
+        pendingBranchKey: pendingBranchKey,
         messages: List<ChatMessage>.unmodifiable(_messages),
       );
     }
@@ -505,12 +524,14 @@ class ChatProvider extends ChangeNotifier {
       return _cacheVisibleMessages(
         sessionId: sessionId,
         revertMessageId: revertMessageId,
+        pendingBranchKey: pendingBranchKey,
         messages: const <ChatMessage>[],
       );
     }
     return _cacheVisibleMessages(
       sessionId: sessionId,
       revertMessageId: revertMessageId,
+      pendingBranchKey: pendingBranchKey,
       messages: List<ChatMessage>.unmodifiable(
         _messages.sublist(0, boundaryIndex),
       ),
@@ -520,13 +541,140 @@ class ChatProvider extends ChangeNotifier {
   List<ChatMessage> _cacheVisibleMessages({
     required String? sessionId,
     required String? revertMessageId,
+    required String? pendingBranchKey,
     required List<ChatMessage> messages,
   }) {
     _cachedVisibleMessagesVersion = _messagesVersion;
     _cachedVisibleMessagesSessionId = sessionId;
     _cachedVisibleMessagesRevertId = revertMessageId;
+    _cachedVisibleMessagesBranchKey = pendingBranchKey;
     _cachedVisibleMessages = messages;
     return _cachedVisibleMessages;
+  }
+
+  _PendingReplacementBranch? get _visiblePendingReplacementBranch {
+    final branch = _pendingReplacementBranch;
+    final sessionId = _currentSession?.id;
+    if (branch == null || sessionId == null || branch.sessionId != sessionId) {
+      return null;
+    }
+    return branch;
+  }
+
+  List<ChatMessage> _applyPendingReplacementBranchToMessages(
+    List<ChatMessage> messages, {
+    required _PendingReplacementBranch branch,
+  }) {
+    final next = <ChatMessage>[];
+    final rootMessageId = branch.replacementRootMessageId?.trim();
+    var droppingRevertedTail = false;
+    for (final message in messages) {
+      if (message.sessionId != branch.sessionId) {
+        next.add(message);
+        continue;
+      }
+      if (!droppingRevertedTail) {
+        if (message.id == branch.revertMessageId) {
+          droppingRevertedTail = true;
+          continue;
+        }
+        next.add(message);
+        continue;
+      }
+      if (rootMessageId != null &&
+          rootMessageId.isNotEmpty &&
+          message.id == rootMessageId) {
+        droppingRevertedTail = false;
+        next.add(message);
+      }
+    }
+    return next;
+  }
+
+  void _startPendingReplacementBranch({
+    required String sessionId,
+    required String revertMessageId,
+  }) {
+    final normalizedRevertMessageId = revertMessageId.trim();
+    if (normalizedRevertMessageId.isEmpty) {
+      return;
+    }
+    final branch = _PendingReplacementBranch(
+      sessionId: sessionId,
+      revertMessageId: normalizedRevertMessageId,
+    );
+    _pendingReplacementBranch = branch;
+    final nextMessages = _applyPendingReplacementBranchToMessages(
+      _messages,
+      branch: branch,
+    );
+    final messagesChanged = nextMessages.length != _messages.length;
+    if (messagesChanged) {
+      _messages = nextMessages;
+      _cacheSessionMessages(sessionId, _messages);
+      _prunePendingLocalUserMessageIdsToVisibleUsers();
+    }
+
+    final currentSession = _currentSession;
+    final revertChanged =
+        currentSession?.id == sessionId && currentSession?.revert != null;
+    if (revertChanged) {
+      final updatedSession = currentSession!.copyWith(revert: null);
+      _currentSession = updatedSession;
+      final sessionIndex = _sessions.indexWhere((item) => item.id == sessionId);
+      if (sessionIndex != -1) {
+        _sessions[sessionIndex] = updatedSession;
+      }
+      unawaited(_persistSessionCacheBestEffort());
+    }
+
+    if (messagesChanged || revertChanged) {
+      _messagesVersion++;
+    }
+  }
+
+  void _setPendingReplacementBranchRootMessage({
+    required String sessionId,
+    required String messageId,
+  }) {
+    final branch = _pendingReplacementBranch;
+    final normalizedMessageId = messageId.trim();
+    if (branch == null ||
+        branch.sessionId != sessionId ||
+        normalizedMessageId.isEmpty ||
+        branch.replacementRootMessageId == normalizedMessageId) {
+      return;
+    }
+    _pendingReplacementBranch = branch.copyWith(
+      replacementRootMessageId: normalizedMessageId,
+    );
+    _messagesVersion++;
+  }
+
+  void _clearPendingReplacementBranch({String? sessionId}) {
+    final branch = _pendingReplacementBranch;
+    if (branch == null) {
+      return;
+    }
+    final normalizedSessionId = sessionId?.trim();
+    if (normalizedSessionId != null &&
+        normalizedSessionId.isNotEmpty &&
+        branch.sessionId != normalizedSessionId) {
+      return;
+    }
+    _pendingReplacementBranch = null;
+    _messagesVersion++;
+  }
+
+  List<ChatMessage> _filterMessagesForPendingReplacementBranch(
+    List<ChatMessage> messages, {
+    required String sessionId,
+  }) {
+    final branch = _pendingReplacementBranch;
+    if (branch == null || branch.sessionId != sessionId) {
+      return messages;
+    }
+    return _applyPendingReplacementBranchToMessages(messages, branch: branch);
   }
 
   void _queueHistoryComposerSync({
@@ -1554,6 +1702,10 @@ class ChatProvider extends ChangeNotifier {
             serverMessagesForMerge = deltaResult.messages;
             requiresFullFetch = deltaResult.requiresFullFetch;
           }
+          serverMessagesForMerge = _filterMessagesForPendingReplacementBranch(
+            serverMessagesForMerge,
+            sessionId: session.id,
+          );
           _messages = _mergeServerMessagesWithActiveLocalTail(
             serverMessagesForMerge,
             sessionId: session.id,
@@ -2389,6 +2541,7 @@ class ChatProvider extends ChangeNotifier {
         _isLoadingOlderMessages = false;
         _hasMoreOldMessages = messages.length >= _defaultOlderMessagesChunkSize;
         _messagesVersion++;
+        _clearPendingReplacementBranch();
         await _clearLastSessionSnapshotBestEffort(
           serverId: serverId,
           scopeId: scopeId,
@@ -2410,6 +2563,7 @@ class ChatProvider extends ChangeNotifier {
         _isLoadingOlderMessages = false;
         _hasMoreOldMessages = false;
         _messagesVersion++;
+        _clearPendingReplacementBranch();
         _setState(ChatState.loaded);
         return;
       }
@@ -2501,6 +2655,7 @@ class ChatProvider extends ChangeNotifier {
     _isLoadingOlderMessages = false;
     _hasMoreOldMessages = false;
     _messagesVersion++;
+    _clearPendingReplacementBranch();
     _pendingLocalUserMessageIds.clear();
     _clearRejectedDraft();
     _sessionInsightsError = null;
@@ -2563,6 +2718,7 @@ class ChatProvider extends ChangeNotifier {
     _isLoadingOlderMessages = false;
     _hasMoreOldMessages = false;
     _messagesVersion++;
+    _clearPendingReplacementBranch();
     _pendingLocalUserMessageIds.clear();
     _clearRejectedDraft();
     _sessionInsightsError = null;
@@ -2627,6 +2783,7 @@ class ChatProvider extends ChangeNotifier {
     );
 
     _pendingLocalUserMessageIds.clear();
+    _clearPendingReplacementBranch();
     _clearRejectedDraft();
     _currentSession = session;
     _isLoadingOlderMessages = false;
@@ -2732,6 +2889,10 @@ class ChatProvider extends ChangeNotifier {
           serverMessagesForMerge = deltaResult.messages;
           requiresFullFetch = deltaResult.requiresFullFetch;
         }
+        serverMessagesForMerge = _filterMessagesForPendingReplacementBranch(
+          serverMessagesForMerge,
+          sessionId: sessionId,
+        );
         _messages = _mergeServerMessagesWithActiveLocalTail(
           serverMessagesForMerge,
           sessionId: sessionId,
@@ -2795,13 +2956,17 @@ class ChatProvider extends ChangeNotifier {
           if (_currentSession?.id != sessionId) {
             return;
           }
-          _messages = _mergeServerMessagesWithActiveLocalTail(
+          final filteredMessages = _filterMessagesForPendingReplacementBranch(
             messages,
+            sessionId: sessionId,
+          );
+          _messages = _mergeServerMessagesWithActiveLocalTail(
+            filteredMessages,
             sessionId: sessionId,
           );
           _cacheSessionMessages(sessionId, _messages);
           _messagesVersion++;
-          _hasMoreOldMessages = messages.length >= requestedLimit;
+          _hasMoreOldMessages = filteredMessages.length >= requestedLimit;
           _notifyListeners();
           unawaited(_persistLastSessionSnapshotBestEffort());
           unawaited(
@@ -2881,6 +3046,22 @@ class ChatProvider extends ChangeNotifier {
     final sendSessionId = hasSessionOverride
         ? normalizedSessionOverride
         : _currentSession!.id;
+    final currentReplacementBranch = _pendingReplacementBranch;
+    if (currentReplacementBranch != null &&
+        currentReplacementBranch.sessionId != sendSessionId) {
+      _clearPendingReplacementBranch(
+        sessionId: currentReplacementBranch.sessionId,
+      );
+    }
+    final activeRevert = _currentSession?.id == sendSessionId
+        ? _currentSession?.revert
+        : null;
+    if (activeRevert != null) {
+      _startPendingReplacementBranch(
+        sessionId: sendSessionId,
+        revertMessageId: activeRevert.messageId,
+      );
+    }
     AppLogger.info(
       'Provider send start session=$sendSessionId agent=${_selectedAgentName ?? "-"} provider=${_selectedProviderId ?? "-"} model=${_selectedModelId ?? "-"} variant=${_selectedVariantId ?? "auto"}',
     );
@@ -2921,6 +3102,11 @@ class ChatProvider extends ChangeNotifier {
               shellMode: shellMode,
             )
           : resolvedLocalMessageId;
+
+      _setPendingReplacementBranchRootMessage(
+        sessionId: sendSessionId,
+        messageId: activeLocalMessageId,
+      );
 
       _pendingLocalUserMessageIds.add(activeLocalMessageId);
       notifyListeners();
@@ -3580,6 +3766,8 @@ class ChatProvider extends ChangeNotifier {
       return false;
     }
 
+    _clearPendingReplacementBranch(sessionId: session.id);
+
     final revertedMessage = _findUserMessageById(messageId);
     final restoredDraft = revertedMessage == null
         ? null
@@ -3616,6 +3804,8 @@ class ChatProvider extends ChangeNotifier {
     if (session == null || currentSessionRevert == null) {
       return false;
     }
+
+    _clearPendingReplacementBranch(sessionId: session.id);
 
     final nextRevertMessageId = _nextRedoBoundaryMessageId();
     if (nextRevertMessageId != null) {

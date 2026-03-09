@@ -79,6 +79,30 @@ class _HistoryComposerSync {
   final bool clear;
 }
 
+class _PendingReplacementBranch {
+  const _PendingReplacementBranch({
+    required this.sessionId,
+    required this.revertMessageId,
+    this.replacementRootMessageId,
+  });
+
+  final String sessionId;
+  final String revertMessageId;
+  final String? replacementRootMessageId;
+
+  String get cacheKey =>
+      '$sessionId::$revertMessageId::${replacementRootMessageId ?? ''}';
+
+  _PendingReplacementBranch copyWith({String? replacementRootMessageId}) {
+    return _PendingReplacementBranch(
+      sessionId: sessionId,
+      revertMessageId: revertMessageId,
+      replacementRootMessageId:
+          replacementRootMessageId ?? this.replacementRootMessageId,
+    );
+  }
+}
+
 class _ChatContextSnapshot {
   const _ChatContextSnapshot({
     required this.sessions,

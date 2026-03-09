@@ -55,7 +55,13 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       );
     }
     if (info.containsKey('revert')) {
-      merged = merged.copyWith(revert: incoming.revert);
+      final pendingBranch = _pendingReplacementBranch;
+      final incomingRevertId = incoming.revert?.messageId.trim();
+      if (pendingBranch == null ||
+          pendingBranch.sessionId != merged.id ||
+          incomingRevertId != pendingBranch.revertMessageId) {
+        merged = merged.copyWith(revert: incoming.revert);
+      }
     }
     return merged;
   }
