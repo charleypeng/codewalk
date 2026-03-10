@@ -6805,15 +6805,17 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('2 work messages'), findsOneWidget);
       expect(
-        find.textContaining(
-          'assistant work messages hidden before final response',
+        find.byKey(
+          const ValueKey<String>(
+            'timeline_assistant_work_preview_msg_work_final_msg_work_step_1_msg_work_step_2',
+          ),
         ),
-        findsNothing,
+        findsOneWidget,
       );
-      expect(find.text('Working step 1'), findsNothing);
-      expect(find.text('Working step 2'), findsNothing);
+      expect(find.text('2 work messages'), findsOneWidget);
+      expect(find.text('Working step 1'), findsOneWidget);
+      expect(find.text('Working step 2'), findsOneWidget);
       expect(find.text('Final assistant response'), findsOneWidget);
 
       await tester.tap(
@@ -6826,6 +6828,130 @@ void main() {
       expect(find.text('Working step 1'), findsOneWidget);
       expect(find.text('Working step 2'), findsOneWidget);
       expect(find.text('Final assistant response'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'keeps historical assistant work groups collapsed when a newer user turn exists',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_historical_assistant_work_grouping',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Historical Assistant Work Grouping',
+          ),
+        ],
+      );
+
+      repository.messagesBySession['ses_historical_assistant_work_grouping'] =
+          <ChatMessage>[
+            UserMessage(
+              id: 'msg_historical_work_user',
+              sessionId: 'ses_historical_assistant_work_grouping',
+              time: DateTime.fromMillisecondsSinceEpoch(1100),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_historical_work_user',
+                  messageId: 'msg_historical_work_user',
+                  sessionId: 'ses_historical_assistant_work_grouping',
+                  text: 'Build this for me',
+                ),
+              ],
+            ),
+            AssistantMessage(
+              id: 'msg_historical_work_step_1',
+              sessionId: 'ses_historical_assistant_work_grouping',
+              time: DateTime.fromMillisecondsSinceEpoch(1200),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(1210),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_historical_work_step_1',
+                  messageId: 'msg_historical_work_step_1',
+                  sessionId: 'ses_historical_assistant_work_grouping',
+                  text: 'Working step 1',
+                ),
+              ],
+            ),
+            AssistantMessage(
+              id: 'msg_historical_work_step_2',
+              sessionId: 'ses_historical_assistant_work_grouping',
+              time: DateTime.fromMillisecondsSinceEpoch(1300),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(1310),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_historical_work_step_2',
+                  messageId: 'msg_historical_work_step_2',
+                  sessionId: 'ses_historical_assistant_work_grouping',
+                  text: 'Working step 2',
+                ),
+              ],
+            ),
+            AssistantMessage(
+              id: 'msg_historical_work_final',
+              sessionId: 'ses_historical_assistant_work_grouping',
+              time: DateTime.fromMillisecondsSinceEpoch(1400),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(1410),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_historical_work_final',
+                  messageId: 'msg_historical_work_final',
+                  sessionId: 'ses_historical_assistant_work_grouping',
+                  text: 'Final assistant response',
+                ),
+              ],
+            ),
+            UserMessage(
+              id: 'msg_historical_follow_up_user',
+              sessionId: 'ses_historical_assistant_work_grouping',
+              time: DateTime.fromMillisecondsSinceEpoch(1500),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_historical_follow_up_user',
+                  messageId: 'msg_historical_follow_up_user',
+                  sessionId: 'ses_historical_assistant_work_grouping',
+                  text: 'Newer user turn',
+                ),
+              ],
+            ),
+          ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('timeline_collapsed_assistant_work_header'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'timeline_assistant_work_preview_msg_historical_work_final_msg_historical_work_step_1_msg_historical_work_step_2',
+          ),
+        ),
+        findsNothing,
+      );
+      expect(find.text('Working step 1'), findsNothing);
+      expect(find.text('Working step 2'), findsNothing);
+      expect(find.text('Newer user turn'), findsOneWidget);
     },
   );
 
@@ -7137,13 +7263,6 @@ void main() {
     );
     expect(find.text('2 work messages'), findsOneWidget);
     expect(find.text('Final assistant answer'), findsOneWidget);
-
-    await tester.tap(
-      find.byKey(
-        const ValueKey<String>('timeline_collapsed_assistant_work_toggle'),
-      ),
-    );
-    await tester.pumpAndSettle();
 
     expect(find.text('Details'), findsOneWidget);
 

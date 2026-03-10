@@ -1,6 +1,64 @@
 part of '../chat_page.dart';
 
 extension _ChatPageTimelineBuilder on _ChatPageState {
+  Widget _buildTimelineMessageWidget({
+    required ChatMessage message,
+    required ChatProvider chatProvider,
+    required SettingsProvider settingsProvider,
+    required String? latestReasoningPartKey,
+    required String? latestRevertibleMessageId,
+    required bool isSubConversation,
+    required String? finalAssistantRevealMessageId,
+    required String? latestTimelineMessageId,
+    bool wrapRevealAnchor = true,
+    String? keyPrefix,
+  }) {
+    Widget messageWidget = ChatMessageWidget(
+      key: ValueKey<String>(
+        '${keyPrefix ?? 'chat_message_widget'}_${message.id}',
+      ),
+      message: message,
+      activeReasoningPartKey: latestReasoningPartKey,
+      showThinkingBubbles: settingsProvider.showThinkingBubbles,
+      showToolCallBubbles: settingsProvider.showToolCallBubbles,
+      showInlineUndoAction:
+          message is UserMessage && message.id == latestRevertibleMessageId,
+      isSessionActivelyResponding:
+          chatProvider.isCurrentSessionActivelyResponding,
+      onInlineUndo:
+          message is UserMessage && message.id == latestRevertibleMessageId
+          ? () => unawaited(
+              _triggerHistoryAction(
+                chatProvider,
+                action: _HistoryToolbarAction.undo,
+              ),
+            )
+          : null,
+      onBackgroundLongPress: () => _handleMessageBackgroundLongPress(message),
+      onBackgroundLongPressEnd: () =>
+          _handleMessageBackgroundLongPressEnd(message),
+      onSubtaskNavigate: isSubConversation
+          ? null
+          : (part) => unawaited(
+              _openSubConversationFromSubtaskPart(chatProvider, part),
+            ),
+      onTaskToolNavigate: isSubConversation
+          ? null
+          : (part) => unawaited(
+              _openSubConversationFromTaskToolPart(chatProvider, part),
+            ),
+    );
+    if (wrapRevealAnchor &&
+        (finalAssistantRevealMessageId == message.id ||
+            latestTimelineMessageId == message.id)) {
+      messageWidget = KeyedSubtree(
+        key: _messageRevealAnchorKey(message.id),
+        child: messageWidget,
+      );
+    }
+    return messageWidget;
+  }
+
   Widget _buildChatContent({
     required ChatProvider chatProvider,
     required bool isKeyboardOpen,
@@ -975,57 +1033,17 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                   Widget child;
                   if (entry is _TimelineMessageEntry) {
                     final message = entry.message;
-                    Widget messageWidget = ChatMessageWidget(
-                      key: ValueKey<String>(
-                        'chat_message_widget_${message.id}',
-                      ),
+                    final messageWidget = _buildTimelineMessageWidget(
                       message: message,
-                      activeReasoningPartKey: latestReasoningPartKey,
-                      showThinkingBubbles: settingsProvider.showThinkingBubbles,
-                      showToolCallBubbles: settingsProvider.showToolCallBubbles,
-                      showInlineUndoAction:
-                          message is UserMessage &&
-                          message.id == latestRevertibleMessageId,
-                      isSessionActivelyResponding:
-                          chatProvider.isCurrentSessionActivelyResponding,
-                      onInlineUndo:
-                          message is UserMessage &&
-                              message.id == latestRevertibleMessageId
-                          ? () => unawaited(
-                              _triggerHistoryAction(
-                                chatProvider,
-                                action: _HistoryToolbarAction.undo,
-                              ),
-                            )
-                          : null,
-                      onBackgroundLongPress: () =>
-                          _handleMessageBackgroundLongPress(message),
-                      onBackgroundLongPressEnd: () =>
-                          _handleMessageBackgroundLongPressEnd(message),
-                      onSubtaskNavigate: isSubConversation
-                          ? null
-                          : (part) => unawaited(
-                              _openSubConversationFromSubtaskPart(
-                                chatProvider,
-                                part,
-                              ),
-                            ),
-                      onTaskToolNavigate: isSubConversation
-                          ? null
-                          : (part) => unawaited(
-                              _openSubConversationFromTaskToolPart(
-                                chatProvider,
-                                part,
-                              ),
-                            ),
+                      chatProvider: chatProvider,
+                      settingsProvider: settingsProvider,
+                      latestReasoningPartKey: latestReasoningPartKey,
+                      latestRevertibleMessageId: latestRevertibleMessageId,
+                      isSubConversation: isSubConversation,
+                      finalAssistantRevealMessageId:
+                          finalAssistantRevealMessageId,
+                      latestTimelineMessageId: latestTimelineMessageId,
                     );
-                    if (finalAssistantRevealMessageId == message.id ||
-                        latestTimelineMessageId == message.id) {
-                      messageWidget = KeyedSubtree(
-                        key: _messageRevealAnchorKey(message.id),
-                        child: messageWidget,
-                      );
-                    }
                     child = KeyedSubtree(
                       key: ValueKey<String>(entry.key),
                       child: messageWidget,
@@ -1033,7 +1051,24 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                   } else if (entry is _TimelineCollapsedHistoryEntry) {
                     child = _buildCollapsedHistoryEntry(entry);
                   } else if (entry is _TimelineCollapsedAssistantWorkEntry) {
-                    child = _buildCollapsedAssistantWorkEntry(entry);
+                    child = _buildCollapsedAssistantWorkEntry(
+                      entry,
+                      buildPreviewMessage: (message) =>
+                          _buildTimelineMessageWidget(
+                            message: message,
+                            chatProvider: chatProvider,
+                            settingsProvider: settingsProvider,
+                            latestReasoningPartKey: latestReasoningPartKey,
+                            latestRevertibleMessageId:
+                                latestRevertibleMessageId,
+                            isSubConversation: isSubConversation,
+                            finalAssistantRevealMessageId:
+                                finalAssistantRevealMessageId,
+                            latestTimelineMessageId: latestTimelineMessageId,
+                            wrapRevealAnchor: false,
+                            keyPrefix: 'assistant_work_preview',
+                          ),
+                    );
                   } else if (entry is _TimelinePermissionPromptEntry) {
                     child = _buildInlinePermissionPromptEntry(
                       entry,
@@ -1267,10 +1302,19 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           createdAt: finalAssistant.time,
         );
         final expanded = _expandedAssistantWorkGroupId == workGroup.id;
+        final showBoundedPreview = assistantRunEnd == endExclusive;
         entries.add(
           _TimelineCollapsedAssistantWorkEntry(
             group: workGroup,
             expanded: expanded,
+            showBoundedPreview: showBoundedPreview,
+            previewMessages: showBoundedPreview
+                ? _buildAssistantWorkPreviewMessages(
+                    messages: messages,
+                    startIndex: assistantRunStart,
+                    endExclusive: assistantRunEnd - 1,
+                  )
+                : const <ChatMessage>[],
           ),
         );
         if (expanded) {
@@ -1342,6 +1386,24 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
         endExclusive: endExclusive,
       );
     }
+  }
+
+  List<ChatMessage> _buildAssistantWorkPreviewMessages({
+    required List<ChatMessage> messages,
+    required int startIndex,
+    required int endExclusive,
+  }) {
+    final previewEntries = <_TimelineEntry>[];
+    _appendRangeWithAssistantToolMerging(
+      entries: previewEntries,
+      messages: messages,
+      startIndex: startIndex,
+      endExclusive: endExclusive,
+    );
+    return previewEntries
+        .whereType<_TimelineMessageEntry>()
+        .map((entry) => entry.message)
+        .toList(growable: false);
   }
 
   int _appendMergedAssistantToolOnlyRun({

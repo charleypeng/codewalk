@@ -260,14 +260,25 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
   }
 
   Widget _buildCollapsedAssistantWorkEntry(
-    _TimelineCollapsedAssistantWorkEntry entry,
-  ) {
+    _TimelineCollapsedAssistantWorkEntry entry, {
+    required Widget Function(ChatMessage message) buildPreviewMessage,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
     final group = entry.group;
-    final actionLabel = entry.expanded ? 'Hide' : 'Show';
+    final actionLabel = entry.expanded
+        ? 'Hide'
+        : (entry.showBoundedPreview ? 'Expand' : 'Show');
     final titleLabel = group.messageCount == 1
         ? '1 work message'
         : '${group.messageCount} work messages';
+    final previewMessages = entry.previewMessages;
+    final showPreview =
+        entry.showBoundedPreview &&
+        !entry.expanded &&
+        previewMessages.isNotEmpty;
+    final maxPreviewHeight = MediaQuery.sizeOf(context).height < 700
+        ? 220.0
+        : 320.0;
 
     return Padding(
       key: ValueKey<String>(entry.key),
@@ -326,6 +337,57 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
                     ),
                   ],
                 ),
+                if (showPreview) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    'Latest tool activity stays inside this bounded panel to keep the chat viewport stable.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface.withValues(alpha: 0.95),
+                        border: Border.all(
+                          color: colorScheme.outlineVariant.withValues(
+                            alpha: 0.45,
+                          ),
+                        ),
+                      ),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: maxPreviewHeight,
+                        ),
+                        child: ScrollConfiguration(
+                          behavior: ScrollConfiguration.of(
+                            context,
+                          ).copyWith(overscroll: false),
+                          child: ListView.builder(
+                            key: ValueKey<String>(
+                              'timeline_assistant_work_preview_${group.id}',
+                            ),
+                            primary: false,
+                            shrinkWrap: true,
+                            reverse: true,
+                            padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+                            physics: const ClampingScrollPhysics(),
+                            itemCount: previewMessages.length,
+                            itemBuilder: (context, index) {
+                              final message =
+                                  previewMessages[previewMessages.length -
+                                      1 -
+                                      index];
+                              return buildPreviewMessage(message);
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

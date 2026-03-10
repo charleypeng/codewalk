@@ -169,7 +169,8 @@
 - **When** newer server messages are applied
 - **Then** the timeline updates in place without clearing to an empty skeleton first
 - **Then** collapsed history groups keep their per-session expansion state during switch and revalidation
-- **Then** assistant work/tool-call groups return collapsed after session return or revalidation (manual expansion is not restored)
+- **Then** historical assistant work/tool-call groups return collapsed after session return or revalidation (manual expansion is not restored)
+- **Then** the latest completed assistant work/tool-call run stays visible inside a bounded internal panel while it remains the newest run, so regrouping does not yank the main chat viewport
 - **Then** an already-selected empty session keeps its empty placeholder visible during background refresh (no loading skeleton blink)
 - **Then** returning from background or focus with no new chat content does not yank the latest message to the top of the viewport just because the route resumed
 - **Then** if refreshed content arrives while the user was already pinned to the latest message, the viewport stays pinned instead of forcing a synthetic reveal jump
