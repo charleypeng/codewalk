@@ -279,6 +279,7 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
     final maxPreviewHeight = MediaQuery.sizeOf(context).height < 700
         ? 220.0
         : 320.0;
+    final allowInteractivePreviewScroll = !_isMobileRuntime;
 
     return Padding(
       key: ValueKey<String>(entry.key),
@@ -365,23 +366,23 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
                           behavior: ScrollConfiguration.of(
                             context,
                           ).copyWith(overscroll: false),
-                          child: ListView.builder(
+                          child: SingleChildScrollView(
                             key: ValueKey<String>(
                               'timeline_assistant_work_preview_${group.id}',
                             ),
                             primary: false,
-                            shrinkWrap: true,
                             reverse: true,
                             padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-                            physics: const ClampingScrollPhysics(),
-                            itemCount: previewMessages.length,
-                            itemBuilder: (context, index) {
-                              final message =
-                                  previewMessages[previewMessages.length -
-                                      1 -
-                                      index];
-                              return buildPreviewMessage(message);
-                            },
+                            physics: allowInteractivePreviewScroll
+                                ? const ClampingScrollPhysics()
+                                : const NeverScrollableScrollPhysics(),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                for (final message in previewMessages)
+                                  buildPreviewMessage(message),
+                              ],
+                            ),
                           ),
                         ),
                       ),
