@@ -378,6 +378,7 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
                                 : const NeverScrollableScrollPhysics(),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 for (final message in previewMessages)
                                   buildPreviewMessage(message),
