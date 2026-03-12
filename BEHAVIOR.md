@@ -286,6 +286,8 @@
 - **Then** manual expansion of a visible tool call or tool-call chain is preserved while the response is still streaming
 - **Then** if a single visible tool block grows into a multi-tool chain during that same active response, the user-open state is carried into the grouped view instead of snapping shut
 - **Then** collapsed multi-tool chains surface an active progress summary (for example `1 running • 1 queued`) while the response is still in flight
+- **Then** the composer status slot surfaces the latest live tool, patch, or reasoning activity in a fixed position so the newest progress stays visible without shifting the main chat viewport
+- **Then** if that fixed progress slot mirrors the active in-flight reasoning block, the matching inline Thinking bubble is temporarily hidden until the assistant response settles, avoiding a misleading stuck-looking duplicate
 - **When** the assistant finishes the complete response
 - **Then** tool-call chains and tool-detail sections start collapsed by default
 - **Then** collapse never happens while the assistant is still streaming

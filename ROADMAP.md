@@ -19,3 +19,4 @@ Description: Compact tracker for featR steps. Visit the referenced `ROADMAP.feat
 - [x] 1.05 Send, Stop, and Queue Parity - Related commits: df4d27e a75b1a4 - File: `ROADMAP.featR.g5.md`
 - [x] 1.06 Realtime Lifecycle and Pending Interaction Convergence - Related commit: a22b324 - File: `ROADMAP.featR.g6.md`
 - [x] 1.07 Ancillary Parity Cleanup and Final Convergence Sweep - Related commits: 14d4c04 aad66fa fa67fd8 00d331b 2b9460a 6b9464f 9db5d9e 2c5802c - File: `ROADMAP.featR.g7.md`
+- [x] 1.08 Busy Progress Surface Clarity Follow-up - Related commits: 8a1edfd d79088f c74d93f - File: `n/a (post-featR follow-up)`

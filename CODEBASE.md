@@ -122,12 +122,12 @@ chat_page_selector_flow.dart               # ConstrainedBox wrapped in Flexible 
 chat_page_scaffold.dart                          # Session selection reordered to close-first; _handleSessionSwitch() guard prevents concurrent switches; conversations sidebar includes project groups card with open-project controls and session previews; applies compact desktop spacing and passes responsive row spacing to ChatSessionList
 chat_page_file_explorer_controller.dart
 chat_page_file_viewer.dart
-chat_page_composer_status.dart
+chat_page_composer_status.dart                    # Resolves the fixed composer live-progress surface for latest busy tool/patch/reasoning activity using shared tool presentation labels
 chat_page_command_query.dart
 chat_page_runtime_support.dart                   # _syncSessionScrollState saves/restores per-session collapse state via _sessionCollapseHistoryCache / _sessionCollapseWorkCache; shrink auto-snap only runs when viewport remains near bottom to avoid forced jumps while reading expanded history; coordinates scroll state with revert-boundary transitions
 chat_page_chrome.dart
 chat_page_file_runtime.dart
-chat_page_composer_widgets.dart
+chat_page_composer_widgets.dart                   # Reserved-height composer progress slot with in-place slide/fade updates so busy status changes do not move the timeline
 chat_page_model_selector_runtime.dart        # New Chat action opens draft mode immediately via provider `beginNewChatDraft()`; child-thread selector labels are memoized and locked to sub-conversation metadata (model shown, variant shown only when explicit)
 chat_page_timeline_builder.dart              # Renders empty state with no-server CTA to wizard; passes `role` to MessageEntranceAnimation so each bubble uses the correct motion profile; composer stays enabled during draft-first New Chat (`currentSession != null || isDraftingNewChat`) and in sub-conversation sessions; sub-conversation model/agent selection remains session-context aware/locked; child-thread footer keeps `Return to main conversation` visible (stop behavior managed by composer)
 chat_page_timeline_runtime.dart              # Tool-chain expanded state key resolution (sessionId::messageId::startPartId)
@@ -137,6 +137,7 @@ chat_page_timeline_runtime.dart              # Tool-chain expanded state key res
 
 ```text
 lib/presentation/widgets/chat_message/chat_message_tool_part.dart   # Renders long tool outputs in a bounded internal scroll viewport; large diffs use lazy rendering so tool growth does not destabilize the outer chat timeline
+lib/presentation/utils/tool_presentation.dart                      # Shared tool label/icon formatting reused by chat bubbles and the fixed composer live-progress surface
 ```
 
 ### `lib/presentation/providers/chat_provider/` clusters (current)
