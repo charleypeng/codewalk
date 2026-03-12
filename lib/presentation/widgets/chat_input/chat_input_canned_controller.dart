@@ -396,6 +396,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
       return null;
     }
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         if (item.scopeMode == CannedAnswerScopeMode.global) ...[
           const Icon(Symbols.public_rounded, size: 14),
