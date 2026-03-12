@@ -718,6 +718,13 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **Then** the app shows an indefinite loading snackbar (`Installing update...`) until the install state settles
 - **Then** on success, the app shows a completion warning snackbar with a `Restart` action so the user can relaunch into the new version
 
+### Snackbars are always manually dismissible
+
+- **Given** the app shows any snackbar
+- **When** the snackbar is visible
+- **Then** it always includes a close (`X`) affordance so the user can dismiss it immediately without waiting for timeout
+- **Then** existing semantic actions (for example `Retry`, `Restart`, or `Install`) remain available alongside the dismiss affordance
+
 ---
 
 ## Notifications
@@ -778,6 +785,7 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **Given** the app was in background
 - **When** the user returns to the app
 - **Then** the app automatically reconnects to the server and resynchronizes state (missed messages, updated sessions, etc.)
+- **Then** transient resume-time probe failures use a short confirmation window before unhealthy/disconnected warning UI is shown, so false alerts do not flash while connectivity is still settling
 
 ### No duplicate refresh on resume
 
