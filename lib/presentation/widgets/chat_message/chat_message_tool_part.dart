@@ -3,6 +3,13 @@ part of '../chat_message_widget.dart';
 /// Tool part rendering: status chip, details toggle, command/output sections,
 /// and diff visualization.
 extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
+  Color _resolveCompletedToolStatusColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? Colors.green.shade400
+        : Colors.green.shade700;
+  }
+
   String _toolPartIdentityToken(ToolPart part) {
     return _partIdentityToken(part);
   }
@@ -129,7 +136,7 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
         icon = Symbols.play_arrow;
         break;
       case ToolStatus.completed:
-        color = colorScheme.tertiary;
+        color = _resolveCompletedToolStatusColor(context);
         label = 'Done';
         icon = Symbols.check_circle_outline_rounded;
         break;

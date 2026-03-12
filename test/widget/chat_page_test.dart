@@ -6898,7 +6898,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Hide'), findsNWidgets(2));
-      expect(find.text('Running command'), findsWidgets);
+      expect(find.text('Running command'), findsOneWidget);
       expect(find.text('Reading file'), findsOneWidget);
 
       await provider.selectSession(sessionB);
@@ -7668,7 +7668,7 @@ void main() {
       await tester.tap(find.text('Details'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 40));
-      expect(find.text('Running command'), findsWidgets);
+      expect(find.text('Running command'), findsOneWidget);
 
       final serverUserEcho = UserMessage(
         id: 'msg_widget_user_refresh_stream',
@@ -7693,7 +7693,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 40));
 
-      expect(find.text('Running command'), findsWidgets);
+      expect(find.text('Running command'), findsOneWidget);
 
       repository.messagesBySession['ses_refresh_tool_reconcile'] =
           <ChatMessage>[
@@ -8865,7 +8865,8 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('Reading file'), findsWidgets);
+      expect(find.text('Reading file'), findsOneWidget);
+      expect(find.text('Reading'), findsOneWidget);
       expect(
         find.text('Inspecting the latest workspace changes'),
         findsNothing,

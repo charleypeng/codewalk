@@ -10,12 +10,12 @@ extension _ChatPageComposerStatus on _ChatPageState {
 
   String _resolvePatchProgressLabel(PatchPart part) {
     if (part.files.isEmpty) {
-      return 'Preparing patch';
+      return 'Patching';
     }
     if (part.files.length == 1) {
-      return 'Preparing patch for ${part.files.first}';
+      return 'Patching 1 file';
     }
-    return 'Preparing patch for ${part.files.length} files';
+    return 'Patching ${part.files.length} files';
   }
 
   _ComposerStatusPresentation? _resolveLatestLiveProgress(
@@ -40,9 +40,9 @@ extension _ChatPageComposerStatus on _ChatPageState {
           if (_shouldIgnoreProgressTool(part)) {
             continue;
           }
-          final presentation = toolPresentation(part.tool);
+          final presentation = toolPresentationForComposer(part.tool);
           return _ComposerStatusPresentation.activeProgress(
-            label: toolResolveDescriptionLabel(part),
+            label: toolResolveComposerDescriptionLabel(part),
             icon: presentation.icon,
           );
         }

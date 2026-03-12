@@ -40,6 +40,29 @@ String toolResolveDescriptionLabel(ToolPart part) {
   return toolPresentation(part.tool).title;
 }
 
+String toolResolveComposerDescriptionLabel(ToolPart part) {
+  final explicitTitle = switch (part.state.status) {
+    ToolStatus.running => (part.state as ToolStateRunning).title,
+    ToolStatus.completed => (part.state as ToolStateCompleted).title,
+    ToolStatus.error => (part.state as ToolStateError).title,
+    ToolStatus.pending => null,
+  };
+
+  final candidateLabels = <String?>[
+    explicitTitle,
+    extractPreferredToolLabel(toolStateMetadata(part.state)),
+    extractPreferredToolLabel(toolStateInput(part.state)),
+  ];
+  for (final candidate in candidateLabels) {
+    final normalized = normalizeToolLabel(candidate);
+    if (normalized != null) {
+      return compactComposerToolLabel(normalized, part.tool);
+    }
+  }
+
+  return toolPresentationForComposer(part.tool).title;
+}
+
 Map<String, dynamic>? toolStateMetadata(ToolState state) {
   return switch (state.status) {
     ToolStatus.running => (state as ToolStateRunning).metadata,
@@ -124,6 +147,99 @@ String? normalizeToolLabel(dynamic raw) {
 
 String toolResolveTypeLabel(ToolPart part) {
   return toolPresentation(part.tool).title;
+}
+
+String compactComposerToolLabel(String label, String rawToolName) {
+  const compactLabelBySource = <String, String>{
+    'running command': 'Running',
+    'reading file': 'Reading',
+    'writing file': 'Writing',
+    'editing files': 'Editing',
+    'finding files': 'Finding',
+    'searching code': 'Searching',
+    'searching the web': 'Searching',
+    'waiting for your input': 'Awaiting input',
+    'updating task list': 'Updating tasks',
+  };
+
+  final compactLabel = compactLabelBySource[label.toLowerCase()];
+  if (compactLabel != null) {
+    return compactLabel;
+  }
+
+  final inlineTitle = toolPresentation(rawToolName).title;
+  if (label.toLowerCase() == inlineTitle.toLowerCase()) {
+    return toolPresentationForComposer(rawToolName).title;
+  }
+  return label;
+}
+
+ToolPresentationData toolPresentationForComposer(String rawToolName) {
+  final presentation = toolPresentation(rawToolName);
+  switch (normalizeToolName(rawToolName)) {
+    case 'bash':
+    case 'shell':
+      return ToolPresentationData(
+        title: 'Running',
+        subtitle: presentation.subtitle,
+        icon: presentation.icon,
+      );
+    case 'read':
+      return ToolPresentationData(
+        title: 'Reading',
+        subtitle: presentation.subtitle,
+        icon: presentation.icon,
+      );
+    case 'write':
+      return ToolPresentationData(
+        title: 'Writing',
+        subtitle: presentation.subtitle,
+        icon: presentation.icon,
+      );
+    case 'edit':
+    case 'apply_patch':
+    case 'patch':
+      return ToolPresentationData(
+        title: 'Editing',
+        subtitle: presentation.subtitle,
+        icon: presentation.icon,
+      );
+    case 'glob':
+    case 'find':
+      return ToolPresentationData(
+        title: 'Finding',
+        subtitle: presentation.subtitle,
+        icon: presentation.icon,
+      );
+    case 'grep':
+    case 'webfetch':
+    case 'google_search':
+    case 'brave_web_search':
+    case 'brave_news_search':
+    case 'brave_video_search':
+    case 'brave_image_search':
+    case 'brave_local_search':
+      return ToolPresentationData(
+        title: 'Searching',
+        subtitle: presentation.subtitle,
+        icon: presentation.icon,
+      );
+    case 'question':
+      return ToolPresentationData(
+        title: 'Awaiting input',
+        subtitle: presentation.subtitle,
+        icon: presentation.icon,
+      );
+    case 'todowrite':
+    case 'todoread':
+      return ToolPresentationData(
+        title: 'Updating tasks',
+        subtitle: presentation.subtitle,
+        icon: presentation.icon,
+      );
+    default:
+      return presentation;
+  }
 }
 
 ToolPresentationData toolPresentation(String rawToolName) {

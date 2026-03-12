@@ -1045,6 +1045,12 @@ void main() {
     expect(find.text('Tool Call: bash'), findsNothing);
     expect(find.text('Running command'), findsOneWidget);
     expect(find.text('Done'), findsOneWidget);
+    expect(
+      tester
+          .widget<Icon>(find.byIcon(Symbols.check_circle_outline_rounded))
+          .color,
+      Colors.green.shade700,
+    );
 
     await tester.tap(
       find.byKey(
@@ -1184,6 +1190,12 @@ void main() {
 
     expect(find.text('Done'), findsNothing);
     expect(find.byIcon(Symbols.check_circle_outline_rounded), findsOneWidget);
+    expect(
+      tester
+          .widget<Icon>(find.byIcon(Symbols.check_circle_outline_rounded))
+          .color,
+      Colors.green.shade700,
+    );
 
     await tester.tap(
       find.byKey(
@@ -1202,6 +1214,50 @@ void main() {
             widget.text.toPlainText().contains('Command: pwd'),
       ),
       findsOneWidget,
+    );
+  });
+
+  testWidgets('completed tool status chip stays green in dark theme', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData.dark(),
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: AssistantMessage(
+              id: 'msg_tool_status_dark',
+              sessionId: 'ses_tool',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: <MessagePart>[
+                ToolPart(
+                  id: 'part_tool_status_dark',
+                  messageId: 'msg_tool_status_dark',
+                  sessionId: 'ses_tool',
+                  callId: 'call_status_dark',
+                  tool: 'bash',
+                  state: ToolStateCompleted(
+                    input: const <String, dynamic>{'command': 'pwd'},
+                    output: '/tmp',
+                    time: ToolTime(
+                      start: DateTime.fromMillisecondsSinceEpoch(1000),
+                      end: DateTime.fromMillisecondsSinceEpoch(1200),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Done'), findsOneWidget);
+    expect(
+      tester
+          .widget<Icon>(find.byIcon(Symbols.check_circle_outline_rounded))
+          .color,
+      Colors.green.shade400,
     );
   });
 
