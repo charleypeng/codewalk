@@ -214,12 +214,40 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Extras'), findsNothing);
     expect(find.text('Quick replies'), findsNothing);
-    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.tap(find.text('XYZ'));
     await tester.pumpAndSettle();
 
     final field = tester.widget<TextField>(find.byType(TextField));
     expect(field.controller!.text, 'aXYZb');
     expect(field.focusNode?.hasFocus, isTrue);
+  });
+
+  testWidgets('opening extras dismisses composer focus', (
+    WidgetTester tester,
+  ) async {
+    final focusNode = FocusNode();
+    addTearDown(focusNode.dispose);
+
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          focusNode: focusNode,
+          onSendMessage: (_) {},
+          cannedAnswersDataSource: InMemoryAppLocalDataSource(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(TextField));
+    await tester.pumpAndSettle();
+    expect(focusNode.hasFocus, isTrue);
+
+    await tester.tap(find.byTooltip('Extras'));
+    await tester.pumpAndSettle();
+
+    expect(focusNode.hasFocus, isFalse);
+    expect(find.text('New quick reply'), findsOneWidget);
   });
 
   testWidgets('canned replace mode replaces current composer text', (
@@ -252,7 +280,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Extras'));
     await tester.pumpAndSettle();
-    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.tap(find.text('Replacement text'));
     await tester.pumpAndSettle();
 
     final field = tester.widget<TextField>(find.byType(TextField));
