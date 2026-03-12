@@ -26,9 +26,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
         chatProvider.isProvidersRefreshInProgress &&
         chatProvider.providers.isEmpty;
     final showProvidersRetryHint =
-        chatProvider.providersRefreshState ==
-            ChatProvidersRefreshState.failed &&
-        chatProvider.providers.isEmpty;
+        chatProvider.providersRefreshState == ChatProvidersRefreshState.failed;
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 0, 8, 2),
       child: Wrap(
