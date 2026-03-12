@@ -403,7 +403,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
           if (metadataText != null) const SizedBox(width: 6),
         ],
         if (metadataText != null)
-          Expanded(
+          Flexible(
             child: Text(
               metadataText,
               maxLines: 1,
