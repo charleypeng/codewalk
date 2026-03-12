@@ -284,12 +284,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         chatProvider.state != ChatState.loading) {
       _pendingInitialScrollSessionId = null;
       if (chatProvider.messages.isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted || _trackedSessionId != sessionId) {
-            return;
-          }
-          _scrollToBottom(force: true);
-        });
+        _scrollToBottom(force: true, animate: false);
       }
     }
   }
@@ -824,10 +819,16 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     });
   }
 
-  void _scrollToBottom({bool force = false}) {
+  void _scrollToBottom({bool force = false, bool animate = true}) {
     final requestToken = ++_scrollToBottomRequestToken;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(_runScrollToBottom(requestToken: requestToken, force: force));
+      unawaited(
+        _runScrollToBottom(
+          requestToken: requestToken,
+          force: force,
+          animate: animate,
+        ),
+      );
     });
   }
 

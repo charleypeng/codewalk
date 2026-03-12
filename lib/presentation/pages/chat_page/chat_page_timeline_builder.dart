@@ -984,7 +984,9 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     final showMessageProgressIndicator =
         progressStage == _AssistantProgressStage.retrying;
     final interactionPermissions = chatProvider.currentThreadPermissionRequests;
+    final currentSessionId = chatProvider.currentSession?.id;
     final timelineEntries = _buildMessageTimelineEntries(
+      sessionId: currentSessionId,
       messages: chatProvider.messages,
       messagesVersion: chatProvider.messagesVersion,
       showRetryIndicator: showMessageProgressIndicator,
@@ -1002,7 +1004,6 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     // Determine which entries are new (for entrance animation.
     // Reset the baseline whenever the active session changes so that loading
     // an existing conversation never animates its full history as "new".
-    final currentSessionId = chatProvider.currentSession?.id;
     final currentLength = timelineEntries.length;
     final sessionChanged = currentSessionId != _animationBaselineSessionId;
     if (sessionChanged) {
@@ -1108,6 +1109,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
   }
 
   List<_TimelineEntry> _buildMessageTimelineEntries({
+    required String? sessionId,
     required List<ChatMessage> messages,
     required int messagesVersion,
     required bool showRetryIndicator,
@@ -1118,18 +1120,18 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     final permissionPromptSignature = interactionPermissions
         .map((request) => '${request.id}:${request.sessionId}')
         .join('|');
-    if (_cachedTimelineEntries != null &&
-        messagesVersion == _cachedTimelineMessagesVersion &&
-        isCompactingContext == _cachedTimelineIsCompacting &&
-        isSessionActivelyResponding == _cachedTimelineIsResponding &&
-        showRetryIndicator == _cachedTimelineShowRetry &&
-        permissionPromptSignature == _cachedTimelinePermissionPromptSignature &&
-        _deferAssistantWorkCollapse ==
-            _cachedTimelineDeferAssistantWorkCollapse &&
-        _expandedCollapsedHistoryGroupId == _cachedTimelineExpandedGroupId &&
-        _expandedAssistantWorkGroupId ==
-            _cachedTimelineExpandedAssistantWorkGroupId) {
-      return _cachedTimelineEntries!;
+    final cachedEntry = _consumeSessionTimelineEntriesCache(sessionId);
+    if (cachedEntry != null &&
+        _canReuseSessionTimelineEntriesCache(
+          cachedEntry,
+          sourceMessages: messages,
+          messagesVersion: messagesVersion,
+          isCompactingContext: isCompactingContext,
+          isSessionActivelyResponding: isSessionActivelyResponding,
+          showRetryIndicator: showRetryIndicator,
+          permissionPromptSignature: permissionPromptSignature,
+        )) {
+      return cachedEntry.entries;
     }
     final entries = <_TimelineEntry>[];
     final previousWasCompactingContext = _wasCompactingContext;
@@ -1219,17 +1221,98 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       entries.add(const _TimelineRetryIndicatorEntry());
     }
 
-    // Store in cache for subsequent rebuilds with unchanged message list.
-    _cachedTimelineMessagesVersion = messagesVersion;
-    _cachedTimelineIsCompacting = isCompactingContext;
-    _cachedTimelineIsResponding = isSessionActivelyResponding;
-    _cachedTimelineShowRetry = showRetryIndicator;
-    _cachedTimelinePermissionPromptSignature = permissionPromptSignature;
-    _cachedTimelineDeferAssistantWorkCollapse = _deferAssistantWorkCollapse;
-    _cachedTimelineExpandedGroupId = _expandedCollapsedHistoryGroupId;
-    _cachedTimelineExpandedAssistantWorkGroupId = _expandedAssistantWorkGroupId;
-    _cachedTimelineEntries = entries;
+    _storeSessionTimelineEntriesCache(
+      sessionId,
+      _SessionTimelineEntriesCacheEntry(
+        sourceMessages: List<ChatMessage>.from(messages, growable: false),
+        entries: List<_TimelineEntry>.from(entries, growable: false),
+        messagesVersion: messagesVersion,
+        isCompacting: isCompactingContext,
+        isResponding: isSessionActivelyResponding,
+        showRetry: showRetryIndicator,
+        permissionPromptSignature: permissionPromptSignature,
+        deferAssistantWorkCollapse: _deferAssistantWorkCollapse,
+        expandedHistoryGroupId: _expandedCollapsedHistoryGroupId,
+        expandedAssistantWorkGroupId: _expandedAssistantWorkGroupId,
+        wasCompactingContext: _wasCompactingContext,
+        frozenCompactionBoundaryId: _frozenCompactionBoundaryId,
+      ),
+    );
     return entries;
+  }
+
+  bool _canReuseSessionTimelineEntriesCache(
+    _SessionTimelineEntriesCacheEntry entry, {
+    required List<ChatMessage> sourceMessages,
+    required int messagesVersion,
+    required bool isCompactingContext,
+    required bool isSessionActivelyResponding,
+    required bool showRetryIndicator,
+    required String permissionPromptSignature,
+  }) {
+    return (entry.messagesVersion == messagesVersion ||
+            _areTimelineSourceMessagesIdentical(
+              entry.sourceMessages,
+              sourceMessages,
+            )) &&
+        entry.isCompacting == isCompactingContext &&
+        entry.isResponding == isSessionActivelyResponding &&
+        entry.showRetry == showRetryIndicator &&
+        entry.permissionPromptSignature == permissionPromptSignature &&
+        entry.deferAssistantWorkCollapse == _deferAssistantWorkCollapse &&
+        entry.expandedHistoryGroupId == _expandedCollapsedHistoryGroupId &&
+        entry.expandedAssistantWorkGroupId == _expandedAssistantWorkGroupId &&
+        entry.wasCompactingContext == _wasCompactingContext &&
+        entry.frozenCompactionBoundaryId == _frozenCompactionBoundaryId;
+  }
+
+  bool _areTimelineSourceMessagesIdentical(
+    List<ChatMessage> a,
+    List<ChatMessage> b,
+  ) {
+    if (identical(a, b)) {
+      return true;
+    }
+    if (a.length != b.length) {
+      return false;
+    }
+    for (var index = 0; index < a.length; index += 1) {
+      if (!identical(a[index], b[index])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  _SessionTimelineEntriesCacheEntry? _consumeSessionTimelineEntriesCache(
+    String? sessionId,
+  ) {
+    if (sessionId == null || sessionId.isEmpty) {
+      return null;
+    }
+    final cachedEntry = _sessionTimelineEntriesCache.remove(sessionId);
+    if (cachedEntry == null) {
+      return null;
+    }
+    _sessionTimelineEntriesCache[sessionId] = cachedEntry;
+    return cachedEntry;
+  }
+
+  void _storeSessionTimelineEntriesCache(
+    String? sessionId,
+    _SessionTimelineEntriesCacheEntry entry,
+  ) {
+    if (sessionId == null || sessionId.isEmpty) {
+      return;
+    }
+    _sessionTimelineEntriesCache.remove(sessionId);
+    _sessionTimelineEntriesCache[sessionId] = entry;
+    while (_sessionTimelineEntriesCache.length >
+        _ChatPageState._maxHydratedTimelineCacheEntries) {
+      _sessionTimelineEntriesCache.remove(
+        _sessionTimelineEntriesCache.keys.first,
+      );
+    }
   }
 
   void _appendTimelineEntriesForRange({

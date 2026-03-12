@@ -97,6 +97,7 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage>
     with WidgetsBindingObserver, WindowListener {
+  static const int _maxHydratedTimelineCacheEntries = 20;
   // File pane shown when expanded and width exceeds this threshold
   static const double _filePaneBreakpoint = 1100;
   static const double _mediumSessionPaneWidth = 260;
@@ -238,17 +239,10 @@ class _ChatPageState extends State<ChatPage>
   bool _nextWasCompactingContext = false;
   bool _compactionStateSyncScheduled = false;
 
-  // Cache for _buildMessageTimelineEntries. Uses ChatProvider.messagesVersion
-  // (O(1) monotonic counter) instead of Object.hashAll (O(N*M) Equatable hash).
-  int _cachedTimelineMessagesVersion = -1;
-  bool _cachedTimelineIsCompacting = false;
-  bool _cachedTimelineIsResponding = false;
-  bool _cachedTimelineShowRetry = false;
-  String _cachedTimelinePermissionPromptSignature = '';
-  bool _cachedTimelineDeferAssistantWorkCollapse = false;
-  String? _cachedTimelineExpandedGroupId;
-  String? _cachedTimelineExpandedAssistantWorkGroupId;
-  List<_TimelineEntry>? _cachedTimelineEntries;
+  // Per-session hydrated timeline cache so reopening a cached session can
+  // reuse its grouped presentation instead of rebuilding the whole timeline.
+  final Map<String, _SessionTimelineEntriesCacheEntry>
+  _sessionTimelineEntriesCache = <String, _SessionTimelineEntriesCacheEntry>{};
 
   // Track timeline growth for message entrance animations (Phase 2.2).
   // _animationBaselineSessionId records which session the baseline was set for,

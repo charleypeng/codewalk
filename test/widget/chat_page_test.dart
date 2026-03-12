@@ -6587,6 +6587,84 @@ void main() {
   });
 
   testWidgets(
+    'reopening a cached session snaps to bottom without waiting for scroll animation',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_cached_bottom_a',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Cached Bottom A',
+          ),
+          ChatSession(
+            id: 'ses_cached_bottom_b',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(2000),
+            title: 'Cached Bottom B',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_cached_bottom_a'] = _threadMessages(
+        'ses_cached_bottom_a',
+        80,
+      );
+      repository.messagesBySession['ses_cached_bottom_b'] = _threadMessages(
+        'ses_cached_bottom_b',
+        6,
+      );
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      final sessionA = provider.sessions
+          .where((session) => session.id == 'ses_cached_bottom_a')
+          .first;
+      final sessionB = provider.sessions
+          .where((session) => session.id == 'ses_cached_bottom_b')
+          .first;
+
+      await provider.selectSession(sessionA);
+      await tester.pumpAndSettle();
+
+      await provider.selectSession(sessionB);
+      await tester.pumpAndSettle();
+
+      await provider.selectSession(sessionA);
+      await tester.pump();
+      await tester.pump();
+
+      final listFinder = find.byKey(
+        const ValueKey<String>('chat_message_list'),
+      );
+      final scrollableFinder = find.descendant(
+        of: listFinder,
+        matching: find.byType(Scrollable),
+      );
+      final scrollable = tester.state<ScrollableState>(scrollableFinder);
+
+      expect(
+        scrollable.position.maxScrollExtent - scrollable.position.pixels,
+        lessThanOrEqualTo(1),
+      );
+      expect(find.byTooltip('Go to latest message'), findsNothing);
+      expect(find.text('message 79'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'resets tool-chain expansion when switching sessions and returning',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));

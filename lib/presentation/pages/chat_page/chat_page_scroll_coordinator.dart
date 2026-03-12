@@ -144,6 +144,7 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
   Future<void> _runScrollToBottom({
     required int requestToken,
     required bool force,
+    required bool animate,
   }) async {
     if (!_canContinueScrollToBottomRequest(requestToken)) {
       return;
@@ -157,45 +158,58 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
 
     _isProgrammaticScrollInFlight = true;
     try {
-      for (
-        var pass = 0;
-        pass < _ChatPageState._maxScrollToBottomPasses;
-        pass += 1
-      ) {
-        if (!_canContinueScrollToBottomRequest(requestToken)) {
-          return;
-        }
-
-        final distance = _distanceToBottom();
-        if (distance <= _ChatPageState._scrollToBottomEpsilon) {
-          break;
-        }
-
-        // During auto-follow (streaming), snap small gaps instantly to avoid
-        // animation conflicts from rapid content updates that cancel/restart
-        // the 260ms animateTo every frame, causing visible jumps.
-        if (!force && distance <= _ChatPageState._nearBottomThreshold) {
-          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-          break;
-        }
-
-        await _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: pass == 0
-              ? _ChatPageState._scrollToBottomFirstPassDuration
-              : _ChatPageState._scrollToBottomNextPassDuration,
-          curve: Curves.easeOut,
-        );
-
-        if (!_canContinueScrollToBottomRequest(requestToken)) {
-          return;
-        }
-        await WidgetsBinding.instance.endOfFrame;
-      }
-
-      if (_canContinueScrollToBottomRequest(requestToken) &&
-          _distanceToBottom() > _ChatPageState._scrollToBottomEpsilon) {
+      if (!animate) {
         _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        await WidgetsBinding.instance.endOfFrame;
+        if (!_canContinueScrollToBottomRequest(requestToken)) {
+          return;
+        }
+        if (_distanceToBottom() > _ChatPageState._scrollToBottomEpsilon) {
+          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        }
+      } else {
+        for (
+          var pass = 0;
+          pass < _ChatPageState._maxScrollToBottomPasses;
+          pass += 1
+        ) {
+          if (!_canContinueScrollToBottomRequest(requestToken)) {
+            return;
+          }
+
+          final distance = _distanceToBottom();
+          if (distance <= _ChatPageState._scrollToBottomEpsilon) {
+            break;
+          }
+
+          // During auto-follow (streaming), snap small gaps instantly to avoid
+          // animation conflicts from rapid content updates that cancel/restart
+          // the 260ms animateTo every frame, causing visible jumps.
+          if (!force && distance <= _ChatPageState._nearBottomThreshold) {
+            _scrollController.jumpTo(
+              _scrollController.position.maxScrollExtent,
+            );
+            break;
+          }
+
+          await _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: pass == 0
+                ? _ChatPageState._scrollToBottomFirstPassDuration
+                : _ChatPageState._scrollToBottomNextPassDuration,
+            curve: Curves.easeOut,
+          );
+
+          if (!_canContinueScrollToBottomRequest(requestToken)) {
+            return;
+          }
+          await WidgetsBinding.instance.endOfFrame;
+        }
+
+        if (_canContinueScrollToBottomRequest(requestToken) &&
+            _distanceToBottom() > _ChatPageState._scrollToBottomEpsilon) {
+          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        }
       }
     } catch (error, stackTrace) {
       AppLogger.debug(
