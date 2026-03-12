@@ -288,6 +288,8 @@
 - **Then** collapsed multi-tool chains surface an active progress summary (for example `1 running • 1 queued`) while the response is still in flight
 - **Then** the composer status slot surfaces the latest live tool, patch, or reasoning activity in a fixed position so the newest progress stays visible without shifting the main chat viewport
 - **Then** if that fixed progress slot mirrors the active in-flight reasoning block, the matching inline Thinking bubble is temporarily hidden until the assistant response settles, avoiding a misleading stuck-looking duplicate
+- **Then** completed tool badges use an explicit success-green treatment so finished work stays visually distinct from queued, active, and error states
+- **Then** when a contiguous visible run contains multiple `task` tool bubbles, settled task bubbles render before still-active running or queued task bubbles without crossing the surrounding text/reasoning boundaries of that same assistant message
 - **When** the assistant finishes the complete response
 - **Then** tool-call chains and tool-detail sections start collapsed by default
 - **Then** collapse never happens while the assistant is still streaming

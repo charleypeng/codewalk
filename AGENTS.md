@@ -63,12 +63,12 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | Folder Structure | 12–48 |
 | Entry Points | 49–59 |
 | Core Modules | 60–102 |
-| Chat Architecture | 103–174 |
-| Data & Domain Layers | 176–187 |
-| Key API/DataSource locations | 188–207 |
-| Main Commands | 208–228 |
-| Testing/Quality Gates | 229–250 |
-| Notes | 251–358 |
+| Chat Architecture | 103–177 |
+| Data & Domain Layers | 178–189 |
+| Key API/DataSource locations | 190–209 |
+| Main Commands | 210–230 |
+| Testing/Quality Gates | 231–252 |
+| Notes | 253–362 |
 
 ## ⚙️ Makefile Quick Reference (details in `Makefile`)
 

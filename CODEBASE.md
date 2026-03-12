@@ -36,7 +36,7 @@ codewalk/
 │       │   └── chat_input/             # ChatInput decomposed clusters (8 modules)
 │       ├── services/                   # Platform/runtime services (tray, notifications, STT, etc.)
 │       ├── utils/                      # Presentation helpers (incl. WindowSizeClass MD3 breakpoints)
-│       └── theme/                      # Material You theme: AppTheme, AppShapes, BrandColor seeds
+│       └── theme/                      # Material You theme: AppTheme, AppShapes, BrandColor seeds, AppSemanticColors
 ├── test/                               # Unit, widget, integration, presentation, support tests
 ├── tool/ci/                            # Analyzer budget and coverage gate scripts
 ├── .github/workflows/                  # CI and release workflows
@@ -122,7 +122,7 @@ chat_page_selector_flow.dart               # ConstrainedBox wrapped in Flexible 
 chat_page_scaffold.dart                          # Session selection reordered to close-first; _handleSessionSwitch() guard prevents concurrent switches; conversations sidebar includes project groups card with open-project controls and session previews; applies compact desktop spacing and passes responsive row spacing to ChatSessionList
 chat_page_file_explorer_controller.dart
 chat_page_file_viewer.dart
-chat_page_composer_status.dart                    # Resolves the fixed composer live-progress surface for latest busy tool/patch/reasoning activity using shared tool presentation labels
+chat_page_composer_status.dart                    # Resolves the fixed composer live-progress surface for latest busy tool/patch/reasoning activity using composer-specific compact labels via toolResolveComposerDescriptionLabel
 chat_page_command_query.dart
 chat_page_runtime_support.dart                   # _syncSessionScrollState saves/restores per-session collapse state via _sessionCollapseHistoryCache / _sessionCollapseWorkCache; shrink auto-snap only runs when viewport remains near bottom to avoid forced jumps while reading expanded history; coordinates scroll state with revert-boundary transitions
 chat_page_chrome.dart
@@ -137,6 +137,7 @@ chat_page_timeline_runtime.dart              # Tool-chain expanded state key res
 
 ```text
 lib/presentation/widgets/chat_message/chat_message_tool_part.dart   # Renders long tool outputs in a bounded internal scroll viewport; large diffs use lazy rendering so tool growth does not destabilize the outer chat timeline
+lib/presentation/widgets/chat_message/chat_message_part_dispatch.dart # Reorders contiguous visible `task` tool runs so unfinished task bubbles stay last within each run while non-task grouping remains unchanged
 lib/presentation/utils/tool_presentation.dart                      # Shared tool label/icon formatting reused by chat bubbles and the fixed composer live-progress surface
 ```
 
