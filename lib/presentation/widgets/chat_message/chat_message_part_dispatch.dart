@@ -139,11 +139,12 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
     required String? latestReasoningPartId,
     required String? activeReasoningPartKey,
   }) {
+    final reorderedParts = _reorderVisibleTaskToolRuns(message.parts);
     final assistantMessage = message is AssistantMessage
         ? message as AssistantMessage
         : null;
     if (assistantMessage == null || !showToolCallBubbles) {
-      return message.parts
+      return reorderedParts
           .map<Widget>(
             (part) => _buildAnimatedMessagePartSafely(
               context,
@@ -155,11 +156,11 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
           .toList(growable: false);
     }
 
-    final allToolSurfaceParts = message.parts
+    final allToolSurfaceParts = reorderedParts
         .where(_isToolSurfacePart)
         .toList(growable: false);
     if (allToolSurfaceParts.length < 2) {
-      return message.parts
+      return reorderedParts
           .map<Widget>(
             (part) => _buildAnimatedMessagePartSafely(
               context,
@@ -178,7 +179,7 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
     final animateToolChain = allToolSurfaceParts.any(_shouldAnimatePartArrival);
     final rendered = <Widget>[];
     var insertedCollapsedToolChain = false;
-    for (final part in message.parts) {
+    for (final part in reorderedParts) {
       if (_isToolSurfacePart(part)) {
         if (insertedCollapsedToolChain) {
           continue;
@@ -228,6 +229,48 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
     }
 
     return rendered;
+  }
+
+  // Keep unfinished task bubbles grouped at the end of each visible task run
+  // without changing the surrounding narrative flow of other message parts.
+  List<MessagePart> _reorderVisibleTaskToolRuns(List<MessagePart> parts) {
+    final reordered = <MessagePart>[];
+    final taskRun = <ToolPart>[];
+
+    void flushTaskRun() {
+      if (taskRun.isEmpty) {
+        return;
+      }
+      final settled = <ToolPart>[];
+      final active = <ToolPart>[];
+      for (final part in taskRun) {
+        if (_isActiveTaskToolPart(part)) {
+          active.add(part);
+        } else {
+          settled.add(part);
+        }
+      }
+      reordered.addAll(settled);
+      reordered.addAll(active);
+      taskRun.clear();
+    }
+
+    for (final part in parts) {
+      if (part case ToolPart() when _isTaskToolPart(part)) {
+        taskRun.add(part);
+        continue;
+      }
+      flushTaskRun();
+      reordered.add(part);
+    }
+
+    flushTaskRun();
+    return reordered;
+  }
+
+  bool _isActiveTaskToolPart(ToolPart part) {
+    return part.state.status == ToolStatus.pending ||
+        part.state.status == ToolStatus.running;
   }
 
   bool _isToolSurfacePart(MessagePart part) {

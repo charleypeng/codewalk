@@ -3551,4 +3551,121 @@ index abc123..def456 100644
 
     expect(tappedToolPart?.id, 'part_task_tool_nav');
   });
+
+  testWidgets('keeps active task tool bubbles last within each task run', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: AssistantMessage(
+              id: 'msg_task_tool_order',
+              sessionId: 'ses_task_tool_order',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: <MessagePart>[
+                const TextPart(
+                  id: 'part_task_order_intro',
+                  messageId: 'msg_task_tool_order',
+                  sessionId: 'ses_task_tool_order',
+                  text: 'Before task run',
+                ),
+                ToolPart(
+                  id: 'part_task_tool_running_1',
+                  messageId: 'msg_task_tool_order',
+                  sessionId: 'ses_task_tool_order',
+                  callId: 'call_task_tool_running_1',
+                  tool: 'task',
+                  state: ToolStateRunning(
+                    input: const <String, dynamic>{
+                      'description': 'Running task one',
+                    },
+                    time: DateTime.fromMillisecondsSinceEpoch(1100),
+                  ),
+                ),
+                ToolPart(
+                  id: 'part_task_tool_completed_1',
+                  messageId: 'msg_task_tool_order',
+                  sessionId: 'ses_task_tool_order',
+                  callId: 'call_task_tool_completed_1',
+                  tool: 'task',
+                  state: ToolStateCompleted(
+                    input: const <String, dynamic>{
+                      'description': 'Completed task one',
+                    },
+                    output: 'done',
+                    time: ToolTime(
+                      start: DateTime.fromMillisecondsSinceEpoch(1100),
+                      end: DateTime.fromMillisecondsSinceEpoch(1200),
+                    ),
+                  ),
+                ),
+                const TextPart(
+                  id: 'part_task_order_middle',
+                  messageId: 'msg_task_tool_order',
+                  sessionId: 'ses_task_tool_order',
+                  text: 'Between task runs',
+                ),
+                ToolPart(
+                  id: 'part_task_tool_running_2',
+                  messageId: 'msg_task_tool_order',
+                  sessionId: 'ses_task_tool_order',
+                  callId: 'call_task_tool_running_2',
+                  tool: 'task',
+                  state: ToolStateRunning(
+                    input: const <String, dynamic>{
+                      'description': 'Running task two',
+                    },
+                    time: DateTime.fromMillisecondsSinceEpoch(1300),
+                  ),
+                ),
+                ToolPart(
+                  id: 'part_task_tool_completed_2',
+                  messageId: 'msg_task_tool_order',
+                  sessionId: 'ses_task_tool_order',
+                  callId: 'call_task_tool_completed_2',
+                  tool: 'task',
+                  state: ToolStateCompleted(
+                    input: const <String, dynamic>{
+                      'description': 'Completed task two',
+                    },
+                    output: 'done',
+                    time: ToolTime(
+                      start: DateTime.fromMillisecondsSinceEpoch(1300),
+                      end: DateTime.fromMillisecondsSinceEpoch(1400),
+                    ),
+                  ),
+                ),
+                const TextPart(
+                  id: 'part_task_order_outro',
+                  messageId: 'msg_task_tool_order',
+                  sessionId: 'ses_task_tool_order',
+                  text: 'After task run',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final introDy = tester.getTopLeft(find.text('Before task run')).dy;
+    final completedOneDy = tester
+        .getTopLeft(find.text('Completed task one'))
+        .dy;
+    final runningOneDy = tester.getTopLeft(find.text('Running task one')).dy;
+    final middleDy = tester.getTopLeft(find.text('Between task runs')).dy;
+    final completedTwoDy = tester
+        .getTopLeft(find.text('Completed task two'))
+        .dy;
+    final runningTwoDy = tester.getTopLeft(find.text('Running task two')).dy;
+    final outroDy = tester.getTopLeft(find.text('After task run')).dy;
+
+    expect(introDy, lessThan(completedOneDy));
+    expect(completedOneDy, lessThan(runningOneDy));
+    expect(runningOneDy, lessThan(middleDy));
+    expect(middleDy, lessThan(completedTwoDy));
+    expect(completedTwoDy, lessThan(runningTwoDy));
+    expect(runningTwoDy, lessThan(outroDy));
+  });
 }
