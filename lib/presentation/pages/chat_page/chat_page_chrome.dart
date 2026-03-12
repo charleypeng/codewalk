@@ -268,18 +268,19 @@ extension _ChatPageChrome on _ChatPageState {
         ),
         Consumer<ChatProvider>(
           builder: (context, chatProvider, _) {
+            if (!chatProvider.canRedoCurrentSession) {
+              return const SizedBox.shrink();
+            }
             return IconButton(
               key: const ValueKey<String>('appbar_redo_button'),
               icon: const Icon(Symbols.redo_rounded),
               tooltip: 'Redo last undone turn',
-              onPressed: chatProvider.canRedoCurrentSession
-                  ? () => unawaited(
-                      _triggerHistoryAction(
-                        chatProvider,
-                        action: _HistoryToolbarAction.redo,
-                      ),
-                    )
-                  : null,
+              onPressed: () => unawaited(
+                _triggerHistoryAction(
+                  chatProvider,
+                  action: _HistoryToolbarAction.redo,
+                ),
+              ),
             );
           },
         ),

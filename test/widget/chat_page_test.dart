@@ -13,6 +13,7 @@ import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/domain/entities/file_node.dart';
 import 'package:codewalk/domain/entities/project.dart';
 import 'package:codewalk/domain/entities/provider.dart';
+import 'package:codewalk/domain/entities/session.dart';
 import 'package:codewalk/domain/usecases/abort_chat_session.dart';
 import 'package:codewalk/domain/usecases/check_connection.dart';
 import 'package:codewalk/domain/usecases/create_chat_session.dart';
@@ -91,7 +92,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('ChatPage responsive shell', () {
-    testWidgets('toolbar shows undo and redo before display toggles', (
+    testWidgets('toolbar hides redo until session has redo state', (
       WidgetTester tester,
     ) async {
       await tester.binding.setSurfaceSize(const Size(1400, 900));
@@ -125,10 +126,10 @@ void main() {
       );
       expect(
         find.byKey(const ValueKey<String>('appbar_redo_button')),
-        findsOneWidget,
+        findsNothing,
       );
       expect(find.byTooltip('Undo last turn'), findsOneWidget);
-      expect(find.byTooltip('Redo last undone turn'), findsOneWidget);
+      expect(find.byTooltip('Redo last undone turn'), findsNothing);
       expect(
         tester
             .getTopLeft(
@@ -145,6 +146,55 @@ void main() {
               .dx,
         ),
       );
+    });
+
+    testWidgets('toolbar shows redo before display toggles when valid', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(1400, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..defaultServerId = 'srv_test'
+        ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'srv_test',
+            'url': 'http://127.0.0.1:4096',
+            'label': 'Test Server',
+            'basicAuthEnabled': false,
+            'basicAuthUsername': '',
+            'basicAuthPassword': '',
+            'createdAt': 0,
+            'updatedAt': 0,
+          },
+        ]);
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_1',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Redo Session',
+            revert: const SessionRevert(messageId: 'msg_user_1'),
+          ),
+        ],
+      );
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(
+        find.byKey(const ValueKey<String>('appbar_redo_button')),
+        findsOneWidget,
+      );
+      expect(find.byTooltip('Redo last undone turn'), findsOneWidget);
       expect(
         tester
             .getTopLeft(
