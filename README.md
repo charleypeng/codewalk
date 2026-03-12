@@ -22,7 +22,7 @@ A native (really fast!!) cross-platform client for [OpenCode](https://github.com
 
 - Realtime AI chat with streaming responses (SSE) and robust turn reconciliation
 - Queued `Send now` handoff without false abort error noise or duplicate chat bubbles
-- Instant session reopen with SWR snapshots and background revalidation
+- Instant session reopen with cached grouped history, direct bottom landing, and background delta-style revalidation
 - Load older message history by scrolling to the top of chat
 - Project-centric sidebar with conversations grouped by open projects
 - Context-scoped conversation pinning to keep priority sessions at top
