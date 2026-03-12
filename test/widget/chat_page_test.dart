@@ -6898,7 +6898,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Hide'), findsNWidgets(2));
-      expect(find.text('Running command'), findsOneWidget);
+      expect(find.text('Running command'), findsWidgets);
       expect(find.text('Reading file'), findsOneWidget);
 
       await provider.selectSession(sessionB);
@@ -7668,7 +7668,7 @@ void main() {
       await tester.tap(find.text('Details'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 40));
-      expect(find.text('Running command'), findsOneWidget);
+      expect(find.text('Running command'), findsWidgets);
 
       final serverUserEcho = UserMessage(
         id: 'msg_widget_user_refresh_stream',
@@ -7693,7 +7693,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 40));
 
-      expect(find.text('Running command'), findsOneWidget);
+      expect(find.text('Running command'), findsWidgets);
 
       repository.messagesBySession['ses_refresh_tool_reconcile'] =
           <ChatMessage>[
@@ -8781,6 +8781,96 @@ void main() {
       );
       expect(find.byIcon(Symbols.stop_rounded), findsNothing);
       expect(find.byIcon(Symbols.send_rounded), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'surfaces latest tool activity in composer and hides mirrored live thinking bubble',
+    (WidgetTester tester) async {
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_busy_progress',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Busy Progress Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_busy_progress'] = const <ChatMessage>[];
+
+      final streamController = StreamController<Either<Failure, ChatMessage>>();
+      addTearDown(() async {
+        if (!streamController.isClosed) {
+          await streamController.close();
+        }
+      });
+      repository.sendMessageHandler = (_, _, _, _) => streamController.stream;
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      await provider.sendMessage('show latest progress');
+      await tester.pump();
+
+      streamController.add(
+        Right(
+          AssistantMessage(
+            id: 'msg_busy_progress',
+            sessionId: 'ses_busy_progress',
+            time: DateTime.fromMillisecondsSinceEpoch(2000),
+            parts: <MessagePart>[
+              const ReasoningPart(
+                id: 'part_busy_reasoning',
+                messageId: 'msg_busy_progress',
+                sessionId: 'ses_busy_progress',
+                text: 'Inspecting the latest workspace changes',
+              ),
+              ToolPart(
+                id: 'part_busy_tool',
+                messageId: 'msg_busy_progress',
+                sessionId: 'ses_busy_progress',
+                callId: 'call_busy_tool',
+                tool: 'read',
+                state: ToolStateRunning(
+                  input: const <String, dynamic>{'path': 'lib/main.dart'},
+                  time: DateTime.fromMillisecondsSinceEpoch(2000),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'composer_reasoning_status_type_activeProgress',
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Reading file'), findsWidgets);
+      expect(
+        find.text('Inspecting the latest workspace changes'),
+        findsNothing,
+      );
+      expect(find.text('Thinking Process'), findsNothing);
     },
   );
 

@@ -10,6 +10,9 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
     required bool isLatestReasoningPart,
   }) {
     final compactLayout = MediaQuery.sizeOf(context).width < 600;
+    if (shouldSuppressLiveReasoningPart(part)) {
+      return const SizedBox.shrink();
+    }
     if (parseReasoningStatusLabel(part.text) != null) {
       return const SizedBox.shrink();
     }

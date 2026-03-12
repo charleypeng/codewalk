@@ -2397,6 +2397,50 @@ void main() {
     },
   );
 
+  testWidgets('suppresses the mirrored live reasoning bubble while busy', (
+    WidgetTester tester,
+  ) async {
+    final message = AssistantMessage(
+      id: 'msg_busy_reasoning',
+      sessionId: 'ses_busy_reasoning',
+      time: DateTime.fromMillisecondsSinceEpoch(1000),
+      parts: const <MessagePart>[
+        ReasoningPart(
+          id: 'thinking_busy',
+          messageId: 'msg_busy_reasoning',
+          sessionId: 'ses_busy_reasoning',
+          text: 'Inspecting the latest workspace changes',
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: message,
+            activeReasoningPartKey: 'msg_busy_reasoning::thinking_busy',
+            isSessionActivelyResponding: true,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Thinking Process'), findsNothing);
+    expect(
+      find.byKey(
+        const ValueKey<String>(
+          'thinking_content_text_msg_busy_reasoning::thinking_busy',
+        ),
+      ),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('message_bubble_msg_busy_reasoning')),
+      findsNothing,
+    );
+  });
+
   testWidgets('renders colorized diff for apply_patch tool', (tester) async {
     const diffOutput = '''--- file.dart
 +++ file.dart

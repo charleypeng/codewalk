@@ -19,6 +19,7 @@ import '../services/file_part_action_service.dart' as file_part_action;
 import '../utils/chat_abort_message.dart';
 import '../utils/diff_parser.dart';
 import '../utils/reasoning_status_parser.dart';
+import '../utils/tool_presentation.dart';
 
 part 'chat_message/chat_message_content.dart';
 part 'chat_message/chat_message_part_dispatch.dart';
@@ -288,6 +289,18 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   VoidCallback? get onBackgroundLongPressEnd => widget.onBackgroundLongPressEnd;
   ValueChanged<SubtaskPart>? get onSubtaskNavigate => widget.onSubtaskNavigate;
   ValueChanged<ToolPart>? get onTaskToolNavigate => widget.onTaskToolNavigate;
+
+  bool shouldSuppressLiveReasoningPart(ReasoningPart part) {
+    if (!isSessionActivelyResponding) {
+      return false;
+    }
+    final currentMessage = message;
+    if (currentMessage is! AssistantMessage || currentMessage.isCompleted) {
+      return false;
+    }
+    final currentReasoningKey = '${part.messageId}::${part.id}';
+    return activeReasoningPartKey == currentReasoningKey;
+  }
 
   void _seedPartAnimationBaseline(ChatMessage currentMessage) {
     for (final timer in _partAnimationTimers.values) {

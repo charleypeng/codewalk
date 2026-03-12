@@ -62,10 +62,11 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
       case PartType.agent:
         return _buildAgentPart(context, part as AgentPart);
       case PartType.reasoning:
-        if (!showThinkingBubbles) {
+        final reasoningPart = part as ReasoningPart;
+        if (!showThinkingBubbles ||
+            shouldSuppressLiveReasoningPart(reasoningPart)) {
           return const SizedBox.shrink();
         }
-        final reasoningPart = part as ReasoningPart;
         final reasoningPartKey = _reasoningPartKey(
           messageId: reasoningPart.messageId,
           partId: reasoningPart.id,

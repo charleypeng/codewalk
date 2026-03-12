@@ -224,8 +224,10 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
   }
 
   bool _shouldRenderPart(MessagePart part) {
-    if (part.type == PartType.reasoning && !showThinkingBubbles) {
-      return false;
+    if (part is ReasoningPart) {
+      if (!showThinkingBubbles || shouldSuppressLiveReasoningPart(part)) {
+        return false;
+      }
     }
     if ((part.type == PartType.tool || part.type == PartType.patch) &&
         !showToolCallBubbles) {
