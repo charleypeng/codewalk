@@ -221,7 +221,8 @@ class _ChatPageState extends State<ChatPage>
   DateTime? _serverAlertIssueStartedAt;
   Timer? _serverAlertRevealTimer;
   DateTime? _foregroundWarningGraceEndsAt;
-  Timer? _foregroundWarningGraceTimer;
+  Timer? _foregroundWarningUiRefreshTimer;
+  Timer? _foregroundWarningSnackbarTimer;
   Timer? _composerStatusShowTimer;
   Timer? _composerStatusHideTimer;
   Timer? _composerStopHintTimer;
@@ -364,7 +365,8 @@ class _ChatPageState extends State<ChatPage>
     _notificationTapSubscription?.cancel();
     _settingsProvider?.removeListener(_handleSettingsChanged);
     _serverAlertRevealTimer?.cancel();
-    _foregroundWarningGraceTimer?.cancel();
+    _foregroundWarningUiRefreshTimer?.cancel();
+    _foregroundWarningSnackbarTimer?.cancel();
     _composerStatusShowTimer?.cancel();
     _composerStatusHideTimer?.cancel();
     _composerStopHintTimer?.cancel();
@@ -561,11 +563,12 @@ class _ChatPageState extends State<ChatPage>
     _foregroundWarningGraceEndsAt = DateTime.now().add(
       _foregroundWarningConfirmationDelay,
     );
-    _foregroundWarningGraceTimer?.cancel();
-    _foregroundWarningGraceTimer = Timer(
+    _foregroundWarningUiRefreshTimer?.cancel();
+    _foregroundWarningSnackbarTimer?.cancel();
+    _foregroundWarningUiRefreshTimer = Timer(
       _foregroundWarningConfirmationDelay,
       () {
-        _foregroundWarningGraceTimer = null;
+        _foregroundWarningUiRefreshTimer = null;
         if (!mounted) {
           return;
         }
@@ -576,26 +579,9 @@ class _ChatPageState extends State<ChatPage>
 
   bool _isForegroundWarningGraceActive() {
     final endsAt = _foregroundWarningGraceEndsAt;
-    if (!_isAppInForeground || endsAt == null) {
-      return false;
-    }
-    final remaining = endsAt.difference(DateTime.now());
-    if (remaining <= Duration.zero) {
-      _foregroundWarningGraceEndsAt = null;
-      _foregroundWarningGraceTimer?.cancel();
-      _foregroundWarningGraceTimer = null;
-      return false;
-    }
-    if (!(_foregroundWarningGraceTimer?.isActive ?? false)) {
-      _foregroundWarningGraceTimer = Timer(remaining, () {
-        _foregroundWarningGraceTimer = null;
-        if (!mounted) {
-          return;
-        }
-        _setState(() {});
-      });
-    }
-    return true;
+    return _isAppInForeground &&
+        endsAt != null &&
+        DateTime.now().isBefore(endsAt);
   }
 
   bool _shouldDeferForegroundWarningUi({
@@ -634,13 +620,12 @@ class _ChatPageState extends State<ChatPage>
       _showServerUnhealthyNotice();
       return;
     }
-    _foregroundWarningGraceTimer?.cancel();
-    _foregroundWarningGraceTimer = Timer(remaining, () {
-      _foregroundWarningGraceTimer = null;
+    _foregroundWarningSnackbarTimer?.cancel();
+    _foregroundWarningSnackbarTimer = Timer(remaining, () {
+      _foregroundWarningSnackbarTimer = null;
       if (!mounted) {
         return;
       }
-      _setState(() {});
       final currentChatProvider = _chatProvider;
       final currentAppProvider = _appProvider;
       if (currentChatProvider == null || currentAppProvider == null) {
