@@ -1663,6 +1663,9 @@ class ChatProvider extends ChangeNotifier {
       'Refreshing active session view reason=$reason session=${session.id}',
     );
 
+    final refreshStartVersion = _messagesVersion;
+    var fallbackToFullFetch = false;
+
     try {
       final cachedMessages = List<ChatMessage>.from(
         _messages.where((message) => message.sessionId == session.id),
@@ -1693,8 +1696,12 @@ class ChatProvider extends ChangeNotifier {
           if (_currentSession?.id != session.id) {
             return;
           }
+          if (_messagesVersion != refreshStartVersion) {
+            return;
+          }
           var serverMessagesForMerge = messages;
           var requiresFullFetch = false;
+          var usedGapRecovery = false;
           if (canUseDelta) {
             final deltaResult = _mergeServerTailWithCachedMessages(
               serverMessages: messages,
@@ -1703,6 +1710,7 @@ class ChatProvider extends ChangeNotifier {
             );
             serverMessagesForMerge = deltaResult.messages;
             requiresFullFetch = deltaResult.requiresFullFetch;
+            usedGapRecovery = deltaResult.usedGapRecovery;
           }
           serverMessagesForMerge = _filterMessagesForPendingReplacementBranch(
             serverMessagesForMerge,
@@ -1715,6 +1723,7 @@ class ChatProvider extends ChangeNotifier {
           _cacheSessionMessages(session.id, _messages);
           _messagesVersion++;
           _hasMoreOldMessages =
+              usedGapRecovery ||
               serverMessagesForMerge.length >= _defaultOlderMessagesChunkSize;
           _prunePendingLocalUserMessageIdsToVisibleUsers();
           notifyListeners();
@@ -1724,9 +1733,11 @@ class ChatProvider extends ChangeNotifier {
             details: 'reason=$reason mergedMessages=${_messages.length}',
           );
           _scheduleAutoTitleRefresh(session.id);
-          unawaited(
-            _persistSessionMessagesSnapshotBestEffort(session.id, _messages),
-          );
+          if (!usedGapRecovery) {
+            unawaited(
+              _persistSessionMessagesSnapshotBestEffort(session.id, _messages),
+            );
+          }
           final hasActiveLocalStream =
               _activeMessageStreamSessionId == session.id &&
               _messageSubscription != null;
@@ -1740,14 +1751,7 @@ class ChatProvider extends ChangeNotifier {
             _scheduleScrollToBottom();
           }
           if (requiresFullFetch && _currentSession?.id == session.id) {
-            unawaited(
-              refreshActiveSessionView(
-                reason: '$reason:delta-fallback',
-                includeStatus: false,
-                allowDuringAbortSuppression: allowDuringAbortSuppression,
-                preferDelta: false,
-              ),
-            );
+            fallbackToFullFetch = true;
           }
         },
       );
@@ -1761,6 +1765,17 @@ class ChatProvider extends ChangeNotifier {
         'refresh-active-finished',
         sessionId: session.id,
         details: 'reason=$reason includeStatus=$includeStatus',
+      );
+    }
+
+    if (fallbackToFullFetch && _currentSession?.id == session.id) {
+      unawaited(
+        refreshActiveSessionView(
+          reason: '$reason:delta-fallback',
+          includeStatus: false,
+          allowDuringAbortSuppression: allowDuringAbortSuppression,
+          preferDelta: false,
+        ),
       );
     }
   }
@@ -2882,6 +2897,7 @@ class ChatProvider extends ChangeNotifier {
         }
         var serverMessagesForMerge = messages;
         var requiresFullFetch = false;
+        var usedGapRecovery = false;
         if (canKeepVisibleState && preferDelta && cachedMessages.isNotEmpty) {
           final deltaResult = _mergeServerTailWithCachedMessages(
             serverMessages: messages,
@@ -2890,6 +2906,7 @@ class ChatProvider extends ChangeNotifier {
           );
           serverMessagesForMerge = deltaResult.messages;
           requiresFullFetch = deltaResult.requiresFullFetch;
+          usedGapRecovery = deltaResult.usedGapRecovery;
         }
         serverMessagesForMerge = _filterMessagesForPendingReplacementBranch(
           serverMessagesForMerge,
@@ -2902,14 +2919,17 @@ class ChatProvider extends ChangeNotifier {
         _cacheSessionMessages(sessionId, _messages);
         _messagesVersion++;
         _hasMoreOldMessages =
+            usedGapRecovery ||
             serverMessagesForMerge.length >= _defaultOlderMessagesChunkSize;
         _prunePendingLocalUserMessageIdsToVisibleUsers();
         _scheduleAutoTitleRefresh(sessionId);
         _setState(ChatState.loaded);
-        unawaited(_persistLastSessionSnapshotBestEffort());
-        unawaited(
-          _persistSessionMessagesSnapshotBestEffort(sessionId, _messages),
-        );
+        if (!usedGapRecovery) {
+          unawaited(_persistLastSessionSnapshotBestEffort());
+          unawaited(
+            _persistSessionMessagesSnapshotBestEffort(sessionId, _messages),
+          );
+        }
         if (requiresFullFetch && _currentSession?.id == sessionId) {
           unawaited(
             loadMessages(
