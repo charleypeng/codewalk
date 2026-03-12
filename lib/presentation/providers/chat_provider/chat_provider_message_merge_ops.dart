@@ -255,7 +255,7 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     return (messages: merged, reconciledLocalIds: reconciledLocalIds);
   }
 
-  ({List<ChatMessage> messages, bool requiresFullFetch})
+  ({List<ChatMessage> messages, bool requiresFullFetch, bool usedGapRecovery})
   _mergeServerTailWithCachedMessages({
     required List<ChatMessage> serverMessages,
     required List<ChatMessage> cachedMessages,
@@ -265,14 +265,22 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
         .where((message) => message.sessionId == sessionId)
         .toList(growable: false);
     if (serverForSession.isEmpty) {
-      return (messages: serverMessages, requiresFullFetch: false);
+      return (
+        messages: serverMessages,
+        requiresFullFetch: false,
+        usedGapRecovery: false,
+      );
     }
 
     final cachedForSession = cachedMessages
         .where((message) => message.sessionId == sessionId)
         .toList(growable: false);
     if (cachedForSession.isEmpty) {
-      return (messages: serverForSession, requiresFullFetch: false);
+      return (
+        messages: serverForSession,
+        requiresFullFetch: false,
+        usedGapRecovery: false,
+      );
     }
 
     final cachedIndexById = <String, int>{
@@ -304,7 +312,14 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     }
 
     if (overlapServerIndex == -1 || overlapCachedIndex == -1) {
-      return (messages: cachedForSession, requiresFullFetch: true);
+      // No safe overlap means the cached snapshot cannot stay authoritative.
+      // Surface the server tail immediately, mark the history as incomplete,
+      // and let the caller force a full fetch before persisting any snapshot.
+      return (
+        messages: serverForSession,
+        requiresFullFetch: true,
+        usedGapRecovery: true,
+      );
     }
 
     final prefix = cachedForSession
@@ -319,7 +334,11 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
       }
     }
 
-    return (messages: deduplicated, requiresFullFetch: false);
+    return (
+      messages: deduplicated,
+      requiresFullFetch: false,
+      usedGapRecovery: false,
+    );
   }
 
   ({int serverIndex, int cachedIndex})? _findOptimisticTailOverlap({

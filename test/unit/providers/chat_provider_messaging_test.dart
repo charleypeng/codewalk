@@ -1005,6 +1005,201 @@ void main() {
     );
 
     test(
+      'loadMessages gap recovery promotes latest server tail before full backfill',
+      () async {
+        final sessionId = 'ses_1';
+        final staleSnapshot = List<ChatMessage>.generate(150, (index) {
+          final messageId = 'cached_$index';
+          return AssistantMessage(
+            id: messageId,
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(1000 + index),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1001 + index),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_$messageId',
+                messageId: messageId,
+                sessionId: sessionId,
+                text: 'cached $index',
+              ),
+            ],
+          );
+        });
+        final serverHistory = List<ChatMessage>.generate(260, (index) {
+          final messageId = 'server_$index';
+          return AssistantMessage(
+            id: messageId,
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(5000 + index),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(5001 + index),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_$messageId',
+                messageId: messageId,
+                sessionId: sessionId,
+                text: 'server $index',
+              ),
+            ],
+          );
+        });
+        chatRepository.messagesBySession[sessionId] = List<ChatMessage>.from(
+          staleSnapshot,
+        );
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        final session = provider.sessions.firstWhere(
+          (item) => item.id == sessionId,
+        );
+        await provider.selectSession(session);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        final localDataSource =
+            provider.localDataSource as InMemoryAppLocalDataSource;
+        final initialSnapshot = await localDataSource
+            .getSessionMessagesSnapshot(
+              sessionId: sessionId,
+              serverId: 'srv_test',
+              scopeId: '/tmp',
+            );
+
+        final fullFetchGate = Completer<void>();
+        var requestNumber = 0;
+        chatRepository.messagesBySession[sessionId] = List<ChatMessage>.from(
+          serverHistory,
+        );
+        chatRepository.getMessagesRequestedLimits.clear();
+        chatRepository.getMessagesHandler =
+            (String _, String __, {String? directory, int? limit}) async {
+              requestNumber += 1;
+              if (requestNumber == 1) {
+                return Right(serverHistory.sublist(serverHistory.length - 200));
+              }
+              await fullFetchGate.future;
+              return Right(serverHistory);
+            };
+
+        unawaited(provider.loadMessages(sessionId, preserveVisibleState: true));
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(chatRepository.getMessagesRequestedLimits, <int?>[200, null]);
+        expect(provider.hasMoreOldMessages, isTrue);
+        expect(provider.messages.length, 200);
+        expect(provider.messages.first.id, 'server_60');
+        expect(provider.messages.last.id, 'server_259');
+
+        final duringFallbackSnapshot = await localDataSource
+            .getSessionMessagesSnapshot(
+              sessionId: sessionId,
+              serverId: 'srv_test',
+              scopeId: '/tmp',
+            );
+        expect(duringFallbackSnapshot, initialSnapshot);
+
+        fullFetchGate.complete();
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(provider.messages.length, 260);
+        expect(provider.messages.first.id, 'server_0');
+        expect(provider.messages.last.id, 'server_259');
+
+        final refreshedSnapshot = await localDataSource
+            .getSessionMessagesSnapshot(
+              sessionId: sessionId,
+              serverId: 'srv_test',
+              scopeId: '/tmp',
+            );
+        expect(refreshedSnapshot, isNot(initialSnapshot));
+        expect(refreshedSnapshot, contains('server_259'));
+      },
+    );
+
+    test(
+      'refreshActiveSessionView completes deferred no-overlap fallback after lock release',
+      () async {
+        final sessionId = 'ses_1';
+        final staleSnapshot = List<ChatMessage>.generate(250, (index) {
+          final messageId = 'cached_$index';
+          return AssistantMessage(
+            id: messageId,
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(1000 + index),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1001 + index),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_$messageId',
+                messageId: messageId,
+                sessionId: sessionId,
+                text: 'cached $index',
+              ),
+            ],
+          );
+        });
+        final serverHistory = List<ChatMessage>.generate(260, (index) {
+          final messageId = 'server_$index';
+          return AssistantMessage(
+            id: messageId,
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(10000 + index),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(10001 + index),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_$messageId',
+                messageId: messageId,
+                sessionId: sessionId,
+                text: 'server $index',
+              ),
+            ],
+          );
+        });
+        chatRepository.messagesBySession[sessionId] = List<ChatMessage>.from(
+          staleSnapshot,
+        );
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        final session = provider.sessions.firstWhere(
+          (item) => item.id == sessionId,
+        );
+        await provider.selectSession(session);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        final fullFetchGate = Completer<void>();
+        var requestNumber = 0;
+        chatRepository.messagesBySession[sessionId] = List<ChatMessage>.from(
+          serverHistory,
+        );
+        chatRepository.getMessagesRequestedLimits.clear();
+        chatRepository.getMessagesHandler =
+            (String _, String __, {String? directory, int? limit}) async {
+              requestNumber += 1;
+              if (requestNumber == 1) {
+                return Right(serverHistory.sublist(serverHistory.length - 200));
+              }
+              await fullFetchGate.future;
+              return Right(serverHistory);
+            };
+
+        await provider.refreshActiveSessionView(
+          reason: 'test-gap-recovery',
+          includeStatus: false,
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(chatRepository.getMessagesRequestedLimits, <int?>[200, null]);
+        expect(provider.messages.length, 200);
+        expect(provider.messages.first.id, 'server_60');
+
+        fullFetchGate.complete();
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(provider.messages.length, 260);
+        expect(provider.messages.first.id, 'server_0');
+        expect(provider.messages.last.id, 'server_259');
+      },
+    );
+
+    test(
       'refreshActiveSessionView schedules scroll callback when latest message changes',
       () async {
         const sessionId = 'ses_1';
