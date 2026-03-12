@@ -4,10 +4,7 @@ part of '../chat_message_widget.dart';
 /// and diff visualization.
 extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
   Color _resolveCompletedToolStatusColor(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    return brightness == Brightness.dark
-        ? Colors.green.shade400
-        : Colors.green.shade700;
+    return AppSemanticColors.success(context);
   }
 
   String _toolPartIdentityToken(ToolPart part) {
@@ -757,12 +754,8 @@ class _CollapsibleToolContentState extends State<_CollapsibleToolContent> {
     switch (lineType) {
       case DiffLineType.add:
         return _DiffLineVisualStyle(
-          textColor: brightness == Brightness.dark
-              ? Colors.green.shade400
-              : Colors.green.shade700,
-          backgroundColor: brightness == Brightness.dark
-              ? Colors.green.shade800.withValues(alpha: 0.45)
-              : Colors.green.shade100,
+          textColor: AppSemanticColors.success(context),
+          backgroundColor: AppSemanticColors.successContainer(context),
         );
       case DiffLineType.remove:
         return _DiffLineVisualStyle(

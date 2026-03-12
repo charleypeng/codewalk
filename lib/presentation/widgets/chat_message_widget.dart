@@ -10,6 +10,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../theme/app_shapes.dart';
 import '../theme/app_animations.dart';
+import '../theme/app_semantic_colors.dart';
 import 'message_entrance_animation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
