@@ -136,6 +136,8 @@
 - **Given** the user already opened a session recently in the same server+project scope
 - **When** the user switches back to that session
 - **Then** cached messages are rendered immediately without waiting for a full network reload
+- **Then** the chat timeline reuses the cached grouped/hydrated presentation for that session instead of visually rebuilding settled history from scratch
+- **Then** the viewport lands directly at the bottom immediately, with no visible scroll animation or reopen reveal effect
 - **Then** the app revalidates the session in background (SWR) and merges newer server state when available
 
 ### Project switching is cache-first and non-blocking
@@ -174,6 +176,7 @@
 - **Then** an already-selected empty session keeps its empty placeholder visible during background refresh (no loading skeleton blink)
 - **Then** returning from background or focus with no new chat content does not yank the latest message to the top of the viewport just because the route resumed
 - **Then** if refreshed content arrives while the user was already pinned to the latest message, the viewport stays pinned instead of forcing a synthetic reveal jump
+- **Then** reopening a cached session does not replay old-history entrance/loading motion before newer delta content is merged
 
 ### Older history loads on demand at top reach
 

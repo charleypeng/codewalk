@@ -328,6 +328,8 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
   - **Event dedup buffer**: `_recentEventIds` (circular `Queue<String>`) in ChatProvider stores recent event keys built by `_composeEventDeduplicationKey`.
   - **Render gate**: `_hasPendingRenderFlush` in ChatProvider suppresses `notifyListeners()` while the app is in background.
   - **ChatMessageWidget build-skip cache**: Converted from `StatelessWidget` to `StatefulWidget`; completed messages short-circuit `build()` by returning a cached widget tree.
+  - **Per-session hydrated timeline cache**: ChatPage keeps `_sessionTimelineEntriesCache` to store grouped timeline presentation per session, enabling instant reopen without full visual rebuild.
+  - **Instant reopen bottom anchoring**: Reopening a cached session scrolls directly to bottom instead of using animated settle scrolling.
 
 - **Chat Entrance Animations**:
   - **Staggered Message Entrance**: Tail message entrance is coordinated via `chat_page_timeline_builder.dart` and `message_entrance_animation.dart`.
