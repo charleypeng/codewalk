@@ -251,7 +251,8 @@
 
 - **Given** the user is composing a message
 - **When** the user taps the `+` extras button on the left side of the composer bubble
-- **Then** the app opens an inline extras popover above the input without forcing a keyboard hide
+- **Then** the app opens or closes the inline extras popover above the input without changing the current keyboard/focus state
+- **Then** if the keyboard is already open, tapping `+` keeps it open; if the keyboard is already closed, tapping `+` keeps it closed
 - **Then** the extras popover stays compact, starts directly with the action row, and avoids redundant title lines above the actions or canned-answer list
 - **Then** the extras popover shows a top action row with quick actions such as `New quick reply` and `Attach files`, leaving room for future actions
 - **Then** attachment entry is opened from that extras popover instead of a separate attachment button near the model controls
