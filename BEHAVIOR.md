@@ -247,11 +247,13 @@
 - **Then** toolbar and slash-command wording stays explicit about operating on the last turn so the inline bubble action, toolbar actions, and composer actions describe the same behavior
 - **Then** timeline visibility and undo/redo availability are driven by the server-authoritative session revert boundary, aligned with official OpenCode Web semantics
 
-### Composer supports canned answers with scoped storage
+### Composer extras menu includes canned answers and attachments
 
 - **Given** the user is composing a message
-- **When** the user taps the `Canned answers` button on the left side of the composer bubble
-- **Then** the app opens an inline canned-answers popover above the input without forcing a keyboard hide
+- **When** the user taps the `+` extras button on the left side of the composer bubble
+- **Then** the app opens an inline extras popover above the input without forcing a keyboard hide
+- **Then** the extras popover shows a top action row with quick actions such as `New quick reply` and `Attach files`, leaving room for future actions
+- **Then** attachment entry is opened from that extras popover instead of a separate attachment button near the model controls
 - **Then** selecting an item inserts canned text according to item mode: `Append at cursor` inserts at current selection, `Replace` overwrites composer text
 - **Then** long-pressing a canned item opens edit/delete actions
 - **Then** add/edit supports an optional label, required text, insertion mode, and scope mode (`Global` or `Project-only`)
@@ -640,6 +642,7 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **Given** the connected OpenCode server has providers configured (e.g., Claude, OpenAI, Gemini)
 - **When** the user opens the model selector
 - **Then** all available providers and their models are listed, sourced directly from the server
+- **Then** the app restores the last successful provider/model catalog snapshot for the active server immediately and revalidates it in the background, so same-server project switches avoid showing an empty selector whenever possible
 - **Then** the user can select any model to use for the current session
 
 ### Model variants and reasoning effort
@@ -653,7 +656,7 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **Given** the user stars a model in the model selector
 - **When** the model selector is opened again
 - **Then** starred models appear in a **Favorites** section above recent models
-- **Then** favorites are persisted locally, scoped per server and project (not shared across servers)
+- **Then** favorites are persisted locally per server, shared across projects on that same server, and not shared across different servers
 
 ### Recent model cycling
 
