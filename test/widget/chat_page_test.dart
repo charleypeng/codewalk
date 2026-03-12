@@ -945,6 +945,83 @@ void main() {
     );
 
     testWidgets(
+      'shows soft loading indicator while switching to a cacheless session',
+      (WidgetTester tester) async {
+        await tester.binding.setSurfaceSize(const Size(1000, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final repository = _ConfigurableDelayFakeChatRepository(
+          sessions: <ChatSession>[
+            ChatSession(
+              id: 'ses_cached_empty',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              title: 'Cached Empty',
+            ),
+            ChatSession(
+              id: 'ses_switch_loading',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(2000),
+              title: 'Switch Loading',
+            ),
+          ],
+        );
+        repository.messagesBySession['ses_cached_empty'] = <ChatMessage>[];
+        repository.messagesBySession['ses_switch_loading'] = <ChatMessage>[];
+
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test';
+        final provider = _buildChatProvider(
+          chatRepository: repository,
+          localDataSource: localDataSource,
+        );
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+        await tester.pumpWidget(_testApp(provider, appProvider));
+        await tester.pumpAndSettle();
+
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.firstWhere(
+            (session) => session.id == 'ses_cached_empty',
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Hello! I am your AI assistant'), findsOneWidget);
+
+        repository.getMessagesGate = Completer<void>();
+        final selectFuture = provider.selectSession(
+          provider.sessions.firstWhere(
+            (session) => session.id == 'ses_switch_loading',
+          ),
+        );
+        await tester.pump();
+
+        expect(
+          find.byKey(
+            const ValueKey<String>('session_hydration_loading_indicator'),
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('Hello! I am your AI assistant'), findsNothing);
+        expect(find.byType(ChatSkeletonShimmer), findsNothing);
+
+        repository.getMessagesGate?.complete();
+        await selectFuture;
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(
+            const ValueKey<String>('session_hydration_loading_indicator'),
+          ),
+          findsNothing,
+        );
+        expect(find.text('Hello! I am your AI assistant'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
       'mobile opening settings from drawer keeps drawer closed after back',
       (WidgetTester tester) async {
         await tester.binding.setSurfaceSize(const Size(500, 900));
@@ -7324,6 +7401,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Hello! I am your AI assistant'), findsOneWidget);
+      expect(
+        find.byKey(
+          const ValueKey<String>('session_hydration_loading_indicator'),
+        ),
+        findsNothing,
+      );
 
       repository.getMessagesGate = Completer<void>();
       final refreshFuture = provider.loadSessions();
@@ -7331,6 +7414,12 @@ void main() {
 
       expect(find.text('Hello! I am your AI assistant'), findsOneWidget);
       expect(find.byType(ChatSkeletonShimmer), findsNothing);
+      expect(
+        find.byKey(
+          const ValueKey<String>('session_hydration_loading_indicator'),
+        ),
+        findsNothing,
+      );
 
       repository.getMessagesGate?.complete();
       await refreshFuture;
@@ -7338,6 +7427,12 @@ void main() {
 
       expect(find.text('Hello! I am your AI assistant'), findsOneWidget);
       expect(find.byType(ChatSkeletonShimmer), findsNothing);
+      expect(
+        find.byKey(
+          const ValueKey<String>('session_hydration_loading_indicator'),
+        ),
+        findsNothing,
+      );
     },
   );
 
