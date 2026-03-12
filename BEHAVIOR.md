@@ -153,7 +153,7 @@
 - **Given** the active session already has cached messages visible
 - **When** background revalidation runs after project/session switch
 - **Then** the client first fetches a limited recent tail window (delta-like refresh) instead of full history
-- **Then** if the fetched tail has no safe overlap with local cache, the client automatically falls back to a full fetch to guarantee correctness
+- **Then** if the fetched tail has no safe overlap with local cache, the client immediately promotes that authoritative recent server tail, marks older history as incomplete, and automatically falls back to a full fetch to guarantee correctness
 
 ### New Chat draft state is isolated per project context
 

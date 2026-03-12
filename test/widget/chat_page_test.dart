@@ -7637,7 +7637,7 @@ void main() {
   );
 
   testWidgets(
-    'delta refresh keeps visible history stable until fallback full fetch resolves',
+    'delta refresh promotes latest server tail until fallback full fetch resolves',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -7741,20 +7741,18 @@ void main() {
       );
       await tester.pump();
 
-      expect(provider.messages.length, 250);
-      expect(provider.messages.last.id, 'msg_cached_249');
+      expect(provider.messages.length, 200);
+      expect(provider.messages.first.id, 'msg_server_50');
+      expect(provider.messages.last.id, 'msg_server_249');
+      expect(provider.hasMoreOldMessages, isTrue);
 
       fullFetchGate.complete();
-      await provider.refreshActiveSessionView(
-        reason: 'delta-no-overlap-post-gate',
-        includeStatus: false,
-        preferDelta: false,
-      );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 40));
       await tester.pumpAndSettle();
 
       expect(provider.messages.length, 250);
+      expect(provider.messages.first.id, 'msg_server_0');
       expect(provider.messages.last.id, 'msg_server_249');
     },
   );
