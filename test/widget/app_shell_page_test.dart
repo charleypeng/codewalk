@@ -36,6 +36,7 @@ import 'package:codewalk/presentation/providers/chat_provider.dart';
 import 'package:codewalk/presentation/providers/project_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
+import 'package:codewalk/presentation/theme/app_theme.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -269,7 +270,12 @@ Widget _testApp(ChatProvider chatProvider, AppProvider appProvider) {
       ),
       ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
     ],
-    child: const MaterialApp(home: AppShellPage()),
+    child: MaterialApp(
+      theme: AppTheme.lightFrom(
+        ColorScheme.fromSeed(seedColor: AppTheme.seedColor),
+      ),
+      home: const AppShellPage(),
+    ),
   );
 }
 
@@ -292,7 +298,12 @@ Widget _testAppWithSettings(
       ),
       ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
     ],
-    child: const MaterialApp(home: AppShellPage()),
+    child: MaterialApp(
+      theme: AppTheme.lightFrom(
+        ColorScheme.fromSeed(seedColor: AppTheme.seedColor),
+      ),
+      home: const AppShellPage(),
+    ),
   );
 }
 

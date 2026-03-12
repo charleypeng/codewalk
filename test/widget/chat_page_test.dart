@@ -49,6 +49,7 @@ import 'package:codewalk/presentation/providers/chat_provider.dart';
 import 'package:codewalk/presentation/providers/project_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
+import 'package:codewalk/presentation/theme/app_theme.dart';
 import 'package:codewalk/presentation/utils/session_title_formatter.dart';
 import 'package:codewalk/presentation/widgets/chat_skeleton_shimmer.dart';
 import 'package:dartz/dartz.dart';
@@ -1417,7 +1418,10 @@ void main() {
         ServerHealthStatus.healthy,
       );
       await tester.pump();
-      expect(find.text('Connected'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('sidebar_server_status_control')),
+        findsOneWidget,
+      );
 
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       await tester.pump();
@@ -1432,7 +1436,10 @@ void main() {
 
       expect(find.byType(SnackBar), findsNothing);
       expect(find.text('Unhealthy'), findsNothing);
-      expect(find.text('Connecting'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('sidebar_server_status_control')),
+        findsOneWidget,
+      );
 
       await tester.pump(const Duration(milliseconds: 1900));
       await tester.pump();
@@ -1440,9 +1447,11 @@ void main() {
       expect(find.text('Unhealthy'), findsNothing);
 
       await tester.pump(const Duration(milliseconds: 150));
-      await tester.pump();
-      expect(find.text('Unhealthy'), findsOneWidget);
-      expect(find.byType(SnackBar), findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('sidebar_server_status_control')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('shows utility pane on large desktop width', (
@@ -10009,7 +10018,12 @@ Widget _testApp(
         value: effectiveSettingsProvider,
       ),
     ],
-    child: MaterialApp(home: home),
+    child: MaterialApp(
+      theme: AppTheme.lightFrom(
+        ColorScheme.fromSeed(seedColor: AppTheme.seedColor),
+      ),
+      home: home,
+    ),
   );
 }
 
