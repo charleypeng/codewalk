@@ -1384,7 +1384,7 @@ void main() {
       }
     });
 
-    testWidgets('debounces unhealthy warning UI after foreground resume', (
+    testWidgets('suppresses unhealthy warning UI during foreground grace', (
       WidgetTester tester,
     ) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));
@@ -1419,8 +1419,8 @@ void main() {
       );
       await tester.pump();
       expect(
-        find.byKey(const ValueKey<String>('sidebar_server_status_control')),
-        findsOneWidget,
+        find.byKey(const ValueKey<String>('appbar_drawer_alert_badge')),
+        findsNothing,
       );
 
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
@@ -1437,21 +1437,14 @@ void main() {
       expect(find.byType(SnackBar), findsNothing);
       expect(find.text('Unhealthy'), findsNothing);
       expect(
-        find.byKey(const ValueKey<String>('sidebar_server_status_control')),
-        findsOneWidget,
+        find.byKey(const ValueKey<String>('appbar_drawer_alert_badge')),
+        findsNothing,
       );
 
       await tester.pump(const Duration(milliseconds: 1900));
       await tester.pump();
       expect(find.byType(SnackBar), findsNothing);
       expect(find.text('Unhealthy'), findsNothing);
-
-      await tester.pump(const Duration(milliseconds: 150));
-      await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey<String>('sidebar_server_status_control')),
-        findsOneWidget,
-      );
     });
 
     testWidgets('shows utility pane on large desktop width', (
