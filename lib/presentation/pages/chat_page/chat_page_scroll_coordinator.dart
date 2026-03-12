@@ -159,10 +159,19 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
     _isProgrammaticScrollInFlight = true;
     try {
       if (!animate) {
-        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-        await WidgetsBinding.instance.endOfFrame;
-        if (!_canContinueScrollToBottomRequest(requestToken)) {
-          return;
+        for (
+          var pass = 0;
+          pass < _ChatPageState._maxScrollToBottomPasses;
+          pass += 1
+        ) {
+          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+          await WidgetsBinding.instance.endOfFrame;
+          if (!_canContinueScrollToBottomRequest(requestToken)) {
+            return;
+          }
+          if (_distanceToBottom() <= _ChatPageState._scrollToBottomEpsilon) {
+            break;
+          }
         }
         if (_distanceToBottom() > _ChatPageState._scrollToBottomEpsilon) {
           _scrollController.jumpTo(_scrollController.position.maxScrollExtent);

@@ -6610,7 +6610,7 @@ void main() {
       );
       repository.messagesBySession['ses_cached_bottom_a'] = _threadMessages(
         'ses_cached_bottom_a',
-        80,
+        240,
       );
       repository.messagesBySession['ses_cached_bottom_b'] = _threadMessages(
         'ses_cached_bottom_b',
@@ -6643,8 +6643,9 @@ void main() {
       await tester.pumpAndSettle();
 
       await provider.selectSession(sessionA);
-      await tester.pump();
-      await tester.pump();
+      for (var frame = 0; frame < 6; frame += 1) {
+        await tester.pump();
+      }
 
       final listFinder = find.byKey(
         const ValueKey<String>('chat_message_list'),
@@ -6660,7 +6661,7 @@ void main() {
         lessThanOrEqualTo(1),
       );
       expect(find.byTooltip('Go to latest message'), findsNothing);
-      expect(find.text('message 79'), findsOneWidget);
+      expect(find.text('message 239'), findsOneWidget);
     },
   );
 
