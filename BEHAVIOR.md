@@ -137,6 +137,7 @@
 - **When** the user switches back to that session
 - **Then** cached messages are rendered immediately without waiting for a full network reload
 - **Then** the chat timeline reuses the cached grouped/hydrated presentation for that session instead of visually rebuilding settled history from scratch
+- **Then** if the selected existing session has no in-memory messages yet, the chat surface shows a subtle loading indicator instead of the generic `Hello! I am your AI assistant` empty state until hydration finishes
 - **Then** the viewport lands directly at the bottom immediately, with no visible scroll animation or reopen reveal effect
 - **Then** the app revalidates the session in background (SWR) and merges newer server state when available
 

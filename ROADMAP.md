@@ -20,3 +20,9 @@ Description: Compact tracker for featR steps. Visit the referenced `ROADMAP.feat
 - [x] 1.06 Realtime Lifecycle and Pending Interaction Convergence - Related commit: a22b324 - File: `ROADMAP.featR.g6.md`
 - [x] 1.07 Ancillary Parity Cleanup and Final Convergence Sweep - Related commits: 14d4c04 aad66fa fa67fd8 00d331b 2b9460a 6b9464f 9db5d9e 2c5802c - File: `ROADMAP.featR.g7.md`
 - [x] 1.08 Busy Progress Surface Clarity Follow-up - Related commits: 8a1edfd d79088f c74d93f 19b256c 9d4be70 3e9181a d6bffc0 - File: `n/a (post-featR follow-up)`
+
+### Feature 2: Chat Hydration Loading State
+
+Description: Replace false empty-state greeting during session/project hydration with a soft loading indicator for better UX.
+
+- [x] 2.01 Replace false chat empty-state greeting during hydration with soft loading indicator - Related commits: 9fea9ff 3f7496e
