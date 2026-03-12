@@ -142,6 +142,9 @@ extension _ChatProviderPreferenceOps on ChatProvider {
             json.encode(_favoriteModelKeys),
             serverId: serverId,
           );
+          await localDataSource.deleteLegacyFavoriteModelsJsonForServer(
+            serverId,
+          );
         }
       }
     }

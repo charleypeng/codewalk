@@ -1610,6 +1610,45 @@ void main() {
     );
 
     test(
+      'legacy scoped favorite models are deleted after server migration',
+      () async {
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'prov_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'mod_a': testModel('mod_a')},
+              ),
+            ],
+            defaultModels: const <String, String>{'prov_a': 'mod_a'},
+            connected: const <String>['prov_a'],
+          ),
+        );
+        await localDataSource.saveFavoriteModelsJson(
+          json.encode(<String>['prov_a/mod_a']),
+          serverId: 'srv_test',
+          scopeId: 'default',
+        );
+
+        await provider.initializeProviders();
+
+        expect(
+          await localDataSource.getFavoriteModelsJson(
+            serverId: 'srv_test',
+            scopeId: 'default',
+          ),
+          isNull,
+        );
+        expect(
+          await localDataSource.getFavoriteModelsJson(serverId: 'srv_test'),
+          isNotNull,
+        );
+      },
+    );
+
+    test(
       'favorite models stay shared across projects on the same server',
       () async {
         final scopedLocal = InMemoryAppLocalDataSource()

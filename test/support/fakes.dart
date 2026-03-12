@@ -495,6 +495,21 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
   }
 
   @override
+  Future<void> deleteLegacyFavoriteModelsJsonForServer(String serverId) async {
+    final serverKey = Uri.encodeComponent(serverId.trim());
+    if (serverKey.isEmpty) {
+      return;
+    }
+    final prefix = 'favorite_models::$serverKey::';
+    final keysToDelete = scopedStrings.keys
+        .where((key) => key.startsWith(prefix))
+        .toList(growable: false);
+    for (final key in keysToDelete) {
+      scopedStrings.remove(key);
+    }
+  }
+
+  @override
   Future<String?> getProviderCatalogCacheJson({String? serverId}) async {
     if (serverId == null) {
       return providerCatalogCacheJson;

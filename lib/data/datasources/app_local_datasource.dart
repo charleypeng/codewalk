@@ -119,6 +119,9 @@ abstract class AppLocalDataSource {
   /// Retrieve legacy project-scoped favorite-model payloads for a server.
   Future<List<String>> getLegacyFavoriteModelsJsonForServer(String serverId);
 
+  /// Delete legacy project-scoped favorite-model payloads for a server.
+  Future<void> deleteLegacyFavoriteModelsJsonForServer(String serverId);
+
   /// Save locally-persisted favorite model keys (scoped).
   Future<void> saveFavoriteModelsJson(
     String favoriteModelsJson, {
@@ -1000,6 +1003,23 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
       values.add(value);
     }
     return values;
+  }
+
+  @override
+  Future<void> deleteLegacyFavoriteModelsJsonForServer(String serverId) async {
+    final normalizedServerId = serverId.trim();
+    if (normalizedServerId.isEmpty) {
+      return;
+    }
+    final prefix =
+        '${AppConstants.favoriteModelsKey}::${Uri.encodeComponent(normalizedServerId)}::';
+    final keysToDelete = sharedPreferences
+        .getKeys()
+        .where((key) => key.startsWith(prefix))
+        .toList(growable: false);
+    for (final key in keysToDelete) {
+      await sharedPreferences.remove(key);
+    }
   }
 
   @override

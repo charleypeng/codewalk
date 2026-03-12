@@ -252,12 +252,14 @@
 - **Given** the user is composing a message
 - **When** the user taps the `+` extras button on the left side of the composer bubble
 - **Then** the app opens an inline extras popover above the input without forcing a keyboard hide
+- **Then** the extras popover stays compact, starts directly with the action row, and avoids redundant title lines above the actions or canned-answer list
 - **Then** the extras popover shows a top action row with quick actions such as `New quick reply` and `Attach files`, leaving room for future actions
 - **Then** attachment entry is opened from that extras popover instead of a separate attachment button near the model controls
 - **Then** selecting an item inserts canned text according to item mode: `Append at cursor` inserts at current selection, `Replace` overwrites composer text
 - **Then** long-pressing a canned item opens edit/delete actions
 - **Then** add/edit supports an optional label, required text, insertion mode, and scope mode (`Global` or `Project-only`)
 - **Then** global items are available across all contexts, while project-only items are restricted to the active `serverId::scopeId` context
+- **Then** global canned answers are indicated inline with a globe icon instead of a standalone textual `Global` subtitle line
 
 ### Optimistic user message ID uses local prefix — never server format
 

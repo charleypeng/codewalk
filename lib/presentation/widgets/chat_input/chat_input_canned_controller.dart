@@ -389,6 +389,30 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
     );
   }
 
+  Widget? _buildCannedAnswerMetadata(CannedAnswer item) {
+    final metadataText = item.normalizedLabel.isEmpty ? null : item.text;
+    if (metadataText == null &&
+        item.scopeMode != CannedAnswerScopeMode.global) {
+      return null;
+    }
+    return Row(
+      children: [
+        if (item.scopeMode == CannedAnswerScopeMode.global) ...[
+          const Icon(Symbols.public_rounded, size: 14),
+          if (metadataText != null) const SizedBox(width: 6),
+        ],
+        if (metadataText != null)
+          Expanded(
+            child: Text(
+              metadataText,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+      ],
+    );
+  }
+
   Widget _buildExtrasPopover({
     required ColorScheme colorScheme,
     required double maxHeight,
@@ -407,33 +431,23 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
           shrinkWrap: true,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
-                  Text(
-                    'Extras',
-                    style: Theme.of(context).textTheme.titleMedium,
+                  _buildExtrasActionChip(
+                    icon: Symbols.edit_note_rounded,
+                    label: 'New quick reply',
+                    onPressed: () =>
+                        unawaited(_openQuickReplyCreatorFromExtras()),
                   ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _buildExtrasActionChip(
-                        icon: Symbols.edit_note_rounded,
-                        label: 'New quick reply',
-                        onPressed: () =>
-                            unawaited(_openQuickReplyCreatorFromExtras()),
-                      ),
-                      _buildExtrasActionChip(
-                        icon: Symbols.attach_file_rounded,
-                        label: 'Attach files',
-                        onPressed: _canOpenAttachmentOptions
-                            ? _openAttachmentOptionsFromExtras
-                            : null,
-                      ),
-                    ],
+                  _buildExtrasActionChip(
+                    icon: Symbols.attach_file_rounded,
+                    label: 'Attach files',
+                    onPressed: _canOpenAttachmentOptions
+                        ? _openAttachmentOptionsFromExtras
+                        : null,
                   ),
                 ],
               ),
@@ -442,16 +456,9 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
               height: 1,
               color: colorScheme.outlineVariant.withValues(alpha: 0.7),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
-              child: Text(
-                'Quick replies',
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-            ),
             if (items.isEmpty)
               const Padding(
-                padding: EdgeInsets.fromLTRB(16, 4, 16, 16),
+                padding: EdgeInsets.fromLTRB(16, 12, 16, 16),
                 child: Text('No quick replies yet.'),
               )
             else
@@ -459,10 +466,6 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
                 Builder(
                   builder: (context) {
                     final item = items[index];
-                    final scopeLabel =
-                        item.scopeMode == CannedAnswerScopeMode.global
-                        ? 'global'
-                        : 'project';
                     final selected = index == _activeSuggestionIndex;
                     return ListTile(
                       selected: selected,
@@ -473,11 +476,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      subtitle: Text(
-                        item.normalizedLabel.isEmpty ? scopeLabel : item.text,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      subtitle: _buildCannedAnswerMetadata(item),
                       onTap: () {
                         _setState(() {
                           _activeSuggestionIndex = index;

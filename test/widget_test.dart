@@ -212,7 +212,8 @@ void main() {
 
     await tester.tap(find.byTooltip('Extras'));
     await tester.pumpAndSettle();
-    expect(find.text('Quick replies'), findsOneWidget);
+    expect(find.text('Extras'), findsNothing);
+    expect(find.text('Quick replies'), findsNothing);
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
 
@@ -275,9 +276,44 @@ void main() {
     await tester.tap(find.byTooltip('Extras'));
     await tester.pumpAndSettle();
 
+    expect(find.text('Extras'), findsNothing);
+    expect(find.text('Quick replies'), findsNothing);
     expect(find.text('New quick reply'), findsOneWidget);
     expect(find.text('Attach files'), findsOneWidget);
     expect(find.text('No quick replies yet.'), findsOneWidget);
+  });
+
+  testWidgets('global canned answer shows globe metadata icon', (
+    WidgetTester tester,
+  ) async {
+    final localDataSource = InMemoryAppLocalDataSource();
+    await localDataSource.saveCannedAnswersJson(
+      jsonEncode([
+        {
+          'id': 'global-1',
+          'label': 'Global reply',
+          'text': 'Shared text',
+          'insertMode': 'append',
+          'scopeMode': 'global',
+          'updatedAtEpochMs': 1,
+        },
+      ]),
+    );
+
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (_) {},
+          cannedAnswersDataSource: localDataSource,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Extras'));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Symbols.public_rounded), findsOneWidget);
   });
 
   testWidgets(
