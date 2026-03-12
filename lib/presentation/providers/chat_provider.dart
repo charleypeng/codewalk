@@ -252,6 +252,8 @@ class ChatProvider extends ChangeNotifier {
   bool _activeSessionRefreshInFlight = false;
   bool _isLoadingOlderMessages = false;
   bool _hasMoreOldMessages = false;
+  // Tracks an existing selected session whose timeline is still hydrating.
+  String? _pendingCurrentSessionHydrationId;
   bool _isAbortingResponse = false;
   bool _isCompactingContext = false;
   bool _isAppInForeground = true;
@@ -481,6 +483,9 @@ class ChatProvider extends ChangeNotifier {
   bool get isLoadingOlderMessages => _isLoadingOlderMessages;
   bool get hasMoreOldMessages => _hasMoreOldMessages;
   bool get isDraftingNewChat => _isNewChatDraftActive;
+  bool get isCurrentSessionHydrating =>
+      _pendingCurrentSessionHydrationId != null &&
+      _pendingCurrentSessionHydrationId == _currentSession?.id;
   SessionRevert? get currentSessionRevert => _currentSession?.revert;
   int get pendingHistoryComposerSyncToken =>
       _pendingHistoryComposerSync?.token ?? 0;
@@ -2553,6 +2558,7 @@ class ChatProvider extends ChangeNotifier {
     try {
       if (_sessions.isEmpty) {
         _currentSession = null;
+        _pendingCurrentSessionHydrationId = null;
         _threadPermissionsVersion++;
         _messages = <ChatMessage>[];
         _isLoadingOlderMessages = false;
@@ -2575,6 +2581,7 @@ class ChatProvider extends ChangeNotifier {
 
       if (_isNewChatDraftActive) {
         _currentSession = null;
+        _pendingCurrentSessionHydrationId = null;
         _threadPermissionsVersion++;
         _messages = <ChatMessage>[];
         _isLoadingOlderMessages = false;
@@ -2624,6 +2631,7 @@ class ChatProvider extends ChangeNotifier {
         );
         if (restoredCachedMessages != null &&
             restoredCachedMessages.isNotEmpty) {
+          _pendingCurrentSessionHydrationId = null;
           _messages = List<ChatMessage>.from(restoredCachedMessages);
           _cacheSessionMessages(targetSession.id, _messages);
           _hasMoreOldMessages =
@@ -2809,6 +2817,7 @@ class ChatProvider extends ChangeNotifier {
     _threadPermissionsVersion++;
     _applySelectionPriorityForCurrentSession();
     if (restoredCachedMessages != null && restoredCachedMessages.isNotEmpty) {
+      _pendingCurrentSessionHydrationId = null;
       _messages = List<ChatMessage>.from(restoredCachedMessages);
       _cacheSessionMessages(session.id, _messages);
       _hasMoreOldMessages =
@@ -2816,9 +2825,10 @@ class ChatProvider extends ChangeNotifier {
       _messagesVersion++;
       _setState(ChatState.loaded);
     } else {
+      _pendingCurrentSessionHydrationId = session.id;
       _messages.clear();
       _messagesVersion++;
-      notifyListeners();
+      _setState(ChatState.loading);
     }
 
     await _saveCurrentSessionId(
@@ -2881,6 +2891,9 @@ class ChatProvider extends ChangeNotifier {
         if (fetchId != _messagesFetchId) {
           return;
         }
+        if (_currentSession?.id == sessionId) {
+          _pendingCurrentSessionHydrationId = null;
+        }
         if (canKeepVisibleState) {
           AppLogger.warn(
             'Background session revalidation failed session=$sessionId',
@@ -2895,6 +2908,7 @@ class ChatProvider extends ChangeNotifier {
         if (fetchId != _messagesFetchId || _currentSession?.id != sessionId) {
           return;
         }
+        _pendingCurrentSessionHydrationId = null;
         var serverMessagesForMerge = messages;
         var requiresFullFetch = false;
         var usedGapRecovery = false;

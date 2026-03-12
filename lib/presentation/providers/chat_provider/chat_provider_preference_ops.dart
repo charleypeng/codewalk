@@ -50,6 +50,7 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     if (snapshot == null) {
       _sessions = <ChatSession>[];
       _currentSession = null;
+      _pendingCurrentSessionHydrationId = null;
       _messages = <ChatMessage>[];
       _messagesVersion++;
       _sessionStatusById = <String, SessionStatusInfo>{};
@@ -101,6 +102,10 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     _isNewChatDraftActive = snapshot.isNewChatDraftActive;
     _activeSendDraft = snapshot.activeSendDraft;
     _rejectedDraft = snapshot.rejectedDraft;
+    _pendingCurrentSessionHydrationId =
+        !_isNewChatDraftActive && _currentSession != null && _messages.isEmpty
+        ? _currentSession!.id
+        : null;
     _pruneSessionAttentionStateToKnownSessions();
     _threadPermissionsVersion++;
   }

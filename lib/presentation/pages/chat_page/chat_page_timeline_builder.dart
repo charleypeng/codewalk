@@ -760,13 +760,9 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     final isSubConversation = _isSubConversationSession(
       chatProvider.currentSession,
     );
-    final activeSessionId = chatProvider.currentSession?.id;
-    final isInitialSessionLoadPending =
-        activeSessionId != null &&
-        _pendingInitialScrollSessionId == activeSessionId;
     if (chatProvider.state == ChatState.loading &&
         chatProvider.messages.isEmpty &&
-        (chatProvider.currentSession == null || isInitialSessionLoadPending)) {
+        chatProvider.currentSession == null) {
       return const ChatSkeletonShimmer();
     }
 
@@ -944,6 +940,17 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
               ),
             ],
           ),
+        ),
+      );
+    }
+
+    if (chatProvider.messages.isEmpty &&
+        chatProvider.isCurrentSessionHydrating) {
+      return const Center(
+        child: SizedBox.square(
+          key: ValueKey<String>('session_hydration_loading_indicator'),
+          dimension: 28,
+          child: CircularProgressIndicator.adaptive(strokeWidth: 2.5),
         ),
       );
     }
