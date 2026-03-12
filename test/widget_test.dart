@@ -222,7 +222,7 @@ void main() {
     expect(field.focusNode?.hasFocus, isTrue);
   });
 
-  testWidgets('opening extras dismisses composer focus', (
+  testWidgets('opening extras preserves composer focus state', (
     WidgetTester tester,
   ) async {
     final focusNode = FocusNode();
@@ -242,6 +242,37 @@ void main() {
     await tester.tap(find.byType(TextField));
     await tester.pumpAndSettle();
     expect(focusNode.hasFocus, isTrue);
+
+    await tester.tap(find.byTooltip('Extras'));
+    await tester.pumpAndSettle();
+
+    expect(focusNode.hasFocus, isTrue);
+    expect(find.text('New quick reply'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Extras'));
+    await tester.pumpAndSettle();
+
+    expect(focusNode.hasFocus, isTrue);
+  });
+
+  testWidgets('opening extras keeps unfocused composer unfocused', (
+    WidgetTester tester,
+  ) async {
+    final focusNode = FocusNode();
+    addTearDown(focusNode.dispose);
+
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          focusNode: focusNode,
+          onSendMessage: (_) {},
+          cannedAnswersDataSource: InMemoryAppLocalDataSource(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(focusNode.hasFocus, isFalse);
 
     await tester.tap(find.byTooltip('Extras'));
     await tester.pumpAndSettle();

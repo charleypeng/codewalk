@@ -110,7 +110,6 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
   }
 
   void _toggleExtrasPopover() {
-    final openingExtras = _popoverType != ChatComposerPopoverType.canned;
     _setState(() {
       if (_popoverType == ChatComposerPopoverType.canned) {
         _popoverType = ChatComposerPopoverType.none;
@@ -120,11 +119,6 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
       _popoverType = ChatComposerPopoverType.canned;
       _activeSuggestionIndex = 0;
     });
-    if (openingExtras) {
-      FocusManager.instance.primaryFocus?.unfocus();
-      return;
-    }
-    _ensureInputFocus();
   }
 
   Future<void> _openQuickReplyCreatorFromExtras() async {
