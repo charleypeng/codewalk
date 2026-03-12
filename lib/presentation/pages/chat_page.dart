@@ -42,6 +42,7 @@ import '../utils/file_explorer_logic.dart';
 import '../utils/reasoning_status_parser.dart';
 import '../utils/session_title_formatter.dart';
 import '../utils/shortcut_binding_codec.dart';
+import '../utils/tool_presentation.dart';
 import '../utils/window_size_class.dart';
 import '../widgets/chat_input_widget.dart';
 import '../widgets/chat_message_widget.dart';
@@ -1316,6 +1317,7 @@ class _TimelineRetryIndicatorEntry extends _TimelineEntry {
 enum _AssistantProgressStage { thinking, receiving, retrying }
 
 enum _ComposerStatusType {
+  activeProgress,
   dynamicReasoning,
   receiving,
   retrying,
@@ -1327,7 +1329,17 @@ class _ComposerStatusPresentation {
   const _ComposerStatusPresentation._({
     required this.type,
     required this.label,
+    this.icon,
   });
+
+  const _ComposerStatusPresentation.activeProgress({
+    required String label,
+    required IconData icon,
+  }) : this._(
+         type: _ComposerStatusType.activeProgress,
+         label: label,
+         icon: icon,
+       );
 
   const _ComposerStatusPresentation.dynamicReasoning(String label)
     : this._(type: _ComposerStatusType.dynamicReasoning, label: label);
@@ -1362,6 +1374,7 @@ class _ComposerStatusPresentation {
 
   final _ComposerStatusType type;
   final String label;
+  final IconData? icon;
 
   @override
   bool operator ==(Object other) {
@@ -1370,11 +1383,12 @@ class _ComposerStatusPresentation {
     }
     return other is _ComposerStatusPresentation &&
         other.type == type &&
-        other.label == label;
+        other.label == label &&
+        other.icon == icon;
   }
 
   @override
-  int get hashCode => Object.hash(type, label);
+  int get hashCode => Object.hash(type, label, icon);
 }
 
 class _ComposerStatusLanternText extends StatefulWidget {

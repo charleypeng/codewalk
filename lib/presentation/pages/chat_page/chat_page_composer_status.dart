@@ -1,6 +1,70 @@
 part of '../chat_page.dart';
 
 extension _ChatPageComposerStatus on _ChatPageState {
+  bool _shouldIgnoreProgressTool(ToolPart part) {
+    final normalizedName = normalizeToolName(part.tool);
+    return normalizedName == 'todowrite' ||
+        normalizedName == 'todoread' ||
+        normalizedName == 'task';
+  }
+
+  String _resolvePatchProgressLabel(PatchPart part) {
+    if (part.files.isEmpty) {
+      return 'Preparing patch';
+    }
+    if (part.files.length == 1) {
+      return 'Preparing patch for ${part.files.first}';
+    }
+    return 'Preparing patch for ${part.files.length} files';
+  }
+
+  _ComposerStatusPresentation? _resolveLatestLiveProgress(
+    List<ChatMessage> messages,
+  ) {
+    for (
+      var messageIndex = messages.length - 1;
+      messageIndex >= 0;
+      messageIndex -= 1
+    ) {
+      final message = messages[messageIndex];
+      if (message is! AssistantMessage || message.isCompleted) {
+        continue;
+      }
+      for (
+        var partIndex = message.parts.length - 1;
+        partIndex >= 0;
+        partIndex -= 1
+      ) {
+        final part = message.parts[partIndex];
+        if (part is ToolPart) {
+          if (_shouldIgnoreProgressTool(part)) {
+            continue;
+          }
+          final presentation = toolPresentation(part.tool);
+          return _ComposerStatusPresentation.activeProgress(
+            label: toolResolveDescriptionLabel(part),
+            icon: presentation.icon,
+          );
+        }
+        if (part is PatchPart) {
+          return _ComposerStatusPresentation.activeProgress(
+            label: _resolvePatchProgressLabel(part),
+            icon: Symbols.compare_arrows,
+          );
+        }
+        if (part is ReasoningPart) {
+          final trimmed = part.text.trim();
+          if (trimmed.isEmpty) {
+            continue;
+          }
+          final label = parseReasoningStatusLabel(part.text) ?? 'Thinking...';
+          return _ComposerStatusPresentation.dynamicReasoning(label);
+        }
+      }
+    }
+    return null;
+  }
+
   void _scheduleCompactionStateSync({
     required bool wasCompactingContext,
     required String? frozenCompactionBoundaryId,
@@ -46,6 +110,11 @@ extension _ChatPageComposerStatus on _ChatPageState {
     final progressStage = _resolveAssistantProgressStage(chatProvider);
     if (progressStage == null) {
       return null;
+    }
+
+    final liveProgress = _resolveLatestLiveProgress(chatProvider.messages);
+    if (liveProgress != null) {
+      return liveProgress;
     }
 
     final reasoningStatusLabel = _resolveLatestReasoningStatusLabel(

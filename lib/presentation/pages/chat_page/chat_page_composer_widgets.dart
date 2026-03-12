@@ -137,7 +137,8 @@ extension _ChatPageComposerWidgets on _ChatPageState {
     _composerStatusHideTimer?.cancel();
     _composerStatusHideTimer = null;
 
-    if (target.type == _ComposerStatusType.dynamicReasoning) {
+    if (target.type == _ComposerStatusType.dynamicReasoning ||
+        target.type == _ComposerStatusType.activeProgress) {
       _tipRotationTimer?.cancel();
       _tipRotationTimer = null;
       _composerStatusShowTimer?.cancel();
@@ -230,6 +231,14 @@ extension _ChatPageComposerWidgets on _ChatPageState {
   Widget _buildComposerReasoningStatusLine(_ComposerStatusPresentation status) {
     final colorScheme = Theme.of(context).colorScheme;
     final leading = switch (status.type) {
+      _ComposerStatusType.activeProgress => Icon(
+        status.icon ?? Symbols.auto_awesome,
+        key: ValueKey<String>(
+          'composer_reasoning_status_icon_active_${status.icon?.codePoint ?? 0}',
+        ),
+        size: 15,
+        color: colorScheme.primary,
+      ),
       _ComposerStatusType.tip => Icon(
         Symbols.lightbulb_outline,
         key: const ValueKey<String>('composer_reasoning_status_icon_tip'),
@@ -267,28 +276,53 @@ extension _ChatPageComposerWidgets on _ChatPageState {
       padding: const EdgeInsets.fromLTRB(12, 2, 12, 4),
       child: Align(
         alignment: Alignment.centerLeft,
-        child: Row(
+        child: SizedBox(
           key: const ValueKey<String>('composer_reasoning_status_line'),
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            KeyedSubtree(
+          child: AnimatedSwitcher(
+            duration: AppAnimations.fast,
+            switchInCurve: AppAnimations.standardCurve,
+            switchOutCurve: AppAnimations.standardCurve,
+            transitionBuilder: (child, animation) {
+              if (!AppAnimations.enabled(context)) {
+                return child;
+              }
+              final slide = Tween<Offset>(
+                begin: const Offset(0, 0.3),
+                end: Offset.zero,
+              ).animate(animation);
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(position: slide, child: child),
+              );
+            },
+            child: Row(
               key: ValueKey<String>(
-                'composer_reasoning_status_type_${status.type.name}',
+                'composer_reasoning_status_content_${status.type.name}_${status.label}_${status.icon?.codePoint ?? 0}',
               ),
-              child: leading,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                KeyedSubtree(
+                  key: ValueKey<String>(
+                    'composer_reasoning_status_type_${status.type.name}',
+                  ),
+                  child: leading,
+                ),
+                if (status.type != _ComposerStatusType.stopHint)
+                  const SizedBox(width: 8),
+                Flexible(
+                  child: _ComposerStatusLanternText(
+                    text: status.label,
+                    key: const ValueKey<String>(
+                      'composer_reasoning_status_text',
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textStyle,
+                  ),
+                ),
+              ],
             ),
-            if (status.type != _ComposerStatusType.stopHint)
-              const SizedBox(width: 8),
-            Flexible(
-              child: _ComposerStatusLanternText(
-                text: status.label,
-                key: const ValueKey<String>('composer_reasoning_status_text'),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: textStyle,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
