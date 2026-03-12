@@ -233,6 +233,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Restart'), findsOneWidget);
+    expect(find.byIcon(Icons.close), findsOneWidget);
     debugDefaultTargetPlatformOverride = previousPlatform;
   });
 }

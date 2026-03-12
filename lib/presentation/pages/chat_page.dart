@@ -115,6 +115,9 @@ class _ChatPageState extends State<ChatPage>
   );
   static const String _rootTreeCacheKey = '__root__';
   static const Duration _serverAlertGracePeriod = Duration(seconds: 10);
+  static const Duration _foregroundWarningConfirmationDelay = Duration(
+    seconds: 2,
+  );
   static const Duration _composerStatusShowDelay = Duration(seconds: 2);
   static const Duration _composerStatusHideDelay = Duration(seconds: 1);
   static const Duration _composerStopHintDuration = Duration(seconds: 1);
@@ -217,6 +220,8 @@ class _ChatPageState extends State<ChatPage>
   final List<FileInputPart> _fileContextItems = <FileInputPart>[];
   DateTime? _serverAlertIssueStartedAt;
   Timer? _serverAlertRevealTimer;
+  DateTime? _foregroundWarningGraceEndsAt;
+  Timer? _foregroundWarningGraceTimer;
   Timer? _composerStatusShowTimer;
   Timer? _composerStatusHideTimer;
   Timer? _composerStopHintTimer;
@@ -359,6 +364,7 @@ class _ChatPageState extends State<ChatPage>
     _notificationTapSubscription?.cancel();
     _settingsProvider?.removeListener(_handleSettingsChanged);
     _serverAlertRevealTimer?.cancel();
+    _foregroundWarningGraceTimer?.cancel();
     _composerStatusShowTimer?.cancel();
     _composerStatusHideTimer?.cancel();
     _composerStopHintTimer?.cancel();
@@ -385,6 +391,7 @@ class _ChatPageState extends State<ChatPage>
       provider.setAppInForeground(_isAppInForeground);
       _applyForegroundPolicy(reason: 'app-lifecycle-${state.name}');
       if (_isAppInForeground) {
+        _startForegroundWarningGrace();
         if (_isChatScreenActive()) {
           _lastResumeRefreshAt = DateTime.now();
           unawaited(
@@ -409,6 +416,7 @@ class _ChatPageState extends State<ChatPage>
   void onWindowRestore() {
     _isAppInForeground = true;
     _applyForegroundPolicy(reason: 'window-restore');
+    _startForegroundWarningGrace();
     final provider = _chatProvider;
     if (provider != null) {
       _handleReturnToChat(provider, reason: 'window-restore');
@@ -420,6 +428,7 @@ class _ChatPageState extends State<ChatPage>
     if (!_isAppInForeground) {
       _isAppInForeground = true;
       _applyForegroundPolicy(reason: 'window-focus');
+      _startForegroundWarningGrace();
       final provider = _chatProvider;
       if (provider != null) {
         _handleReturnToChat(provider, reason: 'window-focus');
@@ -515,7 +524,7 @@ class _ChatPageState extends State<ChatPage>
     _lastActiveServerHealthStatus = currentHealth;
     if (previousHealth == ServerHealthStatus.healthy &&
         currentHealth == ServerHealthStatus.unhealthy) {
-      _showServerUnhealthyNotice();
+      _showServerUnhealthyNoticeWithConfirmation();
     }
 
     final wasConnected = _lastServerConnectionState;
@@ -543,6 +552,111 @@ class _ChatPageState extends State<ChatPage>
         ),
       ),
     );
+  }
+
+  // Resume-time health and connectivity probes can briefly report stale failure
+  // states while sockets and reachability settle, so warning-only UI waits for
+  // a short confirmation window before escalating.
+  void _startForegroundWarningGrace() {
+    _foregroundWarningGraceEndsAt = DateTime.now().add(
+      _foregroundWarningConfirmationDelay,
+    );
+    _foregroundWarningGraceTimer?.cancel();
+    _foregroundWarningGraceTimer = Timer(
+      _foregroundWarningConfirmationDelay,
+      () {
+        _foregroundWarningGraceTimer = null;
+        if (!mounted) {
+          return;
+        }
+        _setState(() {});
+      },
+    );
+  }
+
+  bool _isForegroundWarningGraceActive() {
+    final endsAt = _foregroundWarningGraceEndsAt;
+    if (!_isAppInForeground || endsAt == null) {
+      return false;
+    }
+    final remaining = endsAt.difference(DateTime.now());
+    if (remaining <= Duration.zero) {
+      _foregroundWarningGraceEndsAt = null;
+      _foregroundWarningGraceTimer?.cancel();
+      _foregroundWarningGraceTimer = null;
+      return false;
+    }
+    if (!(_foregroundWarningGraceTimer?.isActive ?? false)) {
+      _foregroundWarningGraceTimer = Timer(remaining, () {
+        _foregroundWarningGraceTimer = null;
+        if (!mounted) {
+          return;
+        }
+        _setState(() {});
+      });
+    }
+    return true;
+  }
+
+  bool _shouldDeferForegroundWarningUi({
+    required ChatProvider chatProvider,
+    required AppProvider appProvider,
+  }) {
+    if (!_isForegroundWarningGraceActive()) {
+      return false;
+    }
+    final health = _activeServerHealth(appProvider);
+    return !appProvider.isConnected ||
+        health == ServerHealthStatus.unhealthy ||
+        _isRecoverableSyncState(chatProvider: chatProvider);
+  }
+
+  void _showServerUnhealthyNoticeWithConfirmation() {
+    final chatProvider = _chatProvider;
+    final appProvider = _appProvider;
+    if (chatProvider == null || appProvider == null) {
+      _showServerUnhealthyNotice();
+      return;
+    }
+    if (!_shouldDeferForegroundWarningUi(
+      chatProvider: chatProvider,
+      appProvider: appProvider,
+    )) {
+      _showServerUnhealthyNotice();
+      return;
+    }
+    final endsAt = _foregroundWarningGraceEndsAt;
+    if (endsAt == null) {
+      return;
+    }
+    final remaining = endsAt.difference(DateTime.now());
+    if (remaining <= Duration.zero) {
+      _showServerUnhealthyNotice();
+      return;
+    }
+    _foregroundWarningGraceTimer?.cancel();
+    _foregroundWarningGraceTimer = Timer(remaining, () {
+      _foregroundWarningGraceTimer = null;
+      if (!mounted) {
+        return;
+      }
+      _setState(() {});
+      final currentChatProvider = _chatProvider;
+      final currentAppProvider = _appProvider;
+      if (currentChatProvider == null || currentAppProvider == null) {
+        return;
+      }
+      if (_shouldDeferForegroundWarningUi(
+        chatProvider: currentChatProvider,
+        appProvider: currentAppProvider,
+      )) {
+        return;
+      }
+      if (_activeServerHealth(currentAppProvider) ==
+          ServerHealthStatus.unhealthy) {
+        _showServerUnhealthyNotice();
+      }
+    });
   }
 
   Future<void> _handleServerReconnected() async {

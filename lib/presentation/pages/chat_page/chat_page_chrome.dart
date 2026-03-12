@@ -562,18 +562,22 @@ extension _ChatPageChrome on _ChatPageState {
     required ChatProvider chatProvider,
     required AppProvider appProvider,
   }) {
+    final deferForegroundWarnings = _shouldDeferForegroundWarningUi(
+      chatProvider: chatProvider,
+      appProvider: appProvider,
+    );
     final hasRecoverableSyncState = _isRecoverableSyncState(
       chatProvider: chatProvider,
     );
     if (hasRecoverableSyncState) {
       // Show error color immediately when the device is confirmed offline,
       // regardless of the loading indicator state.
-      if (!appProvider.isConnected) {
+      if (!appProvider.isConnected && !deferForegroundWarnings) {
         return Theme.of(context).colorScheme.error;
       }
       return Theme.of(context).colorScheme.primary;
     }
-    if (!appProvider.isConnected) {
+    if (!appProvider.isConnected && !deferForegroundWarnings) {
       return Theme.of(context).colorScheme.error;
     }
     return Colors.green;
@@ -613,7 +617,11 @@ extension _ChatPageChrome on _ChatPageState {
     required AppProvider appProvider,
   }) {
     final health = _activeServerHealth(appProvider);
-    if (health == ServerHealthStatus.unhealthy) {
+    final deferForegroundWarnings = _shouldDeferForegroundWarningUi(
+      chatProvider: chatProvider,
+      appProvider: appProvider,
+    );
+    if (health == ServerHealthStatus.unhealthy && !deferForegroundWarnings) {
       return Theme.of(context).colorScheme.error;
     }
     if (health == ServerHealthStatus.unknown) {

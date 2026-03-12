@@ -221,8 +221,15 @@ extension _ChatPageStatusPresenter on _ChatPageState {
     required ChatProvider chatProvider,
     required AppProvider appProvider,
   }) {
+    final deferForegroundWarnings = _shouldDeferForegroundWarningUi(
+      chatProvider: chatProvider,
+      appProvider: appProvider,
+    );
     if (!appProvider.isConnected ||
         chatProvider.syncState == ChatSyncState.reconnecting) {
+      if (deferForegroundWarnings) {
+        return 'Connecting';
+      }
       return 'Reconnecting';
     }
     if (chatProvider.syncState == ChatSyncState.delayed ||
@@ -237,7 +244,11 @@ extension _ChatPageStatusPresenter on _ChatPageState {
     required AppProvider appProvider,
   }) {
     final health = _activeServerHealth(appProvider);
-    if (health == ServerHealthStatus.unhealthy) {
+    if (health == ServerHealthStatus.unhealthy &&
+        !_shouldDeferForegroundWarningUi(
+          chatProvider: chatProvider,
+          appProvider: appProvider,
+        )) {
       return 'Unhealthy';
     }
     if (health == ServerHealthStatus.unknown) {

@@ -146,6 +146,8 @@ class AppTheme {
         behavior: SnackBarBehavior.floating,
         backgroundColor: colorScheme.inverseSurface,
         contentTextStyle: TextStyle(color: colorScheme.onInverseSurface),
+        showCloseIcon: true,
+        closeIconColor: colorScheme.onInverseSurface,
       ),
       chipTheme: base.chipTheme.copyWith(
         shape: RoundedRectangleBorder(borderRadius: AppShapes.borderSmall),

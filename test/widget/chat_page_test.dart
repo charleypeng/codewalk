@@ -1383,6 +1383,68 @@ void main() {
       }
     });
 
+    testWidgets('debounces unhealthy warning UI after foreground resume', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..defaultServerId = 'srv_test'
+        ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'srv_test',
+            'url': 'http://127.0.0.1:4096',
+            'label': 'Test Server',
+            'basicAuthEnabled': false,
+            'basicAuthUsername': '',
+            'basicAuthPassword': '',
+            'createdAt': 0,
+            'updatedAt': 0,
+          },
+        ]);
+      final provider = _buildChatProvider(localDataSource: localDataSource);
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      final activeServerId = appProvider.activeServerId;
+      expect(activeServerId, isNotNull);
+      appProvider.setHealthForTesting(
+        activeServerId!,
+        ServerHealthStatus.healthy,
+      );
+      await tester.pump();
+      expect(find.text('Connected'), findsOneWidget);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+
+      appProvider.setHealthForTesting(
+        activeServerId,
+        ServerHealthStatus.unhealthy,
+      );
+      await tester.pump();
+
+      expect(find.byType(SnackBar), findsNothing);
+      expect(find.text('Unhealthy'), findsNothing);
+      expect(find.text('Connecting'), findsOneWidget);
+
+      await tester.pump(const Duration(milliseconds: 1900));
+      await tester.pump();
+      expect(find.byType(SnackBar), findsNothing);
+      expect(find.text('Unhealthy'), findsNothing);
+
+      await tester.pump(const Duration(milliseconds: 150));
+      await tester.pump();
+      expect(find.text('Unhealthy'), findsOneWidget);
+      expect(find.byType(SnackBar), findsOneWidget);
+    });
+
     testWidgets('shows utility pane on large desktop width', (
       WidgetTester tester,
     ) async {
@@ -9340,6 +9402,7 @@ void main() {
 
     expect(provider.errorMessage, 'Server error. Please try again later');
     expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.byIcon(Icons.close), findsOneWidget);
     final chatInputFieldFinder = find.descendant(
       of: find.byKey(const ValueKey<String>('composer_input_row')),
       matching: find.byType(TextField),
