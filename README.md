@@ -11,6 +11,13 @@
 
 A native (really fast!!) cross-platform client for [OpenCode](https://github.com/anomalyco/opencode) server mode. Built with Flutter, it provides a conversational interface for session-based AI coding interactions over HTTP APIs and streaming events.
 
+## Unique Features
+
+🎙 Speech-to-text on every platform, including Linux
+💬 Canned answers for faster replies
+↩️ Easier undo and redo
+🧙 OpenCode setup wizard
+
 ## Highlights
 
 - Realtime AI chat with streaming responses (SSE) and robust turn reconciliation
