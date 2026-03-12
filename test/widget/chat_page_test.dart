@@ -116,7 +116,8 @@ void main() {
       final appProvider = _buildAppProvider(localDataSource: localDataSource);
 
       await tester.pumpWidget(_testApp(provider, appProvider));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
 
       expect(
         find.byKey(const ValueKey<String>('appbar_undo_button')),
@@ -243,7 +244,8 @@ void main() {
       final appProvider = _buildAppProvider(localDataSource: localDataSource);
 
       await tester.pumpWidget(_testApp(provider, appProvider));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
 
       expect(
         find.byKey(
@@ -769,7 +771,9 @@ void main() {
       final appProvider = _buildAppProvider(localDataSource: localDataSource);
 
       await tester.pumpWidget(_testApp(provider, appProvider));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      await provider.initializeProviders();
 
       await provider.loadSessions();
       await tester.pumpAndSettle();
@@ -1705,15 +1709,10 @@ void main() {
     await provider.selectSession(provider.sessions.first);
     await tester.pumpAndSettle();
 
-    expect(find.byTooltip('Add attachment'), findsOneWidget);
-    expect(
-      find.descendant(
-        of: find.byKey(const ValueKey<String>('composer_input_row')),
-        matching: find.byTooltip('Add attachment'),
-      ),
-      findsNothing,
-    );
-    await tester.tap(find.byTooltip('Add attachment'));
+    expect(find.byTooltip('Extras'), findsOneWidget);
+    await tester.tap(find.byTooltip('Extras'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Attach files'));
     await tester.pumpAndSettle();
     expect(find.text('Select Images'), findsOneWidget);
     expect(find.text('Select PDF'), findsNothing);
@@ -1769,8 +1768,10 @@ void main() {
       await provider.selectSession(provider.sessions.first);
       await tester.pumpAndSettle();
 
-      expect(find.byTooltip('Add attachment'), findsOneWidget);
-      await tester.tap(find.byTooltip('Add attachment'));
+      expect(find.byTooltip('Extras'), findsOneWidget);
+      await tester.tap(find.byTooltip('Extras'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Attach files'));
       await tester.pumpAndSettle();
       expect(find.text('Select Images'), findsOneWidget);
       expect(find.text('Select PDF'), findsOneWidget);
@@ -3674,7 +3675,8 @@ void main() {
       final appProvider = _buildAppProvider(localDataSource: localDataSource);
 
       await tester.pumpWidget(_testApp(provider, appProvider));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
 
       await provider.loadSessions();
       await provider.selectSession(provider.sessions.first);
@@ -4251,7 +4253,8 @@ void main() {
       );
       expect(find.text('model_1'), findsOneWidget);
       expect(find.text('Auto (server)'), findsNothing);
-      expect(find.byIcon(Symbols.attach_file_rounded), findsOneWidget);
+      expect(find.byIcon(Symbols.attach_file_rounded), findsNothing);
+      expect(find.byIcon(Symbols.add_rounded), findsOneWidget);
       expect(find.byIcon(Symbols.mic_none_rounded), findsOneWidget);
 
       await tester.tap(
@@ -4749,27 +4752,39 @@ void main() {
         modelId: 'claude-sonnet-4-5',
       );
       expect(anthropicTileFinder, findsOneWidget);
-      final anthropicTile = tester.widget<ListTile>(anthropicTileFinder);
-      final anthropicLeadingIcon = anthropicTile.leading as Icon?;
-      expect(anthropicLeadingIcon?.icon, SimpleIcons.claude);
+      expect(
+        find.descendant(
+          of: anthropicTileFinder,
+          matching: find.byIcon(SimpleIcons.claude),
+        ),
+        findsOneWidget,
+      );
 
       final googleClaudeTileFinder = modelSelectorTileFinder(
         providerId: 'google',
         modelId: 'claude-opus-via-google',
       );
       expect(googleClaudeTileFinder, findsOneWidget);
-      final googleClaudeTile = tester.widget<ListTile>(googleClaudeTileFinder);
-      final googleClaudeLeadingIcon = googleClaudeTile.leading as Icon?;
-      expect(googleClaudeLeadingIcon?.icon, SimpleIcons.claude);
+      expect(
+        find.descendant(
+          of: googleClaudeTileFinder,
+          matching: find.byIcon(SimpleIcons.claude),
+        ),
+        findsOneWidget,
+      );
 
       final googleTileFinder = modelSelectorTileFinder(
         providerId: 'google',
         modelId: 'gemini-2.5-pro',
       );
       expect(googleTileFinder, findsOneWidget);
-      final googleTile = tester.widget<ListTile>(googleTileFinder);
-      final googleLeadingIcon = googleTile.leading as Icon?;
-      expect(googleLeadingIcon?.icon, SimpleIcons.googlegemini);
+      expect(
+        find.descendant(
+          of: googleTileFinder,
+          matching: find.byIcon(SimpleIcons.googlegemini),
+        ),
+        findsOneWidget,
+      );
 
       await tester.tapAt(const Offset(8, 8));
       await tester.pumpAndSettle();
@@ -7676,12 +7691,16 @@ void main() {
       );
 
       final fullFetchGate = Completer<void>();
+      var shouldGateUnlimitedFetch = false;
       repository.getMessagesHandler =
           (_, requestedSessionId, {String? directory, int? limit}) async {
             final output = List<ChatMessage>.from(
               repository.messagesBySession[requestedSessionId] ?? const [],
             );
             if (limit == null) {
+              if (!shouldGateUnlimitedFetch) {
+                return Right(output);
+              }
               await fullFetchGate.future;
               return Right(output);
             }
@@ -7700,11 +7719,13 @@ void main() {
       final appProvider = _buildAppProvider(localDataSource: localDataSource);
 
       await tester.pumpWidget(_testApp(provider, appProvider));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
 
       await provider.loadSessions();
       await provider.selectSession(provider.sessions.first);
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(provider.messages.length, 250);
       expect(provider.messages.last.id, 'msg_cached_249');
@@ -7712,6 +7733,7 @@ void main() {
       repository.messagesBySession[sessionId] = List<ChatMessage>.of(
         refreshedMessages,
       );
+      shouldGateUnlimitedFetch = true;
 
       await provider.refreshActiveSessionView(
         reason: 'delta-no-overlap',
@@ -7723,6 +7745,11 @@ void main() {
       expect(provider.messages.last.id, 'msg_cached_249');
 
       fullFetchGate.complete();
+      await provider.refreshActiveSessionView(
+        reason: 'delta-no-overlap-post-gate',
+        includeStatus: false,
+        preferDelta: false,
+      );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 40));
       await tester.pumpAndSettle();

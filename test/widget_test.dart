@@ -103,7 +103,9 @@ void main() {
     expect(sentSubmission?.mode, ChatComposerMode.normal);
   });
 
-  testWidgets('canned answers button is visible', (WidgetTester tester) async {
+  testWidgets('extras button is visible with plus icon', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
       _buildChatInputHarness(
         child: ChatInputWidget(
@@ -113,7 +115,8 @@ void main() {
       ),
     );
 
-    expect(find.byTooltip('Canned answers'), findsOneWidget);
+    expect(find.byTooltip('Extras'), findsOneWidget);
+    expect(find.byIcon(Symbols.add_rounded), findsOneWidget);
   });
 
   testWidgets('external voice toggle is ignored when composer is disabled', (
@@ -207,9 +210,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Canned answers'));
+    await tester.tap(find.byTooltip('Extras'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('XYZ').first);
+    expect(find.text('Quick replies'), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
 
     final field = tester.widget<TextField>(find.byType(TextField));
@@ -245,13 +249,35 @@ void main() {
 
     await tester.enterText(find.byType(TextField), 'old text');
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Canned answers'));
+    await tester.tap(find.byTooltip('Extras'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Replacement text').first);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
 
     final field = tester.widget<TextField>(find.byType(TextField));
     expect(field.controller!.text, 'Replacement text');
+  });
+
+  testWidgets('extras menu shows top quick-reply and attachment actions', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (_) {},
+          cannedAnswersDataSource: InMemoryAppLocalDataSource(),
+          showAttachmentButton: true,
+          showInlineAttachmentButton: false,
+        ),
+      ),
+    );
+
+    await tester.tap(find.byTooltip('Extras'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('New quick reply'), findsOneWidget);
+    expect(find.text('Attach files'), findsOneWidget);
+    expect(find.text('No quick replies yet.'), findsOneWidget);
   });
 
   testWidgets(

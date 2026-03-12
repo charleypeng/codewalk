@@ -13,6 +13,7 @@ import '../../data/datasources/app_local_datasource.dart';
 import '../../data/models/chat_message_model.dart';
 import '../../data/models/chat_realtime_model.dart';
 import '../../data/models/chat_session_model.dart';
+import '../../data/models/provider_model.dart';
 import '../../domain/entities/agent.dart';
 import '../../domain/entities/chat_composer_draft.dart';
 import '../../domain/entities/chat_message.dart';
@@ -274,6 +275,7 @@ class ChatProvider extends ChangeNotifier {
   String? _currentProjectId;
   List<Provider> _providers = [];
   Map<String, String> _defaultModels = {};
+  List<String> _connectedProviderIds = <String>[];
   List<Agent> _agents = <Agent>[];
   ChatProvidersRefreshState _providersRefreshState =
       ChatProvidersRefreshState.idle;

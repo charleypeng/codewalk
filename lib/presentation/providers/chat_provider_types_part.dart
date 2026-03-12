@@ -209,6 +209,20 @@ class _RemoteChatSelection {
   }
 }
 
+class _ProviderCatalogSnapshot {
+  const _ProviderCatalogSnapshot({
+    required this.providers,
+    required this.defaultModels,
+    required this.connected,
+  });
+
+  final List<Provider> providers;
+  final Map<String, String> defaultModels;
+  final List<String> connected;
+
+  bool get isEmpty => providers.isEmpty;
+}
+
 class _SessionSelectionOverride {
   const _SessionSelectionOverride({
     required this.providerId,

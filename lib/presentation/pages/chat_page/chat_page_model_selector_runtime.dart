@@ -3,7 +3,6 @@ part of '../chat_page.dart';
 extension _ChatPageModelSelectorRuntime on _ChatPageState {
   Widget _buildModelControls(
     ChatProvider chatProvider, {
-    required bool attachmentsEnabled,
     required bool isSubConversation,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -27,12 +26,9 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
         chatProvider.isProvidersRefreshInProgress &&
         chatProvider.providers.isEmpty;
     final showProvidersRetryHint =
-        chatProvider.providersRefreshState == ChatProvidersRefreshState.failed;
-    final attachButtonStyle = composerAttachButtonStyle(
-      colorScheme: colorScheme,
-      visualDensity: Theme.of(context).visualDensity,
-    );
-
+        chatProvider.providersRefreshState ==
+            ChatProvidersRefreshState.failed &&
+        chatProvider.providers.isEmpty;
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 0, 8, 2),
       child: Wrap(
@@ -142,17 +138,6 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                           ),
                         ),
                 ),
-              ),
-            ),
-          if (attachmentsEnabled)
-            Tooltip(
-              message: 'Add attachment',
-              child: IconButton(
-                onPressed: chatProvider.currentSession == null
-                    ? null
-                    : _chatInputController.openAttachmentOptions,
-                style: attachButtonStyle,
-                icon: const Icon(Symbols.attach_file_rounded),
               ),
             ),
         ],
@@ -837,12 +822,45 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
     return favorites;
   }
 
-  /// Trailing widget for model selector: star toggle + checkmark.
+  Widget _modelSelectorLeading({
+    required String providerId,
+    required String providerName,
+    required String modelId,
+    required String modelName,
+    required bool isSelected,
+  }) {
+    return SizedBox(
+      width: 44,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 18,
+            height: 18,
+            child: isSelected
+                ? const Icon(Symbols.check_rounded, size: 18)
+                : null,
+          ),
+          const SizedBox(width: 8),
+          Icon(
+            _modelSelectorListIcon(
+              providerId: providerId,
+              providerName: providerName,
+              modelId: modelId,
+              modelName: modelName,
+            ),
+            size: 18,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Trailing widget for model selector: favorite toggle only.
   Widget _modelSelectorTrailing({
     required ChatProvider chatProvider,
     required String providerId,
     required String modelId,
-    required bool isSelected,
     required void Function() onFavoriteToggled,
   }) {
     final isFavorite = chatProvider.isModelFavorite(
@@ -868,7 +886,6 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
             onFavoriteToggled();
           },
         ),
-        if (isSelected) const Icon(Symbols.check_rounded, size: 18),
       ],
     );
   }
@@ -1024,14 +1041,17 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                         key: ValueKey<String>(
                                           'model_selector_fav_${entry.providerId}_${entry.modelId}',
                                         ),
-                                        leading: Icon(
-                                          _modelSelectorListIcon(
-                                            providerId: entry.providerId,
-                                            providerName: entry.providerName,
-                                            modelId: entry.modelId,
-                                            modelName: entry.modelName,
-                                          ),
-                                          size: 18,
+                                        leading: _modelSelectorLeading(
+                                          providerId: entry.providerId,
+                                          providerName: entry.providerName,
+                                          modelId: entry.modelId,
+                                          modelName: entry.modelName,
+                                          isSelected:
+                                              selectedKey ==
+                                              _selectorEntryKey(
+                                                entry.providerId,
+                                                entry.modelId,
+                                              ),
                                         ),
                                         title: Text(entry.modelName),
                                         subtitle: Text(entry.providerName),
@@ -1039,12 +1059,6 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                           chatProvider: chatProvider,
                                           providerId: entry.providerId,
                                           modelId: entry.modelId,
-                                          isSelected:
-                                              selectedKey ==
-                                              _selectorEntryKey(
-                                                entry.providerId,
-                                                entry.modelId,
-                                              ),
                                           onFavoriteToggled: () =>
                                               setModalState(() {}),
                                         ),
@@ -1090,14 +1104,17 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                         key: ValueKey<String>(
                                           'model_selector_recent_${entry.providerId}_${entry.modelId}',
                                         ),
-                                        leading: Icon(
-                                          _modelSelectorListIcon(
-                                            providerId: entry.providerId,
-                                            providerName: entry.providerName,
-                                            modelId: entry.modelId,
-                                            modelName: entry.modelName,
-                                          ),
-                                          size: 18,
+                                        leading: _modelSelectorLeading(
+                                          providerId: entry.providerId,
+                                          providerName: entry.providerName,
+                                          modelId: entry.modelId,
+                                          modelName: entry.modelName,
+                                          isSelected:
+                                              selectedKey ==
+                                              _selectorEntryKey(
+                                                entry.providerId,
+                                                entry.modelId,
+                                              ),
                                         ),
                                         title: Text(entry.modelName),
                                         subtitle: Text(entry.providerName),
@@ -1105,12 +1122,6 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                           chatProvider: chatProvider,
                                           providerId: entry.providerId,
                                           modelId: entry.modelId,
-                                          isSelected:
-                                              selectedKey ==
-                                              _selectorEntryKey(
-                                                entry.providerId,
-                                                entry.modelId,
-                                              ),
                                           onFavoriteToggled: () =>
                                               setModalState(() {}),
                                         ),
@@ -1160,14 +1171,17 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                           key: ValueKey<String>(
                                             'model_selector_item_${entry.providerId}_${entry.modelId}',
                                           ),
-                                          leading: Icon(
-                                            _modelSelectorListIcon(
-                                              providerId: entry.providerId,
-                                              providerName: entry.providerName,
-                                              modelId: entry.modelId,
-                                              modelName: entry.modelName,
-                                            ),
-                                            size: 18,
+                                          leading: _modelSelectorLeading(
+                                            providerId: entry.providerId,
+                                            providerName: entry.providerName,
+                                            modelId: entry.modelId,
+                                            modelName: entry.modelName,
+                                            isSelected:
+                                                selectedKey ==
+                                                _selectorEntryKey(
+                                                  entry.providerId,
+                                                  entry.modelId,
+                                                ),
                                           ),
                                           title: Text(entry.modelName),
                                           subtitle:
@@ -1178,12 +1192,6 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                             chatProvider: chatProvider,
                                             providerId: entry.providerId,
                                             modelId: entry.modelId,
-                                            isSelected:
-                                                selectedKey ==
-                                                _selectorEntryKey(
-                                                  entry.providerId,
-                                                  entry.modelId,
-                                                ),
                                             onFavoriteToggled: () =>
                                                 setModalState(() {}),
                                           ),

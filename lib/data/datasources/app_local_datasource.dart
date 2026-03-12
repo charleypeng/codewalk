@@ -116,11 +116,23 @@ abstract class AppLocalDataSource {
   /// Retrieve locally-persisted favorite model keys (scoped).
   Future<String?> getFavoriteModelsJson({String? serverId, String? scopeId});
 
+  /// Retrieve legacy project-scoped favorite-model payloads for a server.
+  Future<List<String>> getLegacyFavoriteModelsJsonForServer(String serverId);
+
   /// Save locally-persisted favorite model keys (scoped).
   Future<void> saveFavoriteModelsJson(
     String favoriteModelsJson, {
     String? serverId,
     String? scopeId,
+  });
+
+  /// Retrieve the last successful provider catalog snapshot for a server.
+  Future<String?> getProviderCatalogCacheJson({String? serverId});
+
+  /// Save the last successful provider catalog snapshot for a server.
+  Future<void> saveProviderCatalogCacheJson(
+    String providerCatalogJson, {
+    String? serverId,
   });
 
   /// Retrieve locally-persisted pinned session IDs (scoped).
@@ -967,6 +979,30 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
   }
 
   @override
+  Future<List<String>> getLegacyFavoriteModelsJsonForServer(
+    String serverId,
+  ) async {
+    final normalizedServerId = serverId.trim();
+    if (normalizedServerId.isEmpty) {
+      return const <String>[];
+    }
+    final prefix =
+        '${AppConstants.favoriteModelsKey}::${Uri.encodeComponent(normalizedServerId)}::';
+    final values = <String>[];
+    for (final key in sharedPreferences.getKeys()) {
+      if (!key.startsWith(prefix)) {
+        continue;
+      }
+      final value = sharedPreferences.getString(key);
+      if (value == null || value.trim().isEmpty) {
+        continue;
+      }
+      values.add(value);
+    }
+    return values;
+  }
+
+  @override
   Future<void> saveFavoriteModelsJson(
     String favoriteModelsJson, {
     String? serverId,
@@ -979,6 +1015,24 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
         scopeId: scopeId,
       ),
       favoriteModelsJson,
+    );
+  }
+
+  @override
+  Future<String?> getProviderCatalogCacheJson({String? serverId}) async {
+    return sharedPreferences.getString(
+      _scopedKey(AppConstants.providerCatalogCacheKey, serverId: serverId),
+    );
+  }
+
+  @override
+  Future<void> saveProviderCatalogCacheJson(
+    String providerCatalogJson, {
+    String? serverId,
+  }) async {
+    await sharedPreferences.setString(
+      _scopedKey(AppConstants.providerCatalogCacheKey, serverId: serverId),
+      providerCatalogJson,
     );
   }
 

@@ -3,6 +3,7 @@ library;
 
 import 'dart:convert';
 
+import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/domain/entities/agent.dart';
 import 'package:codewalk/domain/entities/provider.dart';
@@ -87,6 +88,43 @@ void main() {
         expect(provider.providers, hasLength(2));
         expect(provider.selectedProviderId, 'provider_b');
         expect(provider.selectedModelId, 'model_b');
+      },
+    );
+
+    test(
+      'initializeProviders restores cached provider catalog before revalidation',
+      () async {
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'model_a': testModel('model_a')},
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a'],
+          ),
+        );
+
+        await provider.initializeProviders();
+
+        final cachedProvider = buildProvider();
+        appRepository.providersResult = Left(
+          NetworkFailure('provider refresh failed'),
+        );
+
+        await cachedProvider.initializeProviders();
+
+        expect(cachedProvider.providers, hasLength(1));
+        expect(cachedProvider.selectedProviderId, 'provider_a');
+        expect(cachedProvider.selectedModelId, 'model_a');
+        expect(
+          cachedProvider.providersRefreshState,
+          ChatProvidersRefreshState.ready,
+        );
       },
     );
 

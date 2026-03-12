@@ -59,7 +59,9 @@ extension _ChatProviderSessionOps on ChatProvider {
       _setSyncState(ChatSyncState.reconnecting, reason: 'context-switch');
     }
 
+    final previousServerId = _activeServerId;
     final serverId = await _resolveServerScopeId();
+    final serverChanged = previousServerId != serverId;
     final nextScope = _resolveContextScopeId();
     final nextContextKey = _composeContextKey(serverId, nextScope);
     _lazySessionBootstrapTask = null;
@@ -71,8 +73,6 @@ extension _ChatProviderSessionOps on ChatProvider {
     _isLoadingSessionInsights = false;
     _sessionInsightsError = null;
     _isRespondingInteraction = false;
-    _providers = <Provider>[];
-    _defaultModels = <String, String>{};
     _agents = <Agent>[];
     _providersRefreshTask = null;
     _providersRefreshState = ChatProvidersRefreshState.idle;
@@ -100,21 +100,33 @@ extension _ChatProviderSessionOps on ChatProvider {
     _autoTitleLastSignatureBySessionId.clear();
     _autoTitleInFlightSessionIds.clear();
     _autoTitleQueuedSessionIds.clear();
+    if (serverChanged) {
+      _providers = <Provider>[];
+      _defaultModels = <String, String>{};
+      _connectedProviderIds = <String>[];
+      await _restoreProviderCatalogSnapshot(serverId: serverId, notify: false);
+    }
     _state = _sessions.isEmpty ? ChatState.initial : ChatState.loaded;
     _notifyListeners();
 
     AppLogger.info(
       'Switching chat context reason=$reason context=$_activeContextKey',
     );
-    unawaited(
-      initializeProviders().catchError((Object error, StackTrace stackTrace) {
-        AppLogger.warn(
-          'Background providers refresh failed during context switch',
-          error: error,
-          stackTrace: stackTrace,
-        );
-      }),
-    );
+    final providersRefresh = initializeProviders().catchError((
+      Object error,
+      StackTrace stackTrace,
+    ) {
+      AppLogger.warn(
+        'Background providers refresh failed during context switch',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    });
+    if (reason == 'server') {
+      await providersRefresh;
+    } else {
+      unawaited(providersRefresh);
+    }
 
     final contextMarkedDirty = _dirtyContextKeys.remove(nextContextKey);
     if (useFastProjectTransition) {

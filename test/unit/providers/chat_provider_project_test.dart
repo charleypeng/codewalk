@@ -1591,7 +1591,6 @@ void main() {
         // Verify the data was persisted to local storage.
         final storedJson = await localDataSource.getFavoriteModelsJson(
           serverId: 'srv_test',
-          scopeId: 'default',
         );
         expect(storedJson, isNotNull);
         final decoded = json.decode(storedJson!) as List<dynamic>;
@@ -1607,6 +1606,196 @@ void main() {
           isTrue,
         );
         provider2.dispose();
+      },
+    );
+
+    test(
+      'favorite models stay shared across projects on the same server',
+      () async {
+        final scopedLocal = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test';
+        final scopedProjectProvider = ProjectProvider(
+          projectRepository: FakeProjectRepository(
+            currentProject: Project(
+              id: 'proj_a',
+              name: 'Project A',
+              path: '/repo/a',
+              createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+            ),
+            projects: <Project>[
+              Project(
+                id: 'proj_a',
+                name: 'Project A',
+                path: '/repo/a',
+                createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+              ),
+              Project(
+                id: 'proj_b',
+                name: 'Project B',
+                path: '/repo/b',
+                createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+              ),
+            ],
+          ),
+          localDataSource: scopedLocal,
+        );
+        final scopedProvider = ChatProvider(
+          sendChatMessage: SendChatMessage(chatRepository),
+          getChatSessions: GetChatSessions(chatRepository),
+          createChatSession: CreateChatSession(chatRepository),
+          getChatMessages: GetChatMessages(chatRepository),
+          getChatMessage: GetChatMessage(chatRepository),
+          getAgents: GetAgents(appRepository),
+          getProviders: GetProviders(appRepository),
+          deleteChatSession: DeleteChatSession(chatRepository),
+          updateChatSession: UpdateChatSession(chatRepository),
+          shareChatSession: ShareChatSession(chatRepository),
+          unshareChatSession: UnshareChatSession(chatRepository),
+          forkChatSession: ForkChatSession(chatRepository),
+          getSessionStatus: GetSessionStatus(chatRepository),
+          getSessionChildren: GetSessionChildren(chatRepository),
+          getSessionTodo: GetSessionTodo(chatRepository),
+          getSessionDiff: GetSessionDiff(chatRepository),
+          watchChatEvents: WatchChatEvents(chatRepository),
+          watchGlobalChatEvents: WatchGlobalChatEvents(chatRepository),
+          listPendingPermissions: ListPendingPermissions(chatRepository),
+          replyPermission: ReplyPermission(chatRepository),
+          listPendingQuestions: ListPendingQuestions(chatRepository),
+          replyQuestion: ReplyQuestion(chatRepository),
+          rejectQuestion: RejectQuestion(chatRepository),
+          projectProvider: scopedProjectProvider,
+          localDataSource: scopedLocal,
+        );
+        addTearDown(scopedProvider.dispose);
+
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'prov_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'mod_a': testModel('mod_a')},
+              ),
+            ],
+            defaultModels: const <String, String>{'prov_a': 'mod_a'},
+            connected: const <String>['prov_a'],
+          ),
+        );
+
+        await scopedProjectProvider.initializeProject();
+        await scopedProvider.initializeProviders();
+        await scopedProvider.toggleModelFavorite(
+          providerId: 'prov_a',
+          modelId: 'mod_a',
+        );
+
+        await scopedProjectProvider.switchProject('proj_b');
+        await scopedProvider.onProjectScopeChanged();
+        await scopedProvider.initializeProviders();
+
+        expect(
+          scopedProvider.isModelFavorite(
+            providerId: 'prov_a',
+            modelId: 'mod_a',
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    test(
+      'same-server project switch keeps cached providers visible during refresh',
+      () async {
+        final scopedLocal = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test';
+        final scopedProjectProvider = ProjectProvider(
+          projectRepository: FakeProjectRepository(
+            currentProject: Project(
+              id: 'proj_a',
+              name: 'Project A',
+              path: '/repo/a',
+              createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+            ),
+            projects: <Project>[
+              Project(
+                id: 'proj_a',
+                name: 'Project A',
+                path: '/repo/a',
+                createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+              ),
+              Project(
+                id: 'proj_b',
+                name: 'Project B',
+                path: '/repo/b',
+                createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+              ),
+            ],
+          ),
+          localDataSource: scopedLocal,
+        );
+        final scopedProvider = ChatProvider(
+          sendChatMessage: SendChatMessage(chatRepository),
+          getChatSessions: GetChatSessions(chatRepository),
+          createChatSession: CreateChatSession(chatRepository),
+          getChatMessages: GetChatMessages(chatRepository),
+          getChatMessage: GetChatMessage(chatRepository),
+          getAgents: GetAgents(appRepository),
+          getProviders: GetProviders(appRepository),
+          deleteChatSession: DeleteChatSession(chatRepository),
+          updateChatSession: UpdateChatSession(chatRepository),
+          shareChatSession: ShareChatSession(chatRepository),
+          unshareChatSession: UnshareChatSession(chatRepository),
+          forkChatSession: ForkChatSession(chatRepository),
+          getSessionStatus: GetSessionStatus(chatRepository),
+          getSessionChildren: GetSessionChildren(chatRepository),
+          getSessionTodo: GetSessionTodo(chatRepository),
+          getSessionDiff: GetSessionDiff(chatRepository),
+          watchChatEvents: WatchChatEvents(chatRepository),
+          watchGlobalChatEvents: WatchGlobalChatEvents(chatRepository),
+          listPendingPermissions: ListPendingPermissions(chatRepository),
+          replyPermission: ReplyPermission(chatRepository),
+          listPendingQuestions: ListPendingQuestions(chatRepository),
+          replyQuestion: ReplyQuestion(chatRepository),
+          rejectQuestion: RejectQuestion(chatRepository),
+          projectProvider: scopedProjectProvider,
+          localDataSource: scopedLocal,
+        );
+        addTearDown(scopedProvider.dispose);
+
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'prov_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'mod_a': testModel('mod_a')},
+              ),
+            ],
+            defaultModels: const <String, String>{'prov_a': 'mod_a'},
+            connected: const <String>['prov_a'],
+          ),
+        );
+
+        await scopedProjectProvider.initializeProject();
+        await scopedProvider.initializeProviders();
+        expect(scopedProvider.providers, isNotEmpty);
+
+        appRepository.providersResult = Left(NetworkFailure('refresh failed'));
+
+        await scopedProjectProvider.switchProject('proj_b');
+        await scopedProvider.onProjectScopeChanged(waitForRevalidation: false);
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        expect(scopedProvider.providers, isNotEmpty);
+        expect(scopedProvider.providers.single.id, 'prov_a');
+        expect(
+          scopedProvider.providersRefreshState,
+          ChatProvidersRefreshState.ready,
+        );
+
+        await scopedProvider.initializeProviders();
       },
     );
 

@@ -251,7 +251,6 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
 
               _buildModelControls(
                 chatProvider,
-                attachmentsEnabled: attachmentsEnabled,
                 isSubConversation: isSubConversation,
               ),
 

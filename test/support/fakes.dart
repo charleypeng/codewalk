@@ -149,6 +149,7 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
   String? sessionSelectionOverridesJson;
   String? recentModelsJson;
   String? favoriteModelsJson;
+  String? providerCatalogCacheJson;
   String? pinnedSessionsJson;
   String? cannedAnswersJson;
   String? modelUsageCountsJson;
@@ -214,6 +215,7 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
     sessionSelectionOverridesJson = null;
     recentModelsJson = null;
     favoriteModelsJson = null;
+    providerCatalogCacheJson = null;
     pinnedSessionsJson = null;
     cannedAnswersJson = null;
     modelUsageCountsJson = null;
@@ -474,6 +476,30 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
       serverId: serverId,
       scopeId: scopeId,
     )];
+  }
+
+  @override
+  Future<List<String>> getLegacyFavoriteModelsJsonForServer(
+    String serverId,
+  ) async {
+    final serverKey = Uri.encodeComponent(serverId.trim());
+    if (serverKey.isEmpty) {
+      return const <String>[];
+    }
+    final prefix = 'favorite_models::$serverKey::';
+    return scopedStrings.entries
+        .where((entry) => entry.key.startsWith(prefix))
+        .map((entry) => entry.value)
+        .where((value) => value.trim().isNotEmpty)
+        .toList(growable: false);
+  }
+
+  @override
+  Future<String?> getProviderCatalogCacheJson({String? serverId}) async {
+    if (serverId == null) {
+      return providerCatalogCacheJson;
+    }
+    return scopedStrings[_key('provider_catalog_cache', serverId: serverId)];
   }
 
   @override
@@ -894,6 +920,19 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
           scopeId: scopeId,
         )] =
         favoriteModelsJson;
+  }
+
+  @override
+  Future<void> saveProviderCatalogCacheJson(
+    String providerCatalogJson, {
+    String? serverId,
+  }) async {
+    if (serverId == null) {
+      providerCatalogCacheJson = providerCatalogJson;
+      return;
+    }
+    scopedStrings[_key('provider_catalog_cache', serverId: serverId)] =
+        providerCatalogJson;
   }
 
   @override
@@ -1704,6 +1743,8 @@ class FakeAppRepository implements AppRepository {
     Agent(name: 'build', mode: 'primary', hidden: false, native: false),
     Agent(name: 'plan', mode: 'primary', hidden: false, native: false),
   ]);
+  int getProvidersCallCount = 0;
+  String? lastGetProvidersDirectory;
   String? updatedHost;
   int? updatedPort;
 
@@ -1721,6 +1762,8 @@ class FakeAppRepository implements AppRepository {
   Future<Either<Failure, ProvidersResponse>> getProviders({
     String? directory,
   }) async {
+    getProvidersCallCount += 1;
+    lastGetProvidersDirectory = directory;
     return providersResult;
   }
 

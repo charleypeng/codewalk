@@ -109,7 +109,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
     );
   }
 
-  void _toggleCannedPopover() {
+  void _toggleExtrasPopover() {
     _setState(() {
       if (_popoverType == ChatComposerPopoverType.canned) {
         _popoverType = ChatComposerPopoverType.none;
@@ -120,6 +120,24 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
       _activeSuggestionIndex = 0;
     });
     _ensureInputFocus();
+  }
+
+  Future<void> _openQuickReplyCreatorFromExtras() async {
+    _closePopover();
+    await _promptCreateCannedAnswer();
+  }
+
+  void _openAttachmentOptionsFromExtras() {
+    if (!_canOpenAttachmentOptions) {
+      return;
+    }
+    _closePopover();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _showAttachmentOptions();
+    });
   }
 
   Future<void> _applyCannedAnswer(CannedAnswer answer) async {
@@ -358,44 +376,88 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
     return 'canned_${DateTime.now().microsecondsSinceEpoch}';
   }
 
-  Widget _buildCannedAnswersPopover({
+  Widget _buildExtrasActionChip({
+    required IconData icon,
+    required String label,
+    required VoidCallback? onPressed,
+  }) {
+    return ActionChip(
+      avatar: Icon(icon, size: 18),
+      label: Text(label),
+      onPressed: onPressed,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
+  }
+
+  Widget _buildExtrasPopover({
     required ColorScheme colorScheme,
     required double maxHeight,
   }) {
     final items = _visibleCannedAnswers;
     return Material(
-      key: const ValueKey<String>('composer_popover_panel_canned'),
+      key: const ValueKey<String>('composer_popover_panel_extras'),
       color: colorScheme.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: maxHeight),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: ListView(
+          key: const ValueKey<String>('composer_popover_extras_replies'),
+          padding: EdgeInsets.zero,
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.manual,
+          shrinkWrap: true,
           children: [
-            ListTile(
-              dense: true,
-              title: const Text('Canned answers'),
-              subtitle: const Text('Long-press an item to edit or delete'),
-              trailing: IconButton(
-                tooltip: 'Add canned answer',
-                onPressed: _promptCreateCannedAnswer,
-                icon: const Icon(Symbols.add_rounded),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Extras',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _buildExtrasActionChip(
+                        icon: Symbols.edit_note_rounded,
+                        label: 'New quick reply',
+                        onPressed: () =>
+                            unawaited(_openQuickReplyCreatorFromExtras()),
+                      ),
+                      _buildExtrasActionChip(
+                        icon: Symbols.attach_file_rounded,
+                        label: 'Attach files',
+                        onPressed: _canOpenAttachmentOptions
+                            ? _openAttachmentOptionsFromExtras
+                            : null,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Divider(
+              height: 1,
+              color: colorScheme.outlineVariant.withValues(alpha: 0.7),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+              child: Text(
+                'Quick replies',
+                style: Theme.of(context).textTheme.labelLarge,
               ),
             ),
             if (items.isEmpty)
               const Padding(
-                padding: EdgeInsets.fromLTRB(12, 8, 12, 16),
-                child: Text('No canned answers yet.'),
+                padding: EdgeInsets.fromLTRB(16, 4, 16, 16),
+                child: Text('No quick replies yet.'),
               )
             else
-              Flexible(
-                child: ListView.builder(
-                  key: const ValueKey<String>('composer_popover_canned'),
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.manual,
-                  shrinkWrap: true,
-                  itemCount: items.length,
-                  itemBuilder: (context, index) {
+              for (var index = 0; index < items.length; index++)
+                Builder(
+                  builder: (context) {
                     final item = items[index];
                     final scopeLabel =
                         item.scopeMode == CannedAnswerScopeMode.global
@@ -427,7 +489,6 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
                     );
                   },
                 ),
-              ),
           ],
         ),
       ),

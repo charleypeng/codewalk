@@ -749,7 +749,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     required double maxHeight,
   }) {
     if (_popoverType == ChatComposerPopoverType.canned) {
-      return _buildCannedAnswersPopover(
+      return _buildExtrasPopover(
         colorScheme: colorScheme,
         maxHeight: maxHeight,
       );
@@ -1011,11 +1011,11 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                               children: [
                                 Padding(
                                   padding: const EdgeInsets.only(left: 2),
-                                  child: IconButton.filledTonal(
+                                  child: IconButton(
                                     onPressed: widget.enabled
-                                        ? _toggleCannedPopover
+                                        ? _toggleExtrasPopover
                                         : null,
-                                    tooltip: 'Canned answers',
+                                    tooltip: 'Extras',
                                     style: IconButton.styleFrom(
                                       minimumSize: const Size(40, 40),
                                       maximumSize: const Size(40, 40),
@@ -1025,9 +1025,16 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                                       visualDensity: Theme.of(
                                         context,
                                       ).visualDensity,
+                                      backgroundColor:
+                                          _popoverType ==
+                                              ChatComposerPopoverType.canned
+                                          ? colorScheme.secondaryContainer
+                                          : Colors.transparent,
+                                      foregroundColor:
+                                          colorScheme.onSecondaryContainer,
                                     ),
                                     icon: const Icon(
-                                      Symbols.quickreply_rounded,
+                                      Symbols.add_rounded,
                                       size: 20,
                                     ),
                                   ),

@@ -1,6 +1,26 @@
 part of '../chat_provider.dart';
 
 extension _ChatProviderPreferenceOps on ChatProvider {
+  List<String> _decodeStoredModelKeys(String? raw, {int? maxItems}) {
+    if (raw == null || raw.trim().isEmpty) {
+      return <String>[];
+    }
+    try {
+      final decoded = json.decode(raw);
+      if (decoded is! List<dynamic>) {
+        return <String>[];
+      }
+      final values = decoded
+          .whereType<String>()
+          .map((value) => value.trim())
+          .where((value) => value.isNotEmpty)
+          .toList(growable: false);
+      return maxItems == null ? values : values.take(maxItems).toList();
+    } catch (_) {
+      return <String>[];
+    }
+  }
+
   void _storeCurrentContextSnapshot() {
     _contextSnapshots[_activeContextKey] = _ChatContextSnapshot(
       sessions: _sessions,
@@ -99,36 +119,30 @@ extension _ChatProviderPreferenceOps on ChatProvider {
       serverId: serverId,
       scopeId: scopeId,
     );
-    if (recentJson != null && recentJson.trim().isNotEmpty) {
-      try {
-        final decoded = json.decode(recentJson);
-        if (decoded is List<dynamic>) {
-          _recentModelKeys = decoded
-              .whereType<String>()
-              .where((value) => value.trim().isNotEmpty)
-              .take(ChatProvider._maxRecentModels)
-              .toList();
-        }
-      } catch (_) {
-        _recentModelKeys = <String>[];
-      }
-    }
+    _recentModelKeys = _decodeStoredModelKeys(
+      recentJson,
+      maxItems: ChatProvider._maxRecentModels,
+    );
 
     final favoritesJson = await localDataSource.getFavoriteModelsJson(
       serverId: serverId,
-      scopeId: scopeId,
     );
-    if (favoritesJson != null && favoritesJson.trim().isNotEmpty) {
-      try {
-        final decoded = json.decode(favoritesJson);
-        if (decoded is List<dynamic>) {
-          _favoriteModelKeys = decoded
-              .whereType<String>()
-              .where((value) => value.trim().isNotEmpty)
-              .toList();
+    _favoriteModelKeys = _decodeStoredModelKeys(favoritesJson);
+    if (_favoriteModelKeys.isEmpty) {
+      final legacyFavorites = await localDataSource
+          .getLegacyFavoriteModelsJsonForServer(serverId);
+      if (legacyFavorites.isNotEmpty) {
+        final mergedFavorites = <String>{};
+        for (final legacyRaw in legacyFavorites) {
+          mergedFavorites.addAll(_decodeStoredModelKeys(legacyRaw));
         }
-      } catch (_) {
-        _favoriteModelKeys = <String>[];
+        _favoriteModelKeys = mergedFavorites.toList(growable: false);
+        if (_favoriteModelKeys.isNotEmpty) {
+          await localDataSource.saveFavoriteModelsJson(
+            json.encode(_favoriteModelKeys),
+            serverId: serverId,
+          );
+        }
       }
     }
 
@@ -209,7 +223,6 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     await localDataSource.saveFavoriteModelsJson(
       json.encode(_favoriteModelKeys),
       serverId: serverId,
-      scopeId: scopeId,
     );
     await localDataSource.savePinnedSessionsJson(
       json.encode(_pinnedSessionIds.toList(growable: false)),

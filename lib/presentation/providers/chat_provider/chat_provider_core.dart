@@ -1,6 +1,136 @@
 part of '../chat_provider.dart';
 
 extension _ChatProviderCorePart on ChatProvider {
+  void _applyProviderCatalogSnapshot(
+    _ProviderCatalogSnapshot snapshot, {
+    bool notify = true,
+  }) {
+    _providers = snapshot.providers;
+    _defaultModels = snapshot.defaultModels;
+    _connectedProviderIds = snapshot.connected;
+    if (notify) {
+      _notifyListeners();
+    }
+  }
+
+  String _encodeProviderCatalogSnapshotJson(_ProviderCatalogSnapshot snapshot) {
+    final payload = <String, dynamic>{
+      'providers': snapshot.providers
+          .map(_providerCatalogProviderToJson)
+          .toList(),
+      'default': snapshot.defaultModels,
+      'connected': snapshot.connected,
+    };
+    return json.encode(payload);
+  }
+
+  Map<String, dynamic> _providerCatalogProviderToJson(Provider provider) {
+    return <String, dynamic>{
+      'id': provider.id,
+      'name': provider.name,
+      'env': provider.env,
+      'api': provider.api,
+      'npm': provider.npm,
+      'models': provider.models.map(
+        (key, value) => MapEntry(key, _providerCatalogModelToJson(value)),
+      ),
+    };
+  }
+
+  Map<String, dynamic> _providerCatalogModelToJson(Model model) {
+    return <String, dynamic>{
+      'id': model.id,
+      'name': model.name,
+      'release_date': model.releaseDate,
+      'attachment': model.attachment,
+      'reasoning': model.reasoning,
+      'temperature': model.temperature,
+      'tool_call': model.toolCall,
+      'cost': <String, dynamic>{
+        'input': model.cost.input,
+        'output': model.cost.output,
+        'cache_read': model.cost.cacheRead,
+        'cache_write': model.cost.cacheWrite,
+      },
+      'limit': <String, dynamic>{
+        'context': model.limit.context,
+        'output': model.limit.output,
+      },
+      'options': model.options,
+      'variants': model.variants.map(
+        (key, value) => MapEntry(key, <String, dynamic>{
+          'name': value.name,
+          'description': value.description,
+          'metadata': value.metadata,
+        }),
+      ),
+      'knowledge': model.knowledge,
+      'last_updated': model.lastUpdated,
+      'modalities': model.modalities,
+      'open_weights': model.openWeights,
+    };
+  }
+
+  _ProviderCatalogSnapshot? _decodeProviderCatalogSnapshot(String raw) {
+    if (raw.trim().isEmpty) {
+      return null;
+    }
+    final decoded = json.decode(raw);
+    if (decoded is! Map<String, dynamic>) {
+      return null;
+    }
+    final response = ProvidersResponseModel.fromJson(decoded).toDomain();
+    return _ProviderCatalogSnapshot(
+      providers: response.providers,
+      defaultModels: response.defaultModels,
+      connected: response.connected,
+    );
+  }
+
+  Future<bool> _restoreProviderCatalogSnapshot({
+    required String serverId,
+    bool notify = true,
+  }) async {
+    final raw = await localDataSource.getProviderCatalogCacheJson(
+      serverId: serverId,
+    );
+    if (raw == null || raw.trim().isEmpty) {
+      return false;
+    }
+    try {
+      final snapshot = _decodeProviderCatalogSnapshot(raw);
+      if (snapshot == null || snapshot.isEmpty) {
+        return false;
+      }
+      _applyProviderCatalogSnapshot(snapshot, notify: notify);
+      return true;
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to restore cached provider catalog',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
+  }
+
+  Future<void> _persistProviderCatalogSnapshot({
+    required String serverId,
+  }) async {
+    if (serverId.trim().isEmpty || _providers.isEmpty) {
+      return;
+    }
+    final snapshot = _ProviderCatalogSnapshot(
+      providers: _providers,
+      defaultModels: _defaultModels,
+      connected: _connectedProviderIds,
+    );
+    await localDataSource.saveProviderCatalogCacheJson(
+      _encodeProviderCatalogSnapshotJson(snapshot),
+      serverId: serverId,
+    );
+  }
+
   Future<void> _initializeProvidersInternal() async {
     if (!_featureFlagLogged) {
       _featureFlagLogged = true;
@@ -8,16 +138,20 @@ extension _ChatProviderCorePart on ChatProvider {
         'refreshless_feature_enabled=$_refreshlessRealtimeEnabled',
       );
     }
+    final serverId = await _resolveServerScopeId();
+    final hadVisibleCatalog =
+        _providers.isNotEmpty ||
+        await _restoreProviderCatalogSnapshot(serverId: serverId);
     _setProvidersRefreshState(
       ChatProvidersRefreshState.loading,
       errorMessage: null,
+      notify: !hadVisibleCatalog,
     );
     final fetchId = ++_providersFetchId;
-    final serverId = await _resolveServerScopeId();
     final scopeId = _resolveContextScopeId();
     try {
       var failed = false;
-      var connected = <String>[];
+      var connected = List<String>.from(_connectedProviderIds);
       final result = await getProviders(
         directory: projectProvider.currentDirectory,
       );
@@ -26,25 +160,34 @@ extension _ChatProviderCorePart on ChatProvider {
       }
       result.fold(
         (failure) {
-          failed = true;
           AppLogger.warn('Failed to load providers: ${failure.toString()}');
           final message = failure.message.trim();
-          _setProvidersRefreshState(
-            ChatProvidersRefreshState.failed,
-            errorMessage: message.isEmpty
-                ? 'Failed to refresh providers and models'
-                : message,
-          );
+          if (_providers.isEmpty) {
+            failed = true;
+            _setProvidersRefreshState(
+              ChatProvidersRefreshState.failed,
+              errorMessage: message.isEmpty
+                  ? 'Failed to refresh providers and models'
+                  : message,
+            );
+          }
         },
         (providersResponse) {
           _providers = providersResponse.providers;
           _defaultModels = providersResponse.defaultModels;
+          _connectedProviderIds = List<String>.from(
+            providersResponse.connected,
+          );
           connected = providersResponse.connected;
         },
       );
 
       if (failed) {
         return;
+      }
+
+      if (_providers.isNotEmpty) {
+        await _persistProviderCatalogSnapshot(serverId: serverId);
       }
 
       await _refreshAgents(serverId: serverId, scopeId: scopeId);
@@ -252,6 +395,7 @@ extension _ChatProviderCorePart on ChatProvider {
         _selectedProviderId = null;
         _selectedModelId = null;
         _selectedVariantId = null;
+        _connectedProviderIds = <String>[];
         _recentModelKeys = <String>[];
         _recentAgentNames = <String>[];
         _recentVariantValuesByModel = <String, List<String>>{};
