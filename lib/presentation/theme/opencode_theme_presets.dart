@@ -11,6 +11,10 @@ class OpenCodeThemePalette {
 
 const Map<OpenCodeThemePreset, OpenCodeThemePalette> _openCodeThemePalettes =
     <OpenCodeThemePreset, OpenCodeThemePalette>{
+      OpenCodeThemePreset.system: OpenCodeThemePalette(
+        label: 'System',
+        seedColor: Color(0xFF7C8896),
+      ),
       OpenCodeThemePreset.tokyonight: OpenCodeThemePalette(
         label: 'Tokyo Night',
         seedColor: Color(0xFF7AA2F7),
@@ -54,16 +58,13 @@ const Map<OpenCodeThemePreset, OpenCodeThemePalette> _openCodeThemePalettes =
     };
 
 OpenCodeThemePalette? openCodeThemePaletteFor(OpenCodeThemePreset? preset) {
-  if (preset == null || preset == OpenCodeThemePreset.system) {
+  if (preset == null) {
     return null;
   }
   return _openCodeThemePalettes[preset];
 }
 
 String openCodeThemePresetLabel(OpenCodeThemePreset preset) {
-  if (preset == OpenCodeThemePreset.system) {
-    return 'System';
-  }
   return _openCodeThemePalettes[preset]!.label;
 }
 

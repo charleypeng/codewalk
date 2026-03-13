@@ -8,6 +8,9 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../domain/entities/experience_settings.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../theme/brand_colors.dart';
+import '../../../theme/opencode_theme_presets.dart';
+
+enum _AppearanceThemeFamily { classic, presets }
 
 String _contrastLabel(double level) {
   if (level <= -0.83) return 'Reduced';
@@ -27,6 +30,25 @@ class AppearanceSettingsSection extends StatelessWidget {
       builder: (context, settingsProvider, _) {
         final isDarkModeActive =
             Theme.of(context).brightness == Brightness.dark;
+        final isPresetThemeActive = settingsProvider.themePreset != null;
+        final selectedThemeFamily = isPresetThemeActive
+            ? _AppearanceThemeFamily.presets
+            : _AppearanceThemeFamily.classic;
+        final selectedPreset =
+            settingsProvider.themePreset ?? OpenCodeThemePreset.system;
+        const presetOptions = <OpenCodeThemePreset>[
+          OpenCodeThemePreset.system,
+          OpenCodeThemePreset.tokyonight,
+          OpenCodeThemePreset.everforest,
+          OpenCodeThemePreset.ayu,
+          OpenCodeThemePreset.catppuccin,
+          OpenCodeThemePreset.catppuccinMacchiato,
+          OpenCodeThemePreset.gruvbox,
+          OpenCodeThemePreset.kanagawa,
+          OpenCodeThemePreset.nord,
+          OpenCodeThemePreset.matrix,
+          OpenCodeThemePreset.oneDark,
+        ];
         // Show the persisted preference regardless of active theme.
         // The switch is disabled when dark mode is inactive.
         final amoledSwitchValue = settingsProvider.useAmoledDark;
@@ -64,7 +86,7 @@ class AppearanceSettingsSection extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Choose between light, dark, or system theme.',
+                      'Choose light, dark, or system mode, then keep the CodeWalk classic palette or switch to an OpenCode preset.',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 12),
@@ -97,6 +119,68 @@ class AppearanceSettingsSection extends StatelessWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<_AppearanceThemeFamily>(
+                        key: const ValueKey<String>(
+                          'settings_theme_family_segmented',
+                        ),
+                        segments: const <ButtonSegment<_AppearanceThemeFamily>>[
+                          ButtonSegment<_AppearanceThemeFamily>(
+                            value: _AppearanceThemeFamily.classic,
+                            label: Text('CodeWalk Classic'),
+                            icon: Icon(Symbols.palette),
+                          ),
+                          ButtonSegment<_AppearanceThemeFamily>(
+                            value: _AppearanceThemeFamily.presets,
+                            label: Text('OpenCode Presets'),
+                            icon: Icon(Symbols.format_paint),
+                          ),
+                        ],
+                        selected: <_AppearanceThemeFamily>{selectedThemeFamily},
+                        onSelectionChanged: (selected) {
+                          final nextFamily = selected.first;
+                          if (nextFamily == _AppearanceThemeFamily.classic) {
+                            unawaited(settingsProvider.setThemePreset(null));
+                            return;
+                          }
+                          unawaited(
+                            settingsProvider.setThemePreset(selectedPreset),
+                          );
+                        },
+                      ),
+                    ),
+                    if (isPresetThemeActive) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        'Preset palette',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        key: const ValueKey<String>(
+                          'settings_theme_preset_wrap',
+                        ),
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: presetOptions
+                            .map(
+                              (preset) => ChoiceChip(
+                                key: ValueKey<String>(
+                                  'settings_theme_preset_${preset.name}',
+                                ),
+                                label: Text(openCodeThemePresetLabel(preset)),
+                                selected:
+                                    settingsProvider.themePreset == preset,
+                                onSelected: (_) => unawaited(
+                                  settingsProvider.setThemePreset(preset),
+                                ),
+                              ),
+                            )
+                            .toList(growable: false),
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     SwitchListTile.adaptive(
                       key: const ValueKey<String>(
@@ -133,12 +217,17 @@ class AppearanceSettingsSection extends StatelessWidget {
                         'settings_toggle_dynamic_color',
                       ),
                       title: const Text('Use wallpaper colors'),
-                      subtitle: const Text(
-                        'Extract color scheme from your device wallpaper.',
+                      subtitle: Text(
+                        isPresetThemeActive
+                            ? 'Switch to CodeWalk Classic to use wallpaper colors.'
+                            : 'Extract color scheme from your device wallpaper.',
                       ),
                       value: settingsProvider.useDynamicColor,
-                      onChanged: (value) =>
-                          unawaited(settingsProvider.setUseDynamicColor(value)),
+                      onChanged: isPresetThemeActive
+                          ? null
+                          : (value) => unawaited(
+                              settingsProvider.setUseDynamicColor(value),
+                            ),
                     ),
                   if (settingsProvider.dynamicColorAvailable)
                     const Divider(height: 1),
@@ -153,8 +242,10 @@ class AppearanceSettingsSection extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          settingsProvider.useDynamicColor &&
-                                  settingsProvider.dynamicColorAvailable
+                          isPresetThemeActive
+                              ? 'Switch to CodeWalk Classic to pick a brand color.'
+                              : settingsProvider.useDynamicColor &&
+                                    settingsProvider.dynamicColorAvailable
                               ? 'Disable wallpaper colors to pick a brand color.'
                               : 'Pick a seed color for the app palette.',
                           style: Theme.of(context).textTheme.bodySmall,
@@ -172,8 +263,9 @@ class AppearanceSettingsSection extends StatelessWidget {
                                     settingsProvider.customColorSeed ==
                                     brand.value;
                                 final isDisabled =
+                                    isPresetThemeActive ||
                                     settingsProvider.useDynamicColor &&
-                                    settingsProvider.dynamicColorAvailable;
+                                        settingsProvider.dynamicColorAvailable;
                                 return Tooltip(
                                   message: brand.label,
                                   child: ChoiceChip(
@@ -213,8 +305,9 @@ class AppearanceSettingsSection extends StatelessWidget {
             Builder(
               builder: (context) {
                 final isDynamicActive =
+                    isPresetThemeActive ||
                     settingsProvider.useDynamicColor &&
-                    settingsProvider.dynamicColorAvailable;
+                        settingsProvider.dynamicColorAvailable;
                 return Card(
                   child: Padding(
                     padding: const EdgeInsets.all(AppConstants.defaultPadding),
@@ -228,7 +321,9 @@ class AppearanceSettingsSection extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           isDynamicActive
-                              ? 'Disable wallpaper colors to adjust contrast.'
+                              ? isPresetThemeActive
+                                    ? 'Switch to CodeWalk Classic to adjust contrast.'
+                                    : 'Disable wallpaper colors to adjust contrast.'
                               : 'Adjust the contrast level of the color scheme.',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),

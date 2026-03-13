@@ -44,13 +44,14 @@ void main() {
     () {
       final lightScheme = openCodeLightSchemeFor(OpenCodeThemePreset.nord);
       final darkScheme = openCodeDarkSchemeFor(OpenCodeThemePreset.nord);
+      final systemScheme = openCodeLightSchemeFor(OpenCodeThemePreset.system);
 
       expect(lightScheme, isNotNull);
       expect(darkScheme, isNotNull);
+      expect(systemScheme, isNotNull);
       expect(lightScheme!.brightness, Brightness.light);
       expect(darkScheme!.brightness, Brightness.dark);
       expect(openCodeThemePresetLabel(OpenCodeThemePreset.oneDark), 'One Dark');
-      expect(openCodeLightSchemeFor(OpenCodeThemePreset.system), isNull);
       expect(openCodeDarkSchemeFor(null), isNull);
     },
   );

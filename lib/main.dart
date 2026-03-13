@@ -112,7 +112,6 @@ class MyApp extends StatelessWidget {
               final presetDarkScheme = openCodeDarkSchemeFor(themePreset);
               final usePresetSchemes =
                   themePreset != null &&
-                  themePreset != OpenCodeThemePreset.system &&
                   presetLightScheme != null &&
                   presetDarkScheme != null;
 

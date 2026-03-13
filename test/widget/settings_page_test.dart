@@ -1,4 +1,5 @@
 import 'package:codewalk/core/network/dio_client.dart';
+import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/presentation/pages/settings_page.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
@@ -44,6 +45,30 @@ void main() {
 
     await tester.tap(find.text('Appearance').first);
     await tester.pumpAndSettle();
+
+    expect(find.text('CodeWalk Classic'), findsOneWidget);
+    expect(find.text('OpenCode Presets'), findsOneWidget);
+
+    await tester.tap(find.text('OpenCode Presets'));
+    await tester.pumpAndSettle();
+
+    expect(settingsProvider.themePreset, OpenCodeThemePreset.system);
+    expect(
+      find.byKey(const ValueKey<String>('settings_theme_preset_tokyonight')),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('settings_theme_preset_tokyonight')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(settingsProvider.themePreset, OpenCodeThemePreset.tokyonight);
+
+    await tester.tap(find.text('CodeWalk Classic'));
+    await tester.pumpAndSettle();
+
+    expect(settingsProvider.themePreset, isNull);
 
     // Density card may be below the fold after Theme/Color/Contrast cards.
     await tester.scrollUntilVisible(
