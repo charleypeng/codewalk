@@ -438,6 +438,7 @@ class ExperienceSettings {
       showTaskList: true,
       taskListCollapsed: false,
       showComposerTips: true,
+      composerAutoApprovePermissions: true,
       desktopCloseBehavior: DesktopCloseBehavior.tray,
       androidBackgroundAlertsEnabled: true,
       keepMobileRealtimeForShortPeriod: true,
@@ -471,6 +472,7 @@ class ExperienceSettings {
     required this.showTaskList,
     required this.taskListCollapsed,
     required this.showComposerTips,
+    required this.composerAutoApprovePermissions,
     required this.desktopCloseBehavior,
     required this.androidBackgroundAlertsEnabled,
     required this.keepMobileRealtimeForShortPeriod,
@@ -504,6 +506,7 @@ class ExperienceSettings {
   final bool showTaskList;
   final bool taskListCollapsed;
   final bool showComposerTips;
+  final bool composerAutoApprovePermissions;
   final DesktopCloseBehavior desktopCloseBehavior;
   final bool androidBackgroundAlertsEnabled;
   final bool keepMobileRealtimeForShortPeriod;
@@ -537,6 +540,7 @@ class ExperienceSettings {
     bool? showTaskList,
     bool? taskListCollapsed,
     bool? showComposerTips,
+    bool? composerAutoApprovePermissions,
     DesktopCloseBehavior? desktopCloseBehavior,
     bool? androidBackgroundAlertsEnabled,
     bool? keepMobileRealtimeForShortPeriod,
@@ -574,6 +578,8 @@ class ExperienceSettings {
       showTaskList: showTaskList ?? this.showTaskList,
       taskListCollapsed: taskListCollapsed ?? this.taskListCollapsed,
       showComposerTips: showComposerTips ?? this.showComposerTips,
+      composerAutoApprovePermissions:
+          composerAutoApprovePermissions ?? this.composerAutoApprovePermissions,
       desktopCloseBehavior: desktopCloseBehavior ?? this.desktopCloseBehavior,
       androidBackgroundAlertsEnabled:
           androidBackgroundAlertsEnabled ?? this.androidBackgroundAlertsEnabled,
@@ -652,6 +658,7 @@ class ExperienceSettings {
       'showTaskList': showTaskList,
       'taskListCollapsed': taskListCollapsed,
       'showComposerTips': showComposerTips,
+      'composerAutoApprovePermissions': composerAutoApprovePermissions,
       'desktopCloseBehavior': desktopCloseBehaviorKey(desktopCloseBehavior),
       'keepDesktopRunningInTray':
           desktopCloseBehavior != DesktopCloseBehavior.close,
@@ -701,6 +708,8 @@ class ExperienceSettings {
     var showTaskList = defaults.showTaskList;
     var taskListCollapsed = defaults.taskListCollapsed;
     var showComposerTips = defaults.showComposerTips;
+    var composerAutoApprovePermissions =
+        defaults.composerAutoApprovePermissions;
     var desktopCloseBehavior = defaults.desktopCloseBehavior;
     var androidBackgroundAlertsEnabled =
         defaults.androidBackgroundAlertsEnabled;
@@ -852,6 +861,12 @@ class ExperienceSettings {
       showComposerTips = showComposerTipsJson;
     }
 
+    final composerAutoApprovePermissionsJson =
+        json['composerAutoApprovePermissions'];
+    if (composerAutoApprovePermissionsJson is bool) {
+      composerAutoApprovePermissions = composerAutoApprovePermissionsJson;
+    }
+
     final desktopCloseBehaviorJson = json['desktopCloseBehavior'];
     if (desktopCloseBehaviorJson is String &&
         desktopCloseBehaviorJson.trim().isNotEmpty) {
@@ -967,6 +982,7 @@ class ExperienceSettings {
       showTaskList: showTaskList,
       taskListCollapsed: taskListCollapsed,
       showComposerTips: showComposerTips,
+      composerAutoApprovePermissions: composerAutoApprovePermissions,
       desktopCloseBehavior: desktopCloseBehavior,
       androidBackgroundAlertsEnabled: androidBackgroundAlertsEnabled,
       keepMobileRealtimeForShortPeriod: keepMobileRealtimeForShortPeriod,

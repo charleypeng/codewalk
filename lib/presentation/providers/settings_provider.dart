@@ -84,6 +84,8 @@ class SettingsProvider extends ChangeNotifier {
   bool get showTaskList => _settings.showTaskList;
   bool get taskListCollapsed => _settings.taskListCollapsed;
   bool get showComposerTips => _settings.showComposerTips;
+  bool get composerAutoApprovePermissions =>
+      _settings.composerAutoApprovePermissions;
   DesktopCloseBehavior get desktopCloseBehavior =>
       _settings.desktopCloseBehavior;
   bool get keepDesktopRunningInTray =>
@@ -413,6 +415,15 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(showComposerTips: enabled);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setComposerAutoApprovePermissions(bool enabled) async {
+    if (_settings.composerAutoApprovePermissions == enabled) {
+      return;
+    }
+    _settings = _settings.copyWith(composerAutoApprovePermissions: enabled);
     notifyListeners();
     await _persist();
   }

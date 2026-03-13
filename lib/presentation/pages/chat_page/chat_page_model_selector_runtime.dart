@@ -6,6 +6,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
     required bool isSubConversation,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
+    final settingsProvider = _settingsProvider;
     final selectedModel = chatProvider.selectedModel;
     final lockedSubConversationSelection = isSubConversation
         ? _resolveLockedSubConversationSelection(chatProvider)
@@ -34,6 +35,51 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
         runSpacing: 8,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
+          if (!isSubConversation)
+            Tooltip(
+              message: settingsProvider?.composerAutoApprovePermissions == true
+                  ? 'Permission auto-approve is on'
+                  : 'Permission auto-approve is off',
+              child: FilterChip(
+                key: const ValueKey<String>(
+                  'composer_permission_auto_approve_toggle',
+                ),
+                showCheckmark: false,
+                selected:
+                    settingsProvider?.composerAutoApprovePermissions ?? true,
+                avatar: Badge.count(
+                  isLabelVisible:
+                      chatProvider.currentThreadPermissionRequests.isNotEmpty,
+                  count:
+                      chatProvider.currentThreadPermissionRequests.length > 99
+                      ? 99
+                      : chatProvider.currentThreadPermissionRequests.length,
+                  child: Icon(
+                    Symbols.verified_user,
+                    size: 18,
+                    color:
+                        settingsProvider?.composerAutoApprovePermissions == true
+                        ? colorScheme.onSecondaryContainer
+                        : colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                selectedColor: colorScheme.secondaryContainer,
+                side: BorderSide.none,
+                shape: const StadiumBorder(),
+                label: Text(
+                  settingsProvider?.composerAutoApprovePermissions == true
+                      ? 'Approve on'
+                      : 'Approve off',
+                ),
+                onSelected: settingsProvider == null
+                    ? null
+                    : (selected) => unawaited(
+                        settingsProvider.setComposerAutoApprovePermissions(
+                          selected,
+                        ),
+                      ),
+              ),
+            ),
           if (!isSubConversation)
             Tooltip(
               message: 'Choose agent',

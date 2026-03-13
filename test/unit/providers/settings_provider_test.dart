@@ -90,6 +90,36 @@ void main() {
       expect(soundService.playCount, 1);
     });
 
+    test('defaults composer permission auto-approve to enabled', () async {
+      final local = InMemoryAppLocalDataSource();
+      final provider = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+
+      await provider.initialize();
+
+      expect(provider.composerAutoApprovePermissions, isTrue);
+    });
+
+    test('persists composer permission auto-approve changes', () async {
+      final local = InMemoryAppLocalDataSource();
+      final provider = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+
+      await provider.initialize();
+      await provider.setComposerAutoApprovePermissions(false);
+
+      final raw = local.experienceSettingsJson;
+      expect(raw, isNotNull);
+      final settingsJson = jsonDecode(raw!) as Map<String, dynamic>;
+      expect(settingsJson['composerAutoApprovePermissions'], isFalse);
+    });
+
     test('allows toggling sound independently from notification', () async {
       final local = InMemoryAppLocalDataSource();
       final provider = SettingsProvider(
