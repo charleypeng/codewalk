@@ -91,6 +91,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
     final smallModelKey = settingsProvider.openCodeSmallModelKey;
     final agentOptions = settingsProvider.openCodeDefaultAgentOptions;
     final autoupdateMode = settingsProvider.openCodeAutoupdateMode;
+    final shareMode = settingsProvider.openCodeShareMode;
 
     return Card(
       child: Padding(
@@ -293,6 +294,44 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
+              DropdownButtonFormField<OpenCodeShareMode>(
+                key: const ValueKey<String>('settings_opencode_share_mode'),
+                value: shareMode,
+                decoration: const InputDecoration(
+                  labelText: 'OpenCode sharing default',
+                  border: OutlineInputBorder(),
+                  helperText:
+                      'Controls the official global `share` config, not the share button for an individual chat.',
+                ),
+                items: const <DropdownMenuItem<OpenCodeShareMode>>[
+                  DropdownMenuItem<OpenCodeShareMode>(
+                    value: OpenCodeShareMode.manual,
+                    child: Text('Manual'),
+                  ),
+                  DropdownMenuItem<OpenCodeShareMode>(
+                    value: OpenCodeShareMode.automatic,
+                    child: Text('Automatic'),
+                  ),
+                  DropdownMenuItem<OpenCodeShareMode>(
+                    value: OpenCodeShareMode.disabled,
+                    child: Text('Disabled'),
+                  ),
+                ],
+                onChanged: settingsProvider.openCodeDefaultsLoading
+                    ? null
+                    : (value) {
+                        if (value == null) {
+                          return;
+                        }
+                        unawaited(_applyShareMode(context, value));
+                      },
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Use the chat-level share action to publish one session now. This setting only changes OpenCode’s default sharing policy.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 12),
               Text(
                 'Permissions and variant/reasoning parity stay separate until their UI can preserve advanced config safely.',
                 style: Theme.of(context).textTheme.bodySmall,
@@ -383,6 +422,23 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
       _showFailureSnackBar(
         context,
         'Could not update the OpenCode auto-update mode.',
+      );
+    }
+  }
+
+  Future<void> _applyShareMode(
+    BuildContext context,
+    OpenCodeShareMode mode,
+  ) async {
+    final settingsProvider = context.read<SettingsProvider>();
+    final updated = await settingsProvider.setOpenCodeShareMode(mode);
+    if (!context.mounted) {
+      return;
+    }
+    if (!updated) {
+      _showFailureSnackBar(
+        context,
+        'Could not update the OpenCode sharing default.',
       );
     }
   }

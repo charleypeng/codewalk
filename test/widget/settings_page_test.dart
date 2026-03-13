@@ -26,6 +26,7 @@ void main() {
           'model': 'anthropic/claude-3-5-sonnet',
           'default_agent': 'plan',
           'autoupdate': 'notify',
+          'share': 'auto',
         }),
         _MockResponse(200, <String, dynamic>{
           'all': <dynamic>[
@@ -181,9 +182,14 @@ void main() {
       find.byKey(const ValueKey<String>('settings_opencode_autoupdate')),
       findsOneWidget,
     );
+    expect(
+      find.byKey(const ValueKey<String>('settings_opencode_share_mode')),
+      findsOneWidget,
+    );
     expect(find.text('Anthropic / Claude 3.5 Sonnet'), findsOneWidget);
     expect(find.text('plan'), findsOneWidget);
     expect(find.text('Notify only'), findsOneWidget);
+    expect(find.text('Automatic'), findsWidgets);
     expect(
       find.text(
         'OpenCode automatic fallback is active because `small_model` is unset.',
@@ -193,6 +199,12 @@ void main() {
     expect(
       find.text(
         'Use About for CodeWalk release checks. This setting only mirrors the official OpenCode `autoupdate` config.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'Use the chat-level share action to publish one session now. This setting only changes OpenCode’s default sharing policy.',
       ),
       findsOneWidget,
     );
