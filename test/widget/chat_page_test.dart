@@ -1532,7 +1532,11 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
       final localDataSource = InMemoryAppLocalDataSource()
-        ..activeServerId = 'srv_test';
+        ..activeServerId = 'srv_test'
+        ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+          'checkUpdatesOnOpen': false,
+          'composerAutoApprovePermissions': false,
+        });
       final provider = _buildChatProvider(localDataSource: localDataSource);
       final appProvider = _buildAppProvider(localDataSource: localDataSource);
 
@@ -1559,7 +1563,11 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
       final localDataSource = InMemoryAppLocalDataSource()
-        ..activeServerId = 'srv_test';
+        ..activeServerId = 'srv_test'
+        ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+          'checkUpdatesOnOpen': false,
+          'composerAutoApprovePermissions': false,
+        });
       final provider = _buildChatProvider(localDataSource: localDataSource);
       final appProvider = _buildAppProvider(localDataSource: localDataSource);
 
@@ -1625,7 +1633,11 @@ void main() {
       ];
 
       final localDataSource = InMemoryAppLocalDataSource()
-        ..activeServerId = 'srv_test';
+        ..activeServerId = 'srv_test'
+        ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+          'checkUpdatesOnOpen': false,
+          'composerAutoApprovePermissions': false,
+        });
       final provider = _buildChatProvider(
         chatRepository: repository,
         localDataSource: localDataSource,
@@ -1786,7 +1798,11 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
       final localDataSource = InMemoryAppLocalDataSource()
-        ..activeServerId = 'srv_test';
+        ..activeServerId = 'srv_test'
+        ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+          'checkUpdatesOnOpen': false,
+          'composerAutoApprovePermissions': false,
+        });
       final provider = _buildChatProvider(localDataSource: localDataSource);
       final appProvider = _buildAppProvider(localDataSource: localDataSource);
 
@@ -3780,7 +3796,11 @@ void main() {
       final appRepository = FakeAppRepository();
 
       final localDataSource = InMemoryAppLocalDataSource()
-        ..activeServerId = 'srv_test';
+        ..activeServerId = 'srv_test'
+        ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+          'checkUpdatesOnOpen': false,
+          'composerAutoApprovePermissions': false,
+        });
       final provider = _buildChatProvider(
         chatRepository: repository,
         localDataSource: localDataSource,
@@ -4005,6 +4025,260 @@ void main() {
   });
 
   testWidgets(
+    'auto-approves mirrored subagent permissions when composer toggle is enabled',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_root_auto',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Root Session',
+          ),
+          ChatSession(
+            id: 'ses_sub_auto',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(900),
+            title: 'Sub Session',
+            parentId: 'ses_root_auto',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_root_auto'] = <ChatMessage>[
+        UserMessage(
+          id: 'msg_root_auto_1',
+          sessionId: 'ses_root_auto',
+          time: DateTime.fromMillisecondsSinceEpoch(1200),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_root_auto_1',
+              messageId: 'msg_root_auto_1',
+              sessionId: 'ses_root_auto',
+              text: 'Auto approve permissions',
+            ),
+          ],
+        ),
+      ];
+      repository.pendingPermissions = const <ChatPermissionRequest>[
+        ChatPermissionRequest(
+          id: 'perm_auto_sub_1',
+          sessionId: 'ses_sub_auto',
+          permission: 'bash',
+          patterns: <String>['*'],
+          always: <String>[],
+          metadata: <String, dynamic>{},
+        ),
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.initializeProviders();
+      await provider.loadSessions();
+      await provider.selectSession(
+        provider.sessions
+            .where((session) => session.id == 'ses_root_auto')
+            .first,
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('composer_permission_auto_approve_toggle'),
+        ),
+        findsOneWidget,
+      );
+      expect(repository.lastPermissionRequestId, 'perm_auto_sub_1');
+      expect(repository.lastPermissionReply, 'once');
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'interaction_permission_request_perm_auto_sub_1',
+          ),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>('timeline_permission_request_perm_auto_sub_1'),
+        ),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
+    'keeps permission manual when composer auto-approve is persisted off',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_root_manual',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Root Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_root_manual'] = <ChatMessage>[
+        UserMessage(
+          id: 'msg_root_manual_1',
+          sessionId: 'ses_root_manual',
+          time: DateTime.fromMillisecondsSinceEpoch(1200),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_root_manual_1',
+              messageId: 'msg_root_manual_1',
+              sessionId: 'ses_root_manual',
+              text: 'Permission needs approval',
+            ),
+          ],
+        ),
+      ];
+      repository.pendingPermissions = const <ChatPermissionRequest>[
+        ChatPermissionRequest(
+          id: 'perm_manual_1',
+          sessionId: 'ses_root_manual',
+          permission: 'edit',
+          patterns: <String>['lib/**'],
+          always: <String>[],
+          metadata: <String, dynamic>{},
+        ),
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+          'checkUpdatesOnOpen': false,
+          'composerAutoApprovePermissions': false,
+        });
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.initializeProviders();
+      await provider.loadSessions();
+      await provider.selectSession(
+        provider.sessions
+            .where((session) => session.id == 'ses_root_manual')
+            .first,
+      );
+      await tester.pumpAndSettle();
+
+      expect(repository.lastPermissionRequestId, isNull);
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'interaction_permission_request_perm_manual_1',
+          ),
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>('composer_permission_auto_approve_toggle'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(repository.lastPermissionRequestId, 'perm_manual_1');
+      expect(repository.lastPermissionReply, 'once');
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'interaction_permission_request_perm_manual_1',
+          ),
+        ),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
+    'does not auto-answer questions when composer auto-approve is enabled',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_root_question_auto',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Root Session',
+          ),
+        ],
+      );
+      repository.pendingQuestions = const <ChatQuestionRequest>[
+        ChatQuestionRequest(
+          id: 'q_auto_1',
+          sessionId: 'ses_root_question_auto',
+          questions: <ChatQuestionInfo>[
+            ChatQuestionInfo(
+              question: 'Choose a mode',
+              header: 'Mode',
+              options: <ChatQuestionOption>[
+                ChatQuestionOption(label: 'Safe', description: 'Be careful'),
+                ChatQuestionOption(label: 'Fast', description: 'Go quickly'),
+              ],
+            ),
+          ],
+        ),
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.initializeProviders();
+      await provider.loadSessions();
+      await provider.selectSession(
+        provider.sessions
+            .where((session) => session.id == 'ses_root_question_auto')
+            .first,
+      );
+      await tester.pumpAndSettle();
+
+      expect(repository.lastQuestionReplyRequestId, isNull);
+      expect(repository.lastQuestionRejectRequestId, isNull);
+      expect(
+        find.byKey(
+          const ValueKey<String>('interaction_question_request_q_auto_1'),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
     'shows subagent permission requests in main prompt and timeline',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));
@@ -4054,7 +4328,11 @@ void main() {
       ];
 
       final localDataSource = InMemoryAppLocalDataSource()
-        ..activeServerId = 'srv_test';
+        ..activeServerId = 'srv_test'
+        ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+          'checkUpdatesOnOpen': false,
+          'composerAutoApprovePermissions': false,
+        });
       final provider = _buildChatProvider(
         chatRepository: repository,
         localDataSource: localDataSource,
