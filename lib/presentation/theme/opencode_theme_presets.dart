@@ -65,7 +65,19 @@ OpenCodeThemePalette? openCodeThemePaletteFor(OpenCodeThemePreset? preset) {
 }
 
 String openCodeThemePresetLabel(OpenCodeThemePreset preset) {
-  return _openCodeThemePalettes[preset]!.label;
+  return switch (preset) {
+    OpenCodeThemePreset.system => 'System',
+    OpenCodeThemePreset.tokyonight => 'Tokyo Night',
+    OpenCodeThemePreset.everforest => 'Everforest',
+    OpenCodeThemePreset.ayu => 'Ayu',
+    OpenCodeThemePreset.catppuccin => 'Catppuccin',
+    OpenCodeThemePreset.catppuccinMacchiato => 'Catppuccin Macchiato',
+    OpenCodeThemePreset.gruvbox => 'Gruvbox',
+    OpenCodeThemePreset.kanagawa => 'Kanagawa',
+    OpenCodeThemePreset.nord => 'Nord',
+    OpenCodeThemePreset.matrix => 'Matrix',
+    OpenCodeThemePreset.oneDark => 'One Dark',
+  };
 }
 
 ColorScheme? openCodeLightSchemeFor(OpenCodeThemePreset? preset) {
