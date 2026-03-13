@@ -551,7 +551,10 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<bool> setOpenCodeUsername(String username) async {
     final normalizedUsername = username.trim();
-    if (normalizedUsername.isEmpty || normalizedUsername == _openCodeUsername) {
+    if (normalizedUsername.isEmpty) {
+      return false;
+    }
+    if (normalizedUsername == _openCodeUsername) {
       return true;
     }
 
