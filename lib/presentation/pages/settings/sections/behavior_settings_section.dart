@@ -18,6 +18,8 @@ class BehaviorSettingsSection extends StatefulWidget {
 class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
   late final TextEditingController _usernameController;
   late final FocusNode _usernameFocusNode;
+  final Map<String, int> _deferredConfigMutationGenerationByKey =
+      <String, int>{};
 
   @override
   void initState() {
@@ -439,7 +441,9 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
   Future<void> _applyDefaultModel(BuildContext context, String modelKey) async {
     final updated = await _runDeferredConfigMutation(
       context,
-      (settingsProvider) => settingsProvider.setOpenCodeDefaultModel(modelKey),
+      mutationKey: 'default_model',
+      mutate: (settingsProvider) =>
+          settingsProvider.setOpenCodeDefaultModel(modelKey),
     );
     if (!context.mounted) {
       return;
@@ -460,7 +464,9 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
   ) async {
     final updated = await _runDeferredConfigMutation(
       context,
-      (settingsProvider) => settingsProvider.setOpenCodeDefaultAgent(agentName),
+      mutationKey: 'default_agent',
+      mutate: (settingsProvider) =>
+          settingsProvider.setOpenCodeDefaultAgent(agentName),
     );
     if (!context.mounted) {
       return;
@@ -478,7 +484,9 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
   Future<void> _applySmallModel(BuildContext context, String modelKey) async {
     final updated = await _runDeferredConfigMutation(
       context,
-      (settingsProvider) => settingsProvider.setOpenCodeSmallModel(modelKey),
+      mutationKey: 'small_model',
+      mutate: (settingsProvider) =>
+          settingsProvider.setOpenCodeSmallModel(modelKey),
     );
     if (!context.mounted) {
       return;
@@ -499,7 +507,9 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
   ) async {
     final updated = await _runDeferredConfigMutation(
       context,
-      (settingsProvider) => settingsProvider.setOpenCodeAutoupdateMode(mode),
+      mutationKey: 'autoupdate',
+      mutate: (settingsProvider) =>
+          settingsProvider.setOpenCodeAutoupdateMode(mode),
     );
     if (!context.mounted) {
       return;
@@ -515,7 +525,8 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
   Future<void> _applySnapshotEnabled(BuildContext context, bool enabled) async {
     final updated = await _runDeferredConfigMutation(
       context,
-      (settingsProvider) =>
+      mutationKey: 'snapshot',
+      mutate: (settingsProvider) =>
           settingsProvider.setOpenCodeSnapshotEnabled(enabled),
     );
     if (!context.mounted) {
@@ -546,7 +557,8 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
     }
     final updated = await _runDeferredConfigMutation(
       context,
-      (settingsProvider) =>
+      mutationKey: 'username',
+      mutate: (settingsProvider) =>
           settingsProvider.setOpenCodeUsername(normalizedUsername),
     );
     if (!context.mounted) {
@@ -566,7 +578,8 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
   ) async {
     final updated = await _runDeferredConfigMutation(
       context,
-      (settingsProvider) => settingsProvider.setOpenCodeShareMode(mode),
+      mutationKey: 'share',
+      mutate: (settingsProvider) => settingsProvider.setOpenCodeShareMode(mode),
     );
     if (!context.mounted) {
       return;
@@ -580,28 +593,52 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
   }
 
   Future<bool> _runDeferredConfigMutation(
-    BuildContext context,
-    Future<bool> Function(SettingsProvider settingsProvider) mutate,
-  ) async {
+    BuildContext context, {
+    required String mutationKey,
+    required Future<bool> Function(SettingsProvider settingsProvider) mutate,
+  }) async {
     final chatProvider = _readChatProviderOrNull(context);
     if (chatProvider != null && chatProvider.shouldDeferConfigMutations) {
+      final generation =
+          (_deferredConfigMutationGenerationByKey[mutationKey] ?? 0) + 1;
+      _deferredConfigMutationGenerationByKey[mutationKey] = generation;
       _showFailureSnackBar(
         context,
         'CodeWalk will apply this OpenCode setting after the current response finishes.',
       );
-      while (context.mounted) {
-        await Future<void>.delayed(const Duration(seconds: 1));
-        final pendingChatProvider = _readChatProviderOrNull(context);
-        if (pendingChatProvider == null ||
-            !pendingChatProvider.shouldDeferConfigMutations) {
-          break;
-        }
-      }
+      await _waitForConfigMutationsToBeSafe(chatProvider);
       if (!context.mounted) {
         return false;
       }
+      if (_deferredConfigMutationGenerationByKey[mutationKey] != generation) {
+        return true;
+      }
     }
     return mutate(context.read<SettingsProvider>());
+  }
+
+  Future<void> _waitForConfigMutationsToBeSafe(
+    ChatProvider chatProvider,
+  ) async {
+    if (!chatProvider.shouldDeferConfigMutations) {
+      return;
+    }
+    final completer = Completer<void>();
+    void listener() {
+      if (!chatProvider.shouldDeferConfigMutations && !completer.isCompleted) {
+        completer.complete();
+      }
+    }
+
+    chatProvider.addListener(listener);
+    try {
+      if (!chatProvider.shouldDeferConfigMutations && !completer.isCompleted) {
+        completer.complete();
+      }
+      await completer.future;
+    } finally {
+      chatProvider.removeListener(listener);
+    }
   }
 
   ChatProvider? _readChatProviderOrNull(BuildContext context) {
