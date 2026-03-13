@@ -35,6 +35,6 @@ Description: Build settings parity with official OpenCode in a contract-safe ord
 - [x] 3.02 Settings ownership and sync boundaries - Commit hash: 29f553f
 - [x] 3.03 Theme preset parity foundation - Commit hash: dd4a9b5
 - [x] 3.04 Theme UX, persistence, and migration safety - Commit hash: 1441f2c
-- [~] 3.05 Verified shared settings parity after theme slice - Partial commits: e740abe 4c7a411
+- [~] 3.05 Verified shared settings parity after theme slice - Partial commits: e740abe 4c7a411 75b9ce6 a2eed9c
 - [ ] 3.06 Overlapping permissions/shortcuts parity and provenance labeling
 - [ ] 3.07 Regression coverage, behavior/docs handoff, and divergence record

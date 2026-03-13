@@ -382,6 +382,12 @@ Delivered preset-selection UX while preserving the classic path:
 
 ---
 
+### 🔄 In Progress: Group 3.05 — Partial commits: e740abe 4c7a411 75b9ce6 a2eed9c
+
+*Work in progress on verified shared settings parity (model, default agent, permissions).*
+
+---
+
 ## Group 3.06: Overlapping Permissions/Shortcuts Parity and Provenance Labeling
 
 ### Why
