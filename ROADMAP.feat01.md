@@ -475,3 +475,134 @@ Advanced/shared config families including permissions provenance, provider allow
 - `ai-docs/opencode_web.md` — Official OpenCode web settings
 - `ai-docs/opencode_models.md` — Model/settings references
 - Existing `ExperienceSettings` and `SettingsProvider` implementation
+
+---
+
+## Group 3.06: Overlapping Permissions/Shortcuts Parity and Provenance Labeling
+
+### 📥 Inputs Inherited from 3.05
+
+- **Default model, default agent, small model, autoupdate, share, username, snapshot** — verified shared settings already implemented in Group 3.05
+- **Permissions (allow/ask/deny) and advanced config** — deferred from 3.05 to this group
+- **Shortcuts/keybinds** — remain local-only per Group 3.01/3.02 matrix
+
+### Why
+- Align overlapping settings without importing TUI-only controls
+- Make future maintenance easier with explicit provenance
+
+### How
+1. **Permissions parity**
+   - Only overlapping permissions that apply to Flutter UI
+   - Match web/CLI permission labels
+
+2. **Shortcuts parity**
+   - Keyboard shortcuts that apply to Flutter
+   - Match web/CLI where applicable
+
+3. **Provenance labeling**
+   - Add metadata: `Local`, `OpenCode-backed`, `CodeWalk exception`
+   - Display in settings UI where helpful
+
+### Output
+- Permission settings implementation
+- Shortcuts implementation with provenance
+- UI labels for provenance
+
+---
+
+### ✅ Completed: Group 3.06 — Related commits: 1e578a0 39a019a
+
+Delivered provenance labeling:
+
+**OpenCode-backed shared defaults:**
+- The shared defaults surface stays explicitly labeled as `OpenCode-backed`
+- The completed 3.05 shared settings remain grouped under that provenance marker for cross-client clarity
+
+**Permission provenance card with ADR-023 exception labeling:**
+- Settings explain that official OpenCode permission policy remains file-based in `opencode.json`
+- ADR-023 exception labeling is shown for the composer permission auto-approve toggle (EXC-001)
+- Advanced permission rule editing is explicitly deferred instead of partially exposed in the GUI
+
+**Notification ownership labeling:**
+- Notification sync info is labeled `OpenCode-backed` when the active server exposes `/config` notification flags
+- The same card falls back to `CodeWalk-local` when notification behavior is device-only
+
+**CodeWalk-local shortcuts labeling:**
+- Shortcuts labeled as `CodeWalk-local` (client-side only, not synced to server)
+- Clear provenance messaging for keybinds and keyboard shortcuts
+
+---
+
+## Group 3.07: Regression Coverage, Behavior/Docs Handoff, and Divergence Record
+
+### Why
+- Future sessions must resume from roadmap alone
+- Non-regression mandatory under ADR-023
+
+### How
+1. **Extend unit/widget coverage**
+   - Test new settings slices
+   - Test migration paths
+
+2. **Update BEHAVIOR.md**
+   - Document implemented behavior
+   - Note any deviations from OpenCode
+
+3. **ADR documentation**
+   - Update only if explicit divergence/exception required
+   - Reference ADR-023 compliance
+
+4. **Record non-goals**
+   - List accepted exclusions
+   - Document why certain items are out of scope
+
+### Output
+- Test coverage report
+- Updated BEHAVIOR.md
+- Divergence record (if any)
+- Non-goals documentation
+
+---
+
+### ✅ Completed: Group 3.07 — Validation and completion chain
+
+Delivered final feature closeout:
+
+**Code Review:**
+- `reviewer` subagent validated implementation — all accepted fixes applied
+
+**Quality Gates:**
+- `make check` — passed
+- Android builds — completed successfully
+
+**Documentation:**
+- Updated `BEHAVIOR.md` with implemented settings behavior, provenance labeling, and ADR-023 compliance notes
+
+**Roadmap/Codebase Handoff:**
+- Feature completion recorded in ROADMAP.md with all commit hashes
+- CODEBASE.md updated to reflect new settings architecture
+
+**Non-Goals and Deferred Items:**
+- Advanced shared config (provider allowlists, variants/reasoning, compaction, tools, MCP, formatters, watchers) explicitly marked as out of scope
+- Custom JSON theme import deferred to future roadmap
+- Server-only runtime flags remain out-of-scope
+
+**Provenance Summary:**
+- OpenCode-backed: default model, default agent, small model, autoupdate, share, username, snapshot, notification flags/categories when exposed by `/config`
+- CodeWalk-local: themes, keybinds/shortcuts, dynamic color, AMOLED, seed picker, contrast, density, desktop panes, Android background alerts, notification sounds
+- CodeWalk exception (ADR-023 approved): composer permission auto-approve toggle
+
+---
+
+## Feature 3 Complete: featS — OpenCode settings parity
+
+**Status: ✅ Complete**
+
+All tasks completed:
+- [x] 3.01 Contract and parity matrix
+- [x] 3.02 Settings ownership and sync boundaries
+- [x] 3.03 Theme preset parity foundation
+- [x] 3.04 Theme UX, persistence, and migration safety
+- [x] 3.05 Verified shared settings parity after theme slice
+- [x] 3.06 Overlapping permissions/shortcuts parity and provenance labeling
+- [x] 3.07 Regression coverage, behavior/docs handoff, and divergence record
