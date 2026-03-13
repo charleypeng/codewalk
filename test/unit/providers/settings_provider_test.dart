@@ -396,6 +396,7 @@ void main() {
             'model': 'anthropic/claude-3-5-sonnet',
             'small_model': 'anthropic/claude-3-5-haiku',
             'default_agent': 'plan',
+            'autoupdate': 'notify',
           }),
           _MockResponse(200, <String, dynamic>{
             'all': <dynamic>[
@@ -471,6 +472,7 @@ void main() {
       expect(provider.openCodeDefaultModelKey, 'anthropic/claude-3-5-sonnet');
       expect(provider.openCodeSmallModelKey, 'anthropic/claude-3-5-haiku');
       expect(provider.openCodeDefaultAgentName, 'plan');
+      expect(provider.openCodeAutoupdateMode, OpenCodeAutoupdateMode.notify);
       expect(provider.openCodeDefaultModelOptions, hasLength(2));
       expect(
         provider.openCodeDefaultModelOptions
@@ -506,6 +508,7 @@ void main() {
             'model': 'anthropic/claude-3-5-sonnet',
             'small_model': 'anthropic/claude-3-5-haiku',
             'default_agent': 'plan',
+            'autoupdate': true,
           }),
           _MockResponse(200, <String, dynamic>{
             'all': <dynamic>[
@@ -583,6 +586,9 @@ void main() {
           _MockResponse(200, true),
           _MockResponse(200, true),
           _MockResponse(200, true),
+          _MockResponse(200, true),
+          _MockResponse(200, true),
+          _MockResponse(200, true),
         ]);
       final dioClient = _buildDioClient(adapter);
       final provider = SettingsProvider(
@@ -597,10 +603,16 @@ void main() {
       await provider.setOpenCodeDefaultModel('openai/gpt-5');
       await provider.setOpenCodeDefaultAgent('build');
       await provider.setOpenCodeSmallModel('openai/gpt-5');
+      await provider.setOpenCodeAutoupdateMode(OpenCodeAutoupdateMode.notify);
+      await provider.setOpenCodeAutoupdateMode(OpenCodeAutoupdateMode.disabled);
+      await provider.setOpenCodeAutoupdateMode(
+        OpenCodeAutoupdateMode.automatic,
+      );
 
       expect(provider.openCodeDefaultModelKey, 'openai/gpt-5');
       expect(provider.openCodeDefaultAgentName, 'build');
       expect(provider.openCodeSmallModelKey, 'openai/gpt-5');
+      expect(provider.openCodeAutoupdateMode, OpenCodeAutoupdateMode.automatic);
 
       final modelPatch = adapter.capturedRequests[4];
       expect(modelPatch.method, 'PATCH');
@@ -619,6 +631,26 @@ void main() {
       expect(_decodeRequestData(smallModelPatch.data), <String, dynamic>{
         'small_model': 'openai/gpt-5',
       });
+
+      final autoupdateNotifyPatch = adapter.capturedRequests[7];
+      expect(autoupdateNotifyPatch.method, 'PATCH');
+      expect(_decodeRequestData(autoupdateNotifyPatch.data), <String, dynamic>{
+        'autoupdate': 'notify',
+      });
+
+      final autoupdateDisabledPatch = adapter.capturedRequests[8];
+      expect(autoupdateDisabledPatch.method, 'PATCH');
+      expect(
+        _decodeRequestData(autoupdateDisabledPatch.data),
+        <String, dynamic>{'autoupdate': false},
+      );
+
+      final autoupdateAutomaticPatch = adapter.capturedRequests[9];
+      expect(autoupdateAutomaticPatch.method, 'PATCH');
+      expect(
+        _decodeRequestData(autoupdateAutomaticPatch.data),
+        <String, dynamic>{'autoupdate': true},
+      );
     });
 
     test('persists OpenCode theme preset preference', () async {

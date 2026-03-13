@@ -45,6 +45,8 @@ class OpenCodeDefaultModelOption {
   String get label => '$providerName / $modelName';
 }
 
+enum OpenCodeAutoupdateMode { automatic, notify, disabled }
+
 class SettingsProvider extends ChangeNotifier {
   SettingsProvider({
     required AppLocalDataSource localDataSource,
@@ -88,6 +90,8 @@ class SettingsProvider extends ChangeNotifier {
   String? _openCodeDefaultModelKey;
   String? _openCodeSmallModelKey;
   String? _openCodeDefaultAgentName;
+  OpenCodeAutoupdateMode _openCodeAutoupdateMode =
+      OpenCodeAutoupdateMode.automatic;
   List<OpenCodeDefaultModelOption> _openCodeDefaultModelOptions =
       const <OpenCodeDefaultModelOption>[];
   List<String> _openCodeDefaultAgentOptions = const <String>[];
@@ -111,6 +115,7 @@ class SettingsProvider extends ChangeNotifier {
   String? get openCodeDefaultModelKey => _openCodeDefaultModelKey;
   String? get openCodeSmallModelKey => _openCodeSmallModelKey;
   String? get openCodeDefaultAgentName => _openCodeDefaultAgentName;
+  OpenCodeAutoupdateMode get openCodeAutoupdateMode => _openCodeAutoupdateMode;
   List<OpenCodeDefaultModelOption> get openCodeDefaultModelOptions =>
       List<OpenCodeDefaultModelOption>.unmodifiable(
         _openCodeDefaultModelOptions,
@@ -419,6 +424,9 @@ class SettingsProvider extends ChangeNotifier {
         config,
       );
       final configuredAgentName = _configuredAgentNameFromConfig(config);
+      final configuredAutoupdateMode = _configuredAutoupdateModeFromConfig(
+        config,
+      );
 
       final nextModelOptions = _buildOpenCodeDefaultModelOptions(
         providersPayload,
@@ -435,6 +443,7 @@ class SettingsProvider extends ChangeNotifier {
       _openCodeDefaultModelKey = configuredModelKey;
       _openCodeSmallModelKey = configuredSmallModelKey;
       _openCodeDefaultAgentName = configuredAgentName;
+      _openCodeAutoupdateMode = configuredAutoupdateMode;
       _openCodeDefaultModelOptions = nextModelOptions;
       _openCodeDefaultAgentOptions = nextAgentOptions;
       _openCodeDefaultsLoaded = true;
@@ -523,6 +532,29 @@ class SettingsProvider extends ChangeNotifier {
     } catch (error, stackTrace) {
       AppLogger.warn(
         'Failed to update OpenCode default agent',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
+  }
+
+  Future<bool> setOpenCodeAutoupdateMode(OpenCodeAutoupdateMode mode) async {
+    if (mode == _openCodeAutoupdateMode) {
+      return true;
+    }
+
+    try {
+      await _dioClient.patch<void>(
+        '/config',
+        data: <String, dynamic>{'autoupdate': _encodeAutoupdateMode(mode)},
+      );
+      _openCodeAutoupdateMode = mode;
+      notifyListeners();
+      return true;
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to update OpenCode autoupdate mode',
         error: error,
         stackTrace: stackTrace,
       );
@@ -1359,6 +1391,29 @@ class SettingsProvider extends ChangeNotifier {
       return null;
     }
     return normalized;
+  }
+
+  OpenCodeAutoupdateMode _configuredAutoupdateModeFromConfig(
+    Map<String, dynamic> config,
+  ) {
+    final value = config['autoupdate'];
+    if (value is bool) {
+      return value
+          ? OpenCodeAutoupdateMode.automatic
+          : OpenCodeAutoupdateMode.disabled;
+    }
+    if (value is String && value.trim().toLowerCase() == 'notify') {
+      return OpenCodeAutoupdateMode.notify;
+    }
+    return OpenCodeAutoupdateMode.automatic;
+  }
+
+  dynamic _encodeAutoupdateMode(OpenCodeAutoupdateMode mode) {
+    return switch (mode) {
+      OpenCodeAutoupdateMode.automatic => true,
+      OpenCodeAutoupdateMode.notify => 'notify',
+      OpenCodeAutoupdateMode.disabled => false,
+    };
   }
 
   List<OpenCodeDefaultModelOption> _buildOpenCodeDefaultModelOptions(
