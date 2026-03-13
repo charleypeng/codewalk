@@ -172,12 +172,29 @@ void main() {
       find.byKey(const ValueKey<String>('settings_opencode_default_agent')),
       findsOneWidget,
     );
+    expect(
+      find.byKey(const ValueKey<String>('settings_opencode_small_model')),
+      findsOneWidget,
+    );
     expect(find.text('Anthropic / Claude 3.5 Sonnet'), findsOneWidget);
     expect(find.text('plan'), findsOneWidget);
+    expect(
+      find.text(
+        'OpenCode automatic fallback is active because `small_model` is unset.',
+      ),
+      findsOneWidget,
+    );
 
     final syncToggleFinder = find.byKey(
       const ValueKey<String>('settings_toggle_experimental_multi_device_sync'),
     );
+    await tester.scrollUntilVisible(
+      syncToggleFinder,
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
+
     expect(syncToggleFinder, findsOneWidget);
     expect(find.text('Enable experimental multi-device sync'), findsOneWidget);
     expect(

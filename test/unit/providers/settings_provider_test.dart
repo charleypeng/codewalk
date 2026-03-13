@@ -394,6 +394,7 @@ void main() {
           _MockResponse(200, <String, dynamic>{}),
           _MockResponse(200, <String, dynamic>{
             'model': 'anthropic/claude-3-5-sonnet',
+            'small_model': 'anthropic/claude-3-5-haiku',
             'default_agent': 'plan',
           }),
           _MockResponse(200, <String, dynamic>{
@@ -406,6 +407,19 @@ void main() {
                   'claude-3-5-sonnet': <String, dynamic>{
                     'id': 'claude-3-5-sonnet',
                     'name': 'Claude 3.5 Sonnet',
+                    'release_date': '2025-01-01',
+                    'capabilities': <String, dynamic>{
+                      'attachment': true,
+                      'reasoning': true,
+                      'temperature': false,
+                      'toolcall': true,
+                    },
+                    'cost': <String, dynamic>{'input': 1, 'output': 2},
+                    'limit': <String, dynamic>{'context': 1000, 'output': 100},
+                  },
+                  'claude-3-5-haiku': <String, dynamic>{
+                    'id': 'claude-3-5-haiku',
+                    'name': 'Claude 3.5 Haiku',
                     'release_date': '2025-01-01',
                     'capabilities': <String, dynamic>{
                       'attachment': true,
@@ -455,11 +469,30 @@ void main() {
       await provider.refreshOpenCodeBackedDefaults();
 
       expect(provider.openCodeDefaultModelKey, 'anthropic/claude-3-5-sonnet');
+      expect(provider.openCodeSmallModelKey, 'anthropic/claude-3-5-haiku');
       expect(provider.openCodeDefaultAgentName, 'plan');
-      expect(provider.openCodeDefaultModelOptions, hasLength(1));
+      expect(provider.openCodeDefaultModelOptions, hasLength(2));
       expect(
-        provider.openCodeDefaultModelOptions.single.label,
-        'Anthropic / Claude 3.5 Sonnet',
+        provider.openCodeDefaultModelOptions
+            .map((option) => option.label)
+            .toList(growable: false),
+        containsAll(<String>[
+          'Anthropic / Claude 3.5 Sonnet',
+          'Anthropic / Claude 3.5 Haiku',
+        ]),
+      );
+      expect(
+        provider.openCodeDefaultModelOptions
+            .map((option) => option.key)
+            .toList(growable: false),
+        containsAll(<String>[
+          'anthropic/claude-3-5-sonnet',
+          'anthropic/claude-3-5-haiku',
+        ]),
+      );
+      expect(
+        provider.openCodeDefaultModelOptions.any((option) => option.connected),
+        isTrue,
       );
       expect(provider.openCodeDefaultAgentOptions, <String>['build', 'plan']);
     });
@@ -471,6 +504,7 @@ void main() {
           _MockResponse(200, <String, dynamic>{}),
           _MockResponse(200, <String, dynamic>{
             'model': 'anthropic/claude-3-5-sonnet',
+            'small_model': 'anthropic/claude-3-5-haiku',
             'default_agent': 'plan',
           }),
           _MockResponse(200, <String, dynamic>{
@@ -483,6 +517,19 @@ void main() {
                   'claude-3-5-sonnet': <String, dynamic>{
                     'id': 'claude-3-5-sonnet',
                     'name': 'Claude 3.5 Sonnet',
+                    'release_date': '2025-01-01',
+                    'capabilities': <String, dynamic>{
+                      'attachment': true,
+                      'reasoning': true,
+                      'temperature': false,
+                      'toolcall': true,
+                    },
+                    'cost': <String, dynamic>{'input': 1, 'output': 2},
+                    'limit': <String, dynamic>{'context': 1000, 'output': 100},
+                  },
+                  'claude-3-5-haiku': <String, dynamic>{
+                    'id': 'claude-3-5-haiku',
+                    'name': 'Claude 3.5 Haiku',
                     'release_date': '2025-01-01',
                     'capabilities': <String, dynamic>{
                       'attachment': true,
@@ -535,6 +582,7 @@ void main() {
           ]),
           _MockResponse(200, true),
           _MockResponse(200, true),
+          _MockResponse(200, true),
         ]);
       final dioClient = _buildDioClient(adapter);
       final provider = SettingsProvider(
@@ -548,9 +596,11 @@ void main() {
       await provider.refreshOpenCodeBackedDefaults();
       await provider.setOpenCodeDefaultModel('openai/gpt-5');
       await provider.setOpenCodeDefaultAgent('build');
+      await provider.setOpenCodeSmallModel('openai/gpt-5');
 
       expect(provider.openCodeDefaultModelKey, 'openai/gpt-5');
       expect(provider.openCodeDefaultAgentName, 'build');
+      expect(provider.openCodeSmallModelKey, 'openai/gpt-5');
 
       final modelPatch = adapter.capturedRequests[4];
       expect(modelPatch.method, 'PATCH');
@@ -562,6 +612,12 @@ void main() {
       expect(agentPatch.method, 'PATCH');
       expect(_decodeRequestData(agentPatch.data), <String, dynamic>{
         'default_agent': 'build',
+      });
+
+      final smallModelPatch = adapter.capturedRequests[6];
+      expect(smallModelPatch.method, 'PATCH');
+      expect(_decodeRequestData(smallModelPatch.data), <String, dynamic>{
+        'small_model': 'openai/gpt-5',
       });
     });
 

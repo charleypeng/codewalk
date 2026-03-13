@@ -88,6 +88,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
     SettingsProvider settingsProvider,
   ) {
     final modelOptions = settingsProvider.openCodeDefaultModelOptions;
+    final smallModelKey = settingsProvider.openCodeSmallModelKey;
     final agentOptions = settingsProvider.openCodeDefaultAgentOptions;
 
     return Card(
@@ -208,6 +209,51 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                       },
               ),
               const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                key: const ValueKey<String>('settings_opencode_small_model'),
+                value: _selectedDropdownValue(
+                  smallModelKey,
+                  modelOptions.map((option) => option.key),
+                ),
+                hint: const Text('Automatic fallback'),
+                decoration: const InputDecoration(
+                  labelText: 'Small model',
+                  border: OutlineInputBorder(),
+                  helperText:
+                      'Used for lightweight tasks like title generation.',
+                ),
+                isExpanded: true,
+                items: modelOptions
+                    .map(
+                      (option) => DropdownMenuItem<String>(
+                        value: option.key,
+                        child: Text(
+                          option.label,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged:
+                    modelOptions.isEmpty ||
+                        settingsProvider.openCodeDefaultsLoading
+                    ? null
+                    : (value) {
+                        if (value == null) {
+                          return;
+                        }
+                        unawaited(_applySmallModel(context, value));
+                      },
+              ),
+              const SizedBox(height: 8),
+              Text(
+                smallModelKey == null
+                    ? 'OpenCode automatic fallback is active because `small_model` is unset.'
+                    : 'Resetting `small_model` back to automatic fallback still requires editing config outside the app because `/config` patch updates cannot remove keys.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 12),
               Text(
                 'Permissions and variant/reasoning parity stay separate until their UI can preserve advanced config safely.',
                 style: Theme.of(context).textTheme.bodySmall,
@@ -263,6 +309,22 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
       _showFailureSnackBar(
         context,
         'Could not update the OpenCode default agent.',
+      );
+      return;
+    }
+    await _refreshChatProviderIfAvailable(context);
+  }
+
+  Future<void> _applySmallModel(BuildContext context, String modelKey) async {
+    final settingsProvider = context.read<SettingsProvider>();
+    final updated = await settingsProvider.setOpenCodeSmallModel(modelKey);
+    if (!context.mounted) {
+      return;
+    }
+    if (!updated) {
+      _showFailureSnackBar(
+        context,
+        'Could not update the OpenCode small model.',
       );
       return;
     }

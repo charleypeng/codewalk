@@ -86,6 +86,7 @@ class SettingsProvider extends ChangeNotifier {
   bool _openCodeDefaultsLoaded = false;
   String? _openCodeDefaultsError;
   String? _openCodeDefaultModelKey;
+  String? _openCodeSmallModelKey;
   String? _openCodeDefaultAgentName;
   List<OpenCodeDefaultModelOption> _openCodeDefaultModelOptions =
       const <OpenCodeDefaultModelOption>[];
@@ -108,6 +109,7 @@ class SettingsProvider extends ChangeNotifier {
   bool get openCodeDefaultsLoaded => _openCodeDefaultsLoaded;
   String? get openCodeDefaultsError => _openCodeDefaultsError;
   String? get openCodeDefaultModelKey => _openCodeDefaultModelKey;
+  String? get openCodeSmallModelKey => _openCodeSmallModelKey;
   String? get openCodeDefaultAgentName => _openCodeDefaultAgentName;
   List<OpenCodeDefaultModelOption> get openCodeDefaultModelOptions =>
       List<OpenCodeDefaultModelOption>.unmodifiable(
@@ -413,11 +415,17 @@ class SettingsProvider extends ChangeNotifier {
       }
 
       final configuredModelKey = _configuredModelKeyFromConfig(config);
+      final configuredSmallModelKey = _configuredSmallModelKeyFromConfig(
+        config,
+      );
       final configuredAgentName = _configuredAgentNameFromConfig(config);
 
       final nextModelOptions = _buildOpenCodeDefaultModelOptions(
         providersPayload,
-        configuredModelKey: configuredModelKey,
+        configuredModelKeys: <String?>[
+          configuredModelKey,
+          configuredSmallModelKey,
+        ],
       );
       final nextAgentOptions = _buildOpenCodeDefaultAgentOptions(
         agentsPayload,
@@ -425,6 +433,7 @@ class SettingsProvider extends ChangeNotifier {
       );
 
       _openCodeDefaultModelKey = configuredModelKey;
+      _openCodeSmallModelKey = configuredSmallModelKey;
       _openCodeDefaultAgentName = configuredAgentName;
       _openCodeDefaultModelOptions = nextModelOptions;
       _openCodeDefaultAgentOptions = nextAgentOptions;
@@ -462,6 +471,32 @@ class SettingsProvider extends ChangeNotifier {
     } catch (error, stackTrace) {
       AppLogger.warn(
         'Failed to update OpenCode default model',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
+  }
+
+  Future<bool> setOpenCodeSmallModel(String modelKey) async {
+    final normalizedModelKey = modelKey.trim();
+    if (normalizedModelKey.isEmpty ||
+        normalizedModelKey == _openCodeSmallModelKey) {
+      return true;
+    }
+
+    try {
+      await _dioClient.patch<void>(
+        '/config',
+        data: <String, dynamic>{'small_model': normalizedModelKey},
+      );
+      _openCodeSmallModelKey = normalizedModelKey;
+      _ensureConfiguredModelOption(normalizedModelKey);
+      notifyListeners();
+      return true;
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to update OpenCode small model',
         error: error,
         stackTrace: stackTrace,
       );
@@ -1282,7 +1317,14 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   String? _configuredModelKeyFromConfig(Map<String, dynamic> config) {
-    final modelValue = config['model'];
+    return _configuredModelKeyFromRawValue(config['model']);
+  }
+
+  String? _configuredSmallModelKeyFromConfig(Map<String, dynamic> config) {
+    return _configuredModelKeyFromRawValue(config['small_model']);
+  }
+
+  String? _configuredModelKeyFromRawValue(dynamic modelValue) {
     if (modelValue is String) {
       final normalized = modelValue.trim();
       return normalized.isEmpty ? null : normalized;
@@ -1321,14 +1363,19 @@ class SettingsProvider extends ChangeNotifier {
 
   List<OpenCodeDefaultModelOption> _buildOpenCodeDefaultModelOptions(
     Map<String, dynamic>? rawProviders, {
-    required String? configuredModelKey,
+    required Iterable<String?> configuredModelKeys,
   }) {
+    final normalizedConfiguredKeys = configuredModelKeys
+        .whereType<String>()
+        .map((value) => value.trim())
+        .where((value) => value.isNotEmpty)
+        .toSet();
     if (rawProviders == null) {
-      return configuredModelKey == null
+      return normalizedConfiguredKeys.isEmpty
           ? const <OpenCodeDefaultModelOption>[]
-          : <OpenCodeDefaultModelOption>[
-              _fallbackModelOption(configuredModelKey),
-            ];
+          : normalizedConfiguredKeys
+                .map(_fallbackModelOption)
+                .toList(growable: false);
     }
 
     final parsed = ProvidersResponseModel.fromJson(rawProviders);
@@ -1365,9 +1412,11 @@ class SettingsProvider extends ChangeNotifier {
       return a.modelName.toLowerCase().compareTo(b.modelName.toLowerCase());
     });
 
-    if (configuredModelKey != null &&
-        !options.any((option) => option.key == configuredModelKey)) {
-      options.insert(0, _fallbackModelOption(configuredModelKey));
+    for (final configuredKey in normalizedConfiguredKeys.toList().reversed) {
+      if (options.any((option) => option.key == configuredKey)) {
+        continue;
+      }
+      options.insert(0, _fallbackModelOption(configuredKey));
     }
 
     return options;
