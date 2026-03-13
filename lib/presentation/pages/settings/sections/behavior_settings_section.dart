@@ -90,6 +90,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
     final modelOptions = settingsProvider.openCodeDefaultModelOptions;
     final smallModelKey = settingsProvider.openCodeSmallModelKey;
     final agentOptions = settingsProvider.openCodeDefaultAgentOptions;
+    final autoupdateMode = settingsProvider.openCodeAutoupdateMode;
 
     return Card(
       child: Padding(
@@ -254,6 +255,44 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
+              DropdownButtonFormField<OpenCodeAutoupdateMode>(
+                key: const ValueKey<String>('settings_opencode_autoupdate'),
+                value: autoupdateMode,
+                decoration: const InputDecoration(
+                  labelText: 'OpenCode auto-update',
+                  border: OutlineInputBorder(),
+                  helperText:
+                      'Controls upstream OpenCode runtime updates, not CodeWalk app update checks.',
+                ),
+                items: const <DropdownMenuItem<OpenCodeAutoupdateMode>>[
+                  DropdownMenuItem<OpenCodeAutoupdateMode>(
+                    value: OpenCodeAutoupdateMode.automatic,
+                    child: Text('Automatic'),
+                  ),
+                  DropdownMenuItem<OpenCodeAutoupdateMode>(
+                    value: OpenCodeAutoupdateMode.notify,
+                    child: Text('Notify only'),
+                  ),
+                  DropdownMenuItem<OpenCodeAutoupdateMode>(
+                    value: OpenCodeAutoupdateMode.disabled,
+                    child: Text('Disabled'),
+                  ),
+                ],
+                onChanged: settingsProvider.openCodeDefaultsLoading
+                    ? null
+                    : (value) {
+                        if (value == null) {
+                          return;
+                        }
+                        unawaited(_applyAutoupdateMode(context, value));
+                      },
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Use About for CodeWalk release checks. This setting only mirrors the official OpenCode `autoupdate` config.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 12),
               Text(
                 'Permissions and variant/reasoning parity stay separate until their UI can preserve advanced config safely.',
                 style: Theme.of(context).textTheme.bodySmall,
@@ -329,6 +368,23 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
       return;
     }
     await _refreshChatProviderIfAvailable(context);
+  }
+
+  Future<void> _applyAutoupdateMode(
+    BuildContext context,
+    OpenCodeAutoupdateMode mode,
+  ) async {
+    final settingsProvider = context.read<SettingsProvider>();
+    final updated = await settingsProvider.setOpenCodeAutoupdateMode(mode);
+    if (!context.mounted) {
+      return;
+    }
+    if (!updated) {
+      _showFailureSnackBar(
+        context,
+        'Could not update the OpenCode auto-update mode.',
+      );
+    }
   }
 
   Future<void> _refreshChatProviderIfAvailable(BuildContext context) async {
