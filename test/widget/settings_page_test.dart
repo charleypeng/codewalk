@@ -26,6 +26,7 @@ void main() {
           'model': 'anthropic/claude-3-5-sonnet',
           'default_agent': 'plan',
           'username': 'helio',
+          'snapshot': false,
           'autoupdate': 'notify',
           'share': 'auto',
         }),
@@ -184,6 +185,10 @@ void main() {
       findsOneWidget,
     );
     expect(
+      find.byKey(const ValueKey<String>('settings_opencode_snapshot')),
+      findsOneWidget,
+    );
+    expect(
       find.byKey(const ValueKey<String>('settings_opencode_small_model')),
       findsOneWidget,
     );
@@ -200,9 +205,24 @@ void main() {
     expect(find.text('helio'), findsOneWidget);
     expect(find.text('Notify only'), findsOneWidget);
     expect(find.text('Automatic'), findsWidgets);
+    expect(find.text('OpenCode snapshots'), findsOneWidget);
+    expect(
+      tester
+          .widget<SwitchListTile>(
+            find.byKey(const ValueKey<String>('settings_opencode_snapshot')),
+          )
+          .value,
+      isFalse,
+    );
     expect(
       find.text(
         'Resetting `username` back to the system default still requires editing config outside the app because `/config` patch updates cannot remove keys.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'This controls OpenCode snapshot storage and undo/redo support, not CodeWalk local cache snapshots.',
       ),
       findsOneWidget,
     );

@@ -103,6 +103,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
     final smallModelKey = settingsProvider.openCodeSmallModelKey;
     final agentOptions = settingsProvider.openCodeDefaultAgentOptions;
     final username = settingsProvider.openCodeUsername;
+    final snapshotEnabled = settingsProvider.openCodeSnapshotEnabled;
     final autoupdateMode = settingsProvider.openCodeAutoupdateMode;
     final shareMode = settingsProvider.openCodeShareMode;
 
@@ -266,6 +267,25 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                 username == null
                     ? 'OpenCode uses the system username because `username` is unset.'
                     : 'Resetting `username` back to the system default still requires editing config outside the app because `/config` patch updates cannot remove keys.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 12),
+              SwitchListTile.adaptive(
+                key: const ValueKey<String>('settings_opencode_snapshot'),
+                contentPadding: EdgeInsets.zero,
+                title: const Text('OpenCode snapshots'),
+                subtitle: const Text(
+                  'Keep upstream git-backed snapshots enabled for undo/redo and recovery history.',
+                ),
+                value: snapshotEnabled,
+                onChanged: settingsProvider.openCodeDefaultsLoading
+                    ? null
+                    : (value) =>
+                          unawaited(_applySnapshotEnabled(context, value)),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'This controls OpenCode snapshot storage and undo/redo support, not CodeWalk local cache snapshots.',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
@@ -480,6 +500,20 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
       _showFailureSnackBar(
         context,
         'Could not update the OpenCode auto-update mode.',
+      );
+    }
+  }
+
+  Future<void> _applySnapshotEnabled(BuildContext context, bool enabled) async {
+    final settingsProvider = context.read<SettingsProvider>();
+    final updated = await settingsProvider.setOpenCodeSnapshotEnabled(enabled);
+    if (!context.mounted) {
+      return;
+    }
+    if (!updated) {
+      _showFailureSnackBar(
+        context,
+        'Could not update the OpenCode snapshot setting.',
       );
     }
   }
