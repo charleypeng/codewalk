@@ -116,6 +116,35 @@ Delivered evidence-backed parity matrix documenting:
 - **Model/default agent/permissions remain shared-config candidates** — requires Flutter surface decisions before implementation (covered in Group 3.05)
 - **Undocumented Web settings layout still requires proof** — do not mirror UI structure without citing official sources
 
+### Current Ownership Touchpoints
+
+| Component | Role | Sync Scope |
+|-----------|------|------------|
+| `ExperienceSettings` | Local app/device preferences entity | Local-only |
+| `SettingsProvider` | Unified persistence layer | Local + partial `/config` |
+| `SettingsProvider.syncNotificationsFromServerConfig()` | Sync notification flags/categories from server | `/config` overlap |
+| `SettingsProvider._syncNotificationToServer()` | Push notification changes to server | `/config` overlap |
+| `AppRemoteDataSource.getConfig()` | Generic remote config read entry point | `/config` read-only |
+| `chat_provider_selection_sync_ops.dart` | ChatProvider selection sync operations | Session-scoped |
+| `chat_provider_selection_helpers.dart` | Selection sync helpers for model/agent/variant | Session-scoped |
+
+> **Note**: ChatProvider selection sync files are existing shared-config touchpoints under the CodeWalk namespace. They handle model/agent/variant sync for active sessions but are not yet generalized for settings parity.
+
+### Explicit CodeWalk Exceptions Already Approved
+
+| Exception ID | Description | Approval |
+|--------------|-------------|----------|
+| EXC-001 | Composer permission auto-approve toggle | ADR-023 approved exception — local/product behavior, not shared-permission parity |
+
+> This exception is **local/product behavior only** and must not be mistaken for official OpenCode shared-permission parity. It is documented as an ADR-023 approved exception.
+
+### 3.02 Deliverables
+
+- **Ownership matrix by setting family** — classify each setting family as local, shared, or excluded
+- **Shared/local/excluded sync rules** — document what syncs where and under what conditions
+- **Exception inventory** — all approved CodeWalk exceptions with rationale
+- **Unresolved contract questions** — list of questions to verify before Groups 3.03/3.05 proceed
+
 ### Why
 - Prevent mixing local app/device preferences with shared OpenCode config
 - Avoid unsafe `/config` assumptions
