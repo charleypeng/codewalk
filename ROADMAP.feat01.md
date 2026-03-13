@@ -331,7 +331,32 @@ Implemented theme preset foundation:
 
 ---
 
+### ✅ Completed: Group 3.04 — Commit 1441f2c
+
+Delivered preset-selection UX while preserving the classic path:
+- Added theme family selection and preset chips inside the appearance settings section
+- Preset selection persists locally via `ExperienceSettings.themePreset` and `SettingsProvider.themePreset`
+- Classic Material You controls (dynamic color, AMOLED, seed picker, contrast) remain functional and are not evidence of shared config
+- Theme presets remain fully local/user-selectable; no `/config` sync introduced
+- Existing users without a preset stay on the classic path because `themePreset` defaults to null
+
+---
+
 ## Group 3.05: Verified Shared Settings Parity After Theme Slice
+
+### 📥 Inputs Inherited from 3.04
+
+- **Theme presets are now fully local and user-selectable in CodeWalk** — stored in `ExperienceSettings.themePreset`, persisted via `SettingsProvider.themePreset`, no server involvement
+- **Classic Material You controls remain intact and are not evidence of shared config** — dynamic color, AMOLED, seed picker, contrast are pure Flutter/local preferences; their presence does not imply `/config` parity
+- **Shared-settings work should not revisit theme ownership unless new proof appears** — themes are confirmed local-only; do not add `/config` sync for themes without citing new official OpenCode documentation
+- **Theme JSON import and shared theme sync remain out of scope unless re-planned** — custom theme import and server-side theme storage were explicitly deferred in 3.03/3.04; do not reopen without explicit roadmap update
+
+### 3.05 Guardrails
+
+- **Focus only on verified shared settings families** — model, default agent, permissions (allow/ask/deny), variant/reasoning — where upstream ownership is proven in `/config`
+- **Do not reopen local theme decisions without new evidence** — themes are confirmed local-only; ignore any pressure to treat them as shared config
+- **Require source proof before adding shared GUI settings** — cite `ai-docs/opencode_models.md` or official OpenCode docs; do not assume undocumented settings are shared
+- **Keep Flutter-only settings out of shared parity work** — dynamic color, AMOLED, seed picker, contrast, density, desktop panes, Android background alerts remain CodeWalk-local
 
 ### Why
 - Only implement shared parity after upstream ownership is proven
