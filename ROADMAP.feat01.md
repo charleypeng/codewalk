@@ -274,7 +274,31 @@ Recorded ownership matrix, sync rules, exception inventory, and unresolved contr
 
 ---
 
+### ✅ Completed: Group 3.03 — Commit dd4a9b5
+
+Implemented theme preset foundation:
+- Added `OpenCodeThemePreset` enum with 11 named presets (system, tokyonight, everforest, ayu, catppuccin, catppuccin-macchiato, gruvbox, kanagawa, nord, matrix, one-dark)
+- Created `lib/presentation/theme/opencode_theme_presets.dart` for runtime preset → Flutter theme mapping
+- Integrated preset resolution in `lib/main.dart` before passing schemes into `AppTheme.lightFrom` / `AppTheme.darkFrom`
+- Preset storage remains local via `ExperienceSettings.themePreset` and `SettingsProvider.themePreset`
+
+---
+
 ## Group 3.04: Theme UX, Persistence, and Migration Safety
+
+### 📥 Inputs Inherited from 3.03
+
+- **Preset storage is local and defaults to the classic path** — `ExperienceSettings.themePreset` persists preset choice locally; no `/config` sync
+- **Runtime theme resolution already supports preset-aware mapping** — `lib/presentation/theme/opencode_theme_presets.dart` resolves preset palettes in `lib/main.dart` before they flow into `AppTheme.lightFrom` / `AppTheme.darkFrom`
+- **Preset palette mapping exists but UI selection is still missing** — Presets are available programmatically; user-facing selector UI is the 3.04 deliverable
+- **Custom JSON themes and config sync remain deferred/out of scope** — Custom theme import and server-side theme storage are not part of 3.04
+
+### 3.04 Guardrails
+
+- **Preserve current classic Material You controls in the Appearance UI** — Keep dynamic color, AMOLED, seed picker, contrast toggles functional
+- **Add preset selection UX without reclassifying themes as shared config** — Theme presets remain local-only; do not introduce `/config` sync for themes
+- **Treat migration safety and backward compatibility as first-class concerns** — Existing theme preferences must survive the preset upgrade; test on user profiles with classic settings
+- **Avoid expanding into keybinds/permissions/shared settings during 3.04** — Scope is strictly theme UX; other setting families are out-of-bounds
 
 ### Why
 - Preset system must be usable on mobile and desktop
