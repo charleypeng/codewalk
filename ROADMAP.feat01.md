@@ -382,9 +382,21 @@ Delivered preset-selection UX while preserving the classic path:
 
 ---
 
-### 🔄 In Progress: Group 3.05 — Partial commits: e740abe 4c7a411 75b9ce6 a2eed9c e9aed61 6634786 a3cf43b
+### ✅ Completed: Group 3.05 — Related commits: e740abe 4c7a411 75b9ce6 a2eed9c e9aed61 6634786 a3cf43b d386ce5 60b8ff3 b798ba4 a250563 d0468bb
 
-*Work in progress on verified shared settings parity (model, default agent, permissions).*
+Delivered verified shared settings parity after theme slice:
+
+**Implemented shared settings:**
+- Default model (`defaultModel`)
+- Default agent (`defaultAgent`)
+- Small model (`smallModel`)
+- Autoupdate (`autoupdate`)
+- Share (`share`)
+- Username (`username`)
+- Snapshot (`snapshot`)
+
+**Deferred to later groups:**
+Advanced/shared config families including permissions provenance, provider allowlists, variants/reasoning, compaction, tools, and other advanced configuration are not part of this completed slice and are deferred to future roadmap groups.
 
 ---
 
