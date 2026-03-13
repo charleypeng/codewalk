@@ -93,6 +93,7 @@ class SettingsProvider extends ChangeNotifier {
   String? _openCodeSmallModelKey;
   String? _openCodeDefaultAgentName;
   String? _openCodeUsername;
+  bool _openCodeSnapshotEnabled = true;
   OpenCodeAutoupdateMode _openCodeAutoupdateMode =
       OpenCodeAutoupdateMode.automatic;
   OpenCodeShareMode _openCodeShareMode = OpenCodeShareMode.manual;
@@ -120,6 +121,7 @@ class SettingsProvider extends ChangeNotifier {
   String? get openCodeSmallModelKey => _openCodeSmallModelKey;
   String? get openCodeDefaultAgentName => _openCodeDefaultAgentName;
   String? get openCodeUsername => _openCodeUsername;
+  bool get openCodeSnapshotEnabled => _openCodeSnapshotEnabled;
   OpenCodeAutoupdateMode get openCodeAutoupdateMode => _openCodeAutoupdateMode;
   OpenCodeShareMode get openCodeShareMode => _openCodeShareMode;
   List<OpenCodeDefaultModelOption> get openCodeDefaultModelOptions =>
@@ -431,6 +433,9 @@ class SettingsProvider extends ChangeNotifier {
       );
       final configuredAgentName = _configuredAgentNameFromConfig(config);
       final configuredUsername = _configuredUsernameFromConfig(config);
+      final configuredSnapshotEnabled = _configuredSnapshotEnabledFromConfig(
+        config,
+      );
       final configuredAutoupdateMode = _configuredAutoupdateModeFromConfig(
         config,
       );
@@ -452,6 +457,7 @@ class SettingsProvider extends ChangeNotifier {
       _openCodeSmallModelKey = configuredSmallModelKey;
       _openCodeDefaultAgentName = configuredAgentName;
       _openCodeUsername = configuredUsername;
+      _openCodeSnapshotEnabled = configuredSnapshotEnabled;
       _openCodeAutoupdateMode = configuredAutoupdateMode;
       _openCodeShareMode = configuredShareMode;
       _openCodeDefaultModelOptions = nextModelOptions;
@@ -569,6 +575,29 @@ class SettingsProvider extends ChangeNotifier {
     } catch (error, stackTrace) {
       AppLogger.warn(
         'Failed to update OpenCode username',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
+  }
+
+  Future<bool> setOpenCodeSnapshotEnabled(bool enabled) async {
+    if (enabled == _openCodeSnapshotEnabled) {
+      return true;
+    }
+
+    try {
+      await _dioClient.patch<void>(
+        '/config',
+        data: <String, dynamic>{'snapshot': enabled},
+      );
+      _openCodeSnapshotEnabled = enabled;
+      notifyListeners();
+      return true;
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to update OpenCode snapshot mode',
         error: error,
         stackTrace: stackTrace,
       );
@@ -1460,6 +1489,14 @@ class SettingsProvider extends ChangeNotifier {
       return null;
     }
     return normalized;
+  }
+
+  bool _configuredSnapshotEnabledFromConfig(Map<String, dynamic> config) {
+    final value = config['snapshot'];
+    if (value is bool) {
+      return value;
+    }
+    return true;
   }
 
   OpenCodeAutoupdateMode _configuredAutoupdateModeFromConfig(
