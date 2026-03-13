@@ -31,7 +31,7 @@ Description: Replace false empty-state greeting during session/project hydration
 
 Description: Build settings parity with official OpenCode in a contract-safe order. (See ROADMAP.feat01.md for detailed execution plan)
 
-- [~] 3.01 Contract and parity matrix
+- [x] 3.01 Contract and parity matrix - Commit hash: 0d700be
 - [ ] 3.02 Settings ownership and sync boundaries
 - [ ] 3.03 Theme preset parity foundation
 - [ ] 3.04 Theme UX, persistence, and migration safety

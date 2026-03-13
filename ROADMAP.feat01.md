@@ -97,7 +97,24 @@ The order is intentional:
 
 ---
 
+### ✅ Completed: Group 3.01 — Commit 0d700be
+
+Delivered evidence-backed parity matrix documenting:
+- Local-only settings (themes, keybinds, UI preferences)
+- Proven shared settings (notifications enabled flags)
+- Shared-config candidates for later groups (model, agent, permissions)
+- Verification gaps requiring source-proof before expanding
+
+---
+
 ## Group 3.02: Settings Ownership and Sync Boundaries
+
+### 📥 Inputs Inherited from 3.01
+
+- **Themes/keybinds are local/client parity, not shared `/config` parity** — visual alignment with OpenCode named presets, not server sync
+- **Notifications enabled flags are the proven current `/config` overlap** — already wired in `SettingsProvider`
+- **Model/default agent/permissions remain shared-config candidates** — requires Flutter surface decisions before implementation (covered in Group 3.05)
+- **Undocumented Web settings layout still requires proof** — do not mirror UI structure without citing official sources
 
 ### Why
 - Prevent mixing local app/device preferences with shared OpenCode config
