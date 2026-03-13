@@ -159,6 +159,10 @@ class _ChatPageState extends State<ChatPage>
   ChatProvider? _chatProvider;
   AppProvider? _appProvider;
   SettingsProvider? _settingsProvider;
+  bool _autoApprovePermissionDrainScheduled = false;
+  bool _autoApprovePermissionDrainRunning = false;
+  bool _autoApprovePermissionDrainQueued = false;
+  final Set<String> _autoApprovePermissionCooldownIds = <String>{};
   String? _lastServerId;
   bool? _lastServerConnectionState;
   ServerHealthStatus _lastActiveServerHealthStatus = ServerHealthStatus.unknown;
@@ -317,7 +321,13 @@ class _ChatPageState extends State<ChatPage>
     // Invalidate highlight theme cache on dependency change (theme switch).
     _cachedHighlightTheme = null;
     // Safely get ChatProvider reference here
-    _chatProvider ??= context.read<ChatProvider>();
+    final nextChatProvider = context.read<ChatProvider>();
+    if (!identical(_chatProvider, nextChatProvider)) {
+      _chatProvider?.removeListener(_handleChatProviderChanged);
+      _chatProvider = nextChatProvider;
+      _chatProvider?.addListener(_handleChatProviderChanged);
+      _autoApprovePermissionCooldownIds.clear();
+    }
     _chatProvider?.setAppInForeground(_isAppInForeground);
     final nextAppProvider = context.read<AppProvider>();
     if (!identical(_appProvider, nextAppProvider)) {
@@ -361,6 +371,7 @@ class _ChatPageState extends State<ChatPage>
     _chatProvider?.setScrollToBottomCallback(null);
     _chatProvider?.setChatRouteActive(false);
     unawaited(_chatProvider?.setForegroundActive(false));
+    _chatProvider?.removeListener(_handleChatProviderChanged);
     _scrollToBottomRequestToken += 1;
     _appProvider?.removeListener(_handleAppProviderChange);
     _notificationTapSubscription?.cancel();

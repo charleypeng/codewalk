@@ -3,6 +3,107 @@ part of '../chat_page.dart';
 extension _ChatPageLifecycle on _ChatPageState {
   void _handleSettingsChanged() {
     _applyForegroundPolicy(reason: 'settings-changed');
+    _autoApprovePermissionCooldownIds.clear();
+    _scheduleAutoApprovePermissionDrain(reason: 'settings-changed');
+  }
+
+  void _handleChatProviderChanged() {
+    _scheduleAutoApprovePermissionDrain(reason: 'chat-provider-changed');
+  }
+
+  void _scheduleAutoApprovePermissionDrain({required String reason}) {
+    final chatProvider = _chatProvider;
+    final settingsProvider = _settingsProvider;
+    if (!mounted || chatProvider == null || settingsProvider == null) {
+      return;
+    }
+
+    final visibleRequestIds = chatProvider.currentThreadPermissionRequests
+        .map((request) => request.id)
+        .toSet();
+    _autoApprovePermissionCooldownIds.removeWhere(
+      (requestId) => !visibleRequestIds.contains(requestId),
+    );
+    if (!settingsProvider.initialized) {
+      return;
+    }
+    if (!settingsProvider.composerAutoApprovePermissions) {
+      return;
+    }
+    if (_autoApprovePermissionDrainScheduled) {
+      return;
+    }
+    _autoApprovePermissionDrainScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoApprovePermissionDrainScheduled = false;
+      if (!mounted) {
+        return;
+      }
+      unawaited(_drainAutoApprovePermissions(reason: reason));
+    });
+  }
+
+  Future<void> _drainAutoApprovePermissions({required String reason}) async {
+    if (_autoApprovePermissionDrainRunning) {
+      _autoApprovePermissionDrainQueued = true;
+      return;
+    }
+
+    _autoApprovePermissionDrainRunning = true;
+    try {
+      do {
+        _autoApprovePermissionDrainQueued = false;
+        final chatProvider = _chatProvider;
+        final settingsProvider = _settingsProvider;
+        if (!mounted || chatProvider == null || settingsProvider == null) {
+          return;
+        }
+        if (!settingsProvider.initialized) {
+          return;
+        }
+        if (!settingsProvider.composerAutoApprovePermissions) {
+          return;
+        }
+
+        while (mounted) {
+          if (chatProvider.isRespondingInteraction) {
+            break;
+          }
+
+          final nextRequest = chatProvider.currentThreadPermissionRequests
+              .where(
+                (request) =>
+                    !_autoApprovePermissionCooldownIds.contains(request.id),
+              )
+              .firstOrNull;
+          if (nextRequest == null) {
+            break;
+          }
+
+          AppLogger.info(
+            'Auto-approving permission request=${nextRequest.id} session=${nextRequest.sessionId} reason=$reason',
+          );
+          await chatProvider.respondPermissionRequest(
+            requestId: nextRequest.id,
+            reply: 'once',
+          );
+          if (!mounted) {
+            return;
+          }
+
+          final stillPending = chatProvider.currentThreadPermissionRequests.any(
+            (request) => request.id == nextRequest.id,
+          );
+          if (stillPending) {
+            _autoApprovePermissionCooldownIds.add(nextRequest.id);
+            break;
+          }
+          _autoApprovePermissionCooldownIds.remove(nextRequest.id);
+        }
+      } while (_autoApprovePermissionDrainQueued);
+    } finally {
+      _autoApprovePermissionDrainRunning = false;
+    }
   }
 
   void _applyForegroundPolicy({required String reason}) {
