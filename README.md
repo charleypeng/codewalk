@@ -13,10 +13,10 @@ A native (really fast!!) cross-platform client for [OpenCode](https://github.com
 
 ## Unique Features
 
-🎙 Speech-to-text on every platform, including Linux
-💬 Canned answers for faster replies
-↩️ Easier undo and redo
-🧙 OpenCode setup wizard
+- 🎙 Speech-to-text on every platform, including Linux
+- 💬 Canned answers for faster replies
+- ↩️ Easier undo and redo
+- 🧙 OpenCode setup wizard
 
 ## Highlights
 
