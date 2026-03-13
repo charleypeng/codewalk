@@ -26,3 +26,15 @@ Description: Compact tracker for featR steps. Visit the referenced `ROADMAP.feat
 Description: Replace false empty-state greeting during session/project hydration with a soft loading indicator for better UX.
 
 - [x] 2.01 Replace false chat empty-state greeting during hydration with soft loading indicator - Related commits: 9fea9ff 3f7496e
+
+### Feature 3: featS - OpenCode settings parity
+
+Description: Build settings parity with official OpenCode in a contract-safe order. (See ROADMAP.feat01.md for detailed execution plan)
+
+- [~] 3.01 Contract and parity matrix
+- [ ] 3.02 Settings ownership and sync boundaries
+- [ ] 3.03 Theme preset parity foundation
+- [ ] 3.04 Theme UX, persistence, and migration safety
+- [ ] 3.05 Verified shared settings parity after theme slice
+- [ ] 3.06 Overlapping permissions/shortcuts parity and provenance labeling
+- [ ] 3.07 Regression coverage, behavior/docs handoff, and divergence record
