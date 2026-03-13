@@ -28,6 +28,20 @@ enum AppDensity { extraDense, dense, normal, spacious, extraSpacious }
 
 enum ThemeModeOption { system, light, dark }
 
+enum OpenCodeThemePreset {
+  system,
+  tokyonight,
+  everforest,
+  ayu,
+  catppuccin,
+  catppuccinMacchiato,
+  gruvbox,
+  kanagawa,
+  nord,
+  matrix,
+  oneDark,
+}
+
 enum SpeechToTextEngine { native, sherpa }
 
 enum DesktopCloseBehavior { tray, minimize, close }
@@ -211,6 +225,39 @@ String notificationCategoryKey(NotificationCategory category) {
     NotificationCategory.agent => 'agent',
     NotificationCategory.permissions => 'permissions',
     NotificationCategory.errors => 'errors',
+  };
+}
+
+String openCodeThemePresetKey(OpenCodeThemePreset preset) {
+  return switch (preset) {
+    OpenCodeThemePreset.system => 'system',
+    OpenCodeThemePreset.tokyonight => 'tokyonight',
+    OpenCodeThemePreset.everforest => 'everforest',
+    OpenCodeThemePreset.ayu => 'ayu',
+    OpenCodeThemePreset.catppuccin => 'catppuccin',
+    OpenCodeThemePreset.catppuccinMacchiato => 'catppuccin-macchiato',
+    OpenCodeThemePreset.gruvbox => 'gruvbox',
+    OpenCodeThemePreset.kanagawa => 'kanagawa',
+    OpenCodeThemePreset.nord => 'nord',
+    OpenCodeThemePreset.matrix => 'matrix',
+    OpenCodeThemePreset.oneDark => 'one-dark',
+  };
+}
+
+OpenCodeThemePreset? openCodeThemePresetFromKey(String value) {
+  return switch (value) {
+    'system' => OpenCodeThemePreset.system,
+    'tokyonight' => OpenCodeThemePreset.tokyonight,
+    'everforest' => OpenCodeThemePreset.everforest,
+    'ayu' => OpenCodeThemePreset.ayu,
+    'catppuccin' => OpenCodeThemePreset.catppuccin,
+    'catppuccin-macchiato' => OpenCodeThemePreset.catppuccinMacchiato,
+    'gruvbox' => OpenCodeThemePreset.gruvbox,
+    'kanagawa' => OpenCodeThemePreset.kanagawa,
+    'nord' => OpenCodeThemePreset.nord,
+    'matrix' => OpenCodeThemePreset.matrix,
+    'one-dark' => OpenCodeThemePreset.oneDark,
+    _ => null,
   };
 }
 
@@ -444,6 +491,7 @@ class ExperienceSettings {
       keepMobileRealtimeForShortPeriod: true,
       enableExperimentalMultiDeviceSync: false,
       themeMode: ThemeModeOption.system,
+      themePreset: null,
       useAmoledDark: false,
       useDynamicColor: true,
       customColorSeed: null,
@@ -478,6 +526,7 @@ class ExperienceSettings {
     required this.keepMobileRealtimeForShortPeriod,
     this.enableExperimentalMultiDeviceSync = false,
     this.themeMode = ThemeModeOption.system,
+    this.themePreset,
     this.useAmoledDark = false,
     this.useDynamicColor = true,
     this.customColorSeed,
@@ -512,6 +561,7 @@ class ExperienceSettings {
   final bool keepMobileRealtimeForShortPeriod;
   final bool enableExperimentalMultiDeviceSync;
   final ThemeModeOption themeMode;
+  final OpenCodeThemePreset? themePreset;
   final bool useAmoledDark;
   final bool useDynamicColor;
   final int? customColorSeed;
@@ -546,6 +596,7 @@ class ExperienceSettings {
     bool? keepMobileRealtimeForShortPeriod,
     bool? enableExperimentalMultiDeviceSync,
     ThemeModeOption? themeMode,
+    OpenCodeThemePreset? Function()? themePreset,
     bool? useAmoledDark,
     bool? useDynamicColor,
     int? Function()? customColorSeed,
@@ -590,6 +641,7 @@ class ExperienceSettings {
           enableExperimentalMultiDeviceSync ??
           this.enableExperimentalMultiDeviceSync,
       themeMode: themeMode ?? this.themeMode,
+      themePreset: themePreset != null ? themePreset() : this.themePreset,
       useAmoledDark: useAmoledDark ?? this.useAmoledDark,
       useDynamicColor: useDynamicColor ?? this.useDynamicColor,
       customColorSeed: customColorSeed != null
@@ -666,6 +718,8 @@ class ExperienceSettings {
       'keepMobileRealtimeForShortPeriod': keepMobileRealtimeForShortPeriod,
       'enableExperimentalMultiDeviceSync': enableExperimentalMultiDeviceSync,
       'themeMode': themeModeOptionKey(themeMode),
+      if (themePreset != null)
+        'themePreset': openCodeThemePresetKey(themePreset!),
       'useAmoledDark': useAmoledDark,
       'useDynamicColor': useDynamicColor,
       if (customColorSeed != null) 'customColorSeed': customColorSeed,
@@ -906,6 +960,14 @@ class ExperienceSettings {
       themeMode = themeModeOptionFromKey(themeModeJson.trim().toLowerCase());
     }
 
+    var themePreset = defaults.themePreset;
+    final themePresetJson = json['themePreset'];
+    if (themePresetJson is String && themePresetJson.trim().isNotEmpty) {
+      themePreset = openCodeThemePresetFromKey(
+        themePresetJson.trim().toLowerCase(),
+      );
+    }
+
     var useAmoledDark = defaults.useAmoledDark;
     final useAmoledDarkJson = json['useAmoledDark'];
     if (useAmoledDarkJson is bool) {
@@ -988,6 +1050,7 @@ class ExperienceSettings {
       keepMobileRealtimeForShortPeriod: keepMobileRealtimeForShortPeriod,
       enableExperimentalMultiDeviceSync: enableExperimentalMultiDeviceSync,
       themeMode: themeMode,
+      themePreset: themePreset,
       useAmoledDark: useAmoledDark,
       useDynamicColor: useDynamicColor,
       customColorSeed: customColorSeed,

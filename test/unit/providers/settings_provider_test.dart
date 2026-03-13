@@ -386,6 +386,40 @@ void main() {
       expect(second.themeMode, ThemeModeOption.dark);
     });
 
+    test('persists OpenCode theme preset preference', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+
+      expect(first.themePreset, isNull);
+
+      await first.setThemePreset(OpenCodeThemePreset.nord);
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(second.themePreset, OpenCodeThemePreset.nord);
+
+      await second.setThemePreset(null);
+
+      final third = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await third.initialize();
+
+      expect(third.themePreset, isNull);
+    });
+
     test('persists AMOLED dark preference', () async {
       final local = InMemoryAppLocalDataSource();
       final first = SettingsProvider(

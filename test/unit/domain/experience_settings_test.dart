@@ -3,6 +3,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('OpenCodeThemePreset serialization', () {
+    test('serializes and deserializes catppuccin-macchiato', () {
+      final settings = ExperienceSettings.defaults().copyWith(
+        themePreset: () => OpenCodeThemePreset.catppuccinMacchiato,
+      );
+
+      final json = settings.toJson();
+      final restored = ExperienceSettings.fromJson(json);
+
+      expect(json['themePreset'], 'catppuccin-macchiato');
+      expect(restored.themePreset, OpenCodeThemePreset.catppuccinMacchiato);
+    });
+
+    test('keeps classic path when theme preset is absent', () {
+      final restored = ExperienceSettings.fromJson(
+        ExperienceSettings.defaults().toJson(),
+      );
+
+      expect(restored.themePreset, isNull);
+    });
+  });
+
   group('shortcutActionsForRuntime', () {
     test('includes soft and hard exit on Android physical-keyboard flows', () {
       final actions = shortcutActionsForRuntime(

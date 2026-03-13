@@ -99,6 +99,7 @@ class SettingsProvider extends ChangeNotifier {
   bool get enableExperimentalMultiDeviceSync =>
       _settings.enableExperimentalMultiDeviceSync;
   SpeechToTextEngine get speechToTextEngine => _settings.speechToTextEngine;
+  OpenCodeThemePreset? get themePreset => _settings.themePreset;
   int get speechSilenceTimeoutSeconds => _settings.speechSilenceTimeoutSeconds;
   String get sherpaLanguageCode => _settings.sherpaLanguageCode;
   bool get skipOnboardingWizard => _settings.skipOnboardingWizard;
@@ -315,6 +316,15 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(themeMode: mode);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setThemePreset(OpenCodeThemePreset? preset) async {
+    if (_settings.themePreset == preset) {
+      return;
+    }
+    _settings = _settings.copyWith(themePreset: () => preset);
     notifyListeners();
     await _persist();
   }
