@@ -1,5 +1,6 @@
 import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/presentation/theme/app_theme.dart';
+import 'package:codewalk/presentation/theme/opencode_theme_presets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -37,4 +38,20 @@ void main() {
       const VisualDensity(horizontal: 2, vertical: 2),
     );
   });
+
+  test(
+    'resolves OpenCode theme presets without affecting classic fallback',
+    () {
+      final lightScheme = openCodeLightSchemeFor(OpenCodeThemePreset.nord);
+      final darkScheme = openCodeDarkSchemeFor(OpenCodeThemePreset.nord);
+
+      expect(lightScheme, isNotNull);
+      expect(darkScheme, isNotNull);
+      expect(lightScheme!.brightness, Brightness.light);
+      expect(darkScheme!.brightness, Brightness.dark);
+      expect(openCodeThemePresetLabel(OpenCodeThemePreset.oneDark), 'One Dark');
+      expect(openCodeLightSchemeFor(OpenCodeThemePreset.system), isNull);
+      expect(openCodeDarkSchemeFor(null), isNull);
+    },
+  );
 }

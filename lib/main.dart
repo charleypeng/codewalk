@@ -18,6 +18,7 @@ import 'presentation/providers/project_provider.dart';
 import 'presentation/providers/settings_provider.dart';
 import 'presentation/services/android_background_alert_worker.dart';
 import 'presentation/theme/app_theme.dart';
+import 'presentation/theme/opencode_theme_presets.dart';
 
 void main() {
   runZonedGuarded(
@@ -86,6 +87,7 @@ class MyApp extends StatelessWidget {
               final useAmoledDark = settingsProvider.useAmoledDark;
               final customSeed = settingsProvider.customColorSeed;
               final contrastLevel = settingsProvider.contrastLevel;
+              final themePreset = settingsProvider.themePreset;
 
               // Sync actual dynamic color availability to provider so
               // the settings UI can reflect reality (not just platform
@@ -106,15 +108,27 @@ class MyApp extends StatelessWidget {
                   ? Color(customSeed)
                   : AppTheme.seedColor;
 
+              final presetLightScheme = openCodeLightSchemeFor(themePreset);
+              final presetDarkScheme = openCodeDarkSchemeFor(themePreset);
+              final usePresetSchemes =
+                  themePreset != null &&
+                  themePreset != OpenCodeThemePreset.system &&
+                  presetLightScheme != null &&
+                  presetDarkScheme != null;
+
               // Use dynamic platform colors when available and enabled
-              final lightScheme = useDynamic && lightDynamic != null
+              final lightScheme = usePresetSchemes
+                  ? presetLightScheme!
+                  : useDynamic && lightDynamic != null
                   ? lightDynamic
                   : ColorScheme.fromSeed(
                       seedColor: seedColor,
                       brightness: Brightness.light,
                       contrastLevel: contrastLevel,
                     );
-              final darkScheme = useDynamic && darkDynamic != null
+              final darkScheme = usePresetSchemes
+                  ? presetDarkScheme!
+                  : useDynamic && darkDynamic != null
                   ? darkDynamic
                   : ColorScheme.fromSeed(
                       seedColor: seedColor,
