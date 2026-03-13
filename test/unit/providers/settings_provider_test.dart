@@ -396,6 +396,7 @@ void main() {
             'model': 'anthropic/claude-3-5-sonnet',
             'small_model': 'anthropic/claude-3-5-haiku',
             'default_agent': 'plan',
+            'username': 'helio',
             'autoupdate': 'notify',
             'share': 'auto',
           }),
@@ -473,6 +474,7 @@ void main() {
       expect(provider.openCodeDefaultModelKey, 'anthropic/claude-3-5-sonnet');
       expect(provider.openCodeSmallModelKey, 'anthropic/claude-3-5-haiku');
       expect(provider.openCodeDefaultAgentName, 'plan');
+      expect(provider.openCodeUsername, 'helio');
       expect(provider.openCodeAutoupdateMode, OpenCodeAutoupdateMode.notify);
       expect(provider.openCodeShareMode, OpenCodeShareMode.automatic);
       expect(provider.openCodeDefaultModelOptions, hasLength(2));
@@ -510,6 +512,7 @@ void main() {
             'model': 'anthropic/claude-3-5-sonnet',
             'small_model': 'anthropic/claude-3-5-haiku',
             'default_agent': 'plan',
+            'username': 'helio',
             'autoupdate': true,
             'share': 'manual',
           }),
@@ -595,6 +598,7 @@ void main() {
           _MockResponse(200, true),
           _MockResponse(200, true),
           _MockResponse(200, true),
+          _MockResponse(200, true),
         ]);
       final dioClient = _buildDioClient(adapter);
       final provider = SettingsProvider(
@@ -608,6 +612,7 @@ void main() {
       await provider.refreshOpenCodeBackedDefaults();
       await provider.setOpenCodeDefaultModel('openai/gpt-5');
       await provider.setOpenCodeDefaultAgent('build');
+      await provider.setOpenCodeUsername('codemaster');
       await provider.setOpenCodeSmallModel('openai/gpt-5');
       await provider.setOpenCodeAutoupdateMode(OpenCodeAutoupdateMode.notify);
       await provider.setOpenCodeAutoupdateMode(OpenCodeAutoupdateMode.disabled);
@@ -620,6 +625,7 @@ void main() {
 
       expect(provider.openCodeDefaultModelKey, 'openai/gpt-5');
       expect(provider.openCodeDefaultAgentName, 'build');
+      expect(provider.openCodeUsername, 'codemaster');
       expect(provider.openCodeSmallModelKey, 'openai/gpt-5');
       expect(provider.openCodeAutoupdateMode, OpenCodeAutoupdateMode.automatic);
       expect(provider.openCodeShareMode, OpenCodeShareMode.manual);
@@ -636,45 +642,51 @@ void main() {
         'default_agent': 'build',
       });
 
-      final smallModelPatch = adapter.capturedRequests[6];
+      final usernamePatch = adapter.capturedRequests[6];
+      expect(usernamePatch.method, 'PATCH');
+      expect(_decodeRequestData(usernamePatch.data), <String, dynamic>{
+        'username': 'codemaster',
+      });
+
+      final smallModelPatch = adapter.capturedRequests[7];
       expect(smallModelPatch.method, 'PATCH');
       expect(_decodeRequestData(smallModelPatch.data), <String, dynamic>{
         'small_model': 'openai/gpt-5',
       });
 
-      final autoupdateNotifyPatch = adapter.capturedRequests[7];
+      final autoupdateNotifyPatch = adapter.capturedRequests[8];
       expect(autoupdateNotifyPatch.method, 'PATCH');
       expect(_decodeRequestData(autoupdateNotifyPatch.data), <String, dynamic>{
         'autoupdate': 'notify',
       });
 
-      final autoupdateDisabledPatch = adapter.capturedRequests[8];
+      final autoupdateDisabledPatch = adapter.capturedRequests[9];
       expect(autoupdateDisabledPatch.method, 'PATCH');
       expect(
         _decodeRequestData(autoupdateDisabledPatch.data),
         <String, dynamic>{'autoupdate': false},
       );
 
-      final autoupdateAutomaticPatch = adapter.capturedRequests[9];
+      final autoupdateAutomaticPatch = adapter.capturedRequests[10];
       expect(autoupdateAutomaticPatch.method, 'PATCH');
       expect(
         _decodeRequestData(autoupdateAutomaticPatch.data),
         <String, dynamic>{'autoupdate': true},
       );
 
-      final shareAutomaticPatch = adapter.capturedRequests[10];
+      final shareAutomaticPatch = adapter.capturedRequests[11];
       expect(shareAutomaticPatch.method, 'PATCH');
       expect(_decodeRequestData(shareAutomaticPatch.data), <String, dynamic>{
         'share': 'auto',
       });
 
-      final shareDisabledPatch = adapter.capturedRequests[11];
+      final shareDisabledPatch = adapter.capturedRequests[12];
       expect(shareDisabledPatch.method, 'PATCH');
       expect(_decodeRequestData(shareDisabledPatch.data), <String, dynamic>{
         'share': 'disabled',
       });
 
-      final shareManualPatch = adapter.capturedRequests[12];
+      final shareManualPatch = adapter.capturedRequests[13];
       expect(shareManualPatch.method, 'PATCH');
       expect(_decodeRequestData(shareManualPatch.data), <String, dynamic>{
         'share': 'manual',

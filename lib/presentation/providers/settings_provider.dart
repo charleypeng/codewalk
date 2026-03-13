@@ -92,6 +92,7 @@ class SettingsProvider extends ChangeNotifier {
   String? _openCodeDefaultModelKey;
   String? _openCodeSmallModelKey;
   String? _openCodeDefaultAgentName;
+  String? _openCodeUsername;
   OpenCodeAutoupdateMode _openCodeAutoupdateMode =
       OpenCodeAutoupdateMode.automatic;
   OpenCodeShareMode _openCodeShareMode = OpenCodeShareMode.manual;
@@ -118,6 +119,7 @@ class SettingsProvider extends ChangeNotifier {
   String? get openCodeDefaultModelKey => _openCodeDefaultModelKey;
   String? get openCodeSmallModelKey => _openCodeSmallModelKey;
   String? get openCodeDefaultAgentName => _openCodeDefaultAgentName;
+  String? get openCodeUsername => _openCodeUsername;
   OpenCodeAutoupdateMode get openCodeAutoupdateMode => _openCodeAutoupdateMode;
   OpenCodeShareMode get openCodeShareMode => _openCodeShareMode;
   List<OpenCodeDefaultModelOption> get openCodeDefaultModelOptions =>
@@ -428,6 +430,7 @@ class SettingsProvider extends ChangeNotifier {
         config,
       );
       final configuredAgentName = _configuredAgentNameFromConfig(config);
+      final configuredUsername = _configuredUsernameFromConfig(config);
       final configuredAutoupdateMode = _configuredAutoupdateModeFromConfig(
         config,
       );
@@ -448,6 +451,7 @@ class SettingsProvider extends ChangeNotifier {
       _openCodeDefaultModelKey = configuredModelKey;
       _openCodeSmallModelKey = configuredSmallModelKey;
       _openCodeDefaultAgentName = configuredAgentName;
+      _openCodeUsername = configuredUsername;
       _openCodeAutoupdateMode = configuredAutoupdateMode;
       _openCodeShareMode = configuredShareMode;
       _openCodeDefaultModelOptions = nextModelOptions;
@@ -538,6 +542,30 @@ class SettingsProvider extends ChangeNotifier {
     } catch (error, stackTrace) {
       AppLogger.warn(
         'Failed to update OpenCode default agent',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
+  }
+
+  Future<bool> setOpenCodeUsername(String username) async {
+    final normalizedUsername = username.trim();
+    if (normalizedUsername.isEmpty || normalizedUsername == _openCodeUsername) {
+      return true;
+    }
+
+    try {
+      await _dioClient.patch<void>(
+        '/config',
+        data: <String, dynamic>{'username': normalizedUsername},
+      );
+      _openCodeUsername = normalizedUsername;
+      notifyListeners();
+      return true;
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to update OpenCode username',
         error: error,
         stackTrace: stackTrace,
       );
@@ -1415,6 +1443,15 @@ class SettingsProvider extends ChangeNotifier {
   String? _configuredAgentNameFromConfig(Map<String, dynamic> config) {
     final value =
         (config['default_agent'] ?? config['defaultAgent']) as String?;
+    final normalized = value?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return null;
+    }
+    return normalized;
+  }
+
+  String? _configuredUsernameFromConfig(Map<String, dynamic> config) {
+    final value = config['username'] as String?;
     final normalized = value?.trim();
     if (normalized == null || normalized.isEmpty) {
       return null;
