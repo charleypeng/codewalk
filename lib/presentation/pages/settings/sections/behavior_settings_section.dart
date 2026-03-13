@@ -606,7 +606,10 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
         context,
         'CodeWalk will apply this OpenCode setting after the current response finishes.',
       );
-      await _waitForConfigMutationsToBeSafe(chatProvider);
+      final becameSafe = await _waitForConfigMutationsToBeSafe(chatProvider);
+      if (!becameSafe) {
+        return false;
+      }
       if (!context.mounted) {
         return false;
       }
@@ -617,11 +620,11 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
     return mutate(context.read<SettingsProvider>());
   }
 
-  Future<void> _waitForConfigMutationsToBeSafe(
+  Future<bool> _waitForConfigMutationsToBeSafe(
     ChatProvider chatProvider,
   ) async {
     if (!chatProvider.shouldDeferConfigMutations) {
-      return;
+      return true;
     }
     final completer = Completer<void>();
     void listener() {
@@ -635,7 +638,10 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
       if (!chatProvider.shouldDeferConfigMutations && !completer.isCompleted) {
         completer.complete();
       }
-      await completer.future;
+      await completer.future.timeout(const Duration(minutes: 5));
+      return true;
+    } on TimeoutException {
+      return !chatProvider.shouldDeferConfigMutations;
     } finally {
       chatProvider.removeListener(listener);
     }
