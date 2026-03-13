@@ -497,6 +497,18 @@ The app uses a dual-engine strategy with automatic fallback:
 - **Then** the resolved permission request is removed from the local pending state immediately
 - **When** the user rejects, the server receives a rejection and the session pauses — the assistant stops and waits for the user to send a new message before continuing
 
+### Composer permission auto-approve toggle
+
+- **Given** the user is in a main/root conversation with the composer controls visible
+- **When** the composer is rendered
+- **Then** a permission auto-approve toggle is shown to the left of the agent selector
+- **Then** the toggle defaults to enabled and persists when the user turns it off
+- **When** the toggle is enabled and the current thread receives a permission request
+- **Then** the app automatically replies with `Allow Once` for permission prompts only
+- **Then** mirrored descendant/sub-session permission requests shown in the root thread are auto-approved as part of that same thread scope
+- **Then** question prompts are never auto-answered by this toggle and still require a human choice
+- **Then** the existing inline permission cards remain available as the visible/manual fallback path
+
 ### Question prompts
 
 - **Given** the server needs the user to choose between options

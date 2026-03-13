@@ -1009,3 +1009,35 @@ Related: ADR-003, ADR-018, ADR-019, ADR-022.
 - `lib/presentation/providers/chat_provider/chat_provider_message_merge_ops.dart` → `_shouldSkipLocalUserAppendAsDuplicateEcho()`
 
 **See also**: BEHAVIOR.md § "Optimistic user message ID uses local prefix — never server format".
+
+### Exception EXC-001: Composer Permission Auto-Approve Toggle
+
+**Status**: Approved ADR-023 exception.
+
+**Summary**: CodeWalk exposes a composer-level toggle to the left of the agent selector that defaults to enabled, persists user opt-out, and auto-approves only permission requests with `Allow Once` semantics. Question prompts remain manual.
+
+**Deviation from official behavior**: Official OpenCode currently keeps runtime permission-mode controls outside the composer and does not inherit permissive behavior across subagents/subsessions. CodeWalk intentionally extends auto-approval to the visible thread, including mirrored descendant/subsession permission requests surfaced in the root session.
+
+**Rationale**:
+- Reduce repeated approval friction during active coding sessions.
+- Keep the user in the root conversation while descendant permission prompts are mirrored there.
+- Limit the exception to permission prompts only and avoid permanent escalation by using `Allow Once` semantics.
+
+**Risk analysis**:
+- Medium UX/safety risk: mirrored descendant prompts can be approved without a second explicit tap in the child session.
+- Low contract risk: the server still receives a normal permission reply payload, and question prompts keep the official manual path.
+
+**Rollback / feature-flag plan**:
+- Immediate rollback: user disables the composer toggle locally.
+- Product rollback: revert the composer toggle and drain coordinator commits.
+- Safe fallback: existing inline permission cards remain available as the manual approval path.
+
+**Regression coverage**:
+- Widget coverage verifies default-on behavior, persisted opt-out, mirrored subsession auto-approval, and non-regression for question prompts.
+- The drain coordinator uses `Allow Once` replies only and cools down requests that throw during auto-approval.
+
+**Code locations**:
+- `lib/domain/entities/experience_settings.dart`
+- `lib/presentation/providers/settings_provider.dart`
+- `lib/presentation/pages/chat_page/chat_page_model_selector_runtime.dart`
+- `lib/presentation/pages/chat_page/chat_page_lifecycle.dart`
