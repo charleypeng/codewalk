@@ -230,6 +230,27 @@ Recorded ownership matrix, sync rules, exception inventory, and unresolved contr
 
 ## Group 3.03: Theme Preset Parity Foundation
 
+### 📥 Inputs Inherited from 3.02
+
+- **Themes are local/client presentation parity, not `/config` parity** — visual alignment with OpenCode named presets (e.g., `tokyonight`, `nord`), not server sync
+- **Keybinds remain local and are not part of the theme slice** — shortcuts are defined in `tui.json`, client-side only
+- **Notification/shared-config work is outside the theme-foundation step** — notifications already have proven overlap in Group 3.02; focus on themes only
+- **EXC-001 is unrelated and must not leak into theme ownership decisions** — composer auto-approve is a CodeWalk exception unrelated to theme parity
+
+### 3.03 Guardrails (Theme Foundation Non-Goals)
+
+- **Do not add `/config` theme sync unless new proof appears** — themes are `tui.json` client-local; no server endpoint exists
+- **Do not add custom JSON theme import in the first foundation slice** — defer until preset parity is stable
+- **Do not rewrite existing classic Material You controls out of the app** — preserve dynamic color, AMOLED, seed picker, contrast
+- **Do not mirror undocumented OpenCode Web layout blindly** — only implement with evidence-backed sources
+
+### Expected 3.03 Outputs
+
+- Named preset enum/model (system, tokyonight, everforest, ayu, catppuccin, catppuccin-macchiato, gruvbox, kanagawa, nord, matrix, one-dark)
+- Theme bridge/mapping layer (OpenCode name → Flutter theme)
+- Settings/provider integration points
+- Tests/migration targets to prepare for 3.04
+
 ### Why
 - Themes are the biggest verified settings gap
 - Safest first vertical slice for implementation
