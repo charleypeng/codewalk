@@ -382,7 +382,7 @@ Delivered preset-selection UX while preserving the classic path:
 
 ---
 
-### 🔄 In Progress: Group 3.05 — Partial commits: e740abe 4c7a411 75b9ce6 a2eed9c
+### 🔄 In Progress: Group 3.05 — Partial commits: e740abe 4c7a411 75b9ce6 a2eed9c e9aed61 6634786 a3cf43b
 
 *Work in progress on verified shared settings parity (model, default agent, permissions).*
 
