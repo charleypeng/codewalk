@@ -9,6 +9,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
     final settingsProvider = _settingsProvider;
     final autoApproveEnabled =
         settingsProvider?.composerAutoApprovePermissions ?? true;
+    final autoApproveColor = Colors.green.shade600;
     final selectedModel = chatProvider.selectedModel;
     final lockedSubConversationSelection = isSubConversation
         ? _resolveLockedSubConversationSelection(chatProvider)
@@ -42,38 +43,65 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
               message: autoApproveEnabled
                   ? 'Permission auto-approve is on'
                   : 'Permission auto-approve is off',
-              child: FilterChip(
-                key: const ValueKey<String>(
-                  'composer_permission_auto_approve_toggle',
-                ),
-                showCheckmark: false,
-                selected: autoApproveEnabled,
-                avatar: Badge.count(
-                  isLabelVisible:
-                      chatProvider.currentThreadPermissionRequests.isNotEmpty,
-                  count:
-                      chatProvider.currentThreadPermissionRequests.length > 99
-                      ? 99
-                      : chatProvider.currentThreadPermissionRequests.length,
-                  child: Icon(
-                    Symbols.verified_user,
-                    size: 18,
-                    color: autoApproveEnabled
-                        ? colorScheme.onSecondaryContainer
-                        : colorScheme.onSurfaceVariant,
+              child: Badge.count(
+                isLabelVisible:
+                    chatProvider.currentThreadPermissionRequests.isNotEmpty,
+                count: chatProvider.currentThreadPermissionRequests.length > 99
+                    ? 99
+                    : chatProvider.currentThreadPermissionRequests.length,
+                child: IconButton(
+                  key: const ValueKey<String>(
+                    'composer_permission_auto_approve_toggle',
                   ),
-                ),
-                selectedColor: colorScheme.secondaryContainer,
-                side: BorderSide.none,
-                shape: const StadiumBorder(),
-                label: Text(autoApproveEnabled ? 'Approve on' : 'Approve off'),
-                onSelected: settingsProvider == null
-                    ? null
-                    : (selected) => unawaited(
-                        settingsProvider.setComposerAutoApprovePermissions(
-                          selected,
+                  isSelected: autoApproveEnabled,
+                  icon: const Icon(Symbols.keyboard_double_arrow_right),
+                  selectedIcon: const Icon(Symbols.keyboard_double_arrow_right),
+                  style: ButtonStyle(
+                    shape: const WidgetStatePropertyAll<OutlinedBorder>(
+                      CircleBorder(),
+                    ),
+                    padding: const WidgetStatePropertyAll<EdgeInsetsGeometry>(
+                      EdgeInsets.all(8),
+                    ),
+                    minimumSize: const WidgetStatePropertyAll<Size>(
+                      Size(40, 40),
+                    ),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    foregroundColor: WidgetStateProperty.resolveWith<Color?>((
+                      states,
+                    ) {
+                      if (states.contains(WidgetState.selected)) {
+                        return autoApproveColor;
+                      }
+                      return colorScheme.onSurfaceVariant;
+                    }),
+                    backgroundColor: WidgetStateProperty.resolveWith<Color?>((
+                      states,
+                    ) {
+                      if (states.contains(WidgetState.pressed)) {
+                        return autoApproveColor.withValues(alpha: 0.18);
+                      }
+                      return Colors.transparent;
+                    }),
+                    overlayColor: WidgetStateProperty.resolveWith<Color?>((
+                      states,
+                    ) {
+                      if (states.contains(WidgetState.pressed) ||
+                          states.contains(WidgetState.hovered) ||
+                          states.contains(WidgetState.focused)) {
+                        return autoApproveColor.withValues(alpha: 0.12);
+                      }
+                      return null;
+                    }),
+                  ),
+                  onPressed: settingsProvider == null
+                      ? null
+                      : () => unawaited(
+                          settingsProvider.setComposerAutoApprovePermissions(
+                            !autoApproveEnabled,
+                          ),
                         ),
-                      ),
+                ),
               ),
             ),
           if (!isSubConversation)
