@@ -138,6 +138,52 @@ Delivered evidence-backed parity matrix documenting:
 
 > This exception is **local/product behavior only** and must not be mistaken for official OpenCode shared-permission parity. It is documented as an ADR-023 approved exception.
 
+---
+
+### Ownership Matrix by Setting Family
+
+| Setting Family | CodeWalk Owner | OpenCode Owner | Boundary Rule |
+|----------------|----------------|-----------------|---------------|
+| Themes and theme presets | CodeWalk | Local (`tui.json`) | Visual alignment only; no `/config` sync |
+| Keybinds / shortcuts | CodeWalk | Local (`tui.json`) | Local-only; no server sync |
+| Appearance-only Flutter (dynamic color, AMOLED, seed, contrast, density, visibility toggles) | CodeWalk | N/A | Pure client preferences; never shared |
+| Notifications enabled flags/categories | CodeWalk | Shared (`/config`) | **Proven overlap**; synced to server |
+| Notification sound preferences | CodeWalk | Local | Local-only unless proven otherwise |
+| Default model / small model | CodeWalk | Shared (`/config`) | Candidate for future parity |
+| Default agent | CodeWalk | Shared (`/config`) | Candidate for future parity |
+| Variant / reasoning / model options | CodeWalk | Shared (`/config`) | Candidate for future parity |
+| Permissions (allow/ask/deny) | CodeWalk | Shared (`/config`) | Candidate for future parity |
+| Tools / commands / MCP / formatter / watcher / server runtime | CodeWalk | Server-only | Out-of-scope for Flutter parity |
+| Speech / desktop panes / Android background / update checks / onboarding | CodeWalk | N/A | Pure client/device settings |
+
+---
+
+### Shared vs Local Sync Rules
+
+- **Only settings owned by official OpenCode shared config are candidates for `/config` parity.**
+- `tui.json` concerns stay client-local even if CodeWalk mirrors the user-facing capability.
+- CodeWalk may keep local UX/device settings even when OpenCode has no equivalent.
+- Existing CodeWalk namespaced selection sync is not blanket proof that arbitrary settings belong in shared config.
+- Notification enabled flags are proven current overlap; notification sounds remain local unless proven otherwise.
+
+---
+
+### Exception Inventory
+
+| Exception ID | Boundary Note |
+|--------------|----------------|
+| EXC-001 | Local product behavior, not official shared permission parity |
+
+---
+
+### Unresolved Contract Questions
+
+- Does OpenCode Web expose or group shared settings differently from raw docs?
+- Should any additional shared GUI-relevant config beyond model/default_agent/permissions be mirrored?
+- Does variant/reasoning belong in settings UI or remain in model-selection flow?
+
+---
+
 ### 3.02 Deliverables
 
 - **Ownership matrix by setting family** — classify each setting family as local, shared, or excluded
