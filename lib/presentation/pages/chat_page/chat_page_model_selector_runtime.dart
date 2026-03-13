@@ -7,6 +7,8 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final settingsProvider = _settingsProvider;
+    final autoApproveEnabled =
+        settingsProvider?.composerAutoApprovePermissions ?? true;
     final selectedModel = chatProvider.selectedModel;
     final lockedSubConversationSelection = isSubConversation
         ? _resolveLockedSubConversationSelection(chatProvider)
@@ -37,7 +39,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
         children: [
           if (!isSubConversation)
             Tooltip(
-              message: settingsProvider?.composerAutoApprovePermissions == true
+              message: autoApproveEnabled
                   ? 'Permission auto-approve is on'
                   : 'Permission auto-approve is off',
               child: FilterChip(
@@ -45,8 +47,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                   'composer_permission_auto_approve_toggle',
                 ),
                 showCheckmark: false,
-                selected:
-                    settingsProvider?.composerAutoApprovePermissions ?? true,
+                selected: autoApproveEnabled,
                 avatar: Badge.count(
                   isLabelVisible:
                       chatProvider.currentThreadPermissionRequests.isNotEmpty,
@@ -57,8 +58,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                   child: Icon(
                     Symbols.verified_user,
                     size: 18,
-                    color:
-                        settingsProvider?.composerAutoApprovePermissions == true
+                    color: autoApproveEnabled
                         ? colorScheme.onSecondaryContainer
                         : colorScheme.onSurfaceVariant,
                   ),
@@ -66,11 +66,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                 selectedColor: colorScheme.secondaryContainer,
                 side: BorderSide.none,
                 shape: const StadiumBorder(),
-                label: Text(
-                  settingsProvider?.composerAutoApprovePermissions == true
-                      ? 'Approve on'
-                      : 'Approve off',
-                ),
+                label: Text(autoApproveEnabled ? 'Approve on' : 'Approve off'),
                 onSelected: settingsProvider == null
                     ? null
                     : (selected) => unawaited(

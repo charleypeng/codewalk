@@ -83,10 +83,20 @@ extension _ChatPageLifecycle on _ChatPageState {
           AppLogger.info(
             'Auto-approving permission request=${nextRequest.id} session=${nextRequest.sessionId} reason=$reason',
           );
-          await chatProvider.respondPermissionRequest(
-            requestId: nextRequest.id,
-            reply: 'once',
-          );
+          try {
+            await chatProvider.respondPermissionRequest(
+              requestId: nextRequest.id,
+              reply: 'once',
+            );
+          } catch (error, stackTrace) {
+            AppLogger.error(
+              'Failed to auto-approve permission request=${nextRequest.id}',
+              error: error,
+              stackTrace: stackTrace,
+            );
+            _autoApprovePermissionCooldownIds.add(nextRequest.id);
+            break;
+          }
           if (!mounted) {
             return;
           }
