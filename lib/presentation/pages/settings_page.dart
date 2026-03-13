@@ -85,7 +85,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _section(
       id: 'behavior',
       title: 'Behavior',
-      description: 'OpenCode defaults and composer sync safety',
+      description: 'OpenCode defaults, provenance, and composer sync safety',
       icon: Symbols.settings,
       builder: (_) => const BehaviorSettingsSection(),
     ),
@@ -113,7 +113,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _section(
       id: 'shortcuts',
       title: 'Shortcuts',
-      description: 'Search and edit key bindings',
+      description: 'Portable app key bindings',
       icon: Symbols.keyboard_command_key_rounded,
       builder: (_) => const ShortcutsSettingsSection(),
     ),

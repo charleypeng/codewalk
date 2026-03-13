@@ -721,6 +721,34 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **When** the setting is saved
 - **Then** it persists locally (survives app restart) via SharedPreferences / SecureStorage
 
+### Shared settings show provenance explicitly
+
+- **Given** the user opens Settings sections that mix OpenCode-compatible behavior with CodeWalk-specific behavior
+- **When** provenance context matters for maintenance or cross-client expectations
+- **Then** the UI labels the surface as `OpenCode-backed`, `CodeWalk-local`, or `CodeWalk exception`
+- **Then** those labels describe ownership only; they do not imply full editing support for every OpenCode config file
+
+### OpenCode-backed defaults cover the completed shared settings slice
+
+- **Given** the user opens `Behavior` settings
+- **When** the shared defaults card loads successfully from `/config`
+- **Then** the user can edit the completed OpenCode-backed settings in CodeWalk: default model, default agent, small model, autoupdate, share, username, and snapshot
+- **Then** these changes are written back to `/config` only when the server is idle, so active responses are not aborted by config mutation timing
+
+### Permission handling provenance is documented in settings
+
+- **Given** the user opens `Behavior` settings
+- **When** the permissions provenance card is visible
+- **Then** the app explains that official OpenCode permission policy is file-based (`opencode.json`) rather than fully edited from the GUI
+- **Then** the card also identifies the composer permission auto-approve toggle as the approved CodeWalk exception covered by ADR-023
+
+### Keyboard shortcuts are CodeWalk-local
+
+- **Given** the user opens `Shortcuts` settings on a platform that supports the section
+- **When** the shortcuts screen is rendered
+- **Then** the UI labels the bindings as `CodeWalk-local`
+- **Then** editing those bindings updates CodeWalk runtime preferences only and does not write OpenCode `tui.json` keybinds
+
 ### Automatic update checks while app is open
 
 - **Given** `Check for updates on open` is enabled
@@ -828,9 +856,9 @@ All operations (streaming, sync, network) are asynchronous. The UI must never be
 
 Server tokens, API keys, and credentials must never appear in logs, error screens, exports, or any user-visible surface.
 
-### Never auto-approve permissions
+### Never auto-approve permissions outside the approved exception
 
-Permission requests from the server always require explicit user action (approve or deny). The app must never approve automatically.
+Permission requests from the server must require explicit user action unless the user has the ADR-023-approved composer auto-approve toggle enabled. Outside that exception, the app must never approve automatically.
 
 ### Never leak pending prompts across sessions
 
