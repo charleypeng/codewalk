@@ -3805,6 +3805,11 @@ class ChatProvider extends ChangeNotifier {
 
   bool get canRedoCurrentSession => currentSessionRevert != null;
 
+  bool get shouldDeferConfigMutations =>
+      _hasLocalActiveSelectionSyncWork ||
+      _hasAnyActiveAbortSuppression ||
+      _hasAnyBusySessionStatus;
+
   Future<bool> undoLastTurn() async {
     final session = _currentSession;
     final messageId = latestRevertibleMessageId;
