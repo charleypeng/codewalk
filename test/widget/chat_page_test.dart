@@ -997,6 +997,7 @@ void main() {
           ),
         );
         await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50));
 
         expect(
           find.byKey(

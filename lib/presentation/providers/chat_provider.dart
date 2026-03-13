@@ -2789,9 +2789,32 @@ class ChatProvider extends ChangeNotifier {
     // persisted session ID before this switch updated memory/disk.
     _sessionsFetchId += 1;
 
+    _pendingLocalUserMessageIds.clear();
+    _clearPendingReplacementBranch();
+    _clearRejectedDraft();
+
+    // Move selection ownership to the tapped session before awaiting stream
+    // teardown so the UI can render session-scoped hydration feedback
+    // immediately during cacheless switches.
+    _messageStreamGeneration += 1;
+    _currentSession = session;
+    _isLoadingOlderMessages = false;
+    _hasMoreOldMessages = false;
+    _clearSessionAttentionForSession(session.id);
+    _threadPermissionsVersion++;
+    _applySelectionPriorityForCurrentSession();
+
+    // Show the session-scoped hydration state immediately while cache lookup
+    // and network hydration run, so cacheless switches never fall back to the
+    // generic empty placeholder for a frame.
+    _pendingCurrentSessionHydrationId = session.id;
+    _messages.clear();
+    _messagesVersion++;
+    _setState(ChatState.loading);
+
     await _cancelActiveMessageSubscription(
       reason: 'session-switch',
-      invalidateGeneration: true,
+      invalidateGeneration: false,
     );
     AppLogger.info(
       'selectSession generation=$_messageStreamGeneration target=${session.id}',
@@ -2807,15 +2830,6 @@ class ChatProvider extends ChangeNotifier {
       scopeId: scopeId,
     );
 
-    _pendingLocalUserMessageIds.clear();
-    _clearPendingReplacementBranch();
-    _clearRejectedDraft();
-    _currentSession = session;
-    _isLoadingOlderMessages = false;
-    _hasMoreOldMessages = false;
-    _clearSessionAttentionForSession(session.id);
-    _threadPermissionsVersion++;
-    _applySelectionPriorityForCurrentSession();
     if (restoredCachedMessages != null && restoredCachedMessages.isNotEmpty) {
       _pendingCurrentSessionHydrationId = null;
       _messages = List<ChatMessage>.from(restoredCachedMessages);
@@ -2826,9 +2840,6 @@ class ChatProvider extends ChangeNotifier {
       _setState(ChatState.loaded);
     } else {
       _pendingCurrentSessionHydrationId = session.id;
-      _messages.clear();
-      _messagesVersion++;
-      _setState(ChatState.loading);
     }
 
     await _saveCurrentSessionId(
