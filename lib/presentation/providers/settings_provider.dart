@@ -47,6 +47,8 @@ class OpenCodeDefaultModelOption {
 
 enum OpenCodeAutoupdateMode { automatic, notify, disabled }
 
+enum OpenCodeShareMode { manual, automatic, disabled }
+
 class SettingsProvider extends ChangeNotifier {
   SettingsProvider({
     required AppLocalDataSource localDataSource,
@@ -92,6 +94,7 @@ class SettingsProvider extends ChangeNotifier {
   String? _openCodeDefaultAgentName;
   OpenCodeAutoupdateMode _openCodeAutoupdateMode =
       OpenCodeAutoupdateMode.automatic;
+  OpenCodeShareMode _openCodeShareMode = OpenCodeShareMode.manual;
   List<OpenCodeDefaultModelOption> _openCodeDefaultModelOptions =
       const <OpenCodeDefaultModelOption>[];
   List<String> _openCodeDefaultAgentOptions = const <String>[];
@@ -116,6 +119,7 @@ class SettingsProvider extends ChangeNotifier {
   String? get openCodeSmallModelKey => _openCodeSmallModelKey;
   String? get openCodeDefaultAgentName => _openCodeDefaultAgentName;
   OpenCodeAutoupdateMode get openCodeAutoupdateMode => _openCodeAutoupdateMode;
+  OpenCodeShareMode get openCodeShareMode => _openCodeShareMode;
   List<OpenCodeDefaultModelOption> get openCodeDefaultModelOptions =>
       List<OpenCodeDefaultModelOption>.unmodifiable(
         _openCodeDefaultModelOptions,
@@ -427,6 +431,7 @@ class SettingsProvider extends ChangeNotifier {
       final configuredAutoupdateMode = _configuredAutoupdateModeFromConfig(
         config,
       );
+      final configuredShareMode = _configuredShareModeFromConfig(config);
 
       final nextModelOptions = _buildOpenCodeDefaultModelOptions(
         providersPayload,
@@ -444,6 +449,7 @@ class SettingsProvider extends ChangeNotifier {
       _openCodeSmallModelKey = configuredSmallModelKey;
       _openCodeDefaultAgentName = configuredAgentName;
       _openCodeAutoupdateMode = configuredAutoupdateMode;
+      _openCodeShareMode = configuredShareMode;
       _openCodeDefaultModelOptions = nextModelOptions;
       _openCodeDefaultAgentOptions = nextAgentOptions;
       _openCodeDefaultsLoaded = true;
@@ -555,6 +561,29 @@ class SettingsProvider extends ChangeNotifier {
     } catch (error, stackTrace) {
       AppLogger.warn(
         'Failed to update OpenCode autoupdate mode',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
+  }
+
+  Future<bool> setOpenCodeShareMode(OpenCodeShareMode mode) async {
+    if (mode == _openCodeShareMode) {
+      return true;
+    }
+
+    try {
+      await _dioClient.patch<void>(
+        '/config',
+        data: <String, dynamic>{'share': _encodeShareMode(mode)},
+      );
+      _openCodeShareMode = mode;
+      notifyListeners();
+      return true;
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to update OpenCode share mode',
         error: error,
         stackTrace: stackTrace,
       );
@@ -1413,6 +1442,28 @@ class SettingsProvider extends ChangeNotifier {
       OpenCodeAutoupdateMode.automatic => true,
       OpenCodeAutoupdateMode.notify => 'notify',
       OpenCodeAutoupdateMode.disabled => false,
+    };
+  }
+
+  OpenCodeShareMode _configuredShareModeFromConfig(
+    Map<String, dynamic> config,
+  ) {
+    final value = config['share'];
+    if (value is! String) {
+      return OpenCodeShareMode.manual;
+    }
+    return switch (value.trim().toLowerCase()) {
+      'auto' => OpenCodeShareMode.automatic,
+      'disabled' => OpenCodeShareMode.disabled,
+      _ => OpenCodeShareMode.manual,
+    };
+  }
+
+  String _encodeShareMode(OpenCodeShareMode mode) {
+    return switch (mode) {
+      OpenCodeShareMode.manual => 'manual',
+      OpenCodeShareMode.automatic => 'auto',
+      OpenCodeShareMode.disabled => 'disabled',
     };
   }
 

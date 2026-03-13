@@ -397,6 +397,7 @@ void main() {
             'small_model': 'anthropic/claude-3-5-haiku',
             'default_agent': 'plan',
             'autoupdate': 'notify',
+            'share': 'auto',
           }),
           _MockResponse(200, <String, dynamic>{
             'all': <dynamic>[
@@ -473,6 +474,7 @@ void main() {
       expect(provider.openCodeSmallModelKey, 'anthropic/claude-3-5-haiku');
       expect(provider.openCodeDefaultAgentName, 'plan');
       expect(provider.openCodeAutoupdateMode, OpenCodeAutoupdateMode.notify);
+      expect(provider.openCodeShareMode, OpenCodeShareMode.automatic);
       expect(provider.openCodeDefaultModelOptions, hasLength(2));
       expect(
         provider.openCodeDefaultModelOptions
@@ -509,6 +511,7 @@ void main() {
             'small_model': 'anthropic/claude-3-5-haiku',
             'default_agent': 'plan',
             'autoupdate': true,
+            'share': 'manual',
           }),
           _MockResponse(200, <String, dynamic>{
             'all': <dynamic>[
@@ -589,6 +592,9 @@ void main() {
           _MockResponse(200, true),
           _MockResponse(200, true),
           _MockResponse(200, true),
+          _MockResponse(200, true),
+          _MockResponse(200, true),
+          _MockResponse(200, true),
         ]);
       final dioClient = _buildDioClient(adapter);
       final provider = SettingsProvider(
@@ -608,11 +614,15 @@ void main() {
       await provider.setOpenCodeAutoupdateMode(
         OpenCodeAutoupdateMode.automatic,
       );
+      await provider.setOpenCodeShareMode(OpenCodeShareMode.automatic);
+      await provider.setOpenCodeShareMode(OpenCodeShareMode.disabled);
+      await provider.setOpenCodeShareMode(OpenCodeShareMode.manual);
 
       expect(provider.openCodeDefaultModelKey, 'openai/gpt-5');
       expect(provider.openCodeDefaultAgentName, 'build');
       expect(provider.openCodeSmallModelKey, 'openai/gpt-5');
       expect(provider.openCodeAutoupdateMode, OpenCodeAutoupdateMode.automatic);
+      expect(provider.openCodeShareMode, OpenCodeShareMode.manual);
 
       final modelPatch = adapter.capturedRequests[4];
       expect(modelPatch.method, 'PATCH');
@@ -651,6 +661,24 @@ void main() {
         _decodeRequestData(autoupdateAutomaticPatch.data),
         <String, dynamic>{'autoupdate': true},
       );
+
+      final shareAutomaticPatch = adapter.capturedRequests[10];
+      expect(shareAutomaticPatch.method, 'PATCH');
+      expect(_decodeRequestData(shareAutomaticPatch.data), <String, dynamic>{
+        'share': 'auto',
+      });
+
+      final shareDisabledPatch = adapter.capturedRequests[11];
+      expect(shareDisabledPatch.method, 'PATCH');
+      expect(_decodeRequestData(shareDisabledPatch.data), <String, dynamic>{
+        'share': 'disabled',
+      });
+
+      final shareManualPatch = adapter.capturedRequests[12];
+      expect(shareManualPatch.method, 'PATCH');
+      expect(_decodeRequestData(shareManualPatch.data), <String, dynamic>{
+        'share': 'manual',
+      });
     });
 
     test('persists OpenCode theme preset preference', () async {
