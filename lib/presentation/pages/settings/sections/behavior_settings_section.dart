@@ -16,9 +16,14 @@ class BehaviorSettingsSection extends StatefulWidget {
 }
 
 class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
+  late final TextEditingController _usernameController;
+  late final FocusNode _usernameFocusNode;
+
   @override
   void initState() {
     super.initState();
+    _usernameController = TextEditingController();
+    _usernameFocusNode = FocusNode();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
@@ -27,6 +32,13 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
         context.read<SettingsProvider>().refreshOpenCodeBackedDefaults(),
       );
     });
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _usernameFocusNode.dispose();
+    super.dispose();
   }
 
   @override
@@ -90,8 +102,19 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
     final modelOptions = settingsProvider.openCodeDefaultModelOptions;
     final smallModelKey = settingsProvider.openCodeSmallModelKey;
     final agentOptions = settingsProvider.openCodeDefaultAgentOptions;
+    final username = settingsProvider.openCodeUsername;
     final autoupdateMode = settingsProvider.openCodeAutoupdateMode;
     final shareMode = settingsProvider.openCodeShareMode;
+
+    if (!_usernameFocusNode.hasFocus) {
+      final targetValue = username ?? '';
+      if (_usernameController.text != targetValue) {
+        _usernameController.value = TextEditingValue(
+          text: targetValue,
+          selection: TextSelection.collapsed(offset: targetValue.length),
+        );
+      }
+    }
 
     return Card(
       child: Padding(
@@ -209,6 +232,41 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                         }
                         unawaited(_applyDefaultAgent(context, value));
                       },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                key: const ValueKey<String>('settings_opencode_username'),
+                controller: _usernameController,
+                focusNode: _usernameFocusNode,
+                textInputAction: TextInputAction.done,
+                decoration: const InputDecoration(
+                  labelText: 'Conversation username',
+                  border: OutlineInputBorder(),
+                  helperText:
+                      'Custom display name shown in conversations instead of the system username.',
+                ),
+                onFieldSubmitted: (_) => unawaited(_applyUsername(context)),
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: FilledButton.icon(
+                  key: const ValueKey<String>(
+                    'settings_opencode_username_save',
+                  ),
+                  onPressed: settingsProvider.openCodeDefaultsLoading
+                      ? null
+                      : () => unawaited(_applyUsername(context)),
+                  icon: const Icon(Icons.save),
+                  label: const Text('Save username'),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                username == null
+                    ? 'OpenCode uses the system username because `username` is unset.'
+                    : 'Resetting `username` back to the system default still requires editing config outside the app because `/config` patch updates cannot remove keys.',
+                style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
@@ -422,6 +480,35 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
       _showFailureSnackBar(
         context,
         'Could not update the OpenCode auto-update mode.',
+      );
+    }
+  }
+
+  Future<void> _applyUsername(BuildContext context) async {
+    final settingsProvider = context.read<SettingsProvider>();
+    final normalizedUsername = _usernameController.text.trim();
+    if (normalizedUsername.isEmpty) {
+      if (!context.mounted) {
+        return;
+      }
+      _showFailureSnackBar(
+        context,
+        settingsProvider.openCodeUsername == null
+            ? 'Enter a username to save a custom OpenCode conversation name.'
+            : 'Clearing the OpenCode conversation username still requires editing config outside the app.',
+      );
+      return;
+    }
+    final updated = await settingsProvider.setOpenCodeUsername(
+      normalizedUsername,
+    );
+    if (!context.mounted) {
+      return;
+    }
+    if (!updated) {
+      _showFailureSnackBar(
+        context,
+        'Could not update the OpenCode conversation username.',
       );
     }
   }

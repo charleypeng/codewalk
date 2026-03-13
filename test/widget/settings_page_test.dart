@@ -25,6 +25,7 @@ void main() {
         _MockResponse(200, <String, dynamic>{
           'model': 'anthropic/claude-3-5-sonnet',
           'default_agent': 'plan',
+          'username': 'helio',
           'autoupdate': 'notify',
           'share': 'auto',
         }),
@@ -175,6 +176,14 @@ void main() {
       findsOneWidget,
     );
     expect(
+      find.byKey(const ValueKey<String>('settings_opencode_username')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('settings_opencode_username_save')),
+      findsOneWidget,
+    );
+    expect(
       find.byKey(const ValueKey<String>('settings_opencode_small_model')),
       findsOneWidget,
     );
@@ -188,8 +197,15 @@ void main() {
     );
     expect(find.text('Anthropic / Claude 3.5 Sonnet'), findsOneWidget);
     expect(find.text('plan'), findsOneWidget);
+    expect(find.text('helio'), findsOneWidget);
     expect(find.text('Notify only'), findsOneWidget);
     expect(find.text('Automatic'), findsWidgets);
+    expect(
+      find.text(
+        'Resetting `username` back to the system default still requires editing config outside the app because `/config` patch updates cannot remove keys.',
+      ),
+      findsOneWidget,
+    );
     expect(
       find.text(
         'OpenCode automatic fallback is active because `small_model` is unset.',
@@ -215,7 +231,7 @@ void main() {
     await tester.scrollUntilVisible(
       syncToggleFinder,
       200,
-      scrollable: find.byType(Scrollable).last,
+      scrollable: find.byType(Scrollable).first,
     );
     await tester.pumpAndSettle();
 
