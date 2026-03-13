@@ -167,7 +167,16 @@ void main() {
     await tester.tap(find.text('Behavior').first);
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(
+      find.text('Permission handling provenance'),
+      120,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
     expect(find.text('OpenCode-backed defaults'), findsOneWidget);
+    expect(find.text('Permission handling provenance'), findsOneWidget);
+    expect(find.text('CodeWalk exception'), findsOneWidget);
     expect(
       find.byKey(const ValueKey<String>('settings_opencode_default_model')),
       findsOneWidget,
@@ -241,6 +250,12 @@ void main() {
     expect(
       find.text(
         'Use the chat-level share action to publish one session now. This setting only changes OpenCode’s default sharing policy.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'Advanced permission rule editing stays out of Settings for now and is deferred to later parity work.',
       ),
       findsOneWidget,
     );
@@ -339,6 +354,47 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Open settings'), findsOneWidget);
     expect(find.byType(SettingsPage), findsNothing);
+  });
+
+  testWidgets('desktop shortcuts section shows local provenance', (
+    WidgetTester tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    try {
+      final local = InMemoryAppLocalDataSource()
+        ..experienceSettingsJson = '{"checkUpdatesOnOpen": false}';
+      final settingsProvider = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: SoundService(),
+      );
+      await settingsProvider.initialize();
+      addTearDown(settingsProvider.dispose);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<SettingsProvider>.value(
+          value: settingsProvider,
+          child: const MaterialApp(home: SettingsPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Shortcuts'), findsOneWidget);
+
+      await tester.tap(find.text('Shortcuts').first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Keyboard shortcuts'), findsOneWidget);
+      expect(find.text('CodeWalk-local'), findsOneWidget);
+      expect(
+        find.text(
+          'These bindings are stored in CodeWalk for the current app runtime and do not edit OpenCode `tui.json` keybinds.',
+        ),
+        findsOneWidget,
+      );
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 
   testWidgets('shows Android background alert controls in notifications', (

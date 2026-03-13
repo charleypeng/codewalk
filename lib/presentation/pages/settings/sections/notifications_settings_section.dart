@@ -11,6 +11,7 @@ import '../../../providers/settings_provider.dart';
 import '../../../services/android_battery_optimization_service.dart';
 import '../../../services/notification_sound_source_service.dart';
 import '../../../services/notification_sound_source_service_types.dart';
+import '../../../widgets/settings_provenance_chip.dart';
 
 class NotificationsSettingsSection extends StatefulWidget {
   const NotificationsSettingsSection({super.key});
@@ -144,13 +145,28 @@ class _NotificationsSettingsSectionState
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.defaultPadding),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Symbols.info, size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(text, style: Theme.of(context).textTheme.bodySmall),
+            SettingsProvenanceChip(
+              provenance:
+                  settingsProvider.hasAnyServerBackedNotificationCategory
+                  ? SettingsProvenance.opencodeBacked
+                  : SettingsProvenance.codewalkLocal,
+            ),
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Symbols.info, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    text,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

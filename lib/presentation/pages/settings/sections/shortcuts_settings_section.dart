@@ -8,6 +8,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../domain/entities/experience_settings.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../utils/shortcut_binding_codec.dart';
+import '../../../widgets/settings_provenance_chip.dart';
 
 class ShortcutsSettingsSection extends StatefulWidget {
   const ShortcutsSettingsSection({super.key});
@@ -59,6 +60,15 @@ class _ShortcutsSettingsSectionState extends State<ShortcutsSettingsSection> {
             Text(
               'Search, edit bindings, and resolve conflicts before saving.',
               style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            const SettingsProvenanceChip(
+              provenance: SettingsProvenance.codewalkLocal,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'These bindings are stored in CodeWalk for the current app runtime and do not edit OpenCode `tui.json` keybinds.',
+              style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
             TextField(

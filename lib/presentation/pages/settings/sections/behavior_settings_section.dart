@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../providers/chat_provider.dart';
 import '../../../providers/settings_provider.dart';
+import '../../../widgets/settings_provenance_chip.dart';
 
 class BehaviorSettingsSection extends StatefulWidget {
   const BehaviorSettingsSection({super.key});
@@ -58,6 +59,8 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
             ),
             const SizedBox(height: 16),
             _buildOpenCodeDefaultsCard(context, settingsProvider),
+            const SizedBox(height: 16),
+            _buildPermissionParityCard(context),
             const SizedBox(height: 16),
             Card(
               child: Column(
@@ -131,6 +134,10 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const SettingsProvenanceChip(
+                        provenance: SettingsProvenance.opencodeBacked,
+                      ),
+                      const SizedBox(height: 8),
                       Text(
                         'OpenCode-backed defaults',
                         style: Theme.of(context).textTheme.titleMedium,
@@ -417,6 +424,46 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPermissionParityCard(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.defaultPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                SettingsProvenanceChip(
+                  provenance: SettingsProvenance.codewalkException,
+                ),
+                SettingsProvenanceChip(
+                  provenance: SettingsProvenance.opencodeBacked,
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Permission handling provenance',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Official OpenCode permission policy is configured in `opencode.json` with allow/ask/deny rules per tool. CodeWalk keeps the official permission-request cards and adds one approved ADR-023 exception: the composer auto-approve toggle in chat replies with Allow Once only.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Advanced permission rule editing stays out of Settings for now and is deferred to later parity work.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ],
         ),
       ),
