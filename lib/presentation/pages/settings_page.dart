@@ -85,7 +85,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _section(
       id: 'behavior',
       title: 'Behavior',
-      description: 'Composer sync and concurrency safety',
+      description: 'OpenCode defaults and composer sync safety',
       icon: Symbols.settings,
       builder: (_) => const BehaviorSettingsSection(),
     ),

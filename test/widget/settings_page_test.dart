@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/presentation/pages/settings_page.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,9 +19,58 @@ void main() {
   ) async {
     final local = InMemoryAppLocalDataSource()
       ..experienceSettingsJson = '{"checkUpdatesOnOpen": false}';
+    final dioClient = _buildDioClient(
+      _MockDioAdapter()..enqueue(<_MockResponse>[
+        _MockResponse(200, <String, dynamic>{}),
+        _MockResponse(200, <String, dynamic>{
+          'model': 'anthropic/claude-3-5-sonnet',
+          'default_agent': 'plan',
+        }),
+        _MockResponse(200, <String, dynamic>{
+          'all': <dynamic>[
+            <String, dynamic>{
+              'id': 'anthropic',
+              'name': 'Anthropic',
+              'env': <String>['ANTHROPIC_API_KEY'],
+              'models': <String, dynamic>{
+                'claude-3-5-sonnet': <String, dynamic>{
+                  'id': 'claude-3-5-sonnet',
+                  'name': 'Claude 3.5 Sonnet',
+                  'release_date': '2025-01-01',
+                  'capabilities': <String, dynamic>{
+                    'attachment': true,
+                    'reasoning': true,
+                    'temperature': false,
+                    'toolcall': true,
+                  },
+                  'cost': <String, dynamic>{'input': 1, 'output': 2},
+                  'limit': <String, dynamic>{'context': 1000, 'output': 100},
+                },
+              },
+            },
+          ],
+          'default': <String, String>{'anthropic': 'claude-3-5-sonnet'},
+          'connected': <String>['anthropic'],
+        }),
+        _MockResponse(200, <dynamic>[
+          <String, dynamic>{
+            'name': 'build',
+            'mode': 'primary',
+            'hidden': false,
+            'native': true,
+          },
+          <String, dynamic>{
+            'name': 'plan',
+            'mode': 'primary',
+            'hidden': false,
+            'native': true,
+          },
+        ]),
+      ]),
+    );
     final settingsProvider = SettingsProvider(
       localDataSource: local,
-      dioClient: DioClient(),
+      dioClient: dioClient,
       soundService: SoundService(),
     );
     await settingsProvider.initialize();
@@ -110,6 +162,18 @@ void main() {
 
     await tester.tap(find.text('Behavior').first);
     await tester.pumpAndSettle();
+
+    expect(find.text('OpenCode-backed defaults'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('settings_opencode_default_model')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('settings_opencode_default_agent')),
+      findsOneWidget,
+    );
+    expect(find.text('Anthropic / Claude 3.5 Sonnet'), findsOneWidget);
+    expect(find.text('plan'), findsOneWidget);
 
     final syncToggleFinder = find.byKey(
       const ValueKey<String>('settings_toggle_experimental_multi_device_sync'),
@@ -239,4 +303,78 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     }
   });
+}
+
+class _MockResponse {
+  _MockResponse(this.statusCode, this.data, {this.isError = false});
+
+  final int statusCode;
+  final dynamic data;
+  final bool isError;
+}
+
+class _MockDioAdapter implements HttpClientAdapter {
+  final List<_MockResponse> _responses = <_MockResponse>[];
+  int callCount = 0;
+
+  void enqueue(List<_MockResponse> items) {
+    _responses.addAll(items);
+  }
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<List<int>>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    if (callCount >= _responses.length) {
+      throw DioException(
+        requestOptions: options,
+        type: DioExceptionType.connectionError,
+        message: 'No more mock responses (call #$callCount)',
+      );
+    }
+
+    final mock = _responses[callCount];
+    callCount += 1;
+
+    if (mock.isError) {
+      throw DioException(
+        requestOptions: options,
+        type: DioExceptionType.badResponse,
+        response: Response<dynamic>(
+          requestOptions: options,
+          statusCode: mock.statusCode,
+          data: mock.data,
+        ),
+      );
+    }
+
+    return ResponseBody.fromString(
+      _encode(mock.data),
+      mock.statusCode,
+      headers: <String, List<String>>{
+        'content-type': <String>['application/json'],
+      },
+    );
+  }
+
+  String _encode(dynamic data) {
+    if (data == null) {
+      return '';
+    }
+    if (data is String) {
+      return data;
+    }
+    return jsonEncode(data);
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+DioClient _buildDioClient(_MockDioAdapter adapter) {
+  final dioClient = DioClient();
+  dioClient.dio.httpClientAdapter = adapter;
+  return dioClient;
 }

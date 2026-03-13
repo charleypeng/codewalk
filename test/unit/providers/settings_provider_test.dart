@@ -4,6 +4,7 @@ import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -386,6 +387,184 @@ void main() {
       expect(second.themeMode, ThemeModeOption.dark);
     });
 
+    test('loads OpenCode-backed default model and agent options', () async {
+      final local = InMemoryAppLocalDataSource();
+      final adapter = _MockDioAdapter()
+        ..enqueue(<_MockResponse>[
+          _MockResponse(200, <String, dynamic>{}),
+          _MockResponse(200, <String, dynamic>{
+            'model': 'anthropic/claude-3-5-sonnet',
+            'default_agent': 'plan',
+          }),
+          _MockResponse(200, <String, dynamic>{
+            'all': <dynamic>[
+              <String, dynamic>{
+                'id': 'anthropic',
+                'name': 'Anthropic',
+                'env': <String>['ANTHROPIC_API_KEY'],
+                'models': <String, dynamic>{
+                  'claude-3-5-sonnet': <String, dynamic>{
+                    'id': 'claude-3-5-sonnet',
+                    'name': 'Claude 3.5 Sonnet',
+                    'release_date': '2025-01-01',
+                    'capabilities': <String, dynamic>{
+                      'attachment': true,
+                      'reasoning': true,
+                      'temperature': false,
+                      'toolcall': true,
+                    },
+                    'cost': <String, dynamic>{'input': 1, 'output': 2},
+                    'limit': <String, dynamic>{'context': 1000, 'output': 100},
+                  },
+                },
+              },
+            ],
+            'default': <String, String>{'anthropic': 'claude-3-5-sonnet'},
+            'connected': <String>['anthropic'],
+          }),
+          _MockResponse(200, <dynamic>[
+            <String, dynamic>{
+              'name': 'build',
+              'mode': 'primary',
+              'hidden': false,
+              'native': true,
+            },
+            <String, dynamic>{
+              'name': 'plan',
+              'mode': 'primary',
+              'hidden': false,
+              'native': true,
+            },
+            <String, dynamic>{
+              'name': 'explore',
+              'mode': 'subagent',
+              'hidden': false,
+              'native': true,
+            },
+          ]),
+        ]);
+      final dioClient = _buildDioClient(adapter);
+      final provider = SettingsProvider(
+        localDataSource: local,
+        dioClient: dioClient,
+        soundService: _FakeSoundService(),
+      );
+
+      await provider.initialize();
+      await Future<void>.delayed(Duration.zero);
+      await provider.refreshOpenCodeBackedDefaults();
+
+      expect(provider.openCodeDefaultModelKey, 'anthropic/claude-3-5-sonnet');
+      expect(provider.openCodeDefaultAgentName, 'plan');
+      expect(provider.openCodeDefaultModelOptions, hasLength(1));
+      expect(
+        provider.openCodeDefaultModelOptions.single.label,
+        'Anthropic / Claude 3.5 Sonnet',
+      );
+      expect(provider.openCodeDefaultAgentOptions, <String>['build', 'plan']);
+    });
+
+    test('patches OpenCode-backed default model and agent', () async {
+      final local = InMemoryAppLocalDataSource();
+      final adapter = _MockDioAdapter()
+        ..enqueue(<_MockResponse>[
+          _MockResponse(200, <String, dynamic>{}),
+          _MockResponse(200, <String, dynamic>{
+            'model': 'anthropic/claude-3-5-sonnet',
+            'default_agent': 'plan',
+          }),
+          _MockResponse(200, <String, dynamic>{
+            'all': <dynamic>[
+              <String, dynamic>{
+                'id': 'anthropic',
+                'name': 'Anthropic',
+                'env': <String>['ANTHROPIC_API_KEY'],
+                'models': <String, dynamic>{
+                  'claude-3-5-sonnet': <String, dynamic>{
+                    'id': 'claude-3-5-sonnet',
+                    'name': 'Claude 3.5 Sonnet',
+                    'release_date': '2025-01-01',
+                    'capabilities': <String, dynamic>{
+                      'attachment': true,
+                      'reasoning': true,
+                      'temperature': false,
+                      'toolcall': true,
+                    },
+                    'cost': <String, dynamic>{'input': 1, 'output': 2},
+                    'limit': <String, dynamic>{'context': 1000, 'output': 100},
+                  },
+                },
+              },
+              <String, dynamic>{
+                'id': 'openai',
+                'name': 'OpenAI',
+                'env': <String>['OPENAI_API_KEY'],
+                'models': <String, dynamic>{
+                  'gpt-5': <String, dynamic>{
+                    'id': 'gpt-5',
+                    'name': 'GPT 5',
+                    'release_date': '2025-01-01',
+                    'capabilities': <String, dynamic>{
+                      'attachment': true,
+                      'reasoning': true,
+                      'temperature': false,
+                      'toolcall': true,
+                    },
+                    'cost': <String, dynamic>{'input': 1, 'output': 2},
+                    'limit': <String, dynamic>{'context': 1000, 'output': 100},
+                  },
+                },
+              },
+            ],
+            'default': <String, String>{'anthropic': 'claude-3-5-sonnet'},
+            'connected': <String>['anthropic', 'openai'],
+          }),
+          _MockResponse(200, <dynamic>[
+            <String, dynamic>{
+              'name': 'build',
+              'mode': 'primary',
+              'hidden': false,
+              'native': true,
+            },
+            <String, dynamic>{
+              'name': 'plan',
+              'mode': 'primary',
+              'hidden': false,
+              'native': true,
+            },
+          ]),
+          _MockResponse(200, true),
+          _MockResponse(200, true),
+        ]);
+      final dioClient = _buildDioClient(adapter);
+      final provider = SettingsProvider(
+        localDataSource: local,
+        dioClient: dioClient,
+        soundService: _FakeSoundService(),
+      );
+
+      await provider.initialize();
+      await Future<void>.delayed(Duration.zero);
+      await provider.refreshOpenCodeBackedDefaults();
+      await provider.setOpenCodeDefaultModel('openai/gpt-5');
+      await provider.setOpenCodeDefaultAgent('build');
+
+      expect(provider.openCodeDefaultModelKey, 'openai/gpt-5');
+      expect(provider.openCodeDefaultAgentName, 'build');
+
+      final modelPatch = adapter.capturedRequests[4];
+      expect(modelPatch.method, 'PATCH');
+      expect(_decodeRequestData(modelPatch.data), <String, dynamic>{
+        'model': 'openai/gpt-5',
+      });
+
+      final agentPatch = adapter.capturedRequests[5];
+      expect(agentPatch.method, 'PATCH');
+      expect(_decodeRequestData(agentPatch.data), <String, dynamic>{
+        'default_agent': 'build',
+      });
+    });
+
     test('persists OpenCode theme preset preference', () async {
       final local = InMemoryAppLocalDataSource();
       final first = SettingsProvider(
@@ -587,4 +766,88 @@ void main() {
       },
     );
   });
+}
+
+class _MockResponse {
+  _MockResponse(this.statusCode, this.data, {this.isError = false});
+
+  final int statusCode;
+  final dynamic data;
+  final bool isError;
+}
+
+class _MockDioAdapter implements HttpClientAdapter {
+  final List<_MockResponse> _responses = <_MockResponse>[];
+  final List<RequestOptions> capturedRequests = <RequestOptions>[];
+  int callCount = 0;
+
+  void enqueue(List<_MockResponse> items) {
+    _responses.addAll(items);
+  }
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<List<int>>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    capturedRequests.add(options);
+
+    if (callCount >= _responses.length) {
+      throw DioException(
+        requestOptions: options,
+        type: DioExceptionType.connectionError,
+        message: 'No more mock responses (call #$callCount)',
+      );
+    }
+
+    final mock = _responses[callCount];
+    callCount += 1;
+
+    if (mock.isError) {
+      throw DioException(
+        requestOptions: options,
+        type: DioExceptionType.badResponse,
+        response: Response<dynamic>(
+          requestOptions: options,
+          statusCode: mock.statusCode,
+          data: mock.data,
+        ),
+      );
+    }
+
+    return ResponseBody.fromString(
+      _encode(mock.data),
+      mock.statusCode,
+      headers: <String, List<String>>{
+        'content-type': <String>['application/json'],
+      },
+    );
+  }
+
+  String _encode(dynamic data) {
+    if (data == null) {
+      return '';
+    }
+    if (data is String) {
+      return data;
+    }
+    return jsonEncode(data);
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+DioClient _buildDioClient(_MockDioAdapter adapter) {
+  final dioClient = DioClient();
+  dioClient.dio.httpClientAdapter = adapter;
+  return dioClient;
+}
+
+dynamic _decodeRequestData(dynamic data) {
+  if (data is String) {
+    return jsonDecode(data);
+  }
+  return data;
 }

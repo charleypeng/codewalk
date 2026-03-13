@@ -11,6 +11,8 @@ import 'package:path_provider/path_provider.dart';
 import '../../core/logging/app_logger.dart';
 import '../../core/network/dio_client.dart';
 import '../../data/datasources/app_local_datasource.dart';
+import '../../data/models/agent_model.dart';
+import '../../data/models/provider_model.dart';
 import '../../domain/entities/experience_settings.dart';
 import '../services/android_background_alert_logic.dart';
 import '../services/android_background_alert_worker.dart';
@@ -21,6 +23,27 @@ import '../utils/shortcut_binding_codec.dart';
 
 /// Tracks the lifecycle of an in-app update installation.
 enum UpdateInstallState { idle, downloading, installing, done, failed }
+
+@immutable
+class OpenCodeDefaultModelOption {
+  const OpenCodeDefaultModelOption({
+    required this.key,
+    required this.providerId,
+    required this.providerName,
+    required this.modelId,
+    required this.modelName,
+    required this.connected,
+  });
+
+  final String key;
+  final String providerId;
+  final String providerName;
+  final String modelId;
+  final String modelName;
+  final bool connected;
+
+  String get label => '$providerName / $modelName';
+}
 
 class SettingsProvider extends ChangeNotifier {
   SettingsProvider({
@@ -59,6 +82,14 @@ class SettingsProvider extends ChangeNotifier {
   bool _initialized = false;
   Future<void>? _initFuture;
   Timer? _automaticUpdateCheckTimer;
+  bool _openCodeDefaultsLoading = false;
+  bool _openCodeDefaultsLoaded = false;
+  String? _openCodeDefaultsError;
+  String? _openCodeDefaultModelKey;
+  String? _openCodeDefaultAgentName;
+  List<OpenCodeDefaultModelOption> _openCodeDefaultModelOptions =
+      const <OpenCodeDefaultModelOption>[];
+  List<String> _openCodeDefaultAgentOptions = const <String>[];
 
   // Whether the platform actually provided a dynamic color scheme at runtime.
   // Set from main.dart's DynamicColorBuilder callback.
@@ -73,6 +104,17 @@ class SettingsProvider extends ChangeNotifier {
   bool get pendingStartupUpdateToast => _pendingStartupUpdateToast;
   UpdateInstallState get installState => _installState;
   double get installProgress => _installProgress;
+  bool get openCodeDefaultsLoading => _openCodeDefaultsLoading;
+  bool get openCodeDefaultsLoaded => _openCodeDefaultsLoaded;
+  String? get openCodeDefaultsError => _openCodeDefaultsError;
+  String? get openCodeDefaultModelKey => _openCodeDefaultModelKey;
+  String? get openCodeDefaultAgentName => _openCodeDefaultAgentName;
+  List<OpenCodeDefaultModelOption> get openCodeDefaultModelOptions =>
+      List<OpenCodeDefaultModelOption>.unmodifiable(
+        _openCodeDefaultModelOptions,
+      );
+  List<String> get openCodeDefaultAgentOptions =>
+      List<String>.unmodifiable(_openCodeDefaultAgentOptions);
   ThemeModeOption get themeMode => _settings.themeMode;
   bool get useAmoledDark => _settings.useAmoledDark;
   bool get useDynamicColor => _settings.useDynamicColor;
@@ -327,6 +369,130 @@ class SettingsProvider extends ChangeNotifier {
     _settings = _settings.copyWith(themePreset: () => preset);
     notifyListeners();
     await _persist();
+  }
+
+  Future<void> refreshOpenCodeBackedDefaults() async {
+    if (_openCodeDefaultsLoading) {
+      return;
+    }
+
+    _openCodeDefaultsLoading = true;
+    _openCodeDefaultsError = null;
+    notifyListeners();
+
+    try {
+      final configResponse = await _dioClient.get<Map<String, dynamic>>(
+        '/config',
+      );
+      final config = configResponse.data ?? const <String, dynamic>{};
+
+      Map<String, dynamic>? providersPayload;
+      try {
+        final providersResponse = await _dioClient.get<Map<String, dynamic>>(
+          '/provider',
+        );
+        providersPayload = providersResponse.data;
+      } catch (error, stackTrace) {
+        AppLogger.warn(
+          'Failed to load OpenCode providers for settings defaults',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+
+      List<dynamic>? agentsPayload;
+      try {
+        final agentsResponse = await _dioClient.get<List<dynamic>>('/agent');
+        agentsPayload = agentsResponse.data;
+      } catch (error, stackTrace) {
+        AppLogger.warn(
+          'Failed to load OpenCode agents for settings defaults',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
+
+      final configuredModelKey = _configuredModelKeyFromConfig(config);
+      final configuredAgentName = _configuredAgentNameFromConfig(config);
+
+      final nextModelOptions = _buildOpenCodeDefaultModelOptions(
+        providersPayload,
+        configuredModelKey: configuredModelKey,
+      );
+      final nextAgentOptions = _buildOpenCodeDefaultAgentOptions(
+        agentsPayload,
+        configuredAgentName: configuredAgentName,
+      );
+
+      _openCodeDefaultModelKey = configuredModelKey;
+      _openCodeDefaultAgentName = configuredAgentName;
+      _openCodeDefaultModelOptions = nextModelOptions;
+      _openCodeDefaultAgentOptions = nextAgentOptions;
+      _openCodeDefaultsLoaded = true;
+    } catch (error, stackTrace) {
+      _openCodeDefaultsError =
+          'Could not load OpenCode-backed defaults from the active server.';
+      AppLogger.warn(
+        'Failed to load OpenCode-backed defaults',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    } finally {
+      _openCodeDefaultsLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> setOpenCodeDefaultModel(String modelKey) async {
+    final normalizedModelKey = modelKey.trim();
+    if (normalizedModelKey.isEmpty ||
+        normalizedModelKey == _openCodeDefaultModelKey) {
+      return true;
+    }
+
+    try {
+      await _dioClient.patch<void>(
+        '/config',
+        data: <String, dynamic>{'model': normalizedModelKey},
+      );
+      _openCodeDefaultModelKey = normalizedModelKey;
+      _ensureConfiguredModelOption(normalizedModelKey);
+      notifyListeners();
+      return true;
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to update OpenCode default model',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
+  }
+
+  Future<bool> setOpenCodeDefaultAgent(String agentName) async {
+    final normalizedAgentName = agentName.trim();
+    if (normalizedAgentName.isEmpty ||
+        normalizedAgentName == _openCodeDefaultAgentName) {
+      return true;
+    }
+
+    try {
+      await _dioClient.patch<void>(
+        '/config',
+        data: <String, dynamic>{'default_agent': normalizedAgentName},
+      );
+      _openCodeDefaultAgentName = normalizedAgentName;
+      _ensureConfiguredAgentOption(normalizedAgentName);
+      notifyListeners();
+      return true;
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to update OpenCode default agent',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
   }
 
   Future<void> setUseAmoledDark(bool value) async {
@@ -1113,6 +1279,199 @@ class SettingsProvider extends ChangeNotifier {
     } catch (_) {
       // Server sync is best-effort; local value remains source of truth.
     }
+  }
+
+  String? _configuredModelKeyFromConfig(Map<String, dynamic> config) {
+    final modelValue = config['model'];
+    if (modelValue is String) {
+      final normalized = modelValue.trim();
+      return normalized.isEmpty ? null : normalized;
+    }
+    if (modelValue is Map) {
+      final providerId =
+          (modelValue['providerID'] ??
+                  modelValue['providerId'] ??
+                  modelValue['provider'])
+              as String?;
+      final modelId =
+          (modelValue['modelID'] ?? modelValue['modelId'] ?? modelValue['id'])
+              as String?;
+      final normalizedProviderId = providerId?.trim();
+      final normalizedModelId = modelId?.trim();
+      if (normalizedProviderId == null ||
+          normalizedProviderId.isEmpty ||
+          normalizedModelId == null ||
+          normalizedModelId.isEmpty) {
+        return null;
+      }
+      return '$normalizedProviderId/$normalizedModelId';
+    }
+    return null;
+  }
+
+  String? _configuredAgentNameFromConfig(Map<String, dynamic> config) {
+    final value =
+        (config['default_agent'] ?? config['defaultAgent']) as String?;
+    final normalized = value?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return null;
+    }
+    return normalized;
+  }
+
+  List<OpenCodeDefaultModelOption> _buildOpenCodeDefaultModelOptions(
+    Map<String, dynamic>? rawProviders, {
+    required String? configuredModelKey,
+  }) {
+    if (rawProviders == null) {
+      return configuredModelKey == null
+          ? const <OpenCodeDefaultModelOption>[]
+          : <OpenCodeDefaultModelOption>[
+              _fallbackModelOption(configuredModelKey),
+            ];
+    }
+
+    final parsed = ProvidersResponseModel.fromJson(rawProviders);
+    final connectedProviderIds = parsed.connected.toSet();
+    final options = <OpenCodeDefaultModelOption>[];
+
+    for (final provider in parsed.providers) {
+      for (final entry in provider.models.entries) {
+        final model = entry.value;
+        options.add(
+          OpenCodeDefaultModelOption(
+            key: '${provider.id}/${model.id}',
+            providerId: provider.id,
+            providerName: provider.name,
+            modelId: model.id,
+            modelName: model.name,
+            connected: connectedProviderIds.contains(provider.id),
+          ),
+        );
+      }
+    }
+
+    options.sort((a, b) {
+      final byConnection = (b.connected ? 1 : 0).compareTo(a.connected ? 1 : 0);
+      if (byConnection != 0) {
+        return byConnection;
+      }
+      final byProvider = a.providerName.toLowerCase().compareTo(
+        b.providerName.toLowerCase(),
+      );
+      if (byProvider != 0) {
+        return byProvider;
+      }
+      return a.modelName.toLowerCase().compareTo(b.modelName.toLowerCase());
+    });
+
+    if (configuredModelKey != null &&
+        !options.any((option) => option.key == configuredModelKey)) {
+      options.insert(0, _fallbackModelOption(configuredModelKey));
+    }
+
+    return options;
+  }
+
+  List<String> _buildOpenCodeDefaultAgentOptions(
+    List<dynamic>? rawAgents, {
+    required String? configuredAgentName,
+  }) {
+    final options = <String>[];
+    if (rawAgents != null) {
+      for (final item in rawAgents) {
+        if (item is! Map) {
+          continue;
+        }
+        final agent = AgentModel.fromJson(Map<String, dynamic>.from(item));
+        if (agent.hidden) {
+          continue;
+        }
+        final mode = agent.mode.trim().toLowerCase();
+        if (mode.isNotEmpty && mode != 'primary' && mode != 'all') {
+          continue;
+        }
+        final normalizedName = agent.name.trim();
+        if (normalizedName.isEmpty || options.contains(normalizedName)) {
+          continue;
+        }
+        options.add(normalizedName);
+      }
+      options.sort((a, b) {
+        final byPriority = _agentSortPriority(
+          a,
+        ).compareTo(_agentSortPriority(b));
+        if (byPriority != 0) {
+          return byPriority;
+        }
+        return a.toLowerCase().compareTo(b.toLowerCase());
+      });
+    }
+
+    if (configuredAgentName != null && !options.contains(configuredAgentName)) {
+      options.insert(0, configuredAgentName);
+    }
+
+    return options;
+  }
+
+  int _agentSortPriority(String agentName) {
+    switch (agentName.trim().toLowerCase()) {
+      case 'build':
+        return 0;
+      case 'plan':
+        return 1;
+      default:
+        return 2;
+    }
+  }
+
+  OpenCodeDefaultModelOption _fallbackModelOption(String configuredModelKey) {
+    final separatorIndex = configuredModelKey.indexOf('/');
+    if (separatorIndex <= 0 ||
+        separatorIndex >= configuredModelKey.length - 1) {
+      return OpenCodeDefaultModelOption(
+        key: configuredModelKey,
+        providerId: configuredModelKey,
+        providerName: 'Configured on server',
+        modelId: configuredModelKey,
+        modelName: configuredModelKey,
+        connected: false,
+      );
+    }
+
+    final providerId = configuredModelKey.substring(0, separatorIndex);
+    final modelId = configuredModelKey.substring(separatorIndex + 1);
+    return OpenCodeDefaultModelOption(
+      key: configuredModelKey,
+      providerId: providerId,
+      providerName: providerId,
+      modelId: modelId,
+      modelName: modelId,
+      connected: false,
+    );
+  }
+
+  void _ensureConfiguredModelOption(String configuredModelKey) {
+    if (_openCodeDefaultModelOptions.any(
+      (option) => option.key == configuredModelKey,
+    )) {
+      return;
+    }
+    _openCodeDefaultModelOptions = <OpenCodeDefaultModelOption>[
+      _fallbackModelOption(configuredModelKey),
+      ..._openCodeDefaultModelOptions,
+    ];
+  }
+
+  void _ensureConfiguredAgentOption(String configuredAgentName) {
+    if (_openCodeDefaultAgentOptions.contains(configuredAgentName)) {
+      return;
+    }
+    _openCodeDefaultAgentOptions = <String>[
+      configuredAgentName,
+      ..._openCodeDefaultAgentOptions,
+    ];
   }
 
   @override
