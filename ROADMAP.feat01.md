@@ -218,6 +218,16 @@ Delivered evidence-backed parity matrix documenting:
 
 ---
 
+### ✅ Completed: Group 3.02 — Commit 29f553f
+
+Recorded ownership matrix, sync rules, exception inventory, and unresolved contract questions:
+- Ownership matrix by setting family (themes, keybinds, appearance, notifications, model/agent/permissions, server-only, device-only)
+- Shared vs local sync rules document what syncs where
+- Exception inventory documents EXC-001 (composer auto-approve) as ADR-023 approved
+- Unresolved contract questions flagged for verification before Groups 3.03/3.05
+
+---
+
 ## Group 3.03: Theme Preset Parity Foundation
 
 ### Why
