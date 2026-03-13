@@ -16,15 +16,9 @@ class BehaviorSettingsSection extends StatefulWidget {
 }
 
 class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
-  bool _syncedServerDefaults = false;
-
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_syncedServerDefaults) {
-      return;
-    }
-    _syncedServerDefaults = true;
+  void initState() {
+    super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
@@ -281,6 +275,14 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
       await chatProvider.initializeProviders();
     } on ProviderNotFoundException {
       // Settings tests can render this section without a ChatProvider.
+    } catch (_) {
+      if (!context.mounted) {
+        return;
+      }
+      _showFailureSnackBar(
+        context,
+        'Updated the server setting, but could not refresh chat providers.',
+      );
     }
   }
 
