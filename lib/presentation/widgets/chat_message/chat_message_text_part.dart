@@ -141,13 +141,17 @@ class _MarkdownCodeBlockTapBuilder extends MarkdownElementBuilder {
       return null;
     }
     final language = _markdownCodeLanguage(element);
-    final style =
+    final inheritedStyle =
         preferredStyle ??
         parentStyle ??
-        Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontFamily: 'monospace',
-          color: themeTokens.markdownCodeBlock,
-        );
+        Theme.of(context).textTheme.bodyMedium ??
+        const TextStyle();
+    final style = inheritedStyle.copyWith(
+      fontFamily: 'monospace',
+      color: themeTokens.markdownCodeBlock,
+      backgroundColor: Colors.transparent,
+      height: 1.45,
+    );
     final highlightTheme = openCodeHighlightTheme(
       tokens: themeTokens,
       brightness: Theme.of(context).brightness,
@@ -220,13 +224,16 @@ class _MarkdownInlineCodeTapBuilder extends MarkdownElementBuilder {
     if (code.trim().isEmpty) {
       return null;
     }
-    final style =
+    final inheritedStyle =
         preferredStyle ??
         parentStyle ??
-        Theme.of(context).textTheme.bodyMedium?.copyWith(
-          fontFamily: 'monospace',
-          color: themeTokens.markdownInlineCode,
-        );
+        Theme.of(context).textTheme.bodyMedium ??
+        const TextStyle();
+    final style = inheritedStyle.copyWith(
+      fontFamily: 'monospace',
+      color: themeTokens.markdownInlineCode,
+      backgroundColor: Colors.transparent,
+    );
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => onTapCode(code),

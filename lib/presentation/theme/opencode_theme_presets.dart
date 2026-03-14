@@ -439,8 +439,12 @@ OpenCodeThemeTokens? openCodeThemeTokensFor(
 OpenCodeThemeTokens classicThemeTokensFrom(ColorScheme colorScheme) {
   final surfaceBase = colorScheme.surface;
   final surfaceRaised = colorScheme.surfaceContainerLow;
-  final inlineCodeBackground = colorScheme.surfaceContainerHighest;
-  final codeBlockBackground = colorScheme.surfaceContainerHigh;
+  final codeBlockBackground = colorScheme.surfaceContainerHighest;
+  final inlineCodeBackground = _overlay(
+    codeBlockBackground,
+    colorScheme.primary,
+    colorScheme.brightness == Brightness.dark ? 0.1 : 0.05,
+  );
   final textBase = colorScheme.onSurface;
   final textMuted = colorScheme.onSurfaceVariant;
   return OpenCodeThemeTokens(

@@ -853,6 +853,55 @@ void main() {
     );
   });
 
+  testWidgets(
+    'multi-line markdown code block keeps monospace font in classic dark theme',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(brightness: Brightness.dark),
+          home: Scaffold(
+            body: ChatMessageWidget(
+              message: AssistantMessage(
+                id: 'msg_classic_dark_code',
+                sessionId: 'ses_classic_dark_code',
+                time: DateTime.fromMillisecondsSinceEpoch(1000),
+                parts: const <MessagePart>[
+                  TextPart(
+                    id: 'part_classic_dark_code',
+                    messageId: 'msg_classic_dark_code',
+                    sessionId: 'ses_classic_dark_code',
+                    text: '```dart\nfinal value = 42;\nprint(value);\n```',
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      final highlightView = tester.widget<HighlightView>(
+        find.byType(HighlightView),
+      );
+      expect(highlightView.textStyle?.fontFamily, 'monospace');
+
+      expect(
+        find.byWidgetPredicate((widget) {
+          if (widget is! DecoratedBox) {
+            return false;
+          }
+          final decoration = widget.decoration;
+          if (decoration is! BoxDecoration) {
+            return false;
+          }
+          return decoration.color != null;
+        }),
+        findsWidgets,
+      );
+    },
+  );
+
   testWidgets('markdown code stays stable across parent rebuilds', (
     WidgetTester tester,
   ) async {
