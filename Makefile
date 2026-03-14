@@ -1,4 +1,4 @@
-.PHONY: help deps gen icons icons-tray icons-app tray-prepare icons-check analyze test test-fast test-unit test-widget test-integration test-shard coverage smoke check check-fast desktop android precommit clean release
+.PHONY: help deps gen theme-sync theme-sync-check icons icons-tray icons-app tray-prepare icons-check analyze test test-fast test-unit test-widget test-integration test-shard coverage smoke check check-fast desktop android precommit clean release
 
 APK_DIR = build/app/outputs/flutter-apk
 APK_PATH = $(APK_DIR)/codewalk.apk
@@ -22,6 +22,8 @@ help:
 	@echo ""
 	@echo "  make deps       Install dependencies"
 	@echo "  make gen        Run build_runner"
+	@echo "  make theme-sync Regenerate OpenCode Web theme registry"
+	@echo "  make theme-sync-check  Verify OpenCode Web theme registry is current"
 	@echo "  make icons      Regenerate all icons (icons-tray + icons-app)"
 	@echo "  make icons-tray Regenerate tray icons from tray_mono_master.png"
 	@echo "  make icons-app  Regenerate app icons from original.png"
@@ -49,6 +51,12 @@ deps:
 
 gen:
 	dart run build_runner build --delete-conflicting-outputs $(QUIET)
+
+theme-sync:
+	python tool/theme/generate_opencode_web_themes.py $(QUIET)
+
+theme-sync-check:
+	python tool/theme/generate_opencode_web_themes.py --check $(QUIET)
 
 icons: icons-tray icons-app
 

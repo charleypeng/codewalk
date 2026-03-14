@@ -62,13 +62,13 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | Project Snapshot | 3–11 |
 | Folder Structure | 12–48 |
 | Entry Points | 49–59 |
-| Core Modules | 60–102 |
-| Chat Architecture | 103–177 |
-| Data & Domain Layers | 178–189 |
-| Key API/DataSource locations | 190–209 |
-| Main Commands | 210–230 |
-| Testing/Quality Gates | 231–252 |
-| Notes | 253–362 |
+| Core Modules | 60–106 |
+| Chat Architecture | 107–181 |
+| Data & Domain Layers | 182–193 |
+| Key API/DataSource locations | 194–213 |
+| Main Commands | 214–236 |
+| Testing/Quality Gates | 237–258 |
+| Notes | 259–368 |
 
 ## ⚙️ Makefile Quick Reference (details in `Makefile`)
 
@@ -76,17 +76,17 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 
 | Makefile Topic | Lines |
 |----------------|-------|
-| Help and command index (`help`) | 20–46 |
-| Dependencies and codegen (`deps`, `gen`) | 47–55 |
-| Tray template preparation (`tray-prepare`) | 56–68 |
-| Platform tray icons (`icons-tray`) | 69–91 |
-| App icon generation (`icons-app`) | 92–136 |
-| Icon validation checks (`icons-check`) | 137–208 |
-| Analyze and test flows (`analyze`, `test*`, `coverage`, `smoke`) | 209–248 |
-| Desktop build and delivery (`desktop`) | 249–267 |
-| Android build and Telegram upload (`android`) | 268–302 |
-| Release/version flow (`release`) | 303–326 |
-| Cleanup (`clean`) | 327–329 |
+| Help and command index (`help`) | 20–47 |
+| Dependencies, codegen, and theme sync (`deps`, `gen`, `theme-sync*`) | 49–59 |
+| Tray template preparation (`tray-prepare`) | 63–75 |
+| Platform tray icons (`icons-tray`) | 76–98 |
+| App icon generation (`icons-app`) | 99–149 |
+| Icon validation checks (`icons-check`) | 150–220 |
+| Analyze and test flows (`analyze`, `test*`, `coverage`, `smoke`) | 222–260 |
+| Desktop build and delivery (`desktop`) | 262–280 |
+| Android build and Telegram upload (`android`) | 281–313 |
+| Release/version flow (`release`) | 316–339 |
+| Cleanup (`clean`) | 340–342 |
 
 ## 📌 Line-Scoped Read Policy (`ADR.md`, `CODEBASE.md`, and `Makefile`)
 
