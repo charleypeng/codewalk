@@ -156,17 +156,24 @@ class _MarkdownCodeBlockTapBuilder extends MarkdownElementBuilder {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => onTapCode(code),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.all(8),
-        child: language == null
-            ? Text(code, style: style)
-            : HighlightView(
-                code,
-                language: language,
-                theme: highlightTheme,
-                textStyle: style,
-              ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: themeTokens.codeBlockBackground,
+          border: Border.all(color: themeTokens.border.withValues(alpha: 0.7)),
+          borderRadius: AppShapes.borderSmall,
+        ),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.all(8),
+          child: language == null
+              ? Text(code, style: style)
+              : HighlightView(
+                  code,
+                  language: language,
+                  theme: highlightTheme,
+                  textStyle: style,
+                ),
+        ),
       ),
     );
   }

@@ -1,5 +1,7 @@
 import 'package:codewalk/domain/entities/chat_message.dart';
+import 'package:codewalk/domain/entities/experience_settings.dart';
 import 'package:codewalk/presentation/utils/chat_abort_message.dart';
+import 'package:codewalk/presentation/theme/opencode_theme_presets.dart';
 import 'package:codewalk/presentation/widgets/message_entrance_animation.dart';
 import 'package:codewalk/presentation/widgets/chat_message_widget.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
@@ -798,6 +800,57 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Copied to clipboard'), findsOneWidget);
+  });
+
+  testWidgets('multi-line markdown code block uses themed container', (
+    WidgetTester tester,
+  ) async {
+    final themeTokens = openCodeThemeTokensFor(
+      OpenCodeThemePreset.dracula,
+      Brightness.dark,
+    )!;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(
+          brightness: Brightness.dark,
+          extensions: <ThemeExtension<dynamic>>[themeTokens],
+        ),
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: AssistantMessage(
+              id: 'msg_themed_code',
+              sessionId: 'ses_themed_code',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_themed_code',
+                  messageId: 'msg_themed_code',
+                  sessionId: 'ses_themed_code',
+                  text: '```dart\nfinal value = 42;\nprint(value);\n```',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byWidgetPredicate((widget) {
+        if (widget is! DecoratedBox) {
+          return false;
+        }
+        final decoration = widget.decoration;
+        if (decoration is! BoxDecoration) {
+          return false;
+        }
+        return decoration.color == themeTokens.codeBlockBackground;
+      }),
+      findsWidgets,
+    );
   });
 
   testWidgets('markdown code stays stable across parent rebuilds', (
