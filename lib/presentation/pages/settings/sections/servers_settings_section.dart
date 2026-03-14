@@ -9,6 +9,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../domain/entities/server_profile.dart';
 import '../../../providers/app_provider.dart';
 import '../../../utils/app_page_route.dart';
+import '../../../widgets/searchable_dropdown_form_field.dart';
 import '../../onboarding_wizard_page.dart';
 
 class ServersSettingsSection extends StatefulWidget {
@@ -123,9 +124,13 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 10),
-            DropdownButtonFormField<String>(
+            SearchableDropdownFormField<String>(
               key: _activeServerDropdownKey,
               initialValue: dropdownValue,
+              searchHintText: 'Search active server',
+              emptyText: 'No servers found',
+              searchTermsBuilder: (value) =>
+                  _serverSearchTerms(appProvider, value),
               items: appProvider.serverProfiles
                   .map(
                     (profile) => DropdownMenuItem<String>(
@@ -187,6 +192,15 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
         ),
       ),
     );
+  }
+
+  List<String> _serverSearchTerms(AppProvider appProvider, String serverId) {
+    for (final profile in appProvider.serverProfiles) {
+      if (profile.id == serverId) {
+        return <String>[profile.displayName, profile.url, profile.id];
+      }
+    }
+    return <String>[serverId];
   }
 
   Widget _buildLocalServerCard(AppProvider appProvider) {

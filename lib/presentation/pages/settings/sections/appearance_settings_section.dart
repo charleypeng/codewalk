@@ -9,6 +9,7 @@ import '../../../../domain/entities/experience_settings.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../theme/brand_colors.dart';
 import '../../../theme/opencode_theme_presets.dart';
+import '../../../widgets/searchable_dropdown_form_field.dart';
 
 enum _AppearanceThemeFamily { classic, presets }
 
@@ -141,7 +142,7 @@ class AppearanceSettingsSection extends StatelessWidget {
                     ),
                     if (isPresetThemeActive) ...[
                       const SizedBox(height: 12),
-                      DropdownButtonFormField<OpenCodeThemePreset>(
+                      SearchableDropdownFormField<OpenCodeThemePreset>(
                         key: const ValueKey<String>(
                           'settings_theme_preset_dropdown',
                         ),
@@ -153,6 +154,12 @@ class AppearanceSettingsSection extends StatelessWidget {
                               'Mirrors the official OpenCode Web built-in theme list.',
                         ),
                         isExpanded: true,
+                        searchHintText: 'Search preset palette',
+                        emptyText: 'No preset palettes found',
+                        searchTermsBuilder: (value) => <String>[
+                          openCodeThemePresetLabel(value),
+                          value.name,
+                        ],
                         items: presetOptions
                             .map(
                               (preset) => DropdownMenuItem<OpenCodeThemePreset>(

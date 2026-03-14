@@ -11,6 +11,7 @@ import '../../../providers/settings_provider.dart';
 import '../../../services/android_battery_optimization_service.dart';
 import '../../../services/notification_sound_source_service.dart';
 import '../../../services/notification_sound_source_service_types.dart';
+import '../../../widgets/searchable_dropdown_form_field.dart';
 import '../../../widgets/settings_provenance_chip.dart';
 
 class NotificationsSettingsSection extends StatefulWidget {
@@ -707,8 +708,10 @@ class _NotificationsSettingsSectionState
     required SoundCategory soundCategory,
     required SoundOption selected,
   }) {
-    return DropdownButtonFormField<SoundOption>(
+    return SearchableDropdownFormField<SoundOption>(
       initialValue: selected,
+      searchHintText: 'Search sound type',
+      searchTermsBuilder: (value) => <String>[_soundLabel(value)],
       items: _soundOptions
           .map(
             (option) => DropdownMenuItem<SoundOption>(

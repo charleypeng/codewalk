@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../providers/chat_provider.dart';
 import '../../../providers/settings_provider.dart';
+import '../../../widgets/searchable_dropdown_form_field.dart';
 import '../../../widgets/settings_provenance_chip.dart';
 
 class BehaviorSettingsSection extends StatefulWidget {
@@ -175,7 +176,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                 ),
                 const SizedBox(height: 12),
               ],
-              DropdownButtonFormField<String>(
+              SearchableDropdownFormField<String>(
                 key: const ValueKey<String>('settings_opencode_default_model'),
                 value: _selectedDropdownValue(
                   settingsProvider.openCodeDefaultModelKey,
@@ -187,6 +188,10 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                   helperText: 'Shared across OpenCode clients through config.',
                 ),
                 isExpanded: true,
+                searchHintText: 'Search default model',
+                emptyText: 'No models found',
+                searchTermsBuilder: (value) =>
+                    _modelSearchTerms(modelOptions, value),
                 items: modelOptions
                     .map(
                       (option) => DropdownMenuItem<String>(
@@ -211,7 +216,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                       },
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
+              SearchableDropdownFormField<String>(
                 key: const ValueKey<String>('settings_opencode_default_agent'),
                 value: _selectedDropdownValue(
                   settingsProvider.openCodeDefaultAgentName,
@@ -224,6 +229,9 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                       'Primary agent used when no agent is explicitly chosen.',
                 ),
                 isExpanded: true,
+                searchHintText: 'Search default agent',
+                emptyText: 'No agents found',
+                searchTermsBuilder: (value) => <String>[value],
                 items: agentOptions
                     .map(
                       (agentName) => DropdownMenuItem<String>(
@@ -298,7 +306,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
+              SearchableDropdownFormField<String>(
                 key: const ValueKey<String>('settings_opencode_small_model'),
                 value: _selectedDropdownValue(
                   smallModelKey,
@@ -312,6 +320,10 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                       'Used for lightweight tasks like title generation.',
                 ),
                 isExpanded: true,
+                searchHintText: 'Search small model',
+                emptyText: 'No models found',
+                searchTermsBuilder: (value) =>
+                    _modelSearchTerms(modelOptions, value),
                 items: modelOptions
                     .map(
                       (option) => DropdownMenuItem<String>(
@@ -343,7 +355,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<OpenCodeAutoupdateMode>(
+              SearchableDropdownFormField<OpenCodeAutoupdateMode>(
                 key: const ValueKey<String>('settings_opencode_autoupdate'),
                 value: autoupdateMode,
                 decoration: const InputDecoration(
@@ -352,6 +364,10 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                   helperText:
                       'Controls upstream OpenCode runtime updates, not CodeWalk app update checks.',
                 ),
+                searchHintText: 'Search auto-update mode',
+                searchTermsBuilder: (value) => <String>[
+                  _autoupdateModeLabel(value),
+                ],
                 items: const <DropdownMenuItem<OpenCodeAutoupdateMode>>[
                   DropdownMenuItem<OpenCodeAutoupdateMode>(
                     value: OpenCodeAutoupdateMode.automatic,
@@ -381,7 +397,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<OpenCodeShareMode>(
+              SearchableDropdownFormField<OpenCodeShareMode>(
                 key: const ValueKey<String>('settings_opencode_share_mode'),
                 value: shareMode,
                 decoration: const InputDecoration(
@@ -390,6 +406,8 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                   helperText:
                       'Controls the official global `share` config, not the share button for an individual chat.',
                 ),
+                searchHintText: 'Search sharing mode',
+                searchTermsBuilder: (value) => <String>[_shareModeLabel(value)],
                 items: const <DropdownMenuItem<OpenCodeShareMode>>[
                   DropdownMenuItem<OpenCodeShareMode>(
                     value: OpenCodeShareMode.manual,
@@ -483,6 +501,34 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
       }
     }
     return null;
+  }
+
+  List<String> _modelSearchTerms(
+    List<OpenCodeDefaultModelOption> modelOptions,
+    String modelKey,
+  ) {
+    for (final option in modelOptions) {
+      if (option.key == modelKey) {
+        return <String>[option.key, option.label];
+      }
+    }
+    return <String>[modelKey];
+  }
+
+  String _autoupdateModeLabel(OpenCodeAutoupdateMode mode) {
+    return switch (mode) {
+      OpenCodeAutoupdateMode.automatic => 'Automatic',
+      OpenCodeAutoupdateMode.notify => 'Notify only',
+      OpenCodeAutoupdateMode.disabled => 'Disabled',
+    };
+  }
+
+  String _shareModeLabel(OpenCodeShareMode mode) {
+    return switch (mode) {
+      OpenCodeShareMode.manual => 'Manual',
+      OpenCodeShareMode.automatic => 'Automatic',
+      OpenCodeShareMode.disabled => 'Disabled',
+    };
   }
 
   Future<void> _applyDefaultModel(BuildContext context, String modelKey) async {

@@ -12,6 +12,7 @@ import '../../../../core/di/injection_container.dart' as di;
 import '../../../../domain/entities/experience_settings.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../services/sherpa_model_manager.dart';
+import '../../../widgets/searchable_dropdown_form_field.dart';
 
 class _SherpaModelEntry {
   const _SherpaModelEntry({
@@ -353,13 +354,29 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
             if (_loadingModels)
               const Center(child: CircularProgressIndicator())
             else ...[
-              DropdownButtonFormField<String>(
+              SearchableDropdownFormField<String>(
                 value: selectedCode,
                 decoration: const InputDecoration(
                   labelText: 'Sherpa language',
                   border: OutlineInputBorder(),
                 ),
                 isExpanded: true,
+                searchHintText: 'Search Sherpa language',
+                emptyText: 'No language packs found',
+                searchTermsBuilder: (value) {
+                  if (value == kSherpaLanguageSystem) {
+                    return <String>[
+                      'system default',
+                      _modelManager.detectSystemLanguage(),
+                    ];
+                  }
+                  for (final model in _models) {
+                    if (model.code == value) {
+                      return <String>[model.code, model.label];
+                    }
+                  }
+                  return <String>[value];
+                },
                 items: [
                   DropdownMenuItem<String>(
                     value: kSherpaLanguageSystem,
