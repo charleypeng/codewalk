@@ -709,6 +709,13 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 
 ## Settings
 
+### Settings pickers are searchable
+
+- **Given** the user opens a settings select field (for example theme presets, OpenCode-backed defaults, sound type, active server, or Sherpa language)
+- **When** the user taps the field
+- **Then** the app opens a searchable picker with a search input inside the picker surface
+- **Then** typing filters the available options locally so long lists are faster to navigate on mobile and desktop
+
 ### Theme selection
 
 - **Given** the user is in settings

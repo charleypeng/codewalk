@@ -119,6 +119,8 @@ void main() {
       find.byKey(const ValueKey<String>('settings_theme_preset_dropdown')),
     );
     await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'amo');
+    await tester.pumpAndSettle();
     await tester.tap(find.text('AMOLED').last);
     await tester.pumpAndSettle();
 
