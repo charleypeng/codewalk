@@ -11,22 +11,28 @@ class AppTheme {
   static ThemeData lightFrom(
     ColorScheme colorScheme, {
     AppDensity appDensity = AppDensity.normal,
+    Iterable<ThemeExtension<dynamic>> themeExtensions =
+        const <ThemeExtension<dynamic>>[],
   }) {
     return _buildTheme(
       colorScheme: colorScheme,
       brightness: Brightness.light,
       appDensity: appDensity,
+      themeExtensions: themeExtensions,
     );
   }
 
   static ThemeData darkFrom(
     ColorScheme colorScheme, {
     AppDensity appDensity = AppDensity.normal,
+    Iterable<ThemeExtension<dynamic>> themeExtensions =
+        const <ThemeExtension<dynamic>>[],
   }) {
     return _buildTheme(
       colorScheme: colorScheme,
       brightness: Brightness.dark,
       appDensity: appDensity,
+      themeExtensions: themeExtensions,
     );
   }
 
@@ -54,12 +60,14 @@ class AppTheme {
     required ColorScheme colorScheme,
     required Brightness brightness,
     required AppDensity appDensity,
+    required Iterable<ThemeExtension<dynamic>> themeExtensions,
   }) {
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
       brightness: brightness,
       visualDensity: visualDensityFor(appDensity),
+      extensions: themeExtensions,
     );
 
     final textTheme = Typography.material2021(

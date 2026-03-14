@@ -108,18 +108,21 @@ void main() {
     await tester.tap(find.text('OpenCode Presets'));
     await tester.pumpAndSettle();
 
-    expect(settingsProvider.themePreset, OpenCodeThemePreset.system);
+    expect(settingsProvider.themePreset, OpenCodeThemePreset.oc2);
     expect(
-      find.byKey(const ValueKey<String>('settings_theme_preset_tokyonight')),
+      find.byKey(const ValueKey<String>('settings_theme_preset_dropdown')),
       findsOneWidget,
     );
+    expect(find.text('OC-2'), findsWidgets);
 
     await tester.tap(
-      find.byKey(const ValueKey<String>('settings_theme_preset_tokyonight')),
+      find.byKey(const ValueKey<String>('settings_theme_preset_dropdown')),
     );
     await tester.pumpAndSettle();
+    await tester.tap(find.text('AMOLED').last);
+    await tester.pumpAndSettle();
 
-    expect(settingsProvider.themePreset, OpenCodeThemePreset.tokyonight);
+    expect(settingsProvider.themePreset, OpenCodeThemePreset.amoled);
 
     await tester.tap(find.text('CodeWalk Classic'));
     await tester.pumpAndSettle();

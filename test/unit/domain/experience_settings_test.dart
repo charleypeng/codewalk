@@ -16,6 +16,14 @@ void main() {
       expect(restored.themePreset, OpenCodeThemePreset.catppuccinMacchiato);
     });
 
+    test('migrates legacy system preset to oc-2', () {
+      final restored = ExperienceSettings.fromJson(<String, dynamic>{
+        'themePreset': 'system',
+      });
+
+      expect(restored.themePreset, OpenCodeThemePreset.oc2);
+    });
+
     test('keeps classic path when theme preset is absent', () {
       final restored = ExperienceSettings.fromJson(
         ExperienceSettings.defaults().toJson(),

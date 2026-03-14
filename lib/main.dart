@@ -137,6 +137,16 @@ class MyApp extends StatelessWidget {
               final resolvedDarkScheme = useAmoledDark
                   ? _applyAmoledDarkScheme(darkScheme)
                   : darkScheme;
+              final lightThemeTokens = themePreset != null
+                  ? openCodeThemeTokensFor(themePreset, Brightness.light)
+                  : null;
+              final darkThemeTokens = themePreset != null
+                  ? openCodeThemeTokensFor(themePreset, Brightness.dark)
+                  : null;
+              final lightResolvedTokens =
+                  lightThemeTokens ?? classicThemeTokensFrom(lightScheme);
+              final darkResolvedTokens =
+                  darkThemeTokens ?? classicThemeTokensFrom(resolvedDarkScheme);
 
               // Map user theme mode preference to Flutter ThemeMode
               final themeMode = switch (settingsProvider.themeMode) {
@@ -146,10 +156,19 @@ class MyApp extends StatelessWidget {
               };
               return MaterialApp(
                 title: AppConstants.appName,
-                theme: AppTheme.lightFrom(lightScheme, appDensity: appDensity),
+                theme: AppTheme.lightFrom(
+                  lightScheme,
+                  appDensity: appDensity,
+                  themeExtensions: <ThemeExtension<dynamic>>[
+                    lightResolvedTokens,
+                  ],
+                ),
                 darkTheme: AppTheme.darkFrom(
                   resolvedDarkScheme,
                   appDensity: appDensity,
+                  themeExtensions: <ThemeExtension<dynamic>>[
+                    darkResolvedTokens,
+                  ],
                 ),
                 themeMode: themeMode,
                 home: const AppShellPage(),

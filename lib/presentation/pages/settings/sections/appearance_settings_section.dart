@@ -35,20 +35,8 @@ class AppearanceSettingsSection extends StatelessWidget {
             ? _AppearanceThemeFamily.presets
             : _AppearanceThemeFamily.classic;
         final selectedPreset =
-            settingsProvider.themePreset ?? OpenCodeThemePreset.system;
-        const presetOptions = <OpenCodeThemePreset>[
-          OpenCodeThemePreset.system,
-          OpenCodeThemePreset.tokyonight,
-          OpenCodeThemePreset.everforest,
-          OpenCodeThemePreset.ayu,
-          OpenCodeThemePreset.catppuccin,
-          OpenCodeThemePreset.catppuccinMacchiato,
-          OpenCodeThemePreset.gruvbox,
-          OpenCodeThemePreset.kanagawa,
-          OpenCodeThemePreset.nord,
-          OpenCodeThemePreset.matrix,
-          OpenCodeThemePreset.oneDark,
-        ];
+            settingsProvider.themePreset ?? kDefaultOpenCodeThemePreset;
+        final presetOptions = openCodeThemePresetOptions();
         // Show the persisted preference regardless of active theme.
         // The switch is disabled when dark mode is inactive.
         final amoledSwitchValue = settingsProvider.useAmoledDark;
@@ -153,32 +141,37 @@ class AppearanceSettingsSection extends StatelessWidget {
                     ),
                     if (isPresetThemeActive) ...[
                       const SizedBox(height: 12),
-                      Text(
-                        'Preset palette',
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
+                      DropdownButtonFormField<OpenCodeThemePreset>(
                         key: const ValueKey<String>(
-                          'settings_theme_preset_wrap',
+                          'settings_theme_preset_dropdown',
                         ),
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: presetOptions
+                        value: selectedPreset,
+                        decoration: const InputDecoration(
+                          labelText: 'Preset palette',
+                          border: OutlineInputBorder(),
+                          helperText:
+                              'Mirrors the official OpenCode Web built-in theme list.',
+                        ),
+                        isExpanded: true,
+                        items: presetOptions
                             .map(
-                              (preset) => ChoiceChip(
-                                key: ValueKey<String>(
-                                  'settings_theme_preset_${preset.name}',
-                                ),
-                                label: Text(openCodeThemePresetLabel(preset)),
-                                selected:
-                                    settingsProvider.themePreset == preset,
-                                onSelected: (_) => unawaited(
-                                  settingsProvider.setThemePreset(preset),
-                                ),
+                              (preset) => DropdownMenuItem<OpenCodeThemePreset>(
+                                value: preset,
+                                child: Text(openCodeThemePresetLabel(preset)),
                               ),
                             )
                             .toList(growable: false),
+                        onChanged: (value) {
+                          if (value == null) {
+                            return;
+                          }
+                          unawaited(settingsProvider.setThemePreset(value));
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Theme colors now follow the official OpenCode Web registry and drive markdown/code surfaces too.',
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
                     const SizedBox(height: 12),

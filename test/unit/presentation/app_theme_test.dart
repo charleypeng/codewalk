@@ -44,15 +44,45 @@ void main() {
     () {
       final lightScheme = openCodeLightSchemeFor(OpenCodeThemePreset.nord);
       final darkScheme = openCodeDarkSchemeFor(OpenCodeThemePreset.nord);
-      final systemScheme = openCodeLightSchemeFor(OpenCodeThemePreset.system);
+      final oc2Scheme = openCodeLightSchemeFor(OpenCodeThemePreset.oc2);
+      final auraTokens = openCodeThemeTokensFor(
+        OpenCodeThemePreset.aura,
+        Brightness.dark,
+      );
 
       expect(lightScheme, isNotNull);
       expect(darkScheme, isNotNull);
-      expect(systemScheme, isNotNull);
+      expect(oc2Scheme, isNotNull);
+      expect(auraTokens, isNotNull);
       expect(lightScheme!.brightness, Brightness.light);
       expect(darkScheme!.brightness, Brightness.dark);
+      expect(auraTokens!.themeId, 'aura');
+      expect(openCodeThemePresetOptions(), hasLength(37));
       expect(openCodeThemePresetLabel(OpenCodeThemePreset.oneDark), 'One Dark');
       expect(openCodeDarkSchemeFor(null), isNull);
     },
   );
+
+  test('resolves theme-specific markdown and syntax tokens', () {
+    final oc2Tokens = openCodeThemeTokensFor(
+      OpenCodeThemePreset.oc2,
+      Brightness.dark,
+    );
+    final githubTokens = openCodeThemeTokensFor(
+      OpenCodeThemePreset.github,
+      Brightness.light,
+    );
+
+    expect(oc2Tokens, isNotNull);
+    expect(githubTokens, isNotNull);
+    expect(
+      oc2Tokens!.markdownInlineCode,
+      isNot(githubTokens!.markdownInlineCode),
+    );
+    expect(
+      oc2Tokens.codeBlockBackground,
+      isNot(githubTokens.codeBlockBackground),
+    );
+    expect(oc2Tokens.syntaxKeyword, isNot(githubTokens.syntaxKeyword));
+  });
 }
