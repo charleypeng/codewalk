@@ -714,6 +714,14 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **Given** the user is in settings
 - **When** the user selects a theme
 - **Then** the app supports light, dark, and AMOLED themes, plus Material You dynamic color from the system wallpaper
+- **Then** the `OpenCode Presets` picker mirrors the official OpenCode Web built-in theme registry rather than the older limited docs list
+
+### OpenCode presets recolor markdown and code surfaces
+
+- **Given** the user has an OpenCode preset active
+- **When** chat markdown or the file viewer renders inline code, fenced code blocks, or syntax-highlighted files
+- **Then** those surfaces use theme-aware colors derived from the active OpenCode Web theme instead of a generic brightness-only fallback
+- **Then** changing the preset updates those markdown/code colors without requiring an app restart
 
 ### Local persistence
 

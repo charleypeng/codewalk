@@ -38,3 +38,9 @@ Description: Build settings parity with official OpenCode in a contract-safe ord
 - [x] 3.05 Verified shared settings parity after theme slice - Related commits: e740abe 4c7a411 75b9ce6 a2eed9c e9aed61 6634786 a3cf43b d386ce5 60b8ff3 b798ba4 a250563 d0468bb
 - [x] 3.06 Overlapping permissions/shortcuts parity and provenance labeling - Related commits: 1e578a0 39a019a
 - [x] 3.07 Regression coverage, behavior/docs handoff, and divergence record - Related commits: 39a019a
+
+### Feature 4: OpenCode Web Theme Parity and Theme-Aware Code Coloring
+
+Description: Official OpenCode Web built-in theme registry parity, theme preset migration to oc-2, and theme-aware markdown/code-viewer colors.
+
+- [x] 4.01 OpenCode Web theme registry parity, oc-2 preset migration, and theme-aware code coloring - Related commits: 84b63fe c4e2c28
