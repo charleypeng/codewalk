@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:math' as math;
+import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,6 +12,8 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../theme/app_shapes.dart';
 import '../theme/app_animations.dart';
 import '../theme/app_semantic_colors.dart';
+import '../theme/opencode_highlight_theme.dart';
+import '../theme/opencode_theme_presets.dart';
 import 'message_entrance_animation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -92,6 +95,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   ValueChanged<ToolPart>? _lastTaskToolNavigate;
   double _lastVisualDensityVertical = 0;
   double _lastVisualDensityHorizontal = 0;
+  String? _lastThemeKey;
   final Set<String> _seenPartIds = <String>{};
   final Set<String> _newlyArrivedPartIds = <String>{};
   final Map<String, Timer> _partAnimationTimers = <String, Timer>{};
@@ -204,6 +208,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     final partCount = msg.parts.length;
     final lastPartId = msg.parts.isNotEmpty ? msg.parts.last.id : null;
     final density = Theme.of(context).visualDensity;
+    final themeTokens = _resolveThemeTokens(context);
     return msg.hashCode == _lastMessageHash &&
         partCount == _lastPartCount &&
         lastPartId == _lastPartId &&
@@ -216,12 +221,14 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         identical(widget.onSubtaskNavigate, _lastSubtaskNavigate) &&
         identical(widget.onTaskToolNavigate, _lastTaskToolNavigate) &&
         density.vertical == _lastVisualDensityVertical &&
-        density.horizontal == _lastVisualDensityHorizontal;
+        density.horizontal == _lastVisualDensityHorizontal &&
+        themeTokens.themeId == _lastThemeKey;
   }
 
   void _updateBuildSnapshot(BuildContext context) {
     final msg = widget.message;
     final density = Theme.of(context).visualDensity;
+    final themeTokens = _resolveThemeTokens(context);
     _lastMessageHash = msg.hashCode;
     _lastPartCount = msg.parts.length;
     _lastPartId = msg.parts.isNotEmpty ? msg.parts.last.id : null;
@@ -235,6 +242,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     _lastTaskToolNavigate = widget.onTaskToolNavigate;
     _lastVisualDensityVertical = density.vertical;
     _lastVisualDensityHorizontal = density.horizontal;
+    _lastThemeKey = themeTokens.themeId;
   }
 
   // Cached build result to return when rebuild is skipped.
@@ -244,25 +252,76 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   // every build, which would force flutter_markdown_plus to re-parse.
   MarkdownStyleSheet? _cachedMarkdownStyleSheet;
   Brightness? _cachedMarkdownBrightness;
+  String? _cachedMarkdownThemeKey;
+
+  OpenCodeThemeTokens _resolveThemeTokens(BuildContext context) {
+    return Theme.of(context).extension<OpenCodeThemeTokens>() ??
+        classicThemeTokensFrom(Theme.of(context).colorScheme);
+  }
 
   MarkdownStyleSheet _resolveMarkdownStyleSheet(BuildContext context) {
     final brightness = Theme.of(context).brightness;
+    final themeTokens = _resolveThemeTokens(context);
     if (_cachedMarkdownStyleSheet != null &&
-        _cachedMarkdownBrightness == brightness) {
+        _cachedMarkdownBrightness == brightness &&
+        _cachedMarkdownThemeKey == themeTokens.themeId) {
       return _cachedMarkdownStyleSheet!;
     }
     final sheet = MarkdownStyleSheet(
-      p: Theme.of(context).textTheme.bodyMedium,
+      p: Theme.of(
+        context,
+      ).textTheme.bodyMedium?.copyWith(color: themeTokens.textBase),
+      h1: Theme.of(
+        context,
+      ).textTheme.headlineMedium?.copyWith(color: themeTokens.markdownHeading),
+      h2: Theme.of(
+        context,
+      ).textTheme.headlineSmall?.copyWith(color: themeTokens.markdownHeading),
+      h3: Theme.of(
+        context,
+      ).textTheme.titleLarge?.copyWith(color: themeTokens.markdownHeading),
+      h4: Theme.of(
+        context,
+      ).textTheme.titleMedium?.copyWith(color: themeTokens.markdownHeading),
+      h5: Theme.of(
+        context,
+      ).textTheme.titleSmall?.copyWith(color: themeTokens.markdownHeading),
+      h6: Theme.of(
+        context,
+      ).textTheme.labelLarge?.copyWith(color: themeTokens.markdownHeading),
+      a: Theme.of(
+        context,
+      ).textTheme.bodyMedium?.copyWith(color: themeTokens.markdownLink),
       code: Theme.of(context).textTheme.bodyMedium?.copyWith(
         fontFamily: 'monospace',
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+        color: themeTokens.markdownInlineCode,
+        backgroundColor: themeTokens.inlineCodeBackground,
+      ),
+      blockquote: Theme.of(
+        context,
+      ).textTheme.bodyMedium?.copyWith(color: themeTokens.markdownBlockQuote),
+      em: Theme.of(
+        context,
+      ).textTheme.bodyMedium?.copyWith(color: themeTokens.markdownEmphasis),
+      strong: Theme.of(
+        context,
+      ).textTheme.bodyMedium?.copyWith(color: themeTokens.markdownStrong),
+      listBullet: Theme.of(
+        context,
+      ).textTheme.bodyMedium?.copyWith(color: themeTokens.markdownListItem),
+      horizontalRuleDecoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: themeTokens.markdownHorizontalRule),
+        ),
       ),
       codeblockDecoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        color: themeTokens.codeBlockBackground,
+        border: Border.all(color: themeTokens.border.withValues(alpha: 0.7)),
         borderRadius: AppShapes.borderSmall,
       ),
     );
     _cachedMarkdownBrightness = brightness;
+    _cachedMarkdownThemeKey = themeTokens.themeId;
     _cachedMarkdownStyleSheet = sheet;
     return sheet;
   }

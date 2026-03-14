@@ -14,6 +14,7 @@ extension _ChatMessageTextPartBuilder on _ChatMessageWidgetState {
       reason: 'Large message preview truncated for app stability.',
     );
     final usePlainText = textForRender != part.text;
+    final themeTokens = _resolveThemeTokens(context);
 
     return SizedBox(
       width: double.infinity,
@@ -22,16 +23,18 @@ extension _ChatMessageTextPartBuilder on _ChatMessageWidgetState {
         children: [
           if (usePlainText)
             Text(textForRender, style: Theme.of(context).textTheme.bodyMedium)
-          else
+          else ...[
             MarkdownBody(
               data: textForRender,
               softLineBreak: true,
               styleSheet: _resolveMarkdownStyleSheet(context),
               builders: <String, MarkdownElementBuilder>{
                 'pre': _MarkdownCodeBlockTapBuilder(
+                  themeTokens: themeTokens,
                   onTapCode: (code) => _copyTextToClipboard(context, code),
                 ),
                 'code': _MarkdownInlineCodeTapBuilder(
+                  themeTokens: themeTokens,
                   onTapCode: (code) => _copyTextToClipboard(context, code),
                 ),
               },
@@ -43,6 +46,7 @@ extension _ChatMessageTextPartBuilder on _ChatMessageWidgetState {
                 unawaited(_openMarkdownLink(context, normalizedHref));
               },
             ),
+          ],
           const SizedBox(height: 8),
         ],
       ),
@@ -114,8 +118,12 @@ extension _ChatMessageTextPartBuilder on _ChatMessageWidgetState {
 }
 
 class _MarkdownCodeBlockTapBuilder extends MarkdownElementBuilder {
-  _MarkdownCodeBlockTapBuilder({required this.onTapCode});
+  _MarkdownCodeBlockTapBuilder({
+    required this.themeTokens,
+    required this.onTapCode,
+  });
 
+  final OpenCodeThemeTokens themeTokens;
   final ValueChanged<String> onTapCode;
 
   @override
@@ -132,27 +140,66 @@ class _MarkdownCodeBlockTapBuilder extends MarkdownElementBuilder {
     if (code.trim().isEmpty) {
       return null;
     }
+    final language = _markdownCodeLanguage(element);
     final style =
         preferredStyle ??
         parentStyle ??
-        Theme.of(
-          context,
-        ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace');
+        Theme.of(context).textTheme.bodyMedium?.copyWith(
+          fontFamily: 'monospace',
+          color: themeTokens.markdownCodeBlock,
+        );
+    final highlightTheme = openCodeHighlightTheme(
+      tokens: themeTokens,
+      brightness: Theme.of(context).brightness,
+      baseStyle: style ?? const TextStyle(fontFamily: 'monospace'),
+    );
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => onTapCode(code),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.all(8),
-        child: Text(code, style: style),
+        child: language == null
+            ? Text(code, style: style)
+            : HighlightView(
+                code,
+                language: language,
+                theme: highlightTheme,
+                textStyle: style,
+              ),
       ),
     );
+  }
+
+  String? _markdownCodeLanguage(md.Element element) {
+    for (final child in element.children ?? const <md.Node>[]) {
+      if (child is! md.Element || child.tag != 'code') {
+        continue;
+      }
+      final className = child.attributes['class']?.trim();
+      if (className == null || className.isEmpty) {
+        return null;
+      }
+      for (final token in className.split(RegExp(r'\s+'))) {
+        if (token.startsWith('language-')) {
+          final language = token.substring('language-'.length).trim();
+          if (language.isNotEmpty) {
+            return language;
+          }
+        }
+      }
+    }
+    return null;
   }
 }
 
 class _MarkdownInlineCodeTapBuilder extends MarkdownElementBuilder {
-  _MarkdownInlineCodeTapBuilder({required this.onTapCode});
+  _MarkdownInlineCodeTapBuilder({
+    required this.themeTokens,
+    required this.onTapCode,
+  });
 
+  final OpenCodeThemeTokens themeTokens;
   final ValueChanged<String> onTapCode;
 
   @override
@@ -169,13 +216,23 @@ class _MarkdownInlineCodeTapBuilder extends MarkdownElementBuilder {
     final style =
         preferredStyle ??
         parentStyle ??
-        Theme.of(
-          context,
-        ).textTheme.bodyMedium?.copyWith(fontFamily: 'monospace');
+        Theme.of(context).textTheme.bodyMedium?.copyWith(
+          fontFamily: 'monospace',
+          color: themeTokens.markdownInlineCode,
+        );
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => onTapCode(code),
-      child: Text(code, style: style),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: themeTokens.inlineCodeBackground,
+          borderRadius: AppShapes.borderSmall,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          child: Text(code, style: style),
+        ),
+      ),
     );
   }
 }

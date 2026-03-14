@@ -2,6 +2,7 @@ import 'package:codewalk/domain/entities/chat_message.dart';
 import 'package:codewalk/presentation/utils/chat_abort_message.dart';
 import 'package:codewalk/presentation/widgets/message_entrance_animation.dart';
 import 'package:codewalk/presentation/widgets/chat_message_widget.dart';
+import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -793,7 +794,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.textContaining('final value = 42;'));
+    await tester.tap(find.byType(HighlightView).first);
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Copied to clipboard'), findsOneWidget);
@@ -861,14 +862,12 @@ void main() {
     await tester.pumpWidget(buildHost());
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('final value = 42;'), findsOneWidget);
-    expect(find.textContaining('print(value);'), findsOneWidget);
+    expect(find.byType(HighlightView), findsOneWidget);
 
     for (var i = 0; i < 4; i += 1) {
       await tester.tap(find.text('toggle panel'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('final value = 42;'), findsOneWidget);
-      expect(find.textContaining('print(value);'), findsOneWidget);
+      expect(find.byType(HighlightView), findsOneWidget);
       expect(tester.takeException(), isNull);
     }
   });
@@ -935,8 +934,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('final alpha = 1;'), findsOneWidget);
-    expect(find.textContaining('final beta = 2;'), findsOneWidget);
+    expect(find.byType(HighlightView), findsNWidgets(2));
     expect(tester.takeException(), isNull);
   });
 

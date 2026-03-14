@@ -6,8 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter/services.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
-import 'package:flutter_highlight/themes/atom-one-dark.dart';
-import 'package:flutter_highlight/themes/github.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart' hide Provider;
 import 'package:simple_icons/simple_icons.dart';
@@ -36,6 +34,8 @@ import '../services/android_background_alert_worker.dart';
 import '../services/android_foreground_monitor_service.dart';
 import '../services/notification_service.dart';
 import '../theme/app_animations.dart';
+import '../theme/opencode_highlight_theme.dart';
+import '../theme/opencode_theme_presets.dart';
 import '../utils/app_page_route.dart';
 import '../utils/chat_abort_message.dart';
 import '../utils/file_explorer_logic.dart';
@@ -297,6 +297,7 @@ class _ChatPageState extends State<ChatPage>
   // HighlightView to re-parse when it detects a "changed" theme reference.
   Map<String, TextStyle>? _cachedHighlightTheme;
   Brightness? _cachedHighlightBrightness;
+  String? _cachedHighlightThemeKey;
 
   @override
   void initState() {

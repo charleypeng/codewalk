@@ -203,17 +203,13 @@ extension _ChatPageFileViewer on _ChatPageState {
       ),
       child: Row(
         children: [
-          Icon(
-            Symbols.check_box,
-            size: 16,
-            color: colorScheme.primary,
-          ),
+          Icon(Symbols.check_box, size: 16, color: colorScheme.primary),
           const SizedBox(width: 6),
           Text(
             '$selectedCount line${selectedCount > 1 ? 's' : ''} selected',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: colorScheme.primary,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(color: colorScheme.primary),
           ),
           const Spacer(),
           TextButton.icon(
@@ -306,8 +302,10 @@ extension _ChatPageFileViewer on _ChatPageState {
     return LayoutBuilder(
       builder: (context, constraints) {
         final availableCodeWidth = constraints.maxWidth.isFinite
-            ? (constraints.maxWidth - gutterWidth - 20)
-                  .clamp(0.0, double.infinity)
+            ? (constraints.maxWidth - gutterWidth - 20).clamp(
+                0.0,
+                double.infinity,
+              )
             : 0.0;
         // GestureDetector is INSIDE the scroll view so localPosition
         // maps directly to content coordinates (no scroll offset math).
@@ -447,8 +445,7 @@ extension _ChatPageFileViewer on _ChatPageState {
 
       if (isShiftHeld) {
         // Range selection from last anchor to current line.
-        final anchor =
-            fileState.lastSelectedLineByPath[path] ?? lineNumber;
+        final anchor = fileState.lastSelectedLineByPath[path] ?? lineNumber;
         final start = anchor < lineNumber ? anchor : lineNumber;
         final end = anchor < lineNumber ? lineNumber : anchor;
         for (var i = start; i <= end; i++) {
@@ -541,20 +538,28 @@ extension _ChatPageFileViewer on _ChatPageState {
 
   Map<String, TextStyle> _resolveHighlightTheme(BuildContext context) {
     final brightness = Theme.of(context).brightness;
+    final themeTokens =
+        Theme.of(context).extension<OpenCodeThemeTokens>() ??
+        classicThemeTokensFrom(Theme.of(context).colorScheme);
     if (_cachedHighlightTheme != null &&
-        _cachedHighlightBrightness == brightness) {
+        _cachedHighlightBrightness == brightness &&
+        _cachedHighlightThemeKey == themeTokens.themeId) {
       return _cachedHighlightTheme!;
     }
-    final colorScheme = Theme.of(context).colorScheme;
-    final baseTheme = brightness == Brightness.dark
-        ? atomOneDarkTheme
-        : githubTheme;
-    final rootStyle = (baseTheme['root'] ?? const TextStyle()).copyWith(
-      color: colorScheme.onSurface,
+    final rootStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+      fontFamily: 'monospace',
+      height: 1.4,
+      color: themeTokens.textBase,
       backgroundColor: Colors.transparent,
     );
-    final theme = <String, TextStyle>{...baseTheme, 'root': rootStyle};
+    final theme = openCodeHighlightTheme(
+      tokens: themeTokens,
+      brightness: brightness,
+      baseStyle:
+          rootStyle ?? const TextStyle(fontFamily: 'monospace', height: 1.4),
+    );
     _cachedHighlightBrightness = brightness;
+    _cachedHighlightThemeKey = themeTokens.themeId;
     _cachedHighlightTheme = theme;
     return theme;
   }

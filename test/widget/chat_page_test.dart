@@ -18,6 +18,7 @@ import 'package:codewalk/domain/usecases/abort_chat_session.dart';
 import 'package:codewalk/domain/usecases/check_connection.dart';
 import 'package:codewalk/domain/usecases/create_chat_session.dart';
 import 'package:codewalk/domain/usecases/delete_chat_session.dart';
+import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:codewalk/domain/usecases/fork_chat_session.dart';
 import 'package:codewalk/domain/usecases/get_agents.dart';
 import 'package:codewalk/domain/usecases/get_app_info.dart';
@@ -1649,8 +1650,7 @@ void main() {
 
       expect(find.textContaining('alpha'), findsOneWidget);
       expect(find.textContaining('beta'), findsOneWidget);
-      expect(find.textContaining('final answer = 42;'), findsOneWidget);
-      expect(find.textContaining('print(answer);'), findsOneWidget);
+      expect(find.byType(HighlightView), findsOneWidget);
 
       for (var i = 0; i < 3; i += 1) {
         await tester.tap(
@@ -1673,8 +1673,7 @@ void main() {
 
         expect(find.textContaining('alpha'), findsOneWidget);
         expect(find.textContaining('beta'), findsOneWidget);
-        expect(find.textContaining('final answer = 42;'), findsOneWidget);
-        expect(find.textContaining('print(answer);'), findsOneWidget);
+        expect(find.byType(HighlightView), findsOneWidget);
         expect(tester.takeException(), isNull);
       }
     });
