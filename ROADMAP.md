@@ -44,4 +44,4 @@ Description: Build settings parity with official OpenCode in a contract-safe ord
 Description: Official OpenCode Web built-in theme registry parity, theme preset migration to oc-2, and theme-aware markdown/code-viewer colors.
 
 - [x] 4.01 OpenCode Web theme registry parity, oc-2 preset migration, and theme-aware code coloring - Related commits: 84b63fe c4e2c28
-- [x] 4.02 Theme registry regeneration maintenance script - Maintenance script that regenerates `lib/presentation/theme/opencode_web_theme_registry.dart` from official OpenCode Web sources with a check mode - Commit hash: 60fd201
+- [x] 4.02 Theme registry regeneration maintenance script - Maintenance script (Python + `make theme-sync`/`make theme-sync-check`) that regenerates `lib/presentation/theme/opencode_web_theme_registry.dart` from official OpenCode Web sources with a check mode - Commit hash: 60fd201

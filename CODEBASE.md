@@ -216,6 +216,8 @@ lib/data/datasources/project_remote_datasource.dart
 ```bash
 make deps
 make gen
+make theme-sync
+make theme-sync-check
 make icons
 make icons-check
 make analyze
