@@ -80,14 +80,24 @@ class _SearchableDropdownFormFieldState<T> extends FormFieldState<T> {
           isFocused: false,
           child: Row(
             children: [
-              Expanded(
-                child: hasSelection
-                    ? DefaultTextStyle.merge(
-                        overflow: TextOverflow.ellipsis,
-                        child: selectedItem.child,
-                      )
-                    : (_widget.hint ?? const SizedBox.shrink()),
-              ),
+              _widget.isExpanded
+                  ? Expanded(
+                      child: hasSelection
+                          ? DefaultTextStyle.merge(
+                              overflow: TextOverflow.ellipsis,
+                              child: selectedItem.child,
+                            )
+                          : (_widget.hint ?? const SizedBox.shrink()),
+                    )
+                  : Flexible(
+                      fit: FlexFit.loose,
+                      child: hasSelection
+                          ? DefaultTextStyle.merge(
+                              overflow: TextOverflow.ellipsis,
+                              child: selectedItem.child,
+                            )
+                          : (_widget.hint ?? const SizedBox.shrink()),
+                    ),
               const SizedBox(width: 12),
               Icon(
                 Symbols.search_rounded,
