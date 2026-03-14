@@ -155,7 +155,7 @@ class _MarkdownCodeBlockTapBuilder extends MarkdownElementBuilder {
     final highlightTheme = openCodeHighlightTheme(
       tokens: themeTokens,
       brightness: Theme.of(context).brightness,
-      baseStyle: style ?? const TextStyle(fontFamily: 'monospace'),
+      baseStyle: style,
     );
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
