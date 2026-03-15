@@ -716,7 +716,7 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
   List<ChatSession> _filterSessionsForCurrentContext(
     List<ChatSession> sessions,
   ) {
-    final currentDirectory = _normalizeDirectory(
+    final currentDirectory = normalizeOptionalFilePath(
       projectProvider.currentDirectory,
     );
     if (currentDirectory == null) {
@@ -726,7 +726,7 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
     }
 
     final hasDirectoryMetadata = sessions.any((session) {
-      return _normalizeDirectory(_sessionDirectory(session)) != null;
+      return _sessionDirectory(session) != null;
     });
     if (!hasDirectoryMetadata) {
       return sessions
@@ -735,7 +735,7 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
     }
 
     return sessions.where((session) {
-      final sessionDirectory = _normalizeDirectory(_sessionDirectory(session));
+      final sessionDirectory = _sessionDirectory(session);
       return sessionDirectory == currentDirectory &&
           !_isEphemeralTitleSession(session);
     }).toList();
@@ -749,30 +749,15 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
   }
 
   String? _sessionDirectory(ChatSession session) {
-    final direct = _normalizeDirectory(session.directory);
+    final direct = normalizeOptionalFilePath(session.directory);
     if (direct != null) {
       return direct;
     }
-    final workspace = _normalizeDirectory(session.path?.workspace);
+    final workspace = normalizeOptionalFilePath(session.path?.workspace);
     if (workspace != null) {
       return workspace;
     }
-    return _normalizeDirectory(session.path?.root);
-  }
-
-  String? _normalizeDirectory(String? raw) {
-    if (raw == null) {
-      return null;
-    }
-    var normalized = raw.trim();
-    if (normalized.isEmpty || normalized == '-') {
-      return null;
-    }
-    normalized = normalized.replaceAll('\\', '/');
-    if (normalized.length > 1) {
-      normalized = normalized.replaceAll(RegExp(r'/+$'), '');
-    }
-    return normalized;
+    return normalizeOptionalFilePath(session.path?.root);
   }
 
   Future<void> _refreshAgents({

@@ -9,6 +9,7 @@ import '../../core/config/feature_flags.dart';
 import '../../core/errors/failures.dart';
 import '../../core/logging/app_logger.dart';
 import '../../core/network/dio_client.dart';
+import '../../core/utils/path_utils.dart';
 import '../../data/datasources/app_local_datasource.dart';
 import '../../data/models/chat_message_model.dart';
 import '../../data/models/chat_realtime_model.dart';
