@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../core/errors/failures.dart';
 import '../../core/logging/app_logger.dart';
+import '../../core/utils/path_utils.dart';
 import '../../data/datasources/app_local_datasource.dart';
 import '../../domain/entities/file_node.dart';
 import '../../domain/entities/project.dart';
@@ -47,8 +48,8 @@ class ProjectProvider extends ChangeNotifier {
   bool get worktreeSupported => _worktreeSupported;
 
   String? get currentDirectory {
-    final path = _currentProject?.path.trim();
-    if (path == null || path.isEmpty || path == '/' || path == '-') {
+    final path = normalizeOptionalFilePath(_currentProject?.path);
+    if (path == null || path == '/') {
       return null;
     }
     return path;
@@ -92,6 +93,7 @@ class ProjectProvider extends ChangeNotifier {
         serverId: _activeServerId,
       );
       if (savedProjectId != null && savedProjectId.trim().isNotEmpty) {
+        _rehydrateSyntheticProjects(<String>[savedProjectId]);
         _currentProject = _projects
             .where((p) => p.id == savedProjectId)
             .firstOrNull;
@@ -163,22 +165,22 @@ class ProjectProvider extends ChangeNotifier {
   }
 
   Future<bool> switchToDirectoryContext(String directory) async {
-    final normalized = directory.trim();
-    if (normalized.isEmpty) {
+    final normalized = normalizeOptionalFilePath(directory);
+    if (normalized == null) {
       _setError('Failed to switch project: directory is empty');
       return false;
     }
-    if (_currentProject?.path.trim() == normalized) {
+    if (areEquivalentFilePaths(_currentProject?.path, normalized)) {
       return false;
     }
 
     var project = _projects
-        .where((item) => item.path.trim() == normalized)
+        .where((item) => areEquivalentFilePaths(item.path, normalized))
         .firstOrNull;
     if (project == null) {
       await _loadProjects(silent: true);
       project = _projects
-          .where((item) => item.path.trim() == normalized)
+          .where((item) => areEquivalentFilePaths(item.path, normalized))
           .firstOrNull;
     }
 
@@ -194,8 +196,8 @@ class ProjectProvider extends ChangeNotifier {
           );
         },
         (item) {
-          final fetchedPath = item.path.trim();
-          if (fetchedPath == normalized) {
+          final fetchedPath = normalizeOptionalFilePath(item.path) ?? item.path;
+          if (areEquivalentFilePaths(fetchedPath, normalized)) {
             project = item;
             final existingIndex = _projects.indexWhere((p) => p.id == item.id);
             if (existingIndex >= 0) {
@@ -228,7 +230,7 @@ class ProjectProvider extends ChangeNotifier {
 
     final selectedProject = project!;
     if (_currentProject?.id == selectedProject.id &&
-        _currentProject?.path.trim() == selectedProject.path.trim()) {
+        areEquivalentFilePaths(_currentProject?.path, selectedProject.path)) {
       return false;
     }
 
@@ -772,6 +774,8 @@ class ProjectProvider extends ChangeNotifier {
       try {
         final decoded = jsonDecode(raw);
         if (decoded is List) {
+          final savedIds = decoded.whereType<String>().toList(growable: false);
+          _rehydrateSyntheticProjects(savedIds);
           _openProjectIds = decoded
               .whereType<String>()
               .where((id) => _projects.any((project) => project.id == id))
@@ -806,6 +810,8 @@ class ProjectProvider extends ChangeNotifier {
     try {
       final decoded = jsonDecode(raw);
       if (decoded is List) {
+        final savedIds = decoded.whereType<String>().toList(growable: false);
+        _rehydrateSyntheticProjects(savedIds);
         _archivedProjectIds = decoded
             .whereType<String>()
             .where((id) => _projects.any((project) => project.id == id))
@@ -900,8 +906,37 @@ class ProjectProvider extends ChangeNotifier {
     return sanitized.isEmpty ? projects : sanitized;
   }
 
+  void _rehydrateSyntheticProjects(Iterable<String> projectIds) {
+    for (final id in projectIds) {
+      final synthetic = _syntheticProjectFromId(id);
+      if (synthetic == null) {
+        continue;
+      }
+      final existingIndex = _projects.indexWhere(
+        (item) => item.id == synthetic.id,
+      );
+      if (existingIndex >= 0) {
+        _projects[existingIndex] = synthetic;
+      } else {
+        _projects = <Project>[synthetic, ..._projects];
+      }
+    }
+  }
+
+  Project? _syntheticProjectFromId(String? projectId) {
+    final normalizedId = projectId?.trim();
+    if (normalizedId == null || !normalizedId.startsWith('dir::')) {
+      return null;
+    }
+    final directory = normalizeOptionalFilePath(normalizedId.substring(5));
+    if (directory == null || directory == '/') {
+      return null;
+    }
+    return _buildSyntheticDirectoryProject(directory);
+  }
+
   Project _buildSyntheticDirectoryProject(String directory) {
-    final normalized = directory.trim();
+    final normalized = normalizeFilePath(directory);
     final normalizedPath = normalized.replaceAll('\\', '/');
     final segments = normalizedPath
         .split('/')

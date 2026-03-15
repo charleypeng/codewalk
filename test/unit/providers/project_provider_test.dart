@@ -32,6 +32,27 @@ class _DelayedWorktreeProjectRepository extends FakeProjectRepository {
   }
 }
 
+class _DirectoryProjectRepository extends FakeProjectRepository {
+  _DirectoryProjectRepository({
+    required super.currentProject,
+    required super.projects,
+    required this.projectsByDirectory,
+  });
+
+  final Map<String, Project> projectsByDirectory;
+
+  @override
+  Future<Either<Failure, Project>> getCurrentProject({
+    String? directory,
+  }) async {
+    final normalized = directory?.trim();
+    if (normalized != null && projectsByDirectory.containsKey(normalized)) {
+      return Right(projectsByDirectory[normalized]!);
+    }
+    return super.getCurrentProject(directory: directory);
+  }
+}
+
 void main() {
   group('ProjectProvider', () {
     late InMemoryAppLocalDataSource localDataSource;
@@ -287,6 +308,52 @@ void main() {
     );
 
     test(
+      'switchToDirectoryContext accepts normalized server project paths',
+      () async {
+        projectRepository = _DirectoryProjectRepository(
+          currentProject: Project(
+            id: 'proj_a',
+            name: 'Project A',
+            path: '/repo/a',
+            createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+          ),
+          projects: <Project>[
+            Project(
+              id: 'proj_a',
+              name: 'Project A',
+              path: '/repo/a',
+              createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+            ),
+          ],
+          projectsByDirectory: <String, Project>{
+            '/repo/plain': Project(
+              id: 'proj_plain',
+              name: 'Plain Project',
+              path: '/repo/plain/',
+              createdAt: DateTime.fromMillisecondsSinceEpoch(2),
+            ),
+          },
+        );
+        provider = ProjectProvider(
+          projectRepository: projectRepository,
+          localDataSource: localDataSource,
+        );
+        await provider.initializeProject();
+
+        final switched = await provider.switchToDirectoryContext('/repo/plain');
+
+        expect(switched, isTrue);
+        expect(provider.currentProject?.id, 'proj_plain');
+        expect(provider.currentProject?.path, '/repo/plain/');
+        expect(provider.currentDirectory, '/repo/plain');
+        expect(
+          provider.projects.any((project) => project.id == 'proj_plain'),
+          isTrue,
+        );
+      },
+    );
+
+    test(
       'switchToDirectoryContext returns false when directory is unchanged',
       () async {
         await provider.initializeProject();
@@ -295,6 +362,32 @@ void main() {
 
         expect(switched, isFalse);
         expect(provider.currentProject?.path, '/repo/a');
+      },
+    );
+
+    test(
+      'initializeProject restores synthetic directory contexts from storage',
+      () async {
+        await localDataSource.saveCurrentProjectId(
+          'dir::/repo/plain',
+          serverId: 'srv_test',
+        );
+        await localDataSource.saveOpenProjectIdsJson(
+          jsonEncode(<String>['proj_a', 'dir::/repo/plain']),
+          serverId: 'srv_test',
+        );
+
+        await provider.initializeProject();
+
+        expect(provider.currentProject?.id, 'dir::/repo/plain');
+        expect(provider.currentProject?.path, '/repo/plain');
+        expect(provider.currentDirectory, '/repo/plain');
+        expect(provider.openProjectIds, contains('dir::/repo/plain'));
+        expect(
+          provider.projects.any((project) => project.id == 'dir::/repo/plain'),
+          isTrue,
+        );
+        expect(provider.contextKey, 'srv_test::/repo/plain');
       },
     );
 
