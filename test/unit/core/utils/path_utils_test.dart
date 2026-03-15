@@ -6,6 +6,7 @@ void main() {
     test('normalizeOptionalFilePath trims separators and placeholders', () {
       expect(normalizeOptionalFilePath(' /repo/plain// '), '/repo/plain');
       expect(normalizeOptionalFilePath(r'\repo\plain\'), '/repo/plain');
+      expect(normalizeOptionalFilePath('///'), '/');
       expect(normalizeOptionalFilePath('-'), isNull);
       expect(normalizeOptionalFilePath('   '), isNull);
     });

@@ -196,7 +196,7 @@ class ProjectProvider extends ChangeNotifier {
           );
         },
         (item) {
-          final fetchedPath = normalizeOptionalFilePath(item.path) ?? item.path;
+          final fetchedPath = item.path;
           if (areEquivalentFilePaths(fetchedPath, normalized)) {
             project = item;
             final existingIndex = _projects.indexWhere((p) => p.id == item.id);
@@ -776,8 +776,7 @@ class ProjectProvider extends ChangeNotifier {
         if (decoded is List) {
           final savedIds = decoded.whereType<String>().toList(growable: false);
           _rehydrateSyntheticProjects(savedIds);
-          _openProjectIds = decoded
-              .whereType<String>()
+          _openProjectIds = savedIds
               .where((id) => _projects.any((project) => project.id == id))
               .toList(growable: false);
         }
@@ -812,8 +811,7 @@ class ProjectProvider extends ChangeNotifier {
       if (decoded is List) {
         final savedIds = decoded.whereType<String>().toList(growable: false);
         _rehydrateSyntheticProjects(savedIds);
-        _archivedProjectIds = decoded
-            .whereType<String>()
+        _archivedProjectIds = savedIds
             .where((id) => _projects.any((project) => project.id == id))
             .toList(growable: false);
       }

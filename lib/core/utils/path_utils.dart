@@ -5,6 +5,9 @@ String normalizeFilePath(String path) {
   if (value.isEmpty) {
     return value;
   }
+  if (RegExp(r'^/+$').hasMatch(value)) {
+    return '/';
+  }
   if (value.length > 1) {
     value = value.replaceAll(RegExp(r'/+$'), '');
   }
