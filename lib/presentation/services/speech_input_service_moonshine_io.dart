@@ -10,22 +10,60 @@ import '../../core/logging/app_logger.dart';
 import 'moonshine_model_manager.dart';
 import 'speech_input_service.dart';
 
+@visibleForTesting
+class MoonshineVadChunker {
+  MoonshineVadChunker({required this.windowSize});
+
+  final int windowSize;
+  final List<double> _pending = <double>[];
+
+  List<Float32List> push(Float32List samples) {
+    _pending.addAll(samples);
+    return _drainFrames();
+  }
+
+  List<Float32List> flushPadded() {
+    if (_pending.isEmpty) {
+      return const <Float32List>[];
+    }
+
+    final remainder = _pending.length % windowSize;
+    if (remainder != 0) {
+      _pending.addAll(List<double>.filled(windowSize - remainder, 0));
+    }
+
+    return _drainFrames();
+  }
+
+  List<Float32List> _drainFrames() {
+    final frames = <Float32List>[];
+    while (_pending.length >= windowSize) {
+      final frame = Float32List(windowSize);
+      for (var i = 0; i < windowSize; i++) {
+        frame[i] = _pending[i];
+      }
+      _pending.removeRange(0, windowSize);
+      frames.add(frame);
+    }
+    return frames;
+  }
+}
+
 // Moonshine desktop backend using sherpa_onnx OfflineRecognizer + Silero VAD.
-// It keeps the same speech-service contract as Sherpa but processes one VAD
-// segmented utterance at a time instead of continuous streaming transducer
-// decoding.
+// The VAD runtime expects fixed-size 512-sample windows, so microphone PCM
+// chunks are buffered before reaching native code to avoid Linux crashes.
 class MoonshineSpeechInputService implements SpeechInputService {
   MoonshineSpeechInputService(this._modelManager);
 
   final MoonshineModelManager _modelManager;
   static const _sampleRate = 16000;
+  static const _vadWindowSize = 512;
   static bool _bindingsInitialized = false;
 
   sherpa.OfflineRecognizer? _recognizer;
   sherpa.VoiceActivityDetector? _vad;
   AudioRecorder? _recorder;
   StreamSubscription<Uint8List>? _audioSub;
-  String? _activeModelId;
   String? _activeModelDir;
   bool _isListening = false;
   bool _isAvailable = false;
@@ -82,7 +120,6 @@ class MoonshineSpeechInputService implements SpeechInputService {
       return true;
     }
 
-    _activeModelId = null;
     _activeModelDir = null;
     _recognizer?.free();
     _recognizer = null;
@@ -144,18 +181,52 @@ class MoonshineSpeechInputService implements SpeechInputService {
     onStatus('listening');
 
     final timeout = pauseFor ?? const Duration(seconds: 5);
+    final chunker = MoonshineVadChunker(windowSize: _vadWindowSize);
     Timer? silenceTimer;
     var completed = false;
+    late Future<void> Function() finishSession;
 
-    Future<void> finishSession() async {
+    void decodeDetectedSegments() {
+      while (_isListening && vad.isDetected()) {
+        final segment = vad.front();
+        vad.pop();
+        if (segment.samples.isEmpty) {
+          continue;
+        }
+
+        final stream = recognizer.createStream();
+        try {
+          stream.acceptWaveform(
+            samples: segment.samples,
+            sampleRate: _sampleRate,
+          );
+          recognizer.decode(stream);
+          final text = recognizer.getResult(stream).text.trim();
+          if (text.isNotEmpty) {
+            onResult(text, true);
+          }
+        } finally {
+          stream.free();
+        }
+
+        unawaited(finishSession());
+      }
+    }
+
+    finishSession = () async {
       if (completed) {
         return;
       }
       completed = true;
       silenceTimer?.cancel();
+      for (final frame in chunker.flushPadded()) {
+        vad.acceptWaveform(frame);
+      }
+      vad.flush();
+      decodeDetectedSegments();
       await stopListening();
       onStatus('done');
-    }
+    };
 
     void armSilenceTimer() {
       silenceTimer?.cancel();
@@ -197,32 +268,10 @@ class MoonshineSpeechInputService implements SpeechInputService {
           return;
         }
         final samples = _pcm16ToFloat32(chunk);
-        vad.acceptWaveform(samples);
-        if (!vad.isDetected()) {
-          return;
+        for (final frame in chunker.push(samples)) {
+          vad.acceptWaveform(frame);
+          decodeDetectedSegments();
         }
-        final segment = vad.front();
-        vad.pop();
-        if (segment.samples.isEmpty) {
-          return;
-        }
-
-        final stream = recognizer.createStream();
-        try {
-          stream.acceptWaveform(
-            samples: segment.samples,
-            sampleRate: _sampleRate,
-          );
-          recognizer.decode(stream);
-          final text = recognizer.getResult(stream).text.trim();
-          if (text.isNotEmpty) {
-            onResult(text, true);
-          }
-        } finally {
-          stream.free();
-        }
-
-        unawaited(finishSession());
       },
       onError: (_) {
         silenceTimer?.cancel();
@@ -244,7 +293,6 @@ class MoonshineSpeechInputService implements SpeechInputService {
 
   Future<void> _setActiveModel(String modelId) async {
     _modelManager.setPreferredModelId(modelId);
-    _activeModelId = modelId;
     _activeModelDir = await _modelManager.getModelDir(modelId);
     _unavailableReason = null;
     _isAvailable = true;
@@ -262,7 +310,7 @@ class MoonshineSpeechInputService implements SpeechInputService {
             cachedDecoder: '$modelDir/cached_decode.int8.onnx',
           ),
           tokens: '$modelDir/tokens.txt',
-          numThreads: 2,
+          numThreads: 1,
           provider: 'cpu',
           debug: false,
         ),
@@ -279,6 +327,7 @@ class MoonshineSpeechInputService implements SpeechInputService {
           minSilenceDuration: pauseFor.inMilliseconds / 1000.0,
           minSpeechDuration: 0.2,
           maxSpeechDuration: 15,
+          windowSize: _vadWindowSize,
         ),
         sampleRate: _sampleRate,
         numThreads: 1,
