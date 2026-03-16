@@ -269,6 +269,9 @@ class MoonshineSpeechInputService implements SpeechInputService {
         }
         final samples = _pcm16ToFloat32(chunk);
         for (final frame in chunker.push(samples)) {
+          if (!_isListening) {
+            break;
+          }
           vad.acceptWaveform(frame);
           decodeDetectedSegments();
         }
