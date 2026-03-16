@@ -2597,6 +2597,79 @@ void main() {
     );
   });
 
+  testWidgets(
+    'suppresses sequential reasoning bubbles for the active collapsed tool run',
+    (WidgetTester tester) async {
+      final message = AssistantMessage(
+        id: 'msg_busy_tool_reasoning_chain',
+        sessionId: 'ses_busy_tool_reasoning_chain',
+        time: DateTime.fromMillisecondsSinceEpoch(1000),
+        parts: <MessagePart>[
+          const ReasoningPart(
+            id: 'thinking_chain_1',
+            messageId: 'msg_busy_tool_reasoning_chain',
+            sessionId: 'ses_busy_tool_reasoning_chain',
+            text: 'Inspecting the repository structure',
+          ),
+          ToolPart(
+            id: 'tool_chain_1',
+            messageId: 'msg_busy_tool_reasoning_chain',
+            sessionId: 'ses_busy_tool_reasoning_chain',
+            callId: 'call_chain_1',
+            tool: 'bash',
+            state: ToolStateRunning(
+              input: const <String, dynamic>{'command': 'git status'},
+              time: DateTime.fromMillisecondsSinceEpoch(1100),
+            ),
+          ),
+          const ReasoningPart(
+            id: 'thinking_chain_2',
+            messageId: 'msg_busy_tool_reasoning_chain',
+            sessionId: 'ses_busy_tool_reasoning_chain',
+            text: 'Comparing the latest tool results',
+          ),
+          ToolPart(
+            id: 'tool_chain_2',
+            messageId: 'msg_busy_tool_reasoning_chain',
+            sessionId: 'ses_busy_tool_reasoning_chain',
+            callId: 'call_chain_2',
+            tool: 'read',
+            state: ToolStateRunning(
+              input: const <String, dynamic>{'filePath': 'README.md'},
+              time: DateTime.fromMillisecondsSinceEpoch(1200),
+            ),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChatMessageWidget(
+              message: message,
+              activeReasoningPartKey:
+                  'msg_busy_tool_reasoning_chain::thinking_chain_2',
+              isSessionActivelyResponding: true,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Inspecting the repository structure'), findsNothing);
+      expect(find.text('Comparing the latest tool results'), findsNothing);
+      expect(find.text('Thinking Process'), findsNothing);
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'tool_chain_toggle_msg_busy_tool_reasoning_chain_call_chain_1',
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Running command'), findsOneWidget);
+    },
+  );
+
   testWidgets('renders colorized diff for apply_patch tool', (tester) async {
     const diffOutput = '''--- file.dart
 +++ file.dart

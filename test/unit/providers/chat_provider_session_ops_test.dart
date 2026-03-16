@@ -1089,13 +1089,13 @@ void main() {
     });
 
     test(
-      'refreshActiveSessionView scrolls when latest message changes even if session is idle',
+      'refreshActiveSessionView scrolls when latest message changes after session is idle',
       () async {
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
 
         chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
-          'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
+          'ses_1': SessionStatusInfo(type: SessionStatusType.idle),
         };
         await provider.loadSessionInsights('ses_1');
 

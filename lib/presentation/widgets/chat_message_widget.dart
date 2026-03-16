@@ -355,11 +355,24 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       return false;
     }
     final currentMessage = message;
-    if (currentMessage is! AssistantMessage || currentMessage.isCompleted) {
+    if (currentMessage is! AssistantMessage) {
+      return false;
+    }
+    final activeReasoningKey = activeReasoningPartKey;
+    final isActiveReasoningMessage =
+        activeReasoningKey != null &&
+        activeReasoningKey.startsWith('${currentMessage.id}::');
+    final hasToolSurfacePart = currentMessage.parts.any(
+      (messagePart) => messagePart is ToolPart || messagePart is PatchPart,
+    );
+    if (hasToolSurfacePart && isActiveReasoningMessage) {
+      return true;
+    }
+    if (currentMessage.isCompleted) {
       return false;
     }
     final currentReasoningKey = '${part.messageId}::${part.id}';
-    return activeReasoningPartKey == currentReasoningKey;
+    return activeReasoningKey == currentReasoningKey;
   }
 
   void _seedPartAnimationBaseline(ChatMessage currentMessage) {

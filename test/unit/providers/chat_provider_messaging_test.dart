@@ -9,6 +9,7 @@ import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/data/models/chat_message_model.dart';
 import 'package:codewalk/data/models/chat_session_model.dart';
 import 'package:codewalk/domain/entities/chat_message.dart';
+import 'package:codewalk/domain/entities/chat_realtime.dart';
 import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/domain/entities/provider.dart';
 import 'package:codewalk/domain/usecases/create_chat_session.dart';
@@ -1200,7 +1201,7 @@ void main() {
     );
 
     test(
-      'refreshActiveSessionView schedules scroll callback when latest message changes',
+      'refreshActiveSessionView does not schedule scroll callback for busy passive refresh message changes',
       () async {
         const sessionId = 'ses_1';
         final toolOnlyMessage = AssistantMessage(
@@ -1242,6 +1243,10 @@ void main() {
         provider.setScrollToBottomCallback(() {
           scrollToBottomRequests += 1;
         });
+        chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+          sessionId: SessionStatusInfo(type: SessionStatusType.busy),
+        };
+        await provider.loadSessionInsights(sessionId);
 
         chatRepository.messagesBySession[sessionId] = <ChatMessage>[
           toolOnlyMessage,
@@ -1268,7 +1273,7 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 20));
 
         expect(provider.messages.last.id, 'msg_final_after_tools');
-        expect(scrollToBottomRequests, greaterThan(0));
+        expect(scrollToBottomRequests, 0);
       },
     );
 

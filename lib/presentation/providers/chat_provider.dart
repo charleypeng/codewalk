@@ -1747,13 +1747,21 @@ class ChatProvider extends ChangeNotifier {
           final hasActiveLocalStream =
               _activeMessageStreamSessionId == session.id &&
               _messageSubscription != null;
+          final sessionStatusType = _sessionStatusById[session.id]?.type;
+          final hasBusyRefreshStatus =
+              sessionStatusType == SessionStatusType.busy ||
+              sessionStatusType == SessionStatusType.retry;
           final latestSessionMessage = _messages.lastOrNull;
           final latestSessionMessageChanged =
               latestSessionMessage != previousLatestSessionMessage;
+          // Passive refreshes may replace the visible tail while the user is
+          // reading. Only let refresh-driven latest-message changes follow when
+          // the session is no longer in a server-reported busy/retry turn;
+          // active turns use the runtime follow/reveal policy instead.
           if (!_isCompactingContext &&
               (hasActiveLocalStream ||
                   _state == ChatState.sending ||
-                  latestSessionMessageChanged)) {
+                  (latestSessionMessageChanged && !hasBusyRefreshStatus))) {
             _scheduleScrollToBottom();
           }
           if (requiresFullFetch && _currentSession?.id == session.id) {
