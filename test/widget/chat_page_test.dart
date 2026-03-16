@@ -946,6 +946,86 @@ void main() {
     );
 
     testWidgets(
+      'latest session tap wins while another session switch is in flight',
+      (WidgetTester tester) async {
+        await tester.binding.setSurfaceSize(const Size(1300, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final repository = _ConfigurableDelayFakeChatRepository(
+          sessions: <ChatSession>[
+            ChatSession(
+              id: 'ses_1',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              title: 'Session 1',
+            ),
+            ChatSession(
+              id: 'ses_2',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(2000),
+              title: 'Session 2',
+            ),
+            ChatSession(
+              id: 'ses_3',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(3000),
+              title: 'Session 3',
+            ),
+          ],
+        );
+        repository.messagesBySession['ses_1'] = <ChatMessage>[];
+        repository.messagesBySession['ses_2'] = <ChatMessage>[];
+        repository.messagesBySession['ses_3'] = <ChatMessage>[];
+
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test'
+          ..defaultServerId = 'srv_test'
+          ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 'srv_test',
+              'url': 'http://127.0.0.1:4096',
+              'label': 'Test Server',
+              'basicAuthEnabled': false,
+              'basicAuthUsername': '',
+              'basicAuthPassword': '',
+              'createdAt': 0,
+              'updatedAt': 0,
+            },
+          ]);
+        final provider = _buildChatProvider(
+          chatRepository: repository,
+          localDataSource: localDataSource,
+        );
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+        await tester.pumpWidget(_testApp(provider, appProvider));
+        await tester.pumpAndSettle();
+
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.firstWhere((session) => session.id == 'ses_1'),
+        );
+        await tester.pumpAndSettle();
+
+        repository.getMessagesGate = Completer<void>();
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('chat_session_tile_ses_2')),
+        );
+        await tester.pump();
+        await tester.tap(
+          find.byKey(const ValueKey<String>('chat_session_tile_ses_3')),
+        );
+        await tester.pump();
+
+        repository.getMessagesGate?.complete();
+        await tester.pumpAndSettle();
+
+        expect(provider.currentSession?.id, 'ses_3');
+      },
+    );
+
+    testWidgets(
       'shows soft loading indicator while switching to a cacheless session',
       (WidgetTester tester) async {
         await tester.binding.setSurfaceSize(const Size(1000, 900));
