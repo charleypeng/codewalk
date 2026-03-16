@@ -176,9 +176,10 @@ class _ChatPageState extends State<ChatPage>
   Future<void>? _projectScopeTransitionTask;
   bool _isProjectSelectorActionInFlight = false;
   // Re-entry guard: true while selectSession is in flight.
-  // Prevents double-tap from starting a concurrent session switch.
-  // Pure guard — no UI effect (ChatState.loading handles visual feedback).
+  // Prevents concurrent session switches while preserving the latest tap.
+  // ChatState.loading handles visual feedback during the serialized switch.
   bool _isSessionSwitchInFlight = false;
+  ChatSession? _pendingSessionSwitchTarget;
   // Per-session collapse state cache (up to 20 sessions, LRU-evicted).
   // Stores the last expanded history group ID for each session ID.
   final Map<String, String?> _sessionCollapseHistoryCache = {};

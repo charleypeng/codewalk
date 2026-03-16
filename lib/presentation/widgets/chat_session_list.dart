@@ -57,7 +57,6 @@ class _ChatSessionListState extends State<ChatSessionList> {
   final Set<String> _expandedParentIds = <String>{};
   String? _cachedTreeSignature;
   List<_SessionTreeRow> _cachedVisibleRows = const <_SessionTreeRow>[];
-  String? _loadingSessionId;
 
   @override
   void initState() {
@@ -270,21 +269,10 @@ class _ChatSessionListState extends State<ChatSessionList> {
 
   Future<void> _handleSessionSelected(ChatSession session) async {
     final callback = widget.onSessionSelected;
-    if (callback == null || _loadingSessionId != null) {
+    if (callback == null) {
       return;
     }
-
-    _loadingSessionId = session.id;
-    setState(() {});
-
-    try {
-      await callback(session);
-    } finally {
-      _loadingSessionId = null;
-      if (mounted) {
-        setState(() {});
-      }
-    }
+    await callback(session);
   }
 
   Widget _buildSessionTile(
@@ -581,11 +569,9 @@ class _ChatSessionListState extends State<ChatSessionList> {
                     ),
                   ],
                 ),
-                onTap: _loadingSessionId != null
-                    ? null
-                    : () async {
-                        await _handleSessionSelected(session);
-                      },
+                onTap: () async {
+                  await _handleSessionSelected(session);
+                },
               ),
               if (floatingBadgeKind != SessionAttentionKind.none)
                 Positioned(
