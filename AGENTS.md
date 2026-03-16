@@ -34,7 +34,7 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | 003 | Realtime-first sync with degraded fallback and platform-aware background policy — maintain live UX without losing offline data | 108–156 |
 | 004 | Chat with slim orchestrators and decomposed part-file clusters — maintainability on high-change surfaces | 157–192 |
 | 005 | Composer pipeline for multimodal input, triggers (`@!/`) and send/stop — rich composition without breaking flow | 193–229 |
-| 006 | Speech input with `SpeechInputService`, Sherpa (Linux) and native STT (Android) — pluggable by platform | 230–267 |
+| 006 | Speech input with `SpeechInputService`, Sherpa/Moonshine on desktop, and native STT on Android — pluggable by platform | 230–269 |
 | 007 | Modular settings with typed `SettingsProvider` + `ExperienceSettings` — unified persistence desktop/mobile | 268–304 |
 | 008 | Context-scoped file explorer with quick-open and diff-aware refresh — fast navigation without unnecessary reloads | 305–340 |
 | 009 | Title generation via internal `title` agent — eliminate external dependency for session titles | 341–374 |
@@ -62,7 +62,7 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | Project Snapshot | 3–11 |
 | Folder Structure | 12–48 |
 | Entry Points | 49–59 |
-| Core Modules | 60–106 |
+| Core Modules | 60–108 |
 | Chat Architecture | 107–181 |
 | Data & Domain Layers | 182–193 |
 | Key API/DataSource locations | 194–213 |

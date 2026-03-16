@@ -468,14 +468,16 @@ Additional commands may be provided by the connected OpenCode server and merged 
 - **When** the user activates voice input
 - **Then** the STT feature works on all platforms where the device has a microphone
 
-The app uses a dual-engine strategy with automatic fallback:
+The app uses a platform-aware speech engine strategy with automatic fallback where supported:
 
 | Platform | Primary engine | Notes |
 |----------|---------------|-------|
-| Android | Native (system speech recognizer) | Sherpa excluded from Android build; Native only |
-| Linux | Sherpa ONNX | On-device models downloaded from HuggingFace; Native not supported on Linux |
-| macOS / iOS | Native (system speech recognizer) | Falls back to Sherpa ONNX if native unavailable |
-| Windows / Web | Native (system speech recognizer) | Falls back to Sherpa ONNX if native unavailable |
+| Android | Native (system speech recognizer) | Sherpa/Moonshine runtimes excluded from Android build; Native only |
+| Linux | Sherpa ONNX or Moonshine via sherpa_onnx | On-device models are downloaded on demand; Native not supported on Linux |
+| macOS | Native (system speech recognizer) | Falls back to Sherpa ONNX if native unavailable; Moonshine is an optional desktop engine |
+| iOS | Native (system speech recognizer) | Native only in the current app build |
+| Windows | Native (system speech recognizer) | Falls back to Sherpa ONNX if native unavailable; Moonshine is an optional desktop engine |
+| Web | Native (system speech recognizer) | Browser speech only |
 
 ---
 
