@@ -57,6 +57,9 @@ class _ChatSessionListState extends State<ChatSessionList> {
   final Set<String> _expandedParentIds = <String>{};
   String? _cachedTreeSignature;
   List<_SessionTreeRow> _cachedVisibleRows = const <_SessionTreeRow>[];
+  bool _isSessionSelectionInFlight = false;
+  String? _activeSessionSelectionId;
+  ChatSession? _pendingSessionSelection;
 
   @override
   void initState() {
@@ -272,7 +275,31 @@ class _ChatSessionListState extends State<ChatSessionList> {
     if (callback == null) {
       return;
     }
-    await callback(session);
+    if (_isSessionSelectionInFlight) {
+      if (_activeSessionSelectionId == session.id ||
+          _pendingSessionSelection?.id == session.id) {
+        return;
+      }
+      _pendingSessionSelection = session;
+      return;
+    }
+
+    _pendingSessionSelection = session;
+    _isSessionSelectionInFlight = true;
+    try {
+      while (true) {
+        final pendingSession = _pendingSessionSelection;
+        _pendingSessionSelection = null;
+        if (pendingSession == null) {
+          return;
+        }
+        _activeSessionSelectionId = pendingSession.id;
+        await callback(pendingSession);
+      }
+    } finally {
+      _activeSessionSelectionId = null;
+      _isSessionSelectionInFlight = false;
+    }
   }
 
   Widget _buildSessionTile(
