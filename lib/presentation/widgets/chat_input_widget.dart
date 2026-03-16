@@ -19,8 +19,10 @@ import '../../domain/entities/experience_settings.dart';
 import '../providers/settings_provider.dart';
 import '../services/speech_input_service.dart';
 import '../theme/app_shapes.dart';
+import '../services/speech_input_service_moonshine.dart';
 import '../services/speech_input_service_sherpa.dart';
 import '../services/speech_input_service_stt.dart';
+import 'moonshine_model_download_dialog.dart';
 import 'sherpa_model_download_dialog.dart';
 
 part 'chat_input_widget_types_part.dart';
@@ -291,10 +293,11 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   final RegExp _slashTriggerPattern = RegExp(r'^/(\S*)$');
   final RegExp _mentionTokenPattern = RegExp(r'@([^\s@]+)');
   // STT services are resolved lazily. The active backend is selected from
-  // settings (Native/Sherpa) and can fall back automatically when unavailable.
+  // settings (Native/Sherpa/Moonshine) and can fall back when unavailable.
   SpeechInputService? _activeSpeechService;
   SttSpeechInputService? _nativeSpeechServiceInstance;
   SherpaSpeechInputService? _sherpaSpeechServiceInstance;
+  MoonshineSpeechInputService? _moonshineSpeechServiceInstance;
   bool _isComposing = false;
   bool _isSending = false;
   bool _isListening = false;
@@ -355,6 +358,15 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     return defaultTargetPlatform != TargetPlatform.android;
   }
 
+  bool get _isMoonshineEngineSupported {
+    if (kIsWeb) {
+      return false;
+    }
+    return defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.windows;
+  }
+
   bool get _isSoftwareKeyboardVisible {
     final mediaQueryInsetBottom = MediaQuery.maybeOf(
       context,
@@ -374,6 +386,14 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
       return null;
     }
     return _sherpaSpeechServiceInstance ??= di.sl<SherpaSpeechInputService>();
+  }
+
+  SpeechInputService? get _moonshineSpeechService {
+    if (!_isMoonshineEngineSupported) {
+      return null;
+    }
+    return _moonshineSpeechServiceInstance ??= di
+        .sl<MoonshineSpeechInputService>();
   }
 
   SpeechInputService get _speechService =>
@@ -1329,6 +1349,8 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
         _isNativeEngineSupported ? _nativeSpeechService : null,
       SpeechToTextEngine.sherpa =>
         _isSherpaEngineSupported ? _sherpaSpeechService : null,
+      SpeechToTextEngine.moonshine =>
+        _isMoonshineEngineSupported ? _moonshineSpeechService : null,
     };
   }
 
@@ -1336,6 +1358,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     return switch (engine) {
       SpeechToTextEngine.native => 'Native',
       SpeechToTextEngine.sherpa => 'Sherpa',
+      SpeechToTextEngine.moonshine => 'Moonshine',
     };
   }
 

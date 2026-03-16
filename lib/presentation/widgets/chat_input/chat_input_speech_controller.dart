@@ -25,27 +25,36 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
     SettingsProvider settingsProvider,
   ) async {
     final primaryEngine = settingsProvider.speechToTextEngine;
-    final fallbackEngine = primaryEngine == SpeechToTextEngine.native
-        ? SpeechToTextEngine.sherpa
-        : SpeechToTextEngine.native;
-
-    final primaryService = _serviceForEngine(primaryEngine);
-    if (primaryService != null && await primaryService.initialize()) {
-      return _SpeechServiceResolution(
-        service: primaryService,
-        engine: primaryEngine,
-        usedFallback: false,
-      );
+    final candidates = <SpeechToTextEngine>[primaryEngine];
+    if (primaryEngine == SpeechToTextEngine.native) {
+      candidates.add(SpeechToTextEngine.sherpa);
+    } else if (primaryEngine == SpeechToTextEngine.sherpa) {
+      candidates.add(SpeechToTextEngine.native);
+    } else {
+      if (_isNativeEngineSupported) {
+        candidates.add(SpeechToTextEngine.native);
+      }
+      if (_isSherpaEngineSupported) {
+        candidates.add(SpeechToTextEngine.sherpa);
+      }
     }
 
-    final fallbackService = _serviceForEngine(fallbackEngine);
-    if (fallbackService != null && await fallbackService.initialize()) {
-      return _SpeechServiceResolution(
-        service: fallbackService,
-        engine: fallbackEngine,
-        usedFallback: true,
-        unavailableReason: primaryService?.unavailableReason,
-      );
+    String? unavailableReason;
+    for (var i = 0; i < candidates.length; i++) {
+      final engine = candidates[i];
+      final service = _serviceForEngine(engine);
+      if (service == null) {
+        continue;
+      }
+      if (await service.initialize()) {
+        return _SpeechServiceResolution(
+          service: service,
+          engine: engine,
+          usedFallback: i > 0,
+          unavailableReason: unavailableReason,
+        );
+      }
+      unavailableReason ??= service.unavailableReason;
     }
 
     return null;
@@ -175,11 +184,15 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
   void _onSpeechStatus(String status) {
     if (!mounted) return;
 
-    // 'model_required' is emitted by Sherpa when no model is installed for the
-    // selected language. Show the download/setup dialog.
+    // 'model_required' is emitted by downloadable on-device engines when no
+    // local model is installed yet. Show the matching setup dialog.
     if (status == 'model_required') {
       _finishListeningLoading();
-      _showSherpaDownloadDialog();
+      if (_speechService is MoonshineSpeechInputService) {
+        _showMoonshineDownloadDialog();
+      } else {
+        _showSherpaDownloadDialog();
+      }
       return;
     }
 
@@ -216,6 +229,24 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
     // Re-initialize the service (model is now on disk) and start listening.
     if (downloaded == true && mounted) {
       _sherpaSpeechServiceInstance = null;
+      _activeSpeechService = null;
+      await _startListening();
+    }
+  }
+
+  Future<void> _showMoonshineDownloadDialog() async {
+    if (!mounted) return;
+    _finishListeningLoading();
+    _setState(() {
+      _isListening = false;
+    });
+    final downloaded = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const MoonshineModelDownloadDialog(),
+    );
+    if (downloaded == true && mounted) {
+      _moonshineSpeechServiceInstance = null;
       _activeSpeechService = null;
       await _startListening();
     }

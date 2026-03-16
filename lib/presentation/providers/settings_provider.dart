@@ -159,6 +159,7 @@ class SettingsProvider extends ChangeNotifier {
   OpenCodeThemePreset? get themePreset => _settings.themePreset;
   int get speechSilenceTimeoutSeconds => _settings.speechSilenceTimeoutSeconds;
   String get sherpaLanguageCode => _settings.sherpaLanguageCode;
+  String get moonshineModelId => _settings.moonshineModelId;
   bool get skipOnboardingWizard => _settings.skipOnboardingWizard;
   bool get hasAnyServerBackedNotificationCategory =>
       _serverBackedNotifications.values.any((value) => value);
@@ -207,17 +208,26 @@ class SettingsProvider extends ChangeNotifier {
 
     // Platform STT policy migration:
     // - Linux: Native is disabled, force Sherpa.
-    // - Android: Sherpa is disabled in slim APK builds, force Native.
+    // - Android: Sherpa/Moonshine are disabled in slim APK builds, force Native.
+    // - iOS/Web: Moonshine stays unavailable until a dedicated client path exists.
     final isLinux = !kIsWeb && defaultTargetPlatform == TargetPlatform.linux;
     final isAndroid =
         !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+    final isIos = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
     if (isLinux && _settings.speechToTextEngine == SpeechToTextEngine.native) {
       _settings = _settings.copyWith(
         speechToTextEngine: SpeechToTextEngine.sherpa,
       );
       unawaited(_persist());
     } else if (isAndroid &&
-        _settings.speechToTextEngine == SpeechToTextEngine.sherpa) {
+        (_settings.speechToTextEngine == SpeechToTextEngine.sherpa ||
+            _settings.speechToTextEngine == SpeechToTextEngine.moonshine)) {
+      _settings = _settings.copyWith(
+        speechToTextEngine: SpeechToTextEngine.native,
+      );
+      unawaited(_persist());
+    } else if ((kIsWeb || isIos) &&
+        _settings.speechToTextEngine == SpeechToTextEngine.moonshine) {
       _settings = _settings.copyWith(
         speechToTextEngine: SpeechToTextEngine.native,
       );
@@ -863,6 +873,19 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(sherpaLanguageCode: normalized);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setMoonshineModelId(String modelId) async {
+    final normalized = modelId.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return;
+    }
+    if (_settings.moonshineModelId == normalized) {
+      return;
+    }
+    _settings = _settings.copyWith(moonshineModelId: normalized);
     notifyListeners();
     await _persist();
   }

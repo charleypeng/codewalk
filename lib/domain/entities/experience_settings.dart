@@ -68,11 +68,13 @@ enum OpenCodeThemePreset {
   oneDark,
 }
 
-enum SpeechToTextEngine { native, sherpa }
+enum SpeechToTextEngine { native, sherpa, moonshine }
 
 enum DesktopCloseBehavior { tray, minimize, close }
 
 const String kSherpaLanguageSystem = 'system';
+const String kMoonshineModelTiny = 'tiny';
+const String kMoonshineModelBase = 'base';
 
 class ShortcutDefinition {
   const ShortcutDefinition({
@@ -489,12 +491,14 @@ String speechToTextEngineKey(SpeechToTextEngine engine) {
   return switch (engine) {
     SpeechToTextEngine.native => 'native',
     SpeechToTextEngine.sherpa => 'sherpa',
+    SpeechToTextEngine.moonshine => 'moonshine',
   };
 }
 
 SpeechToTextEngine speechToTextEngineFromKey(String value) {
   return switch (value) {
     'sherpa' => SpeechToTextEngine.sherpa,
+    'moonshine' => SpeechToTextEngine.moonshine,
     _ => SpeechToTextEngine.native,
   };
 }
@@ -579,6 +583,7 @@ class ExperienceSettings {
       speechToTextEngine: defaultSpeechEngine,
       speechSilenceTimeoutSeconds: 5,
       sherpaLanguageCode: kSherpaLanguageSystem,
+      moonshineModelId: kMoonshineModelTiny,
       checkUpdatesOnOpen: true,
     );
   }
@@ -614,6 +619,7 @@ class ExperienceSettings {
     this.speechToTextEngine = SpeechToTextEngine.native,
     this.speechSilenceTimeoutSeconds = 5,
     this.sherpaLanguageCode = kSherpaLanguageSystem,
+    this.moonshineModelId = kMoonshineModelTiny,
     this.skipOnboardingWizard = false,
     this.checkUpdatesOnOpen = true,
   });
@@ -649,6 +655,7 @@ class ExperienceSettings {
   final SpeechToTextEngine speechToTextEngine;
   final int speechSilenceTimeoutSeconds;
   final String sherpaLanguageCode;
+  final String moonshineModelId;
   final bool skipOnboardingWizard;
   final bool checkUpdatesOnOpen;
 
@@ -684,6 +691,7 @@ class ExperienceSettings {
     SpeechToTextEngine? speechToTextEngine,
     int? speechSilenceTimeoutSeconds,
     String? sherpaLanguageCode,
+    String? moonshineModelId,
     bool? skipOnboardingWizard,
     bool? checkUpdatesOnOpen,
   }) {
@@ -732,6 +740,7 @@ class ExperienceSettings {
       speechSilenceTimeoutSeconds:
           speechSilenceTimeoutSeconds ?? this.speechSilenceTimeoutSeconds,
       sherpaLanguageCode: sherpaLanguageCode ?? this.sherpaLanguageCode,
+      moonshineModelId: moonshineModelId ?? this.moonshineModelId,
       skipOnboardingWizard: skipOnboardingWizard ?? this.skipOnboardingWizard,
       checkUpdatesOnOpen: checkUpdatesOnOpen ?? this.checkUpdatesOnOpen,
     );
@@ -807,6 +816,7 @@ class ExperienceSettings {
       'speechToTextEngine': speechToTextEngineKey(speechToTextEngine),
       'speechSilenceTimeoutSeconds': speechSilenceTimeoutSeconds,
       'sherpaLanguageCode': sherpaLanguageCode,
+      'moonshineModelId': moonshineModelId,
       'skipOnboardingWizard': skipOnboardingWizard,
       'checkUpdatesOnOpen': checkUpdatesOnOpen,
     };
@@ -854,6 +864,7 @@ class ExperienceSettings {
     var speechToTextEngine = defaults.speechToTextEngine;
     var speechSilenceTimeoutSeconds = defaults.speechSilenceTimeoutSeconds;
     var sherpaLanguageCode = defaults.sherpaLanguageCode;
+    var moonshineModelId = defaults.moonshineModelId;
 
     final notificationsJson = json['notifications'];
     if (notificationsJson is Map) {
@@ -1094,6 +1105,12 @@ class ExperienceSettings {
       sherpaLanguageCode = sherpaLanguageCodeJson.trim().toLowerCase();
     }
 
+    final moonshineModelIdJson = json['moonshineModelId'];
+    if (moonshineModelIdJson is String &&
+        moonshineModelIdJson.trim().isNotEmpty) {
+      moonshineModelId = moonshineModelIdJson.trim().toLowerCase();
+    }
+
     var skipOnboardingWizard = defaults.skipOnboardingWizard;
     final skipOnboardingWizardJson = json['skipOnboardingWizard'];
     if (skipOnboardingWizardJson is bool) {
@@ -1138,6 +1155,7 @@ class ExperienceSettings {
       speechToTextEngine: speechToTextEngine,
       speechSilenceTimeoutSeconds: speechSilenceTimeoutSeconds,
       sherpaLanguageCode: sherpaLanguageCode,
+      moonshineModelId: moonshineModelId,
       skipOnboardingWizard: skipOnboardingWizard,
       checkUpdatesOnOpen: checkUpdatesOnOpen,
     );

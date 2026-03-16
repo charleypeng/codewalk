@@ -290,34 +290,45 @@ void main() {
       expect(second.enableExperimentalMultiDeviceSync, isTrue);
     });
 
-    test('persists speech engine, timeout, and Sherpa language', () async {
-      final local = InMemoryAppLocalDataSource();
-      final first = SettingsProvider(
-        localDataSource: local,
-        dioClient: DioClient(),
-        soundService: _FakeSoundService(),
-      );
-      await first.initialize();
+    test(
+      'persists speech engine, timeout, Sherpa language, and Moonshine model',
+      () async {
+        final local = InMemoryAppLocalDataSource();
+        final first = SettingsProvider(
+          localDataSource: local,
+          dioClient: DioClient(),
+          soundService: _FakeSoundService(),
+        );
+        await first.initialize();
 
-      await first.setSpeechToTextEngine(SpeechToTextEngine.sherpa);
-      await first.setSpeechSilenceTimeoutSeconds(7);
-      await first.setSherpaLanguageCode('pt');
+        await first.setSpeechToTextEngine(SpeechToTextEngine.moonshine);
+        await first.setSpeechSilenceTimeoutSeconds(7);
+        await first.setSherpaLanguageCode('pt');
+        await first.setMoonshineModelId(kMoonshineModelBase);
 
-      final second = SettingsProvider(
-        localDataSource: local,
-        dioClient: DioClient(),
-        soundService: _FakeSoundService(),
-      );
-      await second.initialize();
+        final second = SettingsProvider(
+          localDataSource: local,
+          dioClient: DioClient(),
+          soundService: _FakeSoundService(),
+        );
+        await second.initialize();
 
-      final expectedEngine =
-          !kIsWeb && defaultTargetPlatform == TargetPlatform.android
-          ? SpeechToTextEngine.native
-          : SpeechToTextEngine.sherpa;
-      expect(second.speechToTextEngine, expectedEngine);
-      expect(second.speechSilenceTimeoutSeconds, 7);
-      expect(second.sherpaLanguageCode, 'pt');
-    });
+        final expectedEngine =
+            !kIsWeb &&
+                (defaultTargetPlatform == TargetPlatform.android ||
+                    defaultTargetPlatform == TargetPlatform.iOS)
+            ? SpeechToTextEngine.native
+            : defaultTargetPlatform == TargetPlatform.linux ||
+                  defaultTargetPlatform == TargetPlatform.macOS ||
+                  defaultTargetPlatform == TargetPlatform.windows
+            ? SpeechToTextEngine.moonshine
+            : SpeechToTextEngine.native;
+        expect(second.speechToTextEngine, expectedEngine);
+        expect(second.speechSilenceTimeoutSeconds, 7);
+        expect(second.sherpaLanguageCode, 'pt');
+        expect(second.moonshineModelId, kMoonshineModelBase);
+      },
+    );
 
     test('persists only-when notification and sound rules', () async {
       final local = InMemoryAppLocalDataSource();

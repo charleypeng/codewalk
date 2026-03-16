@@ -11,6 +11,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/injection_container.dart' as di;
 import '../../../../domain/entities/experience_settings.dart';
 import '../../../providers/settings_provider.dart';
+import '../../../services/moonshine_model_manager.dart';
 import '../../../services/sherpa_model_manager.dart';
 import '../../../widgets/searchable_dropdown_form_field.dart';
 
@@ -35,6 +36,8 @@ class SpeechSettingsSection extends StatefulWidget {
 
 class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
   final SherpaModelManager _modelManager = di.sl<SherpaModelManager>();
+  final MoonshineModelManager _moonshineModelManager = di
+      .sl<MoonshineModelManager>();
 
   List<_SherpaModelEntry> _models = const <_SherpaModelEntry>[];
   Map<String, bool> _installedByCode = const <String, bool>{};
@@ -42,6 +45,12 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
   bool _isMutatingModel = false;
   double _downloadProgress = 0;
   String? _modelError;
+  List<_SherpaModelEntry> _moonshineModels = const <_SherpaModelEntry>[];
+  Map<String, bool> _moonshineInstalledById = const <String, bool>{};
+  bool _loadingMoonshineModels = false;
+  bool _isMutatingMoonshineModel = false;
+  double _moonshineDownloadProgress = 0;
+  String? _moonshineModelError;
   double? _silenceDraftSeconds;
 
   bool get _isLinux {
@@ -71,11 +80,23 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     return defaultTargetPlatform == TargetPlatform.windows;
   }
 
+  bool get _supportsMoonshine {
+    if (kIsWeb) {
+      return false;
+    }
+    return defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.windows;
+  }
+
   @override
   void initState() {
     super.initState();
     if (_isLinux) {
       unawaited(_loadModelCatalog());
+    }
+    if (_supportsMoonshine) {
+      unawaited(_loadMoonshineModelCatalog());
     }
   }
 
@@ -110,9 +131,14 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
               const SizedBox(height: 12),
               _buildLinuxModelCard(settingsProvider),
             ],
-            if (_isLinux && selectedEngine != SpeechToTextEngine.sherpa) ...[
+            if (_isLinux && selectedEngine == SpeechToTextEngine.native) ...[
               const SizedBox(height: 12),
               _buildSherpaModelHintCard(),
+            ],
+            if (_supportsMoonshine &&
+                selectedEngine == SpeechToTextEngine.moonshine) ...[
+              const SizedBox(height: 12),
+              _buildMoonshineModelCard(settingsProvider),
             ],
           ],
         );
@@ -123,11 +149,14 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
   Widget _buildEngineCard(SettingsProvider settingsProvider) {
     final selectedEngine = settingsProvider.speechToTextEngine;
     final sherpaEnabled = _supportsSherpa;
+    final moonshineEnabled = _supportsMoonshine;
     final nativeEnabled = !_isLinux;
     final sherpaUnavailableHint =
         defaultTargetPlatform == TargetPlatform.android
         ? 'Unavailable on Android builds optimized for small APK size.'
         : 'Not available on this platform.';
+    const moonshineUnavailableHint =
+        'Available on desktop only. Android stays native-only.';
 
     return Card(
       child: Padding(
@@ -239,6 +268,24 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                 ],
               ),
             ],
+            const Divider(height: 1),
+            RadioListTile<SpeechToTextEngine>(
+              contentPadding: EdgeInsets.zero,
+              value: SpeechToTextEngine.moonshine,
+              groupValue: selectedEngine,
+              onChanged: moonshineEnabled
+                  ? (value) {
+                      if (value == null) return;
+                      unawaited(settingsProvider.setSpeechToTextEngine(value));
+                    }
+                  : null,
+              title: const Text('Moonshine'),
+              subtitle: Text(
+                moonshineEnabled
+                    ? 'Desktop-only experimental path using sherpa_onnx offline recognition and downloadable models.'
+                    : moonshineUnavailableHint,
+              ),
+            ),
           ],
         ),
       ),
@@ -311,6 +358,137 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
               '${silenceValue.round()} seconds',
               style: Theme.of(context).textTheme.bodySmall,
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMoonshineModelCard(SettingsProvider settingsProvider) {
+    final selectedId = _normalizeMoonshineSelection(
+      settingsProvider.moonshineModelId,
+    );
+    final installed = _moonshineInstalledById[selectedId] ?? false;
+    _SherpaModelEntry? selectedModel;
+    for (final model in _moonshineModels) {
+      if (model.code == selectedId) {
+        selectedModel = model;
+        break;
+      }
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.defaultPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Moonshine models (desktop)',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Moonshine stays downloadable and out of the app bundle. Pick one model for this desktop device and remove it later if you want the space back.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            if (_loadingMoonshineModels)
+              const Center(child: CircularProgressIndicator())
+            else ...[
+              DropdownButtonFormField<String>(
+                value: selectedId,
+                decoration: const InputDecoration(
+                  labelText: 'Moonshine model',
+                  border: OutlineInputBorder(),
+                ),
+                items: _moonshineModels
+                    .map(
+                      (model) => DropdownMenuItem<String>(
+                        value: model.code,
+                        child: Text(model.label),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: _isMutatingMoonshineModel
+                    ? null
+                    : (value) {
+                        if (value == null) {
+                          return;
+                        }
+                        _moonshineModelManager.setPreferredModelId(value);
+                        unawaited(settingsProvider.setMoonshineModelId(value));
+                        setState(() {
+                          _moonshineModelError = null;
+                        });
+                      },
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Chip(
+                    avatar: Icon(
+                      installed ? Symbols.check_circle_outline : Symbols.info,
+                      size: 18,
+                    ),
+                    label: Text(
+                      installed
+                          ? 'Model installed (${selectedId.toUpperCase()})'
+                          : 'Model missing (${selectedId.toUpperCase()})',
+                    ),
+                  ),
+                  const Spacer(),
+                  if (selectedModel != null)
+                    Text(
+                      '~${selectedModel.sizeMb} MB',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  FilledButton.icon(
+                    onPressed: _isMutatingMoonshineModel || installed
+                        ? null
+                        : () => unawaited(_downloadMoonshineModel(selectedId)),
+                    icon: const Icon(Symbols.download_rounded),
+                    label: const Text('Download'),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: _isMutatingMoonshineModel || !installed
+                        ? null
+                        : () => unawaited(_deleteMoonshineModel(selectedId)),
+                    icon: const Icon(Symbols.delete_outline),
+                    label: const Text('Remove'),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    tooltip: 'Refresh status',
+                    onPressed: _isMutatingMoonshineModel
+                        ? null
+                        : () => unawaited(_refreshMoonshineModelStatuses()),
+                    icon: const Icon(Symbols.refresh_rounded),
+                  ),
+                ],
+              ),
+              if (_isMutatingMoonshineModel) ...[
+                const SizedBox(height: 10),
+                LinearProgressIndicator(
+                  value: _moonshineDownloadProgress > 0
+                      ? _moonshineDownloadProgress
+                      : null,
+                ),
+              ],
+              if (_moonshineModelError != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _moonshineModelError!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+            ],
           ],
         ),
       ),
@@ -521,6 +699,37 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     }
   }
 
+  Future<void> _loadMoonshineModelCatalog() async {
+    setState(() {
+      _loadingMoonshineModels = true;
+      _moonshineModelError = null;
+    });
+    try {
+      final raw = await rootBundle.loadString('assets/moonshine_models.json');
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      final entries = (json['models'] as List)
+          .map((entry) {
+            final map = entry as Map<String, dynamic>;
+            return _SherpaModelEntry(
+              code: map['id'] as String,
+              label: map['label'] as String,
+              sizeMb: (map['size_mb'] as num).toInt(),
+            );
+          })
+          .toList(growable: false);
+      _moonshineModels = entries;
+      await _refreshMoonshineModelStatuses();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _moonshineModelError = 'Failed to load Moonshine model catalog: $error';
+        _loadingMoonshineModels = false;
+      });
+    }
+  }
+
   Future<void> _refreshModelStatuses() async {
     if (_models.isEmpty) {
       if (!mounted) {
@@ -588,6 +797,30 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     }
   }
 
+  Future<void> _refreshMoonshineModelStatuses() async {
+    if (_moonshineModels.isEmpty) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _moonshineInstalledById = const <String, bool>{};
+        _loadingMoonshineModels = false;
+      });
+      return;
+    }
+    final statuses = <String, bool>{};
+    for (final model in _moonshineModels) {
+      statuses[model.code] = await _moonshineModelManager.hasModel(model.code);
+    }
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _moonshineInstalledById = statuses;
+      _loadingMoonshineModels = false;
+    });
+  }
+
   Future<void> _deleteModel(String code) async {
     setState(() {
       _isMutatingModel = true;
@@ -613,6 +846,74 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     }
   }
 
+  Future<void> _downloadMoonshineModel(String modelId) async {
+    setState(() {
+      _isMutatingMoonshineModel = true;
+      _moonshineDownloadProgress = 0;
+      _moonshineModelError = null;
+    });
+    try {
+      await _moonshineModelManager.downloadModel(
+        modelId,
+        onProgress: (progress) {
+          if (!mounted) {
+            return;
+          }
+          setState(() {
+            _moonshineDownloadProgress = progress;
+          });
+        },
+      );
+      _moonshineModelManager.setPreferredModelId(modelId);
+      if (!mounted) {
+        return;
+      }
+      final settingsProvider = context.read<SettingsProvider>();
+      await settingsProvider.setMoonshineModelId(modelId);
+      await _refreshMoonshineModelStatuses();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _moonshineModelError = 'Download failed: $error';
+      });
+    } finally {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isMutatingMoonshineModel = false;
+        _moonshineDownloadProgress = 0;
+      });
+    }
+  }
+
+  Future<void> _deleteMoonshineModel(String modelId) async {
+    setState(() {
+      _isMutatingMoonshineModel = true;
+      _moonshineModelError = null;
+    });
+    try {
+      await _moonshineModelManager.deleteModel(modelId);
+      await _refreshMoonshineModelStatuses();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _moonshineModelError = 'Failed to remove model: $error';
+      });
+    } finally {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isMutatingMoonshineModel = false;
+      });
+    }
+  }
+
   String _normalizeLanguageSelection(String raw) {
     if (raw == kSherpaLanguageSystem) {
       return kSherpaLanguageSystem;
@@ -629,5 +930,12 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
       return _modelManager.detectSystemLanguage();
     }
     return selectedCode;
+  }
+
+  String _normalizeMoonshineSelection(String raw) {
+    if (_moonshineModels.any((model) => model.code == raw)) {
+      return raw;
+    }
+    return kMoonshineModelTiny;
   }
 }
