@@ -736,32 +736,7 @@ extension _ChatPageScaffold on _ChatPageState {
     );
   }
 
-  /// Pure re-entry guard for session switches.
-  /// No UI overlay — ChatState.loading in the provider already shows
-  /// appropriate visual feedback in the content area.
   Future<void> _handleSessionSwitch(ChatSession session) async {
-    _pendingSessionSwitchTarget = session;
-    if (_isSessionSwitchInFlight) {
-      return;
-    }
-    _isSessionSwitchInFlight = true;
-    final chatProvider = context.read<ChatProvider>();
-    try {
-      while (true) {
-        final pendingSession = _pendingSessionSwitchTarget;
-        _pendingSessionSwitchTarget = null;
-        if (pendingSession == null) {
-          return;
-        }
-        final resolvedSession =
-            chatProvider.sessions
-                .where((item) => item.id == pendingSession.id)
-                .firstOrNull ??
-            pendingSession;
-        await chatProvider.selectSession(resolvedSession);
-      }
-    } finally {
-      _isSessionSwitchInFlight = false;
-    }
+    await context.read<ChatProvider>().selectSession(session);
   }
 }

@@ -276,8 +276,12 @@ class _ChatSessionListState extends State<ChatSessionList> {
       return;
     }
     if (_isSessionSelectionInFlight) {
-      if (_activeSessionSelectionId == session.id ||
-          _pendingSessionSelection?.id == session.id) {
+      final pendingSessionId = _pendingSessionSelection?.id;
+      if (pendingSessionId == session.id) {
+        return;
+      }
+      if (_activeSessionSelectionId == session.id) {
+        _pendingSessionSelection = null;
         return;
       }
       _pendingSessionSelection = session;

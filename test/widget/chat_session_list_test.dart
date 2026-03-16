@@ -253,6 +253,54 @@ void main() {
     expect(selectionCalls, 2);
   });
 
+  testWidgets('latest tap cancels a queued different session', (tester) async {
+    final selectedIds = <String>[];
+    final inFlightSelection = Completer<void>();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatSessionList(
+            sessions: <ChatSession>[
+              session(),
+              ChatSession(
+                id: 'ses_2',
+                workspaceId: 'default',
+                time: DateTime.fromMillisecondsSinceEpoch(2000),
+                title: 'Session 2',
+              ),
+            ],
+            onSessionSelected: (item) async {
+              selectedIds.add(item.id);
+              await inFlightSelection.future;
+            },
+          ),
+        ),
+      ),
+    );
+
+    final sessionOneTile = find.byKey(
+      const ValueKey<String>('chat_session_tile_ses_1'),
+    );
+    final sessionTwoTile = find.byKey(
+      const ValueKey<String>('chat_session_tile_ses_2'),
+    );
+
+    await tester.tap(sessionOneTile);
+    await tester.pump();
+    await tester.tap(sessionTwoTile);
+    await tester.pump();
+    await tester.tap(sessionOneTile);
+    await tester.pump();
+
+    expect(selectedIds, <String>['ses_1']);
+
+    inFlightSelection.complete();
+    await tester.pumpAndSettle();
+
+    expect(selectedIds, <String>['ses_1']);
+  });
+
   testWidgets('renders child sessions as collapsed sub-conversations', (
     tester,
   ) async {
