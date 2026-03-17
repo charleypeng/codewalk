@@ -427,6 +427,9 @@ class _ChatSessionListState extends State<ChatSessionList> {
                   4,
                   0,
                 ),
+                dense: true,
+                visualDensity: const VisualDensity(vertical: -2),
+                minVerticalPadding: 0,
                 title: Row(
                   children: [
                     if (hasChildren)
@@ -483,33 +486,29 @@ class _ChatSessionListState extends State<ChatSessionList> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (subtitleText == null) ...[
-                      const SizedBox(width: 8),
-                      compactMeta,
-                    ],
                   ],
                 ),
-                subtitle: subtitleText == null
-                    ? null
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            subtitleText,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: isSelected
-                                      ? colorScheme.onSecondaryContainer
-                                            .withValues(alpha: 0.8)
-                                      : colorScheme.onSurfaceVariant,
-                                ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          compactMeta,
-                        ],
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (subtitleText != null) ...[
+                      Text(
+                        subtitleText,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: isSelected
+                              ? colorScheme.onSecondaryContainer.withValues(
+                                  alpha: 0.8,
+                                )
+                              : colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                      const SizedBox(height: 4),
+                    ],
+                    compactMeta,
+                  ],
+                ),
                 trailing: PopupMenuButton<String>(
                   icon: Icon(
                     Symbols.more_vert,

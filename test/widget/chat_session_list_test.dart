@@ -449,9 +449,10 @@ void main() {
     );
 
     expect(find.text('additions: 3, deletions: 1'), findsNothing);
+    expect(find.text('Diff Session'), findsOneWidget);
 
     final tile = tester.widget<ListTile>(find.byType(ListTile));
-    expect(tile.subtitle, isNull);
+    expect(tile.subtitle, isNotNull);
   });
 
   testWidgets('highlights only root sessions with recent unread completion', (
