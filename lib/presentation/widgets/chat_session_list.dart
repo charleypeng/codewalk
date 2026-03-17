@@ -489,6 +489,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
                   ],
                 ),
                 subtitle: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (subtitleText != null) ...[
