@@ -236,6 +236,14 @@ class MoonshineSpeechInputService implements SpeechInputService {
       return;
     }
 
+    maxDurationTimer = Timer(maxUtteranceDuration, () {
+      if (!_isListening) {
+        return;
+      }
+      unawaited(finishSession());
+    });
+    armSilenceTimer();
+
     _audioSub = audioStream.listen(
       (chunk) {
         if (!_isListening) {
