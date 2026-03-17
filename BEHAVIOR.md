@@ -135,12 +135,27 @@
 - **Then** the root session row receives a subtle theme-aware highlight for up to one hour
 - **Then** child/subsessions do not receive that temporary row highlight
 
-### Recent sessions quick access is optional
+### Recent sessions quick access is enabled by default when available
 
-- **Given** the user enables `Recent sessions` in `Display Toggles`
+- **Given** a new installation or a context whose display toggles were never customized
+- **When** the Conversations sidebar is rendered and recent root sessions exist
+- **Then** the `Recent sessions` section is enabled by default and appears above the project groups
+- **Then** if there are no recent root sessions yet, the section stays hidden instead of rendering an empty card
+
+- **Given** the user disables `Recent sessions` in `Display Toggles`
+- **When** the Conversations sidebar is rendered
+- **Then** the sidebar hides that section even when recent root sessions are available
+
+- **Given** the `Recent sessions` section is visible
 - **When** the Conversations sidebar is rendered
 - **Then** the sidebar shows a `Recent sessions` section above the project groups with up to 5 recent root sessions from currently open/cached project contexts
 - **Then** each recent row stays on one line and includes a project badge so the user can identify the source project quickly
+
+### Project paths preserve the trailing folders in the sidebar
+
+- **Given** a project path is too long to fit in its sidebar row subtitle
+- **When** the project group subtitle is truncated
+- **Then** the trailing path segments remain visible and the ellipsis appears at the start of the rendered path instead of the end
 
 ### Session pinning is context-scoped and sort-stable
 
