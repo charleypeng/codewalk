@@ -257,6 +257,7 @@ class MoonshineSpeechInputService implements SpeechInputService {
       },
       onError: (_) {
         silenceTimer?.cancel();
+        maxDurationTimer?.cancel();
         if (completed) {
           return;
         }
