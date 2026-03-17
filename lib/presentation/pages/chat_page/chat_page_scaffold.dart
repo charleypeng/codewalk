@@ -448,7 +448,14 @@ extension _ChatPageScaffold on _ChatPageState {
             title: Text(displayName, overflow: TextOverflow.ellipsis),
             subtitle: subtitle == displayName
                 ? null
-                : Text(subtitle, overflow: TextOverflow.ellipsis),
+                : Directionality(
+                    textDirection: TextDirection.rtl,
+                    child: Text(
+                      subtitle,
+                      textAlign: TextAlign.left,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
             selected: selected,
             onTap: () {
               if (selected) {

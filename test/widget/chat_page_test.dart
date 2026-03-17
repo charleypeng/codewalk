@@ -1997,6 +1997,57 @@ void main() {
         expect(find.text('Project A'), findsWidgets);
       },
     );
+
+    testWidgets('recent sessions stays hidden when there are no recent roots', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        localDataSource: localDataSource,
+        projectRepository: FakeProjectRepository(
+          currentProject: Project(
+            id: 'proj_a',
+            name: 'Project A',
+            path: '/very/long/path/to/repo/a',
+            createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+          ),
+          projects: <Project>[
+            Project(
+              id: 'proj_a',
+              name: 'Project A',
+              path: '/very/long/path/to/repo/a',
+              createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+            ),
+          ],
+        ),
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Recent sessions'), findsNothing);
+
+      final projectTile = tester.widget<ListTile>(
+        find.byKey(const ValueKey<String>('project_group_tile_proj_a')),
+      );
+      final subtitleDirectionality = tester.widget<Directionality>(
+        find
+            .descendant(
+              of: find.byKey(
+                const ValueKey<String>('project_group_tile_proj_a'),
+              ),
+              matching: find.byType(Directionality),
+            )
+            .last,
+      );
+      expect(projectTile.subtitle, isNotNull);
+      expect(subtitleDirectionality.textDirection, TextDirection.rtl);
+    });
   });
 
   testWidgets(

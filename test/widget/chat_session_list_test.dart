@@ -449,6 +449,9 @@ void main() {
     );
 
     expect(find.text('additions: 3, deletions: 1'), findsNothing);
+
+    final tile = tester.widget<ListTile>(find.byType(ListTile));
+    expect(tile.subtitle, isNull);
   });
 
   testWidgets('highlights only root sessions with recent unread completion', (

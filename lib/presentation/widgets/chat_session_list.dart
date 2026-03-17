@@ -284,6 +284,37 @@ class _ChatSessionListState extends State<ChatSessionList> {
     return trimmed;
   }
 
+  Widget _buildCompactMetaRow(
+    BuildContext context, {
+    required ChatSession session,
+    required bool isSelected,
+    required bool hasChildren,
+    required String childLabel,
+    required bool isPinned,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final metaColor = isSelected
+        ? colorScheme.onSecondaryContainer.withValues(alpha: 0.7)
+        : colorScheme.onSurfaceVariant;
+    final textStyle = Theme.of(
+      context,
+    ).textTheme.bodySmall?.copyWith(color: metaColor);
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 2,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      alignment: WrapAlignment.end,
+      children: [
+        Text(_formatTime(session.time), style: textStyle, maxLines: 1),
+        if (hasChildren) Text(childLabel, style: textStyle, maxLines: 1),
+        if (session.shared) Icon(Symbols.share, size: 12, color: metaColor),
+        if (isPinned) Icon(Symbols.push_pin, size: 12, color: metaColor),
+        if (session.archived) Icon(Symbols.archive, size: 12, color: metaColor),
+      ],
+    );
+  }
+
   void _invalidateTreeCache() {
     _cachedTreeSignature = null;
     _cachedVisibleRows = const <_SessionTreeRow>[];
@@ -361,6 +392,14 @@ class _ChatSessionListState extends State<ChatSessionList> {
     final outlineColor = hasRecentUnreadHighlight && !isSelected
         ? colorScheme.primary.withValues(alpha: 0.4)
         : Colors.transparent;
+    final compactMeta = _buildCompactMetaRow(
+      context,
+      session: session,
+      isSelected: isSelected,
+      hasChildren: hasChildren,
+      childLabel: childLabel,
+      isPinned: isPinned,
+    );
 
     return Padding(
       key: ValueKey<String>('chat_session_tile_${session.id}'),
@@ -444,84 +483,33 @@ class _ChatSessionListState extends State<ChatSessionList> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    if (subtitleText == null) ...[
+                      const SizedBox(width: 8),
+                      Flexible(child: compactMeta),
+                    ],
                   ],
                 ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (subtitleText != null)
-                      Text(
-                        subtitleText,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: isSelected
-                              ? colorScheme.onSecondaryContainer.withValues(
-                                  alpha: 0.8,
-                                )
-                              : colorScheme.onSurfaceVariant,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    const SizedBox(height: 4),
-                    Wrap(
-                      spacing: 8,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(
-                          _formatTime(session.time),
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: isSelected
-                                    ? colorScheme.onSecondaryContainer
-                                          .withValues(alpha: 0.7)
-                                    : colorScheme.onSurfaceVariant,
-                              ),
-                        ),
-                        if (hasChildren)
+                subtitle: subtitleText == null
+                    ? null
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            childLabel,
+                            subtitleText,
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   color: isSelected
                                       ? colorScheme.onSecondaryContainer
-                                            .withValues(alpha: 0.7)
+                                            .withValues(alpha: 0.8)
                                       : colorScheme.onSurfaceVariant,
                                 ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        if (session.shared)
-                          Icon(
-                            Symbols.share,
-                            size: 12,
-                            color: isSelected
-                                ? colorScheme.onSecondaryContainer.withValues(
-                                    alpha: 0.7,
-                                  )
-                                : colorScheme.onSurfaceVariant,
-                          ),
-                        if (isPinned)
-                          Icon(
-                            Symbols.push_pin,
-                            size: 12,
-                            color: isSelected
-                                ? colorScheme.onSecondaryContainer.withValues(
-                                    alpha: 0.7,
-                                  )
-                                : colorScheme.onSurfaceVariant,
-                          ),
-                        if (session.archived)
-                          Icon(
-                            Symbols.archive,
-                            size: 12,
-                            color: isSelected
-                                ? colorScheme.onSecondaryContainer.withValues(
-                                    alpha: 0.7,
-                                  )
-                                : colorScheme.onSurfaceVariant,
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
+                          const SizedBox(height: 4),
+                          compactMeta,
+                        ],
+                      ),
                 trailing: PopupMenuButton<String>(
                   icon: Icon(
                     Symbols.more_vert,

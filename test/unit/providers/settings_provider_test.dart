@@ -247,7 +247,7 @@ void main() {
       );
       await first.initialize();
 
-      expect(first.showRecentSessions, isFalse);
+      expect(first.showRecentSessions, isTrue);
 
       await first.setShowRecentSessions(true);
 

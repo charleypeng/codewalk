@@ -567,7 +567,7 @@ class ExperienceSettings {
       showThinkingBubbles: true,
       showToolCallBubbles: true,
       showTaskList: true,
-      showRecentSessions: false,
+      showRecentSessions: true,
       taskListCollapsed: false,
       showComposerTips: true,
       composerAutoApprovePermissions: true,
