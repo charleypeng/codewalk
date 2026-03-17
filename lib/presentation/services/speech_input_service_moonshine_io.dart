@@ -165,8 +165,10 @@ class MoonshineSpeechInputService implements SpeechInputService {
     onStatus('listening');
 
     final timeout = pauseFor ?? const Duration(seconds: 5);
+    final maxUtteranceDuration = const Duration(seconds: 15);
     final buffer = MoonshineAudioBuffer();
     Timer? silenceTimer;
+    Timer? maxDurationTimer;
     var completed = false;
 
     Future<void> finishSession() async {
@@ -175,6 +177,7 @@ class MoonshineSpeechInputService implements SpeechInputService {
       }
       completed = true;
       silenceTimer?.cancel();
+      maxDurationTimer?.cancel();
       final utterance = buffer.takeAll();
       await stopListening();
       if (utterance.isNotEmpty) {
@@ -210,8 +213,6 @@ class MoonshineSpeechInputService implements SpeechInputService {
         unawaited(finishSession());
       });
     }
-
-    armSilenceTimer();
 
     Stream<Uint8List> audioStream;
     try {
