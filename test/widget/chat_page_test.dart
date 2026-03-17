@@ -9435,6 +9435,72 @@ void main() {
     },
   );
 
+  testWidgets(
+    'uses subtle composer block for confirmed offline current-session refresh failures',
+    (WidgetTester tester) async {
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_offline_block',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Offline Block Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_offline_block'] = <ChatMessage>[];
+
+      final appRepository = FakeAppRepository();
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(
+        localDataSource: localDataSource,
+        appRepository: appRepository,
+      );
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      appRepository.checkConnectionResult = const Right(false);
+      await appProvider.checkConnection();
+      await tester.pumpAndSettle();
+
+      repository.getMessagesFailure = const NetworkFailure(
+        'SocketException: Connection refused',
+      );
+      await provider.loadMessages('ses_offline_block');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not refresh this conversation'), findsNothing);
+      expect(find.text('Retry refresh'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('composer_block_reason_row')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('composer_block_reason_text')),
+        findsOneWidget,
+      );
+
+      final inputField = tester.widget<TextField>(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('composer_input_row')),
+          matching: find.byType(TextField),
+        ),
+      );
+      expect(inputField.enabled, isFalse);
+    },
+  );
+
   testWidgets('shows inline abort message without retry snackbar', (
     WidgetTester tester,
   ) async {

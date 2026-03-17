@@ -175,6 +175,32 @@ void main() {
     expect(focusNode.hasFocus, isFalse);
   });
 
+  testWidgets('composer shows block reason when offline sends are blocked', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          enabled: false,
+          blockReason: 'Waiting for network connection...',
+          onSendMessage: (_) {},
+        ),
+      ),
+    );
+
+    expect(
+      find.byKey(const ValueKey<String>('composer_block_reason_row')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('composer_block_reason_text')),
+      findsOneWidget,
+    );
+
+    final inputField = tester.widget<TextField>(find.byType(TextField));
+    expect(inputField.enabled, isFalse);
+  });
+
   testWidgets('canned append inserts text at current cursor', (
     WidgetTester tester,
   ) async {

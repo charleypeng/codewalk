@@ -72,6 +72,15 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     final supportsImages = _supportsImageAttachments(selectedModel);
     final supportsPdf = _supportsPdfAttachments(selectedModel);
     final attachmentsEnabled = supportsImages || supportsPdf;
+    final appProvider = context.watch<AppProvider>();
+    final composerBlockReason = _resolveComposerBlockReason(
+      chatProvider: chatProvider,
+      appProvider: appProvider,
+    );
+    final composerEnabled =
+        (chatProvider.currentSession != null ||
+            chatProvider.isDraftingNewChat) &&
+        composerBlockReason == null;
     final composerStatusTarget = _resolveComposerStatusTarget(chatProvider);
     _queueComposerStatusSync(composerStatusTarget);
     final composerStatus = _priorityComposerStatus ?? _visibleComposerStatus;
@@ -292,9 +301,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                     sentMessageHistory: sentMessageHistory,
                     prefilledDraft: _composerPrefilledDraft,
                     prefilledDraftVersion: _composerPrefilledDraftVersion,
-                    enabled:
-                        chatProvider.currentSession != null ||
-                        chatProvider.isDraftingNewChat,
+                    enabled: composerEnabled,
+                    blockReason: composerBlockReason,
                     isResponding: chatProvider.canAbortActiveResponse,
                     focusNode: _inputFocusNode,
                     controller: _chatInputController,
@@ -757,6 +765,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
 
   Widget _buildMessageList(ChatProvider chatProvider) {
     final settingsProvider = context.watch<SettingsProvider>();
+    final appProvider = context.watch<AppProvider>();
     final isSubConversation = _isSubConversationSession(
       chatProvider.currentSession,
     );
@@ -769,91 +778,103 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     if (chatProvider.state == ChatState.error &&
         chatProvider.currentSession == null) {
       final rawErrorMessage = chatProvider.errorMessage ?? 'An error occurred';
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Symbols.error_outline,
-              size: 64,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              normalizeAbortMessageForDisplay(rawErrorMessage),
-              style: Theme.of(context).textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () {
-                chatProvider.clearError();
-                chatProvider.refresh();
-              },
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      );
+      if (!_shouldInlineOfflineComposerBlock(
+        chatProvider: chatProvider,
+        appProvider: appProvider,
+        rawErrorMessage: rawErrorMessage,
+      )) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Symbols.error_outline,
+                size: 64,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                normalizeAbortMessageForDisplay(rawErrorMessage),
+                style: Theme.of(context).textTheme.titleMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () {
+                  chatProvider.clearError();
+                  chatProvider.refresh();
+                },
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        );
+      }
     }
 
     if (chatProvider.state == ChatState.error &&
         chatProvider.currentSession != null &&
         chatProvider.messages.isEmpty) {
       final rawErrorMessage = chatProvider.errorMessage ?? 'An error occurred';
-      return Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520),
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Symbols.sync_problem,
-                    size: 36,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Could not refresh this conversation',
-                    style: Theme.of(context).textTheme.titleMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    normalizeAbortMessageForDisplay(rawErrorMessage),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+      if (!_shouldInlineOfflineComposerBlock(
+        chatProvider: chatProvider,
+        appProvider: appProvider,
+        rawErrorMessage: rawErrorMessage,
+      )) {
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Symbols.sync_problem,
+                      size: 36,
+                      color: Theme.of(context).colorScheme.error,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      OutlinedButton(
-                        onPressed: chatProvider.clearError,
-                        child: const Text('Keep working'),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Could not refresh this conversation',
+                      style: Theme.of(context).textTheme.titleMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      normalizeAbortMessageForDisplay(rawErrorMessage),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
-                      FilledButton(
-                        onPressed: () {
-                          chatProvider.clearError();
-                          chatProvider.refresh();
-                        },
-                        child: const Text('Retry refresh'),
-                      ),
-                    ],
-                  ),
-                ],
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        OutlinedButton(
+                          onPressed: chatProvider.clearError,
+                          child: const Text('Keep working'),
+                        ),
+                        FilledButton(
+                          onPressed: () {
+                            chatProvider.clearError();
+                            chatProvider.refresh();
+                          },
+                          child: const Text('Retry refresh'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
+      }
     }
 
     if (chatProvider.currentSession == null &&
@@ -1113,6 +1134,44 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
         ],
       ),
     );
+  }
+
+  String? _resolveComposerBlockReason({
+    required ChatProvider chatProvider,
+    required AppProvider appProvider,
+  }) {
+    if (appProvider.activeServer == null ||
+        _shouldDeferForegroundWarningUi(
+          chatProvider: chatProvider,
+          appProvider: appProvider,
+        )) {
+      return null;
+    }
+
+    final hasChatError = chatProvider.state == ChatState.error;
+    if (hasChatError &&
+        !appProvider.isConnected &&
+        isServerConnectionFailure(rawMessage: chatProvider.errorMessage)) {
+      return 'Waiting for network connection...';
+    }
+
+    return null;
+  }
+
+  bool _shouldInlineOfflineComposerBlock({
+    required ChatProvider chatProvider,
+    required AppProvider appProvider,
+    required String? rawErrorMessage,
+  }) {
+    if (!isServerConnectionFailure(rawMessage: rawErrorMessage)) {
+      return false;
+    }
+
+    return _resolveComposerBlockReason(
+          chatProvider: chatProvider,
+          appProvider: appProvider,
+        ) !=
+        null;
   }
 
   List<_TimelineEntry> _buildMessageTimelineEntries({

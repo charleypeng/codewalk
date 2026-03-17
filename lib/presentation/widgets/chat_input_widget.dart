@@ -245,6 +245,7 @@ class ChatInputWidget extends StatefulWidget {
     this.cannedAnswersScopeId,
     this.contextItems = const <FileInputPart>[],
     this.onRemoveContextItem,
+    this.blockReason,
   });
 
   final FutureOr<void> Function(ChatInputSubmission submission) onSendMessage;
@@ -272,6 +273,7 @@ class ChatInputWidget extends StatefulWidget {
   // File line references added as context for the next message.
   final List<FileInputPart> contextItems;
   final void Function(int index)? onRemoveContextItem;
+  final String? blockReason;
 
   @override
   State<ChatInputWidget> createState() => _ChatInputWidgetState();
@@ -788,6 +790,10 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   }
 
   String _composerHintText() {
+    final blockReason = widget.blockReason?.trim();
+    if (blockReason != null && blockReason.isNotEmpty) {
+      return blockReason;
+    }
     if (_mode == ChatComposerMode.shell) {
       return 'Shell command (Esc to exit)';
     }
@@ -816,6 +822,8 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
               ? 'Send message while response is running'
               : 'Send message');
     final showPopover = _popoverType != ChatComposerPopoverType.none;
+    final blockReason = widget.blockReason?.trim();
+    final hasBlockReason = blockReason != null && blockReason.isNotEmpty;
     const composerBackgroundColor = Colors.transparent;
     final normalBubblePreferredColor = Color.alphaBlend(
       colorScheme.surfaceContainerHighest.withValues(
@@ -844,9 +852,15 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
       ),
       minLuminanceDelta: isDark ? 0.03 : 0.015,
     );
-    final inputBubbleColor = _mode == ChatComposerMode.shell
+    var inputBubbleColor = _mode == ChatComposerMode.shell
         ? shellBubbleColor
         : normalBubbleColor;
+    if (hasBlockReason) {
+      inputBubbleColor = Color.alphaBlend(
+        colorScheme.surface.withValues(alpha: isDark ? 0.22 : 0.14),
+        inputBubbleColor,
+      );
+    }
     final inputBubbleBorderRadius = AppShapes.borderExtraLarge;
 
     return Container(
@@ -976,6 +990,48 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                           : null,
                     );
                   }),
+                ),
+              ),
+            if (hasBlockReason)
+              Padding(
+                key: const ValueKey<String>('composer_block_reason_row'),
+                padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: colorScheme.errorContainer.withValues(
+                      alpha: isDark ? 0.36 : 0.72,
+                    ),
+                    borderRadius: AppShapes.borderLarge,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Symbols.cloud_off_rounded,
+                          size: 18,
+                          color: colorScheme.onErrorContainer,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            blockReason,
+                            key: const ValueKey<String>(
+                              'composer_block_reason_text',
+                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: colorScheme.onErrorContainer,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             if (showPopover)

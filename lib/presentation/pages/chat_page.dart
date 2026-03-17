@@ -38,6 +38,7 @@ import '../theme/opencode_highlight_theme.dart';
 import '../theme/opencode_theme_presets.dart';
 import '../utils/app_page_route.dart';
 import '../utils/chat_abort_message.dart';
+import '../utils/chat_server_error_formatter.dart';
 import '../utils/file_explorer_logic.dart';
 import '../utils/reasoning_status_parser.dart';
 import '../utils/session_title_formatter.dart';

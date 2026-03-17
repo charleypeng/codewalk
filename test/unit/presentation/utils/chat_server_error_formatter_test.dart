@@ -2,6 +2,24 @@ import 'package:codewalk/presentation/utils/chat_server_error_formatter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('isServerConnectionFailure', () {
+    test('detects transport failure text', () {
+      expect(
+        isServerConnectionFailure(
+          rawMessage: 'SocketException: Connection refused',
+        ),
+        isTrue,
+      );
+    });
+
+    test('ignores authentication failures', () {
+      expect(
+        isServerConnectionFailure(rawMessage: 'Unauthorized', statusCode: 401),
+        isFalse,
+      );
+    });
+  });
+
   group('formatServerErrorForDisplay', () {
     test('maps quota signals to concise quota copy', () {
       final display = formatServerErrorForDisplay(

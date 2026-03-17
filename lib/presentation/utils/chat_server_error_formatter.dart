@@ -5,7 +5,7 @@ class ChatServerErrorDisplay {
   final String message;
 }
 
-ChatServerErrorDisplay formatServerErrorForDisplay({
+bool isServerConnectionFailure({
   String? rawMessage,
   String? code,
   int? statusCode,
@@ -14,7 +14,7 @@ ChatServerErrorDisplay formatServerErrorForDisplay({
   final normalizedCode = code?.trim().toLowerCase() ?? '';
   final combined = '$normalizedCode $normalizedMessage'.toLowerCase();
 
-  final hasConnectionSignal =
+  return statusCode == 408 ||
       combined.contains('network connection failed') ||
       combined.contains('network connection error') ||
       combined.contains('connection timeout') ||
@@ -25,7 +25,22 @@ ChatServerErrorDisplay formatServerErrorForDisplay({
       combined.contains('network is unreachable') ||
       combined.contains('unable to connect') ||
       combined.contains('timed out');
-  if (hasConnectionSignal) {
+}
+
+ChatServerErrorDisplay formatServerErrorForDisplay({
+  String? rawMessage,
+  String? code,
+  int? statusCode,
+}) {
+  final normalizedMessage = _sanitizeMessage(rawMessage);
+  final normalizedCode = code?.trim().toLowerCase() ?? '';
+  final combined = '$normalizedCode $normalizedMessage'.toLowerCase();
+
+  if (isServerConnectionFailure(
+    rawMessage: rawMessage,
+    code: code,
+    statusCode: statusCode,
+  )) {
     return const ChatServerErrorDisplay(
       name: 'Connection failed',
       message:
