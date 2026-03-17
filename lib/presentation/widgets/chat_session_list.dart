@@ -485,7 +485,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
                     ),
                     if (subtitleText == null) ...[
                       const SizedBox(width: 8),
-                      Flexible(child: compactMeta),
+                      compactMeta,
                     ],
                   ],
                 ),
