@@ -27,6 +27,22 @@ bool isServerConnectionFailure({
       combined.contains('timed out');
 }
 
+bool isServerUnavailableFailure({
+  String? rawMessage,
+  String? code,
+  int? statusCode,
+}) {
+  final normalizedMessage = _sanitizeMessage(rawMessage);
+  final normalizedCode = code?.trim().toLowerCase() ?? '';
+  final combined = '$normalizedCode $normalizedMessage'.toLowerCase();
+
+  return (statusCode != null && statusCode >= 500) ||
+      combined.contains('service unavailable') ||
+      combined.contains('provider unavailable') ||
+      combined.contains('temporarily unavailable') ||
+      combined.contains('gateway timeout');
+}
+
 ChatServerErrorDisplay formatServerErrorForDisplay({
   String? rawMessage,
   String? code,
@@ -90,13 +106,11 @@ ChatServerErrorDisplay formatServerErrorForDisplay({
     );
   }
 
-  final hasUnavailableSignal =
-      (statusCode != null && statusCode >= 500) ||
-      combined.contains('service unavailable') ||
-      combined.contains('provider unavailable') ||
-      combined.contains('temporarily unavailable') ||
-      combined.contains('gateway timeout');
-  if (hasUnavailableSignal) {
+  if (isServerUnavailableFailure(
+    rawMessage: rawMessage,
+    code: code,
+    statusCode: statusCode,
+  )) {
     return const ChatServerErrorDisplay(
       name: 'Provider unavailable',
       message: 'Provider temporarily unavailable. Try again shortly.',

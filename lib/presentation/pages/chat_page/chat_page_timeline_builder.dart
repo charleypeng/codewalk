@@ -1155,6 +1155,14 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       return 'Waiting for network connection...';
     }
 
+    if (hasChatError &&
+        appProvider.isConnected &&
+        chatProvider.messages.isEmpty &&
+        !isServerConnectionFailure(rawMessage: chatProvider.errorMessage) &&
+        _activeServerHealth(appProvider) == ServerHealthStatus.unhealthy) {
+      return 'Active server is unhealthy';
+    }
+
     return null;
   }
 
@@ -1163,15 +1171,19 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     required AppProvider appProvider,
     required String? rawErrorMessage,
   }) {
-    if (!isServerConnectionFailure(rawMessage: rawErrorMessage)) {
+    final blockReason = _resolveComposerBlockReason(
+      chatProvider: chatProvider,
+      appProvider: appProvider,
+    );
+    if (blockReason == null) {
       return false;
     }
 
-    return _resolveComposerBlockReason(
-          chatProvider: chatProvider,
-          appProvider: appProvider,
-        ) !=
-        null;
+    if (blockReason == 'Active server is unhealthy') {
+      return true;
+    }
+
+    return isServerConnectionFailure(rawMessage: rawErrorMessage);
   }
 
   List<_TimelineEntry> _buildMessageTimelineEntries({

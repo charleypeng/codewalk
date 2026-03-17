@@ -9418,6 +9418,15 @@ void main() {
       await provider.initializeProviders();
       await tester.pumpAndSettle();
 
+      final activeServerId = appProvider.activeServerId;
+      expect(activeServerId, isNotNull);
+      await appProvider.getAppInfo();
+      appProvider.setHealthForTesting(
+        activeServerId!,
+        ServerHealthStatus.healthy,
+      );
+      await tester.pumpAndSettle();
+
       repository.getMessagesFailure = const NetworkFailure(
         'idle reconnect failed',
       );
@@ -9478,6 +9487,75 @@ void main() {
         'SocketException: Connection refused',
       );
       await provider.loadMessages('ses_offline_block');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Could not refresh this conversation'), findsNothing);
+      expect(find.text('Retry refresh'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('composer_block_reason_row')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('composer_block_reason_text')),
+        findsOneWidget,
+      );
+
+      final inputField = tester.widget<TextField>(
+        find.descendant(
+          of: find.byKey(const ValueKey<String>('composer_input_row')),
+          matching: find.byType(TextField),
+        ),
+      );
+      expect(inputField.enabled, isFalse);
+    },
+  );
+
+  testWidgets(
+    'uses subtle composer block for unhealthy current-session refresh failures',
+    (WidgetTester tester) async {
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_unhealthy_block',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Unhealthy Block Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_unhealthy_block'] = <ChatMessage>[];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      final activeServerId = appProvider.activeServerId;
+      expect(activeServerId, isNotNull);
+      await appProvider.getAppInfo();
+      appProvider.setHealthForTesting(
+        activeServerId!,
+        ServerHealthStatus.unhealthy,
+      );
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 3));
+
+      repository.getMessagesFailure = const ServerFailure(
+        'service unavailable',
+        503,
+      );
+      await provider.loadMessages('ses_unhealthy_block');
       await tester.pumpAndSettle();
 
       expect(find.text('Could not refresh this conversation'), findsNothing);

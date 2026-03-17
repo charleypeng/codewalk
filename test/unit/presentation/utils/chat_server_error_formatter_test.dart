@@ -20,6 +20,22 @@ void main() {
     });
   });
 
+  group('isServerUnavailableFailure', () {
+    test('detects provider unavailable text', () {
+      expect(
+        isServerUnavailableFailure(rawMessage: 'service unavailable'),
+        isTrue,
+      );
+    });
+
+    test('ignores authentication failures', () {
+      expect(
+        isServerUnavailableFailure(rawMessage: 'Unauthorized', statusCode: 401),
+        isFalse,
+      );
+    });
+  });
+
   group('formatServerErrorForDisplay', () {
     test('maps quota signals to concise quota copy', () {
       final display = formatServerErrorForDisplay(
