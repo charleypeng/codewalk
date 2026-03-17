@@ -1149,17 +1149,17 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     }
 
     final hasChatError = chatProvider.state == ChatState.error;
-    if (hasChatError &&
-        !appProvider.isConnected &&
-        isServerConnectionFailure(rawMessage: chatProvider.errorMessage)) {
+    if (_hasConfirmedOfflineComposerBlock(
+      chatProvider: chatProvider,
+      appProvider: appProvider,
+    )) {
       return 'Waiting for network connection...';
     }
 
-    if (hasChatError &&
-        appProvider.isConnected &&
-        chatProvider.messages.isEmpty &&
-        !isServerConnectionFailure(rawMessage: chatProvider.errorMessage) &&
-        _activeServerHealth(appProvider) == ServerHealthStatus.unhealthy) {
+    if (_hasConfirmedUnhealthyServerBlock(
+      chatProvider: chatProvider,
+      appProvider: appProvider,
+    )) {
       return 'Active server is unhealthy';
     }
 
@@ -1171,19 +1171,38 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     required AppProvider appProvider,
     required String? rawErrorMessage,
   }) {
-    final blockReason = _resolveComposerBlockReason(
+    if (_hasConfirmedUnhealthyServerBlock(
       chatProvider: chatProvider,
       appProvider: appProvider,
-    );
-    if (blockReason == null) {
-      return false;
-    }
-
-    if (blockReason == 'Active server is unhealthy') {
+    )) {
       return true;
     }
 
-    return isServerConnectionFailure(rawMessage: rawErrorMessage);
+    return _hasConfirmedOfflineComposerBlock(
+          chatProvider: chatProvider,
+          appProvider: appProvider,
+        ) &&
+        isServerConnectionFailure(rawMessage: rawErrorMessage);
+  }
+
+  bool _hasConfirmedOfflineComposerBlock({
+    required ChatProvider chatProvider,
+    required AppProvider appProvider,
+  }) {
+    return chatProvider.state == ChatState.error &&
+        !appProvider.isConnected &&
+        isServerConnectionFailure(rawMessage: chatProvider.errorMessage);
+  }
+
+  bool _hasConfirmedUnhealthyServerBlock({
+    required ChatProvider chatProvider,
+    required AppProvider appProvider,
+  }) {
+    return chatProvider.state == ChatState.error &&
+        appProvider.isConnected &&
+        chatProvider.messages.isEmpty &&
+        !isServerConnectionFailure(rawMessage: chatProvider.errorMessage) &&
+        _activeServerHealth(appProvider) == ServerHealthStatus.unhealthy;
   }
 
   List<_TimelineEntry> _buildMessageTimelineEntries({
