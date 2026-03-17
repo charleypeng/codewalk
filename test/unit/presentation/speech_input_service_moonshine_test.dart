@@ -4,29 +4,31 @@ import 'package:codewalk/presentation/services/speech_input_service_moonshine_io
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('MoonshineVadChunker', () {
-    test('buffers arbitrary microphone chunks into 512-sample windows', () {
-      final chunker = MoonshineVadChunker(windowSize: 4);
+  group('MoonshineAudioBuffer', () {
+    test('stores chunks and returns all accumulated samples', () {
+      final buffer = MoonshineAudioBuffer();
+      buffer.add(Float32List.fromList(<double>[1, 2]));
+      buffer.add(Float32List.fromList(<double>[3]));
 
-      final first = chunker.push(Float32List.fromList(<double>[1, 2, 3]));
-      expect(first, isEmpty);
+      expect(buffer.takeAll(), Float32List.fromList(<double>[1, 2, 3]));
+      expect(buffer.isEmpty, isTrue);
+    });
+  });
 
-      final second = chunker.push(
-        Float32List.fromList(<double>[4, 5, 6, 7, 8]),
+  group('moonshineChunkHasSpeech', () {
+    test('ignores empty and near-silent chunks', () {
+      expect(moonshineChunkHasSpeech(Float32List(0)), isFalse);
+      expect(
+        moonshineChunkHasSpeech(Float32List.fromList(<double>[0.001, 0.002])),
+        isFalse,
       );
-      expect(second, hasLength(2));
-      expect(second[0], Float32List.fromList(<double>[1, 2, 3, 4]));
-      expect(second[1], Float32List.fromList(<double>[5, 6, 7, 8]));
     });
 
-    test('pads the final incomplete frame during flush', () {
-      final chunker = MoonshineVadChunker(windowSize: 4);
-      chunker.push(Float32List.fromList(<double>[1, 2, 3]));
-
-      final frames = chunker.flushPadded();
-      expect(frames, hasLength(1));
-      expect(frames[0], Float32List.fromList(<double>[1, 2, 3, 0]));
-      expect(chunker.flushPadded(), isEmpty);
+    test('detects chunks whose average amplitude crosses the threshold', () {
+      expect(
+        moonshineChunkHasSpeech(Float32List.fromList(<double>[0.02, 0.03])),
+        isTrue,
+      );
     });
   });
 }
