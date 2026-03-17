@@ -63,6 +63,13 @@
 - **When** the user interacts with sessions
 - **Then** the user can **create**, **rename**, **archive**, **fork**, and **delete** sessions
 
+### Archiving a root session hides descendant sessions from the active list
+
+- **Given** the active Conversations filter is `Active` and a root session has child/subsessions
+- **When** the user archives that root session
+- **Then** the root session disappears from the active list immediately
+- **Then** descendant sessions of that archived root are also hidden from the active list so they do not remain orphaned as top-level rows
+
 ### New Chat opens as draft immediately
 
 - **Given** a connected server and the chat screen is open
@@ -114,6 +121,26 @@
 - **Then** tapping a project row switches context directly from the sidebar (no modal required)
 - **Then** when snapshot data exists, the sidebar shows compact session previews for that project; when not available, it shows a "Open project to load conversations" hint
 - **Then** inactive project snapshots are patched by global `session.created`, `session.updated`, and `session.deleted` events so remote session renames and count changes can appear before the user returns to that project
+
+### Sidebar hides diff-stat pseudo summaries
+
+- **Given** the Conversations sidebar is rendered for a session whose backend summary payload only contains diff stats such as `additions` and `deletions`
+- **When** the session row subtitle is shown
+- **Then** the sidebar suppresses that pseudo-summary instead of rendering `additions: ...` / `deletions: ...`
+
+### Recent unread root sessions are highlighted temporarily
+
+- **Given** a root session is out of focus and receives a completed assistant reply
+- **When** that reply becomes unread in the current client
+- **Then** the root session row receives a subtle theme-aware highlight for up to one hour
+- **Then** child/subsessions do not receive that temporary row highlight
+
+### Recent sessions quick access is optional
+
+- **Given** the user enables `Recent sessions` in `Display Toggles`
+- **When** the Conversations sidebar is rendered
+- **Then** the sidebar shows a `Recent sessions` section above the project groups with up to 5 recent root sessions from currently open/cached project contexts
+- **Then** each recent row stays on one line and includes a project badge so the user can identify the source project quickly
 
 ### Session pinning is context-scoped and sort-stable
 
