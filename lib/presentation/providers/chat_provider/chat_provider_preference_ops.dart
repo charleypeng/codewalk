@@ -30,6 +30,7 @@ extension _ChatProviderPreferenceOps on ChatProvider {
       pendingPermissionsBySession: _pendingPermissionsBySession,
       pendingQuestionsBySession: _pendingQuestionsBySession,
       sessionUnreadCompletionIds: _sessionUnreadCompletionIds,
+      sessionUnreadCompletionTimestamps: _sessionUnreadCompletionTimestamps,
       sessionErrorAttentionIds: _sessionErrorAttentionIds,
       sessionChildrenById: _sessionChildrenById,
       sessionTodoById: _sessionTodoById,
@@ -57,6 +58,7 @@ extension _ChatProviderPreferenceOps on ChatProvider {
       _pendingPermissionsBySession = <String, List<ChatPermissionRequest>>{};
       _pendingQuestionsBySession = <String, List<ChatQuestionRequest>>{};
       _sessionUnreadCompletionIds.clear();
+      _sessionUnreadCompletionTimestamps.clear();
       _sessionErrorAttentionIds.clear();
       _sessionChildrenById = <String, List<ChatSession>>{};
       _sessionTodoById = <String, List<SessionTodo>>{};
@@ -88,6 +90,9 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     _sessionUnreadCompletionIds
       ..clear()
       ..addAll(snapshot.sessionUnreadCompletionIds);
+    _sessionUnreadCompletionTimestamps
+      ..clear()
+      ..addAll(snapshot.sessionUnreadCompletionTimestamps);
     _sessionErrorAttentionIds
       ..clear()
       ..addAll(snapshot.sessionErrorAttentionIds);

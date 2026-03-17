@@ -31,12 +31,22 @@ class SessionAttentionState {
     this.hasPendingInteraction = false,
     this.hasError = false,
     this.hasUnreadCompletion = false,
+    this.unreadCompletionAt,
   });
 
   final bool isActive;
   final bool hasPendingInteraction;
   final bool hasError;
   final bool hasUnreadCompletion;
+  final DateTime? unreadCompletionAt;
+
+  bool get hasRecentUnreadCompletion {
+    final unreadAt = unreadCompletionAt;
+    if (!hasUnreadCompletion || unreadAt == null) {
+      return false;
+    }
+    return DateTime.now().difference(unreadAt) < const Duration(hours: 1);
+  }
 
   bool get requiresAttention =>
       hasPendingInteraction || hasError || hasUnreadCompletion;
@@ -112,6 +122,7 @@ class _ChatContextSnapshot {
     required this.pendingPermissionsBySession,
     required this.pendingQuestionsBySession,
     required this.sessionUnreadCompletionIds,
+    required this.sessionUnreadCompletionTimestamps,
     required this.sessionErrorAttentionIds,
     required this.sessionChildrenById,
     required this.sessionTodoById,
@@ -133,6 +144,7 @@ class _ChatContextSnapshot {
   final Map<String, List<ChatPermissionRequest>> pendingPermissionsBySession;
   final Map<String, List<ChatQuestionRequest>> pendingQuestionsBySession;
   final Set<String> sessionUnreadCompletionIds;
+  final Map<String, DateTime> sessionUnreadCompletionTimestamps;
   final Set<String> sessionErrorAttentionIds;
   final Map<String, List<ChatSession>> sessionChildrenById;
   final Map<String, List<SessionTodo>> sessionTodoById;

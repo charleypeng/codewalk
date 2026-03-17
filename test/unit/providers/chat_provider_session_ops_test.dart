@@ -120,6 +120,15 @@ void main() {
             title: 'Session 2',
           ),
         );
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_child',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1300),
+            title: 'Child Session',
+            parentId: 'ses_1',
+          ),
+        );
 
         await provider.loadSessions();
         await provider.selectSession(
@@ -142,6 +151,10 @@ void main() {
             .where((item) => item.id == 'ses_1')
             .first;
         expect(archivedSession.archived, isTrue);
+        expect(
+          provider.visibleSessions.any((item) => item.id == 'ses_child'),
+          isFalse,
+        );
 
         final unarchived = await provider.setSessionArchived(
           archivedSession,

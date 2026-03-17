@@ -1926,6 +1926,77 @@ void main() {
 
       addTearDown(() => tester.binding.setSurfaceSize(null));
     });
+
+    testWidgets(
+      'display toggles include recent sessions and show recent card',
+      (WidgetTester tester) async {
+        await tester.binding.setSurfaceSize(const Size(1000, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test'
+          ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+            'showRecentSessions': true,
+          });
+        final repository = FakeChatRepository(
+          sessions: <ChatSession>[
+            ChatSession(
+              id: 'ses_recent',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(2000),
+              title: 'Recent Root Session',
+            ),
+          ],
+        );
+        repository.messagesBySession['ses_recent'] = <ChatMessage>[];
+        final provider = _buildChatProvider(
+          chatRepository: repository,
+          localDataSource: localDataSource,
+          projectRepository: FakeProjectRepository(
+            currentProject: Project(
+              id: 'proj_a',
+              name: 'Project A',
+              path: '/repo/a',
+              createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+            ),
+            projects: <Project>[
+              Project(
+                id: 'proj_a',
+                name: 'Project A',
+                path: '/repo/a',
+                createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+              ),
+            ],
+          ),
+        );
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+        await tester.pumpWidget(_testApp(provider, appProvider));
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('appbar_display_toggles_button')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(
+            const ValueKey<String>('display_toggle_item_recent_sessions'),
+          ),
+          findsOneWidget,
+        );
+
+        await tester.tapAt(const Offset(10, 10));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Recent sessions'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey<String>('recent_session_tile_ses_recent')),
+          findsOneWidget,
+        );
+        expect(find.text('Project A'), findsWidgets);
+      },
+    );
   });
 
   testWidgets(

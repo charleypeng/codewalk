@@ -22,6 +22,7 @@ extension _ChatPageChrome on _ChatPageState {
       _DisplayToggleAction.thinkingBubbles => 'Thinking bubbles',
       _DisplayToggleAction.toolCallBubbles => 'Tool call bubbles',
       _DisplayToggleAction.taskList => 'Task list',
+      _DisplayToggleAction.recentSessions => 'Recent sessions',
       _DisplayToggleAction.composerTips => 'Composer tips',
     };
   }
@@ -310,6 +311,13 @@ extension _ChatPageChrome on _ChatPageState {
                   ),
                 );
                 break;
+              case _DisplayToggleAction.recentSessions:
+                unawaited(
+                  settingsProvider.setShowRecentSessions(
+                    !settingsProvider.showRecentSessions,
+                  ),
+                );
+                break;
               case _DisplayToggleAction.composerTips:
                 unawaited(
                   settingsProvider.setShowComposerTips(
@@ -349,6 +357,16 @@ extension _ChatPageChrome on _ChatPageState {
                 value: _DisplayToggleAction.taskList,
                 checked: settingsProvider.showTaskList,
                 child: Text(_displayToggleLabel(_DisplayToggleAction.taskList)),
+              ),
+              CheckedPopupMenuItem<_DisplayToggleAction>(
+                key: const ValueKey<String>(
+                  'display_toggle_item_recent_sessions',
+                ),
+                value: _DisplayToggleAction.recentSessions,
+                checked: settingsProvider.showRecentSessions,
+                child: Text(
+                  _displayToggleLabel(_DisplayToggleAction.recentSessions),
+                ),
               ),
               CheckedPopupMenuItem<_DisplayToggleAction>(
                 key: const ValueKey<String>(

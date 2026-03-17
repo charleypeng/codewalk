@@ -426,4 +426,89 @@ void main() {
     );
     expect(tilePadding.padding, const EdgeInsets.symmetric(vertical: 3));
   });
+
+  testWidgets('hides pseudo diff summaries from the sidebar subtitle', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatSessionList(
+            sessions: <ChatSession>[
+              ChatSession(
+                id: 'ses_diff',
+                workspaceId: 'default',
+                time: DateTime.fromMillisecondsSinceEpoch(1000),
+                title: 'Diff Session',
+                summary: 'additions: 3, deletions: 1',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('additions: 3, deletions: 1'), findsNothing);
+  });
+
+  testWidgets('highlights only root sessions with recent unread completion', (
+    tester,
+  ) async {
+    final now = DateTime.now();
+    final root = ChatSession(
+      id: 'ses_root',
+      workspaceId: 'default',
+      time: now,
+      title: 'Root Session',
+    );
+    final child = ChatSession(
+      id: 'ses_child',
+      workspaceId: 'default',
+      time: now,
+      title: 'Child Session',
+      parentId: 'ses_root',
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatSessionList(
+            sessions: <ChatSession>[root, child],
+            currentSession: child,
+            sessionAttentionFor: (sessionId) => SessionAttentionState(
+              hasUnreadCompletion: true,
+              unreadCompletionAt: now,
+              isActive: false,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final rootMaterial = tester.widget<Material>(
+      find
+          .descendant(
+            of: find.byKey(
+              const ValueKey<String>('chat_session_tile_ses_root'),
+            ),
+            matching: find.byType(Material),
+          )
+          .first,
+    );
+    final childMaterial = tester.widget<Material>(
+      find
+          .descendant(
+            of: find.byKey(
+              const ValueKey<String>('chat_session_tile_ses_child'),
+            ),
+            matching: find.byType(Material),
+          )
+          .first,
+    );
+
+    final rootShape = rootMaterial.shape! as RoundedRectangleBorder;
+    final childShape = childMaterial.shape! as RoundedRectangleBorder;
+    expect(rootShape.side.color, isNot(Colors.transparent));
+    expect(childShape.side.color, Colors.transparent);
+  });
 }

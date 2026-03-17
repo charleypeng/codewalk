@@ -862,6 +862,8 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       pendingPermissionsBySession: snapshot.pendingPermissionsBySession,
       pendingQuestionsBySession: snapshot.pendingQuestionsBySession,
       sessionUnreadCompletionIds: snapshot.sessionUnreadCompletionIds,
+      sessionUnreadCompletionTimestamps:
+          snapshot.sessionUnreadCompletionTimestamps,
       sessionErrorAttentionIds: snapshot.sessionErrorAttentionIds,
       sessionChildrenById: snapshot.sessionChildrenById,
       sessionTodoById: snapshot.sessionTodoById,

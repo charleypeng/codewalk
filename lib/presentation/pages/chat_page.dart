@@ -83,6 +83,7 @@ enum _DisplayToggleAction {
   thinkingBubbles,
   toolCallBubbles,
   taskList,
+  recentSessions,
   composerTips,
 }
 

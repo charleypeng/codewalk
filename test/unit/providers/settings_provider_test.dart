@@ -238,6 +238,29 @@ void main() {
       expect(second.taskListCollapsed, isTrue);
     });
 
+    test('persists recent sessions visibility toggle', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+
+      expect(first.showRecentSessions, isFalse);
+
+      await first.setShowRecentSessions(true);
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(second.showRecentSessions, isTrue);
+    });
+
     test('persists background behavior preferences', () async {
       final local = InMemoryAppLocalDataSource();
       final first = SettingsProvider(

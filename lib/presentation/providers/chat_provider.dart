@@ -235,6 +235,8 @@ class ChatProvider extends ChangeNotifier {
   Map<String, List<ChatQuestionRequest>> _pendingQuestionsBySession =
       <String, List<ChatQuestionRequest>>{};
   final Set<String> _sessionUnreadCompletionIds = <String>{};
+  final Map<String, DateTime> _sessionUnreadCompletionTimestamps =
+      <String, DateTime>{};
   final Set<String> _sessionErrorAttentionIds = <String>{};
   Map<String, List<ChatSession>> _sessionChildrenById =
       <String, List<ChatSession>>{};
@@ -319,6 +321,7 @@ class ChatProvider extends ChangeNotifier {
   Timer? _syncHealthTimer;
   Timer? _degradedPollingTimer;
   Timer? _foregroundResumeSyncTimer;
+  Timer? _sessionUnreadHighlightTimer;
   int _foregroundResumeSyncCycleCount = 0;
   DateTime? _lastRealtimeSignalAt;
   ChatSyncState _syncState = ChatSyncState.reconnecting;
@@ -901,6 +904,8 @@ class ChatProvider extends ChangeNotifier {
       hasUnreadCompletion: _sessionUnreadCompletionIds.contains(
         normalizedSessionId,
       ),
+      unreadCompletionAt:
+          _sessionUnreadCompletionTimestamps[normalizedSessionId],
     );
   }
 
@@ -909,7 +914,7 @@ class ChatProvider extends ChangeNotifier {
   int get outOfFocusAttentionCount {
     final currentSessionId = _currentSession?.id;
     var total = 0;
-    for (final session in _sessions) {
+    for (final session in visibleSessions) {
       if (session.id == currentSessionId) {
         continue;
       }
@@ -926,7 +931,7 @@ class ChatProvider extends ChangeNotifier {
     var hasPendingInteraction = false;
     var hasUnreadCompletion = false;
 
-    for (final session in _sessions) {
+    for (final session in visibleSessions) {
       if (session.id == currentSessionId) {
         continue;
       }
@@ -957,7 +962,7 @@ class ChatProvider extends ChangeNotifier {
     if (normalizedSessionId.isEmpty) {
       return;
     }
-    _sessionUnreadCompletionIds.remove(normalizedSessionId);
+    _clearSessionUnreadCompletion(normalizedSessionId);
     _sessionErrorAttentionIds.remove(normalizedSessionId);
   }
 
@@ -969,11 +974,15 @@ class ChatProvider extends ChangeNotifier {
     _sessionErrorAttentionIds.removeWhere(
       (sessionId) => !knownSessionIds.contains(sessionId),
     );
+    _sessionUnreadCompletionTimestamps.removeWhere(
+      (sessionId, _) => !knownSessionIds.contains(sessionId),
+    );
 
     final currentSessionId = _currentSession?.id;
     if (currentSessionId != null) {
       _clearSessionAttentionForSession(currentSessionId);
     }
+    _scheduleSessionUnreadHighlightTimer();
   }
 
   void _syncAttentionFromStatusMap(Map<String, SessionStatusInfo> statusMap) {
@@ -982,10 +991,10 @@ class ChatProvider extends ChangeNotifier {
       final statusType = entry.value.type;
       switch (statusType) {
         case SessionStatusType.retry:
-          _sessionUnreadCompletionIds.remove(sessionId);
+          _clearSessionUnreadCompletion(sessionId);
           break;
         case SessionStatusType.busy:
-          _sessionUnreadCompletionIds.remove(sessionId);
+          _clearSessionUnreadCompletion(sessionId);
           break;
         case SessionStatusType.idle:
           // Keep sticky error attention on idle until the user focuses the
@@ -1086,6 +1095,24 @@ class ChatProvider extends ChangeNotifier {
     return _buildVisibleSessionsFrom(_sessions);
   }
 
+  List<ChatSession> recentRootSessionsForScopeId(String scopeId) {
+    final sessions = _sessionsForScopeId(scopeId);
+    if (sessions.isEmpty) {
+      return const <ChatSession>[];
+    }
+    final recent =
+        sessions
+            .where(
+              (session) =>
+                  !session.archived &&
+                  (session.parentId == null ||
+                      session.parentId!.trim().isEmpty),
+            )
+            .toList(growable: false)
+          ..sort((a, b) => b.time.compareTo(a.time));
+    return recent;
+  }
+
   List<ChatSession> visibleSessionsForScopeId(String scopeId) {
     final normalizedScopeId = scopeId.trim();
     if (normalizedScopeId.isEmpty) {
@@ -1123,12 +1150,18 @@ class ChatProvider extends ChangeNotifier {
   }) {
     final effectivePinnedSessionIds = pinnedSessionIds ?? _pinnedSessionIds;
     final query = _sessionSearchQuery.trim().toLowerCase();
+    final sessionById = <String, ChatSession>{
+      for (final session in sourceSessions) session.id: session,
+    };
+    final hiddenByArchivedAncestor = _hiddenByArchivedAncestor(sessionById);
     final filtered = sourceSessions
         .where((session) {
           final archived = session.archived;
+          final hiddenByAncestor =
+              hiddenByArchivedAncestor[session.id] ?? false;
           switch (_sessionListFilter) {
             case SessionListFilter.active:
-              if (archived) {
+              if (archived || hiddenByAncestor) {
                 return false;
               }
             case SessionListFilter.archived:
@@ -1243,11 +1276,16 @@ class ChatProvider extends ChangeNotifier {
 
   bool get canLoadMoreSessions {
     final query = _sessionSearchQuery.trim().toLowerCase();
+    final sessionById = <String, ChatSession>{
+      for (final session in _sessions) session.id: session,
+    };
+    final hiddenByArchivedAncestor = _hiddenByArchivedAncestor(sessionById);
     final total = _sessions.where((session) {
       final archived = session.archived;
+      final hiddenByAncestor = hiddenByArchivedAncestor[session.id] ?? false;
       switch (_sessionListFilter) {
         case SessionListFilter.active:
-          if (archived) {
+          if (archived || hiddenByAncestor) {
             return false;
           }
         case SessionListFilter.archived:
@@ -3309,7 +3347,7 @@ class ChatProvider extends ChangeNotifier {
                     );
                     _sessionStatusById[streamSessionId] =
                         const SessionStatusInfo(type: SessionStatusType.idle);
-                    _sessionUnreadCompletionIds.remove(streamSessionId);
+                    _clearSessionUnreadCompletion(streamSessionId);
                     _sessionErrorAttentionIds.add(streamSessionId);
                     _notifyListeners();
                     return;
@@ -3371,7 +3409,7 @@ class ChatProvider extends ChangeNotifier {
                 _sessionStatusById[streamSessionId] = const SessionStatusInfo(
                   type: SessionStatusType.idle,
                 );
-                _sessionUnreadCompletionIds.remove(streamSessionId);
+                _clearSessionUnreadCompletion(streamSessionId);
                 _sessionErrorAttentionIds.add(streamSessionId);
                 _notifyListeners();
                 return;
@@ -3444,10 +3482,10 @@ class ChatProvider extends ChangeNotifier {
                 final clearedError = _sessionErrorAttentionIds.remove(
                   streamSessionId,
                 );
-                final addedUnread = _sessionUnreadCompletionIds.add(
+                final addedUnread = !_sessionUnreadCompletionIds.contains(
                   streamSessionId,
                 );
-                // `Set.add` returns true only when the value is newly inserted.
+                _markSessionUnreadCompletion(streamSessionId);
                 final statusChanged =
                     previousStatusType != SessionStatusType.idle;
                 if (statusChanged || clearedError || addedUnread) {
@@ -3696,6 +3734,7 @@ class ChatProvider extends ChangeNotifier {
     if (previous == null) {
       return false;
     }
+    final previousCurrentSession = _currentSession;
 
     final archivedAt = archived ? DateTime.now() : null;
     final optimistic = previous.copyWith(
@@ -3705,11 +3744,15 @@ class ChatProvider extends ChangeNotifier {
     _applySessionLocally(optimistic);
 
     if (archived && _sessionListFilter == SessionListFilter.active) {
-      if (_currentSession?.id == session.id) {
-        _currentSession = _sessions.firstWhere(
-          (item) => item.id != session.id && !item.archived,
-          orElse: () => previous,
-        );
+      final visibleSessionIds = _buildVisibleSessionsFrom(
+        _sessions,
+      ).map((item) => item.id).toSet();
+      final currentSessionId = _currentSession?.id;
+      if (currentSessionId != null &&
+          !visibleSessionIds.contains(currentSessionId)) {
+        _currentSession = _buildVisibleSessionsFrom(
+          _sessions,
+        ).where((item) => item.id != currentSessionId).firstOrNull;
         _threadPermissionsVersion++;
       }
     }
@@ -3729,8 +3772,9 @@ class ChatProvider extends ChangeNotifier {
     return result.fold(
       (failure) {
         _applySessionLocally(previous);
-        if (_currentSession?.id != previous.id && session.id == previous.id) {
-          _currentSession = previous;
+        if (previousCurrentSession != null) {
+          _currentSession =
+              _sessionById(previousCurrentSession.id) ?? previousCurrentSession;
           _threadPermissionsVersion++;
         }
         _handleFailure(failure);
@@ -3739,6 +3783,9 @@ class ChatProvider extends ChangeNotifier {
       },
       (updated) {
         _applySessionLocally(updated);
+        if (_currentSession?.id == updated.id) {
+          _currentSession = updated;
+        }
         unawaited(_persistSessionCacheBestEffort());
         notifyListeners();
         return true;
@@ -4070,6 +4117,113 @@ class ChatProvider extends ChangeNotifier {
     _syncHealthTimer?.cancel();
     _degradedPollingTimer?.cancel();
     _foregroundResumeSyncTimer?.cancel();
+    _sessionUnreadHighlightTimer?.cancel();
     super.dispose();
+  }
+
+  List<ChatSession> _sessionsForScopeId(String scopeId) {
+    final normalizedScopeId = scopeId.trim();
+    if (normalizedScopeId.isEmpty) {
+      return const <ChatSession>[];
+    }
+    final contextKey = _composeContextKey(_activeServerId, normalizedScopeId);
+    if (contextKey == _activeContextKey) {
+      return _sessions;
+    }
+    return _contextSnapshots[contextKey]?.sessions ?? const <ChatSession>[];
+  }
+
+  Map<String, bool> _hiddenByArchivedAncestor(
+    Map<String, ChatSession> sessionById,
+  ) {
+    final memo = <String, bool>{};
+
+    bool resolve(String sessionId, Set<String> stack) {
+      final cached = memo[sessionId];
+      if (cached != null) {
+        return cached;
+      }
+      if (!stack.add(sessionId)) {
+        return false;
+      }
+      final session = sessionById[sessionId];
+      final parentId = session?.parentId?.trim();
+      if (session == null || parentId == null || parentId.isEmpty) {
+        memo[sessionId] = false;
+        stack.remove(sessionId);
+        return false;
+      }
+      final parent = sessionById[parentId];
+      final hidden =
+          parent != null && (parent.archived || resolve(parentId, stack));
+      memo[sessionId] = hidden;
+      stack.remove(sessionId);
+      return hidden;
+    }
+
+    for (final sessionId in sessionById.keys) {
+      resolve(sessionId, <String>{});
+    }
+    return memo;
+  }
+
+  void _markSessionUnreadCompletion(String sessionId, {DateTime? timestamp}) {
+    final normalizedSessionId = sessionId.trim();
+    if (normalizedSessionId.isEmpty) {
+      return;
+    }
+    _sessionUnreadCompletionIds.add(normalizedSessionId);
+    _sessionUnreadCompletionTimestamps[normalizedSessionId] =
+        timestamp ??
+        _sessionUnreadCompletionTimestamps[normalizedSessionId] ??
+        DateTime.now();
+    _scheduleSessionUnreadHighlightTimer();
+  }
+
+  void _clearSessionUnreadCompletion(String sessionId) {
+    final normalizedSessionId = sessionId.trim();
+    if (normalizedSessionId.isEmpty) {
+      return;
+    }
+    _sessionUnreadCompletionIds.remove(normalizedSessionId);
+    _sessionUnreadCompletionTimestamps.remove(normalizedSessionId);
+    _scheduleSessionUnreadHighlightTimer();
+  }
+
+  void _scheduleSessionUnreadHighlightTimer() {
+    _sessionUnreadHighlightTimer?.cancel();
+    _sessionUnreadHighlightTimer = null;
+
+    final now = DateTime.now();
+    DateTime? nextExpiry;
+    for (final entry in _sessionUnreadCompletionTimestamps.entries) {
+      final expiresAt = entry.value.add(const Duration(hours: 1));
+      if (!expiresAt.isAfter(now)) {
+        continue;
+      }
+      if (nextExpiry == null || expiresAt.isBefore(nextExpiry)) {
+        nextExpiry = expiresAt;
+      }
+    }
+    if (nextExpiry == null) {
+      return;
+    }
+
+    _sessionUnreadHighlightTimer = Timer(nextExpiry.difference(now), () {
+      _pruneExpiredUnreadHighlights();
+      _notifyListeners();
+    });
+  }
+
+  void _pruneExpiredUnreadHighlights() {
+    final now = DateTime.now();
+    _sessionUnreadCompletionTimestamps.removeWhere((sessionId, timestamp) {
+      final expired = now.difference(timestamp) >= const Duration(hours: 1);
+      if (expired) {
+        _sessionUnreadCompletionIds.remove(sessionId);
+      }
+      return expired;
+    });
+    _scheduleSessionUnreadHighlightTimer();
   }
 }

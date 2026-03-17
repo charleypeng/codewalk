@@ -567,6 +567,7 @@ class ExperienceSettings {
       showThinkingBubbles: true,
       showToolCallBubbles: true,
       showTaskList: true,
+      showRecentSessions: false,
       taskListCollapsed: false,
       showComposerTips: true,
       composerAutoApprovePermissions: true,
@@ -603,6 +604,7 @@ class ExperienceSettings {
     required this.showThinkingBubbles,
     required this.showToolCallBubbles,
     required this.showTaskList,
+    required this.showRecentSessions,
     required this.taskListCollapsed,
     required this.showComposerTips,
     required this.composerAutoApprovePermissions,
@@ -639,6 +641,7 @@ class ExperienceSettings {
   final bool showThinkingBubbles;
   final bool showToolCallBubbles;
   final bool showTaskList;
+  final bool showRecentSessions;
   final bool taskListCollapsed;
   final bool showComposerTips;
   final bool composerAutoApprovePermissions;
@@ -675,6 +678,7 @@ class ExperienceSettings {
     bool? showThinkingBubbles,
     bool? showToolCallBubbles,
     bool? showTaskList,
+    bool? showRecentSessions,
     bool? taskListCollapsed,
     bool? showComposerTips,
     bool? composerAutoApprovePermissions,
@@ -715,6 +719,7 @@ class ExperienceSettings {
       showThinkingBubbles: showThinkingBubbles ?? this.showThinkingBubbles,
       showToolCallBubbles: showToolCallBubbles ?? this.showToolCallBubbles,
       showTaskList: showTaskList ?? this.showTaskList,
+      showRecentSessions: showRecentSessions ?? this.showRecentSessions,
       taskListCollapsed: taskListCollapsed ?? this.taskListCollapsed,
       showComposerTips: showComposerTips ?? this.showComposerTips,
       composerAutoApprovePermissions:
@@ -797,6 +802,7 @@ class ExperienceSettings {
       'showThinkingBubbles': showThinkingBubbles,
       'showToolCallBubbles': showToolCallBubbles,
       'showTaskList': showTaskList,
+      'showRecentSessions': showRecentSessions,
       'taskListCollapsed': taskListCollapsed,
       'showComposerTips': showComposerTips,
       'composerAutoApprovePermissions': composerAutoApprovePermissions,
@@ -850,6 +856,7 @@ class ExperienceSettings {
     var showThinkingBubbles = defaults.showThinkingBubbles;
     var showToolCallBubbles = defaults.showToolCallBubbles;
     var showTaskList = defaults.showTaskList;
+    var showRecentSessions = defaults.showRecentSessions;
     var taskListCollapsed = defaults.taskListCollapsed;
     var showComposerTips = defaults.showComposerTips;
     var composerAutoApprovePermissions =
@@ -996,6 +1003,11 @@ class ExperienceSettings {
       showTaskList = showTaskListJson;
     }
 
+    final showRecentSessionsJson = json['showRecentSessions'];
+    if (showRecentSessionsJson is bool) {
+      showRecentSessions = showRecentSessionsJson;
+    }
+
     final taskListCollapsedJson = json['taskListCollapsed'];
     if (taskListCollapsedJson is bool) {
       taskListCollapsed = taskListCollapsedJson;
@@ -1139,6 +1151,7 @@ class ExperienceSettings {
       showThinkingBubbles: showThinkingBubbles,
       showToolCallBubbles: showToolCallBubbles,
       showTaskList: showTaskList,
+      showRecentSessions: showRecentSessions,
       taskListCollapsed: taskListCollapsed,
       showComposerTips: showComposerTips,
       composerAutoApprovePermissions: composerAutoApprovePermissions,

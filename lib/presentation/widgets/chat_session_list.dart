@@ -54,6 +54,11 @@ class ChatSessionList extends StatefulWidget {
 }
 
 class _ChatSessionListState extends State<ChatSessionList> {
+  static final RegExp _pseudoSummaryPattern = RegExp(
+    r'^\s*(additions|deletions)\s*:\s*\d+(\s*,\s*(additions|deletions)\s*:\s*\d+)*\s*$',
+    caseSensitive: false,
+  );
+
   final Set<String> _expandedParentIds = <String>{};
   String? _cachedTreeSignature;
   List<_SessionTreeRow> _cachedVisibleRows = const <_SessionTreeRow>[];
@@ -248,6 +253,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
       ..write('expanded:${expanded.join(',')};')
       ..write('current:${widget.currentSession?.id ?? ''};');
     for (final session in sessions) {
+      final attention = widget.sessionAttentionFor?.call(session.id);
       buffer
         ..write(session.id)
         ..write(':')
@@ -259,10 +265,23 @@ class _ChatSessionListState extends State<ChatSessionList> {
         ..write(':')
         ..write(session.shared)
         ..write(':')
+        ..write(attention?.unreadCompletionAt?.millisecondsSinceEpoch ?? 0)
+        ..write(':')
         ..write(pinnedSessionIds.contains(session.id))
         ..write(';');
     }
     return buffer.toString();
+  }
+
+  String? _sidebarSummary(String? summary) {
+    final trimmed = summary?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return null;
+    }
+    if (_pseudoSummaryPattern.hasMatch(trimmed)) {
+      return null;
+    }
+    return trimmed;
   }
 
   void _invalidateTreeCache() {
@@ -327,6 +346,21 @@ class _ChatSessionListState extends State<ChatSessionList> {
     final childLabel = childCount == 1
         ? '1 sub-conversation'
         : '$childCount sub-conversations';
+    final hasRecentUnreadHighlight =
+        sessionAttention.hasRecentUnreadCompletion &&
+        (session.parentId == null || session.parentId!.trim().isEmpty);
+    final subtitleText = _sidebarSummary(session.summary);
+    final tileColor = isSelected
+        ? colorScheme.secondaryContainer
+        : (hasRecentUnreadHighlight
+              ? Color.alphaBlend(
+                  colorScheme.primary.withValues(alpha: 0.08),
+                  colorScheme.surfaceContainerLow,
+                )
+              : colorScheme.surfaceContainerLow);
+    final outlineColor = hasRecentUnreadHighlight && !isSelected
+        ? colorScheme.primary.withValues(alpha: 0.4)
+        : Colors.transparent;
 
     return Padding(
       key: ValueKey<String>('chat_session_tile_${session.id}'),
@@ -335,10 +369,11 @@ class _ChatSessionListState extends State<ChatSessionList> {
         label: 'Chat session: ${session.title}',
         selected: isSelected,
         child: Material(
-          color: isSelected
-              ? colorScheme.secondaryContainer
-              : colorScheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(18),
+          color: tileColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: BorderSide(color: outlineColor),
+          ),
           child: Stack(
             clipBehavior: Clip.none,
             children: [
@@ -414,9 +449,9 @@ class _ChatSessionListState extends State<ChatSessionList> {
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (session.summary != null && session.summary!.isNotEmpty)
+                    if (subtitleText != null)
                       Text(
-                        session.summary!,
+                        subtitleText,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: isSelected
                               ? colorScheme.onSecondaryContainer.withValues(

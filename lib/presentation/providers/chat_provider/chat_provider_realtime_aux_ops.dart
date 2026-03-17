@@ -226,7 +226,7 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     _sessionStatusById.remove(sessionId);
     _pendingPermissionsBySession.remove(sessionId);
     _pendingQuestionsBySession.remove(sessionId);
-    _sessionUnreadCompletionIds.remove(sessionId);
+    _clearSessionUnreadCompletion(sessionId);
     _sessionErrorAttentionIds.remove(sessionId);
     _sessionChildrenById.remove(sessionId);
     _sessionTodoById.remove(sessionId);

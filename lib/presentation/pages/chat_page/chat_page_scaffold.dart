@@ -219,28 +219,179 @@ extension _ChatPageScaffold on _ChatPageState {
     required bool closeOnSelect,
     required bool isMobileLayout,
   }) {
+    final settingsProvider = context.watch<SettingsProvider>();
     final openProjects = projectProvider.openProjects;
     final currentProjectId = projectProvider.currentProject?.id;
     final openProjectIds = openProjects.map((project) => project.id).toSet();
     _projectGroupExpandedById.removeWhere(
       (projectId, _) => !openProjectIds.contains(projectId),
     );
+    final recentEntries = settingsProvider.showRecentSessions
+        ? _recentRootSessionEntries(
+            chatProvider: chatProvider,
+            openProjects: openProjects,
+          )
+        : const <MapEntry<Project, ChatSession>>[];
 
-    return ListView.separated(
-      padding: EdgeInsets.fromLTRB(8, 0, 8, isMobileLayout ? 8 : 6),
-      itemCount: openProjects.length,
-      separatorBuilder: (_, __) => SizedBox(height: isMobileLayout ? 6 : 4),
-      itemBuilder: (context, index) {
-        final project = openProjects[index];
-        final selected = project.id == currentProjectId;
-        return _buildProjectGroupTile(
+    final children = <Widget>[];
+    if (recentEntries.isNotEmpty) {
+      children.add(
+        _buildRecentSessionsCard(
+          chatProvider: chatProvider,
+          entries: recentEntries,
+          closeOnSelect: closeOnSelect,
+          isMobileLayout: isMobileLayout,
+        ),
+      );
+      children.add(SizedBox(height: isMobileLayout ? 6 : 4));
+    }
+
+    for (var index = 0; index < openProjects.length; index += 1) {
+      final project = openProjects[index];
+      final selected = project.id == currentProjectId;
+      children.add(
+        _buildProjectGroupTile(
           chatProvider: chatProvider,
           project: project,
           selected: selected,
           closeOnSelect: closeOnSelect,
           isMobileLayout: isMobileLayout,
-        );
-      },
+        ),
+      );
+      if (index != openProjects.length - 1) {
+        children.add(SizedBox(height: isMobileLayout ? 6 : 4));
+      }
+    }
+
+    return ListView(
+      padding: EdgeInsets.fromLTRB(8, 0, 8, isMobileLayout ? 8 : 6),
+      children: children,
+    );
+  }
+
+  List<MapEntry<Project, ChatSession>> _recentRootSessionEntries({
+    required ChatProvider chatProvider,
+    required List<Project> openProjects,
+  }) {
+    final entries = <MapEntry<Project, ChatSession>>[];
+    final seenSessionIds = <String>{};
+    for (final project in openProjects) {
+      final scopeId = _scopeIdForProject(project);
+      for (final session in chatProvider.recentRootSessionsForScopeId(
+        scopeId,
+      )) {
+        if (!seenSessionIds.add(session.id)) {
+          continue;
+        }
+        entries.add(MapEntry<Project, ChatSession>(project, session));
+      }
+    }
+    entries.sort((a, b) => b.value.time.compareTo(a.value.time));
+    return entries.take(5).toList(growable: false);
+  }
+
+  Widget _buildRecentSessionsCard({
+    required ChatProvider chatProvider,
+    required List<MapEntry<Project, ChatSession>> entries,
+    required bool closeOnSelect,
+    required bool isMobileLayout,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(8, 8, 8, isMobileLayout ? 8 : 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+              child: Text(
+                'Recent sessions',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+            for (final entry in entries)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: _buildRecentSessionTile(
+                  chatProvider: chatProvider,
+                  project: entry.key,
+                  session: entry.value,
+                  closeOnSelect: closeOnSelect,
+                  isMobileLayout: isMobileLayout,
+                  colorScheme: colorScheme,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentSessionTile({
+    required ChatProvider chatProvider,
+    required Project project,
+    required ChatSession session,
+    required bool closeOnSelect,
+    required bool isMobileLayout,
+    required ColorScheme colorScheme,
+  }) {
+    final attention = chatProvider.sessionAttentionFor(session.id);
+    final highlighted = attention.hasRecentUnreadCompletion;
+    return Material(
+      color: highlighted
+          ? Color.alphaBlend(
+              colorScheme.primary.withValues(alpha: 0.08),
+              colorScheme.surfaceContainerLow,
+            )
+          : colorScheme.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        key: ValueKey<String>('recent_session_tile_${session.id}'),
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => unawaited(
+          _openSessionFromProjectGroup(
+            projectId: project.id,
+            sessionId: session.id,
+            closeOnSelect: closeOnSelect,
+          ),
+        ),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(10, isMobileLayout ? 8 : 6, 10, 6),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _sessionDisplayTitle(session),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: highlighted ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: colorScheme.secondaryContainer,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  _projectDisplayLabel(project),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSecondaryContainer,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
