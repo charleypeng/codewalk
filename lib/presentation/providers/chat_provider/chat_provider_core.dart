@@ -307,6 +307,12 @@ extension _ChatProviderCorePart on ChatProvider {
         }
 
         if (_selectedModelId == null &&
+            selectedProvider.id == 'opencode' &&
+            selectedProvider.models.containsKey('big-pickle')) {
+          _selectedModelId = 'big-pickle';
+        }
+
+        if (_selectedModelId == null &&
             _defaultModels.containsKey(selectedProvider.id)) {
           final defaultModelId = _defaultModels[selectedProvider.id];
           if (defaultModelId != null &&
