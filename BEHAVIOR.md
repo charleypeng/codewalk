@@ -219,6 +219,7 @@
 - **Then** an already-selected empty session keeps its empty placeholder visible during background refresh (no loading skeleton blink)
 - **Then** returning from background or focus with no new chat content does not yank the latest message to the top of the viewport just because the route resumed
 - **Then** if refreshed content arrives while the user was already pinned to the latest message, the viewport stays pinned instead of forcing a synthetic reveal jump
+- **Then** passive refreshes, realtime part updates, and status-only busy/retry reconciliation must not start a second auto-scroll owner while the active turn already owns the viewport
 - **Then** reopening a cached session does not replay old-history entrance/loading motion before newer delta content is merged
 
 ### Older history loads on demand at top reach
@@ -336,6 +337,7 @@
 - **When** the assistant finishes the complete response
 - **Then** tool-call chains and tool-detail sections start collapsed by default
 - **Then** collapse never happens while the assistant is still streaming
+- **Then** content shrink from active tool/work regrouping, collapse deferral, or inline reasoning suppression must not trigger outer chat snap-back while that same response is still active
 - **Then** manual expansion is temporary and is not restored after return/revalidation
 - **Then** when the final completed assistant-work group is compacted for the finished response, that completed group is shown collapsed by default even if a streaming-era tool block was manually expanded earlier in the turn
 - **Then** the user can manually re-expand any collapsed work group by tapping its Details toggle
@@ -404,6 +406,7 @@
 - **When** the latest assistant chunk is completed but the turn still emits tool/patch updates
 - **Then** the chat keeps active follow/reveal behavior for that same turn
 - **Then** idle/background status snapshots without live tool/patch updates do not trigger autonomous jumps
+- **Then** provider-side passive updates (refresh merges, realtime part deltas, and status pulses) must defer to the runtime viewport owner instead of requesting an extra scroll-to-bottom for that same turn
 
 ### Recoverable current-session refresh failures stay scoped
 
@@ -425,6 +428,7 @@
 - **When** the user is reading without sending new input
 - **Then** the chat does not perform autonomous jump/scroll corrections
 - **Then** auto-follow resumes only after explicit user intent (e.g., sending a new message or tapping `Go to latest`)
+- **Then** once the final response settles, shrink-correction may clean up empty space below the last message, but only after the active-turn viewport owner has been released
 
 ---
 
@@ -950,6 +954,10 @@ After a tool/work group settles for a completed turn, transient realtime sync/st
 ### Never misread viewport shrink as top-history intent
 
 Top-history loading must only trigger from real upward user scrolling. Content shrink from collapse, re-layout, or other viewport-clamp side effects must never be interpreted as intent to load older messages, because that causes jumps into old history and then snap-back recovery.
+
+### Never let passive busy-turn updates fight the viewport owner
+
+During an active busy/retry turn, only one viewport owner may control the outer chat scroll position. Passive refresh merges, realtime part deltas, status pulses, and collapse/re-layout side effects must never stack a second autonomous scroll correction on top of the active-turn follow/reveal policy, because that causes the classic up/down bounce regression.
 
 ### Never show stale data after resume
 

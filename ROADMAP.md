@@ -38,6 +38,7 @@ Description: Various UI/UX enhancements, snackbar improvements, task bubble upda
 - [ ] 3.09 Quando 'Display Options' filtrar um grupo de bubbles a ponto de ficar vazio, o grupo deve sumir ao invés de mostrar vazio
 - [ ] 3.10 Salvar automaticamente o texto do input do composer como rascunho local relacionado à sessão. Ao trocar de sessão, mostrar o rascunho da sessão atual ou vazio se não existir
 - [ ] 3.11 Memorizar localmente a relação agent + model + variant por agente. Ao trocar de agente, se houver memória salva, selecionar automaticamente o último modelo (e sua variante) salvo
+- [x] 3.12 Corrigir bounce do viewport durante turns busy: updates passivos (refresh, deltas realtime e pulsos de status) não podem disputar com o viewport owner ativo nem recolapsar grupos de trabalho durante o turno - Commit hash: d781708
 
 ### Feature 4: OpenCode Release Monitoring Skill
 
