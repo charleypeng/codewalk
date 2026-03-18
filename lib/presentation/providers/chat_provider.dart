@@ -446,13 +446,10 @@ class ChatProvider extends ChangeNotifier {
       return false;
     }
 
-    final hasToolSurfacePart = candidate.parts.any(
-      (part) => part is ToolPart || part is PatchPart,
-    );
     final hasTextPart = candidate.parts.any(
       (part) => part is TextPart && part.text.trim().isNotEmpty,
     );
-    return hasToolSurfacePart && hasTextPart;
+    return hasTextPart;
   }
 
   void _traceFinal(String event, {String? sessionId, String? details}) {
