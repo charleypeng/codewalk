@@ -84,6 +84,14 @@
 
 > **Current state**: the offline error is too aggressive (full-screen error with "Retry"). The desired behavior is a subtle composer block with a clear reason message.
 
+### Offline startup reloads initial data automatically after recovery
+
+- **Given** an active server is configured but the app starts while that server is unreachable
+- **When** connectivity and backend availability return while the chat screen remains active
+- **Then** the app automatically retries the initial bootstrap flow without requiring pull-to-refresh or app restart
+- **Then** the project list, sidebar session state, and initial session data reload from the recovered server state
+- **Then** reconnect flapping is debounced so repeated short connection changes do not trigger duplicate bootstrap reloads
+
 ---
 
 ## Sessions

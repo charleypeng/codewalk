@@ -48,3 +48,14 @@ Description: Various UI/UX enhancements, snackbar improvements, task bubble upda
 Description: Create a skill to monitor OpenCode releases and identify potential impacts on CodeWalk
 
 - [ ] 4.01 Criar uma skill que visita https://github.com/anomalyco/opencode/releases e verifica como as mudanças podem afetar ou necessitar atualizar o CodeWalk, em especial as sessões Core/Desktop/Web
+
+### Feature 5: Offline-to-Online Data Reload
+
+Description: Ensure the app automatically reloads initial data when connectivity is restored after an offline start. Currently, if the app launches while offline and the server is unavailable, the project list and related data remain empty even after the connection returns, requiring manual intervention to refresh.
+
+DoD: When the app starts offline and later regains connectivity, recent projects and initial session data should automatically reload without requiring user action (pull-to-refresh or restart).
+
+- [x] 5.01 Detect when the app transitions from offline to online state after initial failed load - Commit hashes: fac3b79, bb16867
+- [x] 5.02 Trigger automatic reload of recent projects when connectivity is restored - Commit hashes: fac3b79, bb16867
+- [x] 5.03 Ensure session data and sidebar content refreshes without requiring manual action - Commit hashes: fac3b79, bb16867
+- [x] 5.04 Handle edge cases: multiple rapid connection changes, server still unavailable after network recovery - Commit hashes: fac3b79, bb16867
