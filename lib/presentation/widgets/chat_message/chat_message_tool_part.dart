@@ -24,6 +24,10 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
     final isTaskTool = _normalizeToolName(part.tool) == 'task';
     final hasDetails = part.state.status != ToolStatus.pending;
     final toolIdentityToken = _toolPartIdentityToken(part);
+    final latestTaskCommand =
+        isTaskTool && part.state.status == ToolStatus.running
+        ? _extractToolCommand(part.state)
+        : null;
 
     return Container(
       key: ValueKey<String>('tool_part_container_$toolIdentityToken'),
@@ -64,6 +68,33 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
+                      ),
+                    ],
+                    if (latestTaskCommand != null &&
+                        latestTaskCommand.trim().isNotEmpty &&
+                        latestTaskCommand.toLowerCase() !=
+                            descriptionLabel.toLowerCase()) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(
+                            Symbols.terminal_rounded,
+                            size: 12,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              latestTaskCommand,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ],

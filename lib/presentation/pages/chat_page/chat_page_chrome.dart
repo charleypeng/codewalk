@@ -634,26 +634,22 @@ extension _ChatPageChrome on _ChatPageState {
     required ChatProvider chatProvider,
     required AppProvider appProvider,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     final health = _activeServerHealth(appProvider);
     final deferForegroundWarnings = _shouldDeferForegroundWarningUi(
       chatProvider: chatProvider,
       appProvider: appProvider,
     );
     if (health == ServerHealthStatus.unhealthy && !deferForegroundWarnings) {
-      return Theme.of(context).colorScheme.error;
+      return colorScheme.error;
     }
-    if (health == ServerHealthStatus.unknown) {
-      return Theme.of(context).colorScheme.outline;
-    }
-    if (_isRecoverableSyncState(chatProvider: chatProvider) &&
-        chatProvider.isRecoverableSyncAlertEscalated) {
-      return Theme.of(context).colorScheme.error;
-    }
-    return _syncStatusColor(
-      context: context,
+    if (_hasDelayedServerStatus(
       chatProvider: chatProvider,
       appProvider: appProvider,
-    );
+    )) {
+      return Colors.orange;
+    }
+    return Colors.green;
   }
 
   Color _sessionAttentionBadgeColor({

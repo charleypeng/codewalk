@@ -22,6 +22,8 @@ class AppConstants {
   static const String selectedVariantMapKey = 'selected_variant_map';
   static const String sessionSelectionOverridesKey =
       'session_selection_overrides';
+  static const String agentSelectionMemoryKey = 'agent_selection_memory';
+  static const String sessionComposerDraftKey = 'session_composer_draft';
   static const String recentModelsKey = 'recent_models';
   static const String favoriteModelsKey = 'favorite_models';
   static const String providerCatalogCacheKey = 'provider_catalog_cache';

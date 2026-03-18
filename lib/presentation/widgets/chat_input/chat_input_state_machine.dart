@@ -65,6 +65,7 @@ extension _ChatInputStateMachine on _ChatInputWidgetState {
           _slashSuggestions = <ChatComposerSlashCommandSuggestion>[];
           _activeSuggestionIndex = 0;
         });
+        _notifyDraftChanged();
         if (shouldHideKeyboardAfterSend) {
           _effectiveFocusNode.unfocus();
           FocusManager.instance.primaryFocus?.unfocus();
@@ -76,6 +77,7 @@ extension _ChatInputStateMachine on _ChatInputWidgetState {
         _setState(() {
           _isComposing = _controller.text.trim().isNotEmpty;
         });
+        _notifyDraftChanged();
       }
     } catch (error) {
       if (!mounted) {
@@ -111,6 +113,7 @@ extension _ChatInputStateMachine on _ChatInputWidgetState {
     _setState(() {
       _isComposing = text.trim().isNotEmpty;
     });
+    _notifyDraftChanged();
     if (_suppressEnsureInputFocus) {
       _suppressEnsureInputFocus = false;
       return;

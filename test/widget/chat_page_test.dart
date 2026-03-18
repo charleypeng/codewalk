@@ -4320,6 +4320,170 @@ void main() {
   );
 
   testWidgets(
+    'auto-approves permissions with always when the request exposes remembered approval',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_root_auto_always',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Root Session',
+          ),
+          ChatSession(
+            id: 'ses_sub_auto_always',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(900),
+            title: 'Sub Session',
+            parentId: 'ses_root_auto_always',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_root_auto_always'] = <ChatMessage>[
+        UserMessage(
+          id: 'msg_root_auto_always_1',
+          sessionId: 'ses_root_auto_always',
+          time: DateTime.fromMillisecondsSinceEpoch(1200),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_root_auto_always_1',
+              messageId: 'msg_root_auto_always_1',
+              sessionId: 'ses_root_auto_always',
+              text: 'Remember approvals when allowed',
+            ),
+          ],
+        ),
+      ];
+      repository.pendingPermissions = const <ChatPermissionRequest>[
+        ChatPermissionRequest(
+          id: 'perm_auto_always_1',
+          sessionId: 'ses_sub_auto_always',
+          permission: 'bash',
+          patterns: <String>['*'],
+          always: <String>['*'],
+          metadata: <String, dynamic>{},
+        ),
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.initializeProviders();
+      await provider.loadSessions();
+      await provider.selectSession(
+        provider.sessions
+            .where((session) => session.id == 'ses_root_auto_always')
+            .first,
+      );
+      await tester.pumpAndSettle();
+
+      expect(repository.lastPermissionRequestId, 'perm_auto_always_1');
+      expect(repository.lastPermissionReply, 'always');
+    },
+  );
+
+  testWidgets(
+    'restores persisted composer drafts per session when switching conversations',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_draft_one',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Draft One',
+          ),
+          ChatSession(
+            id: 'ses_draft_two',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(900),
+            title: 'Draft Two',
+          ),
+        ],
+      );
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.initializeProviders();
+      await provider.loadSessions();
+      await provider.selectSession(
+        provider.sessions
+            .where((session) => session.id == 'ses_draft_one')
+            .first,
+      );
+      await tester.pumpAndSettle();
+
+      final inputFinder = find.descendant(
+        of: find.byKey(const ValueKey<String>('composer_input_row')),
+        matching: find.byType(TextField),
+      );
+
+      await tester.enterText(inputFinder, 'draft for first session');
+      await tester.pump(const Duration(milliseconds: 320));
+      await tester.pumpAndSettle();
+
+      await provider.selectSession(
+        provider.sessions
+            .where((session) => session.id == 'ses_draft_two')
+            .first,
+      );
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<TextField>(inputFinder).controller?.text ?? '',
+        isEmpty,
+      );
+
+      await tester.enterText(inputFinder, 'draft for second session');
+      await tester.pump(const Duration(milliseconds: 320));
+      await tester.pumpAndSettle();
+
+      await provider.selectSession(
+        provider.sessions
+            .where((session) => session.id == 'ses_draft_one')
+            .first,
+      );
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<TextField>(inputFinder).controller?.text,
+        'draft for first session',
+      );
+
+      await provider.selectSession(
+        provider.sessions
+            .where((session) => session.id == 'ses_draft_two')
+            .first,
+      );
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<TextField>(inputFinder).controller?.text,
+        'draft for second session',
+      );
+    },
+  );
+
+  testWidgets(
     'keeps permission manual when composer auto-approve is persisted off',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));

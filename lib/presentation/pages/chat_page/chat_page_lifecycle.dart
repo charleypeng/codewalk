@@ -36,6 +36,10 @@ extension _ChatPageLifecycle on _ChatPageState {
     _scheduleAutoApprovePermissionDrain(reason: 'chat-provider-changed');
   }
 
+  String _autoApprovePermissionReply(ChatPermissionRequest request) {
+    return request.always.isNotEmpty ? 'always' : 'once';
+  }
+
   void _scheduleAutoApprovePermissionDrain({required String reason}) {
     final chatProvider = _chatProvider;
     final settingsProvider = _settingsProvider;
@@ -108,13 +112,14 @@ extension _ChatPageLifecycle on _ChatPageState {
             break;
           }
 
+          final autoReply = _autoApprovePermissionReply(nextRequest);
           AppLogger.info(
-            'Auto-approving permission request=${nextRequest.id} session=${nextRequest.sessionId} reason=$reason',
+            'Auto-approving permission request=${nextRequest.id} session=${nextRequest.sessionId} reply=$autoReply reason=$reason',
           );
           try {
             await chatProvider.respondPermissionRequest(
               requestId: nextRequest.id,
-              reply: 'once',
+              reply: autoReply,
             );
           } catch (error, stackTrace) {
             AppLogger.error(
@@ -332,6 +337,7 @@ extension _ChatPageLifecycle on _ChatPageState {
     ChatProvider chatProvider, {
     required String reason,
   }) {
+    _scheduleAutoApprovePermissionDrain(reason: reason);
     if (!_autoFollowToLatest || chatProvider.currentSession == null) {
       return;
     }

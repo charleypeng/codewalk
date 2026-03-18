@@ -124,6 +124,7 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     _pinnedSessionIds = <String>{};
     _modelUsageCounts = <String, int>{};
     _selectedVariantByModel = <String, String>{};
+    _agentSelectionMemoryByAgent = <String, _AgentSelectionMemory>{};
 
     final recentJson = await localDataSource.getRecentModelsJson(
       serverId: serverId,
@@ -222,6 +223,12 @@ extension _ChatProviderPreferenceOps on ChatProvider {
         _selectedVariantByModel = <String, String>{};
       }
     }
+
+    final agentSelectionMemoryJson = await localDataSource
+        .getAgentSelectionMemoryJson(serverId: serverId, scopeId: scopeId);
+    _agentSelectionMemoryByAgent = _decodeAgentSelectionMemory(
+      agentSelectionMemoryJson,
+    );
   }
 
   Future<void> _persistModelPreferenceState({
@@ -252,6 +259,103 @@ extension _ChatProviderPreferenceOps on ChatProvider {
       serverId: serverId,
       scopeId: scopeId,
     );
+    await localDataSource.saveAgentSelectionMemoryJson(
+      json.encode(_encodeAgentSelectionMemory()),
+      serverId: serverId,
+      scopeId: scopeId,
+    );
+  }
+
+  Map<String, _AgentSelectionMemory> _decodeAgentSelectionMemory(String? raw) {
+    if (raw == null || raw.trim().isEmpty) {
+      return <String, _AgentSelectionMemory>{};
+    }
+    try {
+      final decoded = json.decode(raw);
+      if (decoded is! Map<String, dynamic>) {
+        return <String, _AgentSelectionMemory>{};
+      }
+      final result = <String, _AgentSelectionMemory>{};
+      decoded.forEach((key, value) {
+        if (value is! Map) {
+          return;
+        }
+        final agentName = key.trim();
+        final providerId = value['providerId']?.toString().trim() ?? '';
+        final modelId = value['modelId']?.toString().trim() ?? '';
+        final variantId = value['variantId']?.toString().trim();
+        if (agentName.isEmpty || providerId.isEmpty || modelId.isEmpty) {
+          return;
+        }
+        result[agentName] = _AgentSelectionMemory(
+          providerId: providerId,
+          modelId: modelId,
+          variantId: variantId == null || variantId.isEmpty ? null : variantId,
+        );
+      });
+      return result;
+    } catch (_) {
+      return <String, _AgentSelectionMemory>{};
+    }
+  }
+
+  Map<String, Map<String, String?>> _encodeAgentSelectionMemory() {
+    return _agentSelectionMemoryByAgent.map(
+      (key, value) => MapEntry(key, <String, String?>{
+        'providerId': value.providerId,
+        'modelId': value.modelId,
+        'variantId': value.variantId,
+      }),
+    );
+  }
+
+  void _rememberCurrentSelectionForAgent({String? agentName}) {
+    final normalizedAgent = agentName?.trim();
+    final providerId = _selectedProviderId?.trim();
+    final modelId = _selectedModelId?.trim();
+    if (normalizedAgent == null ||
+        normalizedAgent.isEmpty ||
+        providerId == null ||
+        providerId.isEmpty ||
+        modelId == null ||
+        modelId.isEmpty) {
+      return;
+    }
+    final variantId = _selectedVariantId?.trim();
+    _agentSelectionMemoryByAgent[normalizedAgent] = _AgentSelectionMemory(
+      providerId: providerId,
+      modelId: modelId,
+      variantId: variantId == null || variantId.isEmpty ? null : variantId,
+    );
+  }
+
+  bool _restoreSelectionForAgent(String agentName) {
+    final normalizedAgent = agentName.trim();
+    if (normalizedAgent.isEmpty) {
+      return false;
+    }
+    final memory = _agentSelectionMemoryByAgent[normalizedAgent];
+    if (memory == null) {
+      return false;
+    }
+    final provider = _providers
+        .where((item) => item.id == memory.providerId)
+        .firstOrNull;
+    if (provider == null || !provider.models.containsKey(memory.modelId)) {
+      return false;
+    }
+    _selectedProviderId = provider.id;
+    _selectedModelId = memory.modelId;
+    final model = provider.models[memory.modelId];
+    final variantId = memory.variantId;
+    if (variantId != null &&
+        model != null &&
+        model.variants.containsKey(variantId)) {
+      _selectedVariantId = variantId;
+    } else {
+      _selectedVariantId = _resolveStoredVariantForSelection();
+    }
+    return true;
   }
 
   void _recordModelUsage() {

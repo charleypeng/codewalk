@@ -64,6 +64,14 @@ class ChatInputController {
     _state?._clearDraftFromExternal();
   }
 
+  void clearDraftWithoutFocus() {
+    _state?._clearDraftFromExternal(ensureFocus: false);
+  }
+
+  void armGlobalEscapeStopHint() {
+    _state?._armGlobalEscapeStopHintFromExternal();
+  }
+
   Future<void> toggleVoiceInput() async {
     if (!canToggleVoiceInput) {
       return;
@@ -234,6 +242,7 @@ class ChatInputWidget extends StatefulWidget {
     this.isResponding = false,
     this.onStopRequested,
     this.onStopHintRequested,
+    this.onDraftChanged,
     this.focusNode,
     this.showAttachmentButton = false,
     this.showInlineAttachmentButton = true,
@@ -260,6 +269,7 @@ class ChatInputWidget extends StatefulWidget {
   final bool enabled;
   final bool isResponding;
   final FutureOr<void> Function()? onStopRequested;
+  final ValueChanged<ChatComposerDraft?>? onDraftChanged;
   final VoidCallback? onStopHintRequested;
   final FocusNode? focusNode;
   final bool showAttachmentButton;
@@ -461,6 +471,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
         });
 
         _applyHistoryMessage(prefilledText);
+        _notifyDraftChanged();
       }
     }
     if (!listEquals(oldWidget.sentMessageHistory, widget.sentMessageHistory)) {
@@ -501,7 +512,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     setState(fn);
   }
 
-  void _clearDraftFromExternal() {
+  void _clearDraftFromExternal({bool ensureFocus = true}) {
     _controller.clear();
     _setState(() {
       _isComposing = false;
@@ -512,7 +523,34 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
       _slashSuggestions = <ChatComposerSlashCommandSuggestion>[];
       _activeSuggestionIndex = 0;
     });
-    _ensureInputFocus();
+    _notifyDraftChanged();
+    if (ensureFocus) {
+      _ensureInputFocus();
+    }
+  }
+
+  ChatComposerDraft? _currentDraftSnapshot() {
+    final rawText = _controller.text;
+    final text = _mode == ChatComposerMode.shell
+        ? _normalizeShellPayload(rawText)
+        : rawText.trim();
+    final attachments = _mode == ChatComposerMode.shell
+        ? const <FileInputPart>[]
+        : List<FileInputPart>.unmodifiable(_attachments);
+    final draft = ChatComposerDraft(
+      text: text,
+      attachments: attachments,
+      shellMode: _mode == ChatComposerMode.shell,
+    );
+    return draft.hasContent ? draft : null;
+  }
+
+  void _notifyDraftChanged() {
+    widget.onDraftChanged?.call(_currentDraftSnapshot());
+  }
+
+  void _armGlobalEscapeStopHintFromExternal() {
+    _lastNormalModeEscapeAt = DateTime.now();
   }
 
   int get _activeSuggestionsCount {
@@ -636,6 +674,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
           _controller.clear();
           _isComposing = false;
         });
+        _notifyDraftChanged();
         return KeyEventResult.handled;
       }
       if (_mode == ChatComposerMode.normal) {
@@ -667,6 +706,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
           _controller.clear();
           _isComposing = false;
         });
+        _notifyDraftChanged();
         return KeyEventResult.handled;
       }
     }
@@ -961,6 +1001,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                               setState(() {
                                 _attachments.removeAt(index);
                               });
+                              _notifyDraftChanged();
                             }
                           : null,
                     );

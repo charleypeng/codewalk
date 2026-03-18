@@ -3725,6 +3725,43 @@ index abc123..def456 100644
     expect(tappedToolPart?.id, 'part_task_tool_nav');
   });
 
+  testWidgets('shows latest command for a running task tool bubble', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: AssistantMessage(
+              id: 'msg_task_tool_command',
+              sessionId: 'ses_task_tool_command',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: <MessagePart>[
+                ToolPart(
+                  id: 'part_task_tool_command',
+                  messageId: 'msg_task_tool_command',
+                  sessionId: 'ses_task_tool_command',
+                  callId: 'call_task_tool_command',
+                  tool: 'task',
+                  state: ToolStateRunning(
+                    input: const <String, dynamic>{
+                      'description': 'Run project checks',
+                      'command': 'make check',
+                    },
+                    time: DateTime.fromMillisecondsSinceEpoch(1000),
+                  ),
+                ),
+              ],
+            ),
+            isSessionActivelyResponding: true,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('make check'), findsOneWidget);
+  });
+
   testWidgets('keeps active task tool bubbles last within each task run', (
     WidgetTester tester,
   ) async {

@@ -86,6 +86,8 @@ class _SessionTimelineEntriesCacheEntry {
     required this.expandedAssistantWorkGroupId,
     required this.wasCompactingContext,
     required this.frozenCompactionBoundaryId,
+    required this.showThinkingBubbles,
+    required this.showToolCallBubbles,
   });
 
   final List<ChatMessage> sourceMessages;
@@ -100,4 +102,6 @@ class _SessionTimelineEntriesCacheEntry {
   final String? expandedAssistantWorkGroupId;
   final bool wasCompactingContext;
   final String? frozenCompactionBoundaryId;
+  final bool showThinkingBubbles;
+  final bool showToolCallBubbles;
 }

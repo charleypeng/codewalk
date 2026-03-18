@@ -298,6 +298,8 @@ class ChatProvider extends ChangeNotifier {
   Set<String> _pinnedSessionIds = <String>{};
   Map<String, int> _modelUsageCounts = <String, int>{};
   Map<String, String> _selectedVariantByModel = <String, String>{};
+  Map<String, _AgentSelectionMemory> _agentSelectionMemoryByAgent =
+      <String, _AgentSelectionMemory>{};
   String _activeServerId = 'legacy';
   int _providersFetchId = 0;
   int _sessionsFetchId = 0;
@@ -2275,6 +2277,7 @@ class ChatProvider extends ChangeNotifier {
     nextModelId ??= provider.models.keys.firstOrNull;
     _selectedModelId = nextModelId;
     _selectedVariantId = _resolveStoredVariantForSelection();
+    _rememberCurrentSelectionForAgent(agentName: _selectedAgentName);
     _recordModelSelectionRecency(previousModelKey: previousModelKey);
     _recordVariantSelectionRecencyForCurrentModel();
     _storeCurrentSessionSelectionOverride();
@@ -2294,6 +2297,7 @@ class ChatProvider extends ChangeNotifier {
     _selectedProviderId = providerId;
     _selectedModelId = modelId;
     _selectedVariantId = _resolveStoredVariantForSelection();
+    _rememberCurrentSelectionForAgent(agentName: _selectedAgentName);
     _recordModelSelectionRecency(previousModelKey: previousModelKey);
     _recordVariantSelectionRecencyForCurrentModel();
     _storeCurrentSessionSelectionOverride();
@@ -2348,7 +2352,9 @@ class ChatProvider extends ChangeNotifier {
       return;
     }
     final previousAgentName = _selectedAgentName;
+    _rememberCurrentSelectionForAgent(agentName: previousAgentName);
     _selectedAgentName = next;
+    _restoreSelectionForAgent(next);
     _recordAgentSelectionRecency(previousAgentName: previousAgentName);
     _storeCurrentSessionSelectionOverride();
     notifyListeners();
@@ -2379,6 +2385,7 @@ class ChatProvider extends ChangeNotifier {
     _recordVariantSelectionRecencyForCurrentModel(
       previousVariantId: previousVariantId,
     );
+    _rememberCurrentSelectionForAgent(agentName: _selectedAgentName);
 
     _storeCurrentSessionSelectionOverride();
     await _persistSelection();
@@ -2903,6 +2910,16 @@ class ChatProvider extends ChangeNotifier {
     // Save current session ID and try cache-first restore (SWR).
     final serverId = await _resolveServerScopeId();
     final scopeId = _resolveContextScopeId();
+    final restoredComposerDraft = await _loadPersistedComposerDraft(
+      session.id,
+      serverId: serverId,
+      scopeId: scopeId,
+    );
+    _queueHistoryComposerSync(
+      sessionId: session.id,
+      draft: restoredComposerDraft,
+      clear: true,
+    );
 
     final restoredCachedMessages = await _restoreSessionMessagesFromCache(
       session.id,
@@ -3487,6 +3504,12 @@ class ChatProvider extends ChangeNotifier {
                 }
               }
               _clearActiveSendDraft();
+              unawaited(
+                _persistComposerDraftForSessionInternal(
+                  sessionId: streamSessionId,
+                  draft: null,
+                ),
+              );
               // Activate abort suppression so that any session.error arriving
               // on the provider-level SSE shortly after this stream closes
               // (e.g. due to half-open TCP after background resume) is
@@ -3620,6 +3643,12 @@ class ChatProvider extends ChangeNotifier {
       }
       _clearSessionAttentionForSession(session.id);
       _clearActiveSendDraft();
+      unawaited(
+        _persistComposerDraftForSessionInternal(
+          sessionId: session.id,
+          draft: null,
+        ),
+      );
       _errorMessage = null;
       success = true;
     }

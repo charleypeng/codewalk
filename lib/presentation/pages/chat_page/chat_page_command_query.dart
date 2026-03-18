@@ -185,10 +185,9 @@ extension _ChatPageCommandQuery on _ChatPageState {
         if (!mounted) {
           return true;
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Use @ for mentions, ! for shell, / for commands'),
-          ),
+        _showChatPageMessageSnackBar(
+          'Use @ for mentions, ! for shell, / for commands',
+          hideCurrent: false,
         );
         return true;
       case 'compact':
@@ -278,8 +277,6 @@ extension _ChatPageCommandQuery on _ChatPageState {
             _HistoryToolbarAction.undo => 'Nothing to undo in this session',
             _HistoryToolbarAction.redo => 'Nothing to redo in this session',
           };
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    _showChatPageMessageSnackBar(message, hideCurrent: false);
   }
 }

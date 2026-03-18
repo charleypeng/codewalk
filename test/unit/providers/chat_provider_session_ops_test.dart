@@ -353,6 +353,7 @@ void main() {
 
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
+        provider.consumePendingHistoryComposerSync(sessionId: 'ses_1');
 
         final ok = await provider.redoLastTurn();
 
@@ -379,6 +380,7 @@ void main() {
       );
       await provider.loadSessions();
       await provider.selectSession(provider.sessions.first);
+      provider.consumePendingHistoryComposerSync(sessionId: 'ses_1');
 
       final ok = await provider.redoLastTurn();
 

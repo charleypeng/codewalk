@@ -100,31 +100,22 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       if (!mounted) {
         return;
       }
-      final messenger = ScaffoldMessenger.maybeOf(context);
-      if (messenger == null) {
-        return;
-      }
-      messenger.hideCurrentSnackBar();
       final hasRetryAction =
           notice.type == ChatUiNoticeType.remoteAbort && notice.hasAction;
-      messenger.showSnackBar(
-        SnackBar(
-          duration: const Duration(seconds: 4),
-          behavior: SnackBarBehavior.floating,
-          content: Text(notice.message),
-          action: hasRetryAction
-              ? SnackBarAction(
-                  label: notice.actionLabel!,
-                  onPressed: () {
-                    unawaited(
-                      chatProvider.refreshActiveSessionView(
-                        reason: 'ui-notice-remote-abort-retry',
-                      ),
-                    );
-                  },
-                )
-              : null,
-        ),
+      _showChatPageSnackBar(
+        content: Text(notice.message),
+        action: hasRetryAction
+            ? SnackBarAction(
+                label: notice.actionLabel!,
+                onPressed: () {
+                  unawaited(
+                    chatProvider.refreshActiveSessionView(
+                      reason: 'ui-notice-remote-abort-retry',
+                    ),
+                  );
+                },
+              )
+            : null,
       );
     });
   }
@@ -151,12 +142,14 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         _composerPrefilledDraft = rejectedDraft;
         _composerPrefilledDraftVersion += 1;
       });
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) {
-          return;
-        }
-        _inputFocusNode.requestFocus();
-      });
+      if (rejectedDraft.hasContent) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) {
+            return;
+          }
+          _inputFocusNode.requestFocus();
+        });
+      }
     });
   }
 
@@ -179,7 +172,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         return;
       }
       if (pending.clear) {
-        _chatInputController.clearDraft();
+        _chatInputController.clearDraftWithoutFocus();
       }
       final draft = pending.draft;
       if (draft != null) {
@@ -188,12 +181,14 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
           _composerPrefilledDraftVersion += 1;
         });
       }
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) {
-          return;
-        }
-        _inputFocusNode.requestFocus();
-      });
+      if (draft != null && draft.hasContent) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) {
+            return;
+          }
+          _inputFocusNode.requestFocus();
+        });
+      }
     });
   }
 

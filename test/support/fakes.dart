@@ -147,6 +147,7 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
   String? selectedAgent;
   String? selectedVariantMapJson;
   String? sessionSelectionOverridesJson;
+  String? agentSelectionMemoryJson;
   String? recentModelsJson;
   String? favoriteModelsJson;
   String? providerCatalogCacheJson;
@@ -213,6 +214,7 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
     selectedAgent = null;
     selectedVariantMapJson = null;
     sessionSelectionOverridesJson = null;
+    agentSelectionMemoryJson = null;
     recentModelsJson = null;
     favoriteModelsJson = null;
     providerCatalogCacheJson = null;
@@ -447,6 +449,35 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
     }
     return scopedStrings[_key(
       'session_selection_overrides',
+      serverId: serverId,
+      scopeId: scopeId,
+    )];
+  }
+
+  @override
+  Future<String?> getAgentSelectionMemoryJson({
+    String? serverId,
+    String? scopeId,
+  }) async {
+    if (serverId == null && scopeId == null) {
+      return agentSelectionMemoryJson;
+    }
+    return scopedStrings[_key(
+      'agent_selection_memory',
+      serverId: serverId,
+      scopeId: scopeId,
+    )];
+  }
+
+  @override
+  Future<String?> getSessionComposerDraftJson({
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  }) async {
+    return scopedStrings[_sessionKey(
+      'session_composer_draft',
+      sessionId: sessionId,
       serverId: serverId,
       scopeId: scopeId,
     )];
@@ -903,6 +934,44 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
           scopeId: scopeId,
         )] =
         overridesJson;
+  }
+
+  @override
+  Future<void> saveAgentSelectionMemoryJson(
+    String agentSelectionMemoryJson, {
+    String? serverId,
+    String? scopeId,
+  }) async {
+    if (serverId == null && scopeId == null) {
+      this.agentSelectionMemoryJson = agentSelectionMemoryJson;
+      return;
+    }
+    scopedStrings[_key(
+          'agent_selection_memory',
+          serverId: serverId,
+          scopeId: scopeId,
+        )] =
+        agentSelectionMemoryJson;
+  }
+
+  @override
+  Future<void> saveSessionComposerDraftJson(
+    String? draftJson, {
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  }) async {
+    final key = _sessionKey(
+      'session_composer_draft',
+      sessionId: sessionId,
+      serverId: serverId,
+      scopeId: scopeId,
+    );
+    if (draftJson == null || draftJson.trim().isEmpty) {
+      scopedStrings.remove(key);
+      return;
+    }
+    scopedStrings[key] = draftJson;
   }
 
   @override

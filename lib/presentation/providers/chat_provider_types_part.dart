@@ -68,6 +68,18 @@ class SessionAttentionState {
   }
 }
 
+class _AgentSelectionMemory {
+  const _AgentSelectionMemory({
+    required this.providerId,
+    required this.modelId,
+    this.variantId,
+  });
+
+  final String providerId;
+  final String modelId;
+  final String? variantId;
+}
+
 class _RejectedDraftEnvelope {
   const _RejectedDraftEnvelope({required this.sessionId, required this.draft});
 

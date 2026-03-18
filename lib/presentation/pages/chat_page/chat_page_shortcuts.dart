@@ -124,6 +124,9 @@ extension _ChatPageShortcuts on _ChatPageState {
       if (shouldStop) {
         _lastGlobalEscapeAt = null;
         unawaited(_requestStopActiveResponse(chatProvider));
+      } else {
+        _chatInputController.armGlobalEscapeStopHint();
+        _focusInput();
       }
       return;
     }
@@ -141,16 +144,13 @@ extension _ChatPageShortcuts on _ChatPageState {
   }
 
   Future<void> _requestStopActiveResponse(ChatProvider chatProvider) async {
-    final messenger = ScaffoldMessenger.of(context);
     final stopped = await chatProvider.abortActiveResponse();
     if (stopped || !mounted) {
       return;
     }
     final rawMessage =
         chatProvider.errorMessage ?? 'Failed to stop current response';
-    messenger.showSnackBar(
-      SnackBar(content: Text(normalizeAbortMessageForDisplay(rawMessage))),
-    );
+    _showChatPageMessageSnackBar(normalizeAbortMessageForDisplay(rawMessage));
   }
 
   Future<void> _closeAppShortcut() async {

@@ -576,15 +576,15 @@ extension _ChatPageScaffold on _ChatPageState {
                           return;
                         }
                         if (created == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Failed to fork conversation'),
-                            ),
+                          _showChatPageMessageSnackBar(
+                            'Failed to fork conversation',
+                            hideCurrent: false,
                           );
                           return;
                         }
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Conversation forked')),
+                        _showChatPageMessageSnackBar(
+                          'Conversation forked',
+                          hideCurrent: false,
                         );
                         _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
                       },
@@ -718,10 +718,9 @@ extension _ChatPageScaffold on _ChatPageState {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Conversation is not available for this project yet'),
-        ),
+      _showChatPageMessageSnackBar(
+        'Conversation is not available for this project yet',
+        hideCurrent: false,
       );
       return;
     }

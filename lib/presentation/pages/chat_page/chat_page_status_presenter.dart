@@ -2,19 +2,14 @@ part of '../chat_page.dart';
 
 extension _ChatPageStatusPresenter on _ChatPageState {
   Future<void> _compactCurrentSession(ChatProvider chatProvider) async {
-    final messenger = ScaffoldMessenger.of(context);
     final success = await chatProvider.compactCurrentSession();
     if (!mounted) {
       return;
     }
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          success
-              ? 'Context compacted'
-              : (chatProvider.errorMessage ?? 'Failed to compact context'),
-        ),
-      ),
+    _showChatPageMessageSnackBar(
+      success
+          ? 'Context compacted'
+          : (chatProvider.errorMessage ?? 'Failed to compact context'),
     );
   }
 
@@ -221,15 +216,8 @@ extension _ChatPageStatusPresenter on _ChatPageState {
     required ChatProvider chatProvider,
     required AppProvider appProvider,
   }) {
-    final deferForegroundWarnings = _shouldDeferForegroundWarningUi(
-      chatProvider: chatProvider,
-      appProvider: appProvider,
-    );
     if (!appProvider.isConnected ||
         chatProvider.syncState == ChatSyncState.reconnecting) {
-      if (deferForegroundWarnings) {
-        return 'Connecting';
-      }
       return 'Reconnecting';
     }
     if (chatProvider.syncState == ChatSyncState.delayed ||
@@ -237,6 +225,27 @@ extension _ChatPageStatusPresenter on _ChatPageState {
       return 'Sync delayed';
     }
     return 'Connected';
+  }
+
+  bool _hasDelayedServerStatus({
+    required ChatProvider chatProvider,
+    required AppProvider appProvider,
+  }) {
+    final health = _activeServerHealth(appProvider);
+    if (health == ServerHealthStatus.unhealthy) {
+      return false;
+    }
+    if (_shouldDeferForegroundWarningUi(
+      chatProvider: chatProvider,
+      appProvider: appProvider,
+    )) {
+      return true;
+    }
+    return health == ServerHealthStatus.unknown ||
+        !appProvider.isConnected ||
+        chatProvider.syncState == ChatSyncState.reconnecting ||
+        chatProvider.syncState == ChatSyncState.delayed ||
+        chatProvider.isInDegradedMode;
   }
 
   String _serverStatusLabel({
@@ -249,15 +258,15 @@ extension _ChatPageStatusPresenter on _ChatPageState {
           chatProvider: chatProvider,
           appProvider: appProvider,
         )) {
-      return 'Unhealthy';
+      return 'Offline';
     }
-    if (health == ServerHealthStatus.unknown) {
-      return 'Unknown';
-    }
-    return _syncStatusLabel(
+    if (_hasDelayedServerStatus(
       chatProvider: chatProvider,
       appProvider: appProvider,
-    );
+    )) {
+      return 'Delayed';
+    }
+    return 'Online';
   }
 
   Widget _buildServerStatusControl({required bool closeOnSelect}) {
@@ -279,7 +288,6 @@ extension _ChatPageStatusPresenter on _ChatPageState {
           key: const ValueKey<String>('sidebar_server_switch_button'),
           tooltip: 'Switch Server',
           onSelected: (value) async {
-            final messenger = ScaffoldMessenger.of(context);
             if (value == '__manage__') {
               await _openSettingsPage(
                 closeOnSelect: closeOnSelect,
@@ -290,9 +298,7 @@ extension _ChatPageStatusPresenter on _ChatPageState {
 
             final ok = await appProvider.setActiveServer(value);
             if (!ok && mounted) {
-              messenger.showSnackBar(
-                SnackBar(content: Text(appProvider.errorMessage)),
-              );
+              _showChatPageMessageSnackBar(appProvider.errorMessage);
             }
           },
           itemBuilder: (context) {
@@ -313,7 +319,7 @@ extension _ChatPageStatusPresenter on _ChatPageState {
                           color: switch (serverHealth) {
                             ServerHealthStatus.healthy => Colors.green,
                             ServerHealthStatus.unhealthy => Colors.red,
-                            ServerHealthStatus.unknown => Colors.grey,
+                            ServerHealthStatus.unknown => Colors.orange,
                           },
                           shape: BoxShape.circle,
                         ),
@@ -365,24 +371,35 @@ extension _ChatPageStatusPresenter on _ChatPageState {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  flex: 2,
-                  child: Text(
-                    active?.displayName ?? 'Server',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelMedium,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          active?.displayName ?? 'Server',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          statusLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: statusColor,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                              ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    statusLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
-                ),
-                const SizedBox(width: 2),
+                const SizedBox(width: 4),
                 const Icon(Symbols.arrow_drop_down, size: 18),
               ],
             ),

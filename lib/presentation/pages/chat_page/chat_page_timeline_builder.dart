@@ -268,6 +268,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                   final sentMessageHistory = _collectSentMessageHistory(
                     chatProvider.messages,
                   );
+                  final currentSessionId = chatProvider.currentSession?.id;
                   final projectProvider = context.read<ProjectProvider>();
                   return ChatInputWidget(
                     onSendMessage: (submission) async {
@@ -288,6 +289,12 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                       await _requestStopActiveResponse(chatProvider);
                     },
                     onStopHintRequested: _showComposerStopHint,
+                    onDraftChanged: (draft) {
+                      _scheduleComposerDraftPersistence(
+                        sessionId: currentSessionId,
+                        draft: draft,
+                      );
+                    },
                     onMentionQuery: _queryMentionSuggestions,
                     onSlashQuery: _querySlashSuggestions,
                     onBuiltinSlashCommand: (commandName) =>
@@ -663,9 +670,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    _showChatPageMessageSnackBar(message, hideCurrent: false);
   }
 
   Widget _buildMessageViewport(ChatProvider chatProvider) {
@@ -1208,6 +1213,9 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     required bool isCompactingContext,
     required List<ChatPermissionRequest> interactionPermissions,
   }) {
+    final settingsProvider = _settingsProvider;
+    final showThinkingBubbles = settingsProvider?.showThinkingBubbles ?? true;
+    final showToolCallBubbles = settingsProvider?.showToolCallBubbles ?? true;
     final permissionPromptSignature = interactionPermissions
         .map((request) => '${request.id}:${request.sessionId}')
         .join('|');
@@ -1221,6 +1229,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           isSessionActivelyResponding: isSessionActivelyResponding,
           showRetryIndicator: showRetryIndicator,
           permissionPromptSignature: permissionPromptSignature,
+          showThinkingBubbles: showThinkingBubbles,
+          showToolCallBubbles: showToolCallBubbles,
         )) {
       return cachedEntry.entries;
     }
@@ -1327,6 +1337,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
         expandedAssistantWorkGroupId: _expandedAssistantWorkGroupId,
         wasCompactingContext: _wasCompactingContext,
         frozenCompactionBoundaryId: _frozenCompactionBoundaryId,
+        showThinkingBubbles: showThinkingBubbles,
+        showToolCallBubbles: showToolCallBubbles,
       ),
     );
     return entries;
@@ -1340,6 +1352,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     required bool isSessionActivelyResponding,
     required bool showRetryIndicator,
     required String permissionPromptSignature,
+    required bool showThinkingBubbles,
+    required bool showToolCallBubbles,
   }) {
     return (entry.messagesVersion == messagesVersion ||
             _areTimelineSourceMessagesIdentical(
@@ -1354,7 +1368,9 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
         entry.expandedHistoryGroupId == _expandedCollapsedHistoryGroupId &&
         entry.expandedAssistantWorkGroupId == _expandedAssistantWorkGroupId &&
         entry.wasCompactingContext == _wasCompactingContext &&
-        entry.frozenCompactionBoundaryId == _frozenCompactionBoundaryId;
+        entry.frozenCompactionBoundaryId == _frozenCompactionBoundaryId &&
+        entry.showThinkingBubbles == showThinkingBubbles &&
+        entry.showToolCallBubbles == showToolCallBubbles;
   }
 
   bool _areTimelineSourceMessagesIdentical(
@@ -1416,6 +1432,10 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       return;
     }
 
+    final settingsProvider = _settingsProvider;
+    final showThinkingBubbles = settingsProvider?.showThinkingBubbles ?? true;
+    final showToolCallBubbles = settingsProvider?.showToolCallBubbles ?? true;
+
     var index = startIndex;
     while (index < endExclusive) {
       final current = messages[index];
@@ -1459,7 +1479,15 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
               'finalAssistantId=${finalAssistant.id} completed=${finalAssistant.isCompleted} workMessageCount=$workMessageCount shouldDeferCurrentRunCollapse=$shouldDeferCurrentRunCollapse',
         );
       }
+      final visibleWorkPreviewMessages = _visibleAssistantWorkPreviewMessages(
+        messages: messages,
+        startIndex: assistantRunStart,
+        endExclusive: assistantRunEnd - 1,
+        showThinkingBubbles: showThinkingBubbles,
+        showToolCallBubbles: showToolCallBubbles,
+      );
       if (workMessageCount > 0 &&
+          visibleWorkPreviewMessages.isNotEmpty &&
           !shouldDeferCurrentRunCollapse &&
           _isSuccessfulFinalAssistantMessage(finalAssistant)) {
         _traceFinalUi(
@@ -1482,11 +1510,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
             expanded: expanded,
             showBoundedPreview: showBoundedPreview,
             previewMessages: showBoundedPreview
-                ? _buildAssistantWorkPreviewMessages(
-                    messages: messages,
-                    startIndex: assistantRunStart,
-                    endExclusive: assistantRunEnd - 1,
-                  )
+                ? visibleWorkPreviewMessages
                 : const <ChatMessage>[],
           ),
         );
@@ -1559,6 +1583,75 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
         endExclusive: endExclusive,
       );
     }
+  }
+
+  bool _timelineMessageHasVisibleContent(
+    ChatMessage message, {
+    required bool showThinkingBubbles,
+    required bool showToolCallBubbles,
+  }) {
+    for (final part in message.parts) {
+      switch (part.type) {
+        case PartType.reasoning:
+          final reasoningPart = part as ReasoningPart;
+          if (!showThinkingBubbles) {
+            continue;
+          }
+          if (parseReasoningStatusLabel(reasoningPart.text) == null &&
+              reasoningPart.text.trim().isNotEmpty) {
+            return true;
+          }
+          continue;
+        case PartType.tool:
+          if (!showToolCallBubbles) {
+            continue;
+          }
+          if (part is ToolPart &&
+              part.tool.trim().toLowerCase() == 'todowrite') {
+            continue;
+          }
+          return true;
+        case PartType.patch:
+          if (!showToolCallBubbles) {
+            continue;
+          }
+          return true;
+        case PartType.text:
+          if ((part as TextPart).text.trim().isNotEmpty) {
+            return true;
+          }
+          continue;
+        case PartType.stepStart:
+        case PartType.stepFinish:
+          continue;
+        default:
+          return true;
+      }
+    }
+    return false;
+  }
+
+  List<ChatMessage> _visibleAssistantWorkPreviewMessages({
+    required List<ChatMessage> messages,
+    required int startIndex,
+    required int endExclusive,
+    required bool showThinkingBubbles,
+    required bool showToolCallBubbles,
+  }) {
+    final previewMessages = _buildAssistantWorkPreviewMessages(
+      messages: messages,
+      startIndex: startIndex,
+      endExclusive: endExclusive,
+    );
+    return previewMessages
+        .where(
+          (message) => _timelineMessageHasVisibleContent(
+            message,
+            showThinkingBubbles: showThinkingBubbles,
+            showToolCallBubbles: showToolCallBubbles,
+          ),
+        )
+        .toList(growable: false);
   }
 
   List<ChatMessage> _buildAssistantWorkPreviewMessages({

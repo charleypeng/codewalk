@@ -103,6 +103,30 @@ abstract class AppLocalDataSource {
     String? scopeId,
   });
 
+  Future<String?> getAgentSelectionMemoryJson({
+    String? serverId,
+    String? scopeId,
+  });
+
+  Future<void> saveAgentSelectionMemoryJson(
+    String agentSelectionMemoryJson, {
+    String? serverId,
+    String? scopeId,
+  });
+
+  Future<String?> getSessionComposerDraftJson({
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  });
+
+  Future<void> saveSessionComposerDraftJson(
+    String? draftJson, {
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  });
+
   /// Technical comment translated to English.
   Future<String?> getRecentModelsJson({String? serverId, String? scopeId});
 
@@ -935,6 +959,72 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
       ),
       overridesJson,
     );
+  }
+
+  @override
+  Future<String?> getAgentSelectionMemoryJson({
+    String? serverId,
+    String? scopeId,
+  }) async {
+    return sharedPreferences.getString(
+      _scopedKey(
+        AppConstants.agentSelectionMemoryKey,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+  }
+
+  @override
+  Future<void> saveAgentSelectionMemoryJson(
+    String agentSelectionMemoryJson, {
+    String? serverId,
+    String? scopeId,
+  }) async {
+    await sharedPreferences.setString(
+      _scopedKey(
+        AppConstants.agentSelectionMemoryKey,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+      agentSelectionMemoryJson,
+    );
+  }
+
+  @override
+  Future<String?> getSessionComposerDraftJson({
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  }) async {
+    return sharedPreferences.getString(
+      _sessionScopedKey(
+        AppConstants.sessionComposerDraftKey,
+        sessionId: sessionId,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+  }
+
+  @override
+  Future<void> saveSessionComposerDraftJson(
+    String? draftJson, {
+    required String sessionId,
+    String? serverId,
+    String? scopeId,
+  }) async {
+    final key = _sessionScopedKey(
+      AppConstants.sessionComposerDraftKey,
+      sessionId: sessionId,
+      serverId: serverId,
+      scopeId: scopeId,
+    );
+    if (draftJson == null || draftJson.trim().isEmpty) {
+      await sharedPreferences.remove(key);
+      return;
+    }
+    await sharedPreferences.setString(key, draftJson);
   }
 
   @override

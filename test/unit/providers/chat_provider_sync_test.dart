@@ -732,6 +732,64 @@ void main() {
     });
 
     test(
+      'setSelectedAgent restores last model and variant used for each agent',
+      () async {
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{
+                  'model_a': testModel(
+                    'model_a',
+                    variants: const <String, ModelVariant>{
+                      'low': ModelVariant(id: 'low', name: 'Low'),
+                      'high': ModelVariant(id: 'high', name: 'High'),
+                    },
+                  ),
+                  'model_b': testModel(
+                    'model_b',
+                    variants: const <String, ModelVariant>{
+                      'low': ModelVariant(id: 'low', name: 'Low'),
+                      'high': ModelVariant(id: 'high', name: 'High'),
+                    },
+                  ),
+                },
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a'],
+          ),
+        );
+        appRepository.agentsResult = const Right(<Agent>[
+          Agent(name: 'build', mode: 'primary', hidden: false, native: false),
+          Agent(name: 'plan', mode: 'primary', hidden: false, native: false),
+        ]);
+
+        await provider.initializeProviders();
+        await provider.setSelectedVariant('low');
+        await provider.setSelectedAgent('plan');
+        await provider.setSelectedModelByProvider(
+          providerId: 'provider_a',
+          modelId: 'model_b',
+        );
+        await provider.setSelectedVariant('high');
+
+        await provider.setSelectedAgent('build');
+        expect(provider.selectedAgentName, 'build');
+        expect(provider.selectedModelId, 'model_a');
+        expect(provider.selectedVariantId, 'low');
+
+        await provider.setSelectedAgent('plan');
+        expect(provider.selectedAgentName, 'plan');
+        expect(provider.selectedModelId, 'model_b');
+        expect(provider.selectedVariantId, 'high');
+      },
+    );
+
+    test(
       'cycleAgent follows Alt+Tab burst behavior and resets after timeout',
       () async {
         provider = buildProvider(

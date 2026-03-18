@@ -102,6 +102,7 @@ extension _ChatInputAttachmentController on _ChatInputWidgetState {
         }
       }
     });
+    _notifyDraftChanged();
   }
 
   bool _isMimeAllowed(String mime) {

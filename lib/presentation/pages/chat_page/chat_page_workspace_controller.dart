@@ -120,14 +120,13 @@ extension _ChatPageWorkspaceController on _ChatPageState {
     if (!ok) {
       final error = projectProvider.error;
       if (error != null && error.trim().isNotEmpty) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(error)));
+        _showChatPageMessageSnackBar(error, hideCurrent: false);
       }
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Project archived from closed list')),
+    _showChatPageMessageSnackBar(
+      'Project archived from closed list',
+      hideCurrent: false,
     );
   }
 
@@ -219,18 +218,16 @@ extension _ChatPageWorkspaceController on _ChatPageState {
     }
     final openedDirectory = projectProvider.currentDirectory;
     if (openedDirectory == requestedDirectory) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Project context opened: $requestedDirectory')),
+      _showChatPageMessageSnackBar(
+        'Project context opened: $requestedDirectory',
+        hideCurrent: false,
       );
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          projectProvider.error ??
-              'Failed to open project context: $requestedDirectory',
-        ),
-      ),
+    _showChatPageMessageSnackBar(
+      projectProvider.error ??
+          'Failed to open project context: $requestedDirectory',
+      hideCurrent: false,
     );
   }
 
