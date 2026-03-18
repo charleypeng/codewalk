@@ -422,11 +422,16 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       return;
     }
 
-    final latestMessageId = chatProvider.messages.last.id;
+    final latestAssistantMessageId = _resolveLatestRevealableAssistantMessageId(
+      chatProvider.messages,
+    );
+    if (latestAssistantMessageId == null || latestAssistantMessageId.isEmpty) {
+      return;
+    }
     _scrollToBottomRequestToken += 1;
     _scheduleLatestMessageReturnReveal(
       sessionId: sessionId,
-      messageId: latestMessageId,
+      messageId: latestAssistantMessageId,
       reason: reason,
     );
   }
@@ -483,12 +488,11 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     }
 
     final messages = chatProvider.messages;
-    final latestMessageId = messages.isEmpty ? null : messages.last.id;
     final latestRevealableAssistantMessageId =
         _resolveLatestRevealableAssistantMessageId(messages);
 
-    return _returnRevealBaselineMessageCount != messages.length ||
-        _returnRevealBaselineLatestMessageId != latestMessageId ||
+    return latestRevealableAssistantMessageId != null &&
+        latestRevealableAssistantMessageId.isNotEmpty &&
         _returnRevealBaselineLatestRevealableAssistantMessageId !=
             latestRevealableAssistantMessageId;
   }
@@ -517,11 +521,16 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       return;
     }
 
-    final latestMessageId = chatProvider.messages.last.id;
-    if (latestMessageId != messageId) {
+    final latestRevealableAssistantMessageId =
+        _resolveLatestRevealableAssistantMessageId(chatProvider.messages);
+    if (latestRevealableAssistantMessageId == null ||
+        latestRevealableAssistantMessageId.isEmpty) {
+      return;
+    }
+    if (latestRevealableAssistantMessageId != messageId) {
       _scheduleLatestMessageReturnReveal(
         sessionId: sessionId,
-        messageId: latestMessageId,
+        messageId: latestRevealableAssistantMessageId,
         reason: reason,
       );
       return;

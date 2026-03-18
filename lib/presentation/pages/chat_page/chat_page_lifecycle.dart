@@ -4,6 +4,16 @@ extension _ChatPageLifecycle on _ChatPageState {
   void _handleSettingsChanged() {
     _applyForegroundPolicy(reason: 'settings-changed');
     _autoApprovePermissionCooldownIds.clear();
+    _clearReturnRevealBaseline();
+    _pendingFinalAssistantRevealMessageId = null;
+    _finalAssistantRevealScheduled = false;
+    _pendingFinalAssistantRevealAttempts = 0;
+    final chatProvider = _chatProvider;
+    if (chatProvider != null &&
+        !chatProvider.isCurrentSessionActivelyResponding) {
+      _suppressPostCompletionAutoSnap = false;
+      _shouldRevealFinalAssistantOnCompletion = false;
+    }
     _scheduleAutoApprovePermissionDrain(reason: 'settings-changed');
   }
 
@@ -24,6 +34,9 @@ extension _ChatPageLifecycle on _ChatPageState {
     _autoApprovePermissionCooldownIds.removeWhere(
       (requestId) => !visibleRequestIds.contains(requestId),
     );
+    if (visibleRequestIds.isEmpty) {
+      return;
+    }
     if (!settingsProvider.initialized) {
       return;
     }

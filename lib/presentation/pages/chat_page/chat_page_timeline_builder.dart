@@ -9,7 +9,6 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     required String? latestRevertibleMessageId,
     required bool isSubConversation,
     required String? finalAssistantRevealMessageId,
-    required String? latestTimelineMessageId,
     bool wrapRevealAnchor = true,
     String? keyPrefix,
   }) {
@@ -48,9 +47,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
               _openSubConversationFromTaskToolPart(chatProvider, part),
             ),
     );
-    if (wrapRevealAnchor &&
-        (finalAssistantRevealMessageId == message.id ||
-            latestTimelineMessageId == message.id)) {
+    if (wrapRevealAnchor && finalAssistantRevealMessageId == message.id) {
       messageWidget = KeyedSubtree(
         key: _messageRevealAnchorKey(message.id),
         child: messageWidget,
@@ -1025,7 +1022,6 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     );
     final finalAssistantRevealMessageId =
         _resolveLatestRevealableAssistantMessageId(chatProvider.messages);
-    final latestTimelineMessageId = chatProvider.messages.last.id;
     final latestRevertibleMessageId = chatProvider.latestRevertibleMessageId;
     _pruneMessageRevealAnchorKeys(chatProvider.messages);
 
@@ -1070,7 +1066,6 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                       isSubConversation: isSubConversation,
                       finalAssistantRevealMessageId:
                           finalAssistantRevealMessageId,
-                      latestTimelineMessageId: latestTimelineMessageId,
                     );
                     child = KeyedSubtree(
                       key: ValueKey<String>(entry.key),
@@ -1092,7 +1087,6 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                             isSubConversation: isSubConversation,
                             finalAssistantRevealMessageId:
                                 finalAssistantRevealMessageId,
-                            latestTimelineMessageId: latestTimelineMessageId,
                             wrapRevealAnchor: false,
                             keyPrefix: 'assistant_work_preview',
                           ),
