@@ -4480,6 +4480,292 @@ void main() {
   );
 
   testWidgets(
+    'toggling auto-approve with no pending permissions keeps the viewport stable',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      const sessionId = 'ses_toggle_no_pending';
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: sessionId,
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Toggle No Pending',
+          ),
+        ],
+      );
+      final messages = <ChatMessage>[];
+      for (var index = 0; index < 18; index += 1) {
+        final userId = 'msg_toggle_user_$index';
+        messages.add(
+          UserMessage(
+            id: userId,
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(1000 + (index * 2000)),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_$userId',
+                messageId: userId,
+                sessionId: sessionId,
+                text: index == 8 ? 'older user marker' : 'user message $index',
+              ),
+            ],
+          ),
+        );
+        final assistantId = 'msg_toggle_assistant_$index';
+        messages.add(
+          AssistantMessage(
+            id: assistantId,
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(2000 + (index * 2000)),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(
+              2100 + (index * 2000),
+            ),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_$assistantId',
+                messageId: assistantId,
+                sessionId: sessionId,
+                text: 'assistant message $index',
+              ),
+            ],
+          ),
+        );
+      }
+      messages.add(
+        UserMessage(
+          id: 'msg_toggle_tail_user',
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(50000),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_toggle_tail_user',
+              messageId: 'msg_toggle_tail_user',
+              sessionId: sessionId,
+              text: 'tail user awaiting the next response',
+            ),
+          ],
+        ),
+      );
+      repository.messagesBySession[sessionId] = messages;
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.initializeProviders();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      final listFinder = find.byKey(
+        const ValueKey<String>('chat_message_list'),
+      );
+      final scrollableFinder = find.descendant(
+        of: listFinder,
+        matching: find.byType(Scrollable),
+      );
+
+      double distanceToBottom() {
+        final position = tester
+            .state<ScrollableState>(scrollableFinder)
+            .position;
+        return position.maxScrollExtent - position.pixels;
+      }
+
+      expect(distanceToBottom(), lessThanOrEqualTo(1));
+      expect(find.text('older user marker'), findsNothing);
+
+      final toggleFinder = find.byKey(
+        const ValueKey<String>('composer_permission_auto_approve_toggle'),
+      );
+      await tester.tap(toggleFinder);
+      await tester.pump();
+
+      expect(distanceToBottom(), lessThanOrEqualTo(1));
+      expect(find.text('older user marker'), findsNothing);
+
+      await tester.pump(const Duration(milliseconds: 1200));
+
+      expect(distanceToBottom(), lessThanOrEqualTo(1));
+      expect(find.text('older user marker'), findsNothing);
+
+      await tester.tap(toggleFinder);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1200));
+
+      expect(distanceToBottom(), lessThanOrEqualTo(1));
+      expect(find.text('older user marker'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'enabling auto-approve with pending permissions keeps the viewport stable',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      const sessionId = 'ses_toggle_pending';
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: sessionId,
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Toggle Pending',
+          ),
+        ],
+      );
+      final messages = <ChatMessage>[];
+      for (var index = 0; index < 18; index += 1) {
+        final userId = 'msg_pending_user_$index';
+        messages.add(
+          UserMessage(
+            id: userId,
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(1000 + (index * 2000)),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_$userId',
+                messageId: userId,
+                sessionId: sessionId,
+                text: index == 8
+                    ? 'older pending user marker'
+                    : 'pending user $index',
+              ),
+            ],
+          ),
+        );
+        final assistantId = 'msg_pending_assistant_$index';
+        messages.add(
+          AssistantMessage(
+            id: assistantId,
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(2000 + (index * 2000)),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(
+              2100 + (index * 2000),
+            ),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_$assistantId',
+                messageId: assistantId,
+                sessionId: sessionId,
+                text: 'pending assistant $index',
+              ),
+            ],
+          ),
+        );
+      }
+      messages.add(
+        UserMessage(
+          id: 'msg_pending_tail_user',
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(50000),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_pending_tail_user',
+              messageId: 'msg_pending_tail_user',
+              sessionId: sessionId,
+              text: 'tail user waiting on permission',
+            ),
+          ],
+        ),
+      );
+      repository.messagesBySession[sessionId] = messages;
+      repository.pendingPermissions = const <ChatPermissionRequest>[
+        ChatPermissionRequest(
+          id: 'perm_toggle_pending_1',
+          sessionId: sessionId,
+          permission: 'bash',
+          patterns: <String>['*'],
+          always: <String>[],
+          metadata: <String, dynamic>{},
+        ),
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+          'checkUpdatesOnOpen': false,
+          'composerAutoApprovePermissions': false,
+        });
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.initializeProviders();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      final listFinder = find.byKey(
+        const ValueKey<String>('chat_message_list'),
+      );
+      final scrollableFinder = find.descendant(
+        of: listFinder,
+        matching: find.byType(Scrollable),
+      );
+
+      double distanceToBottom() {
+        final position = tester
+            .state<ScrollableState>(scrollableFinder)
+            .position;
+        return position.maxScrollExtent - position.pixels;
+      }
+
+      expect(distanceToBottom(), lessThanOrEqualTo(1));
+      expect(find.text('older pending user marker'), findsNothing);
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'interaction_permission_request_perm_toggle_pending_1',
+          ),
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>('composer_permission_auto_approve_toggle'),
+        ),
+      );
+      await tester.pump();
+
+      expect(distanceToBottom(), lessThanOrEqualTo(1));
+      expect(find.text('older pending user marker'), findsNothing);
+
+      await tester.pump(const Duration(milliseconds: 1200));
+
+      expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
+      expect(repository.lastPermissionReply, 'once');
+      expect(distanceToBottom(), lessThanOrEqualTo(1));
+      expect(find.text('older pending user marker'), findsNothing);
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'interaction_permission_request_perm_toggle_pending_1',
+          ),
+        ),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
     'shows subagent permission requests in main prompt and timeline',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));
