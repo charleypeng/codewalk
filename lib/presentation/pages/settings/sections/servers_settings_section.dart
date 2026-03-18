@@ -11,6 +11,7 @@ import '../../../providers/app_provider.dart';
 import '../../../utils/app_page_route.dart';
 import '../../../widgets/searchable_dropdown_form_field.dart';
 import '../../onboarding_wizard_page.dart';
+import '../../opencode_setup_debug_page.dart';
 
 class ServersSettingsSection extends StatefulWidget {
   const ServersSettingsSection({super.key});
@@ -313,6 +314,14 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                     icon: const Icon(Symbols.auto_fix_high_rounded),
                     label: const Text('Setup Wizard'),
                   ),
+                  OutlinedButton.icon(
+                    key: const ValueKey(
+                      'open_code_setup_debug_button_settings',
+                    ),
+                    onPressed: _openSetupDebugPage,
+                    icon: const Icon(Symbols.bug_report_rounded),
+                    label: const Text('Setup Debug'),
+                  ),
                 ],
               ),
             if (appProvider.localSetupInProgress) ...[
@@ -412,6 +421,12 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
         ),
       ),
     );
+  }
+
+  Future<void> _openSetupDebugPage() async {
+    await Navigator.of(
+      context,
+    ).push(AppPageRoute(builder: (_) => const OpenCodeSetupDebugPage()));
   }
 
   Widget _buildEmptyState() {
@@ -627,6 +642,9 @@ class _ServerSetupQuickGuideState extends State<ServerSetupQuickGuide> {
         locale?.languageCode.toLowerCase().startsWith('pt') ?? false;
 
     final title = isPortuguese ? 'Configuracao rapida' : 'Quick setup';
+    final intro = isPortuguese
+        ? 'CodeWalk e o app. OpenCode e o motor que precisa estar rodando para a conexao funcionar.'
+        : 'CodeWalk is the app. OpenCode is the engine that needs to be running before this connection can work.';
     final firstStep = isPortuguese
         ? '1. Instale o OpenCode CLI.'
         : '1. Install OpenCode CLI.';
@@ -641,6 +659,12 @@ class _ServerSetupQuickGuideState extends State<ServerSetupQuickGuide> {
         ? 'Proteger acesso com senha'
         : 'Protect access with password';
     final passwordHint = isPortuguese ? 'Senha do servidor' : 'Server password';
+    final installOptions = isPortuguese
+        ? 'Outras opcoes oficiais: script de instalacao, npm, bun, pnpm, Homebrew ou binario do GitHub Releases.'
+        : 'Other official install options: install script, npm, bun, pnpm, Homebrew, or a binary from GitHub Releases.';
+    final verifyHint = isPortuguese
+        ? 'Depois de iniciar o servidor, confirme /global/health ou /doc antes de colar a URL no CodeWalk.'
+        : 'After starting the server, confirm /global/health or /doc responds before pasting the URL into CodeWalk.';
     final command = _buildCommand();
 
     return Padding(
@@ -664,6 +688,8 @@ class _ServerSetupQuickGuideState extends State<ServerSetupQuickGuide> {
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          Text(intro, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 8),
           Text(firstStep, style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: 6),
@@ -727,6 +753,10 @@ class _ServerSetupQuickGuideState extends State<ServerSetupQuickGuide> {
               ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
             ),
           ),
+          const SizedBox(height: 8),
+          Text(installOptions, style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: 6),
+          Text(verifyHint, style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
     );

@@ -22,6 +22,22 @@ enum ServerHealthStatus { unknown, healthy, unhealthy }
 
 enum LocalServerRuntimeStatus { stopped, starting, running, stopping, failed }
 
+enum SetupDebugSeverity { info, error }
+
+class SetupDebugEntry {
+  const SetupDebugEntry({
+    required this.timestamp,
+    required this.source,
+    required this.message,
+    required this.severity,
+  });
+
+  final DateTime timestamp;
+  final String source;
+  final String message;
+  final SetupDebugSeverity severity;
+}
+
 class AppProvider extends ChangeNotifier {
   AppProvider({
     required GetAppInfo getAppInfo,
@@ -75,6 +91,7 @@ class AppProvider extends ChangeNotifier {
   String _localSetupMessage =
       'Run diagnostics to verify local OpenCode requirements.';
   List<String> _localSetupLogs = <String>[];
+  List<SetupDebugEntry> _setupDebugEntries = <SetupDebugEntry>[];
   final String _localServerHost = ApiConstants.defaultHost;
   final int _localServerPort = ApiConstants.defaultPort;
   bool _localServerStoppingByRequest = false;
@@ -107,6 +124,8 @@ class AppProvider extends ChangeNotifier {
   bool get localSetupInProgress => _localSetupInProgress;
   String get localSetupMessage => _localSetupMessage;
   List<String> get localSetupLogs => List<String>.unmodifiable(_localSetupLogs);
+  List<SetupDebugEntry> get setupDebugEntries =>
+      List<SetupDebugEntry>.unmodifiable(_setupDebugEntries);
   List<ServerProfile> get serverProfiles =>
       List<ServerProfile>.unmodifiable(_serverProfiles);
   String? get activeServerId => _activeServerId;
@@ -530,6 +549,14 @@ class AppProvider extends ChangeNotifier {
     if (!_localSetupInProgress) {
       _localSetupMessage = report.recommendation;
     }
+    final availability = report.opencode.available
+        ? 'OpenCode detected'
+        : 'OpenCode not detected';
+    _recordSetupDebugEvent(
+      source: 'Diagnostics',
+      message: '$availability on ${report.platform}. ${report.recommendation}',
+      notify: false,
+    );
     if (notify) {
       notifyListeners();
     }
@@ -542,6 +569,12 @@ class AppProvider extends ChangeNotifier {
     _localSetupLogs = <String>[];
     _localSetupMessage = 'Detecting OpenCode command...';
     _errorMessage = '';
+    _recordSetupDebugEvent(
+      source: 'Use Existing',
+      message:
+          'Trying to detect an existing OpenCode command from the current environment.',
+      notify: false,
+    );
     notifyListeners();
 
     final report = await _localServerRuntime.diagnose(
@@ -559,6 +592,12 @@ class AppProvider extends ChangeNotifier {
           : 'OpenCode command was not detected. Run installation from the wizard.';
       _localSetupInProgress = false;
       _localSetupMessage = message;
+      _recordSetupDebugEvent(
+        source: 'Use Existing',
+        message: message,
+        severity: SetupDebugSeverity.error,
+        notify: false,
+      );
       _setError(message);
       return false;
     }
@@ -567,6 +606,11 @@ class AppProvider extends ChangeNotifier {
     _localSetupInProgress = false;
     _localSetupMessage = 'Using OpenCode command at ${report.opencode.path}';
     _errorMessage = '';
+    _recordSetupDebugEvent(
+      source: 'Use Existing',
+      message: _localSetupMessage,
+      notify: false,
+    );
     notifyListeners();
     return true;
   }
@@ -584,6 +628,12 @@ class AppProvider extends ChangeNotifier {
     _localSetupLogs = <String>[];
     _localSetupMessage = 'Installing OpenCode requirements...';
     _errorMessage = '';
+    final methodLabel = _installMethodLabel(method);
+    _recordSetupDebugEvent(
+      source: methodLabel,
+      message: 'Started OpenCode installation from CodeWalk.',
+      notify: false,
+    );
     notifyListeners();
 
     final result = await _localServerRuntime.install(
@@ -596,6 +646,12 @@ class AppProvider extends ChangeNotifier {
           : 'OpenCode installation failed.';
       _localSetupInProgress = false;
       _localSetupMessage = message;
+      _recordSetupDebugEvent(
+        source: methodLabel,
+        message: message,
+        severity: SetupDebugSeverity.error,
+        notify: false,
+      );
       _setError(message);
       return false;
     }
@@ -608,6 +664,13 @@ class AppProvider extends ChangeNotifier {
     _localSetupInProgress = false;
     _localSetupMessage = 'OpenCode requirements installed successfully.';
     _errorMessage = '';
+    _recordSetupDebugEvent(
+      source: methodLabel,
+      message: result.commandPath?.trim().isNotEmpty == true
+          ? 'Installation succeeded. OpenCode command available at ${result.commandPath!.trim()}.'
+          : 'Installation succeeded.',
+      notify: false,
+    );
     notifyListeners();
     return true;
   }
@@ -617,8 +680,95 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearSetupDebugData() {
+    _localSetupLogs = <String>[];
+    _setupDebugEntries = <SetupDebugEntry>[];
+    _localServerLastOutput = '';
+    notifyListeners();
+  }
+
+  void recordSetupDebugEvent({
+    required String source,
+    required String message,
+    SetupDebugSeverity severity = SetupDebugSeverity.info,
+  }) {
+    _recordSetupDebugEvent(
+      source: source,
+      message: message,
+      severity: severity,
+      notify: true,
+    );
+  }
+
+  String exportSetupDebugReport() {
+    final buffer = StringBuffer()
+      ..writeln('=== OpenCode Setup Debug ===')
+      ..writeln('Exported: ${DateTime.now().toIso8601String()}')
+      ..writeln('Status: $_localServerStatusMessage');
+
+    if (_localSetupMessage.trim().isNotEmpty) {
+      buffer.writeln(
+        'Setup message: ${_sanitizeSetupDebugText(_localSetupMessage)}',
+      );
+    }
+    if (_localServerCommandPath.trim().isNotEmpty) {
+      buffer.writeln(
+        'Command path: ${_sanitizeSetupDebugText(_localServerCommandPath)}',
+      );
+    }
+    if (_localServerLastOutput.trim().isNotEmpty) {
+      buffer.writeln(
+        'Latest server output: ${_sanitizeSetupDebugText(_localServerLastOutput)}',
+      );
+    }
+
+    final report = _localEnvironmentReport;
+    if (report != null) {
+      buffer
+        ..writeln()
+        ..writeln('--- Environment ---')
+        ..writeln('Platform: ${_sanitizeSetupDebugText(report.platform)}')
+        ..writeln('OpenCode: ${_toolStatusSummary(report.opencode)}')
+        ..writeln('Node.js: ${_toolStatusSummary(report.node)}')
+        ..writeln('npm: ${_toolStatusSummary(report.npm)}')
+        ..writeln('Bun: ${_toolStatusSummary(report.bun)}')
+        ..writeln('WSL: ${_toolStatusSummary(report.wsl)}')
+        ..writeln(
+          'Network: ${report.hasNetworkAccess ? 'reachable' : 'unreachable'}',
+        )
+        ..writeln(
+          'Install directory: ${report.installDirectoryWritable ? 'writable' : 'not writable'}',
+        )
+        ..writeln(
+          'Recommendation: ${_sanitizeSetupDebugText(report.recommendation)}',
+        );
+    }
+
+    if (_setupDebugEntries.isNotEmpty) {
+      buffer
+        ..writeln()
+        ..writeln('--- Timeline ---');
+      for (final entry in _setupDebugEntries) {
+        buffer.writeln(
+          '[${entry.timestamp.toIso8601String()}] ${entry.severity.name.toUpperCase()} ${entry.source}: ${entry.message}',
+        );
+      }
+    }
+
+    if (_localSetupLogs.isNotEmpty) {
+      buffer
+        ..writeln()
+        ..writeln('--- Setup Logs ---');
+      for (final line in _localSetupLogs) {
+        buffer.writeln(line);
+      }
+    }
+
+    return buffer.toString().trimRight();
+  }
+
   void _appendLocalSetupLog(String line) {
-    final value = line.trim();
+    final value = _sanitizeSetupDebugText(line.trim());
     if (value.isEmpty) {
       return;
     }
@@ -656,6 +806,11 @@ class AppProvider extends ChangeNotifier {
     _localServerStatusMessage = 'Starting local server...';
     _localServerLastOutput = '';
     _errorMessage = '';
+    _recordSetupDebugEvent(
+      source: 'Local Server',
+      message: 'Starting managed OpenCode server at $localServerUrl.',
+      notify: false,
+    );
     notifyListeners();
 
     if (_localServerCommandPath.trim().isEmpty) {
@@ -676,6 +831,12 @@ class AppProvider extends ChangeNotifier {
           : 'Failed to start local OpenCode server.';
       _localServerStatus = LocalServerRuntimeStatus.failed;
       _localServerStatusMessage = message;
+      _recordSetupDebugEvent(
+        source: 'Local Server',
+        message: message,
+        severity: SetupDebugSeverity.error,
+        notify: false,
+      );
       _setError(message);
       return false;
     }
@@ -686,6 +847,12 @@ class AppProvider extends ChangeNotifier {
       _localServerStatus = LocalServerRuntimeStatus.failed;
       _localServerStatusMessage = message;
       await _localServerRuntime.stop();
+      _recordSetupDebugEvent(
+        source: 'Local Server',
+        message: message,
+        severity: SetupDebugSeverity.error,
+        notify: false,
+      );
       _setError(message);
       return false;
     }
@@ -695,6 +862,12 @@ class AppProvider extends ChangeNotifier {
     _localServerStatus = LocalServerRuntimeStatus.running;
     _localServerStatusMessage = 'Running at $localServerUrl';
     _errorMessage = '';
+    _recordSetupDebugEvent(
+      source: 'Local Server',
+      message:
+          'Managed OpenCode server is healthy and running at $localServerUrl.',
+      notify: false,
+    );
     notifyListeners();
     return true;
   }
@@ -709,6 +882,11 @@ class AppProvider extends ChangeNotifier {
     _localServerStatus = LocalServerRuntimeStatus.stopping;
     _localServerStatusMessage = 'Stopping local server...';
     _errorMessage = '';
+    _recordSetupDebugEvent(
+      source: 'Local Server',
+      message: 'Stopping managed OpenCode server.',
+      notify: false,
+    );
     notifyListeners();
 
     await _localServerRuntime.stop();
@@ -716,6 +894,11 @@ class AppProvider extends ChangeNotifier {
       _localServerStatus = LocalServerRuntimeStatus.stopped;
       _localServerStatusMessage = 'Local server is stopped.';
       _localServerStoppingByRequest = false;
+      _recordSetupDebugEvent(
+        source: 'Local Server',
+        message: 'Managed OpenCode server stopped cleanly.',
+        notify: false,
+      );
       notifyListeners();
     }
 
@@ -740,7 +923,7 @@ class AppProvider extends ChangeNotifier {
   }
 
   void _handleLocalServerOutput(String line) {
-    final trimmed = line.trim();
+    final trimmed = _sanitizeSetupDebugText(line.trim());
     if (trimmed.isEmpty) {
       return;
     }
@@ -753,6 +936,11 @@ class AppProvider extends ChangeNotifier {
       _localServerStoppingByRequest = false;
       _localServerStatus = LocalServerRuntimeStatus.stopped;
       _localServerStatusMessage = 'Local server is stopped.';
+      _recordSetupDebugEvent(
+        source: 'Local Server',
+        message: 'Managed OpenCode server exited after a requested stop.',
+        notify: false,
+      );
       notifyListeners();
       unawaited(refreshServerHealth());
       return;
@@ -763,6 +951,12 @@ class AppProvider extends ChangeNotifier {
 
     _localServerStatus = LocalServerRuntimeStatus.failed;
     _localServerStatusMessage = 'Local server exited with code $code.';
+    _recordSetupDebugEvent(
+      source: 'Local Server',
+      message: _localServerStatusMessage,
+      severity: SetupDebugSeverity.error,
+      notify: false,
+    );
     notifyListeners();
     unawaited(refreshServerHealth());
   }
@@ -1097,6 +1291,94 @@ class AppProvider extends ChangeNotifier {
   void _setError(String message) {
     _errorMessage = message;
     notifyListeners();
+  }
+
+  void _recordSetupDebugEvent({
+    required String source,
+    required String message,
+    SetupDebugSeverity severity = SetupDebugSeverity.info,
+    required bool notify,
+  }) {
+    final sanitizedSource = _sanitizeSetupDebugText(source).trim();
+    final sanitizedMessage = _sanitizeSetupDebugText(message).trim();
+    if (sanitizedSource.isEmpty || sanitizedMessage.isEmpty) {
+      return;
+    }
+
+    const maxEntries = 80;
+    _setupDebugEntries = <SetupDebugEntry>[
+      ..._setupDebugEntries,
+      SetupDebugEntry(
+        timestamp: DateTime.now(),
+        source: sanitizedSource,
+        message: sanitizedMessage,
+        severity: severity,
+      ),
+    ];
+    if (_setupDebugEntries.length > maxEntries) {
+      _setupDebugEntries = _setupDebugEntries.sublist(
+        _setupDebugEntries.length - maxEntries,
+      );
+    }
+    if (notify) {
+      notifyListeners();
+    }
+  }
+
+  String _installMethodLabel(LocalOpencodeInstallMethod method) {
+    return switch (method) {
+      LocalOpencodeInstallMethod.downloadBinary => 'Install Binary',
+      LocalOpencodeInstallMethod.npmGlobal => 'Install via npm',
+      LocalOpencodeInstallMethod.bunGlobal => 'Install via Bun',
+      LocalOpencodeInstallMethod.bunBootstrapThenInstall =>
+        'Install Bun + OpenCode',
+    };
+  }
+
+  String _toolStatusSummary(LocalToolStatus status) {
+    final details = <String>[];
+    if (status.version.trim().isNotEmpty) {
+      details.add(_sanitizeSetupDebugText(status.version.trim()));
+    }
+    if (status.path.trim().isNotEmpty) {
+      details.add(_sanitizeSetupDebugText(status.path.trim()));
+    }
+    if (status.note.trim().isNotEmpty) {
+      details.add(_sanitizeSetupDebugText(status.note.trim()));
+    }
+    if (details.isEmpty) {
+      return status.available ? 'available' : 'not available';
+    }
+    return details.join(' | ');
+  }
+
+  String _sanitizeSetupDebugText(String input) {
+    if (input.isEmpty) {
+      return input;
+    }
+
+    var sanitized = input;
+    sanitized = sanitized.replaceAllMapped(
+      RegExp(r'(Basic\s+)[A-Za-z0-9+/=]+', caseSensitive: false),
+      (match) => '${match.group(1)}***',
+    );
+    sanitized = sanitized.replaceAllMapped(
+      RegExp(r'(Bearer\s+)[A-Za-z0-9\-._~+/=]+', caseSensitive: false),
+      (match) => '${match.group(1)}***',
+    );
+    sanitized = sanitized.replaceAllMapped(
+      RegExp(r'://([^:@/\s]+):([^@/\s]+)@'),
+      (match) => '://${match.group(1)}:***@',
+    );
+    sanitized = sanitized.replaceAllMapped(
+      RegExp(
+        "((?:password|token|secret|api[_\\- ]?key|authorization)\\s*[:=]\\s*)([\"']?)([^\"'\\s,;]+)([\"']?)",
+        caseSensitive: false,
+      ),
+      (match) =>
+          '${match.group(1)}${match.group(2) ?? ''}***${match.group(4) ?? ''}',
+    );
+    return sanitized;
   }
 
   String _generateServerId() {

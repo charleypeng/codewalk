@@ -12,6 +12,8 @@ import '../providers/app_provider.dart';
 import '../theme/app_animations.dart';
 import '../providers/settings_provider.dart';
 import '../services/local_opencode_server_runtime_types.dart';
+import '../utils/app_page_route.dart';
+import 'opencode_setup_debug_page.dart';
 import 'settings/sections/servers_settings_section.dart';
 
 enum SetupWizardInitialFlow {
@@ -219,6 +221,10 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
   }
 
   void _goToConnectServer() {
+    context.read<AppProvider>().recordSetupDebugEvent(
+      source: 'Onboarding',
+      message: 'User chose to connect to an existing OpenCode server.',
+    );
     setState(() {
       _showQuickGuide = false;
       _step = 1;
@@ -226,6 +232,10 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
   }
 
   void _goToNeedHelp() {
+    context.read<AppProvider>().recordSetupDebugEvent(
+      source: 'Onboarding',
+      message: 'User opened the guided OpenCode setup path.',
+    );
     setState(() {
       _showQuickGuide = true;
       _step = 1;
@@ -233,6 +243,10 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
   }
 
   void _goToLocalManagedSetup() {
+    context.read<AppProvider>().recordSetupDebugEvent(
+      source: 'Onboarding',
+      message: 'User opened managed local OpenCode setup.',
+    );
     setState(() {
       _step = 3;
       _connectionError = null;
@@ -254,6 +268,12 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
     await appProvider.runLocalServerDiagnostics();
   }
 
+  Future<void> _openSetupDebugPage() async {
+    await Navigator.of(
+      context,
+    ).push(AppPageRoute(builder: (_) => const OpenCodeSetupDebugPage()));
+  }
+
   Future<void> _testConnection() async {
     if (_formKey.currentState?.validate() != true) return;
 
@@ -265,6 +285,10 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
     final appProvider = context.read<AppProvider>();
     final adjustedUrl = _mapAndroidLoopback(_urlController.text.trim());
     final label = _labelController.text.trim();
+    appProvider.recordSetupDebugEvent(
+      source: 'Manual connection',
+      message: 'Testing OpenCode server URL $adjustedUrl from onboarding.',
+    );
     final username = _usernameController.text.trim();
     final password = _passwordController.text.trim();
 
@@ -289,6 +313,11 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       );
       if (!mounted) return;
       if (!updated) {
+        appProvider.recordSetupDebugEvent(
+          source: 'Manual connection',
+          message: appProvider.errorMessage,
+          severity: SetupDebugSeverity.error,
+        );
         setState(() {
           _testing = false;
           _connectionError = appProvider.errorMessage;
@@ -297,6 +326,16 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       }
 
       final health = appProvider.healthFor(trackedServerId);
+      final healthMessage = health == ServerHealthStatus.unhealthy
+          ? 'Server health check failed. It may still be starting up.'
+          : 'Server connection updated successfully.';
+      appProvider.recordSetupDebugEvent(
+        source: 'Manual connection',
+        message: healthMessage,
+        severity: health == ServerHealthStatus.unhealthy
+            ? SetupDebugSeverity.error
+            : SetupDebugSeverity.info,
+      );
       setState(() {
         _testing = false;
         _connectionSuccess = health != ServerHealthStatus.unhealthy;
@@ -342,6 +381,16 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       final health = serverId == null
           ? ServerHealthStatus.unhealthy
           : appProvider.healthFor(serverId);
+      final healthMessage = health == ServerHealthStatus.unhealthy
+          ? 'Server added but health check failed. It may still be starting up.'
+          : 'Server connection saved successfully.';
+      appProvider.recordSetupDebugEvent(
+        source: 'Manual connection',
+        message: healthMessage,
+        severity: health == ServerHealthStatus.unhealthy
+            ? SetupDebugSeverity.error
+            : SetupDebugSeverity.info,
+      );
       setState(() {
         _testing = false;
         _connectionSuccess = health != ServerHealthStatus.unhealthy;
@@ -351,6 +400,11 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         _step = 2;
       });
     } else {
+      appProvider.recordSetupDebugEvent(
+        source: 'Manual connection',
+        message: appProvider.errorMessage,
+        severity: SetupDebugSeverity.error,
+      );
       setState(() {
         _testing = false;
         _connectionError = appProvider.errorMessage;
@@ -476,188 +530,225 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         ? 'Welcome to ${AppConstants.appName}'
         : 'Choose how to set up your server';
     final subtitle = widget.showSkipAction
-        ? 'Connect to an OpenCode server to get started'
-        : 'Pick the best path for your current setup';
+        ? 'CodeWalk needs an OpenCode server before it can help with your code.'
+        : 'Pick the setup path that matches your current OpenCode setup.';
 
-    // Scroll needed: welcome content overflows on small screens (icon + texts + 3 cards).
     return SingleChildScrollView(
       key: const ValueKey('step_welcome'),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-        Icon(Symbols.code_rounded, size: 72, color: colorScheme.primary),
-        const SizedBox(height: 24),
-        Text(
-          title,
-          style: Theme.of(context).textTheme.headlineSmall,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          subtitle,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 40),
-
-        // Recommended card: connect to server
-        SizedBox(
-          width: double.infinity,
-          child: Card(
-            color: colorScheme.primaryContainer,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-              onTap: _goToConnectServer,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Icon(
-                      Symbols.dns_rounded,
-                      color: colorScheme.onPrimaryContainer,
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Connect to server',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  color: colorScheme.onPrimaryContainer,
+          Icon(Symbols.code_rounded, size: 72, color: colorScheme.primary),
+          const SizedBox(height: 24),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.headlineSmall,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+          Card(
+            child: ExpansionTile(
+              key: const ValueKey('what_is_opencode_tile'),
+              tilePadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 4,
+              ),
+              childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              leading: Icon(Symbols.info_rounded, color: colorScheme.primary),
+              title: const Text('What is OpenCode?'),
+              subtitle: const Text(
+                'CodeWalk is the app. OpenCode is the engine it connects to.',
+              ),
+              children: [
+                Text(
+                  'OpenCode runs locally or on a server and powers the AI coding features inside CodeWalk. If OpenCode is already running, connect to it. If not, pick one of the guided setup paths below.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: Card(
+              color: colorScheme.primaryContainer,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+                onTap: _goToConnectServer,
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Symbols.dns_rounded,
+                        color: colorScheme.onPrimaryContainer,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Connect to a running server',
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    color: colorScheme.onPrimaryContainer,
+                                  ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'I already have OpenCode running on this device or somewhere on my network.',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: colorScheme.onPrimaryContainer,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Symbols.arrow_forward_rounded,
+                        color: colorScheme.onPrimaryContainer,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+                side: BorderSide(color: colorScheme.outlineVariant),
+              ),
+              color: colorScheme.surface,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+                onTap: _goToNeedHelp,
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Symbols.help_outline_rounded,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Show me the setup steps',
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(color: colorScheme.onSurface),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Explain how to install OpenCode, start the server, and then connect from CodeWalk.',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Symbols.arrow_forward_rounded,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+                side: BorderSide(color: colorScheme.outlineVariant),
+              ),
+              color: supportsLocalManaged
+                  ? colorScheme.surfaceContainerHigh
+                  : colorScheme.surface,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+                onTap: supportsLocalManaged ? _goToLocalManagedSetup : null,
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Symbols.computer,
+                        color: supportsLocalManaged
+                            ? colorScheme.onSurface
+                            : colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Let CodeWalk set it up locally',
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(color: colorScheme.onSurface),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              supportsLocalManaged
+                                  ? 'Desktop only: CodeWalk can diagnose, install, and run OpenCode for you.'
+                                  : 'Available only on desktop (Linux/macOS/Windows).',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                            if (supportsLocalManaged) ...[
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
                                 ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'I already have a server running',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: colorScheme.onPrimaryContainer,
+                                decoration: BoxDecoration(
+                                  color: colorScheme.secondaryContainer,
+                                  borderRadius: BorderRadius.circular(999),
                                 ),
-                          ),
-                        ],
+                                child: Text(
+                                  'Good first option on desktop',
+                                  style: Theme.of(context).textTheme.labelSmall,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
-                    ),
-                    Icon(
-                      Symbols.arrow_forward_rounded,
-                      color: colorScheme.onPrimaryContainer,
-                    ),
-                  ],
+                      Icon(
+                        Symbols.arrow_forward_rounded,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 12),
-
-        // Alternative card: need help
-        SizedBox(
-          width: double.infinity,
-          child: Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-              side: BorderSide(color: colorScheme.outlineVariant),
-            ),
-            color: colorScheme.surface,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-              onTap: _goToNeedHelp,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Icon(
-                      Symbols.help_outline_rounded,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'I need help setting up',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(color: colorScheme.onSurface),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Show me how to install and start a server',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: colorScheme.onSurfaceVariant),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      Symbols.arrow_forward_rounded,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        SizedBox(
-          width: double.infinity,
-          child: Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-              side: BorderSide(color: colorScheme.outlineVariant),
-            ),
-            color: supportsLocalManaged
-                ? colorScheme.surfaceContainerHigh
-                : colorScheme.surface,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-              onTap: supportsLocalManaged ? _goToLocalManagedSetup : null,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Icon(
-                      Symbols.computer,
-                      color: supportsLocalManaged
-                          ? colorScheme.onSurface
-                          : colorScheme.onSurfaceVariant,
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Use managed local server',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(color: colorScheme.onSurface),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            supportsLocalManaged
-                                ? 'Install, diagnose and run OpenCode locally'
-                                : 'Available only on desktop (Linux/macOS/Windows)',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: colorScheme.onSurfaceVariant),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      Symbols.arrow_forward_rounded,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
         ],
       ),
     );
@@ -688,15 +779,34 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
           ),
           const SizedBox(height: 4),
           if (_showQuickGuide) ...[
+            Text(
+              'You are almost there. Install OpenCode first, then connect CodeWalk to the server URL.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
             ServerSetupQuickGuide(onCopy: _copyToClipboard),
             const SizedBox(height: 8),
-            FilledButton.tonal(
-              onPressed: () {
-                setState(() {
-                  _showQuickGuide = false;
-                });
-              },
-              child: const Text('Continue to server URL'),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.tonal(
+                  onPressed: () {
+                    setState(() {
+                      _showQuickGuide = false;
+                    });
+                  },
+                  child: const Text('Continue to server URL'),
+                ),
+                TextButton.icon(
+                  key: const ValueKey(
+                    'open_code_setup_debug_button_quick_guide',
+                  ),
+                  onPressed: _openSetupDebugPage,
+                  icon: const Icon(Symbols.bug_report_rounded),
+                  label: const Text('View setup debug'),
+                ),
+              ],
             ),
             const SizedBox(height: 24),
           ],
@@ -994,6 +1104,11 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                   ],
                 ],
                 const SizedBox(height: 12),
+                Text(
+                  'Recommended order: try Install Bun + OpenCode if you want CodeWalk to bootstrap everything for you. Use Existing if OpenCode is already installed.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -1115,6 +1230,16 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    key: const ValueKey('open_code_setup_debug_button_local'),
+                    onPressed: _openSetupDebugPage,
+                    icon: const Icon(Symbols.bug_report_rounded),
+                    label: const Text('View setup debug'),
+                  ),
+                ),
               ],
               if (appProvider.localSetupInProgress) ...[
                 const SizedBox(height: 12),
@@ -1127,37 +1252,26 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
-              if (appProvider.localSetupLogs.isNotEmpty) ...[
+              if (appProvider.localSetupLogs.isNotEmpty ||
+                  appProvider.setupDebugEntries.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Text('Logs', style: Theme.of(context).textTheme.titleSmall),
-                    const Spacer(),
-                    TextButton(
-                      onPressed: setupBusy
-                          ? null
-                          : appProvider.clearLocalSetupLogs,
-                      child: const Text('Clear'),
-                    ),
-                  ],
-                ),
-                Container(
-                  width: double.infinity,
-                  constraints: const BoxConstraints(maxHeight: 220),
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                    ),
-                  ),
-                  child: SingleChildScrollView(
-                    child: SelectableText(
-                      appProvider.localSetupLogs.join('\n'),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+                Card(
+                  color: Theme.of(context).colorScheme.surfaceContainer,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Detailed setup events were captured for troubleshooting.',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${appProvider.localSetupLogs.length} setup log lines and ${appProvider.setupDebugEntries.length} setup events are available in the separate setup debug screen.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -1328,6 +1442,13 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
           },
           icon: const Icon(Symbols.swap_horiz_rounded),
           label: const Text('Choose another path'),
+        ),
+        const SizedBox(height: 12),
+        TextButton.icon(
+          key: const ValueKey('open_code_setup_debug_button_failed'),
+          onPressed: _openSetupDebugPage,
+          icon: const Icon(Symbols.bug_report_rounded),
+          label: const Text('View setup debug'),
         ),
         const SizedBox(height: 12),
         OutlinedButton(onPressed: _complete, child: const Text('Skip for now')),

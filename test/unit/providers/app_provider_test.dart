@@ -305,5 +305,36 @@ void main() {
         LocalOpencodeInstallMethod.downloadBinary,
       );
     });
+
+    test('setup debug events redact secrets in entries and export', () async {
+      await provider.initialize();
+
+      provider.recordSetupDebugEvent(
+        source: 'Manual connection',
+        message: 'Authorization: Bearer secret-token password=hunter2',
+        severity: SetupDebugSeverity.error,
+      );
+
+      expect(provider.setupDebugEntries, isNotEmpty);
+      expect(
+        provider.setupDebugEntries.last.message,
+        contains('Authorization:'),
+      );
+      expect(provider.setupDebugEntries.last.message, contains('***'));
+      expect(
+        provider.setupDebugEntries.last.message,
+        isNot(contains('hunter2')),
+      );
+      expect(
+        provider.setupDebugEntries.last.message,
+        isNot(contains('secret-token')),
+      );
+
+      final export = provider.exportSetupDebugReport();
+      expect(export, contains('Authorization:'));
+      expect(export, contains('***'));
+      expect(export, isNot(contains('secret-token')));
+      expect(export, isNot(contains('hunter2')));
+    });
   });
 }

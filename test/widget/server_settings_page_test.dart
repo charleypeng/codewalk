@@ -3,6 +3,7 @@ import 'package:codewalk/domain/usecases/check_connection.dart';
 import 'package:codewalk/domain/usecases/get_app_info.dart';
 import 'package:codewalk/presentation/pages/server_settings_page.dart';
 import 'package:codewalk/presentation/providers/app_provider.dart';
+import 'package:codewalk/presentation/services/local_opencode_server_runtime_types.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -48,6 +49,7 @@ void main() {
   testWidgets('renders server list with active/default metadata', (
     WidgetTester tester,
   ) async {
+    await _setLargeSurface(tester);
     await tester.pumpWidget(_testApp(appProvider));
     await tester.pumpAndSettle();
 
@@ -63,6 +65,7 @@ void main() {
   testWidgets('blocks activating unhealthy server from action menu', (
     WidgetTester tester,
   ) async {
+    await _setLargeSurface(tester);
     await tester.pumpWidget(_testApp(appProvider));
     await tester.pumpAndSettle();
     await _scrollToServer(tester, 'Beta');
@@ -86,9 +89,50 @@ void main() {
     expect(find.text('Cannot activate an unhealthy server'), findsOneWidget);
   });
 
+  testWidgets('local server card opens separate setup debug page', (
+    WidgetTester tester,
+  ) async {
+    await _setLargeSurface(tester);
+
+    final localServerRuntime = FakeLocalOpencodeServerRuntime(
+      supported: true,
+      diagnoseResult: const LocalOpencodeEnvironmentReport(
+        supported: true,
+        platform: 'linux',
+        opencode: LocalToolStatus(available: true, path: '/tmp/opencode'),
+        node: LocalToolStatus(available: true),
+        npm: LocalToolStatus(available: true),
+        bun: LocalToolStatus(available: true),
+        wsl: LocalToolStatus(available: false),
+        hasNetworkAccess: true,
+        installDirectoryWritable: true,
+        recommendation: 'Ready',
+      ),
+    );
+    final supportedProvider = AppProvider(
+      getAppInfo: GetAppInfo(FakeAppRepository()),
+      checkConnection: CheckConnection(FakeAppRepository()),
+      localDataSource: InMemoryAppLocalDataSource(),
+      dioClient: DioClient(),
+      localServerRuntime: localServerRuntime,
+      enableHealthPolling: false,
+    );
+    await supportedProvider.initialize();
+    await tester.pumpWidget(_testApp(supportedProvider));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Setup Debug'), findsOneWidget);
+
+    await tester.tap(find.text('Setup Debug'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('OpenCode Setup Debug'), findsOneWidget);
+  });
+
   testWidgets(
     'add server opens unified wizard and preserves remote setup form',
     (WidgetTester tester) async {
+      await _setLargeSurface(tester);
       await tester.pumpWidget(_testApp(appProvider));
       await tester.pumpAndSettle();
 
@@ -107,11 +151,12 @@ void main() {
       await tester.tap(find.text('Choose another path'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Connect to server'), findsOneWidget);
-      expect(find.text('I need help setting up'), findsOneWidget);
-      expect(find.text('Use managed local server'), findsOneWidget);
+      expect(find.text('Connect to a running server'), findsOneWidget);
+      expect(find.text('Show me the setup steps'), findsOneWidget);
+      expect(find.text('Let CodeWalk set it up locally'), findsOneWidget);
 
-      await tester.tap(find.text('I need help setting up'));
+      await tester.ensureVisible(find.text('Show me the setup steps'));
+      await tester.tap(find.text('Show me the setup steps'));
       await tester.pumpAndSettle();
 
       expect(find.text('Quick setup'), findsOneWidget);
@@ -159,6 +204,11 @@ Widget _testApp(AppProvider appProvider) {
     value: appProvider,
     child: const MaterialApp(home: ServerSettingsPage()),
   );
+}
+
+Future<void> _setLargeSurface(WidgetTester tester) async {
+  await tester.binding.setSurfaceSize(const Size(1200, 900));
+  addTearDown(() => tester.binding.setSurfaceSize(null));
 }
 
 Future<void> _scrollToServer(WidgetTester tester, String label) async {

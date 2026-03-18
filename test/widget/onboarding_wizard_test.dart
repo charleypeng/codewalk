@@ -4,6 +4,7 @@ import 'package:codewalk/domain/usecases/get_app_info.dart';
 import 'package:codewalk/presentation/pages/onboarding_wizard_page.dart';
 import 'package:codewalk/presentation/providers/app_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
+import 'package:codewalk/presentation/services/local_opencode_server_runtime_types.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -38,26 +39,41 @@ void main() {
     await settingsProvider.initialize();
   });
 
-  Widget buildWizard({VoidCallback? onComplete}) {
+  Widget buildWizard({
+    VoidCallback? onComplete,
+    AppProvider? providerOverride,
+    SetupWizardInitialFlow initialFlow = SetupWizardInitialFlow.choose,
+    bool showSkipAction = true,
+  }) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<AppProvider>.value(value: appProvider),
+        ChangeNotifierProvider<AppProvider>.value(
+          value: providerOverride ?? appProvider,
+        ),
         ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
       ],
-      child: MaterialApp(home: OnboardingWizardPage(onComplete: onComplete)),
+      child: MaterialApp(
+        home: OnboardingWizardPage(
+          onComplete: onComplete,
+          initialFlow: initialFlow,
+          showSkipAction: showSkipAction,
+        ),
+      ),
     );
   }
 
   group('welcome step', () {
-    testWidgets('shows welcome and two option cards', (
+    testWidgets('shows beginner-friendly welcome options', (
       WidgetTester tester,
     ) async {
+      await _setLargeSurface(tester);
       await tester.pumpWidget(buildWizard());
       await tester.pumpAndSettle();
 
       expect(find.text('Welcome to CodeWalk'), findsOneWidget);
-      expect(find.text('Connect to server'), findsOneWidget);
-      expect(find.text('I need help setting up'), findsOneWidget);
+      expect(find.text('Connect to a running server'), findsOneWidget);
+      expect(find.text('Show me the setup steps'), findsOneWidget);
+      expect(find.text('What is OpenCode?'), findsOneWidget);
       expect(find.text('Skip'), findsOneWidget);
     });
   });
@@ -136,7 +152,7 @@ void main() {
       await tester.pumpWidget(buildWizard());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Connect to server'));
+      await tester.tap(find.text('Connect to a running server'));
       await tester.pumpAndSettle();
 
       expect(find.byKey(const ValueKey('step_server_setup')), findsOneWidget);
@@ -152,10 +168,12 @@ void main() {
     testWidgets('need help shows quick guide then continues to form', (
       WidgetTester tester,
     ) async {
+      await _setLargeSurface(tester);
       await tester.pumpWidget(buildWizard());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('I need help setting up'));
+      await tester.ensureVisible(find.text('Show me the setup steps'));
+      await tester.tap(find.text('Show me the setup steps'));
       await tester.pumpAndSettle();
 
       // Quick guide should be visible.
@@ -175,7 +193,7 @@ void main() {
       await tester.pumpWidget(buildWizard());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Connect to server'));
+      await tester.tap(find.text('Connect to a running server'));
       await tester.pumpAndSettle();
 
       // Tap "Test connection" and let the async chain complete.
@@ -197,7 +215,7 @@ void main() {
         await tester.pumpWidget(buildWizard());
         await tester.pumpAndSettle();
 
-        await tester.tap(find.text('Connect to server'));
+        await tester.tap(find.text('Connect to a running server'));
         await tester.pumpAndSettle();
 
         await tester.tap(find.text('Test connection'));
@@ -232,6 +250,61 @@ void main() {
     );
   });
 
+  testWidgets('managed local setup opens separate setup debug page', (
+    WidgetTester tester,
+  ) async {
+    await _setLargeSurface(tester);
+
+    final localServerRuntime = FakeLocalOpencodeServerRuntime(
+      supported: true,
+      diagnoseResult: const LocalOpencodeEnvironmentReport(
+        supported: true,
+        platform: 'linux',
+        opencode: LocalToolStatus(available: true, path: '/tmp/opencode'),
+        node: LocalToolStatus(available: true),
+        npm: LocalToolStatus(available: true),
+        bun: LocalToolStatus(available: true),
+        wsl: LocalToolStatus(available: false),
+        hasNetworkAccess: true,
+        installDirectoryWritable: true,
+        recommendation: 'Use Existing OpenCode',
+      ),
+    );
+    final managedProvider = AppProvider(
+      getAppInfo: GetAppInfo(FakeAppRepository()),
+      checkConnection: CheckConnection(FakeAppRepository()),
+      localDataSource: localDataSource,
+      dioClient: DioClient(),
+      localServerRuntime: localServerRuntime,
+      enableHealthPolling: false,
+    );
+    await managedProvider.initialize();
+
+    await tester.pumpWidget(
+      buildWizard(
+        providerOverride: managedProvider,
+        initialFlow: SetupWizardInitialFlow.managedLocalServer,
+        showSkipAction: false,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('open_code_setup_debug_button_local')),
+      findsOneWidget,
+    );
+
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('open_code_setup_debug_button_local')),
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('open_code_setup_debug_button_local')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('OpenCode Setup Debug'), findsOneWidget);
+  });
+
   group('back navigation', () {
     testWidgets('back from step 1 returns to welcome', (
       WidgetTester tester,
@@ -239,7 +312,7 @@ void main() {
       await tester.pumpWidget(buildWizard());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Connect to server'));
+      await tester.tap(find.text('Connect to a running server'));
       await tester.pumpAndSettle();
       expect(find.text('Server connection'), findsOneWidget);
 
@@ -250,4 +323,9 @@ void main() {
       expect(find.text('Welcome to CodeWalk'), findsOneWidget);
     });
   });
+}
+
+Future<void> _setLargeSurface(WidgetTester tester) async {
+  await tester.binding.setSurfaceSize(const Size(1200, 900));
+  addTearDown(() => tester.binding.setSurfaceSize(null));
 }
