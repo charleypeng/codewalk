@@ -721,9 +721,7 @@ class _ChatPageState extends State<ChatPage>
         return;
       }
 
-      if (chatProvider.providers.isEmpty) {
-        chatProvider.warmupProvidersRefresh(reason: 'offline-start-recovery');
-      }
+      chatProvider.warmupProvidersRefresh(reason: 'offline-start-recovery');
       if (chatProvider.currentSession != null) {
         await chatProvider.refreshActiveSessionView(
           reason: 'offline-start-recovery',
