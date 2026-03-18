@@ -13,6 +13,20 @@
 - **When** the app starts
 - **Then** a setup wizard is displayed requiring the user to configure at least one OpenCode server
 
+### First launch explains the OpenCode relationship
+
+- **Given** the first-run setup wizard is visible
+- **When** the welcome step is rendered
+- **Then** the UI explains that CodeWalk is the client and OpenCode is the server or engine it needs before chat can work
+- **Then** the setup paths describe whether the user should connect to an existing server, follow guided setup steps, or let CodeWalk manage a local desktop install
+
+### OpenCode setup troubleshooting is separate from app logs
+
+- **Given** the user is troubleshooting OpenCode installation or setup
+- **When** the user opens the dedicated setup debug surface from onboarding or server settings
+- **Then** the app shows OpenCode-specific diagnostics, setup events, and captured setup logs
+- **Then** this surface remains separate from the general `App Logs` screen used for CodeWalk runtime logs
+
 ### No server = no functionality
 
 - **Given** no server is configured
