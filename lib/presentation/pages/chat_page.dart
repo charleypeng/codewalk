@@ -215,6 +215,7 @@ class _ChatPageState extends State<ChatPage>
   int _returnRevealBaselineMessageCount = 0;
   String? _returnRevealBaselineLatestMessageId;
   String? _returnRevealBaselineLatestRevealableAssistantMessageId;
+  String? _lastForegroundPolicySettingsSignature;
   ChatComposerDraft? _composerPrefilledDraft;
   int _composerPrefilledDraftVersion = 0;
   final Map<String, _FileExplorerContextState> _fileContextStates =
@@ -361,6 +362,8 @@ class _ChatPageState extends State<ChatPage>
       _settingsProvider = nextSettingsProvider;
       _settingsProvider?.addListener(_handleSettingsChanged);
       _applyForegroundPolicy(reason: 'settings-provider-attached');
+      _lastForegroundPolicySettingsSignature =
+          _foregroundPolicySettingsSignature(nextSettingsProvider.settings);
     }
   }
 

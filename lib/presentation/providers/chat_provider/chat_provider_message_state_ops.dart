@@ -327,7 +327,10 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     if (message is UserMessage ||
         (_currentSession?.id == message.sessionId &&
             isSessionActivelyResponding(message.sessionId) &&
-            _shouldSchedulePassiveAutoScrollForSession(message.sessionId))) {
+            _shouldSchedulePassiveAutoScrollForSession(
+              message.sessionId,
+              latestMessage: message,
+            ))) {
       _scheduleScrollToBottom();
     }
   }

@@ -1,8 +1,23 @@
 part of '../chat_page.dart';
 
 extension _ChatPageLifecycle on _ChatPageState {
+  String _foregroundPolicySettingsSignature(ExperienceSettings settings) {
+    return '${shouldRunAndroidBackgroundAlerts(settings)}|'
+        '${settings.desktopCloseBehavior.name}|'
+        '${settings.keepMobileRealtimeForShortPeriod}';
+  }
+
   void _handleSettingsChanged() {
-    _applyForegroundPolicy(reason: 'settings-changed');
+    final settings =
+        _settingsProvider?.settings ?? ExperienceSettings.defaults();
+    final nextForegroundPolicySignature = _foregroundPolicySettingsSignature(
+      settings,
+    );
+    if (_lastForegroundPolicySettingsSignature !=
+        nextForegroundPolicySignature) {
+      _applyForegroundPolicy(reason: 'settings-changed');
+      _lastForegroundPolicySettingsSignature = nextForegroundPolicySignature;
+    }
     _autoApprovePermissionCooldownIds.clear();
     _clearReturnRevealBaseline();
     _pendingFinalAssistantRevealMessageId = null;

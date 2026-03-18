@@ -419,14 +419,40 @@ class ChatProvider extends ChangeNotifier {
     });
   }
 
-  bool _shouldSchedulePassiveAutoScrollForSession(String sessionId) {
+  bool _shouldSchedulePassiveAutoScrollForSession(
+    String sessionId, {
+    ChatMessage? latestMessage,
+  }) {
     final normalizedSessionId = sessionId.trim();
     if (normalizedSessionId.isEmpty || _isCompactingContext) {
       return false;
     }
     final status = _sessionStatusById[normalizedSessionId]?.type;
-    return status != SessionStatusType.busy &&
-        status != SessionStatusType.retry;
+    if (status != SessionStatusType.busy && status != SessionStatusType.retry) {
+      return true;
+    }
+
+    ChatMessage? candidate = latestMessage;
+    if (candidate == null) {
+      for (var index = _messages.length - 1; index >= 0; index -= 1) {
+        final message = _messages[index];
+        if (message.sessionId == normalizedSessionId) {
+          candidate = message;
+          break;
+        }
+      }
+    }
+    if (candidate is! AssistantMessage) {
+      return false;
+    }
+
+    final hasToolSurfacePart = candidate.parts.any(
+      (part) => part is ToolPart || part is PatchPart,
+    );
+    final hasTextPart = candidate.parts.any(
+      (part) => part is TextPart && part.text.trim().isNotEmpty,
+    );
+    return hasToolSurfacePart && hasTextPart;
   }
 
   void _traceFinal(String event, {String? sessionId, String? details}) {
