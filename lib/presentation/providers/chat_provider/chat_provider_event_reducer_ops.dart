@@ -553,9 +553,9 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         if (delta != null && delta.isNotEmpty && message is AssistantMessage) {
           _scheduleDebouncedMessageFallback(sessionId, messageId);
         }
-        if (!_isCompactingContext &&
-            shouldAutoScroll &&
-            isSessionActivelyResponding(sessionId)) {
+        if (shouldAutoScroll &&
+            isSessionActivelyResponding(sessionId) &&
+            _shouldSchedulePassiveAutoScrollForSession(sessionId)) {
           _scheduleScrollToBottom();
         }
         break;

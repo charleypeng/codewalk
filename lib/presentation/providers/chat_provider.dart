@@ -419,6 +419,16 @@ class ChatProvider extends ChangeNotifier {
     });
   }
 
+  bool _shouldSchedulePassiveAutoScrollForSession(String sessionId) {
+    final normalizedSessionId = sessionId.trim();
+    if (normalizedSessionId.isEmpty || _isCompactingContext) {
+      return false;
+    }
+    final status = _sessionStatusById[normalizedSessionId]?.type;
+    return status != SessionStatusType.busy &&
+        status != SessionStatusType.retry;
+  }
+
   void _traceFinal(String event, {String? sessionId, String? details}) {
     final currentSessionId = _currentSession?.id;
     final normalizedSessionId = (sessionId ?? currentSessionId ?? '-').trim();

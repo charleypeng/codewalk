@@ -324,10 +324,10 @@ extension _ChatProviderMessageStateOps on ChatProvider {
 
     // Trigger auto-scroll only while the current session is actively
     // responding, or when a user message is added/replaced.
-    if (!_isCompactingContext &&
-        (message is UserMessage ||
-            (_currentSession?.id == message.sessionId &&
-                isSessionActivelyResponding(message.sessionId)))) {
+    if (message is UserMessage ||
+        (_currentSession?.id == message.sessionId &&
+            isSessionActivelyResponding(message.sessionId) &&
+            _shouldSchedulePassiveAutoScrollForSession(message.sessionId))) {
       _scheduleScrollToBottom();
     }
   }

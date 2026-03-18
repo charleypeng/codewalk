@@ -1357,6 +1357,77 @@ void main() {
     );
 
     test(
+      'message.part.updated does not schedule scroll callback during busy passive updates',
+      () async {
+        const sessionId = 'ses_1';
+        chatRepository.messagesBySession[sessionId] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_busy_tool_surface',
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(1100),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1110),
+            parts: <MessagePart>[
+              ToolPart(
+                id: 'part_busy_tool_surface',
+                messageId: 'msg_busy_tool_surface',
+                sessionId: sessionId,
+                callId: 'call_busy_tool_surface',
+                tool: 'bash',
+                state: ToolStateCompleted(
+                  input: const <String, dynamic>{'command': 'pwd'},
+                  output: '/tmp',
+                  time: ToolTime(
+                    start: DateTime.fromMillisecondsSinceEpoch(1100),
+                    end: DateTime.fromMillisecondsSinceEpoch(1105),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.initializeProviders();
+
+        var scrollToBottomRequests = 0;
+        provider.setScrollToBottomCallback(() {
+          scrollToBottomRequests += 1;
+        });
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.status',
+            properties: <String, dynamic>{
+              'sessionID': sessionId,
+              'status': <String, dynamic>{'type': 'busy'},
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        final part = MessagePartModel.fromDomain(
+          const ReasoningPart(
+            id: 'part_busy_reasoning',
+            messageId: 'msg_busy_tool_surface',
+            sessionId: sessionId,
+            text: 'Inspecting tool progress',
+          ),
+        );
+        chatRepository.emitEvent(
+          ChatEvent(
+            type: 'message.part.updated',
+            properties: <String, dynamic>{'part': part.toJson()},
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(scrollToBottomRequests, 0);
+      },
+    );
+
+    test(
       'session.idle does not bypass lifecycle cleanup rules during abort suppression',
       () async {
         provider = buildProvider(
@@ -1478,6 +1549,76 @@ void main() {
           (latestAssistant.parts.single as TextPart).text,
           'final response resolved on stream',
         );
+      },
+    );
+
+    test(
+      'busy assistant stream updates do not schedule passive provider auto-scroll',
+      () async {
+        final sendController =
+            StreamController<Either<Failure, ChatMessage>>.broadcast();
+        addTearDown(() async {
+          if (!sendController.isClosed) {
+            await sendController.close();
+          }
+        });
+        chatRepository.sendMessageHandler = (_, _, _, _) =>
+            sendController.stream;
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.initializeProviders();
+
+        await provider.sendMessage('run busy tool step');
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.status',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_1',
+              'status': <String, dynamic>{'type': 'busy'},
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        var scrollToBottomRequests = 0;
+        provider.setScrollToBottomCallback(() {
+          scrollToBottomRequests += 1;
+        });
+
+        sendController.add(
+          Right(
+            AssistantMessage(
+              id: 'msg_busy_stream_update',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(2100),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(2200),
+              parts: <MessagePart>[
+                ToolPart(
+                  id: 'part_busy_stream_update',
+                  messageId: 'msg_busy_stream_update',
+                  sessionId: 'ses_1',
+                  callId: 'call_busy_stream_update',
+                  tool: 'bash',
+                  state: ToolStateCompleted(
+                    input: const <String, dynamic>{'command': 'git status'},
+                    output: 'clean',
+                    time: ToolTime(
+                      start: DateTime.fromMillisecondsSinceEpoch(2100),
+                      end: DateTime.fromMillisecondsSinceEpoch(2150),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(scrollToBottomRequests, 0);
       },
     );
 

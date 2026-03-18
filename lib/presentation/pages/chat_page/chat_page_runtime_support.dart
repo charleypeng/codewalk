@@ -58,9 +58,14 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     final currentMax = _scrollController.position.maxScrollExtent;
     final contentShrank = currentMax < _lastKnownMaxScrollExtent;
     _lastKnownMaxScrollExtent = currentMax;
+    final chatProvider = _chatProvider;
+    final hasActiveViewportOwner =
+        _deferAssistantWorkCollapse ||
+        (chatProvider?.isCurrentSessionActivelyResponding ?? false);
     if (_autoFollowToLatest &&
         !_isProgrammaticScrollInFlight &&
         !_suppressPostCompletionAutoSnap &&
+        !hasActiveViewportOwner &&
         contentShrank &&
         _isNearBottom()) {
       final gap = _distanceToBottom();
