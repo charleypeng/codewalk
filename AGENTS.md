@@ -51,7 +51,7 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | 020 | Session-level SWR cache with persisted LRU snapshots — instant reopen of long sessions with background revalidation | 790–849 |
 | 021 | Context-scoped New Chat draft state — prevent cross-project draft leakage during fast SWR switches | 850–893 |
 | 022 | Unified project context controls with sidebar session previews — integrated navigation while preserving `serverId::scopeId` ownership | 894–934 |
-| 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web | 935–1037 |
+| 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web | 935–1045 |
 
 ## 🗺 CODEBASE Quick Reference (details in `CODEBASE.md`)
 
@@ -62,13 +62,13 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | Project Snapshot | 3–11 |
 | Folder Structure | 12–48 |
 | Entry Points | 49–59 |
-| Core Modules | 60–109 |
-| Chat Architecture | 110–184 |
-| Data & Domain Layers | 185–196 |
-| Key API/DataSource locations | 197–216 |
-| Main Commands | 217–239 |
-| Testing/Quality Gates | 240–261 |
-| Notes | 262–388 |
+| Core Modules | 60–110 |
+| Chat Architecture | 111–186 |
+| Data & Domain Layers | 187–198 |
+| Key API/DataSource locations | 199–218 |
+| Main Commands | 219–241 |
+| Testing/Quality Gates | 242–263 |
+| Notes | 264–389 |
 
 ## ⚙️ Makefile Quick Reference (details in `Makefile`)
 

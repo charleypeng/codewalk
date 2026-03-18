@@ -58,6 +58,23 @@
 - **Then** the app checks each server's health every 10 seconds and shows a visual online/offline indicator
 - **Then** health checks are independent of session data sync — messages and events arrive via real-time SSE, not polling
 
+### Active server status is simplified to Online / Delayed / Offline
+
+- **Given** the active server status control is visible in the chat chrome
+- **When** health or sync state changes
+- **Then** the control shows `Online` with a green indicator when the active server is healthy and chat sync is not delayed
+- **Then** the control shows `Delayed` with an orange indicator when reconnect/degraded/unknown state is still recoverable or resume-time warning grace is active
+- **Then** the control shows `Offline` with a red indicator only after the active server is confirmed unhealthy
+- **Then** the compact status text is rendered immediately after the server name instead of being pushed to a far-right metadata slot
+
+### Unhealthy server warning waits for confirmation
+
+- **Given** the active server becomes unhealthy or resume-time connectivity is still settling
+- **When** warning-only UI is evaluated
+- **Then** the app keeps the short foreground grace window for stale resume probes
+- **Then** the unhealthy snackbar waits an additional 5-second debounce before appearing
+- **Then** if the server recovers before those windows finish, the unhealthy snackbar is not shown
+
 ### Server goes offline during use
 
 - **Given** the active server goes offline while the user is chatting
@@ -308,6 +325,14 @@
 - **Then** toolbar and slash-command wording stays explicit about operating on the last turn so the inline bubble action, toolbar actions, and composer actions describe the same behavior
 - **Then** timeline visibility and undo/redo availability are driven by the server-authoritative session revert boundary, aligned with official OpenCode Web semantics
 
+### Composer drafts persist per session
+
+- **Given** the user types an unsent composer draft in a session
+- **When** the user switches to another session in the same server/project context and later returns
+- **Then** the original session restores its own locally persisted draft text, shell mode, and supported attachments
+- **Then** sessions with no saved draft reopen with an empty composer
+- **Then** transient drafts restored after a rejected send or undo/redo history action keep priority over the persisted session draft until that transient state is consumed
+
 ### Composer extras menu includes canned answers and attachments
 
 - **Given** the user is composing a message
@@ -348,6 +373,7 @@
 - **Then** if that fixed progress slot mirrors the active in-flight reasoning block, the matching inline Thinking bubble is temporarily hidden until the assistant response settles, avoiding a misleading stuck-looking duplicate
 - **Then** completed tool badges use an explicit success-green treatment so finished work stays visually distinct from queued, active, and error states
 - **Then** when a contiguous visible run contains multiple `task` tool bubbles, settled task bubbles render before still-active running or queued task bubbles without crossing the surrounding text/reasoning boundaries of that same assistant message
+- **Then** a running `task` tool bubble surfaces the latest extracted command inline in the header when command metadata is available, so the active work is identifiable without opening Details
 - **When** the assistant finishes the complete response
 - **Then** tool-call chains and tool-detail sections start collapsed by default
 - **Then** collapse never happens while the assistant is still streaming
@@ -360,6 +386,13 @@
 - **Then** once a completed turn has settled, transient realtime status pulses do not auto re-open or rapidly re-collapse that same work group
 - **Then** long tool output is rendered inside a bounded inner viewport with its own scrollbar so tool growth does not keep stretching the outer chat timeline while the user is reading
 - **Then** when tool output continues updating inside that bounded viewport, the inner scroll may follow the latest tail only while the user is already near the bottom of that tool output; it must not yank the main chat viewport
+
+### Empty assistant-work groups disappear after display filtering
+
+- **Given** `Display toggles` hides all visible items inside an assistant work/tool group
+- **When** the timeline is rebuilt from cache or fresh grouping
+- **Then** that now-empty group is omitted entirely instead of rendering an empty shell
+- **Then** display-toggle state participates in timeline cache reuse so stale filtered groups are not resurrected
 
 ### Sub-conversation threads keep a full composer with parent return
 
@@ -566,7 +599,7 @@ The app uses a platform-aware speech engine strategy with automatic fallback whe
 - **Then** a permission auto-approve toggle is shown to the left of the agent selector
 - **Then** the toggle defaults to enabled and persists when the user turns it off
 - **When** the toggle is enabled and the current thread receives a permission request
-- **Then** the app automatically replies with `Allow Once` for permission prompts only
+- **Then** the app automatically replies with `Always` when that permission request exposes remembered approval, otherwise it falls back to `Allow Once`
 - **Then** mirrored descendant/sub-session permission requests shown in the root thread are auto-approved as part of that same thread scope
 - **Then** question prompts are never auto-answered by this toggle and still require a human choice
 - **Then** the existing inline permission cards remain available as the visible/manual fallback path
@@ -626,6 +659,12 @@ The app uses a platform-aware speech engine strategy with automatic fallback whe
 - **When** no task is in progress
 - **Then** the header summary uses compact completion text (`x/y done`)
 
+### Task snackbars without actions dismiss on tap
+
+- **Given** the chat page shows a snackbar without an explicit action button
+- **When** the user taps anywhere on that snackbar
+- **Then** the snackbar dismisses immediately without waiting for timeout
+
 ---
 
 ## Layout
@@ -635,6 +674,16 @@ The app uses a platform-aware speech engine strategy with automatic fallback whe
 - **Given** the app is running on a mobile device (compact screen)
 - **When** the user navigates the app
 - **Then** the chat occupies the full screen, with the session list accessible via a lateral drawer
+
+### Mobile back follows conversation hierarchy
+
+- **Given** the app is running on mobile and the chat page owns the system back action
+- **When** the current session is a sub-conversation
+- **Then** the first back action returns to the parent/root conversation
+- **When** the current session is already the root conversation and the drawer is closed
+- **Then** the next back action opens the conversations drawer
+- **When** the drawer is already open
+- **Then** the next back action sends the app to the background
 
 ### Mobile drawer status indicator (hamburger)
 
@@ -766,6 +815,14 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **Then** all available agents are listed and one can be selected
 - **When** the user presses `mod+j` / `mod+shift+j`
 - **Then** the app cycles forward/backward through the available agents
+
+### Agent changes restore the last compatible local model choice
+
+- **Given** the user previously used a specific provider/model/variant combination with an agent in the current server/project context
+- **When** the user switches back to that agent later
+- **Then** the app restores the last compatible local provider/model selection remembered for that agent
+- **Then** the remembered variant is restored only when that variant still exists for the restored model
+- **Then** explicit remote/session-scoped selections still take precedence over this local per-agent memory
 
 ---
 

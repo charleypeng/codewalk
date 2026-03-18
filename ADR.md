@@ -1016,18 +1016,19 @@ Related: ADR-003, ADR-018, ADR-019, ADR-022.
 
 **Status**: Approved ADR-023 exception.
 
-**Summary**: CodeWalk exposes a composer-level toggle to the left of the agent selector that defaults to enabled, persists user opt-out, and auto-approves only permission requests with `Allow Once` semantics. Question prompts remain manual.
+**Summary**: CodeWalk exposes a composer-level toggle to the left of the agent selector that defaults to enabled, persists user opt-out, and auto-approves permission requests with `always` semantics when the request exposes it, otherwise falls back to `Allow Once`. Question prompts remain manual.
 
-**Deviation from official behavior**: Official OpenCode currently keeps runtime permission-mode controls outside the composer and does not inherit permissive behavior across subagents/subsessions. CodeWalk intentionally extends auto-approval to the visible thread, including mirrored descendant/subsession permission requests surfaced in the root session.
+**Deviation from official behavior**: Official OpenCode currently keeps runtime permission-mode controls outside the composer and does not inherit permissive behavior across subagents/subsessions. CodeWalk intentionally extends auto-approval to the visible thread, including mirrored descendant/subsession permission requests surfaced in the root session, and prefers `always` when available to reduce repeated prompts.
 
 **Rationale**:
 - Reduce repeated approval friction during active coding sessions.
 - Keep the user in the root conversation while descendant permission prompts are mirrored there.
-- Limit the exception to permission prompts only and avoid permanent escalation by using `Allow Once` semantics.
+- Prefer `always` for durable permission grants when the request supports it; fall back to `Allow Once` for single-shot grants.
+- Question prompts intentionally remain manual to preserve user control over non-permission decisions.
 
 **Risk analysis**:
 - Medium UX/safety risk: mirrored descendant prompts can be approved without a second explicit tap in the child session.
-- Low contract risk: the server still receives a normal permission reply payload, and question prompts keep the official manual path.
+- Low contract risk: the server still receives a normal permission reply payload (`always` or `once`), and question prompts keep the official manual path.
 
 **Rollback / feature-flag plan**:
 - Immediate rollback: user disables the composer toggle locally.
@@ -1036,7 +1037,7 @@ Related: ADR-003, ADR-018, ADR-019, ADR-022.
 
 **Regression coverage**:
 - Widget coverage verifies default-on behavior, persisted opt-out, mirrored subsession auto-approval, and non-regression for question prompts.
-- The drain coordinator uses `Allow Once` replies only and cools down requests that throw during auto-approval.
+- The drain coordinator uses `always` when available, otherwise `Allow Once`, and cools down requests that throw during auto-approval.
 
 **Code locations**:
 - `lib/domain/entities/experience_settings.dart`
