@@ -4582,6 +4582,10 @@ void main() {
         return position.maxScrollExtent - position.pixels;
       }
 
+      final messageCallsBeforeToggle = repository.getMessagesCallCount;
+      final sessionCallsBeforeToggle = repository.getSessionsCallCount;
+      final statusCallsBeforeToggle = repository.getSessionStatusCallCount;
+
       expect(distanceToBottom(), lessThanOrEqualTo(1));
       expect(find.text('older user marker'), findsNothing);
 
@@ -4598,6 +4602,9 @@ void main() {
 
       expect(distanceToBottom(), lessThanOrEqualTo(1));
       expect(find.text('older user marker'), findsNothing);
+      expect(repository.getMessagesCallCount, messageCallsBeforeToggle);
+      expect(repository.getSessionsCallCount, sessionCallsBeforeToggle);
+      expect(repository.getSessionStatusCallCount, statusCallsBeforeToggle);
 
       await tester.tap(toggleFinder);
       await tester.pump();
@@ -4605,6 +4612,9 @@ void main() {
 
       expect(distanceToBottom(), lessThanOrEqualTo(1));
       expect(find.text('older user marker'), findsNothing);
+      expect(repository.getMessagesCallCount, messageCallsBeforeToggle);
+      expect(repository.getSessionsCallCount, sessionCallsBeforeToggle);
+      expect(repository.getSessionStatusCallCount, statusCallsBeforeToggle);
     },
   );
 
@@ -4727,6 +4737,10 @@ void main() {
         return position.maxScrollExtent - position.pixels;
       }
 
+      final messageCallsBeforeToggle = repository.getMessagesCallCount;
+      final sessionCallsBeforeToggle = repository.getSessionsCallCount;
+      final statusCallsBeforeToggle = repository.getSessionStatusCallCount;
+
       expect(distanceToBottom(), lessThanOrEqualTo(1));
       expect(find.text('older pending user marker'), findsNothing);
       expect(
@@ -4754,6 +4768,9 @@ void main() {
       expect(repository.lastPermissionReply, 'once');
       expect(distanceToBottom(), lessThanOrEqualTo(1));
       expect(find.text('older pending user marker'), findsNothing);
+      expect(repository.getMessagesCallCount, messageCallsBeforeToggle);
+      expect(repository.getSessionsCallCount, sessionCallsBeforeToggle);
+      expect(repository.getSessionStatusCallCount, statusCallsBeforeToggle);
       expect(
         find.byKey(
           const ValueKey<String>(
