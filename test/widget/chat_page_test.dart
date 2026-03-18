@@ -4048,6 +4048,237 @@ void main() {
   );
 
   testWidgets(
+    'offline startup reloads projects and sessions automatically once reconnected',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final project = Project(
+        id: 'proj_recovery',
+        name: 'Recovery Project',
+        path: '/repo/recovery',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      );
+      final projectRepository =
+          FakeProjectRepository(
+              currentProject: project,
+              projects: <Project>[project],
+            )
+            ..getProjectsFailure = const NetworkFailure('offline')
+            ..currentProjectFailure = const NetworkFailure('offline');
+      final chatRepository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_recovery',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Recovered Session',
+          ),
+        ],
+      )..getSessionsFailure = const NetworkFailure('offline');
+      final appRepository = FakeAppRepository()
+        ..checkConnectionResult = const Right(false);
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: chatRepository,
+        projectRepository: projectRepository,
+        appRepository: appRepository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(
+        localDataSource: localDataSource,
+        appRepository: appRepository,
+      );
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      final startupProjectCalls = projectRepository.getProjectsCallCount;
+      final startupSessionCalls = chatRepository.getSessionsCallCount;
+      expect(provider.projectProvider.currentProject, isNull);
+      expect(provider.projectProvider.status, ProjectStatus.error);
+      expect(provider.state, ChatState.error);
+
+      projectRepository.getProjectsFailure = null;
+      projectRepository.currentProjectFailure = null;
+      chatRepository.getSessionsFailure = null;
+      appRepository.checkConnectionResult = const Right(true);
+
+      await appProvider.checkConnection();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 700));
+      await tester.pumpAndSettle();
+
+      expect(
+        projectRepository.getProjectsCallCount,
+        greaterThan(startupProjectCalls),
+      );
+      expect(
+        chatRepository.getSessionsCallCount,
+        greaterThan(startupSessionCalls),
+      );
+      expect(provider.projectProvider.currentProject?.id, 'proj_recovery');
+      expect(provider.projectProvider.status, ProjectStatus.loaded);
+      expect(
+        provider.sessions.map((item) => item.id),
+        contains('ses_recovery'),
+      );
+      expect(provider.state, ChatState.loaded);
+    },
+  );
+
+  testWidgets(
+    'health recovery retries initial data reload until connection succeeds',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final project = Project(
+        id: 'proj_health_retry',
+        name: 'Retry Project',
+        path: '/repo/health-retry',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      );
+      final projectRepository =
+          FakeProjectRepository(
+              currentProject: project,
+              projects: <Project>[project],
+            )
+            ..getProjectsFailure = const NetworkFailure('offline')
+            ..currentProjectFailure = const NetworkFailure('offline');
+      final chatRepository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_health_retry',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Retry Session',
+          ),
+        ],
+      )..getSessionsFailure = const NetworkFailure('offline');
+      final appRepository = FakeAppRepository()
+        ..checkConnectionResult = const Right(false);
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: chatRepository,
+        projectRepository: projectRepository,
+        appRepository: appRepository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(
+        localDataSource: localDataSource,
+        appRepository: appRepository,
+      );
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      final startupProjectCalls = projectRepository.getProjectsCallCount;
+      projectRepository.getProjectsFailure = null;
+      projectRepository.currentProjectFailure = null;
+      chatRepository.getSessionsFailure = null;
+
+      appProvider.setHealthForTesting('srv_test', ServerHealthStatus.healthy);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 700));
+      await tester.pump();
+
+      expect(projectRepository.getProjectsCallCount, startupProjectCalls);
+      expect(provider.projectProvider.currentProject, isNull);
+
+      appRepository.checkConnectionResult = const Right(true);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+
+      expect(
+        projectRepository.getProjectsCallCount,
+        greaterThan(startupProjectCalls),
+      );
+      expect(provider.projectProvider.currentProject?.id, 'proj_health_retry');
+      expect(
+        provider.sessions.map((item) => item.id),
+        contains('ses_health_retry'),
+      );
+    },
+  );
+
+  testWidgets(
+    'offline-start reconnect flapping collapses to a single recovery reload',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final project = Project(
+        id: 'proj_flap',
+        name: 'Flap Project',
+        path: '/repo/flap',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      );
+      final projectRepository =
+          FakeProjectRepository(
+              currentProject: project,
+              projects: <Project>[project],
+            )
+            ..getProjectsFailure = const NetworkFailure('offline')
+            ..currentProjectFailure = const NetworkFailure('offline');
+      final chatRepository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_flap',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Flap Session',
+          ),
+        ],
+      )..getSessionsFailure = const NetworkFailure('offline');
+      final appRepository = FakeAppRepository()
+        ..checkConnectionResult = const Right(false);
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: chatRepository,
+        projectRepository: projectRepository,
+        appRepository: appRepository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(
+        localDataSource: localDataSource,
+        appRepository: appRepository,
+      );
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      final startupProjectCalls = projectRepository.getProjectsCallCount;
+      final startupSessionCalls = chatRepository.getSessionsCallCount;
+      projectRepository.getProjectsFailure = null;
+      projectRepository.currentProjectFailure = null;
+      chatRepository.getSessionsFailure = null;
+
+      appRepository.checkConnectionResult = const Right(true);
+      await appProvider.checkConnection();
+      await tester.pump();
+
+      appRepository.checkConnectionResult = const Right(false);
+      await appProvider.checkConnection();
+      await tester.pump();
+
+      appRepository.checkConnectionResult = const Right(true);
+      await appProvider.checkConnection();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 700));
+      await tester.pumpAndSettle();
+
+      expect(projectRepository.getProjectsCallCount, startupProjectCalls + 1);
+      expect(chatRepository.getSessionsCallCount, startupSessionCalls + 1);
+      expect(provider.projectProvider.currentProject?.id, 'proj_flap');
+      expect(provider.sessions.map((item) => item.id), contains('ses_flap'));
+    },
+  );
+
+  testWidgets(
     'mobile long-press on user message bubble pre-fills composer input',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(390, 844));

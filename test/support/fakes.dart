@@ -1900,6 +1900,10 @@ class FakeProjectRepository implements ProjectRepository {
   final Project _currentProject;
   final List<Project> _projects;
   final List<Worktree> _worktrees;
+  int getCurrentProjectCallCount = 0;
+  int getProjectsCallCount = 0;
+  Failure? currentProjectFailure;
+  Failure? getProjectsFailure;
   Failure? worktreeFailure;
   Failure? directoryFailure;
   Failure? fileContentFailure;
@@ -1916,6 +1920,10 @@ class FakeProjectRepository implements ProjectRepository {
   Future<Either<Failure, Project>> getCurrentProject({
     String? directory,
   }) async {
+    getCurrentProjectCallCount += 1;
+    if (currentProjectFailure != null) {
+      return Left(currentProjectFailure!);
+    }
     if (directory != null && directory.trim().isNotEmpty) {
       final byDirectory = _projects
           .where((project) => project.path == directory)
@@ -1939,6 +1947,10 @@ class FakeProjectRepository implements ProjectRepository {
 
   @override
   Future<Either<Failure, List<Project>>> getProjects() async {
+    getProjectsCallCount += 1;
+    if (getProjectsFailure != null) {
+      return Left(getProjectsFailure!);
+    }
     return Right(_projects);
   }
 

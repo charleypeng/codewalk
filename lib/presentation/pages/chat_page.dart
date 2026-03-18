@@ -122,6 +122,9 @@ class _ChatPageState extends State<ChatPage>
   static const Duration _foregroundWarningConfirmationDelay = Duration(
     seconds: 2,
   );
+  static const Duration _initialDataRecoveryDebounce = Duration(
+    milliseconds: 600,
+  );
   static const Duration _composerStatusShowDelay = Duration(seconds: 2);
   static const Duration _composerStatusHideDelay = Duration(seconds: 1);
   static const Duration _composerStopHintDuration = Duration(seconds: 1);
@@ -229,6 +232,7 @@ class _ChatPageState extends State<ChatPage>
   Timer? _foregroundWarningUiRefreshTimer;
   Timer? _foregroundWarningSnackbarTimer;
   Timer? _unhealthySnackbarDebounceTimer;
+  Timer? _initialDataRecoveryTimer;
   Timer? _composerDraftPersistTimer;
   Timer? _composerStatusShowTimer;
   Timer? _composerStatusHideTimer;
@@ -236,6 +240,9 @@ class _ChatPageState extends State<ChatPage>
   Timer? _backgroundRealtimeHoldTimer;
   Timer? _tipRotationTimer;
   DateTime? _lastResumeRefreshAt;
+  bool _needsInitialDataRecovery = false;
+  bool _initialDataRecoveryInFlight = false;
+  int _initialDataRecoveryAttemptCount = 0;
   int _currentTipIndex = 0;
   DateTime? _lastGlobalEscapeAt;
   _ComposerStatusPresentation? _visibleComposerStatus;
@@ -385,6 +392,7 @@ class _ChatPageState extends State<ChatPage>
     _foregroundWarningUiRefreshTimer?.cancel();
     _foregroundWarningSnackbarTimer?.cancel();
     _unhealthySnackbarDebounceTimer?.cancel();
+    _initialDataRecoveryTimer?.cancel();
     _composerDraftPersistTimer?.cancel();
     _composerStatusShowTimer?.cancel();
     _composerStatusHideTimer?.cancel();
@@ -501,6 +509,7 @@ class _ChatPageState extends State<ChatPage>
       await appProvider.initialize();
       await projectProvider.initializeProject();
       if (appProvider.activeServer == null) {
+        _clearInitialDataRecoveryState();
         chatProvider.clearError();
         return;
       }
@@ -511,7 +520,19 @@ class _ChatPageState extends State<ChatPage>
 
       // Technical comment translated to English.
       await chatProvider.loadSessions();
+      if (!appProvider.isConnected) {
+        // Offline startup can still restore cached data, but it needs a full
+        // recovery pass once the backend is reachable again.
+        _markInitialDataRecoveryNeeded();
+        return;
+      }
+      _clearInitialDataRecoveryState();
     } catch (e) {
+      if (appProvider.activeServer != null && !appProvider.isConnected) {
+        _markInitialDataRecoveryNeeded();
+      } else {
+        _clearInitialDataRecoveryState();
+      }
       // Technical comment translated to English.
       chatProvider.clearError();
       AppLogger.error('Chat initialization failed', error: e);
@@ -553,8 +574,176 @@ class _ChatPageState extends State<ChatPage>
 
     final wasConnected = _lastServerConnectionState;
     _lastServerConnectionState = currentConnected;
+    if (_needsInitialDataRecovery &&
+        !currentConnected &&
+        currentHealth != ServerHealthStatus.healthy) {
+      _cancelPendingInitialDataRecovery();
+    }
+    final shouldScheduleInitialDataRecovery =
+        _needsInitialDataRecovery &&
+        ((wasConnected == false && currentConnected) ||
+            (previousHealth != ServerHealthStatus.healthy &&
+                currentHealth == ServerHealthStatus.healthy));
+    if (shouldScheduleInitialDataRecovery) {
+      _scheduleInitialDataRecovery(
+        delay: _initialDataRecoveryDebounce,
+        reason: currentConnected
+            ? 'app-provider-connected'
+            : 'server-health-healthy',
+      );
+      return;
+    }
     if (wasConnected == false && currentConnected) {
       unawaited(_handleServerReconnected());
+    }
+  }
+
+  void _markInitialDataRecoveryNeeded() {
+    _needsInitialDataRecovery = true;
+    _initialDataRecoveryAttemptCount = 0;
+  }
+
+  void _clearInitialDataRecoveryState() {
+    _needsInitialDataRecovery = false;
+    _initialDataRecoveryAttemptCount = 0;
+    _cancelPendingInitialDataRecovery();
+  }
+
+  void _cancelPendingInitialDataRecovery() {
+    _initialDataRecoveryTimer?.cancel();
+    _initialDataRecoveryTimer = null;
+  }
+
+  Duration _initialDataRecoveryRetryDelay(int attemptCount) {
+    if (attemptCount <= 1) {
+      return const Duration(seconds: 1);
+    }
+    if (attemptCount == 2) {
+      return const Duration(seconds: 2);
+    }
+    return const Duration(seconds: 4);
+  }
+
+  void _scheduleInitialDataRecovery({
+    required Duration delay,
+    required String reason,
+  }) {
+    if (!_needsInitialDataRecovery || !mounted) {
+      return;
+    }
+    _initialDataRecoveryTimer?.cancel();
+    AppLogger.info(
+      'initial_data_recovery_scheduled reason=$reason delayMs=${delay.inMilliseconds} attempts=$_initialDataRecoveryAttemptCount',
+    );
+    _initialDataRecoveryTimer = Timer(delay, () {
+      _initialDataRecoveryTimer = null;
+      unawaited(_runInitialDataRecovery(reason: reason));
+    });
+  }
+
+  void _retryInitialDataRecovery({required String reason}) {
+    if (!_needsInitialDataRecovery || !mounted) {
+      return;
+    }
+    _initialDataRecoveryAttemptCount += 1;
+    _scheduleInitialDataRecovery(
+      delay: _initialDataRecoveryRetryDelay(_initialDataRecoveryAttemptCount),
+      reason: reason,
+    );
+  }
+
+  Future<void> _runInitialDataRecovery({required String reason}) async {
+    if (!mounted ||
+        !_needsInitialDataRecovery ||
+        _initialDataRecoveryInFlight) {
+      return;
+    }
+    if (!_isChatScreenActive()) {
+      return;
+    }
+
+    final appProvider = _appProvider ?? context.read<AppProvider>();
+    final projectProvider = context.read<ProjectProvider>();
+    final chatProvider = _chatProvider ?? context.read<ChatProvider>();
+    final expectedServerId = appProvider.activeServerId;
+    if (expectedServerId == null) {
+      return;
+    }
+
+    _initialDataRecoveryInFlight = true;
+    AppLogger.info(
+      'initial_data_recovery_start reason=$reason attempts=$_initialDataRecoveryAttemptCount server=$expectedServerId',
+    );
+
+    try {
+      await appProvider.checkConnection(
+        directory: projectProvider.currentDirectory,
+      );
+      if (!mounted || appProvider.activeServerId != expectedServerId) {
+        return;
+      }
+      if (!appProvider.isConnected) {
+        AppLogger.info(
+          'initial_data_recovery_waiting_for_backend reason=$reason server=$expectedServerId',
+        );
+        _retryInitialDataRecovery(reason: 'connection-not-ready');
+        return;
+      }
+
+      final previousContextKey = projectProvider.contextKey;
+      await projectProvider.initializeProject(forceReload: true);
+      if (!mounted || appProvider.activeServerId != expectedServerId) {
+        return;
+      }
+      if (projectProvider.status == ProjectStatus.error ||
+          projectProvider.currentProject == null) {
+        AppLogger.warn(
+          'Initial data recovery could not restore project context yet',
+        );
+        _retryInitialDataRecovery(reason: 'project-context-not-ready');
+        return;
+      }
+
+      final contextChanged = projectProvider.contextKey != previousContextKey;
+      if (contextChanged) {
+        await chatProvider.onProjectScopeChanged();
+      } else {
+        await chatProvider.loadSessions(
+          preserveVisibleState: chatProvider.sessions.isNotEmpty,
+        );
+      }
+      if (!mounted || appProvider.activeServerId != expectedServerId) {
+        return;
+      }
+      if (chatProvider.state == ChatState.error) {
+        AppLogger.warn('Initial data recovery session reload failed; retrying');
+        _retryInitialDataRecovery(reason: 'session-reload-failed');
+        return;
+      }
+
+      if (chatProvider.providers.isEmpty) {
+        chatProvider.warmupProvidersRefresh(reason: 'offline-start-recovery');
+      }
+      if (chatProvider.currentSession != null) {
+        await chatProvider.refreshActiveSessionView(
+          reason: 'offline-start-recovery',
+        );
+      }
+
+      _clearInitialDataRecoveryState();
+      _scheduleAutoApprovePermissionDrain(reason: 'offline-start-recovery');
+      AppLogger.info(
+        'initial_data_recovery_complete server=$expectedServerId context=${projectProvider.contextKey}',
+      );
+    } catch (e, stackTrace) {
+      AppLogger.warn(
+        'Initial data recovery failed unexpectedly',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      _retryInitialDataRecovery(reason: 'unexpected-recovery-error');
+    } finally {
+      _initialDataRecoveryInFlight = false;
     }
   }
 
