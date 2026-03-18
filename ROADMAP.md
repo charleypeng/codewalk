@@ -22,7 +22,7 @@ Description: Redesign the onboarding wizard to be more intuitive and accessible 
 - [x] 2.01 Revamp do wizard de onboard para ficar mais fácil ainda, principalmente pra quem não sabe o que é OpenCode - Commit hash: d6fcc19
   - Note: O onboarding agora explica o que é OpenCode de forma mais clara e inclui uma superfície de debug separada para configuração do OpenCode
 - [ ] 2.02 Apontar balões estilo tour para usar a primeira vez após servidor configurado e funcionando. Após concluir o onboard com sucesso, mostrar botão para ir pra tela principal
-- [ ] 2.03 Inicialmente selecionar o modelo opencode/big-pickle automaticamente após onboard
+- [x] 2.03 Inicialmente selecionar o modelo opencode/big-pickle automaticamente após onboard - Commit hash: 88af23a
 
 ### Feature 3: UI/UX & Platform Improvements
 
