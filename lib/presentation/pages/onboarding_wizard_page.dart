@@ -216,6 +216,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       await context.read<SettingsProvider>().setPendingPostOnboardingChatTour(
         true,
       );
+      if (!mounted) {
+        return;
+      }
     }
     if (widget.onComplete != null) {
       widget.onComplete!();
