@@ -381,6 +381,73 @@ void main() {
     expect(find.byType(SettingsPage), findsNothing);
   });
 
+  testWidgets('about replay chat tour arms flag and closes settings', (
+    WidgetTester tester,
+  ) async {
+    final local = InMemoryAppLocalDataSource()
+      ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+        'checkUpdatesOnOpen': false,
+        'pendingPostOnboardingChatTour': false,
+      });
+    final settingsProvider = SettingsProvider(
+      localDataSource: local,
+      dioClient: DioClient(),
+      soundService: SoundService(),
+    );
+    await settingsProvider.initialize();
+    addTearDown(settingsProvider.dispose);
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<SettingsProvider>.value(
+        value: settingsProvider,
+        child: MaterialApp(
+          home: Builder(
+            builder: (context) {
+              return Scaffold(
+                body: Center(
+                  child: FilledButton(
+                    key: const ValueKey<String>('open_settings_button'),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const SettingsPage()),
+                      );
+                    },
+                    child: const Text('Open settings'),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('open_settings_button')),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('About'),
+      120,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('About').first);
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('about_replay_chat_tour_tile')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(settingsProvider.pendingPostOnboardingChatTour, isTrue);
+    expect(find.byType(SettingsPage), findsNothing);
+    expect(find.text('Open settings'), findsOneWidget);
+  });
+
   testWidgets('desktop shortcuts section shows local provenance', (
     WidgetTester tester,
   ) async {
