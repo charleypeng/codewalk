@@ -315,7 +315,8 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
   `skipOnboardingWizard` is false; navigation back to the shell happens automatically via
   `Consumer2` rebuild when a profile is added.
 - **Steps**: Welcome (connect or need-help paths) -> Server Setup (optional `ServerSetupQuickGuide`
-  + connection form with URL/label/auth/AI-titles) -> Ready (success or retry).
+  + connection form with URL/label/auth/AI-titles) -> Ready (success or retry). The wizard stays
+  visible through the Ready step and can persist a pending post-onboarding chat tour handoff.
 - **`ServerSetupQuickGuide`** (`servers_settings_section.dart`): Reusable stateless widget showing
   quick-start instructions and a copyable `opencode serve` command. Used by both the onboarding
   wizard and the Settings > Servers add/edit dialog.
@@ -323,6 +324,22 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
   to `10.0.2.2` on Android emulator builds.
 - **Skip persistence**: User can skip the wizard with an optional "Don't show again" checkbox,
   which calls `SettingsProvider.setSkipOnboardingWizard(true)`.
+
+### Post-Onboarding Chat Tour
+
+- **Purpose**: First-use showcase tour that activates after successful onboarding completion,
+  guiding users through key UI elements before their first interaction.
+- **Persistence**: `SettingsProvider.pendingPostOnboardingChatTour` flag controls handoff state;
+  set during onboarding completion and cleared after tour finishes or is dismissed.
+- **Phases**: Two-phase tour flow (`intro` → `composer`) managed in `ChatPage` via
+  `_PostOnboardingTourPhase` enum.
+- **Tour targets**:
+  - **Intro phase**: Drawer access (mobile), project context (sidebar), desktop sidebar menu,
+    and New Chat button (`chat_page_chrome.dart`)
+  - **Composer phase**: Chat input field and Send button (`chat_input_widget.dart`)
+- **Implementation**: Uses `showcaseview` package with `ShowCaseWidget` wrapper in `ChatPage`;
+  tour keys are `GlobalKey` instances passed to target widgets; responsive copy adapts to
+  mobile/desktop layouts.
 
 ### OpenCode Setup Debug Flow
 

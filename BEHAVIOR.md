@@ -13,6 +13,21 @@
 - **When** the app starts
 - **Then** a setup wizard is displayed requiring the user to configure at least one OpenCode server
 
+### Successful onboarding stays in the wizard through Ready
+
+- **Given** the user finishes server setup successfully during onboarding
+- **When** the connection is saved and the wizard advances to the final success state
+- **Then** the onboarding flow remains visible through the `Ready` step instead of dismissing immediately when the first server profile is created
+- **Then** the user gets an explicit action to continue into the main chat experience
+
+### Successful onboarding can trigger a first-use chat tour
+
+- **Given** the user leaves onboarding from the successful `Ready` step
+- **When** the main chat screen opens for that first post-onboarding session
+- **Then** the app starts a guided first-use tour that introduces how to open project/sidebar controls, start a new chat, use the chat input, and send a message
+- **Then** the tour adapts its first step to the current layout, using drawer/sidebar access on compact screens and the relevant project/sidebar control on larger layouts
+- **Then** the handoff runs only once for that successful onboarding completion unless a later onboarding success arms it again
+
 ### First launch explains the OpenCode relationship
 
 - **Given** the first-run setup wizard is visible

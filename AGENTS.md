@@ -68,7 +68,7 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | Key API/DataSource locations | 199–218 |
 | Main Commands | 219–241 |
 | Testing/Quality Gates | 242–263 |
-| Notes | 264–389 |
+| Notes | 264–406 |
 
 ## ⚙️ Makefile Quick Reference (details in `Makefile`)
 
