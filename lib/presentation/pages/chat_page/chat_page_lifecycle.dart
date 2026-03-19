@@ -10,6 +10,11 @@ extension _ChatPageLifecycle on _ChatPageState {
   void _handleSettingsChanged() {
     final settings =
         _settingsProvider?.settings ?? ExperienceSettings.defaults();
+    final pendingPostOnboardingTour = settings.pendingPostOnboardingChatTour;
+    if (pendingPostOnboardingTour != _lastPendingPostOnboardingChatTour) {
+      _lastPendingPostOnboardingChatTour = pendingPostOnboardingTour;
+      _queuedPendingPostOnboardingTourAutoStart = pendingPostOnboardingTour;
+    }
     final nextForegroundPolicySignature = _foregroundPolicySettingsSignature(
       settings,
     );
@@ -30,6 +35,7 @@ extension _ChatPageLifecycle on _ChatPageState {
       _shouldRevealFinalAssistantOnCompletion = false;
     }
     _scheduleAutoApprovePermissionDrain(reason: 'settings-changed');
+    _flushPendingPostOnboardingTourAutoStart();
   }
 
   void _handleChatProviderChanged() {
@@ -337,6 +343,7 @@ extension _ChatPageLifecycle on _ChatPageState {
     ChatProvider chatProvider, {
     required String reason,
   }) {
+    _flushPendingPostOnboardingTourAutoStart();
     _scheduleAutoApprovePermissionDrain(reason: reason);
     if (!_autoFollowToLatest || chatProvider.currentSession == null) {
       return;

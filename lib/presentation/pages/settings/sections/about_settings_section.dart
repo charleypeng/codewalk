@@ -280,6 +280,9 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
     BuildContext context,
     SettingsProvider settings,
   ) async {
+    if (settings.pendingPostOnboardingChatTour) {
+      await settings.setPendingPostOnboardingChatTour(false);
+    }
     await settings.setPendingPostOnboardingChatTour(true);
     if (!mounted) {
       return;

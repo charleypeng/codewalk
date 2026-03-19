@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../providers/settings_provider.dart';
 import '../theme/app_animations.dart';
 import '../utils/app_page_route.dart';
 import '../utils/window_size_class.dart';
@@ -348,6 +352,21 @@ class _SettingsPageState extends State<SettingsPage> {
     ).push(AppPageRoute(builder: (_) => const LogsPage()));
   }
 
+  Future<void> _replayChatTour() async {
+    final settingsProvider = context.read<SettingsProvider>();
+    if (settingsProvider.pendingPostOnboardingChatTour) {
+      await settingsProvider.setPendingPostOnboardingChatTour(false);
+    }
+    await settingsProvider.setPendingPostOnboardingChatTour(true);
+    if (!mounted) {
+      return;
+    }
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+    }
+  }
+
   Widget _buildSectionList({required bool isSplit}) {
     return ListView(
       padding: const EdgeInsets.all(AppConstants.defaultPadding),
@@ -356,6 +375,13 @@ class _SettingsPageState extends State<SettingsPage> {
           onPressed: _openSetupWizard,
           icon: const Icon(Symbols.auto_fix_high_rounded),
           label: const Text('Setup Wizard'),
+        ),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          key: const ValueKey<String>('settings_replay_chat_tour_button'),
+          onPressed: () => unawaited(_replayChatTour()),
+          icon: const Icon(Symbols.play_circle_rounded),
+          label: const Text('Replay chat tour'),
         ),
         const SizedBox(height: 12),
         ..._visibleSections.map((section) {

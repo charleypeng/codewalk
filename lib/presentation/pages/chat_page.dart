@@ -308,6 +308,8 @@ class _ChatPageState extends State<ChatPage>
   bool _tourAdvancingToComposerPhase = false;
   _PostOnboardingTourPhase _tourPhase = _PostOnboardingTourPhase.idle;
   int _postOnboardingTourRunToken = 0;
+  bool _queuedPendingPostOnboardingTourAutoStart = false;
+  bool _lastPendingPostOnboardingChatTour = false;
 
   // Per-session hydrated timeline cache so reopening a cached session can
   // reuse its grouped presentation instead of rebuilding the whole timeline.
@@ -421,9 +423,19 @@ class _ChatPageState extends State<ChatPage>
       _settingsProvider?.removeListener(_handleSettingsChanged);
       _settingsProvider = nextSettingsProvider;
       _settingsProvider?.addListener(_handleSettingsChanged);
+      _lastPendingPostOnboardingChatTour =
+          nextSettingsProvider.pendingPostOnboardingChatTour;
+      _queuedPendingPostOnboardingTourAutoStart =
+          nextSettingsProvider.pendingPostOnboardingChatTour;
       _applyForegroundPolicy(reason: 'settings-provider-attached');
       _lastForegroundPolicySettingsSignature =
           _foregroundPolicySettingsSignature(nextSettingsProvider.settings);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        _flushPendingPostOnboardingTourAutoStart();
+      });
     }
   }
 
@@ -1225,6 +1237,25 @@ class _ChatPageState extends State<ChatPage>
     return mounted && token == _postOnboardingTourRunToken;
   }
 
+  void _flushPendingPostOnboardingTourAutoStart() {
+    final settingsProvider = _settingsProvider;
+    if (settingsProvider == null ||
+        !_queuedPendingPostOnboardingTourAutoStart ||
+        !settingsProvider.pendingPostOnboardingChatTour ||
+        _tourStartScheduled ||
+        !_isChatScreenActive()) {
+      return;
+    }
+    _queuedPendingPostOnboardingTourAutoStart = false;
+    final runToken = _startPostOnboardingTourRun();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isPostOnboardingTourRunActive(runToken)) {
+        return;
+      }
+      _startIntroPostOnboardingTour(attempt: 0, runToken: runToken);
+    });
+  }
+
   bool _startShowcaseIfReady(List<GlobalKey> keys) {
     final showcaseState = _showcaseWidgetKey.currentState;
     final allMounted = keys.every(_isTourTargetReady);
@@ -1233,22 +1264,6 @@ class _ChatPageState extends State<ChatPage>
     }
     showcaseState.startShowCase(keys);
     return true;
-  }
-
-  void _maybeStartPostOnboardingTour({
-    required SettingsProvider settingsProvider,
-  }) {
-    if (!settingsProvider.pendingPostOnboardingChatTour ||
-        _tourStartScheduled) {
-      return;
-    }
-    final runToken = _startPostOnboardingTourRun();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_isPostOnboardingTourRunActive(runToken)) {
-        return;
-      }
-      _startIntroPostOnboardingTour(attempt: 0, runToken: runToken);
-    });
   }
 
   void _startIntroPostOnboardingTour({
@@ -1371,6 +1386,8 @@ class _ChatPageState extends State<ChatPage>
 
   Future<void> _clearPendingPostOnboardingTour() async {
     _resetPostOnboardingTourTransientState();
+    _queuedPendingPostOnboardingTourAutoStart = false;
+    _lastPendingPostOnboardingChatTour = false;
     final settingsProvider =
         _settingsProvider ?? context.read<SettingsProvider>();
     await settingsProvider.setPendingPostOnboardingChatTour(false);
@@ -1553,7 +1570,6 @@ class _ChatPageState extends State<ChatPage>
           }
         }
 
-        _maybeStartPostOnboardingTour(settingsProvider: settingsProvider);
         return ShowCaseWidget(
           key: _showcaseWidgetKey,
           onDismiss: _handlePostOnboardingTourDismiss,

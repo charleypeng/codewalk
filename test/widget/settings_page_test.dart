@@ -90,14 +90,27 @@ void main() {
 
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('Setup Wizard'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('settings_replay_chat_tour_button')),
+      findsOneWidget,
+    );
+    expect(find.text('Replay chat tour'), findsOneWidget);
     expect(find.text('Appearance'), findsOneWidget);
     expect(find.text('Behavior'), findsOneWidget);
     expect(find.text('Notifications'), findsOneWidget);
     expect(find.text('Speech to text'), findsOneWidget);
-    expect(find.text('Logs'), findsOneWidget);
     expect(find.text('Sounds'), findsNothing);
     expect(find.text('Shortcuts'), findsNothing);
     expect(find.text('Servers'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Logs'),
+      120,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Logs'), findsOneWidget);
 
     await tester.tap(find.text('Appearance').first);
     await tester.pumpAndSettle();
@@ -381,6 +394,63 @@ void main() {
     expect(find.byType(SettingsPage), findsNothing);
   });
 
+  testWidgets('settings replay chat tour button arms flag and closes page', (
+    WidgetTester tester,
+  ) async {
+    final local = InMemoryAppLocalDataSource()
+      ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+        'checkUpdatesOnOpen': false,
+        'pendingPostOnboardingChatTour': false,
+      });
+    final settingsProvider = SettingsProvider(
+      localDataSource: local,
+      dioClient: DioClient(),
+      soundService: SoundService(),
+    );
+    await settingsProvider.initialize();
+    addTearDown(settingsProvider.dispose);
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<SettingsProvider>.value(
+        value: settingsProvider,
+        child: MaterialApp(
+          home: Builder(
+            builder: (context) {
+              return Scaffold(
+                body: Center(
+                  child: FilledButton(
+                    key: const ValueKey<String>('open_settings_button'),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const SettingsPage()),
+                      );
+                    },
+                    child: const Text('Open settings'),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('open_settings_button')),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('settings_replay_chat_tour_button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(settingsProvider.pendingPostOnboardingChatTour, isTrue);
+    expect(find.byType(SettingsPage), findsNothing);
+    expect(find.text('Open settings'), findsOneWidget);
+  });
+
   testWidgets('about replay chat tour arms flag and closes settings', (
     WidgetTester tester,
   ) async {
@@ -468,6 +538,13 @@ void main() {
           value: settingsProvider,
           child: const MaterialApp(home: SettingsPage()),
         ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(
+        find.text('Shortcuts'),
+        120,
+        scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
 
