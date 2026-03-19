@@ -330,8 +330,9 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 - **Purpose**: First-use showcase tour that activates after successful onboarding completion,
   guiding users through key UI elements before their first interaction.
 - **Persistence**: `SettingsProvider.pendingPostOnboardingChatTour` flag controls handoff state;
-  set during onboarding completion and cleared only after tour finishes or is dismissed (slow-mount
-  of intro/composer targets no longer consumes the flag prematurely).
+  set during onboarding completion and cleared only after tour finishes or is dismissed.
+- **Auto-start scheduling**: Tour auto-start is queued from settings changes and chat-route return
+  (`didChangeDependencies` / `didPushNext` lifecycle) instead of being scheduled from every chat build.
 - **Phases**: Two-phase tour flow (`intro` → `composer`) managed in `ChatPage` via
   `_PostOnboardingTourPhase` enum.
 - **Tour targets**:
@@ -343,8 +344,8 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
   mobile/desktop layouts. Retries are run-token guarded so stale callbacks do not double-trigger
   after replay.
 - **Replay action**:
-  - **Primary**: Settings > About includes a stable `Replay chat tour` entry for users who want to re-run the tour.
-  - **Secondary**: Chat Display toggles popup also offers a `Replay chat tour` shortcut.
+  - **Primary**: Main Settings landing page includes a clearly reachable `Replay chat tour` action.
+  - **Secondary**: Settings > About still offers the replay action as an alternative path.
 
 ### OpenCode Setup Debug Flow
 
