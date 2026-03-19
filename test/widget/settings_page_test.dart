@@ -293,6 +293,26 @@ void main() {
 
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('About'),
+      120,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('About').first);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('about_replay_chat_tour_tile')),
+      findsOneWidget,
+    );
+    expect(find.text('Replay chat tour'), findsOneWidget);
+    expect(
+      find.text('Close settings and show the guided chat walkthrough'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('mobile back follows detail then list then app flow', (

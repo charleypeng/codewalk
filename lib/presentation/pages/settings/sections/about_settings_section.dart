@@ -57,6 +57,7 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
             _buildCheckUpdatesOnOpenTile(context, settings),
             _buildCheckForUpdatesTile(context, settings, checking),
             const Divider(height: 32),
+            _buildReplayChatTourTile(context, settings),
             _buildResetAppTile(context),
             const Divider(height: 32),
             _buildGitHubTile(context),
@@ -138,7 +139,9 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           LinearProgressIndicator(
-            value: settings.installProgress > 0 ? settings.installProgress : null,
+            value: settings.installProgress > 0
+                ? settings.installProgress
+                : null,
           ),
           const SizedBox(height: 4),
           Text(
@@ -256,6 +259,32 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
       subtitle: const Text('Erase all data and restart'),
       onTap: () => _confirmResetApp(context),
     );
+  }
+
+  Widget _buildReplayChatTourTile(
+    BuildContext context,
+    SettingsProvider settings,
+  ) {
+    return ListTile(
+      key: const ValueKey<String>('about_replay_chat_tour_tile'),
+      leading: const Icon(Symbols.play_circle_rounded),
+      title: const Text('Replay chat tour'),
+      subtitle: const Text(
+        'Close settings and show the guided chat walkthrough',
+      ),
+      onTap: () => unawaited(_replayChatTour(context, settings)),
+    );
+  }
+
+  Future<void> _replayChatTour(
+    BuildContext context,
+    SettingsProvider settings,
+  ) async {
+    await settings.setPendingPostOnboardingChatTour(true);
+    if (!mounted) {
+      return;
+    }
+    Navigator.of(context).pop();
   }
 
   Future<void> _confirmResetApp(BuildContext context) async {
