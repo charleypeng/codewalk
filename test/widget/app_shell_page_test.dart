@@ -31,6 +31,7 @@ import 'package:codewalk/domain/usecases/update_chat_session.dart';
 import 'package:codewalk/domain/usecases/watch_chat_events.dart';
 import 'package:codewalk/domain/usecases/watch_global_chat_events.dart';
 import 'package:codewalk/presentation/pages/app_shell_page.dart';
+import 'package:codewalk/presentation/pages/onboarding_wizard_page.dart';
 import 'package:codewalk/presentation/providers/app_provider.dart';
 import 'package:codewalk/presentation/providers/chat_provider.dart';
 import 'package:codewalk/presentation/providers/project_provider.dart';
@@ -237,6 +238,41 @@ void main() {
     expect(find.byIcon(Icons.close), findsOneWidget);
     debugDefaultTargetPlatformOverride = previousPlatform;
   });
+
+  testWidgets(
+    'keeps onboarding mounted after server add until the wizard is explicitly completed',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1200, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource();
+      await tester.pumpWidget(
+        _testApp(
+          _buildChatProvider(localDataSource: localDataSource),
+          _buildAppProvider(localDataSource: localDataSource),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Welcome to CodeWalk'), findsOneWidget);
+
+      await tester.tap(find.text('Connect to a running server'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Test connection'));
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 220));
+      });
+      await tester.pumpAndSettle();
+
+      expect(find.byType(OnboardingWizardPage), findsOneWidget);
+      expect(find.byKey(const ValueKey('step_server_setup')), findsNothing);
+      expect(find.text('Connection issue'), findsWidgets);
+      expect(find.text('Try again'), findsOneWidget);
+      expect(localDataSource.serverProfilesJson, isNotNull);
+      expect(find.text('Conversations'), findsNothing);
+    },
+  );
 }
 
 Widget _testApp(ChatProvider chatProvider, AppProvider appProvider) {

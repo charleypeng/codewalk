@@ -162,6 +162,8 @@ class SettingsProvider extends ChangeNotifier {
   String get sherpaLanguageCode => _settings.sherpaLanguageCode;
   String get moonshineModelId => _settings.moonshineModelId;
   bool get skipOnboardingWizard => _settings.skipOnboardingWizard;
+  bool get pendingPostOnboardingChatTour =>
+      _settings.pendingPostOnboardingChatTour;
   bool get hasAnyServerBackedNotificationCategory =>
       _serverBackedNotifications.values.any((value) => value);
 
@@ -847,6 +849,15 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(skipOnboardingWizard: value);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setPendingPostOnboardingChatTour(bool value) async {
+    if (_settings.pendingPostOnboardingChatTour == value) {
+      return;
+    }
+    _settings = _settings.copyWith(pendingPostOnboardingChatTour: value);
     notifyListeners();
     await _persist();
   }

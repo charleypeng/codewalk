@@ -121,6 +121,32 @@ void main() {
       expect(settingsJson['composerAutoApprovePermissions'], isFalse);
     });
 
+    test('persists pending post-onboarding chat tour flag', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+      await first.setPendingPostOnboardingChatTour(true);
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(second.pendingPostOnboardingChatTour, isTrue);
+
+      await second.setPendingPostOnboardingChatTour(false);
+      final raw = local.experienceSettingsJson;
+      expect(raw, isNotNull);
+      final settingsJson = jsonDecode(raw!) as Map<String, dynamic>;
+      expect(settingsJson['pendingPostOnboardingChatTour'], isFalse);
+    });
+
     test('allows toggling sound independently from notification', () async {
       final local = InMemoryAppLocalDataSource();
       final provider = SettingsProvider(

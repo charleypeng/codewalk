@@ -585,6 +585,7 @@ class ExperienceSettings {
       speechSilenceTimeoutSeconds: 5,
       sherpaLanguageCode: kSherpaLanguageSystem,
       moonshineModelId: kMoonshineModelTiny,
+      pendingPostOnboardingChatTour: false,
       checkUpdatesOnOpen: true,
     );
   }
@@ -623,6 +624,7 @@ class ExperienceSettings {
     this.sherpaLanguageCode = kSherpaLanguageSystem,
     this.moonshineModelId = kMoonshineModelTiny,
     this.skipOnboardingWizard = false,
+    this.pendingPostOnboardingChatTour = false,
     this.checkUpdatesOnOpen = true,
   });
 
@@ -660,6 +662,7 @@ class ExperienceSettings {
   final String sherpaLanguageCode;
   final String moonshineModelId;
   final bool skipOnboardingWizard;
+  final bool pendingPostOnboardingChatTour;
   final bool checkUpdatesOnOpen;
 
   ExperienceSettings copyWith({
@@ -697,6 +700,7 @@ class ExperienceSettings {
     String? sherpaLanguageCode,
     String? moonshineModelId,
     bool? skipOnboardingWizard,
+    bool? pendingPostOnboardingChatTour,
     bool? checkUpdatesOnOpen,
   }) {
     return ExperienceSettings(
@@ -747,6 +751,8 @@ class ExperienceSettings {
       sherpaLanguageCode: sherpaLanguageCode ?? this.sherpaLanguageCode,
       moonshineModelId: moonshineModelId ?? this.moonshineModelId,
       skipOnboardingWizard: skipOnboardingWizard ?? this.skipOnboardingWizard,
+      pendingPostOnboardingChatTour:
+          pendingPostOnboardingChatTour ?? this.pendingPostOnboardingChatTour,
       checkUpdatesOnOpen: checkUpdatesOnOpen ?? this.checkUpdatesOnOpen,
     );
   }
@@ -824,6 +830,7 @@ class ExperienceSettings {
       'sherpaLanguageCode': sherpaLanguageCode,
       'moonshineModelId': moonshineModelId,
       'skipOnboardingWizard': skipOnboardingWizard,
+      'pendingPostOnboardingChatTour': pendingPostOnboardingChatTour,
       'checkUpdatesOnOpen': checkUpdatesOnOpen,
     };
   }
@@ -1129,6 +1136,13 @@ class ExperienceSettings {
       skipOnboardingWizard = skipOnboardingWizardJson;
     }
 
+    var pendingPostOnboardingChatTour = defaults.pendingPostOnboardingChatTour;
+    final pendingPostOnboardingChatTourJson =
+        json['pendingPostOnboardingChatTour'];
+    if (pendingPostOnboardingChatTourJson is bool) {
+      pendingPostOnboardingChatTour = pendingPostOnboardingChatTourJson;
+    }
+
     var checkUpdatesOnOpen = defaults.checkUpdatesOnOpen;
     final checkUpdatesOnOpenJson = json['checkUpdatesOnOpen'];
     if (checkUpdatesOnOpenJson is bool) {
@@ -1170,6 +1184,7 @@ class ExperienceSettings {
       sherpaLanguageCode: sherpaLanguageCode,
       moonshineModelId: moonshineModelId,
       skipOnboardingWizard: skipOnboardingWizard,
+      pendingPostOnboardingChatTour: pendingPostOnboardingChatTour,
       checkUpdatesOnOpen: checkUpdatesOnOpen,
     );
   }

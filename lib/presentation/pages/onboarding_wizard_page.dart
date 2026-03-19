@@ -128,7 +128,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         _handleSkip();
         return;
       }
-      _complete();
+      unawaited(_complete());
       return;
     }
     setState(() {
@@ -146,7 +146,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
 
   Future<void> _handleSkip() async {
     if (!widget.showSkipAction) {
-      _complete();
+      unawaited(_complete());
       return;
     }
 
@@ -187,8 +187,10 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                 FilledButton(
                   onPressed: () {
                     if (dontShowAgain) {
-                      context.read<SettingsProvider>().setSkipOnboardingWizard(
-                        true,
+                      unawaited(
+                        context
+                            .read<SettingsProvider>()
+                            .setSkipOnboardingWizard(true),
                       );
                     }
                     Navigator.of(dialogContext).pop(true);
@@ -203,11 +205,18 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
     );
 
     if (confirmed == true) {
-      _complete();
+      unawaited(_complete());
     }
   }
 
-  void _complete() {
+  Future<void> _complete() async {
+    if (_connectionSuccess &&
+        widget.showSkipAction &&
+        _editingServerId == null) {
+      await context.read<SettingsProvider>().setPendingPostOnboardingChatTour(
+        true,
+      );
+    }
     if (widget.onComplete != null) {
       widget.onComplete!();
       return;
@@ -1278,7 +1287,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
               ],
               const SizedBox(height: 20),
               FilledButton.icon(
-                onPressed: _complete,
+                onPressed: () => unawaited(_complete()),
                 icon: const Icon(Symbols.check_circle_rounded),
                 label: Text(widget.showSkipAction ? 'Continue' : 'Done'),
               ),
@@ -1379,7 +1388,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
           ),
           const SizedBox(height: 40),
           FilledButton.icon(
-            onPressed: _complete,
+            onPressed: () => unawaited(_complete()),
             icon: const Icon(Symbols.arrow_forward_rounded),
             label: Text(actionLabel),
           ),
@@ -1451,7 +1460,10 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
           label: const Text('View setup debug'),
         ),
         const SizedBox(height: 12),
-        OutlinedButton(onPressed: _complete, child: const Text('Skip for now')),
+        OutlinedButton(
+          onPressed: () => unawaited(_complete()),
+          child: const Text('Skip for now'),
+        ),
       ],
     );
   }

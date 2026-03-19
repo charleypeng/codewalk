@@ -23,6 +23,7 @@ class AppShellPage extends StatefulWidget {
 class _AppShellPageState extends State<AppShellPage> {
   final DesktopTrayService _desktopTrayService = createDesktopTrayService();
   SettingsProvider? _settingsProvider;
+  bool _onboardingActive = false;
   // Tracks whether the wizard was dismissed this session (without persisting
   // the preference). Resets on app restart, unlike skipOnboardingWizard.
   bool _wizardDismissedThisSession = false;
@@ -88,14 +89,25 @@ class _AppShellPageState extends State<AppShellPage> {
         }
         // Show onboarding wizard when no server is configured, unless user
         // opted out permanently or dismissed it this session.
-        final needsOnboarding =
+        final shouldShowOnboarding =
             appProvider.serverProfiles.isEmpty &&
             !settingsProvider.skipOnboardingWizard &&
             !_wizardDismissedThisSession;
-        if (needsOnboarding) {
+        if (shouldShowOnboarding && !_onboardingActive) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || _onboardingActive) {
+              return;
+            }
+            setState(() {
+              _onboardingActive = true;
+            });
+          });
+        }
+        if (shouldShowOnboarding || _onboardingActive) {
           return OnboardingWizardPage(
             onComplete: () {
               setState(() {
+                _onboardingActive = false;
                 _wizardDismissedThisSession = true;
               });
             },
