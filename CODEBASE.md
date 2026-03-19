@@ -342,8 +342,9 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
   tour keys are `GlobalKey` instances passed to target widgets; responsive copy adapts to
   mobile/desktop layouts. Retries are run-token guarded so stale callbacks do not double-trigger
   after replay.
-- **Replay action**: Chat Display toggles popup includes a low-prominence `Replay chat tour`
-  action for users who want to re-run the tour.
+- **Replay action**:
+  - **Primary**: Settings > About includes a stable `Replay chat tour` entry for users who want to re-run the tour.
+  - **Secondary**: Chat Display toggles popup also offers a `Replay chat tour` shortcut.
 
 ### OpenCode Setup Debug Flow
 

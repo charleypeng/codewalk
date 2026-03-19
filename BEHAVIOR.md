@@ -35,6 +35,12 @@
 - **When** the user opens `Display toggles` from the chat app bar and chooses `Replay chat tour`
 - **Then** the app restarts the same guided tour from the chat surface without requiring onboarding or data reset
 
+### Chat tour can be replayed from Settings > About
+
+- **Given** the user cannot easily find the replay shortcut from the chat app bar
+- **When** the user opens `Settings` > `About` and taps `Replay chat tour`
+- **Then** the app closes settings, arms the same replay flow, and returns to chat so the guided tour can start again without onboarding or data reset
+
 ### First launch explains the OpenCode relationship
 
 - **Given** the first-run setup wizard is visible
