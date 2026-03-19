@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart' hide Provider;
+import 'package:showcaseview/showcaseview.dart';
 import 'package:simple_icons/simple_icons.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -89,6 +90,32 @@ enum _DisplayToggleAction {
 
 enum _HistoryToolbarAction { undo, redo }
 
+enum _PostOnboardingTourPhase { idle, intro, composer }
+
+@visibleForTesting
+({String title, String description}) postOnboardingSidebarTourCopy({
+  required bool isMobile,
+  required bool showConversationPane,
+}) {
+  if (isMobile) {
+    return (
+      title: 'Open sidebar',
+      description: 'Use this button to open your projects and conversations.',
+    );
+  }
+  if (showConversationPane) {
+    return (
+      title: 'Open project',
+      description: 'Use this button to switch project folders and context.',
+    );
+  }
+  return (
+    title: 'Sidebar access',
+    description:
+        'Use this menu to show the conversations sidebar and project tools.',
+  );
+}
+
 /// Chat page
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key, this.projectId});
@@ -156,6 +183,20 @@ class _ChatPageState extends State<ChatPage>
   final GlobalKey _agentSelectorChipKey = GlobalKey(
     debugLabel: 'agent_selector_chip',
   );
+  final GlobalKey _drawerAccessTourKey = GlobalKey(
+    debugLabel: 'tour_drawer_access',
+  );
+  final GlobalKey _projectContextTourKey = GlobalKey(
+    debugLabel: 'tour_project_context',
+  );
+  final GlobalKey _desktopSidebarMenuTourKey = GlobalKey(
+    debugLabel: 'tour_desktop_sidebar_menu',
+  );
+  final GlobalKey _newChatTourKey = GlobalKey(debugLabel: 'tour_new_chat');
+  final GlobalKey _composerTourKey = GlobalKey(debugLabel: 'tour_composer');
+  final GlobalKey _sendButtonTourKey = GlobalKey(debugLabel: 'tour_send');
+  final GlobalKey<ShowCaseWidgetState> _showcaseWidgetKey =
+      GlobalKey<ShowCaseWidgetState>();
   final TextEditingController _sessionSearchController =
       TextEditingController();
   NotificationService? _notificationService;
@@ -258,6 +299,9 @@ class _ChatPageState extends State<ChatPage>
   String? _nextFrozenCompactionBoundaryId;
   bool _nextWasCompactingContext = false;
   bool _compactionStateSyncScheduled = false;
+  bool _tourStartScheduled = false;
+  bool _tourAdvancingToComposerPhase = false;
+  _PostOnboardingTourPhase _tourPhase = _PostOnboardingTourPhase.idle;
 
   // Per-session hydrated timeline cache so reopening a cached session can
   // reuse its grouped presentation instead of rebuilding the whole timeline.
@@ -1069,6 +1113,189 @@ class _ChatPageState extends State<ChatPage>
 
   double _lastKnownMaxScrollExtent = 0;
 
+  GlobalKey _sidebarAccessTourKey({
+    required bool isMobile,
+    required bool showConversationPane,
+  }) {
+    if (isMobile) {
+      return _drawerAccessTourKey;
+    }
+    return showConversationPane
+        ? _projectContextTourKey
+        : _desktopSidebarMenuTourKey;
+  }
+
+  Widget _buildTourTarget({
+    required GlobalKey showcaseKey,
+    required Widget child,
+    required String title,
+    required String description,
+    required TooltipPosition tooltipPosition,
+    bool includePrevious = false,
+    VoidCallback? onNext,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Showcase(
+      key: showcaseKey,
+      title: title,
+      description: description,
+      tooltipPosition: tooltipPosition,
+      disableDefaultTargetGestures: true,
+      tooltipBackgroundColor: colorScheme.primaryContainer,
+      titleTextStyle: Theme.of(context).textTheme.titleSmall?.copyWith(
+        color: colorScheme.onPrimaryContainer,
+        fontWeight: FontWeight.w700,
+      ),
+      descTextStyle: Theme.of(
+        context,
+      ).textTheme.bodyMedium?.copyWith(color: colorScheme.onPrimaryContainer),
+      overlayColor: colorScheme.surface,
+      overlayOpacity: isDark ? 0.82 : 0.72,
+      targetPadding: const EdgeInsets.all(4),
+      targetBorderRadius: BorderRadius.circular(18),
+      tooltipActionConfig: const TooltipActionConfig(
+        position: TooltipActionPosition.inside,
+      ),
+      tooltipActions: [
+        const TooltipActionButton(type: TooltipDefaultActionType.skip),
+        if (includePrevious)
+          const TooltipActionButton(type: TooltipDefaultActionType.previous),
+        TooltipActionButton(
+          type: TooltipDefaultActionType.next,
+          onTap: onNext ?? () => ShowcaseView.get().next(force: true),
+        ),
+      ],
+      child: child,
+    );
+  }
+
+  void _maybeStartPostOnboardingTour({
+    required bool isMobile,
+    required bool showConversationPane,
+    required SettingsProvider settingsProvider,
+  }) {
+    if (!settingsProvider.pendingPostOnboardingChatTour ||
+        _tourStartScheduled) {
+      return;
+    }
+    _tourStartScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _startIntroPostOnboardingTour(
+        isMobile: isMobile,
+        showConversationPane: showConversationPane,
+        attempt: 0,
+      );
+    });
+  }
+
+  void _startIntroPostOnboardingTour({
+    required bool isMobile,
+    required bool showConversationPane,
+    required int attempt,
+  }) {
+    final keys = <GlobalKey>[
+      _sidebarAccessTourKey(
+        isMobile: isMobile,
+        showConversationPane: showConversationPane,
+      ),
+      _newChatTourKey,
+    ];
+    final allMounted = keys.every((key) => key.currentContext != null);
+    if (!allMounted) {
+      if (attempt >= 5) {
+        unawaited(_clearPendingPostOnboardingTour());
+        return;
+      }
+      Future<void>.delayed(const Duration(milliseconds: 80), () {
+        if (!mounted) {
+          return;
+        }
+        _startIntroPostOnboardingTour(
+          isMobile: isMobile,
+          showConversationPane: showConversationPane,
+          attempt: attempt + 1,
+        );
+      });
+      return;
+    }
+    _tourPhase = _PostOnboardingTourPhase.intro;
+    _showcaseWidgetKey.currentState?.startShowCase(keys);
+  }
+
+  Future<void> _advancePostOnboardingTourToComposer() async {
+    if (_tourAdvancingToComposerPhase) {
+      return;
+    }
+    _tourAdvancingToComposerPhase = true;
+    _tourPhase = _PostOnboardingTourPhase.composer;
+    ShowcaseView.get().dismiss();
+
+    final chatProvider = context.read<ChatProvider>();
+    if (chatProvider.currentSession != null ||
+        !chatProvider.isDraftingNewChat) {
+      await chatProvider.beginNewChatDraft();
+    }
+    if (!mounted) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _startComposerPostOnboardingTour(attempt: 0);
+    });
+  }
+
+  void _startComposerPostOnboardingTour({required int attempt}) {
+    final keys = <GlobalKey>[_composerTourKey, _sendButtonTourKey];
+    final allMounted = keys.every((key) => key.currentContext != null);
+    if (!allMounted) {
+      if (attempt >= 5) {
+        _tourAdvancingToComposerPhase = false;
+        unawaited(_clearPendingPostOnboardingTour());
+        return;
+      }
+      Future<void>.delayed(const Duration(milliseconds: 80), () {
+        if (!mounted) {
+          return;
+        }
+        _startComposerPostOnboardingTour(attempt: attempt + 1);
+      });
+      return;
+    }
+    _tourAdvancingToComposerPhase = false;
+    _showcaseWidgetKey.currentState?.startShowCase(keys);
+  }
+
+  Future<void> _clearPendingPostOnboardingTour() async {
+    _tourPhase = _PostOnboardingTourPhase.idle;
+    _tourStartScheduled = false;
+    _tourAdvancingToComposerPhase = false;
+    final settingsProvider =
+        _settingsProvider ?? context.read<SettingsProvider>();
+    await settingsProvider.setPendingPostOnboardingChatTour(false);
+  }
+
+  void _handlePostOnboardingTourDismiss(GlobalKey? _) {
+    if (_tourAdvancingToComposerPhase ||
+        _tourPhase == _PostOnboardingTourPhase.idle) {
+      return;
+    }
+    unawaited(_clearPendingPostOnboardingTour());
+  }
+
+  void _handlePostOnboardingTourFinish() {
+    if (_tourAdvancingToComposerPhase ||
+        _tourPhase != _PostOnboardingTourPhase.composer) {
+      return;
+    }
+    unawaited(_clearPendingPostOnboardingTour());
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -1230,158 +1457,168 @@ class _ChatPageState extends State<ChatPage>
           }
         }
 
-        return Shortcuts(
-          shortcuts: shortcutMap,
-          child: Actions(
-            actions: actionMap,
-            child: Focus(
-              autofocus: true,
-              onKeyEvent: (_, event) {
-                return _handleGlobalShortcutKeyEvent(event)
-                    ? KeyEventResult.handled
-                    : KeyEventResult.ignored;
-              },
-              child: PopScope<void>(
-                canPop: !_isMobileRuntime,
-                onPopInvokedWithResult: (didPop, _) {
-                  if (didPop || !_isMobileRuntime) {
-                    return;
-                  }
-                  unawaited(_handleMobileBackPress());
+        _maybeStartPostOnboardingTour(
+          isMobile: isMobile || (isMedium && !showConversationPane),
+          showConversationPane: showConversationPane,
+          settingsProvider: settingsProvider,
+        );
+        return ShowCaseWidget(
+          key: _showcaseWidgetKey,
+          onDismiss: _handlePostOnboardingTourDismiss,
+          onFinish: _handlePostOnboardingTourFinish,
+          enableAutoScroll: false,
+          builder: (context) => Shortcuts(
+            shortcuts: shortcutMap,
+            child: Actions(
+              actions: actionMap,
+              child: Focus(
+                autofocus: true,
+                onKeyEvent: (_, event) {
+                  return _handleGlobalShortcutKeyEvent(event)
+                      ? KeyEventResult.handled
+                      : KeyEventResult.ignored;
                 },
-                child: Scaffold(
-                  key: _scaffoldKey,
-                  backgroundColor: Theme.of(context).colorScheme.surface,
-                  resizeToAvoidBottomInset: true,
-                  appBar: _buildAppBar(
-                    isMobile: isMobile || (isMedium && !showConversationPane),
-                    isLargeDesktop: isLargeDesktop,
-                    settingsProvider: settingsProvider,
-                  ),
-                  drawer: (isMobile || (isMedium && !showConversationPane))
-                      ? _buildSessionDrawer()
-                      : null,
-                  body: Consumer<ChatProvider>(
-                    builder: (context, chatProvider, child) {
-                      _syncSessionScrollState(chatProvider);
-                      _syncResponseViewportPolicy(chatProvider);
-                      _syncChatRouteActivity(chatProvider);
-                      _consumePendingUiNotice(chatProvider);
-                      _consumePendingHistoryComposerSync(chatProvider);
-                      _consumeRejectedDraft(chatProvider);
-                      late final Widget content;
-                      if (isMobile) {
-                        content = _buildChatContent(
-                          chatProvider: chatProvider,
-                          isKeyboardOpen: keyboardOpen,
-                          maxContentWidth: double.infinity,
-                          horizontalPadding: 0,
-                          verticalPadding: 0,
-                        );
-                      } else {
-                        final filePaneWidth = settingsProvider.desktopPaneWidth(
-                          DesktopPane.files,
-                        );
-                        final utilityPaneWidth = settingsProvider
-                            .desktopPaneWidth(DesktopPane.utility);
-                        final rowChildren = <Widget>[
-                          if (showConversationPane) ...[
-                            SizedBox(
-                              width: sessionPaneWidth,
-                              child: _buildSessionPanel(
-                                closeOnSelect: false,
-                                isMobileLayout: false,
-                                onCollapseRequested: () {
-                                  unawaited(
-                                    settingsProvider.setDesktopPaneVisible(
-                                      DesktopPane.conversations,
-                                      false,
-                                    ),
-                                  );
-                                },
+                child: PopScope<void>(
+                  canPop: !_isMobileRuntime,
+                  onPopInvokedWithResult: (didPop, _) {
+                    if (didPop || !_isMobileRuntime) {
+                      return;
+                    }
+                    unawaited(_handleMobileBackPress());
+                  },
+                  child: Scaffold(
+                    key: _scaffoldKey,
+                    backgroundColor: Theme.of(context).colorScheme.surface,
+                    resizeToAvoidBottomInset: true,
+                    appBar: _buildAppBar(
+                      isMobile: isMobile || (isMedium && !showConversationPane),
+                      isLargeDesktop: isLargeDesktop,
+                      settingsProvider: settingsProvider,
+                    ),
+                    drawer: (isMobile || (isMedium && !showConversationPane))
+                        ? _buildSessionDrawer()
+                        : null,
+                    body: Consumer<ChatProvider>(
+                      builder: (context, chatProvider, child) {
+                        _syncSessionScrollState(chatProvider);
+                        _syncResponseViewportPolicy(chatProvider);
+                        _syncChatRouteActivity(chatProvider);
+                        _consumePendingUiNotice(chatProvider);
+                        _consumePendingHistoryComposerSync(chatProvider);
+                        _consumeRejectedDraft(chatProvider);
+                        late final Widget content;
+                        if (isMobile) {
+                          content = _buildChatContent(
+                            chatProvider: chatProvider,
+                            isKeyboardOpen: keyboardOpen,
+                            maxContentWidth: double.infinity,
+                            horizontalPadding: 0,
+                            verticalPadding: 0,
+                          );
+                        } else {
+                          final filePaneWidth = settingsProvider
+                              .desktopPaneWidth(DesktopPane.files);
+                          final utilityPaneWidth = settingsProvider
+                              .desktopPaneWidth(DesktopPane.utility);
+                          final rowChildren = <Widget>[
+                            if (showConversationPane) ...[
+                              SizedBox(
+                                width: sessionPaneWidth,
+                                child: _buildSessionPanel(
+                                  closeOnSelect: false,
+                                  isMobileLayout: false,
+                                  onCollapseRequested: () {
+                                    unawaited(
+                                      settingsProvider.setDesktopPaneVisible(
+                                        DesktopPane.conversations,
+                                        false,
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
-                            ),
-                            if (isMedium)
-                              _buildPaneDivider()
-                            else
+                              if (isMedium)
+                                _buildPaneDivider()
+                              else
+                                _buildResizableHandle(
+                                  pane: DesktopPane.conversations,
+                                  settingsProvider: settingsProvider,
+                                  paneOnLeft: true,
+                                ),
+                            ],
+                            if (showDesktopFilePane) ...[
+                              SizedBox(
+                                width: filePaneWidth,
+                                child: _buildDesktopFilePane(
+                                  chatProvider,
+                                  onCollapseRequested: () {
+                                    unawaited(
+                                      settingsProvider.setDesktopPaneVisible(
+                                        DesktopPane.files,
+                                        false,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
                               _buildResizableHandle(
-                                pane: DesktopPane.conversations,
+                                pane: DesktopPane.files,
                                 settingsProvider: settingsProvider,
                                 paneOnLeft: true,
                               ),
-                          ],
-                          if (showDesktopFilePane) ...[
-                            SizedBox(
-                              width: filePaneWidth,
-                              child: _buildDesktopFilePane(
-                                chatProvider,
-                                onCollapseRequested: () {
-                                  unawaited(
-                                    settingsProvider.setDesktopPaneVisible(
-                                      DesktopPane.files,
-                                      false,
-                                    ),
-                                  );
-                                },
+                            ],
+                            Expanded(
+                              child: _buildChatContent(
+                                chatProvider: chatProvider,
+                                isKeyboardOpen: keyboardOpen,
+                                maxContentWidth: mainContentWidth,
+                                horizontalPadding: 12,
+                                verticalPadding: 2,
                               ),
                             ),
-                            _buildResizableHandle(
-                              pane: DesktopPane.files,
-                              settingsProvider: settingsProvider,
-                              paneOnLeft: true,
-                            ),
-                          ],
-                          Expanded(
-                            child: _buildChatContent(
-                              chatProvider: chatProvider,
-                              isKeyboardOpen: keyboardOpen,
-                              maxContentWidth: mainContentWidth,
-                              horizontalPadding: 12,
-                              verticalPadding: 2,
-                            ),
-                          ),
-                          if (showDesktopUtilityPane) ...[
-                            _buildResizableHandle(
-                              pane: DesktopPane.utility,
-                              settingsProvider: settingsProvider,
-                              paneOnLeft: false,
-                            ),
-                            SizedBox(
-                              width: utilityPaneWidth,
-                              child: _buildDesktopUtilityPane(
-                                chatProvider,
+                            if (showDesktopUtilityPane) ...[
+                              _buildResizableHandle(
+                                pane: DesktopPane.utility,
                                 settingsProvider: settingsProvider,
-                                onCollapseRequested: () {
-                                  unawaited(
-                                    settingsProvider.setDesktopPaneVisible(
-                                      DesktopPane.utility,
-                                      false,
-                                    ),
-                                  );
-                                },
+                                paneOnLeft: false,
                               ),
+                              SizedBox(
+                                width: utilityPaneWidth,
+                                child: _buildDesktopUtilityPane(
+                                  chatProvider,
+                                  settingsProvider: settingsProvider,
+                                  onCollapseRequested: () {
+                                    unawaited(
+                                      settingsProvider.setDesktopPaneVisible(
+                                        DesktopPane.utility,
+                                        false,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          ];
+                          content = Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: rowChildren,
+                          );
+                        }
+
+                        if (!_isProjectScopeTransitioning) {
+                          return content;
+                        }
+
+                        return Stack(
+                          children: [
+                            Positioned.fill(child: content),
+                            Positioned.fill(
+                              child: _buildProjectScopeLoadingOverlay(),
                             ),
                           ],
-                        ];
-                        content = Row(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: rowChildren,
                         );
-                      }
-
-                      if (!_isProjectScopeTransitioning) {
-                        return content;
-                      }
-
-                      return Stack(
-                        children: [
-                          Positioned.fill(child: content),
-                          Positioned.fill(
-                            child: _buildProjectScopeLoadingOverlay(),
-                          ),
-                        ],
-                      );
-                    },
+                      },
+                    ),
                   ),
                 ),
               ),

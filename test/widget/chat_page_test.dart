@@ -11379,6 +11379,32 @@ void main() {
       expect(find.text('Server connection'), findsOneWidget);
     },
   );
+
+  test('uses compact sidebar tour copy on small layouts', () {
+    final copy = postOnboardingSidebarTourCopy(
+      isMobile: true,
+      showConversationPane: false,
+    );
+
+    expect(copy.title, 'Open sidebar');
+    expect(
+      copy.description,
+      'Use this button to open your projects and conversations.',
+    );
+  });
+
+  test('uses project-context tour copy on desktop layouts with sidebar', () {
+    final copy = postOnboardingSidebarTourCopy(
+      isMobile: false,
+      showConversationPane: true,
+    );
+
+    expect(copy.title, 'Open project');
+    expect(
+      copy.description,
+      'Use this button to switch project folders and context.',
+    );
+  });
 }
 
 Future<void> _pumpUiFrames(WidgetTester tester) async {

@@ -88,14 +88,26 @@ extension _ChatPageScaffold on _ChatPageState {
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                           ),
-                          IconButton(
-                            key: const ValueKey<String>(
-                              'conversations_project_context_button',
+                          _buildTourTarget(
+                            showcaseKey: _projectContextTourKey,
+                            title: postOnboardingSidebarTourCopy(
+                              isMobile: false,
+                              showConversationPane: true,
+                            ).title,
+                            description: postOnboardingSidebarTourCopy(
+                              isMobile: false,
+                              showConversationPane: true,
+                            ).description,
+                            tooltipPosition: TooltipPosition.right,
+                            child: IconButton(
+                              key: const ValueKey<String>(
+                                'conversations_project_context_button',
+                              ),
+                              icon: const Icon(Symbols.folder_open),
+                              onPressed: () =>
+                                  unawaited(_openProjectSelectorDialog()),
+                              tooltip: 'Project Context',
                             ),
-                            icon: const Icon(Symbols.folder_open),
-                            onPressed: () =>
-                                unawaited(_openProjectSelectorDialog()),
-                            tooltip: 'Project Context',
                           ),
                           IconButton(
                             icon: const Icon(Symbols.add),

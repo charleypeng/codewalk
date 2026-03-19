@@ -193,17 +193,28 @@ extension _ChatPageChrome on _ChatPageState {
                         ],
                       ),
                     );
-                    return IconButton(
-                      key: const ValueKey<String>('appbar_drawer_button'),
-                      tooltip: MaterialLocalizations.of(
-                        leadingContext,
-                      ).openAppDrawerTooltip,
-                      onPressed: () => Scaffold.of(leadingContext).openDrawer(),
-                      icon: hasAlert
-                          ? alertIcon
-                          : (hasSessionAttention
-                                ? attentionIcon
-                                : (showSyncLoading ? loadingIcon : menuIcon)),
+                    final sidebarTourCopy = postOnboardingSidebarTourCopy(
+                      isMobile: true,
+                      showConversationPane: false,
+                    );
+                    return _buildTourTarget(
+                      showcaseKey: _drawerAccessTourKey,
+                      title: sidebarTourCopy.title,
+                      description: sidebarTourCopy.description,
+                      tooltipPosition: TooltipPosition.bottom,
+                      child: IconButton(
+                        key: const ValueKey<String>('appbar_drawer_button'),
+                        tooltip: MaterialLocalizations.of(
+                          leadingContext,
+                        ).openAppDrawerTooltip,
+                        onPressed: () =>
+                            Scaffold.of(leadingContext).openDrawer(),
+                        icon: hasAlert
+                            ? alertIcon
+                            : (hasSessionAttention
+                                  ? attentionIcon
+                                  : (showSyncLoading ? loadingIcon : menuIcon)),
+                      ),
                     );
                   },
                 );
@@ -217,38 +228,50 @@ extension _ChatPageChrome on _ChatPageState {
       ),
       actions: [
         if (!isMobile)
-          PopupMenuButton<DesktopPane>(
-            key: const ValueKey<String>('desktop_sidebars_menu_button'),
-            tooltip: 'Toggle sidebars',
-            onSelected: (pane) {
-              final next = !settingsProvider.isDesktopPaneVisible(pane);
-              unawaited(settingsProvider.setDesktopPaneVisible(pane, next));
-            },
-            itemBuilder: (context) {
-              return DesktopPane.values
-                  .map(
-                    (pane) => PopupMenuItem<DesktopPane>(
-                      key: ValueKey<String>(
-                        'desktop_sidebar_menu_item_${pane.name}',
+          _buildTourTarget(
+            showcaseKey: _desktopSidebarMenuTourKey,
+            title: postOnboardingSidebarTourCopy(
+              isMobile: false,
+              showConversationPane: false,
+            ).title,
+            description: postOnboardingSidebarTourCopy(
+              isMobile: false,
+              showConversationPane: false,
+            ).description,
+            tooltipPosition: TooltipPosition.bottom,
+            child: PopupMenuButton<DesktopPane>(
+              key: const ValueKey<String>('desktop_sidebars_menu_button'),
+              tooltip: 'Toggle sidebars',
+              onSelected: (pane) {
+                final next = !settingsProvider.isDesktopPaneVisible(pane);
+                unawaited(settingsProvider.setDesktopPaneVisible(pane, next));
+              },
+              itemBuilder: (context) {
+                return DesktopPane.values
+                    .map(
+                      (pane) => PopupMenuItem<DesktopPane>(
+                        key: ValueKey<String>(
+                          'desktop_sidebar_menu_item_${pane.name}',
+                        ),
+                        value: pane,
+                        child: Row(
+                          children: [
+                            Icon(
+                              settingsProvider.isDesktopPaneVisible(pane)
+                                  ? Symbols.check_box_rounded
+                                  : Symbols.check_box_outline_blank_rounded,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(_desktopPaneLabel(pane)),
+                          ],
+                        ),
                       ),
-                      value: pane,
-                      child: Row(
-                        children: [
-                          Icon(
-                            settingsProvider.isDesktopPaneVisible(pane)
-                                ? Symbols.check_box_rounded
-                                : Symbols.check_box_outline_blank_rounded,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(_desktopPaneLabel(pane)),
-                        ],
-                      ),
-                    ),
-                  )
-                  .toList(growable: false);
-            },
-            icon: const Icon(Symbols.view_sidebar),
+                    )
+                    .toList(growable: false);
+              },
+              icon: const Icon(Symbols.view_sidebar),
+            ),
           ),
         Consumer<ChatProvider>(
           builder: (context, chatProvider, _) {
@@ -420,10 +443,18 @@ extension _ChatPageChrome on _ChatPageState {
             onPressed: () => unawaited(_openMobileFilesDialog()),
           ),
         if (!isMobile)
-          IconButton(
-            icon: const Icon(Symbols.add_comment),
-            tooltip: 'New Chat',
-            onPressed: _createNewSession,
+          _buildTourTarget(
+            showcaseKey: _newChatTourKey,
+            title: 'New chat',
+            description: 'Start a new conversation here.',
+            tooltipPosition: TooltipPosition.bottom,
+            includePrevious: true,
+            onNext: () => unawaited(_advancePostOnboardingTourToComposer()),
+            child: IconButton(
+              icon: const Icon(Symbols.add_comment),
+              tooltip: 'New Chat',
+              onPressed: _createNewSession,
+            ),
           ),
         if (!refreshlessEnabled)
           IconButton(
@@ -432,10 +463,18 @@ extension _ChatPageChrome on _ChatPageState {
             onPressed: _refreshData,
           ),
         if (isMobile)
-          IconButton(
-            icon: const Icon(Symbols.add_comment),
-            tooltip: 'New Chat',
-            onPressed: _createNewSession,
+          _buildTourTarget(
+            showcaseKey: _newChatTourKey,
+            title: 'New chat',
+            description: 'Start a new conversation here.',
+            tooltipPosition: TooltipPosition.bottom,
+            includePrevious: true,
+            onNext: () => unawaited(_advancePostOnboardingTourToComposer()),
+            child: IconButton(
+              icon: const Icon(Symbols.add_comment),
+              tooltip: 'New Chat',
+              onPressed: _createNewSession,
+            ),
           ),
         const SizedBox(width: 2),
       ],

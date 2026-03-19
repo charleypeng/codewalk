@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 import '../../core/di/injection_container.dart' as di;
 import '../../core/logging/app_logger.dart';
@@ -255,6 +256,8 @@ class ChatInputWidget extends StatefulWidget {
     this.contextItems = const <FileInputPart>[],
     this.onRemoveContextItem,
     this.blockReason,
+    this.composerShowcaseKey,
+    this.sendButtonShowcaseKey,
   });
 
   final FutureOr<void> Function(ChatInputSubmission submission) onSendMessage;
@@ -284,6 +287,8 @@ class ChatInputWidget extends StatefulWidget {
   final List<FileInputPart> contextItems;
   final void Function(int index)? onRemoveContextItem;
   final String? blockReason;
+  final GlobalKey? composerShowcaseKey;
+  final GlobalKey? sendButtonShowcaseKey;
 
   @override
   State<ChatInputWidget> createState() => _ChatInputWidgetState();
@@ -903,6 +908,79 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     }
     final inputBubbleBorderRadius = AppShapes.borderExtraLarge;
 
+    Widget wrapComposerTourTarget(Widget child) {
+      final showcaseKey = widget.composerShowcaseKey;
+      if (showcaseKey == null) {
+        return child;
+      }
+      return Showcase(
+        key: showcaseKey,
+        title: 'Chat input',
+        description: 'Type your request here.',
+        tooltipPosition: TooltipPosition.top,
+        disableDefaultTargetGestures: true,
+        tooltipBackgroundColor: colorScheme.primaryContainer,
+        titleTextStyle: Theme.of(context).textTheme.titleSmall?.copyWith(
+          color: colorScheme.onPrimaryContainer,
+          fontWeight: FontWeight.w700,
+        ),
+        descTextStyle: Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(color: colorScheme.onPrimaryContainer),
+        overlayColor: colorScheme.surface,
+        overlayOpacity: isDark ? 0.82 : 0.72,
+        targetPadding: const EdgeInsets.all(4),
+        targetBorderRadius: inputBubbleBorderRadius,
+        tooltipActionConfig: const TooltipActionConfig(
+          position: TooltipActionPosition.inside,
+        ),
+        tooltipActions: const [
+          TooltipActionButton(type: TooltipDefaultActionType.skip),
+          TooltipActionButton(type: TooltipDefaultActionType.next),
+        ],
+        child: child,
+      );
+    }
+
+    Widget wrapSendTourTarget(Widget child) {
+      final showcaseKey = widget.sendButtonShowcaseKey;
+      if (showcaseKey == null) {
+        return child;
+      }
+      return Showcase(
+        key: showcaseKey,
+        title: 'Send',
+        description: 'Send your message here.',
+        tooltipPosition: TooltipPosition.top,
+        disableDefaultTargetGestures: true,
+        tooltipBackgroundColor: colorScheme.primaryContainer,
+        titleTextStyle: Theme.of(context).textTheme.titleSmall?.copyWith(
+          color: colorScheme.onPrimaryContainer,
+          fontWeight: FontWeight.w700,
+        ),
+        descTextStyle: Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(color: colorScheme.onPrimaryContainer),
+        overlayColor: colorScheme.surface,
+        overlayOpacity: isDark ? 0.82 : 0.72,
+        targetPadding: const EdgeInsets.all(4),
+        targetBorderRadius: BorderRadius.circular(_composerActionButtonSize),
+        tooltipActionConfig: const TooltipActionConfig(
+          position: TooltipActionPosition.inside,
+        ),
+        tooltipActions: [
+          const TooltipActionButton(type: TooltipDefaultActionType.skip),
+          const TooltipActionButton(type: TooltipDefaultActionType.previous),
+          TooltipActionButton(
+            type: TooltipDefaultActionType.next,
+            name: 'Got it',
+            onTap: () => ShowcaseView.get().next(force: true),
+          ),
+        ],
+        child: child,
+      );
+    }
+
     return Container(
       key: const ValueKey<String>('composer_root_container'),
       decoration: const BoxDecoration(color: composerBackgroundColor),
@@ -1106,154 +1184,161 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                       constraints: const BoxConstraints(
                         minHeight: _composerActionButtonSize,
                       ),
-                      child: DecoratedBox(
-                        key: const ValueKey<String>('composer_input_bubble'),
-                        decoration: BoxDecoration(
-                          color: inputBubbleColor,
-                          borderRadius: inputBubbleBorderRadius,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.07),
-                              blurRadius: 12,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: inputBubbleBorderRadius,
-                          child: Focus(
-                            onKeyEvent: _handleInputKeyEvent,
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 2),
-                                  child: IconButton(
-                                    onPressed: widget.enabled
-                                        ? _toggleExtrasPopover
-                                        : null,
-                                    tooltip: 'Extras',
-                                    style: IconButton.styleFrom(
-                                      minimumSize: const Size(40, 40),
-                                      maximumSize: const Size(40, 40),
-                                      padding: EdgeInsets.zero,
-                                      tapTargetSize:
-                                          MaterialTapTargetSize.shrinkWrap,
-                                      visualDensity: Theme.of(
-                                        context,
-                                      ).visualDensity,
-                                      backgroundColor:
-                                          _popoverType ==
-                                              ChatComposerPopoverType.canned
-                                          ? colorScheme.secondaryContainer
-                                          : Colors.transparent,
-                                      foregroundColor:
-                                          colorScheme.onSecondaryContainer,
-                                    ),
-                                    icon: const Icon(
-                                      Symbols.add_rounded,
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: TextField(
-                                    key: _textFieldKey,
-                                    controller: _controller,
-                                    focusNode: _effectiveFocusNode,
-                                    enabled: widget.enabled,
-                                    minLines: 1,
-                                    maxLines: _composerMaxLines,
-                                    textAlignVertical: TextAlignVertical.center,
-                                    textInputAction: _isDesktopPlatform
-                                        ? TextInputAction.newline
-                                        : TextInputAction.send,
-                                    keyboardType: TextInputType.multiline,
-                                    onChanged: _handleTextChanged,
-                                    onSubmitted: (_) =>
-                                        unawaited(_handleSendMessage()),
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium,
-                                    decoration: InputDecoration(
-                                      hintText: _composerHintText(),
-                                      hintStyle: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(
-                                            color: isDark
-                                                ? colorScheme.onSurface
-                                                      .withValues(alpha: 0.72)
-                                                : colorScheme.onSurfaceVariant
-                                                      .withValues(alpha: 0.88),
-                                          ),
-                                      isDense: true,
-                                      filled: false,
-                                      fillColor: Colors.transparent,
-                                      hoverColor: Colors.transparent,
-                                      focusColor: Colors.transparent,
-                                      border: InputBorder.none,
-                                      enabledBorder: InputBorder.none,
-                                      focusedBorder: InputBorder.none,
-                                      contentPadding: const EdgeInsets.fromLTRB(
-                                        16,
-                                        7,
-                                        8,
-                                        7,
+                      child: wrapComposerTourTarget(
+                        DecoratedBox(
+                          key: const ValueKey<String>('composer_input_bubble'),
+                          decoration: BoxDecoration(
+                            color: inputBubbleColor,
+                            borderRadius: inputBubbleBorderRadius,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.07),
+                                blurRadius: 12,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: inputBubbleBorderRadius,
+                            child: Focus(
+                              onKeyEvent: _handleInputKeyEvent,
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 2),
+                                    child: IconButton(
+                                      onPressed: widget.enabled
+                                          ? _toggleExtrasPopover
+                                          : null,
+                                      tooltip: 'Extras',
+                                      style: IconButton.styleFrom(
+                                        minimumSize: const Size(40, 40),
+                                        maximumSize: const Size(40, 40),
+                                        padding: EdgeInsets.zero,
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                        visualDensity: Theme.of(
+                                          context,
+                                        ).visualDensity,
+                                        backgroundColor:
+                                            _popoverType ==
+                                                ChatComposerPopoverType.canned
+                                            ? colorScheme.secondaryContainer
+                                            : Colors.transparent,
+                                        foregroundColor:
+                                            colorScheme.onSecondaryContainer,
+                                      ),
+                                      icon: const Icon(
+                                        Symbols.add_rounded,
+                                        size: 20,
                                       ),
                                     ),
                                   ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 2),
-                                  child: IconButton.filledTonal(
-                                    onPressed:
-                                        widget.enabled && !_isStartingListening
-                                        ? () => unawaited(_toggleVoiceInput())
-                                        : null,
-                                    tooltip: _isStartingListening
-                                        ? 'Starting voice input'
-                                        : _isListening
-                                        ? 'Stop voice input'
-                                        : 'Start voice input',
-                                    style: IconButton.styleFrom(
-                                      minimumSize: const Size(40, 40),
-                                      maximumSize: const Size(40, 40),
-                                      padding: EdgeInsets.zero,
-                                      tapTargetSize:
-                                          MaterialTapTargetSize.shrinkWrap,
-                                      visualDensity: Theme.of(
+                                  Expanded(
+                                    child: TextField(
+                                      key: _textFieldKey,
+                                      controller: _controller,
+                                      focusNode: _effectiveFocusNode,
+                                      enabled: widget.enabled,
+                                      minLines: 1,
+                                      maxLines: _composerMaxLines,
+                                      textAlignVertical:
+                                          TextAlignVertical.center,
+                                      textInputAction: _isDesktopPlatform
+                                          ? TextInputAction.newline
+                                          : TextInputAction.send,
+                                      keyboardType: TextInputType.multiline,
+                                      onChanged: _handleTextChanged,
+                                      onSubmitted: (_) =>
+                                          unawaited(_handleSendMessage()),
+                                      style: Theme.of(
                                         context,
-                                      ).visualDensity,
-                                      backgroundColor:
-                                          microphoneButtonBackgroundColor(
-                                            isListening:
-                                                _isListening ||
-                                                _isStartingListening,
-                                            colorScheme: colorScheme,
-                                          ),
-                                      foregroundColor:
-                                          microphoneButtonForegroundColor(
-                                            isListening:
-                                                _isListening ||
-                                                _isStartingListening,
-                                            colorScheme: colorScheme,
-                                          ),
+                                      ).textTheme.bodyMedium,
+                                      decoration: InputDecoration(
+                                        hintText: _composerHintText(),
+                                        hintStyle: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color: isDark
+                                                  ? colorScheme.onSurface
+                                                        .withValues(alpha: 0.72)
+                                                  : colorScheme.onSurfaceVariant
+                                                        .withValues(
+                                                          alpha: 0.88,
+                                                        ),
+                                            ),
+                                        isDense: true,
+                                        filled: false,
+                                        fillColor: Colors.transparent,
+                                        hoverColor: Colors.transparent,
+                                        focusColor: Colors.transparent,
+                                        border: InputBorder.none,
+                                        enabledBorder: InputBorder.none,
+                                        focusedBorder: InputBorder.none,
+                                        contentPadding:
+                                            const EdgeInsets.fromLTRB(
+                                              16,
+                                              7,
+                                              8,
+                                              7,
+                                            ),
+                                      ),
                                     ),
-                                    icon: _isStartingListening
-                                        ? const Icon(
-                                            Symbols.hourglass_top_rounded,
-                                            size: 20,
-                                          )
-                                        : Icon(
-                                            _isListening
-                                                ? Symbols.mic_rounded
-                                                : Symbols.mic_none_rounded,
-                                            size: 20,
-                                          ),
                                   ),
-                                ),
-                              ],
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 2),
+                                    child: IconButton.filledTonal(
+                                      onPressed:
+                                          widget.enabled &&
+                                              !_isStartingListening
+                                          ? () => unawaited(_toggleVoiceInput())
+                                          : null,
+                                      tooltip: _isStartingListening
+                                          ? 'Starting voice input'
+                                          : _isListening
+                                          ? 'Stop voice input'
+                                          : 'Start voice input',
+                                      style: IconButton.styleFrom(
+                                        minimumSize: const Size(40, 40),
+                                        maximumSize: const Size(40, 40),
+                                        padding: EdgeInsets.zero,
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                        visualDensity: Theme.of(
+                                          context,
+                                        ).visualDensity,
+                                        backgroundColor:
+                                            microphoneButtonBackgroundColor(
+                                              isListening:
+                                                  _isListening ||
+                                                  _isStartingListening,
+                                              colorScheme: colorScheme,
+                                            ),
+                                        foregroundColor:
+                                            microphoneButtonForegroundColor(
+                                              isListening:
+                                                  _isListening ||
+                                                  _isStartingListening,
+                                              colorScheme: colorScheme,
+                                            ),
+                                      ),
+                                      icon: _isStartingListening
+                                          ? const Icon(
+                                              Symbols.hourglass_top_rounded,
+                                              size: 20,
+                                            )
+                                          : Icon(
+                                              _isListening
+                                                  ? Symbols.mic_rounded
+                                                  : Symbols.mic_none_rounded,
+                                              size: 20,
+                                            ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -1271,119 +1356,127 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                       button: true,
                       child: SizedBox.square(
                         dimension: _composerActionButtonSize,
-                        child: FilledButton(
-                          onPressed: showStopAction
-                              ? (widget.enabled &&
-                                        !_isSending &&
-                                        widget.onStopRequested != null
-                                    ? () => unawaited(_requestStopResponse())
-                                    : null)
-                              : (canSend ? _handleSendButtonTap : null),
-                          style: FilledButton.styleFrom(
-                            minimumSize: const Size(
-                              _composerActionButtonSize,
-                              _composerActionButtonSize,
+                        child: wrapSendTourTarget(
+                          FilledButton(
+                            key: const ValueKey<String>('composer_send_button'),
+                            onPressed: showStopAction
+                                ? (widget.enabled &&
+                                          !_isSending &&
+                                          widget.onStopRequested != null
+                                      ? () => unawaited(_requestStopResponse())
+                                      : null)
+                                : (canSend ? _handleSendButtonTap : null),
+                            style: FilledButton.styleFrom(
+                              minimumSize: const Size(
+                                _composerActionButtonSize,
+                                _composerActionButtonSize,
+                              ),
+                              maximumSize: const Size(
+                                _composerActionButtonSize,
+                                _composerActionButtonSize,
+                              ),
+                              fixedSize: const Size(
+                                _composerActionButtonSize,
+                                _composerActionButtonSize,
+                              ),
+                              shape: const CircleBorder(),
+                              padding: EdgeInsets.zero,
+                              backgroundColor: showStopAction
+                                  ? const Color(0xFF424242)
+                                  : (canSend
+                                        ? colorScheme.primary
+                                        : colorScheme.surfaceContainerHighest),
+                              foregroundColor: showStopAction
+                                  ? colorScheme.error
+                                  : (canSend
+                                        ? colorScheme.onPrimary
+                                        : colorScheme.onSurfaceVariant),
+                              elevation: canSend ? 1.5 : 0,
+                              shadowColor: colorScheme.primary.withValues(
+                                alpha: 0.3,
+                              ),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              visualDensity: Theme.of(context).visualDensity,
                             ),
-                            maximumSize: const Size(
-                              _composerActionButtonSize,
-                              _composerActionButtonSize,
-                            ),
-                            fixedSize: const Size(
-                              _composerActionButtonSize,
-                              _composerActionButtonSize,
-                            ),
-                            shape: const CircleBorder(),
-                            padding: EdgeInsets.zero,
-                            backgroundColor: showStopAction
-                                ? const Color(0xFF424242)
-                                : (canSend
-                                      ? colorScheme.primary
-                                      : colorScheme.surfaceContainerHighest),
-                            foregroundColor: showStopAction
-                                ? colorScheme.error
-                                : (canSend
-                                      ? colorScheme.onPrimary
-                                      : colorScheme.onSurfaceVariant),
-                            elevation: canSend ? 1.5 : 0,
-                            shadowColor: colorScheme.primary.withValues(
-                              alpha: 0.3,
-                            ),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            visualDensity: Theme.of(context).visualDensity,
-                          ),
-                          child: _isSending
-                              ? const SizedBox(
-                                  width: _composerActionButtonSize,
-                                  height: _composerActionButtonSize,
-                                  child: Center(
-                                    child: SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : showStopAction
-                              ? SizedBox(
-                                  width: _composerActionButtonSize,
-                                  height: _composerActionButtonSize,
-                                  child: Center(
-                                    child: Icon(
-                                      Symbols.stop_rounded,
-                                      size: 24,
-                                      color: colorScheme.error,
-                                    ),
-                                  ),
-                                )
-                              : SizedBox(
-                                  width: _composerActionButtonSize,
-                                  height: _composerActionButtonSize,
-                                  child: Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      const Align(
-                                        alignment: Alignment.center,
-                                        child: Icon(
-                                          Symbols.send_rounded,
-                                          size: 24,
+                            child: _isSending
+                                ? const SizedBox(
+                                    width: _composerActionButtonSize,
+                                    height: _composerActionButtonSize,
+                                    child: Center(
+                                      child: SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
                                         ),
                                       ),
-                                      Align(
-                                        alignment: Alignment.bottomRight,
-                                        child: Padding(
-                                          padding: const EdgeInsets.only(
-                                            right: 3,
-                                            bottom: 3,
+                                    ),
+                                  )
+                                : showStopAction
+                                ? SizedBox(
+                                    width: _composerActionButtonSize,
+                                    height: _composerActionButtonSize,
+                                    child: Center(
+                                      child: Icon(
+                                        Symbols.stop_rounded,
+                                        size: 24,
+                                        color: colorScheme.error,
+                                      ),
+                                    ),
+                                  )
+                                : SizedBox(
+                                    width: _composerActionButtonSize,
+                                    height: _composerActionButtonSize,
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        const Align(
+                                          alignment: Alignment.center,
+                                          child: Icon(
+                                            Symbols.send_rounded,
+                                            size: 24,
                                           ),
-                                          child: DecoratedBox(
-                                            decoration: BoxDecoration(
-                                              color: canSend
-                                                  ? colorScheme.onPrimary
-                                                        .withValues(alpha: 0.16)
-                                                  : colorScheme
-                                                        .primaryContainer,
-                                              borderRadius:
-                                                  AppShapes.borderFull,
+                                        ),
+                                        Align(
+                                          alignment: Alignment.bottomRight,
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                              right: 3,
+                                              bottom: 3,
                                             ),
-                                            child: Padding(
-                                              padding: const EdgeInsets.all(1),
-                                              child: Icon(
-                                                Symbols.keyboard_return_rounded,
-                                                size: 9,
+                                            child: DecoratedBox(
+                                              decoration: BoxDecoration(
                                                 color: canSend
                                                     ? colorScheme.onPrimary
+                                                          .withValues(
+                                                            alpha: 0.16,
+                                                          )
                                                     : colorScheme
-                                                          .onPrimaryContainer,
+                                                          .primaryContainer,
+                                                borderRadius:
+                                                    AppShapes.borderFull,
+                                              ),
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(
+                                                  1,
+                                                ),
+                                                child: Icon(
+                                                  Symbols
+                                                      .keyboard_return_rounded,
+                                                  size: 9,
+                                                  color: canSend
+                                                      ? colorScheme.onPrimary
+                                                      : colorScheme
+                                                            .onPrimaryContainer,
+                                                ),
                                               ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
+                          ),
                         ),
                       ),
                     ),
