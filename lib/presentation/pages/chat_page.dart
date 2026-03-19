@@ -168,9 +168,9 @@ class _ChatPageState extends State<ChatPage>
     milliseconds: 180,
   );
   static const Duration _postOnboardingTourRetryDelay = Duration(
-    milliseconds: 120,
+    milliseconds: 150,
   );
-  static const int _postOnboardingTourMaxAttempts = 15;
+  static const int _postOnboardingTourMaxAttempts = 20;
   static const double _composerStatusReservedHeight = 26;
   static const Duration _finalAssistantRevealDuration = Duration(
     milliseconds: 260,
@@ -307,6 +307,7 @@ class _ChatPageState extends State<ChatPage>
   bool _tourStartScheduled = false;
   bool _tourAdvancingToComposerPhase = false;
   _PostOnboardingTourPhase _tourPhase = _PostOnboardingTourPhase.idle;
+  int _postOnboardingTourRunToken = 0;
 
   // Per-session hydrated timeline cache so reopening a cached session can
   // reuse its grouped presentation instead of rebuilding the whole timeline.
@@ -1208,9 +1209,20 @@ class _ChatPageState extends State<ChatPage>
   }
 
   void _resetPostOnboardingTourTransientState() {
+    _postOnboardingTourRunToken += 1;
     _tourPhase = _PostOnboardingTourPhase.idle;
     _tourStartScheduled = false;
     _tourAdvancingToComposerPhase = false;
+  }
+
+  int _startPostOnboardingTourRun() {
+    _postOnboardingTourRunToken += 1;
+    _tourStartScheduled = true;
+    return _postOnboardingTourRunToken;
+  }
+
+  bool _isPostOnboardingTourRunActive(int token) {
+    return mounted && token == _postOnboardingTourRunToken;
   }
 
   bool _startShowcaseIfReady(List<GlobalKey> keys) {
@@ -1230,16 +1242,22 @@ class _ChatPageState extends State<ChatPage>
         _tourStartScheduled) {
       return;
     }
-    _tourStartScheduled = true;
+    final runToken = _startPostOnboardingTourRun();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
+      if (!_isPostOnboardingTourRunActive(runToken)) {
         return;
       }
-      _startIntroPostOnboardingTour(attempt: 0);
+      _startIntroPostOnboardingTour(attempt: 0, runToken: runToken);
     });
   }
 
-  void _startIntroPostOnboardingTour({required int attempt}) {
+  void _startIntroPostOnboardingTour({
+    required int attempt,
+    required int runToken,
+  }) {
+    if (!_isPostOnboardingTourRunActive(runToken)) {
+      return;
+    }
     final settingsProvider =
         _settingsProvider ?? context.read<SettingsProvider>();
     final layout = _currentTourLayout(settingsProvider);
@@ -1260,10 +1278,13 @@ class _ChatPageState extends State<ChatPage>
           return;
         }
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) {
+          if (!_isPostOnboardingTourRunActive(runToken)) {
             return;
           }
-          _startIntroPostOnboardingTour(attempt: attempt + 1);
+          _startIntroPostOnboardingTour(
+            attempt: attempt + 1,
+            runToken: runToken,
+          );
         });
       });
       return;
@@ -1275,6 +1296,7 @@ class _ChatPageState extends State<ChatPage>
     if (_tourAdvancingToComposerPhase) {
       return;
     }
+    final runToken = _postOnboardingTourRunToken;
     _tourAdvancingToComposerPhase = true;
     _tourPhase = _PostOnboardingTourPhase.composer;
     ShowcaseView.get().dismiss();
@@ -1284,18 +1306,24 @@ class _ChatPageState extends State<ChatPage>
         !chatProvider.isDraftingNewChat) {
       await chatProvider.beginNewChatDraft();
     }
-    if (!mounted) {
+    if (!_isPostOnboardingTourRunActive(runToken)) {
       return;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
+      if (!_isPostOnboardingTourRunActive(runToken)) {
         return;
       }
-      _startComposerPostOnboardingTour(attempt: 0);
+      _startComposerPostOnboardingTour(attempt: 0, runToken: runToken);
     });
   }
 
-  void _startComposerPostOnboardingTour({required int attempt}) {
+  void _startComposerPostOnboardingTour({
+    required int attempt,
+    required int runToken,
+  }) {
+    if (!_isPostOnboardingTourRunActive(runToken)) {
+      return;
+    }
     final keys = <GlobalKey>[_composerTourKey, _sendButtonTourKey];
     if (!_startShowcaseIfReady(keys)) {
       if (attempt >= _postOnboardingTourMaxAttempts) {
@@ -1308,10 +1336,13 @@ class _ChatPageState extends State<ChatPage>
           return;
         }
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) {
+          if (!_isPostOnboardingTourRunActive(runToken)) {
             return;
           }
-          _startComposerPostOnboardingTour(attempt: attempt + 1);
+          _startComposerPostOnboardingTour(
+            attempt: attempt + 1,
+            runToken: runToken,
+          );
         });
       });
       return;
@@ -1323,17 +1354,17 @@ class _ChatPageState extends State<ChatPage>
 
   void _restartPostOnboardingTour() {
     _resetPostOnboardingTourTransientState();
+    final runToken = _startPostOnboardingTourRun();
     ShowcaseView.get().dismiss();
     Future<void>.delayed(_postOnboardingTourRetryDelay, () {
-      if (!mounted) {
+      if (!_isPostOnboardingTourRunActive(runToken)) {
         return;
       }
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) {
+        if (!_isPostOnboardingTourRunActive(runToken)) {
           return;
         }
-        _tourStartScheduled = true;
-        _startIntroPostOnboardingTour(attempt: 0);
+        _startIntroPostOnboardingTour(attempt: 0, runToken: runToken);
       });
     });
   }
