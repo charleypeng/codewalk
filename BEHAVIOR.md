@@ -26,7 +26,14 @@
 - **When** the main chat screen opens for that first post-onboarding session
 - **Then** the app starts a guided first-use tour that introduces how to open project/sidebar controls, start a new chat, use the chat input, and send a message
 - **Then** the tour adapts its first step to the current layout, using drawer/sidebar access on compact screens and the relevant project/sidebar control on larger layouts
+- **Then** the app keeps the one-time handoff armed while the chat surface is still mounting, instead of silently consuming the tour just because the targets were late to appear
 - **Then** the handoff runs only once for that successful onboarding completion unless a later onboarding success arms it again
+
+### Chat tour can be replayed from the chat screen
+
+- **Given** the user is already on the main chat screen
+- **When** the user opens `Display toggles` from the chat app bar and chooses `Replay chat tour`
+- **Then** the app restarts the same guided tour from the chat surface without requiring onboarding or data reset
 
 ### First launch explains the OpenCode relationship
 

@@ -330,7 +330,8 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 - **Purpose**: First-use showcase tour that activates after successful onboarding completion,
   guiding users through key UI elements before their first interaction.
 - **Persistence**: `SettingsProvider.pendingPostOnboardingChatTour` flag controls handoff state;
-  set during onboarding completion and cleared after tour finishes or is dismissed.
+  set during onboarding completion and cleared only after tour finishes or is dismissed (slow-mount
+  of intro/composer targets no longer consumes the flag prematurely).
 - **Phases**: Two-phase tour flow (`intro` → `composer`) managed in `ChatPage` via
   `_PostOnboardingTourPhase` enum.
 - **Tour targets**:
@@ -339,7 +340,10 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
   - **Composer phase**: Chat input field and Send button (`chat_input_widget.dart`)
 - **Implementation**: Uses `showcaseview` package with `ShowCaseWidget` wrapper in `ChatPage`;
   tour keys are `GlobalKey` instances passed to target widgets; responsive copy adapts to
-  mobile/desktop layouts.
+  mobile/desktop layouts. Retries are run-token guarded so stale callbacks do not double-trigger
+  after replay.
+- **Replay action**: Chat Display toggles popup includes a low-prominence `Replay chat tour`
+  action for users who want to re-run the tour.
 
 ### OpenCode Setup Debug Flow
 
