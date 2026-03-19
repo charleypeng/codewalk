@@ -24,6 +24,7 @@ extension _ChatPageChrome on _ChatPageState {
       _DisplayToggleAction.taskList => 'Task list',
       _DisplayToggleAction.recentSessions => 'Recent sessions',
       _DisplayToggleAction.composerTips => 'Composer tips',
+      _DisplayToggleAction.replayTour => 'Replay chat tour',
     };
   }
 
@@ -348,6 +349,9 @@ extension _ChatPageChrome on _ChatPageState {
                   ),
                 );
                 break;
+              case _DisplayToggleAction.replayTour:
+                _restartPostOnboardingTour();
+                break;
             }
           },
           itemBuilder: (context) {
@@ -399,6 +403,14 @@ extension _ChatPageChrome on _ChatPageState {
                 checked: settingsProvider.showComposerTips,
                 child: Text(
                   _displayToggleLabel(_DisplayToggleAction.composerTips),
+                ),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem<_DisplayToggleAction>(
+                key: const ValueKey<String>('display_toggle_item_replay_tour'),
+                value: _DisplayToggleAction.replayTour,
+                child: Text(
+                  _displayToggleLabel(_DisplayToggleAction.replayTour),
                 ),
               ),
             ];

@@ -3,7 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollDirection;
+import 'package:flutter/rendering.dart' show RenderBox, ScrollDirection;
 import 'package:flutter/services.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -86,6 +86,7 @@ enum _DisplayToggleAction {
   taskList,
   recentSessions,
   composerTips,
+  replayTour,
 }
 
 enum _HistoryToolbarAction { undo, redo }
@@ -166,6 +167,10 @@ class _ChatPageState extends State<ChatPage>
   static const Duration _notificationTapRetryInterval = Duration(
     milliseconds: 180,
   );
+  static const Duration _postOnboardingTourRetryDelay = Duration(
+    milliseconds: 120,
+  );
+  static const int _postOnboardingTourMaxAttempts = 15;
   static const double _composerStatusReservedHeight = 26;
   static const Duration _finalAssistantRevealDuration = Duration(
     milliseconds: 260,
@@ -1113,6 +1118,26 @@ class _ChatPageState extends State<ChatPage>
 
   double _lastKnownMaxScrollExtent = 0;
 
+  ({bool isMobile, bool showConversationPane}) _currentTourLayout(
+    SettingsProvider settingsProvider,
+  ) {
+    final width = MediaQuery.sizeOf(context).width;
+    final sizeClass = WindowSizeClass.fromWidth(width);
+    final compactLayout = sizeClass.isCompact;
+    final mediumLayout = sizeClass == WindowSizeClass.medium;
+    final conversationsPaneEnabled = settingsProvider.isDesktopPaneVisible(
+      DesktopPane.conversations,
+    );
+    final showConversationPane =
+        !compactLayout &&
+        (mediumLayout ? conversationsPaneEnabled : true) &&
+        conversationsPaneEnabled;
+    return (
+      isMobile: compactLayout || (mediumLayout && !showConversationPane),
+      showConversationPane: showConversationPane,
+    );
+  }
+
   GlobalKey _sidebarAccessTourKey({
     required bool isMobile,
     required bool showConversationPane,
@@ -1170,9 +1195,35 @@ class _ChatPageState extends State<ChatPage>
     );
   }
 
+  bool _isTourTargetReady(GlobalKey key) {
+    final targetContext = key.currentContext;
+    if (targetContext == null) {
+      return false;
+    }
+    final renderObject = targetContext.findRenderObject();
+    if (renderObject is! RenderBox) {
+      return false;
+    }
+    return renderObject.attached && renderObject.hasSize;
+  }
+
+  void _resetPostOnboardingTourTransientState() {
+    _tourPhase = _PostOnboardingTourPhase.idle;
+    _tourStartScheduled = false;
+    _tourAdvancingToComposerPhase = false;
+  }
+
+  bool _startShowcaseIfReady(List<GlobalKey> keys) {
+    final showcaseState = _showcaseWidgetKey.currentState;
+    final allMounted = keys.every(_isTourTargetReady);
+    if (showcaseState == null || !allMounted) {
+      return false;
+    }
+    showcaseState.startShowCase(keys);
+    return true;
+  }
+
   void _maybeStartPostOnboardingTour({
-    required bool isMobile,
-    required bool showConversationPane,
     required SettingsProvider settingsProvider,
   }) {
     if (!settingsProvider.pendingPostOnboardingChatTour ||
@@ -1184,46 +1235,40 @@ class _ChatPageState extends State<ChatPage>
       if (!mounted) {
         return;
       }
-      _startIntroPostOnboardingTour(
-        isMobile: isMobile,
-        showConversationPane: showConversationPane,
-        attempt: 0,
-      );
+      _startIntroPostOnboardingTour(attempt: 0);
     });
   }
 
-  void _startIntroPostOnboardingTour({
-    required bool isMobile,
-    required bool showConversationPane,
-    required int attempt,
-  }) {
+  void _startIntroPostOnboardingTour({required int attempt}) {
+    final settingsProvider =
+        _settingsProvider ?? context.read<SettingsProvider>();
+    final layout = _currentTourLayout(settingsProvider);
     final keys = <GlobalKey>[
       _sidebarAccessTourKey(
-        isMobile: isMobile,
-        showConversationPane: showConversationPane,
+        isMobile: layout.isMobile,
+        showConversationPane: layout.showConversationPane,
       ),
       _newChatTourKey,
     ];
-    final allMounted = keys.every((key) => key.currentContext != null);
-    if (!allMounted) {
-      if (attempt >= 5) {
-        unawaited(_clearPendingPostOnboardingTour());
+    if (!_startShowcaseIfReady(keys)) {
+      if (attempt >= _postOnboardingTourMaxAttempts) {
+        _resetPostOnboardingTourTransientState();
         return;
       }
-      Future<void>.delayed(const Duration(milliseconds: 80), () {
+      Future<void>.delayed(_postOnboardingTourRetryDelay, () {
         if (!mounted) {
           return;
         }
-        _startIntroPostOnboardingTour(
-          isMobile: isMobile,
-          showConversationPane: showConversationPane,
-          attempt: attempt + 1,
-        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) {
+            return;
+          }
+          _startIntroPostOnboardingTour(attempt: attempt + 1);
+        });
       });
       return;
     }
     _tourPhase = _PostOnboardingTourPhase.intro;
-    _showcaseWidgetKey.currentState?.startShowCase(keys);
   }
 
   Future<void> _advancePostOnboardingTourToComposer() async {
@@ -1252,29 +1297,49 @@ class _ChatPageState extends State<ChatPage>
 
   void _startComposerPostOnboardingTour({required int attempt}) {
     final keys = <GlobalKey>[_composerTourKey, _sendButtonTourKey];
-    final allMounted = keys.every((key) => key.currentContext != null);
-    if (!allMounted) {
-      if (attempt >= 5) {
+    if (!_startShowcaseIfReady(keys)) {
+      if (attempt >= _postOnboardingTourMaxAttempts) {
         _tourAdvancingToComposerPhase = false;
-        unawaited(_clearPendingPostOnboardingTour());
+        _tourStartScheduled = false;
         return;
       }
-      Future<void>.delayed(const Duration(milliseconds: 80), () {
+      Future<void>.delayed(_postOnboardingTourRetryDelay, () {
         if (!mounted) {
           return;
         }
-        _startComposerPostOnboardingTour(attempt: attempt + 1);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) {
+            return;
+          }
+          _startComposerPostOnboardingTour(attempt: attempt + 1);
+        });
       });
       return;
     }
+    // Keep the persisted handoff armed until the user finishes or dismisses the
+    // replayed composer steps, even if the composer takes longer than one frame.
     _tourAdvancingToComposerPhase = false;
-    _showcaseWidgetKey.currentState?.startShowCase(keys);
+  }
+
+  void _restartPostOnboardingTour() {
+    _resetPostOnboardingTourTransientState();
+    ShowcaseView.get().dismiss();
+    Future<void>.delayed(_postOnboardingTourRetryDelay, () {
+      if (!mounted) {
+        return;
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        _tourStartScheduled = true;
+        _startIntroPostOnboardingTour(attempt: 0);
+      });
+    });
   }
 
   Future<void> _clearPendingPostOnboardingTour() async {
-    _tourPhase = _PostOnboardingTourPhase.idle;
-    _tourStartScheduled = false;
-    _tourAdvancingToComposerPhase = false;
+    _resetPostOnboardingTourTransientState();
     final settingsProvider =
         _settingsProvider ?? context.read<SettingsProvider>();
     await settingsProvider.setPendingPostOnboardingChatTour(false);
@@ -1457,11 +1522,7 @@ class _ChatPageState extends State<ChatPage>
           }
         }
 
-        _maybeStartPostOnboardingTour(
-          isMobile: isMobile || (isMedium && !showConversationPane),
-          showConversationPane: showConversationPane,
-          settingsProvider: settingsProvider,
-        );
+        _maybeStartPostOnboardingTour(settingsProvider: settingsProvider);
         return ShowCaseWidget(
           key: _showcaseWidgetKey,
           onDismiss: _handlePostOnboardingTourDismiss,

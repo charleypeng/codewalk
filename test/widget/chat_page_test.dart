@@ -1998,6 +1998,64 @@ void main() {
       },
     );
 
+    testWidgets('display toggles expose replay chat tour action', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(500, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(localDataSource: localDataSource);
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('appbar_display_toggles_button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('display_toggle_item_replay_tour')),
+        findsOneWidget,
+      );
+      expect(find.text('Replay chat tour'), findsOneWidget);
+    });
+
+    testWidgets('pending tour flag survives startup retries', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(500, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+          'pendingPostOnboardingChatTour': true,
+          'checkUpdatesOnOpen': false,
+        });
+      final provider = _buildChatProvider(localDataSource: localDataSource);
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+      final settingsProvider = SettingsProvider(
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        soundService: SoundService(),
+      );
+      await settingsProvider.initialize();
+      addTearDown(settingsProvider.dispose);
+
+      await tester.pumpWidget(
+        _testApp(provider, appProvider, settingsProvider: settingsProvider),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.pump(const Duration(seconds: 3));
+
+      expect(settingsProvider.pendingPostOnboardingChatTour, isTrue);
+    });
+
     testWidgets('recent sessions stays hidden when there are no recent roots', (
       WidgetTester tester,
     ) async {
