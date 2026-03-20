@@ -319,7 +319,9 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                     cannedAnswersScopeId: projectProvider.currentScopeId,
                     contextItems: _fileContextItems,
                     composerShowcaseKey: _composerTourKey,
+                    composerShowcaseTargetKey: _composerTourTargetKey,
                     sendButtonShowcaseKey: _sendButtonTourKey,
+                    sendButtonShowcaseTargetKey: _sendButtonTourTargetKey,
                     onRemoveContextItem: (index) {
                       if (index >= 0 && index < _fileContextItems.length) {
                         _setState(() {

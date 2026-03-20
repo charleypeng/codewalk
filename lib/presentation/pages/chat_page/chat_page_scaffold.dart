@@ -90,6 +90,7 @@ extension _ChatPageScaffold on _ChatPageState {
                           ),
                           _buildTourTarget(
                             showcaseKey: _projectContextTourKey,
+                            targetKey: _projectContextTourTargetKey,
                             title: postOnboardingSidebarTourCopy(
                               isMobile: false,
                               showConversationPane: true,

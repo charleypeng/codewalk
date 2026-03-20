@@ -170,6 +170,9 @@ class _ChatPageState extends State<ChatPage>
   static const Duration _postOnboardingTourRetryDelay = Duration(
     milliseconds: 150,
   );
+  static const Duration _postOnboardingTourStartDelay = Duration(
+    milliseconds: 250,
+  );
   static const int _postOnboardingTourMaxAttempts = 20;
   static const double _composerStatusReservedHeight = 26;
   static const Duration _finalAssistantRevealDuration = Duration(
@@ -191,15 +194,33 @@ class _ChatPageState extends State<ChatPage>
   final GlobalKey _drawerAccessTourKey = GlobalKey(
     debugLabel: 'tour_drawer_access',
   );
+  final GlobalKey _drawerAccessTourTargetKey = GlobalKey(
+    debugLabel: 'tour_drawer_access_target',
+  );
   final GlobalKey _projectContextTourKey = GlobalKey(
     debugLabel: 'tour_project_context',
+  );
+  final GlobalKey _projectContextTourTargetKey = GlobalKey(
+    debugLabel: 'tour_project_context_target',
   );
   final GlobalKey _desktopSidebarMenuTourKey = GlobalKey(
     debugLabel: 'tour_desktop_sidebar_menu',
   );
+  final GlobalKey _desktopSidebarMenuTourTargetKey = GlobalKey(
+    debugLabel: 'tour_desktop_sidebar_menu_target',
+  );
   final GlobalKey _newChatTourKey = GlobalKey(debugLabel: 'tour_new_chat');
+  final GlobalKey _newChatTourTargetKey = GlobalKey(
+    debugLabel: 'tour_new_chat_target',
+  );
   final GlobalKey _composerTourKey = GlobalKey(debugLabel: 'tour_composer');
+  final GlobalKey _composerTourTargetKey = GlobalKey(
+    debugLabel: 'tour_composer_target',
+  );
   final GlobalKey _sendButtonTourKey = GlobalKey(debugLabel: 'tour_send');
+  final GlobalKey _sendButtonTourTargetKey = GlobalKey(
+    debugLabel: 'tour_send_target',
+  );
   final GlobalKey<ShowCaseWidgetState> _showcaseWidgetKey =
       GlobalKey<ShowCaseWidgetState>();
   final TextEditingController _sessionSearchController =
@@ -232,7 +253,7 @@ class _ChatPageState extends State<ChatPage>
   final Map<String, String?> _sessionCollapseHistoryCache = {};
   final Map<String, bool> _projectGroupExpandedById = <String, bool>{};
   bool _isAppInForeground = true;
-  bool _wasChatRouteCurrent = true;
+  bool _wasChatRouteCurrent = false;
   bool _isProgrammaticScrollInFlight = false;
   bool _olderMessagesLoadTriggerArmed = true;
   bool _olderMessagesAnchorRestoreInFlight = false;
@@ -1136,7 +1157,7 @@ class _ChatPageState extends State<ChatPage>
   ) {
     final width = MediaQuery.sizeOf(context).width;
     final sizeClass = WindowSizeClass.fromWidth(width);
-    final compactLayout = sizeClass.isCompact;
+    final compactLayout = sizeClass == WindowSizeClass.compact;
     final mediumLayout = sizeClass == WindowSizeClass.medium;
     final conversationsPaneEnabled = settingsProvider.isDesktopPaneVisible(
       DesktopPane.conversations,
@@ -1163,8 +1184,21 @@ class _ChatPageState extends State<ChatPage>
         : _desktopSidebarMenuTourKey;
   }
 
+  GlobalKey _sidebarAccessTourTargetKey({
+    required bool isMobile,
+    required bool showConversationPane,
+  }) {
+    if (isMobile) {
+      return _drawerAccessTourTargetKey;
+    }
+    return showConversationPane
+        ? _projectContextTourTargetKey
+        : _desktopSidebarMenuTourTargetKey;
+  }
+
   Widget _buildTourTarget({
     required GlobalKey showcaseKey,
+    required GlobalKey targetKey,
     required Widget child,
     required String title,
     required String description,
@@ -1204,7 +1238,7 @@ class _ChatPageState extends State<ChatPage>
           onTap: onNext ?? () => ShowcaseView.get().next(force: true),
         ),
       ],
-      child: child,
+      child: KeyedSubtree(key: targetKey, child: child),
     );
   }
 
@@ -1246,23 +1280,35 @@ class _ChatPageState extends State<ChatPage>
         !_isChatScreenActive()) {
       return;
     }
-    _queuedPendingPostOnboardingTourAutoStart = false;
     final runToken = _startPostOnboardingTourRun();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    Future<void>.delayed(_postOnboardingTourStartDelay, () {
       if (!_isPostOnboardingTourRunActive(runToken)) {
         return;
       }
-      _startIntroPostOnboardingTour(attempt: 0, runToken: runToken);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_isPostOnboardingTourRunActive(runToken)) {
+          return;
+        }
+        _startIntroPostOnboardingTour(attempt: 0, runToken: runToken);
+      });
     });
   }
 
-  bool _startShowcaseIfReady(List<GlobalKey> keys) {
+  bool _startShowcaseIfReady(
+    List<({GlobalKey showcase, GlobalKey target})> targets, {
+    Duration delay = _postOnboardingTourStartDelay,
+  }) {
+    final allMounted = targets.every(
+      (target) => _isTourTargetReady(target.target),
+    );
     final showcaseState = _showcaseWidgetKey.currentState;
-    final allMounted = keys.every(_isTourTargetReady);
     if (showcaseState == null || !allMounted) {
       return false;
     }
-    showcaseState.startShowCase(keys);
+    showcaseState.startShowCase(
+      targets.map((target) => target.showcase).toList(growable: false),
+      delay: delay,
+    );
     return true;
   }
 
@@ -1276,14 +1322,20 @@ class _ChatPageState extends State<ChatPage>
     final settingsProvider =
         _settingsProvider ?? context.read<SettingsProvider>();
     final layout = _currentTourLayout(settingsProvider);
-    final keys = <GlobalKey>[
-      _sidebarAccessTourKey(
-        isMobile: layout.isMobile,
-        showConversationPane: layout.showConversationPane,
+    final targets = <({GlobalKey showcase, GlobalKey target})>[
+      (
+        showcase: _sidebarAccessTourKey(
+          isMobile: layout.isMobile,
+          showConversationPane: layout.showConversationPane,
+        ),
+        target: _sidebarAccessTourTargetKey(
+          isMobile: layout.isMobile,
+          showConversationPane: layout.showConversationPane,
+        ),
       ),
-      _newChatTourKey,
+      (showcase: _newChatTourKey, target: _newChatTourTargetKey),
     ];
-    if (!_startShowcaseIfReady(keys)) {
+    if (!_startShowcaseIfReady(targets)) {
       if (attempt >= _postOnboardingTourMaxAttempts) {
         _resetPostOnboardingTourTransientState();
         return;
@@ -1304,6 +1356,7 @@ class _ChatPageState extends State<ChatPage>
       });
       return;
     }
+    _queuedPendingPostOnboardingTourAutoStart = false;
     _tourPhase = _PostOnboardingTourPhase.intro;
   }
 
@@ -1324,11 +1377,16 @@ class _ChatPageState extends State<ChatPage>
     if (!_isPostOnboardingTourRunActive(runToken)) {
       return;
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    Future<void>.delayed(_postOnboardingTourStartDelay, () {
       if (!_isPostOnboardingTourRunActive(runToken)) {
         return;
       }
-      _startComposerPostOnboardingTour(attempt: 0, runToken: runToken);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_isPostOnboardingTourRunActive(runToken)) {
+          return;
+        }
+        _startComposerPostOnboardingTour(attempt: 0, runToken: runToken);
+      });
     });
   }
 
@@ -1339,8 +1397,11 @@ class _ChatPageState extends State<ChatPage>
     if (!_isPostOnboardingTourRunActive(runToken)) {
       return;
     }
-    final keys = <GlobalKey>[_composerTourKey, _sendButtonTourKey];
-    if (!_startShowcaseIfReady(keys)) {
+    final targets = <({GlobalKey showcase, GlobalKey target})>[
+      (showcase: _composerTourKey, target: _composerTourTargetKey),
+      (showcase: _sendButtonTourKey, target: _sendButtonTourTargetKey),
+    ];
+    if (!_startShowcaseIfReady(targets)) {
       if (attempt >= _postOnboardingTourMaxAttempts) {
         _tourAdvancingToComposerPhase = false;
         _tourStartScheduled = false;
@@ -1367,21 +1428,15 @@ class _ChatPageState extends State<ChatPage>
     _tourAdvancingToComposerPhase = false;
   }
 
-  void _restartPostOnboardingTour() {
+  Future<void> _restartPostOnboardingTour() async {
     _resetPostOnboardingTourTransientState();
-    final runToken = _startPostOnboardingTourRun();
     ShowcaseView.get().dismiss();
-    Future<void>.delayed(_postOnboardingTourRetryDelay, () {
-      if (!_isPostOnboardingTourRunActive(runToken)) {
-        return;
-      }
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!_isPostOnboardingTourRunActive(runToken)) {
-          return;
-        }
-        _startIntroPostOnboardingTour(attempt: 0, runToken: runToken);
-      });
-    });
+    final settingsProvider =
+        _settingsProvider ?? context.read<SettingsProvider>();
+    if (settingsProvider.pendingPostOnboardingChatTour) {
+      await settingsProvider.setPendingPostOnboardingChatTour(false);
+    }
+    await settingsProvider.setPendingPostOnboardingChatTour(true);
   }
 
   Future<void> _clearPendingPostOnboardingTour() async {

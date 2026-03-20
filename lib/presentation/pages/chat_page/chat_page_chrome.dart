@@ -200,6 +200,7 @@ extension _ChatPageChrome on _ChatPageState {
                     );
                     return _buildTourTarget(
                       showcaseKey: _drawerAccessTourKey,
+                      targetKey: _drawerAccessTourTargetKey,
                       title: sidebarTourCopy.title,
                       description: sidebarTourCopy.description,
                       tooltipPosition: TooltipPosition.bottom,
@@ -231,6 +232,7 @@ extension _ChatPageChrome on _ChatPageState {
         if (!isMobile)
           _buildTourTarget(
             showcaseKey: _desktopSidebarMenuTourKey,
+            targetKey: _desktopSidebarMenuTourTargetKey,
             title: postOnboardingSidebarTourCopy(
               isMobile: false,
               showConversationPane: false,
@@ -350,7 +352,7 @@ extension _ChatPageChrome on _ChatPageState {
                 );
                 break;
               case _DisplayToggleAction.replayTour:
-                _restartPostOnboardingTour();
+                unawaited(_restartPostOnboardingTour());
                 break;
             }
           },
@@ -457,6 +459,7 @@ extension _ChatPageChrome on _ChatPageState {
         if (!isMobile)
           _buildTourTarget(
             showcaseKey: _newChatTourKey,
+            targetKey: _newChatTourTargetKey,
             title: 'New chat',
             description: 'Start a new conversation here.',
             tooltipPosition: TooltipPosition.bottom,
@@ -477,6 +480,7 @@ extension _ChatPageChrome on _ChatPageState {
         if (isMobile)
           _buildTourTarget(
             showcaseKey: _newChatTourKey,
+            targetKey: _newChatTourTargetKey,
             title: 'New chat',
             description: 'Start a new conversation here.',
             tooltipPosition: TooltipPosition.bottom,

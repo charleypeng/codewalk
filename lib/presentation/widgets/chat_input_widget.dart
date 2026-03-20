@@ -257,7 +257,9 @@ class ChatInputWidget extends StatefulWidget {
     this.onRemoveContextItem,
     this.blockReason,
     this.composerShowcaseKey,
+    this.composerShowcaseTargetKey,
     this.sendButtonShowcaseKey,
+    this.sendButtonShowcaseTargetKey,
   });
 
   final FutureOr<void> Function(ChatInputSubmission submission) onSendMessage;
@@ -288,7 +290,9 @@ class ChatInputWidget extends StatefulWidget {
   final void Function(int index)? onRemoveContextItem;
   final String? blockReason;
   final GlobalKey? composerShowcaseKey;
+  final GlobalKey? composerShowcaseTargetKey;
   final GlobalKey? sendButtonShowcaseKey;
+  final GlobalKey? sendButtonShowcaseTargetKey;
 
   @override
   State<ChatInputWidget> createState() => _ChatInputWidgetState();
@@ -938,7 +942,10 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
           TooltipActionButton(type: TooltipDefaultActionType.skip),
           TooltipActionButton(type: TooltipDefaultActionType.next),
         ],
-        child: child,
+        child: KeyedSubtree(
+          key: widget.composerShowcaseTargetKey,
+          child: child,
+        ),
       );
     }
 
@@ -977,7 +984,10 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
             onTap: () => ShowcaseView.get().next(force: true),
           ),
         ],
-        child: child,
+        child: KeyedSubtree(
+          key: widget.sendButtonShowcaseTargetKey,
+          child: child,
+        ),
       );
     }
 
