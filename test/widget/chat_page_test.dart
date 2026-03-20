@@ -1882,7 +1882,7 @@ void main() {
       await tester.tap(
         find.byKey(const ValueKey<String>('display_toggle_item_replay_tour')),
       );
-      // startShowcase uses a 250ms delay via _postOnboardingTourStartDelay.
+      // startShowcase uses a 350ms delay via _postOnboardingTourStartDelay.
       // Pump to let the Future.delayed fire and _activeWidgetId get set.
       await tester.pump(const Duration(milliseconds: 350));
       await tester.pump(const Duration(milliseconds: 500));
@@ -1925,7 +1925,7 @@ void main() {
           mediaQueryData: const MediaQueryData(size: Size(1000, 900)),
         ),
       );
-      // Pump to let the post-frame callback fire and the showcase delay (250ms) elapse.
+      // Pump to let the post-frame callback fire and the showcase delay (350ms) elapse.
       await tester.pump(const Duration(milliseconds: 350));
       await tester.pump(const Duration(milliseconds: 500));
 

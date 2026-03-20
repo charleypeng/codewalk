@@ -171,7 +171,7 @@ class _ChatPageState extends State<ChatPage>
     milliseconds: 150,
   );
   static const Duration _postOnboardingTourStartDelay = Duration(
-    milliseconds: 250,
+    milliseconds: 350,
   );
   static const int _postOnboardingTourMaxAttempts = 20;
   static const double _composerStatusReservedHeight = 26;
