@@ -70,6 +70,20 @@ void main() {
       );
     }
 
+    Future<void> waitForCondition(
+      bool Function() condition, {
+      Duration timeout = const Duration(seconds: 2),
+      Duration interval = const Duration(milliseconds: 5),
+    }) async {
+      final stopwatch = Stopwatch()..start();
+      while (!condition()) {
+        if (stopwatch.elapsed >= timeout) {
+          fail('Timed out waiting for condition after $timeout');
+        }
+        await Future<void>.delayed(interval);
+      }
+    }
+
     setUp(() async {
       final fixtures = await buildDefaultTestFixtures();
       chatRepository = fixtures.chatRepository;
@@ -357,7 +371,11 @@ void main() {
         await provider.selectSession(provider.sessions.first);
 
         await provider.sendMessage('hello provider');
-        await Future<void>.delayed(const Duration(milliseconds: 20));
+        await waitForCondition(
+          () =>
+              provider.state == ChatState.loaded &&
+              provider.messages.length == 2,
+        );
 
         expect(provider.state, ChatState.loaded);
         expect(provider.messages.length, 2);
