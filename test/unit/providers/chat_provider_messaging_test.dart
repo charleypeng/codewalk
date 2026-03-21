@@ -374,7 +374,10 @@ void main() {
         await waitForCondition(
           () =>
               provider.state == ChatState.loaded &&
-              provider.messages.length == 2,
+              provider.messages.length == 2 &&
+              provider.messages.last is AssistantMessage &&
+              (provider.messages.last as AssistantMessage).completedTime !=
+                  null,
         );
 
         expect(provider.state, ChatState.loaded);
