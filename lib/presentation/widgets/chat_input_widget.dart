@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
-import 'package:showcaseview/showcaseview.dart';
+import 'package:showcaseview/showcaseview.dart' show TooltipPosition;
 
 import '../../core/di/injection_container.dart' as di;
 import '../../core/logging/app_logger.dart';
@@ -23,6 +23,7 @@ import '../theme/app_shapes.dart';
 import '../services/speech_input_service_moonshine.dart';
 import '../services/speech_input_service_sherpa.dart';
 import '../services/speech_input_service_stt.dart';
+import 'chat_tour_showcase.dart';
 import 'moonshine_model_download_dialog.dart';
 import 'sherpa_model_download_dialog.dart';
 
@@ -260,6 +261,7 @@ class ChatInputWidget extends StatefulWidget {
     this.composerShowcaseTargetKey,
     this.sendButtonShowcaseKey,
     this.sendButtonShowcaseTargetKey,
+    this.onTourSkip,
   });
 
   final FutureOr<void> Function(ChatInputSubmission submission) onSendMessage;
@@ -293,6 +295,7 @@ class ChatInputWidget extends StatefulWidget {
   final GlobalKey? composerShowcaseTargetKey;
   final GlobalKey? sendButtonShowcaseKey;
   final GlobalKey? sendButtonShowcaseTargetKey;
+  final VoidCallback? onTourSkip;
 
   @override
   State<ChatInputWidget> createState() => _ChatInputWidgetState();
@@ -917,35 +920,15 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
       if (showcaseKey == null) {
         return child;
       }
-      return Showcase(
-        key: showcaseKey,
+      return ChatTourShowcase(
+        showcaseKey: showcaseKey,
+        targetKey: widget.composerShowcaseTargetKey!,
         title: 'Chat input',
         description: 'Type your request here.',
         tooltipPosition: TooltipPosition.top,
-        disableDefaultTargetGestures: true,
-        tooltipBackgroundColor: colorScheme.primaryContainer,
-        titleTextStyle: Theme.of(context).textTheme.titleSmall?.copyWith(
-          color: colorScheme.onPrimaryContainer,
-          fontWeight: FontWeight.w700,
-        ),
-        descTextStyle: Theme.of(
-          context,
-        ).textTheme.bodyMedium?.copyWith(color: colorScheme.onPrimaryContainer),
-        overlayColor: colorScheme.surface,
-        overlayOpacity: isDark ? 0.82 : 0.72,
-        targetPadding: const EdgeInsets.all(4),
+        onSkipAction: widget.onTourSkip,
         targetBorderRadius: inputBubbleBorderRadius,
-        tooltipActionConfig: const TooltipActionConfig(
-          position: TooltipActionPosition.inside,
-        ),
-        tooltipActions: const [
-          TooltipActionButton(type: TooltipDefaultActionType.skip),
-          TooltipActionButton(type: TooltipDefaultActionType.next),
-        ],
-        child: KeyedSubtree(
-          key: widget.composerShowcaseTargetKey,
-          child: child,
-        ),
+        child: child,
       );
     }
 
@@ -954,40 +937,17 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
       if (showcaseKey == null) {
         return child;
       }
-      return Showcase(
-        key: showcaseKey,
+      return ChatTourShowcase(
+        showcaseKey: showcaseKey,
+        targetKey: widget.sendButtonShowcaseTargetKey!,
         title: 'Send',
         description: 'Send your message here.',
         tooltipPosition: TooltipPosition.top,
-        disableDefaultTargetGestures: true,
-        tooltipBackgroundColor: colorScheme.primaryContainer,
-        titleTextStyle: Theme.of(context).textTheme.titleSmall?.copyWith(
-          color: colorScheme.onPrimaryContainer,
-          fontWeight: FontWeight.w700,
-        ),
-        descTextStyle: Theme.of(
-          context,
-        ).textTheme.bodyMedium?.copyWith(color: colorScheme.onPrimaryContainer),
-        overlayColor: colorScheme.surface,
-        overlayOpacity: isDark ? 0.82 : 0.72,
-        targetPadding: const EdgeInsets.all(4),
+        includePrevious: true,
+        primaryActionLabel: 'Done',
+        onSkipAction: widget.onTourSkip,
         targetBorderRadius: BorderRadius.circular(_composerActionButtonSize),
-        tooltipActionConfig: const TooltipActionConfig(
-          position: TooltipActionPosition.inside,
-        ),
-        tooltipActions: [
-          const TooltipActionButton(type: TooltipDefaultActionType.skip),
-          const TooltipActionButton(type: TooltipDefaultActionType.previous),
-          TooltipActionButton(
-            type: TooltipDefaultActionType.next,
-            name: 'Got it',
-            onTap: () => ShowcaseView.get().next(force: true),
-          ),
-        ],
-        child: KeyedSubtree(
-          key: widget.sendButtonShowcaseTargetKey,
-          child: child,
-        ),
+        child: child,
       );
     }
 

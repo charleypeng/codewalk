@@ -35,6 +35,7 @@ import '../services/android_background_alert_worker.dart';
 import '../services/android_foreground_monitor_service.dart';
 import '../services/notification_service.dart';
 import '../theme/app_animations.dart';
+import '../theme/app_shapes.dart';
 import '../theme/opencode_highlight_theme.dart';
 import '../theme/opencode_theme_presets.dart';
 import '../utils/app_page_route.dart';
@@ -50,6 +51,7 @@ import '../widgets/chat_input_widget.dart';
 import '../widgets/chat_message_widget.dart';
 import '../widgets/chat_session_list.dart';
 import '../widgets/chat_skeleton_shimmer.dart';
+import '../widgets/chat_tour_showcase.dart';
 import '../widgets/message_entrance_animation.dart';
 import '../widgets/permission_request_card.dart';
 import '../widgets/question_request_card.dart';
@@ -327,6 +329,7 @@ class _ChatPageState extends State<ChatPage>
   bool _compactionStateSyncScheduled = false;
   bool _tourStartScheduled = false;
   bool _tourAdvancingToComposerPhase = false;
+  bool _tourExplicitSkipRequested = false;
   _PostOnboardingTourPhase _tourPhase = _PostOnboardingTourPhase.idle;
   int _postOnboardingTourRunToken = 0;
   bool _queuedPendingPostOnboardingTourAutoStart = false;
@@ -1204,41 +1207,21 @@ class _ChatPageState extends State<ChatPage>
     required String description,
     required TooltipPosition tooltipPosition,
     bool includePrevious = false,
+    String primaryActionLabel = 'Next',
     VoidCallback? onNext,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Showcase(
-      key: showcaseKey,
+    return ChatTourShowcase(
+      showcaseKey: showcaseKey,
+      targetKey: targetKey,
       title: title,
       description: description,
       tooltipPosition: tooltipPosition,
-      disableDefaultTargetGestures: true,
-      tooltipBackgroundColor: colorScheme.primaryContainer,
-      titleTextStyle: Theme.of(context).textTheme.titleSmall?.copyWith(
-        color: colorScheme.onPrimaryContainer,
-        fontWeight: FontWeight.w700,
-      ),
-      descTextStyle: Theme.of(
-        context,
-      ).textTheme.bodyMedium?.copyWith(color: colorScheme.onPrimaryContainer),
-      overlayColor: colorScheme.surface,
-      overlayOpacity: isDark ? 0.82 : 0.72,
-      targetPadding: const EdgeInsets.all(4),
-      targetBorderRadius: BorderRadius.circular(18),
-      tooltipActionConfig: const TooltipActionConfig(
-        position: TooltipActionPosition.inside,
-      ),
-      tooltipActions: [
-        const TooltipActionButton(type: TooltipDefaultActionType.skip),
-        if (includePrevious)
-          const TooltipActionButton(type: TooltipDefaultActionType.previous),
-        TooltipActionButton(
-          type: TooltipDefaultActionType.next,
-          onTap: onNext ?? () => ShowcaseView.get().next(force: true),
-        ),
-      ],
-      child: KeyedSubtree(key: targetKey, child: child),
+      includePrevious: includePrevious,
+      primaryActionLabel: primaryActionLabel,
+      onPrimaryAction: onNext,
+      onSkipAction: _handlePostOnboardingTourSkip,
+      targetBorderRadius: AppShapes.borderLarge,
+      child: child,
     );
   }
 
@@ -1259,6 +1242,12 @@ class _ChatPageState extends State<ChatPage>
     _tourPhase = _PostOnboardingTourPhase.idle;
     _tourStartScheduled = false;
     _tourAdvancingToComposerPhase = false;
+    _tourExplicitSkipRequested = false;
+  }
+
+  void _handlePostOnboardingTourSkip() {
+    _tourExplicitSkipRequested = true;
+    ShowcaseView.get().dismiss();
   }
 
   int _startPostOnboardingTourRun() {
@@ -1322,6 +1311,9 @@ class _ChatPageState extends State<ChatPage>
     final settingsProvider =
         _settingsProvider ?? context.read<SettingsProvider>();
     final layout = _currentTourLayout(settingsProvider);
+    if (layout.isMobile) {
+      _closeDrawerIfNeeded(closeOnSelect: true);
+    }
     final targets = <({GlobalKey showcase, GlobalKey target})>[
       (
         showcase: _sidebarAccessTourKey(
@@ -1368,6 +1360,12 @@ class _ChatPageState extends State<ChatPage>
     _tourAdvancingToComposerPhase = true;
     _tourPhase = _PostOnboardingTourPhase.composer;
     ShowcaseView.get().dismiss();
+
+    final scaffoldState = _scaffoldKey.currentState;
+    if (scaffoldState?.isDrawerOpen ?? false) {
+      scaffoldState?.closeDrawer();
+      await Future<void>.delayed(_postOnboardingTourRetryDelay);
+    }
 
     final chatProvider = context.read<ChatProvider>();
     if (chatProvider.currentSession != null ||
@@ -1453,7 +1451,18 @@ class _ChatPageState extends State<ChatPage>
         _tourPhase == _PostOnboardingTourPhase.idle) {
       return;
     }
-    unawaited(_clearPendingPostOnboardingTour());
+    if (_tourExplicitSkipRequested) {
+      unawaited(_clearPendingPostOnboardingTour());
+      return;
+    }
+    // Passive dismiss should stop the current run without consuming the
+    // first-use handoff. The next eligible return to chat can re-open it.
+    _resetPostOnboardingTourTransientState();
+    final settingsProvider =
+        _settingsProvider ?? context.read<SettingsProvider>();
+    if (settingsProvider.pendingPostOnboardingChatTour) {
+      _queuedPendingPostOnboardingTourAutoStart = true;
+    }
   }
 
   void _handlePostOnboardingTourFinish() {

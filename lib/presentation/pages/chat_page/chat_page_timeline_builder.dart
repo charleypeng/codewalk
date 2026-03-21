@@ -322,6 +322,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                     composerShowcaseTargetKey: _composerTourTargetKey,
                     sendButtonShowcaseKey: _sendButtonTourKey,
                     sendButtonShowcaseTargetKey: _sendButtonTourTargetKey,
+                    onTourSkip: _handlePostOnboardingTourSkip,
                     onRemoveContextItem: (index) {
                       if (index >= 0 && index < _fileContextItems.length) {
                         _setState(() {
