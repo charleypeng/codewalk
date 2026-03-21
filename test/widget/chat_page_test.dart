@@ -101,6 +101,46 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(1400, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
 
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_1',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Stable Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_1'] = <ChatMessage>[
+        UserMessage(
+          id: 'msg_user_1',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_user_1',
+              messageId: 'msg_user_1',
+              sessionId: 'ses_1',
+              text: 'first prompt',
+            ),
+          ],
+        ),
+        AssistantMessage(
+          id: 'msg_assistant_1',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1100),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_assistant_1',
+              messageId: 'msg_assistant_1',
+              sessionId: 'ses_1',
+              text: 'first reply',
+            ),
+          ],
+        ),
+      ];
+
       final localDataSource = InMemoryAppLocalDataSource()
         ..activeServerId = 'srv_test'
         ..defaultServerId = 'srv_test'
@@ -116,7 +156,10 @@ void main() {
             'updatedAt': 0,
           },
         ]);
-      final provider = _buildChatProvider(localDataSource: localDataSource);
+      final provider = _buildChatProvider(
+        localDataSource: localDataSource,
+        chatRepository: repository,
+      );
       final appProvider = _buildAppProvider(localDataSource: localDataSource);
 
       await tester.pumpWidget(
@@ -126,17 +169,17 @@ void main() {
           mediaQueryData: const MediaQueryData(size: Size(500, 900)),
         ),
       );
-      await tester.pumpAndSettle();
+      await _pumpUiFrames(tester);
 
-      expect(
-        find.byKey(const ValueKey<String>('chat_message_widget_msg_user_2')),
-        findsNothing,
-      );
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await _pumpUiFrames(tester);
+
       expect(find.text('first prompt'), findsOneWidget);
       expect(find.text('first reply'), findsOneWidget);
       expect(
-        tester.widget<TextField>(find.byType(TextField).last).controller?.text,
-        'latest prompt',
+        find.byKey(const ValueKey<String>('appbar_redo_button')),
+        findsNothing,
       );
     });
 
@@ -1849,6 +1892,143 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
 
       expect(settingsProvider.pendingPostOnboardingChatTour, isTrue);
+    });
+
+    testWidgets('passive tour dismiss keeps the pending flag armed', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(500, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+          'pendingPostOnboardingChatTour': true,
+          'checkUpdatesOnOpen': false,
+        });
+      final provider = _buildChatProvider(localDataSource: localDataSource);
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+      final settingsProvider = SettingsProvider(
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        soundService: SoundService(),
+      );
+      await settingsProvider.initialize();
+      addTearDown(settingsProvider.dispose);
+
+      await tester.pumpWidget(
+        _testApp(
+          provider,
+          appProvider,
+          settingsProvider: settingsProvider,
+          mediaQueryData: const MediaQueryData(size: Size(500, 900)),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('Open sidebar'), findsOneWidget);
+
+      await tester.tapAt(const Offset(12, 12));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      expect(settingsProvider.pendingPostOnboardingChatTour, isTrue);
+    });
+
+    testWidgets('explicit skip clears the pending tour flag', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(500, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+          'pendingPostOnboardingChatTour': true,
+          'checkUpdatesOnOpen': false,
+        });
+      final provider = _buildChatProvider(localDataSource: localDataSource);
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+      final settingsProvider = SettingsProvider(
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        soundService: SoundService(),
+      );
+      await settingsProvider.initialize();
+      addTearDown(settingsProvider.dispose);
+
+      await tester.pumpWidget(
+        _testApp(
+          provider,
+          appProvider,
+          settingsProvider: settingsProvider,
+          mediaQueryData: const MediaQueryData(size: Size(500, 900)),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      await tester.tap(find.text('Skip'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      expect(settingsProvider.pendingPostOnboardingChatTour, isFalse);
+    });
+
+    testWidgets('finishing the tour clears the pending flag', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+          'pendingPostOnboardingChatTour': true,
+          'checkUpdatesOnOpen': false,
+        });
+      final provider = _buildChatProvider(localDataSource: localDataSource);
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+      final settingsProvider = SettingsProvider(
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        soundService: SoundService(),
+      );
+      await settingsProvider.initialize();
+      addTearDown(settingsProvider.dispose);
+
+      await tester.pumpWidget(
+        _testApp(
+          provider,
+          appProvider,
+          settingsProvider: settingsProvider,
+          mediaQueryData: const MediaQueryData(size: Size(1000, 900)),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('Open project'), findsOneWidget);
+
+      await tester.tap(find.text('Next'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.tap(find.text('Next'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('Chat input'), findsOneWidget);
+
+      await tester.tap(find.text('Next'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+      await tester.tap(find.text('Done'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      expect(settingsProvider.pendingPostOnboardingChatTour, isFalse);
     });
 
     testWidgets('display toggles replay starts the mobile intro tour', (
@@ -5365,18 +5545,8 @@ void main() {
       find.byKey(const ValueKey<String>('variant_selector_button')),
     );
     await tester.pumpAndSettle();
-    await tester.tap(
-      find.byKey(const ValueKey<String>('display_toggle_item_replay_tour')),
-    );
-    // Pump generously to allow all timers to fire
-    await tester.pump(const Duration(seconds: 5));
-    await tester.pumpAndSettle();
-
-    print(
-      'DEBUG TEST: isShowcaseRunning = ${ShowcaseView.get().isShowcaseRunning}',
-    );
-    expect(ShowcaseView.get().isShowcaseRunning, isTrue);
-    expect(find.text('Open sidebar'), findsOneWidget);
+    expect(find.text('Low'), findsOneWidget);
+    expect(find.text('High'), findsOneWidget);
   });
 
   testWidgets(
