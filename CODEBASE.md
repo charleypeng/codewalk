@@ -106,6 +106,7 @@ lib/presentation/widgets/chat_message_widget.dart # Message bubble with build-sk
 lib/presentation/widgets/session_todo_list_widget.dart # Session task panel with progress bar and keyboard-aware collapse; compact mobile collapsed summaries use count-first wording (`x/y in progress`, `x/y done`)
 lib/presentation/widgets/chat_session_list.dart    # Chat session list widget; uses responsive vertical tile padding (1 on desktop, 3 on mobile) for information density
 lib/presentation/widgets/message_entrance_animation.dart # Entrance animation wrapper; `role` parameter selects user (130 ms) or assistant (180 ms) motion profile from AppAnimations
+lib/presentation/widgets/chat_tour_showcase.dart   # Shared showcase wrapper for the first-use chat tour; provides MD3-compliant tooltip styling with consistent surface, shape, and action hierarchy using `showcaseview` package
 ```
 
 ## Chat Architecture
@@ -342,7 +343,8 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 - **Implementation**: Uses `showcaseview` package with `ShowCaseWidget` wrapper in `ChatPage`;
   tour keys are `GlobalKey` instances passed to target widgets; responsive copy adapts to
   mobile/desktop layouts. Retries are run-token guarded so stale callbacks do not double-trigger
-  after replay.
+  after replay. Shared `ChatTourShowcase` widget provides MD3-compliant tooltip styling across
+  all tour steps.
 - **Replay action**:
   - **Primary**: Main Settings landing page includes a clearly reachable `Replay chat tour` action.
   - **Secondary**: Settings > About still offers the replay action as an alternative path.

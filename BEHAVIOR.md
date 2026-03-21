@@ -26,7 +26,8 @@
 - **When** the main chat screen opens for that first post-onboarding session
 - **Then** the app starts a guided first-use tour that introduces how to open project/sidebar controls, start a new chat, use the chat input, and send a message
 - **Then** the tour adapts its first step to the current layout, using drawer/sidebar access on compact screens and the relevant project/sidebar control on larger layouts
-- **Then** the app keeps the one-time handoff armed while the chat surface is still mounting, instead of silently consuming the tour just because the targets were late to appear
+- **Then** the app keeps the one-time handoff armed while the chat surface is still mounting, instead of silently consuming the tour just because the targets were late to appear or a transient dismiss interrupted the first run
+- **Then** the tour is only marked as seen after the user explicitly skips it or completes the full walkthrough
 - **Then** the handoff runs only once for that successful onboarding completion unless a later onboarding success arms it again
 
 ### Chat tour can be replayed from the chat screen
