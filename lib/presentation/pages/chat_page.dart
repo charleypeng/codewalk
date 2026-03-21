@@ -1365,6 +1365,9 @@ class _ChatPageState extends State<ChatPage>
     if (scaffoldState?.isDrawerOpen ?? false) {
       scaffoldState?.closeDrawer();
       await Future<void>.delayed(_postOnboardingTourRetryDelay);
+      if (!mounted) {
+        return;
+      }
     }
 
     final chatProvider = context.read<ChatProvider>();
