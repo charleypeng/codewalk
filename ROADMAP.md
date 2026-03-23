@@ -43,11 +43,11 @@ Description: Various UI/UX enhancements, snackbar improvements, task bubble upda
 - [x] 3.11 Memorizar localmente a relação agent + model + variant por agente. Ao trocar de agente, se houver memória salva, selecionar automaticamente o último modelo (e sua variante) salvo - Commit hash: 44bbab6
 - [x] 3.12 Corrigir bounce do viewport durante turns busy: updates passivos (refresh, deltas realtime e pulsos de status) não podem disputar com o viewport owner ativo nem recolapsar grupos de trabalho durante o turno - Commit hash: d781708
 
-### Feature 4: OpenCode Release Monitoring Skill
+### Feature 4: OpenCode Release Monitoring Command
 
-Description: Create a skill to monitor OpenCode releases and identify potential impacts on CodeWalk
+Description: Create a repo-local OpenCode command that uses the `planner` agent to inspect OpenCode releases and evaluate CodeWalk impact
 
-- [ ] 4.01 Criar uma skill que visita https://github.com/anomalyco/opencode/releases e verifica como as mudanças podem afetar ou necessitar atualizar o CodeWalk, em especial as sessões Core/Desktop/Web
+- [~] 4.01 Create repo-local command `.opencode/commands/release-monitor.md` that reviews OpenCode releases and identifies impacts/needed updates for CodeWalk, especially Core/Desktop/Web, using `planner` — Command file exists in working tree, pending commit
 
 ### Feature 5: Offline-to-Online Data Reload
 

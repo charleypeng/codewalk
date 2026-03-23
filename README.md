@@ -129,6 +129,15 @@ make precommit  # check + android
 4. Configure Basic Auth only if your server requires it
 5. Save and switch active/default profiles as needed
 
+### OpenCode Project Command
+
+When you run OpenCode from this repository, the repo ships a project command at `.opencode/commands/release-monitor.md`:
+
+- `/release-monitor` reviews the latest OpenCode release for CodeWalk impact
+- `/release-monitor vX.Y.Z` or `/release-monitor https://github.com/anomalyco/opencode/releases/tag/...` reviews a specific release target
+
+The command requires a configured `planner` agent in your OpenCode setup and returns a release summary, impact/risk by area, proposed adjustments, and an execution plan only when CodeWalk work is needed.
+
 ## Architecture
 
 The project follows Clean Architecture with three layers: Domain, Data, and Presentation. Dependency injection via `get_it`, HTTP via `dio`, state management via `provider`.

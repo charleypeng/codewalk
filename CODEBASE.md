@@ -40,6 +40,7 @@ codewalk/
 ├── test/                               # Unit, widget, integration, presentation, support tests
 ├── tool/ci/                            # Analyzer budget and coverage gate scripts
 ├── .github/workflows/                  # CI and release workflows
+├── .opencode/commands/                 # Repo-local OpenCode custom commands
 ├── android/ linux/ macos/ web/ windows/ # Platform runners/build configs
 ├── android/app/src/main/res/drawable-*/ # Android notification small icons (`ic_stat_codewalk.png`)
 ├── linux/runner/resources/             # Linux launcher icon + desktop entry icon metadata
@@ -390,6 +391,10 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
   - **In-bubble Part Entrance**: Streamed part entrance is handled in-bubble via `chat_message_widget.dart`, `chat_message_part_dispatch.dart`, and `PartEntranceAnimation`.
   - **Animation tokens**: `AppAnimations` defines userBubble (130 ms) and assistantBubble (180 ms) motion profiles.
   - **Regression Coverage**: `test/widget/chat_message_widget_test.dart` ensures stable animation behavior and part-dispatch logic.
+
+### OpenCode Custom Commands
+
+- `.opencode/commands/release-monitor.md` provides the `/release-monitor` command targeting the configured `planner` agent to analyze OpenCode release impact on CodeWalk.
 
 ### Material You Design System
 
