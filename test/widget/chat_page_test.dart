@@ -585,6 +585,131 @@ void main() {
       expect(settingsProvider.showThinkingBubbles, isNot(initial));
     });
 
+    testWidgets('typed custom slash command routes through command mode', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(900, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_1',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Command Session',
+          ),
+        ],
+      );
+      repository.sendMessageHandler = (_, sessionId, _, _) async* {
+        yield Right(
+          AssistantMessage(
+            id: 'msg_command_reply',
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(1100),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_command_reply',
+                messageId: 'msg_command_reply',
+                sessionId: 'ses_1',
+                text: 'command reply',
+              ),
+            ],
+          ),
+        );
+      };
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..defaultServerId = 'srv_test'
+        ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'srv_test',
+            'url': 'http://127.0.0.1:4096',
+            'label': 'Test Server',
+            'basicAuthEnabled': false,
+            'basicAuthUsername': '',
+            'basicAuthPassword': '',
+            'createdAt': 0,
+            'updatedAt': 0,
+          },
+        ]);
+      final provider = _buildChatProvider(
+        localDataSource: localDataSource,
+        chatRepository: repository,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byType(TextField).last,
+        '/release-monitor v1.2.3',
+      );
+      await tester.pump();
+      await tester.tap(find.byIcon(Symbols.send_rounded));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(repository.lastSendInput?.mode, 'command');
+      expect(
+        repository.lastSendInput?.parts.single,
+        const TextInputPart(text: '/release-monitor v1.2.3'),
+      );
+      expect(find.text('/release-monitor v1.2.3'), findsOneWidget);
+      expect(find.text('command reply'), findsOneWidget);
+    });
+
+    testWidgets('typed builtin slash command stays local and skips send', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(900, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository();
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..defaultServerId = 'srv_test'
+        ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'srv_test',
+            'url': 'http://127.0.0.1:4096',
+            'label': 'Test Server',
+            'basicAuthEnabled': false,
+            'basicAuthUsername': '',
+            'basicAuthPassword': '',
+            'createdAt': 0,
+            'updatedAt': 0,
+          },
+        ]);
+      final provider = _buildChatProvider(
+        localDataSource: localDataSource,
+        chatRepository: repository,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).last, '/help');
+      await tester.pump();
+      await tester.tap(find.byIcon(Symbols.send_rounded));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(repository.lastSendInput, isNull);
+      expect(
+        tester.widget<TextField>(find.byType(TextField).last).controller?.text,
+        isEmpty,
+      );
+    });
+
     testWidgets('shows drawer on mobile width', (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(500, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));

@@ -556,6 +556,8 @@
 - **Given** the user is typing in the composer
 - **When** the user types `/`
 - **Then** a command picker appears with available slash commands
+- **Then** selecting a builtin command from that picker runs the local action immediately
+- **Then** selecting a non-builtin command inserts the slash-command prefix into the composer so the user can add optional arguments before sending
 
 The following commands are always available (builtin):
 
@@ -563,12 +565,26 @@ The following commands are always available (builtin):
 |---------|--------|
 | `/new` | Start a new conversation |
 | `/model` | Open the model selector |
+| `/models` | Open the model selector |
+| `/sessions` | Open the conversations surface |
 | `/agent` | Open the agent selector |
 | `/open` | Quick-open a project file |
 | `/help` | Show available commands |
 | `/compact` | Compact (summarize) the current session context |
+| `/thinking` | Toggle Thinking bubbles |
+| `/undo` | Undo the last visible user turn |
+| `/redo` | Redo the last undone turn |
 
 Additional commands may be provided by the connected OpenCode server and merged into the picker alongside the builtins.
+
+- **Given** the user sends a slash command from the composer
+- **When** the command name matches a builtin slash command
+- **Then** CodeWalk runs the local builtin action instead of sending a normal chat prompt
+
+- **Given** the user sends a non-builtin slash command from the composer
+- **When** the command is dispatched
+- **Then** CodeWalk executes it through the OpenCode slash-command API (`POST /session/:id/command`) instead of the normal prompt send path
+- **Then** the typed slash command remains visible as the initiating user turn while the server response renders in the conversation
 
 ---
 

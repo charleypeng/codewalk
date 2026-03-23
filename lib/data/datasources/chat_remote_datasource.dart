@@ -842,6 +842,83 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     }
   }
 
+  Future<ChatMessageModel> _sendSlashCommand(
+    String sessionId,
+    ChatInputModel input, {
+    String? directory,
+  }) async {
+    try {
+      final queryParams = <String, String>{};
+      if (directory != null) {
+        queryParams['directory'] = directory;
+      }
+
+      final rawCommand = input.parts
+          .where((part) => part.type == 'text')
+          .map((part) => part.text ?? '')
+          .join('\n')
+          .trim();
+      final normalized = rawCommand.startsWith('/')
+          ? rawCommand.substring(1).trimLeft()
+          : rawCommand;
+      if (normalized.isEmpty) {
+        throw const ValidationException('Slash command cannot be empty');
+      }
+
+      final separatorMatch = RegExp(r'\s').firstMatch(normalized);
+      final command =
+          (separatorMatch == null
+                  ? normalized
+                  : normalized.substring(0, separatorMatch.start))
+              .trim();
+      if (command.isEmpty) {
+        throw const ValidationException('Slash command cannot be empty');
+      }
+      final arguments = separatorMatch == null
+          ? ''
+          : normalized.substring(separatorMatch.start).trimLeft();
+
+      final payload = <String, dynamic>{'command': command};
+      if (arguments.isNotEmpty) {
+        payload['arguments'] = arguments;
+      }
+      if (input.providerId.trim().isNotEmpty &&
+          input.modelId.trim().isNotEmpty) {
+        payload['model'] = <String, dynamic>{
+          'providerID': input.providerId,
+          'modelID': input.modelId,
+        };
+      }
+
+      final response = await dio.post(
+        '/session/$sessionId/command',
+        data: payload,
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+      if (response.statusCode != 200) {
+        throw const ServerException('Server error');
+      }
+
+      final map = response.data as Map<String, dynamic>;
+      final info = (map['info'] as Map<String, dynamic>?) ?? map;
+      final parts = (map['parts'] as List<dynamic>?) ?? const <dynamic>[];
+      return ChatMessageModel.fromJson({...info, 'parts': parts});
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        throw const NotFoundException('Resource not found');
+      }
+      if (e.response?.statusCode == 400) {
+        throw const ValidationException('Invalid input parameters');
+      }
+      throw const ServerException('Server error');
+    } catch (e) {
+      if (e is ValidationException) {
+        rethrow;
+      }
+      throw const ServerException('Server error');
+    }
+  }
+
   ServerException _serverExceptionFromDio(
     DioException exception, {
     required String fallbackMessage,
@@ -961,6 +1038,16 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         details:
             'provider=${input.providerId} model=${input.modelId} variant=${input.variant ?? "auto"} mode=${input.mode ?? "-"} parts=${input.parts.length} sendStartMs=$sendStartMs',
       );
+
+      if (input.mode == 'command') {
+        final commandMessage = await _sendSlashCommand(
+          sessionId,
+          input,
+          directory: directory,
+        );
+        yield commandMessage;
+        return;
+      }
 
       if (input.mode == 'shell') {
         final shellMessage = await _sendShellCommand(

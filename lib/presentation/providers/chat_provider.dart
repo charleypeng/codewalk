@@ -3128,9 +3128,10 @@ class ChatProvider extends ChangeNotifier {
     String text, {
     List<FileInputPart> attachments = const <FileInputPart>[],
     bool shellMode = false,
+    bool commandMode = false,
   }) async {
     final trimmedText = text.trim();
-    final effectiveAttachments = shellMode
+    final effectiveAttachments = shellMode || commandMode
         ? const <FileInputPart>[]
         : attachments;
     if (trimmedText.isEmpty && effectiveAttachments.isEmpty) {
@@ -3140,12 +3141,13 @@ class ChatProvider extends ChangeNotifier {
       'submit-message',
       sessionId: _currentSession?.id,
       details:
-          'textLen=${trimmedText.length} attachments=${effectiveAttachments.length} shellMode=$shellMode',
+          'textLen=${trimmedText.length} attachments=${effectiveAttachments.length} shellMode=$shellMode commandMode=$commandMode',
     );
     await sendMessage(
       trimmedText,
       attachments: effectiveAttachments,
       shellMode: shellMode,
+      commandMode: commandMode,
     );
   }
 
@@ -3154,12 +3156,13 @@ class ChatProvider extends ChangeNotifier {
     String text, {
     List<FileInputPart> attachments = const <FileInputPart>[],
     bool shellMode = false,
+    bool commandMode = false,
     String? localMessageId,
     bool appendOptimisticMessage = true,
     String? sessionIdOverride,
   }) async {
     final trimmedText = text.trim();
-    final effectiveAttachments = shellMode
+    final effectiveAttachments = shellMode || commandMode
         ? const <FileInputPart>[]
         : attachments;
     final normalizedSessionOverride = sessionIdOverride;
@@ -3213,7 +3216,7 @@ class ChatProvider extends ChangeNotifier {
       'send-start',
       sessionId: sendSessionId,
       details:
-          'textLen=${trimmedText.length} attachments=${effectiveAttachments.length} shell=$shellMode sessionOverride=$hasSessionOverride',
+          'textLen=${trimmedText.length} attachments=${effectiveAttachments.length} shell=$shellMode command=$commandMode sessionOverride=$hasSessionOverride',
     );
     _setActiveSendDraft(
       trimmedText,
@@ -3307,7 +3310,9 @@ class ChatProvider extends ChangeNotifier {
         providerId: _selectedProviderId ?? 'anthropic',
         modelId: _selectedModelId ?? 'claude-3-5-sonnet-20241022',
         variant: _selectedVariantId,
-        mode: shellMode ? 'shell' : selectedAgentForSend,
+        mode: commandMode
+            ? 'command'
+            : (shellMode ? 'shell' : selectedAgentForSend),
         parts: inputParts,
       );
 

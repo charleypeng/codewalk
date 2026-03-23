@@ -144,6 +144,34 @@ extension _ChatPageCommandQuery on _ChatPageState {
     return filtered.take(24).toList(growable: false);
   }
 
+  _SlashCommandInvocation? _parseSlashCommandInvocation(String text) {
+    final trimmed = text.trim();
+    if (!trimmed.startsWith('/')) {
+      return null;
+    }
+
+    final body = trimmed.substring(1).trimLeft();
+    if (body.isEmpty) {
+      return null;
+    }
+
+    final separatorMatch = RegExp(r'\s').firstMatch(body);
+    final commandName =
+        (separatorMatch == null
+                ? body
+                : body.substring(0, separatorMatch.start))
+            .trim()
+            .toLowerCase();
+    if (commandName.isEmpty) {
+      return null;
+    }
+
+    final arguments = separatorMatch == null
+        ? ''
+        : body.substring(separatorMatch.start).trimLeft();
+    return _SlashCommandInvocation(name: commandName, arguments: arguments);
+  }
+
   Future<bool> _handleBuiltinSlashCommand({
     required String commandName,
     required ChatProvider chatProvider,
@@ -279,4 +307,11 @@ extension _ChatPageCommandQuery on _ChatPageState {
           };
     _showChatPageMessageSnackBar(message, hideCurrent: false);
   }
+}
+
+class _SlashCommandInvocation {
+  const _SlashCommandInvocation({required this.name, required this.arguments});
+
+  final String name;
+  final String arguments;
 }

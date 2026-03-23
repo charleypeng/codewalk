@@ -572,6 +572,37 @@ void main() {
     });
 
     test(
+      'submitMessage lazily creates a new session for slash command mode',
+      () async {
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+
+        final initialSessionCount = chatRepository.sessions.length;
+        final previousSessionId = provider.currentSession?.id;
+        expect(previousSessionId, isNotNull);
+
+        await provider.beginNewChatDraft();
+        expect(provider.currentSession, isNull);
+
+        await provider.submitMessage(
+          '/release-monitor v1.2.3',
+          commandMode: true,
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(provider.currentSession, isNotNull);
+        expect(provider.currentSession?.id, isNot(previousSessionId));
+        expect(chatRepository.sessions.length, initialSessionCount + 1);
+        expect(chatRepository.lastSendSessionId, provider.currentSession?.id);
+        expect(chatRepository.lastSendInput?.mode, 'command');
+        expect(
+          chatRepository.lastSendInput?.parts.single,
+          const TextInputPart(text: '/release-monitor v1.2.3'),
+        );
+      },
+    );
+
+    test(
       'loadSessions keeps New Chat draft active when cached snapshot exists',
       () async {
         await provider.projectProvider.initializeProject();
@@ -1374,6 +1405,45 @@ void main() {
       );
       final userMessage = provider.messages.first as UserMessage;
       expect((userMessage.parts.first as TextPart).text, '!pwd');
+    });
+
+    test('sendMessage sends slash command payload when requested', () async {
+      final assistantCompleted = AssistantMessage(
+        id: 'msg_command_done',
+        sessionId: 'ses_1',
+        time: DateTime.fromMillisecondsSinceEpoch(2200),
+        completedTime: DateTime.fromMillisecondsSinceEpoch(2300),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'prt_command_done',
+            messageId: 'msg_command_done',
+            sessionId: 'ses_1',
+            text: 'command output',
+          ),
+        ],
+      );
+      chatRepository.sendMessageHandler = (_, _, _, _) async* {
+        yield Right(assistantCompleted);
+      };
+
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+
+      await provider.sendMessage('/release-monitor v1.2.3', commandMode: true);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      expect(provider.state, ChatState.loaded);
+      expect(chatRepository.lastSendInput?.mode, 'command');
+      expect(
+        chatRepository.lastSendInput?.parts.single,
+        const TextInputPart(text: '/release-monitor v1.2.3'),
+      );
+      final userMessage = provider.messages.first as UserMessage;
+      expect(
+        (userMessage.parts.first as TextPart).text,
+        '/release-monitor v1.2.3',
+      );
     });
   });
 }

@@ -272,17 +272,45 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                   final projectProvider = context.read<ProjectProvider>();
                   return ChatInputWidget(
                     onSendMessage: (submission) async {
+                      Future<void> clearComposerContextIfNeeded() async {
+                        if (_fileContextItems.isNotEmpty) {
+                          _setState(() {
+                            _fileContextItems.clear();
+                          });
+                        }
+                      }
+
+                      final slashInvocation =
+                          submission.mode == ChatComposerMode.shell
+                          ? null
+                          : _parseSlashCommandInvocation(submission.text);
+
+                      if (slashInvocation != null) {
+                        final builtinHandled = await _handleBuiltinSlashCommand(
+                          commandName: slashInvocation.name,
+                          chatProvider: chatProvider,
+                        );
+                        await clearComposerContextIfNeeded();
+                        if (builtinHandled) {
+                          return;
+                        }
+
+                        _prepareForOutgoingUserMessage();
+                        await chatProvider.submitMessage(
+                          submission.text.trim(),
+                          commandMode: true,
+                        );
+                        _scrollToBottom(force: true);
+                        return;
+                      }
+
                       _prepareForOutgoingUserMessage();
                       await chatProvider.submitMessage(
                         submission.text,
                         attachments: submission.attachments,
                         shellMode: submission.mode == ChatComposerMode.shell,
                       );
-                      if (_fileContextItems.isNotEmpty) {
-                        _setState(() {
-                          _fileContextItems.clear();
-                        });
-                      }
+                      await clearComposerContextIfNeeded();
                       _scrollToBottom(force: true);
                     },
                     onStopRequested: () async {
