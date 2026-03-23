@@ -55,6 +55,7 @@ import 'package:codewalk/presentation/theme/app_theme.dart';
 import 'package:codewalk/presentation/utils/session_title_formatter.dart';
 import 'package:codewalk/presentation/widgets/chat_skeleton_shimmer.dart';
 import 'package:dartz/dartz.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -88,6 +89,55 @@ class _ConfigurableDelayFakeChatRepository extends FakeChatRepository {
       limit: limit,
     );
   }
+}
+
+class _SlashCommandFallbackDioClient extends DioClient {
+  _SlashCommandFallbackDioClient({
+    List<dynamic> remoteCommands = const <dynamic>[],
+    List<Map<String, dynamic>> projectCommandFiles =
+        const <Map<String, dynamic>>[],
+  }) : _remoteCommands = remoteCommands,
+       _projectCommandFiles = projectCommandFiles,
+       super(baseUrl: 'http://localhost') {
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          if (options.path == '/command') {
+            handler.resolve(
+              Response<dynamic>(
+                requestOptions: options,
+                statusCode: 200,
+                data: _remoteCommands,
+              ),
+            );
+            return;
+          }
+
+          if (options.path == '/file' &&
+              options.queryParameters['path'] == '.opencode/commands') {
+            handler.resolve(
+              Response<dynamic>(
+                requestOptions: options,
+                statusCode: 200,
+                data: _projectCommandFiles,
+              ),
+            );
+            return;
+          }
+
+          handler.reject(
+            DioException(
+              requestOptions: options,
+              error: 'Unexpected request in test: ${options.path}',
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  final List<dynamic> _remoteCommands;
+  final List<Map<String, dynamic>> _projectCommandFiles;
 }
 
 @Tags(<String>['slow'])
@@ -584,6 +634,63 @@ void main() {
 
       expect(settingsProvider.showThinkingBubbles, isNot(initial));
     });
+
+    testWidgets(
+      'slash picker falls back to selected project .opencode commands',
+      (WidgetTester tester) async {
+        await tester.binding.setSurfaceSize(const Size(900, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        await di.sl.reset();
+        di.sl.registerLazySingleton<DioClient>(
+          () => _SlashCommandFallbackDioClient(
+            projectCommandFiles: const <Map<String, dynamic>>[
+              <String, dynamic>{
+                'name': 'release-monitor.md',
+                'type': 'file',
+                'path': '.opencode/commands/release-monitor.md',
+              },
+            ],
+          ),
+        );
+        addTearDown(() => di.sl.reset());
+
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test'
+          ..defaultServerId = 'srv_test'
+          ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 'srv_test',
+              'url': 'http://127.0.0.1:4096',
+              'label': 'Test Server',
+              'basicAuthEnabled': false,
+              'basicAuthUsername': '',
+              'basicAuthPassword': '',
+              'createdAt': 0,
+              'updatedAt': 0,
+            },
+          ]);
+        final provider = _buildChatProvider(localDataSource: localDataSource);
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+        await tester.pumpWidget(_testApp(provider, appProvider));
+        await tester.pumpAndSettle();
+
+        await provider.beginNewChatDraft();
+        await tester.pumpAndSettle();
+
+        await tester.enterText(find.byType(TextField).last, '/rel');
+        await tester.pump(const Duration(milliseconds: 350));
+        await tester.pumpAndSettle();
+
+        final suggestion = find.descendant(
+          of: find.byKey(
+            const ValueKey<String>('composer_popover_panel_slash'),
+          ),
+          matching: find.text('/release-monitor'),
+        );
+        expect(suggestion, findsOneWidget);
+      },
+    );
 
     testWidgets('typed custom slash command routes through command mode', (
       WidgetTester tester,

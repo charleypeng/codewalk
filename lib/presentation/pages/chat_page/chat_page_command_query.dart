@@ -82,6 +82,7 @@ extension _ChatPageCommandQuery on _ChatPageState {
     final commands = <ChatComposerSlashCommandSuggestion>[
       ..._builtinSlashCommands(),
     ];
+    final projectProvider = context.read<ProjectProvider>();
     final dio = di.sl<DioClient>().dio;
 
     try {
@@ -110,6 +111,12 @@ extension _ChatPageCommandQuery on _ChatPageState {
         stackTrace: stackTrace,
       );
     }
+
+    final localProjectCommands = await _loadProjectLocalSlashCommands(
+      projectDirectory: projectProvider.currentDirectory,
+      dio: dio,
+    );
+    commands.addAll(localProjectCommands);
 
     final deduped = <String, ChatComposerSlashCommandSuggestion>{};
     for (final command in commands) {
@@ -142,6 +149,61 @@ extension _ChatPageCommandQuery on _ChatPageState {
           });
 
     return filtered.take(24).toList(growable: false);
+  }
+
+  Future<List<ChatComposerSlashCommandSuggestion>>
+  _loadProjectLocalSlashCommands({
+    required String? projectDirectory,
+    required dynamic dio,
+  }) async {
+    final normalizedDirectory = projectDirectory?.trim();
+    if (normalizedDirectory == null || normalizedDirectory.isEmpty) {
+      return const <ChatComposerSlashCommandSuggestion>[];
+    }
+
+    try {
+      final response = await dio.get(
+        '/file',
+        queryParameters: <String, dynamic>{
+          'directory': normalizedDirectory,
+          'path': '.opencode/commands',
+        },
+      );
+      final data = response.data as List<dynamic>? ?? const <dynamic>[];
+      final suggestions = <ChatComposerSlashCommandSuggestion>[];
+      for (final raw in data) {
+        if (raw is! Map) {
+          continue;
+        }
+        final type = (raw['type'] as String?)?.trim().toLowerCase();
+        if (type != 'file') {
+          continue;
+        }
+        final name = (raw['name'] as String?)?.trim() ?? '';
+        if (!name.toLowerCase().endsWith('.md')) {
+          continue;
+        }
+        final commandName = name.substring(0, name.length - 3).trim();
+        if (commandName.isEmpty) {
+          continue;
+        }
+        suggestions.add(
+          ChatComposerSlashCommandSuggestion(
+            name: commandName,
+            source: 'project',
+            description: 'Project command',
+          ),
+        );
+      }
+      return suggestions;
+    } catch (error, stackTrace) {
+      AppLogger.debug(
+        'Project local slash commands unavailable',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return const <ChatComposerSlashCommandSuggestion>[];
+    }
   }
 
   _SlashCommandInvocation? _parseSlashCommandInvocation(String text) {
