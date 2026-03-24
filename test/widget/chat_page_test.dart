@@ -8619,7 +8619,7 @@ void main() {
       expect(
         find.byKey(
           const ValueKey<String>(
-            'timeline_assistant_work_preview_msg_work_final_msg_work_step_1_msg_work_step_2',
+            'timeline_assistant_work_preview_assistant_work_msg_work_final',
           ),
         ),
         findsOneWidget,
@@ -8755,7 +8755,7 @@ void main() {
       expect(
         find.byKey(
           const ValueKey<String>(
-            'timeline_assistant_work_preview_msg_historical_work_final_msg_historical_work_step_1_msg_historical_work_step_2',
+            'timeline_assistant_work_preview_assistant_work_msg_historical_work_final',
           ),
         ),
         findsNothing,
@@ -8892,6 +8892,291 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets(
+    'keeps expanded historical assistant work group after SWR revalidation when work message ids shift',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      List<ChatMessage> buildMessages({
+        required String stepSuffix,
+        required String textSuffix,
+      }) {
+        return <ChatMessage>[
+          UserMessage(
+            id: 'msg_work_revalidate_shift_user',
+            sessionId: 'ses_assistant_work_revalidate_shift',
+            time: DateTime.fromMillisecondsSinceEpoch(1100),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_work_revalidate_shift_user',
+                messageId: 'msg_work_revalidate_shift_user',
+                sessionId: 'ses_assistant_work_revalidate_shift',
+                text: 'Build this for me',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_work_revalidate_shift_step_1_$stepSuffix',
+            sessionId: 'ses_assistant_work_revalidate_shift',
+            time: DateTime.fromMillisecondsSinceEpoch(1200),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1210),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_work_revalidate_shift_step_1_$stepSuffix',
+                messageId: 'msg_work_revalidate_shift_step_1_$stepSuffix',
+                sessionId: 'ses_assistant_work_revalidate_shift',
+                text: 'Working step 1 $textSuffix',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_work_revalidate_shift_step_2_$stepSuffix',
+            sessionId: 'ses_assistant_work_revalidate_shift',
+            time: DateTime.fromMillisecondsSinceEpoch(1300),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1310),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_work_revalidate_shift_step_2_$stepSuffix',
+                messageId: 'msg_work_revalidate_shift_step_2_$stepSuffix',
+                sessionId: 'ses_assistant_work_revalidate_shift',
+                text: 'Working step 2 $textSuffix',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_work_revalidate_shift_final',
+            sessionId: 'ses_assistant_work_revalidate_shift',
+            time: DateTime.fromMillisecondsSinceEpoch(1400),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1410),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_work_revalidate_shift_final',
+                messageId: 'msg_work_revalidate_shift_final',
+                sessionId: 'ses_assistant_work_revalidate_shift',
+                text: 'Final assistant response',
+              ),
+            ],
+          ),
+          UserMessage(
+            id: 'msg_work_revalidate_shift_follow_up',
+            sessionId: 'ses_assistant_work_revalidate_shift',
+            time: DateTime.fromMillisecondsSinceEpoch(1500),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_work_revalidate_shift_follow_up',
+                messageId: 'msg_work_revalidate_shift_follow_up',
+                sessionId: 'ses_assistant_work_revalidate_shift',
+                text: 'Newer user turn',
+              ),
+            ],
+          ),
+        ];
+      }
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_assistant_work_revalidate_shift',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Assistant Work Revalidate Shift',
+          ),
+        ],
+      );
+
+      repository.messagesBySession['ses_assistant_work_revalidate_shift'] =
+          buildMessages(stepSuffix: 'a', textSuffix: 'initial');
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>('timeline_collapsed_assistant_work_toggle'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Working step 1 initial'), findsOneWidget);
+      expect(find.text('Working step 2 initial'), findsOneWidget);
+
+      repository.messagesBySession['ses_assistant_work_revalidate_shift'] =
+          buildMessages(stepSuffix: 'b', textSuffix: 'refreshed');
+
+      await provider.loadMessages(
+        'ses_assistant_work_revalidate_shift',
+        preserveVisibleState: true,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Working step 1 refreshed'), findsOneWidget);
+      expect(find.text('Working step 2 refreshed'), findsOneWidget);
+      expect(find.text('Newer user turn'), findsOneWidget);
+      expect(
+        find.byKey(
+          const ValueKey<String>('timeline_collapsed_assistant_work_header'),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'keeps latest assistant work group collapsed during transient responding status pulses after completion',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_assistant_work_status_pulse',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Assistant Work Status Pulse',
+          ),
+        ],
+      );
+
+      repository.messagesBySession['ses_assistant_work_status_pulse'] =
+          <ChatMessage>[
+            UserMessage(
+              id: 'msg_status_pulse_user',
+              sessionId: 'ses_assistant_work_status_pulse',
+              time: DateTime.fromMillisecondsSinceEpoch(1100),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_status_pulse_user',
+                  messageId: 'msg_status_pulse_user',
+                  sessionId: 'ses_assistant_work_status_pulse',
+                  text: 'Build this for me',
+                ),
+              ],
+            ),
+            AssistantMessage(
+              id: 'msg_status_pulse_step_1',
+              sessionId: 'ses_assistant_work_status_pulse',
+              time: DateTime.fromMillisecondsSinceEpoch(1200),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(1210),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_status_pulse_step_1',
+                  messageId: 'msg_status_pulse_step_1',
+                  sessionId: 'ses_assistant_work_status_pulse',
+                  text: 'Working step 1',
+                ),
+              ],
+            ),
+            AssistantMessage(
+              id: 'msg_status_pulse_step_2',
+              sessionId: 'ses_assistant_work_status_pulse',
+              time: DateTime.fromMillisecondsSinceEpoch(1300),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(1310),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_status_pulse_step_2',
+                  messageId: 'msg_status_pulse_step_2',
+                  sessionId: 'ses_assistant_work_status_pulse',
+                  text: 'Working step 2',
+                ),
+              ],
+            ),
+            AssistantMessage(
+              id: 'msg_status_pulse_final',
+              sessionId: 'ses_assistant_work_status_pulse',
+              time: DateTime.fromMillisecondsSinceEpoch(1400),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(1410),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_status_pulse_final',
+                  messageId: 'msg_status_pulse_final',
+                  sessionId: 'ses_assistant_work_status_pulse',
+                  text: 'Final assistant response',
+                ),
+              ],
+            ),
+          ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('timeline_collapsed_assistant_work_header'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(TextButton, 'Expand'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Hide'), findsNothing);
+
+      repository.emitEvent(
+        const ChatEvent(
+          type: 'session.status',
+          properties: <String, dynamic>{
+            'sessionID': 'ses_assistant_work_status_pulse',
+            'status': <String, dynamic>{'type': 'busy'},
+          },
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('timeline_collapsed_assistant_work_header'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(TextButton, 'Expand'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Hide'), findsNothing);
+
+      repository.emitEvent(
+        const ChatEvent(
+          type: 'session.status',
+          properties: <String, dynamic>{
+            'sessionID': 'ses_assistant_work_status_pulse',
+            'status': <String, dynamic>{'type': 'idle'},
+          },
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('timeline_collapsed_assistant_work_header'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Final assistant response'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Expand'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Hide'), findsNothing);
+    },
+  );
 
   testWidgets(
     'keeps empty session placeholder visible during background refresh',

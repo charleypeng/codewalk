@@ -310,11 +310,13 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
           hasSettledFinalMessage &&
           _pendingFinalAssistantRevealMessageId == null &&
           !_deferAssistantWorkCollapse &&
-          latestTimelineMessageId == _finalAssistantRevealSettledMessageId;
+          latestRevealableAssistantMessageId ==
+              _finalAssistantRevealSettledMessageId;
       if (shouldIgnoreTransientRespondingPulse) {
         _traceFinalUi(
           'viewport-policy-ignore-transient-responding-pulse',
-          details: 'latestTimelineMessageId=${latestTimelineMessageId ?? "-"}',
+          details:
+              'latestTimelineMessageId=${latestTimelineMessageId ?? "-"} latestRevealableAssistantMessageId=${latestRevealableAssistantMessageId ?? "-"}',
         );
         return;
       }

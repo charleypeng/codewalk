@@ -2055,7 +2055,7 @@ class _CollapsedAssistantWorkGroup {
   final int messageCount;
   final DateTime createdAt;
 
-  String get id => '${finalMessageId}_${startMessageId}_$endMessageId';
+  String get id => 'assistant_work_$finalMessageId';
 }
 
 class _TimelineRetryIndicatorEntry extends _TimelineEntry {
