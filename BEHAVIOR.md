@@ -427,6 +427,8 @@
 - **Then** once manually expanded, a completed tool-call group stays expanded during normal timeline rebuilds (scroll state updates, background refresh, and other parent re-renders) so the user can keep reading without involuntary collapse
 - **Then** automatic collapse is only applied when collapse mode is activated for that rendered group, not on every subsequent rebuild
 - **Then** once a completed turn has settled, transient realtime status pulses do not auto re-open or rapidly re-collapse that same work group
+- **Then** the rendered identity of a settled assistant-work group is anchored to the final completed assistant turn, not to volatile intermediate work message ids, so same-turn passive refreshes reuse the existing grouped surface instead of remounting it
+- **Then** passive status-only or background refresh pulses must not re-enter active-response collapse deferral for an already settled turn unless a newer revealable assistant message actually exists
 - **Then** long tool output is rendered inside a bounded inner viewport with its own scrollbar so tool growth does not keep stretching the outer chat timeline while the user is reading
 - **Then** when tool output continues updating inside that bounded viewport, the inner scroll may follow the latest tail only while the user is already near the bottom of that tool output; it must not yank the main chat viewport
 
@@ -1080,6 +1082,8 @@ Tool call work groups must only collapse after the assistant has fully completed
 ### Never flicker settled work groups on sync jitter
 
 After a tool/work group settles for a completed turn, transient realtime sync/status jitter must not cause rapid open/close loops or repeated remount flashes.
+
+The grouped surface for that settled turn must keep the same rendered identity across same-turn passive refreshes, and passive status pulses must not temporarily treat that settled turn as active again unless a newer revealable assistant message exists.
 
 ### Never misread viewport shrink as top-history intent
 
