@@ -4,6 +4,7 @@ import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/presentation/providers/chat_provider.dart';
 import 'package:codewalk/presentation/widgets/chat_session_list.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -47,6 +48,35 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(renamedTitle, 'Renamed title');
+  });
+
+  testWidgets('rename dialog Enter submits the new title', (tester) async {
+    String? renamedTitle;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatSessionList(
+            sessions: <ChatSession>[session()],
+            onSessionRenamed: (item, title) async {
+              renamedTitle = title;
+              return true;
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Symbols.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Rename'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'Enter renamed title');
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    expect(renamedTitle, 'Enter renamed title');
   });
 
   testWidgets('share toggle action calls callback', (tester) async {

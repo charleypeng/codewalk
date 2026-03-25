@@ -7,6 +7,7 @@ import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/local_opencode_server_runtime_types.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -124,6 +125,22 @@ void main() {
 
       expect(completed, isTrue);
       expect(settingsProvider.skipOnboardingWizard, isTrue);
+    });
+
+    testWidgets('skip dialog Enter confirms the primary action', (
+      WidgetTester tester,
+    ) async {
+      var completed = false;
+      await tester.pumpWidget(buildWizard(onComplete: () => completed = true));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Skip'));
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+
+      expect(completed, isTrue);
     });
 
     testWidgets('cancel in skip dialog returns to wizard', (

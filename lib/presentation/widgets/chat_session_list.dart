@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../domain/entities/chat_session.dart';
 import '../providers/chat_provider.dart';
+import 'modal_primary_action_shortcuts.dart';
 import '../utils/session_title_formatter.dart';
 
 /// Chat session list widget
@@ -751,42 +754,52 @@ class _ChatSessionListState extends State<ChatSessionList> {
 
     final controller = TextEditingController(text: session.title);
 
+    Future<void> submitRename(BuildContext dialogContext) async {
+      final newTitle = controller.text.trim();
+      if (newTitle.isEmpty) {
+        return;
+      }
+      Navigator.of(dialogContext).pop();
+      final ok = await callback(session, newTitle);
+      if (!ok && dialogContext.mounted) {
+        ScaffoldMessenger.of(dialogContext).showSnackBar(
+          const SnackBar(content: Text('Failed to rename conversation')),
+        );
+      }
+    }
+
     showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Rename Conversation'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Enter new conversation name',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final newTitle = controller.text.trim();
-              if (newTitle.isEmpty) {
-                return;
-              }
-              Navigator.of(context).pop();
-              final ok = await callback(session, newTitle);
-              if (!ok && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Failed to rename conversation'),
-                  ),
-                );
-              }
+      builder: (context) => ModalPrimaryActionShortcuts(
+        onPrimaryAction: () {
+          unawaited(submitRename(context));
+        },
+        child: AlertDialog(
+          title: const Text('Rename Conversation'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            onSubmitted: (_) {
+              unawaited(submitRename(context));
             },
-            child: const Text('Save'),
+            decoration: const InputDecoration(
+              hintText: 'Enter new conversation name',
+              border: OutlineInputBorder(),
+            ),
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                unawaited(submitRename(context));
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        ),
       ),
     );
   }

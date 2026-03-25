@@ -53,6 +53,7 @@ import '../widgets/chat_session_list.dart';
 import '../widgets/chat_skeleton_shimmer.dart';
 import '../widgets/chat_tour_showcase.dart';
 import '../widgets/message_entrance_animation.dart';
+import '../widgets/modal_primary_action_shortcuts.dart';
 import '../widgets/permission_request_card.dart';
 import '../widgets/question_request_card.dart';
 import '../widgets/session_title_inline_editor.dart';

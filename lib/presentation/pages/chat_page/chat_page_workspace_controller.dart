@@ -145,59 +145,68 @@ extension _ChatPageWorkspaceController on _ChatPageState {
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (dialogContext, setDialogState) {
-            return AlertDialog(
-              title: const Text('Open project folder'),
-              content: SizedBox(
-                width: 420,
-                child: TextField(
-                  key: const ValueKey<String>('workspace_base_directory_input'),
-                  controller: baseDirectoryController,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    labelText: 'Project directory',
-                    hintText: '/repo/my-project',
-                    helperText: 'Choose any folder to open as project context.',
-                    suffixIcon: IconButton(
-                      key: const ValueKey<String>(
-                        'workspace_open_directory_picker_button',
+            void submitSelectedDirectory() {
+              final baseDirectory = baseDirectoryController.text.trim();
+              if (!dialogContext.mounted || baseDirectory.isEmpty) {
+                return;
+              }
+              Navigator.of(dialogContext).pop(baseDirectory);
+            }
+
+            return ModalPrimaryActionShortcuts(
+              onPrimaryAction: submitSelectedDirectory,
+              child: AlertDialog(
+                title: const Text('Open project folder'),
+                content: SizedBox(
+                  width: 420,
+                  child: TextField(
+                    key: const ValueKey<String>(
+                      'workspace_base_directory_input',
+                    ),
+                    controller: baseDirectoryController,
+                    autofocus: true,
+                    onSubmitted: (_) {
+                      submitSelectedDirectory();
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'Project directory',
+                      hintText: '/repo/my-project',
+                      helperText:
+                          'Choose any folder to open as project context.',
+                      suffixIcon: IconButton(
+                        key: const ValueKey<String>(
+                          'workspace_open_directory_picker_button',
+                        ),
+                        tooltip: 'Browse directories',
+                        onPressed: () async {
+                          final picked = await _openDirectoryPicker(
+                            initialDirectory:
+                                baseDirectoryController.text.trim().isEmpty
+                                ? defaultDirectory
+                                : baseDirectoryController.text.trim(),
+                          );
+                          if (!dialogContext.mounted || picked == null) {
+                            return;
+                          }
+                          baseDirectoryController.text = picked;
+                          setDialogState(() {});
+                        },
+                        icon: const Icon(Symbols.folder_open),
                       ),
-                      tooltip: 'Browse directories',
-                      onPressed: () async {
-                        final picked = await _openDirectoryPicker(
-                          initialDirectory:
-                              baseDirectoryController.text.trim().isEmpty
-                              ? defaultDirectory
-                              : baseDirectoryController.text.trim(),
-                        );
-                        if (!dialogContext.mounted || picked == null) {
-                          return;
-                        }
-                        baseDirectoryController.text = picked;
-                        setDialogState(() {});
-                      },
-                      icon: const Icon(Symbols.folder_open),
                     ),
                   ),
                 ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: const Text('Cancel'),
+                  ),
+                  FilledButton(
+                    onPressed: submitSelectedDirectory,
+                    child: const Text('Open folder'),
+                  ),
+                ],
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    final baseDirectory = baseDirectoryController.text.trim();
-                    if (!dialogContext.mounted) {
-                      return;
-                    }
-                    Navigator.of(
-                      dialogContext,
-                    ).pop(baseDirectory.isEmpty ? null : baseDirectory);
-                  },
-                  child: const Text('Open folder'),
-                ),
-              ],
             );
           },
         );

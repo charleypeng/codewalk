@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/di/injection_container.dart' as di;
 import '../services/sherpa_model_manager.dart';
+import 'modal_primary_action_shortcuts.dart';
 
 // Model manifest entry loaded from assets/sherpa_models.json.
 class _SherpaModelEntry {
@@ -117,30 +119,37 @@ class _SherpaModelDownloadDialogState extends State<SherpaModelDownloadDialog> {
             orElse: () => _models.first,
           );
 
-    return AlertDialog(
-      title: const Text('Voice Input Setup'),
-      content: SizedBox(
-        width: 380,
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _buildContent(selected),
+    return ModalPrimaryActionShortcuts(
+      autofocus: true,
+      enabled: _selectedCode != null && !_isDownloading,
+      onPrimaryAction: () {
+        unawaited(_startDownload());
+      },
+      child: AlertDialog(
+        title: const Text('Voice Input Setup'),
+        content: SizedBox(
+          width: 380,
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _buildContent(selected),
+        ),
+        actions: _isDownloading
+            ? null
+            : [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(null),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed:
+                      _selectedCode == null ||
+                          _errorMessage != null && _isDownloading
+                      ? null
+                      : _startDownload,
+                  child: const Text('Download'),
+                ),
+              ],
       ),
-      actions: _isDownloading
-          ? null
-          : [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(null),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed:
-                    _selectedCode == null ||
-                        _errorMessage != null && _isDownloading
-                    ? null
-                    : _startDownload,
-                child: const Text('Download'),
-              ),
-            ],
     );
   }
 

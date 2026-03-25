@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:flutter/services.dart';
 import '../../core/di/injection_container.dart' as di;
 import '../../domain/entities/experience_settings.dart';
 import '../services/moonshine_model_manager.dart';
+import 'modal_primary_action_shortcuts.dart';
 
 class _MoonshineModelEntry {
   const _MoonshineModelEntry({
@@ -120,26 +122,33 @@ class _MoonshineModelDownloadDialogState
             (entry) => entry.id == _selectedId,
             orElse: () => _models.first,
           );
-    return AlertDialog(
-      title: const Text('Moonshine Voice Setup'),
-      content: SizedBox(
-        width: 380,
-        child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _buildContent(selected),
+    return ModalPrimaryActionShortcuts(
+      autofocus: true,
+      enabled: !_isDownloading && _selectedId != null,
+      onPrimaryAction: () {
+        unawaited(_startDownload());
+      },
+      child: AlertDialog(
+        title: const Text('Moonshine Voice Setup'),
+        content: SizedBox(
+          width: 380,
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _buildContent(selected),
+        ),
+        actions: _isDownloading
+            ? null
+            : <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(null),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: _selectedId == null ? null : _startDownload,
+                  child: const Text('Download'),
+                ),
+              ],
       ),
-      actions: _isDownloading
-          ? null
-          : <Widget>[
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(null),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: _selectedId == null ? null : _startDownload,
-                child: const Text('Download'),
-              ),
-            ],
     );
   }
 

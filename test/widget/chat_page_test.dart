@@ -3170,6 +3170,61 @@ void main() {
     expect(find.text('Project context opened: /repo/plain'), findsOneWidget);
   });
 
+  testWidgets('open project folder Enter submits the chosen directory', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_a',
+        name: 'Project A',
+        path: '/repo/a',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_a',
+          name: 'Project A',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+        Project(
+          id: 'proj_enter',
+          name: 'Enter Directory',
+          path: '/repo/enter',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+        ),
+      ],
+    );
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Choose Directory'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open project folder...'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('workspace_base_directory_input')),
+      '/repo/enter',
+    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    expect(provider.projectProvider.currentDirectory, '/repo/enter');
+    expect(find.text('Project context opened: /repo/enter'), findsOneWidget);
+  });
+
   testWidgets('open project folder supports browsing directories dynamically', (
     WidgetTester tester,
   ) async {

@@ -13,6 +13,7 @@ import '../theme/app_animations.dart';
 import '../providers/settings_provider.dart';
 import '../services/local_opencode_server_runtime_types.dart';
 import '../utils/app_page_route.dart';
+import '../widgets/modal_primary_action_shortcuts.dart';
 import 'opencode_setup_debug_page.dart';
 import 'settings/sections/servers_settings_section.dart';
 
@@ -156,48 +157,54 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         var dontShowAgain = false;
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Skip setup?'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'You can add a server later in Settings > Servers.',
+            void submitSkip() {
+              if (dontShowAgain) {
+                unawaited(
+                  context.read<SettingsProvider>().setSkipOnboardingWizard(
+                    true,
                   ),
-                  const SizedBox(height: 12),
-                  CheckboxListTile(
-                    value: dontShowAgain,
-                    onChanged: (value) {
-                      setDialogState(() {
-                        dontShowAgain = value ?? false;
-                      });
-                    },
-                    contentPadding: EdgeInsets.zero,
-                    controlAffinity: ListTileControlAffinity.leading,
-                    title: const Text("Don't show again"),
+                );
+              }
+              Navigator.of(dialogContext).pop(true);
+            }
+
+            return ModalPrimaryActionShortcuts(
+              autofocus: true,
+              onPrimaryAction: submitSkip,
+              child: AlertDialog(
+                title: const Text('Skip setup?'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'You can add a server later in Settings > Servers.',
+                    ),
+                    const SizedBox(height: 12),
+                    CheckboxListTile(
+                      value: dontShowAgain,
+                      onChanged: (value) {
+                        setDialogState(() {
+                          dontShowAgain = value ?? false;
+                        });
+                      },
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      title: const Text("Don't show again"),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: const Text('Cancel'),
+                  ),
+                  FilledButton(
+                    onPressed: submitSkip,
+                    child: const Text('Skip'),
                   ),
                 ],
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    if (dontShowAgain) {
-                      unawaited(
-                        context
-                            .read<SettingsProvider>()
-                            .setSkipOnboardingWizard(true),
-                      );
-                    }
-                    Navigator.of(dialogContext).pop(true);
-                  },
-                  child: const Text('Skip'),
-                ),
-              ],
             );
           },
         );
