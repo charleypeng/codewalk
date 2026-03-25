@@ -16,6 +16,7 @@ import '../../data/models/chat_session_model.dart';
 import '../../domain/entities/experience_settings.dart';
 import 'android_background_alert_logic.dart';
 import 'notification_service.dart';
+import 'permission_auto_approve_runtime.dart';
 
 const String _backgroundAlertWorkUniqueName =
     'codewalk.android.background.alerts';
@@ -24,6 +25,8 @@ const String _backgroundAlertOneOffUniqueName =
 const String _backgroundAlertTaskName = 'codewalk.background.alerts.poll';
 const String _backgroundAlertSnapshotKeyPrefix =
     'codewalk.android.background.alert.snapshot.v1';
+const String _backgroundPermissionAutoApproveContextKeyPrefix =
+    'codewalk.android.background.permission_auto_approve.v1';
 const Duration _backgroundAlertFailureRetryInterval = Duration(minutes: 5);
 
 @pragma('vm:entry-point')
@@ -266,6 +269,38 @@ class AndroidBackgroundAlertWorker {
     await prefs.setString(snapshotKey, jsonEncode(primedSnapshot.toJson()));
   }
 
+  static Future<void> primePermissionAutoApproveContext({
+    required PermissionAutoApproveBackgroundContext context,
+  }) async {
+    if (!_isAndroidRuntime() || !context.isValid) {
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _backgroundPermissionAutoApproveContextStorageKey(context.serverId),
+      jsonEncode(context.toJson()),
+    );
+  }
+
+  static Future<void> clearPermissionAutoApproveContext({
+    required String serverId,
+  }) async {
+    if (!_isAndroidRuntime()) {
+      return;
+    }
+
+    final normalizedServerId = serverId.trim();
+    if (normalizedServerId.isEmpty) {
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(
+      _backgroundPermissionAutoApproveContextStorageKey(normalizedServerId),
+    );
+  }
+
   @pragma('vm:entry-point')
   static Future<bool> executeTask({required String taskName}) async {
     if (!_isAndroidRuntime()) {
@@ -325,20 +360,41 @@ class _AndroidBackgroundAlertRunner {
 
       final permissionEnabled =
           settings.notifications[NotificationCategory.permissions] ?? true;
-      final permissionRequests = permissionEnabled
+      final autoApproveContext = _readPermissionAutoApproveContext(
+        prefs,
+        server.serverId,
+      );
+      final shouldAttemptPermissionAutoApprove =
+          settings.composerAutoApprovePermissions && autoApproveContext != null;
+      var sessionMetadata = shouldAttemptPermissionAutoApprove
+          ? await _fetchSessionMetadata(dio)
+          : const _SessionMetadata.empty();
+      final shouldFetchPermissions =
+          permissionEnabled || shouldAttemptPermissionAutoApprove;
+      var permissionRequests = shouldFetchPermissions
           ? await _fetchPermissionRequests(dio)
           : const <BackgroundInteractionRequest>[];
       final questionRequests = permissionEnabled
           ? await _fetchQuestionRequests(dio)
           : const <BackgroundInteractionRequest>[];
-      final cachedTitles = Map<String, String>.from(
-        previousSnapshot.sessionTitleById,
-      );
+      if (shouldAttemptPermissionAutoApprove && permissionRequests.isNotEmpty) {
+        final autoApproveResult = await _autoApprovePermissionRequests(
+          dio: dio,
+          context: autoApproveContext,
+          sessionMetadata: sessionMetadata,
+          permissionRequests: permissionRequests,
+        );
+        permissionRequests = autoApproveResult.remainingRequests;
+      }
+      final cachedTitles = <String, String>{
+        ...previousSnapshot.sessionTitleById,
+        ...sessionMetadata.titleBySessionId,
+      };
       final currentState = BackgroundPollingState(
         sessionStatusById: statusById,
-        sessionUpdatedAtById: Map<String, int>.from(
-          previousSnapshot.sessionUpdatedAtById,
-        ),
+        sessionUpdatedAtById: sessionMetadata.updatedAtBySessionId.isEmpty
+            ? Map<String, int>.from(previousSnapshot.sessionUpdatedAtById)
+            : Map<String, int>.from(sessionMetadata.updatedAtBySessionId),
         sessionTitleById: cachedTitles,
         permissionRequests: permissionRequests,
         questionRequests: questionRequests,
@@ -356,7 +412,10 @@ class _AndroidBackgroundAlertRunner {
         signals: plan.signals,
         cachedTitles: cachedTitles,
       )) {
-        final sessionMetadata = await _fetchSessionMetadata(dio);
+        if (sessionMetadata.titleBySessionId.isEmpty &&
+            sessionMetadata.updatedAtBySessionId.isEmpty) {
+          sessionMetadata = await _fetchSessionMetadata(dio);
+        }
         final refreshedTitles = <String, String>{
           ...cachedTitles,
           ...sessionMetadata.titleBySessionId,
@@ -500,8 +559,136 @@ class _AndroidBackgroundAlertRunner {
     return BackgroundAlertSnapshot.empty();
   }
 
+  PermissionAutoApproveBackgroundContext? _readPermissionAutoApproveContext(
+    SharedPreferences prefs,
+    String serverId,
+  ) {
+    final raw = prefs.getString(
+      _backgroundPermissionAutoApproveContextStorageKey(serverId),
+    );
+    if (raw == null || raw.trim().isEmpty) {
+      return null;
+    }
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) {
+        final context = PermissionAutoApproveBackgroundContext.fromJson(
+          decoded,
+        );
+        return context.isValid ? context : null;
+      }
+      if (decoded is Map) {
+        final context = PermissionAutoApproveBackgroundContext.fromJson(
+          Map<String, dynamic>.from(decoded),
+        );
+        return context.isValid ? context : null;
+      }
+    } catch (_) {
+      // Falls back to no context.
+    }
+    return null;
+  }
+
   String _snapshotStorageKey(String serverId) {
     return _backgroundAlertSnapshotStorageKey(serverId);
+  }
+
+  Future<_PermissionAutoApproveRunResult> _autoApprovePermissionRequests({
+    required Dio dio,
+    required PermissionAutoApproveBackgroundContext? context,
+    required _SessionMetadata sessionMetadata,
+    required List<BackgroundInteractionRequest> permissionRequests,
+  }) async {
+    if (context == null || permissionRequests.isEmpty) {
+      return _PermissionAutoApproveRunResult(
+        remainingRequests: permissionRequests,
+      );
+    }
+
+    final allowedSessionIds = resolveThreadSessionIdsForBackgroundContext(
+      context: context,
+      parentSessionIdByChild: sessionMetadata.parentSessionIdByChild,
+    );
+    if (allowedSessionIds.isEmpty) {
+      return _PermissionAutoApproveRunResult(
+        remainingRequests: permissionRequests,
+      );
+    }
+
+    final remainingRequests = <BackgroundInteractionRequest>[];
+    for (final request in permissionRequests) {
+      final sessionId = request.sessionId.trim();
+      if (!allowedSessionIds.contains(sessionId)) {
+        remainingRequests.add(request);
+        continue;
+      }
+
+      final reply = permissionAutoApproveReplyForAlwaysPatterns(request.always);
+      final approved = await _replyPermission(
+        dio: dio,
+        requestId: request.id,
+        reply: reply,
+        directory: context.directory,
+      );
+      if (!approved) {
+        remainingRequests.add(request);
+        continue;
+      }
+
+      AppLogger.info(
+        'Background auto-approved permission request=${request.id} session=$sessionId reply=$reply scope=${context.scopeId}',
+      );
+    }
+
+    return _PermissionAutoApproveRunResult(
+      remainingRequests: remainingRequests,
+    );
+  }
+
+  Future<bool> _replyPermission({
+    required Dio dio,
+    required String requestId,
+    required String reply,
+    String? directory,
+  }) async {
+    final normalizedRequestId = requestId.trim();
+    if (normalizedRequestId.isEmpty) {
+      return false;
+    }
+
+    final queryParameters = <String, String>{};
+    if (directory != null && directory.trim().isNotEmpty) {
+      queryParameters['directory'] = directory.trim();
+    }
+
+    try {
+      final response = await dio.post(
+        '/permission/$normalizedRequestId/reply',
+        data: <String, dynamic>{'reply': reply},
+        queryParameters: queryParameters.isEmpty ? null : queryParameters,
+      );
+      return response.statusCode == 200;
+    } on DioException catch (error, stackTrace) {
+      if (error.response?.statusCode == 404) {
+        AppLogger.debug(
+          'Background auto-approve treated as already resolved request=$normalizedRequestId',
+        );
+        return true;
+      }
+      AppLogger.warn(
+        'Background auto-approve failed request=$normalizedRequestId',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return false;
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Background auto-approve failed request=$normalizedRequestId',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return false;
+    }
   }
 
   Future<_ResolvedServerConfig?> _resolveServerConfig(
@@ -726,6 +913,7 @@ class _AndroidBackgroundAlertRunner {
 
       final titleById = <String, String>{};
       final updatedAtById = <String, int>{};
+      final parentByChildId = <String, String>{};
       for (final item in raw) {
         if (item is! Map) {
           continue;
@@ -745,11 +933,16 @@ class _AndroidBackgroundAlertRunner {
         if (updatedAt > 0) {
           updatedAtById[sessionId] = updatedAt;
         }
+        final parentId = model.parentId?.trim();
+        if (parentId != null && parentId.isNotEmpty) {
+          parentByChildId[sessionId] = parentId;
+        }
       }
 
       return _SessionMetadata(
         titleBySessionId: titleById,
         updatedAtBySessionId: updatedAtById,
+        parentSessionIdByChild: parentByChildId,
       );
     } catch (_) {
       return const _SessionMetadata.empty();
@@ -778,6 +971,7 @@ class _AndroidBackgroundAlertRunner {
             return BackgroundInteractionRequest(
               id: parsed.id,
               sessionId: parsed.sessionId,
+              always: parsed.always,
             );
           })
           .where((item) {
@@ -1008,14 +1202,23 @@ class _SessionMetadata {
   const _SessionMetadata({
     required this.titleBySessionId,
     required this.updatedAtBySessionId,
+    required this.parentSessionIdByChild,
   });
 
   const _SessionMetadata.empty()
     : titleBySessionId = const <String, String>{},
-      updatedAtBySessionId = const <String, int>{};
+      updatedAtBySessionId = const <String, int>{},
+      parentSessionIdByChild = const <String, String>{};
 
   final Map<String, String> titleBySessionId;
   final Map<String, int> updatedAtBySessionId;
+  final Map<String, String> parentSessionIdByChild;
+}
+
+class _PermissionAutoApproveRunResult {
+  const _PermissionAutoApproveRunResult({required this.remainingRequests});
+
+  final List<BackgroundInteractionRequest> remainingRequests;
 }
 
 class _NotificationChannelConfig {
@@ -1062,4 +1265,9 @@ ExperienceSettings _readExperienceSettingsFromPrefs(SharedPreferences prefs) {
 String _backgroundAlertSnapshotStorageKey(String serverId) {
   final normalized = serverId.trim().isEmpty ? 'legacy' : serverId.trim();
   return '$_backgroundAlertSnapshotKeyPrefix::$normalized';
+}
+
+String _backgroundPermissionAutoApproveContextStorageKey(String serverId) {
+  final normalized = serverId.trim().isEmpty ? 'legacy' : serverId.trim();
+  return '$_backgroundPermissionAutoApproveContextKeyPrefix::$normalized';
 }

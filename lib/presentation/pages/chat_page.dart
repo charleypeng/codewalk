@@ -34,6 +34,7 @@ import '../services/android_background_alert_logic.dart';
 import '../services/android_background_alert_worker.dart';
 import '../services/android_foreground_monitor_service.dart';
 import '../services/notification_service.dart';
+import '../services/permission_auto_approve_runtime.dart';
 import '../theme/app_animations.dart';
 import '../theme/app_shapes.dart';
 import '../theme/opencode_highlight_theme.dart';
@@ -239,6 +240,7 @@ class _ChatPageState extends State<ChatPage>
   bool _autoApprovePermissionDrainRunning = false;
   bool _autoApprovePermissionDrainQueued = false;
   final Set<String> _autoApprovePermissionCooldownIds = <String>{};
+  String? _backgroundPermissionAutoApproveContextSignature;
   String? _lastServerId;
   bool? _lastServerConnectionState;
   ServerHealthStatus _lastActiveServerHealthStatus = ServerHealthStatus.unknown;

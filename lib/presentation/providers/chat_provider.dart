@@ -1450,6 +1450,18 @@ class ChatProvider extends ChangeNotifier {
     return _cachedThreadQuestionRequests;
   }
 
+  List<String> get currentThreadSessionIds {
+    final currentSessionId = _currentSession?.id;
+    if (currentSessionId == null || currentSessionId.isEmpty) {
+      return const <String>[];
+    }
+
+    return List<String>.unmodifiable(<String>[
+      currentSessionId,
+      ..._orderedCurrentSessionDescendantIds(),
+    ]);
+  }
+
   List<String> _orderedCurrentSessionDescendantIds() {
     final currentSessionId = _currentSession?.id;
     if (currentSessionId == null || currentSessionId.isEmpty) {

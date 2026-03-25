@@ -48,10 +48,12 @@ class BackgroundInteractionRequest {
   const BackgroundInteractionRequest({
     required this.id,
     required this.sessionId,
+    this.always = const <String>[],
   });
 
   final String id;
   final String sessionId;
+  final List<String> always;
 }
 
 class BackgroundPollingState {

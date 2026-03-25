@@ -35,15 +35,108 @@ extension _ChatPageLifecycle on _ChatPageState {
       _shouldRevealFinalAssistantOnCompletion = false;
     }
     _scheduleAutoApprovePermissionDrain(reason: 'settings-changed');
+    unawaited(
+      _syncBackgroundPermissionAutoApproveContext(reason: 'settings-changed'),
+    );
     _flushPendingPostOnboardingTourAutoStart();
   }
 
   void _handleChatProviderChanged() {
     _scheduleAutoApprovePermissionDrain(reason: 'chat-provider-changed');
+    unawaited(
+      _syncBackgroundPermissionAutoApproveContext(
+        reason: 'chat-provider-changed',
+      ),
+    );
   }
 
   String _autoApprovePermissionReply(ChatPermissionRequest request) {
-    return request.always.isNotEmpty ? 'always' : 'once';
+    return permissionAutoApproveReplyForRequest(request);
+  }
+
+  Future<void> _syncBackgroundPermissionAutoApproveContext({
+    required String reason,
+  }) async {
+    if (!_isMobileRuntime) {
+      return;
+    }
+
+    final chatProvider = _chatProvider;
+    final settingsProvider = _settingsProvider;
+    final serverId = chatProvider?.activeServerId.trim() ?? '';
+    final clearSignature = serverId.isEmpty ? 'clear:-' : 'clear:$serverId';
+
+    Future<void> clearContext() async {
+      if (_backgroundPermissionAutoApproveContextSignature == clearSignature) {
+        return;
+      }
+      _backgroundPermissionAutoApproveContextSignature = clearSignature;
+      if (serverId.isEmpty) {
+        return;
+      }
+      AppLogger.debug(
+        'background_permission_auto_approve_context reason=$reason action=clear server=$serverId',
+      );
+      await AndroidBackgroundAlertWorker.clearPermissionAutoApproveContext(
+        serverId: serverId,
+      );
+    }
+
+    if (!mounted || chatProvider == null || settingsProvider == null) {
+      await clearContext();
+      return;
+    }
+    if (!settingsProvider.initialized) {
+      return;
+    }
+    if (!_isChatScreenActive()) {
+      await clearContext();
+      return;
+    }
+    if (!settingsProvider.composerAutoApprovePermissions) {
+      await clearContext();
+      return;
+    }
+    if (!shouldRunAndroidBackgroundAlerts(settingsProvider.settings)) {
+      await clearContext();
+      return;
+    }
+
+    final currentSessionId = chatProvider.currentSession?.id.trim() ?? '';
+    final projectProvider = context.read<ProjectProvider>();
+    final scopeId = projectProvider.currentScopeId.trim();
+    final threadSessionIds = chatProvider.currentThreadSessionIds;
+    if (serverId.isEmpty ||
+        scopeId.isEmpty ||
+        currentSessionId.isEmpty ||
+        threadSessionIds.isEmpty) {
+      await clearContext();
+      return;
+    }
+
+    final contextData = PermissionAutoApproveBackgroundContext(
+      serverId: serverId,
+      scopeId: scopeId,
+      currentSessionId: currentSessionId,
+      threadSessionIds: threadSessionIds,
+      updatedAtEpochMs: DateTime.now().millisecondsSinceEpoch,
+      directory: projectProvider.currentDirectory,
+    );
+    if (!contextData.isValid) {
+      await clearContext();
+      return;
+    }
+    if (_backgroundPermissionAutoApproveContextSignature ==
+        contextData.signature) {
+      return;
+    }
+    _backgroundPermissionAutoApproveContextSignature = contextData.signature;
+    AppLogger.debug(
+      'background_permission_auto_approve_context reason=$reason action=prime server=$serverId session=$currentSessionId scope=$scopeId sessions=${threadSessionIds.length}',
+    );
+    await AndroidBackgroundAlertWorker.primePermissionAutoApproveContext(
+      context: contextData,
+    );
   }
 
   void _scheduleAutoApprovePermissionDrain({required String reason}) {
@@ -334,6 +427,9 @@ extension _ChatPageLifecycle on _ChatPageState {
     }
     _wasChatRouteCurrent = isCurrent;
     chatProvider.setChatRouteActive(isCurrent);
+    unawaited(
+      _syncBackgroundPermissionAutoApproveContext(reason: 'route-sync'),
+    );
     if (isCurrent) {
       _handleReturnToChat(chatProvider, reason: 'route-return');
     }
@@ -345,6 +441,7 @@ extension _ChatPageLifecycle on _ChatPageState {
   }) {
     _flushPendingPostOnboardingTourAutoStart();
     _scheduleAutoApprovePermissionDrain(reason: reason);
+    unawaited(_syncBackgroundPermissionAutoApproveContext(reason: reason));
     if (!_autoFollowToLatest || chatProvider.currentSession == null) {
       return;
     }
