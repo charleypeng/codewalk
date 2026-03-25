@@ -1016,34 +1016,42 @@ Related: ADR-003, ADR-018, ADR-019, ADR-022.
 
 **Status**: Approved ADR-023 exception.
 
-**Summary**: CodeWalk exposes a composer-level toggle to the left of the agent selector that defaults to enabled, persists user opt-out, and auto-approves permission requests with `always` semantics when the request exposes it, otherwise falls back to `Allow Once`. Question prompts remain manual.
+**Summary**: CodeWalk exposes a composer-level toggle to the left of the agent selector that defaults to enabled, persists user opt-out, and auto-approves permission requests with `always` semantics when the request exposes it, otherwise falls back to `Allow Once`. Question prompts remain manual. The auto-approve behavior extends to the Android background worker continuity path, enabling pending permission resolution when the app resumes from background.
 
-**Deviation from official behavior**: Official OpenCode currently keeps runtime permission-mode controls outside the composer and does not inherit permissive behavior across subagents/subsessions. CodeWalk intentionally extends auto-approval to the visible thread, including mirrored descendant/subsession permission requests surfaced in the root session, and prefers `always` when available to reduce repeated prompts.
+**Deviation from official behavior**: Official OpenCode currently keeps runtime permission-mode controls outside the composer and does not inherit permissive behavior across subagents/subsessions. CodeWalk intentionally extends auto-approval to the visible thread, including mirrored descendant/subsession permission requests surfaced in the root session, and prefers `always` when available to reduce repeated prompts. The Android background worker continuity path further extends this to background-collected permission requests when the app is resumed.
 
 **Rationale**:
 - Reduce repeated approval friction during active coding sessions.
 - Keep the user in the root conversation while descendant permission prompts are mirrored there.
 - Prefer `always` for durable permission grants when the request supports it; fall back to `Allow Once` for single-shot grants.
 - Question prompts intentionally remain manual to preserve user control over non-permission decisions.
+- Android background worker continuity: when the app returns from background, pending permissions collected during background status probes can be auto-approved without requiring the user to manually revisit each session, while still respecting the same `always`/`once` preference and cooldown logic.
+- Background auto-approve uses the same drain coordinator semantics as foreground, ensuring consistent behavior across both paths.
 
 **Risk analysis**:
-- Medium UX/safety risk: mirrored descendant prompts can be approved without a second explicit tap in the child session.
-- Low contract risk: the server still receives a normal permission reply payload (`always` or `once`), and question prompts keep the official manual path.
+- Medium UX/safety risk (foreground): mirrored descendant prompts can be approved without a second explicit tap in the child session.
+- Medium UX/safety risk (background): the background worker may approve permissions for sessions that were active when the app entered background, even if the user has since switched contexts — mitigated by scoping the auto-approve context to the exact session/thread hierarchy present at prime time and requiring the same `composerAutoApprovePermissions` toggle.
+- Low contract risk: the server still receives a normal permission reply payload (`always` or `once`), and question prompts keep the official manual path in both foreground and background paths.
+- Low data-risk: the background context is cleared when the chat screen is left, when the toggle is disabled, or when the device switches away from the active server.
 
 **Rollback / feature-flag plan**:
-- Immediate rollback: user disables the composer toggle locally.
-- Product rollback: revert the composer toggle and drain coordinator commits.
-- Safe fallback: existing inline permission cards remain available as the manual approval path.
+- Immediate rollback (foreground): user disables the composer toggle locally.
+- Immediate rollback (background): user disables the composer toggle locally — the background context is cleared on the next lifecycle event.
+- Product rollback: revert the composer toggle and drain coordinator commits; the background context key (`codewalk.android.background.permission_auto_approve.v1`) is removed from SharedPreferences on clear.
+- Safe fallback: existing inline permission cards remain available as the manual approval path in both foreground and background flows.
 
 **Regression coverage**:
 - Widget coverage verifies default-on behavior, persisted opt-out, mirrored subsession auto-approval, and non-regression for question prompts.
 - The drain coordinator uses `always` when available, otherwise `Allow Once`, and cools down requests that throw during auto-approval.
+- Background worker tests verify that auto-approve is scoped to primed session IDs, respects 404 as success (already resolved), and correctly clears context on lifecycle changes.
 
 **Code locations**:
-- `lib/domain/entities/experience_settings.dart`
-- `lib/presentation/providers/settings_provider.dart`
-- `lib/presentation/pages/chat_page/chat_page_model_selector_runtime.dart`
-- `lib/presentation/pages/chat_page/chat_page_lifecycle.dart`
+- `lib/domain/entities/experience_settings.dart` — `composerAutoApprovePermissions` toggle entity
+- `lib/presentation/providers/settings_provider.dart` — toggle state and persistence
+- `lib/presentation/services/permission_auto_approve_runtime.dart` — shared `permissionAutoApproveReplyForAlwaysPatterns`, `PermissionAutoApproveBackgroundContext`, `collectThreadSessionIds`, `resolveThreadSessionIdsForBackgroundContext`
+- `lib/presentation/services/android_background_alert_worker.dart` — background auto-approve execution via `_runPermissionAutoApproveDrain`; context prime/clear via `primePermissionAutoApproveContext`/`clearPermissionAutoApproveContext`; feature flag key `codewalk.android.background.permission_auto_approve.v1`
+- `lib/presentation/pages/chat_page/chat_page_model_selector_runtime.dart` — toggle UI widget
+- `lib/presentation/pages/chat_page/chat_page_lifecycle.dart` — `_backgroundPermissionAutoApproveContextSignature` lifecycle management, `_scheduleAutoApprovePermissionDrain` coordinator
 
 ---
 

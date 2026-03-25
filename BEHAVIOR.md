@@ -662,6 +662,8 @@ The app uses a platform-aware speech engine strategy with automatic fallback whe
 - **When** the toggle is enabled and the current thread receives a permission request
 - **Then** the app automatically replies with `Always` when that permission request exposes remembered approval, otherwise it falls back to `Allow Once`
 - **Then** mirrored descendant/sub-session permission requests shown in the root thread are auto-approved as part of that same thread scope
+- **Then** on Android, the background worker keeps that same thread-scoped permission auto-approve path alive while the app is backgrounded, instead of waiting for foreground return
+- **Then** if background auto-approve fails, the permission notification and inline card still remain as the visible/manual fallback path
 - **Then** question prompts are never auto-answered by this toggle and still require a human choice
 - **Then** the existing inline permission cards remain available as the visible/manual fallback path
 

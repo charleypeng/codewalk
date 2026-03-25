@@ -95,6 +95,7 @@ lib/presentation/services/android_foreground_monitor_service.dart # Android fore
 lib/presentation/services/android_background_alert_worker.dart # WorkManager-based background polling; 3m active probes, 5m tail probe, and low-data title-cached notification fetches
 lib/presentation/services/android_background_alert_logic.dart # Pure logic for tail probe scheduling, alert planning, and snapshot state
 lib/presentation/services/android_battery_optimization_service.dart # Android battery optimization query/exemption request via MethodChannel
+lib/presentation/services/permission_auto_approve_runtime.dart # Background permission auto-approve context and session ID resolution for Android background continuity
 lib/presentation/services/moonshine_model_manager_io.dart # Desktop Moonshine model download/extract/delete flow using sherpa-onnx release archives + Silero VAD asset
 lib/presentation/services/speech_input_service_moonshine_io.dart # Desktop Moonshine dictation backend; uses sherpa_onnx OfflineRecognizer + VoiceActivityDetector for on-device utterance recognition
 lib/presentation/providers/chat_provider.dart     # Chat state/realtime/session facade; cache-first per-session SWR restore, in-memory LRU message cache, persisted per-session snapshots, microtask coalescing, event dedup buffer, render gate, favorite models; drives timeline visibility, undo/redo availability, rejected-draft restoration, persisted per-session composer drafts, and per-agent provider/model/variant memory; project-switch SWR support via `onProjectScopeChanged(waitForRevalidation: false)` and `loadSessions(backgroundRevalidation: true)`; non-active contexts marked dirty by global events keep cache for immediate restore-on-return, while background revalidation refreshes state; active-session SWR uses limited-tail (delta-like) refresh with overlap merge and full-fetch fallback; message merge / refresh behavior has regression coverage protecting active tool/work visibility during optimistic echo replay and refresh/reconcile; includes `loadOlderMessages()` scaffold and keeps loadSessionInsights fire-and-forget on session switch; idle final-message reconcile can bypass abort-suppression only for targeted `session-idle-final-reconcile`; New Chat uses draft-first flow (`beginNewChatDraft`) with lazy session bootstrap on first send, and draft state is now context-scoped inside `_ChatContextSnapshot` to prevent cross-project leakage during fast switches; keeps provider-side optimistic user IDs on the local `local_user_*` contract for `prompt_async` sends; includes cross-scope helpers `visibleSessionsForScopeId` and `hasSnapshotForScopeId`
@@ -291,6 +292,12 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 - **Battery optimization UX** (`android_battery_optimization_service.dart` +
   `notifications_settings_section.dart`): Queries and requests optimization exemption from
   Settings to reduce background task interruptions on Android.
+- **Permission auto-approve context** (`permission_auto_approve_runtime.dart` +
+  `chat_page_lifecycle.dart`): Primes/clears `PermissionAutoApproveBackgroundContext` via
+  `AndroidBackgroundAlertWorker.primePermissionAutoApproveContext()` /
+  `clearPermissionAutoApproveContext()` to maintain permission continuity when app goes to
+  background; controlled by `composerAutoApprovePermissions` setting; auto-drains visible
+  permission requests with cooldown tracking and respects `isRespondingInteraction` guard.
 
 ### Favorite Models
 
