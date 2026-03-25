@@ -165,9 +165,6 @@ extension _ChatPageWorkspaceController on _ChatPageState {
                     ),
                     controller: baseDirectoryController,
                     autofocus: true,
-                    onSubmitted: (_) {
-                      submitSelectedDirectory();
-                    },
                     decoration: InputDecoration(
                       labelText: 'Project directory',
                       hintText: '/repo/my-project',

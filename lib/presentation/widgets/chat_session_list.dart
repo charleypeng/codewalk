@@ -779,9 +779,6 @@ class _ChatSessionListState extends State<ChatSessionList> {
           content: TextField(
             controller: controller,
             autofocus: true,
-            onSubmitted: (_) {
-              unawaited(submitRename(context));
-            },
             decoration: const InputDecoration(
               hintText: 'Enter new conversation name',
               border: OutlineInputBorder(),
