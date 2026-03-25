@@ -42,6 +42,7 @@ Description: Various UI/UX enhancements, snackbar improvements, task bubble upda
 - [x] 3.10 Salvar automaticamente o texto do input do composer como rascunho local relacionado à sessão. Ao trocar de sessão, mostrar o rascunho da sessão atual ou vazio se não existir - Commit hash: 44bbab6
 - [x] 3.11 Memorizar localmente a relação agent + model + variant por agente. Ao trocar de agente, se houver memória salva, selecionar automaticamente o último modelo (e sua variante) salvo - Commit hash: 44bbab6
 - [x] 3.12 Corrigir bounce do viewport durante turns busy: updates passivos (refresh, deltas realtime e pulsos de status) não podem disputar com o viewport owner ativo nem recolapsar grupos de trabalho durante o turno - Commit hash: d781708
+- [x] 3.13 Add ModalPrimaryActionShortcuts helper: Enter/NumpadEnter triggers primary action in safe dialogs (workspace, rename, onboarding) — Commit hashes: 97ebf1f, 0e275eb
 
 ### Feature 4: OpenCode Release Monitoring Command
 

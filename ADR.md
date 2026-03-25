@@ -1044,3 +1044,80 @@ Related: ADR-003, ADR-018, ADR-019, ADR-022.
 - `lib/presentation/providers/settings_provider.dart`
 - `lib/presentation/pages/chat_page/chat_page_model_selector_runtime.dart`
 - `lib/presentation/pages/chat_page/chat_page_lifecycle.dart`
+
+---
+
+## ADR-024: Modal Enter Keyboard Policy (2026-03-25)
+
+**Status**: Accepted
+
+### Context
+
+Users expect to confirm simple, non-destructive dialogs with the Enter key
+without reaching for the mouse or tapping the primary button. CodeWalk already
+implements this pattern locally in Quick Open, but the behavior was not
+consistent across other safe dialogs.
+
+The app also includes modal surfaces where Enter-confirmation is inappropriate:
+
+- destructive confirmations should require deliberate confirmation;
+- shortcut-capture dialogs must receive raw Enter keystrokes;
+- multiline canned-answer editing needs Enter for line breaks; and
+- picker/search/selector bottom sheets use Enter for navigation or selection.
+
+### Decision
+
+Non-destructive dialogs with **a single, unambiguous primary action** may
+respond to `Enter` and `NumpadEnter` to trigger that action.
+
+The following modal categories are explicitly excluded from this policy:
+
+- **Destructive confirmations** — delete/reset/eject style dialogs must not map
+  Enter to the irreversible action by default.
+- **Shortcut-capture dialogs** — dialogs that record keyboard shortcuts must not
+  intercept Enter before capture is completed intentionally.
+- **Multiline canned-answer editing** — dialogs where Enter is part of text
+  editing must preserve newline behavior.
+- **Picker/search/selector bottom sheets** — sheets that use Enter for item
+  navigation or selection remain manual unless redesigned for keyboard-first
+  confirmation.
+
+### Key Files
+
+- `lib/presentation/widgets/modal_primary_action_shortcuts.dart`
+
+### Rationale
+
+- **Ergonomics**: desktop and external-keyboard users can confirm safe dialogs
+  faster.
+- **Clarity**: the rule is easy to apply - safe single-action dialogs may opt
+  in, excluded categories stay manual.
+- **Consistency**: the reusable wrapper keeps the keyboard behavior explicit and
+  centralized.
+- **Safety**: the exclusion list prevents accidental destructive confirmations
+  or conflicts with text editing and key capture.
+
+### Consequences
+
+- Eligible dialogs can opt into Enter/NumpadEnter confirmation with a single
+  reusable wrapper.
+- New modal surfaces must be evaluated against the exclusion list before adding
+  Enter support.
+- Destructive confirmations, shortcut capture, multiline canned-answer editing,
+  and picker/search/selector bottom sheets remain manual until a future ADR
+  changes the policy.
+
+### ADR-023 Compatibility
+
+This policy is additive and local to Flutter keyboard routing. It does not
+change OpenCode server behavior, API contracts, realtime lifecycle, or model
+semantics, so no ADR-023 exception is required.
+
+### Code Locations
+
+- `lib/presentation/widgets/modal_primary_action_shortcuts.dart`
+- `lib/presentation/pages/chat_page/chat_page_workspace_controller.dart`
+- `lib/presentation/widgets/chat_session_list.dart`
+- `lib/presentation/pages/onboarding_wizard_page.dart`
+- `lib/presentation/widgets/moonshine_model_download_dialog.dart`
+- `lib/presentation/widgets/sherpa_model_download_dialog.dart`

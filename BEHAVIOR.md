@@ -808,6 +808,13 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 | `Escape` | Close drawer / focus input | Double-press stops active response |
 | `mod+q` | Force-exit app | On desktop, bypasses close-to-tray/minimize; on Android and iOS it exits the app surface |
 
+### Enter confirms safe modal primary actions
+
+- **Given** a modal dialog has a single clear, non-destructive primary action
+- **When** the user presses `Enter` or `NumpadEnter`
+- **Then** the dialog may trigger that primary action without requiring a tap/click
+- **Then** destructive confirmations, shortcut-capture dialogs, multiline canned-answer editing, and picker/search/selector bottom sheets remain excluded from this shortcut policy
+
 ### Single `Escape` restores composer focus when available
 
 - **Given** no drawer, dialog, or composer popover owns the `Escape` key
