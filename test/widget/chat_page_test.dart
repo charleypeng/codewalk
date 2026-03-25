@@ -3919,6 +3919,12 @@ void main() {
         type: FileNodeType.file,
       ),
     ];
+    projectRepository.fileContentsByPath['/repo/a/docs/chat.md'] =
+        const FileContent(
+          path: '/repo/a/docs/chat.md',
+          content: '# Chat Docs',
+          isBinary: false,
+        );
     projectRepository.fileContentsByPath['/repo/a/lib/chat_provider.dart'] =
         const FileContent(
           path: '/repo/a/lib/chat_provider.dart',
@@ -3961,6 +3967,90 @@ void main() {
       find.descendant(
         of: find.byKey(const ValueKey<String>('open_files_dialog_centered')),
         matching: find.text('class ChatProvider {}', findRichText: true),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('quick open Enter opens the first visible result', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1300, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_search_enter',
+        name: 'Project Search Enter',
+        path: '/repo/a',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_search_enter',
+          name: 'Project Search Enter',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      ],
+    );
+    projectRepository.searchResultsByQuery['chat'] = const <FileNode>[
+      FileNode(
+        path: '/repo/a/lib/chat_provider.dart',
+        name: 'chat_provider.dart',
+        type: FileNodeType.file,
+      ),
+      FileNode(
+        path: '/repo/a/docs/chat.md',
+        name: 'chat.md',
+        type: FileNodeType.file,
+      ),
+    ];
+    projectRepository.fileContentsByPath['/repo/a/docs/chat.md'] =
+        const FileContent(
+          path: '/repo/a/docs/chat.md',
+          content: '# Chat Docs',
+          isBinary: false,
+        );
+    projectRepository.fileContentsByPath['/repo/a/lib/chat_provider.dart'] =
+        const FileContent(
+          path: '/repo/a/lib/chat_provider.dart',
+          content: 'class ChatProvider {}',
+          isBinary: false,
+        );
+
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('file_tree_quick_open_button')),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('quick_open_input')),
+      'chat',
+    );
+    await tester.pumpAndSettle();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('open_files_dialog_centered')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('open_files_dialog_centered')),
+        matching: find.text('# Chat Docs', findRichText: true),
       ),
       findsOneWidget,
     );
