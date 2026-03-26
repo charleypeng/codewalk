@@ -161,6 +161,7 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
   String? currentProjectId;
   String? openProjectIdsJson;
   String? archivedProjectIdsJson;
+  String? hiddenProjectPathsJson;
   String? cachedSessions;
   int? cachedSessionsUpdatedAt;
   String? lastSessionSnapshot;
@@ -228,6 +229,7 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
     currentProjectId = null;
     openProjectIdsJson = null;
     archivedProjectIdsJson = null;
+    hiddenProjectPathsJson = null;
     cachedSessions = null;
     cachedSessionsUpdatedAt = null;
     lastSessionSnapshot = null;
@@ -395,6 +397,12 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
   Future<String?> getArchivedProjectIdsJson({String? serverId}) async {
     if (serverId == null) return archivedProjectIdsJson;
     return scopedStrings[_key('archived_project_ids', serverId: serverId)];
+  }
+
+  @override
+  Future<String?> getHiddenProjectPathsJson({String? serverId}) async {
+    if (serverId == null) return hiddenProjectPathsJson;
+    return scopedStrings[_key('hidden_project_paths', serverId: serverId)];
   }
 
   @override
@@ -834,6 +842,19 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
     }
     scopedStrings[_key('archived_project_ids', serverId: serverId)] =
         projectIdsJson;
+  }
+
+  @override
+  Future<void> saveHiddenProjectPathsJson(
+    String projectPathsJson, {
+    String? serverId,
+  }) async {
+    if (serverId == null) {
+      hiddenProjectPathsJson = projectPathsJson;
+      return;
+    }
+    scopedStrings[_key('hidden_project_paths', serverId: serverId)] =
+        projectPathsJson;
   }
 
   @override
@@ -2076,6 +2097,7 @@ class FakeProjectRepository implements ProjectRepository {
   Future<Either<Failure, List<FileNode>>> findFiles({
     String? directory,
     required String query,
+    String? type,
     int limit = 50,
   }) async {
     if (directoryFailure != null) {
@@ -2084,7 +2106,19 @@ class FakeProjectRepository implements ProjectRepository {
     final normalized = query.trim().toLowerCase();
     final seeded = searchResultsByQuery[normalized];
     if (seeded != null) {
-      return Right(List<FileNode>.from(seeded.take(limit)));
+      final filtered = type == null
+          ? seeded
+          : seeded.where((item) {
+              switch (type.trim().toLowerCase()) {
+                case 'directory':
+                  return item.isDirectory;
+                case 'file':
+                  return item.isFile;
+                default:
+                  return true;
+              }
+            });
+      return Right(List<FileNode>.from(filtered.take(limit)));
     }
     return const Right(<FileNode>[]);
   }

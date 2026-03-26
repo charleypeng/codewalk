@@ -229,13 +229,48 @@ void main() {
           provider.closedProjects.any((project) => project.id == 'proj_a'),
           isFalse,
         );
+        expect(provider.hiddenProjectPaths, contains('/repo/a'));
         expect(provider.archivedProjectIds, contains('proj_a'));
         expect(
           localDataSource.scopedStrings['archived_project_ids::srv_test'],
           isNotNull,
         );
+        expect(
+          localDataSource.scopedStrings['hidden_project_paths::srv_test'],
+          isNotNull,
+        );
+
+        final restoredProvider = ProjectProvider(
+          projectRepository: projectRepository,
+          localDataSource: localDataSource,
+        );
+        await restoredProvider.initializeProject();
+
+        expect(
+          restoredProvider.closedProjects.any(
+            (project) => project.id == 'proj_a',
+          ),
+          isFalse,
+        );
+        expect(restoredProvider.hiddenProjectPaths, contains('/repo/a'));
       },
     );
+
+    test('switchToDirectoryContext unhides a removed project path', () async {
+      await provider.initializeProject();
+      await provider.switchProject('proj_b');
+      await provider.closeProject('proj_a');
+
+      final archived = await provider.archiveClosedProject('proj_a');
+      expect(archived, isTrue);
+      expect(provider.hiddenProjectPaths, contains('/repo/a'));
+
+      final switched = await provider.switchToDirectoryContext('/repo/a');
+
+      expect(switched, isTrue);
+      expect(provider.currentProject?.path, '/repo/a');
+      expect(provider.hiddenProjectPaths, isNot(contains('/repo/a')));
+    });
 
     test('worktree operations load/create/reset/delete', () async {
       await provider.initializeProject();

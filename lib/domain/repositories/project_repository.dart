@@ -52,6 +52,7 @@ abstract class ProjectRepository {
   Future<Either<Failure, List<FileNode>>> findFiles({
     String? directory,
     required String query,
+    String? type,
     int limit,
   });
 

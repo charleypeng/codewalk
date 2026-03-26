@@ -42,6 +42,7 @@ abstract class ProjectRemoteDataSource {
   Future<List<FileNodeModel>> findFiles({
     String? directory,
     required String query,
+    String? type,
     int limit,
   });
 
@@ -54,7 +55,6 @@ abstract class ProjectRemoteDataSource {
 
 /// Technical comment translated to English.
 class ProjectRemoteDataSourceImpl implements ProjectRemoteDataSource {
-
   ProjectRemoteDataSourceImpl({required this.dio});
   final dynamic dio;
 
@@ -236,6 +236,7 @@ class ProjectRemoteDataSourceImpl implements ProjectRemoteDataSource {
   Future<List<FileNodeModel>> findFiles({
     String? directory,
     required String query,
+    String? type,
     int limit = 50,
   }) async {
     final queryParams = <String, dynamic>{
@@ -244,6 +245,9 @@ class ProjectRemoteDataSourceImpl implements ProjectRemoteDataSource {
     };
     if (directory != null && directory.trim().isNotEmpty) {
       queryParams['directory'] = directory.trim();
+    }
+    if (type != null && type.trim().isNotEmpty) {
+      queryParams['type'] = type.trim();
     }
     final response = await dio.get('/find/file', queryParameters: queryParams);
     final data = response.data;
@@ -256,7 +260,7 @@ class ProjectRemoteDataSourceImpl implements ProjectRemoteDataSource {
             return FileNodeModel.fromJson(<String, dynamic>{
               'path': item,
               'name': item.split('/').last,
-              'type': 'file',
+              'type': type ?? 'file',
             }, parentPath: '/');
           }
           if (item is Map) {

@@ -29,6 +29,7 @@ class ProjectProvider extends ChangeNotifier {
   Project? _currentProject;
   List<String> _openProjectIds = <String>[];
   List<String> _archivedProjectIds = <String>[];
+  List<String> _hiddenProjectPaths = <String>[];
   List<Worktree> _worktrees = <Worktree>[];
   int _worktreesRequestId = 0;
   bool _worktreeSupported = false;
@@ -44,6 +45,8 @@ class ProjectProvider extends ChangeNotifier {
   List<String> get openProjectIds => List<String>.unmodifiable(_openProjectIds);
   List<String> get archivedProjectIds =>
       List<String>.unmodifiable(_archivedProjectIds);
+  List<String> get hiddenProjectPaths =>
+      List<String>.unmodifiable(_hiddenProjectPaths);
   List<Worktree> get worktrees => List<Worktree>.unmodifiable(_worktrees);
   bool get worktreeSupported => _worktreeSupported;
 
@@ -69,10 +72,9 @@ class ProjectProvider extends ChangeNotifier {
 
   List<Project> get closedProjects {
     final openSet = _openProjectIds.toSet();
-    final archivedSet = _archivedProjectIds.toSet();
     return _projects
         .where((item) => !openSet.contains(item.id))
-        .where((item) => !archivedSet.contains(item.id))
+        .where((item) => !_isProjectHidden(item))
         .toList(growable: false);
   }
 
@@ -88,6 +90,7 @@ class ProjectProvider extends ChangeNotifier {
     try {
       _activeServerId = await _resolveServerId();
       await _loadProjects(silent: true);
+      await _restoreHiddenProjectPaths();
 
       final savedProjectId = await _localDataSource.getCurrentProjectId(
         serverId: _activeServerId,
@@ -111,13 +114,16 @@ class ProjectProvider extends ChangeNotifier {
             .firstOrNull;
       }
 
-      _currentProject ??= _projects.firstOrNull;
+      if (_currentProject != null && _isProjectHidden(_currentProject!)) {
+        _currentProject = _firstVisibleProject;
+      }
+
+      _currentProject ??= _firstVisibleProject ?? _projects.firstOrNull;
       if (_currentProject == null) {
         _setError('No project context available from server');
         return;
       }
 
-      await _restoreArchivedProjects();
       await _restoreOpenProjects();
       _ensureOpenProject(_currentProject!.id);
       await _persistProjectState();
@@ -313,15 +319,24 @@ class ProjectProvider extends ChangeNotifier {
       _setError('Only closed projects can be archived');
       return false;
     }
-    final exists = _projects.any((item) => item.id == projectId);
-    if (!exists) {
+    final project = _projects.where((item) => item.id == projectId).firstOrNull;
+    if (project == null) {
       _setError('Failed to archive project: project not found');
       return false;
     }
-    if (_archivedProjectIds.contains(projectId)) {
+    if (_isProjectHidden(project)) {
       return false;
     }
-    _archivedProjectIds = <String>[..._archivedProjectIds, projectId];
+    final hiddenPath = normalizeOptionalFilePath(project.path);
+    if (hiddenPath == null) {
+      _setError('Failed to archive project: project path is invalid');
+      return false;
+    }
+    _hiddenProjectPaths = _appendUniqueSortedPath(
+      _hiddenProjectPaths,
+      hiddenPath,
+    );
+    _syncArchivedProjectIdsFromHiddenPaths();
     await _persistProjectState();
     notifyListeners();
     return true;
@@ -646,6 +661,8 @@ class ProjectProvider extends ChangeNotifier {
     required String query,
     String? directory,
     int limit = 50,
+    String? type,
+    bool updateProviderError = true,
   }) async {
     final normalizedQuery = query.trim();
     if (normalizedQuery.isEmpty) {
@@ -659,13 +676,16 @@ class ProjectProvider extends ChangeNotifier {
       directory: targetDirectory,
       query: normalizedQuery,
       limit: limit,
+      type: type,
     );
     return result.fold((failure) {
       AppLogger.warn(
-        'File search failed query=$normalizedQuery directory=${targetDirectory ?? "-"}',
+        'File search failed query=$normalizedQuery directory=${targetDirectory ?? "-"} type=${type ?? "-"}',
         error: failure,
       );
-      _setError('Failed to search files: ${failure.message}');
+      if (updateProviderError) {
+        _setError('Failed to search files: ${failure.message}');
+      }
       return null;
     }, (nodes) => nodes);
   }
@@ -739,18 +759,23 @@ class ProjectProvider extends ChangeNotifier {
       },
       (projects) {
         _projects = _sanitizeProjects(projects);
+        _syncArchivedProjectIdsFromHiddenPaths();
         _openProjectIds = _openProjectIds
-            .where((id) => _projects.any((item) => item.id == id))
-            .toList(growable: false);
-        _archivedProjectIds = _archivedProjectIds
-            .where((id) => _projects.any((item) => item.id == id))
+            .where((id) {
+              final project = _projects
+                  .where((item) => item.id == id)
+                  .firstOrNull;
+              return project != null && !_isProjectHidden(project);
+            })
             .toList(growable: false);
         if (_currentProject != null) {
           final refreshed = _projects
               .where((item) => item.id == _currentProject!.id)
               .firstOrNull;
-          if (refreshed != null) {
+          if (refreshed != null && !_isProjectHidden(refreshed)) {
             _currentProject = refreshed;
+          } else if (refreshed != null) {
+            _currentProject = null;
           }
         }
       },
@@ -777,8 +802,14 @@ class ProjectProvider extends ChangeNotifier {
           final savedIds = decoded.whereType<String>().toList(growable: false);
           _rehydrateSyntheticProjects(savedIds);
           _openProjectIds = savedIds
-              .where((id) => _projects.any((project) => project.id == id))
+              .where((id) {
+                final project = _projects
+                    .where((candidate) => candidate.id == id)
+                    .firstOrNull;
+                return project != null && !_isProjectHidden(project);
+              })
               .toList(growable: false);
+          _syncArchivedProjectIdsFromHiddenPaths();
         }
       } catch (e, stackTrace) {
         AppLogger.warn(
@@ -789,31 +820,56 @@ class ProjectProvider extends ChangeNotifier {
       }
     }
 
-    if (_currentProject != null) {
+    if (_currentProject != null && !_isProjectHidden(_currentProject!)) {
       _ensureOpenProject(_currentProject!.id);
     }
 
-    if (_openProjectIds.isEmpty && _projects.isNotEmpty) {
-      _openProjectIds = <String>[_projects.first.id];
+    final firstVisibleProject = _firstVisibleProject;
+    if (_openProjectIds.isEmpty && firstVisibleProject != null) {
+      _openProjectIds = <String>[firstVisibleProject.id];
     }
   }
 
-  Future<void> _restoreArchivedProjects() async {
-    _archivedProjectIds = <String>[];
-    final raw = await _localDataSource.getArchivedProjectIdsJson(
+  Future<void> _restoreHiddenProjectPaths() async {
+    final hiddenPaths = <String>{};
+
+    final raw = await _localDataSource.getHiddenProjectPathsJson(
       serverId: _activeServerId,
     );
-    if (raw == null || raw.trim().isEmpty) {
-      return;
+    if (raw != null && raw.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is List) {
+          for (final path in decoded.whereType<String>()) {
+            final normalized = normalizeOptionalFilePath(path);
+            if (normalized != null) {
+              hiddenPaths.add(normalized);
+            }
+          }
+        }
+      } catch (e, stackTrace) {
+        AppLogger.warn(
+          'Failed to restore hidden project paths',
+          error: e,
+          stackTrace: stackTrace,
+        );
+      }
     }
+
     try {
-      final decoded = jsonDecode(raw);
-      if (decoded is List) {
-        final savedIds = decoded.whereType<String>().toList(growable: false);
-        _rehydrateSyntheticProjects(savedIds);
-        _archivedProjectIds = savedIds
-            .where((id) => _projects.any((project) => project.id == id))
-            .toList(growable: false);
+      final legacyRaw = await _localDataSource.getArchivedProjectIdsJson(
+        serverId: _activeServerId,
+      );
+      if (legacyRaw != null && legacyRaw.trim().isNotEmpty) {
+        final decoded = jsonDecode(legacyRaw);
+        if (decoded is List) {
+          for (final projectId in decoded.whereType<String>()) {
+            final legacyPath = _projectPathForProjectId(projectId);
+            if (legacyPath != null) {
+              hiddenPaths.add(legacyPath);
+            }
+          }
+        }
       }
     } catch (e, stackTrace) {
       AppLogger.warn(
@@ -822,23 +878,28 @@ class ProjectProvider extends ChangeNotifier {
         stackTrace: stackTrace,
       );
     }
+
+    _hiddenProjectPaths = hiddenPaths.toList(growable: false)..sort();
+    _syncArchivedProjectIdsFromHiddenPaths();
   }
 
   void _ensureOpenProject(String projectId) {
-    _unarchiveProject(projectId);
+    _unhideProject(projectId);
     if (_openProjectIds.contains(projectId)) {
       return;
     }
     _openProjectIds = <String>[..._openProjectIds, projectId];
   }
 
-  void _unarchiveProject(String projectId) {
-    if (!_archivedProjectIds.contains(projectId)) {
+  void _unhideProject(String projectId) {
+    final hiddenPath = _projectPathForProjectId(projectId);
+    if (hiddenPath == null) {
       return;
     }
-    _archivedProjectIds = _archivedProjectIds
-        .where((id) => id != projectId)
+    _hiddenProjectPaths = _hiddenProjectPaths
+        .where((path) => path != hiddenPath)
         .toList(growable: false);
+    _syncArchivedProjectIdsFromHiddenPaths();
   }
 
   Future<void> _persistProjectState() async {
@@ -856,6 +917,10 @@ class ProjectProvider extends ChangeNotifier {
     );
     await _localDataSource.saveArchivedProjectIdsJson(
       jsonEncode(_archivedProjectIds),
+      serverId: _activeServerId,
+    );
+    await _localDataSource.saveHiddenProjectPathsJson(
+      jsonEncode(_hiddenProjectPaths),
       serverId: _activeServerId,
     );
   }
@@ -950,5 +1015,42 @@ class ProjectProvider extends ChangeNotifier {
       createdAt: now,
       updatedAt: now,
     );
+  }
+
+  Project? get _firstVisibleProject {
+    return _projects.where((item) => !_isProjectHidden(item)).firstOrNull;
+  }
+
+  bool _isProjectHidden(Project project) {
+    final normalizedPath = normalizeOptionalFilePath(project.path);
+    if (normalizedPath == null) {
+      return false;
+    }
+    return _hiddenProjectPaths.contains(normalizedPath);
+  }
+
+  String? _projectPathForProjectId(String projectId) {
+    final project = _projects.where((item) => item.id == projectId).firstOrNull;
+    if (project != null) {
+      return normalizeOptionalFilePath(project.path);
+    }
+    final synthetic = _syntheticProjectFromId(projectId);
+    return normalizeOptionalFilePath(synthetic?.path);
+  }
+
+  void _syncArchivedProjectIdsFromHiddenPaths() {
+    final hiddenPathSet = _hiddenProjectPaths.toSet();
+    _archivedProjectIds = _projects
+        .where(
+          (item) =>
+              hiddenPathSet.contains(normalizeOptionalFilePath(item.path)),
+        )
+        .map((item) => item.id)
+        .toList(growable: false);
+  }
+
+  List<String> _appendUniqueSortedPath(List<String> paths, String path) {
+    final merged = <String>{...paths, path}.toList(growable: false)..sort();
+    return merged;
   }
 }

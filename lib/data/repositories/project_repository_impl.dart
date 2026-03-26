@@ -9,8 +9,9 @@ import '../datasources/project_remote_datasource.dart';
 import 'dio_exception_handler.dart';
 
 /// Technical comment translated to English.
-class ProjectRepositoryImpl with DioExceptionHandler implements ProjectRepository {
-
+class ProjectRepositoryImpl
+    with DioExceptionHandler
+    implements ProjectRepository {
   ProjectRepositoryImpl({required this.remoteDataSource});
   final ProjectRemoteDataSource remoteDataSource;
 
@@ -168,12 +169,14 @@ class ProjectRepositoryImpl with DioExceptionHandler implements ProjectRepositor
   Future<Either<Failure, List<FileNode>>> findFiles({
     String? directory,
     required String query,
+    String? type,
     int limit = 50,
   }) async {
     try {
       final items = await remoteDataSource.findFiles(
         directory: directory,
         query: query,
+        type: type,
         limit: limit,
       );
       return Right(
