@@ -183,7 +183,9 @@
 - **When** the user interacts with context options
 - **Then** the UI uses project/folder language only (no workspace distinction in this flow)
 - **Then** the action `Open project folder...` allows opening any folder as project context, including non-Git folders
+- **Then** `Open project folder...` shows inline fuzzy folder suggestions backed by OpenCode directory search when the typed query is specific enough, while preserving manual path entry and directory browsing as fallback
 - **Then** tapping a project row switches/reopens that context immediately and closes the picker without requiring a secondary open action
+- **Then** removing a closed project from history hides that exact project path from the closed-project history across reloads until the user explicitly reopens or re-enters that path again
 - **Then** selector actions are serialized so repeated rapid taps do not trigger overlapping switch/reopen/close/archive operations
 
 ### Conversations are grouped by project context
