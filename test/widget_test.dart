@@ -368,7 +368,7 @@ void main() {
     expect(find.text('No quick replies yet.'), findsOneWidget);
   });
 
-  testWidgets('global canned answer shows globe metadata icon', (
+  testWidgets('global canned answer shows one-line globe plus label only', (
     WidgetTester tester,
   ) async {
     final localDataSource = InMemoryAppLocalDataSource();
@@ -399,6 +399,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byIcon(Symbols.public_rounded), findsOneWidget);
+    expect(find.text('Global reply'), findsOneWidget);
+    expect(find.text('Shared text'), findsNothing);
   });
 
   testWidgets(
