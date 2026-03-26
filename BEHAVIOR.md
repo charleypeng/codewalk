@@ -392,6 +392,7 @@
 - **Then** add/edit supports an optional label, required text, insertion mode, and scope mode (`Global` or `Project-only`)
 - **Then** global items are available across all contexts, while project-only items are restricted to the active `serverId::scopeId` context
 - **Then** global canned answers are indicated inline with a globe icon instead of a standalone textual `Global` subtitle line
+- **Then** each canned-answer row stays on a single line and shows only one text source: the optional label when present, otherwise the canned text truncated with ellipsis
 
 ### Optimistic user message ID uses local prefix — never server format
 
