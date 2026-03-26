@@ -125,7 +125,7 @@ extension _ChatPageWorkspaceController on _ChatPageState {
       return;
     }
     _showChatPageMessageSnackBar(
-      'Project archived from closed list',
+      'Project removed from history',
       hideCurrent: false,
     );
   }
@@ -140,11 +140,76 @@ extension _ChatPageWorkspaceController on _ChatPageState {
     final baseDirectoryController = TextEditingController(
       text: defaultDirectory,
     );
+    Timer? suggestionDebounce;
+    var suggestionRequestId = 0;
+    var loadingSuggestions = false;
+    List<FileNode> directorySuggestions = const <FileNode>[];
+
     final selectedDirectory = await showDialog<String>(
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (dialogContext, setDialogState) {
+            void scheduleDirectorySuggestions() {
+              final rawInput = baseDirectoryController.text.trim();
+              suggestionDebounce?.cancel();
+              if (rawInput.isEmpty) {
+                setDialogState(() {
+                  loadingSuggestions = false;
+                  directorySuggestions = const <FileNode>[];
+                });
+                return;
+              }
+
+              final requestId = ++suggestionRequestId;
+              setDialogState(() {
+                loadingSuggestions = true;
+              });
+
+              suggestionDebounce = Timer(
+                const Duration(milliseconds: 250),
+                () async {
+                  final knownSuggestions = _knownProjectDirectorySuggestions(
+                    projectProvider: projectProvider,
+                    query: rawInput,
+                  );
+                  final remoteQuery = _directorySuggestionSearchQuery(rawInput);
+                  List<FileNode> remoteSuggestions = const <FileNode>[];
+                  if (remoteQuery.length >= 2) {
+                    final remoteMatches = await projectProvider.findFiles(
+                      query: remoteQuery,
+                      directory: _directorySuggestionSearchRoot(
+                        rawInput,
+                        defaultDirectory,
+                      ),
+                      limit: 10,
+                      type: 'directory',
+                      updateProviderError: false,
+                    );
+                    remoteSuggestions =
+                        remoteMatches
+                            ?.where((item) => item.isDirectory)
+                            .toList(growable: false) ??
+                        const <FileNode>[];
+                  }
+
+                  if (!dialogContext.mounted ||
+                      requestId != suggestionRequestId) {
+                    return;
+                  }
+
+                  setDialogState(() {
+                    loadingSuggestions = false;
+                    directorySuggestions = _mergeDirectorySuggestions(
+                      query: rawInput,
+                      knownSuggestions: knownSuggestions,
+                      remoteSuggestions: remoteSuggestions,
+                    );
+                  });
+                },
+              );
+            }
+
             void submitSelectedDirectory() {
               final baseDirectory = baseDirectoryController.text.trim();
               if (!dialogContext.mounted || baseDirectory.isEmpty) {
@@ -159,38 +224,102 @@ extension _ChatPageWorkspaceController on _ChatPageState {
                 title: const Text('Open project folder'),
                 content: SizedBox(
                   width: 420,
-                  child: TextField(
-                    key: const ValueKey<String>(
-                      'workspace_base_directory_input',
-                    ),
-                    controller: baseDirectoryController,
-                    autofocus: true,
-                    decoration: InputDecoration(
-                      labelText: 'Project directory',
-                      hintText: '/repo/my-project',
-                      helperText:
-                          'Choose any folder to open as project context.',
-                      suffixIcon: IconButton(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextField(
                         key: const ValueKey<String>(
-                          'workspace_open_directory_picker_button',
+                          'workspace_base_directory_input',
                         ),
-                        tooltip: 'Browse directories',
-                        onPressed: () async {
-                          final picked = await _openDirectoryPicker(
-                            initialDirectory:
-                                baseDirectoryController.text.trim().isEmpty
-                                ? defaultDirectory
-                                : baseDirectoryController.text.trim(),
-                          );
-                          if (!dialogContext.mounted || picked == null) {
-                            return;
-                          }
-                          baseDirectoryController.text = picked;
-                          setDialogState(() {});
-                        },
-                        icon: const Icon(Symbols.folder_open),
+                        controller: baseDirectoryController,
+                        autofocus: true,
+                        onChanged: (_) => scheduleDirectorySuggestions(),
+                        decoration: InputDecoration(
+                          labelText: 'Project directory',
+                          hintText: '/repo/my-project',
+                          helperText:
+                              'Choose any folder to open as project context.',
+                          suffixIcon: IconButton(
+                            key: const ValueKey<String>(
+                              'workspace_open_directory_picker_button',
+                            ),
+                            tooltip: 'Browse directories',
+                            onPressed: () async {
+                              final picked = await _openDirectoryPicker(
+                                initialDirectory:
+                                    baseDirectoryController.text.trim().isEmpty
+                                    ? defaultDirectory
+                                    : baseDirectoryController.text.trim(),
+                              );
+                              if (!dialogContext.mounted || picked == null) {
+                                return;
+                              }
+                              baseDirectoryController.text = picked;
+                              scheduleDirectorySuggestions();
+                            },
+                            icon: const Icon(Symbols.folder_open),
+                          ),
+                        ),
                       ),
-                    ),
+                      if (loadingSuggestions) ...[
+                        const SizedBox(height: 8),
+                        const LinearProgressIndicator(
+                          key: ValueKey<String>(
+                            'workspace_directory_suggestions_loading',
+                          ),
+                        ),
+                      ],
+                      if (directorySuggestions.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          'Suggestions',
+                          style: Theme.of(dialogContext).textTheme.labelLarge,
+                        ),
+                        const SizedBox(height: 8),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 220),
+                          child: Material(
+                            key: const ValueKey<String>(
+                              'workspace_directory_suggestions',
+                            ),
+                            color: Theme.of(
+                              dialogContext,
+                            ).colorScheme.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(12),
+                            child: ListView.separated(
+                              shrinkWrap: true,
+                              itemCount: directorySuggestions.length,
+                              separatorBuilder: (_, _) =>
+                                  const Divider(height: 1),
+                              itemBuilder: (context, index) {
+                                final suggestion = directorySuggestions[index];
+                                return ListTile(
+                                  key: ValueKey<String>(
+                                    'workspace_directory_suggestion_${suggestion.path}',
+                                  ),
+                                  dense: true,
+                                  leading: const Icon(Symbols.folder),
+                                  title: Text(fileBasename(suggestion.path)),
+                                  subtitle: Text(
+                                    suggestion.path,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  onTap: () {
+                                    baseDirectoryController.text =
+                                        suggestion.path;
+                                    setDialogState(() {
+                                      directorySuggestions = const <FileNode>[];
+                                    });
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
                 actions: [
@@ -209,6 +338,7 @@ extension _ChatPageWorkspaceController on _ChatPageState {
         );
       },
     );
+    suggestionDebounce?.cancel();
     if (!mounted || selectedDirectory == null) {
       return;
     }
@@ -253,5 +383,138 @@ extension _ChatPageWorkspaceController on _ChatPageState {
       useSafeArea: true,
       builder: (_) => _DirectoryPickerSheet(initialDirectory: startDirectory),
     );
+  }
+
+  List<FileNode> _knownProjectDirectorySuggestions({
+    required ProjectProvider projectProvider,
+    required String query,
+  }) {
+    final normalizedQuery = query.trim().toLowerCase();
+    if (normalizedQuery.isEmpty) {
+      return const <FileNode>[];
+    }
+
+    final seenPaths = <String>{};
+    final matches =
+        projectProvider.projects
+            .map((project) {
+              final normalizedPath = normalizeFilePath(project.path);
+              return FileNode(
+                path: normalizedPath,
+                name: project.name,
+                type: FileNodeType.directory,
+              );
+            })
+            .where((item) {
+              final pathLower = item.path.toLowerCase();
+              final baseLower = fileBasename(item.path).toLowerCase();
+              final nameLower = item.name.toLowerCase();
+              return pathLower.contains(normalizedQuery) ||
+                  baseLower.contains(normalizedQuery) ||
+                  nameLower.contains(normalizedQuery);
+            })
+            .where((item) => seenPaths.add(item.path))
+            .toList(growable: false)
+          ..sort((left, right) {
+            final byScore = _directorySuggestionScore(
+              left,
+              normalizedQuery,
+            ).compareTo(_directorySuggestionScore(right, normalizedQuery));
+            if (byScore != 0) {
+              return byScore;
+            }
+            return left.path.toLowerCase().compareTo(right.path.toLowerCase());
+          });
+
+    return matches.take(6).toList(growable: false);
+  }
+
+  String _directorySuggestionSearchQuery(String rawInput) {
+    final trimmed = rawInput.trim();
+    if (trimmed.isEmpty) {
+      return '';
+    }
+    if (!trimmed.contains('/')) {
+      return trimmed;
+    }
+    final normalizedPath = normalizeOptionalFilePath(trimmed);
+    if (normalizedPath == null) {
+      return trimmed;
+    }
+    final basename = fileBasename(normalizedPath);
+    return basename == '/' ? '' : basename;
+  }
+
+  String _directorySuggestionSearchRoot(String rawInput, String fallback) {
+    final normalizedFallback = normalizeOptionalFilePath(fallback) ?? '/';
+    final trimmed = rawInput.trim();
+    if (trimmed.isEmpty || !trimmed.contains('/')) {
+      return normalizedFallback;
+    }
+    final normalizedPath = normalizeOptionalFilePath(trimmed);
+    if (normalizedPath == null || normalizedPath == '/') {
+      return normalizedFallback;
+    }
+    final separator = normalizedPath.lastIndexOf('/');
+    if (separator <= 0) {
+      return '/';
+    }
+    return normalizedPath.substring(0, separator);
+  }
+
+  List<FileNode> _mergeDirectorySuggestions({
+    required String query,
+    required List<FileNode> knownSuggestions,
+    required List<FileNode> remoteSuggestions,
+  }) {
+    final normalizedQuery = query.trim().toLowerCase();
+    final mergedByPath = <String, FileNode>{};
+
+    for (final suggestion in <FileNode>[
+      ...knownSuggestions,
+      ...remoteSuggestions.where((item) => item.isDirectory),
+    ]) {
+      final normalizedPath = normalizeFilePath(suggestion.path);
+      mergedByPath.putIfAbsent(
+        normalizedPath,
+        () => FileNode(
+          path: normalizedPath,
+          name: suggestion.name,
+          type: FileNodeType.directory,
+        ),
+      );
+    }
+
+    final merged = mergedByPath.values.toList(growable: false)
+      ..sort((left, right) {
+        final byScore = _directorySuggestionScore(
+          left,
+          normalizedQuery,
+        ).compareTo(_directorySuggestionScore(right, normalizedQuery));
+        if (byScore != 0) {
+          return byScore;
+        }
+        return left.path.toLowerCase().compareTo(right.path.toLowerCase());
+      });
+
+    return merged.take(12).toList(growable: false);
+  }
+
+  int _directorySuggestionScore(FileNode node, String normalizedQuery) {
+    final pathLower = node.path.toLowerCase();
+    final baseLower = fileBasename(node.path).toLowerCase();
+    final nameLower = node.name.toLowerCase();
+    if (baseLower == normalizedQuery || pathLower == normalizedQuery) {
+      return 0;
+    }
+    if (baseLower.startsWith(normalizedQuery) ||
+        nameLower.startsWith(normalizedQuery)) {
+      return 1;
+    }
+    if (pathLower.contains(normalizedQuery) ||
+        nameLower.contains(normalizedQuery)) {
+      return 2;
+    }
+    return 3;
   }
 }

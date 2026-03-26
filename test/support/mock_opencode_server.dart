@@ -395,6 +395,65 @@ class MockOpenCodeServer {
       return;
     }
 
+    if (method == 'GET' && request.uri.path == '/find/file') {
+      final query = (request.uri.queryParameters['query'] ?? '')
+          .trim()
+          .toLowerCase();
+      final type = request.uri.queryParameters['type']?.trim().toLowerCase();
+      final directory = request.uri.queryParameters['directory']?.trim();
+      final limit =
+          int.tryParse(request.uri.queryParameters['limit'] ?? '') ?? 50;
+      final entries = <Map<String, dynamic>>[
+        <String, dynamic>{
+          'path': '/workspace/project',
+          'name': 'project',
+          'type': 'directory',
+        },
+        <String, dynamic>{
+          'path': '/workspace/project/lib',
+          'name': 'lib',
+          'type': 'directory',
+        },
+        <String, dynamic>{
+          'path': '/workspace/project/lib/src',
+          'name': 'src',
+          'type': 'directory',
+        },
+        <String, dynamic>{
+          'path': '/workspace/alt',
+          'name': 'alt',
+          'type': 'directory',
+        },
+        <String, dynamic>{
+          'path': '/workspace/project/README.md',
+          'name': 'README.md',
+          'type': 'file',
+        },
+      ];
+      final filtered = entries
+          .where((item) {
+            final path = (item['path'] as String).toLowerCase();
+            final name = (item['name'] as String).toLowerCase();
+            final itemType = (item['type'] as String).toLowerCase();
+            if (directory != null &&
+                directory.isNotEmpty &&
+                !path.startsWith(directory.toLowerCase())) {
+              return false;
+            }
+            if (type != null && type.isNotEmpty && itemType != type) {
+              return false;
+            }
+            if (query.isEmpty) {
+              return true;
+            }
+            return path.contains(query) || name.contains(query);
+          })
+          .take(limit)
+          .toList(growable: false);
+      await _writeJson(request.response, 200, filtered);
+      return;
+    }
+
     if (method == 'PATCH' && segments.length == 2 && segments[0] == 'project') {
       final projectId = segments[1];
       final project = _projectsById[projectId];

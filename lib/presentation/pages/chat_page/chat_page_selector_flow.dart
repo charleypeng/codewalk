@@ -252,7 +252,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                           ),
                           trailing: IconButton(
                             icon: const Icon(Symbols.delete_outline_rounded),
-                            tooltip: 'Archive closed project $displayName',
+                            tooltip: 'Remove $displayName from history',
                             onPressed: selectorActionInFlight
                                 ? null
                                 : () => unawaited(

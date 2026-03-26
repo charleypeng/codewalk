@@ -2831,12 +2831,14 @@ void main() {
 
     expect(find.text('Workspace Feature'), findsOneWidget);
     expect(find.byTooltip('Reopen Workspace Feature'), findsNothing);
-    await tester.tap(
-      find.byTooltip('Archive closed project Workspace Feature'),
-    );
+    await tester.tap(find.byTooltip('Remove Workspace Feature from history'));
     await tester.pumpAndSettle();
 
     expect(provider.projectProvider.archivedProjectIds, contains('proj_ws'));
+    expect(
+      provider.projectProvider.hiddenProjectPaths,
+      contains('/repo/main/feature-a'),
+    );
     expect(find.text('Workspace Feature'), findsNothing);
   });
 
@@ -3225,6 +3227,88 @@ void main() {
     expect(find.text('Project context opened: /repo/enter'), findsOneWidget);
   });
 
+  testWidgets('open project folder shows fuzzy directory suggestions', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1000, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final projectRepository = FakeProjectRepository(
+      currentProject: Project(
+        id: 'proj_a',
+        name: 'Project A',
+        path: '/repo/a',
+        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+      ),
+      projects: <Project>[
+        Project(
+          id: 'proj_a',
+          name: 'Project A',
+          path: '/repo/a',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+        Project(
+          id: 'proj_known',
+          name: 'Known Feature',
+          path: '/repo/a/known-feature',
+          createdAt: DateTime.fromMillisecondsSinceEpoch(1),
+        ),
+      ],
+    );
+    projectRepository.searchResultsByQuery['feature'] = <FileNode>[
+      const FileNode(
+        path: '/repo/a/feature-search',
+        name: 'feature-search',
+        type: FileNodeType.directory,
+      ),
+    ];
+    final provider = _buildChatProvider(
+      localDataSource: localDataSource,
+      projectRepository: projectRepository,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Choose Directory'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open project folder...'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('workspace_base_directory_input')),
+      'feature',
+    );
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('workspace_directory_suggestions')),
+      findsOneWidget,
+    );
+    expect(find.text('/repo/a/feature-search'), findsOneWidget);
+    expect(find.text('/repo/a/known-feature'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(
+        const ValueKey<String>(
+          'workspace_directory_suggestion_/repo/a/feature-search',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('/repo/a/feature-search'), findsOneWidget);
+
+    await tester.tap(find.text('Open folder'));
+    await tester.pumpAndSettle();
+
+    expect(provider.projectProvider.currentDirectory, '/repo/a/feature-search');
+  });
+
   testWidgets('open project folder supports browsing directories dynamically', (
     WidgetTester tester,
   ) async {
@@ -3308,7 +3392,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('/repo/a/client/app'), findsOneWidget);
+    final directoryField = tester.widget<TextField>(
+      find.byKey(const ValueKey<String>('workspace_base_directory_input')),
+    );
+    expect(directoryField.controller?.text, '/repo/a/client/app');
 
     await tester.tap(find.text('Open folder'));
     await tester.pumpAndSettle();
@@ -9429,7 +9516,7 @@ void main() {
         time: DateTime.fromMillisecondsSinceEpoch(1200),
         completedTime: DateTime.fromMillisecondsSinceEpoch(1210),
         parts: <MessagePart>[
-          AgentPart(
+          const AgentPart(
             id: 'part_merge_tool_agent_1',
             messageId: 'msg_merge_tool_1',
             sessionId: 'ses_merge_tool_run',
@@ -9458,7 +9545,7 @@ void main() {
         time: DateTime.fromMillisecondsSinceEpoch(1250),
         completedTime: DateTime.fromMillisecondsSinceEpoch(1260),
         parts: <MessagePart>[
-          SubtaskPart(
+          const SubtaskPart(
             id: 'part_merge_tool_subtask_2',
             messageId: 'msg_merge_tool_2',
             sessionId: 'ses_merge_tool_run',

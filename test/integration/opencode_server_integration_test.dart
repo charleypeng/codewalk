@@ -125,6 +125,17 @@ void main() {
           created.id,
           directory: '/workspace/project',
         );
+
+        final directories = await remote.findFiles(
+          query: 'project',
+          type: 'directory',
+          limit: 10,
+        );
+        expect(directories, isNotEmpty);
+        expect(
+          directories.every((item) => item.type.name == 'directory'),
+          isTrue,
+        );
       },
     );
 
