@@ -388,29 +388,9 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
     );
   }
 
-  Widget? _buildCannedAnswerMetadata(CannedAnswer item) {
-    final metadataText = item.normalizedLabel.isEmpty ? null : item.text;
-    if (metadataText == null &&
-        item.scopeMode != CannedAnswerScopeMode.global) {
-      return null;
-    }
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (item.scopeMode == CannedAnswerScopeMode.global) ...[
-          const Icon(Symbols.public_rounded, size: 14),
-          if (metadataText != null) const SizedBox(width: 6),
-        ],
-        if (metadataText != null)
-          Flexible(
-            child: Text(
-              metadataText,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-      ],
-    );
+  String _cannedAnswerDisplayText(CannedAnswer item) {
+    // Keep each quick reply row to one visible text source.
+    return item.normalizedLabel.isEmpty ? item.text : item.normalizedLabel;
   }
 
   Widget _buildExtrasPopover({
@@ -469,14 +449,14 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
                     final selected = index == _activeSuggestionIndex;
                     return ListTile(
                       selected: selected,
+                      leading: item.scopeMode == CannedAnswerScopeMode.global
+                          ? const Icon(Symbols.public_rounded, size: 18)
+                          : null,
                       title: Text(
-                        item.normalizedLabel.isEmpty
-                            ? item.text
-                            : item.normalizedLabel,
+                        _cannedAnswerDisplayText(item),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      subtitle: _buildCannedAnswerMetadata(item),
                       onTap: () {
                         _setState(() {
                           _activeSuggestionIndex = index;
