@@ -396,7 +396,6 @@ extension _ChatPageScaffold on _ChatPageState {
                           text: _sessionDisplayTitle(session),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          repeat: false,
                           style: titleStyle,
                         )
                       : Text(
