@@ -343,6 +343,62 @@ void main() {
     );
 
     test(
+      'switchToDirectoryContext preserves previously open synthetic directories',
+      () async {
+        await provider.initializeProject();
+
+        final openedParent = await provider.switchToDirectoryContext(
+          '/home/helio',
+        );
+        final openedNested = await provider.switchToDirectoryContext(
+          '/home/helio/MEGA/CONFIG/opencode',
+        );
+
+        expect(openedParent, isTrue);
+        expect(openedNested, isTrue);
+        expect(
+          provider.currentProject?.id,
+          'dir::/home/helio/MEGA/CONFIG/opencode',
+        );
+        expect(provider.openProjectIds, contains('dir::/home/helio'));
+        expect(
+          provider.openProjectIds,
+          contains('dir::/home/helio/MEGA/CONFIG/opencode'),
+        );
+        expect(
+          provider.openProjects.map((project) => project.path),
+          containsAll(<String>[
+            '/home/helio',
+            '/home/helio/MEGA/CONFIG/opencode',
+          ]),
+        );
+      },
+    );
+
+    test('loadProjects preserves open synthetic directories', () async {
+      await provider.initializeProject();
+      await provider.switchToDirectoryContext('/home/helio');
+      await provider.switchToDirectoryContext(
+        '/home/helio/MEGA/CONFIG/opencode',
+      );
+
+      await provider.loadProjects();
+
+      expect(provider.openProjectIds, contains('dir::/home/helio'));
+      expect(
+        provider.openProjectIds,
+        contains('dir::/home/helio/MEGA/CONFIG/opencode'),
+      );
+      expect(
+        provider.projects.map((project) => project.path),
+        containsAll(<String>[
+          '/home/helio',
+          '/home/helio/MEGA/CONFIG/opencode',
+        ]),
+      );
+    });
+
+    test(
       'switchToDirectoryContext accepts normalized server project paths',
       () async {
         projectRepository = _DirectoryProjectRepository(

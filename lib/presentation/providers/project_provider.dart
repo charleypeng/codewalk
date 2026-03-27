@@ -750,6 +750,8 @@ class ProjectProvider extends ChangeNotifier {
   }
 
   Future<void> _loadProjects({required bool silent}) async {
+    final syntheticProjectsToPreserve =
+        _syntheticProjectsToPreserveDuringRefresh();
     final result = await _projectRepository.getProjects();
     result.fold(
       (failure) {
@@ -759,6 +761,7 @@ class ProjectProvider extends ChangeNotifier {
       },
       (projects) {
         _projects = _sanitizeProjects(projects);
+        _mergePreservedSyntheticProjects(syntheticProjectsToPreserve);
         _syncArchivedProjectIdsFromHiddenPaths();
         _openProjectIds = _openProjectIds
             .where((id) {
@@ -967,6 +970,40 @@ class ProjectProvider extends ChangeNotifier {
         .where((item) => !_isPlaceholderRootProject(item))
         .toList(growable: false);
     return sanitized.isEmpty ? projects : sanitized;
+  }
+
+  List<Project> _syntheticProjectsToPreserveDuringRefresh() {
+    final syntheticIds = <String>{..._openProjectIds};
+    final currentProjectId = _currentProject?.id.trim();
+    if (currentProjectId != null && currentProjectId.isNotEmpty) {
+      syntheticIds.add(currentProjectId);
+    }
+    return syntheticIds
+        .map(_syntheticProjectFromId)
+        .whereType<Project>()
+        .toList(growable: false);
+  }
+
+  void _mergePreservedSyntheticProjects(Iterable<Project> projects) {
+    for (final synthetic in projects) {
+      if (_isProjectHidden(synthetic)) {
+        continue;
+      }
+      final existingPathIndex = _projects.indexWhere(
+        (item) => areEquivalentFilePaths(item.path, synthetic.path),
+      );
+      if (existingPathIndex >= 0) {
+        continue;
+      }
+      final existingIdIndex = _projects.indexWhere(
+        (item) => item.id == synthetic.id,
+      );
+      if (existingIdIndex >= 0) {
+        _projects[existingIdIndex] = synthetic;
+      } else {
+        _projects = <Project>[synthetic, ..._projects];
+      }
+    }
   }
 
   void _rehydrateSyntheticProjects(Iterable<String> projectIds) {
