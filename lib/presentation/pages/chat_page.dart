@@ -2249,9 +2249,6 @@ class _ComposerStatusLanternTextState extends State<_ComposerStatusLanternText>
     );
 
     if (!_animationsEnabled(context)) {
-      if (_controller.isAnimating) {
-        _controller.stop();
-      }
       return textWidget;
     }
 
@@ -2260,8 +2257,6 @@ class _ComposerStatusLanternTextState extends State<_ComposerStatusLanternText>
         _controller.status == AnimationStatus.completed) {
       return textWidget;
     }
-
-    _syncAnimationState();
 
     final colorScheme = Theme.of(context).colorScheme;
     final baseColor = textStyle?.color ?? colorScheme.onSurfaceVariant;
