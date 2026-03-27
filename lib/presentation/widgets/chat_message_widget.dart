@@ -33,6 +33,13 @@ part 'chat_message/chat_message_tool_helpers.dart';
 part 'chat_message/chat_message_tool_part.dart';
 part 'chat_message/chat_message_info_parts.dart';
 
+class TaskToolChildSummary {
+  const TaskToolChildSummary({this.latestToolLabel, this.toolCallCount});
+
+  final String? latestToolLabel;
+  final int? toolCallCount;
+}
+
 /// Chat message widget.
 ///
 /// Uses a StatefulWidget so that completed messages can skip expensive
@@ -52,6 +59,8 @@ class ChatMessageWidget extends StatefulWidget {
     this.onBackgroundLongPressEnd,
     this.onSubtaskNavigate,
     this.onTaskToolNavigate,
+    this.taskToolChildSummariesByPartId =
+        const <String, TaskToolChildSummary>{},
   });
 
   final ChatMessage message;
@@ -65,6 +74,7 @@ class ChatMessageWidget extends StatefulWidget {
   final VoidCallback? onBackgroundLongPressEnd;
   final ValueChanged<SubtaskPart>? onSubtaskNavigate;
   final ValueChanged<ToolPart>? onTaskToolNavigate;
+  final Map<String, TaskToolChildSummary> taskToolChildSummariesByPartId;
 
   @override
   State<ChatMessageWidget> createState() => _ChatMessageWidgetState();
@@ -91,6 +101,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   bool _lastShowInlineUndoAction = false;
   bool _lastResponding = false;
   int _lastLocalUiStateVersion = 0;
+  int _lastTaskToolSummaryHash = 0;
   ValueChanged<SubtaskPart>? _lastSubtaskNavigate;
   ValueChanged<ToolPart>? _lastTaskToolNavigate;
   double _lastVisualDensityVertical = 0;
@@ -110,6 +121,26 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   String _nextStableIdentity(String prefix) {
     _stableIdentitySequence += 1;
     return '$prefix:$_stableIdentitySequence';
+  }
+
+  int _computeTaskToolSummaryHash() {
+    if (widget.taskToolChildSummariesByPartId.isEmpty) {
+      return 0;
+    }
+    final keys = widget.taskToolChildSummariesByPartId.keys.toList(
+      growable: false,
+    )..sort();
+    var hash = 0;
+    for (final key in keys) {
+      final summary = widget.taskToolChildSummariesByPartId[key];
+      hash = Object.hash(
+        hash,
+        key,
+        summary?.latestToolLabel,
+        summary?.toolCallCount,
+      );
+    }
+    return hash;
   }
 
   String _stableToolIdentity({required String partId, required String callId}) {
@@ -209,6 +240,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     final lastPartId = msg.parts.isNotEmpty ? msg.parts.last.id : null;
     final density = Theme.of(context).visualDensity;
     final themeTokens = _resolveThemeTokens(context);
+    final taskToolSummaryHash = _computeTaskToolSummaryHash();
     return msg.hashCode == _lastMessageHash &&
         partCount == _lastPartCount &&
         lastPartId == _lastPartId &&
@@ -218,6 +250,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         widget.showInlineUndoAction == _lastShowInlineUndoAction &&
         widget.isSessionActivelyResponding == _lastResponding &&
         _localUiStateVersion == _lastLocalUiStateVersion &&
+        taskToolSummaryHash == _lastTaskToolSummaryHash &&
         identical(widget.onSubtaskNavigate, _lastSubtaskNavigate) &&
         identical(widget.onTaskToolNavigate, _lastTaskToolNavigate) &&
         density.vertical == _lastVisualDensityVertical &&
@@ -229,6 +262,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     final msg = widget.message;
     final density = Theme.of(context).visualDensity;
     final themeTokens = _resolveThemeTokens(context);
+    final taskToolSummaryHash = _computeTaskToolSummaryHash();
     _lastMessageHash = msg.hashCode;
     _lastPartCount = msg.parts.length;
     _lastPartId = msg.parts.isNotEmpty ? msg.parts.last.id : null;
@@ -238,6 +272,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     _lastShowInlineUndoAction = widget.showInlineUndoAction;
     _lastResponding = widget.isSessionActivelyResponding;
     _lastLocalUiStateVersion = _localUiStateVersion;
+    _lastTaskToolSummaryHash = taskToolSummaryHash;
     _lastSubtaskNavigate = widget.onSubtaskNavigate;
     _lastTaskToolNavigate = widget.onTaskToolNavigate;
     _lastVisualDensityVertical = density.vertical;
@@ -349,6 +384,9 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   VoidCallback? get onBackgroundLongPressEnd => widget.onBackgroundLongPressEnd;
   ValueChanged<SubtaskPart>? get onSubtaskNavigate => widget.onSubtaskNavigate;
   ValueChanged<ToolPart>? get onTaskToolNavigate => widget.onTaskToolNavigate;
+  TaskToolChildSummary? taskToolChildSummaryForPart(String partId) {
+    return widget.taskToolChildSummariesByPartId[partId];
+  }
 
   bool shouldSuppressLiveReasoningPart(ReasoningPart part) {
     if (!isSessionActivelyResponding) {

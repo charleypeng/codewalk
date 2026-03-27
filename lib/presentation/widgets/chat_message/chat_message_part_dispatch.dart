@@ -58,6 +58,7 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
           onNavigateToSubConversation: onTaskToolNavigate == null
               ? null
               : () => onTaskToolNavigate!(toolPart),
+          taskChildSummary: taskToolChildSummaryForPart(toolPart.id),
         );
       case PartType.agent:
         return _buildAgentPart(context, part as AgentPart);

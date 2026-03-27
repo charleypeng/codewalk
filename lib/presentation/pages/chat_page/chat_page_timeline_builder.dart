@@ -12,6 +12,10 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     bool wrapRevealAnchor = true,
     String? keyPrefix,
   }) {
+    final taskToolChildSummariesByPartId = _buildTaskToolChildSummaries(
+      chatProvider: chatProvider,
+      message: message,
+    );
     Widget messageWidget = ChatMessageWidget(
       key: ValueKey<String>(
         '${keyPrefix ?? 'chat_message_widget'}_${message.id}',
@@ -46,6 +50,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           : (part) => unawaited(
               _openSubConversationFromTaskToolPart(chatProvider, part),
             ),
+      taskToolChildSummariesByPartId: taskToolChildSummariesByPartId,
     );
     if (wrapRevealAnchor && finalAssistantRevealMessageId == message.id) {
       messageWidget = KeyedSubtree(
@@ -54,6 +59,181 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       );
     }
     return messageWidget;
+  }
+
+  Map<String, TaskToolChildSummary> _buildTaskToolChildSummaries({
+    required ChatProvider chatProvider,
+    required ChatMessage message,
+  }) {
+    final taskParts = message.parts
+        .whereType<ToolPart>()
+        .where((part) {
+          return _normalizeToolNameForSubConversation(part.tool) == 'task';
+        })
+        .toList(growable: false);
+    if (taskParts.isEmpty) {
+      return const <String, TaskToolChildSummary>{};
+    }
+
+    final output = <String, TaskToolChildSummary>{};
+    for (final part in taskParts) {
+      final metadataSummary = _taskToolChildSummaryFromStateMetadata(
+        part.state,
+      );
+      final childSession = _resolveSubConversationForTaskToolPart(
+        chatProvider,
+        part,
+      );
+      final cachedSummary = childSession == null
+          ? null
+          : _taskToolChildSummaryFromCachedSession(
+              chatProvider,
+              childSession.id,
+            );
+      final mergedSummary = _mergeTaskToolChildSummaries(
+        metadataSummary,
+        cachedSummary,
+      );
+      if (mergedSummary != null) {
+        output[part.id] = mergedSummary;
+      }
+    }
+    return output;
+  }
+
+  TaskToolChildSummary? _mergeTaskToolChildSummaries(
+    TaskToolChildSummary? preferred,
+    TaskToolChildSummary? fallback,
+  ) {
+    final latestToolLabel =
+        preferred?.latestToolLabel ?? fallback?.latestToolLabel;
+    final toolCallCount = preferred?.toolCallCount ?? fallback?.toolCallCount;
+    if (latestToolLabel == null && toolCallCount == null) {
+      return null;
+    }
+    return TaskToolChildSummary(
+      latestToolLabel: latestToolLabel,
+      toolCallCount: toolCallCount,
+    );
+  }
+
+  TaskToolChildSummary? _taskToolChildSummaryFromStateMetadata(
+    ToolState state,
+  ) {
+    final metadata = toolStateMetadata(state);
+    if (metadata == null || metadata.isEmpty) {
+      return null;
+    }
+
+    String normalizeMetadataKey(String raw) {
+      return raw.trim().toLowerCase().replaceAll(RegExp(r'[_\-\s]'), '');
+    }
+
+    String? readLabel(dynamic value) {
+      if (value is String) {
+        return normalizeToolLabel(value);
+      }
+      if (value is Map) {
+        return extractPreferredToolLabel(Map<String, dynamic>.from(value));
+      }
+      return null;
+    }
+
+    int? readCount(dynamic value) {
+      if (value is int) {
+        return value;
+      }
+      if (value is String) {
+        return int.tryParse(value.trim());
+      }
+      return null;
+    }
+
+    const latestToolKeys = <String>{
+      'latesttoolcall',
+      'latesttoollabel',
+      'latesttoolname',
+      'currenttoolcall',
+      'currenttoollabel',
+      'activetoolcall',
+      'activetoollabel',
+      'lasttoolcall',
+      'lasttoollabel',
+    };
+    const toolCallCountKeys = <String>{
+      'toolcallcount',
+      'toolcalls',
+      'totaltoolcalls',
+    };
+
+    String? latestToolLabel;
+    int? toolCallCount;
+
+    void visit(dynamic value, {String? key}) {
+      if (key != null) {
+        final normalizedKey = normalizeMetadataKey(key);
+        if (latestToolLabel == null && latestToolKeys.contains(normalizedKey)) {
+          latestToolLabel = readLabel(value);
+        }
+        if (toolCallCount == null &&
+            toolCallCountKeys.contains(normalizedKey)) {
+          toolCallCount = readCount(value);
+        }
+      }
+      if (value is Map) {
+        for (final entry in value.entries) {
+          visit(entry.value, key: entry.key.toString());
+        }
+      } else if (value is List) {
+        for (final item in value) {
+          visit(item);
+        }
+      }
+    }
+
+    visit(metadata);
+    if (latestToolLabel == null && toolCallCount == null) {
+      return null;
+    }
+    return TaskToolChildSummary(
+      latestToolLabel: latestToolLabel,
+      toolCallCount: toolCallCount,
+    );
+  }
+
+  TaskToolChildSummary? _taskToolChildSummaryFromCachedSession(
+    ChatProvider chatProvider,
+    String sessionId,
+  ) {
+    final messages = chatProvider.cachedMessagesForSession(sessionId);
+    if (messages == null || messages.isEmpty) {
+      return null;
+    }
+
+    final visibleToolParts = <ToolPart>[];
+    for (final message in messages) {
+      for (final part in message.parts) {
+        if (part is! ToolPart) {
+          continue;
+        }
+        final normalized = normalizeToolName(part.tool);
+        if (normalized == 'todowrite' || normalized == 'todoread') {
+          continue;
+        }
+        visibleToolParts.add(part);
+      }
+    }
+    if (visibleToolParts.isEmpty) {
+      return const TaskToolChildSummary(toolCallCount: 0);
+    }
+
+    final latestToolLabel = toolResolveComposerDescriptionLabel(
+      visibleToolParts.last,
+    );
+    return TaskToolChildSummary(
+      latestToolLabel: latestToolLabel,
+      toolCallCount: visibleToolParts.length,
+    );
   }
 
   Widget _buildChatContent({

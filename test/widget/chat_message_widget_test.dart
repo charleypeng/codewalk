@@ -3762,6 +3762,100 @@ index abc123..def456 100644
     expect(find.text('make check'), findsOneWidget);
   });
 
+  testWidgets('hides task view and details controls in favor of bubble tap', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: AssistantMessage(
+              id: 'msg_task_tool_compact',
+              sessionId: 'ses_task_tool_compact',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: <MessagePart>[
+                ToolPart(
+                  id: 'part_task_tool_compact',
+                  messageId: 'msg_task_tool_compact',
+                  sessionId: 'ses_task_tool_compact',
+                  callId: 'call_task_tool_compact',
+                  tool: 'task',
+                  state: ToolStateCompleted(
+                    input: const <String, dynamic>{
+                      'description': 'Compact task bubble',
+                    },
+                    output: 'done',
+                    time: ToolTime(
+                      start: DateTime.fromMillisecondsSinceEpoch(1000),
+                      end: DateTime.fromMillisecondsSinceEpoch(1010),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            onTaskToolNavigate: (_) {},
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('View'), findsNothing);
+    expect(find.text('Details'), findsNothing);
+    expect(find.text('Show'), findsNothing);
+    expect(
+      find.byKey(
+        const ValueKey<String>('task_tool_open_session_part_task_tool_compact'),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('shows total tool call count for a completed task bubble', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: AssistantMessage(
+              id: 'msg_task_tool_summary',
+              sessionId: 'ses_task_tool_summary',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: <MessagePart>[
+                ToolPart(
+                  id: 'part_task_tool_summary',
+                  messageId: 'msg_task_tool_summary',
+                  sessionId: 'ses_task_tool_summary',
+                  callId: 'call_task_tool_summary',
+                  tool: 'task',
+                  state: ToolStateCompleted(
+                    input: const <String, dynamic>{
+                      'description': 'Summarize child tool calls',
+                    },
+                    output: 'done',
+                    time: ToolTime(
+                      start: DateTime.fromMillisecondsSinceEpoch(1000),
+                      end: DateTime.fromMillisecondsSinceEpoch(1010),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            taskToolChildSummariesByPartId:
+                const <String, TaskToolChildSummary>{
+                  'part_task_tool_summary': TaskToolChildSummary(
+                    latestToolLabel: 'Reading',
+                    toolCallCount: 3,
+                  ),
+                },
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('3 tool calls'), findsOneWidget);
+  });
+
   testWidgets('keeps active task tool bubbles last within each task run', (
     WidgetTester tester,
   ) async {

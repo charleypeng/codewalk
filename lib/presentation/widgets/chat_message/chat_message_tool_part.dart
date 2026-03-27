@@ -15,6 +15,7 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
     BuildContext context,
     ToolPart part, {
     VoidCallback? onNavigateToSubConversation,
+    TaskToolChildSummary? taskChildSummary,
   }) {
     final isCompactToolStatus = MediaQuery.sizeOf(context).width < 600;
     final colorScheme = Theme.of(context).colorScheme;
@@ -28,11 +29,22 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
         isTaskTool && part.state.status == ToolStatus.running
         ? _extractToolCommand(part.state)
         : null;
+    final taskSecondaryLabel = isTaskTool
+        ? _buildTaskToolSecondaryLabel(
+            part,
+            descriptionLabel: descriptionLabel,
+            taskChildSummary: taskChildSummary,
+            latestTaskCommand: latestTaskCommand,
+          )
+        : null;
 
-    return Container(
+    final content = Container(
       key: ValueKey<String>('tool_part_container_$toolIdentityToken'),
       margin: const EdgeInsets.symmetric(vertical: 4),
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: isTaskTool ? 8 : 12,
+      ),
       decoration: BoxDecoration(
         color: Theme.of(
           context,
@@ -58,8 +70,9 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    if (typeLabel.toLowerCase() !=
-                        descriptionLabel.toLowerCase()) ...[
+                    if (!isTaskTool &&
+                        typeLabel.toLowerCase() !=
+                            descriptionLabel.toLowerCase()) ...[
                       const SizedBox(height: 2),
                       Text(
                         typeLabel,
@@ -70,7 +83,18 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
                         ),
                       ),
                     ],
-                    if (latestTaskCommand != null &&
+                    if (taskSecondaryLabel != null &&
+                        taskSecondaryLabel.trim().isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        taskSecondaryLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ] else if (latestTaskCommand != null &&
                         latestTaskCommand.trim().isNotEmpty &&
                         latestTaskCommand.toLowerCase() !=
                             descriptionLabel.toLowerCase()) ...[
@@ -100,46 +124,93 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
                   ],
                 ),
               ),
-              if (isTaskTool && onNavigateToSubConversation != null) ...[
-                TextButton(
-                  key: ValueKey<String>('task_tool_open_session_${part.id}'),
-                  onPressed: onNavigateToSubConversation,
-                  style: TextButton.styleFrom(
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                  ),
-                  child: const Text('View'),
-                ),
-                const SizedBox(width: 6),
-              ],
               const SizedBox(width: 6),
-              _buildToolStatusChip(
-                context,
-                part.state.status,
-                showLabel: !isCompactToolStatus,
-              ),
+              isTaskTool
+                  ? _buildTaskToolStatusIcon(context, part.state.status)
+                  : _buildToolStatusChip(
+                      context,
+                      part.state.status,
+                      showLabel: !isCompactToolStatus,
+                    ),
             ],
           ),
-          const SizedBox(height: 8),
-          _ToolPartDetailsToggle(
-            key: ValueKey<String>(
-              'tool_part_details_toggle_$toolIdentityToken',
+          if (!isTaskTool) ...[
+            const SizedBox(height: 8),
+            _ToolPartDetailsToggle(
+              key: ValueKey<String>(
+                'tool_part_details_toggle_$toolIdentityToken',
+              ),
+              expanded: _isToolDetailsExpanded(toolIdentityToken),
+              onExpandedChanged: (expanded) =>
+                  _setToolDetailsExpanded(toolIdentityToken, expanded),
+              partId: part.id,
+              hasDetails: hasDetails,
+              details: _buildToolStateDetails(context, part.state, part.tool),
             ),
-            expanded: _isToolDetailsExpanded(toolIdentityToken),
-            onExpandedChanged: (expanded) =>
-                _setToolDetailsExpanded(toolIdentityToken, expanded),
-            partId: part.id,
-            hasDetails: hasDetails,
-            details: _buildToolStateDetails(context, part.state, part.tool),
-          ),
+          ],
         ],
       ),
     );
+
+    if (!isTaskTool || onNavigateToSubConversation == null) {
+      return content;
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: ValueKey<String>('task_tool_open_session_${part.id}'),
+        onTap: onNavigateToSubConversation,
+        borderRadius: AppShapes.borderSmall,
+        child: content,
+      ),
+    );
+  }
+
+  String? _buildTaskToolSecondaryLabel(
+    ToolPart part, {
+    required String descriptionLabel,
+    required TaskToolChildSummary? taskChildSummary,
+    required String? latestTaskCommand,
+  }) {
+    if (part.state.status == ToolStatus.completed) {
+      final toolCallCount = taskChildSummary?.toolCallCount;
+      if (toolCallCount != null) {
+        return toolCallCount == 1 ? '1 tool call' : '$toolCallCount tool calls';
+      }
+      return null;
+    }
+
+    final latestToolLabel = taskChildSummary?.latestToolLabel?.trim();
+    if (latestToolLabel != null &&
+        latestToolLabel.isNotEmpty &&
+        latestToolLabel.toLowerCase() != descriptionLabel.toLowerCase()) {
+      return latestToolLabel;
+    }
+
+    final fallbackCommand = latestTaskCommand?.trim();
+    if (fallbackCommand != null &&
+        fallbackCommand.isNotEmpty &&
+        fallbackCommand.toLowerCase() != descriptionLabel.toLowerCase()) {
+      return fallbackCommand;
+    }
+
+    return part.state.status == ToolStatus.running ? 'Running task' : null;
+  }
+
+  Widget _buildTaskToolStatusIcon(BuildContext context, ToolStatus status) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final color = switch (status) {
+      ToolStatus.pending || ToolStatus.running => colorScheme.primary,
+      ToolStatus.completed => _resolveCompletedToolStatusColor(context),
+      ToolStatus.error => colorScheme.error,
+    };
+    final icon = switch (status) {
+      ToolStatus.pending || ToolStatus.running => Symbols.hourglass_top_rounded,
+      ToolStatus.completed => Symbols.check_circle_rounded,
+      ToolStatus.error => Symbols.warning_amber_rounded,
+    };
+    return Icon(icon, size: 20, color: color);
   }
 
   Widget _buildToolStatusChip(

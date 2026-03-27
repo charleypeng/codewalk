@@ -491,6 +491,17 @@ class ChatProvider extends ChangeNotifier {
   List<ChatMessage> get messages => _visibleMessagesForCurrentSession();
   List<ChatMessage> get rawMessages =>
       List<ChatMessage>.unmodifiable(_messages);
+  List<ChatMessage>? cachedMessagesForSession(String sessionId) {
+    final normalizedSessionId = sessionId.trim();
+    if (normalizedSessionId.isEmpty) {
+      return null;
+    }
+    if (_currentSession?.id == normalizedSessionId) {
+      return List<ChatMessage>.unmodifiable(rawMessages);
+    }
+    return _cachedSessionMessages(normalizedSessionId);
+  }
+
   int get messagesVersion => _messagesVersion;
   String? get errorMessage => _errorMessage;
   ChatUiNotice? get pendingUiNotice => _pendingUiNotice;
