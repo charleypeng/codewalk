@@ -2152,12 +2152,14 @@ class _ComposerStatusLanternText extends StatefulWidget {
     this.style,
     this.maxLines,
     this.overflow,
+    this.repeat = true,
   });
 
   final String text;
   final TextStyle? style;
   final int? maxLines;
   final TextOverflow? overflow;
+  final bool repeat;
 
   @override
   State<_ComposerStatusLanternText> createState() =>
@@ -2174,7 +2176,21 @@ class _ComposerStatusLanternTextState extends State<_ComposerStatusLanternText>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2100),
-    )..repeat();
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncAnimationState(restart: true);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ComposerStatusLanternText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.repeat != widget.repeat || oldWidget.text != widget.text) {
+      _syncAnimationState(restart: true);
+    }
   }
 
   @override
@@ -2195,6 +2211,33 @@ class _ComposerStatusLanternTextState extends State<_ComposerStatusLanternText>
         .disableAnimations;
   }
 
+  void _syncAnimationState({bool restart = false}) {
+    if (!_animationsEnabled(context)) {
+      if (_controller.isAnimating) {
+        _controller.stop();
+      }
+      if (_controller.value != 0) {
+        _controller.value = 0;
+      }
+      return;
+    }
+    if (widget.repeat) {
+      if (!_controller.isAnimating) {
+        _controller.repeat();
+      }
+      return;
+    }
+    if (restart || _controller.status == AnimationStatus.completed) {
+      _controller.stop();
+      _controller.forward(from: 0);
+      return;
+    }
+    if (!_controller.isAnimating &&
+        _controller.status == AnimationStatus.dismissed) {
+      _controller.forward();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final textStyle = widget.style;
@@ -2212,9 +2255,13 @@ class _ComposerStatusLanternTextState extends State<_ComposerStatusLanternText>
       return textWidget;
     }
 
-    if (!_controller.isAnimating) {
-      _controller.repeat();
+    if (!widget.repeat &&
+        !_controller.isAnimating &&
+        _controller.status == AnimationStatus.completed) {
+      return textWidget;
     }
+
+    _syncAnimationState();
 
     final colorScheme = Theme.of(context).colorScheme;
     final baseColor = textStyle?.color ?? colorScheme.onSurfaceVariant;

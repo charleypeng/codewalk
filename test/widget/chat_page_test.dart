@@ -2068,6 +2068,276 @@ void main() {
       },
     );
 
+    testWidgets('recent sessions shows busy sweep for non-current busy items', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+          'showRecentSessions': true,
+        });
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_current',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Current Session',
+          ),
+          ChatSession(
+            id: 'ses_recent',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(2000),
+            title: 'Recent Root Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_current'] = <ChatMessage>[];
+      repository.messagesBySession['ses_recent'] = <ChatMessage>[];
+      repository.sessionStatusById = const <String, SessionStatusInfo>{
+        'ses_recent': SessionStatusInfo(type: SessionStatusType.busy),
+      };
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+        projectRepository: FakeProjectRepository(
+          currentProject: Project(
+            id: 'proj_a',
+            name: 'Project A',
+            path: '/repo/a',
+            createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+          ),
+          projects: <Project>[
+            Project(
+              id: 'proj_a',
+              name: 'Project A',
+              path: '/repo/a',
+              createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+            ),
+          ],
+        ),
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(
+        provider.sessions.firstWhere((session) => session.id == 'ses_current'),
+      );
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('recent_session_busy_title_ses_recent'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(
+            const ValueKey<String>('recent_session_title_ses_recent'),
+          ),
+          matching: find.byType(ShaderMask),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('recent sessions disables busy sweep when animations are off', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+          'showRecentSessions': true,
+        });
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_current',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Current Session',
+          ),
+          ChatSession(
+            id: 'ses_recent',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(2000),
+            title: 'Recent Root Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_current'] = <ChatMessage>[];
+      repository.messagesBySession['ses_recent'] = <ChatMessage>[];
+      repository.sessionStatusById = const <String, SessionStatusInfo>{
+        'ses_recent': SessionStatusInfo(type: SessionStatusType.busy),
+      };
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+        projectRepository: FakeProjectRepository(
+          currentProject: Project(
+            id: 'proj_a',
+            name: 'Project A',
+            path: '/repo/a',
+            createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+          ),
+          projects: <Project>[
+            Project(
+              id: 'proj_a',
+              name: 'Project A',
+              path: '/repo/a',
+              createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+            ),
+          ],
+        ),
+      );
+      addTearDown(provider.dispose);
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      const mediaQueryData = MediaQueryData(
+        size: Size(1000, 900),
+        disableAnimations: true,
+      );
+      await tester.pumpWidget(
+        _testApp(provider, appProvider, mediaQueryData: mediaQueryData),
+      );
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(
+        provider.sessions.firstWhere((session) => session.id == 'ses_current'),
+      );
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('recent_session_busy_title_ses_recent'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(
+            const ValueKey<String>('recent_session_title_ses_recent'),
+          ),
+          matching: find.byType(ShaderMask),
+        ),
+        findsNothing,
+      );
+    });
+
+    testWidgets('recent sessions emphasizes unread title color for one hour', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+          'showRecentSessions': true,
+        });
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_current',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Current Session',
+          ),
+          ChatSession(
+            id: 'ses_recent',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(2000),
+            title: 'Recent Root Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_current'] = <ChatMessage>[];
+      repository.messagesBySession['ses_recent'] = <ChatMessage>[];
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+        projectRepository: FakeProjectRepository(
+          currentProject: Project(
+            id: 'proj_a',
+            name: 'Project A',
+            path: '/repo/a',
+            createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+          ),
+          projects: <Project>[
+            Project(
+              id: 'proj_a',
+              name: 'Project A',
+              path: '/repo/a',
+              createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+            ),
+          ],
+        ),
+      );
+      addTearDown(provider.dispose);
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(
+        provider.sessions.firstWhere((session) => session.id == 'ses_current'),
+      );
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      repository.emitEvent(
+        const ChatEvent(
+          type: 'session.status',
+          properties: <String, dynamic>{
+            'sessionID': 'ses_recent',
+            'status': <String, dynamic>{'type': 'busy'},
+          },
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+      repository.emitEvent(
+        const ChatEvent(
+          type: 'session.idle',
+          properties: <String, dynamic>{'sessionID': 'ses_recent'},
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pumpAndSettle();
+
+      final title = tester.widget<Text>(
+        find.descendant(
+          of: find.byKey(
+            const ValueKey<String>('recent_session_title_ses_recent'),
+          ),
+          matching: find.text('Recent Root Session'),
+        ),
+      );
+      final recentSessionsContext = tester.element(
+        find.text('Recent sessions'),
+      );
+      final colorScheme = Theme.of(recentSessionsContext).colorScheme;
+      expect(title.style?.color, colorScheme.primary);
+
+      await provider.selectSession(
+        provider.sessions.firstWhere((session) => session.id == 'ses_recent'),
+      );
+      await tester.pumpAndSettle();
+    });
+
     testWidgets('display toggles expose replay chat tour action', (
       WidgetTester tester,
     ) async {

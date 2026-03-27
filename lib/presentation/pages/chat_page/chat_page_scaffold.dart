@@ -351,8 +351,18 @@ extension _ChatPageScaffold on _ChatPageState {
     required bool isMobileLayout,
     required ColorScheme colorScheme,
   }) {
-    final attention = chatProvider.sessionAttentionFor(session.id);
+    final attention = chatProvider.sessionAttentionForScope(
+      session.id,
+      scopeId: _scopeIdForProject(project),
+    );
     final highlighted = attention.hasRecentUnreadCompletion;
+    final isBusy = attention.isActive;
+    final showBusySweep =
+        isBusy && chatProvider.currentSession?.id != session.id;
+    final titleStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+      fontWeight: highlighted ? FontWeight.w700 : FontWeight.w500,
+      color: highlighted ? colorScheme.primary : null,
+    );
     return Material(
       color: highlighted
           ? Color.alphaBlend(
@@ -376,13 +386,25 @@ extension _ChatPageScaffold on _ChatPageState {
           child: Row(
             children: [
               Expanded(
-                child: Text(
-                  _sessionDisplayTitle(session),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: highlighted ? FontWeight.w700 : FontWeight.w500,
-                  ),
+                child: KeyedSubtree(
+                  key: ValueKey<String>('recent_session_title_${session.id}'),
+                  child: showBusySweep
+                      ? _ComposerStatusLanternText(
+                          key: ValueKey<String>(
+                            'recent_session_busy_title_${session.id}',
+                          ),
+                          text: _sessionDisplayTitle(session),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          repeat: false,
+                          style: titleStyle,
+                        )
+                      : Text(
+                          _sessionDisplayTitle(session),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: titleStyle,
+                        ),
                 ),
               ),
               const SizedBox(width: 8),
