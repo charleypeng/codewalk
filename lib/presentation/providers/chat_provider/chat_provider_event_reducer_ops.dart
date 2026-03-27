@@ -376,7 +376,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
                 previousStatusType == SessionStatusType.busy ||
                 previousStatusType == SessionStatusType.retry;
             if (wasBusyBeforeIdle) {
-              _sessionUnreadCompletionIds.add(sessionId);
+              _markSessionUnreadCompletion(sessionId);
             }
             _notifyListeners();
           }
@@ -806,6 +806,10 @@ extension _ChatProviderEventReducerOps on ChatProvider {
     }
 
     List<ChatSession>? nextSessions;
+    Map<String, SessionStatusInfo>? nextSessionStatusById;
+    Set<String>? nextUnreadCompletionIds;
+    Map<String, DateTime>? nextUnreadCompletionTimestamps;
+    Set<String>? nextErrorAttentionIds;
     switch (event.type) {
       case 'session.created':
       case 'session.updated':
@@ -850,25 +854,101 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           return false;
         }
         break;
+      case 'session.status':
+        final sessionId = event.properties['sessionID'] as String?;
+        final statusMap = event.properties['status'];
+        if (sessionId == null || statusMap is! Map<String, dynamic>) {
+          return false;
+        }
+        final nextStatus = SessionStatusModel.fromJson(statusMap).toDomain();
+        final previousStatus = snapshot.sessionStatusById[sessionId];
+        if (previousStatus == nextStatus) {
+          return false;
+        }
+        nextSessionStatusById = Map<String, SessionStatusInfo>.from(
+          snapshot.sessionStatusById,
+        )..[sessionId] = nextStatus;
+        if (nextStatus.type == SessionStatusType.busy ||
+            nextStatus.type == SessionStatusType.retry) {
+          nextUnreadCompletionIds = Set<String>.from(
+            snapshot.sessionUnreadCompletionIds,
+          )..remove(sessionId);
+          nextUnreadCompletionTimestamps = Map<String, DateTime>.from(
+            snapshot.sessionUnreadCompletionTimestamps,
+          )..remove(sessionId);
+        }
+        break;
+      case 'session.idle':
+        final sessionId = event.properties['sessionID'] as String?;
+        if (sessionId == null || sessionId.trim().isEmpty) {
+          return false;
+        }
+        final previousStatusType = snapshot.sessionStatusById[sessionId]?.type;
+        final nextIdleStatus = const SessionStatusInfo(
+          type: SessionStatusType.idle,
+        );
+        nextSessionStatusById = Map<String, SessionStatusInfo>.from(
+          snapshot.sessionStatusById,
+        )..[sessionId] = nextIdleStatus;
+        nextErrorAttentionIds = Set<String>.from(
+          snapshot.sessionErrorAttentionIds,
+        )..remove(sessionId);
+        final wasBusyBeforeIdle =
+            previousStatusType == SessionStatusType.busy ||
+            previousStatusType == SessionStatusType.retry;
+        if (wasBusyBeforeIdle) {
+          nextUnreadCompletionIds = Set<String>.from(
+            snapshot.sessionUnreadCompletionIds,
+          )..add(sessionId);
+          nextUnreadCompletionTimestamps = Map<String, DateTime>.from(
+            snapshot.sessionUnreadCompletionTimestamps,
+          )..[sessionId] = DateTime.now();
+        }
+        break;
       default:
         return false;
     }
 
-    if (listEquals(snapshot.sessions, nextSessions)) {
+    final effectiveSessions = nextSessions ?? snapshot.sessions;
+    final effectiveSessionStatusById =
+        nextSessionStatusById ?? snapshot.sessionStatusById;
+    final effectiveUnreadCompletionIds =
+        nextUnreadCompletionIds ?? snapshot.sessionUnreadCompletionIds;
+    final effectiveUnreadCompletionTimestamps =
+        nextUnreadCompletionTimestamps ??
+        snapshot.sessionUnreadCompletionTimestamps;
+    final effectiveErrorAttentionIds =
+        nextErrorAttentionIds ?? snapshot.sessionErrorAttentionIds;
+
+    final changed =
+        !listEquals(snapshot.sessions, effectiveSessions) ||
+        !mapEquals(snapshot.sessionStatusById, effectiveSessionStatusById) ||
+        !setEquals(
+          snapshot.sessionUnreadCompletionIds,
+          effectiveUnreadCompletionIds,
+        ) ||
+        !mapEquals(
+          snapshot.sessionUnreadCompletionTimestamps,
+          effectiveUnreadCompletionTimestamps,
+        ) ||
+        !setEquals(
+          snapshot.sessionErrorAttentionIds,
+          effectiveErrorAttentionIds,
+        );
+    if (!changed) {
       return false;
     }
 
     _contextSnapshots[contextKey] = _ChatContextSnapshot(
-      sessions: nextSessions,
+      sessions: effectiveSessions,
       currentSession: snapshot.currentSession,
       messages: snapshot.messages,
-      sessionStatusById: snapshot.sessionStatusById,
+      sessionStatusById: effectiveSessionStatusById,
       pendingPermissionsBySession: snapshot.pendingPermissionsBySession,
       pendingQuestionsBySession: snapshot.pendingQuestionsBySession,
-      sessionUnreadCompletionIds: snapshot.sessionUnreadCompletionIds,
-      sessionUnreadCompletionTimestamps:
-          snapshot.sessionUnreadCompletionTimestamps,
-      sessionErrorAttentionIds: snapshot.sessionErrorAttentionIds,
+      sessionUnreadCompletionIds: effectiveUnreadCompletionIds,
+      sessionUnreadCompletionTimestamps: effectiveUnreadCompletionTimestamps,
+      sessionErrorAttentionIds: effectiveErrorAttentionIds,
       sessionChildrenById: snapshot.sessionChildrenById,
       sessionTodoById: snapshot.sessionTodoById,
       sessionDiffById: snapshot.sessionDiffById,
@@ -881,6 +961,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       activeSendDraft: snapshot.activeSendDraft,
       rejectedDraft: snapshot.rejectedDraft,
     );
+    _scheduleSessionUnreadHighlightTimer();
     _notifyListeners();
     return true;
   }

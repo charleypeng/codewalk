@@ -919,13 +919,59 @@ class ChatProvider extends ChangeNotifier {
     return isSessionActivelyResponding(sessionId);
   }
 
+  SessionAttentionState sessionAttentionForScope(
+    String sessionId, {
+    required String scopeId,
+  }) {
+    final normalizedScopeId = scopeId.trim();
+    if (normalizedScopeId.isEmpty) {
+      return sessionAttentionFor(sessionId);
+    }
+    final contextKey = _composeContextKey(_activeServerId, normalizedScopeId);
+    if (contextKey == _activeContextKey) {
+      return sessionAttentionFor(sessionId);
+    }
+
+    final normalizedSessionId = sessionId.trim();
+    if (normalizedSessionId.isEmpty) {
+      return const SessionAttentionState();
+    }
+
+    final snapshot = _contextSnapshots[contextKey];
+    if (snapshot == null) {
+      return const SessionAttentionState();
+    }
+
+    final statusType = snapshot.sessionStatusById[normalizedSessionId]?.type;
+    final hasPendingPermission =
+        (snapshot
+            .pendingPermissionsBySession[normalizedSessionId]
+            ?.isNotEmpty ??
+        false);
+    final hasPendingQuestion =
+        (snapshot.pendingQuestionsBySession[normalizedSessionId]?.isNotEmpty ??
+        false);
+
+    return SessionAttentionState(
+      isActive:
+          statusType == SessionStatusType.busy ||
+          statusType == SessionStatusType.retry,
+      hasPendingInteraction: hasPendingPermission || hasPendingQuestion,
+      hasError: snapshot.sessionErrorAttentionIds.contains(normalizedSessionId),
+      hasUnreadCompletion: snapshot.sessionUnreadCompletionIds.contains(
+        normalizedSessionId,
+      ),
+      unreadCompletionAt:
+          snapshot.sessionUnreadCompletionTimestamps[normalizedSessionId],
+    );
+  }
+
   SessionAttentionState sessionAttentionFor(String sessionId) {
     final normalizedSessionId = sessionId.trim();
     if (normalizedSessionId.isEmpty) {
       return const SessionAttentionState();
     }
 
-    final statusType = _sessionStatusById[normalizedSessionId]?.type;
     final hasPendingPermission =
         (_pendingPermissionsBySession[normalizedSessionId]?.isNotEmpty ??
         false);
@@ -4284,6 +4330,17 @@ class ChatProvider extends ChangeNotifier {
         nextExpiry = expiresAt;
       }
     }
+    for (final snapshot in _contextSnapshots.values) {
+      for (final entry in snapshot.sessionUnreadCompletionTimestamps.entries) {
+        final expiresAt = entry.value.add(const Duration(hours: 1));
+        if (!expiresAt.isAfter(now)) {
+          continue;
+        }
+        if (nextExpiry == null || expiresAt.isBefore(nextExpiry)) {
+          nextExpiry = expiresAt;
+        }
+      }
+    }
     if (nextExpiry == null) {
       return;
     }
@@ -4303,6 +4360,52 @@ class ChatProvider extends ChangeNotifier {
       }
       return expired;
     });
+
+    final updatedSnapshots = <String, _ChatContextSnapshot>{};
+    for (final entry in _contextSnapshots.entries) {
+      final snapshot = entry.value;
+      final nextTimestamps = Map<String, DateTime>.from(
+        snapshot.sessionUnreadCompletionTimestamps,
+      );
+      final nextIds = Set<String>.from(snapshot.sessionUnreadCompletionIds);
+      var changed = false;
+      nextTimestamps.removeWhere((sessionId, timestamp) {
+        final expired = now.difference(timestamp) >= const Duration(hours: 1);
+        if (expired) {
+          nextIds.remove(sessionId);
+          changed = true;
+        }
+        return expired;
+      });
+      if (!changed) {
+        continue;
+      }
+      updatedSnapshots[entry.key] = _ChatContextSnapshot(
+        sessions: snapshot.sessions,
+        currentSession: snapshot.currentSession,
+        messages: snapshot.messages,
+        sessionStatusById: snapshot.sessionStatusById,
+        pendingPermissionsBySession: snapshot.pendingPermissionsBySession,
+        pendingQuestionsBySession: snapshot.pendingQuestionsBySession,
+        sessionUnreadCompletionIds: nextIds,
+        sessionUnreadCompletionTimestamps: nextTimestamps,
+        sessionErrorAttentionIds: snapshot.sessionErrorAttentionIds,
+        sessionChildrenById: snapshot.sessionChildrenById,
+        sessionTodoById: snapshot.sessionTodoById,
+        sessionDiffById: snapshot.sessionDiffById,
+        sessionSearchQuery: snapshot.sessionSearchQuery,
+        sessionListFilter: snapshot.sessionListFilter,
+        sessionListSort: snapshot.sessionListSort,
+        pinnedSessionIds: snapshot.pinnedSessionIds,
+        sessionVisibleLimit: snapshot.sessionVisibleLimit,
+        isNewChatDraftActive: snapshot.isNewChatDraftActive,
+        activeSendDraft: snapshot.activeSendDraft,
+        rejectedDraft: snapshot.rejectedDraft,
+      );
+    }
+    if (updatedSnapshots.isNotEmpty) {
+      _contextSnapshots.addAll(updatedSnapshots);
+    }
     _scheduleSessionUnreadHighlightTimer();
   }
 }
