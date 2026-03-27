@@ -422,7 +422,8 @@
 - **Then** if that fixed progress slot mirrors the active in-flight reasoning block, the matching inline Thinking bubble is temporarily hidden until the assistant response settles, avoiding a misleading stuck-looking duplicate
 - **Then** completed tool badges use an explicit success-green treatment so finished work stays visually distinct from queued, active, and error states
 - **Then** when a contiguous visible run contains multiple `task` tool bubbles, settled task bubbles render before still-active running or queued task bubbles without crossing the surrounding text/reasoning boundaries of that same assistant message
-- **Then** a running `task` tool bubble surfaces the latest extracted command inline in the header when command metadata is available, so the active work is identifiable without opening Details
+- **Then** a running `task` tool bubble prefers the latest internal child-session tool label inline when task metadata or cached child-session messages expose it; otherwise it falls back to the latest extracted command, and finally to `Running task`
+- **Then** a completed `task` tool bubble shows `N tool calls` when child-session totals are available, so finished work stays compact while still hinting at the amount of internal activity
 - **When** the assistant finishes the complete response
 - **Then** tool-call chains and tool-detail sections start collapsed by default
 - **Then** collapse never happens while the assistant is still streaming
@@ -448,6 +449,8 @@
 ### Sub-conversation threads keep a full composer with parent return
 
 - **Given** the user opens a child thread from a subtask/task bubble in the main conversation
+- **When** that source bubble represents a `task` tool with a matching child session
+- **Then** the entire task bubble surface acts as the navigation affordance instead of rendering a dedicated `View` button
 - **When** the child thread is active (`parentId` is set)
 - **Then** the full chat composer remains available inside the child thread, including text send, slash input, attachments, and voice input
 - **Then** a dedicated `Return to main conversation` control remains visible so the user can navigate back to the parent thread at any time

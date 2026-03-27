@@ -148,7 +148,7 @@ chat_page_timeline_runtime.dart              # Tool-chain expanded state key res
 ### Chat message widgets
 
 ```text
-lib/presentation/widgets/chat_message/chat_message_tool_part.dart   # Renders long tool outputs in a bounded internal scroll viewport; large diffs use lazy rendering so tool growth does not destabilize the outer chat timeline; running `task` tools show latest command preview inline when available
+lib/presentation/widgets/chat_message/chat_message_tool_part.dart   # Renders long tool outputs in a bounded internal scroll viewport; large diffs use lazy rendering so tool growth does not destabilize the outer chat timeline; task bubbles are compact, navigate to child thread via full-bubble tap, hide the task-only details row, prefer latest child-tool progress labels with command fallback while running, and show `N tool calls` when completed if child-session totals are available
 lib/presentation/widgets/chat_message/chat_message_part_dispatch.dart # Reorders contiguous visible `task` tool runs so unfinished task bubbles stay last within each run while non-task grouping remains unchanged
 lib/presentation/utils/tool_presentation.dart                      # Shared tool label/icon formatting reused by chat bubbles and the fixed composer live-progress surface
 ```
