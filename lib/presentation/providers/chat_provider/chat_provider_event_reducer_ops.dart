@@ -283,11 +283,17 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         final sessionId = properties['sessionID'] as String?;
         final statusMap = properties['status'];
         if (sessionId != null && statusMap is Map<String, dynamic>) {
+          final previousStatusType = _sessionStatusById[sessionId]?.type;
           final status = SessionStatusModel.fromJson(statusMap).toDomain();
           _sessionStatusById[sessionId] = status;
           if (status.type == SessionStatusType.busy ||
               status.type == SessionStatusType.retry) {
             _sessionUnreadCompletionIds.remove(sessionId);
+          } else if (status.type == SessionStatusType.idle &&
+              sessionId != _currentSession?.id &&
+              (previousStatusType == SessionStatusType.busy ||
+                  previousStatusType == SessionStatusType.retry)) {
+            _markSessionUnreadCompletion(sessionId);
           }
           if (sessionId == _currentSession?.id) {
             _clearSessionAttentionForSession(sessionId);
@@ -876,6 +882,15 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           nextUnreadCompletionTimestamps = Map<String, DateTime>.from(
             snapshot.sessionUnreadCompletionTimestamps,
           )..remove(sessionId);
+        } else if (nextStatus.type == SessionStatusType.idle &&
+            (previousStatus?.type == SessionStatusType.busy ||
+                previousStatus?.type == SessionStatusType.retry)) {
+          nextUnreadCompletionIds = Set<String>.from(
+            snapshot.sessionUnreadCompletionIds,
+          )..add(sessionId);
+          nextUnreadCompletionTimestamps = Map<String, DateTime>.from(
+            snapshot.sessionUnreadCompletionTimestamps,
+          )..[sessionId] = DateTime.now();
         }
         break;
       case 'session.idle':

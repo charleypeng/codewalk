@@ -1395,7 +1395,7 @@ void main() {
     );
 
     test(
-      'global session.status and session.idle patch inactive recent attention state',
+      'global idle status transition preserves inactive recent unread attention',
       () async {
         final scopedRepository = FakeChatRepository(
           sessions: <ChatSession>[
@@ -1496,6 +1496,24 @@ void main() {
         );
         expect(busyAttention.isActive, isTrue);
         expect(busyAttention.hasUnreadCompletion, isFalse);
+
+        scopedRepository.emitGlobalEvent(
+          const ChatEvent(
+            type: 'session.status',
+            properties: <String, dynamic>{
+              'directory': '/repo/a',
+              'sessionID': 'ses_a_old',
+              'status': <String, dynamic>{'type': 'idle'},
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        final unreadAttentionAfterStatus = scopedProvider
+            .sessionAttentionForScope('ses_a_old', scopeId: '/repo/a');
+        expect(unreadAttentionAfterStatus.isActive, isFalse);
+        expect(unreadAttentionAfterStatus.hasUnreadCompletion, isTrue);
+        expect(unreadAttentionAfterStatus.unreadCompletionAt, isNotNull);
 
         scopedRepository.emitGlobalEvent(
           const ChatEvent(
