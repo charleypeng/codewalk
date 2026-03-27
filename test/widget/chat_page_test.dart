@@ -2238,7 +2238,121 @@ void main() {
       );
     });
 
-    testWidgets('recent sessions emphasizes unread title color for one hour', (
+    testWidgets(
+      'recent sessions emphasizes unread title color after idle status transition',
+      (WidgetTester tester) async {
+        await tester.binding.setSurfaceSize(const Size(1000, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test'
+          ..experienceSettingsJson = jsonEncode(<String, dynamic>{
+            'showRecentSessions': true,
+          });
+        final repository = FakeChatRepository(
+          sessions: <ChatSession>[
+            ChatSession(
+              id: 'ses_current',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              title: 'Current Session',
+            ),
+            ChatSession(
+              id: 'ses_recent',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(2000),
+              title: 'Recent Root Session',
+            ),
+          ],
+        );
+        repository.messagesBySession['ses_current'] = <ChatMessage>[];
+        repository.messagesBySession['ses_recent'] = <ChatMessage>[];
+        final provider = _buildChatProvider(
+          chatRepository: repository,
+          localDataSource: localDataSource,
+          projectRepository: FakeProjectRepository(
+            currentProject: Project(
+              id: 'proj_a',
+              name: 'Project A',
+              path: '/repo/a',
+              createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+            ),
+            projects: <Project>[
+              Project(
+                id: 'proj_a',
+                name: 'Project A',
+                path: '/repo/a',
+                createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+              ),
+            ],
+          ),
+        );
+        addTearDown(provider.dispose);
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+        await tester.pumpWidget(_testApp(provider, appProvider));
+        await tester.pumpAndSettle();
+
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.firstWhere(
+            (session) => session.id == 'ses_current',
+          ),
+        );
+        await provider.initializeProviders();
+        await tester.pumpAndSettle();
+
+        repository.emitEvent(
+          const ChatEvent(
+            type: 'session.status',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_recent',
+              'status': <String, dynamic>{'type': 'busy'},
+            },
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 50));
+        repository.emitEvent(
+          const ChatEvent(
+            type: 'session.status',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_recent',
+              'status': <String, dynamic>{'type': 'idle'},
+            },
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 50));
+        repository.emitEvent(
+          const ChatEvent(
+            type: 'session.idle',
+            properties: <String, dynamic>{'sessionID': 'ses_recent'},
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 50));
+        await tester.pumpAndSettle();
+
+        final title = tester.widget<Text>(
+          find.descendant(
+            of: find.byKey(
+              const ValueKey<String>('recent_session_title_ses_recent'),
+            ),
+            matching: find.text('Recent Root Session'),
+          ),
+        );
+        final recentSessionsContext = tester.element(
+          find.text('Recent sessions'),
+        );
+        final colorScheme = Theme.of(recentSessionsContext).colorScheme;
+        expect(title.style?.color, colorScheme.primary);
+
+        await provider.selectSession(
+          provider.sessions.firstWhere((session) => session.id == 'ses_recent'),
+        );
+        await tester.pumpAndSettle();
+      },
+    );
+
+    testWidgets('recent sessions highlights the current session row', (
       WidgetTester tester,
     ) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));
@@ -2300,43 +2414,31 @@ void main() {
       await provider.initializeProviders();
       await tester.pumpAndSettle();
 
-      repository.emitEvent(
-        const ChatEvent(
-          type: 'session.status',
-          properties: <String, dynamic>{
-            'sessionID': 'ses_recent',
-            'status': <String, dynamic>{'type': 'busy'},
-          },
-        ),
-      );
-      await tester.pump(const Duration(milliseconds: 50));
-      repository.emitEvent(
-        const ChatEvent(
-          type: 'session.idle',
-          properties: <String, dynamic>{'sessionID': 'ses_recent'},
-        ),
-      );
-      await tester.pump(const Duration(milliseconds: 50));
-      await tester.pumpAndSettle();
-
+      final tileMaterial = tester
+          .widgetList<Material>(
+            find.ancestor(
+              of: find.byKey(
+                const ValueKey<String>('recent_session_tile_ses_current'),
+              ),
+              matching: find.byType(Material),
+            ),
+          )
+          .firstWhere((material) => material.color != null);
       final title = tester.widget<Text>(
         find.descendant(
           of: find.byKey(
-            const ValueKey<String>('recent_session_title_ses_recent'),
+            const ValueKey<String>('recent_session_title_ses_current'),
           ),
-          matching: find.text('Recent Root Session'),
+          matching: find.text('Current Session'),
         ),
       );
       final recentSessionsContext = tester.element(
         find.text('Recent sessions'),
       );
       final colorScheme = Theme.of(recentSessionsContext).colorScheme;
-      expect(title.style?.color, colorScheme.primary);
 
-      await provider.selectSession(
-        provider.sessions.firstWhere((session) => session.id == 'ses_recent'),
-      );
-      await tester.pumpAndSettle();
+      expect(tileMaterial.color, colorScheme.secondaryContainer);
+      expect(title.style?.color, colorScheme.onSecondaryContainer);
     });
 
     testWidgets('display toggles expose replay chat tour action', (

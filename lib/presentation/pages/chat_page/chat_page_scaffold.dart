@@ -355,21 +355,28 @@ extension _ChatPageScaffold on _ChatPageState {
       session.id,
       scopeId: _scopeIdForProject(project),
     );
+    final isCurrentSession = chatProvider.currentSession?.id == session.id;
     final highlighted = attention.hasRecentUnreadCompletion;
     final isBusy = attention.isActive;
-    final showBusySweep =
-        isBusy && chatProvider.currentSession?.id != session.id;
+    final showBusySweep = isBusy && !isCurrentSession;
+    final tileColor = isCurrentSession
+        ? colorScheme.secondaryContainer
+        : (highlighted
+              ? Color.alphaBlend(
+                  colorScheme.primary.withValues(alpha: 0.08),
+                  colorScheme.surfaceContainerLow,
+                )
+              : colorScheme.surfaceContainerLow);
     final titleStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-      fontWeight: highlighted ? FontWeight.w700 : FontWeight.w500,
-      color: highlighted ? colorScheme.primary : null,
+      fontWeight: (highlighted || isCurrentSession)
+          ? FontWeight.w700
+          : FontWeight.w500,
+      color: isCurrentSession
+          ? colorScheme.onSecondaryContainer
+          : (highlighted ? colorScheme.primary : null),
     );
     return Material(
-      color: highlighted
-          ? Color.alphaBlend(
-              colorScheme.primary.withValues(alpha: 0.08),
-              colorScheme.surfaceContainerLow,
-            )
-          : colorScheme.surfaceContainerLow,
+      color: tileColor,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         key: ValueKey<String>('recent_session_tile_${session.id}'),
