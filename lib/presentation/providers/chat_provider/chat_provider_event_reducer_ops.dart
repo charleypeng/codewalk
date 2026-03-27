@@ -712,7 +712,10 @@ extension _ChatProviderEventReducerOps on ChatProvider {
         type.startsWith('session.') ||
         type.startsWith('message.') ||
         type.startsWith('project.') ||
-        type.startsWith('worktree.');
+        type.startsWith('worktree.') ||
+        type.startsWith('todo.') ||
+        type.startsWith('permission.') ||
+        type.startsWith('question.');
     if (!affectsContext) {
       return;
     }

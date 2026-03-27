@@ -1417,6 +1417,99 @@ void main() {
     );
 
     test(
+      'global todo and interaction events apply incrementally to the active context',
+      () async {
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'model_a': testModel('model_a')},
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a'],
+          ),
+        );
+
+        await provider.initializeProviders();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        final sessionsBefore = chatRepository.getSessionsCallCount;
+        final activeDirectory = provider.projectProvider.currentDirectory;
+
+        chatRepository.emitGlobalEvent(
+          ChatEvent(
+            type: 'todo.updated',
+            properties: <String, dynamic>{
+              'directory': activeDirectory,
+              'sessionID': 'ses_1',
+              'todos': const <Map<String, dynamic>>[
+                <String, dynamic>{
+                  'id': 'todo_global_1',
+                  'content': 'Review global sync event handling',
+                  'status': 'in_progress',
+                  'priority': 'high',
+                },
+              ],
+            },
+          ),
+        );
+        chatRepository.emitGlobalEvent(
+          const ChatEvent(
+            type: 'permission.asked',
+            properties: <String, dynamic>{
+              'id': 'perm_global_1',
+              'sessionID': 'ses_1',
+              'permission': 'bash',
+              'patterns': <String>['*'],
+              'always': <String>['*'],
+              'metadata': <String, dynamic>{},
+            },
+          ),
+        );
+        chatRepository.emitGlobalEvent(
+          const ChatEvent(
+            type: 'question.asked',
+            properties: <String, dynamic>{
+              'id': 'question_global_1',
+              'sessionID': 'ses_1',
+              'questions': <Map<String, dynamic>>[
+                <String, dynamic>{
+                  'question': 'Proceed with event-sourced reconcile?',
+                  'header': 'Sync',
+                  'options': <Map<String, dynamic>>[
+                    <String, dynamic>{
+                      'label': 'Yes',
+                      'description': 'Keep incremental sync',
+                    },
+                  ],
+                },
+              ],
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+
+        expect(provider.currentSessionTodo, hasLength(1));
+        expect(provider.currentSessionTodo.single.id, 'todo_global_1');
+        expect(provider.currentThreadPermissionRequests, hasLength(1));
+        expect(
+          provider.currentThreadPermissionRequests.single.id,
+          'perm_global_1',
+        );
+        expect(provider.currentThreadQuestionRequests, hasLength(1));
+        expect(
+          provider.currentThreadQuestionRequests.single.id,
+          'question_global_1',
+        );
+        expect(chatRepository.getSessionsCallCount, sessionsBefore);
+      },
+    );
+
+    test(
       'visibleSessions keeps ancestors needed for tree grouping beyond limit',
       () async {
         chatRepository.sessions
