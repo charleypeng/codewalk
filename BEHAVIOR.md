@@ -209,6 +209,7 @@
 - **Given** a root session is out of focus and receives a completed assistant reply
 - **When** that reply becomes unread in the current client
 - **Then** the root session row receives a subtle theme-aware highlight for up to one hour
+- **Then** recent-session title text for that unread root reply also switches to a theme-aware emphasized color during that same one-hour window
 - **Then** child/subsessions do not receive that temporary row highlight
 
 ### Recent sessions quick access is enabled by default when available
@@ -226,6 +227,7 @@
 - **When** the Conversations sidebar is rendered
 - **Then** the sidebar shows a `Recent sessions` section above the project groups with up to 5 recent root sessions from currently open/cached project contexts
 - **Then** each recent row stays on one line and includes a project badge so the user can identify the source project quickly
+- **Then** any recent row whose session is still busy shows the same sweep-style running indicator used by the composer, including sessions from other open/cached project contexts
 
 ### Project paths preserve the trailing folders in the sidebar
 
