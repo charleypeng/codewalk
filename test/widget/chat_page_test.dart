@@ -13,7 +13,6 @@ import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/domain/entities/file_node.dart';
 import 'package:codewalk/domain/entities/project.dart';
 import 'package:codewalk/domain/entities/provider.dart';
-import 'package:codewalk/domain/entities/session.dart';
 import 'package:codewalk/domain/usecases/abort_chat_session.dart';
 import 'package:codewalk/domain/usecases/check_connection.dart';
 import 'package:codewalk/domain/usecases/create_chat_session.dart';
@@ -2130,7 +2129,8 @@ void main() {
         provider.sessions.firstWhere((session) => session.id == 'ses_current'),
       );
       await provider.initializeProviders();
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       expect(
         find.byKey(
@@ -2218,7 +2218,8 @@ void main() {
         provider.sessions.firstWhere((session) => session.id == 'ses_current'),
       );
       await provider.initializeProviders();
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
 
       expect(
         find.byKey(
