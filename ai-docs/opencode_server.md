@@ -3,125 +3,94 @@ Title: Server
 URL Source: https://opencode.ai/docs/server/
 
 Markdown Content:
-Server | OpenCode
-===============
-[Skip to content](https://opencode.ai/docs/server/#_top)
+# Server | OpenCode
 
 [![Image 1](https://opencode.ai/docs/_astro/logo-dark.DOStV66V.svg)![Image 2](https://opencode.ai/docs/_astro/logo-light.B0yzR0O5.svg) OpenCode](https://opencode.ai/docs/)
 
-[app.header.home](https://opencode.ai/)[app.header.docs](https://opencode.ai/docs/)
+[app.header.home](https://opencode.ai/) [app.header.docs](https://opencode.ai/docs/)
 
-[](https://github.com/anomalyco/opencode)[](https://opencode.ai/discord)
+[](https://github.com/anomalyco/opencode) [](https://opencode.ai/discord)
 
 Search Ctrl K
 
- Cancel 
+Cancel
 
-*   [Intro](https://opencode.ai/docs/)
-*   [Config](https://opencode.ai/docs/config/)
-*   [Providers](https://opencode.ai/docs/providers/)
-*   [Network](https://opencode.ai/docs/network/)
-*   [Enterprise](https://opencode.ai/docs/enterprise/)
-*   [Troubleshooting](https://opencode.ai/docs/troubleshooting/)
-*   [Windows (WSL)](https://opencode.ai/docs/windows-wsl/)
-*   
-Usage 
-    *   [TUI](https://opencode.ai/docs/tui/)
-    *   [CLI](https://opencode.ai/docs/cli/)
-    *   [Web](https://opencode.ai/docs/web/)
-    *   [IDE](https://opencode.ai/docs/ide/)
-    *   [Zen](https://opencode.ai/docs/zen/)
-    *   [Share](https://opencode.ai/docs/share/)
-    *   [GitHub](https://opencode.ai/docs/github/)
-    *   [GitLab](https://opencode.ai/docs/gitlab/)
+* [Intro](https://opencode.ai/docs/)
+* [Config](https://opencode.ai/docs/config/)
+* [Providers](https://opencode.ai/docs/providers/)
+* [Network](https://opencode.ai/docs/network/)
+* [Enterprise](https://opencode.ai/docs/enterprise/)
+* [Troubleshooting](https://opencode.ai/docs/troubleshooting/)
+* [Windows](https://opencode.ai/docs/windows-wsl)
+*
+Usage
+    * [Go](https://opencode.ai/docs/go/)
+    * [TUI](https://opencode.ai/docs/tui/)
+    * [CLI](https://opencode.ai/docs/cli/)
+    * [Web](https://opencode.ai/docs/web/)
+    * [IDE](https://opencode.ai/docs/ide/)
+    * [Zen](https://opencode.ai/docs/zen/)
+    * [Share](https://opencode.ai/docs/share/)
+    * [GitHub](https://opencode.ai/docs/github/)
+    * [GitLab](https://opencode.ai/docs/gitlab/)
 
-*   
-Configure 
-    *   [Tools](https://opencode.ai/docs/tools/)
-    *   [Rules](https://opencode.ai/docs/rules/)
-    *   [Agents](https://opencode.ai/docs/agents/)
-    *   [Models](https://opencode.ai/docs/models/)
-    *   [Themes](https://opencode.ai/docs/themes/)
-    *   [Keybinds](https://opencode.ai/docs/keybinds/)
-    *   [Commands](https://opencode.ai/docs/commands/)
-    *   [Formatters](https://opencode.ai/docs/formatters/)
-    *   [Permissions](https://opencode.ai/docs/permissions/)
-    *   [LSP Servers](https://opencode.ai/docs/lsp/)
-    *   [MCP servers](https://opencode.ai/docs/mcp-servers/)
-    *   [ACP Support](https://opencode.ai/docs/acp/)
-    *   [Agent Skills](https://opencode.ai/docs/skills/)
-    *   [Custom Tools](https://opencode.ai/docs/custom-tools/)
+*
+Configure
+    * [Tools](https://opencode.ai/docs/tools/)
+    * [Rules](https://opencode.ai/docs/rules/)
+    * [Agents](https://opencode.ai/docs/agents/)
+    * [Models](https://opencode.ai/docs/models/)
+    * [Themes](https://opencode.ai/docs/themes/)
+    * [Keybinds](https://opencode.ai/docs/keybinds/)
+    * [Commands](https://opencode.ai/docs/commands/)
+    * [Formatters](https://opencode.ai/docs/formatters/)
+    * [Permissions](https://opencode.ai/docs/permissions/)
+    * [LSP Servers](https://opencode.ai/docs/lsp/)
+    * [MCP servers](https://opencode.ai/docs/mcp-servers/)
+    * [ACP Support](https://opencode.ai/docs/acp/)
+    * [Agent Skills](https://opencode.ai/docs/skills/)
+    * [Custom Tools](https://opencode.ai/docs/custom-tools/)
 
-*   
-Develop 
-    *   [SDK](https://opencode.ai/docs/sdk/)
-    *   [Server](https://opencode.ai/docs/server/)
-    *   [Plugins](https://opencode.ai/docs/plugins/)
-    *   [Ecosystem](https://opencode.ai/docs/ecosystem/)
+*
+Develop
+    * [SDK](https://opencode.ai/docs/sdk/)
+    * [Server](https://opencode.ai/docs/server/)
+    * [Plugins](https://opencode.ai/docs/plugins/)
+    * [Ecosystem](https://opencode.ai/docs/ecosystem/)
 
-[GitHub](https://github.com/anomalyco/opencode)[Discord](https://opencode.ai/discord)
+[GitHub](https://github.com/anomalyco/opencode) [Discord](https://opencode.ai/discord)
 
-Select theme Select language 
-
-On this page
-
-*   [Overview](https://opencode.ai/docs/server/#_top)
-    *   [Usage](https://opencode.ai/docs/server/#usage)
-    *   [Authentication](https://opencode.ai/docs/server/#authentication)
-    *   [How it works](https://opencode.ai/docs/server/#how-it-works)
-
-*   [Spec](https://opencode.ai/docs/server/#spec)
-*   [APIs](https://opencode.ai/docs/server/#apis)
-    *   [Global](https://opencode.ai/docs/server/#global)
-    *   [Project](https://opencode.ai/docs/server/#project)
-    *   [Path & VCS](https://opencode.ai/docs/server/#path--vcs)
-    *   [Instance](https://opencode.ai/docs/server/#instance)
-    *   [Config](https://opencode.ai/docs/server/#config)
-    *   [Provider](https://opencode.ai/docs/server/#provider)
-    *   [Sessions](https://opencode.ai/docs/server/#sessions)
-    *   [Messages](https://opencode.ai/docs/server/#messages)
-    *   [Commands](https://opencode.ai/docs/server/#commands)
-    *   [Files](https://opencode.ai/docs/server/#files)
-    *   [Tools (Experimental)](https://opencode.ai/docs/server/#tools-experimental)
-    *   [LSP, Formatters & MCP](https://opencode.ai/docs/server/#lsp-formatters--mcp)
-    *   [Agents](https://opencode.ai/docs/server/#agents)
-    *   [Logging](https://opencode.ai/docs/server/#logging)
-    *   [TUI](https://opencode.ai/docs/server/#tui)
-    *   [Auth](https://opencode.ai/docs/server/#auth)
-    *   [Events](https://opencode.ai/docs/server/#events)
-    *   [Docs](https://opencode.ai/docs/server/#docs)
+Select theme Select language
 
 On this page
-------------
 
-*   [Overview](https://opencode.ai/docs/server/#_top)
-    *   [Usage](https://opencode.ai/docs/server/#usage)
-    *   [Authentication](https://opencode.ai/docs/server/#authentication)
-    *   [How it works](https://opencode.ai/docs/server/#how-it-works)
+* [Overview](https://opencode.ai/docs/server/#_top)
+    * [Usage](https://opencode.ai/docs/server/#usage)
+    * [Authentication](https://opencode.ai/docs/server/#authentication)
+    * [How it works](https://opencode.ai/docs/server/#how-it-works)
 
-*   [Spec](https://opencode.ai/docs/server/#spec)
-*   [APIs](https://opencode.ai/docs/server/#apis)
-    *   [Global](https://opencode.ai/docs/server/#global)
-    *   [Project](https://opencode.ai/docs/server/#project)
-    *   [Path & VCS](https://opencode.ai/docs/server/#path--vcs)
-    *   [Instance](https://opencode.ai/docs/server/#instance)
-    *   [Config](https://opencode.ai/docs/server/#config)
-    *   [Provider](https://opencode.ai/docs/server/#provider)
-    *   [Sessions](https://opencode.ai/docs/server/#sessions)
-    *   [Messages](https://opencode.ai/docs/server/#messages)
-    *   [Commands](https://opencode.ai/docs/server/#commands)
-    *   [Files](https://opencode.ai/docs/server/#files)
-    *   [Tools (Experimental)](https://opencode.ai/docs/server/#tools-experimental)
-    *   [LSP, Formatters & MCP](https://opencode.ai/docs/server/#lsp-formatters--mcp)
-    *   [Agents](https://opencode.ai/docs/server/#agents)
-    *   [Logging](https://opencode.ai/docs/server/#logging)
-    *   [TUI](https://opencode.ai/docs/server/#tui)
-    *   [Auth](https://opencode.ai/docs/server/#auth)
-    *   [Events](https://opencode.ai/docs/server/#events)
-    *   [Docs](https://opencode.ai/docs/server/#docs)
+* [Spec](https://opencode.ai/docs/server/#spec)
+* [APIs](https://opencode.ai/docs/server/#apis)
+    * [Global](https://opencode.ai/docs/server/#global)
+    * [Project](https://opencode.ai/docs/server/#project)
+    * [Path & VCS](https://opencode.ai/docs/server/#path--vcs)
+    * [Instance](https://opencode.ai/docs/server/#instance)
+    * [Config](https://opencode.ai/docs/server/#config)
+    * [Provider](https://opencode.ai/docs/server/#provider)
+    * [Sessions](https://opencode.ai/docs/server/#sessions)
+    * [Messages](https://opencode.ai/docs/server/#messages)
+    * [Commands](https://opencode.ai/docs/server/#commands)
+    * [Files](https://opencode.ai/docs/server/#files)
+    * [Tools (Experimental)](https://opencode.ai/docs/server/#tools-experimental)
+    * [LSP, Formatters & MCP](https://opencode.ai/docs/server/#lsp-formatters--mcp)
+    * [Agents](https://opencode.ai/docs/server/#agents)
+    * [Logging](https://opencode.ai/docs/server/#logging)
+    * [TUI](https://opencode.ai/docs/server/#tui)
+    * [Auth](https://opencode.ai/docs/server/#auth)
+    * [Events](https://opencode.ai/docs/server/#events)
+    * [Docs](https://opencode.ai/docs/server/#docs)
 
-Server
-======
+# Server
 
 Interact with opencode server over HTTP.
 
@@ -179,14 +148,13 @@ You can run `opencode serve` to start a standalone server. If you have the openc
 
 #### [Connect to an existing server](https://opencode.ai/docs/server/#connect-to-an-existing-server)
 
-When you start the TUI it randomly assigns a port and hostname. You can instead pass in the `--hostname` and `--port`[flags](https://opencode.ai/docs/cli). Then use this to connect to its server.
+When you start the TUI it randomly assigns a port and hostname. You can instead pass in the `--hostname` and `--port` flags. Then use this to connect to its server.
 
 The [`/tui`](https://opencode.ai/docs/server/#tui) endpoint can be used to drive the TUI through the server. For example, you can prefill or run a prompt. This setup is used by the OpenCode [IDE](https://opencode.ai/docs/ide) plugins.
 
 * * *
 
-[Spec](https://opencode.ai/docs/server/#spec)
----------------------------------------------
+## [Spec](https://opencode.ai/docs/server/#spec)
 
 The server publishes an OpenAPI 3.1 spec that can be viewed at:
 
@@ -196,8 +164,7 @@ For example, `http://localhost:4096/doc`. Use the spec to generate clients or in
 
 * * *
 
-[APIs](https://opencode.ai/docs/server/#apis)
----------------------------------------------
+## [APIs](https://opencode.ai/docs/server/#apis)
 
 The opencode server exposes the following APIs.
 
@@ -206,7 +173,7 @@ The opencode server exposes the following APIs.
 ### [Global](https://opencode.ai/docs/server/#global)
 
 | Method | Path | Description | Response |
-| --- | --- | --- | --- |
+| ------ | -------------- | ------------------------------ | ---------------------------------- |
 | `GET` | `/global/health` | Get server health and version | `{ healthy: true, version: string }` |
 | `GET` | `/global/event` | Get global events (SSE stream) | Event stream |
 
@@ -215,7 +182,7 @@ The opencode server exposes the following APIs.
 ### [Project](https://opencode.ai/docs/server/#project)
 
 | Method | Path | Description | Response |
-| --- | --- | --- | --- |
+| ------ | ---------------- | ----------------------- | ----------------------------------------------------------------------------------------------- |
 | `GET` | `/project` | List all projects | [`Project[]`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
 | `GET` | `/project/current` | Get the current project | [`Project`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
 
@@ -224,7 +191,7 @@ The opencode server exposes the following APIs.
 ### [Path & VCS](https://opencode.ai/docs/server/#path--vcs)
 
 | Method | Path | Description | Response |
-| --- | --- | --- | --- |
+| ------ | ----- | ------------------------------------ | --------------------------------------------------------------------------------------------- |
 | `GET` | `/path` | Get the current path | [`Path`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
 | `GET` | `/vcs` | Get VCS info for the current project | [`VcsInfo`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
 
@@ -233,7 +200,7 @@ The opencode server exposes the following APIs.
 ### [Instance](https://opencode.ai/docs/server/#instance)
 
 | Method | Path | Description | Response |
-| --- | --- | --- | --- |
+| ------ | ----------------- | ---------------------------- | -------- |
 | `POST` | `/instance/dispose` | Dispose the current instance | `boolean` |
 
 * * *
@@ -241,7 +208,7 @@ The opencode server exposes the following APIs.
 ### [Config](https://opencode.ai/docs/server/#config)
 
 | Method | Path | Description | Response |
-| --- | --- | --- | --- |
+| ------ | ----------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET` | `/config` | Get config info | [`Config`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
 | `PATCH` | `/config` | Update config | [`Config`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
 | `GET` | `/config/providers` | List providers and default models | `{ providers:`[Provider[]](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts)`, default: { [key: string]: string } }` |
@@ -251,7 +218,7 @@ The opencode server exposes the following APIs.
 ### [Provider](https://opencode.ai/docs/server/#provider)
 
 | Method | Path | Description | Response |
-| --- | --- | --- | --- |
+| ------ | ------------------------------ | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET` | `/provider` | List all providers | `{ all:`[Provider[]](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts)`, default: {...}, connected: string[] }` |
 | `GET` | `/provider/auth` | Get provider authentication methods | `{ [providerID: string]:`[ProviderAuthMethod[]](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts)`}` |
 | `POST` | `/provider/{id}/oauth/authorize` | Authorize a provider using OAuth | [`ProviderAuthAuthorization`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
@@ -262,14 +229,14 @@ The opencode server exposes the following APIs.
 ### [Sessions](https://opencode.ai/docs/server/#sessions)
 
 | Method | Path | Description | Notes |
-| --- | --- | --- | --- |
+| ------ | -------------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `GET` | `/session` | List all sessions | Returns [`Session[]`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
 | `POST` | `/session` | Create a new session | body: `{ parentID?, title? }`, returns [`Session`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
 | `GET` | `/session/status` | Get session status for all sessions | Returns `{ [sessionID: string]:`[SessionStatus](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts)`}` |
 | `GET` | `/session/:id` | Get session details | Returns [`Session`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
 | `DELETE` | `/session/:id` | Delete a session and all its data | Returns `boolean` |
 | `PATCH` | `/session/:id` | Update session properties | body: `{ title? }`, returns [`Session`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
-| `GET` | `/session/:id/children` | Get a session’s child sessions | Returns [`Session[]`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
+| `GET` | `/session/:id/children` | Get a session's child sessions | Returns [`Session[]`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
 | `GET` | `/session/:id/todo` | Get the todo list for a session | Returns [`Todo[]`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
 | `POST` | `/session/:id/init` | Analyze app and create `AGENTS.md` | body: `{ messageID, providerID, modelID }`, returns `boolean` |
 | `POST` | `/session/:id/fork` | Fork an existing session at a message | body: `{ messageID? }`, returns [`Session`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
@@ -287,7 +254,7 @@ The opencode server exposes the following APIs.
 ### [Messages](https://opencode.ai/docs/server/#messages)
 
 | Method | Path | Description | Notes |
-| --- | --- | --- | --- |
+| ------ | ------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `GET` | `/session/:id/message` | List messages in a session | query: `limit?`, returns `{ info:`[Message](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts)`, parts:`[Part[]](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts)`}[]` |
 | `POST` | `/session/:id/message` | Send a message and wait for response | body: `{ messageID?, model?, agent?, noReply?, system?, tools?, parts }`, returns `{ info:`[Message](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts)`, parts:`[Part[]](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts)`}` |
 | `GET` | `/session/:id/message/:messageID` | Get message details | Returns `{ info:`[Message](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts)`, parts:`[Part[]](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts)`}` |
@@ -300,7 +267,7 @@ The opencode server exposes the following APIs.
 ### [Commands](https://opencode.ai/docs/server/#commands)
 
 | Method | Path | Description | Response |
-| --- | --- | --- | --- |
+| ------ | -------- | ----------------- | ----------------------------------------------------------------------------------------------- |
 | `GET` | `/command` | List all commands | [`Command[]`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
 
 * * *
@@ -308,7 +275,7 @@ The opencode server exposes the following APIs.
 ### [Files](https://opencode.ai/docs/server/#files)
 
 | Method | Path | Description | Response |
-| --- | --- | --- | --- |
+| ------ | ---------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `GET` | `/find?pattern=<pat>` | Search for text in files | Array of match objects with `path`, `lines`, `line_number`, `absolute_offset`, `submatches` |
 | `GET` | `/find/file?query=<q>` | Find files and directories by name | `string[]` (paths) |
 | `GET` | `/find/symbol?query=<q>` | Find workspace symbols | [`Symbol[]`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
@@ -318,18 +285,18 @@ The opencode server exposes the following APIs.
 
 #### [`/find/file` query parameters](https://opencode.ai/docs/server/#findfile-query-parameters)
 
-*   `query` (required) — search string (fuzzy match)
-*   `type` (optional) — limit results to `"file"` or `"directory"`
-*   `directory` (optional) — override the project root for the search
-*   `limit` (optional) — max results (1–200)
-*   `dirs` (optional) — legacy flag (`"false"` returns only files)
+* `query` (required) - search string (fuzzy match)
+* `type` (optional) - limit results to `"file"` or `"directory"`
+* `directory` (optional) - override the project root for the search
+* `limit` (optional) - max results (1-200)
+* `dirs` (optional) - legacy flag (`"false"` returns only files)
 
 * * *
 
 ### [Tools (Experimental)](https://opencode.ai/docs/server/#tools-experimental)
 
 | Method | Path | Description | Response |
-| --- | --- | --- | --- |
+| ------ | ----------------------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `GET` | `/experimental/tool/ids` | List all tool IDs | [`ToolIDs`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
 | `GET` | `/experimental/tool?provider=<p>&model=<m>` | List tools with JSON schemas for a model | [`ToolList`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
 
@@ -338,7 +305,7 @@ The opencode server exposes the following APIs.
 ### [LSP, Formatters & MCP](https://opencode.ai/docs/server/#lsp-formatters--mcp)
 
 | Method | Path | Description | Response |
-| --- | --- | --- | --- |
+| ------ | ---------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `GET` | `/lsp` | Get LSP server status | [`LSPStatus[]`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
 | `GET` | `/formatter` | Get formatter status | [`FormatterStatus[]`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
 | `GET` | `/mcp` | Get MCP server status | `{ [name: string]:`[MCPStatus](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts)`}` |
@@ -349,7 +316,7 @@ The opencode server exposes the following APIs.
 ### [Agents](https://opencode.ai/docs/server/#agents)
 
 | Method | Path | Description | Response |
-| --- | --- | --- | --- |
+| ------ | ------ | ------------------------- | --------------------------------------------------------------------------------------------- |
 | `GET` | `/agent` | List all available agents | [`Agent[]`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
 
 * * *
@@ -357,7 +324,7 @@ The opencode server exposes the following APIs.
 ### [Logging](https://opencode.ai/docs/server/#logging)
 
 | Method | Path | Description | Response |
-| --- | --- | --- | --- |
+| ------ | ---- | ---------------------------------------------------------- | -------- |
 | `POST` | `/log` | Write log entry. Body: `{ service, level, message, extra? }` | `boolean` |
 
 * * *
@@ -365,7 +332,7 @@ The opencode server exposes the following APIs.
 ### [TUI](https://opencode.ai/docs/server/#tui)
 
 | Method | Path | Description | Response |
-| --- | --- | --- | --- |
+| ------ | --------------------- | ----------------------------------------- | ---------------------- |
 | `POST` | `/tui/append-prompt` | Append text to the prompt | `boolean` |
 | `POST` | `/tui/open-help` | Open the help dialog | `boolean` |
 | `POST` | `/tui/open-sessions` | Open the session selector | `boolean` |
@@ -383,7 +350,7 @@ The opencode server exposes the following APIs.
 ### [Auth](https://opencode.ai/docs/server/#auth)
 
 | Method | Path | Description | Response |
-| --- | --- | --- | --- |
+| ------ | --------- | --------------------------------------------------------------- | -------- |
 | `PUT` | `/auth/:id` | Set authentication credentials. Body must match provider schema | `boolean` |
 
 * * *
@@ -391,7 +358,7 @@ The opencode server exposes the following APIs.
 ### [Events](https://opencode.ai/docs/server/#events)
 
 | Method | Path | Description | Response |
-| --- | --- | --- | --- |
+| ------ | ------ | --------------------------------------------------------------------------- | ------------------------- |
 | `GET` | `/event` | Server-sent events stream. First event is `server.connected`, then bus events | Server-sent events stream |
 
 * * *
@@ -399,11 +366,13 @@ The opencode server exposes the following APIs.
 ### [Docs](https://opencode.ai/docs/server/#docs)
 
 | Method | Path | Description | Response |
-| --- | --- | --- | --- |
+| ------ | ---- | ------------------------- | --------------------------- |
 | `GET` | `/doc` | OpenAPI 3.1 specification | HTML page with OpenAPI spec |
 
-[Edit page](https://github.com/anomalyco/opencode/edit/dev/packages/web/src/content/docs/server.mdx)[Found a bug? Open an issue](https://github.com/anomalyco/opencode/issues/new)[Join our Discord community](https://opencode.ai/discord)Select language 
+[Edit page](https://github.com/anomalyco/opencode/edit/dev/packages/web/src/content/docs/server.mdx) [Found a bug? Open an issue](https://github.com/anomalyco/opencode/issues/new) [Join our Discord community](https://opencode.ai/discord)
+
+Select language
 
 © [Anomaly](https://anoma.ly/)
 
-Last updated: Feb 13, 2026
+Last updated: Mar 25, 2026
