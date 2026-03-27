@@ -2182,7 +2182,7 @@ class _ComposerStatusLanternTextState extends State<_ComposerStatusLanternText>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _syncAnimationState(restart: true);
+    _syncAnimationState();
   }
 
   @override
