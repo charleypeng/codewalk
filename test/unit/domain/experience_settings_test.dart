@@ -72,5 +72,28 @@ void main() {
       expect(actions, isNot(contains(ShortcutAction.quitApp)));
       expect(actions, contains(ShortcutAction.refresh));
     });
+
+    test(
+      'default bindings keep arrow keys free for native cursor navigation',
+      () {
+        const disallowedBindings = <String>{
+          'mod+arrowup',
+          'mod+arrowdown',
+          'mod+arrowleft',
+          'mod+arrowright',
+        };
+
+        for (final definition in kShortcutDefinitions) {
+          expect(
+            disallowedBindings.contains(
+              definition.defaultBinding.toLowerCase(),
+            ),
+            isFalse,
+            reason:
+                'Default shortcut `${definition.defaultBinding}` should not consume native arrow navigation.',
+          );
+        }
+      },
+    );
   });
 }
