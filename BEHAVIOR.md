@@ -228,6 +228,7 @@
 - **Then** the sidebar shows a `Recent sessions` section above the project groups with up to 5 recent root sessions from currently open/cached project contexts
 - **Then** each recent row stays on one line and includes a project badge so the user can identify the source project quickly
 - **Then** any recent row whose session is still busy shows the same sweep-style running indicator used by the composer, including sessions from other open/cached project contexts
+- **Then** if the currently open session also appears in `Recent sessions`, that row uses the same selected-style background emphasis as the project session list below it
 
 ### Project paths preserve the trailing folders in the sidebar
 
