@@ -2,20 +2,19 @@
 
 APK_DIR = build/app/outputs/flutter-apk
 APK_PATH = $(APK_DIR)/codewalk.apk
+APK_METADATA_PATH = $(patsubst %/flutter-apk,%/apk/release,$(APK_DIR))/output-metadata.json
 ANDROID_KEY_PROPERTIES = android/key.properties
 ANALYZE_LOG = /tmp/flutter_analyze.log
 TEST_JOBS ?= 12
 FAST_EXCLUDE_TAGS ?= slow,integration
 
-define READ_PUBSPEC_VERSION_SH
-app_version=$$(awk '/^version:[[:space:]]*/{sub(/^version:[[:space:]]*/, "", $$0); print; exit}' pubspec.yaml); \
-app_version_name=$${app_version%%+*}; \
-app_version_code=$${app_version##*+}; \
-if [ -z "$$app_version" ] || [ "$$app_version_name" = "$$app_version" ] || [ -z "$$app_version_code" ]; then \
-	echo "Unable to parse version from pubspec.yaml (expected name+build)."; \
-	exit 1; \
-fi
-endef
+READ_PUBSPEC_VERSION_SH = app_version=$$(awk '/^version:[[:space:]]*/{sub(/^version:[[:space:]]*/, "", $$0); print; exit}' pubspec.yaml); \
+	app_version_name=$$(printf '%s' "$$app_version" | cut -d+ -f1); \
+	app_version_code=$$(printf '%s' "$$app_version" | cut -d+ -f2); \
+	if [ -z "$$app_version" ] || [ "$$app_version_name" = "$$app_version" ] || [ -z "$$app_version_code" ]; then \
+		echo "Unable to parse version from pubspec.yaml (expected name+build)."; \
+		exit 1; \
+	fi;
 
 # TTY detection: suppress verbose output in non-interactive mode (CI/agents)
 ifneq ($(shell test -t 1 && echo yes),yes)
@@ -271,7 +270,7 @@ check-fast: deps gen analyze test-fast
 
 desktop:
 	@set -e; \
-	$(READ_PUBSPEC_VERSION_SH); \
+	$(READ_PUBSPEC_VERSION_SH) \
 	if [ "$$OS" = "Windows_NT" ]; then \
 		echo "Detected Windows host. Building Windows desktop app..."; \
 		flutter build windows --release --build-name "$$app_version_name" --build-number "$$app_version_code"; \
@@ -324,9 +323,9 @@ android:
 		exit 1; \
 	fi
 	@set -e; \
-	$(READ_PUBSPEC_VERSION_SH); \
+	$(READ_PUBSPEC_VERSION_SH) \
 	flutter build apk --release --target-platform android-arm64 --split-per-abi --build-name "$$app_version_name" --build-number "$$app_version_code" $(QUIET); \
-	metadata_file="build/app/outputs/apk/release/output-metadata.json"; \
+	metadata_file="$(APK_METADATA_PATH)"; \
 	if [ ! -f "$$metadata_file" ]; then \
 		echo "Android build metadata not found: $$metadata_file"; \
 		exit 1; \
