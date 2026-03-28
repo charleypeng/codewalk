@@ -7,6 +7,16 @@ ANALYZE_LOG = /tmp/flutter_analyze.log
 TEST_JOBS ?= 12
 FAST_EXCLUDE_TAGS ?= slow,integration
 
+define READ_PUBSPEC_VERSION_SH
+app_version=$$(awk '/^version:[[:space:]]*/{sub(/^version:[[:space:]]*/, "", $$0); print; exit}' pubspec.yaml); \
+app_version_name=$${app_version%%+*}; \
+app_version_code=$${app_version##*+}; \
+if [ -z "$$app_version" ] || [ "$$app_version_name" = "$$app_version" ] || [ -z "$$app_version_code" ]; then \
+	echo "Unable to parse version from pubspec.yaml (expected name+build)."; \
+	exit 1; \
+fi
+endef
+
 # TTY detection: suppress verbose output in non-interactive mode (CI/agents)
 ifneq ($(shell test -t 1 && echo yes),yes)
     LOG = /tmp/codewalk-make.log
@@ -261,17 +271,33 @@ check-fast: deps gen analyze test-fast
 
 desktop:
 	@set -e; \
+	$(READ_PUBSPEC_VERSION_SH); \
 	if [ "$$OS" = "Windows_NT" ]; then \
 		echo "Detected Windows host. Building Windows desktop app..."; \
-		flutter build windows; \
+		flutter build windows --release --build-name "$$app_version_name" --build-number "$$app_version_code"; \
+		generated_config="windows/flutter/ephemeral/generated_config.cmake"; \
+		if [ ! -f "$$generated_config" ] || ! grep -F "$$app_version_name+$$app_version_code" "$$generated_config" >/dev/null; then \
+			echo "Desktop build version mismatch: $$generated_config does not reflect $$app_version_name+$$app_version_code"; \
+			exit 1; \
+		fi; \
 		echo "Desktop build ready: build/windows/x64/runner/Release/"; \
 	elif [ "$$(uname -s)" = "Darwin" ]; then \
 		echo "Detected macOS host. Building macOS desktop app..."; \
-		flutter build macos; \
+		flutter build macos --release --build-name "$$app_version_name" --build-number "$$app_version_code"; \
+		generated_config="macos/Flutter/ephemeral/Flutter-Generated.xcconfig"; \
+		if [ ! -f "$$generated_config" ] || ! grep -F "FLUTTER_BUILD_NAME=$$app_version_name" "$$generated_config" >/dev/null || ! grep -F "FLUTTER_BUILD_NUMBER=$$app_version_code" "$$generated_config" >/dev/null; then \
+			echo "Desktop build version mismatch: $$generated_config does not reflect $$app_version_name+$$app_version_code"; \
+			exit 1; \
+		fi; \
 		echo "Desktop build ready: build/macos/Build/Products/Release/"; \
 	elif [ "$$(uname -s)" = "Linux" ]; then \
 		echo "Detected Linux host. Building Linux desktop app..."; \
-		flutter build linux; \
+		flutter build linux --release --build-name "$$app_version_name" --build-number "$$app_version_code"; \
+		generated_config="linux/flutter/ephemeral/generated_config.cmake"; \
+		if [ ! -f "$$generated_config" ] || ! grep -F "$$app_version_name+$$app_version_code" "$$generated_config" >/dev/null; then \
+			echo "Desktop build version mismatch: $$generated_config does not reflect $$app_version_name+$$app_version_code"; \
+			exit 1; \
+		fi; \
 		echo "Desktop build ready: build/linux/x64/release/bundle/"; \
 	else \
 		echo "Unsupported host OS for make desktop."; \
@@ -297,19 +323,39 @@ android:
 		echo "Expected one of: $$store_file, android/$$store_file, android/app/$$store_file"; \
 		exit 1; \
 	fi
-	flutter build apk --release --target-platform android-arm64 --split-per-abi $(QUIET)
-	@if [ -f "$(APK_DIR)/app-arm64-v8a-release.apk" ]; then \
-		mv -f "$(APK_DIR)/app-arm64-v8a-release.apk" "$(APK_PATH)"; \
-		echo "APK ready (arm64-only): $(APK_PATH)"; \
+	@set -e; \
+	$(READ_PUBSPEC_VERSION_SH); \
+	flutter build apk --release --target-platform android-arm64 --split-per-abi --build-name "$$app_version_name" --build-number "$$app_version_code" $(QUIET); \
+	metadata_file="build/app/outputs/apk/release/output-metadata.json"; \
+	if [ ! -f "$$metadata_file" ]; then \
+		echo "Android build metadata not found: $$metadata_file"; \
+		exit 1; \
+	fi; \
+	metadata_pair=$$(python3 -c 'import json, sys; data = json.load(open(sys.argv[1])); element = data["elements"][0]; version_code = int(element["versionCode"]); print(f"{element['"'"'versionName'"'"']}+{version_code}+{version_code % 1000}")' "$$metadata_file"); \
+	metadata_version_name=$${metadata_pair%%+*}; \
+	metadata_rest=$${metadata_pair#*+}; \
+	metadata_version_code=$${metadata_rest%%+*}; \
+	metadata_build_code=$${metadata_pair##*+}; \
+	if [ "$$metadata_version_name" != "$$app_version_name" ] || [ "$$metadata_build_code" != "$$app_version_code" ]; then \
+		echo "Android build version mismatch: expected $$app_version_name+$$app_version_code but got versionName=$$metadata_version_name versionCode=$$metadata_version_code (build remainder $$metadata_build_code)"; \
+		exit 1; \
+	fi; \
+	if [ -f "$(APK_DIR)/app-arm64-v8a-release.apk" ]; then \
+		source_apk="$(APK_DIR)/app-arm64-v8a-release.apk"; \
 	elif [ -f "$(APK_DIR)/app-release.apk" ]; then \
-		mv -f "$(APK_DIR)/app-release.apk" "$(APK_PATH)"; \
-		echo "APK ready (arm64-only): $(APK_PATH)"; \
+		source_apk="$(APK_DIR)/app-release.apk"; \
 	else \
 		echo "APK output not found (expected arm64 build in $(APK_DIR))"; \
 		exit 1; \
-	fi
-	@CAPTION_TEXT="$${HEY_CAPTION:-$$(git log -1 --pretty=%s 2>/dev/null || echo CodeWalk-Android-build)}"; \
-	HEY_SYNC=1 ~/bin/hey -f "$(APK_PATH)" "$$CAPTION_TEXT"
+	fi; \
+	git_ref=$$(git rev-parse --short HEAD 2>/dev/null || echo local); \
+	upload_apk="$(APK_DIR)/codewalk-android-$${app_version_name}+$$app_version_code-$$git_ref.apk"; \
+	cp -f "$$source_apk" "$(APK_PATH)"; \
+	cp -f "$$source_apk" "$$upload_apk"; \
+	echo "APK ready (arm64-only): $(APK_PATH)"; \
+	echo "APK upload copy: $$upload_apk"; \
+	CAPTION_TEXT="$${HEY_CAPTION:-$$(git log -1 --pretty=%s 2>/dev/null || echo CodeWalk-Android-build)}"; \
+	HEY_ALLOW_DUPLICATE=1 HEY_SYNC=1 ~/bin/hey -f "$$upload_apk" "$$CAPTION_TEXT"
 
 precommit: check icons-check android
 
