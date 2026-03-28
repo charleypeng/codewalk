@@ -90,8 +90,15 @@
 
 - **Given** server profiles are configured
 - **When** the app is active
-- **Then** the app checks each server's health every 10 seconds and shows a visual online/offline indicator
-- **Then** health checks are independent of session data sync — messages and events arrive via real-time SSE, not polling
+- **Then** by default the app checks each server's health every 10 seconds and shows a visual online/offline indicator
+- **Then** when `Cellular data saver` is active on mobile data, automatic foreground health checks slow to one burst every 20 seconds and prioritize the active server only
+
+### Cellular data saver indicator
+
+- **Given** `Cellular data saver` is enabled and the current connection is mobile/cellular
+- **When** throttling is active
+- **Then** the mobile hamburger button shows a low-priority saver badge when no higher-priority alert/loading badge is active
+- **Then** the server status control also shows a compact `Saver` chip so the throttled state stays visible after opening the drawer/sidebar
 
 ### Active server status is simplified to Online / Delayed / Offline
 
@@ -955,6 +962,13 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **Then** the app explains that official OpenCode permission policy is file-based (`opencode.json`) rather than fully edited from the GUI
 - **Then** the card also identifies the composer permission auto-approve toggle as the approved CodeWalk exception covered by ADR-023
 
+### Cellular data saver is documented in Behavior settings
+
+- **Given** the user opens `Behavior` settings
+- **When** the cellular data saver card is visible
+- **Then** the app exposes a `CodeWalk exception` toggle that defaults to enabled
+- **Then** the card explains that mobile/cellular connections suppress automatic background network work and throttle automatic foreground refreshes to one burst every 20 seconds
+
 ### Keyboard shortcuts are CodeWalk-local
 
 - **Given** the user opens `Shortcuts` settings on a platform that supports the section
@@ -997,6 +1011,8 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **When** the app goes to background with a known active response
 - **Then** the app may keep realtime alive briefly, schedule low-data probes every 3 minutes, and run one 5-minute tail probe after the active work settles
 - **Then** the worker fetches only the minimum data needed for completion, error, permission, and question alerts; session metadata is fetched only when needed to label a notification
+- **When** `Cellular data saver` is active on mobile data
+- **Then** Android background network checks are suppressed entirely, including periodic probes, active-response probes, and tail probes
 - **When** the user disables Android background alerts in Settings
 - **Then** no Android background checks run and the persistent monitor notification is removed
 - **Then** notifications are intended to fire only while the app is in the background; while in foreground, the user receives real-time updates directly in the chat UI
@@ -1044,6 +1060,7 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **When** the user returns to the app
 - **Then** the app automatically reconnects to the server and resynchronizes state (missed messages, updated sessions, etc.)
 - **Then** transient resume-time probe failures use a short confirmation window before unhealthy/disconnected warning UI is shown, so false alerts do not flash while connectivity is still settling
+- **Then** when `Cellular data saver` is active on mobile data, resume-time automatic sync is limited to one immediate foreground burst and idle realtime may stay paused afterward until the next 20-second window or an explicit user action
 
 ### No duplicate refresh on resume
 
