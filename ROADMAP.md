@@ -49,7 +49,7 @@ Description: Various UI/UX enhancements, snackbar improvements, task bubble upda
 
 Description: Create a repo-local OpenCode command that uses the `planner` agent to inspect OpenCode releases and evaluate CodeWalk impact
 
-- [~] 4.01 Create repo-local command `.opencode/commands/release-monitor.md` that reviews OpenCode releases and identifies impacts/needed updates for CodeWalk, especially Core/Desktop/Web, using `planner` — Command file exists in working tree, pending commit
+- [x] 4.01 Create repo-local command `.opencode/commands/release-monitor.md` that reviews OpenCode releases and identifies impacts/needed updates for CodeWalk, especially Core/Desktop/Web, using `planner` — Completed in working tree (no commit)
 
 ### Feature 5: Offline-to-Online Data Reload
 
