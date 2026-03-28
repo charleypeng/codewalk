@@ -871,7 +871,10 @@ extension _ChatPageScaffold on _ChatPageState {
                               final session = chatProvider.currentSession;
                               if (session != null) {
                                 unawaited(
-                                  chatProvider.loadSessionInsights(session.id),
+                                  chatProvider.loadSessionInsights(
+                                    session.id,
+                                    userInitiated: true,
+                                  ),
                                 );
                               }
                             },

@@ -95,130 +95,170 @@ extension _ChatPageChrome on _ChatPageState {
       leading: isMobile
           ? Builder(
               builder: (leadingContext) {
-                return Consumer2<ChatProvider, AppProvider>(
-                  builder: (context, chatProvider, appProvider, _) {
-                    final hasAlert = _hasServerStatusAlert(
-                      chatProvider: chatProvider,
-                      appProvider: appProvider,
-                    );
-                    final outOfFocusAttentionKind =
-                        chatProvider.outOfFocusAttentionKind;
-                    final hasSessionAttention =
-                        outOfFocusAttentionKind != SessionAttentionKind.none;
-                    final showSyncLoading = _shouldShowMenuSyncLoading(
-                      chatProvider: chatProvider,
-                    );
-                    final alertColor = _serverStatusColor(
-                      context: context,
-                      chatProvider: chatProvider,
-                      appProvider: appProvider,
-                    );
-                    const menuIcon = Icon(Symbols.menu);
-                    final alertIcon = SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          const Positioned.fill(child: Icon(Symbols.menu)),
-                          Positioned(
-                            top: -1,
-                            right: -1,
-                            child: Container(
-                              key: const ValueKey<String>(
-                                'appbar_drawer_alert_badge',
-                              ),
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: alertColor,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                    final loadingIcon = SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          const Positioned.fill(child: Icon(Symbols.menu)),
-                          Positioned(
-                            top: -1,
-                            right: -1,
-                            child: SizedBox(
-                              key: const ValueKey<String>(
-                                'appbar_drawer_sync_loading',
-                              ),
-                              width: 9,
-                              height: 9,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 1.4,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Theme.of(context).colorScheme.primary,
+                return Consumer3<ChatProvider, AppProvider, SettingsProvider>(
+                  builder:
+                      (
+                        context,
+                        chatProvider,
+                        appProvider,
+                        settingsProvider,
+                        _,
+                      ) {
+                        final hasAlert = _hasServerStatusAlert(
+                          chatProvider: chatProvider,
+                          appProvider: appProvider,
+                        );
+                        final outOfFocusAttentionKind =
+                            chatProvider.outOfFocusAttentionKind;
+                        final hasSessionAttention =
+                            outOfFocusAttentionKind !=
+                            SessionAttentionKind.none;
+                        final showSyncLoading = _shouldShowMenuSyncLoading(
+                          chatProvider: chatProvider,
+                        );
+                        final alertColor = _serverStatusColor(
+                          context: context,
+                          chatProvider: chatProvider,
+                          appProvider: appProvider,
+                        );
+                        const menuIcon = Icon(Symbols.menu);
+                        final alertIcon = SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              const Positioned.fill(child: Icon(Symbols.menu)),
+                              Positioned(
+                                top: -1,
+                                right: -1,
+                                child: Container(
+                                  key: const ValueKey<String>(
+                                    'appbar_drawer_alert_badge',
+                                  ),
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: alertColor,
+                                    shape: BoxShape.circle,
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
-                      ),
-                    );
-                    final attentionIcon = SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          const Positioned.fill(child: Icon(Symbols.menu)),
-                          Positioned(
-                            top: -1,
-                            right: -1,
-                            child: Container(
-                              key: const ValueKey<String>(
-                                'appbar_drawer_attention_badge',
-                              ),
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: _sessionAttentionBadgeColor(
-                                  context: context,
-                                  kind: outOfFocusAttentionKind,
+                        );
+                        final loadingIcon = SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              const Positioned.fill(child: Icon(Symbols.menu)),
+                              Positioned(
+                                top: -1,
+                                right: -1,
+                                child: SizedBox(
+                                  key: const ValueKey<String>(
+                                    'appbar_drawer_sync_loading',
+                                  ),
+                                  width: 9,
+                                  height: 9,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 1.4,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Theme.of(context).colorScheme.primary,
+                                    ),
+                                  ),
                                 ),
-                                shape: BoxShape.circle,
                               ),
-                            ),
+                            ],
                           ),
-                        ],
-                      ),
-                    );
-                    final sidebarTourCopy = postOnboardingSidebarTourCopy(
-                      isMobile: true,
-                      showConversationPane: false,
-                    );
-                    return _buildTourTarget(
-                      showcaseKey: _drawerAccessTourKey,
-                      targetKey: _drawerAccessTourTargetKey,
-                      title: sidebarTourCopy.title,
-                      description: sidebarTourCopy.description,
-                      tooltipPosition: TooltipPosition.bottom,
-                      child: IconButton(
-                        key: const ValueKey<String>('appbar_drawer_button'),
-                        tooltip: MaterialLocalizations.of(
-                          leadingContext,
-                        ).openAppDrawerTooltip,
-                        onPressed: () =>
-                            Scaffold.of(leadingContext).openDrawer(),
-                        icon: hasAlert
-                            ? alertIcon
-                            : (hasSessionAttention
-                                  ? attentionIcon
-                                  : (showSyncLoading ? loadingIcon : menuIcon)),
-                      ),
-                    );
-                  },
+                        );
+                        final attentionIcon = SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              const Positioned.fill(child: Icon(Symbols.menu)),
+                              Positioned(
+                                top: -1,
+                                right: -1,
+                                child: Container(
+                                  key: const ValueKey<String>(
+                                    'appbar_drawer_attention_badge',
+                                  ),
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: _sessionAttentionBadgeColor(
+                                      context: context,
+                                      kind: outOfFocusAttentionKind,
+                                    ),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                        final dataSaverIcon = SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              const Positioned.fill(child: Icon(Symbols.menu)),
+                              Positioned(
+                                top: -1,
+                                right: -1,
+                                child: Container(
+                                  key: const ValueKey<String>(
+                                    'appbar_drawer_data_saver_badge',
+                                  ),
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.tertiary,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                        final sidebarTourCopy = postOnboardingSidebarTourCopy(
+                          isMobile: true,
+                          showConversationPane: false,
+                        );
+                        return _buildTourTarget(
+                          showcaseKey: _drawerAccessTourKey,
+                          targetKey: _drawerAccessTourTargetKey,
+                          title: sidebarTourCopy.title,
+                          description: sidebarTourCopy.description,
+                          tooltipPosition: TooltipPosition.bottom,
+                          child: IconButton(
+                            key: const ValueKey<String>('appbar_drawer_button'),
+                            tooltip: MaterialLocalizations.of(
+                              leadingContext,
+                            ).openAppDrawerTooltip,
+                            onPressed: () =>
+                                Scaffold.of(leadingContext).openDrawer(),
+                            icon: hasAlert
+                                ? alertIcon
+                                : (hasSessionAttention
+                                      ? attentionIcon
+                                      : (showSyncLoading
+                                            ? loadingIcon
+                                            : (settingsProvider
+                                                      .isCellularDataSaverActive
+                                                  ? dataSaverIcon
+                                                  : menuIcon))),
+                          ),
+                        );
+                      },
                 );
               },
             )

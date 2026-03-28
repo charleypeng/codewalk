@@ -101,6 +101,7 @@ void main() {
         await provider.initializeProviders();
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
         dioClient.patchBodies.clear();
 
         chatRepository.emitEvent(
@@ -267,6 +268,7 @@ void main() {
         await provider.initializeProviders();
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
         dioClient.patchBodies.clear();
 
         chatRepository.emitEvent(

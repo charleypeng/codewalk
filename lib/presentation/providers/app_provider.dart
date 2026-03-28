@@ -13,6 +13,7 @@ import '../../domain/entities/app_info.dart';
 import '../../domain/entities/server_profile.dart';
 import '../../domain/usecases/check_connection.dart';
 import '../../domain/usecases/get_app_info.dart';
+import '../services/cellular_data_saver_service.dart';
 import '../services/local_opencode_server_runtime.dart';
 import '../services/local_opencode_server_runtime_types.dart';
 
@@ -44,6 +45,7 @@ class AppProvider extends ChangeNotifier {
     required CheckConnection checkConnection,
     required AppLocalDataSource localDataSource,
     required DioClient dioClient,
+    CellularDataSaverService? cellularDataSaverService,
     LocalOpencodeServerRuntime? localServerRuntime,
     Future<ServerHealthStatus> Function(String url)? localServerHealthProbe,
     Duration serverHealthRequestTimeout = const Duration(seconds: 3),
@@ -52,16 +54,21 @@ class AppProvider extends ChangeNotifier {
        _checkConnection = checkConnection,
        _localDataSource = localDataSource,
        _dioClient = dioClient,
+       _cellularDataSaverService =
+           cellularDataSaverService ?? CellularDataSaverService.disabled(),
        _localServerRuntime =
            localServerRuntime ?? createLocalOpencodeServerRuntime(),
        _localServerHealthProbe = localServerHealthProbe,
        _serverHealthRequestTimeout = serverHealthRequestTimeout,
-       _enableHealthPolling = enableHealthPolling;
+       _enableHealthPolling = enableHealthPolling {
+    _cellularDataSaverService.addListener(_handleCellularDataSaverChanged);
+  }
 
   final GetAppInfo _getAppInfo;
   final CheckConnection _checkConnection;
   final AppLocalDataSource _localDataSource;
   final DioClient _dioClient;
+  final CellularDataSaverService _cellularDataSaverService;
   final LocalOpencodeServerRuntime _localServerRuntime;
   final Future<ServerHealthStatus> Function(String url)?
   _localServerHealthProbe;
@@ -77,6 +84,7 @@ class AppProvider extends ChangeNotifier {
   bool _initialized = false;
   Future<void>? _initFuture;
   Timer? _healthTimer;
+  Duration _currentHealthPollingInterval = const Duration(seconds: 10);
   bool _localServerRuntimeBound = false;
   StreamSubscription<String>? _localServerStdoutSubscription;
   StreamSubscription<String>? _localServerStderrSubscription;
@@ -134,6 +142,13 @@ class AppProvider extends ChangeNotifier {
 
   ServerHealthStatus healthFor(String serverId) {
     return _serverHealthById[serverId] ?? ServerHealthStatus.unknown;
+  }
+
+  Duration get _effectiveHealthPollingInterval {
+    if (_cellularDataSaverService.shouldThrottleAutomaticForegroundSync) {
+      return _cellularDataSaverService.automaticSyncInterval;
+    }
+    return const Duration(seconds: 10);
   }
 
   static String normalizeServerUrl(
@@ -1257,6 +1272,7 @@ class AppProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _cellularDataSaverService.removeListener(_handleCellularDataSaverChanged);
     _healthTimer?.cancel();
     _localServerStdoutSubscription?.cancel();
     _localServerStderrSubscription?.cancel();
@@ -1267,21 +1283,40 @@ class AppProvider extends ChangeNotifier {
 
   void _startHealthPolling() {
     _healthTimer?.cancel();
-    _healthTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+    _currentHealthPollingInterval = _effectiveHealthPollingInterval;
+    _healthTimer = Timer.periodic(_currentHealthPollingInterval, (_) {
+      if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+        return;
+      }
+      if (_cellularDataSaverService.shouldThrottleAutomaticForegroundSync) {
+        final activeServerId = _activeServerId;
+        if (activeServerId == null || activeServerId.isEmpty) {
+          return;
+        }
+        unawaited(refreshServerHealth(serverId: activeServerId));
+        return;
+      }
       unawaited(refreshServerHealth());
     });
   }
 
   void _syncHealthPollingLifecycle() {
-    if (!_enableHealthPolling || _serverProfiles.isEmpty) {
+    if (!_enableHealthPolling ||
+        _serverProfiles.isEmpty ||
+        _cellularDataSaverService.shouldSuppressBackgroundWork) {
       _healthTimer?.cancel();
       _healthTimer = null;
       return;
     }
-    if (_healthTimer?.isActive == true) {
+    if (_healthTimer?.isActive == true &&
+        _currentHealthPollingInterval == _effectiveHealthPollingInterval) {
       return;
     }
     _startHealthPolling();
+  }
+
+  void _handleCellularDataSaverChanged() {
+    _syncHealthPollingLifecycle();
   }
 
   void _setStatus(AppStatus status) {

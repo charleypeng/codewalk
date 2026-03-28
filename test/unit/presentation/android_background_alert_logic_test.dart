@@ -37,23 +37,54 @@ void main() {
     expect(kBackgroundTailProbeInterval, const Duration(minutes: 5));
   });
 
-  test('background alerts require master switch and one notification category', () {
+  test(
+    'background alerts require master switch and one notification category',
+    () {
+      final defaults = ExperienceSettings.defaults();
+      expect(shouldRunAndroidBackgroundAlerts(defaults), isTrue);
+
+      final disabledMaster = defaults.copyWith(
+        androidBackgroundAlertsEnabled: false,
+      );
+      expect(shouldRunAndroidBackgroundAlerts(disabledMaster), isFalse);
+
+      final disabledCategories = defaults.copyWith(
+        notifications: const <NotificationCategory, bool>{
+          NotificationCategory.agent: false,
+          NotificationCategory.permissions: false,
+          NotificationCategory.errors: false,
+        },
+      );
+      expect(shouldRunAndroidBackgroundAlerts(disabledCategories), isFalse);
+    },
+  );
+
+  test('cellular data saver disables background network only on cellular', () {
     final defaults = ExperienceSettings.defaults();
-    expect(shouldRunAndroidBackgroundAlerts(defaults), isTrue);
 
-    final disabledMaster = defaults.copyWith(
-      androidBackgroundAlertsEnabled: false,
+    expect(
+      shouldDisableBackgroundNetworkForDataSaver(
+        settings: defaults,
+        isCellularTransport: true,
+      ),
+      isTrue,
     );
-    expect(shouldRunAndroidBackgroundAlerts(disabledMaster), isFalse);
 
-    final disabledCategories = defaults.copyWith(
-      notifications: const <NotificationCategory, bool>{
-        NotificationCategory.agent: false,
-        NotificationCategory.permissions: false,
-        NotificationCategory.errors: false,
-      },
+    expect(
+      shouldDisableBackgroundNetworkForDataSaver(
+        settings: defaults,
+        isCellularTransport: false,
+      ),
+      isFalse,
     );
-    expect(shouldRunAndroidBackgroundAlerts(disabledCategories), isFalse);
+
+    expect(
+      shouldDisableBackgroundNetworkForDataSaver(
+        settings: defaults.copyWith(dataSaverEnabled: false),
+        isCellularTransport: true,
+      ),
+      isFalse,
+    );
   });
 
   test('schedules tail probe only when active sessions just ended', () {

@@ -15,6 +15,7 @@ import '../../data/models/chat_realtime_model.dart';
 import '../../data/models/chat_session_model.dart';
 import '../../domain/entities/experience_settings.dart';
 import 'android_background_alert_logic.dart';
+import 'cellular_data_saver_service.dart';
 import 'notification_service.dart';
 import 'permission_auto_approve_runtime.dart';
 
@@ -53,10 +54,11 @@ class AndroidBackgroundAlertWorker {
     }
 
     final prefs = await SharedPreferences.getInstance();
+    final settings = _readExperienceSettingsFromPrefs(prefs);
     await syncRegistration(
-      enabled: shouldRunAndroidBackgroundAlerts(
-        _readExperienceSettingsFromPrefs(prefs),
-      ),
+      enabled:
+          shouldRunAndroidBackgroundAlerts(settings) &&
+          !_shouldDisableBackgroundDataSaver(settings, prefs),
     );
   }
 
@@ -110,9 +112,9 @@ class AndroidBackgroundAlertWorker {
     }
 
     final prefs = await SharedPreferences.getInstance();
-    if (!shouldRunAndroidBackgroundAlerts(
-      _readExperienceSettingsFromPrefs(prefs),
-    )) {
+    final settings = _readExperienceSettingsFromPrefs(prefs);
+    if (!shouldRunAndroidBackgroundAlerts(settings) ||
+        _shouldDisableBackgroundDataSaver(settings, prefs)) {
       await _cancelScheduledTasks();
       return;
     }
@@ -230,9 +232,9 @@ class AndroidBackgroundAlertWorker {
     }
 
     final prefs = await SharedPreferences.getInstance();
-    if (!shouldRunAndroidBackgroundAlerts(
-      _readExperienceSettingsFromPrefs(prefs),
-    )) {
+    final settings = _readExperienceSettingsFromPrefs(prefs);
+    if (!shouldRunAndroidBackgroundAlerts(settings) ||
+        _shouldDisableBackgroundDataSaver(settings, prefs)) {
       return;
     }
     final snapshotKey = _backgroundAlertSnapshotStorageKey(normalizedServerId);
@@ -332,7 +334,8 @@ class _AndroidBackgroundAlertRunner {
     try {
       final prefs = await SharedPreferences.getInstance();
       final settings = _readSettings(prefs);
-      if (!shouldRunAndroidBackgroundAlerts(settings)) {
+      if (!shouldRunAndroidBackgroundAlerts(settings) ||
+          _shouldDisableBackgroundDataSaver(settings, prefs)) {
         await AndroidBackgroundAlertWorker.syncRegistration(enabled: false);
         AppLogger.debug(
           'background_alert_worker skipped ($taskName): disabled in settings',
@@ -1270,4 +1273,16 @@ String _backgroundAlertSnapshotStorageKey(String serverId) {
 String _backgroundPermissionAutoApproveContextStorageKey(String serverId) {
   final normalized = serverId.trim().isEmpty ? 'legacy' : serverId.trim();
   return '$_backgroundPermissionAutoApproveContextKeyPrefix::$normalized';
+}
+
+bool _shouldDisableBackgroundDataSaver(
+  ExperienceSettings settings,
+  SharedPreferences prefs,
+) {
+  return shouldDisableBackgroundNetworkForDataSaver(
+    settings: settings,
+    isCellularTransport:
+        CellularDataSaverService.readPersistedTransport(prefs) ==
+        DataSaverTransport.cellular,
+  );
 }

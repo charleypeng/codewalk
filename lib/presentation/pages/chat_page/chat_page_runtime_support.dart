@@ -845,7 +845,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
 
   Future<void> _refreshData() async {
     final chatProvider = context.read<ChatProvider>();
-    await chatProvider.loadSessions();
+    await chatProvider.loadSessions(userInitiated: true);
     await chatProvider.refresh();
   }
 

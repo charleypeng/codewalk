@@ -37,6 +37,7 @@ import 'package:codewalk/domain/usecases/watch_global_chat_events.dart';
 import 'package:codewalk/presentation/providers/chat_provider.dart';
 import 'package:codewalk/presentation/providers/project_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
+import 'package:codewalk/presentation/services/cellular_data_saver_service.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:dio/dio.dart';
 
@@ -202,6 +203,7 @@ ChatProvider buildChatProvider({
   Duration abortSuppressionWindow = const Duration(milliseconds: 30),
   Duration shortcutCycleWindow = const Duration(seconds: 3),
   SettingsProvider? settingsProvider,
+  CellularDataSaverService? cellularDataSaverService,
 }) {
   return ChatProvider(
     sendChatMessage: SendChatMessage(chatRepository),
@@ -237,6 +239,7 @@ ChatProvider buildChatProvider({
     localDataSource: localDataSource,
     settingsProvider: settingsProvider ?? defaultSettingsProvider,
     dioClient: dioClient,
+    cellularDataSaverService: cellularDataSaverService,
     syncHealthCheckInterval: syncHealthCheckInterval,
     abortSuppressionWindow: abortSuppressionWindow,
     shortcutCycleWindow: shortcutCycleWindow,

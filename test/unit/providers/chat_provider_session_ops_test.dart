@@ -13,6 +13,7 @@ import 'package:codewalk/domain/entities/provider.dart';
 import 'package:codewalk/domain/entities/session.dart';
 import 'package:codewalk/presentation/providers/chat_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
+import 'package:codewalk/presentation/services/cellular_data_saver_service.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -32,6 +33,7 @@ void main() {
       Duration syncHealthCheckInterval = const Duration(seconds: 5),
       Duration abortSuppressionWindow = const Duration(milliseconds: 30),
       SettingsProvider? settingsProvider,
+      CellularDataSaverService? cellularDataSaverService,
     }) {
       return buildChatProvider(
         chatRepository: chatRepository,
@@ -42,6 +44,7 @@ void main() {
         syncHealthCheckInterval: syncHealthCheckInterval,
         abortSuppressionWindow: abortSuppressionWindow,
         settingsProvider: settingsProvider,
+        cellularDataSaverService: cellularDataSaverService,
       );
     }
 
@@ -702,6 +705,7 @@ void main() {
         await provider.initializeProviders();
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
         expect(
           ((provider.messages.single as AssistantMessage).parts.single
                   as TextPart)
@@ -859,6 +863,7 @@ void main() {
     test('loadSessionInsights calls all 4 endpoints', () async {
       await provider.loadSessions();
       await provider.selectSession(provider.sessions.first);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
 
       // Reset counters after selectSession (which also calls loadSessionInsights).
       chatRepository.getSessionChildrenCallCount = 0;
@@ -873,6 +878,33 @@ void main() {
       expect(chatRepository.getSessionDiffCallCount, 1);
       expect(chatRepository.getSessionStatusCallCount, 1);
     });
+
+    test(
+      'loadSessionInsights only refreshes status automatically on cellular data saver',
+      () async {
+        final dataSaverService = CellularDataSaverService.disabled();
+        addTearDown(dataSaverService.dispose);
+        dataSaverService.debugSetDataSaverEnabled(true);
+        dataSaverService.debugSetTransport(DataSaverTransport.cellular);
+        provider = buildProvider(cellularDataSaverService: dataSaverService);
+
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        chatRepository.getSessionChildrenCallCount = 0;
+        chatRepository.getSessionTodoCallCount = 0;
+        chatRepository.getSessionDiffCallCount = 0;
+        chatRepository.getSessionStatusCallCount = 0;
+
+        await provider.loadSessionInsights('ses_1');
+
+        expect(chatRepository.getSessionChildrenCallCount, 0);
+        expect(chatRepository.getSessionTodoCallCount, 0);
+        expect(chatRepository.getSessionDiffCallCount, 0);
+        expect(chatRepository.getSessionStatusCallCount, 1);
+      },
+    );
 
     test('loadSessionInsights handles partial failures gracefully', () async {
       chatRepository.sessionChildrenFailure = const ServerFailure(
@@ -1437,6 +1469,7 @@ void main() {
         await provider.initializeProviders();
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
+        await Future<void>.delayed(const Duration(milliseconds: 20));
         final sessionsBefore = chatRepository.getSessionsCallCount;
         final activeDirectory = provider.projectProvider.currentDirectory;
 

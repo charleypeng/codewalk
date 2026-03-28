@@ -17,8 +17,6 @@ import 'package:codewalk/domain/usecases/abort_chat_session.dart';
 import 'package:codewalk/domain/usecases/check_connection.dart';
 import 'package:codewalk/domain/usecases/create_chat_session.dart';
 import 'package:codewalk/domain/usecases/delete_chat_session.dart';
-import 'package:flutter_highlight/flutter_highlight.dart';
-import 'package:showcaseview/showcaseview.dart';
 import 'package:codewalk/domain/usecases/fork_chat_session.dart';
 import 'package:codewalk/domain/usecases/get_agents.dart';
 import 'package:codewalk/domain/usecases/get_app_info.dart';
@@ -49,18 +47,20 @@ import 'package:codewalk/presentation/providers/app_provider.dart';
 import 'package:codewalk/presentation/providers/chat_provider.dart';
 import 'package:codewalk/presentation/providers/project_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
+import 'package:codewalk/presentation/services/cellular_data_saver_service.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:codewalk/presentation/theme/app_theme.dart';
 import 'package:codewalk/presentation/utils/session_title_formatter.dart';
 import 'package:codewalk/presentation/widgets/chat_skeleton_shimmer.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart' hide Provider;
+import 'package:showcaseview/showcaseview.dart';
 import 'package:simple_icons/simple_icons.dart';
 
 import '../support/fakes.dart';
@@ -1407,6 +1407,71 @@ void main() {
         );
       },
     );
+
+    testWidgets('shows hamburger data saver badge on cellular throttling', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(500, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test'
+        ..defaultServerId = 'srv_test'
+        ..serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'srv_test',
+            'url': 'http://127.0.0.1:4096',
+            'label': 'Test Server',
+            'basicAuthEnabled': false,
+            'basicAuthUsername': '',
+            'basicAuthPassword': '',
+            'createdAt': 0,
+            'updatedAt': 0,
+          },
+        ]);
+      _disableAutomaticUpdateChecksForTest(localDataSource);
+      final dataSaverService = CellularDataSaverService.disabled();
+      addTearDown(dataSaverService.dispose);
+      dataSaverService.debugSetDataSaverEnabled(true);
+      dataSaverService.debugSetTransport(DataSaverTransport.cellular);
+
+      final settingsProvider = SettingsProvider(
+        localDataSource: localDataSource,
+        dioClient: DioClient(),
+        soundService: SoundService(),
+        cellularDataSaverService: dataSaverService,
+      );
+      addTearDown(settingsProvider.dispose);
+      await settingsProvider.initialize();
+
+      final provider = _buildChatProvider(
+        localDataSource: localDataSource,
+        cellularDataSaverService: dataSaverService,
+      );
+      final appProvider = _buildAppProvider(
+        localDataSource: localDataSource,
+        cellularDataSaverService: dataSaverService,
+      );
+
+      await tester.pumpWidget(
+        _testApp(
+          provider,
+          appProvider,
+          settingsProvider: settingsProvider,
+          cellularDataSaverService: dataSaverService,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('appbar_drawer_data_saver_badge')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('appbar_drawer_alert_badge')),
+        findsNothing,
+      );
+    });
 
     testWidgets(
       'shows hamburger attention badge for out-of-focus session interactions',
@@ -12733,6 +12798,7 @@ Widget _testApp(
   ChatProvider provider,
   AppProvider appProvider, {
   SettingsProvider? settingsProvider,
+  CellularDataSaverService? cellularDataSaverService,
   MediaQueryData? mediaQueryData,
 }) {
   if (di.sl.isRegistered<AppLocalDataSource>()) {
@@ -12746,6 +12812,7 @@ Widget _testApp(
         localDataSource: provider.localDataSource,
         dioClient: DioClient(),
         soundService: SoundService(),
+        cellularDataSaverService: cellularDataSaverService,
       );
   if (settingsProvider == null) {
     addTearDown(effectiveSettingsProvider.dispose);
@@ -12796,6 +12863,7 @@ ChatProvider _buildChatProvider({
   FakeProjectRepository? projectRepository,
   FakeAppRepository? appRepository,
   required InMemoryAppLocalDataSource localDataSource,
+  CellularDataSaverService? cellularDataSaverService,
   bool includeVariants = false,
   ProvidersResponse? providersResponse,
 }) {
@@ -12859,6 +12927,7 @@ ChatProvider _buildChatProvider({
       localDataSource: localDataSource,
     ),
     localDataSource: localDataSource,
+    cellularDataSaverService: cellularDataSaverService,
     syncHealthCheckInterval: const Duration(milliseconds: 150),
     foregroundResumeSyncIndicatorDuration: const Duration(milliseconds: 250),
     foregroundResumeSyncIndicatorMaxCycles: 2,
@@ -12869,6 +12938,7 @@ ChatProvider _buildChatProvider({
 AppProvider _buildAppProvider({
   required InMemoryAppLocalDataSource localDataSource,
   FakeAppRepository? appRepository,
+  CellularDataSaverService? cellularDataSaverService,
 }) {
   _ensureActiveServerProfile(localDataSource);
   final repository = appRepository ?? FakeAppRepository();
@@ -12877,6 +12947,7 @@ AppProvider _buildAppProvider({
     checkConnection: CheckConnection(repository),
     localDataSource: localDataSource,
     dioClient: DioClient(),
+    cellularDataSaverService: cellularDataSaverService,
     enableHealthPolling: false,
   );
   unawaited(provider.initialize());

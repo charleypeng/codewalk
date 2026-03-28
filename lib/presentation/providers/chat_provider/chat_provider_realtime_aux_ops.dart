@@ -1,6 +1,91 @@
 part of '../chat_provider.dart';
 
 extension _ChatProviderRealtimeAuxOps on ChatProvider {
+  Duration get _effectiveSyncHealthCheckInterval {
+    if (_cellularDataSaverService.shouldThrottleAutomaticForegroundSync) {
+      return _cellularDataSaverService.automaticSyncInterval;
+    }
+    return _syncHealthCheckInterval;
+  }
+
+  Future<void> _stopRealtimeEventSubscriptions({required String reason}) async {
+    _eventStreamGeneration += 1;
+    final previousSubscription = _eventSubscription;
+    final previousGlobalSubscription = _globalEventSubscription;
+    _eventSubscription = null;
+    _globalEventSubscription = null;
+    await _cancelSubscriptionSafely(
+      previousSubscription,
+      label: 'realtime event ($reason)',
+    );
+    await _cancelSubscriptionSafely(
+      previousGlobalSubscription,
+      label: 'global event ($reason)',
+    );
+  }
+
+  Future<void> _syncCellularDataSaverRealtimePolicy({
+    required String reason,
+    bool forceBurst = false,
+  }) async {
+    if (!_refreshlessRealtimeEnabled) {
+      return;
+    }
+    if (!_cellularDataSaverService.isDataSaverActive) {
+      if (_idleRealtimePausedForDataSaver && _isForegroundActive) {
+        _idleRealtimePausedForDataSaver = false;
+        await _startRealtimeEventSubscription();
+      }
+      return;
+    }
+    if (!_isForegroundActive) {
+      _idleRealtimePausedForDataSaver = true;
+      _setSyncState(ChatSyncState.connected, reason: 'data-saver-background');
+      await _stopRealtimeEventSubscriptions(reason: 'background-data-saver');
+      return;
+    }
+
+    final shouldKeepActive =
+        forceBurst || _shouldKeepRealtimeActiveForDataSaver;
+    if (!shouldKeepActive) {
+      if (_idleRealtimePausedForDataSaver &&
+          _eventSubscription == null &&
+          _globalEventSubscription == null) {
+        return;
+      }
+      _idleRealtimePausedForDataSaver = true;
+      _setSyncState(ChatSyncState.connected, reason: 'data-saver-idle:$reason');
+      await _stopRealtimeEventSubscriptions(reason: reason);
+      return;
+    }
+
+    if (_eventSubscription != null &&
+        _globalEventSubscription != null &&
+        !_idleRealtimePausedForDataSaver) {
+      return;
+    }
+    _idleRealtimePausedForDataSaver = false;
+    await _startRealtimeEventSubscription();
+  }
+
+  Future<void> _runAutomaticForegroundSyncForDataSaver({
+    required String reason,
+  }) async {
+    if (!_cellularDataSaverService.allowAutomaticForegroundSync(
+      reason: reason,
+    )) {
+      return;
+    }
+    await loadSessions(preserveVisibleState: true);
+    await refreshActiveSessionView(
+      reason: 'data-saver:$reason',
+      includeStatus: true,
+    );
+    await _loadPendingInteractions();
+    await _syncSelectionFromRemote(reason: 'data-saver:$reason', force: true);
+    await _syncCellularDataSaverRealtimePolicy(reason: '$reason:post-sync');
+  }
+
   void _startForegroundResumeSyncIndicator({required String reason}) {
     if (!_refreshlessRealtimeEnabled) {
       return;
@@ -176,6 +261,7 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     );
 
     _notifyListeners();
+    await _syncCellularDataSaverRealtimePolicy(reason: 'pending-interactions');
   }
 
   void _upsertSession(ChatSession session) {

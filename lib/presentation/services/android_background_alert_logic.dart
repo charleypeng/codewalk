@@ -1,3 +1,4 @@
+import '../../core/config/feature_flags.dart';
 import '../../domain/entities/experience_settings.dart';
 
 const Duration kBackgroundFastProbeInterval = Duration(minutes: 3);
@@ -8,6 +9,16 @@ bool shouldRunAndroidBackgroundAlerts(ExperienceSettings settings) {
     return false;
   }
   return settings.notifications.values.any((enabled) => enabled);
+}
+
+bool shouldDisableBackgroundNetworkForDataSaver({
+  required ExperienceSettings settings,
+  required bool isCellularTransport,
+}) {
+  if (!FeatureFlags.cellularDataSaver) {
+    return false;
+  }
+  return settings.dataSaverEnabled && isCellularTransport;
 }
 
 bool hasActiveBackgroundSessions(Map<String, String> sessionStatusById) {

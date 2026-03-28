@@ -270,8 +270,8 @@ extension _ChatPageStatusPresenter on _ChatPageState {
   }
 
   Widget _buildServerStatusControl({required bool closeOnSelect}) {
-    return Consumer2<AppProvider, ChatProvider>(
-      builder: (context, appProvider, chatProvider, _) {
+    return Consumer3<AppProvider, ChatProvider, SettingsProvider>(
+      builder: (context, appProvider, chatProvider, settingsProvider, _) {
         final active = appProvider.activeServer;
         final statusColor = _serverStatusColor(
           context: context,
@@ -396,6 +396,32 @@ extension _ChatPageStatusPresenter on _ChatPageState {
                               ),
                         ),
                       ),
+                      if (settingsProvider.isCellularDataSaverActive) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          key: const ValueKey<String>(
+                            'sidebar_server_status_data_saver_chip',
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.tertiaryContainer,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            'Saver',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: colorScheme.onTertiaryContainer,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

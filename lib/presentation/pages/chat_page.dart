@@ -1138,7 +1138,7 @@ class _ChatPageState extends State<ChatPage>
       if (chatProvider.state != ChatState.loading &&
           reloadAttempts < _notificationTapReloadAttempts) {
         reloadAttempts += 1;
-        await chatProvider.loadSessions();
+        await chatProvider.loadSessions(userInitiated: true);
         if (!mounted) {
           return;
         }

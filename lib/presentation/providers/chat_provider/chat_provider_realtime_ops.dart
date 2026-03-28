@@ -27,13 +27,23 @@ extension _ChatProviderRealtimeOps on ChatProvider {
 
   void _startSyncHealthMonitor() {
     _syncHealthTimer?.cancel();
-    _syncHealthTimer = Timer.periodic(_syncHealthCheckInterval, (_) {
+    _syncHealthTimer = Timer.periodic(_effectiveSyncHealthCheckInterval, (_) {
       _evaluateSyncHealth();
     });
   }
 
   void _evaluateSyncHealth() {
     if (!_isForegroundActive) {
+      return;
+    }
+    if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+      return;
+    }
+    if (_cellularDataSaverService.isDataSaverActive &&
+        _idleRealtimePausedForDataSaver) {
+      unawaited(
+        _runAutomaticForegroundSyncForDataSaver(reason: 'sync-health-tick'),
+      );
       return;
     }
     unawaited(_syncSelectionFromRemote(reason: 'sync-health-tick'));
@@ -58,6 +68,10 @@ extension _ChatProviderRealtimeOps on ChatProvider {
     if (!_degradedMode || !_isForegroundActive) {
       return;
     }
+    if (_cellularDataSaverService.isDataSaverActive) {
+      await _runAutomaticForegroundSyncForDataSaver(reason: 'degraded-$reason');
+      return;
+    }
     AppLogger.info('sync_degraded_poll_tick reason=$reason');
     await loadSessions();
     await refreshActiveSessionView(reason: 'degraded-sync:$reason');
@@ -68,6 +82,12 @@ extension _ChatProviderRealtimeOps on ChatProvider {
   }
 
   Future<void> _resumeRealtimeAfterForeground() async {
+    if (_cellularDataSaverService.isDataSaverActive) {
+      await _runAutomaticForegroundSyncForDataSaver(
+        reason: 'foreground-resume',
+      );
+      return;
+    }
     if (_foregroundResumeReconcileInFlight) {
       AppLogger.info('sync_resume_reconcile_skip reason=in-flight');
       return;

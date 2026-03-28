@@ -430,6 +430,10 @@ extension _ChatProviderCorePart on ChatProvider {
     if (fetchId == _providersFetchId) {
       if (_refreshlessRealtimeEnabled && !_isForegroundActive) {
         _setSyncState(ChatSyncState.reconnecting, reason: 'background-init');
+      } else if (_cellularDataSaverService.isDataSaverActive &&
+          !_shouldKeepRealtimeActiveForDataSaver) {
+        _idleRealtimePausedForDataSaver = true;
+        _setSyncState(ChatSyncState.connected, reason: 'data-saver-init');
       } else {
         await _startRealtimeEventSubscription();
       }

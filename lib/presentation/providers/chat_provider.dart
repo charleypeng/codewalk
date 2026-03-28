@@ -38,9 +38,9 @@ import '../../domain/usecases/get_session_todo.dart';
 import '../../domain/usecases/list_pending_permissions.dart';
 import '../../domain/usecases/list_pending_questions.dart';
 import '../../domain/usecases/reject_question.dart';
-import '../../domain/usecases/revert_chat_message.dart';
 import '../../domain/usecases/reply_permission.dart';
 import '../../domain/usecases/reply_question.dart';
+import '../../domain/usecases/revert_chat_message.dart';
 import '../../domain/usecases/send_chat_message.dart';
 import '../../domain/usecases/share_chat_session.dart';
 import '../../domain/usecases/summarize_chat_session.dart';
@@ -50,6 +50,7 @@ import '../../domain/usecases/update_chat_session.dart';
 import '../../domain/usecases/watch_chat_events.dart';
 import '../../domain/usecases/watch_global_chat_events.dart';
 import '../services/chat_title_generator.dart';
+import '../services/cellular_data_saver_service.dart';
 import '../services/event_feedback_dispatcher.dart';
 import '../utils/chat_abort_message.dart';
 import '../utils/chat_event_property_extractors.dart';
@@ -131,6 +132,7 @@ class ChatProvider extends ChangeNotifier {
     required this.localDataSource,
     this.settingsProvider,
     this.dioClient,
+    CellularDataSaverService? cellularDataSaverService,
     this.eventFeedbackDispatcher,
     this.titleGenerator,
     Duration syncSignalStaleThreshold = const Duration(seconds: 20),
@@ -145,6 +147,8 @@ class ChatProvider extends ChangeNotifier {
     Duration abortSuppressionWindow = const Duration(seconds: 8),
     Duration shortcutCycleWindow = const Duration(seconds: 3),
   }) {
+    _cellularDataSaverService =
+        cellularDataSaverService ?? CellularDataSaverService.disabled();
     _syncSignalStaleThreshold = syncSignalStaleThreshold;
     _syncHealthCheckInterval = syncHealthCheckInterval;
     _degradedPollingInterval = degradedPollingInterval;
@@ -160,6 +164,7 @@ class ChatProvider extends ChangeNotifier {
       _activeServerId,
       _resolveContextScopeId(),
     );
+    _cellularDataSaverService.addListener(_handleCellularDataSaverChanged);
   }
 
   // Scroll callback
@@ -196,6 +201,7 @@ class ChatProvider extends ChangeNotifier {
   final AppLocalDataSource localDataSource;
   final SettingsProvider? settingsProvider;
   final DioClient? dioClient;
+  late final CellularDataSaverService _cellularDataSaverService;
   final EventFeedbackDispatcher? eventFeedbackDispatcher;
   final ChatTitleGenerator? titleGenerator;
 
@@ -324,6 +330,7 @@ class ChatProvider extends ChangeNotifier {
   Timer? _degradedPollingTimer;
   Timer? _foregroundResumeSyncTimer;
   Timer? _sessionUnreadHighlightTimer;
+  bool _idleRealtimePausedForDataSaver = false;
   int _foregroundResumeSyncCycleCount = 0;
   DateTime? _lastRealtimeSignalAt;
   ChatSyncState _syncState = ChatSyncState.reconnecting;
@@ -331,6 +338,8 @@ class ChatProvider extends ChangeNotifier {
   bool _degradedMode = false;
   bool _isForegroundResumeSyncing = false;
   bool _foregroundResumeReconcileInFlight = false;
+  final Map<String, DateTime> _lastAutomaticSessionInsightsAtBySessionId =
+      <String, DateTime>{};
   bool _realtimeSubscriptionRestartInFlight = false;
   bool _realtimeSubscriptionRestartQueued = false;
   bool _recoverableSyncAlertEscalated = false;
@@ -406,6 +415,55 @@ class ChatProvider extends ChangeNotifier {
       _notifyScheduled = false;
       notifyListeners();
     });
+  }
+
+  bool get _hasPendingThreadInteractions {
+    for (final items in _pendingPermissionsBySession.values) {
+      if (items.isNotEmpty) {
+        return true;
+      }
+    }
+    for (final items in _pendingQuestionsBySession.values) {
+      if (items.isNotEmpty) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool get _shouldKeepRealtimeActiveForDataSaver {
+    if (!_refreshlessRealtimeEnabled ||
+        !_cellularDataSaverService.isDataSaverActive) {
+      return true;
+    }
+    if (!_isForegroundActive) {
+      return false;
+    }
+    if (_cellularDataSaverService.hasInteractiveBurst) {
+      return true;
+    }
+    if (_state == ChatState.sending || isCurrentSessionActivelyResponding) {
+      return true;
+    }
+    return _hasPendingThreadInteractions;
+  }
+
+  void _handleCellularDataSaverChanged() {
+    if (!_refreshlessRealtimeEnabled) {
+      return;
+    }
+    if (_cellularDataSaverService.shouldSuppressBackgroundWork) {
+      _syncHealthTimer?.cancel();
+      _syncHealthTimer = null;
+      _degradedPollingTimer?.cancel();
+      _degradedPollingTimer = null;
+      _degradedMode = false;
+      _degradedModeStartedAt = null;
+    } else if (_isForegroundActive) {
+      _startSyncHealthMonitor();
+    }
+    unawaited(_syncCellularDataSaverRealtimePolicy(reason: 'runtime-change'));
+    _notifyListeners();
   }
 
   // Microtask coalescing for scroll-to-bottom: prevents multiple scroll jumps
@@ -1716,6 +1774,7 @@ class ChatProvider extends ChangeNotifier {
   Future<void> setForegroundActive(bool isActive) async {
     final wasActive = _isForegroundActive;
     _isForegroundActive = isActive;
+    _cellularDataSaverService.setAppForeground(isActive);
     if (!isActive) {
       _clearRejectedDraft();
       _stopForegroundResumeSyncIndicator(reason: 'background');
@@ -1732,14 +1791,18 @@ class ChatProvider extends ChangeNotifier {
     }
 
     if (!isActive) {
-      // Pause health/degraded timers (UI-only concerns) but keep SSE alive
-      // so data accumulates in internal fields for flush on foreground return.
+      // Pause automatic network work in background. When cellular data saver is
+      // active we also close idle realtime streams so no background downloads continue.
       _syncHealthTimer?.cancel();
       _syncHealthTimer = null;
       _degradedPollingTimer?.cancel();
       _degradedPollingTimer = null;
       _degradedMode = false;
       _degradedModeStartedAt = null;
+      if (_cellularDataSaverService.shouldDisableBackgroundNetworkTasks) {
+        _idleRealtimePausedForDataSaver = true;
+        await _stopRealtimeEventSubscriptions(reason: 'background-data-saver');
+      }
       return;
     }
 
@@ -1748,6 +1811,7 @@ class ChatProvider extends ChangeNotifier {
     }
 
     _startSyncHealthMonitor();
+    await _syncCellularDataSaverRealtimePolicy(reason: 'foreground-return');
     await _resumeRealtimeAfterForeground();
   }
 
@@ -1985,7 +2049,32 @@ class ChatProvider extends ChangeNotifier {
     String sessionId, {
     String? messageId,
     bool silent = false,
+    bool userInitiated = false,
   }) async {
+    if (userInitiated) {
+      _cellularDataSaverService.noteExplicitUserAction(
+        reason: 'session-insights',
+      );
+      await _syncCellularDataSaverRealtimePolicy(
+        reason: 'session-insights-user',
+        forceBurst: true,
+      );
+    }
+
+    final automaticDataSaverMode =
+        _cellularDataSaverService.isDataSaverActive && !userInitiated;
+    if (automaticDataSaverMode) {
+      final lastAutomaticLoadAt =
+          _lastAutomaticSessionInsightsAtBySessionId[sessionId];
+      final now = DateTime.now();
+      if (lastAutomaticLoadAt != null &&
+          now.difference(lastAutomaticLoadAt) <
+              _cellularDataSaverService.automaticSyncInterval) {
+        return;
+      }
+      _lastAutomaticSessionInsightsAtBySessionId[sessionId] = now;
+    }
+
     if (!silent) {
       _isLoadingSessionInsights = true;
       _sessionInsightsError = null;
@@ -1996,83 +2085,93 @@ class ChatProvider extends ChangeNotifier {
       final directory = projectProvider.currentDirectory;
       final projectId = projectProvider.currentProjectId;
 
-      // Launch all 4 independent calls concurrently.
-      final childrenFuture = _runSessionInsightRequest(
-        requestName: 'children',
-        request: () => getSessionChildren(
-          GetSessionChildrenParams(
-            projectId: projectId,
-            sessionId: sessionId,
-            directory: directory,
+      Future<Either<Failure, List<ChatSession>>>? childrenFuture;
+      Future<Either<Failure, List<SessionTodo>>>? todoFuture;
+      Future<Either<Failure, List<SessionDiff>>>? diffFuture;
+      if (!automaticDataSaverMode) {
+        // Full insights are useful after explicit actions, but expensive to pull
+        // automatically on cellular data.
+        childrenFuture = _runSessionInsightRequest(
+          requestName: 'children',
+          request: () => getSessionChildren(
+            GetSessionChildrenParams(
+              projectId: projectId,
+              sessionId: sessionId,
+              directory: directory,
+            ),
           ),
-        ),
-      );
-      final todoFuture = _runSessionInsightRequest(
-        requestName: 'todo',
-        request: () => getSessionTodo(
-          GetSessionTodoParams(
-            projectId: projectId,
-            sessionId: sessionId,
-            directory: directory,
+        );
+        todoFuture = _runSessionInsightRequest(
+          requestName: 'todo',
+          request: () => getSessionTodo(
+            GetSessionTodoParams(
+              projectId: projectId,
+              sessionId: sessionId,
+              directory: directory,
+            ),
           ),
-        ),
-      );
-      final diffFuture = _runSessionInsightRequest(
-        requestName: 'diff',
-        request: () => getSessionDiff(
-          GetSessionDiffParams(
-            projectId: projectId,
-            sessionId: sessionId,
-            messageId: messageId,
-            directory: directory,
+        );
+        diffFuture = _runSessionInsightRequest(
+          requestName: 'diff',
+          request: () => getSessionDiff(
+            GetSessionDiffParams(
+              projectId: projectId,
+              sessionId: sessionId,
+              messageId: messageId,
+              directory: directory,
+            ),
           ),
-        ),
-      );
+        );
+      }
       final statusFuture = _runSessionInsightRequest(
         requestName: 'status',
         request: () =>
             getSessionStatus(GetSessionStatusParams(directory: directory)),
       );
 
-      // Await all results (futures already running in parallel).
-      final childrenResult = await childrenFuture;
-      final todoResult = await todoFuture;
-      final diffResult = await diffFuture;
       final statusResult = await statusFuture;
+      if (childrenFuture != null) {
+        final childrenResult = await childrenFuture;
+        childrenResult.fold(
+          (failure) {
+            AppLogger.warn(
+              'Failed to load session children for $sessionId: $failure',
+            );
+          },
+          (children) {
+            _sessionChildrenById[sessionId] = children;
+            _threadPermissionsVersion++;
+          },
+        );
+      }
 
-      childrenResult.fold(
-        (failure) {
-          AppLogger.warn(
-            'Failed to load session children for $sessionId: $failure',
-          );
-        },
-        (children) {
-          _sessionChildrenById[sessionId] = children;
-          _threadPermissionsVersion++;
-        },
-      );
+      if (todoFuture != null) {
+        final todoResult = await todoFuture;
+        todoResult.fold(
+          (failure) {
+            AppLogger.warn(
+              'Failed to load session todo for $sessionId: $failure',
+            );
+          },
+          (todos) {
+            _sessionTodoById[sessionId] = todos;
+          },
+        );
+      }
 
-      todoResult.fold(
-        (failure) {
-          AppLogger.warn(
-            'Failed to load session todo for $sessionId: $failure',
-          );
-        },
-        (todos) {
-          _sessionTodoById[sessionId] = todos;
-        },
-      );
-
-      diffResult.fold(
-        (failure) {
-          AppLogger.warn(
-            'Failed to load session diff for $sessionId: $failure',
-          );
-        },
-        (diff) {
-          _sessionDiffById[sessionId] = diff;
-        },
-      );
+      if (diffFuture != null) {
+        final diffResult = await diffFuture;
+        diffResult.fold(
+          (failure) {
+            AppLogger.warn(
+              'Failed to load session diff for $sessionId: $failure',
+            );
+          },
+          (diff) {
+            _sessionDiffById[sessionId] = diff;
+          },
+        );
+      }
 
       statusResult.fold(
         (failure) {
@@ -2568,8 +2667,18 @@ class ChatProvider extends ChangeNotifier {
   }
 
   /// Load session list
-  Future<void> loadSessions({bool preserveVisibleState = false}) async {
+  Future<void> loadSessions({
+    bool preserveVisibleState = false,
+    bool userInitiated = false,
+  }) async {
     if (_state == ChatState.loading) return;
+    if (userInitiated) {
+      _cellularDataSaverService.noteExplicitUserAction(reason: 'load-sessions');
+      await _syncCellularDataSaverRealtimePolicy(
+        reason: 'load-sessions-user',
+        forceBurst: true,
+      );
+    }
     final fetchId = ++_sessionsFetchId;
 
     final canKeepVisibleState = preserveVisibleState && _sessions.isNotEmpty;
@@ -2927,9 +3036,16 @@ class ChatProvider extends ChangeNotifier {
 
   /// Select session
   Future<void> selectSession(ChatSession session) async {
+    _cellularDataSaverService.noteExplicitUserAction(reason: 'select-session');
+    await _syncCellularDataSaverRealtimePolicy(
+      reason: 'select-session-user',
+      forceBurst: true,
+    );
     _isNewChatDraftActive = false;
     if (_currentSession?.id == session.id) {
-      unawaited(loadSessionInsights(session.id, silent: true));
+      unawaited(
+        loadSessionInsights(session.id, silent: true, userInitiated: true),
+      );
       return;
     }
 
@@ -3022,7 +3138,9 @@ class ChatProvider extends ChangeNotifier {
     }
 
     // Insights are non-critical and run fire-and-forget.
-    unawaited(loadSessionInsights(session.id, silent: true));
+    unawaited(
+      loadSessionInsights(session.id, silent: true, userInitiated: true),
+    );
   }
 
   /// Load message list
@@ -3241,6 +3359,12 @@ class ChatProvider extends ChangeNotifier {
     if (trimmedText.isEmpty && effectiveAttachments.isEmpty) {
       return false;
     }
+
+    _cellularDataSaverService.noteExplicitUserAction(reason: 'send-message');
+    await _syncCellularDataSaverRealtimePolicy(
+      reason: 'send-message-user',
+      forceBurst: true,
+    );
 
     if (!hasSessionOverride && _currentSession == null) {
       final inFlight = _lazySessionBootstrapTask;
@@ -4222,6 +4346,11 @@ class ChatProvider extends ChangeNotifier {
 
   /// Refresh current session
   Future<void> refresh() async {
+    _cellularDataSaverService.noteExplicitUserAction(reason: 'manual-refresh');
+    await _syncCellularDataSaverRealtimePolicy(
+      reason: 'manual-refresh-user',
+      forceBurst: true,
+    );
     if (_currentSession != null) {
       await refreshActiveSessionView(reason: 'manual-refresh');
     } else {
@@ -4236,6 +4365,7 @@ class ChatProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _cellularDataSaverService.removeListener(_handleCellularDataSaverChanged);
     unawaited(
       _cancelActiveMessageSubscription(
         reason: 'dispose',
