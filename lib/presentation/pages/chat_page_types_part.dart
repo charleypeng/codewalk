@@ -105,3 +105,32 @@ class _SessionTimelineEntriesCacheEntry {
   final bool showThinkingBubbles;
   final bool showToolCallBubbles;
 }
+
+enum _HamburgerBadgeReasonKind {
+  none,
+  serverAlert,
+  sessionError,
+  sessionPendingInteraction,
+  sessionUnreadCompletion,
+  syncLoading,
+  dataSaver,
+}
+
+class _HamburgerBadgeReasonState {
+  const _HamburgerBadgeReasonState({
+    required this.kind,
+    this.sessionId,
+    this.sessionTitle,
+  });
+
+  const _HamburgerBadgeReasonState.none()
+    : kind = _HamburgerBadgeReasonKind.none,
+      sessionId = null,
+      sessionTitle = null;
+
+  final _HamburgerBadgeReasonKind kind;
+  final String? sessionId;
+  final String? sessionTitle;
+
+  bool get hasBadge => kind != _HamburgerBadgeReasonKind.none;
+}

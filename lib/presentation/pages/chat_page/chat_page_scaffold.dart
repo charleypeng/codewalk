@@ -73,6 +73,11 @@ extension _ChatPageScaffold on _ChatPageState {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildSidebarNavigation(closeOnSelect: closeOnSelect),
+            if (closeOnSelect && isMobileLayout)
+              _buildHamburgerReasonNotice(
+                chatProvider: chatProvider,
+                closeOnSelect: closeOnSelect,
+              ),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
               child: Card(
@@ -224,6 +229,176 @@ extension _ChatPageScaffold on _ChatPageState {
         );
       },
     );
+  }
+
+  Widget _buildHamburgerReasonNotice({
+    required ChatProvider chatProvider,
+    required bool closeOnSelect,
+  }) {
+    final appProvider = context.watch<AppProvider>();
+    final settingsProvider = context.watch<SettingsProvider>();
+    final badgeReason = _resolveHamburgerBadgeReason(
+      chatProvider: chatProvider,
+      appProvider: appProvider,
+      settingsProvider: settingsProvider,
+    );
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 180),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeOutCubic,
+      child: !badgeReason.hasBadge
+          ? const SizedBox.shrink()
+          : Padding(
+              key: ValueKey<_HamburgerBadgeReasonKind>(badgeReason.kind),
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+              child: Card(
+                child: InkWell(
+                  key: const ValueKey<String>('drawer_hamburger_reason_notice'),
+                  onTap: _hamburgerReasonHasAction(badgeReason)
+                      ? () => unawaited(
+                          _handleHamburgerReasonTap(
+                            badgeReason: badgeReason,
+                            closeOnSelect: closeOnSelect,
+                          ),
+                        )
+                      : null,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: _hamburgerReasonColor(
+                              context,
+                              badgeReason.kind,
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _hamburgerReasonMessage(badgeReason),
+                            key: const ValueKey<String>(
+                              'drawer_hamburger_reason_notice_text',
+                            ),
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                        if (_hamburgerReasonHasAction(badgeReason)) ...[
+                          const SizedBox(width: 8),
+                          Icon(
+                            Symbols.arrow_forward,
+                            size: 18,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+
+  String _hamburgerReasonMessage(_HamburgerBadgeReasonState badgeReason) {
+    return switch (badgeReason.kind) {
+      _HamburgerBadgeReasonKind.serverAlert =>
+        'Server connection needs attention.',
+      _HamburgerBadgeReasonKind.sessionError =>
+        '"${badgeReason.sessionTitle ?? 'Conversation'}" has an error.',
+      _HamburgerBadgeReasonKind.sessionPendingInteraction =>
+        '"${badgeReason.sessionTitle ?? 'Conversation'}" needs your input.',
+      _HamburgerBadgeReasonKind.sessionUnreadCompletion =>
+        '"${badgeReason.sessionTitle ?? 'Conversation'}" has a new reply.',
+      _HamburgerBadgeReasonKind.syncLoading => 'Syncing conversations...',
+      _HamburgerBadgeReasonKind.dataSaver => 'Cellular data saver is active.',
+      _HamburgerBadgeReasonKind.none => '',
+    };
+  }
+
+  bool _hamburgerReasonHasAction(_HamburgerBadgeReasonState badgeReason) {
+    return switch (badgeReason.kind) {
+      _HamburgerBadgeReasonKind.serverAlert ||
+      _HamburgerBadgeReasonKind.sessionError ||
+      _HamburgerBadgeReasonKind.sessionPendingInteraction ||
+      _HamburgerBadgeReasonKind.sessionUnreadCompletion ||
+      _HamburgerBadgeReasonKind.dataSaver => true,
+      _HamburgerBadgeReasonKind.syncLoading ||
+      _HamburgerBadgeReasonKind.none => false,
+    };
+  }
+
+  Color _hamburgerReasonColor(
+    BuildContext context,
+    _HamburgerBadgeReasonKind kind,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return switch (kind) {
+      _HamburgerBadgeReasonKind.serverAlert => _serverStatusColor(
+        context: context,
+        chatProvider: context.read<ChatProvider>(),
+        appProvider: context.read<AppProvider>(),
+      ),
+      _HamburgerBadgeReasonKind.sessionError => colorScheme.error,
+      _HamburgerBadgeReasonKind.sessionPendingInteraction =>
+        colorScheme.tertiary,
+      _HamburgerBadgeReasonKind.sessionUnreadCompletion ||
+      _HamburgerBadgeReasonKind.syncLoading => colorScheme.primary,
+      _HamburgerBadgeReasonKind.dataSaver => colorScheme.tertiary,
+      _HamburgerBadgeReasonKind.none => colorScheme.outline,
+    };
+  }
+
+  Future<void> _handleHamburgerReasonTap({
+    required _HamburgerBadgeReasonState badgeReason,
+    required bool closeOnSelect,
+  }) async {
+    switch (badgeReason.kind) {
+      case _HamburgerBadgeReasonKind.serverAlert:
+        await _openSettingsPage(
+          closeOnSelect: closeOnSelect,
+          initialSectionId: 'servers',
+        );
+        return;
+      case _HamburgerBadgeReasonKind.dataSaver:
+        await _openSettingsPage(
+          closeOnSelect: closeOnSelect,
+          initialSectionId: 'behavior',
+        );
+        return;
+      case _HamburgerBadgeReasonKind.sessionError:
+      case _HamburgerBadgeReasonKind.sessionPendingInteraction:
+      case _HamburgerBadgeReasonKind.sessionUnreadCompletion:
+        final sessionId = badgeReason.sessionId?.trim();
+        if (sessionId == null || sessionId.isEmpty) {
+          return;
+        }
+        final target = context
+            .read<ChatProvider>()
+            .visibleSessions
+            .where((item) => item.id == sessionId)
+            .firstOrNull;
+        if (target == null) {
+          return;
+        }
+        await _handleSessionSwitch(target);
+        _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
+        return;
+      case _HamburgerBadgeReasonKind.syncLoading:
+      case _HamburgerBadgeReasonKind.none:
+        return;
+    }
   }
 
   Widget _buildGroupedConversationsList({

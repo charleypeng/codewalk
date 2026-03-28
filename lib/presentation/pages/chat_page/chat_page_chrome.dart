@@ -104,17 +104,10 @@ extension _ChatPageChrome on _ChatPageState {
                         settingsProvider,
                         _,
                       ) {
-                        final hasAlert = _hasServerStatusAlert(
+                        final badgeReason = _resolveHamburgerBadgeReason(
                           chatProvider: chatProvider,
                           appProvider: appProvider,
-                        );
-                        final outOfFocusAttentionKind =
-                            chatProvider.outOfFocusAttentionKind;
-                        final hasSessionAttention =
-                            outOfFocusAttentionKind !=
-                            SessionAttentionKind.none;
-                        final showSyncLoading = _shouldShowMenuSyncLoading(
-                          chatProvider: chatProvider,
+                          settingsProvider: settingsProvider,
                         );
                         final alertColor = _serverStatusColor(
                           context: context,
@@ -193,7 +186,10 @@ extension _ChatPageChrome on _ChatPageState {
                                   decoration: BoxDecoration(
                                     color: _sessionAttentionBadgeColor(
                                       context: context,
-                                      kind: outOfFocusAttentionKind,
+                                      kind:
+                                          _sessionAttentionKindForHamburgerReason(
+                                            badgeReason.kind,
+                                          ),
                                     ),
                                     shape: BoxShape.circle,
                                   ),
@@ -246,16 +242,20 @@ extension _ChatPageChrome on _ChatPageState {
                             ).openAppDrawerTooltip,
                             onPressed: () =>
                                 Scaffold.of(leadingContext).openDrawer(),
-                            icon: hasAlert
-                                ? alertIcon
-                                : (hasSessionAttention
-                                      ? attentionIcon
-                                      : (showSyncLoading
-                                            ? loadingIcon
-                                            : (settingsProvider
-                                                      .isCellularDataSaverActive
-                                                  ? dataSaverIcon
-                                                  : menuIcon))),
+                            icon: switch (badgeReason.kind) {
+                              _HamburgerBadgeReasonKind.serverAlert =>
+                                alertIcon,
+                              _HamburgerBadgeReasonKind.sessionError ||
+                              _HamburgerBadgeReasonKind
+                                  .sessionPendingInteraction ||
+                              _HamburgerBadgeReasonKind
+                                  .sessionUnreadCompletion => attentionIcon,
+                              _HamburgerBadgeReasonKind.syncLoading =>
+                                loadingIcon,
+                              _HamburgerBadgeReasonKind.dataSaver =>
+                                dataSaverIcon,
+                              _HamburgerBadgeReasonKind.none => menuIcon,
+                            },
                           ),
                         );
                       },
@@ -758,6 +758,101 @@ extension _ChatPageChrome on _ChatPageState {
       SessionAttentionKind.unreadCompletion => colorScheme.primary,
       SessionAttentionKind.active => colorScheme.primary,
       SessionAttentionKind.none => colorScheme.outline,
+    };
+  }
+
+  // Keep the drawer notice and hamburger icon on the same reason resolver so
+  // the explanation never drifts from the visible badge state.
+  _HamburgerBadgeReasonState _resolveHamburgerBadgeReason({
+    required ChatProvider chatProvider,
+    required AppProvider appProvider,
+    required SettingsProvider settingsProvider,
+  }) {
+    if (_hasServerStatusAlert(
+      chatProvider: chatProvider,
+      appProvider: appProvider,
+    )) {
+      return const _HamburgerBadgeReasonState(
+        kind: _HamburgerBadgeReasonKind.serverAlert,
+      );
+    }
+
+    final attentionReason = _resolveOutOfFocusAttentionHamburgerReason(
+      chatProvider: chatProvider,
+    );
+    if (attentionReason.hasBadge) {
+      return attentionReason;
+    }
+
+    if (_shouldShowMenuSyncLoading(chatProvider: chatProvider)) {
+      return const _HamburgerBadgeReasonState(
+        kind: _HamburgerBadgeReasonKind.syncLoading,
+      );
+    }
+
+    if (settingsProvider.isCellularDataSaverActive) {
+      return const _HamburgerBadgeReasonState(
+        kind: _HamburgerBadgeReasonKind.dataSaver,
+      );
+    }
+
+    return const _HamburgerBadgeReasonState.none();
+  }
+
+  _HamburgerBadgeReasonState _resolveOutOfFocusAttentionHamburgerReason({
+    required ChatProvider chatProvider,
+  }) {
+    final currentSessionId = chatProvider.currentSession?.id;
+    final aggregatedKind = chatProvider.outOfFocusAttentionKind;
+    if (aggregatedKind == SessionAttentionKind.none) {
+      return const _HamburgerBadgeReasonState.none();
+    }
+
+    for (final session in chatProvider.visibleSessions) {
+      if (session.id == currentSessionId) {
+        continue;
+      }
+      final attention = chatProvider.sessionAttentionFor(session.id);
+      if (attention.primaryKind != aggregatedKind) {
+        continue;
+      }
+      return _HamburgerBadgeReasonState(
+        kind: _hamburgerReasonKindForSessionAttention(aggregatedKind),
+        sessionId: session.id,
+        sessionTitle: _sessionDisplayTitle(session),
+      );
+    }
+
+    return const _HamburgerBadgeReasonState.none();
+  }
+
+  _HamburgerBadgeReasonKind _hamburgerReasonKindForSessionAttention(
+    SessionAttentionKind kind,
+  ) {
+    return switch (kind) {
+      SessionAttentionKind.error => _HamburgerBadgeReasonKind.sessionError,
+      SessionAttentionKind.pendingInteraction =>
+        _HamburgerBadgeReasonKind.sessionPendingInteraction,
+      SessionAttentionKind.unreadCompletion =>
+        _HamburgerBadgeReasonKind.sessionUnreadCompletion,
+      SessionAttentionKind.active ||
+      SessionAttentionKind.none => _HamburgerBadgeReasonKind.none,
+    };
+  }
+
+  SessionAttentionKind _sessionAttentionKindForHamburgerReason(
+    _HamburgerBadgeReasonKind kind,
+  ) {
+    return switch (kind) {
+      _HamburgerBadgeReasonKind.sessionError => SessionAttentionKind.error,
+      _HamburgerBadgeReasonKind.sessionPendingInteraction =>
+        SessionAttentionKind.pendingInteraction,
+      _HamburgerBadgeReasonKind.sessionUnreadCompletion =>
+        SessionAttentionKind.unreadCompletion,
+      _HamburgerBadgeReasonKind.none ||
+      _HamburgerBadgeReasonKind.serverAlert ||
+      _HamburgerBadgeReasonKind.syncLoading ||
+      _HamburgerBadgeReasonKind.dataSaver => SessionAttentionKind.none,
     };
   }
 
