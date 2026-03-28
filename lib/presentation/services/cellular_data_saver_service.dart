@@ -17,7 +17,7 @@ class CellularDataSaverService extends ChangeNotifier
   CellularDataSaverService({
     required SharedPreferences sharedPreferences,
     Connectivity? connectivity,
-    this.automaticSyncInterval = const Duration(seconds: 20),
+    this.automaticSyncInterval = const Duration(minutes: 1),
     bool startMonitoring = true,
   }) : _sharedPreferences = sharedPreferences,
        _connectivity = connectivity ?? Connectivity(),
@@ -43,7 +43,7 @@ class CellularDataSaverService extends ChangeNotifier
   CellularDataSaverService.disabled()
     : _sharedPreferences = null,
       _connectivity = null,
-      automaticSyncInterval = const Duration(seconds: 20),
+      automaticSyncInterval = const Duration(minutes: 1),
       _disabled = true;
 
   static const String persistedTransportKey =
