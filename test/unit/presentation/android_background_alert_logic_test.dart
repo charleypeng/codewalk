@@ -220,6 +220,39 @@ void main() {
     expect(plan.signals.first.title, 'Build feature');
   });
 
+  test('suppresses completion when the idle session is a child session', () {
+    const previous = BackgroundAlertSnapshot(
+      sessionStatusById: <String, String>{'ses_child': 'busy'},
+      sessionUpdatedAtById: <String, int>{'ses_child': 100},
+      sessionTitleById: <String, String>{'ses_child': 'Child Session'},
+      notifiedPermissionRequestIds: <String>[],
+      notifiedQuestionRequestIds: <String>[],
+      lastPolledAtEpochMs: 100,
+    );
+    const current = BackgroundPollingState(
+      sessionStatusById: <String, String>{'ses_child': 'idle'},
+      sessionUpdatedAtById: <String, int>{'ses_child': 200},
+      sessionTitleById: <String, String>{'ses_child': 'Child Session'},
+      parentSessionIdByChild: <String, String>{'ses_child': 'ses_root'},
+      permissionRequests: <BackgroundInteractionRequest>[],
+      questionRequests: <BackgroundInteractionRequest>[],
+    );
+
+    final plan = planner.plan(
+      previous: previous,
+      current: current,
+      settings: ExperienceSettings.defaults(),
+      nowEpochMs: 200,
+    );
+
+    expect(
+      plan.signals.where(
+        (signal) => signal.kind == BackgroundAlertKind.completion,
+      ),
+      isEmpty,
+    );
+  });
+
   test('emits error when session transitions to retry', () {
     const previous = BackgroundAlertSnapshot(
       sessionStatusById: <String, String>{'ses_1': 'busy'},

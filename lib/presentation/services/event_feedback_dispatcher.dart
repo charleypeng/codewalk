@@ -25,10 +25,15 @@ class EventFeedbackDispatcher {
   Future<void> handle(
     ChatEvent event, {
     String? sessionTitleHint,
+    bool isRootSession = true,
     bool isAppInForeground = true,
     String? currentSessionId,
   }) async {
-    final signal = _signalForEvent(event, sessionTitleHint: sessionTitleHint);
+    final signal = _signalForEvent(
+      event,
+      sessionTitleHint: sessionTitleHint,
+      isRootSession: isRootSession,
+    );
     if (signal == null) {
       return;
     }
@@ -108,6 +113,7 @@ class EventFeedbackDispatcher {
   _FeedbackSignal? _signalForEvent(
     ChatEvent event, {
     String? sessionTitleHint,
+    required bool isRootSession,
   }) {
     final properties = event.properties;
     final sessionId = extractEventSessionId(properties);
@@ -140,6 +146,9 @@ class EventFeedbackDispatcher {
           directory: directory,
         );
       case 'session.idle':
+        if (!isRootSession) {
+          return null;
+        }
         return _FeedbackSignal(
           notificationCategory: NotificationCategory.agent,
           soundCategory: SoundCategory.agent,

@@ -363,13 +363,17 @@ class _AndroidBackgroundAlertRunner {
 
       final permissionEnabled =
           settings.notifications[NotificationCategory.permissions] ?? true;
+      final agentEnabled =
+          settings.notifications[NotificationCategory.agent] ?? true;
       final autoApproveContext = _readPermissionAutoApproveContext(
         prefs,
         server.serverId,
       );
       final shouldAttemptPermissionAutoApprove =
           settings.composerAutoApprovePermissions && autoApproveContext != null;
-      var sessionMetadata = shouldAttemptPermissionAutoApprove
+      final shouldFetchSessionMetadata =
+          shouldAttemptPermissionAutoApprove || agentEnabled;
+      var sessionMetadata = shouldFetchSessionMetadata
           ? await _fetchSessionMetadata(dio)
           : const _SessionMetadata.empty();
       final shouldFetchPermissions =
@@ -399,6 +403,9 @@ class _AndroidBackgroundAlertRunner {
             ? Map<String, int>.from(previousSnapshot.sessionUpdatedAtById)
             : Map<String, int>.from(sessionMetadata.updatedAtBySessionId),
         sessionTitleById: cachedTitles,
+        parentSessionIdByChild: Map<String, String>.from(
+          sessionMetadata.parentSessionIdByChild,
+        ),
         permissionRequests: permissionRequests,
         questionRequests: questionRequests,
       );
@@ -427,6 +434,9 @@ class _AndroidBackgroundAlertRunner {
           sessionStatusById: statusById,
           sessionUpdatedAtById: sessionMetadata.updatedAtBySessionId,
           sessionTitleById: refreshedTitles,
+          parentSessionIdByChild: Map<String, String>.from(
+            sessionMetadata.parentSessionIdByChild,
+          ),
           permissionRequests: permissionRequests,
           questionRequests: questionRequests,
         );

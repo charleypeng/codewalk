@@ -356,6 +356,15 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     );
   }
 
+  bool _isRootSessionId(String? sessionId) {
+    if (sessionId == null || sessionId.isEmpty) {
+      return true;
+    }
+    final session = _sessionById(sessionId);
+    final parentId = session?.parentId?.trim();
+    return parentId == null || parentId.isEmpty;
+  }
+
   String? _extractDirectoryFromEvent(ChatEvent event) {
     return extractEventDirectory(event.properties);
   }

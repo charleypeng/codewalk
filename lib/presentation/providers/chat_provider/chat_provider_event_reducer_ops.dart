@@ -189,6 +189,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           eventFeedbackDispatcher?.handle(
             event,
             sessionTitleHint: sessionTitleHint,
+            isRootSession: _isRootSessionId(eventSessionId),
             isAppInForeground: _isAppInForeground,
             currentSessionId: _currentSession?.id,
           ),

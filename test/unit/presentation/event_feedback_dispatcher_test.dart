@@ -112,6 +112,35 @@ void main() {
     expect(notificationService.lastDirectory, '/tmp/workspace-a');
   });
 
+  test('suppresses child-session completion notifications', () async {
+    final settingsProvider = SettingsProvider(
+      localDataSource: InMemoryAppLocalDataSource(),
+      dioClient: DioClient(),
+      soundService: _FakeSoundService(),
+    );
+    await settingsProvider.initialize();
+
+    final notificationService = _FakeNotificationService();
+    final soundService = _FakeSoundService();
+    final dispatcher = EventFeedbackDispatcher(
+      settingsProvider: settingsProvider,
+      notificationService: notificationService,
+      soundService: soundService,
+    );
+
+    await dispatcher.handle(
+      const ChatEvent(
+        type: 'session.idle',
+        properties: <String, dynamic>{'sessionID': 'ses_child'},
+      ),
+      sessionTitleHint: 'Child Session',
+      isRootSession: false,
+    );
+
+    expect(notificationService.lastTitle, isNull);
+    expect(soundService.calls, 0);
+  });
+
   test(
     'supports notification disabled and sound enabled independently',
     () async {

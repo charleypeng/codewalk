@@ -72,6 +72,7 @@ class BackgroundPollingState {
     required this.sessionStatusById,
     required this.sessionUpdatedAtById,
     required this.sessionTitleById,
+    this.parentSessionIdByChild = const <String, String>{},
     required this.permissionRequests,
     required this.questionRequests,
   });
@@ -79,6 +80,7 @@ class BackgroundPollingState {
   final Map<String, String> sessionStatusById;
   final Map<String, int> sessionUpdatedAtById;
   final Map<String, String> sessionTitleById;
+  final Map<String, String> parentSessionIdByChild;
   final List<BackgroundInteractionRequest> permissionRequests;
   final List<BackgroundInteractionRequest> questionRequests;
 }
@@ -350,7 +352,11 @@ class BackgroundAlertPlanner {
         final title = _sessionTitleFor(current.sessionTitleById[sessionId]);
         if (agentEnabled &&
             previousStatus == 'busy' &&
-            currentStatus == 'idle') {
+            currentStatus == 'idle' &&
+            !_isChildSession(
+              sessionId,
+              parentSessionIdByChild: current.parentSessionIdByChild,
+            )) {
           signals.add(
             BackgroundAlertSignal(
               kind: BackgroundAlertKind.completion,
@@ -454,5 +460,13 @@ class BackgroundAlertPlanner {
       return 'Session';
     }
     return title;
+  }
+
+  bool _isChildSession(
+    String sessionId, {
+    required Map<String, String> parentSessionIdByChild,
+  }) {
+    final parentId = parentSessionIdByChild[sessionId]?.trim();
+    return parentId != null && parentId.isNotEmpty;
   }
 }
