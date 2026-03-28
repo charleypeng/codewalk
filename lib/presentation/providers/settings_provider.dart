@@ -17,6 +17,7 @@ import '../../domain/entities/experience_settings.dart';
 import '../services/android_background_alert_logic.dart';
 import '../services/android_background_alert_worker.dart';
 import '../services/android_foreground_monitor_service.dart';
+import '../services/cellular_data_saver_service.dart';
 import '../services/sound_service.dart';
 import '../services/update_check_service.dart';
 import '../utils/shortcut_binding_codec.dart';
@@ -55,15 +56,21 @@ class SettingsProvider extends ChangeNotifier {
     required DioClient dioClient,
     required SoundService soundService,
     UpdateCheckService? updateCheckService,
+    CellularDataSaverService? cellularDataSaverService,
   }) : _localDataSource = localDataSource,
        _dioClient = dioClient,
        _soundService = soundService,
-       _updateCheckService = updateCheckService ?? UpdateCheckService();
+       _updateCheckService = updateCheckService ?? UpdateCheckService(),
+       _cellularDataSaverService =
+           cellularDataSaverService ?? CellularDataSaverService.disabled() {
+    _cellularDataSaverService.addListener(_handleCellularDataSaverChanged);
+  }
 
   final AppLocalDataSource _localDataSource;
   final DioClient _dioClient;
   final SoundService _soundService;
   final UpdateCheckService _updateCheckService;
+  final CellularDataSaverService _cellularDataSaverService;
 
   ExperienceSettings _settings = ExperienceSettings.defaults();
   final Map<NotificationCategory, bool> _serverBackedNotifications =
@@ -100,6 +107,7 @@ class SettingsProvider extends ChangeNotifier {
   List<OpenCodeDefaultModelOption> _openCodeDefaultModelOptions =
       const <OpenCodeDefaultModelOption>[];
   List<String> _openCodeDefaultAgentOptions = const <String>[];
+  bool? _lastBackgroundDataSaverDisableState;
 
   // Whether the platform actually provided a dynamic color scheme at runtime.
   // Set from main.dart's DynamicColorBuilder callback.
@@ -148,6 +156,13 @@ class SettingsProvider extends ChangeNotifier {
       _settings.desktopCloseBehavior;
   bool get keepDesktopRunningInTray =>
       _settings.desktopCloseBehavior != DesktopCloseBehavior.close;
+  bool get dataSaverEnabled => _settings.dataSaverEnabled;
+  bool get isCellularConnection =>
+      _cellularDataSaverService.isCellularConnection;
+  bool get isCellularDataSaverActive =>
+      _cellularDataSaverService.isDataSaverActive;
+  Duration get cellularDataSaverInterval =>
+      _cellularDataSaverService.automaticSyncInterval;
   bool get androidBackgroundAlertsEnabled =>
       _settings.androidBackgroundAlertsEnabled;
   bool get keepMobileRealtimeForShortPeriod =>
@@ -237,6 +252,9 @@ class SettingsProvider extends ChangeNotifier {
       unawaited(_persist());
     }
 
+    _cellularDataSaverService.setDataSaverEnabled(_settings.dataSaverEnabled);
+    _lastBackgroundDataSaverDisableState =
+        _cellularDataSaverService.shouldDisableBackgroundNetworkTasks;
     _dismissedUpdateVersion = await _localDataSource
         .getDismissedUpdateVersion();
     unawaited(syncNotificationsFromServerConfig());
@@ -797,6 +815,17 @@ class SettingsProvider extends ChangeNotifier {
     );
   }
 
+  Future<void> setDataSaverEnabled(bool enabled) async {
+    if (_settings.dataSaverEnabled == enabled) {
+      return;
+    }
+    _settings = _settings.copyWith(dataSaverEnabled: enabled);
+    _cellularDataSaverService.setDataSaverEnabled(enabled);
+    notifyListeners();
+    await _persist();
+    await _syncAndroidBackgroundAlertRuntime();
+  }
+
   Future<void> setAndroidBackgroundAlertsEnabled(bool enabled) async {
     if (_settings.androidBackgroundAlertsEnabled == enabled) {
       return;
@@ -805,6 +834,20 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
     await _persist();
     await _syncAndroidBackgroundAlertRuntime();
+  }
+
+  void _handleCellularDataSaverChanged() {
+    if (!_initialized) {
+      return;
+    }
+    notifyListeners();
+    final nextDisableState =
+        _cellularDataSaverService.shouldDisableBackgroundNetworkTasks;
+    if (_lastBackgroundDataSaverDisableState == nextDisableState) {
+      return;
+    }
+    _lastBackgroundDataSaverDisableState = nextDisableState;
+    unawaited(_syncAndroidBackgroundAlertRuntime());
   }
 
   Future<void> setKeepMobileRealtimeForShortPeriod(bool enabled) async {
@@ -1443,7 +1486,12 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   Future<void> _syncAndroidBackgroundAlertRuntime() async {
-    final enabled = shouldRunAndroidBackgroundAlerts(_settings);
+    final enabled =
+        shouldRunAndroidBackgroundAlerts(_settings) &&
+        !shouldDisableBackgroundNetworkForDataSaver(
+          settings: _settings,
+          isCellularTransport: _cellularDataSaverService.isCellularConnection,
+        );
     await AndroidBackgroundAlertWorker.syncRegistration(enabled: enabled);
     if (!enabled) {
       await AndroidForegroundMonitorService.sync(
@@ -1752,6 +1800,7 @@ class SettingsProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _cellularDataSaverService.removeListener(_handleCellularDataSaverChanged);
     _automaticUpdateCheckTimer?.cancel();
     _automaticUpdateCheckTimer = null;
     super.dispose();

@@ -49,11 +49,12 @@ import '../../presentation/providers/chat_provider.dart';
 import '../../presentation/providers/project_provider.dart';
 import '../../presentation/providers/settings_provider.dart';
 import '../../presentation/services/chat_title_generator.dart';
+import '../../presentation/services/cellular_data_saver_service.dart';
 import '../../presentation/services/event_feedback_dispatcher.dart';
 import '../../presentation/services/moonshine_model_manager.dart';
 import '../../presentation/services/notification_service.dart';
-import '../../presentation/services/sound_service.dart';
 import '../../presentation/services/sherpa_model_manager.dart';
+import '../../presentation/services/sound_service.dart';
 import '../../presentation/services/speech_input_service_moonshine.dart';
 import '../../presentation/services/speech_input_service_sherpa.dart';
 import '../../presentation/services/speech_input_service_stt.dart';
@@ -93,6 +94,9 @@ Future<void> init() async {
 
   sl.registerLazySingleton(NotificationService.new);
   sl.registerLazySingleton(SoundService.new);
+  sl.registerLazySingleton(
+    () => CellularDataSaverService(sharedPreferences: sl()),
+  );
   // SherpaModelManager: registered on all platforms; stub on web.
   // On IO platforms it manages on-device Kroko model download and storage.
   sl.registerLazySingleton(SherpaModelManager.new);
@@ -170,6 +174,7 @@ Future<void> init() async {
       checkConnection: sl(),
       localDataSource: sl(),
       dioClient: sl(),
+      cellularDataSaverService: sl(),
     ),
   );
 
@@ -206,6 +211,7 @@ Future<void> init() async {
       localDataSource: sl(),
       settingsProvider: sl(),
       dioClient: sl(),
+      cellularDataSaverService: sl(),
       eventFeedbackDispatcher: sl(),
       titleGenerator: sl(),
     ),
@@ -221,6 +227,7 @@ Future<void> init() async {
       dioClient: sl(),
       soundService: sl(),
       updateCheckService: sl(),
+      cellularDataSaverService: sl(),
     ),
   );
 

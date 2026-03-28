@@ -104,6 +104,36 @@ void main() {
       expect(provider.composerAutoApprovePermissions, isTrue);
     });
 
+    test('defaults cellular data saver to enabled', () async {
+      final local = InMemoryAppLocalDataSource();
+      final provider = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+
+      await provider.initialize();
+
+      expect(provider.dataSaverEnabled, isTrue);
+    });
+
+    test('persists cellular data saver changes', () async {
+      final local = InMemoryAppLocalDataSource();
+      final provider = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+
+      await provider.initialize();
+      await provider.setDataSaverEnabled(false);
+
+      final raw = local.experienceSettingsJson;
+      expect(raw, isNotNull);
+      final settingsJson = jsonDecode(raw!) as Map<String, dynamic>;
+      expect(settingsJson['dataSaverEnabled'], isFalse);
+    });
+
     test('persists composer permission auto-approve changes', () async {
       final local = InMemoryAppLocalDataSource();
       final provider = SettingsProvider(

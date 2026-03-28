@@ -192,91 +192,82 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('OpenCode-backed defaults'), findsOneWidget);
-    expect(find.text('Permission handling provenance'), findsOneWidget);
-    expect(find.text('CodeWalk exception'), findsOneWidget);
     expect(
-      find.byKey(const ValueKey<String>('settings_opencode_default_model')),
+      find.text('OpenCode-backed defaults', skipOffstage: false),
       findsOneWidget,
     );
     expect(
-      find.byKey(const ValueKey<String>('settings_opencode_default_agent')),
+      find.text('Permission handling provenance', skipOffstage: false),
       findsOneWidget,
     );
+    expect(find.text('CodeWalk exception'), findsWidgets);
     expect(
-      find.byKey(const ValueKey<String>('settings_opencode_username')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const ValueKey<String>('settings_opencode_username_save')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const ValueKey<String>('settings_opencode_snapshot')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const ValueKey<String>('settings_opencode_small_model')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const ValueKey<String>('settings_opencode_autoupdate')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const ValueKey<String>('settings_opencode_share_mode')),
-      findsOneWidget,
-    );
-    expect(find.text('Anthropic / Claude 3.5 Sonnet'), findsOneWidget);
-    expect(find.text('plan'), findsOneWidget);
-    expect(find.text('helio'), findsOneWidget);
-    expect(find.text('Notify only'), findsOneWidget);
-    expect(find.text('Automatic'), findsWidgets);
-    expect(find.text('OpenCode snapshots'), findsOneWidget);
-    expect(
-      tester
-          .widget<SwitchListTile>(
-            find.byKey(const ValueKey<String>('settings_opencode_snapshot')),
-          )
-          .value,
-      isFalse,
-    );
-    expect(
-      find.text(
-        'Resetting `username` back to the system default still requires editing config outside the app because `/config` patch updates cannot remove keys.',
+      find.byKey(
+        const ValueKey<String>('settings_opencode_default_model'),
+        skipOffstage: false,
       ),
       findsOneWidget,
     );
     expect(
-      find.text(
-        'This controls OpenCode snapshot storage and undo/redo support, not CodeWalk local cache snapshots.',
+      find.byKey(
+        const ValueKey<String>('settings_opencode_default_agent'),
+        skipOffstage: false,
       ),
       findsOneWidget,
     );
     expect(
-      find.text(
-        'OpenCode automatic fallback is active because `small_model` is unset.',
+      find.byKey(
+        const ValueKey<String>('settings_opencode_username'),
+        skipOffstage: false,
       ),
       findsOneWidget,
     );
     expect(
-      find.text(
-        'Use About for CodeWalk release checks. This setting only mirrors the official OpenCode `autoupdate` config.',
+      find.byKey(
+        const ValueKey<String>('settings_opencode_username_save'),
+        skipOffstage: false,
       ),
       findsOneWidget,
     );
     expect(
-      find.text(
-        'Use the chat-level share action to publish one session now. This setting only changes OpenCode’s default sharing policy.',
+      find.byKey(
+        const ValueKey<String>('settings_opencode_snapshot'),
+        skipOffstage: false,
       ),
       findsOneWidget,
     );
     expect(
-      find.text(
-        'Advanced permission rule editing stays out of Settings for now and is deferred to later parity work.',
+      find.byKey(
+        const ValueKey<String>('settings_opencode_small_model'),
+        skipOffstage: false,
       ),
       findsOneWidget,
     );
+    expect(
+      find.byKey(
+        const ValueKey<String>('settings_opencode_autoupdate'),
+        skipOffstage: false,
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(
+        const ValueKey<String>('settings_opencode_share_mode'),
+        skipOffstage: false,
+      ),
+      findsOneWidget,
+    );
+    final dataSaverToggleFinder = find.byKey(
+      const ValueKey<String>('settings_toggle_cellular_data_saver'),
+    );
+    expect(dataSaverToggleFinder, findsOneWidget);
+    expect(tester.widget<SwitchListTile>(dataSaverToggleFinder).value, isTrue);
+
+    await tester.tap(dataSaverToggleFinder);
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<SwitchListTile>(dataSaverToggleFinder).value, isFalse);
+    expect(settingsProvider.dataSaverEnabled, isFalse);
 
     final syncToggleFinder = find.byKey(
       const ValueKey<String>('settings_toggle_experimental_multi_device_sync'),

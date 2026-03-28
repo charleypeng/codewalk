@@ -63,6 +63,8 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
             const SizedBox(height: 16),
             _buildPermissionParityCard(context),
             const SizedBox(height: 16),
+            _buildDataSaverCard(context, settingsProvider),
+            const SizedBox(height: 16),
             Card(
               child: Column(
                 children: [
@@ -442,6 +444,55 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDataSaverCard(
+    BuildContext context,
+    SettingsProvider settingsProvider,
+  ) {
+    final isCellularActive = settingsProvider.isCellularConnection;
+    final saverActive = settingsProvider.isCellularDataSaverActive;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.defaultPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SettingsProvenanceChip(
+              provenance: SettingsProvenance.codewalkException,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Cellular data saver',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Cuts automatic mobile-data usage by stopping background downloads and throttling automatic foreground refreshes to one burst every ${settingsProvider.cellularDataSaverInterval.inSeconds} seconds.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            SwitchListTile.adaptive(
+              key: const ValueKey<String>(
+                'settings_toggle_cellular_data_saver',
+              ),
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Enable cellular data saver'),
+              subtitle: Text(
+                saverActive
+                    ? 'Active now on mobile data.'
+                    : (isCellularActive
+                          ? 'Waiting for the next mobile-data sync window.'
+                          : 'Only applies when the connection is cellular/mobile.'),
+              ),
+              value: settingsProvider.dataSaverEnabled,
+              onChanged: (value) =>
+                  unawaited(settingsProvider.setDataSaverEnabled(value)),
+            ),
           ],
         ),
       ),

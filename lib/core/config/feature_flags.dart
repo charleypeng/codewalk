@@ -1,6 +1,15 @@
 class FeatureFlags {
   const FeatureFlags._();
 
+  /// Rollback guardrail for the cellular data saver flow.
+  ///
+  /// Use `--dart-define=CODEWALK_CELLULAR_DATA_SAVER=false` to quickly restore
+  /// the previous always-on mobile networking behavior without reverting code.
+  static const bool cellularDataSaver = bool.fromEnvironment(
+    'CODEWALK_CELLULAR_DATA_SAVER',
+    defaultValue: true,
+  );
+
   /// Rollback guardrail for Feature 017 (refreshless realtime UX).
   ///
   /// Use `--dart-define=CODEWALK_REFRESHLESS_ENABLED=false` to quickly

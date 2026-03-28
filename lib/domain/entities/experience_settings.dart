@@ -572,6 +572,7 @@ class ExperienceSettings {
       showComposerTips: true,
       composerAutoApprovePermissions: true,
       desktopCloseBehavior: DesktopCloseBehavior.tray,
+      dataSaverEnabled: true,
       androidBackgroundAlertsEnabled: true,
       keepMobileRealtimeForShortPeriod: true,
       enableExperimentalMultiDeviceSync: false,
@@ -610,6 +611,7 @@ class ExperienceSettings {
     required this.showComposerTips,
     required this.composerAutoApprovePermissions,
     required this.desktopCloseBehavior,
+    required this.dataSaverEnabled,
     required this.androidBackgroundAlertsEnabled,
     required this.keepMobileRealtimeForShortPeriod,
     this.enableExperimentalMultiDeviceSync = false,
@@ -648,6 +650,7 @@ class ExperienceSettings {
   final bool showComposerTips;
   final bool composerAutoApprovePermissions;
   final DesktopCloseBehavior desktopCloseBehavior;
+  final bool dataSaverEnabled;
   final bool androidBackgroundAlertsEnabled;
   final bool keepMobileRealtimeForShortPeriod;
   final bool enableExperimentalMultiDeviceSync;
@@ -686,6 +689,7 @@ class ExperienceSettings {
     bool? showComposerTips,
     bool? composerAutoApprovePermissions,
     DesktopCloseBehavior? desktopCloseBehavior,
+    bool? dataSaverEnabled,
     bool? androidBackgroundAlertsEnabled,
     bool? keepMobileRealtimeForShortPeriod,
     bool? enableExperimentalMultiDeviceSync,
@@ -729,6 +733,7 @@ class ExperienceSettings {
       composerAutoApprovePermissions:
           composerAutoApprovePermissions ?? this.composerAutoApprovePermissions,
       desktopCloseBehavior: desktopCloseBehavior ?? this.desktopCloseBehavior,
+      dataSaverEnabled: dataSaverEnabled ?? this.dataSaverEnabled,
       androidBackgroundAlertsEnabled:
           androidBackgroundAlertsEnabled ?? this.androidBackgroundAlertsEnabled,
       keepMobileRealtimeForShortPeriod:
@@ -813,6 +818,7 @@ class ExperienceSettings {
       'showComposerTips': showComposerTips,
       'composerAutoApprovePermissions': composerAutoApprovePermissions,
       'desktopCloseBehavior': desktopCloseBehaviorKey(desktopCloseBehavior),
+      'dataSaverEnabled': dataSaverEnabled,
       'keepDesktopRunningInTray':
           desktopCloseBehavior != DesktopCloseBehavior.close,
       'androidBackgroundAlertsEnabled': androidBackgroundAlertsEnabled,
@@ -869,6 +875,7 @@ class ExperienceSettings {
     var composerAutoApprovePermissions =
         defaults.composerAutoApprovePermissions;
     var desktopCloseBehavior = defaults.desktopCloseBehavior;
+    var dataSaverEnabled = defaults.dataSaverEnabled;
     var androidBackgroundAlertsEnabled =
         defaults.androidBackgroundAlertsEnabled;
     var keepMobileRealtimeForShortPeriod =
@@ -1046,6 +1053,11 @@ class ExperienceSettings {
       }
     }
 
+    final dataSaverEnabledJson = json['dataSaverEnabled'];
+    if (dataSaverEnabledJson is bool) {
+      dataSaverEnabled = dataSaverEnabledJson;
+    }
+
     final keepMobileRealtimeForShortPeriodJson =
         json['keepMobileRealtimeForShortPeriod'];
     if (keepMobileRealtimeForShortPeriodJson is bool) {
@@ -1170,6 +1182,7 @@ class ExperienceSettings {
       showComposerTips: showComposerTips,
       composerAutoApprovePermissions: composerAutoApprovePermissions,
       desktopCloseBehavior: desktopCloseBehavior,
+      dataSaverEnabled: dataSaverEnabled,
       androidBackgroundAlertsEnabled: androidBackgroundAlertsEnabled,
       keepMobileRealtimeForShortPeriod: keepMobileRealtimeForShortPeriod,
       enableExperimentalMultiDeviceSync: enableExperimentalMultiDeviceSync,

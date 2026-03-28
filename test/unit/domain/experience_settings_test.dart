@@ -3,6 +3,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  group('data saver serialization', () {
+    test('defaults cellular data saver to enabled', () {
+      expect(ExperienceSettings.defaults().dataSaverEnabled, isTrue);
+    });
+
+    test('serializes and deserializes cellular data saver', () {
+      final settings = ExperienceSettings.defaults().copyWith(
+        dataSaverEnabled: false,
+      );
+
+      final json = settings.toJson();
+      final restored = ExperienceSettings.fromJson(json);
+
+      expect(json['dataSaverEnabled'], isFalse);
+      expect(restored.dataSaverEnabled, isFalse);
+    });
+  });
+
   group('OpenCodeThemePreset serialization', () {
     test('serializes and deserializes catppuccin-macchiato', () {
       final settings = ExperienceSettings.defaults().copyWith(
