@@ -99,6 +99,7 @@
 - **When** throttling is active
 - **Then** the mobile hamburger button shows a low-priority saver badge when no higher-priority alert/loading badge is active
 - **Then** the server status control also shows a compact `Saver` chip so the throttled state stays visible after opening the drawer/sidebar
+- **Then** when the mobile drawer is opened while that saver badge is active, a compact notice above `Conversations` explains that cellular data saver is active and links to `Settings` > `Behavior`
 
 ### Active server status is simplified to Online / Delayed / Offline
 
@@ -218,6 +219,14 @@
 - **Then** the root session row receives a subtle theme-aware highlight for up to one hour
 - **Then** recent-session title text for that unread root reply also switches to a theme-aware emphasized color during that same one-hour window
 - **Then** child/subsessions do not receive that temporary row highlight
+
+### Only root sessions notify for final assistant completions
+
+- **Given** a session finishes a final assistant response and notification feedback is evaluated
+- **When** that session is a main/root session
+- **Then** the app may emit the normal completion notification or sound according to the user's notification settings
+- **When** that session is a child/subsession (`parentId` is present)
+- **Then** the app does not emit a final-response completion notification or sound for that child session
 
 ### Recent sessions quick access is enabled by default when available
 
@@ -766,9 +775,10 @@ The app uses a platform-aware speech engine strategy with automatic fallback whe
 
 ### Mobile drawer status indicator (hamburger)
 
-The hamburger icon has exactly three states — only one can be active at a time:
+The hamburger icon has exactly one active state at a time:
 
 - **Default (no badge)**: normal operation; no urgent or loading condition is active
+- **Attention dot**: shown when another visible conversation in the current project needs attention because it has an error, is waiting for user input, or received a new unread assistant reply
 - **Loading spinner**: shown only when all three conditions are true simultaneously:
   1. The app returned from background and is actively resynchronizing (`isForegroundResumeSyncing`)
   2. The sync state is recoverable (reconnecting, delayed, or degraded — not failed)
@@ -776,10 +786,17 @@ The hamburger icon has exactly three states — only one can be active at a time
 - **Red dot badge**: shown when an urgent condition persists beyond the grace period:
   - Active server health probe is `unhealthy` (including offline probe failures), OR
   - Recoverable sync alert has escalated (unresolved for too long)
+- **Saver dot**: shown when `Cellular data saver` is actively throttling mobile network work and no higher-priority alert/attention/loading state is active
 
 Transient connectivity blips that do not escalate are surfaced via loading/sync states, not as urgent red health alerts.
 
-Non-urgent (blue/gray) dot badges are never shown on the hamburger icon.
+### Mobile drawer explains the active hamburger indicator
+
+- **Given** the mobile drawer is open and the hamburger indicator is showing a dot or loading spinner
+- **When** the `Conversations` section is rendered
+- **Then** a compact notice appears above `Conversations` explaining the current active reason
+- **Then** if the reason has a natural destination, tapping the notice opens the relevant settings section or conversation
+- **Then** the notice has no close button and disappears automatically as soon as the hamburger indicator returns to its default no-badge state
 
 ### Desktop: split view
 
@@ -1010,7 +1027,7 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **Then** the app relies on sparse WorkManager checks only; it does not start an immediate fast probe just because the screen was left
 - **When** the app goes to background with a known active response
 - **Then** the app may keep realtime alive briefly, schedule low-data probes every 3 minutes, and run one 5-minute tail probe after the active work settles
-- **Then** the worker fetches only the minimum data needed for completion, error, permission, and question alerts; session metadata is fetched only when needed to label a notification
+- **Then** the worker fetches only the minimum data needed for completion, error, permission, and question alerts; session metadata is fetched only when needed to label a notification or suppress child-session completion alerts
 - **When** `Cellular data saver` is active on mobile data
 - **Then** Android background network checks are suppressed entirely, including periodic probes, active-response probes, and tail probes
 - **When** the user disables Android background alerts in Settings
