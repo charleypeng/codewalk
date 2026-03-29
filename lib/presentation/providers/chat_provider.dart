@@ -4438,6 +4438,14 @@ class ChatProvider extends ChangeNotifier {
     if (normalizedSessionId.isEmpty) {
       return;
     }
+    // Child/task sessions should finish silently; only root sessions own
+    // completion attention surfaces such as unread highlights and menu badges.
+    final session = _sessionById(normalizedSessionId);
+    final parentId = session?.parentId?.trim();
+    if (session == null || (parentId != null && parentId.isNotEmpty)) {
+      _clearSessionUnreadCompletion(normalizedSessionId);
+      return;
+    }
     _sessionUnreadCompletionIds.add(normalizedSessionId);
     _sessionUnreadCompletionTimestamps[normalizedSessionId] =
         timestamp ??

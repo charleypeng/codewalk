@@ -1677,6 +1677,59 @@ void main() {
       },
     );
 
+    test(
+      'child busy -> idle transition does not mark unread completion attention',
+      () async {
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_root',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1500),
+            title: 'Root Session',
+          ),
+        );
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_child',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1600),
+            title: 'Child Session',
+            parentId: 'ses_root',
+          ),
+        );
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.where((item) => item.id == 'ses_1').first,
+        );
+        await provider.initializeProviders();
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.status',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_child',
+              'status': <String, dynamic>{'type': 'busy'},
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.idle',
+            properties: <String, dynamic>{'sessionID': 'ses_child'},
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        final childAttention = provider.sessionAttentionFor('ses_child');
+        expect(childAttention.hasUnreadCompletion, isFalse);
+        expect(provider.outOfFocusAttentionKind, SessionAttentionKind.none);
+      },
+    );
+
     test('current session retry status keeps notice queue empty', () async {
       await provider.projectProvider.initializeProject();
       await provider.loadSessions();
