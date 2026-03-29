@@ -129,14 +129,14 @@ make precommit  # check + android
 4. Configure Basic Auth only if your server requires it
 5. Save and switch active/default profiles as needed
 
-### OpenCode Project Command
+### OpenCode Project Agent
 
-When you run OpenCode from this repository, the repo ships a project command at `.opencode/commands/release-monitor.md`:
+When you run OpenCode from this repository, the repo ships a project agent at `.opencode/agents/opencodeNews.md`:
 
-- `/release-monitor` reviews the latest OpenCode release for CodeWalk impact
-- `/release-monitor vX.Y.Z` or `/release-monitor https://github.com/anomalyco/opencode/releases/tag/...` reviews a specific release target
+- `@opencodeNews` reviews the latest OpenCode release for CodeWalk impact
+- `@opencodeNews review vX.Y.Z` or `@opencodeNews check https://github.com/anomalyco/opencode/releases/tag/...` reviews a specific release target mentioned in the same prompt
 
-The command requires a configured `planner` agent in your OpenCode setup and returns a release summary, impact/risk by area, proposed adjustments, and an execution plan only when CodeWalk work is needed.
+The agent returns a release summary, impact/risk by area, proposed adjustments, and an execution plan only when CodeWalk work is needed.
 
 ## Architecture
 

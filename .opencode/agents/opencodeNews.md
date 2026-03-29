@@ -10,7 +10,7 @@ Target selection:
 - If the invoking request includes a target release reference, treat it as the target to analyze. It can be a tag, compare URL, or release URL. Fetch that exact target before reaching conclusions.
 
 Latest release snapshot:
-!`python -c 'import json,urllib.request;req=urllib.request.Request("https://api.github.com/repos/anomalyco/opencode/releases/latest",headers={"User-Agent":"CodeWalk release-monitor"});data=json.load(urllib.request.urlopen(req));body=(data.get("body") or "").strip();body=body[:4000]+("..." if len(body)>4000 else "");print(json.dumps({"tag_name":data.get("tag_name"),"name":data.get("name"),"published_at":data.get("published_at"),"html_url":data.get("html_url"),"body":body}, indent=2))'`
+!`python -c 'import json,urllib.request;req=urllib.request.Request("https://api.github.com/repos/anomalyco/opencode/releases/latest",headers={"User-Agent":"CodeWalk opencodeNews"});data=json.load(urllib.request.urlopen(req));body=(data.get("body") or "").strip();body=body[:4000]+("..." if len(body)>4000 else "");print(json.dumps({"tag_name":data.get("tag_name"),"name":data.get("name"),"published_at":data.get("published_at"),"html_url":data.get("html_url"),"body":body}, indent=2))'`
 
 Mandatory local anchors:
 - `ADR.md` (ADR-023 is the primary compatibility rule)
