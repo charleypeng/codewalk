@@ -1,13 +1,13 @@
 ---
 description: Review OpenCode releases and assess CodeWalk impact
-agent: planner
+mode: primary
 ---
 
 Review the target OpenCode release and decide whether CodeWalk needs follow-up work.
 
 Target selection:
-- If `$ARGUMENTS` is empty, analyze the latest OpenCode release using the snapshot below.
-- If `$ARGUMENTS` is present, treat it as the target release reference. It can be a tag, compare URL, or release URL. Fetch that exact target before reaching conclusions.
+- If the invoking request does not specify a release target, analyze the latest OpenCode release using the snapshot below.
+- If the invoking request includes a target release reference, treat it as the target to analyze. It can be a tag, compare URL, or release URL. Fetch that exact target before reaching conclusions.
 
 Latest release snapshot:
 !`python -c 'import json,urllib.request;req=urllib.request.Request("https://api.github.com/repos/anomalyco/opencode/releases/latest",headers={"User-Agent":"CodeWalk release-monitor"});data=json.load(urllib.request.urlopen(req));body=(data.get("body") or "").strip();body=body[:4000]+("..." if len(body)>4000 else "");print(json.dumps({"tag_name":data.get("tag_name"),"name":data.get("name"),"published_at":data.get("published_at"),"html_url":data.get("html_url"),"body":body}, indent=2))'`
@@ -29,7 +29,6 @@ CodeWalk hotspots worth checking when relevant:
 - `lib/presentation/pages/chat_page.dart`
 
 Rules:
-- Use `planner`, not the built-in `plan` agent.
 - Stay analysis-only. Do not edit files or implement changes.
 - Treat ADR-023 and official OpenCode docs/source as the compatibility source of truth.
 - Focus first on Core, Desktop, and Web impact, then cover any other affected surfaces.
