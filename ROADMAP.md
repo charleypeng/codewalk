@@ -45,11 +45,11 @@ Description: Various UI/UX enhancements, snackbar improvements, task bubble upda
 - [x] 3.13 Add ModalPrimaryActionShortcuts helper: Enter/NumpadEnter triggers primary action in safe dialogs (workspace, rename, onboarding) — Commit hashes: 97ebf1f, 0e275eb
 - [x] 3.14 Redesign compact task bubble: remove View/Show controls, full-bubble tap navigation, icon-only status indicators, latest child-tool progress label fallback, and completed "N tool calls" footer — Commit hash: 4554e47
 
-### Feature 4: OpenCode Release Monitoring Command
+### Feature 4: Repo-Local OpenCode Agent for Release Impact Review
 
-Description: Create a repo-local OpenCode command that uses the `planner` agent to inspect OpenCode releases and evaluate CodeWalk impact
+Description: Create a repo-local OpenCode agent at `.opencode/agents/opencodeNews.md` that inspects OpenCode releases and evaluates CodeWalk impact
 
-- [x] 4.01 Create repo-local command `.opencode/commands/release-monitor.md` that reviews OpenCode releases and identifies impacts/needed updates for CodeWalk, especially Core/Desktop/Web, using `planner` — Completed in working tree (no commit)
+- [x] 4.01 Create repo-local agent `.opencode/agents/opencodeNews.md` for OpenCode release impact review, replacing the old `release-monitor` command — Commit hashes: 5d4629d, 6f22c21
 
 ### Feature 5: Offline-to-Online Data Reload
 
