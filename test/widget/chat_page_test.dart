@@ -3134,7 +3134,7 @@ void main() {
     final appProvider = _buildAppProvider(localDataSource: localDataSource);
 
     await tester.pumpWidget(_testApp(provider, appProvider));
-    await tester.pump(const Duration(milliseconds: 80));
+    await tester.pumpAndSettle();
     await provider.loadSessions();
     await provider.selectSession(provider.sessions.first);
     await tester.pumpAndSettle();
