@@ -268,6 +268,7 @@ class _ChatPageState extends State<ChatPage>
   bool _suppressPostCompletionAutoSnap = false;
   bool _shouldRevealFinalAssistantOnCompletion = false;
   String? _pendingFinalAssistantRevealMessageId;
+  String? _settledLatestAssistantWorkGroupId;
 
   void _traceFinalUi(String event, {String? details}) {
     final provider = _chatProvider;
@@ -278,7 +279,7 @@ class _ChatPageState extends State<ChatPage>
         ? ''
         : ' details=${details.trim()}';
     AppLogger.info(
-      '$_traceFinalPrefix ui event=$event session=$sessionId responding=${provider?.isCurrentSessionActivelyResponding ?? false} state=${provider?.state.name ?? "-"} messages=${messages.length} last=$lastMessageId pendingFinal=${_pendingFinalAssistantRevealMessageId ?? "-"} settledFinal=${_finalAssistantRevealSettledMessageId ?? "-"} deferCollapse=$_deferAssistantWorkCollapse autoFollow=$_autoFollowToLatest$suffix',
+      '$_traceFinalPrefix ui event=$event session=$sessionId responding=${provider?.isCurrentSessionActivelyResponding ?? false} state=${provider?.state.name ?? "-"} messages=${messages.length} last=$lastMessageId pendingFinal=${_pendingFinalAssistantRevealMessageId ?? "-"} settledFinal=${_finalAssistantRevealSettledMessageId ?? "-"} settledWorkGroup=${_settledLatestAssistantWorkGroupId ?? "-"} deferCollapse=$_deferAssistantWorkCollapse autoFollow=$_autoFollowToLatest$suffix',
     );
   }
 

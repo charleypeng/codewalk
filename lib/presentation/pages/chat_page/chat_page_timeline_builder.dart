@@ -2052,4 +2052,57 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     }
     return null;
   }
+
+  String? _resolveLatestSettledAssistantWorkGroupId({
+    required List<ChatMessage> messages,
+    required bool showThinkingBubbles,
+    required bool showToolCallBubbles,
+  }) {
+    if (messages.isEmpty) {
+      return null;
+    }
+
+    final endExclusive = messages.length;
+    var assistantRunStart = endExclusive;
+    while (assistantRunStart > 0 &&
+        messages[assistantRunStart - 1] is AssistantMessage) {
+      assistantRunStart -= 1;
+    }
+
+    if (assistantRunStart <= 0 ||
+        assistantRunStart >= endExclusive ||
+        messages[assistantRunStart - 1] is! UserMessage) {
+      return null;
+    }
+
+    final finalAssistant = messages[endExclusive - 1];
+    if (finalAssistant is! AssistantMessage ||
+        !_isSuccessfulFinalAssistantMessage(finalAssistant)) {
+      return null;
+    }
+
+    final workMessageCount = endExclusive - assistantRunStart - 1;
+    if (workMessageCount <= 0) {
+      return null;
+    }
+
+    final visibleWorkPreviewMessages = _visibleAssistantWorkPreviewMessages(
+      messages: messages,
+      startIndex: assistantRunStart,
+      endExclusive: endExclusive - 1,
+      showThinkingBubbles: showThinkingBubbles,
+      showToolCallBubbles: showToolCallBubbles,
+    );
+    if (visibleWorkPreviewMessages.isEmpty) {
+      return null;
+    }
+
+    return _CollapsedAssistantWorkGroup(
+      startMessageId: messages[assistantRunStart].id,
+      endMessageId: messages[endExclusive - 2].id,
+      finalMessageId: finalAssistant.id,
+      messageCount: workMessageCount,
+      createdAt: finalAssistant.time,
+    ).id;
+  }
 }

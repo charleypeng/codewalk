@@ -232,6 +232,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _shouldRevealFinalAssistantOnCompletion = false;
       _pendingFinalAssistantRevealMessageId = null;
       _finalAssistantRevealSettledMessageId = null;
+      _settledLatestAssistantWorkGroupId = null;
       _finalAssistantRevealScheduled = false;
       _pendingFinalAssistantRevealAttempts = 0;
       _messageRevealAnchorKeysByMessageId.clear();
@@ -273,6 +274,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _shouldRevealFinalAssistantOnCompletion = false;
       _pendingFinalAssistantRevealMessageId = null;
       _finalAssistantRevealSettledMessageId = null;
+      _settledLatestAssistantWorkGroupId = null;
       _finalAssistantRevealScheduled = false;
       _pendingFinalAssistantRevealAttempts = 0;
       _messageRevealAnchorKeysByMessageId.clear();
@@ -296,8 +298,17 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     }
 
     final isResponding = chatProvider.isCurrentSessionActivelyResponding;
+    final settingsProvider = _settingsProvider;
+    final showThinkingBubbles = settingsProvider?.showThinkingBubbles ?? true;
+    final showToolCallBubbles = settingsProvider?.showToolCallBubbles ?? true;
     final latestRevealableAssistantMessageId =
         _resolveLatestRevealableAssistantMessageId(chatProvider.messages);
+    final latestSettledAssistantWorkGroupId =
+        _resolveLatestSettledAssistantWorkGroupId(
+          messages: chatProvider.messages,
+          showThinkingBubbles: showThinkingBubbles,
+          showToolCallBubbles: showToolCallBubbles,
+        );
     final latestTimelineMessageId = chatProvider.messages.isEmpty
         ? null
         : chatProvider.messages.last.id;
@@ -306,17 +317,21 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       final hasSettledFinalMessage =
           _finalAssistantRevealSettledMessageId != null &&
           _finalAssistantRevealSettledMessageId!.isNotEmpty;
+      final hasSettledLatestWorkGroup =
+          latestSettledAssistantWorkGroupId != null &&
+          latestSettledAssistantWorkGroupId ==
+              _settledLatestAssistantWorkGroupId;
       final shouldIgnoreTransientRespondingPulse =
-          hasSettledFinalMessage &&
           _pendingFinalAssistantRevealMessageId == null &&
-          !_deferAssistantWorkCollapse &&
-          latestRevealableAssistantMessageId ==
-              _finalAssistantRevealSettledMessageId;
+          ((hasSettledFinalMessage &&
+                  latestRevealableAssistantMessageId ==
+                      _finalAssistantRevealSettledMessageId) ||
+              hasSettledLatestWorkGroup);
       if (shouldIgnoreTransientRespondingPulse) {
         _traceFinalUi(
           'viewport-policy-ignore-transient-responding-pulse',
           details:
-              'latestTimelineMessageId=${latestTimelineMessageId ?? "-"} latestRevealableAssistantMessageId=${latestRevealableAssistantMessageId ?? "-"}',
+              'latestTimelineMessageId=${latestTimelineMessageId ?? "-"} latestRevealableAssistantMessageId=${latestRevealableAssistantMessageId ?? "-"} latestSettledAssistantWorkGroupId=${latestSettledAssistantWorkGroupId ?? "-"}',
         );
         return;
       }
@@ -331,6 +346,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _shouldRevealFinalAssistantOnCompletion = _autoFollowToLatest;
       _pendingFinalAssistantRevealMessageId = null;
       _finalAssistantRevealSettledMessageId = null;
+      _settledLatestAssistantWorkGroupId = null;
       _pendingFinalAssistantRevealAttempts = 0;
       return;
     }
@@ -342,6 +358,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _deferAssistantWorkCollapse = false;
       _suppressPostCompletionAutoSnap = shouldRevealFinalAssistant;
       _finalAssistantRevealSettledMessageId = null;
+      _settledLatestAssistantWorkGroupId = latestSettledAssistantWorkGroupId;
       _pendingFinalAssistantRevealAttempts = 0;
       if (shouldRevealFinalAssistant) {
         _pendingFinalAssistantRevealMessageId =
@@ -371,6 +388,8 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _scheduleFinalAssistantReveal();
       return;
     }
+
+    _settledLatestAssistantWorkGroupId = latestSettledAssistantWorkGroupId;
 
     if (_shouldRevealFinalAssistantOnCompletion &&
         _suppressPostCompletionAutoSnap &&
@@ -766,6 +785,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     _shouldRevealFinalAssistantOnCompletion = false;
     _pendingFinalAssistantRevealMessageId = null;
     _finalAssistantRevealSettledMessageId = null;
+    _settledLatestAssistantWorkGroupId = null;
     _pendingFinalAssistantRevealAttempts = 0;
     if (_autoFollowToLatest &&
         !_showScrollToLatestFab &&
