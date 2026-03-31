@@ -1993,12 +1993,17 @@ class ChatProvider extends ChangeNotifier {
           );
           final hasMoreOldMessagesChanged =
               _hasMoreOldMessages != nextHasMoreOldMessages;
-          if (!messagesChanged && !hasMoreOldMessagesChanged) {
-            _traceFinal(
-              'refresh-active-noop',
-              sessionId: session.id,
-              details: 'reason=$reason',
-            );
+          if (!messagesChanged) {
+            if (!hasMoreOldMessagesChanged) {
+              _traceFinal(
+                'refresh-active-noop',
+                sessionId: session.id,
+                details: 'reason=$reason',
+              );
+              return;
+            }
+            _hasMoreOldMessages = nextHasMoreOldMessages;
+            notifyListeners();
             return;
           }
 
@@ -3440,9 +3445,18 @@ class ChatProvider extends ChangeNotifier {
         );
         final hasMoreOldMessagesChanged =
             _hasMoreOldMessages != nextHasMoreOldMessages;
-        if (!messagesChanged && !hasMoreOldMessagesChanged) {
+        if (!messagesChanged) {
+          if (!hasMoreOldMessagesChanged) {
+            if (_state != ChatState.loaded) {
+              _setState(ChatState.loaded);
+            }
+            return;
+          }
+          _hasMoreOldMessages = nextHasMoreOldMessages;
           if (_state != ChatState.loaded) {
             _setState(ChatState.loaded);
+          } else {
+            _notifyListeners();
           }
           return;
         }
