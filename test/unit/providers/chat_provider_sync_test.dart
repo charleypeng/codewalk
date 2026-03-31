@@ -466,6 +466,7 @@ void main() {
           providerId: 'provider_b',
           modelId: 'model_b',
         );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
 
         final overridePatch = dioClient.patchBodies
             .whereType<Map<String, dynamic>>()
@@ -732,6 +733,95 @@ void main() {
       await provider.cycleAgent(reverse: true);
       expect(provider.selectedAgentName, 'build');
     });
+
+    test(
+      'setSelectedVariant updates state and notifies before delayed persistence completes',
+      () async {
+        localDataSource = DelayedSelectionPersistenceLocalDataSource(
+          delay: const Duration(milliseconds: 200),
+        )..activeServerId = 'srv_test';
+        provider = buildProvider();
+
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{
+                  'model_reasoning': testModel(
+                    'model_reasoning',
+                    variants: const <String, ModelVariant>{
+                      'high': ModelVariant(id: 'high', name: 'High'),
+                    },
+                  ),
+                },
+              ),
+            ],
+            defaultModels: const <String, String>{
+              'provider_a': 'model_reasoning',
+            },
+            connected: const <String>['provider_a'],
+          ),
+        );
+
+        await provider.initializeProviders();
+        var notifications = 0;
+        provider.addListener(() {
+          notifications += 1;
+        });
+
+        final stopwatch = Stopwatch()..start();
+        await provider.setSelectedVariant('high');
+        stopwatch.stop();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(stopwatch.elapsedMilliseconds, lessThan(100));
+        expect(provider.selectedVariantId, 'high');
+        expect(notifications, greaterThan(0));
+      },
+    );
+
+    test(
+      'setSelectedModelByProvider returns before delayed persistence finishes',
+      () async {
+        localDataSource = DelayedSelectionPersistenceLocalDataSource(
+          delay: const Duration(milliseconds: 200),
+        )..activeServerId = 'srv_test';
+        provider = buildProvider();
+
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{
+                  'model_a': testModel('model_a'),
+                  'model_b': testModel('model_b'),
+                },
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a'],
+          ),
+        );
+
+        await provider.initializeProviders();
+
+        final stopwatch = Stopwatch()..start();
+        await provider.setSelectedModelByProvider(
+          providerId: 'provider_a',
+          modelId: 'model_b',
+        );
+        stopwatch.stop();
+
+        expect(stopwatch.elapsedMilliseconds, lessThan(100));
+        expect(provider.selectedModelId, 'model_b');
+      },
+    );
 
     test(
       'setSelectedAgent restores last model and variant used for each agent',

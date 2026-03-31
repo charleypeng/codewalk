@@ -1260,6 +1260,168 @@ class InMemoryAppLocalDataSource implements AppLocalDataSource {
   }
 }
 
+class DelayedSelectionPersistenceLocalDataSource
+    extends InMemoryAppLocalDataSource {
+  DelayedSelectionPersistenceLocalDataSource({required this.delay});
+
+  final Duration delay;
+
+  Future<void> _afterDelay(Future<void> Function() action) async {
+    await Future<void>.delayed(delay);
+    await action();
+  }
+
+  @override
+  Future<void> saveSelectedProvider(
+    String providerId, {
+    String? serverId,
+    String? scopeId,
+  }) {
+    return _afterDelay(
+      () => super.saveSelectedProvider(
+        providerId,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+  }
+
+  @override
+  Future<void> saveSelectedModel(
+    String modelId, {
+    String? serverId,
+    String? scopeId,
+  }) {
+    return _afterDelay(
+      () => super.saveSelectedModel(
+        modelId,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+  }
+
+  @override
+  Future<void> saveSelectedAgent(
+    String? agentName, {
+    String? serverId,
+    String? scopeId,
+  }) {
+    return _afterDelay(
+      () => super.saveSelectedAgent(
+        agentName,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+  }
+
+  @override
+  Future<void> saveRecentModelsJson(
+    String recentModelsJson, {
+    String? serverId,
+    String? scopeId,
+  }) {
+    return _afterDelay(
+      () => super.saveRecentModelsJson(
+        recentModelsJson,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+  }
+
+  @override
+  Future<void> saveFavoriteModelsJson(
+    String favoriteModelsJson, {
+    String? serverId,
+    String? scopeId,
+  }) {
+    return _afterDelay(
+      () => super.saveFavoriteModelsJson(
+        favoriteModelsJson,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+  }
+
+  @override
+  Future<void> savePinnedSessionsJson(
+    String pinnedSessionsJson, {
+    String? serverId,
+    String? scopeId,
+  }) {
+    return _afterDelay(
+      () => super.savePinnedSessionsJson(
+        pinnedSessionsJson,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+  }
+
+  @override
+  Future<void> saveModelUsageCountsJson(
+    String modelUsageCountsJson, {
+    String? serverId,
+    String? scopeId,
+  }) {
+    return _afterDelay(
+      () => super.saveModelUsageCountsJson(
+        modelUsageCountsJson,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+  }
+
+  @override
+  Future<void> saveSelectedVariantMap(
+    String variantMapJson, {
+    String? serverId,
+    String? scopeId,
+  }) {
+    return _afterDelay(
+      () => super.saveSelectedVariantMap(
+        variantMapJson,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+  }
+
+  @override
+  Future<void> saveAgentSelectionMemoryJson(
+    String agentSelectionMemoryJson, {
+    String? serverId,
+    String? scopeId,
+  }) {
+    return _afterDelay(
+      () => super.saveAgentSelectionMemoryJson(
+        agentSelectionMemoryJson,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+  }
+
+  @override
+  Future<void> saveSessionSelectionOverridesJson(
+    String overridesJson, {
+    String? serverId,
+    String? scopeId,
+  }) {
+    return _afterDelay(
+      () => super.saveSessionSelectionOverridesJson(
+        overridesJson,
+        serverId: serverId,
+        scopeId: scopeId,
+      ),
+    );
+  }
+}
+
 class FakeChatRepository implements ChatRepository {
   FakeChatRepository({
     List<ChatSession>? sessions,

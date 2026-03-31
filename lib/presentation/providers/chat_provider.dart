@@ -92,6 +92,56 @@ enum _SelectionSyncTransactionPhase {
   failed,
 }
 
+class _SelectionPersistenceSnapshot {
+  const _SelectionPersistenceSnapshot({
+    required this.serverId,
+    required this.scopeId,
+    required this.selectedProviderId,
+    required this.selectedModelId,
+    required this.selectedAgentName,
+    required this.recentModelsJson,
+    required this.favoriteModelsJson,
+    required this.pinnedSessionsJson,
+    required this.modelUsageCountsJson,
+    required this.selectedVariantMapJson,
+    required this.agentSelectionMemoryJson,
+    required this.sessionSelectionOverridesJson,
+    required this.syncRemote,
+  });
+
+  final String serverId;
+  final String scopeId;
+  final String? selectedProviderId;
+  final String? selectedModelId;
+  final String? selectedAgentName;
+  final String recentModelsJson;
+  final String favoriteModelsJson;
+  final String pinnedSessionsJson;
+  final String modelUsageCountsJson;
+  final String selectedVariantMapJson;
+  final String agentSelectionMemoryJson;
+  final String sessionSelectionOverridesJson;
+  final bool syncRemote;
+
+  _SelectionPersistenceSnapshot copyWith({bool? syncRemote}) {
+    return _SelectionPersistenceSnapshot(
+      serverId: serverId,
+      scopeId: scopeId,
+      selectedProviderId: selectedProviderId,
+      selectedModelId: selectedModelId,
+      selectedAgentName: selectedAgentName,
+      recentModelsJson: recentModelsJson,
+      favoriteModelsJson: favoriteModelsJson,
+      pinnedSessionsJson: pinnedSessionsJson,
+      modelUsageCountsJson: modelUsageCountsJson,
+      selectedVariantMapJson: selectedVariantMapJson,
+      agentSelectionMemoryJson: agentSelectionMemoryJson,
+      sessionSelectionOverridesJson: sessionSelectionOverridesJson,
+      syncRemote: syncRemote ?? this.syncRemote,
+    );
+  }
+}
+
 enum SessionListFilter { active, archived, all }
 
 enum SessionListSort { recent, oldest, title }
@@ -320,6 +370,8 @@ class ChatProvider extends ChangeNotifier {
   bool _remoteSelectionSyncInFlight = false;
   _SelectionSyncTransactionPhase _selectionSyncTransactionPhase =
       _SelectionSyncTransactionPhase.idle;
+  Future<void>? _selectionPersistenceTask;
+  _SelectionPersistenceSnapshot? _pendingSelectionPersistenceSnapshot;
   String _activeContextKey = 'legacy::default';
   final Map<String, _ChatContextSnapshot> _contextSnapshots =
       <String, _ChatContextSnapshot>{};
@@ -2344,44 +2396,93 @@ class ChatProvider extends ChangeNotifier {
     return 'legacy';
   }
 
-  Future<void> onProjectScopeChanged({bool waitForRevalidation = true}) async {
-    await _switchContext(
-      reason: 'project',
-      waitForRevalidation: waitForRevalidation,
+  _SelectionPersistenceSnapshot _captureSelectionPersistenceSnapshot({
+    bool syncRemote = true,
+  }) {
+    final serverId = _activeServerId.trim().isEmpty
+        ? 'legacy'
+        : _activeServerId;
+    final scopeId = _resolveContextScopeId();
+    final overrides = _sessionOverridesForContext(_activeContextKey);
+    final serializedOverrides = <String, dynamic>{};
+    for (final entry in overrides.entries) {
+      serializedOverrides[entry.key] = _sessionOverrideToJson(entry.value);
+    }
+    return _SelectionPersistenceSnapshot(
+      serverId: serverId,
+      scopeId: scopeId,
+      selectedProviderId: _selectedProviderId,
+      selectedModelId: _selectedModelId,
+      selectedAgentName: _selectedAgentName,
+      recentModelsJson: json.encode(_recentModelKeys),
+      favoriteModelsJson: json.encode(_favoriteModelKeys),
+      pinnedSessionsJson: json.encode(
+        _pinnedSessionIds.toList(growable: false),
+      ),
+      modelUsageCountsJson: json.encode(_modelUsageCounts),
+      selectedVariantMapJson: json.encode(_selectedVariantByModel),
+      agentSelectionMemoryJson: json.encode(_encodeAgentSelectionMemory()),
+      sessionSelectionOverridesJson: json.encode(serializedOverrides),
+      syncRemote: syncRemote,
     );
   }
 
-  /// Reset provider state and reload server-scoped data.
-  Future<void> onServerScopeChanged() async {
-    await _switchContext(reason: 'server');
-  }
-
-  Future<void> _persistSelection({bool syncRemote = true}) async {
-    final serverId = await _resolveServerScopeId();
-    final scopeId = _resolveContextScopeId();
-    if (_selectedProviderId != null) {
+  Future<void> _persistSelectionSnapshot(
+    _SelectionPersistenceSnapshot snapshot, {
+    required bool syncRemote,
+  }) async {
+    if (snapshot.selectedProviderId != null) {
       await localDataSource.saveSelectedProvider(
-        _selectedProviderId!,
-        serverId: serverId,
-        scopeId: scopeId,
+        snapshot.selectedProviderId!,
+        serverId: snapshot.serverId,
+        scopeId: snapshot.scopeId,
       );
     }
-    if (_selectedModelId != null) {
+    if (snapshot.selectedModelId != null) {
       await localDataSource.saveSelectedModel(
-        _selectedModelId!,
-        serverId: serverId,
-        scopeId: scopeId,
+        snapshot.selectedModelId!,
+        serverId: snapshot.serverId,
+        scopeId: snapshot.scopeId,
       );
     }
     await localDataSource.saveSelectedAgent(
-      _selectedAgentName,
-      serverId: serverId,
-      scopeId: scopeId,
+      snapshot.selectedAgentName,
+      serverId: snapshot.serverId,
+      scopeId: snapshot.scopeId,
     );
-    await _persistModelPreferenceState(serverId: serverId, scopeId: scopeId);
-    await _persistSessionSelectionOverridesState(
-      serverId: serverId,
-      scopeId: scopeId,
+    await localDataSource.saveRecentModelsJson(
+      snapshot.recentModelsJson,
+      serverId: snapshot.serverId,
+      scopeId: snapshot.scopeId,
+    );
+    await localDataSource.saveFavoriteModelsJson(
+      snapshot.favoriteModelsJson,
+      serverId: snapshot.serverId,
+    );
+    await localDataSource.savePinnedSessionsJson(
+      snapshot.pinnedSessionsJson,
+      serverId: snapshot.serverId,
+      scopeId: snapshot.scopeId,
+    );
+    await localDataSource.saveModelUsageCountsJson(
+      snapshot.modelUsageCountsJson,
+      serverId: snapshot.serverId,
+      scopeId: snapshot.scopeId,
+    );
+    await localDataSource.saveSelectedVariantMap(
+      snapshot.selectedVariantMapJson,
+      serverId: snapshot.serverId,
+      scopeId: snapshot.scopeId,
+    );
+    await localDataSource.saveAgentSelectionMemoryJson(
+      snapshot.agentSelectionMemoryJson,
+      serverId: snapshot.serverId,
+      scopeId: snapshot.scopeId,
+    );
+    await localDataSource.saveSessionSelectionOverridesJson(
+      snapshot.sessionSelectionOverridesJson,
+      serverId: snapshot.serverId,
+      scopeId: snapshot.scopeId,
     );
     if (syncRemote) {
       if (!_isExperimentalMultiDeviceSyncEnabled) {
@@ -2405,6 +2506,70 @@ class ChatProvider extends ChangeNotifier {
         await _runSelectionSyncTransaction(reason: 'immediate-sync');
       }
     }
+  }
+
+  void _scheduleSelectionPersistence({bool syncRemote = true}) {
+    final existing = _pendingSelectionPersistenceSnapshot;
+    _pendingSelectionPersistenceSnapshot = _captureSelectionPersistenceSnapshot(
+      syncRemote: syncRemote || (existing?.syncRemote ?? false),
+    );
+    final inFlight = _selectionPersistenceTask;
+    if (inFlight != null) {
+      return;
+    }
+    final task = _flushScheduledSelectionPersistence();
+    _selectionPersistenceTask = task;
+    unawaited(task);
+  }
+
+  Future<void> _flushScheduledSelectionPersistence() async {
+    try {
+      while (true) {
+        final snapshot = _pendingSelectionPersistenceSnapshot;
+        if (snapshot == null) {
+          break;
+        }
+        _pendingSelectionPersistenceSnapshot = null;
+        await _persistSelectionSnapshot(
+          snapshot,
+          syncRemote: snapshot.syncRemote,
+        );
+      }
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Selection persistence flush failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    } finally {
+      _selectionPersistenceTask = null;
+    }
+    if (_pendingSelectionPersistenceSnapshot != null) {
+      final retryTask = _flushScheduledSelectionPersistence();
+      _selectionPersistenceTask = retryTask;
+      unawaited(retryTask);
+      return;
+    }
+    _selectionPersistenceTask = null;
+  }
+
+  Future<void> onProjectScopeChanged({bool waitForRevalidation = true}) async {
+    await _switchContext(
+      reason: 'project',
+      waitForRevalidation: waitForRevalidation,
+    );
+  }
+
+  /// Reset provider state and reload server-scoped data.
+  Future<void> onServerScopeChanged() async {
+    await _switchContext(reason: 'server');
+  }
+
+  Future<void> _persistSelection({bool syncRemote = true}) async {
+    final snapshot = _captureSelectionPersistenceSnapshot(
+      syncRemote: syncRemote,
+    );
+    await _persistSelectionSnapshot(snapshot, syncRemote: syncRemote);
   }
 
   Future<void> setSelectedProvider(String providerId) async {
@@ -2449,8 +2614,8 @@ class ChatProvider extends ChangeNotifier {
     _recordModelSelectionRecency(previousModelKey: previousModelKey);
     _recordVariantSelectionRecencyForCurrentModel();
     _storeCurrentSessionSelectionOverride();
-    await _persistSelection();
-    notifyListeners();
+    _notifyListeners();
+    _scheduleSelectionPersistence();
   }
 
   Future<void> setSelectedModelByProvider({
@@ -2469,8 +2634,8 @@ class ChatProvider extends ChangeNotifier {
     _recordModelSelectionRecency(previousModelKey: previousModelKey);
     _recordVariantSelectionRecencyForCurrentModel();
     _storeCurrentSessionSelectionOverride();
-    notifyListeners();
-    await _persistSelection();
+    _notifyListeners();
+    _scheduleSelectionPersistence();
   }
 
   Future<void> setSelectedModel(String modelId) async {
@@ -2525,8 +2690,8 @@ class ChatProvider extends ChangeNotifier {
     _restoreSelectionForAgent(next);
     _recordAgentSelectionRecency(previousAgentName: previousAgentName);
     _storeCurrentSessionSelectionOverride();
-    notifyListeners();
-    await _persistSelection();
+    _notifyListeners();
+    _scheduleSelectionPersistence();
   }
 
   Future<void> setSelectedVariant(String? variantId) async {
@@ -2556,8 +2721,8 @@ class ChatProvider extends ChangeNotifier {
     _rememberCurrentSelectionForAgent(agentName: _selectedAgentName);
 
     _storeCurrentSessionSelectionOverride();
-    await _persistSelection();
-    notifyListeners();
+    _notifyListeners();
+    _scheduleSelectionPersistence();
   }
 
   Future<void> cycleVariant() async {

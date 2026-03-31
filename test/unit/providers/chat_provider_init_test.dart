@@ -269,6 +269,7 @@ void main() {
           providerId: 'provider_b',
           modelId: 'model_b',
         );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
 
         final hasModelPatch = dioClient.patchBodies.any((body) {
           final selection = selectionPayloadFromPatch(body);
@@ -482,6 +483,7 @@ void main() {
       dioClient.patchBodies.clear();
 
       await provider.setSelectedAgent('plan');
+      await Future<void>.delayed(const Duration(milliseconds: 20));
 
       final hasAgentPatch = dioClient.patchBodies.any((body) {
         final selection = selectionPayloadFromPatch(body);
@@ -713,6 +715,7 @@ void main() {
       dioClient.patchBodies.clear();
 
       await provider.setSelectedVariant('high');
+      await Future<void>.delayed(const Duration(milliseconds: 20));
 
       final variantPatch = dioClient.patchBodies
           .whereType<Map<String, dynamic>>()
