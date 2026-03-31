@@ -1,6 +1,27 @@
 part of '../chat_provider.dart';
 
 extension _ChatProviderMessageMergeOps on ChatProvider {
+  bool _areMessageListsSemanticallyEqual(
+    List<ChatMessage> a,
+    List<ChatMessage> b,
+  ) {
+    if (identical(a, b)) {
+      return true;
+    }
+    if (a.length != b.length) {
+      return false;
+    }
+    for (var index = 0; index < a.length; index += 1) {
+      if (identical(a[index], b[index])) {
+        continue;
+      }
+      if (a[index] != b[index]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   void _scheduleDebouncedMessageFallback(
     String sessionId,
     String messageId, {
@@ -168,8 +189,10 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
   /// signature), so callers can avoid re-adding them during tail preservation.
   ({List<ChatMessage> messages, Set<String> reconciledLocalIds})
   _mergeServerMessagesWithPendingLocalUsers(List<ChatMessage> serverMessages) {
+    // Internal provider state appends messages in-place during sends/streaming,
+    // so merged results must stay growable even when the source list is not.
     final emptyResult = (
-      messages: serverMessages,
+      messages: List<ChatMessage>.from(serverMessages),
       reconciledLocalIds: const <String>{},
     );
     if (_pendingLocalUserMessageIds.isEmpty) return emptyResult;
@@ -442,7 +465,7 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
     final shouldPreserveLocalTail =
         currentSessionId == sessionId && isSessionActivelyResponding(sessionId);
     if (!shouldPreserveLocalTail || _messages.isEmpty) {
-      return merged;
+      return List<ChatMessage>.from(merged);
     }
 
     final existingIds = merged.map((message) => message.id).toSet();
@@ -452,7 +475,7 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
         .where((message) => message.sessionId == sessionId)
         .toList(growable: false);
     if (localMessages.isEmpty) {
-      return merged;
+      return List<ChatMessage>.from(merged);
     }
 
     var anchorIndex = -1;
@@ -488,6 +511,6 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
       existingIds.add(message.id);
     }
 
-    return merged;
+    return List<ChatMessage>.from(merged);
   }
 }

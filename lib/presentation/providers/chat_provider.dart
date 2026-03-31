@@ -1980,15 +1980,34 @@ class ChatProvider extends ChangeNotifier {
             serverMessagesForMerge,
             sessionId: session.id,
           );
-          _messages = _mergeServerMessagesWithActiveLocalTail(
+          final mergedMessages = _mergeServerMessagesWithActiveLocalTail(
             serverMessagesForMerge,
             sessionId: session.id,
           );
-          _cacheSessionMessages(session.id, _messages);
-          _messagesVersion++;
-          _hasMoreOldMessages =
+          final nextHasMoreOldMessages =
               usedGapRecovery ||
               serverMessagesForMerge.length >= _defaultOlderMessagesChunkSize;
+          final messagesChanged = !_areMessageListsSemanticallyEqual(
+            cachedMessages,
+            mergedMessages,
+          );
+          final hasMoreOldMessagesChanged =
+              _hasMoreOldMessages != nextHasMoreOldMessages;
+          if (!messagesChanged && !hasMoreOldMessagesChanged) {
+            _traceFinal(
+              'refresh-active-noop',
+              sessionId: session.id,
+              details: 'reason=$reason',
+            );
+            return;
+          }
+
+          _messages = List<ChatMessage>.from(mergedMessages);
+          _cacheSessionMessages(session.id, _messages);
+          if (messagesChanged) {
+            _messagesVersion++;
+          }
+          _hasMoreOldMessages = nextHasMoreOldMessages;
           _prunePendingLocalUserMessageIdsToVisibleUsers();
           notifyListeners();
           _traceFinal(
@@ -3241,13 +3260,26 @@ class ChatProvider extends ChangeNotifier {
     _threadPermissionsVersion++;
     _applySelectionPriorityForCurrentSession();
 
+    final warmCachedMessages = _cachedSessionMessages(session.id);
+    final hasWarmCachedMessages =
+        warmCachedMessages != null && warmCachedMessages.isNotEmpty;
+
     // Show the session-scoped hydration state immediately while cache lookup
     // and network hydration run, so cacheless switches never fall back to the
     // generic empty placeholder for a frame.
-    _pendingCurrentSessionHydrationId = session.id;
-    _messages.clear();
-    _messagesVersion++;
-    _setState(ChatState.loading);
+    if (hasWarmCachedMessages) {
+      _pendingCurrentSessionHydrationId = null;
+      _messages = List<ChatMessage>.from(warmCachedMessages);
+      _cacheSessionMessages(session.id, _messages);
+      _hasMoreOldMessages = _messages.length >= _defaultOlderMessagesChunkSize;
+      _messagesVersion++;
+      _setState(ChatState.loaded);
+    } else {
+      _pendingCurrentSessionHydrationId = session.id;
+      _messages = <ChatMessage>[];
+      _messagesVersion++;
+      _setState(ChatState.loading);
+    }
 
     await _cancelActiveMessageSubscription(
       reason: 'session-switch',
@@ -3271,20 +3303,25 @@ class ChatProvider extends ChangeNotifier {
       clear: true,
     );
 
-    final restoredCachedMessages = await _restoreSessionMessagesFromCache(
-      session.id,
-      serverId: serverId,
-      scopeId: scopeId,
-    );
+    final restoredCachedMessages = hasWarmCachedMessages
+        ? warmCachedMessages
+        : await _restoreSessionMessagesFromCache(
+            session.id,
+            serverId: serverId,
+            scopeId: scopeId,
+          );
 
     if (restoredCachedMessages != null && restoredCachedMessages.isNotEmpty) {
       _pendingCurrentSessionHydrationId = null;
-      _messages = List<ChatMessage>.from(restoredCachedMessages);
-      _cacheSessionMessages(session.id, _messages);
+      final restoredMessages = List<ChatMessage>.from(restoredCachedMessages);
       _hasMoreOldMessages =
           restoredCachedMessages.length >= _defaultOlderMessagesChunkSize;
-      _messagesVersion++;
-      _setState(ChatState.loaded);
+      if (!_areMessageListsSemanticallyEqual(_messages, restoredMessages)) {
+        _messages = restoredMessages;
+        _cacheSessionMessages(session.id, _messages);
+        _messagesVersion++;
+        _setState(ChatState.loaded);
+      }
     } else {
       _pendingCurrentSessionHydrationId = session.id;
     }
@@ -3369,6 +3406,10 @@ class ChatProvider extends ChangeNotifier {
           return;
         }
         _pendingCurrentSessionHydrationId = null;
+        final previousVisibleMessages = List<ChatMessage>.from(
+          _messages.where((message) => message.sessionId == sessionId),
+          growable: false,
+        );
         var serverMessagesForMerge = messages;
         var requiresFullFetch = false;
         var usedGapRecovery = false;
@@ -3386,18 +3427,39 @@ class ChatProvider extends ChangeNotifier {
           serverMessagesForMerge,
           sessionId: sessionId,
         );
-        _messages = _mergeServerMessagesWithActiveLocalTail(
+        final mergedMessages = _mergeServerMessagesWithActiveLocalTail(
           serverMessagesForMerge,
           sessionId: sessionId,
         );
-        _cacheSessionMessages(sessionId, _messages);
-        _messagesVersion++;
-        _hasMoreOldMessages =
+        final nextHasMoreOldMessages =
             usedGapRecovery ||
             serverMessagesForMerge.length >= _defaultOlderMessagesChunkSize;
+        final messagesChanged = !_areMessageListsSemanticallyEqual(
+          previousVisibleMessages,
+          mergedMessages,
+        );
+        final hasMoreOldMessagesChanged =
+            _hasMoreOldMessages != nextHasMoreOldMessages;
+        if (!messagesChanged && !hasMoreOldMessagesChanged) {
+          if (_state != ChatState.loaded) {
+            _setState(ChatState.loaded);
+          }
+          return;
+        }
+
+        _messages = List<ChatMessage>.from(mergedMessages);
+        _cacheSessionMessages(sessionId, _messages);
+        if (messagesChanged) {
+          _messagesVersion++;
+        }
+        _hasMoreOldMessages = nextHasMoreOldMessages;
         _prunePendingLocalUserMessageIdsToVisibleUsers();
         _scheduleAutoTitleRefresh(sessionId);
-        _setState(ChatState.loaded);
+        if (_state != ChatState.loaded ||
+            messagesChanged ||
+            hasMoreOldMessagesChanged) {
+          _setState(ChatState.loaded);
+        }
         if (!usedGapRecovery) {
           unawaited(_persistLastSessionSnapshotBestEffort());
           unawaited(
@@ -4479,7 +4541,7 @@ class ChatProvider extends ChangeNotifier {
         _sessions = previousSessions;
         _currentSession = previousCurrent;
         _threadPermissionsVersion++;
-        _messages = previousMessages;
+        _messages = List<ChatMessage>.from(previousMessages);
         if (previousCurrent != null) {
           _cacheSessionMessages(previousCurrent.id, previousMessages);
           unawaited(

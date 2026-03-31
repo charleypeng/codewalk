@@ -1601,7 +1601,10 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       return false;
     }
     for (var index = 0; index < a.length; index += 1) {
-      if (!identical(a[index], b[index])) {
+      if (identical(a[index], b[index])) {
+        continue;
+      }
+      if (a[index] != b[index]) {
         return false;
       }
     }
