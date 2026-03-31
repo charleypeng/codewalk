@@ -763,7 +763,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
     if (selected == null) {
       return;
     }
-    await chatProvider.setSelectedAgent(selected);
+    unawaited(chatProvider.setSelectedAgent(selected));
   }
 
   List<_ModelSelectorEntry> _buildModelSelectorEntries(
@@ -1131,17 +1131,19 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                               setModalState(() {}),
                                         ),
                                         onTap: () async {
-                                          await chatProvider
-                                              .setSelectedModelByProvider(
-                                                providerId: entry.providerId,
-                                                modelId: entry.modelId,
-                                              );
                                           if (!bottomSheetContext.mounted) {
                                             return;
                                           }
                                           Navigator.of(
                                             bottomSheetContext,
                                           ).pop();
+                                          unawaited(
+                                            chatProvider
+                                                .setSelectedModelByProvider(
+                                                  providerId: entry.providerId,
+                                                  modelId: entry.modelId,
+                                                ),
+                                          );
                                         },
                                       ),
                                   ],
@@ -1194,17 +1196,19 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                               setModalState(() {}),
                                         ),
                                         onTap: () async {
-                                          await chatProvider
-                                              .setSelectedModelByProvider(
-                                                providerId: entry.providerId,
-                                                modelId: entry.modelId,
-                                              );
                                           if (!bottomSheetContext.mounted) {
                                             return;
                                           }
                                           Navigator.of(
                                             bottomSheetContext,
                                           ).pop();
+                                          unawaited(
+                                            chatProvider
+                                                .setSelectedModelByProvider(
+                                                  providerId: entry.providerId,
+                                                  modelId: entry.modelId,
+                                                ),
+                                          );
                                         },
                                       ),
                                   ],
@@ -1264,17 +1268,20 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                                 setModalState(() {}),
                                           ),
                                           onTap: () async {
-                                            await chatProvider
-                                                .setSelectedModelByProvider(
-                                                  providerId: entry.providerId,
-                                                  modelId: entry.modelId,
-                                                );
                                             if (!bottomSheetContext.mounted) {
                                               return;
                                             }
                                             Navigator.of(
                                               bottomSheetContext,
                                             ).pop();
+                                            unawaited(
+                                              chatProvider
+                                                  .setSelectedModelByProvider(
+                                                    providerId:
+                                                        entry.providerId,
+                                                    modelId: entry.modelId,
+                                                  ),
+                                            );
                                           },
                                         ),
                                     ],
@@ -1372,7 +1379,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
     if (selected == null && chatProvider.selectedVariantId == null) {
       return;
     }
-    await chatProvider.setSelectedVariant(selected);
+    unawaited(chatProvider.setSelectedVariant(selected));
   }
 
   Future<void> _createNewSession() async {
