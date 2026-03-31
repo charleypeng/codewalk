@@ -3134,7 +3134,7 @@ void main() {
     final appProvider = _buildAppProvider(localDataSource: localDataSource);
 
     await tester.pumpWidget(_testApp(provider, appProvider));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 80));
     await provider.loadSessions();
     await provider.selectSession(provider.sessions.first);
     await tester.pumpAndSettle();
@@ -10559,6 +10559,148 @@ void main() {
 
       expect(find.text('Hello! I am your AI assistant'), findsOneWidget);
       expect(find.byType(ChatSkeletonShimmer), findsNothing);
+      expect(
+        find.byKey(
+          const ValueKey<String>('session_hydration_loading_indicator'),
+        ),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
+    'keeps warm cached session visible while return revalidation is pending',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = _ConfigurableDelayFakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_cached_return_a',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Cached Return A',
+          ),
+          ChatSession(
+            id: 'ses_cached_return_b',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(2000),
+            title: 'Cached Return B',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_cached_return_a'] = <ChatMessage>[
+        UserMessage(
+          id: 'msg_cached_return_a_user',
+          sessionId: 'ses_cached_return_a',
+          time: DateTime.fromMillisecondsSinceEpoch(1100),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_cached_return_a_user',
+              messageId: 'msg_cached_return_a_user',
+              sessionId: 'ses_cached_return_a',
+              text: 'Show cached return',
+            ),
+          ],
+        ),
+        AssistantMessage(
+          id: 'msg_cached_return_a_final',
+          sessionId: 'ses_cached_return_a',
+          time: DateTime.fromMillisecondsSinceEpoch(1200),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1210),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_cached_return_a_final',
+              messageId: 'msg_cached_return_a_final',
+              sessionId: 'ses_cached_return_a',
+              text: 'Cached session content',
+            ),
+          ],
+        ),
+      ];
+      repository.messagesBySession['ses_cached_return_b'] = <ChatMessage>[
+        UserMessage(
+          id: 'msg_cached_return_b_user',
+          sessionId: 'ses_cached_return_b',
+          time: DateTime.fromMillisecondsSinceEpoch(2100),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_cached_return_b_user',
+              messageId: 'msg_cached_return_b_user',
+              sessionId: 'ses_cached_return_b',
+              text: 'Switch away',
+            ),
+          ],
+        ),
+        AssistantMessage(
+          id: 'msg_cached_return_b_final',
+          sessionId: 'ses_cached_return_b',
+          time: DateTime.fromMillisecondsSinceEpoch(2200),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(2210),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_cached_return_b_final',
+              messageId: 'msg_cached_return_b_final',
+              sessionId: 'ses_cached_return_b',
+              text: 'Other session content',
+            ),
+          ],
+        ),
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(
+        provider.sessions.firstWhere(
+          (session) => session.id == 'ses_cached_return_a',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Cached session content'), findsOneWidget);
+
+      await provider.selectSession(
+        provider.sessions.firstWhere(
+          (session) => session.id == 'ses_cached_return_b',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Other session content'), findsOneWidget);
+
+      repository.getMessagesGate = Completer<void>();
+      await provider.selectSession(
+        provider.sessions.firstWhere(
+          (session) => session.id == 'ses_cached_return_a',
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Cached session content'), findsOneWidget);
+      expect(find.text('Other session content'), findsNothing);
+      expect(find.byType(ChatSkeletonShimmer), findsNothing);
+      expect(
+        find.byKey(
+          const ValueKey<String>('session_hydration_loading_indicator'),
+        ),
+        findsNothing,
+      );
+
+      repository.getMessagesGate?.complete();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Cached session content'), findsOneWidget);
       expect(
         find.byKey(
           const ValueKey<String>('session_hydration_loading_indicator'),

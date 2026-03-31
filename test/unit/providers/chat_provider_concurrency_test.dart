@@ -1064,6 +1064,72 @@ void main() {
         expect(versionAfterSelect, greaterThan(0));
       });
 
+      test(
+        'does not increment on preserveVisibleState loadMessages semantic no-op',
+        () async {
+          final assistantMessage = AssistantMessage(
+            id: 'msg_same_load',
+            sessionId: 'ses_1',
+            time: DateTime.now(),
+            completedTime: DateTime.now(),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_same_load',
+                messageId: 'msg_same_load',
+                sessionId: 'ses_1',
+                text: 'hello again',
+              ),
+            ],
+          );
+          chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+            assistantMessage,
+          ];
+
+          await provider.projectProvider.initializeProject();
+          await provider.loadSessions();
+          await provider.selectSession(provider.sessions.first);
+
+          final versionBeforeRefresh = provider.messagesVersion;
+          await provider.loadMessages('ses_1', preserveVisibleState: true);
+
+          expect(provider.messagesVersion, versionBeforeRefresh);
+          expect(provider.messages, hasLength(1));
+        },
+      );
+
+      test(
+        'does not increment on refreshActiveSessionView semantic no-op',
+        () async {
+          final assistantMessage = AssistantMessage(
+            id: 'msg_same_refresh',
+            sessionId: 'ses_1',
+            time: DateTime.now(),
+            completedTime: DateTime.now(),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_same_refresh',
+                messageId: 'msg_same_refresh',
+                sessionId: 'ses_1',
+                text: 'stable tail',
+              ),
+            ],
+          );
+          chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+            assistantMessage,
+          ];
+
+          await provider.projectProvider.initializeProject();
+          await provider.loadSessions();
+          await provider.selectSession(provider.sessions.first);
+
+          final versionBeforeRefresh = provider.messagesVersion;
+          await provider.refreshActiveSessionView(reason: 'test-semantic-noop');
+
+          expect(provider.messagesVersion, versionBeforeRefresh);
+          expect(provider.messages, hasLength(1));
+        },
+      );
+
       test('increments on sendMessage (local user message added)', () async {
         chatRepository.sendMessageHandler = (_, _, _, _) async* {
           // Never emit — we only care about the local user message bump.
