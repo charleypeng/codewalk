@@ -10160,6 +10160,346 @@ void main() {
   );
 
   testWidgets(
+    'keeps latest assistant work group collapsed after session re-entry during passive status pulses',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      List<ChatMessage> buildCollapsedWorkMessages() {
+        return <ChatMessage>[
+          UserMessage(
+            id: 'msg_reentry_status_user',
+            sessionId: 'ses_assistant_work_reentry_status',
+            time: DateTime.fromMillisecondsSinceEpoch(1100),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_reentry_status_user',
+                messageId: 'msg_reentry_status_user',
+                sessionId: 'ses_assistant_work_reentry_status',
+                text: 'Build this for me',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_reentry_status_step_1',
+            sessionId: 'ses_assistant_work_reentry_status',
+            time: DateTime.fromMillisecondsSinceEpoch(1200),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1210),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_reentry_status_step_1',
+                messageId: 'msg_reentry_status_step_1',
+                sessionId: 'ses_assistant_work_reentry_status',
+                text: 'Working step 1',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_reentry_status_step_2',
+            sessionId: 'ses_assistant_work_reentry_status',
+            time: DateTime.fromMillisecondsSinceEpoch(1300),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1310),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_reentry_status_step_2',
+                messageId: 'msg_reentry_status_step_2',
+                sessionId: 'ses_assistant_work_reentry_status',
+                text: 'Working step 2',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_reentry_status_final',
+            sessionId: 'ses_assistant_work_reentry_status',
+            time: DateTime.fromMillisecondsSinceEpoch(1400),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1410),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_reentry_status_final',
+                messageId: 'msg_reentry_status_final',
+                sessionId: 'ses_assistant_work_reentry_status',
+                text: 'Final assistant response',
+              ),
+            ],
+          ),
+        ];
+      }
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_assistant_work_reentry_status',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Assistant Work Reentry Status',
+          ),
+          ChatSession(
+            id: 'ses_assistant_work_reentry_status_other',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(2000),
+            title: 'Another Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_assistant_work_reentry_status'] =
+          buildCollapsedWorkMessages();
+      repository.messagesBySession['ses_assistant_work_reentry_status_other'] =
+          <ChatMessage>[
+            UserMessage(
+              id: 'msg_reentry_status_other_user',
+              sessionId: 'ses_assistant_work_reentry_status_other',
+              time: DateTime.fromMillisecondsSinceEpoch(2100),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_reentry_status_other_user',
+                  messageId: 'msg_reentry_status_other_user',
+                  sessionId: 'ses_assistant_work_reentry_status_other',
+                  text: 'Other session',
+                ),
+              ],
+            ),
+          ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(
+        provider.sessions.firstWhere(
+          (session) => session.id == 'ses_assistant_work_reentry_status',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await provider.selectSession(
+        provider.sessions.firstWhere(
+          (session) => session.id == 'ses_assistant_work_reentry_status_other',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await provider.selectSession(
+        provider.sessions.firstWhere(
+          (session) => session.id == 'ses_assistant_work_reentry_status',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('timeline_collapsed_assistant_work_header'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(TextButton, 'Expand'), findsOneWidget);
+
+      repository.emitEvent(
+        const ChatEvent(
+          type: 'session.status',
+          properties: <String, dynamic>{
+            'sessionID': 'ses_assistant_work_reentry_status',
+            'status': <String, dynamic>{'type': 'busy'},
+          },
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('timeline_collapsed_assistant_work_header'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(TextButton, 'Hide'), findsNothing);
+
+      repository.emitEvent(
+        const ChatEvent(
+          type: 'session.status',
+          properties: <String, dynamic>{
+            'sessionID': 'ses_assistant_work_reentry_status',
+            'status': <String, dynamic>{'type': 'idle'},
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('timeline_collapsed_assistant_work_header'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Final assistant response'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Expand'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'keeps latest assistant work group collapsed after session re-entry during background refresh',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      List<ChatMessage> buildMessages(int offsetMs) {
+        DateTime at(int value) =>
+            DateTime.fromMillisecondsSinceEpoch(value + offsetMs);
+
+        return <ChatMessage>[
+          UserMessage(
+            id: 'msg_reentry_refresh_user',
+            sessionId: 'ses_assistant_work_reentry_refresh',
+            time: at(1100),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_reentry_refresh_user',
+                messageId: 'msg_reentry_refresh_user',
+                sessionId: 'ses_assistant_work_reentry_refresh',
+                text: 'Build this for me',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_reentry_refresh_step_1',
+            sessionId: 'ses_assistant_work_reentry_refresh',
+            time: at(1200),
+            completedTime: at(1210),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_reentry_refresh_step_1',
+                messageId: 'msg_reentry_refresh_step_1',
+                sessionId: 'ses_assistant_work_reentry_refresh',
+                text: 'Working step 1',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_reentry_refresh_step_2',
+            sessionId: 'ses_assistant_work_reentry_refresh',
+            time: at(1300),
+            completedTime: at(1310),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_reentry_refresh_step_2',
+                messageId: 'msg_reentry_refresh_step_2',
+                sessionId: 'ses_assistant_work_reentry_refresh',
+                text: 'Working step 2',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_reentry_refresh_final',
+            sessionId: 'ses_assistant_work_reentry_refresh',
+            time: at(1400),
+            completedTime: at(1410),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_reentry_refresh_final',
+                messageId: 'msg_reentry_refresh_final',
+                sessionId: 'ses_assistant_work_reentry_refresh',
+                text: 'Final assistant response',
+              ),
+            ],
+          ),
+        ];
+      }
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_assistant_work_reentry_refresh',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Assistant Work Reentry Refresh',
+          ),
+          ChatSession(
+            id: 'ses_assistant_work_reentry_refresh_other',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(2000),
+            title: 'Another Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_assistant_work_reentry_refresh'] =
+          buildMessages(0);
+      repository.messagesBySession['ses_assistant_work_reentry_refresh_other'] =
+          <ChatMessage>[
+            UserMessage(
+              id: 'msg_reentry_refresh_other_user',
+              sessionId: 'ses_assistant_work_reentry_refresh_other',
+              time: DateTime.fromMillisecondsSinceEpoch(2100),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_reentry_refresh_other_user',
+                  messageId: 'msg_reentry_refresh_other_user',
+                  sessionId: 'ses_assistant_work_reentry_refresh_other',
+                  text: 'Other session',
+                ),
+              ],
+            ),
+          ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(
+        provider.sessions.firstWhere(
+          (session) => session.id == 'ses_assistant_work_reentry_refresh',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await provider.selectSession(
+        provider.sessions.firstWhere(
+          (session) => session.id == 'ses_assistant_work_reentry_refresh_other',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await provider.selectSession(
+        provider.sessions.firstWhere(
+          (session) => session.id == 'ses_assistant_work_reentry_refresh',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      repository.messagesBySession['ses_assistant_work_reentry_refresh'] =
+          buildMessages(5000);
+      await provider.loadMessages(
+        'ses_assistant_work_reentry_refresh',
+        preserveVisibleState: true,
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('timeline_collapsed_assistant_work_header'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Final assistant response'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Expand'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Hide'), findsNothing);
+    },
+  );
+
+  testWidgets(
     'keeps empty session placeholder visible during background refresh',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));
