@@ -10286,6 +10286,17 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      repository.emitEvent(
+        const ChatEvent(
+          type: 'session.status',
+          properties: <String, dynamic>{
+            'sessionID': 'ses_assistant_work_reentry_status',
+            'status': <String, dynamic>{'type': 'busy'},
+          },
+        ),
+      );
+      await tester.pump();
+
       await provider.selectSession(
         provider.sessions.firstWhere(
           (session) => session.id == 'ses_assistant_work_reentry_status',
@@ -10339,6 +10350,47 @@ void main() {
       );
       expect(find.text('Final assistant response'), findsOneWidget);
       expect(find.widgetWithText(TextButton, 'Expand'), findsOneWidget);
+
+      repository.emitEvent(
+        const ChatEvent(
+          type: 'session.status',
+          properties: <String, dynamic>{
+            'sessionID': 'ses_assistant_work_reentry_status',
+            'status': <String, dynamic>{'type': 'busy'},
+          },
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('timeline_collapsed_assistant_work_header'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(TextButton, 'Expand'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Hide'), findsNothing);
+
+      repository.emitEvent(
+        const ChatEvent(
+          type: 'session.status',
+          properties: <String, dynamic>{
+            'sessionID': 'ses_assistant_work_reentry_status',
+            'status': <String, dynamic>{'type': 'idle'},
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('timeline_collapsed_assistant_work_header'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Final assistant response'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Expand'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Hide'), findsNothing);
     },
   );
 
