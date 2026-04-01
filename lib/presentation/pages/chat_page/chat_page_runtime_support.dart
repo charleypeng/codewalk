@@ -192,6 +192,44 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     });
   }
 
+  void _restoreSettledAssistantWorkOwnership(
+    ChatProvider chatProvider, {
+    required String reason,
+  }) {
+    final settingsProvider = _settingsProvider;
+    final showThinkingBubbles = settingsProvider?.showThinkingBubbles ?? true;
+    final showToolCallBubbles = settingsProvider?.showToolCallBubbles ?? true;
+    final latestRevealableAssistantMessageId =
+        _resolveLatestRevealableAssistantMessageId(chatProvider.messages);
+    final latestSettledAssistantWorkGroupId =
+        _resolveLatestSettledAssistantWorkGroupId(
+          messages: chatProvider.messages,
+          showThinkingBubbles: showThinkingBubbles,
+          showToolCallBubbles: showToolCallBubbles,
+        );
+    final hasSettledLatestWorkGroup =
+        latestSettledAssistantWorkGroupId != null &&
+        latestRevealableAssistantMessageId != null &&
+        latestRevealableAssistantMessageId.isNotEmpty;
+
+    // Passive busy pulses can survive session switches. Rebuild settled
+    // ownership from the visible turn first so return/revalidation does not
+    // re-enter the active collapse path for an already finished group.
+    _settledLatestAssistantWorkGroupId = latestSettledAssistantWorkGroupId;
+    _finalAssistantRevealSettledMessageId = hasSettledLatestWorkGroup
+        ? latestRevealableAssistantMessageId
+        : null;
+    _wasCurrentSessionActivelyResponding =
+        chatProvider.isCurrentSessionActivelyResponding &&
+        !hasSettledLatestWorkGroup;
+
+    _traceFinalUi(
+      'restore-settled-assistant-work-ownership',
+      details:
+          'reason=$reason latestRevealableAssistantMessageId=${latestRevealableAssistantMessageId ?? "-"} latestSettledAssistantWorkGroupId=${latestSettledAssistantWorkGroupId ?? "-"} responding=${chatProvider.isCurrentSessionActivelyResponding}',
+    );
+  }
+
   void _syncSessionScrollState(ChatProvider chatProvider) {
     final sessionId = chatProvider.currentSession?.id;
     if (sessionId != _trackedSessionId) {
@@ -225,14 +263,14 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _wasCompactingContext = false;
       _nextFrozenCompactionBoundaryId = null;
       _nextWasCompactingContext = false;
-      _wasCurrentSessionActivelyResponding =
-          chatProvider.isCurrentSessionActivelyResponding;
       _deferAssistantWorkCollapse = false;
       _suppressPostCompletionAutoSnap = false;
       _shouldRevealFinalAssistantOnCompletion = false;
       _pendingFinalAssistantRevealMessageId = null;
-      _finalAssistantRevealSettledMessageId = null;
-      _settledLatestAssistantWorkGroupId = null;
+      _restoreSettledAssistantWorkOwnership(
+        chatProvider,
+        reason: 'session-switch',
+      );
       _finalAssistantRevealScheduled = false;
       _pendingFinalAssistantRevealAttempts = 0;
       _messageRevealAnchorKeysByMessageId.clear();
@@ -312,6 +350,26 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     final latestTimelineMessageId = chatProvider.messages.isEmpty
         ? null
         : chatProvider.messages.last.id;
+
+    if (isResponding &&
+        _pendingFinalAssistantRevealMessageId == null &&
+        !_deferAssistantWorkCollapse &&
+        latestSettledAssistantWorkGroupId != null &&
+        latestRevealableAssistantMessageId != null &&
+        latestRevealableAssistantMessageId.isNotEmpty &&
+        (_settledLatestAssistantWorkGroupId == null ||
+            _finalAssistantRevealSettledMessageId == null)) {
+      _settledLatestAssistantWorkGroupId = latestSettledAssistantWorkGroupId;
+      _finalAssistantRevealSettledMessageId =
+          latestRevealableAssistantMessageId;
+      _wasCurrentSessionActivelyResponding = false;
+      _traceFinalUi(
+        'viewport-policy-restore-settled-work-ownership',
+        details:
+            'latestRevealableAssistantMessageId=$latestRevealableAssistantMessageId latestSettledAssistantWorkGroupId=$latestSettledAssistantWorkGroupId',
+      );
+      return;
+    }
 
     if (isResponding) {
       final hasSettledFinalMessage =
