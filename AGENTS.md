@@ -53,6 +53,7 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | 022 | Unified project context controls with sidebar session previews — integrated navigation while preserving `serverId::scopeId` ownership | 894–934 |
 | 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web | 937–1056 |
 | 024 | Modal Enter keyboard policy for safe dialogs — speed up keyboard confirmation without enabling destructive or ambiguous modal flows | 1050–1123 |
+| 025 | Settled Assistant-Work Disclosure Ownership — client-side architectural ownership to prevent open/close thrash, scroll jumps on session return | 1133–1175 |
 
 ## 🗺 CODEBASE Quick Reference (details in `CODEBASE.md`)
 

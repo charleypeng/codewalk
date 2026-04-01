@@ -1129,3 +1129,47 @@ semantics, so no ADR-023 exception is required.
 - `lib/presentation/pages/onboarding_wizard_page.dart`
 - `lib/presentation/widgets/moonshine_model_download_dialog.dart`
 - `lib/presentation/widgets/sherpa_model_download_dialog.dart`
+
+## ADR-025: Settled Assistant-Work Disclosure Ownership (2026-04-01)
+
+### Status
+
+Accepted
+
+### Context
+
+Repeated regressions have shown that BEHAVIOR.md invariants alone are insufficient to prevent open/close thrash of the latest assistant-work group. Repeated scroll jumps and final-message unreadability on both mobile and desktop indicate a need for architectural ownership of disclosure state — not just behavioral documentation.
+
+Scope is limited to **client-side disclosure ownership** for the latest settled assistant-work group in chat.
+
+### Decision
+
+1. **Settled disclosure ownership** belongs to the latest assistant-work group that has been explicitly revealed or collapsed by the user or by a structural visibility change.
+
+2. **Passive data inputs only**: `session.status`, background refresh, and revalidation are data inputs only. They must **not** by themselves reopen or re-collapse a settled latest assistant-work group.
+
+3. **On session return**, settled disclosure ownership must be **reconstructed from the currently visible message structure** before any passive busy pulse can influence viewport or collapse policy.
+
+4. **Only the following may clear settled ownership**:
+   - A newer revealable assistant message
+   - A newer user turn
+   - A structural visibility change that removes the group
+
+### Rationale
+
+- Prevents repeated open/close thrash during passive refresh cycles.
+- Ensures final-message readability by stabilizing the latest group state.
+- Eliminates scroll jumps on both mobile and desktop during session return.
+- Architectural ownership is more robust than invariant documentation for this class of regression.
+
+### Consequences
+
+- ✅ Positive: Stable disclosure behavior across session return, background refresh, and revalidation cycles.
+- ✅ Positive: Eliminates thrash and scroll jumps for the latest assistant-work group.
+- ⚠️ Warning: Any new passive data pipeline that influences viewport must be audited against this rule.
+- ⚠️ Warning: Structural visibility changes (e.g., group removal) must explicitly clear ownership — no implicit side effects.
+- ❌ Trade-off: Older groups do not receive this protection; only the latest settled group is scoped.
+
+### ADR-023 Compatibility
+
+This ADR is fully compatible with ADR-023 and official OpenCode lifecycle semantics. It introduces no server contract change, no custom busy protocol, and no deviation from the OpenCode message lifecycle. All state is client-side reconstruction from existing message structure.
