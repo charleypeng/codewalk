@@ -233,11 +233,11 @@ Implement a state-driven composer pipeline with multimodal submission contracts,
 
 ### Context
 
-Speech input must remain pluggable while respecting platform constraints: Linux favors downloadable on-device engines, desktop can expose Moonshine through the existing sherpa_onnx stack, while Android uses native STT in slim builds.
+Speech input must remain pluggable while respecting platform constraints: Linux favors downloadable on-device engines, desktop can expose Moonshine or Parakeet V3 (sherpa_onnx offline NeMo transducer) through the existing sherpa_onnx stack, while Android uses native STT in slim builds.
 
 ### Decision
 
-Use `SpeechInputService` as the abstraction contract, register native, Sherpa, and desktop Moonshine implementations behind DI, enforce platform policy in settings/runtime selection, and keep Android artifacts slim by excluding sherpa_onnx native libs from Android builds.
+Use `SpeechInputService` as the abstraction contract, register native, Sherpa, desktop Moonshine, and desktop Parakeet (offline NeMo transducer via sherpa_onnx) implementations behind DI, enforce platform policy in settings/runtime selection, and keep Android artifacts slim by excluding sherpa_onnx native libs from Android builds.
 
 ### Rationale
 
@@ -259,7 +259,11 @@ Use `SpeechInputService` as the abstraction contract, register native, Sherpa, a
 - `lib/presentation/services/speech_input_service_sherpa.dart`
 - `lib/presentation/services/speech_input_service_sherpa_io.dart`
 - `lib/presentation/services/speech_input_service_moonshine_io.dart`
+- `lib/presentation/services/speech_input_service_parakeet.dart`
+- `lib/presentation/services/speech_input_service_parakeet_io.dart`
 - `lib/presentation/services/moonshine_model_manager_io.dart`
+- `lib/presentation/services/parakeet_model_manager.dart`
+- `lib/presentation/services/parakeet_model_manager_io.dart`
 - `lib/presentation/providers/settings_provider.dart`
 - `lib/presentation/pages/settings/sections/speech_settings_section.dart`
 - `lib/core/di/injection_container.dart`

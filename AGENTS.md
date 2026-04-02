@@ -34,7 +34,7 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | 003 | Realtime-first sync with degraded fallback and platform-aware background policy — maintain live UX without losing offline data | 108–156 |
 | 004 | Chat with slim orchestrators and decomposed part-file clusters — maintainability on high-change surfaces | 157–192 |
 | 005 | Composer pipeline for multimodal input, triggers (`@!/`) and send/stop — rich composition without breaking flow | 193–229 |
-| 006 | Speech input with `SpeechInputService`, Sherpa/Moonshine on desktop, and native STT on Android — pluggable by platform | 230–269 |
+| 006 | Speech input with `SpeechInputService`, Sherpa/Moonshine and Parakeet V3 (offline NeMo transducer) on desktop, native STT on Android — pluggable by platform | 230–272 |
 | 007 | Modular settings with typed `SettingsProvider` + `ExperienceSettings` — unified persistence desktop/mobile | 268–304 |
 | 008 | Context-scoped file explorer with quick-open and diff-aware refresh — fast navigation without unnecessary reloads | 305–340 |
 | 009 | Title generation via internal `title` agent — eliminate external dependency for session titles | 341–374 |
@@ -62,15 +62,15 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | CODEBASE Topic | Lines |
 |----------------|-------|
 | Project Snapshot | 3–11 |
-| Folder Structure | 12–49 |
-| Entry Points | 50–60 |
-| Core Modules | 61–115 |
-| Chat Architecture | 114–189 |
-| Data & Domain Layers | 190–201 |
-| Key API/DataSource locations | 202–221 |
-| Main Commands | 222–244 |
-| Testing/Quality Gates | 245–266 |
-| Notes | 267–425 |
+| Folder Structure | 12–51 |
+| Entry Points | 52–62 |
+| Core Modules | 63–124 |
+| Chat Architecture | 125–200 |
+| Data & Domain Layers | 201–212 |
+| Key API/DataSource locations | 213–232 |
+| Main Commands | 233–255 |
+| Testing/Quality Gates | 256–277 |
+| Notes | 278–436 |
 
 ## ⚙️ Makefile Quick Reference (details in `Makefile`)
 

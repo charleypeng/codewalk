@@ -1087,6 +1087,30 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 
 ---
 
+## Speech Input
+
+### Desktop can use Parakeet for offline multilingual speech-to-text
+
+- **Given** the user opens `Settings` > `Speech to text` on Linux, macOS, or Windows
+- **When** the user selects the `Parakeet` engine
+- **Then** the settings screen shows a dedicated Parakeet model card with install status, download, remove, and refresh actions
+- **Then** the app keeps Parakeet downloadable and out of the shipped app bundle
+
+### First Parakeet use prompts model download
+
+- **Given** the user starts voice input with `Parakeet` selected and no local Parakeet model installed
+- **When** the composer starts speech input
+- **Then** the app opens a blocking `Parakeet Voice Setup` dialog instead of failing silently
+- **Then** after the download finishes successfully, the app retries the speech-input start flow automatically
+
+### Parakeet stays desktop-only
+
+- **Given** the app runs on Android, iOS, or Web
+- **When** speech-engine availability is evaluated from persisted settings
+- **Then** `Parakeet` is treated as unavailable and the app falls back to a supported engine instead of exposing a broken selection
+
+---
+
 ## Anti-behaviors
 
 > Things that must **never** happen, regardless of circumstances.

@@ -14,7 +14,9 @@
 ```text
 codewalk/
 ├── ai-docs/                            # AI docs and engineering artifacts
-├── assets/images/                      # Source and generated launcher/tray icon assets used by `make icons`
+├── assets/
+│   ├── images/                           # Source and generated launcher/tray icon assets used by `make icons`
+│   └── parakeet_models.json              # Parakeet STT model catalog (id, label, download URL, lang)
 ├── lib/                                # Application source
 │   ├── main.dart                       # App bootstrap (DI, providers, shell)
 │   ├── core/                           # Config, constants, DI, errors, logging, network
@@ -98,12 +100,20 @@ lib/presentation/services/android_battery_optimization_service.dart # Android ba
 lib/presentation/services/permission_auto_approve_runtime.dart # Background permission auto-approve context and session ID resolution for Android background continuity
 lib/presentation/services/moonshine_model_manager_io.dart # Desktop Moonshine model download/extract/delete flow using sherpa-onnx release archives + Silero VAD asset
 lib/presentation/services/speech_input_service_moonshine_io.dart # Desktop Moonshine dictation backend; uses sherpa_onnx OfflineRecognizer + VoiceActivityDetector for on-device utterance recognition
+lib/presentation/services/speech_input_service_stt.dart # STT abstraction backend (speech_to_text package) for iOS, macOS, Web, and Windows
+lib/presentation/services/speech_input_service_parakeet.dart # Conditional export: routes to IO or stub Parakeet STT adapter
+lib/presentation/services/speech_input_service_parakeet_io.dart # Desktop Parakeet STT backend; NeMo transducer for on-device transcription
+lib/presentation/services/speech_input_service_parakeet_stub.dart # Non-IO platforms: no-op Parakeet stub
+lib/presentation/services/parakeet_model_manager.dart # Conditional export: routes to IO or stub Parakeet model manager
+lib/presentation/services/parakeet_model_manager_io.dart # Desktop Parakeet model download/extract/delete flow using NeMo release archives
+lib/presentation/services/parakeet_model_manager_stub.dart # Non-IO platforms: disabled Parakeet model manager
+lib/presentation/widgets/parakeet_model_download_dialog.dart # Parakeet model download/setup dialog shown when Parakeet is selected without a downloaded model
 lib/presentation/providers/chat_provider.dart     # Chat state/realtime/session facade; cache-first per-session SWR restore, in-memory LRU message cache, persisted per-session snapshots, microtask coalescing, event dedup buffer, render gate, favorite models; drives timeline visibility, undo/redo availability, rejected-draft restoration, persisted per-session composer drafts, and per-agent provider/model/variant memory; project-switch SWR support via `onProjectScopeChanged(waitForRevalidation: false)` and `loadSessions(backgroundRevalidation: true)`; non-active contexts marked dirty by global events keep cache for immediate restore-on-return, while background revalidation refreshes state; active-session SWR uses limited-tail (delta-like) refresh with overlap merge and full-fetch fallback; message merge / refresh behavior has regression coverage protecting active tool/work visibility during optimistic echo replay and refresh/reconcile; includes `loadOlderMessages()` scaffold and keeps loadSessionInsights fire-and-forget on session switch; idle final-message reconcile can bypass abort-suppression only for targeted `session-idle-final-reconcile`; New Chat uses draft-first flow (`beginNewChatDraft`) with lazy session bootstrap on first send, and draft state is now context-scoped inside `_ChatContextSnapshot` to prevent cross-project leakage during fast switches; keeps provider-side optimistic user IDs on the local `local_user_*` contract for `prompt_async` sends; includes cross-scope helpers `visibleSessionsForScopeId` and `hasSnapshotForScopeId`
 lib/presentation/pages/onboarding_wizard_page.dart # 3-step onboarding wizard (Welcome, Server Setup, Ready); uses ServerSetupQuickGuide; includes navigation to OpenCodeSetupDebugPage for troubleshooting
 lib/presentation/pages/opencode_setup_debug_page.dart # OpenCode setup debug surface for installation/diagnostics troubleshooting; displays environment report, setup timeline, captured logs, and exportable debug report
 lib/presentation/pages/settings/sections/servers_settings_section.dart # Server profile CRUD; exports reusable ServerSetupQuickGuide widget; includes navigation to OpenCodeSetupDebugPage
 lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade; WindowListener for desktop lifecycle; guards startup (checkConnection/loadSessions) against no-active-server; holds tool-chain expanded state map; _isSessionSwitchInFlight guard, _sessionCollapseHistoryCache / _sessionCollapseWorkCache per-session collapse maps; top-reach history loading is coordinated with anchor-preserving restore; workspace controller uses fast project-scope switch path
-lib/presentation/widgets/chat_input_widget.dart   # Composer/input orchestration facade; speech controller now resolves Native, Sherpa, and desktop Moonshine backends and routes model-required setup dialogs accordingly
+lib/presentation/widgets/chat_input_widget.dart   # Composer/input orchestration facade; speech controller resolves Native, Sherpa, Moonshine, and Parakeet backends and routes model-required setup dialogs accordingly
 lib/presentation/widgets/chat_message_widget.dart # Message bubble with build-skip cache, cached MarkdownStyleSheet; compact (<600dp) collapsed-copy variants for reasoning/tool-chain/tool-content toggles; completed tool-chain groups preserve user expansion through ordinary parent rebuilds (no involuntary collapse-on-scroll); includes `SubtaskPart`/`task` navigation callbacks and stable rebuild gating keyed by callback identity
 lib/presentation/widgets/session_todo_list_widget.dart # Session task panel with progress bar and keyboard-aware collapse; compact mobile collapsed summaries use count-first wording (`x/y in progress`, `x/y done`)
 lib/presentation/widgets/chat_session_list.dart    # Chat session list widget; uses responsive vertical tile padding (1 on desktop, 3 on mobile) for information density
