@@ -74,16 +74,16 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: Padding(
-            padding: EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             child: SearchableDropdownFormField<String>(
-              key: ValueKey<String>('searchable_dropdown_empty'),
+              key: const ValueKey<String>('searchable_dropdown_empty'),
               value: 'alpha',
               emptyText: 'Nothing available',
-              items: <DropdownMenuItem<String>>[
+              items: const <DropdownMenuItem<String>>[
                 DropdownMenuItem<String>(value: 'alpha', child: Text('Alpha')),
               ],
               onChanged: _noop,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Choice',
                 border: OutlineInputBorder(),
               ),
@@ -110,15 +110,15 @@ void main() {
       MaterialApp(
         home: Scaffold(
           body: Padding(
-            padding: EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             child: SearchableDropdownFormField<String>(
-              key: ValueKey<String>('searchable_dropdown_disabled'),
+              key: const ValueKey<String>('searchable_dropdown_disabled'),
               value: 'alpha',
-              items: <DropdownMenuItem<String>>[
+              items: const <DropdownMenuItem<String>>[
                 DropdownMenuItem<String>(value: 'alpha', child: Text('Alpha')),
               ],
               onChanged: null,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Choice',
                 border: OutlineInputBorder(),
               ),

@@ -177,6 +177,33 @@ void main() {
       expect(settingsJson['pendingPostOnboardingChatTour'], isFalse);
     });
 
+    test('persists Parakeet engine and selected model', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      final local = InMemoryAppLocalDataSource();
+      try {
+        final first = SettingsProvider(
+          localDataSource: local,
+          dioClient: DioClient(),
+          soundService: _FakeSoundService(),
+        );
+        await first.initialize();
+        await first.setSpeechToTextEngine(SpeechToTextEngine.parakeet);
+        await first.setParakeetModelId(kParakeetModelDefault);
+
+        final second = SettingsProvider(
+          localDataSource: local,
+          dioClient: DioClient(),
+          soundService: _FakeSoundService(),
+        );
+        await second.initialize();
+
+        expect(second.speechToTextEngine, SpeechToTextEngine.parakeet);
+        expect(second.parakeetModelId, kParakeetModelDefault);
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
+    });
+
     test('allows toggling sound independently from notification', () async {
       final local = InMemoryAppLocalDataSource();
       final provider = SettingsProvider(

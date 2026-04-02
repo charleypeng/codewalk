@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  setUp(() {
-    AppLogger.clearEntries();
-  });
+  setUp(AppLogger.clearEntries);
 
   testWidgets('renders, filters, and clears logs', (tester) async {
     AppLogger.info('alpha message');

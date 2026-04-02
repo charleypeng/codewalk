@@ -12,6 +12,7 @@ import '../../../../core/di/injection_container.dart' as di;
 import '../../../../domain/entities/experience_settings.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../services/moonshine_model_manager.dart';
+import '../../../services/parakeet_model_manager.dart';
 import '../../../services/sherpa_model_manager.dart';
 import '../../../widgets/searchable_dropdown_form_field.dart';
 
@@ -38,6 +39,8 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
   final SherpaModelManager _modelManager = di.sl<SherpaModelManager>();
   final MoonshineModelManager _moonshineModelManager = di
       .sl<MoonshineModelManager>();
+  final ParakeetModelManager _parakeetModelManager = di
+      .sl<ParakeetModelManager>();
 
   List<_SherpaModelEntry> _models = const <_SherpaModelEntry>[];
   Map<String, bool> _installedByCode = const <String, bool>{};
@@ -51,6 +54,12 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
   bool _isMutatingMoonshineModel = false;
   double _moonshineDownloadProgress = 0;
   String? _moonshineModelError;
+  List<_SherpaModelEntry> _parakeetModels = const <_SherpaModelEntry>[];
+  Map<String, bool> _parakeetInstalledById = const <String, bool>{};
+  bool _loadingParakeetModels = false;
+  bool _isMutatingParakeetModel = false;
+  double _parakeetDownloadProgress = 0;
+  String? _parakeetModelError;
   double? _silenceDraftSeconds;
 
   bool get _isLinux {
@@ -89,6 +98,15 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
         defaultTargetPlatform == TargetPlatform.windows;
   }
 
+  bool get _supportsParakeet {
+    if (kIsWeb) {
+      return false;
+    }
+    return defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.windows;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -97,6 +115,9 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     }
     if (_supportsMoonshine) {
       unawaited(_loadMoonshineModelCatalog());
+    }
+    if (_supportsParakeet) {
+      unawaited(_loadParakeetModelCatalog());
     }
   }
 
@@ -140,6 +161,11 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
               const SizedBox(height: 12),
               _buildMoonshineModelCard(settingsProvider),
             ],
+            if (_supportsParakeet &&
+                selectedEngine == SpeechToTextEngine.parakeet) ...[
+              const SizedBox(height: 12),
+              _buildParakeetModelCard(settingsProvider),
+            ],
           ],
         );
       },
@@ -150,6 +176,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     final selectedEngine = settingsProvider.speechToTextEngine;
     final sherpaEnabled = _supportsSherpa;
     final moonshineEnabled = _supportsMoonshine;
+    final parakeetEnabled = _supportsParakeet;
     final nativeEnabled = !_isLinux;
     final sherpaUnavailableHint =
         defaultTargetPlatform == TargetPlatform.android
@@ -157,6 +184,8 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
         : 'Not available on this platform.';
     const moonshineUnavailableHint =
         'Available on desktop only. Android stays native-only.';
+    const parakeetUnavailableHint =
+        'Available on desktop only. Uses offline multilingual recognition.';
 
     return Card(
       child: Padding(
@@ -284,6 +313,24 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                 moonshineEnabled
                     ? 'Desktop-only experimental path using sherpa_onnx offline recognition and downloadable models.'
                     : moonshineUnavailableHint,
+              ),
+            ),
+            const Divider(height: 1),
+            RadioListTile<SpeechToTextEngine>(
+              contentPadding: EdgeInsets.zero,
+              value: SpeechToTextEngine.parakeet,
+              groupValue: selectedEngine,
+              onChanged: parakeetEnabled
+                  ? (value) {
+                      if (value == null) return;
+                      unawaited(settingsProvider.setSpeechToTextEngine(value));
+                    }
+                  : null,
+              title: const Text('Parakeet'),
+              subtitle: Text(
+                parakeetEnabled
+                    ? 'Desktop-only offline NeMo transducer path with one multilingual downloadable model.'
+                    : parakeetUnavailableHint,
               ),
             ),
           ],
@@ -485,6 +532,137 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                 const SizedBox(height: 8),
                 Text(
                   _moonshineModelError!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildParakeetModelCard(SettingsProvider settingsProvider) {
+    final selectedId = _normalizeParakeetSelection(
+      settingsProvider.parakeetModelId,
+    );
+    final installed = _parakeetInstalledById[selectedId] ?? false;
+    _SherpaModelEntry? selectedModel;
+    for (final model in _parakeetModels) {
+      if (model.code == selectedId) {
+        selectedModel = model;
+        break;
+      }
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.defaultPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Parakeet models (desktop)',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Parakeet stays downloadable and out of the app bundle. It currently exposes one multilingual model optimized for 25 European languages.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            if (_loadingParakeetModels)
+              const Center(child: CircularProgressIndicator())
+            else ...[
+              DropdownButtonFormField<String>(
+                value: selectedId,
+                decoration: const InputDecoration(
+                  labelText: 'Parakeet model',
+                  border: OutlineInputBorder(),
+                ),
+                items: _parakeetModels
+                    .map(
+                      (model) => DropdownMenuItem<String>(
+                        value: model.code,
+                        child: Text(model.label),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: _isMutatingParakeetModel
+                    ? null
+                    : (value) {
+                        if (value == null) {
+                          return;
+                        }
+                        _parakeetModelManager.setPreferredModelId(value);
+                        unawaited(settingsProvider.setParakeetModelId(value));
+                        setState(() {
+                          _parakeetModelError = null;
+                        });
+                      },
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Chip(
+                    avatar: Icon(
+                      installed ? Symbols.check_circle_outline : Symbols.info,
+                      size: 18,
+                    ),
+                    label: Text(
+                      installed
+                          ? 'Model installed (${selectedId.toUpperCase()})'
+                          : 'Model missing (${selectedId.toUpperCase()})',
+                    ),
+                  ),
+                  const Spacer(),
+                  if (selectedModel != null)
+                    Text(
+                      '~${selectedModel.sizeMb} MB',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  FilledButton.icon(
+                    onPressed: _isMutatingParakeetModel || installed
+                        ? null
+                        : () => unawaited(_downloadParakeetModel(selectedId)),
+                    icon: const Icon(Symbols.download_rounded),
+                    label: const Text('Download'),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: _isMutatingParakeetModel || !installed
+                        ? null
+                        : () => unawaited(_deleteParakeetModel(selectedId)),
+                    icon: const Icon(Symbols.delete_outline),
+                    label: const Text('Remove'),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    tooltip: 'Refresh status',
+                    onPressed: _isMutatingParakeetModel
+                        ? null
+                        : () => unawaited(_refreshParakeetModelStatuses()),
+                    icon: const Icon(Symbols.refresh_rounded),
+                  ),
+                ],
+              ),
+              if (_isMutatingParakeetModel) ...[
+                const SizedBox(height: 10),
+                LinearProgressIndicator(
+                  value: _parakeetDownloadProgress > 0
+                      ? _parakeetDownloadProgress
+                      : null,
+                ),
+              ],
+              if (_parakeetModelError != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _parakeetModelError!,
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ],
@@ -730,6 +908,37 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     }
   }
 
+  Future<void> _loadParakeetModelCatalog() async {
+    setState(() {
+      _loadingParakeetModels = true;
+      _parakeetModelError = null;
+    });
+    try {
+      final raw = await rootBundle.loadString('assets/parakeet_models.json');
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      final entries = (json['models'] as List)
+          .map((entry) {
+            final map = entry as Map<String, dynamic>;
+            return _SherpaModelEntry(
+              code: map['id'] as String,
+              label: map['label'] as String,
+              sizeMb: (map['size_mb'] as num).toInt(),
+            );
+          })
+          .toList(growable: false);
+      _parakeetModels = entries;
+      await _refreshParakeetModelStatuses();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _parakeetModelError = 'Failed to load Parakeet model catalog: $error';
+        _loadingParakeetModels = false;
+      });
+    }
+  }
+
   Future<void> _refreshModelStatuses() async {
     if (_models.isEmpty) {
       if (!mounted) {
@@ -818,6 +1027,30 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     setState(() {
       _moonshineInstalledById = statuses;
       _loadingMoonshineModels = false;
+    });
+  }
+
+  Future<void> _refreshParakeetModelStatuses() async {
+    if (_parakeetModels.isEmpty) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _parakeetInstalledById = const <String, bool>{};
+        _loadingParakeetModels = false;
+      });
+      return;
+    }
+    final statuses = <String, bool>{};
+    for (final model in _parakeetModels) {
+      statuses[model.code] = await _parakeetModelManager.hasModel(model.code);
+    }
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _parakeetInstalledById = statuses;
+      _loadingParakeetModels = false;
     });
   }
 
@@ -914,6 +1147,74 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     }
   }
 
+  Future<void> _downloadParakeetModel(String modelId) async {
+    setState(() {
+      _isMutatingParakeetModel = true;
+      _parakeetDownloadProgress = 0;
+      _parakeetModelError = null;
+    });
+    try {
+      await _parakeetModelManager.downloadModel(
+        modelId,
+        onProgress: (progress) {
+          if (!mounted) {
+            return;
+          }
+          setState(() {
+            _parakeetDownloadProgress = progress;
+          });
+        },
+      );
+      _parakeetModelManager.setPreferredModelId(modelId);
+      if (!mounted) {
+        return;
+      }
+      final settingsProvider = context.read<SettingsProvider>();
+      await settingsProvider.setParakeetModelId(modelId);
+      await _refreshParakeetModelStatuses();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _parakeetModelError = 'Download failed: $error';
+      });
+    } finally {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isMutatingParakeetModel = false;
+        _parakeetDownloadProgress = 0;
+      });
+    }
+  }
+
+  Future<void> _deleteParakeetModel(String modelId) async {
+    setState(() {
+      _isMutatingParakeetModel = true;
+      _parakeetModelError = null;
+    });
+    try {
+      await _parakeetModelManager.deleteModel(modelId);
+      await _refreshParakeetModelStatuses();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _parakeetModelError = 'Failed to remove model: $error';
+      });
+    } finally {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isMutatingParakeetModel = false;
+      });
+    }
+  }
+
   String _normalizeLanguageSelection(String raw) {
     if (raw == kSherpaLanguageSystem) {
       return kSherpaLanguageSystem;
@@ -937,5 +1238,12 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
       return raw;
     }
     return kMoonshineModelTiny;
+  }
+
+  String _normalizeParakeetSelection(String raw) {
+    if (_parakeetModels.any((model) => model.code == raw)) {
+      return raw;
+    }
+    return kParakeetModelDefault;
   }
 }

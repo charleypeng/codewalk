@@ -28,14 +28,30 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
     final candidates = <SpeechToTextEngine>[primaryEngine];
     if (primaryEngine == SpeechToTextEngine.native) {
       candidates.add(SpeechToTextEngine.sherpa);
+      if (_isParakeetEngineSupported) {
+        candidates.add(SpeechToTextEngine.parakeet);
+      }
     } else if (primaryEngine == SpeechToTextEngine.sherpa) {
       candidates.add(SpeechToTextEngine.native);
+      if (_isParakeetEngineSupported) {
+        candidates.add(SpeechToTextEngine.parakeet);
+      }
+    } else if (primaryEngine == SpeechToTextEngine.parakeet) {
+      if (_isNativeEngineSupported) {
+        candidates.add(SpeechToTextEngine.native);
+      }
+      if (_isSherpaEngineSupported) {
+        candidates.add(SpeechToTextEngine.sherpa);
+      }
     } else {
       if (_isNativeEngineSupported) {
         candidates.add(SpeechToTextEngine.native);
       }
       if (_isSherpaEngineSupported) {
         candidates.add(SpeechToTextEngine.sherpa);
+      }
+      if (_isParakeetEngineSupported) {
+        candidates.add(SpeechToTextEngine.parakeet);
       }
     }
 
@@ -190,6 +206,8 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
       _finishListeningLoading();
       if (_speechService is MoonshineSpeechInputService) {
         _showMoonshineDownloadDialog();
+      } else if (_speechService is ParakeetSpeechInputService) {
+        _showParakeetDownloadDialog();
       } else {
         _showSherpaDownloadDialog();
       }
@@ -247,6 +265,24 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
     );
     if (downloaded == true && mounted) {
       _moonshineSpeechServiceInstance = null;
+      _activeSpeechService = null;
+      await _startListening();
+    }
+  }
+
+  Future<void> _showParakeetDownloadDialog() async {
+    if (!mounted) return;
+    _finishListeningLoading();
+    _setState(() {
+      _isListening = false;
+    });
+    final downloaded = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const ParakeetModelDownloadDialog(),
+    );
+    if (downloaded == true && mounted) {
+      _parakeetSpeechServiceInstance = null;
       _activeSpeechService = null;
       await _startListening();
     }

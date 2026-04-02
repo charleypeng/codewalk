@@ -599,11 +599,10 @@ void main() {
 }
 
 class _MockResponse {
-  _MockResponse(this.statusCode, this.data, {this.isError = false});
+  _MockResponse(this.statusCode, this.data);
 
   final int statusCode;
   final dynamic data;
-  final bool isError;
 }
 
 class _MockDioAdapter implements HttpClientAdapter {
@@ -631,7 +630,7 @@ class _MockDioAdapter implements HttpClientAdapter {
     final mock = _responses[callCount];
     callCount += 1;
 
-    if (mock.isError) {
+    if (mock.statusCode >= 400) {
       throw DioException(
         requestOptions: options,
         type: DioExceptionType.badResponse,

@@ -21,10 +21,12 @@ import '../providers/settings_provider.dart';
 import '../services/speech_input_service.dart';
 import '../theme/app_shapes.dart';
 import '../services/speech_input_service_moonshine.dart';
+import '../services/speech_input_service_parakeet.dart';
 import '../services/speech_input_service_sherpa.dart';
 import '../services/speech_input_service_stt.dart';
 import 'chat_tour_showcase.dart';
 import 'moonshine_model_download_dialog.dart';
+import 'parakeet_model_download_dialog.dart';
 import 'sherpa_model_download_dialog.dart';
 
 part 'chat_input_widget_types_part.dart';
@@ -322,6 +324,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   SttSpeechInputService? _nativeSpeechServiceInstance;
   SherpaSpeechInputService? _sherpaSpeechServiceInstance;
   MoonshineSpeechInputService? _moonshineSpeechServiceInstance;
+  ParakeetSpeechInputService? _parakeetSpeechServiceInstance;
   bool _isComposing = false;
   bool _isSending = false;
   bool _isListening = false;
@@ -391,6 +394,15 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
         defaultTargetPlatform == TargetPlatform.windows;
   }
 
+  bool get _isParakeetEngineSupported {
+    if (kIsWeb) {
+      return false;
+    }
+    return defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.windows;
+  }
+
   bool get _isSoftwareKeyboardVisible {
     final mediaQueryInsetBottom = MediaQuery.maybeOf(
       context,
@@ -418,6 +430,14 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     }
     return _moonshineSpeechServiceInstance ??= di
         .sl<MoonshineSpeechInputService>();
+  }
+
+  SpeechInputService? get _parakeetSpeechService {
+    if (!_isParakeetEngineSupported) {
+      return null;
+    }
+    return _parakeetSpeechServiceInstance ??= di
+        .sl<ParakeetSpeechInputService>();
   }
 
   SpeechInputService get _speechService =>
@@ -1511,6 +1531,8 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
         _isSherpaEngineSupported ? _sherpaSpeechService : null,
       SpeechToTextEngine.moonshine =>
         _isMoonshineEngineSupported ? _moonshineSpeechService : null,
+      SpeechToTextEngine.parakeet =>
+        _isParakeetEngineSupported ? _parakeetSpeechService : null,
     };
   }
 
@@ -1519,6 +1541,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
       SpeechToTextEngine.native => 'Native',
       SpeechToTextEngine.sherpa => 'Sherpa',
       SpeechToTextEngine.moonshine => 'Moonshine',
+      SpeechToTextEngine.parakeet => 'Parakeet',
     };
   }
 

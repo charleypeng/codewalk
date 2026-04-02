@@ -54,10 +54,10 @@ import 'package:codewalk/presentation/utils/session_title_formatter.dart';
 import 'package:codewalk/presentation/widgets/chat_skeleton_shimmer.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart' hide Provider;
 import 'package:showcaseview/showcaseview.dart';
@@ -139,7 +139,6 @@ class _SlashCommandFallbackDioClient extends DioClient {
   final List<Map<String, dynamic>> _projectCommandFiles;
 }
 
-@Tags(<String>['slow'])
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -479,7 +478,7 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await di.sl.reset();
       di.sl.registerLazySingleton<DioClient>(DioClient.new);
-      addTearDown(() => di.sl.reset());
+      addTearDown(di.sl.reset);
 
       final repository = FakeChatRepository(
         sessions: <ChatSession>[
@@ -588,7 +587,7 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await di.sl.reset();
       di.sl.registerLazySingleton<DioClient>(DioClient.new);
-      addTearDown(() => di.sl.reset());
+      addTearDown(di.sl.reset);
 
       final localDataSource = InMemoryAppLocalDataSource()
         ..activeServerId = 'srv_test'
@@ -651,7 +650,7 @@ void main() {
             ],
           ),
         );
-        addTearDown(() => di.sl.reset());
+        addTearDown(di.sl.reset);
 
         final localDataSource = InMemoryAppLocalDataSource()
           ..activeServerId = 'srv_test'
