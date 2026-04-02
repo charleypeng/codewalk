@@ -134,6 +134,7 @@ flutter:
     - assets/images/tray_icon_windows.ico
     - assets/sherpa_models.json
     - assets/moonshine_models.json
+    - assets/parakeet_models.json
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
