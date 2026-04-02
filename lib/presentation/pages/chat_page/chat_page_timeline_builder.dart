@@ -1433,6 +1433,11 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     final settingsProvider = _settingsProvider;
     final showThinkingBubbles = settingsProvider?.showThinkingBubbles ?? true;
     final showToolCallBubbles = settingsProvider?.showToolCallBubbles ?? true;
+    final assistantWorkCompactionDecision =
+        _resolveAssistantWorkCompactionDecision(
+          messages: messages,
+          isResponding: isSessionActivelyResponding,
+        );
     final permissionPromptSignature = interactionPermissions
         .map((request) => '${request.id}:${request.sessionId}')
         .join('|');
@@ -1446,6 +1451,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           isSessionActivelyResponding: isSessionActivelyResponding,
           showRetryIndicator: showRetryIndicator,
           permissionPromptSignature: permissionPromptSignature,
+          assistantWorkCompactionDecision: assistantWorkCompactionDecision,
           showThinkingBubbles: showThinkingBubbles,
           showToolCallBubbles: showToolCallBubbles,
         )) {
@@ -1511,6 +1517,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
             messages: messages,
             startIndex: 0,
             endExclusive: boundaryIndex,
+            assistantWorkCompactionDecision: assistantWorkCompactionDecision,
           );
         }
         _appendTimelineEntriesForRange(
@@ -1518,6 +1525,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           messages: messages,
           startIndex: boundaryIndex,
           endExclusive: messages.length,
+          assistantWorkCompactionDecision: assistantWorkCompactionDecision,
         );
       }
     }
@@ -1528,6 +1536,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
         messages: messages,
         startIndex: 0,
         endExclusive: messages.length,
+        assistantWorkCompactionDecision: assistantWorkCompactionDecision,
       );
     }
 
@@ -1549,7 +1558,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
         isResponding: isSessionActivelyResponding,
         showRetry: showRetryIndicator,
         permissionPromptSignature: permissionPromptSignature,
-        deferAssistantWorkCollapse: _deferAssistantWorkCollapse,
+        assistantWorkCompactionDecision: assistantWorkCompactionDecision,
         expandedHistoryGroupId: _expandedCollapsedHistoryGroupId,
         expandedAssistantWorkGroupId: _expandedAssistantWorkGroupId,
         wasCompactingContext: _wasCompactingContext,
@@ -1569,6 +1578,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     required bool isSessionActivelyResponding,
     required bool showRetryIndicator,
     required String permissionPromptSignature,
+    required _AssistantWorkCompactionDecision assistantWorkCompactionDecision,
     required bool showThinkingBubbles,
     required bool showToolCallBubbles,
   }) {
@@ -1581,7 +1591,12 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
         entry.isResponding == isSessionActivelyResponding &&
         entry.showRetry == showRetryIndicator &&
         entry.permissionPromptSignature == permissionPromptSignature &&
-        entry.deferAssistantWorkCollapse == _deferAssistantWorkCollapse &&
+        entry.assistantWorkCompactionDecision.shouldDeferLatestCollapse ==
+            assistantWorkCompactionDecision.shouldDeferLatestCollapse &&
+        entry
+                .assistantWorkCompactionDecision
+                .settledLatestAssistantWorkGroupId ==
+            assistantWorkCompactionDecision.settledLatestAssistantWorkGroupId &&
         entry.expandedHistoryGroupId == _expandedCollapsedHistoryGroupId &&
         entry.expandedAssistantWorkGroupId == _expandedAssistantWorkGroupId &&
         entry.wasCompactingContext == _wasCompactingContext &&
@@ -1647,6 +1662,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     required List<ChatMessage> messages,
     required int startIndex,
     required int endExclusive,
+    required _AssistantWorkCompactionDecision assistantWorkCompactionDecision,
   }) {
     if (startIndex >= endExclusive) {
       return;
@@ -1691,7 +1707,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       final finalAssistant = messages[assistantRunEnd - 1] as AssistantMessage;
       final workMessageCount = assistantRunEnd - assistantRunStart - 1;
       final shouldDeferCurrentRunCollapse =
-          _deferAssistantWorkCollapse && assistantRunEnd == endExclusive;
+          assistantRunEnd == endExclusive &&
+          assistantWorkCompactionDecision.shouldDeferLatestCollapse;
       if (assistantRunEnd == endExclusive) {
         _traceFinalUi(
           'timeline-current-assistant-run',

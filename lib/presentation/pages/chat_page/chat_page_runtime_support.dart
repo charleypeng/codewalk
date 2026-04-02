@@ -192,41 +192,65 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     });
   }
 
-  void _restoreSettledAssistantWorkOwnership(
-    ChatProvider chatProvider, {
-    required String reason,
+  _AssistantWorkCompactionDecision _resolveAssistantWorkCompactionDecision({
+    required List<ChatMessage> messages,
+    required bool isResponding,
   }) {
     final settingsProvider = _settingsProvider;
     final showThinkingBubbles = settingsProvider?.showThinkingBubbles ?? true;
     final showToolCallBubbles = settingsProvider?.showToolCallBubbles ?? true;
     final latestRevealableAssistantMessageId =
-        _resolveLatestRevealableAssistantMessageId(chatProvider.messages);
+        _resolveLatestRevealableAssistantMessageId(messages);
     final latestSettledAssistantWorkGroupId =
         _resolveLatestSettledAssistantWorkGroupId(
-          messages: chatProvider.messages,
+          messages: messages,
           showThinkingBubbles: showThinkingBubbles,
           showToolCallBubbles: showToolCallBubbles,
         );
-    final hasSettledLatestWorkGroup =
-        latestSettledAssistantWorkGroupId != null &&
-        latestRevealableAssistantMessageId != null &&
-        latestRevealableAssistantMessageId.isNotEmpty;
+
+    final decision = _AssistantWorkCompactionDecision(
+      shouldDeferLatestCollapse: false,
+      latestRevealableAssistantMessageId: latestRevealableAssistantMessageId,
+      settledLatestAssistantWorkGroupId: latestSettledAssistantWorkGroupId,
+    );
+
+    if (!isResponding || decision.hasSettledLatestWorkGroup) {
+      return decision;
+    }
+
+    return _AssistantWorkCompactionDecision(
+      shouldDeferLatestCollapse: true,
+      latestRevealableAssistantMessageId: latestRevealableAssistantMessageId,
+      settledLatestAssistantWorkGroupId: latestSettledAssistantWorkGroupId,
+    );
+  }
+
+  void _restoreSettledAssistantWorkOwnership(
+    ChatProvider chatProvider, {
+    required String reason,
+  }) {
+    final compactionDecision = _resolveAssistantWorkCompactionDecision(
+      messages: chatProvider.messages,
+      isResponding: chatProvider.isCurrentSessionActivelyResponding,
+    );
 
     // Passive busy pulses can survive session switches. Rebuild settled
     // ownership from the visible turn first so return/revalidation does not
     // re-enter the active collapse path for an already finished group.
-    _settledLatestAssistantWorkGroupId = latestSettledAssistantWorkGroupId;
-    _finalAssistantRevealSettledMessageId = hasSettledLatestWorkGroup
-        ? latestRevealableAssistantMessageId
+    _settledLatestAssistantWorkGroupId =
+        compactionDecision.settledLatestAssistantWorkGroupId;
+    _finalAssistantRevealSettledMessageId =
+        compactionDecision.hasSettledLatestWorkGroup
+        ? compactionDecision.latestRevealableAssistantMessageId
         : null;
     _wasCurrentSessionActivelyResponding =
         chatProvider.isCurrentSessionActivelyResponding &&
-        !hasSettledLatestWorkGroup;
+        !compactionDecision.hasSettledLatestWorkGroup;
 
     _traceFinalUi(
       'restore-settled-assistant-work-ownership',
       details:
-          'reason=$reason latestRevealableAssistantMessageId=${latestRevealableAssistantMessageId ?? "-"} latestSettledAssistantWorkGroupId=${latestSettledAssistantWorkGroupId ?? "-"} responding=${chatProvider.isCurrentSessionActivelyResponding}',
+          'reason=$reason latestRevealableAssistantMessageId=${compactionDecision.latestRevealableAssistantMessageId ?? "-"} latestSettledAssistantWorkGroupId=${compactionDecision.settledLatestAssistantWorkGroupId ?? "-"} responding=${chatProvider.isCurrentSessionActivelyResponding}',
     );
   }
 
@@ -336,27 +360,21 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     }
 
     final isResponding = chatProvider.isCurrentSessionActivelyResponding;
-    final settingsProvider = _settingsProvider;
-    final showThinkingBubbles = settingsProvider?.showThinkingBubbles ?? true;
-    final showToolCallBubbles = settingsProvider?.showToolCallBubbles ?? true;
+    final compactionDecision = _resolveAssistantWorkCompactionDecision(
+      messages: chatProvider.messages,
+      isResponding: isResponding,
+    );
     final latestRevealableAssistantMessageId =
-        _resolveLatestRevealableAssistantMessageId(chatProvider.messages);
+        compactionDecision.latestRevealableAssistantMessageId;
     final latestSettledAssistantWorkGroupId =
-        _resolveLatestSettledAssistantWorkGroupId(
-          messages: chatProvider.messages,
-          showThinkingBubbles: showThinkingBubbles,
-          showToolCallBubbles: showToolCallBubbles,
-        );
+        compactionDecision.settledLatestAssistantWorkGroupId;
     final latestTimelineMessageId = chatProvider.messages.isEmpty
         ? null
         : chatProvider.messages.last.id;
 
     if (isResponding &&
         _pendingFinalAssistantRevealMessageId == null &&
-        !_deferAssistantWorkCollapse &&
-        latestSettledAssistantWorkGroupId != null &&
-        latestRevealableAssistantMessageId != null &&
-        latestRevealableAssistantMessageId.isNotEmpty &&
+        !compactionDecision.shouldDeferLatestCollapse &&
         (_settledLatestAssistantWorkGroupId == null ||
             _finalAssistantRevealSettledMessageId == null)) {
       _settledLatestAssistantWorkGroupId = latestSettledAssistantWorkGroupId;
@@ -376,7 +394,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
           _finalAssistantRevealSettledMessageId != null &&
           _finalAssistantRevealSettledMessageId!.isNotEmpty;
       final hasSettledLatestWorkGroup =
-          latestSettledAssistantWorkGroupId != null &&
+          compactionDecision.hasSettledLatestWorkGroup &&
           latestSettledAssistantWorkGroupId ==
               _settledLatestAssistantWorkGroupId;
       final shouldIgnoreTransientRespondingPulse =
@@ -399,7 +417,8 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
             'latestTimelineMessageId=${latestTimelineMessageId ?? "-"} latestRevealableAssistantMessageId=${latestRevealableAssistantMessageId ?? "-"}',
       );
       _wasCurrentSessionActivelyResponding = true;
-      _deferAssistantWorkCollapse = true;
+      _deferAssistantWorkCollapse =
+          compactionDecision.shouldDeferLatestCollapse;
       _suppressPostCompletionAutoSnap = false;
       _shouldRevealFinalAssistantOnCompletion = _autoFollowToLatest;
       _pendingFinalAssistantRevealMessageId = null;
@@ -447,7 +466,8 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       return;
     }
 
-    _settledLatestAssistantWorkGroupId = latestSettledAssistantWorkGroupId;
+    _settledLatestAssistantWorkGroupId =
+        compactionDecision.settledLatestAssistantWorkGroupId;
 
     if (_shouldRevealFinalAssistantOnCompletion &&
         _suppressPostCompletionAutoSnap &&

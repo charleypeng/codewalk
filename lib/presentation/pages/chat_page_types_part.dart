@@ -81,7 +81,7 @@ class _SessionTimelineEntriesCacheEntry {
     required this.isResponding,
     required this.showRetry,
     required this.permissionPromptSignature,
-    required this.deferAssistantWorkCollapse,
+    required this.assistantWorkCompactionDecision,
     required this.expandedHistoryGroupId,
     required this.expandedAssistantWorkGroupId,
     required this.wasCompactingContext,
@@ -97,13 +97,30 @@ class _SessionTimelineEntriesCacheEntry {
   final bool isResponding;
   final bool showRetry;
   final String permissionPromptSignature;
-  final bool deferAssistantWorkCollapse;
+  final _AssistantWorkCompactionDecision assistantWorkCompactionDecision;
   final String? expandedHistoryGroupId;
   final String? expandedAssistantWorkGroupId;
   final bool wasCompactingContext;
   final String? frozenCompactionBoundaryId;
   final bool showThinkingBubbles;
   final bool showToolCallBubbles;
+}
+
+class _AssistantWorkCompactionDecision {
+  const _AssistantWorkCompactionDecision({
+    required this.shouldDeferLatestCollapse,
+    required this.latestRevealableAssistantMessageId,
+    required this.settledLatestAssistantWorkGroupId,
+  });
+
+  final bool shouldDeferLatestCollapse;
+  final String? latestRevealableAssistantMessageId;
+  final String? settledLatestAssistantWorkGroupId;
+
+  bool get hasSettledLatestWorkGroup =>
+      settledLatestAssistantWorkGroupId != null &&
+      latestRevealableAssistantMessageId != null &&
+      latestRevealableAssistantMessageId!.isNotEmpty;
 }
 
 enum _HamburgerBadgeReasonKind {
