@@ -177,6 +177,7 @@ class SettingsProvider extends ChangeNotifier {
   String get sherpaLanguageCode => _settings.sherpaLanguageCode;
   String get moonshineModelId => _settings.moonshineModelId;
   String get parakeetModelId => _settings.parakeetModelId;
+  String get senseVoiceModelId => _settings.senseVoiceModelId;
   bool get skipOnboardingWizard => _settings.skipOnboardingWizard;
   bool get pendingPostOnboardingChatTour =>
       _settings.pendingPostOnboardingChatTour;
@@ -226,29 +227,31 @@ class SettingsProvider extends ChangeNotifier {
     }
 
     // Platform STT policy migration:
-    // - Linux: Native is disabled, force Sherpa.
-    // - Android: Sherpa/Moonshine/Parakeet are disabled in slim APK builds, force Native.
-    // - iOS/Web: Moonshine/Parakeet stay unavailable until a dedicated client path exists.
+    // - Linux: Native is disabled, force Parakeet for new installs / invalid native selections.
+    // - Android: Sherpa/Moonshine/Parakeet/SenseVoice are disabled in slim APK builds, force Native.
+    // - iOS/Web: Moonshine/Parakeet/SenseVoice stay unavailable until a dedicated client path exists.
     final isLinux = !kIsWeb && defaultTargetPlatform == TargetPlatform.linux;
     final isAndroid =
         !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
     final isIos = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
     if (isLinux && _settings.speechToTextEngine == SpeechToTextEngine.native) {
       _settings = _settings.copyWith(
-        speechToTextEngine: SpeechToTextEngine.sherpa,
+        speechToTextEngine: SpeechToTextEngine.parakeet,
       );
       unawaited(_persist());
     } else if (isAndroid &&
         (_settings.speechToTextEngine == SpeechToTextEngine.sherpa ||
             _settings.speechToTextEngine == SpeechToTextEngine.moonshine ||
-            _settings.speechToTextEngine == SpeechToTextEngine.parakeet)) {
+            _settings.speechToTextEngine == SpeechToTextEngine.parakeet ||
+            _settings.speechToTextEngine == SpeechToTextEngine.sensevoice)) {
       _settings = _settings.copyWith(
         speechToTextEngine: SpeechToTextEngine.native,
       );
       unawaited(_persist());
     } else if ((kIsWeb || isIos) &&
         (_settings.speechToTextEngine == SpeechToTextEngine.moonshine ||
-            _settings.speechToTextEngine == SpeechToTextEngine.parakeet)) {
+            _settings.speechToTextEngine == SpeechToTextEngine.parakeet ||
+            _settings.speechToTextEngine == SpeechToTextEngine.sensevoice)) {
       _settings = _settings.copyWith(
         speechToTextEngine: SpeechToTextEngine.native,
       );
@@ -966,6 +969,19 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(parakeetModelId: normalized);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setSenseVoiceModelId(String modelId) async {
+    final normalized = modelId.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return;
+    }
+    if (_settings.senseVoiceModelId == normalized) {
+      return;
+    }
+    _settings = _settings.copyWith(senseVoiceModelId: normalized);
     notifyListeners();
     await _persist();
   }

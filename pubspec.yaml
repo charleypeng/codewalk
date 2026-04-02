@@ -135,6 +135,7 @@ flutter:
     - assets/sherpa_models.json
     - assets/moonshine_models.json
     - assets/parakeet_models.json
+    - assets/sensevoice_models.json
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

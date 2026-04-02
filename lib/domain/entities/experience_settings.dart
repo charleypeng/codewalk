@@ -68,7 +68,7 @@ enum OpenCodeThemePreset {
   oneDark,
 }
 
-enum SpeechToTextEngine { native, sherpa, moonshine, parakeet }
+enum SpeechToTextEngine { native, sherpa, moonshine, parakeet, sensevoice }
 
 enum DesktopCloseBehavior { tray, minimize, close }
 
@@ -76,6 +76,7 @@ const String kSherpaLanguageSystem = 'system';
 const String kMoonshineModelTiny = 'tiny';
 const String kMoonshineModelBase = 'base';
 const String kParakeetModelDefault = 'parakeet-v3';
+const String kSenseVoiceModelDefault = 'sensevoice-2024-07-17';
 
 class ShortcutDefinition {
   const ShortcutDefinition({
@@ -494,6 +495,7 @@ String speechToTextEngineKey(SpeechToTextEngine engine) {
     SpeechToTextEngine.sherpa => 'sherpa',
     SpeechToTextEngine.moonshine => 'moonshine',
     SpeechToTextEngine.parakeet => 'parakeet',
+    SpeechToTextEngine.sensevoice => 'sensevoice',
   };
 }
 
@@ -502,6 +504,7 @@ SpeechToTextEngine speechToTextEngineFromKey(String value) {
     'sherpa' => SpeechToTextEngine.sherpa,
     'moonshine' => SpeechToTextEngine.moonshine,
     'parakeet' => SpeechToTextEngine.parakeet,
+    'sensevoice' => SpeechToTextEngine.sensevoice,
     _ => SpeechToTextEngine.native,
   };
 }
@@ -520,7 +523,7 @@ class ExperienceSettings {
   factory ExperienceSettings.defaults() {
     final defaultSpeechEngine =
         !kIsWeb && defaultTargetPlatform == TargetPlatform.linux
-        ? SpeechToTextEngine.sherpa
+        ? SpeechToTextEngine.parakeet
         : SpeechToTextEngine.native;
     final shortcuts = <ShortcutAction, String>{
       for (final definition in kShortcutDefinitions)
@@ -590,6 +593,7 @@ class ExperienceSettings {
       sherpaLanguageCode: kSherpaLanguageSystem,
       moonshineModelId: kMoonshineModelTiny,
       parakeetModelId: kParakeetModelDefault,
+      senseVoiceModelId: kSenseVoiceModelDefault,
       pendingPostOnboardingChatTour: false,
       checkUpdatesOnOpen: true,
     );
@@ -630,6 +634,7 @@ class ExperienceSettings {
     this.sherpaLanguageCode = kSherpaLanguageSystem,
     this.moonshineModelId = kMoonshineModelTiny,
     this.parakeetModelId = kParakeetModelDefault,
+    this.senseVoiceModelId = kSenseVoiceModelDefault,
     this.skipOnboardingWizard = false,
     this.pendingPostOnboardingChatTour = false,
     this.checkUpdatesOnOpen = true,
@@ -670,6 +675,7 @@ class ExperienceSettings {
   final String sherpaLanguageCode;
   final String moonshineModelId;
   final String parakeetModelId;
+  final String senseVoiceModelId;
   final bool skipOnboardingWizard;
   final bool pendingPostOnboardingChatTour;
   final bool checkUpdatesOnOpen;
@@ -710,6 +716,7 @@ class ExperienceSettings {
     String? sherpaLanguageCode,
     String? moonshineModelId,
     String? parakeetModelId,
+    String? senseVoiceModelId,
     bool? skipOnboardingWizard,
     bool? pendingPostOnboardingChatTour,
     bool? checkUpdatesOnOpen,
@@ -763,6 +770,7 @@ class ExperienceSettings {
       sherpaLanguageCode: sherpaLanguageCode ?? this.sherpaLanguageCode,
       moonshineModelId: moonshineModelId ?? this.moonshineModelId,
       parakeetModelId: parakeetModelId ?? this.parakeetModelId,
+      senseVoiceModelId: senseVoiceModelId ?? this.senseVoiceModelId,
       skipOnboardingWizard: skipOnboardingWizard ?? this.skipOnboardingWizard,
       pendingPostOnboardingChatTour:
           pendingPostOnboardingChatTour ?? this.pendingPostOnboardingChatTour,
@@ -844,6 +852,7 @@ class ExperienceSettings {
       'sherpaLanguageCode': sherpaLanguageCode,
       'moonshineModelId': moonshineModelId,
       'parakeetModelId': parakeetModelId,
+      'senseVoiceModelId': senseVoiceModelId,
       'skipOnboardingWizard': skipOnboardingWizard,
       'pendingPostOnboardingChatTour': pendingPostOnboardingChatTour,
       'checkUpdatesOnOpen': checkUpdatesOnOpen,
@@ -896,6 +905,7 @@ class ExperienceSettings {
     var sherpaLanguageCode = defaults.sherpaLanguageCode;
     var moonshineModelId = defaults.moonshineModelId;
     var parakeetModelId = defaults.parakeetModelId;
+    var senseVoiceModelId = defaults.senseVoiceModelId;
 
     final notificationsJson = json['notifications'];
     if (notificationsJson is Map) {
@@ -1158,6 +1168,12 @@ class ExperienceSettings {
       parakeetModelId = parakeetModelIdJson.trim().toLowerCase();
     }
 
+    final senseVoiceModelIdJson = json['senseVoiceModelId'];
+    if (senseVoiceModelIdJson is String &&
+        senseVoiceModelIdJson.trim().isNotEmpty) {
+      senseVoiceModelId = senseVoiceModelIdJson.trim().toLowerCase();
+    }
+
     var skipOnboardingWizard = defaults.skipOnboardingWizard;
     final skipOnboardingWizardJson = json['skipOnboardingWizard'];
     if (skipOnboardingWizardJson is bool) {
@@ -1213,6 +1229,7 @@ class ExperienceSettings {
       sherpaLanguageCode: sherpaLanguageCode,
       moonshineModelId: moonshineModelId,
       parakeetModelId: parakeetModelId,
+      senseVoiceModelId: senseVoiceModelId,
       skipOnboardingWizard: skipOnboardingWizard,
       pendingPostOnboardingChatTour: pendingPostOnboardingChatTour,
       checkUpdatesOnOpen: checkUpdatesOnOpen,
