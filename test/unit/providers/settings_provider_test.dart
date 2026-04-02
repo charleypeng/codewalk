@@ -204,6 +204,54 @@ void main() {
       }
     });
 
+    test(
+      'defaults new Linux installs to Parakeet when native is unavailable',
+      () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+        try {
+          final local = InMemoryAppLocalDataSource();
+          final provider = SettingsProvider(
+            localDataSource: local,
+            dioClient: DioClient(),
+            soundService: _FakeSoundService(),
+          );
+
+          await provider.initialize();
+
+          expect(provider.speechToTextEngine, SpeechToTextEngine.parakeet);
+        } finally {
+          debugDefaultTargetPlatformOverride = null;
+        }
+      },
+    );
+
+    test('persists SenseVoice engine and selected model', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      final local = InMemoryAppLocalDataSource();
+      try {
+        final first = SettingsProvider(
+          localDataSource: local,
+          dioClient: DioClient(),
+          soundService: _FakeSoundService(),
+        );
+        await first.initialize();
+        await first.setSpeechToTextEngine(SpeechToTextEngine.sensevoice);
+        await first.setSenseVoiceModelId(kSenseVoiceModelDefault);
+
+        final second = SettingsProvider(
+          localDataSource: local,
+          dioClient: DioClient(),
+          soundService: _FakeSoundService(),
+        );
+        await second.initialize();
+
+        expect(second.speechToTextEngine, SpeechToTextEngine.sensevoice);
+        expect(second.senseVoiceModelId, kSenseVoiceModelDefault);
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
+    });
+
     test('allows toggling sound independently from notification', () async {
       final local = InMemoryAppLocalDataSource();
       final provider = SettingsProvider(

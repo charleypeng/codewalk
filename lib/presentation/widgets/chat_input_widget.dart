@@ -22,11 +22,13 @@ import '../services/speech_input_service.dart';
 import '../theme/app_shapes.dart';
 import '../services/speech_input_service_moonshine.dart';
 import '../services/speech_input_service_parakeet.dart';
+import '../services/speech_input_service_sensevoice.dart';
 import '../services/speech_input_service_sherpa.dart';
 import '../services/speech_input_service_stt.dart';
 import 'chat_tour_showcase.dart';
 import 'moonshine_model_download_dialog.dart';
 import 'parakeet_model_download_dialog.dart';
+import 'sensevoice_model_download_dialog.dart';
 import 'sherpa_model_download_dialog.dart';
 
 part 'chat_input_widget_types_part.dart';
@@ -325,6 +327,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
   SherpaSpeechInputService? _sherpaSpeechServiceInstance;
   MoonshineSpeechInputService? _moonshineSpeechServiceInstance;
   ParakeetSpeechInputService? _parakeetSpeechServiceInstance;
+  SenseVoiceSpeechInputService? _senseVoiceSpeechServiceInstance;
   bool _isComposing = false;
   bool _isSending = false;
   bool _isListening = false;
@@ -403,6 +406,15 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
         defaultTargetPlatform == TargetPlatform.windows;
   }
 
+  bool get _isSenseVoiceEngineSupported {
+    if (kIsWeb) {
+      return false;
+    }
+    return defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.windows;
+  }
+
   bool get _isSoftwareKeyboardVisible {
     final mediaQueryInsetBottom = MediaQuery.maybeOf(
       context,
@@ -438,6 +450,14 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     }
     return _parakeetSpeechServiceInstance ??= di
         .sl<ParakeetSpeechInputService>();
+  }
+
+  SpeechInputService? get _senseVoiceSpeechService {
+    if (!_isSenseVoiceEngineSupported) {
+      return null;
+    }
+    return _senseVoiceSpeechServiceInstance ??= di
+        .sl<SenseVoiceSpeechInputService>();
   }
 
   SpeechInputService get _speechService =>
@@ -1533,6 +1553,8 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
         _isMoonshineEngineSupported ? _moonshineSpeechService : null,
       SpeechToTextEngine.parakeet =>
         _isParakeetEngineSupported ? _parakeetSpeechService : null,
+      SpeechToTextEngine.sensevoice =>
+        _isSenseVoiceEngineSupported ? _senseVoiceSpeechService : null,
     };
   }
 
@@ -1542,6 +1564,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
       SpeechToTextEngine.sherpa => 'Sherpa',
       SpeechToTextEngine.moonshine => 'Moonshine',
       SpeechToTextEngine.parakeet => 'Parakeet',
+      SpeechToTextEngine.sensevoice => 'SenseVoice',
     };
   }
 

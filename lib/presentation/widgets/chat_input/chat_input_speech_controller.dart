@@ -31,10 +31,16 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
       if (_isParakeetEngineSupported) {
         candidates.add(SpeechToTextEngine.parakeet);
       }
+      if (_isSenseVoiceEngineSupported) {
+        candidates.add(SpeechToTextEngine.sensevoice);
+      }
     } else if (primaryEngine == SpeechToTextEngine.sherpa) {
       candidates.add(SpeechToTextEngine.native);
       if (_isParakeetEngineSupported) {
         candidates.add(SpeechToTextEngine.parakeet);
+      }
+      if (_isSenseVoiceEngineSupported) {
+        candidates.add(SpeechToTextEngine.sensevoice);
       }
     } else if (primaryEngine == SpeechToTextEngine.parakeet) {
       if (_isNativeEngineSupported) {
@@ -42,6 +48,19 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
       }
       if (_isSherpaEngineSupported) {
         candidates.add(SpeechToTextEngine.sherpa);
+      }
+      if (_isSenseVoiceEngineSupported) {
+        candidates.add(SpeechToTextEngine.sensevoice);
+      }
+    } else if (primaryEngine == SpeechToTextEngine.sensevoice) {
+      if (_isNativeEngineSupported) {
+        candidates.add(SpeechToTextEngine.native);
+      }
+      if (_isSherpaEngineSupported) {
+        candidates.add(SpeechToTextEngine.sherpa);
+      }
+      if (_isParakeetEngineSupported) {
+        candidates.add(SpeechToTextEngine.parakeet);
       }
     } else {
       if (_isNativeEngineSupported) {
@@ -52,6 +71,9 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
       }
       if (_isParakeetEngineSupported) {
         candidates.add(SpeechToTextEngine.parakeet);
+      }
+      if (_isSenseVoiceEngineSupported) {
+        candidates.add(SpeechToTextEngine.sensevoice);
       }
     }
 
@@ -208,6 +230,8 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
         _showMoonshineDownloadDialog();
       } else if (_speechService is ParakeetSpeechInputService) {
         _showParakeetDownloadDialog();
+      } else if (_speechService is SenseVoiceSpeechInputService) {
+        _showSenseVoiceDownloadDialog();
       } else {
         _showSherpaDownloadDialog();
       }
@@ -283,6 +307,24 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
     );
     if (downloaded == true && mounted) {
       _parakeetSpeechServiceInstance = null;
+      _activeSpeechService = null;
+      await _startListening();
+    }
+  }
+
+  Future<void> _showSenseVoiceDownloadDialog() async {
+    if (!mounted) return;
+    _finishListeningLoading();
+    _setState(() {
+      _isListening = false;
+    });
+    final downloaded = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const SenseVoiceModelDownloadDialog(),
+    );
+    if (downloaded == true && mounted) {
+      _senseVoiceSpeechServiceInstance = null;
       _activeSpeechService = null;
       await _startListening();
     }

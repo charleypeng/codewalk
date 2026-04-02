@@ -13,6 +13,7 @@ import '../../../../domain/entities/experience_settings.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../services/moonshine_model_manager.dart';
 import '../../../services/parakeet_model_manager.dart';
+import '../../../services/sensevoice_model_manager.dart';
 import '../../../services/sherpa_model_manager.dart';
 import '../../../widgets/searchable_dropdown_form_field.dart';
 
@@ -41,6 +42,8 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
       .sl<MoonshineModelManager>();
   final ParakeetModelManager _parakeetModelManager = di
       .sl<ParakeetModelManager>();
+  final SenseVoiceModelManager _senseVoiceModelManager = di
+      .sl<SenseVoiceModelManager>();
 
   List<_SherpaModelEntry> _models = const <_SherpaModelEntry>[];
   Map<String, bool> _installedByCode = const <String, bool>{};
@@ -60,6 +63,12 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
   bool _isMutatingParakeetModel = false;
   double _parakeetDownloadProgress = 0;
   String? _parakeetModelError;
+  List<_SherpaModelEntry> _senseVoiceModels = const <_SherpaModelEntry>[];
+  Map<String, bool> _senseVoiceInstalledById = const <String, bool>{};
+  bool _loadingSenseVoiceModels = false;
+  bool _isMutatingSenseVoiceModel = false;
+  double _senseVoiceDownloadProgress = 0;
+  String? _senseVoiceModelError;
   double? _silenceDraftSeconds;
 
   bool get _isLinux {
@@ -107,6 +116,15 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
         defaultTargetPlatform == TargetPlatform.windows;
   }
 
+  bool get _supportsSenseVoice {
+    if (kIsWeb) {
+      return false;
+    }
+    return defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.windows;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -118,6 +136,9 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     }
     if (_supportsParakeet) {
       unawaited(_loadParakeetModelCatalog());
+    }
+    if (_supportsSenseVoice) {
+      unawaited(_loadSenseVoiceModelCatalog());
     }
   }
 
@@ -166,6 +187,11 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
               const SizedBox(height: 12),
               _buildParakeetModelCard(settingsProvider),
             ],
+            if (_supportsSenseVoice &&
+                selectedEngine == SpeechToTextEngine.sensevoice) ...[
+              const SizedBox(height: 12),
+              _buildSenseVoiceModelCard(settingsProvider),
+            ],
           ],
         );
       },
@@ -177,6 +203,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     final sherpaEnabled = _supportsSherpa;
     final moonshineEnabled = _supportsMoonshine;
     final parakeetEnabled = _supportsParakeet;
+    final senseVoiceEnabled = _supportsSenseVoice;
     final nativeEnabled = !_isLinux;
     final sherpaUnavailableHint =
         defaultTargetPlatform == TargetPlatform.android
@@ -186,6 +213,8 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
         'Available on desktop only. Android stays native-only.';
     const parakeetUnavailableHint =
         'Available on desktop only. Uses offline multilingual recognition.';
+    const senseVoiceUnavailableHint =
+        'Available on desktop only. Strongest for Chinese, Cantonese, Japanese, Korean, and English.';
 
     return Card(
       child: Padding(
@@ -231,7 +260,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Native STT is disabled on Linux in this app. Sherpa is the default engine.',
+                        'Native STT is disabled on Linux in this app. Parakeet is the default engine for new installs.',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
@@ -331,6 +360,24 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                 parakeetEnabled
                     ? 'Desktop-only offline NeMo transducer path with one multilingual downloadable model.'
                     : parakeetUnavailableHint,
+              ),
+            ),
+            const Divider(height: 1),
+            RadioListTile<SpeechToTextEngine>(
+              contentPadding: EdgeInsets.zero,
+              value: SpeechToTextEngine.sensevoice,
+              groupValue: selectedEngine,
+              onChanged: senseVoiceEnabled
+                  ? (value) {
+                      if (value == null) return;
+                      unawaited(settingsProvider.setSpeechToTextEngine(value));
+                    }
+                  : null,
+              title: const Text('SenseVoice'),
+              subtitle: Text(
+                senseVoiceEnabled
+                    ? 'Desktop-only offline path tuned for Chinese, Cantonese, Japanese, Korean, and English.'
+                    : senseVoiceUnavailableHint,
               ),
             ),
           ],
@@ -673,6 +720,137 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     );
   }
 
+  Widget _buildSenseVoiceModelCard(SettingsProvider settingsProvider) {
+    final selectedId = _normalizeSenseVoiceSelection(
+      settingsProvider.senseVoiceModelId,
+    );
+    final installed = _senseVoiceInstalledById[selectedId] ?? false;
+    _SherpaModelEntry? selectedModel;
+    for (final model in _senseVoiceModels) {
+      if (model.code == selectedId) {
+        selectedModel = model;
+        break;
+      }
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.defaultPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'SenseVoice models (desktop)',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'SenseVoice stays downloadable and out of the app bundle. It is the strongest desktop option here for Chinese, Cantonese, Japanese, Korean, and English.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            if (_loadingSenseVoiceModels)
+              const Center(child: CircularProgressIndicator())
+            else ...[
+              DropdownButtonFormField<String>(
+                value: selectedId,
+                decoration: const InputDecoration(
+                  labelText: 'SenseVoice model',
+                  border: OutlineInputBorder(),
+                ),
+                items: _senseVoiceModels
+                    .map(
+                      (model) => DropdownMenuItem<String>(
+                        value: model.code,
+                        child: Text(model.label),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: _isMutatingSenseVoiceModel
+                    ? null
+                    : (value) {
+                        if (value == null) {
+                          return;
+                        }
+                        _senseVoiceModelManager.setPreferredModelId(value);
+                        unawaited(settingsProvider.setSenseVoiceModelId(value));
+                        setState(() {
+                          _senseVoiceModelError = null;
+                        });
+                      },
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Chip(
+                    avatar: Icon(
+                      installed ? Symbols.check_circle_outline : Symbols.info,
+                      size: 18,
+                    ),
+                    label: Text(
+                      installed
+                          ? 'Model installed (${selectedId.toUpperCase()})'
+                          : 'Model missing (${selectedId.toUpperCase()})',
+                    ),
+                  ),
+                  const Spacer(),
+                  if (selectedModel != null)
+                    Text(
+                      '~${selectedModel.sizeMb} MB',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  FilledButton.icon(
+                    onPressed: _isMutatingSenseVoiceModel || installed
+                        ? null
+                        : () => unawaited(_downloadSenseVoiceModel(selectedId)),
+                    icon: const Icon(Symbols.download_rounded),
+                    label: const Text('Download'),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: _isMutatingSenseVoiceModel || !installed
+                        ? null
+                        : () => unawaited(_deleteSenseVoiceModel(selectedId)),
+                    icon: const Icon(Symbols.delete_outline),
+                    label: const Text('Remove'),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    tooltip: 'Refresh status',
+                    onPressed: _isMutatingSenseVoiceModel
+                        ? null
+                        : () => unawaited(_refreshSenseVoiceModelStatuses()),
+                    icon: const Icon(Symbols.refresh_rounded),
+                  ),
+                ],
+              ),
+              if (_isMutatingSenseVoiceModel) ...[
+                const SizedBox(height: 10),
+                LinearProgressIndicator(
+                  value: _senseVoiceDownloadProgress > 0
+                      ? _senseVoiceDownloadProgress
+                      : null,
+                ),
+              ],
+              if (_senseVoiceModelError != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _senseVoiceModelError!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildLinuxModelCard(SettingsProvider settingsProvider) {
     final selectedCode = _normalizeLanguageSelection(
       settingsProvider.sherpaLanguageCode,
@@ -939,6 +1117,38 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     }
   }
 
+  Future<void> _loadSenseVoiceModelCatalog() async {
+    setState(() {
+      _loadingSenseVoiceModels = true;
+      _senseVoiceModelError = null;
+    });
+    try {
+      final raw = await rootBundle.loadString('assets/sensevoice_models.json');
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      final entries = (json['models'] as List)
+          .map((entry) {
+            final map = entry as Map<String, dynamic>;
+            return _SherpaModelEntry(
+              code: map['id'] as String,
+              label: map['label'] as String,
+              sizeMb: (map['size_mb'] as num).toInt(),
+            );
+          })
+          .toList(growable: false);
+      _senseVoiceModels = entries;
+      await _refreshSenseVoiceModelStatuses();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _senseVoiceModelError =
+            'Failed to load SenseVoice model catalog: $error';
+        _loadingSenseVoiceModels = false;
+      });
+    }
+  }
+
   Future<void> _refreshModelStatuses() async {
     if (_models.isEmpty) {
       if (!mounted) {
@@ -1051,6 +1261,30 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     setState(() {
       _parakeetInstalledById = statuses;
       _loadingParakeetModels = false;
+    });
+  }
+
+  Future<void> _refreshSenseVoiceModelStatuses() async {
+    if (_senseVoiceModels.isEmpty) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _senseVoiceInstalledById = const <String, bool>{};
+        _loadingSenseVoiceModels = false;
+      });
+      return;
+    }
+    final statuses = <String, bool>{};
+    for (final model in _senseVoiceModels) {
+      statuses[model.code] = await _senseVoiceModelManager.hasModel(model.code);
+    }
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _senseVoiceInstalledById = statuses;
+      _loadingSenseVoiceModels = false;
     });
   }
 
@@ -1215,6 +1449,74 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
     }
   }
 
+  Future<void> _downloadSenseVoiceModel(String modelId) async {
+    setState(() {
+      _isMutatingSenseVoiceModel = true;
+      _senseVoiceDownloadProgress = 0;
+      _senseVoiceModelError = null;
+    });
+    try {
+      await _senseVoiceModelManager.downloadModel(
+        modelId,
+        onProgress: (progress) {
+          if (!mounted) {
+            return;
+          }
+          setState(() {
+            _senseVoiceDownloadProgress = progress;
+          });
+        },
+      );
+      _senseVoiceModelManager.setPreferredModelId(modelId);
+      if (!mounted) {
+        return;
+      }
+      final settingsProvider = context.read<SettingsProvider>();
+      await settingsProvider.setSenseVoiceModelId(modelId);
+      await _refreshSenseVoiceModelStatuses();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _senseVoiceModelError = 'Download failed: $error';
+      });
+    } finally {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isMutatingSenseVoiceModel = false;
+        _senseVoiceDownloadProgress = 0;
+      });
+    }
+  }
+
+  Future<void> _deleteSenseVoiceModel(String modelId) async {
+    setState(() {
+      _isMutatingSenseVoiceModel = true;
+      _senseVoiceModelError = null;
+    });
+    try {
+      await _senseVoiceModelManager.deleteModel(modelId);
+      await _refreshSenseVoiceModelStatuses();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _senseVoiceModelError = 'Failed to remove model: $error';
+      });
+    } finally {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isMutatingSenseVoiceModel = false;
+      });
+    }
+  }
+
   String _normalizeLanguageSelection(String raw) {
     if (raw == kSherpaLanguageSystem) {
       return kSherpaLanguageSystem;
@@ -1245,5 +1547,12 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
       return raw;
     }
     return kParakeetModelDefault;
+  }
+
+  String _normalizeSenseVoiceSelection(String raw) {
+    if (_senseVoiceModels.any((model) => model.code == raw)) {
+      return raw;
+    }
+    return kSenseVoiceModelDefault;
   }
 }
