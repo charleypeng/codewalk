@@ -233,11 +233,11 @@ Implement a state-driven composer pipeline with multimodal submission contracts,
 
 ### Context
 
-Speech input must remain pluggable while respecting platform constraints: Linux favors downloadable on-device engines, desktop can expose Moonshine or Parakeet V3 (sherpa_onnx offline NeMo transducer) through the existing sherpa_onnx stack, while Android uses native STT in slim builds.
+Speech input must remain pluggable while respecting platform constraints: Linux favors downloadable on-device engines, desktop can expose Moonshine, Parakeet V3 (sherpa_onnx offline NeMo transducer), or SenseVoice (sherpa_onnx offline recognition) through the existing sherpa_onnx stack, while Android uses native STT in slim builds. Linux now defaults to Parakeet for new installs; existing native selections are migrated to Parakeet because native STT is disabled on Linux.
 
 ### Decision
 
-Use `SpeechInputService` as the abstraction contract, register native, Sherpa, desktop Moonshine, and desktop Parakeet (offline NeMo transducer via sherpa_onnx) implementations behind DI, enforce platform policy in settings/runtime selection, and keep Android artifacts slim by excluding sherpa_onnx native libs from Android builds.
+Use `SpeechInputService` as the abstraction contract, register native, Sherpa, desktop Moonshine, desktop Parakeet (offline NeMo transducer via sherpa_onnx), and desktop SenseVoice (sherpa_onnx offline recognition) implementations behind DI, enforce platform policy in settings/runtime selection (Linux defaults to Parakeet with automatic migration from native), and keep Android artifacts slim by excluding sherpa_onnx native libs from Android builds.
 
 ### Rationale
 
@@ -249,8 +249,10 @@ Use `SpeechInputService` as the abstraction contract, register native, Sherpa, d
 
 - ✅ Keeps speech UX stable while allowing backend specialization.
 - ✅ Enforces deterministic engine policy per platform.
+- ✅ SenseVoice adds a strong desktop option for Chinese, Cantonese, Japanese, Korean, and English via sherpa_onnx offline recognition.
+- ✅ Linux default to Parakeet with automatic migration prevents broken native-engine state on new installs.
 - ⚠ Feature parity between engines is not guaranteed at all times.
-- ❌ Sherpa/Moonshine are unavailable in Android slim build profile.
+- ❌ Sherpa/Moonshine/Parakeet/SenseVoice are unavailable in Android slim build profile.
 
 ### Key Files
 
@@ -261,9 +263,14 @@ Use `SpeechInputService` as the abstraction contract, register native, Sherpa, d
 - `lib/presentation/services/speech_input_service_moonshine_io.dart`
 - `lib/presentation/services/speech_input_service_parakeet.dart`
 - `lib/presentation/services/speech_input_service_parakeet_io.dart`
+- `lib/presentation/services/speech_input_service_sensevoice.dart`
+- `lib/presentation/services/speech_input_service_sensevoice_io.dart`
+- `lib/presentation/services/speech_input_service_sensevoice_stub.dart`
 - `lib/presentation/services/moonshine_model_manager_io.dart`
 - `lib/presentation/services/parakeet_model_manager.dart`
 - `lib/presentation/services/parakeet_model_manager_io.dart`
+- `lib/presentation/services/sensevoice_model_manager_io.dart`
+- `lib/presentation/widgets/sensevoice_model_download_dialog.dart`
 - `lib/presentation/providers/settings_provider.dart`
 - `lib/presentation/pages/settings/sections/speech_settings_section.dart`
 - `lib/core/di/injection_container.dart`

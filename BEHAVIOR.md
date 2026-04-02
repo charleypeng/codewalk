@@ -1089,6 +1089,13 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 
 ## Speech Input
 
+### New Linux installs default to Parakeet when Native is unavailable
+
+- **Given** the app is opened on Linux for the first time with default settings
+- **When** speech-to-text settings are initialized
+- **Then** the app selects `Parakeet` as the default engine instead of `Sherpa`
+- **Then** explicit existing non-native user selections remain unchanged
+
 ### Desktop can use Parakeet for offline multilingual speech-to-text
 
 - **Given** the user opens `Settings` > `Speech to text` on Linux, macOS, or Windows
@@ -1108,6 +1115,26 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 - **Given** the app runs on Android, iOS, or Web
 - **When** speech-engine availability is evaluated from persisted settings
 - **Then** `Parakeet` is treated as unavailable and the app falls back to a supported engine instead of exposing a broken selection
+
+### Desktop can use SenseVoice for CJK-focused offline speech-to-text
+
+- **Given** the user opens `Settings` > `Speech to text` on Linux, macOS, or Windows
+- **When** the user selects the `SenseVoice` engine
+- **Then** the settings screen shows a dedicated SenseVoice model card with install status, download, remove, and refresh actions
+- **Then** the app presents SenseVoice as the strongest built-in option for Chinese, Cantonese, Japanese, Korean, and English
+
+### First SenseVoice use prompts model download
+
+- **Given** the user starts voice input with `SenseVoice` selected and no local SenseVoice model installed
+- **When** the composer starts speech input
+- **Then** the app opens a blocking `SenseVoice Setup` dialog instead of failing silently
+- **Then** after the download finishes successfully, the app retries the speech-input start flow automatically
+
+### SenseVoice stays desktop-only
+
+- **Given** the app runs on Android, iOS, or Web
+- **When** speech-engine availability is evaluated from persisted settings
+- **Then** `SenseVoice` is treated as unavailable and the app falls back to a supported engine instead of exposing a broken selection
 
 ---
 
