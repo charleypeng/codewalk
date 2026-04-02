@@ -6297,10 +6297,9 @@ void main() {
       final listFinder = find.byKey(
         const ValueKey<String>('chat_message_list'),
       );
-      final scrollableFinder = find.descendant(
-        of: listFinder,
-        matching: find.byType(Scrollable),
-      );
+      final scrollableFinder = find
+          .descendant(of: listFinder, matching: find.byType(Scrollable))
+          .first;
 
       double distanceToBottom() {
         final position = tester
@@ -6452,10 +6451,9 @@ void main() {
       final listFinder = find.byKey(
         const ValueKey<String>('chat_message_list'),
       );
-      final scrollableFinder = find.descendant(
-        of: listFinder,
-        matching: find.byType(Scrollable),
-      );
+      final scrollableFinder = find
+          .descendant(of: listFinder, matching: find.byType(Scrollable))
+          .first;
 
       double distanceToBottom() {
         final position = tester
@@ -8288,10 +8286,9 @@ void main() {
     await tester.pumpAndSettle();
 
     final listFinder = find.byKey(const ValueKey<String>('chat_message_list'));
-    final scrollableFinder = find.descendant(
-      of: listFinder,
-      matching: find.byType(Scrollable),
-    );
+    final scrollableFinder = find
+        .descendant(of: listFinder, matching: find.byType(Scrollable))
+        .first;
 
     expect(find.text('message 39'), findsOneWidget);
     expect(find.byTooltip('Go to latest message'), findsNothing);
@@ -9348,10 +9345,9 @@ void main() {
       final listFinder = find.byKey(
         const ValueKey<String>('chat_message_list'),
       );
-      final scrollableFinder = find.descendant(
-        of: listFinder,
-        matching: find.byType(Scrollable),
-      );
+      final scrollableFinder = find
+          .descendant(of: listFinder, matching: find.byType(Scrollable))
+          .first;
       final scrollable = tester.state<ScrollableState>(scrollableFinder);
 
       expect(
@@ -10304,6 +10300,19 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      final listFinder = find.byKey(
+        const ValueKey<String>('chat_message_list'),
+      );
+      final scrollableBefore = tester
+          .stateList<ScrollableState>(
+            find.descendant(of: listFinder, matching: find.byType(Scrollable)),
+          )
+          .first;
+      final pixelsBeforePulses = scrollableBefore.position.pixels;
+      final distanceToBottomBeforePulses =
+          scrollableBefore.position.maxScrollExtent -
+          scrollableBefore.position.pixels;
+
       expect(
         find.byKey(
           const ValueKey<String>('timeline_collapsed_assistant_work_header'),
@@ -10331,6 +10340,21 @@ void main() {
       );
       expect(find.widgetWithText(TextButton, 'Hide'), findsNothing);
 
+      final scrollableAfterFirstBusy = tester
+          .stateList<ScrollableState>(
+            find.descendant(of: listFinder, matching: find.byType(Scrollable)),
+          )
+          .first;
+      expect(
+        scrollableAfterFirstBusy.position.pixels,
+        closeTo(pixelsBeforePulses, 1),
+      );
+      expect(
+        scrollableAfterFirstBusy.position.maxScrollExtent -
+            scrollableAfterFirstBusy.position.pixels,
+        closeTo(distanceToBottomBeforePulses, 1),
+      );
+
       repository.emitEvent(
         const ChatEvent(
           type: 'session.status',
@@ -10350,6 +10374,21 @@ void main() {
       );
       expect(find.text('Final assistant response'), findsOneWidget);
       expect(find.widgetWithText(TextButton, 'Expand'), findsOneWidget);
+
+      final scrollableAfterFirstIdle = tester
+          .stateList<ScrollableState>(
+            find.descendant(of: listFinder, matching: find.byType(Scrollable)),
+          )
+          .first;
+      expect(
+        scrollableAfterFirstIdle.position.pixels,
+        closeTo(pixelsBeforePulses, 1),
+      );
+      expect(
+        scrollableAfterFirstIdle.position.maxScrollExtent -
+            scrollableAfterFirstIdle.position.pixels,
+        closeTo(distanceToBottomBeforePulses, 1),
+      );
 
       repository.emitEvent(
         const ChatEvent(
@@ -10371,6 +10410,21 @@ void main() {
       expect(find.widgetWithText(TextButton, 'Expand'), findsOneWidget);
       expect(find.widgetWithText(TextButton, 'Hide'), findsNothing);
 
+      final scrollableAfterSecondBusy = tester
+          .stateList<ScrollableState>(
+            find.descendant(of: listFinder, matching: find.byType(Scrollable)),
+          )
+          .first;
+      expect(
+        scrollableAfterSecondBusy.position.pixels,
+        closeTo(pixelsBeforePulses, 1),
+      );
+      expect(
+        scrollableAfterSecondBusy.position.maxScrollExtent -
+            scrollableAfterSecondBusy.position.pixels,
+        closeTo(distanceToBottomBeforePulses, 1),
+      );
+
       repository.emitEvent(
         const ChatEvent(
           type: 'session.status',
@@ -10391,6 +10445,21 @@ void main() {
       expect(find.text('Final assistant response'), findsOneWidget);
       expect(find.widgetWithText(TextButton, 'Expand'), findsOneWidget);
       expect(find.widgetWithText(TextButton, 'Hide'), findsNothing);
+
+      final scrollableAfterSecondIdle = tester
+          .stateList<ScrollableState>(
+            find.descendant(of: listFinder, matching: find.byType(Scrollable)),
+          )
+          .first;
+      expect(
+        scrollableAfterSecondIdle.position.pixels,
+        closeTo(pixelsBeforePulses, 1),
+      );
+      expect(
+        scrollableAfterSecondIdle.position.maxScrollExtent -
+            scrollableAfterSecondIdle.position.pixels,
+        closeTo(distanceToBottomBeforePulses, 1),
+      );
     },
   );
 
