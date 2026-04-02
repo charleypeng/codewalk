@@ -9871,6 +9871,149 @@ void main() {
   });
 
   testWidgets(
+    'does not restore manual assistant work expansion after session return',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      List<ChatMessage> buildMessages(String sessionId, int offsetMs) {
+        DateTime at(int value) =>
+            DateTime.fromMillisecondsSinceEpoch(value + offsetMs);
+
+        return <ChatMessage>[
+          UserMessage(
+            id: 'msg_${sessionId}_user',
+            sessionId: sessionId,
+            time: at(1100),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_${sessionId}_user',
+                messageId: 'msg_${sessionId}_user',
+                sessionId: sessionId,
+                text: 'Build this for me',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_${sessionId}_step_1',
+            sessionId: sessionId,
+            time: at(1200),
+            completedTime: at(1210),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_${sessionId}_step_1',
+                messageId: 'msg_${sessionId}_step_1',
+                sessionId: sessionId,
+                text: 'Working step 1',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_${sessionId}_step_2',
+            sessionId: sessionId,
+            time: at(1300),
+            completedTime: at(1310),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_${sessionId}_step_2',
+                messageId: 'msg_${sessionId}_step_2',
+                sessionId: sessionId,
+                text: 'Working step 2',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_${sessionId}_final',
+            sessionId: sessionId,
+            time: at(1400),
+            completedTime: at(1410),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_${sessionId}_final',
+                messageId: 'msg_${sessionId}_final',
+                sessionId: sessionId,
+                text: 'Final assistant response',
+              ),
+            ],
+          ),
+        ];
+      }
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_assistant_work_manual_return',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Assistant Work Manual Return',
+          ),
+          ChatSession(
+            id: 'ses_assistant_work_manual_return_other',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(2000),
+            title: 'Another Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_assistant_work_manual_return'] =
+          buildMessages('ses_assistant_work_manual_return', 0);
+      repository.messagesBySession['ses_assistant_work_manual_return_other'] =
+          buildMessages('ses_assistant_work_manual_return_other', 5000);
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(
+        provider.sessions.firstWhere(
+          (session) => session.id == 'ses_assistant_work_manual_return',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>('timeline_collapsed_assistant_work_toggle'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(TextButton, 'Hide'), findsOneWidget);
+
+      await provider.selectSession(
+        provider.sessions.firstWhere(
+          (session) => session.id == 'ses_assistant_work_manual_return_other',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await provider.selectSession(
+        provider.sessions.firstWhere(
+          (session) => session.id == 'ses_assistant_work_manual_return',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(
+          const ValueKey<String>('timeline_collapsed_assistant_work_header'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(TextButton, 'Expand'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Hide'), findsNothing);
+    },
+  );
+
+  testWidgets(
     'keeps expanded historical assistant work group after SWR revalidation when work message ids shift',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));
