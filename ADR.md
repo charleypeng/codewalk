@@ -998,6 +998,8 @@ These references are the first source of truth before implementing client behavi
   - https://github.com/anomalyco/opencode/blob/dev/packages/opencode/src/server/server.ts
   - https://github.com/anomalyco/opencode/tree/dev/packages/app
   - https://github.com/anomalyco/opencode/tree/dev/packages/opencode/src/cli/cmd/tui
+- **Community / Non-Official Reference**:
+  - https://github.com/openchamber/openchamber — community project, NOT an official OpenCode resource. Must never override official OpenCode docs/source. May be investigated as a secondary source for implementation details, working patterns, and bug/feature investigation ideas.
 
 Related: ADR-003, ADR-018, ADR-019, ADR-022.
 

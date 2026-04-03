@@ -20,6 +20,7 @@ CodeWalk is a project that provides access to code agents from anywhere — desk
 This rule is **supreme** for any app behavior change and overrides conflicting local guidance.
 
 - Any behavior modification must first verify alignment with **ADR-023** and official OpenCode references (docs and source), using `ai-docs/opencode_server.md`, `ai-docs/opencode_web.md`, and `ai-docs/opencode_models.md` as mandatory local anchors.
+- When adding a new feature or investigating/fixing a bug, also investigate https://github.com/openchamber/openchamber as a complementary community reference for working patterns and implementation ideas. It is non-official and must never override official OpenCode docs/source.
 - If full alignment is not possible, the change is blocked unless there is an explicit ADR exception with rationale, risk analysis, rollback/feature-flag plan, and regression tests.
 - Every behavior change must prove non-regression: it must not introduce regressions in the modified flow or in related core flows of the app.
 
@@ -51,10 +52,10 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | 020 | Session-level SWR cache with persisted LRU snapshots — instant reopen of long sessions with background revalidation | 790–849 |
 | 021 | Context-scoped New Chat draft state — prevent cross-project draft leakage during fast SWR switches | 850–893 |
 | 022 | Unified project context controls with sidebar session previews — integrated navigation while preserving `serverId::scopeId` ownership | 894–934 |
-| 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web | 937–1056 |
-| 024 | Modal Enter keyboard policy for safe dialogs — speed up keyboard confirmation without enabling destructive or ambiguous modal flows | 1050–1123 |
-| 025 | Settled Assistant-Work Disclosure Ownership — client-side architectural ownership to prevent open/close thrash, scroll jumps on session return | 1133–1175 |
-| 026 | Desktop-first terminal workspace with local `opencode attach <server>` — embedded TUI launch without server API changes | 1193–1240 |
+| 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web; community reference openchamber added as secondary source | 951–1074 |
+| 024 | Modal Enter keyboard policy for safe dialogs — speed up keyboard confirmation without enabling destructive or ambiguous modal flows | 1076–1149 |
+| 025 | Settled Assistant-Work Disclosure Ownership — client-side architectural ownership to prevent open/close thrash, scroll jumps on session return | 1151–1193 |
+| 026 | Desktop-first terminal workspace with local `opencode attach <server>` — embedded TUI launch without server API changes | 1197–1244 |
 
 ## 🗺 CODEBASE Quick Reference (details in `CODEBASE.md`)
 
