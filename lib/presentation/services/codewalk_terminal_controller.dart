@@ -77,7 +77,7 @@ class CodewalkTerminalController extends ChangeNotifier {
     }
 
     final attachUrl = _buildAttachUrl(serverProfile);
-    final targetKey = '${serverProfile.id}|$executable';
+    final targetKey = '${serverProfile.id}\u0000$executable';
     final sameTarget = !force && _process != null && _targetKey == targetKey;
     if (sameTarget) {
       return;
@@ -99,6 +99,19 @@ class CodewalkTerminalController extends ChangeNotifier {
       );
       _process = process;
       late final StreamSubscription<String> outputSubscription;
+      var outputClosed = false;
+
+      Future<void> closeOutput() async {
+        if (outputClosed) {
+          return;
+        }
+        outputClosed = true;
+        if (identical(_outputSubscription, outputSubscription)) {
+          _outputSubscription = null;
+        }
+        await outputSubscription.cancel();
+      }
+
       outputSubscription = process.output.listen(
         (data) {
           _terminal.write(data);
@@ -113,8 +126,7 @@ class CodewalkTerminalController extends ChangeNotifier {
           if (_processToken != processToken) {
             return;
           }
-          _outputSubscription = null;
-          unawaited(outputSubscription.cancel());
+          unawaited(closeOutput());
           _state = CodewalkTerminalState.failed;
           _statusMessage = 'Terminal attach failed: $error';
           _notify();
@@ -126,10 +138,7 @@ class CodewalkTerminalController extends ChangeNotifier {
           return;
         }
         _process = null;
-        if (identical(_outputSubscription, outputSubscription)) {
-          _outputSubscription = null;
-        }
-        await outputSubscription.cancel();
+        await closeOutput();
         _state = CodewalkTerminalState.exited;
         _statusMessage = 'Terminal exited with code $code.';
         _notify();
@@ -157,7 +166,7 @@ class CodewalkTerminalController extends ChangeNotifier {
     _notify();
   }
 
-  Future<void> _terminateProcess() async {
+  Future<void> _terminateProcess({bool awaitExit = true}) async {
     final process = _process;
     final outputSubscription = _outputSubscription;
     final exitWatcher = _exitWatcher;
@@ -168,7 +177,9 @@ class CodewalkTerminalController extends ChangeNotifier {
     _exitWatcher = null;
     process?.kill();
     await outputSubscription?.cancel();
-    await exitWatcher;
+    if (awaitExit) {
+      await exitWatcher;
+    }
   }
 
   Terminal _createTerminal() {
@@ -207,7 +218,7 @@ class CodewalkTerminalController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    unawaited(_terminateProcess());
+    unawaited(_terminateProcess(awaitExit: false));
     super.dispose();
   }
 }
