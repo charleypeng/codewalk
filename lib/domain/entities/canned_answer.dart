@@ -8,6 +8,7 @@ class CannedAnswer {
     required this.text,
     this.label,
     this.insertMode = CannedAnswerInsertMode.append,
+    this.sendAutomatically = false,
     this.scopeMode = CannedAnswerScopeMode.global,
     required this.updatedAtEpochMs,
   });
@@ -16,6 +17,7 @@ class CannedAnswer {
   final String text;
   final String? label;
   final CannedAnswerInsertMode insertMode;
+  final bool sendAutomatically;
   final CannedAnswerScopeMode scopeMode;
   final int updatedAtEpochMs;
 
@@ -29,6 +31,7 @@ class CannedAnswer {
     String? text,
     String? Function()? label,
     CannedAnswerInsertMode? insertMode,
+    bool? sendAutomatically,
     CannedAnswerScopeMode? scopeMode,
     int? updatedAtEpochMs,
   }) {
@@ -37,6 +40,7 @@ class CannedAnswer {
       text: text ?? this.text,
       label: label != null ? label() : this.label,
       insertMode: insertMode ?? this.insertMode,
+      sendAutomatically: sendAutomatically ?? this.sendAutomatically,
       scopeMode: scopeMode ?? this.scopeMode,
       updatedAtEpochMs: updatedAtEpochMs ?? this.updatedAtEpochMs,
     );
@@ -48,6 +52,7 @@ class CannedAnswer {
       'text': text,
       if (normalizedLabel.isNotEmpty) 'label': normalizedLabel,
       'insertMode': _insertModeKey(insertMode),
+      if (sendAutomatically) 'sendAutomatically': true,
       'scopeMode': _scopeModeKey(scopeMode),
       'updatedAtEpochMs': updatedAtEpochMs,
     };
@@ -61,6 +66,7 @@ class CannedAnswer {
     }
     final label = json['label']?.toString();
     final modeValue = json['insertMode']?.toString().trim().toLowerCase() ?? '';
+    final sendAutomatically = json['sendAutomatically'] == true;
     final scopeValue = json['scopeMode']?.toString().trim().toLowerCase() ?? '';
     final updatedAtRaw = json['updatedAtEpochMs'];
     final updatedAtEpochMs = updatedAtRaw is num
@@ -71,6 +77,7 @@ class CannedAnswer {
       text: text,
       label: label,
       insertMode: _insertModeFromKey(modeValue),
+      sendAutomatically: sendAutomatically,
       scopeMode: _scopeModeFromKey(scopeValue),
       updatedAtEpochMs: updatedAtEpochMs,
     );

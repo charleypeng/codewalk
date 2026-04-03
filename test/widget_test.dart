@@ -248,6 +248,55 @@ void main() {
     expect(field.focusNode?.hasFocus, isTrue);
   });
 
+  testWidgets('canned auto-send appends at cursor and submits result', (
+    WidgetTester tester,
+  ) async {
+    final localDataSource = InMemoryAppLocalDataSource();
+    ChatInputSubmission? sentSubmission;
+    await localDataSource.saveCannedAnswersJson(
+      jsonEncode([
+        {
+          'id': 'append-send-1',
+          'text': 'XYZ',
+          'insertMode': 'append',
+          'sendAutomatically': true,
+          'scopeMode': 'global',
+          'updatedAtEpochMs': 1,
+        },
+      ]),
+    );
+
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (submission) {
+            sentSubmission = submission;
+          },
+          cannedAnswersDataSource: localDataSource,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.showKeyboard(find.byType(TextField));
+    tester.testTextInput.updateEditingValue(
+      const TextEditingValue(
+        text: 'ab',
+        selection: TextSelection.collapsed(offset: 1),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Extras'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('XYZ'));
+    await tester.pumpAndSettle();
+
+    expect(sentSubmission?.text, 'aXYZb');
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.controller!.text, isEmpty);
+  });
+
   testWidgets('opening extras preserves composer focus state', (
     WidgetTester tester,
   ) async {
@@ -342,6 +391,71 @@ void main() {
 
     final field = tester.widget<TextField>(find.byType(TextField));
     expect(field.controller!.text, 'Replacement text');
+  });
+
+  testWidgets('canned auto-send replace mode submits replaced text', (
+    WidgetTester tester,
+  ) async {
+    final localDataSource = InMemoryAppLocalDataSource();
+    ChatInputSubmission? sentSubmission;
+    await localDataSource.saveCannedAnswersJson(
+      jsonEncode([
+        {
+          'id': 'replace-send-1',
+          'text': 'Replacement text',
+          'insertMode': 'replace',
+          'sendAutomatically': true,
+          'scopeMode': 'global',
+          'updatedAtEpochMs': 2,
+        },
+      ]),
+    );
+
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (submission) {
+            sentSubmission = submission;
+          },
+          cannedAnswersDataSource: localDataSource,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'old text');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Extras'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Replacement text'));
+    await tester.pumpAndSettle();
+
+    expect(sentSubmission?.text, 'Replacement text');
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.controller!.text, isEmpty);
+  });
+
+  testWidgets('new quick reply dialog shows auto-send switch', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      _buildChatInputHarness(
+        child: ChatInputWidget(
+          onSendMessage: (_) {},
+          cannedAnswersDataSource: InMemoryAppLocalDataSource(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Extras'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('New quick reply'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Send automatically'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('extras menu shows top quick-reply and attachment actions', (

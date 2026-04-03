@@ -161,6 +161,15 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
       _popoverType = ChatComposerPopoverType.none;
       _activeSuggestionIndex = 0;
     });
+    if (answer.sendAutomatically) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        unawaited(_handleSendMessage());
+      });
+      return;
+    }
     _ensureInputFocus();
   }
 
@@ -264,6 +273,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
     );
     final textController = TextEditingController(text: initial?.text ?? '');
     var insertMode = initial?.insertMode ?? CannedAnswerInsertMode.append;
+    var sendAutomatically = initial?.sendAutomatically ?? false;
     var scopeMode = initial?.scopeMode ?? CannedAnswerScopeMode.global;
     final isProjectScopeAvailable =
         _normalizedCannedServerId.isNotEmpty &&
@@ -314,6 +324,18 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
                       },
                     ),
                     SwitchListTile(
+                      title: const Text('Send automatically'),
+                      subtitle: const Text(
+                        'Send immediately after inserting this quick reply',
+                      ),
+                      value: sendAutomatically,
+                      onChanged: (enabled) {
+                        setDialogState(() {
+                          sendAutomatically = enabled;
+                        });
+                      },
+                    ),
+                    SwitchListTile(
                       title: const Text('Global'),
                       subtitle: Text(
                         isProjectScopeAvailable
@@ -353,6 +375,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
                             : labelController.text.trim(),
                         text: text,
                         insertMode: insertMode,
+                        sendAutomatically: sendAutomatically,
                         scopeMode: scopeMode,
                         updatedAtEpochMs: DateTime.now().millisecondsSinceEpoch,
                       ),
