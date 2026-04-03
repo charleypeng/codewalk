@@ -200,9 +200,17 @@ class CodewalkTerminalController extends ChangeNotifier {
 
   static _CodewalkAttachTarget _buildAttachTarget(ServerProfile profile) {
     final baseArguments = <String>['attach'];
+    final normalizedUrl = Uri.tryParse(profile.url)?.toString();
+    if (normalizedUrl == null || normalizedUrl.trim().isEmpty) {
+      return const _CodewalkAttachTarget(
+        errorMessage:
+            'The active server URL is invalid, so Terminal cannot attach yet.',
+      );
+    }
+
     if (!profile.basicAuthEnabled) {
       return _CodewalkAttachTarget(
-        arguments: <String>[...baseArguments, profile.url],
+        arguments: <String>[...baseArguments, normalizedUrl],
       );
     }
 
@@ -218,16 +226,19 @@ class CodewalkTerminalController extends ChangeNotifier {
     if (username != 'opencode') {
       return _CodewalkAttachTarget(
         errorMessage:
-            'Terminal attach is blocked because the current OpenCode CLI still hardcodes the Basic Auth username to `opencode`. Use the default username or update the upstream CLI once that fix lands.',
+            'Terminal attach is blocked because the current OpenCode CLI still hardcodes the Basic Auth username to `opencode`. For now, use `opencode` as the server username for terminal attach or update the upstream CLI once that fix lands.',
       );
     }
 
     return _CodewalkAttachTarget(
+      // The current CLI accepts `--password` but not URL userinfo. This still
+      // exposes the password in local process listings, so switch to an env or
+      // stdin flow once upstream exposes one.
       arguments: <String>[
         ...baseArguments,
         '--password',
         password,
-        profile.url,
+        normalizedUrl,
       ],
     );
   }
@@ -250,6 +261,8 @@ class CodewalkTerminalController extends ChangeNotifier {
 class _CodewalkAttachTarget {
   const _CodewalkAttachTarget({
     this.arguments = const <String>[],
+    // Reserved for a future upstream-safe auth handoff such as env-based
+    // password injection; currently attach uses explicit CLI arguments only.
     this.environment,
     this.errorMessage,
   });
