@@ -313,13 +313,36 @@ android:
 	store_password=$$(awk '/^[[:space:]]*storePassword[[:space:]]*=/{sub(/^[^=]*=/,""); gsub(/\r/, ""); gsub(/^[[:space:]]+|[[:space:]]+$$/, ""); print; exit}' "$(ANDROID_KEY_PROPERTIES)"); \
 	key_password=$$(awk '/^[[:space:]]*keyPassword[[:space:]]*=/{sub(/^[^=]*=/,""); gsub(/\r/, ""); gsub(/^[[:space:]]+|[[:space:]]+$$/, ""); print; exit}' "$(ANDROID_KEY_PROPERTIES)"); \
 	key_alias=$$(awk '/^[[:space:]]*keyAlias[[:space:]]*=/{sub(/^[^=]*=/,""); gsub(/\r/, ""); gsub(/^[[:space:]]+|[[:space:]]+$$/, ""); print; exit}' "$(ANDROID_KEY_PROPERTIES)"); \
+	resolved_store_file="$$store_file"; \
 	if [ -z "$$store_file" ] || [ -z "$$store_password" ] || [ -z "$$key_password" ] || [ -z "$$key_alias" ]; then \
 		echo "Incomplete $(ANDROID_KEY_PROPERTIES). Required keys: storeFile, storePassword, keyPassword, keyAlias."; \
 		exit 1; \
 	fi; \
-	if [ ! -f "$$store_file" ] && [ ! -f "android/$$store_file" ] && [ ! -f "android/app/$$store_file" ]; then \
+	case "$$store_file" in \
+		~/*) resolved_store_file="$$HOME/$${store_file#~/}" ;; \
+		/*) \
+			if [ ! -f "$$resolved_store_file" ]; then \
+				home_parent=$$(dirname "$$HOME"); \
+				case "$$store_file" in \
+					"$$home_parent"/*/*) resolved_store_file="$$HOME/$${store_file#$$home_parent/*/}" ;; \
+				esac; \
+			fi; \
+			;; \
+		*) \
+			if [ -f "$$HOME/$$store_file" ]; then \
+				resolved_store_file="$$HOME/$$store_file"; \
+			elif [ -f "$$store_file" ]; then \
+				resolved_store_file="$$store_file"; \
+			elif [ -f "android/$$store_file" ]; then \
+				resolved_store_file="android/$$store_file"; \
+			elif [ -f "android/app/$$store_file" ]; then \
+				resolved_store_file="android/app/$$store_file"; \
+			fi; \
+			;; \
+	esac; \
+	if [ ! -f "$$resolved_store_file" ]; then \
 		echo "Keystore declared in $(ANDROID_KEY_PROPERTIES) not found: $$store_file"; \
-		echo "Expected one of: $$store_file, android/$$store_file, android/app/$$store_file"; \
+		echo "Expected one of: $$store_file, $$HOME/$$store_file, android/$$store_file, android/app/$$store_file, or the same path under $$HOME"; \
 		exit 1; \
 	fi
 	@set -e; \

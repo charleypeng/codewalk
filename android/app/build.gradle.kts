@@ -1,3 +1,4 @@
+import java.io.File
 import java.util.Properties
 
 plugins {
@@ -11,6 +12,42 @@ plugins {
 val keyPropertiesFile = rootProject.file("key.properties")
 val keyProperties = Properties().apply {
     if (keyPropertiesFile.exists()) keyPropertiesFile.inputStream().use { load(it) }
+}
+
+fun resolveSigningFile(rawValue: String?): File? {
+    if (rawValue.isNullOrBlank()) return null
+
+    val trimmed = rawValue.trim()
+    val userHome = System.getProperty("user.home")
+    val currentHomeDir = File(userHome)
+
+    return when {
+        trimmed.startsWith("~/") -> File(userHome, trimmed.removePrefix("~/"))
+        File(trimmed).isAbsolute -> {
+            val absoluteFile = File(trimmed)
+            if (absoluteFile.exists()) {
+                absoluteFile
+            } else {
+                val homeParent = currentHomeDir.parentFile
+                val homePrefix = homeParent?.absolutePath?.let { "$it${File.separator}" }
+                if (homePrefix != null && trimmed.startsWith(homePrefix)) {
+                    val pathAfterNamedHome = trimmed.removePrefix(homePrefix)
+                    val separatorIndex = pathAfterNamedHome.indexOf(File.separatorChar)
+                    if (separatorIndex >= 0) {
+                        File(currentHomeDir, pathAfterNamedHome.substring(separatorIndex + 1))
+                    } else {
+                        absoluteFile
+                    }
+                } else {
+                    absoluteFile
+                }
+            }
+        }
+        else -> {
+            val homeRelative = File(userHome, trimmed)
+            if (homeRelative.exists()) homeRelative else rootProject.file(trimmed)
+        }
+    }
 }
 
 android {
@@ -44,7 +81,7 @@ android {
             create("release") {
                 keyAlias = keyProperties["keyAlias"] as String
                 keyPassword = keyProperties["keyPassword"] as String
-                storeFile = file(keyProperties["storeFile"] as String)
+                storeFile = resolveSigningFile(keyProperties["storeFile"] as String)
                 storePassword = keyProperties["storePassword"] as String
             }
         }
