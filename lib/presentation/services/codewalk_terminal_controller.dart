@@ -76,7 +76,11 @@ class CodewalkTerminalController extends ChangeNotifier {
       return;
     }
 
-    final attachUrl = _buildAttachUrl(serverProfile);
+    final attachTarget = _buildAttachTarget(serverProfile);
+    if (attachTarget.errorMessage != null) {
+      await _resetToUnavailable(attachTarget.errorMessage!);
+      return;
+    }
     final targetKey = '${serverProfile.id}\u0000$executable';
     final sameTarget = !force && _process != null && _targetKey == targetKey;
     if (sameTarget) {
@@ -95,7 +99,8 @@ class CodewalkTerminalController extends ChangeNotifier {
     try {
       final process = startCodewalkTerminalProcess(
         executable: executable,
-        arguments: <String>['attach', attachUrl],
+        arguments: attachTarget.arguments,
+        environment: attachTarget.environment,
       );
       _process = process;
       late final StreamSubscription<String> outputSubscription;
@@ -193,19 +198,38 @@ class CodewalkTerminalController extends ChangeNotifier {
     return terminal;
   }
 
-  static String _buildAttachUrl(ServerProfile profile) {
-    final uri = Uri.parse(profile.url);
-    if (!profile.basicAuthEnabled ||
-        profile.basicAuthUsername.trim().isEmpty ||
-        profile.basicAuthPassword.trim().isEmpty) {
-      return uri.toString();
+  static _CodewalkAttachTarget _buildAttachTarget(ServerProfile profile) {
+    final baseArguments = <String>['attach'];
+    if (!profile.basicAuthEnabled) {
+      return _CodewalkAttachTarget(
+        arguments: <String>[...baseArguments, profile.url],
+      );
     }
-    return uri
-        .replace(
-          userInfo:
-              '${Uri.encodeComponent(profile.basicAuthUsername)}:${Uri.encodeComponent(profile.basicAuthPassword)}',
-        )
-        .toString();
+
+    final username = profile.basicAuthUsername.trim();
+    final password = profile.basicAuthPassword.trim();
+    if (username.isEmpty || password.isEmpty) {
+      return _CodewalkAttachTarget(
+        errorMessage:
+            'The active server requires both Basic Auth username and password before Terminal can attach.',
+      );
+    }
+
+    if (username != 'opencode') {
+      return _CodewalkAttachTarget(
+        errorMessage:
+            'Terminal attach is blocked because the current OpenCode CLI still hardcodes the Basic Auth username to `opencode`. Use the default username or update the upstream CLI once that fix lands.',
+      );
+    }
+
+    return _CodewalkAttachTarget(
+      arguments: <String>[
+        ...baseArguments,
+        '--password',
+        password,
+        profile.url,
+      ],
+    );
   }
 
   void _notify() {
@@ -221,4 +245,16 @@ class CodewalkTerminalController extends ChangeNotifier {
     unawaited(_terminateProcess(awaitExit: false));
     super.dispose();
   }
+}
+
+class _CodewalkAttachTarget {
+  const _CodewalkAttachTarget({
+    this.arguments = const <String>[],
+    this.environment,
+    this.errorMessage,
+  });
+
+  final List<String> arguments;
+  final Map<String, String>? environment;
+  final String? errorMessage;
 }
