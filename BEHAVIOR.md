@@ -407,8 +407,9 @@
 - **Then** the extras popover shows a top action row with quick actions such as `New quick reply` and `Attach files`, leaving room for future actions
 - **Then** attachment entry is opened from that extras popover instead of a separate attachment button near the model controls
 - **Then** selecting an item inserts canned text according to item mode: `Append at cursor` inserts at current selection, `Replace` overwrites composer text
+- **Then** if that canned answer has `Send automatically` enabled, the app sends the resulting composer message immediately after insertion, still using the same insertion mode first
 - **Then** long-pressing a canned item opens edit/delete actions
-- **Then** add/edit supports an optional label, required text, insertion mode, and scope mode (`Global` or `Project-only`)
+- **Then** add/edit supports an optional label, required text, insertion mode, optional `Send automatically`, and scope mode (`Global` or `Project-only`)
 - **Then** global items are available across all contexts, while project-only items are restricted to the active `serverId::scopeId` context
 - **Then** global canned answers are indicated inline with a globe icon instead of a standalone textual `Global` subtitle line
 - **Then** each canned-answer row stays on a single line and shows only one text source: the optional label when present, otherwise the canned text truncated with ellipsis
