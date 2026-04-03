@@ -22,7 +22,7 @@ CodewalkTerminalShellTarget resolveCodewalkTerminalShellTargetImpl({
       // Android terminals often receive a server-scoped project path that does
       // not exist inside the app sandbox. Falling back to a safe local cwd is
       // better than blocking terminal startup entirely.
-      normalizedDirectory = '/';
+      normalizedDirectory = Directory.systemTemp.path;
     } else {
       return CodewalkTerminalShellTarget(
         executable: '',
