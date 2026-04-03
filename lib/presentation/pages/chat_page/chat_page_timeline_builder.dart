@@ -259,297 +259,349 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
             chatProvider.isDraftingNewChat) &&
         composerBlockReason == null;
     final settingsProvider = context.watch<SettingsProvider>();
-    final showTerminalPanel =
-        !context.windowSizeClass.isCompact &&
-        settingsProvider.terminalPanelVisible;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isCompactLayout =
+        context.windowSizeClass.isCompact || screenWidth < 600;
+    final showTerminalPanel = settingsProvider.terminalPanelVisible;
+    final hideComposerForTerminal = isCompactLayout && showTerminalPanel;
     final composerStatusTarget = _resolveComposerStatusTarget(chatProvider);
     _queueComposerStatusSync(composerStatusTarget);
     final composerStatus = _priorityComposerStatus ?? _visibleComposerStatus;
 
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: horizontalPadding,
-        vertical: verticalPadding,
-      ),
-      child: Align(
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxContentWidth),
-          child: Column(
-            children: [
-              // Active session header
-              if (chatProvider.currentSession != null)
-                Builder(
-                  builder: (context) {
-                    final currentSession = chatProvider.currentSession!;
-                    return Container(
-                      key: const ValueKey<String>(
-                        'chat_compact_session_header',
-                      ),
-                      width: double.infinity,
-                      margin: const EdgeInsets.fromLTRB(8, 0, 8, 0),
-                      child: Card(
-                        margin: EdgeInsets.zero,
-                        elevation: 0,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerLow,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 4,
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: SessionTitleInlineEditor(
-                                  key: ValueKey<String>(
-                                    'chat_header_session_title_editor_${currentSession.id}',
+      padding: EdgeInsets.symmetric(vertical: verticalPadding),
+      child: Column(
+        children: [
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxContentWidth),
+                  child: Column(
+                    children: [
+                      // Active session header
+                      if (chatProvider.currentSession != null)
+                        Builder(
+                          builder: (context) {
+                            final currentSession = chatProvider.currentSession!;
+                            return Container(
+                              key: const ValueKey<String>(
+                                'chat_compact_session_header',
+                              ),
+                              width: double.infinity,
+                              margin: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+                              child: Card(
+                                margin: EdgeInsets.zero,
+                                elevation: 0,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerLow,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 4,
                                   ),
-                                  title: _sessionDisplayTitle(currentSession),
-                                  editingValue: _sessionEditingValue(
-                                    currentSession,
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      Expanded(
+                                        child: SessionTitleInlineEditor(
+                                          key: ValueKey<String>(
+                                            'chat_header_session_title_editor_${currentSession.id}',
+                                          ),
+                                          title: _sessionDisplayTitle(
+                                            currentSession,
+                                          ),
+                                          editingValue: _sessionEditingValue(
+                                            currentSession,
+                                          ),
+                                          textStyle: Theme.of(context)
+                                              .textTheme
+                                              .titleSmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                          onRename: (title) =>
+                                              chatProvider.renameSession(
+                                                currentSession,
+                                                title,
+                                              ),
+                                        ),
+                                      ),
+                                      Builder(
+                                        builder: (context) {
+                                          final usage =
+                                              _resolveSessionContextUsage(
+                                                chatProvider,
+                                              );
+                                          final canCompact =
+                                              !chatProvider
+                                                  .isCompactingContext &&
+                                              !chatProvider
+                                                  .canAbortActiveResponse;
+
+                                          return PopupMenuButton<
+                                            _ContextUsageAction
+                                          >(
+                                            key: const ValueKey<String>(
+                                              'appbar_context_usage_button',
+                                            ),
+                                            tooltip: 'Compact Context',
+                                            padding: EdgeInsets.zero,
+                                            onSelected: (action) {
+                                              if (action ==
+                                                  _ContextUsageAction
+                                                      .compactNow) {
+                                                unawaited(
+                                                  _compactCurrentSession(
+                                                    chatProvider,
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                            itemBuilder: (context) {
+                                              return [
+                                                PopupMenuItem<
+                                                  _ContextUsageAction
+                                                >(
+                                                  enabled: false,
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 12,
+                                                        vertical: 8,
+                                                      ),
+                                                  child: _buildContextUsagePopover(
+                                                    context,
+                                                    usage: usage,
+                                                    isCompacting: chatProvider
+                                                        .isCompactingContext,
+                                                  ),
+                                                ),
+                                                const PopupMenuDivider(
+                                                  height: 0,
+                                                ),
+                                                PopupMenuItem<
+                                                  _ContextUsageAction
+                                                >(
+                                                  value: _ContextUsageAction
+                                                      .compactNow,
+                                                  enabled: canCompact,
+                                                  child: Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Icon(
+                                                        Symbols.compress,
+                                                        size: 16,
+                                                        color: Theme.of(
+                                                          context,
+                                                        ).colorScheme.primary,
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      Text(
+                                                        chatProvider
+                                                                .isCompactingContext
+                                                            ? 'Compacting...'
+                                                            : 'Compact now',
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ];
+                                            },
+                                            child: _buildContextUsageControl(
+                                              context,
+                                              usage: usage,
+                                              isCompacting: chatProvider
+                                                  .isCompactingContext,
+                                              enabled: true,
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ],
                                   ),
-                                  textStyle: Theme.of(context)
-                                      .textTheme
-                                      .titleSmall
-                                      ?.copyWith(fontWeight: FontWeight.w700),
-                                  onRename: (title) => chatProvider
-                                      .renameSession(currentSession, title),
                                 ),
                               ),
-                              Builder(
-                                builder: (context) {
-                                  final usage = _resolveSessionContextUsage(
-                                    chatProvider,
-                                  );
-                                  final canCompact =
-                                      !chatProvider.isCompactingContext &&
-                                      !chatProvider.canAbortActiveResponse;
-
-                                  return PopupMenuButton<_ContextUsageAction>(
-                                    key: const ValueKey<String>(
-                                      'appbar_context_usage_button',
-                                    ),
-                                    tooltip: 'Compact Context',
-                                    padding: EdgeInsets.zero,
-                                    onSelected: (action) {
-                                      if (action ==
-                                          _ContextUsageAction.compactNow) {
-                                        unawaited(
-                                          _compactCurrentSession(chatProvider),
-                                        );
-                                      }
-                                    },
-                                    itemBuilder: (context) {
-                                      return [
-                                        PopupMenuItem<_ContextUsageAction>(
-                                          enabled: false,
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 8,
-                                          ),
-                                          child: _buildContextUsagePopover(
-                                            context,
-                                            usage: usage,
-                                            isCompacting: chatProvider
-                                                .isCompactingContext,
-                                          ),
-                                        ),
-                                        const PopupMenuDivider(height: 0),
-                                        PopupMenuItem<_ContextUsageAction>(
-                                          value: _ContextUsageAction.compactNow,
-                                          enabled: canCompact,
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                Symbols.compress,
-                                                size: 16,
-                                                color: Theme.of(
-                                                  context,
-                                                ).colorScheme.primary,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                chatProvider.isCompactingContext
-                                                    ? 'Compacting...'
-                                                    : 'Compact now',
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ];
-                                    },
-                                    child: _buildContextUsageControl(
-                                      context,
-                                      usage: usage,
-                                      isCompacting:
-                                          chatProvider.isCompactingContext,
-                                      enabled: true,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
+                            );
+                          },
                         ),
+                      // Session todo list (mobile or desktop fallback when utility pane hidden)
+                      Builder(
+                        builder: (context) {
+                          final sp = context.watch<SettingsProvider>();
+                          final sizeClass = context.windowSizeClass;
+                          final isCompactLayout = sizeClass.isCompact;
+                          final mediaKeyboardInset = MediaQuery.viewInsetsOf(
+                            context,
+                          ).bottom;
+                          final viewKeyboardInset = View.of(
+                            context,
+                          ).viewInsets.bottom;
+                          final effectiveKeyboardOpen =
+                              isKeyboardOpen ||
+                              mediaKeyboardInset > 0 ||
+                              viewKeyboardInset > 0;
+                          final shouldForceCollapse =
+                              effectiveKeyboardOpen &&
+                              (isCompactLayout || _isMobileRuntime);
+                          final utilityPaneVisible =
+                              sizeClass.isAtLeastLarge &&
+                              sp.isDesktopPaneVisible(DesktopPane.utility);
+                          if (chatProvider.currentSessionTodo.isEmpty ||
+                              !sp.showTaskList ||
+                              (!isCompactLayout && utilityPaneVisible)) {
+                            return const SizedBox.shrink();
+                          }
+                          return _buildInlineTodoCard(
+                            context,
+                            chatProvider,
+                            sp,
+                            forceCollapsed: shouldForceCollapse,
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
-              // Session todo list (mobile or desktop fallback when utility pane hidden)
-              Builder(
-                builder: (context) {
-                  final sp = context.watch<SettingsProvider>();
-                  final sizeClass = context.windowSizeClass;
-                  final isCompactLayout = sizeClass.isCompact;
-                  final mediaKeyboardInset = MediaQuery.viewInsetsOf(
-                    context,
-                  ).bottom;
-                  final viewKeyboardInset = View.of(context).viewInsets.bottom;
-                  final effectiveKeyboardOpen =
-                      isKeyboardOpen ||
-                      mediaKeyboardInset > 0 ||
-                      viewKeyboardInset > 0;
-                  final shouldForceCollapse =
-                      effectiveKeyboardOpen &&
-                      (isCompactLayout || _isMobileRuntime);
-                  final utilityPaneVisible =
-                      sizeClass.isAtLeastLarge &&
-                      sp.isDesktopPaneVisible(DesktopPane.utility);
-                  if (chatProvider.currentSessionTodo.isEmpty ||
-                      !sp.showTaskList ||
-                      (!isCompactLayout && utilityPaneVisible)) {
-                    return const SizedBox.shrink();
-                  }
-                  return _buildInlineTodoCard(
-                    context,
-                    chatProvider,
-                    sp,
-                    forceCollapsed: shouldForceCollapse,
-                  );
-                },
-              ),
-              // Message list
-              Expanded(child: _buildMessageViewport(chatProvider)),
+                      // Message list
+                      Expanded(child: _buildMessageViewport(chatProvider)),
 
-              _buildInteractionPrompts(chatProvider),
+                      if (!hideComposerForTerminal)
+                        _buildInteractionPrompts(chatProvider),
 
-              _buildComposerReasoningStatusSlot(composerStatus),
+                      if (!hideComposerForTerminal)
+                        _buildComposerReasoningStatusSlot(composerStatus),
 
-              _buildModelControls(
-                chatProvider,
-                isSubConversation: isSubConversation,
-              ),
-
-              if (showTerminalPanel) _buildTerminalPanel(settingsProvider),
-
-              // Input field
-              if (isSubConversation)
-                _buildSubConversationReturnButton(chatProvider),
-              Builder(
-                builder: (context) {
-                  final sentMessageHistory = _collectSentMessageHistory(
-                    chatProvider.messages,
-                  );
-                  final currentSessionId = chatProvider.currentSession?.id;
-                  final projectProvider = context.read<ProjectProvider>();
-                  return ChatInputWidget(
-                    onSendMessage: (submission) async {
-                      Future<void> clearComposerContextIfNeeded() async {
-                        if (_fileContextItems.isNotEmpty) {
-                          _setState(() {
-                            _fileContextItems.clear();
-                          });
-                        }
-                      }
-
-                      final slashInvocation =
-                          submission.mode == ChatComposerMode.shell
-                          ? null
-                          : _parseSlashCommandInvocation(submission.text);
-
-                      if (slashInvocation != null) {
-                        final builtinHandled = await _handleBuiltinSlashCommand(
-                          commandName: slashInvocation.name,
-                          chatProvider: chatProvider,
-                        );
-                        await clearComposerContextIfNeeded();
-                        if (builtinHandled) {
-                          return;
-                        }
-
-                        _prepareForOutgoingUserMessage();
-                        await chatProvider.submitMessage(
-                          submission.text.trim(),
-                          commandMode: true,
-                        );
-                        _scrollToBottom(force: true);
-                        return;
-                      }
-
-                      _prepareForOutgoingUserMessage();
-                      await chatProvider.submitMessage(
-                        submission.text,
-                        attachments: submission.attachments,
-                        shellMode: submission.mode == ChatComposerMode.shell,
-                      );
-                      await clearComposerContextIfNeeded();
-                      _scrollToBottom(force: true);
-                    },
-                    onStopRequested: () async {
-                      await _requestStopActiveResponse(chatProvider);
-                    },
-                    onStopHintRequested: _showComposerStopHint,
-                    onDraftChanged: (draft) {
-                      _scheduleComposerDraftPersistence(
-                        sessionId: currentSessionId,
-                        draft: draft,
-                      );
-                    },
-                    onMentionQuery: _queryMentionSuggestions,
-                    onSlashQuery: _querySlashSuggestions,
-                    onBuiltinSlashCommand: (commandName) =>
-                        _handleBuiltinSlashCommand(
-                          commandName: commandName,
-                          chatProvider: chatProvider,
+                      if (!hideComposerForTerminal)
+                        _buildModelControls(
+                          chatProvider,
+                          isSubConversation: isSubConversation,
                         ),
-                    sentMessageHistory: sentMessageHistory,
-                    prefilledDraft: _composerPrefilledDraft,
-                    prefilledDraftVersion: _composerPrefilledDraftVersion,
-                    enabled: composerEnabled,
-                    blockReason: composerBlockReason,
-                    isResponding: chatProvider.canAbortActiveResponse,
-                    focusNode: _inputFocusNode,
-                    controller: _chatInputController,
-                    showAttachmentButton: attachmentsEnabled,
-                    showInlineAttachmentButton: false,
-                    allowImageAttachment: supportsImages,
-                    allowPdfAttachment: supportsPdf,
-                    cannedAnswersDataSource: di.sl(),
-                    cannedAnswersServerId: projectProvider.activeServerId,
-                    cannedAnswersScopeId: projectProvider.currentScopeId,
-                    contextItems: _fileContextItems,
-                    composerShowcaseKey: _composerTourKey,
-                    composerShowcaseTargetKey: _composerTourTargetKey,
-                    sendButtonShowcaseKey: _sendButtonTourKey,
-                    sendButtonShowcaseTargetKey: _sendButtonTourTargetKey,
-                    onTourSkip: _handlePostOnboardingTourSkip,
-                    onRemoveContextItem: (index) {
-                      if (index >= 0 && index < _fileContextItems.length) {
-                        _setState(() {
-                          _fileContextItems.removeAt(index);
-                        });
-                      }
-                    },
-                  );
-                },
+
+                      // Input field
+                      if (isSubConversation)
+                        _buildSubConversationReturnButton(chatProvider),
+                      if (!hideComposerForTerminal)
+                        Builder(
+                          builder: (context) {
+                            final sentMessageHistory =
+                                _collectSentMessageHistory(
+                                  chatProvider.messages,
+                                );
+                            final currentSessionId =
+                                chatProvider.currentSession?.id;
+                            final projectProvider = context
+                                .read<ProjectProvider>();
+                            return ChatInputWidget(
+                              onSendMessage: (submission) async {
+                                Future<void>
+                                clearComposerContextIfNeeded() async {
+                                  if (_fileContextItems.isNotEmpty) {
+                                    _setState(() {
+                                      _fileContextItems.clear();
+                                    });
+                                  }
+                                }
+
+                                final slashInvocation =
+                                    submission.mode == ChatComposerMode.shell
+                                    ? null
+                                    : _parseSlashCommandInvocation(
+                                        submission.text,
+                                      );
+
+                                if (slashInvocation != null) {
+                                  final builtinHandled =
+                                      await _handleBuiltinSlashCommand(
+                                        commandName: slashInvocation.name,
+                                        chatProvider: chatProvider,
+                                      );
+                                  await clearComposerContextIfNeeded();
+                                  if (builtinHandled) {
+                                    return;
+                                  }
+
+                                  _prepareForOutgoingUserMessage();
+                                  await chatProvider.submitMessage(
+                                    submission.text.trim(),
+                                    commandMode: true,
+                                  );
+                                  _scrollToBottom(force: true);
+                                  return;
+                                }
+
+                                _prepareForOutgoingUserMessage();
+                                await chatProvider.submitMessage(
+                                  submission.text,
+                                  attachments: submission.attachments,
+                                  shellMode:
+                                      submission.mode == ChatComposerMode.shell,
+                                );
+                                await clearComposerContextIfNeeded();
+                                _scrollToBottom(force: true);
+                              },
+                              onStopRequested: () async {
+                                await _requestStopActiveResponse(chatProvider);
+                              },
+                              onStopHintRequested: _showComposerStopHint,
+                              onDraftChanged: (draft) {
+                                _scheduleComposerDraftPersistence(
+                                  sessionId: currentSessionId,
+                                  draft: draft,
+                                );
+                              },
+                              onMentionQuery: _queryMentionSuggestions,
+                              onSlashQuery: _querySlashSuggestions,
+                              onBuiltinSlashCommand: (commandName) =>
+                                  _handleBuiltinSlashCommand(
+                                    commandName: commandName,
+                                    chatProvider: chatProvider,
+                                  ),
+                              sentMessageHistory: sentMessageHistory,
+                              prefilledDraft: _composerPrefilledDraft,
+                              prefilledDraftVersion:
+                                  _composerPrefilledDraftVersion,
+                              enabled: composerEnabled,
+                              blockReason: composerBlockReason,
+                              isResponding: chatProvider.canAbortActiveResponse,
+                              focusNode: _inputFocusNode,
+                              controller: _chatInputController,
+                              showAttachmentButton: attachmentsEnabled,
+                              showInlineAttachmentButton: false,
+                              allowImageAttachment: supportsImages,
+                              allowPdfAttachment: supportsPdf,
+                              cannedAnswersDataSource: di.sl(),
+                              cannedAnswersServerId:
+                                  projectProvider.activeServerId,
+                              cannedAnswersScopeId:
+                                  projectProvider.currentScopeId,
+                              contextItems: _fileContextItems,
+                              composerShowcaseKey: _composerTourKey,
+                              composerShowcaseTargetKey: _composerTourTargetKey,
+                              sendButtonShowcaseKey: _sendButtonTourKey,
+                              sendButtonShowcaseTargetKey:
+                                  _sendButtonTourTargetKey,
+                              onTourSkip: _handlePostOnboardingTourSkip,
+                              onRemoveContextItem: (index) {
+                                if (index >= 0 &&
+                                    index < _fileContextItems.length) {
+                                  _setState(() {
+                                    _fileContextItems.removeAt(index);
+                                  });
+                                }
+                              },
+                            );
+                          },
+                        ),
+                    ],
+                  ),
+                ),
               ),
-            ],
+            ),
           ),
-        ),
+          if (showTerminalPanel) _buildTerminalPanel(settingsProvider),
+        ],
       ),
     );
   }

@@ -58,7 +58,12 @@ CodewalkTerminalShellTarget resolveCodewalkTerminalShellTargetImpl({
     );
   }
 
-  for (final candidate in const <String>['/bin/bash', '/bin/zsh', '/bin/sh']) {
+  for (final candidate in const <String>[
+    '/system/bin/sh',
+    '/bin/bash',
+    '/bin/zsh',
+    '/bin/sh',
+  ]) {
     if (File(candidate).existsSync()) {
       return CodewalkTerminalShellTarget(
         executable: candidate,
@@ -75,7 +80,7 @@ CodewalkTerminalShellTarget resolveCodewalkTerminalShellTargetImpl({
     workingDirectory: normalizedDirectory,
     statusLabel: 'shell',
     errorMessage:
-        'No supported desktop shell was found for the embedded terminal.',
+        'No supported shell was found for the embedded terminal on this platform.',
   );
 }
 

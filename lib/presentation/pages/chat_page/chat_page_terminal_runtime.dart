@@ -1,12 +1,12 @@
 part of '../chat_page.dart';
 
 extension _ChatPageTerminalRuntime on _ChatPageState {
-  Future<void> _toggleTerminalPanel({required bool isMobile}) async {
+  Future<void> _toggleTerminalPanel() async {
     final settingsProvider = _settingsProvider;
     if (settingsProvider == null) {
       return;
     }
-    if (isMobile) {
+    if (!_terminalController.supportsDesktopAttach) {
       await _showMobileTerminalInfoSheet();
       return;
     }
@@ -62,7 +62,7 @@ extension _ChatPageTerminalRuntime on _ChatPageState {
                 Text('Terminal', style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 12),
                 Text(
-                  'The embedded project terminal is desktop-first for now. On mobile, keep using composer shell mode for one-shot commands or open a desktop shell for ${activeServer?.displayName ?? 'the active server'}.',
+                  'Embedded terminal is not available on this platform yet. Keep using composer shell mode for one-shot commands or open a supported native terminal for ${activeServer?.displayName ?? 'the active server'}.',
                 ),
               ],
             ),
@@ -74,34 +74,49 @@ extension _ChatPageTerminalRuntime on _ChatPageState {
 
   Widget _buildTerminalPanel(SettingsProvider settingsProvider) {
     final mediaHeight = MediaQuery.sizeOf(context).height;
-    final maxPanelHeight = min(480.0, mediaHeight * 0.55);
-    final panelHeight = settingsProvider.terminalPanelHeight.clamp(
-      180.0,
-      maxPanelHeight,
-    );
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-      child: SizedBox(
-        height: panelHeight,
-        child: CodewalkTerminalPanel(
-          controller: _terminalController,
-          onHide: () {
-            unawaited(settingsProvider.setTerminalPanelVisible(false));
-          },
-          onReconnect: () {
-            unawaited(_startTerminalForCurrentProject(force: true));
-          },
-          onStop: () {
-            _terminalSessionSignature = null;
-            unawaited(_terminalController.stop());
-          },
-          onHeightDelta: (delta) {
-            settingsProvider.updateTerminalPanelHeightInMemory(
-              (panelHeight + delta).clamp(180.0, maxPanelHeight),
-            );
-            unawaited(settingsProvider.persistTerminalPanelHeight());
-          },
-        ),
+    final isCompact = context.windowSizeClass.isCompact;
+    final normalMaxPanelHeight = isCompact
+        ? max(320.0, mediaHeight * 0.72)
+        : min(480.0, mediaHeight * 0.55);
+    final maximizedHeight = mediaHeight * (isCompact ? 0.88 : 0.8);
+    final panelHeight = settingsProvider.terminalPanelMaximized
+        ? maximizedHeight
+        : settingsProvider.terminalPanelHeight.clamp(
+            180.0,
+            normalMaxPanelHeight,
+          );
+    return SizedBox(
+      height: panelHeight,
+      child: CodewalkTerminalPanel(
+        controller: _terminalController,
+        isMaximized: settingsProvider.terminalPanelMaximized,
+        onHide: () {
+          unawaited(settingsProvider.setTerminalPanelVisible(false));
+        },
+        onReconnect: () {
+          unawaited(_startTerminalForCurrentProject(force: true));
+        },
+        onStop: () {
+          _terminalSessionSignature = null;
+          unawaited(_terminalController.stop());
+          unawaited(settingsProvider.setTerminalPanelVisible(false));
+        },
+        onToggleMaximize: () {
+          unawaited(
+            settingsProvider.setTerminalPanelMaximized(
+              !settingsProvider.terminalPanelMaximized,
+            ),
+          );
+        },
+        onHeightDelta: (delta) {
+          if (settingsProvider.terminalPanelMaximized) {
+            return;
+          }
+          settingsProvider.updateTerminalPanelHeightInMemory(
+            (panelHeight + delta).clamp(180.0, normalMaxPanelHeight),
+          );
+          unawaited(settingsProvider.persistTerminalPanelHeight());
+        },
       ),
     );
   }

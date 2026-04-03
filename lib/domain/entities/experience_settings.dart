@@ -571,6 +571,7 @@ class ExperienceSettings {
       desktopPaneWidths: const <DesktopPane, double>{},
       terminalPanelVisible: false,
       terminalPanelHeight: 240,
+      terminalPanelMaximized: false,
       appDensity: AppDensity.normal,
       showThinkingBubbles: true,
       showToolCallBubbles: true,
@@ -614,6 +615,7 @@ class ExperienceSettings {
     this.desktopPaneWidths = const <DesktopPane, double>{},
     this.terminalPanelVisible = false,
     this.terminalPanelHeight = 240,
+    this.terminalPanelMaximized = false,
     required this.appDensity,
     required this.showThinkingBubbles,
     required this.showToolCallBubbles,
@@ -657,6 +659,7 @@ class ExperienceSettings {
   final Map<DesktopPane, double> desktopPaneWidths;
   final bool terminalPanelVisible;
   final double terminalPanelHeight;
+  final bool terminalPanelMaximized;
   final AppDensity appDensity;
   final bool showThinkingBubbles;
   final bool showToolCallBubbles;
@@ -700,6 +703,7 @@ class ExperienceSettings {
     Map<DesktopPane, double>? desktopPaneWidths,
     bool? terminalPanelVisible,
     double? terminalPanelHeight,
+    bool? terminalPanelMaximized,
     AppDensity? appDensity,
     bool? showThinkingBubbles,
     bool? showToolCallBubbles,
@@ -747,6 +751,8 @@ class ExperienceSettings {
       desktopPaneWidths: desktopPaneWidths ?? this.desktopPaneWidths,
       terminalPanelVisible: terminalPanelVisible ?? this.terminalPanelVisible,
       terminalPanelHeight: terminalPanelHeight ?? this.terminalPanelHeight,
+      terminalPanelMaximized:
+          terminalPanelMaximized ?? this.terminalPanelMaximized,
       appDensity: appDensity ?? this.appDensity,
       showThinkingBubbles: showThinkingBubbles ?? this.showThinkingBubbles,
       showToolCallBubbles: showToolCallBubbles ?? this.showToolCallBubbles,
@@ -837,6 +843,7 @@ class ExperienceSettings {
         },
       'terminalPanelVisible': terminalPanelVisible,
       'terminalPanelHeight': terminalPanelHeight,
+      'terminalPanelMaximized': terminalPanelMaximized,
       'appDensity': appDensityKey(appDensity),
       'showThinkingBubbles': showThinkingBubbles,
       'showToolCallBubbles': showToolCallBubbles,
@@ -897,6 +904,7 @@ class ExperienceSettings {
     final desktopPaneWidths = <DesktopPane, double>{};
     var terminalPanelVisible = defaults.terminalPanelVisible;
     var terminalPanelHeight = defaults.terminalPanelHeight;
+    var terminalPanelMaximized = defaults.terminalPanelMaximized;
     var appDensity = defaults.appDensity;
     var showThinkingBubbles = defaults.showThinkingBubbles;
     var showToolCallBubbles = defaults.showToolCallBubbles;
@@ -1042,6 +1050,11 @@ class ExperienceSettings {
         180.0,
         480.0,
       );
+    }
+
+    final terminalPanelMaximizedJson = json['terminalPanelMaximized'];
+    if (terminalPanelMaximizedJson is bool) {
+      terminalPanelMaximized = terminalPanelMaximizedJson;
     }
 
     final appDensityJson = json['appDensity'];
@@ -1234,6 +1247,7 @@ class ExperienceSettings {
       desktopPaneWidths: desktopPaneWidths,
       terminalPanelVisible: terminalPanelVisible,
       terminalPanelHeight: terminalPanelHeight,
+      terminalPanelMaximized: terminalPanelMaximized,
       appDensity: appDensity,
       showThinkingBubbles: showThinkingBubbles,
       showToolCallBubbles: showToolCallBubbles,

@@ -29,9 +29,11 @@ class CodewalkTerminalController extends ChangeNotifier {
       'Open Terminal to start a shell in the active project folder.';
   String? _targetKey;
   int _processToken = 0;
+  int _terminalGeneration = 0;
   bool _disposed = false;
 
   Terminal get terminal => _terminal;
+  int get terminalGeneration => _terminalGeneration;
   CodewalkTerminalState get state => _state;
   String get statusMessage => _statusMessage;
 
@@ -40,6 +42,7 @@ class CodewalkTerminalController extends ChangeNotifier {
       return false;
     }
     return switch (defaultTargetPlatform) {
+      TargetPlatform.android ||
       TargetPlatform.linux ||
       TargetPlatform.macOS ||
       TargetPlatform.windows => true,
@@ -53,7 +56,7 @@ class CodewalkTerminalController extends ChangeNotifier {
   }) async {
     if (!supportsDesktopAttach) {
       await _resetToUnavailable(
-        'Embedded terminal is available on desktop only right now.',
+        'Embedded terminal is available on supported native platforms only right now.',
       );
       return;
     }
@@ -76,6 +79,7 @@ class CodewalkTerminalController extends ChangeNotifier {
     await _terminateProcess();
     final processToken = ++_processToken;
     _terminal = _createTerminal();
+    _terminalGeneration += 1;
     _state = CodewalkTerminalState.starting;
     _statusMessage =
         'Starting ${shellTarget.statusLabel} in ${shellTarget.workingDirectory}...';
@@ -154,6 +158,7 @@ class CodewalkTerminalController extends ChangeNotifier {
   Future<void> _resetToUnavailable(String message) async {
     await _terminateProcess();
     _terminal = _createTerminal();
+    _terminalGeneration += 1;
     _state = CodewalkTerminalState.unavailable;
     _statusMessage = message;
     _notify();

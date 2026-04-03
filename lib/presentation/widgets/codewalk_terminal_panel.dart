@@ -7,17 +7,21 @@ import '../services/codewalk_terminal_controller.dart';
 class CodewalkTerminalPanel extends StatefulWidget {
   const CodewalkTerminalPanel({
     required this.controller,
+    required this.isMaximized,
     required this.onHide,
     required this.onReconnect,
     required this.onStop,
+    required this.onToggleMaximize,
     required this.onHeightDelta,
     super.key,
   });
 
   final CodewalkTerminalController controller;
+  final bool isMaximized;
   final VoidCallback onHide;
   final VoidCallback onReconnect;
   final VoidCallback onStop;
+  final VoidCallback onToggleMaximize;
   final ValueChanged<double> onHeightDelta;
 
   @override
@@ -25,7 +29,17 @@ class CodewalkTerminalPanel extends StatefulWidget {
 }
 
 class _CodewalkTerminalPanelState extends State<CodewalkTerminalPanel> {
-  final TerminalController _viewController = TerminalController();
+  TerminalController _viewController = TerminalController();
+  int? _terminalGeneration;
+
+  void _syncTerminalController() {
+    final generation = widget.controller.terminalGeneration;
+    if (_terminalGeneration == generation) {
+      return;
+    }
+    _terminalGeneration = generation;
+    _viewController = TerminalController();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +47,7 @@ class _CodewalkTerminalPanelState extends State<CodewalkTerminalPanel> {
     return AnimatedBuilder(
       animation: widget.controller,
       builder: (context, _) {
+        _syncTerminalController();
         return Container(
           key: const ValueKey<String>('terminal_panel'),
           decoration: BoxDecoration(
@@ -69,40 +84,49 @@ class _CodewalkTerminalPanelState extends State<CodewalkTerminalPanel> {
                     const Icon(Symbols.terminal_rounded, size: 18),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Terminal',
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                          Text(
-                            widget.controller.statusMessage,
-                            key: const ValueKey<String>(
-                              'terminal_panel_status_text',
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
+                      child: Text(
+                        widget.controller.statusMessage,
+                        key: const ValueKey<String>(
+                          'terminal_panel_status_text',
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
                     IconButton(
+                      key: const ValueKey<String>(
+                        'terminal_panel_reconnect_button',
+                      ),
                       tooltip: 'Reconnect terminal',
                       onPressed: widget.onReconnect,
                       icon: const Icon(Symbols.refresh_rounded),
                     ),
                     IconButton(
-                      tooltip: 'Stop terminal session',
+                      key: const ValueKey<String>(
+                        'terminal_panel_maximize_button',
+                      ),
+                      tooltip: widget.isMaximized
+                          ? 'Restore terminal size'
+                          : 'Maximize terminal',
+                      onPressed: widget.onToggleMaximize,
+                      icon: Icon(
+                        widget.isMaximized
+                            ? Symbols.close_fullscreen_rounded
+                            : Symbols.open_in_full_rounded,
+                      ),
+                    ),
+                    IconButton(
+                      key: const ValueKey<String>('terminal_panel_stop_button'),
+                      tooltip: 'Close terminal',
                       onPressed: widget.onStop,
-                      icon: const Icon(Symbols.stop_rounded),
+                      icon: const Icon(Symbols.close_rounded),
                     ),
                     IconButton(
                       key: const ValueKey<String>('terminal_panel_hide_button'),
-                      tooltip: 'Hide terminal',
+                      tooltip: 'Minimize terminal',
                       onPressed: widget.onHide,
-                      icon: const Icon(Symbols.close_rounded),
+                      icon: const Icon(Symbols.keyboard_arrow_down_rounded),
                     ),
                   ],
                 ),
@@ -122,10 +146,13 @@ class _CodewalkTerminalPanelState extends State<CodewalkTerminalPanel> {
         state == CodewalkTerminalState.exited) {
       return ClipRRect(
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
-        child: TerminalView(
-          widget.controller.terminal,
-          controller: _viewController,
-          autofocus: true,
+        child: KeyedSubtree(
+          key: ValueKey<int>(widget.controller.terminalGeneration),
+          child: TerminalView(
+            widget.controller.terminal,
+            controller: _viewController,
+            autofocus: true,
+          ),
         ),
       );
     }

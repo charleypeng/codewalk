@@ -152,6 +152,7 @@ class SettingsProvider extends ChangeNotifier {
   bool get showComposerTips => _settings.showComposerTips;
   bool get terminalPanelVisible => _settings.terminalPanelVisible;
   double get terminalPanelHeight => _settings.terminalPanelHeight;
+  bool get terminalPanelMaximized => _settings.terminalPanelMaximized;
   bool get composerAutoApprovePermissions =>
       _settings.composerAutoApprovePermissions;
   DesktopCloseBehavior get desktopCloseBehavior =>
@@ -422,6 +423,15 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<void> setTerminalPanelHeight(double height) async {
     updateTerminalPanelHeightInMemory(height);
+    await _persist();
+  }
+
+  Future<void> setTerminalPanelMaximized(bool maximized) async {
+    if (_settings.terminalPanelMaximized == maximized) {
+      return;
+    }
+    _settings = _settings.copyWith(terminalPanelMaximized: maximized);
+    notifyListeners();
     await _persist();
   }
 
@@ -1018,7 +1028,12 @@ class SettingsProvider extends ChangeNotifier {
     if (_settings.terminalPanelVisible == visible) {
       return;
     }
-    _settings = _settings.copyWith(terminalPanelVisible: visible);
+    _settings = _settings.copyWith(
+      terminalPanelVisible: visible,
+      terminalPanelMaximized: visible
+          ? _settings.terminalPanelMaximized
+          : false,
+    );
     notifyListeners();
     await _persist();
   }

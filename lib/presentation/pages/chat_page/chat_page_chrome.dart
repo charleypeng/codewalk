@@ -462,12 +462,12 @@ extension _ChatPageChrome on _ChatPageState {
         IconButton(
           key: const ValueKey<String>('appbar_terminal_button'),
           icon: const Icon(Symbols.terminal_rounded),
-          tooltip: isMobile
-              ? 'Open terminal info'
-              : (settingsProvider.terminalPanelVisible
-                    ? 'Hide terminal'
-                    : 'Open terminal'),
-          onPressed: () => unawaited(_toggleTerminalPanel(isMobile: isMobile)),
+          tooltip: settingsProvider.terminalPanelVisible
+              ? 'Hide terminal'
+              : (_terminalController.supportsDesktopAttach
+                    ? 'Open terminal'
+                    : 'Open terminal info'),
+          onPressed: () => unawaited(_toggleTerminalPanel()),
         ),
         if (refreshlessEnabled && !isMobile)
           Consumer2<ChatProvider, AppProvider>(
