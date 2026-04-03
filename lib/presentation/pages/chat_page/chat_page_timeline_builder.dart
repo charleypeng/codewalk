@@ -258,6 +258,10 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
         (chatProvider.currentSession != null ||
             chatProvider.isDraftingNewChat) &&
         composerBlockReason == null;
+    final settingsProvider = context.watch<SettingsProvider>();
+    final showTerminalPanel =
+        !context.windowSizeClass.isCompact &&
+        settingsProvider.terminalPanelVisible;
     final composerStatusTarget = _resolveComposerStatusTarget(chatProvider);
     _queueComposerStatusSync(composerStatusTarget);
     final composerStatus = _priorityComposerStatus ?? _visibleComposerStatus;
@@ -439,6 +443,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                 chatProvider,
                 isSubConversation: isSubConversation,
               ),
+
+              if (showTerminalPanel) _buildTerminalPanel(settingsProvider),
 
               // Input field
               if (isSubConversation)

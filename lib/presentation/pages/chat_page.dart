@@ -26,6 +26,7 @@ import '../../domain/entities/experience_settings.dart';
 import '../../domain/entities/file_node.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/entities/provider.dart';
+import '../../domain/entities/server_profile.dart';
 import '../providers/app_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/project_provider.dart';
@@ -33,6 +34,7 @@ import '../providers/settings_provider.dart';
 import '../services/android_background_alert_logic.dart';
 import '../services/android_background_alert_worker.dart';
 import '../services/android_foreground_monitor_service.dart';
+import '../services/codewalk_terminal_controller.dart';
 import '../services/notification_service.dart';
 import '../services/permission_auto_approve_runtime.dart';
 import '../theme/app_animations.dart';
@@ -53,6 +55,7 @@ import '../widgets/chat_message_widget.dart';
 import '../widgets/chat_session_list.dart';
 import '../widgets/chat_skeleton_shimmer.dart';
 import '../widgets/chat_tour_showcase.dart';
+import '../widgets/codewalk_terminal_panel.dart';
 import '../widgets/message_entrance_animation.dart';
 import '../widgets/modal_primary_action_shortcuts.dart';
 import '../widgets/permission_request_card.dart';
@@ -81,6 +84,7 @@ part 'chat_page/chat_page_file_runtime.dart';
 part 'chat_page/chat_page_composer_widgets.dart';
 part 'chat_page/chat_page_model_selector_runtime.dart';
 part 'chat_page/chat_page_timeline_runtime.dart';
+part 'chat_page/chat_page_terminal_runtime.dart';
 
 enum _ContextUsageAction { compactNow }
 
@@ -191,6 +195,8 @@ class _ChatPageState extends State<ChatPage>
   final ScrollController _scrollController = ScrollController();
   final FocusNode _inputFocusNode = FocusNode(debugLabel: 'chat_input');
   final ChatInputController _chatInputController = ChatInputController();
+  final CodewalkTerminalController _terminalController =
+      CodewalkTerminalController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final GlobalKey _agentSelectorChipKey = GlobalKey(
     debugLabel: 'agent_selector_chip',
@@ -293,6 +299,7 @@ class _ChatPageState extends State<ChatPage>
   String? _returnRevealBaselineLatestMessageId;
   String? _returnRevealBaselineLatestRevealableAssistantMessageId;
   String? _lastForegroundPolicySettingsSignature;
+  String? _terminalAttachSignature;
   ChatComposerDraft? _composerPrefilledDraft;
   int _composerPrefilledDraftVersion = 0;
   final Map<String, _FileExplorerContextState> _fileContextStates =
@@ -499,6 +506,7 @@ class _ChatPageState extends State<ChatPage>
     _scrollController.dispose();
     _inputFocusNode.dispose();
     _sessionSearchController.dispose();
+    _terminalController.dispose();
     super.dispose();
   }
 
@@ -646,6 +654,12 @@ class _ChatPageState extends State<ChatPage>
       _lastServerId = currentServerId;
       _lastServerConnectionState = currentConnected;
       _lastActiveServerHealthStatus = currentHealth;
+      _terminalAttachSignature = null;
+      if (_settingsProvider?.terminalPanelVisible == true) {
+        unawaited(_attachTerminalForActiveServer(force: true));
+      } else {
+        unawaited(_terminalController.stop());
+      }
       if (currentServerId != null) {
         unawaited(_handleServerScopeChange());
       }

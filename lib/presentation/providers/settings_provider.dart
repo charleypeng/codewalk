@@ -150,6 +150,8 @@ class SettingsProvider extends ChangeNotifier {
   bool get showRecentSessions => _settings.showRecentSessions;
   bool get taskListCollapsed => _settings.taskListCollapsed;
   bool get showComposerTips => _settings.showComposerTips;
+  bool get terminalPanelVisible => _settings.terminalPanelVisible;
+  double get terminalPanelHeight => _settings.terminalPanelHeight;
   bool get composerAutoApprovePermissions =>
       _settings.composerAutoApprovePermissions;
   DesktopCloseBehavior get desktopCloseBehavior =>
@@ -402,6 +404,24 @@ class SettingsProvider extends ChangeNotifier {
     next.remove(pane);
     _settings = _settings.copyWith(desktopPaneWidths: next);
     notifyListeners();
+    await _persist();
+  }
+
+  void updateTerminalPanelHeightInMemory(double height) {
+    final clamped = height.clamp(180.0, 480.0);
+    if ((_settings.terminalPanelHeight - clamped).abs() < 1) {
+      return;
+    }
+    _settings = _settings.copyWith(terminalPanelHeight: clamped);
+    notifyListeners();
+  }
+
+  Future<void> persistTerminalPanelHeight() async {
+    await _persist();
+  }
+
+  Future<void> setTerminalPanelHeight(double height) async {
+    updateTerminalPanelHeightInMemory(height);
     await _persist();
   }
 
@@ -990,6 +1010,15 @@ class SettingsProvider extends ChangeNotifier {
     final next = Map<DesktopPane, bool>.from(_settings.desktopPanes);
     next[pane] = visible;
     _settings = _settings.copyWith(desktopPanes: next);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setTerminalPanelVisible(bool visible) async {
+    if (_settings.terminalPanelVisible == visible) {
+      return;
+    }
+    _settings = _settings.copyWith(terminalPanelVisible: visible);
     notifyListeners();
     await _persist();
   }

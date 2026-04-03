@@ -569,6 +569,8 @@ class ExperienceSettings {
         DesktopPane.utility: true,
       },
       desktopPaneWidths: const <DesktopPane, double>{},
+      terminalPanelVisible: false,
+      terminalPanelHeight: 240,
       appDensity: AppDensity.normal,
       showThinkingBubbles: true,
       showToolCallBubbles: true,
@@ -610,6 +612,8 @@ class ExperienceSettings {
     required this.shortcuts,
     required this.desktopPanes,
     this.desktopPaneWidths = const <DesktopPane, double>{},
+    this.terminalPanelVisible = false,
+    this.terminalPanelHeight = 240,
     required this.appDensity,
     required this.showThinkingBubbles,
     required this.showToolCallBubbles,
@@ -651,6 +655,8 @@ class ExperienceSettings {
   final Map<ShortcutAction, String> shortcuts;
   final Map<DesktopPane, bool> desktopPanes;
   final Map<DesktopPane, double> desktopPaneWidths;
+  final bool terminalPanelVisible;
+  final double terminalPanelHeight;
   final AppDensity appDensity;
   final bool showThinkingBubbles;
   final bool showToolCallBubbles;
@@ -692,6 +698,8 @@ class ExperienceSettings {
     Map<ShortcutAction, String>? shortcuts,
     Map<DesktopPane, bool>? desktopPanes,
     Map<DesktopPane, double>? desktopPaneWidths,
+    bool? terminalPanelVisible,
+    double? terminalPanelHeight,
     AppDensity? appDensity,
     bool? showThinkingBubbles,
     bool? showToolCallBubbles,
@@ -737,6 +745,8 @@ class ExperienceSettings {
       shortcuts: shortcuts ?? this.shortcuts,
       desktopPanes: desktopPanes ?? this.desktopPanes,
       desktopPaneWidths: desktopPaneWidths ?? this.desktopPaneWidths,
+      terminalPanelVisible: terminalPanelVisible ?? this.terminalPanelVisible,
+      terminalPanelHeight: terminalPanelHeight ?? this.terminalPanelHeight,
       appDensity: appDensity ?? this.appDensity,
       showThinkingBubbles: showThinkingBubbles ?? this.showThinkingBubbles,
       showToolCallBubbles: showToolCallBubbles ?? this.showToolCallBubbles,
@@ -825,6 +835,8 @@ class ExperienceSettings {
           for (final entry in desktopPaneWidths.entries)
             desktopPaneKey(entry.key): entry.value,
         },
+      'terminalPanelVisible': terminalPanelVisible,
+      'terminalPanelHeight': terminalPanelHeight,
       'appDensity': appDensityKey(appDensity),
       'showThinkingBubbles': showThinkingBubbles,
       'showToolCallBubbles': showToolCallBubbles,
@@ -883,6 +895,8 @@ class ExperienceSettings {
     final shortcuts = Map<ShortcutAction, String>.from(defaults.shortcuts);
     final desktopPanes = Map<DesktopPane, bool>.from(defaults.desktopPanes);
     final desktopPaneWidths = <DesktopPane, double>{};
+    var terminalPanelVisible = defaults.terminalPanelVisible;
+    var terminalPanelHeight = defaults.terminalPanelHeight;
     var appDensity = defaults.appDensity;
     var showThinkingBubbles = defaults.showThinkingBubbles;
     var showToolCallBubbles = defaults.showToolCallBubbles;
@@ -1015,6 +1029,19 @@ class ExperienceSettings {
           desktopPaneWidths[pane] = raw.toDouble().clamp(160.0, 500.0);
         }
       }
+    }
+
+    final terminalPanelVisibleJson = json['terminalPanelVisible'];
+    if (terminalPanelVisibleJson is bool) {
+      terminalPanelVisible = terminalPanelVisibleJson;
+    }
+
+    final terminalPanelHeightJson = json['terminalPanelHeight'];
+    if (terminalPanelHeightJson is num) {
+      terminalPanelHeight = terminalPanelHeightJson.toDouble().clamp(
+        180.0,
+        480.0,
+      );
     }
 
     final appDensityJson = json['appDensity'];
@@ -1205,6 +1232,8 @@ class ExperienceSettings {
       shortcuts: shortcuts,
       desktopPanes: desktopPanes,
       desktopPaneWidths: desktopPaneWidths,
+      terminalPanelVisible: terminalPanelVisible,
+      terminalPanelHeight: terminalPanelHeight,
       appDensity: appDensity,
       showThinkingBubbles: showThinkingBubbles,
       showToolCallBubbles: showToolCallBubbles,

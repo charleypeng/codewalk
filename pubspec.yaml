@@ -96,6 +96,8 @@ dependencies:
       url: https://github.com/jlnrrg/simple_icons.git
       ref: 381d0cbd7e75591c9e3c81058b86b7dda6a89e07
   showcaseview: ^5.0.1
+  xterm: ^4.0.0
+  flutter_pty: ^0.4.2
 
 dev_dependencies:
   flutter_test:

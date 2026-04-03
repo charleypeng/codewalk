@@ -2268,6 +2268,69 @@ void main() {
       );
     });
 
+    testWidgets('desktop terminal button toggles terminal panel', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(1300, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(localDataSource: localDataSource);
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('terminal_panel')),
+        findsNothing,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('appbar_terminal_button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('terminal_panel')),
+        findsOneWidget,
+      );
+      expect(find.text('Terminal'), findsWidgets);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('appbar_terminal_button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('terminal_panel')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('mobile terminal button opens info sheet', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(500, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(localDataSource: localDataSource);
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('appbar_terminal_button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('desktop-first for now'), findsOneWidget);
+    });
+
     testWidgets('applies compact app bar toolbar heights', (
       WidgetTester tester,
     ) async {
