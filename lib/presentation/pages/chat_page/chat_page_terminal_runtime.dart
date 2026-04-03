@@ -76,9 +76,10 @@ extension _ChatPageTerminalRuntime on _ChatPageState {
 
   Widget _buildTerminalPanel(SettingsProvider settingsProvider) {
     final mediaHeight = MediaQuery.sizeOf(context).height;
+    final maxPanelHeight = min(480.0, mediaHeight * 0.55);
     final panelHeight = settingsProvider.terminalPanelHeight.clamp(
       180.0,
-      mediaHeight * 0.55,
+      maxPanelHeight,
     );
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
@@ -98,7 +99,7 @@ extension _ChatPageTerminalRuntime on _ChatPageState {
           },
           onHeightDelta: (delta) {
             settingsProvider.updateTerminalPanelHeightInMemory(
-              settingsProvider.terminalPanelHeight + delta,
+              (panelHeight + delta).clamp(180.0, maxPanelHeight),
             );
             unawaited(settingsProvider.persistTerminalPanelHeight());
           },

@@ -27,8 +27,9 @@ class CodewalkTerminalController extends ChangeNotifier {
   CodewalkTerminalState _state = CodewalkTerminalState.idle;
   String _statusMessage = 'Open Terminal to attach the official OpenCode TUI.';
   String? _attachedServerLabel;
-  String? _attachUrl;
-  String? _commandPath;
+  String? _targetKey;
+  int _processToken = 0;
+  bool _disposed = false;
 
   Terminal get terminal => _terminal;
   CodewalkTerminalState get state => _state;
@@ -76,23 +77,20 @@ class CodewalkTerminalController extends ChangeNotifier {
     }
 
     final attachUrl = _buildAttachUrl(serverProfile);
-    final sameTarget =
-        !force &&
-        _process != null &&
-        _attachUrl == attachUrl &&
-        _commandPath == executable;
+    final targetKey = '${serverProfile.id}|$executable';
+    final sameTarget = !force && _process != null && _targetKey == targetKey;
     if (sameTarget) {
       return;
     }
 
     await _terminateProcess();
+    final processToken = ++_processToken;
     _terminal = _createTerminal();
     _state = CodewalkTerminalState.attaching;
     _statusMessage = 'Attaching to ${serverProfile.displayName}...';
     _attachedServerLabel = serverProfile.displayName;
-    _attachUrl = attachUrl;
-    _commandPath = executable;
-    notifyListeners();
+    _targetKey = targetKey;
+    _notify();
 
     try {
       final process = startCodewalkTerminalProcess(
@@ -100,37 +98,47 @@ class CodewalkTerminalController extends ChangeNotifier {
         arguments: <String>['attach', attachUrl],
       );
       _process = process;
-      _outputSubscription = process.output.listen(
+      late final StreamSubscription<String> outputSubscription;
+      outputSubscription = process.output.listen(
         (data) {
           _terminal.write(data);
-          if (_state == CodewalkTerminalState.attaching) {
+          if (_processToken == processToken &&
+              _state == CodewalkTerminalState.attaching) {
             _state = CodewalkTerminalState.attached;
             _statusMessage = 'Attached to ${serverProfile.displayName}';
-            notifyListeners();
+            _notify();
           }
         },
         onError: (Object error, StackTrace stackTrace) {
+          if (_processToken != processToken) {
+            return;
+          }
+          _outputSubscription = null;
+          unawaited(outputSubscription.cancel());
           _state = CodewalkTerminalState.failed;
           _statusMessage = 'Terminal attach failed: $error';
-          notifyListeners();
+          _notify();
         },
       );
+      _outputSubscription = outputSubscription;
       _exitWatcher = process.exitCode.then((code) async {
-        if (!identical(process, _process)) {
+        if (_processToken != processToken) {
           return;
         }
         _process = null;
-        await _outputSubscription?.cancel();
-        _outputSubscription = null;
+        if (identical(_outputSubscription, outputSubscription)) {
+          _outputSubscription = null;
+        }
+        await outputSubscription.cancel();
         _state = CodewalkTerminalState.exited;
         _statusMessage = 'Terminal exited with code $code.';
-        notifyListeners();
+        _notify();
       });
     } catch (error) {
       _process = null;
       _state = CodewalkTerminalState.failed;
       _statusMessage = 'Terminal attach failed: $error';
-      notifyListeners();
+      _notify();
     }
   }
 
@@ -138,7 +146,7 @@ class CodewalkTerminalController extends ChangeNotifier {
     await _terminateProcess();
     _state = CodewalkTerminalState.idle;
     _statusMessage = 'Terminal session closed.';
-    notifyListeners();
+    _notify();
   }
 
   Future<void> _resetToUnavailable(String message) async {
@@ -146,16 +154,21 @@ class CodewalkTerminalController extends ChangeNotifier {
     _terminal = _createTerminal();
     _state = CodewalkTerminalState.unavailable;
     _statusMessage = message;
-    notifyListeners();
+    _notify();
   }
 
   Future<void> _terminateProcess() async {
-    _process?.kill();
+    final process = _process;
+    final outputSubscription = _outputSubscription;
+    final exitWatcher = _exitWatcher;
+    _processToken += 1;
     _process = null;
-    await _outputSubscription?.cancel();
     _outputSubscription = null;
-    await _exitWatcher;
+    _targetKey = null;
     _exitWatcher = null;
+    process?.kill();
+    await outputSubscription?.cancel();
+    await exitWatcher;
   }
 
   Terminal _createTerminal() {
@@ -184,8 +197,16 @@ class CodewalkTerminalController extends ChangeNotifier {
         .toString();
   }
 
+  void _notify() {
+    if (_disposed) {
+      return;
+    }
+    notifyListeners();
+  }
+
   @override
   void dispose() {
+    _disposed = true;
     unawaited(_terminateProcess());
     super.dispose();
   }
