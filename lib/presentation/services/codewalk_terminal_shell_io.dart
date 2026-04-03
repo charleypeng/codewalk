@@ -5,7 +5,7 @@ import 'codewalk_terminal_shell.dart';
 CodewalkTerminalShellTarget resolveCodewalkTerminalShellTargetImpl({
   required String? workingDirectory,
 }) {
-  final normalizedDirectory = workingDirectory?.trim();
+  var normalizedDirectory = workingDirectory?.trim();
   if (normalizedDirectory == null || normalizedDirectory.isEmpty) {
     return const CodewalkTerminalShellTarget(
       executable: '',
@@ -18,14 +18,21 @@ CodewalkTerminalShellTarget resolveCodewalkTerminalShellTargetImpl({
   }
 
   if (!Directory(normalizedDirectory).existsSync()) {
-    return CodewalkTerminalShellTarget(
-      executable: '',
-      arguments: const <String>[],
-      workingDirectory: normalizedDirectory,
-      statusLabel: 'shell',
-      errorMessage:
-          'The current project folder is unavailable, so Terminal cannot start there yet.',
-    );
+    if (Platform.isAndroid) {
+      // Android terminals often receive a server-scoped project path that does
+      // not exist inside the app sandbox. Falling back to a safe local cwd is
+      // better than blocking terminal startup entirely.
+      normalizedDirectory = '/';
+    } else {
+      return CodewalkTerminalShellTarget(
+        executable: '',
+        arguments: const <String>[],
+        workingDirectory: normalizedDirectory,
+        statusLabel: 'shell',
+        errorMessage:
+            'The current project folder is unavailable, so Terminal cannot start there yet.',
+      );
+    }
   }
 
   if (Platform.isWindows) {
