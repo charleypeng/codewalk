@@ -619,11 +619,11 @@ Additional commands may be provided by the connected OpenCode server and merged 
 - **Given** the user is on a non-compact desktop chat layout
 - **When** the user taps the AppBar terminal button
 - **Then** CodeWalk toggles a bottom terminal panel inside the chat workspace instead of reusing the composer input mode
-- **Then** CodeWalk uses the configured local OpenCode command to run `opencode attach <active-server>` when a local command path is available
-- **Then** hiding the panel keeps the current terminal session intact, while `Stop terminal session` explicitly terminates the active attach process
+- **Then** CodeWalk starts a local PTY shell in the active project directory using the platform shell available on that desktop runtime
+- **Then** hiding the panel keeps the current shell session intact, while `Stop terminal session` explicitly terminates the active local shell process
 - **Given** the user is on mobile
 - **When** the user taps the same terminal button
-- **Then** CodeWalk opens an informational sheet explaining that the embedded terminal is desktop-first for now and points the user to composer shell mode or desktop attach instead
+- **Then** CodeWalk opens an informational sheet explaining that the embedded project terminal is desktop-first for now and points the user to composer shell mode or a desktop shell instead
 - **Then** composer shell mode remains a separate one-shot command path backed by `POST /session/:id/shell`
 
 ---

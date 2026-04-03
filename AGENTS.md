@@ -55,7 +55,7 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web; community reference openchamber added as secondary source | 951–1074 |
 | 024 | Modal Enter keyboard policy for safe dialogs — speed up keyboard confirmation without enabling destructive or ambiguous modal flows | 1076–1149 |
 | 025 | Settled Assistant-Work Disclosure Ownership — client-side architectural ownership to prevent open/close thrash, scroll jumps on session return | 1151–1193 |
-| 026 | Desktop-first terminal workspace with local `opencode attach <server>` — embedded TUI launch without server API changes | 1197–1244 |
+| 026 | Desktop-first terminal workspace with local PTY shell in active project directory — embedded shell without server API changes | 1195–1241 |
 
 ## 🗺 CODEBASE Quick Reference (details in `CODEBASE.md`)
 
@@ -67,12 +67,12 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | Folder Structure | 12–51 |
 | Entry Points | 53–62 |
 | Core Modules | 64–131 |
-| Chat Architecture | 133–219 |
-| Data & Domain Layers | 221–231 |
-| Key API/DataSource locations | 233–251 |
-| Main Commands | 253–274 |
-| Testing/Quality Gates | 276–296 |
-| Notes | 298–458 |
+| Chat Architecture | 133–223 |
+| Data & Domain Layers | 225–235 |
+| Key API/DataSource locations | 237–255 |
+| Main Commands | 257–278 |
+| Testing/Quality Gates | 280–300 |
+| Notes | 302–461 |
 
 ## ⚙️ Makefile Quick Reference (details in `Makefile`)
 
