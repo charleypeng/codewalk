@@ -54,7 +54,6 @@ import 'package:codewalk/presentation/utils/session_title_formatter.dart';
 import 'package:codewalk/presentation/widgets/chat_skeleton_shimmer.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -2313,53 +2312,55 @@ void main() {
       );
     });
 
-    testWidgets('compact terminal opens and can be minimized', (
-      WidgetTester tester,
-    ) async {
-      debugDefaultTargetPlatformOverride = TargetPlatform.android;
-      await tester.binding.setSurfaceSize(const Size(390, 900));
-      addTearDown(() {
-        debugDefaultTargetPlatformOverride = null;
-        tester.binding.setSurfaceSize(null);
-      });
+    testWidgets(
+      'compact terminal opens and can be minimized',
+      (WidgetTester tester) async {
+        await tester.binding.setSurfaceSize(const Size(390, 900));
+        addTearDown(() {
+          tester.binding.setSurfaceSize(null);
+        });
 
-      final localDataSource = InMemoryAppLocalDataSource()
-        ..activeServerId = 'srv_test';
-      final provider = _buildChatProvider(localDataSource: localDataSource);
-      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test';
+        final provider = _buildChatProvider(localDataSource: localDataSource);
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
 
-      await tester.pumpWidget(_testApp(provider, appProvider));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(_testApp(provider, appProvider));
+        await tester.pumpAndSettle();
 
-      expect(
-        find.byKey(const ValueKey<String>('composer_root_container')),
-        findsOneWidget,
-      );
+        expect(
+          find.byKey(const ValueKey<String>('composer_root_container')),
+          findsOneWidget,
+        );
 
-      await tester.tap(
-        find.byKey(const ValueKey<String>('appbar_terminal_button')),
-      );
-      await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey<String>('appbar_terminal_button')),
+        );
+        await tester.pumpAndSettle();
 
-      expect(
-        find.byKey(const ValueKey<String>('terminal_panel')),
-        findsOneWidget,
-      );
+        expect(
+          find.byKey(const ValueKey<String>('terminal_panel')),
+          findsOneWidget,
+        );
 
-      await tester.tap(
-        find.byKey(const ValueKey<String>('terminal_panel_hide_button')),
-      );
-      await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey<String>('terminal_panel_hide_button')),
+        );
+        await tester.pumpAndSettle();
 
-      expect(
-        find.byKey(const ValueKey<String>('terminal_panel')),
-        findsNothing,
-      );
-      expect(
-        find.byKey(const ValueKey<String>('composer_root_container')),
-        findsOneWidget,
-      );
-    });
+        expect(
+          find.byKey(const ValueKey<String>('terminal_panel')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const ValueKey<String>('composer_root_container')),
+          findsOneWidget,
+        );
+      },
+      variant: const TargetPlatformVariant(<TargetPlatform>{
+        TargetPlatform.android,
+      }),
+    );
 
     testWidgets('terminal maximize button expands panel height', (
       WidgetTester tester,

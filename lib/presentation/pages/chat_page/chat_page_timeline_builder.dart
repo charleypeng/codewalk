@@ -259,9 +259,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
             chatProvider.isDraftingNewChat) &&
         composerBlockReason == null;
     final settingsProvider = context.watch<SettingsProvider>();
-    final screenWidth = MediaQuery.sizeOf(context).width;
     final isCompactLayout =
-        context.windowSizeClass.isCompact || screenWidth < 600;
+        context.windowSizeClass.isCompact || _isMobileRuntime;
     final showTerminalPanel = settingsProvider.terminalPanelVisible;
     final hideComposerForTerminal = isCompactLayout && showTerminalPanel;
     final composerStatusTarget = _resolveComposerStatusTarget(chatProvider);
