@@ -210,15 +210,18 @@ chat_input_speech_controller.dart
 ### Terminal Workspace
 
 ```text
-lib/presentation/services/codewalk_terminal_controller.dart   # Owns xterm Terminal state, local PTY shell lifecycle (startShell/stop), target binding, teardown guards, and platform gating; resolves shell via `resolveCodewalkTerminalShellTarget()` instead of `opencode attach`
+lib/presentation/services/codewalk_terminal_controller.dart   # Owns xterm Terminal state, local PTY shell lifecycle (startShell/stop), Android-inclusive platform gating, terminal generation rebinding, target binding, and teardown guards; resolves shell via `resolveCodewalkTerminalShellTarget()` instead of `opencode attach`
 lib/presentation/services/codewalk_terminal_shell.dart        # Conditional export + `CodewalkTerminalShellTarget` value object (executable, arguments, workingDirectory, statusLabel, errorMessage)
-lib/presentation/services/codewalk_terminal_shell_io.dart     # Desktop implementation: resolves user's `$SHELL` (Unix) or `%COMSPEC%`/PowerShell (Windows), validates directory existence, falls back through `/bin/bash`, `/bin/zsh`, `/bin/sh`
+lib/presentation/services/codewalk_terminal_shell_io.dart     # Native implementation: resolves user's `$SHELL` (Unix) or `%COMSPEC%`/PowerShell (Windows), validates directory existence, and falls back through `/system/bin/sh`, `/bin/bash`, `/bin/zsh`, `/bin/sh`
 lib/presentation/services/codewalk_terminal_shell_stub.dart   # Non-IO platforms: returns error target ("Embedded terminal is available on desktop only right now.")
 lib/presentation/services/codewalk_terminal_process.dart      # Terminal process abstraction + conditional platform factory (`startCodewalkTerminalProcess`)
-lib/presentation/services/codewalk_terminal_process_io.dart   # Desktop PTY-backed implementation using `flutter_pty` (Pty.start with resolved shell executable, workingDirectory, environment)
+lib/presentation/services/codewalk_terminal_process_io.dart   # Native PTY-backed implementation using `flutter_pty` (Pty.start with resolved shell executable, workingDirectory, environment)
 lib/presentation/services/codewalk_terminal_process_stub.dart # Unsupported-platform stub used on non-IO targets
-lib/presentation/widgets/codewalk_terminal_panel.dart         # Resizable terminal panel widget with reconnect/stop/hide actions and fallback states
-lib/presentation/pages/chat_page/chat_page_terminal_runtime.dart # ChatPage extension for terminal toggle flow, project-scoped shell start (`startShell(workingDirectory:)`), mobile info sheet, and persisted panel height handling
+lib/presentation/widgets/codewalk_terminal_panel.dart         # Resizable terminal panel widget with reconnect/close/minimize/maximize controls, terminal-generation view rebinding, and fallback states
+lib/presentation/pages/chat_page/chat_page_terminal_runtime.dart # ChatPage extension for terminal toggle flow, project-scoped shell start (`startShell(workingDirectory:)`), close/minimize/maximize actions, and persisted panel height/maximize handling
+lib/presentation/pages/chat_page/chat_page_timeline_builder.dart # Main chat workspace layout: renders terminal full-width below the constrained chat column and hides composer-adjacent controls on compact/mobile while terminal is visible
+lib/domain/entities/experience_settings.dart                  # Persisted terminal visibility, height, and maximize state inside shared experience settings
+lib/presentation/providers/settings_provider.dart             # In-memory + persisted mutators for terminal visibility, height, and maximize state
 ```
 
 ## Data & Domain Layers

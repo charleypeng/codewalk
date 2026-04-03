@@ -616,14 +616,18 @@ Additional commands may be provided by the connected OpenCode server and merged 
 
 ### Terminal workspace
 
-- **Given** the user is on a non-compact desktop chat layout
+- **Given** the user is in the chat workspace on a supported native platform
 - **When** the user taps the AppBar terminal button
-- **Then** CodeWalk toggles a bottom terminal panel inside the chat workspace instead of reusing the composer input mode
-- **Then** CodeWalk starts a local PTY shell in the active project directory using the platform shell available on that desktop runtime
-- **Then** hiding the panel keeps the current shell session intact, while `Stop terminal session` explicitly terminates the active local shell process
-- **Given** the user is on mobile
+- **Then** CodeWalk toggles an embedded terminal panel inside the chat workspace instead of reusing the composer input mode
+- **Then** CodeWalk starts a local PTY shell in the active project directory using the platform shell available on that runtime
+- **Then** `Close terminal` fully closes the panel and terminates the active shell process, while `Minimize terminal` hides the panel without stopping the shell
+- **Then** `Maximize terminal` expands the panel to a larger workspace view and `Restore terminal size` returns it to the saved panel height
+- **Given** the user is on a compact/mobile chat layout
+- **When** the embedded terminal is open
+- **Then** CodeWalk hides the composer input area until the terminal is minimized or closed so the terminal can use the available screen space
+- **Given** the user is on an unsupported platform
 - **When** the user taps the same terminal button
-- **Then** CodeWalk opens an informational sheet explaining that the embedded project terminal is desktop-first for now and points the user to composer shell mode or a desktop shell instead
+- **Then** CodeWalk opens an informational sheet explaining that the embedded terminal is unavailable there and points the user to composer shell mode or a supported native terminal instead
 - **Then** composer shell mode remains a separate one-shot command path backed by `POST /session/:id/shell`
 
 ---

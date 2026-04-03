@@ -29,7 +29,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-023: Official OpenCode Contract-First Compatibility Policy
 - ADR-024: Modal Enter Keyboard Policy for Safe Dialogs
 - ADR-025: Settled Assistant-Work Disclosure Ownership
-- ADR-026: Desktop-First Terminal Workspace with Local PTY Shell
+- ADR-026: Cross-Platform Terminal Workspace with Local PTY Shell
 
 ---
 
@@ -1192,22 +1192,25 @@ This ADR is fully compatible with ADR-023 and official OpenCode lifecycle semant
 
 ---
 
-## ADR-026: Desktop-First Terminal Workspace with Local PTY Shell (2026-04-03)
+## ADR-026: Cross-Platform Terminal Workspace with Local PTY Shell (2026-04-03)
 
 **Status**: Accepted
 
 ### Context
 
-CodeWalk provides a chat-based UI for interacting with OpenCode servers, but some workflows benefit from direct shell access in the active project directory. Desktop users need a way to open a local PTY terminal without leaving the chat workspace. The feature must preserve ADR-023 parity by remaining entirely client-side — no server contract changes, no new endpoints, and no deviation from OpenCode lifecycle semantics.
+CodeWalk provides a chat-based UI for interacting with OpenCode servers, but some workflows benefit from direct shell access in the active project directory. Users on both desktop and mobile need a way to open a local PTY terminal without leaving the chat workspace. The feature must preserve ADR-023 parity by remaining entirely client-side — no server contract changes, no new endpoints, and no deviation from OpenCode lifecycle semantics.
 
 ### Decision
 
-1. **Desktop-first local PTY shell**: On desktop platforms (Linux, macOS, Windows), CodeWalk spawns a local PTY shell process rooted in the active project directory, displayed in a bottom terminal panel embedded in the chat workspace.
+1. **Cross-platform local PTY shell**: On all supported platforms (Linux, macOS, Windows, Android), CodeWalk spawns a local PTY shell process rooted in the active project directory, displayed in an embedded terminal panel within the chat workspace.
 2. **No server API changes**: The terminal is a purely local shell — it does not invoke `opencode attach` or any OpenCode CLI command. No new endpoints, events, or server-side behavior changes are required.
 3. **Project directory integration**: The shell launches in the active project's working directory (the `scopeId` from the current `serverId::scopeId` context), giving users immediate access to the files and tools relevant to their conversation.
-4. **Managed panel lifecycle**: CodeWalk owns the embedded terminal panel lifecycle. Hiding the panel preserves the running shell session; explicit stop, controller teardown, or target change terminates the active PTY-backed process.
-5. **Local shell prerequisite**: The terminal uses the platform's default shell (`$SHELL` on Unix, PowerShell/CMD on Windows). No external command path configuration is required.
-6. **Mobile fallback**: Mobile keeps a terminal entry point in the AppBar, but it opens an informational sheet only. Composer shell mode remains the supported mobile command path.
+4. **Panel lifecycle with explicit actions**:
+   - **Stop**: fully closes the terminal panel and terminates the running PTY process.
+   - **Hide**: minimizes the panel without stopping the shell — the session persists and can be restored.
+   - **Maximize/Restore**: toggles the terminal between a compact inline panel and a maximized full-workspace view.
+5. **Composer visibility on compact/mobile**: On compact and mobile layouts, the composer input area is hidden while the terminal panel is open, freeing vertical space for the embedded shell. The composer reappears when the terminal is hidden or stopped.
+6. **Local shell prerequisite**: The terminal uses the platform's default shell (`$SHELL` on Unix, PowerShell/CMD on Windows). No external command path configuration is required.
 
 ### Rationale
 
@@ -1216,16 +1219,22 @@ CodeWalk provides a chat-based UI for interacting with OpenCode servers, but som
 - A local PTY shell is simpler and more general-purpose than `opencode attach` — it works without requiring the OpenCode CLI to be installed locally and gives users full shell capability.
 - No server API changes means zero contract risk and full ADR-023 compliance.
 - Keeping the terminal panel client-owned preserves a simple boundary: CodeWalk manages PTY lifecycle locally while the OpenCode server remains the source of truth for shared sessions and state.
+- Extending to mobile/compact layouts follows the project's mobile-first UX principle — users deserve the same embedded shell capability regardless of device, with layout-adaptive behavior (composer hide, maximize/restore) to fit smaller viewports.
+- Explicit stop vs. hide semantics prevent ambiguity: users know whether they are closing the session or just minimizing it.
 
 ### Consequences
 
-- ✅ Desktop users get a local shell in the active project directory without leaving CodeWalk.
+- ✅ All platforms (desktop + Android) get a local shell in the active project directory without leaving CodeWalk.
 - ✅ Zero server API changes — fully compatible with ADR-023 contract-first policy.
 - ✅ No external CLI dependency — uses the platform's default shell.
-- ✅ Hiding and reopening the terminal panel can preserve the current shell session during the active chat screen lifetime.
+- ✅ Hide/restore preserves the current shell session during the active chat screen lifetime.
+- ✅ Stop provides a clean, unambiguous way to fully close the panel and kill the process.
+- ✅ Maximize/restore gives flexible viewport control on all screen sizes.
+- ✅ Composer auto-hide on compact/mobile layouts prevents cramped UX and maximizes terminal space.
 - ⚠ The shell runs with the user's local environment and permissions — CodeWalk does not sandbox or restrict shell access.
 - ⚠ Long-running background processes in the shell are not managed by CodeWalk lifecycle and may outlive the chat session.
-- ❌ Mobile keeps an informational fallback only; no embedded terminal is available there yet.
+- ⚠ Mobile/compact layouts sacrifice composer visibility while the terminal is open — users must hide/stop the terminal to resume chat composition.
+- ❌ None — previous mobile informational fallback has been replaced with full embedded terminal support.
 
 ### Key Files
 
