@@ -12,16 +12,34 @@ void main() {
       expect(target.errorMessage, isNotNull);
     });
 
+    test('returns unavailable error when working directory does not exist', () {
+      final target = resolveCodewalkTerminalShellTarget(
+        workingDirectory:
+            '${Directory.systemTemp.path}/codewalk-terminal-shell-missing',
+      );
+
+      expect(target.isError, isTrue);
+      expect(target.errorMessage, contains('unavailable'));
+    });
+
     test('returns shell target for an existing directory', () {
-      final directory = Directory.systemTemp.path;
+      final directory = Directory.systemTemp.createTempSync(
+        'codewalk-terminal-shell-',
+      );
+
+      addTearDown(() {
+        if (directory.existsSync()) {
+          directory.deleteSync(recursive: true);
+        }
+      });
 
       final target = resolveCodewalkTerminalShellTarget(
-        workingDirectory: directory,
+        workingDirectory: directory.path,
       );
 
       expect(target.isError, isFalse);
       expect(target.executable, isNotEmpty);
-      expect(target.workingDirectory, directory);
+      expect(target.workingDirectory, directory.path);
       expect(target.statusLabel, isNotEmpty);
     });
   });
