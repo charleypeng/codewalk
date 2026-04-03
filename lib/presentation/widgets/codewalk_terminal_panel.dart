@@ -117,8 +117,8 @@ class _CodewalkTerminalPanelState extends State<CodewalkTerminalPanel> {
 
   Widget _buildBody(BuildContext context) {
     final state = widget.controller.state;
-    if (state == CodewalkTerminalState.attached ||
-        state == CodewalkTerminalState.attaching ||
+    if (state == CodewalkTerminalState.running ||
+        state == CodewalkTerminalState.starting ||
         state == CodewalkTerminalState.exited) {
       return ClipRRect(
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),

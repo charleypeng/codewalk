@@ -13,36 +13,34 @@ extension _ChatPageTerminalRuntime on _ChatPageState {
     final nextVisible = !settingsProvider.terminalPanelVisible;
     await settingsProvider.setTerminalPanelVisible(nextVisible);
     if (nextVisible) {
-      await _attachTerminalForActiveServer();
+      await _startTerminalForCurrentProject();
     }
   }
 
-  Future<void> _attachTerminalForActiveServer({bool force = false}) async {
-    final appProvider = _appProvider;
-    if (appProvider == null) {
+  Future<void> _startTerminalForCurrentProject({bool force = false}) async {
+    final projectProvider = _projectProvider;
+    if (projectProvider == null) {
       return;
     }
-    final activeServer = appProvider.activeServer;
     final signature = _terminalSignatureFor(
-      server: activeServer,
-      commandPath: appProvider.localServerCommandPath,
+      serverId: _appProvider?.activeServerId,
+      directory: projectProvider.currentDirectory,
     );
-    if (!force && signature == _terminalAttachSignature) {
+    if (!force && signature == _terminalSessionSignature) {
       return;
     }
-    _terminalAttachSignature = signature;
-    await _terminalController.attach(
-      serverProfile: activeServer,
-      commandPath: appProvider.localServerCommandPath,
+    _terminalSessionSignature = signature;
+    await _terminalController.startShell(
+      workingDirectory: projectProvider.currentDirectory,
       force: force,
     );
   }
 
   String _terminalSignatureFor({
-    required ServerProfile? server,
-    required String commandPath,
+    required String? serverId,
+    required String? directory,
   }) {
-    return '${server?.id ?? '-'}|${server?.url ?? '-'}|${commandPath.trim()}';
+    return '${serverId ?? '-'}|${directory?.trim() ?? '-'}';
   }
 
   Future<void> _showMobileTerminalInfoSheet() async {
@@ -64,7 +62,7 @@ extension _ChatPageTerminalRuntime on _ChatPageState {
                 Text('Terminal', style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 12),
                 Text(
-                  'The embedded OpenCode terminal is desktop-first for now. On mobile, keep using composer shell mode for one-shot commands or attach from a desktop terminal to ${activeServer?.displayName ?? 'the active server'}.',
+                  'The embedded project terminal is desktop-first for now. On mobile, keep using composer shell mode for one-shot commands or open a desktop shell for ${activeServer?.displayName ?? 'the active server'}.',
                 ),
               ],
             ),
@@ -91,10 +89,10 @@ extension _ChatPageTerminalRuntime on _ChatPageState {
             unawaited(settingsProvider.setTerminalPanelVisible(false));
           },
           onReconnect: () {
-            unawaited(_attachTerminalForActiveServer(force: true));
+            unawaited(_startTerminalForCurrentProject(force: true));
           },
           onStop: () {
-            _terminalAttachSignature = null;
+            _terminalSessionSignature = null;
             unawaited(_terminalController.stop());
           },
           onHeightDelta: (delta) {

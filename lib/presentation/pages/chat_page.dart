@@ -241,6 +241,7 @@ class _ChatPageState extends State<ChatPage>
   Future<void>? _notificationTapTask;
   ChatProvider? _chatProvider;
   AppProvider? _appProvider;
+  ProjectProvider? _projectProvider;
   SettingsProvider? _settingsProvider;
   bool _autoApprovePermissionDrainScheduled = false;
   bool _autoApprovePermissionDrainRunning = false;
@@ -299,7 +300,7 @@ class _ChatPageState extends State<ChatPage>
   String? _returnRevealBaselineLatestMessageId;
   String? _returnRevealBaselineLatestRevealableAssistantMessageId;
   String? _lastForegroundPolicySettingsSignature;
-  String? _terminalAttachSignature;
+  String? _terminalSessionSignature;
   ChatComposerDraft? _composerPrefilledDraft;
   int _composerPrefilledDraftVersion = 0;
   final Map<String, _FileExplorerContextState> _fileContextStates =
@@ -438,6 +439,12 @@ class _ChatPageState extends State<ChatPage>
           : nextAppProvider.healthFor(initialActiveServer.id);
       _appProvider?.addListener(_handleAppProviderChange);
     }
+    final nextProjectProvider = context.read<ProjectProvider>();
+    if (!identical(_projectProvider, nextProjectProvider)) {
+      _projectProvider?.removeListener(_handleProjectProviderChange);
+      _projectProvider = nextProjectProvider;
+      _projectProvider?.addListener(_handleProjectProviderChange);
+    }
     if (di.sl.isRegistered<NotificationService>()) {
       final nextNotificationService = di.sl<NotificationService>();
       if (!identical(_notificationService, nextNotificationService)) {
@@ -483,6 +490,7 @@ class _ChatPageState extends State<ChatPage>
     _chatProvider?.removeListener(_handleChatProviderChanged);
     _scrollToBottomRequestToken += 1;
     _appProvider?.removeListener(_handleAppProviderChange);
+    _projectProvider?.removeListener(_handleProjectProviderChange);
     _notificationTapSubscription?.cancel();
     _settingsProvider?.removeListener(_handleSettingsChanged);
     _serverAlertRevealTimer?.cancel();
@@ -654,9 +662,9 @@ class _ChatPageState extends State<ChatPage>
       _lastServerId = currentServerId;
       _lastServerConnectionState = currentConnected;
       _lastActiveServerHealthStatus = currentHealth;
-      _terminalAttachSignature = null;
+      _terminalSessionSignature = null;
       if (_settingsProvider?.terminalPanelVisible == true) {
-        unawaited(_attachTerminalForActiveServer(force: true));
+        unawaited(_startTerminalForCurrentProject(force: true));
       } else {
         unawaited(_terminalController.stop());
       }
@@ -700,6 +708,13 @@ class _ChatPageState extends State<ChatPage>
     if (wasConnected == false && currentConnected) {
       unawaited(_handleServerReconnected());
     }
+  }
+
+  void _handleProjectProviderChange() {
+    if (_settingsProvider?.terminalPanelVisible != true) {
+      return;
+    }
+    unawaited(_startTerminalForCurrentProject());
   }
 
   void _markInitialDataRecoveryNeeded() {

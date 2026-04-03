@@ -9,10 +9,16 @@ const bool codewalkTerminalProcessSupported = true;
 CodewalkTerminalProcess createCodewalkTerminalProcess({
   required String executable,
   required List<String> arguments,
+  String? workingDirectory,
   Map<String, String>? environment,
 }) {
   return _FlutterPtyCodewalkTerminalProcess(
-    Pty.start(executable, arguments: arguments, environment: environment),
+    Pty.start(
+      executable,
+      arguments: arguments,
+      workingDirectory: workingDirectory,
+      environment: environment,
+    ),
   );
 }
 

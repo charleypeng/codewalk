@@ -15,11 +15,13 @@ bool get supportsCodewalkTerminalProcess => codewalkTerminalProcessSupported;
 CodewalkTerminalProcess startCodewalkTerminalProcess({
   required String executable,
   required List<String> arguments,
+  String? workingDirectory,
   Map<String, String>? environment,
 }) {
   return createCodewalkTerminalProcess(
     executable: executable,
     arguments: arguments,
+    workingDirectory: workingDirectory,
     environment: environment,
   );
 }

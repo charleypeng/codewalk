@@ -3,14 +3,14 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:xterm/xterm.dart';
 
-import '../../domain/entities/server_profile.dart';
 import 'codewalk_terminal_process.dart';
+import 'codewalk_terminal_shell.dart';
 
 enum CodewalkTerminalState {
   idle,
   unavailable,
-  attaching,
-  attached,
+  starting,
+  running,
   exited,
   failed,
 }
@@ -25,8 +25,8 @@ class CodewalkTerminalController extends ChangeNotifier {
   StreamSubscription<String>? _outputSubscription;
   Future<void>? _exitWatcher;
   CodewalkTerminalState _state = CodewalkTerminalState.idle;
-  String _statusMessage = 'Open Terminal to attach the official OpenCode TUI.';
-  String? _attachedServerLabel;
+  String _statusMessage =
+      'Open Terminal to start a shell in the active project folder.';
   String? _targetKey;
   int _processToken = 0;
   bool _disposed = false;
@@ -34,8 +34,6 @@ class CodewalkTerminalController extends ChangeNotifier {
   Terminal get terminal => _terminal;
   CodewalkTerminalState get state => _state;
   String get statusMessage => _statusMessage;
-  String? get attachedServerLabel => _attachedServerLabel;
-  bool get isAttached => _state == CodewalkTerminalState.attached;
 
   bool get supportsDesktopAttach {
     if (kIsWeb || !supportsCodewalkTerminalProcess) {
@@ -49,9 +47,8 @@ class CodewalkTerminalController extends ChangeNotifier {
     };
   }
 
-  Future<void> attach({
-    required ServerProfile? serverProfile,
-    required String commandPath,
+  Future<void> startShell({
+    required String? workingDirectory,
     bool force = false,
   }) async {
     if (!supportsDesktopAttach) {
@@ -61,27 +58,16 @@ class CodewalkTerminalController extends ChangeNotifier {
       return;
     }
 
-    if (serverProfile == null) {
-      await _resetToUnavailable(
-        'Select an active server before opening Terminal.',
-      );
+    final shellTarget = resolveCodewalkTerminalShellTarget(
+      workingDirectory: workingDirectory,
+    );
+    if (shellTarget.isError) {
+      await _resetToUnavailable(shellTarget.errorMessage!);
       return;
     }
 
-    final executable = commandPath.trim();
-    if (executable.isEmpty) {
-      await _resetToUnavailable(
-        'Configure the local OpenCode command first so CodeWalk can run `opencode attach`.',
-      );
-      return;
-    }
-
-    final attachTarget = _buildAttachTarget(serverProfile);
-    if (attachTarget.errorMessage != null) {
-      await _resetToUnavailable(attachTarget.errorMessage!);
-      return;
-    }
-    final targetKey = '${serverProfile.id}\u0000$executable';
+    final targetKey =
+        '${shellTarget.executable}\u0000${shellTarget.workingDirectory}';
     final sameTarget = !force && _process != null && _targetKey == targetKey;
     if (sameTarget) {
       return;
@@ -90,17 +76,18 @@ class CodewalkTerminalController extends ChangeNotifier {
     await _terminateProcess();
     final processToken = ++_processToken;
     _terminal = _createTerminal();
-    _state = CodewalkTerminalState.attaching;
-    _statusMessage = 'Attaching to ${serverProfile.displayName}...';
-    _attachedServerLabel = serverProfile.displayName;
+    _state = CodewalkTerminalState.starting;
+    _statusMessage =
+        'Starting ${shellTarget.statusLabel} in ${shellTarget.workingDirectory}...';
     _targetKey = targetKey;
     _notify();
 
     try {
       final process = startCodewalkTerminalProcess(
-        executable: executable,
-        arguments: attachTarget.arguments,
-        environment: attachTarget.environment,
+        executable: shellTarget.executable,
+        arguments: shellTarget.arguments,
+        workingDirectory: shellTarget.workingDirectory,
+        environment: shellTarget.environment,
       );
       _process = process;
       late final StreamSubscription<String> outputSubscription;
@@ -121,9 +108,10 @@ class CodewalkTerminalController extends ChangeNotifier {
         (data) {
           _terminal.write(data);
           if (_processToken == processToken &&
-              _state == CodewalkTerminalState.attaching) {
-            _state = CodewalkTerminalState.attached;
-            _statusMessage = 'Attached to ${serverProfile.displayName}';
+              _state == CodewalkTerminalState.starting) {
+            _state = CodewalkTerminalState.running;
+            _statusMessage =
+                '${shellTarget.statusLabel} running in ${shellTarget.workingDirectory}';
             _notify();
           }
         },
@@ -133,7 +121,7 @@ class CodewalkTerminalController extends ChangeNotifier {
           }
           unawaited(closeOutput());
           _state = CodewalkTerminalState.failed;
-          _statusMessage = 'Terminal attach failed: $error';
+          _statusMessage = 'Terminal start failed: $error';
           _notify();
         },
       );
@@ -151,7 +139,7 @@ class CodewalkTerminalController extends ChangeNotifier {
     } catch (error) {
       _process = null;
       _state = CodewalkTerminalState.failed;
-      _statusMessage = 'Terminal attach failed: $error';
+      _statusMessage = 'Terminal start failed: $error';
       _notify();
     }
   }
@@ -198,51 +186,6 @@ class CodewalkTerminalController extends ChangeNotifier {
     return terminal;
   }
 
-  static _CodewalkAttachTarget _buildAttachTarget(ServerProfile profile) {
-    final baseArguments = <String>['attach'];
-    final normalizedUrl = Uri.tryParse(profile.url)?.toString();
-    if (normalizedUrl == null || normalizedUrl.trim().isEmpty) {
-      return const _CodewalkAttachTarget(
-        errorMessage:
-            'The active server URL is invalid, so Terminal cannot attach yet.',
-      );
-    }
-
-    if (!profile.basicAuthEnabled) {
-      return _CodewalkAttachTarget(
-        arguments: <String>[...baseArguments, normalizedUrl],
-      );
-    }
-
-    final username = profile.basicAuthUsername.trim();
-    final password = profile.basicAuthPassword.trim();
-    if (username.isEmpty || password.isEmpty) {
-      return _CodewalkAttachTarget(
-        errorMessage:
-            'The active server requires both Basic Auth username and password before Terminal can attach.',
-      );
-    }
-
-    if (username != 'opencode') {
-      return _CodewalkAttachTarget(
-        errorMessage:
-            'Terminal attach is blocked because the current OpenCode CLI still hardcodes the Basic Auth username to `opencode`. For now, use `opencode` as the server username for terminal attach or update the upstream CLI once that fix lands.',
-      );
-    }
-
-    return _CodewalkAttachTarget(
-      // The current CLI accepts `--password` but not URL userinfo. This still
-      // exposes the password in local process listings, so switch to an env or
-      // stdin flow once upstream exposes one.
-      arguments: <String>[
-        ...baseArguments,
-        '--password',
-        password,
-        normalizedUrl,
-      ],
-    );
-  }
-
   void _notify() {
     if (_disposed) {
       return;
@@ -256,18 +199,4 @@ class CodewalkTerminalController extends ChangeNotifier {
     unawaited(_terminateProcess(awaitExit: false));
     super.dispose();
   }
-}
-
-class _CodewalkAttachTarget {
-  const _CodewalkAttachTarget({
-    this.arguments = const <String>[],
-    // Reserved for a future upstream-safe auth handoff such as env-based
-    // password injection; currently attach uses explicit CLI arguments only.
-    this.environment,
-    this.errorMessage,
-  });
-
-  final List<String> arguments;
-  final Map<String, String>? environment;
-  final String? errorMessage;
 }
