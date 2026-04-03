@@ -37,7 +37,7 @@ codewalk/
 │       │   ├── chat_message_widget.dart # StatefulWidget with build-skip cache for messages
 │       │   ├── chat_input_widget.dart  # Chat input orchestrator/facade
 │       │   └── chat_input/             # ChatInput decomposed clusters (8 modules)
-│       ├── services/                   # Platform/runtime services (tray, notifications, STT, etc.)
+│       ├── services/                   # Platform/runtime services (tray, notifications, STT, terminal, etc.)
 │       ├── utils/                      # Presentation helpers (incl. WindowSizeClass MD3 breakpoints)
 │       └── theme/                      # Material You theme: AppTheme, AppShapes, BrandColor seeds, AppSemanticColors
 ├── test/                               # Unit, widget, integration, presentation, support tests
@@ -157,6 +157,7 @@ chat_page_command_query.dart
 chat_page_runtime_support.dart                   # _syncSessionScrollState saves/restores per-session collapse state via _sessionCollapseHistoryCache / _sessionCollapseWorkCache; shrink auto-snap only runs when viewport remains near bottom to avoid forced jumps while reading expanded history; coordinates scroll state with revert-boundary transitions
 chat_page_chrome.dart
 chat_page_file_runtime.dart
+chat_page_terminal_runtime.dart              # Terminal panel toggle, attach/detach lifecycle, mobile info sheet, and panel height management
 chat_page_composer_widgets.dart                   # Reserved-height composer progress slot with in-place slide/fade updates so busy status changes do not move the timeline
 chat_page_model_selector_runtime.dart        # New Chat action opens draft mode immediately via provider `beginNewChatDraft()`; child-thread selector labels are memoized and locked to sub-conversation metadata (model shown, variant shown only when explicit)
 chat_page_timeline_builder.dart              # Renders empty state with no-server CTA to wizard; passes `role` to MessageEntranceAnimation so each bubble uses the correct motion profile; composer stays enabled during draft-first New Chat (`currentSession != null || isDraftingNewChat`) and in sub-conversation sessions; sub-conversation model/agent selection remains session-context aware/locked; child-thread footer keeps `Return to main conversation` visible (stop behavior managed by composer)
@@ -204,6 +205,17 @@ chat_input_suggestion_popover.dart
 chat_input_attachment_controller.dart
 chat_input_send_controller.dart
 chat_input_speech_controller.dart
+```
+
+### Terminal Workspace
+
+```text
+lib/presentation/services/codewalk_terminal_controller.dart   # Owns xterm Terminal state, local `opencode attach` lifecycle, target binding, teardown guards, and platform gating
+lib/presentation/services/codewalk_terminal_process.dart      # Terminal process abstraction + conditional platform factory
+lib/presentation/services/codewalk_terminal_process_io.dart   # Desktop PTY-backed implementation using `flutter_pty`
+lib/presentation/services/codewalk_terminal_process_stub.dart # Unsupported-platform stub used on non-IO targets
+lib/presentation/widgets/codewalk_terminal_panel.dart         # Resizable terminal panel widget with reconnect/stop/hide actions and fallback states
+lib/presentation/pages/chat_page/chat_page_terminal_runtime.dart # ChatPage extension for terminal toggle flow, active-server attach, mobile info sheet, and persisted panel height handling
 ```
 
 ## Data & Domain Layers

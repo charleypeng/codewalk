@@ -27,6 +27,9 @@ This document contains only active architectural decisions that represent the cu
 - ADR-021: Context-Scoped Draft State for Project-Switch SWR
 - ADR-022: Unified Project Context Controls with Sidebar Session Previews
 - ADR-023: Official OpenCode Contract-First Compatibility Policy
+- ADR-024: Modal Enter Keyboard Policy for Safe Dialogs
+- ADR-025: Settled Assistant-Work Disclosure Ownership
+- ADR-026: Desktop-First Terminal Workspace with Local `opencode attach <server>`
 
 ---
 
@@ -1184,3 +1187,54 @@ Scope is limited to **client-side disclosure ownership** for the latest settled 
 ### ADR-023 Compatibility
 
 This ADR is fully compatible with ADR-023 and official OpenCode lifecycle semantics. It introduces no server contract change, no custom busy protocol, and no deviation from the OpenCode message lifecycle. All state is client-side reconstruction from existing message structure.
+
+---
+
+## ADR-026: Desktop-First Terminal Workspace with Local `opencode attach <server>` (2026-04-03)
+
+**Status**: Accepted
+
+### Context
+
+CodeWalk provides a chat-based UI for interacting with OpenCode servers, but some workflows benefit from the full terminal TUI experience (`opencode attach`). Desktop users need a way to launch that attach flow directly inside the chat workspace without opening a separate terminal window or redefining server contracts. The feature must preserve ADR-023 parity by reusing the official attach client rather than inventing a new transport or shell protocol.
+
+### Decision
+
+1. **Desktop-first embedded panel**: On desktop platforms (Linux, macOS, Windows), CodeWalk can spawn a local `opencode attach <server>` process inside a bottom terminal panel embedded in the chat workspace.
+2. **No server API changes**: The feature reuses the existing `opencode attach` CLI command and the server profiles already managed by ADR-001. No new endpoints, events, or server-side behavior changes are required.
+3. **Server profile integration**: The terminal launch inherits the active server profile's URL and basic-auth configuration from CodeWalk's existing server configuration, passing them to `opencode attach` as the target URL.
+4. **Managed panel lifecycle**: CodeWalk owns the embedded terminal panel lifecycle. Hiding the panel preserves the running attach session; explicit stop, controller teardown, or target change terminates the active PTY-backed process.
+5. **Local command prerequisite**: Before attach, CodeWalk requires a configured local OpenCode command path. If the command is unavailable, the panel renders setup guidance instead of attempting attach.
+6. **Mobile fallback**: Mobile keeps a terminal entry point in the AppBar, but it opens an informational sheet only. Composer shell mode remains the supported mobile command path.
+
+### Rationale
+
+- Some workflows (complex multi-file edits, vim/emacs users, power users) benefit from the full TUI experience that `opencode attach` provides.
+- Launching from within the chat workspace keeps the terminal discoverable and close to the conversation that is driving the work.
+- Reusing existing server profiles (ADR-001) avoids duplicating connection configuration.
+- No server API changes means zero contract risk and full ADR-023 compliance.
+- Keeping the terminal panel client-owned preserves a simple boundary: CodeWalk manages PTY/session lifecycle locally while the OpenCode server remains the source of truth for shared sessions and state.
+
+### Consequences
+
+- ✅ Desktop users can open the official attach TUI without leaving CodeWalk.
+- ✅ Zero server API changes — fully compatible with ADR-023 contract-first policy.
+- ✅ Reuses existing server profile configuration (ADR-001), no duplicate auth/connection setup.
+- ✅ Hiding and reopening the terminal panel can preserve the current attach session during the active chat screen lifetime.
+- ⚠ Requires the local `opencode` CLI to be configured before attach.
+- ⚠ When basic auth is enabled, the attach URL passed to the CLI may expose credentials in local process listings; this is a limitation of the current attach contract.
+- ❌ Mobile keeps an informational fallback only; no embedded TUI is available there yet.
+
+### Key Files
+
+- `lib/presentation/services/codewalk_terminal_controller.dart`
+- `lib/presentation/services/codewalk_terminal_process.dart`
+- `lib/presentation/services/codewalk_terminal_process_io.dart`
+- `lib/presentation/widgets/codewalk_terminal_panel.dart`
+- `lib/presentation/pages/chat_page/chat_page_terminal_runtime.dart`
+- `lib/domain/entities/server_profile.dart` (reused for connection details)
+- `lib/presentation/providers/app_provider.dart` (active server profile access)
+
+### ADR-023 Compatibility
+
+This feature is fully compatible with ADR-023. It introduces no server contract changes, no new API endpoints, and no deviation from OpenCode lifecycle semantics. It is a client-side terminal surface that invokes the existing `opencode attach` CLI command against the active server profile while leaving session/state ownership with the official OpenCode server.
