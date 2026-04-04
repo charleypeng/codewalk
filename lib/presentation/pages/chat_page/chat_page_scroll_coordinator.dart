@@ -165,6 +165,7 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
     }
 
     if (_currentScrollOwner == _ScrollOwner.userDrag && !force) {
+      _markUnreadMessagesBelow();
       return;
     }
 
