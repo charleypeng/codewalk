@@ -10731,6 +10731,237 @@ void main() {
   );
 
   testWidgets(
+    'scroll stays stable during simulated background resume with passive refresh',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      const sessionId = 'ses_resume_scroll_stable';
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: sessionId,
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Resume Scroll Stable',
+          ),
+        ],
+      );
+      final messages = <ChatMessage>[];
+      for (var index = 0; index < 15; index += 1) {
+        final userId = 'msg_resume_user_$index';
+        messages.add(
+          UserMessage(
+            id: userId,
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(1000 + (index * 2000)),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_$userId',
+                messageId: userId,
+                sessionId: sessionId,
+                text: 'user message $index',
+              ),
+            ],
+          ),
+        );
+        final assistantId = 'msg_resume_assistant_$index';
+        messages.add(
+          AssistantMessage(
+            id: assistantId,
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(2000 + (index * 2000)),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(
+              2100 + (index * 2000),
+            ),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_$assistantId',
+                messageId: assistantId,
+                sessionId: sessionId,
+                text: 'assistant message $index',
+              ),
+            ],
+          ),
+        );
+      }
+      repository.messagesBySession[sessionId] = messages;
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.initializeProviders();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      final listFinder = find.byKey(
+        const ValueKey<String>('chat_message_list'),
+      );
+      final scrollableFinder = find
+          .descendant(of: listFinder, matching: find.byType(Scrollable))
+          .first;
+
+      double scrollPixels() {
+        final position = tester
+            .state<ScrollableState>(scrollableFinder)
+            .position;
+        return position.pixels;
+      }
+
+      double distanceToBottom() {
+        final position = tester
+            .state<ScrollableState>(scrollableFinder)
+            .position;
+        return position.maxScrollExtent - position.pixels;
+      }
+
+      expect(distanceToBottom(), lessThanOrEqualTo(1));
+      final pixelsBeforeResume = scrollPixels();
+
+      repository.emitEvent(
+        const ChatEvent(
+          type: 'session.status',
+          properties: <String, dynamic>{
+            'sessionID': sessionId,
+            'status': <String, dynamic>{'type': 'busy'},
+          },
+        ),
+      );
+      await tester.pump();
+
+      repository.emitEvent(
+        const ChatEvent(
+          type: 'session.status',
+          properties: <String, dynamic>{
+            'sessionID': sessionId,
+            'status': <String, dynamic>{'type': 'idle'},
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final pixelsAfterPulses = scrollPixels();
+      expect(
+        pixelsAfterPulses,
+        closeTo(pixelsBeforeResume, 1),
+        reason: 'scroll position should not shift during passive status pulses',
+      );
+      expect(
+        distanceToBottom(),
+        lessThanOrEqualTo(1),
+        reason: 'should remain at bottom after passive pulses',
+      );
+    },
+  );
+
+  testWidgets(
+    'timeline cache reused during passive status pulse without message changes',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      const sessionId = 'ses_cache_pulse';
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: sessionId,
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Cache Pulse',
+          ),
+        ],
+      );
+      repository.messagesBySession[sessionId] = <ChatMessage>[
+        UserMessage(
+          id: 'msg_cache_pulse_user',
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(1100),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_cache_pulse_user',
+              messageId: 'msg_cache_pulse_user',
+              sessionId: sessionId,
+              text: 'Test cache',
+            ),
+          ],
+        ),
+        AssistantMessage(
+          id: 'msg_cache_pulse_final',
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(1200),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1210),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_cache_pulse_final',
+              messageId: 'msg_cache_pulse_final',
+              sessionId: sessionId,
+              text: 'Final response',
+            ),
+          ],
+        ),
+      ];
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.initializeProviders();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Final response'), findsOneWidget);
+
+      final messagesBefore = provider.messages.length;
+      final versionBefore = provider.messagesVersion;
+
+      repository.emitEvent(
+        const ChatEvent(
+          type: 'session.status',
+          properties: <String, dynamic>{
+            'sessionID': sessionId,
+            'status': <String, dynamic>{'type': 'busy'},
+          },
+        ),
+      );
+      await tester.pump();
+
+      expect(provider.messages.length, messagesBefore);
+      expect(provider.messagesVersion, versionBefore);
+
+      repository.emitEvent(
+        const ChatEvent(
+          type: 'session.status',
+          properties: <String, dynamic>{
+            'sessionID': sessionId,
+            'status': <String, dynamic>{'type': 'idle'},
+          },
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(provider.messages.length, messagesBefore);
+      expect(find.text('Final response'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'keeps latest assistant work group collapsed after session re-entry during background refresh',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));
