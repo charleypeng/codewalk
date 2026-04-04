@@ -50,6 +50,9 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
     final shouldShowJumpToFirst = _shouldShowJumpToFirstFab();
     if (_autoFollowToLatest) {
       if (userScrollDirection == ScrollDirection.idle) {
+        if (_currentScrollOwner == _ScrollOwner.userDrag) {
+          _setScrollOwner(_ScrollOwner.none);
+        }
         return;
       }
       _setScrollOwner(_ScrollOwner.userDrag);
@@ -60,6 +63,11 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
         _showScrollToFirstFab = shouldShowJumpToFirst;
       });
       return;
+    }
+
+    if (_currentScrollOwner == _ScrollOwner.userDrag &&
+        userScrollDirection == ScrollDirection.idle) {
+      _setScrollOwner(_ScrollOwner.none);
     }
 
     if (!_showScrollToLatestFab ||
@@ -156,7 +164,7 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
       return;
     }
 
-    if (_currentScrollOwner == _ScrollOwner.userDrag) {
+    if (_currentScrollOwner == _ScrollOwner.userDrag && !force) {
       return;
     }
 

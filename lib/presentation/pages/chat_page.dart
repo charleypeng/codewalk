@@ -296,7 +296,8 @@ class _ChatPageState extends State<ChatPage>
 
   void _setScrollOwner(_ScrollOwner owner) {
     _currentScrollOwner = owner;
-    _isProgrammaticScrollInFlight = owner != _ScrollOwner.none;
+    _isProgrammaticScrollInFlight =
+        owner != _ScrollOwner.none && owner != _ScrollOwner.userDrag;
     _isReturnRevealInFlight = owner == _ScrollOwner.returnReveal;
     _olderMessagesAnchorRestoreInFlight =
         owner == _ScrollOwner.paginationRestore;
