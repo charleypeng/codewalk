@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:xterm/xterm.dart';
@@ -152,6 +153,11 @@ class _CodewalkTerminalPanelState extends State<CodewalkTerminalPanel> {
             widget.controller.terminal,
             controller: _viewController,
             autofocus: true,
+            // Email keyboard mode breaks Android terminal composition,
+            // especially when inserting spaces. Use the plain text IME there.
+            keyboardType: defaultTargetPlatform == TargetPlatform.android
+                ? TextInputType.text
+                : TextInputType.emailAddress,
           ),
         ),
       );
