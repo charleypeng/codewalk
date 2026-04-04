@@ -177,6 +177,9 @@ class CodewalkTerminalController extends ChangeNotifier {
       _socket = null;
       if (canReuseSession && createdPtyId != null) {
         await _deleteRemotePty(createdPtyId, normalizedDirectory);
+        if (_processToken != processToken) {
+          return;
+        }
         _ptyId = null;
         _targetKey = null;
         _cursor = -1;
