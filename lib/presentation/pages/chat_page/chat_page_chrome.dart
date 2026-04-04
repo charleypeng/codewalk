@@ -464,7 +464,7 @@ extension _ChatPageChrome on _ChatPageState {
           icon: const Icon(Symbols.terminal_rounded),
           tooltip: settingsProvider.terminalPanelVisible
               ? 'Hide terminal'
-              : (_terminalController.supportsDesktopAttach
+              : (_terminalController.supportsRemoteTerminal
                     ? 'Open terminal'
                     : 'Open terminal info'),
           onPressed: () => unawaited(_toggleTerminalPanel()),

@@ -17,6 +17,7 @@ import '../../core/di/injection_container.dart' as di;
 import '../../core/logging/app_logger.dart';
 import '../../core/network/dio_client.dart';
 import '../../core/utils/path_utils.dart';
+import '../../data/datasources/terminal_remote_datasource.dart';
 import '../../domain/entities/agent.dart';
 import '../../domain/entities/chat_composer_draft.dart';
 import '../../domain/entities/chat_message.dart';
@@ -196,7 +197,11 @@ class _ChatPageState extends State<ChatPage>
   final FocusNode _inputFocusNode = FocusNode(debugLabel: 'chat_input');
   final ChatInputController _chatInputController = ChatInputController();
   final CodewalkTerminalController _terminalController =
-      CodewalkTerminalController();
+      CodewalkTerminalController(
+        remoteDataSource: di.sl.isRegistered<TerminalRemoteDataSource>()
+            ? di.sl<TerminalRemoteDataSource>()
+            : null,
+      );
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final GlobalKey _agentSelectorChipKey = GlobalKey(
     debugLabel: 'agent_selector_chip',

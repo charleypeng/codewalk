@@ -16,6 +16,7 @@ class ApiConstants {
   static const String eventEndpoint = '/event';
   static const String authEndpoint = '/auth';
   static const String tuiEndpoint = '/tui';
+  static const String ptyEndpoint = '/pty';
   static const String logEndpoint = '/log';
 
   // Technical comment translated to English.

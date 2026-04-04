@@ -6,7 +6,7 @@ extension _ChatPageTerminalRuntime on _ChatPageState {
     if (settingsProvider == null) {
       return;
     }
-    if (!_terminalController.supportsDesktopAttach) {
+    if (!_terminalController.supportsRemoteTerminal) {
       await _showMobileTerminalInfoSheet();
       return;
     }
@@ -19,11 +19,12 @@ extension _ChatPageTerminalRuntime on _ChatPageState {
 
   Future<void> _startTerminalForCurrentProject({bool force = false}) async {
     final projectProvider = _projectProvider;
-    if (projectProvider == null) {
+    final activeServer = _appProvider?.activeServer;
+    if (projectProvider == null || activeServer == null) {
       return;
     }
     final signature = _terminalSignatureFor(
-      serverId: _appProvider?.activeServerId,
+      serverId: activeServer.id,
       directory: projectProvider.currentDirectory,
     );
     if (!force && signature == _terminalSessionSignature) {
@@ -31,6 +32,7 @@ extension _ChatPageTerminalRuntime on _ChatPageState {
     }
     _terminalSessionSignature = signature;
     await _terminalController.startShell(
+      serverProfile: activeServer,
       workingDirectory: projectProvider.currentDirectory,
       force: force,
     );
@@ -62,7 +64,7 @@ extension _ChatPageTerminalRuntime on _ChatPageState {
                 Text('Terminal', style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 12),
                 Text(
-                  'Embedded terminal is not available on this platform yet. Keep using composer shell mode for one-shot commands or open a supported native terminal for ${activeServer?.displayName ?? 'the active server'}.',
+                  'Embedded terminal is not available on this runtime yet. Keep using composer shell mode for one-shot commands or open the terminal from a supported CodeWalk app runtime for ${activeServer?.displayName ?? 'the active server'}.',
                 ),
               ],
             ),

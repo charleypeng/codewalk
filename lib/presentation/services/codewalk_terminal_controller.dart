@@ -1,10 +1,15 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:xterm/xterm.dart';
 
-import 'codewalk_terminal_process.dart';
-import 'codewalk_terminal_shell.dart';
+import '../../core/errors/exceptions.dart';
+import '../../data/datasources/terminal_remote_datasource.dart';
+import '../../data/models/pty_session_model.dart';
+import '../../domain/entities/server_profile.dart';
+import 'codewalk_terminal_socket.dart';
+import 'codewalk_terminal_url.dart';
 
 enum CodewalkTerminalState {
   idle,
@@ -16,18 +21,25 @@ enum CodewalkTerminalState {
 }
 
 class CodewalkTerminalController extends ChangeNotifier {
-  CodewalkTerminalController() {
+  CodewalkTerminalController({TerminalRemoteDataSource? remoteDataSource})
+    : _remoteDataSource =
+          remoteDataSource ?? _UnavailableTerminalRemoteDataSource() {
     _terminal = _createTerminal();
   }
 
+  final TerminalRemoteDataSource _remoteDataSource;
+
   late Terminal _terminal;
-  CodewalkTerminalProcess? _process;
-  StreamSubscription<String>? _outputSubscription;
-  Future<void>? _exitWatcher;
+  CodewalkTerminalSocketConnection? _socket;
+  StreamSubscription<List<int>>? _outputSubscription;
+  Future<void>? _socketDone;
   CodewalkTerminalState _state = CodewalkTerminalState.idle;
   String _statusMessage =
-      'Open Terminal to start a shell in the active project folder.';
+      'Open Terminal to connect to the server project terminal.';
   String? _targetKey;
+  String? _ptyId;
+  String? _directory;
+  int _cursor = -1;
   int _processToken = 0;
   int _terminalGeneration = 0;
   bool _disposed = false;
@@ -37,64 +49,78 @@ class CodewalkTerminalController extends ChangeNotifier {
   CodewalkTerminalState get state => _state;
   String get statusMessage => _statusMessage;
 
-  bool get supportsDesktopAttach {
-    if (kIsWeb || !supportsCodewalkTerminalProcess) {
-      return false;
-    }
-    return switch (defaultTargetPlatform) {
-      TargetPlatform.android ||
-      TargetPlatform.linux ||
-      TargetPlatform.macOS ||
-      TargetPlatform.windows => true,
-      _ => false,
-    };
-  }
+  bool get supportsRemoteTerminal => !kIsWeb;
 
   Future<void> startShell({
+    required ServerProfile? serverProfile,
     required String? workingDirectory,
     bool force = false,
   }) async {
-    if (!supportsDesktopAttach) {
+    if (!supportsRemoteTerminal) {
       await _resetToUnavailable(
-        'Embedded terminal is available on supported native platforms only right now.',
+        'Embedded terminal is not available on this runtime yet.',
       );
       return;
     }
 
-    final shellTarget = resolveCodewalkTerminalShellTarget(
-      workingDirectory: workingDirectory,
-    );
-    if (shellTarget.isError) {
-      await _resetToUnavailable(shellTarget.errorMessage!);
+    if (serverProfile == null) {
+      await _resetToUnavailable(
+        'Select an active server before opening Terminal.',
+      );
       return;
     }
 
-    final targetKey =
-        '${shellTarget.executable}\u0000${shellTarget.workingDirectory}';
-    final sameTarget = !force && _process != null && _targetKey == targetKey;
-    if (sameTarget) {
+    final normalizedDirectory = workingDirectory?.trim();
+    if (normalizedDirectory == null || normalizedDirectory.isEmpty) {
+      await _resetToUnavailable(
+        'Open a project folder before starting the server terminal.',
+      );
       return;
     }
 
-    await _terminateProcess();
+    final targetKey = '${serverProfile.id}\u0000$normalizedDirectory';
+    final canReuseSession = _ptyId != null && _targetKey == targetKey;
+    if (!force && canReuseSession && _socket != null) {
+      return;
+    }
+
+    if (!canReuseSession) {
+      await _terminateSession();
+    } else {
+      await _disconnectSocket();
+    }
+
     final processToken = ++_processToken;
     _terminal = _createTerminal();
     _terminalGeneration += 1;
     _state = CodewalkTerminalState.starting;
-    _statusMessage =
-        'Starting ${shellTarget.statusLabel} in ${shellTarget.workingDirectory}...';
+    _statusMessage = 'Connecting to ${serverProfile.displayName} terminal...';
     _targetKey = targetKey;
+    _directory = normalizedDirectory;
     _notify();
 
+    var createdPtyId = _ptyId;
     try {
-      final process = startCodewalkTerminalProcess(
-        executable: shellTarget.executable,
-        arguments: shellTarget.arguments,
-        workingDirectory: shellTarget.workingDirectory,
-        environment: shellTarget.environment,
+      if (!canReuseSession || createdPtyId == null) {
+        final createdSession = await _remoteDataSource.createPty(
+          directory: normalizedDirectory,
+        );
+        createdPtyId = createdSession.id;
+        _ptyId = createdPtyId;
+        _cursor = -1;
+      }
+
+      final socket = await openCodewalkTerminalSocket(
+        url: buildCodewalkTerminalSocketUrl(
+          baseUrl: serverProfile.url,
+          ptyId: createdPtyId,
+          directory: normalizedDirectory,
+          cursor: _cursor,
+        ),
+        headers: _authorizationHeaders(serverProfile),
       );
-      _process = process;
-      late final StreamSubscription<String> outputSubscription;
+      _socket = socket;
+      late final StreamSubscription<List<int>> outputSubscription;
       var outputClosed = false;
 
       Future<void> closeOutput() async {
@@ -108,14 +134,19 @@ class CodewalkTerminalController extends ChangeNotifier {
         await outputSubscription.cancel();
       }
 
-      outputSubscription = process.output.listen(
-        (data) {
-          _terminal.write(data);
-          if (_processToken == processToken &&
-              _state == CodewalkTerminalState.starting) {
+      outputSubscription = socket.messages.listen(
+        (bytes) {
+          if (_processToken != processToken) {
+            return;
+          }
+          if (_consumeCursorFrame(bytes)) {
+            return;
+          }
+          _terminal.write(utf8.decode(bytes, allowMalformed: true));
+          if (_state == CodewalkTerminalState.starting) {
             _state = CodewalkTerminalState.running;
             _statusMessage =
-                '${shellTarget.statusLabel} running in ${shellTarget.workingDirectory}';
+                'Connected to ${serverProfile.displayName} in $normalizedDirectory';
             _notify();
           }
         },
@@ -124,39 +155,44 @@ class CodewalkTerminalController extends ChangeNotifier {
             return;
           }
           unawaited(closeOutput());
+          _socket = null;
           _state = CodewalkTerminalState.failed;
-          _statusMessage = 'Terminal start failed: $error';
+          _statusMessage = 'Terminal connection failed: $error';
           _notify();
         },
       );
       _outputSubscription = outputSubscription;
-      _exitWatcher = process.exitCode.then((code) async {
+      _socketDone = socket.done.then((_) async {
         if (_processToken != processToken) {
           return;
         }
-        _process = null;
+        _socket = null;
         await closeOutput();
         _state = CodewalkTerminalState.exited;
-        _statusMessage = 'Terminal exited with code $code.';
+        _statusMessage = 'Terminal disconnected.';
         _notify();
       });
     } catch (error) {
-      _process = null;
+      _socket = null;
+      if (!canReuseSession && createdPtyId != null) {
+        await _deleteRemotePty(createdPtyId, normalizedDirectory);
+        _ptyId = null;
+      }
       _state = CodewalkTerminalState.failed;
-      _statusMessage = 'Terminal start failed: $error';
+      _statusMessage = 'Terminal connection failed: $error';
       _notify();
     }
   }
 
   Future<void> stop() async {
-    await _terminateProcess();
+    await _terminateSession();
     _state = CodewalkTerminalState.idle;
     _statusMessage = 'Terminal session closed.';
     _notify();
   }
 
   Future<void> _resetToUnavailable(String message) async {
-    await _terminateProcess();
+    await _terminateSession();
     _terminal = _createTerminal();
     _terminalGeneration += 1;
     _state = CodewalkTerminalState.unavailable;
@@ -164,29 +200,90 @@ class CodewalkTerminalController extends ChangeNotifier {
     _notify();
   }
 
-  Future<void> _terminateProcess({bool awaitExit = true}) async {
-    final process = _process;
-    final outputSubscription = _outputSubscription;
-    final exitWatcher = _exitWatcher;
-    _processToken += 1;
-    _process = null;
-    _outputSubscription = null;
+  Future<void> _terminateSession() async {
+    final ptyId = _ptyId;
+    final directory = _directory;
+    await _disconnectSocket();
     _targetKey = null;
-    _exitWatcher = null;
-    process?.kill();
-    await outputSubscription?.cancel();
-    if (awaitExit) {
-      await exitWatcher;
+    _ptyId = null;
+    _directory = null;
+    _cursor = -1;
+    if (ptyId != null && directory != null) {
+      await _deleteRemotePty(ptyId, directory);
     }
+  }
+
+  Future<void> _disconnectSocket() async {
+    final socket = _socket;
+    final outputSubscription = _outputSubscription;
+    final socketDone = _socketDone;
+    _processToken += 1;
+    _socket = null;
+    _outputSubscription = null;
+    _socketDone = null;
+    await socket?.close();
+    await outputSubscription?.cancel();
+    await socketDone;
+  }
+
+  Future<void> _deleteRemotePty(String ptyId, String directory) async {
+    try {
+      await _remoteDataSource.deletePty(ptyId: ptyId, directory: directory);
+    } catch (_) {
+      // A failed cleanup should not block terminal state transitions.
+    }
+  }
+
+  bool _consumeCursorFrame(List<int> bytes) {
+    if (bytes.isEmpty || bytes.first != 0) {
+      return false;
+    }
+    try {
+      final decoded = jsonDecode(utf8.decode(bytes.sublist(1)));
+      if (decoded is Map<String, dynamic>) {
+        final cursor = decoded['cursor'];
+        if (cursor is int) {
+          _cursor = cursor;
+        }
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Map<String, String>? _authorizationHeaders(ServerProfile profile) {
+    if (!profile.basicAuthEnabled) {
+      return null;
+    }
+    final username = profile.basicAuthUsername.trim();
+    final password = profile.basicAuthPassword.trim();
+    if (username.isEmpty || password.isEmpty) {
+      return null;
+    }
+    final encoded = base64Encode(utf8.encode('$username:$password'));
+    return <String, String>{'Authorization': 'Basic $encoded'};
   }
 
   Terminal _createTerminal() {
     final terminal = Terminal(maxLines: 10000);
     terminal.onOutput = (data) {
-      _process?.write(data);
+      _socket?.send(utf8.encode(data));
     };
     terminal.onResize = (width, height, _, _) {
-      _process?.resize(height, width);
+      final ptyId = _ptyId;
+      final directory = _directory;
+      if (ptyId == null || directory == null) {
+        return;
+      }
+      unawaited(
+        _remoteDataSource.resizePty(
+          ptyId: ptyId,
+          directory: directory,
+          rows: height,
+          cols: width,
+        ),
+      );
     };
     return terminal;
   }
@@ -201,7 +298,28 @@ class CodewalkTerminalController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    unawaited(_terminateProcess(awaitExit: false));
+    unawaited(_terminateSession());
     super.dispose();
   }
+}
+
+class _UnavailableTerminalRemoteDataSource implements TerminalRemoteDataSource {
+  @override
+  Future<PtySessionModel> createPty({required String directory}) async {
+    throw const ServerException('Terminal transport is unavailable.');
+  }
+
+  @override
+  Future<void> deletePty({
+    required String ptyId,
+    required String directory,
+  }) async {}
+
+  @override
+  Future<void> resizePty({
+    required String ptyId,
+    required String directory,
+    required int rows,
+    required int cols,
+  }) async {}
 }

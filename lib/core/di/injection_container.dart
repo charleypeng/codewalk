@@ -8,6 +8,7 @@ import '../../data/datasources/app_local_datasource.dart';
 import '../../data/datasources/app_remote_datasource.dart';
 import '../../data/datasources/chat_remote_datasource.dart';
 import '../../data/datasources/project_remote_datasource.dart';
+import '../../data/datasources/terminal_remote_datasource.dart';
 import '../../data/repositories/app_repository_impl.dart';
 import '../../data/repositories/chat_repository_impl.dart';
 import '../../data/repositories/project_repository_impl.dart';
@@ -94,6 +95,10 @@ Future<void> init() async {
 
   sl.registerLazySingleton<ProjectRemoteDataSource>(
     () => ProjectRemoteDataSourceImpl(dio: sl<DioClient>().dio),
+  );
+
+  sl.registerLazySingleton<TerminalRemoteDataSource>(
+    () => TerminalRemoteDataSourceImpl(dio: sl<DioClient>().dio),
   );
 
   sl.registerLazySingleton(NotificationService.new);
