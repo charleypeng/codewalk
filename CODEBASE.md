@@ -210,18 +210,18 @@ chat_input_speech_controller.dart
 ### Terminal Workspace
 
 ```text
-lib/presentation/services/codewalk_terminal_controller.dart   # Owns xterm Terminal state, local PTY shell lifecycle (startShell/stop), Android-inclusive platform gating, terminal generation rebinding, target binding, and teardown guards; resolves shell via `resolveCodewalkTerminalShellTarget()` instead of `opencode attach`
-lib/presentation/services/codewalk_terminal_shell.dart        # Conditional export + `CodewalkTerminalShellTarget` value object (executable, arguments, workingDirectory, statusLabel, errorMessage)
-lib/presentation/services/codewalk_terminal_shell_io.dart     # Native implementation: resolves user's `$SHELL` (Unix) or `%COMSPEC%`/PowerShell (Windows), validates directory existence, and falls back through `/system/bin/sh`, `/bin/bash`, `/bin/zsh`, `/bin/sh`
-lib/presentation/services/codewalk_terminal_shell_stub.dart   # Non-IO platforms: returns error target ("Embedded terminal is available on desktop only right now.")
-lib/presentation/services/codewalk_terminal_process.dart      # Terminal process abstraction + conditional platform factory (`startCodewalkTerminalProcess`)
-lib/presentation/services/codewalk_terminal_process_io.dart   # Native PTY-backed implementation using `flutter_pty` (Pty.start with resolved shell executable, workingDirectory, environment)
-lib/presentation/services/codewalk_terminal_process_stub.dart # Unsupported-platform stub used on non-IO targets
-lib/presentation/widgets/codewalk_terminal_panel.dart         # Resizable terminal panel widget with reconnect/close/minimize/maximize controls, terminal-generation view rebinding, and fallback states
-lib/presentation/pages/chat_page/chat_page_terminal_runtime.dart # ChatPage extension for terminal toggle flow, project-scoped shell start (`startShell(workingDirectory:)`), close/minimize/maximize actions, and persisted panel height/maximize handling
+lib/data/datasources/terminal_remote_datasource.dart    # Server-side PTY datasource: createPty (POST /pty), resizePty (PUT /pty/:id), deletePty (DELETE /pty/:id); directory-scoped calls to server /pty contract
+lib/data/models/pty_session_model.dart                  # PTY session model (id, title, command, args, cwd, status, pid) from server createPty response
+lib/presentation/services/codewalk_terminal_controller.dart   # Owns xterm Terminal state, server-side PTY lifecycle (startShell/stop), WebSocket connect/disconnect, resize debouncing, cursor tracking, process-token concurrency guards, and teardown; `supportsRemoteTerminal` gates to IO-only (!kIsWeb)
+lib/presentation/services/codewalk_terminal_socket.dart         # Conditional export: abstract `CodewalkTerminalSocketConnection` interface + `openCodewalkTerminalSocket()` factory
+lib/presentation/services/codewalk_terminal_socket_io.dart      # IO implementation: `dart:io` WebSocket.connect with binary frame support (List<int> output stream)
+lib/presentation/services/codewalk_terminal_socket_stub.dart    # Non-IO platforms: throws UnsupportedError
+lib/presentation/services/codewalk_terminal_url.dart            # WebSocket URL builder: converts HTTP(S) base URL to ws(s):// + `/pty/{ptyId}/connect` with directory and cursor query params
+lib/presentation/widgets/codewalk_terminal_panel.dart           # Resizable terminal panel with reconnect/close/minimize/maximize controls, terminal-generation view rebinding, and fallback state (icon + "Try again" when not running)
+lib/presentation/pages/chat_page/chat_page_terminal_runtime.dart # ChatPage extension for terminal toggle flow, project-scoped shell start, close/minimize/maximize actions, persisted panel height/maximize handling, and fallback info sheet when terminal is unsupported
 lib/presentation/pages/chat_page/chat_page_timeline_builder.dart # Main chat workspace layout: renders terminal full-width below the constrained chat column and hides composer-adjacent controls on compact/mobile while terminal is visible
-lib/domain/entities/experience_settings.dart                  # Persisted terminal visibility, height, and maximize state inside shared experience settings
-lib/presentation/providers/settings_provider.dart             # In-memory + persisted mutators for terminal visibility, height, and maximize state
+lib/domain/entities/experience_settings.dart                    # Persisted terminal visibility, height, and maximize state inside shared experience settings
+lib/presentation/providers/settings_provider.dart               # In-memory + persisted mutators for terminal visibility, height, and maximize state
 ```
 
 ## Data & Domain Layers

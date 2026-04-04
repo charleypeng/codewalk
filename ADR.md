@@ -29,7 +29,8 @@ This document contains only active architectural decisions that represent the cu
 - ADR-023: Official OpenCode Contract-First Compatibility Policy
 - ADR-024: Modal Enter Keyboard Policy for Safe Dialogs
 - ADR-025: Settled Assistant-Work Disclosure Ownership
-- ADR-026: Cross-Platform Terminal Workspace with Local PTY Shell
+- ADR-026: Cross-Platform Terminal Workspace with Local PTY Shell ⚠️ SUPERSEDED by ADR-027
+- ADR-027: Server-Hosted PTY Terminal with Embedded Client Rendering
 
 ---
 
@@ -1192,9 +1193,9 @@ This ADR is fully compatible with ADR-023 and official OpenCode lifecycle semant
 
 ---
 
-## ADR-026: Cross-Platform Terminal Workspace with Local PTY Shell (2026-04-03)
+## ADR-026: Cross-Platform Terminal Workspace with Local PTY Shell (2026-04-03) ⚠️ SUPERSEDED by ADR-027
 
-**Status**: Accepted
+**Status**: Superseded
 
 ### Context
 
@@ -1248,3 +1249,65 @@ CodeWalk provides a chat-based UI for interacting with OpenCode servers, but som
 ### ADR-023 Compatibility
 
 This feature is fully compatible with ADR-023. It introduces no server contract changes, no new API endpoints, and no deviation from OpenCode lifecycle semantics. It is a purely client-side terminal surface that spawns a local PTY shell in the active project directory, leaving session/state ownership entirely with the official OpenCode server.
+
+---
+
+## ADR-027: Server-Hosted PTY Terminal with Embedded Client Rendering (2026-04-03)
+
+**Status**: Accepted
+
+**Supersedes**: ADR-026 (Cross-Platform Terminal Workspace with Local PTY Shell)
+
+### Context
+
+ADR-026 specified a local PTY shell spawned on the client device using `flutter_pty`. This approach has fundamental limitations: it requires native PTY libraries on every platform (including Android), ties terminal availability to the client's local environment, and cannot leverage the OpenCode server's project directory context. The architecture has been rewritten to use a server-hosted PTY that runs on the OpenCode host in the active project directory, with the client rendering terminal output via an embedded terminal panel over a streaming transport.
+
+### Decision
+
+1. **Server-hosted PTY**: The PTY shell process runs on the OpenCode server host, rooted in the active project directory. The client no longer spawns local shell processes.
+2. **Client rendering via embedded terminal panel**: The Flutter client renders terminal output using an embedded terminal panel (xterm.js-compatible rendering), receiving streaming data from the server over WebSocket/SSE transport.
+3. **Local `flutter_pty` shell removed**: All `flutter_pty` dependencies, platform-specific PTY spawning code, and local shell lifecycle management are removed from the client codebase.
+4. **Panel lifecycle semantics preserved**:
+   - **Close**: terminates the server-side PTY session and removes the panel.
+   - **Minimize**: hides the panel without terminating the server-side session — can be restored.
+   - **Maximize**: toggles between compact inline panel and full-workspace view.
+5. **Composer auto-hide on compact/mobile**: On compact and mobile layouts, the composer input area is hidden while the terminal panel is open. The composer reappears when the terminal is minimized or closed.
+6. **Project directory integration**: The server-side PTY launches in the active project's working directory (the `scopeId` from the current `serverId::scopeId` context), ensuring the shell operates in the same workspace the chat conversation is about.
+7. **No server API contract changes**: The terminal transport reuses existing OpenCode streaming infrastructure (WebSocket or SSE). No new dedicated terminal endpoints are introduced — the server exposes PTY data through the established event stream contract.
+
+### Rationale
+
+- **Server-hosted PTY matches the OpenCode model**: The server already owns the project directory context, environment, and toolchain. Running the shell there eliminates client-side environment variability and ensures the terminal operates in the same context as the AI agent.
+- **Removes native dependency burden**: `flutter_pty` requires platform-specific native compilation (C libraries, NDK for Android, etc.). Server-hosted PTY shifts this complexity to the server, which already has a full POSIX environment.
+- **Unified experience across all clients**: Desktop, mobile, and web clients all get the same terminal capability without platform-specific code paths or feature parity gaps.
+- **Preserves UX semantics**: Close/minimize/maximize and composer auto-hide behaviors from ADR-026 are retained — only the execution location changes.
+- **ADR-023 alignment**: By reusing existing OpenCode streaming transport rather than introducing new endpoints, this decision stays within the contract-first policy. The server's PTY is an extension of its existing workspace management, not a new API surface.
+
+### Consequences
+
+- ✅ Terminal works identically on all client platforms (desktop, mobile, web) with no platform-specific native dependencies.
+- ✅ Server-side PTY runs in the correct project environment with full toolchain access.
+- ✅ Removes `flutter_pty` native compilation complexity from the client build pipeline.
+- ✅ Close/minimize/maximize semantics and composer auto-hide on compact/mobile are preserved.
+- ✅ No new server API endpoints — reuses existing streaming transport, maintaining ADR-023 compliance.
+- ⚠ Terminal availability depends on the OpenCode server supporting PTY sessions — clients connecting to servers without this capability must show a graceful fallback.
+- ⚠ Network latency affects terminal responsiveness compared to local PTY — acceptable for interactive use but may feel less snappy than ADR-026's local shell.
+- ⚠ Server resource usage increases (one PTY process per active terminal session per client).
+- ❌ Offline terminal access is no longer possible — the terminal requires an active server connection.
+
+### Key Files
+
+- `lib/presentation/services/codewalk_terminal_controller.dart` — client-side terminal lifecycle and state orchestration
+- `lib/data/datasources/terminal_remote_datasource.dart` — remote PTY session API calls
+- `lib/data/models/pty_session_model.dart` — PTY session data model and serialization
+- `lib/presentation/services/codewalk_terminal_socket.dart` — WebSocket transport contract
+- `lib/presentation/services/codewalk_terminal_socket_io.dart` — IO platform WebSocket implementation
+- `lib/presentation/services/codewalk_terminal_socket_stub.dart` — web/no-op stub
+- `lib/presentation/services/codewalk_terminal_url.dart` — terminal endpoint URL resolution
+- `lib/presentation/widgets/codewalk_terminal_panel.dart` — embedded terminal panel UI
+- `lib/presentation/pages/chat_page/chat_page_terminal_runtime.dart` — chat page terminal integration
+- `lib/presentation/providers/project_provider.dart` (active project directory access)
+
+### ADR-023 Compatibility
+
+This feature is fully compatible with ADR-023. It reuses existing OpenCode streaming transport (WebSocket/SSE) for terminal I/O rather than introducing new API endpoints or contract changes. The server-side PTY is an extension of the server's workspace management, and the client acts purely as a rendering surface — session/state ownership remains entirely with the official OpenCode server. No divergence from official OpenCode CLI/Web lifecycle semantics is introduced.

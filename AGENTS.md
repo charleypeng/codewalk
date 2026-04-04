@@ -55,7 +55,8 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web; community reference openchamber added as secondary source | 951–1074 |
 | 024 | Modal Enter keyboard policy for safe dialogs — speed up keyboard confirmation without enabling destructive or ambiguous modal flows | 1076–1149 |
 | 025 | Settled Assistant-Work Disclosure Ownership — client-side architectural ownership to prevent open/close thrash, scroll jumps on session return | 1151–1193 |
-| 026 | Cross-platform terminal workspace with local PTY shell on desktop + Android — stop/hide/maximize lifecycle, composer auto-hide on compact/mobile, no server API changes | 1195–1250 |
+| 026 | ⚠️ SUPERSEDED — Local PTY shell replaced by server-hosted PTY (ADR-027) | 1195–1251 |
+| 027 | Server-hosted PTY terminal with embedded client rendering — runs on OpenCode host in active project directory, client renders via streaming transport, local flutter_pty removed, close/minimize/maximize semantics preserved, composer hides on compact/mobile | 1253–1313 |
 
 ## 🗺 CODEBASE Quick Reference (details in `CODEBASE.md`)
 
