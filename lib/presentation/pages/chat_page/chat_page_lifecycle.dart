@@ -462,6 +462,13 @@ extension _ChatPageLifecycle on _ChatPageState {
       return;
     }
     _captureReturnRevealBaseline(chatProvider);
-    _revealLatestMessageStartAfterReturn(chatProvider, reason: reason);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_isChatScreenActive() ||
+          _chatProvider?.currentSession?.id !=
+              chatProvider.currentSession?.id) {
+        return;
+      }
+      _revealLatestMessageStartAfterReturn(chatProvider, reason: reason);
+    });
   }
 }

@@ -150,6 +150,14 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
       return;
     }
 
+    if (_isReturnRevealInFlight && !force) {
+      return;
+    }
+
+    if (_olderMessagesAnchorRestoreInFlight && !force) {
+      return;
+    }
+
     final shouldScroll = force || _autoFollowToLatest;
     if (!shouldScroll) {
       _markUnreadMessagesBelow();

@@ -279,6 +279,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _pendingInitialScrollSessionId = sessionId;
       _olderMessagesLoadTriggerArmed = true;
       _olderMessagesAnchorRestoreInFlight = false;
+      _isReturnRevealInFlight = false;
       // Restore collapse state for the incoming session (null if not cached).
       _expandedCollapsedHistoryGroupId = sessionId != null
           ? _sessionCollapseHistoryCache[sessionId]
@@ -334,6 +335,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _wasCurrentSessionActivelyResponding = false;
       _deferAssistantWorkCollapse = false;
       _suppressPostCompletionAutoSnap = false;
+      _isReturnRevealInFlight = false;
       _shouldRevealFinalAssistantOnCompletion = false;
       _pendingFinalAssistantRevealMessageId = null;
       _finalAssistantRevealSettledMessageId = null;
@@ -657,6 +659,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       return;
     }
 
+    _isReturnRevealInFlight = true;
     _isProgrammaticScrollInFlight = true;
     try {
       await Scrollable.ensureVisible(
@@ -673,6 +676,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     } finally {
       if (mounted) {
         _isProgrammaticScrollInFlight = false;
+        _isReturnRevealInFlight = false;
       }
     }
 
