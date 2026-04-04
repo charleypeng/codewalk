@@ -462,8 +462,11 @@ extension _ChatPageLifecycle on _ChatPageState {
       return;
     }
     _captureReturnRevealBaseline(chatProvider);
+    // Defer reveal to next frame so refreshActiveSessionView-triggered
+    // provider scrolls can settle first and avoid racing with this reveal.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_isChatScreenActive() ||
+      if (!mounted ||
+          !_isChatScreenActive() ||
           _chatProvider?.currentSession?.id !=
               chatProvider.currentSession?.id) {
         return;
