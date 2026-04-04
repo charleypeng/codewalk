@@ -1639,27 +1639,69 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     required bool showThinkingBubbles,
     required bool showToolCallBubbles,
   }) {
-    return (entry.messagesVersion == messagesVersion ||
-            _areTimelineSourceMessagesIdentical(
-              entry.sourceMessages,
-              sourceMessages,
-            )) &&
-        entry.isCompacting == isCompactingContext &&
-        entry.isResponding == isSessionActivelyResponding &&
-        entry.showRetry == showRetryIndicator &&
-        entry.permissionPromptSignature == permissionPromptSignature &&
+    final versionMatch =
+        entry.messagesVersion == messagesVersion ||
+        _areTimelineSourceMessagesIdentical(
+          entry.sourceMessages,
+          sourceMessages,
+        );
+    final compactingMatch = entry.isCompacting == isCompactingContext;
+    final respondingMatch = entry.isResponding == isSessionActivelyResponding;
+    final retryMatch = entry.showRetry == showRetryIndicator;
+    final permMatch =
+        entry.permissionPromptSignature == permissionPromptSignature;
+    final compactionMatch =
         entry.assistantWorkCompactionDecision.shouldDeferLatestCollapse ==
             assistantWorkCompactionDecision.shouldDeferLatestCollapse &&
         entry
                 .assistantWorkCompactionDecision
                 .settledLatestAssistantWorkGroupId ==
-            assistantWorkCompactionDecision.settledLatestAssistantWorkGroupId &&
-        entry.expandedHistoryGroupId == _expandedCollapsedHistoryGroupId &&
-        entry.expandedAssistantWorkGroupId == _expandedAssistantWorkGroupId &&
-        entry.wasCompactingContext == _wasCompactingContext &&
-        entry.frozenCompactionBoundaryId == _frozenCompactionBoundaryId &&
-        entry.showThinkingBubbles == showThinkingBubbles &&
-        entry.showToolCallBubbles == showToolCallBubbles;
+            assistantWorkCompactionDecision.settledLatestAssistantWorkGroupId;
+    final historyGroupMatch =
+        entry.expandedHistoryGroupId == _expandedCollapsedHistoryGroupId;
+    final workGroupMatch =
+        entry.expandedAssistantWorkGroupId == _expandedAssistantWorkGroupId;
+    final wasCompactingMatch =
+        entry.wasCompactingContext == _wasCompactingContext;
+    final frozenMatch =
+        entry.frozenCompactionBoundaryId == _frozenCompactionBoundaryId;
+    final thinkingMatch = entry.showThinkingBubbles == showThinkingBubbles;
+    final toolMatch = entry.showToolCallBubbles == showToolCallBubbles;
+
+    final canReuse =
+        versionMatch &&
+        compactingMatch &&
+        respondingMatch &&
+        retryMatch &&
+        permMatch &&
+        compactionMatch &&
+        historyGroupMatch &&
+        workGroupMatch &&
+        wasCompactingMatch &&
+        frozenMatch &&
+        thinkingMatch &&
+        toolMatch;
+
+    if (!canReuse) {
+      final reasons = <String>[];
+      if (!versionMatch) reasons.add('version');
+      if (!compactingMatch) reasons.add('compacting');
+      if (!respondingMatch) reasons.add('responding');
+      if (!retryMatch) reasons.add('retry');
+      if (!permMatch) reasons.add('permission');
+      if (!compactionMatch) reasons.add('compaction');
+      if (!historyGroupMatch) reasons.add('historyGroup');
+      if (!workGroupMatch) reasons.add('workGroup');
+      if (!wasCompactingMatch) reasons.add('wasCompacting');
+      if (!frozenMatch) reasons.add('frozen');
+      if (!thinkingMatch) reasons.add('thinking');
+      if (!toolMatch) reasons.add('tool');
+      AppLogger.debug(
+        'CW_CACHE timeline cache invalidated: ${reasons.join(", ")}',
+      );
+    }
+
+    return canReuse;
   }
 
   bool _areTimelineSourceMessagesIdentical(
