@@ -171,7 +171,7 @@ jobs:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "$KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
+            echo "$KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
             {
               echo "storePassword=$STORE_PASSWORD"
               echo "keyPassword=$KEY_PASSWORD"
