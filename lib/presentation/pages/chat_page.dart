@@ -272,6 +272,7 @@ class _ChatPageState extends State<ChatPage>
   bool _isAppInForeground = true;
   bool _wasChatRouteCurrent = false;
   bool _isProgrammaticScrollInFlight = false;
+  bool _isReturnRevealInFlight = false;
   bool _olderMessagesLoadTriggerArmed = true;
   bool _olderMessagesAnchorRestoreInFlight = false;
   int _scrollToBottomRequestToken = 0;

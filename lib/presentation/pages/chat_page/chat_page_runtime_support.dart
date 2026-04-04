@@ -49,21 +49,19 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
   }
 
   bool _handleScrollMetricsChanged(ScrollMetricsNotification notification) {
-    // When content shrinks (e.g. bubbles collapse, tool chains hide) and we
-    // should be following the latest message, snap to the bottom immediately
-    // to prevent void space below the last message.
     if (!_scrollController.hasClients) {
       return false;
     }
     final currentMax = _scrollController.position.maxScrollExtent;
     final contentShrank = currentMax < _lastKnownMaxScrollExtent;
-    _lastKnownMaxScrollExtent = currentMax;
     final chatProvider = _chatProvider;
     final hasActiveViewportOwner =
         _deferAssistantWorkCollapse ||
         (chatProvider?.isCurrentSessionActivelyResponding ?? false);
     if (_autoFollowToLatest &&
         !_isProgrammaticScrollInFlight &&
+        !_isReturnRevealInFlight &&
+        !_olderMessagesAnchorRestoreInFlight &&
         !_suppressPostCompletionAutoSnap &&
         !hasActiveViewportOwner &&
         contentShrank &&
@@ -75,6 +73,8 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     }
 
     if (!_isProgrammaticScrollInFlight &&
+        !_isReturnRevealInFlight &&
+        !_olderMessagesAnchorRestoreInFlight &&
         _isNearBottom() &&
         (!_autoFollowToLatest ||
             _showScrollToLatestFab ||
@@ -88,6 +88,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       });
     }
 
+    _lastKnownMaxScrollExtent = currentMax;
     return false;
   }
 
