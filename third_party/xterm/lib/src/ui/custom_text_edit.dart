@@ -216,7 +216,13 @@ class CustomTextEditState extends State<CustomTextEdit> with TextInputClient {
 
   @override
   void updateEditingValue(TextEditingValue value) {
+    final previousEditingState = _currentEditingState;
     _currentEditingState = value;
+
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      _handleAndroidEditingValue(previousEditingState, value);
+      return;
+    }
 
     // Get input after composing is done
     if (!_currentEditingState.composing.isCollapsed) {
@@ -242,6 +248,60 @@ class CustomTextEditState extends State<CustomTextEdit> with TextInputClient {
     if (_currentEditingState.composing.isCollapsed &&
         _currentEditingState.text != _initEditingState.text) {
       _connection!.setEditingState(_initEditingState);
+    }
+  }
+
+  void _handleAndroidEditingValue(
+    TextEditingValue previousValue,
+    TextEditingValue currentValue,
+  ) {
+    final composingText = currentValue.composing.isCollapsed
+        ? null
+        : currentValue.composing.textInside(currentValue.text);
+    widget.onComposing(composingText);
+
+    final previousText = _logicalText(previousValue);
+    final currentText = _logicalText(currentValue);
+
+    if (currentText != previousText) {
+      _emitEditingDelta(previousText, currentText);
+    }
+
+    if (currentValue.composing.isCollapsed &&
+        currentValue.text != _initEditingState.text) {
+      _connection?.setEditingState(_initEditingState);
+      _currentEditingState = _initEditingState.copyWith();
+    }
+  }
+
+  String _logicalText(TextEditingValue value) {
+    final initText = _initEditingState.text;
+    if (initText.isNotEmpty && value.text.startsWith(initText)) {
+      return value.text.substring(initText.length);
+    }
+    return value.text;
+  }
+
+  void _emitEditingDelta(String previousText, String currentText) {
+    var sharedPrefixLength = 0;
+    final sharedLimit = previousText.length < currentText.length
+        ? previousText.length
+        : currentText.length;
+
+    while (sharedPrefixLength < sharedLimit &&
+        previousText.codeUnitAt(sharedPrefixLength) ==
+            currentText.codeUnitAt(sharedPrefixLength)) {
+      sharedPrefixLength += 1;
+    }
+
+    final removedText = previousText.substring(sharedPrefixLength);
+    final insertedText = currentText.substring(sharedPrefixLength);
+
+    for (var index = 0; index < removedText.length; index += 1) {
+      widget.onDelete();
+    }
+    if (insertedText.isNotEmpty) {
+      widget.onInsert(insertedText);
     }
   }
 
