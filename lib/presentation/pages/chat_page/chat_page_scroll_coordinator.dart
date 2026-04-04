@@ -18,9 +18,17 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
     final userScrollDirection = _scrollController.position.userScrollDirection;
     _maybeLoadOlderMessagesFromTop(userScrollDirection: userScrollDirection);
 
+    if (_hasActiveUserScrollActivity() &&
+        userScrollDirection != ScrollDirection.idle) {
+      _setScrollOwner(_ScrollOwner.userDrag);
+    }
+
     final nearBottom = _isNearBottom();
     if (nearBottom) {
       _suppressPostCompletionAutoSnap = false;
+      if (_currentScrollOwner == _ScrollOwner.userDrag) {
+        _setScrollOwner(_ScrollOwner.none);
+      }
       if (!_autoFollowToLatest ||
           _showScrollToLatestFab ||
           _hasUnreadMessagesBelow ||
@@ -41,12 +49,10 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
 
     final shouldShowJumpToFirst = _shouldShowJumpToFirstFab();
     if (_autoFollowToLatest) {
-      // Keep auto-follow enabled for content-size changes (new messages,
-      // collapsed/expanded bubbles). We only opt out when the user actually
-      // scrolls away from the latest position.
       if (userScrollDirection == ScrollDirection.idle) {
         return;
       }
+      _setScrollOwner(_ScrollOwner.userDrag);
       _setState(() {
         _autoFollowToLatest = false;
         _showScrollToLatestFab = true;
@@ -101,7 +107,6 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
 
     final maxBefore = _scrollController.position.maxScrollExtent;
     _olderMessagesLoadTriggerArmed = false;
-    _olderMessagesAnchorRestoreInFlight = true;
     unawaited(
       _loadOlderMessagesAndRestoreAnchor(
         provider: provider,
@@ -114,6 +119,7 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
     required ChatProvider provider,
     required double maxExtentBefore,
   }) async {
+    _setScrollOwner(_ScrollOwner.paginationRestore);
     try {
       await provider.loadOlderMessages();
       if (!mounted || !_scrollController.hasClients) {
@@ -137,7 +143,7 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
       );
       _scrollController.jumpTo(nextPixels);
     } finally {
-      _olderMessagesAnchorRestoreInFlight = false;
+      _setScrollOwner(_ScrollOwner.none);
     }
   }
 
@@ -147,6 +153,10 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
     required bool animate,
   }) async {
     if (!_canContinueScrollToBottomRequest(requestToken)) {
+      return;
+    }
+
+    if (_currentScrollOwner == _ScrollOwner.userDrag) {
       return;
     }
 
@@ -164,7 +174,7 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
       return;
     }
 
-    _isProgrammaticScrollInFlight = true;
+    _setScrollOwner(force ? _ScrollOwner.newMessage : _ScrollOwner.streaming);
     try {
       if (!animate) {
         for (
@@ -236,7 +246,7 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
       );
     } finally {
       if (requestToken == _scrollToBottomRequestToken) {
-        _isProgrammaticScrollInFlight = false;
+        _setScrollOwner(_ScrollOwner.none);
       }
     }
 

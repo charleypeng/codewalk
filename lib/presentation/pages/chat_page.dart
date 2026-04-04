@@ -102,6 +102,16 @@ enum _HistoryToolbarAction { undo, redo }
 
 enum _PostOnboardingTourPhase { idle, intro, composer }
 
+enum _ScrollOwner {
+  none,
+  userDrag,
+  paginationRestore,
+  newMessage,
+  streaming,
+  returnReveal,
+  contentShrinkSnap,
+}
+
 @visibleForTesting
 ({String title, String description}) postOnboardingSidebarTourCopy({
   required bool isMobile,
@@ -275,6 +285,7 @@ class _ChatPageState extends State<ChatPage>
   bool _isReturnRevealInFlight = false;
   bool _olderMessagesLoadTriggerArmed = true;
   bool _olderMessagesAnchorRestoreInFlight = false;
+  _ScrollOwner _currentScrollOwner = _ScrollOwner.none;
   int _scrollToBottomRequestToken = 0;
   bool _wasCurrentSessionActivelyResponding = false;
   bool _deferAssistantWorkCollapse = false;
@@ -282,6 +293,14 @@ class _ChatPageState extends State<ChatPage>
   bool _shouldRevealFinalAssistantOnCompletion = false;
   String? _pendingFinalAssistantRevealMessageId;
   String? _settledLatestAssistantWorkGroupId;
+
+  void _setScrollOwner(_ScrollOwner owner) {
+    _currentScrollOwner = owner;
+    _isProgrammaticScrollInFlight = owner != _ScrollOwner.none;
+    _isReturnRevealInFlight = owner == _ScrollOwner.returnReveal;
+    _olderMessagesAnchorRestoreInFlight =
+        owner == _ScrollOwner.paginationRestore;
+  }
 
   void _traceFinalUi(String event, {String? details}) {
     final provider = _chatProvider;

@@ -58,18 +58,29 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     final hasActiveViewportOwner =
         _deferAssistantWorkCollapse ||
         (chatProvider?.isCurrentSessionActivelyResponding ?? false);
+    final hasScrollOwner =
+        _currentScrollOwner != _ScrollOwner.none &&
+        _currentScrollOwner != _ScrollOwner.contentShrinkSnap;
     if (_autoFollowToLatest &&
         !_isProgrammaticScrollInFlight &&
         !_isReturnRevealInFlight &&
         !_olderMessagesAnchorRestoreInFlight &&
         !_suppressPostCompletionAutoSnap &&
         !hasActiveViewportOwner &&
+        !hasScrollOwner &&
         contentShrank &&
         _isNearBottom()) {
       final gap = _distanceToBottom();
       if (gap > _ChatPageState._scrollToBottomEpsilon) {
+        _setScrollOwner(_ScrollOwner.contentShrinkSnap);
         _scrollController.jumpTo(currentMax);
+        _setScrollOwner(_ScrollOwner.none);
       }
+    }
+
+    if (_currentScrollOwner == _ScrollOwner.userDrag) {
+      _lastKnownMaxScrollExtent = currentMax;
+      return false;
     }
 
     if (!_isProgrammaticScrollInFlight &&
@@ -278,8 +289,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       }
       _pendingInitialScrollSessionId = sessionId;
       _olderMessagesLoadTriggerArmed = true;
-      _olderMessagesAnchorRestoreInFlight = false;
-      _isReturnRevealInFlight = false;
+      _setScrollOwner(_ScrollOwner.none);
       // Restore collapse state for the incoming session (null if not cached).
       _expandedCollapsedHistoryGroupId = sessionId != null
           ? _sessionCollapseHistoryCache[sessionId]
@@ -335,7 +345,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _wasCurrentSessionActivelyResponding = false;
       _deferAssistantWorkCollapse = false;
       _suppressPostCompletionAutoSnap = false;
-      _isReturnRevealInFlight = false;
+      _setScrollOwner(_ScrollOwner.none);
       _shouldRevealFinalAssistantOnCompletion = false;
       _pendingFinalAssistantRevealMessageId = null;
       _finalAssistantRevealSettledMessageId = null;
@@ -659,8 +669,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       return;
     }
 
-    _isReturnRevealInFlight = true;
-    _isProgrammaticScrollInFlight = true;
+    _setScrollOwner(_ScrollOwner.returnReveal);
     try {
       await Scrollable.ensureVisible(
         anchorContext,
@@ -675,8 +684,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       );
     } finally {
       if (mounted) {
-        _isProgrammaticScrollInFlight = false;
-        _isReturnRevealInFlight = false;
+        _setScrollOwner(_ScrollOwner.none);
       }
     }
 
@@ -912,7 +920,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       if (!mounted || !_scrollController.hasClients) {
         return;
       }
-      _isProgrammaticScrollInFlight = true;
+      _setScrollOwner(_ScrollOwner.newMessage);
       _scrollController
           .animateTo(
             _scrollController.position.minScrollExtent,
@@ -923,7 +931,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
             if (!mounted) {
               return;
             }
-            _isProgrammaticScrollInFlight = false;
+            _setScrollOwner(_ScrollOwner.none);
             if (_showScrollToFirstFab) {
               _setState(() {
                 _showScrollToFirstFab = false;
