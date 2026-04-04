@@ -40,6 +40,7 @@ class CodewalkTerminalController extends ChangeNotifier {
   String? _ptyId;
   String? _directory;
   int _cursor = -1;
+  Timer? _resizeDebounceTimer;
   int _processToken = 0;
   int _terminalGeneration = 0;
   bool _disposed = false;
@@ -174,6 +175,17 @@ class CodewalkTerminalController extends ChangeNotifier {
       });
     } catch (error) {
       _socket = null;
+      if (canReuseSession && createdPtyId != null) {
+        await _deleteRemotePty(createdPtyId, normalizedDirectory);
+        _ptyId = null;
+        _targetKey = null;
+        _cursor = -1;
+        return startShell(
+          serverProfile: serverProfile,
+          workingDirectory: normalizedDirectory,
+          force: false,
+        );
+      }
       if (!canReuseSession && createdPtyId != null) {
         await _deleteRemotePty(createdPtyId, normalizedDirectory);
         _ptyId = null;
@@ -203,6 +215,8 @@ class CodewalkTerminalController extends ChangeNotifier {
   Future<void> _terminateSession() async {
     final ptyId = _ptyId;
     final directory = _directory;
+    _resizeDebounceTimer?.cancel();
+    _resizeDebounceTimer = null;
     await _disconnectSocket();
     _targetKey = null;
     _ptyId = null;
@@ -276,14 +290,17 @@ class CodewalkTerminalController extends ChangeNotifier {
       if (ptyId == null || directory == null) {
         return;
       }
-      unawaited(
-        _remoteDataSource.resizePty(
-          ptyId: ptyId,
-          directory: directory,
-          rows: height,
-          cols: width,
-        ),
-      );
+      _resizeDebounceTimer?.cancel();
+      _resizeDebounceTimer = Timer(const Duration(milliseconds: 80), () {
+        unawaited(
+          _remoteDataSource.resizePty(
+            ptyId: ptyId,
+            directory: directory,
+            rows: height,
+            cols: width,
+          ),
+        );
+      });
     };
     return terminal;
   }
@@ -298,6 +315,7 @@ class CodewalkTerminalController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _resizeDebounceTimer?.cancel();
     unawaited(_terminateSession());
     super.dispose();
   }
