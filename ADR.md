@@ -31,6 +31,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-025: Settled Assistant-Work Disclosure Ownership
 - ADR-026: Cross-Platform Terminal Workspace with Local PTY Shell ⚠️ SUPERSEDED by ADR-027
 - ADR-027: Server-Hosted PTY Terminal with Embedded Client Rendering
+- ADR-028: Unified Scroll Ownership Model for Chat Timeline
 
 ---
 
@@ -1311,3 +1312,53 @@ ADR-026 specified a local PTY shell spawned on the client device using `flutter_
 ### ADR-023 Compatibility
 
 This feature is fully compatible with ADR-023. It reuses existing OpenCode streaming transport (WebSocket/SSE) for terminal I/O rather than introducing new API endpoints or contract changes. The server-side PTY is an extension of the server's workspace management, and the client acts purely as a rendering surface — session/state ownership remains entirely with the official OpenCode server. No divergence from official OpenCode CLI/Web lifecycle semantics is introduced.
+
+---
+
+## ADR-028: Unified Scroll Ownership Model for Chat Timeline (2026-04-04)
+
+**Status**: Accepted
+
+### Context
+
+The chat timeline experienced recurrent scroll jumping across three trigger scenarios: user sending a message, app returning from background, and scrolling to load older messages. Multiple targeted fixes over time addressed individual scroll paths but the bug kept returning because each fix addressed one scroll owner without coordinating across all competing scroll sources. Five concurrent scroll owners (`_handleScrollMetricsChanged` snap, `_runScrollToBottom`, `_revealLatestMessageReturnReveal`, `_loadOlderMessagesAndRestoreAnchor`, and provider `_scheduleScrollToBottom`) raced against each other without a unified priority system.
+
+### Decision
+
+1. **Unified scroll ownership via `_ScrollOwner` enum** — `none`, `userDrag`, `paginationRestore`, `newMessage`, `streaming`, `returnReveal`, `contentShrinkSnap` replacing scattered boolean coordination
+2. **Hardened `_handleScrollMetricsChanged` content-shrink snap gates** — blocks on return reveal in-flight, pagination restore in-flight, and any non-none scroll owner
+3. **Serialized background resume scroll actions** — `_handleReturnToChat` defers reveal via `addPostFrameCallback` with mounted guard to avoid racing with provider-triggered scrolls
+4. **`_runScrollToBottom` gates on `_currentScrollOwner == userDrag`** for non-force scrolls, preventing scroll hijacking during user drag
+5. **`_lastKnownMaxScrollExtent` update moved to end of handler** to avoid false "content grew" detection during transitions
+6. **Timeline cache invalidation logging** for future diagnosis of unnecessary repaints
+
+### Rationale
+
+- A single source of truth for scroll ownership eliminates race conditions between competing scroll sources
+- The enum approach is more maintainable than scattered boolean flags because it makes the ownership model explicit and prevents future regressions from new scroll paths being added without coordination
+- PostFrameCallback deferral ensures the widget tree is stable before initiating scroll animations on background resume
+- Force scrolls (user message send, FAB tap) bypass all gates to maintain responsiveness for explicit user actions
+
+### Consequences
+
+- ✅ Scroll jumping eliminated across all three trigger scenarios (send message, return from background, load older messages)
+- ✅ Unified `_ScrollOwner` enum replaces scattered boolean coordination
+- ✅ User drag always takes priority — programmatic scrolls defer until user releases
+- ✅ Force scrolls (user message send, FAB tap) bypass all gates
+- ✅ Timeline cache survives passive refresh pulses without invalidation
+- ✅ Widget regression tests cover all identified race conditions
+- ⚠ `_isProgrammaticScrollInFlight` and `_isReturnRevealInFlight` booleans kept for backward compatibility with final assistant reveal path — should be migrated to enum in future cleanup
+- ⚠ Debug logging for owner transitions not yet added — would help trace ownership handoffs during scroll races
+
+### Key Files
+
+- `lib/presentation/pages/chat_page.dart` — `_ScrollOwner` enum definition, `_currentScrollOwner` state field, `_setScrollOwner()` helper
+- `lib/presentation/pages/chat_page/chat_page_runtime_support.dart` — `_handleScrollMetricsChanged` hardened gates, `_runLatestMessageReturnReveal` owner integration
+- `lib/presentation/pages/chat_page/chat_page_scroll_coordinator.dart` — `_handleScrollChanged` user drag detection, `_runScrollToBottom` owner gates, `_loadOlderMessagesAndRestoreAnchor` owner integration
+- `lib/presentation/pages/chat_page/chat_page_lifecycle.dart` — `_handleReturnToChat` PostFrameCallback deferral with mounted guard
+- `lib/presentation/pages/chat_page/chat_page_timeline_builder.dart` — cache invalidation logging
+- `test/widget/chat_page_test.dart` — 2 new regression tests for scroll stability and cache reuse
+
+### ADR-023 Compatibility
+
+This feature is fully compatible with ADR-023. No server contract change, no new API endpoints, no deviation from OpenCode lifecycle semantics. All state is client-side scroll coordination.

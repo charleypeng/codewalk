@@ -144,7 +144,7 @@ lib/presentation/widgets/chat_input_widget.dart
 
 ```text
 chat_page_lifecycle.dart
-chat_page_scroll_coordinator.dart                  # Handles top-scroll older-history trigger (requires real active user scroll activity so layout shrink/collapse cannot falsely load older history) and viewport anchor restoration after prepend
+chat_page_scroll_coordinator.dart                  # Unified scroll ownership via `_ScrollOwner` enum (none, userDrag, paginationRestore, newMessage, streaming, returnReveal, contentShrinkSnap); handles top-scroll older-history trigger and viewport anchor restoration; gates programmatic scrolls against user drag priority
 chat_page_workspace_controller.dart
 chat_page_shortcuts.dart
 chat_page_status_presenter.dart                    # Simplified active-server status presentation (`Online` / `Delayed` / `Offline`) and context-usage controls
@@ -154,7 +154,7 @@ chat_page_file_explorer_controller.dart
 chat_page_file_viewer.dart
 chat_page_composer_status.dart                    # Resolves the fixed composer live-progress surface for latest busy tool/patch/reasoning activity using composer-specific compact labels via toolResolveComposerDescriptionLabel
 chat_page_command_query.dart
-chat_page_runtime_support.dart                   # _syncSessionScrollState saves/restores per-session collapse state via _sessionCollapseHistoryCache / _sessionCollapseWorkCache; shrink auto-snap only runs when viewport remains near bottom to avoid forced jumps while reading expanded history; coordinates scroll state with revert-boundary transitions
+chat_page_runtime_support.dart                   # Content-shrink snap hardened against competing scroll owners; _handleScrollMetricsChanged gates on return reveal, pagination restore, and scroll owner enum; per-session collapse state cache via _sessionCollapseHistoryCache
 chat_page_chrome.dart
 chat_page_file_runtime.dart
 chat_page_terminal_runtime.dart              # Terminal panel toggle, attach/detach lifecycle, mobile info sheet, and panel height management
