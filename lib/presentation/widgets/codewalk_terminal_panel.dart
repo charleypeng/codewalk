@@ -153,10 +153,10 @@ class _CodewalkTerminalPanelState extends State<CodewalkTerminalPanel> {
             widget.controller.terminal,
             controller: _viewController,
             autofocus: true,
-            // Email keyboard mode breaks Android terminal composition,
-            // especially when inserting spaces. Use the plain text IME there.
+            // Android terminals work better with a raw text keyboard that
+            // suppresses prediction/composition side effects.
             keyboardType: defaultTargetPlatform == TargetPlatform.android
-                ? TextInputType.text
+                ? TextInputType.visiblePassword
                 : TextInputType.emailAddress,
           ),
         ),
