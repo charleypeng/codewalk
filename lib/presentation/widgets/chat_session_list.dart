@@ -141,6 +141,19 @@ class _ChatSessionListState extends State<ChatSessionList> {
           .add(session);
     }
 
+    final pinnedRoots = <ChatSession>[];
+    final unpinnedRoots = <ChatSession>[];
+    for (final root in roots) {
+      if (widget.pinnedSessionIds.contains(root.id)) {
+        pinnedRoots.add(root);
+      } else {
+        unpinnedRoots.add(root);
+      }
+    }
+    roots.clear();
+    roots.addAll(pinnedRoots);
+    roots.addAll(unpinnedRoots);
+
     final signature = _createTreeSignature(
       sessions: widget.sessions,
       roots: roots,
