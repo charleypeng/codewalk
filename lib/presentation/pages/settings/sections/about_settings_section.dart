@@ -284,7 +284,7 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
       await settings.setPendingPostOnboardingChatTour(false);
     }
     await settings.setPendingPostOnboardingChatTour(true);
-    if (!mounted) {
+    if (!context.mounted) {
       return;
     }
     Navigator.of(context).pop();
@@ -317,13 +317,13 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
       },
     );
 
-    if (confirmed != true || !mounted) return;
+    if (confirmed != true || !context.mounted) return;
 
     // Clear all persisted data.
     final localDataSource = di.sl<AppLocalDataSource>();
     await localDataSource.clearAll();
 
-    if (!mounted) return;
+    if (!context.mounted) return;
 
     // Reset in-memory provider state and re-initialize from (now empty) storage.
     final appProvider = context.read<AppProvider>();
@@ -335,7 +335,7 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
 
     // Navigate back to AppShellPage, clearing the stack so the
     // onboarding gate re-evaluates with empty server profiles.
-    if (!mounted) return;
+    if (!context.mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const AppShellPage()),
       (_) => false,

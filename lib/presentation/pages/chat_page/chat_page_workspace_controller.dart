@@ -90,6 +90,7 @@ extension _ChatPageWorkspaceController on _ChatPageState {
       if (!changed || !wasActiveProject) {
         return;
       }
+      if (!mounted) return;
       await context.read<ChatProvider>().onProjectScopeChanged(
         waitForRevalidation: false,
       );
