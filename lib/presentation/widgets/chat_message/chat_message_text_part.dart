@@ -93,6 +93,7 @@ extension _ChatMessageTextPartBuilder on _ChatMessageWidgetState {
         mode: LaunchMode.externalApplication,
       );
       if (!launched) {
+        if (!context.mounted) return;
         _showLinkOpenFeedback(context, 'Unable to open link');
       }
     } catch (error, stackTrace) {
@@ -101,6 +102,7 @@ extension _ChatMessageTextPartBuilder on _ChatMessageWidgetState {
         error: error,
         stackTrace: stackTrace,
       );
+      if (!context.mounted) return;
       _showLinkOpenFeedback(context, 'Unable to open link');
     }
   }
