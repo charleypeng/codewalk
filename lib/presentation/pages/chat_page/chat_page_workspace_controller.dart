@@ -83,6 +83,7 @@ extension _ChatPageWorkspaceController on _ChatPageState {
   }
 
   Future<void> _closeProjectContext(String projectId) async {
+    final chatProvider = context.read<ChatProvider>();
     await _runProjectScopeTransition(() async {
       final projectProvider = context.read<ProjectProvider>();
       final wasActiveProject = projectProvider.currentProject?.id == projectId;
@@ -90,8 +91,7 @@ extension _ChatPageWorkspaceController on _ChatPageState {
       if (!changed || !wasActiveProject) {
         return;
       }
-      if (!mounted) return;
-      await context.read<ChatProvider>().onProjectScopeChanged(
+      await chatProvider.onProjectScopeChanged(
         waitForRevalidation: false,
       );
     });
