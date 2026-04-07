@@ -1292,7 +1292,7 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 20));
 
         var scrollToBottomRequests = 0;
-        provider.setScrollToBottomCallback(() {
+        provider.setScrollToBottomCallback(({required reason}) {
           scrollToBottomRequests += 1;
         });
         chatRepository.sessionStatusById = const <String, SessionStatusInfo>{

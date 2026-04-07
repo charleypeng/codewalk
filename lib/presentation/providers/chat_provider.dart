@@ -218,7 +218,7 @@ class ChatProvider extends ChangeNotifier {
   }
 
   // Scroll callback
-  VoidCallback? _scrollToBottomCallback;
+  void Function({required String reason})? _scrollToBottomCallback;
 
   final SendChatMessage sendChatMessage;
   final AbortChatSession? abortChatSession;
@@ -522,12 +522,12 @@ class ChatProvider extends ChangeNotifier {
   // per frame when several events trigger scroll simultaneously.
   bool _scrollScheduled = false;
 
-  void _scheduleScrollToBottom() {
+  void _scheduleScrollToBottom({String reason = 'provider'}) {
     if (_scrollScheduled) return;
     _scrollScheduled = true;
     scheduleMicrotask(() {
       _scrollScheduled = false;
-      _scrollToBottomCallback?.call();
+      _scrollToBottomCallback?.call(reason: reason);
     });
   }
 
@@ -1756,7 +1756,9 @@ class ChatProvider extends ChangeNotifier {
   }
 
   /// Set scroll-to-bottom callback
-  void setScrollToBottomCallback(VoidCallback? callback) {
+  void setScrollToBottomCallback(
+    void Function({required String reason})? callback,
+  ) {
     _scrollToBottomCallback = callback;
   }
 
@@ -2044,7 +2046,7 @@ class ChatProvider extends ChangeNotifier {
               (hasActiveLocalStream ||
                   _state == ChatState.sending ||
                   (latestSessionMessageChanged && !hasBusyRefreshStatus))) {
-            _scheduleScrollToBottom();
+            _scheduleScrollToBottom(reason: 'refresh-active-session-view');
           }
           if (requiresFullFetch && _currentSession?.id == session.id) {
             fallbackToFullFetch = true;

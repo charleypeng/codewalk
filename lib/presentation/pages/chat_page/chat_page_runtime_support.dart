@@ -252,9 +252,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     _settledLatestAssistantWorkGroupId =
         compactionDecision.settledLatestAssistantWorkGroupId;
     _finalAssistantRevealSettledMessageId =
-        compactionDecision.hasSettledLatestWorkGroup
-        ? compactionDecision.latestRevealableAssistantMessageId
-        : null;
+        compactionDecision.latestRevealableAssistantMessageId;
     _wasCurrentSessionActivelyResponding =
         chatProvider.isCurrentSessionActivelyResponding &&
         !compactionDecision.hasSettledLatestWorkGroup;
@@ -302,6 +300,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _deferAssistantWorkCollapse = false;
       _suppressPostCompletionAutoSnap = false;
       _shouldRevealFinalAssistantOnCompletion = false;
+      _manualScrollFollowPaused = false;
       _pendingFinalAssistantRevealMessageId = null;
       _restoreSettledAssistantWorkOwnership(
         chatProvider,
@@ -329,6 +328,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       } else {
         _autoFollowToLatest = true;
         _showScrollToFirstFab = false;
+        _manualScrollFollowPaused = false;
       }
     }
 
@@ -620,7 +620,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     }
 
     if (chatProvider.isCurrentSessionActivelyResponding) {
-      _scrollToBottom(force: true);
+      _scrollToBottom(force: false);
       return;
     }
 
@@ -874,6 +874,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     _suppressPostCompletionAutoSnap = false;
     _deferAssistantWorkCollapse = true;
     _shouldRevealFinalAssistantOnCompletion = false;
+    _manualScrollFollowPaused = false;
     _pendingFinalAssistantRevealMessageId = null;
     _finalAssistantRevealSettledMessageId = null;
     _settledLatestAssistantWorkGroupId = null;
@@ -897,6 +898,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     _shouldRevealFinalAssistantOnCompletion = false;
     _pendingFinalAssistantRevealMessageId = null;
     _deferAssistantWorkCollapse = false;
+    _manualScrollFollowPaused = false;
     _scrollToBottom(force: true);
   }
 
@@ -942,7 +944,21 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
   }
 
   void _scrollToBottom({bool force = false, bool animate = true}) {
+    if (!force &&
+        (_currentScrollOwner == _ScrollOwner.newMessage ||
+            _currentScrollOwner == _ScrollOwner.streaming)) {
+      _traceFinalUi(
+        'scroll-to-bottom-skipped-owner-already-following',
+        details: 'owner=${_currentScrollOwner.name}',
+      );
+      return;
+    }
     final requestToken = ++_scrollToBottomRequestToken;
+    _traceFinalUi(
+      'scroll-to-bottom-request',
+      details:
+          'requestToken=$requestToken force=$force animate=$animate owner=${_currentScrollOwner.name}',
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(
         _runScrollToBottom(

@@ -1147,7 +1147,7 @@ void main() {
         await provider.loadSessionInsights('ses_1');
 
         var scrollRequests = 0;
-        provider.setScrollToBottomCallback(() {
+        provider.setScrollToBottomCallback(({required reason}) {
           scrollRequests += 1;
         });
 

@@ -567,7 +567,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
               sessionId,
               latestMessage: updatedMessage,
             )) {
-          _scheduleScrollToBottom();
+          _scheduleScrollToBottom(reason: 'event-reducer-message-part-updated');
         }
         break;
       case 'message.part.removed':

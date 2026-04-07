@@ -256,7 +256,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
           _notifyListeners();
           _attemptPendingRemoteSelectionSync(reason: 'message-user-deduped');
           _scheduleAutoTitleRefresh(message.sessionId);
-          _scheduleScrollToBottom();
+          _scheduleScrollToBottom(reason: 'message-state-user-deduped');
           return;
         }
         _setPendingReplacementBranchRootMessage(
@@ -269,7 +269,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
         _notifyListeners();
         _attemptPendingRemoteSelectionSync(reason: 'message-user-replaced');
         _scheduleAutoTitleRefresh(message.sessionId);
-        _scheduleScrollToBottom();
+        _scheduleScrollToBottom(reason: 'message-state-user-replaced');
         return;
       }
     }
@@ -331,7 +331,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
               message.sessionId,
               latestMessage: message,
             ))) {
-      _scheduleScrollToBottom();
+      _scheduleScrollToBottom(reason: 'message-state-message-update');
     }
   }
 

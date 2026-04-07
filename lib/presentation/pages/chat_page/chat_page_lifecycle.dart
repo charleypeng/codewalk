@@ -439,6 +439,14 @@ extension _ChatPageLifecycle on _ChatPageState {
     ChatProvider chatProvider, {
     required String reason,
   }) {
+    final now = DateTime.now();
+    if (_lastReturnToChatAt != null &&
+        now.difference(_lastReturnToChatAt!) <
+            const Duration(milliseconds: 400)) {
+      _traceFinalUi('return-to-chat-skip-debounced', details: 'reason=$reason');
+      return;
+    }
+    _lastReturnToChatAt = now;
     _flushPendingPostOnboardingTourAutoStart();
     _scheduleAutoApprovePermissionDrain(reason: reason);
     unawaited(_syncBackgroundPermissionAutoApproveContext(reason: reason));
@@ -454,7 +462,7 @@ extension _ChatPageLifecycle on _ChatPageState {
     );
     if (chatProvider.isCurrentSessionActivelyResponding) {
       _captureReturnRevealBaseline(chatProvider);
-      _scrollToBottom(force: true);
+      _scrollToBottom(force: false);
       return;
     }
     if (!_shouldRevealLatestMessageAfterReturn(chatProvider)) {

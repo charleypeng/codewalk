@@ -1392,7 +1392,7 @@ void main() {
         await provider.initializeProviders();
 
         var scrollToBottomRequests = 0;
-        provider.setScrollToBottomCallback(() {
+        provider.setScrollToBottomCallback(({required reason}) {
           scrollToBottomRequests += 1;
         });
 
@@ -1585,7 +1585,7 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 40));
 
         var scrollToBottomRequests = 0;
-        provider.setScrollToBottomCallback(() {
+        provider.setScrollToBottomCallback(({required reason}) {
           scrollToBottomRequests += 1;
         });
 

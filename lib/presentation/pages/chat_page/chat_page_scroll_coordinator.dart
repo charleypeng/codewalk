@@ -21,13 +21,32 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
     if (_hasActiveUserScrollActivity() &&
         userScrollDirection != ScrollDirection.idle) {
       _setScrollOwner(_ScrollOwner.userDrag);
+      if (_distanceToBottom() > _ChatPageState._scrollToBottomEpsilon) {
+        _manualScrollFollowPaused = true;
+      }
     }
 
     final nearBottom = _isNearBottom();
     if (nearBottom) {
       _suppressPostCompletionAutoSnap = false;
+      if (_distanceToBottom() <= _ChatPageState._scrollToBottomEpsilon) {
+        _manualScrollFollowPaused = false;
+      }
       if (_currentScrollOwner == _ScrollOwner.userDrag) {
         _setScrollOwner(_ScrollOwner.none);
+      }
+      if (_manualScrollFollowPaused) {
+        if (_autoFollowToLatest ||
+            (_showScrollToLatestFab &&
+                !_hasUnreadMessagesBelow &&
+                !_showScrollToFirstFab)) {
+          _setState(() {
+            _autoFollowToLatest = false;
+            _showScrollToLatestFab = false;
+            _showScrollToFirstFab = false;
+          });
+        }
+        return;
       }
       if (!_autoFollowToLatest ||
           _showScrollToLatestFab ||
@@ -134,6 +153,7 @@ extension _ChatPageScrollCoordinator on _ChatPageState {
         return;
       }
 
+      await Future<void>.microtask(() {});
       await WidgetsBinding.instance.endOfFrame;
       if (!mounted || !_scrollController.hasClients) {
         return;

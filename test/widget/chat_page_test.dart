@@ -9064,6 +9064,91 @@ void main() {
   });
 
   testWidgets(
+    'slight manual upward scroll near bottom suppresses passive refresh auto-follow',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      const sessionId = 'ses_manual_pause_refresh';
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: sessionId,
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Manual Pause Refresh',
+          ),
+        ],
+      );
+      repository.messagesBySession[sessionId] = _threadMessages(sessionId, 40);
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await tester.pumpAndSettle();
+
+      final listFinder = find.byKey(
+        const ValueKey<String>('chat_message_list'),
+      );
+      final scrollableFinder = find.descendant(
+        of: listFinder,
+        matching: find.byType(Scrollable),
+      );
+
+      await tester.drag(listFinder, const Offset(0, 80));
+      await tester.pumpAndSettle();
+
+      final scrollableBefore = tester.state<ScrollableState>(scrollableFinder);
+      final pixelsBeforeRefresh = scrollableBefore.position.pixels;
+      expect(
+        scrollableBefore.position.maxScrollExtent -
+            scrollableBefore.position.pixels,
+        greaterThan(1),
+      );
+
+      repository.messagesBySession[sessionId] = <ChatMessage>[
+        ...repository.messagesBySession[sessionId]!,
+        AssistantMessage(
+          id: 'msg_manual_pause_refresh_tail',
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(90000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(90100),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_manual_pause_refresh_tail',
+              messageId: 'msg_manual_pause_refresh_tail',
+              sessionId: sessionId,
+              text: 'passive refresh should not steal the viewport',
+            ),
+          ],
+        ),
+      ];
+
+      await provider.refreshActiveSessionView(
+        reason: 'manual-scroll-near-bottom-passive-refresh',
+        includeStatus: false,
+      );
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      final scrollableAfter = tester.state<ScrollableState>(scrollableFinder);
+      expect(scrollableAfter.position.pixels, closeTo(pixelsBeforeRefresh, 1));
+      expect(find.byTooltip('Go to latest message'), findsOneWidget);
+      expect(find.byIcon(Symbols.mark_chat_unread), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'collapses pre-compaction history by default and toggles older messages',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));

@@ -287,6 +287,7 @@ class _ChatPageState extends State<ChatPage>
   bool _olderMessagesAnchorRestoreInFlight = false;
   _ScrollOwner _currentScrollOwner = _ScrollOwner.none;
   int _scrollToBottomRequestToken = 0;
+  bool _manualScrollFollowPaused = false;
   bool _wasCurrentSessionActivelyResponding = false;
   bool _deferAssistantWorkCollapse = false;
   bool _suppressPostCompletionAutoSnap = false;
@@ -295,12 +296,62 @@ class _ChatPageState extends State<ChatPage>
   String? _settledLatestAssistantWorkGroupId;
 
   void _setScrollOwner(_ScrollOwner owner) {
+    final previousOwner = _currentScrollOwner;
     _currentScrollOwner = owner;
     _isProgrammaticScrollInFlight =
         owner != _ScrollOwner.none && owner != _ScrollOwner.userDrag;
     _isReturnRevealInFlight = owner == _ScrollOwner.returnReveal;
     _olderMessagesAnchorRestoreInFlight =
         owner == _ScrollOwner.paginationRestore;
+    if (previousOwner != owner) {
+      AppLogger.debug(
+        'Chat viewport owner: ${previousOwner.name} -> ${owner.name} '
+        'session=${_chatProvider?.currentSession?.id ?? "-"} '
+        'autoFollow=$_autoFollowToLatest '
+        'requestToken=$_scrollToBottomRequestToken',
+      );
+    }
+  }
+
+  void _requestPassiveScrollToBottom({required String reason}) {
+    if (!mounted) {
+      return;
+    }
+    if (_currentScrollOwner == _ScrollOwner.userDrag) {
+      _traceFinalUi(
+        'passive-scroll-suppressed-user-drag',
+        details: 'reason=$reason',
+      );
+      _markUnreadMessagesBelow();
+      return;
+    }
+    if (_manualScrollFollowPaused) {
+      _traceFinalUi(
+        'passive-scroll-suppressed-manual-pause',
+        details: 'reason=$reason',
+      );
+      _markUnreadMessagesBelow();
+      return;
+    }
+    if (_currentScrollOwner != _ScrollOwner.none ||
+        _isReturnRevealInFlight ||
+        _olderMessagesAnchorRestoreInFlight) {
+      _traceFinalUi(
+        'passive-scroll-suppressed-owner-active',
+        details: 'reason=$reason owner=${_currentScrollOwner.name}',
+      );
+      return;
+    }
+    if (!_autoFollowToLatest) {
+      _traceFinalUi(
+        'passive-scroll-suppressed-auto-follow-disabled',
+        details: 'reason=$reason',
+      );
+      _markUnreadMessagesBelow();
+      return;
+    }
+    _traceFinalUi('passive-scroll-request', details: 'reason=$reason');
+    _scrollToBottom(force: false);
   }
 
   void _traceFinalUi(String event, {String? details}) {
@@ -347,6 +398,7 @@ class _ChatPageState extends State<ChatPage>
   Timer? _backgroundRealtimeHoldTimer;
   Timer? _tipRotationTimer;
   DateTime? _lastResumeRefreshAt;
+  DateTime? _lastReturnToChatAt;
   bool _needsInitialDataRecovery = false;
   bool _initialDataRecoveryInFlight = false;
   int _initialDataRecoveryAttemptCount = 0;
@@ -627,7 +679,7 @@ class _ChatPageState extends State<ChatPage>
     final chatProvider = context.read<ChatProvider>();
 
     // Set scroll to bottom callback
-    chatProvider.setScrollToBottomCallback(_scrollToBottom);
+    chatProvider.setScrollToBottomCallback(_requestPassiveScrollToBottom);
     _applyForegroundPolicy(reason: 'chat-load-initial-data');
 
     // Technical comment translated to English.
