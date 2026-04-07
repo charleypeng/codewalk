@@ -57,7 +57,7 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | 025 | Settled Assistant-Work Disclosure Ownership — client-side architectural ownership to prevent open/close thrash, scroll jumps on session return | 1151–1193 |
 | 026 | ⚠️ SUPERSEDED — Local PTY shell replaced by server-hosted PTY (ADR-027) | 1195–1251 |
 | 027 | Server-hosted PTY terminal with embedded client rendering — runs on OpenCode host in active project directory, client renders via streaming transport, local flutter_pty removed, close/minimize/maximize semantics preserved, composer hides on compact/mobile | 1253–1313 |
-| 028 | Unified scroll ownership via `_ScrollOwner` enum — eliminate scroll jumping across send/return/pagination triggers, user drag priority, force scroll bypass | 1318–1364 |
+| 028 | Unified scroll ownership via `_ScrollOwner` enum — eliminate scroll jumping across send/return/pagination triggers, user drag priority, force scroll bypass; additive guardrails cover passive provider scroll suppression, manual follow pause near bottom, response-settle shrink-snap suppression, and duplicate return-to-chat scoping | 1318–1370 |
 
 ## 🗺 CODEBASE Quick Reference (details in `CODEBASE.md`)
 

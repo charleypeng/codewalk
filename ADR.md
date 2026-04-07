@@ -1350,6 +1350,12 @@ The chat timeline experienced recurrent scroll jumping across three trigger scen
 - ⚠ `_isProgrammaticScrollInFlight` and `_isReturnRevealInFlight` booleans kept for backward compatibility with final assistant reveal path — should be migrated to enum in future cleanup
 - ⚠ Debug logging for owner transitions not yet added — would help trace ownership handoffs during scroll races
 
+**Note** (commits `d1cb997`, `1395955`, `042705a`): Practical guardrails tightened around four scroll-race surfaces without changing the architectural contract:
+1. **Passive provider scroll suppression** — provider-triggered scroll-to-bottom requests are now suppressed when the user is actively reading near the bottom edge, preventing viewport jumps from background SSE pulses.
+2. **Manual follow pause near bottom** — when the user manually scrolls near the bottom (within a small threshold), auto-follow is paused to avoid fighting intentional user positioning.
+3. **Response-settle shrink-snap suppression** — content-shrink snap is suppressed during the response-settle window after a streaming response completes, preventing the viewport from jumping when the message bubble collapses from streaming to settled layout.
+4. **Duplicate return-to-chat debounce scoping** (`042705a`) — the return-to-chat debounce was narrowed to deduplicate only identical signatures (same trigger source + same timestamp window), preventing unrelated return-to-chat calls from being incorrectly coalesced.
+
 ### Key Files
 
 - `lib/presentation/pages/chat_page.dart` — `_ScrollOwner` enum definition, `_currentScrollOwner` state field, `_setScrollOwner()` helper

@@ -36,6 +36,7 @@ coverage/
 
 # OpenCode Server workspace artifacts
 config.json
+.opencode/
 
 # Symbolication related
 app.*.symbols
