@@ -57,6 +57,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     final chatProvider = _chatProvider;
     final hasActiveViewportOwner =
         _deferAssistantWorkCollapse ||
+        _responseSettleFramesRemaining > 0 ||
         (chatProvider?.isCurrentSessionActivelyResponding ?? false);
     final hasScrollOwner =
         _currentScrollOwner != _ScrollOwner.none &&
@@ -101,6 +102,26 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
 
     _lastKnownMaxScrollExtent = currentMax;
     return false;
+  }
+
+  void _beginResponseSettleWindow() {
+    _responseSettleFramesRemaining = 2;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _drainResponseSettleWindow();
+    });
+  }
+
+  void _drainResponseSettleWindow() {
+    if (!mounted || _responseSettleFramesRemaining <= 0) {
+      return;
+    }
+    _responseSettleFramesRemaining -= 1;
+    if (_responseSettleFramesRemaining <= 0) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _drainResponseSettleWindow();
+    });
   }
 
   void _consumePendingUiNotice(ChatProvider chatProvider) {
@@ -443,6 +464,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
 
     if (_wasCurrentSessionActivelyResponding) {
       _wasCurrentSessionActivelyResponding = false;
+      _beginResponseSettleWindow();
       final shouldRevealFinalAssistant =
           _shouldRevealFinalAssistantOnCompletion && _autoFollowToLatest;
       _deferAssistantWorkCollapse = false;

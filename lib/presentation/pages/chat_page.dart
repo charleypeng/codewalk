@@ -288,6 +288,7 @@ class _ChatPageState extends State<ChatPage>
   _ScrollOwner _currentScrollOwner = _ScrollOwner.none;
   int _scrollToBottomRequestToken = 0;
   bool _manualScrollFollowPaused = false;
+  int _responseSettleFramesRemaining = 0;
   bool _wasCurrentSessionActivelyResponding = false;
   bool _deferAssistantWorkCollapse = false;
   bool _suppressPostCompletionAutoSnap = false;

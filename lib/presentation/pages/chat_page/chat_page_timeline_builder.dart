@@ -1646,7 +1646,15 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           sourceMessages,
         );
     final compactingMatch = entry.isCompacting == isCompactingContext;
-    final respondingMatch = entry.isResponding == isSessionActivelyResponding;
+    final respondingMatch =
+        entry.isResponding == isSessionActivelyResponding ||
+        (entry.assistantWorkCompactionDecision.shouldDeferLatestCollapse ==
+                assistantWorkCompactionDecision.shouldDeferLatestCollapse &&
+            entry
+                    .assistantWorkCompactionDecision
+                    .settledLatestAssistantWorkGroupId ==
+                assistantWorkCompactionDecision
+                    .settledLatestAssistantWorkGroupId);
     final retryMatch = entry.showRetry == showRetryIndicator;
     final permMatch =
         entry.permissionPromptSignature == permissionPromptSignature;
