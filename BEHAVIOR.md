@@ -275,7 +275,8 @@
 - **Then** cached messages are rendered immediately without waiting for a full network reload
 - **Then** the chat timeline reuses the cached grouped/hydrated presentation for that session instead of visually rebuilding settled history from scratch
 - **Then** if the selected existing session has no in-memory messages yet, the chat surface shows a subtle loading indicator instead of the generic `Hello! I am your AI assistant` empty state until hydration finishes
-- **Then** the viewport lands directly at the bottom immediately, with no visible scroll animation or reopen reveal effect
+- **Then** if that cached session is still actively processing, the viewport lands directly at the bottom immediately, with no visible reopen animation
+- **Then** if that cached session is already settled, the viewport restores directly to the latest assistant response instead of replaying a reopen bottom-snap or reveal thrash
 - **Then** the app revalidates the session in background (SWR) and merges newer server state when available
 
 ### Project switching is cache-first and non-blocking
@@ -312,8 +313,8 @@
 - **Then** historical assistant work/tool-call groups return collapsed after session return or revalidation (manual expansion is not restored)
 - **Then** the latest completed assistant work/tool-call run stays visible inside a bounded internal panel while it remains the newest run, so regrouping does not yank the main chat viewport
 - **Then** an already-selected empty session keeps its empty placeholder visible during background refresh (no loading skeleton blink)
-- **Then** returning from background or focus with no new chat content does not yank the latest message to the top of the viewport just because the route resumed
-- **Then** if refreshed content arrives while the user was already pinned to the latest message, the viewport stays pinned instead of forcing a synthetic reveal jump
+- **Then** returning from background or focus with no new chat content restores a settled cached session to the latest assistant response and an active cached session to the bottom, without a second jump
+- **Then** if refreshed settled content arrives during resume revalidation, the queued cached restore waits for that refresh to finish and then reveals the newest assistant response once instead of bottom-snapping first
 - **Then** passive refreshes, realtime part updates, and status-only busy/retry reconciliation must not start a second auto-scroll owner while the active turn already owns the viewport
 - **Then** reopening a cached session does not replay old-history entrance/loading motion before newer delta content is merged
 

@@ -1192,6 +1192,12 @@ Scope is limited to **client-side disclosure ownership** for the latest settled 
 
 This ADR is fully compatible with ADR-023 and official OpenCode lifecycle semantics. It introduces no server contract change, no custom busy protocol, and no deviation from the OpenCode message lifecycle. All state is client-side reconstruction from existing message structure.
 
+**Note** (commit `9284223`): Session return and app-resume restore behavior refined for cached sessions:
+1. **Cached settled session switch/return** — reveals the latest assistant response (disclosure ownership preserved, viewport positioned on final message).
+2. **Cached active session switch/return** — lands at bottom to follow ongoing streaming activity.
+3. **App-resume restore waits for refresh completion** — scroll/restore consumption is deferred until background refresh finishes, preventing stale viewport reconstruction.
+4. **Passive refresh callbacks promote queued latest-response restore** — instead of defaulting to bottom-following, the passive refresh callback promotes the previously queued latest-response reveal, ensuring the user sees the most recent settled content.
+
 ---
 
 ## ADR-026: Cross-Platform Terminal Workspace with Local PTY Shell (2026-04-03) ⚠️ SUPERSEDED by ADR-027
@@ -1355,6 +1361,12 @@ The chat timeline experienced recurrent scroll jumping across three trigger scen
 2. **Manual follow pause near bottom** — when the user manually scrolls near the bottom (within a small threshold), auto-follow is paused to avoid fighting intentional user positioning.
 3. **Response-settle shrink-snap suppression** — content-shrink snap is suppressed during the response-settle window after a streaming response completes, preventing the viewport from jumping when the message bubble collapses from streaming to settled layout.
 4. **Duplicate return-to-chat debounce scoping** (`042705a`) — the return-to-chat debounce was narrowed to deduplicate only identical signatures (same trigger source + same timestamp window), preventing unrelated return-to-chat calls from being incorrectly coalesced.
+
+**Note** (commit `9284223`): Cached session restore now uses a single queued restore target instead of an unconditional reopen bottom snap:
+1. **Settled cached restore reveals the latest assistant response** — cached session switch/return restores directly to the latest revealable assistant response instead of always snapping to bottom.
+2. **Active cached restore still lands at bottom** — cached sessions that are still processing keep bottom-follow behavior.
+3. **Resume restore waits for refresh completion** — app-resume restore consumption is deferred until resume revalidation finishes, so refreshed settled content is revealed once instead of bottom-snapping before the newer tail appears.
+4. **Passive refresh promotion respects queued latest-response restore** — passive refresh callbacks promote a queued latest-response restore for that same session instead of requesting a competing bottom-follow scroll.
 
 ### Key Files
 
