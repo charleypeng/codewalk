@@ -112,6 +112,8 @@ enum _ScrollOwner {
   contentShrinkSnap,
 }
 
+enum _CachedViewportRestoreTarget { none, bottom, latestResponse }
+
 @visibleForTesting
 ({String title, String description}) postOnboardingSidebarTourCopy({
   required bool isMobile,
@@ -286,6 +288,8 @@ class _ChatPageState extends State<ChatPage>
   bool _olderMessagesLoadTriggerArmed = true;
   bool _olderMessagesAnchorRestoreInFlight = false;
   _ScrollOwner _currentScrollOwner = _ScrollOwner.none;
+  _CachedViewportRestoreTarget _pendingCachedViewportRestoreTarget =
+      _CachedViewportRestoreTarget.none;
   int _scrollToBottomRequestToken = 0;
   bool _manualScrollFollowPaused = false;
   int _responseSettleFramesRemaining = 0;
@@ -351,6 +355,20 @@ class _ChatPageState extends State<ChatPage>
       _markUnreadMessagesBelow();
       return;
     }
+    if (_chatProvider != null &&
+        _pendingInitialScrollSessionId == _chatProvider!.currentSession?.id &&
+        _pendingCachedViewportRestoreTarget ==
+            _CachedViewportRestoreTarget.latestResponse) {
+      _traceFinalUi(
+        'passive-scroll-promote-cached-latest-restore',
+        details: 'reason=$reason',
+      );
+      _consumeQueuedCachedViewportRestore(
+        _chatProvider!,
+        reason: 'passive:$reason',
+      );
+      return;
+    }
     _traceFinalUi('passive-scroll-request', details: 'reason=$reason');
     _scrollToBottom(force: false);
   }
@@ -373,10 +391,6 @@ class _ChatPageState extends State<ChatPage>
   int _pendingFinalAssistantRevealAttempts = 0;
   final Map<String, GlobalKey> _messageRevealAnchorKeysByMessageId =
       <String, GlobalKey>{};
-  String? _returnRevealBaselineSessionId;
-  int _returnRevealBaselineMessageCount = 0;
-  String? _returnRevealBaselineLatestMessageId;
-  String? _returnRevealBaselineLatestRevealableAssistantMessageId;
   String? _lastForegroundPolicySettingsSignature;
   String? _terminalSessionSignature;
   ChatComposerDraft? _composerPrefilledDraft;
@@ -401,6 +415,9 @@ class _ChatPageState extends State<ChatPage>
   DateTime? _lastResumeRefreshAt;
   DateTime? _lastReturnToChatAt;
   String? _lastReturnToChatSignature;
+  String? _lastConsumedCachedViewportRestoreSignature;
+  DateTime? _lastConsumedCachedViewportRestoreAt;
+  bool _resumeRefreshViewportRestorePending = false;
   bool _needsInitialDataRecovery = false;
   bool _initialDataRecoveryInFlight = false;
   int _initialDataRecoveryAttemptCount = 0;
@@ -609,8 +626,22 @@ class _ChatPageState extends State<ChatPage>
         _startForegroundWarningGrace();
         if (_isChatScreenActive()) {
           _lastResumeRefreshAt = DateTime.now();
+          _resumeRefreshViewportRestorePending = true;
           unawaited(
-            provider.refreshActiveSessionView(reason: 'app-lifecycle-resumed'),
+            provider
+                .refreshActiveSessionView(reason: 'app-lifecycle-resumed')
+                .whenComplete(() {
+                  _resumeRefreshViewportRestorePending = false;
+                  if (!mounted ||
+                      !_isAppInForeground ||
+                      !_isChatScreenActive()) {
+                    return;
+                  }
+                  _handleReturnToChat(
+                    provider,
+                    reason: 'app-resumed-refresh-complete',
+                  );
+                }),
           );
         }
         _handleReturnToChat(provider, reason: 'app-resumed');

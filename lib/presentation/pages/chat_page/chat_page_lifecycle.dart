@@ -24,7 +24,6 @@ extension _ChatPageLifecycle on _ChatPageState {
       _lastForegroundPolicySettingsSignature = nextForegroundPolicySignature;
     }
     _autoApprovePermissionCooldownIds.clear();
-    _clearReturnRevealBaseline();
     _pendingFinalAssistantRevealMessageId = null;
     _finalAssistantRevealScheduled = false;
     _pendingFinalAssistantRevealAttempts = 0;
@@ -422,9 +421,6 @@ extension _ChatPageLifecycle on _ChatPageState {
     if (_wasChatRouteCurrent == isCurrent) {
       return;
     }
-    if (!isCurrent) {
-      _captureReturnRevealBaseline(chatProvider);
-    }
     _wasChatRouteCurrent = isCurrent;
     chatProvider.setChatRouteActive(isCurrent);
     unawaited(
@@ -466,6 +462,11 @@ extension _ChatPageLifecycle on _ChatPageState {
     if (!_autoFollowToLatest || chatProvider.currentSession == null) {
       return;
     }
+    if (_resumeRefreshViewportRestorePending &&
+        reason != 'app-resumed-refresh-complete') {
+      _queueCachedViewportRestore(chatProvider, reason: reason);
+      return;
+    }
     if (chatProvider.messages.isEmpty ||
         chatProvider.state == ChatState.loading) {
       return;
@@ -473,26 +474,6 @@ extension _ChatPageLifecycle on _ChatPageState {
     AppLogger.debug(
       'Auto-following latest messages after $reason for session=${chatProvider.currentSession!.id}',
     );
-    if (chatProvider.isCurrentSessionActivelyResponding) {
-      _captureReturnRevealBaseline(chatProvider);
-      _scrollToBottom(force: false);
-      return;
-    }
-    if (!_shouldRevealLatestMessageAfterReturn(chatProvider)) {
-      _captureReturnRevealBaseline(chatProvider);
-      return;
-    }
-    _captureReturnRevealBaseline(chatProvider);
-    // Defer reveal to next frame so refreshActiveSessionView-triggered
-    // provider scrolls can settle first and avoid racing with this reveal.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted ||
-          !_isChatScreenActive() ||
-          _chatProvider?.currentSession?.id !=
-              chatProvider.currentSession?.id) {
-        return;
-      }
-      _revealLatestMessageStartAfterReturn(chatProvider, reason: reason);
-    });
+    _queueCachedViewportRestore(chatProvider, reason: reason);
   }
 }

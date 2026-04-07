@@ -285,6 +285,102 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     );
   }
 
+  _CachedViewportRestoreTarget _resolveCachedViewportRestoreTarget(
+    ChatProvider chatProvider,
+  ) {
+    if (chatProvider.currentSession == null || chatProvider.messages.isEmpty) {
+      return _CachedViewportRestoreTarget.none;
+    }
+    if (chatProvider.isCurrentSessionActivelyResponding) {
+      return _CachedViewportRestoreTarget.bottom;
+    }
+    final latestRevealableAssistantMessageId =
+        _resolveLatestRevealableAssistantMessageId(chatProvider.messages);
+    if (latestRevealableAssistantMessageId == null ||
+        latestRevealableAssistantMessageId.isEmpty) {
+      return _CachedViewportRestoreTarget.bottom;
+    }
+    return _CachedViewportRestoreTarget.latestResponse;
+  }
+
+  void _queueCachedViewportRestore(
+    ChatProvider chatProvider, {
+    required String reason,
+  }) {
+    final sessionId = chatProvider.currentSession?.id;
+    if (sessionId == null || sessionId.isEmpty) {
+      _pendingInitialScrollSessionId = null;
+      _pendingCachedViewportRestoreTarget = _CachedViewportRestoreTarget.none;
+      return;
+    }
+    _pendingInitialScrollSessionId = sessionId;
+    _pendingCachedViewportRestoreTarget = _resolveCachedViewportRestoreTarget(
+      chatProvider,
+    );
+    _traceFinalUi(
+      'queue-cached-viewport-restore',
+      details:
+          'reason=$reason target=${_pendingCachedViewportRestoreTarget.name} session=$sessionId',
+    );
+  }
+
+  bool _consumeQueuedCachedViewportRestore(
+    ChatProvider chatProvider, {
+    required String reason,
+  }) {
+    final sessionId = chatProvider.currentSession?.id;
+    if (sessionId == null ||
+        sessionId.isEmpty ||
+        _pendingInitialScrollSessionId != sessionId ||
+        chatProvider.state == ChatState.loading ||
+        chatProvider.messages.isEmpty) {
+      return false;
+    }
+
+    final target = _pendingCachedViewportRestoreTarget;
+    _pendingInitialScrollSessionId = null;
+    _pendingCachedViewportRestoreTarget = _CachedViewportRestoreTarget.none;
+    if (target == _CachedViewportRestoreTarget.none) {
+      return false;
+    }
+
+    final signature = [
+      sessionId,
+      target.name,
+      chatProvider.messages.length,
+      chatProvider.messages.last.id,
+      chatProvider.isCurrentSessionActivelyResponding,
+    ].join('|');
+    final now = DateTime.now();
+    if (_lastConsumedCachedViewportRestoreAt != null &&
+        _lastConsumedCachedViewportRestoreSignature == signature &&
+        now.difference(_lastConsumedCachedViewportRestoreAt!) <
+            const Duration(milliseconds: 400)) {
+      _traceFinalUi(
+        'cached-viewport-restore-skip-duplicate',
+        details: 'reason=$reason signature=$signature',
+      );
+      return false;
+    }
+    _lastConsumedCachedViewportRestoreSignature = signature;
+    _lastConsumedCachedViewportRestoreAt = now;
+
+    _traceFinalUi(
+      'consume-cached-viewport-restore',
+      details: 'reason=$reason target=${target.name} signature=$signature',
+    );
+    switch (target) {
+      case _CachedViewportRestoreTarget.none:
+        return false;
+      case _CachedViewportRestoreTarget.bottom:
+        _scrollToBottom(force: true, animate: false);
+        return true;
+      case _CachedViewportRestoreTarget.latestResponse:
+        _revealLatestMessageForCachedRestore(chatProvider, reason: reason);
+        return true;
+    }
+  }
+
   void _syncSessionScrollState(ChatProvider chatProvider) {
     final sessionId = chatProvider.currentSession?.id;
     if (sessionId != _trackedSessionId) {
@@ -306,7 +402,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
           _notificationService?.clearNotificationsForSession(sessionId),
         );
       }
-      _pendingInitialScrollSessionId = sessionId;
+      _queueCachedViewportRestore(chatProvider, reason: 'session-switch');
       _olderMessagesLoadTriggerArmed = true;
       _setScrollOwner(_ScrollOwner.none);
       // Restore collapse state for the incoming session (null if not cached).
@@ -330,7 +426,6 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _finalAssistantRevealScheduled = false;
       _pendingFinalAssistantRevealAttempts = 0;
       _messageRevealAnchorKeysByMessageId.clear();
-      _clearReturnRevealBaseline();
       if (!_autoFollowToLatest ||
           _showScrollToLatestFab ||
           _hasUnreadMessagesBelow ||
@@ -355,6 +450,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
 
     if (sessionId == null) {
       _pendingInitialScrollSessionId = null;
+      _pendingCachedViewportRestoreTarget = _CachedViewportRestoreTarget.none;
       _autoFollowToLatest = true;
       _showScrollToFirstFab = false;
       _expandedCollapsedHistoryGroupId = null;
@@ -374,16 +470,15 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _finalAssistantRevealScheduled = false;
       _pendingFinalAssistantRevealAttempts = 0;
       _messageRevealAnchorKeysByMessageId.clear();
-      _clearReturnRevealBaseline();
       return;
     }
 
     if (_pendingInitialScrollSessionId == sessionId &&
         chatProvider.state != ChatState.loading) {
-      _pendingInitialScrollSessionId = null;
-      if (chatProvider.messages.isNotEmpty) {
-        _scrollToBottom(force: true, animate: false);
-      }
+      _consumeQueuedCachedViewportRestore(
+        chatProvider,
+        reason: 'session-ready',
+      );
     }
   }
 
@@ -540,7 +635,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     );
   }
 
-  void _revealLatestMessageStartAfterReturn(
+  void _revealLatestMessageForCachedRestore(
     ChatProvider chatProvider, {
     required String reason,
   }) {
@@ -581,49 +676,6 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         ),
       );
     });
-  }
-
-  void _captureReturnRevealBaseline(ChatProvider? chatProvider) {
-    final sessionId = chatProvider?.currentSession?.id;
-    if (sessionId == null || sessionId.isEmpty) {
-      _clearReturnRevealBaseline();
-      return;
-    }
-
-    final messages = chatProvider?.messages ?? const <ChatMessage>[];
-    _returnRevealBaselineSessionId = sessionId;
-    _returnRevealBaselineMessageCount = messages.length;
-    _returnRevealBaselineLatestMessageId = messages.isEmpty
-        ? null
-        : messages.last.id;
-    _returnRevealBaselineLatestRevealableAssistantMessageId =
-        _resolveLatestRevealableAssistantMessageId(messages);
-  }
-
-  void _clearReturnRevealBaseline() {
-    _returnRevealBaselineSessionId = null;
-    _returnRevealBaselineMessageCount = 0;
-    _returnRevealBaselineLatestMessageId = null;
-    _returnRevealBaselineLatestRevealableAssistantMessageId = null;
-  }
-
-  bool _shouldRevealLatestMessageAfterReturn(ChatProvider chatProvider) {
-    final sessionId = chatProvider.currentSession?.id;
-    if (sessionId == null || sessionId.isEmpty) {
-      return false;
-    }
-    if (_returnRevealBaselineSessionId != sessionId) {
-      return false;
-    }
-
-    final messages = chatProvider.messages;
-    final latestRevealableAssistantMessageId =
-        _resolveLatestRevealableAssistantMessageId(messages);
-
-    return latestRevealableAssistantMessageId != null &&
-        latestRevealableAssistantMessageId.isNotEmpty &&
-        _returnRevealBaselineLatestRevealableAssistantMessageId !=
-            latestRevealableAssistantMessageId;
   }
 
   Future<void> _runLatestMessageReturnReveal({

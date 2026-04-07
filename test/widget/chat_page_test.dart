@@ -6435,8 +6435,8 @@ void main() {
       final messageCallsBeforeToggle = repository.getMessagesCallCount;
       final sessionCallsBeforeToggle = repository.getSessionsCallCount;
       final statusCallsBeforeToggle = repository.getSessionStatusCallCount;
+      final distanceBeforeToggle = distanceToBottom();
 
-      expect(distanceToBottom(), lessThanOrEqualTo(1));
       expect(find.text('older user marker'), findsNothing);
 
       final toggleFinder = find.byKey(
@@ -6445,12 +6445,12 @@ void main() {
       await tester.tap(toggleFinder);
       await tester.pump();
 
-      expect(distanceToBottom(), lessThanOrEqualTo(1));
+      expect(distanceToBottom(), closeTo(distanceBeforeToggle, 1));
       expect(find.text('older user marker'), findsNothing);
 
       await tester.pump(const Duration(milliseconds: 1200));
 
-      expect(distanceToBottom(), lessThanOrEqualTo(1));
+      expect(distanceToBottom(), closeTo(distanceBeforeToggle, 1));
       expect(find.text('older user marker'), findsNothing);
       expect(repository.getMessagesCallCount, messageCallsBeforeToggle);
       expect(repository.getSessionsCallCount, sessionCallsBeforeToggle);
@@ -6460,7 +6460,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 1200));
 
-      expect(distanceToBottom(), lessThanOrEqualTo(1));
+      expect(distanceToBottom(), closeTo(distanceBeforeToggle, 1));
       expect(find.text('older user marker'), findsNothing);
       expect(repository.getMessagesCallCount, messageCallsBeforeToggle);
       expect(repository.getSessionsCallCount, sessionCallsBeforeToggle);
@@ -6589,8 +6589,8 @@ void main() {
       final messageCallsBeforeToggle = repository.getMessagesCallCount;
       final sessionCallsBeforeToggle = repository.getSessionsCallCount;
       final statusCallsBeforeToggle = repository.getSessionStatusCallCount;
+      final distanceBeforeToggle = distanceToBottom();
 
-      expect(distanceToBottom(), lessThanOrEqualTo(1));
       expect(find.text('older pending user marker'), findsNothing);
       expect(
         find.byKey(
@@ -6608,14 +6608,14 @@ void main() {
       );
       await tester.pump();
 
-      expect(distanceToBottom(), lessThanOrEqualTo(1));
+      expect(distanceToBottom(), closeTo(distanceBeforeToggle, 1));
       expect(find.text('older pending user marker'), findsNothing);
 
       await tester.pump(const Duration(milliseconds: 1200));
 
       expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
       expect(repository.lastPermissionReply, 'once');
-      expect(distanceToBottom(), lessThanOrEqualTo(1));
+      expect(distanceToBottom(), closeTo(distanceBeforeToggle, 1));
       expect(find.text('older pending user marker'), findsNothing);
       expect(repository.getMessagesCallCount, messageCallsBeforeToggle);
       expect(repository.getSessionsCallCount, sessionCallsBeforeToggle);
@@ -9491,7 +9491,7 @@ void main() {
   });
 
   testWidgets(
-    'reopening a cached session snaps to bottom without waiting for scroll animation',
+    'reopening a settled cached session reveals the latest response instead of snapping to bottom',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(390, 844));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -9512,10 +9512,27 @@ void main() {
           ),
         ],
       );
-      repository.messagesBySession['ses_cached_bottom_a'] = _threadMessages(
-        'ses_cached_bottom_a',
-        240,
-      );
+      final longLatestText = List<String>.filled(
+        120,
+        'cached settled session should reveal the latest response',
+      ).join(' ');
+      repository.messagesBySession['ses_cached_bottom_a'] = <ChatMessage>[
+        ..._threadMessages('ses_cached_bottom_a', 28),
+        AssistantMessage(
+          id: 'msg_cached_bottom_a_latest',
+          sessionId: 'ses_cached_bottom_a',
+          time: DateTime.fromMillisecondsSinceEpoch(35000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(35500),
+          parts: <MessagePart>[
+            TextPart(
+              id: 'part_cached_bottom_a_latest',
+              messageId: 'msg_cached_bottom_a_latest',
+              sessionId: 'ses_cached_bottom_a',
+              text: longLatestText,
+            ),
+          ],
+        ),
+      ];
       repository.messagesBySession['ses_cached_bottom_b'] = _threadMessages(
         'ses_cached_bottom_b',
         6,
@@ -9561,12 +9578,99 @@ void main() {
 
       expect(
         scrollable.position.maxScrollExtent - scrollable.position.pixels,
-        lessThanOrEqualTo(1),
+        greaterThan(1),
       );
-      expect(find.byTooltip('Go to latest message'), findsNothing);
-      expect(find.text('message 239'), findsOneWidget);
     },
   );
+
+  testWidgets('reopening an active cached session lands at bottom', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_cached_active_a',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Cached Active A',
+        ),
+        ChatSession(
+          id: 'ses_cached_active_b',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(2000),
+          title: 'Cached Active B',
+        ),
+      ],
+    );
+    repository.messagesBySession['ses_cached_active_a'] = <ChatMessage>[
+      ..._threadMessages('ses_cached_active_a', 60),
+      UserMessage(
+        id: 'msg_cached_active_a_user',
+        sessionId: 'ses_cached_active_a',
+        time: DateTime.fromMillisecondsSinceEpoch(70000),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'part_cached_active_a_user',
+            messageId: 'msg_cached_active_a_user',
+            sessionId: 'ses_cached_active_a',
+            text: 'still processing',
+          ),
+        ],
+      ),
+    ];
+    repository.messagesBySession['ses_cached_active_b'] = _threadMessages(
+      'ses_cached_active_b',
+      6,
+    );
+    repository.sessionStatusById = const <String, SessionStatusInfo>{
+      'ses_cached_active_a': SessionStatusInfo(type: SessionStatusType.busy),
+    };
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    final sessionA = provider.sessions
+        .where((session) => session.id == 'ses_cached_active_a')
+        .first;
+    final sessionB = provider.sessions
+        .where((session) => session.id == 'ses_cached_active_b')
+        .first;
+
+    await provider.selectSession(sessionA);
+    await tester.pumpAndSettle();
+
+    await provider.selectSession(sessionB);
+    await tester.pumpAndSettle();
+
+    await provider.selectSession(sessionA);
+    for (var frame = 0; frame < 6; frame += 1) {
+      await tester.pump();
+    }
+
+    final listFinder = find.byKey(const ValueKey<String>('chat_message_list'));
+    final scrollableFinder = find
+        .descendant(of: listFinder, matching: find.byType(Scrollable))
+        .first;
+    final scrollable = tester.state<ScrollableState>(scrollableFinder);
+
+    expect(
+      scrollable.position.maxScrollExtent - scrollable.position.pixels,
+      lessThanOrEqualTo(1),
+    );
+    expect(find.byTooltip('Go to latest message'), findsNothing);
+  });
 
   testWidgets(
     'resets tool-chain expansion when switching sessions and returning',
@@ -10909,7 +11013,7 @@ void main() {
         return position.maxScrollExtent - position.pixels;
       }
 
-      expect(distanceToBottom(), lessThanOrEqualTo(1));
+      expect(distanceToBottom(), greaterThan(1));
       final pixelsBeforeResume = scrollPixels();
 
       repository.emitEvent(
@@ -10942,8 +11046,9 @@ void main() {
       );
       expect(
         distanceToBottom(),
-        lessThanOrEqualTo(1),
-        reason: 'should remain at bottom after passive pulses',
+        greaterThan(1),
+        reason:
+            'settled cached restore should stay on the latest-response reveal position after passive pulses',
       );
     },
   );
@@ -12090,6 +12195,7 @@ void main() {
         matching: find.byType(Scrollable),
       );
       final scrollableBefore = tester.state<ScrollableState>(scrollableFinder);
+      final pixelsBeforeResume = scrollableBefore.position.pixels;
       expect(
         scrollableBefore.position.maxScrollExtent -
             scrollableBefore.position.pixels,
@@ -12222,7 +12328,7 @@ void main() {
   });
 
   testWidgets(
-    'does not yank latest message into reveal position when app resumes without new content',
+    'resuming a settled cached session reveals the latest response without a second jump',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(390, 844));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -12282,10 +12388,11 @@ void main() {
         matching: find.byType(Scrollable),
       );
       final scrollableBefore = tester.state<ScrollableState>(scrollableFinder);
+      final pixelsBeforeResume = scrollableBefore.position.pixels;
       expect(
         scrollableBefore.position.maxScrollExtent -
             scrollableBefore.position.pixels,
-        lessThanOrEqualTo(1),
+        greaterThan(1),
       );
 
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
@@ -12298,13 +12405,13 @@ void main() {
       expect(
         scrollableAfter.position.maxScrollExtent -
             scrollableAfter.position.pixels,
-        lessThanOrEqualTo(1),
+        greaterThan(1),
       );
-      expect(find.byTooltip('Go to latest message'), findsNothing);
+      expect(scrollableAfter.position.pixels, closeTo(pixelsBeforeResume, 1));
     },
   );
 
-  testWidgets('keeps latest follow when app resumes after new final content', (
+  testWidgets('resuming after new final content reveals the latest response', (
     WidgetTester tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
@@ -12386,9 +12493,9 @@ void main() {
     expect(
       scrollableAfter.position.maxScrollExtent -
           scrollableAfter.position.pixels,
-      lessThanOrEqualTo(1),
+      greaterThan(1),
     );
-    expect(find.byTooltip('Go to latest message'), findsNothing);
+    expect(find.byTooltip('Go to latest message'), findsOneWidget);
   });
 
   testWidgets('keeps latest follow when app resumes during active response', (
