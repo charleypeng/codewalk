@@ -400,6 +400,7 @@ class _ChatPageState extends State<ChatPage>
   Timer? _tipRotationTimer;
   DateTime? _lastResumeRefreshAt;
   DateTime? _lastReturnToChatAt;
+  String? _lastReturnToChatSignature;
   bool _needsInitialDataRecovery = false;
   bool _initialDataRecoveryInFlight = false;
   int _initialDataRecoveryAttemptCount = 0;

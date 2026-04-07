@@ -439,14 +439,27 @@ extension _ChatPageLifecycle on _ChatPageState {
     ChatProvider chatProvider, {
     required String reason,
   }) {
+    final signature = [
+      reason,
+      chatProvider.currentSession?.id ?? '-',
+      chatProvider.messages.lastOrNull?.id ?? '-',
+      chatProvider.messages.length,
+      chatProvider.isCurrentSessionActivelyResponding,
+      _autoFollowToLatest,
+    ].join('|');
     final now = DateTime.now();
     if (_lastReturnToChatAt != null &&
+        _lastReturnToChatSignature == signature &&
         now.difference(_lastReturnToChatAt!) <
             const Duration(milliseconds: 400)) {
-      _traceFinalUi('return-to-chat-skip-debounced', details: 'reason=$reason');
+      _traceFinalUi(
+        'return-to-chat-skip-debounced',
+        details: 'reason=$reason signature=$signature',
+      );
       return;
     }
     _lastReturnToChatAt = now;
+    _lastReturnToChatSignature = signature;
     _flushPendingPostOnboardingTourAutoStart();
     _scheduleAutoApprovePermissionDrain(reason: reason);
     unawaited(_syncBackgroundPermissionAutoApproveContext(reason: reason));
