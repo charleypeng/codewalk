@@ -316,6 +316,8 @@
 - **Then** returning from background or focus with no new chat content restores a settled cached session to the latest assistant response and an active cached session to the bottom, without a second jump
 - **Then** if refreshed settled content arrives during resume revalidation, the queued cached restore waits for that refresh to finish and then reveals the newest assistant response once instead of bottom-snapping first
 - **Then** passive refreshes, realtime part updates, and status-only busy/retry reconciliation must not start a second auto-scroll owner while the active turn already owns the viewport
+- **Then** a transient `idle` status pulse must not settle the current session while a send is still initializing or an assistant message remains incomplete locally
+- **Then** unsupported global `message.*` fallback reconcile must refresh the visible timeline only when the event explicitly targets the current session; unrelated sessions/projects may dirty caches and lists but must not move or settle the visible chat
 - **Then** reopening a cached session does not replay old-history entrance/loading motion before newer delta content is merged
 
 ### Older history loads on demand at top reach

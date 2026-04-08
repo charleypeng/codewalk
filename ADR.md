@@ -146,6 +146,8 @@ Use realtime streams as the primary sync mechanism, automatically enter degraded
 
 **Note**: In polling-only background monitoring (when push notifications are unavailable), added a 5-minute tail probe after active sessions end to reduce missed notifications. Implementation uses `kBackgroundTailProbeInterval` (5 minutes) as the constant and `shouldScheduleBackgroundTailProbe()` to determine eligibility based on session state and platform support.
 
+**Note** (commit `161b9ce`): Tightened current-session active-turn detection — incomplete `assistant`/`current` sending state remains active even if idle status arrives early, preventing premature turn completion detection. Also narrowed unsupported global `message.*` fallback reconcile — only the visible current session can trigger active-session refresh when no active local stream/compaction guard is in effect.
+
 ### Key Files
 
 - `lib/presentation/providers/chat_provider/chat_provider_realtime_ops.dart`
@@ -1367,6 +1369,11 @@ The chat timeline experienced recurrent scroll jumping across three trigger scen
 2. **Active cached restore still lands at bottom** — cached sessions that are still processing keep bottom-follow behavior.
 3. **Resume restore waits for refresh completion** — app-resume restore consumption is deferred until resume revalidation finishes, so refreshed settled content is revealed once instead of bottom-snapping before the newer tail appears.
 4. **Passive refresh promotion respects queued latest-response restore** — passive refresh callbacks promote a queued latest-response restore for that same session instead of requesting a competing bottom-follow scroll.
+
+**Note** (commit `161b9ce`): Passive background reconcile now keeps the active-turn lock and scopes unsupported message fallback more narrowly:
+1. **Current-session active-turn detection resists transient idle pulses** — a current-session send in progress or incomplete assistant message keeps the session in responding mode even if `session.status` briefly reports `idle` first.
+2. **Unsupported global `message.*` fallback only refreshes the visible session when explicitly targeted** — active-context fallback reconcile for unsupported message events is now scoped to the current session id, and it is suppressed while a local stream or compaction guard is active.
+3. **Passive latest-message signal remains semantic, not a settle override** — settled passive refreshes may still report a latest-message change for unread/latest affordances, but they no longer depend on transient idle status to unlock final reveal or collapse.
 
 ### Key Files
 
