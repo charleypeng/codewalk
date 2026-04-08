@@ -529,6 +529,8 @@
 - **Then** idle/background status snapshots without live tool/patch updates do not trigger autonomous jumps
 - **Then** provider-side passive updates (refresh merges, realtime part deltas, and status pulses) must defer to the runtime viewport owner instead of causing a visible extra scroll-to-bottom correction for that same turn
 - **Then** when the user is still passively following the active turn, growth from tool/reasoning/text updates keeps the viewport visually pinned to bottom without per-delta jump churn
+- **Then** tool-only assistant messages stay as raw bubbles while the active turn is still responding; they are not live-merged into a synthetic grouped bubble mid-turn
+- **Then** tool-only assistant messages may merge/collapse only after the final assistant message arrives and the turn settles
 
 ### Recoverable current-session refresh failures stay scoped
 

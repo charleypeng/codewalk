@@ -1382,6 +1382,11 @@ The chat timeline experienced recurrent scroll jumping across three trigger scen
 4. **Final reveal skips when the whole answer already fits and otherwise targets the clarified mid-screen contract** — the viewport math only runs when the full final message would not already be fully visible.
 5. **Final reveal viewport math is guarded by mounted/hasSize checks** (`4aa9a00`) — fast navigation/unmount races now reschedule instead of touching invalid render contexts.
 
+**Note** (commits `80ad3a5`, `49c0f7d`): Active-turn assistant work rendering now defers synthetic tool-only merge until settlement:
+1. **Raw tool-call bubbles remain visible during the active turn** — consecutive tool-only assistant messages are rendered as separate entries while the current run is still responding.
+2. **Synthetic tool-only merge now happens only after settlement** — merged tool-run bubbles remain a settled/history presentation and are no longer used as a live-turn optimization.
+3. **Active-turn assistant entrance animation suppression is scoped to tool-only bubbles** (`49c0f7d`) — the final assistant text response may still animate normally once the turn settles.
+
 ### Key Files
 
 - `lib/presentation/pages/chat_page.dart` — `_ScrollOwner` enum definition, `_currentScrollOwner` state field, `_setScrollOwner()` helper
