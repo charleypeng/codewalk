@@ -1428,6 +1428,72 @@ void main() {
     );
 
     test(
+      'message.part.updated still emits passive signal during active turn when status is stale idle',
+      () async {
+        const sessionId = 'ses_1';
+        chatRepository.messagesBySession[sessionId] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_idle_tool_surface',
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(1100),
+            parts: <MessagePart>[
+              ToolPart(
+                id: 'part_idle_tool_surface',
+                messageId: 'msg_idle_tool_surface',
+                sessionId: sessionId,
+                callId: 'call_idle_tool_surface',
+                tool: 'bash',
+                state: ToolStateRunning(
+                  input: const <String, dynamic>{'command': 'pwd'},
+                  time: DateTime.fromMillisecondsSinceEpoch(1100),
+                ),
+              ),
+            ],
+          ),
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.initializeProviders();
+
+        var scrollToBottomRequests = 0;
+        provider.setScrollToBottomCallback(({required reason}) {
+          scrollToBottomRequests += 1;
+        });
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.status',
+            properties: <String, dynamic>{
+              'sessionID': sessionId,
+              'status': <String, dynamic>{'type': 'idle'},
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        final part = MessagePartModel.fromDomain(
+          const ReasoningPart(
+            id: 'part_idle_reasoning',
+            messageId: 'msg_idle_tool_surface',
+            sessionId: sessionId,
+            text: 'Still progressing despite stale idle status',
+          ),
+        );
+        chatRepository.emitEvent(
+          ChatEvent(
+            type: 'message.part.updated',
+            properties: <String, dynamic>{'part': part.toJson()},
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(scrollToBottomRequests, 1);
+      },
+    );
+
+    test(
       'session.idle does not bypass lifecycle cleanup rules during abort suppression',
       () async {
         provider = buildProvider(

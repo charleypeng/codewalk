@@ -2028,9 +2028,6 @@ class ChatProvider extends ChangeNotifier {
               _persistSessionMessagesSnapshotBestEffort(session.id, _messages),
             );
           }
-          final hasActiveLocalStream =
-              _activeMessageStreamSessionId == session.id &&
-              _messageSubscription != null;
           final sessionStatusType = _sessionStatusById[session.id]?.type;
           final hasBusyRefreshStatus =
               sessionStatusType == SessionStatusType.busy ||
@@ -2039,9 +2036,9 @@ class ChatProvider extends ChangeNotifier {
           final latestSessionMessageChanged =
               latestSessionMessage != previousLatestSessionMessage;
           if (!_isCompactingContext &&
-              (hasActiveLocalStream ||
-                  _state == ChatState.sending ||
-                  (latestSessionMessageChanged && !hasBusyRefreshStatus))) {
+              latestSessionMessageChanged &&
+              !hasBusyRefreshStatus &&
+              !isSessionActivelyResponding(session.id)) {
             _scheduleScrollToBottom(reason: 'refresh-active-session-view');
           }
           if (requiresFullFetch && _currentSession?.id == session.id) {

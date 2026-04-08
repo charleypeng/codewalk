@@ -199,7 +199,7 @@ class _ChatPageState extends State<ChatPage>
   static const Duration _finalAssistantRevealDuration = Duration(
     milliseconds: 260,
   );
-  static const double _finalAssistantRevealAlignment = 0.0;
+  static const double _finalAssistantRevealAlignment = 0.4;
   static const int _maxFinalAssistantRevealAttempts = 8;
   static const double _returnLatestRevealAlignment = 0.0;
   static const int _maxReturnLatestRevealAttempts = 8;
@@ -355,6 +355,13 @@ class _ChatPageState extends State<ChatPage>
       _markUnreadMessagesBelow();
       return;
     }
+    if (_chatProvider?.isCurrentSessionActivelyResponding == true) {
+      _traceFinalUi(
+        'passive-scroll-suppressed-active-response',
+        details: 'reason=$reason',
+      );
+      return;
+    }
     if (_chatProvider != null &&
         _pendingInitialScrollSessionId == _chatProvider!.currentSession?.id &&
         _pendingCachedViewportRestoreTarget ==
@@ -390,6 +397,8 @@ class _ChatPageState extends State<ChatPage>
   bool _finalAssistantRevealScheduled = false;
   int _pendingFinalAssistantRevealAttempts = 0;
   final Map<String, GlobalKey> _messageRevealAnchorKeysByMessageId =
+      <String, GlobalKey>{};
+  final Map<String, GlobalKey> _messageRevealMeasurementKeysByMessageId =
       <String, GlobalKey>{};
   String? _lastForegroundPolicySettingsSignature;
   String? _terminalSessionSignature;

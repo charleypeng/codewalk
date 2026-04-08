@@ -1156,6 +1156,7 @@ void main() {
             id: 'msg_refresh_scroll',
             sessionId: 'ses_1',
             time: DateTime.fromMillisecondsSinceEpoch(2000),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(2100),
             parts: const <MessagePart>[
               TextPart(
                 id: 'part_refresh_scroll',

@@ -53,6 +53,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       return false;
     }
     final currentMax = _scrollController.position.maxScrollExtent;
+    final contentGrew = currentMax > _lastKnownMaxScrollExtent;
     final contentShrank = currentMax < _lastKnownMaxScrollExtent;
     final chatProvider = _chatProvider;
     final hasActiveViewportOwner =
@@ -76,6 +77,26 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         _setScrollOwner(_ScrollOwner.contentShrinkSnap);
         _scrollController.jumpTo(currentMax);
         _setScrollOwner(_ScrollOwner.none);
+      }
+    }
+
+    if (_autoFollowToLatest &&
+        !_manualScrollFollowPaused &&
+        (chatProvider?.isCurrentSessionActivelyResponding ?? false) &&
+        !_isReturnRevealInFlight &&
+        !_olderMessagesAnchorRestoreInFlight &&
+        _currentScrollOwner != _ScrollOwner.userDrag &&
+        contentGrew) {
+      final gap = _distanceToBottom();
+      if (gap > _ChatPageState._scrollToBottomEpsilon) {
+        final shouldReleaseOwner = _currentScrollOwner == _ScrollOwner.none;
+        if (shouldReleaseOwner) {
+          _setScrollOwner(_ScrollOwner.streaming);
+        }
+        _scrollController.jumpTo(currentMax);
+        if (shouldReleaseOwner) {
+          _setScrollOwner(_ScrollOwner.none);
+        }
       }
     }
 
@@ -643,12 +664,23 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     );
   }
 
+  GlobalKey _messageRevealMeasurementKey(String messageId) {
+    return _messageRevealMeasurementKeysByMessageId.putIfAbsent(
+      messageId,
+      () => GlobalKey(debugLabel: 'message_reveal_measurement_$messageId'),
+    );
+  }
+
   void _pruneMessageRevealAnchorKeys(List<ChatMessage> messages) {
-    if (_messageRevealAnchorKeysByMessageId.isEmpty) {
+    if (_messageRevealAnchorKeysByMessageId.isEmpty &&
+        _messageRevealMeasurementKeysByMessageId.isEmpty) {
       return;
     }
     final visibleMessageIds = messages.map((message) => message.id).toSet();
     _messageRevealAnchorKeysByMessageId.removeWhere(
+      (messageId, _) => !visibleMessageIds.contains(messageId),
+    );
+    _messageRevealMeasurementKeysByMessageId.removeWhere(
       (messageId, _) => !visibleMessageIds.contains(messageId),
     );
   }
@@ -860,7 +892,9 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
 
     final anchorContext =
         _messageRevealAnchorKeysByMessageId[messageId]?.currentContext;
-    if (anchorContext == null) {
+    final measurementContext =
+        _messageRevealMeasurementKeysByMessageId[messageId]?.currentContext;
+    if (anchorContext == null || measurementContext == null) {
       _traceFinalUi(
         'final-reveal-no-anchor',
         details:
@@ -878,12 +912,19 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
 
     _isProgrammaticScrollInFlight = true;
     try {
-      await Scrollable.ensureVisible(
-        anchorContext,
-        alignment: _ChatPageState._finalAssistantRevealAlignment,
-        duration: _ChatPageState._finalAssistantRevealDuration,
-        curve: Curves.easeOutCubic,
-      );
+      if (_messageAnchorFullyFitsInViewport(measurementContext)) {
+        _traceFinalUi(
+          'final-reveal-skipped-fits-viewport',
+          details: 'messageId=$messageId',
+        );
+      } else {
+        await Scrollable.ensureVisible(
+          anchorContext,
+          alignment: _ChatPageState._finalAssistantRevealAlignment,
+          duration: _ChatPageState._finalAssistantRevealDuration,
+          curve: Curves.easeOutCubic,
+        );
+      }
     } catch (error, stackTrace) {
       AppLogger.debug(
         'Failed to reveal final assistant message id=$messageId',
@@ -917,6 +958,7 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         _scrollController.hasClients && !_isNearBottom();
     _setState(() {
       _autoFollowToLatest = false;
+      _shouldRevealFinalAssistantOnCompletion = false;
       _showScrollToLatestFab = shouldShowLatestFab;
       _hasUnreadMessagesBelow = false;
       _showScrollToFirstFab =
@@ -925,41 +967,30 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       _pendingFinalAssistantRevealMessageId = null;
       _finalAssistantRevealSettledMessageId = messageId;
     });
+  }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted ||
-          !_scrollController.hasClients ||
-          !_shouldRevealFinalAssistantOnCompletion ||
-          _finalAssistantRevealSettledMessageId != messageId ||
-          _autoFollowToLatest) {
-        return;
-      }
-      final anchorContext =
-          _messageRevealAnchorKeysByMessageId[messageId]?.currentContext;
-      if (anchorContext == null) {
-        return;
-      }
-      unawaited(
-        Scrollable.ensureVisible(
-          anchorContext,
-          alignment: _ChatPageState._finalAssistantRevealAlignment,
-          duration: Duration.zero,
-        ),
-      );
-
-      if (_isNearBottom() &&
-          (!_autoFollowToLatest ||
-              _showScrollToLatestFab ||
-              _hasUnreadMessagesBelow ||
-              _showScrollToFirstFab)) {
-        _setState(() {
-          _autoFollowToLatest = true;
-          _showScrollToLatestFab = false;
-          _hasUnreadMessagesBelow = false;
-          _showScrollToFirstFab = false;
-        });
-      }
-    });
+  bool _messageAnchorFullyFitsInViewport(BuildContext anchorContext) {
+    if (!_scrollController.hasClients) {
+      return false;
+    }
+    final anchorRenderObject = anchorContext.findRenderObject();
+    final viewportRenderObject = _scrollController
+        .position
+        .context
+        .storageContext
+        .findRenderObject();
+    if (anchorRenderObject is! RenderBox ||
+        viewportRenderObject is! RenderBox) {
+      return false;
+    }
+    final viewportHeight = _scrollController.position.viewportDimension;
+    final top = anchorRenderObject
+        .localToGlobal(Offset.zero, ancestor: viewportRenderObject)
+        .dy;
+    final bottom = top + anchorRenderObject.size.height;
+    return anchorRenderObject.size.height <= viewportHeight &&
+        top >= -_ChatPageState._scrollToBottomEpsilon &&
+        bottom <= viewportHeight + _ChatPageState._scrollToBottomEpsilon;
   }
 
   void _prepareForOutgoingUserMessage() {

@@ -12499,6 +12499,214 @@ void main() {
     expect(find.byTooltip('Go to latest message'), findsOneWidget);
   });
 
+  testWidgets(
+    'long final assistant reveal exits bottom follow for reading mode',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      const sessionId = 'ses_final_reveal_alignment';
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: sessionId,
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Final Reveal Alignment',
+          ),
+        ],
+      );
+      repository.messagesBySession[sessionId] = _threadMessages(sessionId, 30);
+
+      final streamController = StreamController<Either<Failure, ChatMessage>>();
+      addTearDown(() async {
+        if (!streamController.isClosed) {
+          await streamController.close();
+        }
+      });
+      repository.sendMessageHandler = (_, _, _, _) => streamController.stream;
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      await provider.sendMessage('finish with a long final answer');
+      await tester.pump();
+
+      final longFinalFiller = List<String>.filled(
+        320,
+        'final answer should start around forty percent of the viewport height',
+      ).join(' ');
+      streamController.add(
+        Right(
+          AssistantMessage(
+            id: 'msg_final_reveal_alignment',
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(60000),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(60100),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_final_reveal_alignment_intro',
+                messageId: 'msg_final_reveal_alignment',
+                sessionId: sessionId,
+                text: 'Final reveal starts here',
+              ),
+              TextPart(
+                id: 'part_final_reveal_alignment_body',
+                messageId: 'msg_final_reveal_alignment',
+                sessionId: sessionId,
+                text: longFinalFiller,
+              ),
+            ],
+          ),
+        ),
+      );
+      await streamController.close();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 320));
+      await tester.pumpAndSettle();
+
+      final listFinder = find.byKey(
+        const ValueKey<String>('chat_message_list'),
+      );
+      final scrollableFinder = find.descendant(
+        of: listFinder,
+        matching: find.byType(Scrollable),
+      );
+      final scrollableAfter = tester.state<ScrollableState>(scrollableFinder);
+      expect(
+        scrollableAfter.position.maxScrollExtent -
+            scrollableAfter.position.pixels,
+        greaterThan(1),
+      );
+      expect(find.byTooltip('Go to latest message'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'short final assistant answer that already fits does not reposition away from bottom',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      const sessionId = 'ses_final_reveal_short';
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: sessionId,
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Final Reveal Short',
+          ),
+        ],
+      );
+      repository.messagesBySession[sessionId] = _threadMessages(sessionId, 8);
+
+      final streamController = StreamController<Either<Failure, ChatMessage>>();
+      addTearDown(() async {
+        if (!streamController.isClosed) {
+          await streamController.close();
+        }
+      });
+      repository.sendMessageHandler = (_, _, _, _) => streamController.stream;
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      await provider.sendMessage('finish with a short final answer');
+      await tester.pump();
+
+      streamController.add(
+        Right(
+          AssistantMessage(
+            id: 'msg_final_reveal_short',
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(60000),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_final_reveal_short',
+                messageId: 'msg_final_reveal_short',
+                sessionId: sessionId,
+                text: 'Short visible answer',
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final listFinder = find.byKey(
+        const ValueKey<String>('chat_message_list'),
+      );
+      final scrollableFinder = find.descendant(
+        of: listFinder,
+        matching: find.byType(Scrollable),
+      );
+      final scrollableBefore = tester.state<ScrollableState>(scrollableFinder);
+      final pixelsBeforeCompletion = scrollableBefore.position.pixels;
+
+      streamController.add(
+        Right(
+          AssistantMessage(
+            id: 'msg_final_reveal_short',
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(60000),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(60100),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_final_reveal_short',
+                messageId: 'msg_final_reveal_short',
+                sessionId: sessionId,
+                text: 'Short visible answer',
+              ),
+            ],
+          ),
+        ),
+      );
+      await streamController.close();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 320));
+      await tester.pumpAndSettle();
+
+      final scrollableAfter = tester.state<ScrollableState>(scrollableFinder);
+      expect(
+        scrollableAfter.position.pixels,
+        closeTo(pixelsBeforeCompletion, 1),
+      );
+      expect(
+        scrollableAfter.position.maxScrollExtent -
+            scrollableAfter.position.pixels,
+        lessThanOrEqualTo(1),
+      );
+      expect(find.byTooltip('Go to latest message'), findsNothing);
+    },
+  );
+
   testWidgets('keeps latest follow when app resumes during active response', (
     WidgetTester tester,
   ) async {

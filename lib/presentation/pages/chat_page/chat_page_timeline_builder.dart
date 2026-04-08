@@ -53,9 +53,20 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       taskToolChildSummariesByPartId: taskToolChildSummariesByPartId,
     );
     if (wrapRevealAnchor && finalAssistantRevealMessageId == message.id) {
-      messageWidget = KeyedSubtree(
-        key: _messageRevealAnchorKey(message.id),
-        child: messageWidget,
+      messageWidget = Column(
+        key: _messageRevealMeasurementKey(message.id),
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          SizedBox(
+            key: _messageRevealAnchorKey(message.id),
+            child: SizedBox(
+              key: ValueKey<String>('message_reveal_anchor_${message.id}'),
+              height: 1,
+            ),
+          ),
+          messageWidget,
+        ],
       );
     }
     return messageWidget;
