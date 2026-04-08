@@ -990,16 +990,16 @@ class ChatProvider extends ChangeNotifier {
       return true;
     }
 
-    if (!hasBusyStatus) {
-      return false;
-    }
-
     if (_state == ChatState.sending) {
       return true;
     }
 
     if (hasInProgressAssistant) {
       return true;
+    }
+
+    if (!hasBusyStatus) {
+      return false;
     }
 
     ChatMessage? latestSessionMessage;
@@ -2038,10 +2038,6 @@ class ChatProvider extends ChangeNotifier {
           final latestSessionMessage = _messages.lastOrNull;
           final latestSessionMessageChanged =
               latestSessionMessage != previousLatestSessionMessage;
-          // Passive refreshes may replace the visible tail while the user is
-          // reading. Only let refresh-driven latest-message changes follow when
-          // the session is no longer in a server-reported busy/retry turn;
-          // active turns use the runtime follow/reveal policy instead.
           if (!_isCompactingContext &&
               (hasActiveLocalStream ||
                   _state == ChatState.sending ||

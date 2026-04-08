@@ -1553,6 +1553,61 @@ void main() {
     );
 
     test(
+      'idle status pulse does not settle the current session while an assistant message is still incomplete',
+      () async {
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          UserMessage(
+            id: 'msg_idle_pulse_user',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_idle_pulse_user',
+                messageId: 'msg_idle_pulse_user',
+                sessionId: 'ses_1',
+                text: 'keep working',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_idle_pulse_assistant',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1100),
+            parts: <MessagePart>[
+              TextPart(
+                id: 'part_idle_pulse_assistant',
+                messageId: 'msg_idle_pulse_assistant',
+                sessionId: 'ses_1',
+                text: 'still streaming',
+              ),
+            ],
+          ),
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.initializeProviders();
+
+        expect(provider.isCurrentSessionActivelyResponding, isTrue);
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.status',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_1',
+              'status': <String, dynamic>{'type': 'idle'},
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(provider.currentSessionStatus?.type, SessionStatusType.idle);
+        expect(provider.isCurrentSessionActivelyResponding, isTrue);
+      },
+    );
+
+    test(
       'busy assistant stream updates do not schedule passive provider auto-scroll',
       () async {
         final sendController =

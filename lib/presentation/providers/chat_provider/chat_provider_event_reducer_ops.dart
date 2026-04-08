@@ -727,11 +727,18 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       if (_tryApplyGlobalEventIncremental(event)) {
         return;
       }
+      final currentSessionId = _currentSession?.id?.trim();
+      final eventSessionId = _extractEventSessionId(event.properties)?.trim();
+      final refreshVisibleSession =
+          event.type.startsWith('message.') &&
+          currentSessionId != null &&
+          currentSessionId.isNotEmpty &&
+          eventSessionId == currentSessionId;
       _scheduleCurrentContextRefresh(
         reason: 'global:$type:no-directory',
         refreshSessions: true,
         refreshStatus: true,
-        refreshActiveSession: true,
+        refreshActiveSession: refreshVisibleSession,
       );
       return;
     }
@@ -793,11 +800,19 @@ extension _ChatProviderEventReducerOps on ChatProvider {
 
   void _scheduleGlobalFallbackReconcile(ChatEvent event) {
     final type = event.type;
+    final currentSessionId = _currentSession?.id?.trim();
+    final eventSessionId = _extractEventSessionId(event.properties)?.trim();
     final refreshSessions =
         type.startsWith('session.') ||
         type.startsWith('project.') ||
         type.startsWith('worktree.');
-    final refreshActiveSession = type.startsWith('message.');
+    final refreshActiveSession =
+        type.startsWith('message.') &&
+        !_isCompactingContext &&
+        _activeMessageStreamSessionId == null &&
+        currentSessionId != null &&
+        currentSessionId.isNotEmpty &&
+        eventSessionId == currentSessionId;
     _scheduleCurrentContextRefresh(
       reason: 'global:$type:fallback',
       refreshSessions: refreshSessions,

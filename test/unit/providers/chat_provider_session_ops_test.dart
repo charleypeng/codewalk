@@ -734,7 +734,7 @@ void main() {
             },
           ),
         );
-        await Future<void>.delayed(const Duration(milliseconds: 40));
+        await Future<void>.delayed(const Duration(milliseconds: 450));
 
         final message = provider.messages.single as AssistantMessage;
         expect((message.parts.single as TextPart).text, 'done');
@@ -744,7 +744,7 @@ void main() {
     );
 
     test(
-      'does not treat stale in-progress assistant as active response without busy status',
+      'treats an incomplete current-session assistant as active even before busy status is reported',
       () async {
         final draft = AssistantMessage(
           id: 'msg_ai_stale_draft',
@@ -770,8 +770,8 @@ void main() {
         await provider.loadSessionInsights('ses_1');
 
         expect(provider.currentSessionStatus?.type, SessionStatusType.idle);
-        expect(provider.isCurrentSessionActivelyResponding, isFalse);
-        expect(provider.canAbortActiveResponse, isFalse);
+        expect(provider.isCurrentSessionActivelyResponding, isTrue);
+        expect(provider.canAbortActiveResponse, isTrue);
 
         chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
           'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
@@ -1136,7 +1136,7 @@ void main() {
     });
 
     test(
-      'refreshActiveSessionView scrolls when latest message changes after session is idle',
+      'refreshActiveSessionView reports latest-message changes after a settled passive refresh',
       () async {
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);

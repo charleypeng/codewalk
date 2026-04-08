@@ -13251,7 +13251,7 @@ void main() {
   );
 
   testWidgets(
-    'keeps composer status and stop hidden for stale in-progress draft without busy status',
+    'shows stop for an incomplete draft even before busy status arrives',
     (WidgetTester tester) async {
       final repository = FakeChatRepository(
         sessions: <ChatSession>[
@@ -13302,8 +13302,8 @@ void main() {
         find.byKey(const ValueKey<String>('composer_reasoning_status_line')),
         findsNothing,
       );
-      expect(find.byIcon(Symbols.stop_rounded), findsNothing);
-      expect(find.byIcon(Symbols.send_rounded), findsOneWidget);
+      expect(find.byIcon(Symbols.stop_rounded), findsOneWidget);
+      expect(find.byIcon(Symbols.send_rounded), findsNothing);
     },
   );
 
