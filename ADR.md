@@ -1375,6 +1375,13 @@ The chat timeline experienced recurrent scroll jumping across three trigger scen
 2. **Unsupported global `message.*` fallback only refreshes the visible session when explicitly targeted** — active-context fallback reconcile for unsupported message events is now scoped to the current session id, and it is suppressed while a local stream or compaction guard is active.
 3. **Passive latest-message signal remains semantic, not a settle override** — settled passive refreshes may still report a latest-message change for unread/latest affordances, but they no longer depend on transient idle status to unlock final reveal or collapse.
 
+**Note** (commits `81edb30`, `4aa9a00`): Active-turn follow and final reveal were simplified for the remaining live-turn jitter/reveal bugs:
+1. **Passive provider re-entry is suppressed during active response while still preserving unread/latest affordances after manual follow pause** — active turns no longer perform visible per-tool-call bottom corrections when the user is already passively following.
+2. **Growth-time bottom snap keeps active turns visually pinned** — streamed tool/reasoning/text growth uses a runtime bottom snap while actively responding instead of repeated animated correction churn.
+3. **Final assistant reveal uses a single reading-mode reveal** — the extra corrective final reveal pass was removed, and long final answers now enter reading mode instead of remaining pinned to bottom.
+4. **Final reveal skips when the whole answer already fits and otherwise targets the clarified mid-screen contract** — the viewport math only runs when the full final message would not already be fully visible.
+5. **Final reveal viewport math is guarded by mounted/hasSize checks** (`4aa9a00`) — fast navigation/unmount races now reschedule instead of touching invalid render contexts.
+
 ### Key Files
 
 - `lib/presentation/pages/chat_page.dart` — `_ScrollOwner` enum definition, `_currentScrollOwner` state field, `_setScrollOwner()` helper

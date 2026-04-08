@@ -527,7 +527,8 @@
 - **When** the latest assistant chunk is completed but the turn still emits tool/patch updates
 - **Then** the chat keeps active follow/reveal behavior for that same turn
 - **Then** idle/background status snapshots without live tool/patch updates do not trigger autonomous jumps
-- **Then** provider-side passive updates (refresh merges, realtime part deltas, and status pulses) must defer to the runtime viewport owner instead of requesting an extra scroll-to-bottom for that same turn
+- **Then** provider-side passive updates (refresh merges, realtime part deltas, and status pulses) must defer to the runtime viewport owner instead of causing a visible extra scroll-to-bottom correction for that same turn
+- **Then** when the user is still passively following the active turn, growth from tool/reasoning/text updates keeps the viewport visually pinned to bottom without per-delta jump churn
 
 ### Recoverable current-session refresh failures stay scoped
 
@@ -541,7 +542,8 @@
 - **Given** a response finishes after tool/work messages
 - **When** the final assistant message becomes available
 - **Then** the chat reveals the **start** of the final assistant message (not the end)
-- **Then** the reveal is anchored at the top of the viewport so reading starts from the first line
+- **Then** if the whole final assistant message already fits in the current viewport, the chat does not perform an extra reposition
+- **Then** otherwise the reveal lands with the start of the final assistant message around 40% of the viewport height so reading starts near the middle of the screen instead of hard at the top
 
 ### Post-completion reading remains stable
 
