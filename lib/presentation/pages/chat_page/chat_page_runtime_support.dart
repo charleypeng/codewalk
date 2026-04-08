@@ -381,6 +381,26 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     }
   }
 
+  void _scheduleQueuedDesktopViewportRestore(
+    ChatProvider chatProvider, {
+    required String reason,
+  }) {
+    if (_resumeRefreshViewportRestorePending) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted ||
+          !_isChatScreenActive() ||
+          _chatProvider?.currentSession?.id !=
+              chatProvider.currentSession?.id) {
+        return;
+      }
+      _lastConsumedCachedViewportRestoreSignature = null;
+      _lastConsumedCachedViewportRestoreAt = null;
+      _consumeQueuedCachedViewportRestore(chatProvider, reason: reason);
+    });
+  }
+
   void _syncSessionScrollState(ChatProvider chatProvider) {
     final sessionId = chatProvider.currentSession?.id;
     if (sessionId != _trackedSessionId) {

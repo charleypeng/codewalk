@@ -666,6 +666,7 @@ class _ChatPageState extends State<ChatPage>
     final provider = _chatProvider;
     if (provider != null) {
       _handleReturnToChat(provider, reason: 'window-restore');
+      _scheduleQueuedDesktopViewportRestore(provider, reason: 'window-restore');
     }
   }
 
@@ -678,6 +679,7 @@ class _ChatPageState extends State<ChatPage>
       final provider = _chatProvider;
       if (provider != null) {
         _handleReturnToChat(provider, reason: 'window-focus');
+        _scheduleQueuedDesktopViewportRestore(provider, reason: 'window-focus');
       }
     }
   }

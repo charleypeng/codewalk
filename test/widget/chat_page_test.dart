@@ -54,6 +54,7 @@ import 'package:codewalk/presentation/utils/session_title_formatter.dart';
 import 'package:codewalk/presentation/widgets/chat_skeleton_shimmer.dart';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12584,6 +12585,198 @@ void main() {
     );
     expect(find.byTooltip('Go to latest message'), findsNothing);
   });
+
+  testWidgets(
+    'desktop window restore reveals the latest response for a settled cached session',
+    (WidgetTester tester) async {
+      final previousPlatform = debugDefaultTargetPlatformOverride;
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      try {
+        await tester.binding.setSurfaceSize(const Size(1000, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final repository = FakeChatRepository(
+          sessions: <ChatSession>[
+            ChatSession(
+              id: 'ses_desktop_restore_settled',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              title: 'Desktop Restore Settled',
+            ),
+          ],
+        );
+        final longLatestText = List<String>.filled(
+          120,
+          'desktop window restore should reveal the latest settled response',
+        ).join(' ');
+        repository.messagesBySession['ses_desktop_restore_settled'] =
+            <ChatMessage>[
+              ..._threadMessages('ses_desktop_restore_settled', 28),
+              AssistantMessage(
+                id: 'msg_desktop_restore_settled_latest',
+                sessionId: 'ses_desktop_restore_settled',
+                time: DateTime.fromMillisecondsSinceEpoch(35000),
+                completedTime: DateTime.fromMillisecondsSinceEpoch(35500),
+                parts: <MessagePart>[
+                  TextPart(
+                    id: 'part_desktop_restore_settled_latest',
+                    messageId: 'msg_desktop_restore_settled_latest',
+                    sessionId: 'ses_desktop_restore_settled',
+                    text: longLatestText,
+                  ),
+                ],
+              ),
+            ];
+
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test';
+        final provider = _buildChatProvider(
+          chatRepository: repository,
+          localDataSource: localDataSource,
+        );
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+        await tester.pumpWidget(_testApp(provider, appProvider));
+        await tester.pumpAndSettle();
+
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await tester.pumpAndSettle();
+
+        final listFinder = find.byKey(
+          const ValueKey<String>('chat_message_list'),
+        );
+        final scrollableFinder = find.descendant(
+          of: listFinder,
+          matching: find.byType(Scrollable),
+        );
+        final scrollableBefore = tester.state<ScrollableState>(
+          scrollableFinder,
+        );
+        final pixelsBeforeRestore = scrollableBefore.position.pixels;
+        expect(
+          scrollableBefore.position.maxScrollExtent -
+              scrollableBefore.position.pixels,
+          greaterThan(1),
+        );
+
+        await tester.pump(const Duration(milliseconds: 450));
+
+        final dynamic chatPageState = tester.state(find.byType(ChatPage));
+        chatPageState.onWindowMinimize();
+        await tester.pump();
+        chatPageState.onWindowRestore();
+        await tester.pump();
+        await tester.pumpAndSettle();
+
+        final scrollableAfter = tester.state<ScrollableState>(scrollableFinder);
+        expect(
+          scrollableAfter.position.maxScrollExtent -
+              scrollableAfter.position.pixels,
+          greaterThan(1),
+        );
+        expect(
+          scrollableAfter.position.pixels,
+          closeTo(pixelsBeforeRestore, 1),
+        );
+      } finally {
+        debugDefaultTargetPlatformOverride = previousPlatform;
+      }
+    },
+  );
+
+  testWidgets(
+    'desktop window focus keeps an active cached session pinned to bottom',
+    (WidgetTester tester) async {
+      final previousPlatform = debugDefaultTargetPlatformOverride;
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      try {
+        await tester.binding.setSurfaceSize(const Size(1000, 900));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        final repository = FakeChatRepository(
+          sessions: <ChatSession>[
+            ChatSession(
+              id: 'ses_desktop_focus_active',
+              workspaceId: 'default',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              title: 'Desktop Focus Active',
+            ),
+          ],
+        );
+        repository.messagesBySession['ses_desktop_focus_active'] =
+            <ChatMessage>[
+              ..._threadMessages('ses_desktop_focus_active', 40),
+              UserMessage(
+                id: 'msg_desktop_focus_active_user',
+                sessionId: 'ses_desktop_focus_active',
+                time: DateTime.fromMillisecondsSinceEpoch(60000),
+                parts: const <MessagePart>[
+                  TextPart(
+                    id: 'part_desktop_focus_active_user',
+                    messageId: 'msg_desktop_focus_active_user',
+                    sessionId: 'ses_desktop_focus_active',
+                    text: 'still processing on desktop focus',
+                  ),
+                ],
+              ),
+            ];
+        repository.sessionStatusById = const <String, SessionStatusInfo>{
+          'ses_desktop_focus_active': SessionStatusInfo(
+            type: SessionStatusType.busy,
+          ),
+        };
+
+        final localDataSource = InMemoryAppLocalDataSource()
+          ..activeServerId = 'srv_test';
+        final provider = _buildChatProvider(
+          chatRepository: repository,
+          localDataSource: localDataSource,
+        );
+        final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+        await tester.pumpWidget(_testApp(provider, appProvider));
+        await tester.pumpAndSettle();
+
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await tester.pumpAndSettle();
+
+        final listFinder = find.byKey(
+          const ValueKey<String>('chat_message_list'),
+        );
+        final scrollableFinder = find.descendant(
+          of: listFinder,
+          matching: find.byType(Scrollable),
+        );
+        final scrollableBefore = tester.state<ScrollableState>(
+          scrollableFinder,
+        );
+        expect(
+          scrollableBefore.position.maxScrollExtent -
+              scrollableBefore.position.pixels,
+          lessThanOrEqualTo(1),
+        );
+
+        final dynamic chatPageState = tester.state(find.byType(ChatPage));
+        chatPageState.onWindowMinimize();
+        await tester.pump();
+        chatPageState.onWindowFocus();
+        await tester.pump();
+        await tester.pumpAndSettle();
+
+        final scrollableAfter = tester.state<ScrollableState>(scrollableFinder);
+        expect(
+          scrollableAfter.position.maxScrollExtent -
+              scrollableAfter.position.pixels,
+          lessThanOrEqualTo(1),
+        );
+        expect(find.byTooltip('Go to latest message'), findsNothing);
+      } finally {
+        debugDefaultTargetPlatformOverride = previousPlatform;
+      }
+    },
+  );
 
   testWidgets(
     'shows delayed tip in composer for both thinking and receiving stages',
