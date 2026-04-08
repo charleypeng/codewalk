@@ -395,8 +395,6 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
               chatProvider.currentSession?.id) {
         return;
       }
-      _lastConsumedCachedViewportRestoreSignature = null;
-      _lastConsumedCachedViewportRestoreAt = null;
       _consumeQueuedCachedViewportRestore(chatProvider, reason: reason);
     });
   }
