@@ -894,7 +894,16 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         _messageRevealAnchorKeysByMessageId[messageId]?.currentContext;
     final measurementContext =
         _messageRevealMeasurementKeysByMessageId[messageId]?.currentContext;
-    if (anchorContext == null || measurementContext == null) {
+    final anchorRenderObject = anchorContext?.findRenderObject();
+    final measurementRenderObject = measurementContext?.findRenderObject();
+    if (anchorContext == null ||
+        measurementContext == null ||
+        !anchorContext.mounted ||
+        !measurementContext.mounted ||
+        anchorRenderObject is! RenderBox ||
+        measurementRenderObject is! RenderBox ||
+        !anchorRenderObject.hasSize ||
+        !measurementRenderObject.hasSize) {
       _traceFinalUi(
         'final-reveal-no-anchor',
         details:
