@@ -540,6 +540,15 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         ? null
         : chatProvider.messages.last.id;
 
+    if (isResponding) {
+      _debugStartActiveTurnPassiveScrollTracking(sessionId);
+    } else {
+      _debugFinishActiveTurnPassiveScrollTracking(
+        sessionId: sessionId,
+        reason: 'turn-finished',
+      );
+    }
+
     if (isResponding &&
         _pendingFinalAssistantRevealMessageId == null &&
         !compactionDecision.shouldDeferLatestCollapse &&

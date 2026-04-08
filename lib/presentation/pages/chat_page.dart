@@ -299,6 +299,8 @@ class _ChatPageState extends State<ChatPage>
   bool _shouldRevealFinalAssistantOnCompletion = false;
   String? _pendingFinalAssistantRevealMessageId;
   String? _settledLatestAssistantWorkGroupId;
+  int _debugActiveTurnPassiveScrollRequests = 0;
+  String? _debugActiveTurnPassiveScrollSessionId;
 
   void _setScrollOwner(_ScrollOwner owner) {
     final previousOwner = _currentScrollOwner;
@@ -356,6 +358,13 @@ class _ChatPageState extends State<ChatPage>
       return;
     }
     if (_chatProvider?.isCurrentSessionActivelyResponding == true) {
+      final currentSessionId = _chatProvider?.currentSession?.id;
+      if (currentSessionId != null) {
+        _debugRecordActiveTurnPassiveScrollRequest(
+          sessionId: currentSessionId,
+          reason: reason,
+        );
+      }
       _traceFinalUi(
         'passive-scroll-suppressed-active-response',
         details: 'reason=$reason',
@@ -391,6 +400,76 @@ class _ChatPageState extends State<ChatPage>
     AppLogger.info(
       '$_traceFinalPrefix ui event=$event session=$sessionId responding=${provider?.isCurrentSessionActivelyResponding ?? false} state=${provider?.state.name ?? "-"} messages=${messages.length} last=$lastMessageId pendingFinal=${_pendingFinalAssistantRevealMessageId ?? "-"} settledFinal=${_finalAssistantRevealSettledMessageId ?? "-"} settledWorkGroup=${_settledLatestAssistantWorkGroupId ?? "-"} deferCollapse=$_deferAssistantWorkCollapse autoFollow=$_autoFollowToLatest$suffix',
     );
+  }
+
+  void _debugStartActiveTurnPassiveScrollTracking(String sessionId) {
+    assert(() {
+      final normalizedSessionId = sessionId.trim();
+      if (normalizedSessionId.isEmpty) {
+        return true;
+      }
+      if (_debugActiveTurnPassiveScrollSessionId == normalizedSessionId) {
+        return true;
+      }
+      if (_debugActiveTurnPassiveScrollSessionId != null &&
+          _debugActiveTurnPassiveScrollRequests > 0) {
+        AppLogger.debug(
+          'CW_TRACE_ACTIVE_TURN_PASSIVE_SCROLL event=abandon '
+          'session=${_debugActiveTurnPassiveScrollSessionId ?? "-"} '
+          'count=$_debugActiveTurnPassiveScrollRequests',
+        );
+      }
+      _debugActiveTurnPassiveScrollSessionId = normalizedSessionId;
+      _debugActiveTurnPassiveScrollRequests = 0;
+      return true;
+    }());
+  }
+
+  void _debugRecordActiveTurnPassiveScrollRequest({
+    required String sessionId,
+    required String reason,
+  }) {
+    assert(() {
+      final normalizedSessionId = sessionId.trim();
+      if (normalizedSessionId.isEmpty) {
+        return true;
+      }
+      if (_debugActiveTurnPassiveScrollSessionId != normalizedSessionId) {
+        _debugStartActiveTurnPassiveScrollTracking(normalizedSessionId);
+      }
+      _debugActiveTurnPassiveScrollRequests += 1;
+      AppLogger.debug(
+        'CW_TRACE_ACTIVE_TURN_PASSIVE_SCROLL event=request '
+        'session=$normalizedSessionId '
+        'count=$_debugActiveTurnPassiveScrollRequests '
+        'reason=$reason',
+      );
+      return true;
+    }());
+  }
+
+  void _debugFinishActiveTurnPassiveScrollTracking({
+    required String sessionId,
+    required String reason,
+  }) {
+    assert(() {
+      final normalizedSessionId = sessionId.trim();
+      if (normalizedSessionId.isEmpty ||
+          _debugActiveTurnPassiveScrollSessionId != normalizedSessionId) {
+        return true;
+      }
+      if (_debugActiveTurnPassiveScrollRequests > 0) {
+        AppLogger.debug(
+          'CW_TRACE_ACTIVE_TURN_PASSIVE_SCROLL event=summary '
+          'session=$normalizedSessionId '
+          'count=$_debugActiveTurnPassiveScrollRequests '
+          'reason=$reason',
+        );
+      }
+      _debugActiveTurnPassiveScrollSessionId = null;
+      _debugActiveTurnPassiveScrollRequests = 0;
+      return true;
+    }());
   }
 
   String? _finalAssistantRevealSettledMessageId;
