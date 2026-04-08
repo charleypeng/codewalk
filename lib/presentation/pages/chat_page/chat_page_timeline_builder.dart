@@ -1396,7 +1396,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                   if (isNewEntry) {
                     final shouldSuppressAssistantActiveTurnAnimation =
                         entry is _TimelineMessageEntry &&
-                        entry.message is AssistantMessage &&
+                        _isMergeableAssistantToolOnlyMessage(entry.message) &&
                         chatProvider.isCurrentSessionActivelyResponding;
                     if (shouldSuppressAssistantActiveTurnAnimation) {
                       return child;
