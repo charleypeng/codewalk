@@ -527,6 +527,14 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       return;
     }
 
+    final previousDebugSessionId = _debugActiveTurnPassiveScrollSessionId;
+    if (previousDebugSessionId != null && previousDebugSessionId != sessionId) {
+      _debugFinishActiveTurnPassiveScrollTracking(
+        sessionId: previousDebugSessionId,
+        reason: 'session-switch',
+      );
+    }
+
     final isResponding = chatProvider.isCurrentSessionActivelyResponding;
     final compactionDecision = _resolveAssistantWorkCompactionDecision(
       messages: chatProvider.messages,
