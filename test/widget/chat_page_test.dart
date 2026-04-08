@@ -11667,7 +11667,7 @@ void main() {
   });
 
   testWidgets(
-    'does not collapse assistant work group before final assistant response',
+    'keeps active-turn tool-only messages separate before the final assistant response',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));
       addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -11744,6 +11744,11 @@ void main() {
           ],
         ),
       ];
+      repository.sessionStatusById = const <String, SessionStatusInfo>{
+        'ses_no_final_collapse': SessionStatusInfo(
+          type: SessionStatusType.busy,
+        ),
+      };
 
       final localDataSource = InMemoryAppLocalDataSource()
         ..activeServerId = 'srv_test';
@@ -11758,6 +11763,7 @@ void main() {
 
       await provider.loadSessions();
       await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
       await tester.pumpAndSettle();
 
       expect(
@@ -11766,7 +11772,7 @@ void main() {
         ),
         findsNothing,
       );
-      expect(find.text('Details'), findsOneWidget);
+      expect(find.text('Details'), findsNWidgets(2));
     },
   );
 

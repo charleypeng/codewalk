@@ -1394,6 +1394,13 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                   // Pass the message role for role-specific motion profiles.
                   final isNewEntry = animateNewEntries && index >= prevLength;
                   if (isNewEntry) {
+                    final shouldSuppressAssistantActiveTurnAnimation =
+                        entry is _TimelineMessageEntry &&
+                        entry.message is AssistantMessage &&
+                        chatProvider.isCurrentSessionActivelyResponding;
+                    if (shouldSuppressAssistantActiveTurnAnimation) {
+                      return child;
+                    }
                     final role = entry is _TimelineMessageEntry
                         ? entry.message.role
                         : null;
@@ -1789,12 +1796,15 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     final settingsProvider = _settingsProvider;
     final showThinkingBubbles = settingsProvider?.showThinkingBubbles ?? true;
     final showToolCallBubbles = settingsProvider?.showToolCallBubbles ?? true;
+    final isActivelyResponding =
+        assistantWorkCompactionDecision.shouldDeferLatestCollapse;
 
     var index = startIndex;
     while (index < endExclusive) {
       final current = messages[index];
       if (current is! UserMessage) {
-        if (_isMergeableAssistantToolOnlyMessage(current)) {
+        if (!isActivelyResponding &&
+            _isMergeableAssistantToolOnlyMessage(current)) {
           index = _appendMergedAssistantToolOnlyRun(
             entries: entries,
             messages: messages,
@@ -1875,6 +1885,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
             messages: messages,
             startIndex: assistantRunStart,
             endExclusive: assistantRunEnd - 1,
+            isActivelyResponding: false,
           );
         }
         entries.add(_TimelineMessageEntry(finalAssistant));
@@ -1898,6 +1909,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           messages: messages,
           startIndex: assistantRunStart,
           endExclusive: assistantRunEnd,
+          isActivelyResponding:
+              shouldDeferCurrentRunCollapse && assistantRunEnd == endExclusive,
         );
         if (assistantRunEnd == endExclusive) {
           _traceFinalUi(
@@ -1917,6 +1930,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     required List<ChatMessage> messages,
     required int startIndex,
     required int endExclusive,
+    required bool isActivelyResponding,
   }) {
     if (startIndex >= endExclusive) {
       return;
@@ -1925,7 +1939,15 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     var index = startIndex;
     while (index < endExclusive) {
       final current = messages[index];
-      if (!_isMergeableAssistantToolOnlyMessage(current)) {
+      if (isActivelyResponding ||
+          !_isMergeableAssistantToolOnlyMessage(current)) {
+        if (isActivelyResponding &&
+            _isMergeableAssistantToolOnlyMessage(current)) {
+          _traceFinalUi(
+            'timeline-tool-merge-deferred-active-turn',
+            details: 'messageId=${current.id}',
+          );
+        }
         entries.add(_TimelineMessageEntry(current));
         index += 1;
         continue;
@@ -2020,6 +2042,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       messages: messages,
       startIndex: startIndex,
       endExclusive: endExclusive,
+      isActivelyResponding: false,
     );
     return previewEntries
         .whereType<_TimelineMessageEntry>()
