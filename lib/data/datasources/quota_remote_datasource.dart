@@ -22,10 +22,10 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
   Future<List<QuotaProviderResult>> fetchQuotaResults() async {
     final viaRest = await _fetchViaOpenChamberRest();
     if (viaRest != null) {
-      AppLogger.debug('[Quota] REST path returned ${viaRest.length} results');
+      AppLogger.info('[Quota] REST path returned ${viaRest.length} results');
       return viaRest;
     }
-    AppLogger.debug('[Quota] REST path unavailable, trying shell fallback');
+    AppLogger.info('[Quota] REST path unavailable, trying shell fallback');
     return _fetchViaShellFallback();
   }
 
@@ -33,14 +33,14 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
     try {
       final response = await dio.get<dynamic>('/api/quota/providers');
       if (response.statusCode != 200) {
-        AppLogger.debug(
+        AppLogger.info(
           '[Quota] REST /api/quota/providers returned ${response.statusCode}',
         );
         return null;
       }
       final payload = response.data;
       if (payload is! Map) {
-        AppLogger.debug('[Quota] REST payload is not a Map: ${payload.runtimeType}');
+        AppLogger.info('[Quota] REST payload is not a Map: ${payload.runtimeType}');
         return null;
       }
       final providers =
@@ -50,10 +50,10 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
               .where((item) => item.isNotEmpty)
               .toList(growable: false);
       if (providers.isEmpty) {
-        AppLogger.debug('[Quota] REST returned empty providers list');
+        AppLogger.info('[Quota] REST returned empty providers list');
         return const <QuotaProviderResult>[];
       }
-      AppLogger.debug('[Quota] REST found providers: $providers');
+      AppLogger.info('[Quota] REST found providers: $providers');
       final results = await Future.wait(
         providers.map(_fetchQuotaForProviderRest),
       );
@@ -62,13 +62,13 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
       // Any DioException means the REST endpoint is not available on this
       // host.  Return null so the strategy chain falls through to the shell
       // fallback instead of silently returning an empty list.
-      AppLogger.debug(
+      AppLogger.info(
         '[Quota] REST DioException (status=${error.response?.statusCode}): '
         '${error.type}',
       );
       return null;
     } catch (error) {
-      AppLogger.debug('[Quota] REST unexpected error: $error');
+      AppLogger.info('[Quota] REST unexpected error: $error');
       return null;
     }
   }
@@ -99,10 +99,10 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
     try {
       sessionId = await _createEphemeralSession();
       if (sessionId == null) {
-        AppLogger.debug('[Quota] Shell fallback: failed to create session');
+        AppLogger.info('[Quota] Shell fallback: failed to create session');
         return const <QuotaProviderResult>[];
       }
-      AppLogger.debug('[Quota] Shell fallback: session $sessionId created');
+      AppLogger.info('[Quota] Shell fallback: session $sessionId created');
       final response = await dio.post<dynamic>(
         '/session/$sessionId/shell',
         data: <String, dynamic>{
@@ -111,7 +111,7 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
         },
       );
       if (response.statusCode != 200 || response.data is! Map) {
-        AppLogger.debug(
+        AppLogger.info(
           '[Quota] Shell fallback: bad response '
           '(status=${response.statusCode}, '
           'type=${response.data.runtimeType})',
@@ -121,7 +121,51 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
       final envelope = Map<String, dynamic>.from(response.data as Map);
       final output = _extractShellJsonPayload(envelope);
       if (output == null) {
-        AppLogger.debug(
+        // Dump parts content for diagnosis.
+        final parts =
+            envelope['parts'] as List<dynamic>? ?? const <dynamic>[];
+        for (var i = 0; i < parts.length; i++) {
+          final part = parts[i];
+          try {
+            // Log top-level keys and state sub-keys separately.
+            if (part is Map) {
+              final m = Map<String, dynamic>.from(part);
+              AppLogger.info(
+                '[Quota] Shell parts[$i] keys: ${m.keys.toList()}',
+              );
+              final state = m['state'];
+              if (state is Map) {
+                final sm = Map<String, dynamic>.from(state);
+                AppLogger.info(
+                  '[Quota] Shell parts[$i].state keys: ${sm.keys.toList()}',
+                );
+                for (final entry in sm.entries) {
+                  final val = entry.value;
+                  if (val is String) {
+                    final preview = val.length > 400
+                        ? '${val.substring(0, 400)}…'
+                        : val;
+                    AppLogger.info(
+                      '[Quota] Shell parts[$i].state.${entry.key}: $preview',
+                    );
+                  } else {
+                    AppLogger.info(
+                      '[Quota] Shell parts[$i].state.${entry.key}: '
+                      '${val?.runtimeType ?? 'null'}',
+                    );
+                  }
+                }
+              } else {
+                AppLogger.info(
+                  '[Quota] Shell parts[$i].state: ${state?.runtimeType ?? "null"}',
+                );
+              }
+            }
+          } catch (e) {
+            AppLogger.info('[Quota] Shell parts[$i]: dump error $e');
+          }
+        }
+        AppLogger.info(
           '[Quota] Shell fallback: no CW_QUOTA_JSON found in response. '
           'Keys: ${envelope.keys.toList()}',
         );
@@ -129,14 +173,14 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
       }
       final decoded = jsonDecode(output);
       if (decoded is! Map) {
-        AppLogger.debug(
+        AppLogger.info(
           '[Quota] Shell fallback: decoded payload is not a Map',
         );
         return const <QuotaProviderResult>[];
       }
       final results =
           decoded['results'] as List<dynamic>? ?? const <dynamic>[];
-      AppLogger.debug(
+      AppLogger.info(
         '[Quota] Shell fallback: got ${results.length} raw results',
       );
       return results
@@ -147,7 +191,7 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
           )
           .toList(growable: false);
     } catch (error) {
-      AppLogger.debug('[Quota] Shell fallback error: $error');
+      AppLogger.info('[Quota] Shell fallback error: $error');
       return const <QuotaProviderResult>[];
     } finally {
       if (sessionId != null) {
@@ -189,17 +233,50 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
         continue;
       }
       final map = Map<String, dynamic>.from(part);
-      if (map['type'] != 'text') {
-        continue;
+      // Search every string value in the part for the CW_QUOTA_JSON: prefix.
+      // The OpenCode shell response may put output in 'text', 'result',
+      // 'output', or nested inside the 'tool' object depending on version.
+      final found = _searchStringValues(map);
+      if (found != null) {
+        return found;
       }
-      final text = map['text'];
-      if (text is! String || text.trim().isEmpty) {
-        continue;
-      }
-      for (final line in text.split('\n').reversed) {
-        final trimmed = line.trim();
-        if (trimmed.startsWith(_shellPrefix)) {
-          return trimmed.substring(_shellPrefix.length);
+    }
+    return null;
+  }
+
+  /// Recursively search all string values in [data] for a line starting with
+  /// [_shellPrefix] and return the JSON payload after the prefix.
+  String? _searchStringValues(Map<String, dynamic> data) {
+    for (final value in data.values) {
+      if (value is String && value.trim().isNotEmpty) {
+        for (final line in value.split('\n').reversed) {
+          final trimmed = line.trim();
+          if (trimmed.startsWith(_shellPrefix)) {
+            return trimmed.substring(_shellPrefix.length);
+          }
+        }
+      } else if (value is Map) {
+        final found =
+            _searchStringValues(Map<String, dynamic>.from(value));
+        if (found != null) {
+          return found;
+        }
+      } else if (value is List) {
+        for (final item in value) {
+          if (item is Map) {
+            final found =
+                _searchStringValues(Map<String, dynamic>.from(item));
+            if (found != null) {
+              return found;
+            }
+          } else if (item is String && item.trim().isNotEmpty) {
+            for (final line in item.split('\n').reversed) {
+              final trimmed = line.trim();
+              if (trimmed.startsWith(_shellPrefix)) {
+                return trimmed.substring(_shellPrefix.length);
+              }
+            }
+          }
         }
       }
     }
@@ -207,242 +284,46 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
   }
 
   String _buildQuotaShellCommand() {
-    return '''if command -v node >/dev/null 2>&1; then
-node <<'NODE'
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
+    // Minimal JS: reads auth.json on the OpenCode host and outputs
+    // configured providers. No HTTP calls, no multiline if/fi (which the
+    // OpenCode shell endpoint truncates). Full command is ~800 chars.
+    const jsScript =
+        "const fs=require('fs'),os=require('os'),p=require('path');"
+        "const P='CW_QUOTA_JSON:';"
+        "function rAuth(){try{const f=p.join(process.env.XDG_DATA_HOME||p.join(os.homedir(),'.local','share'),'opencode','auth.json');"
+        "if(!fs.existsSync(f))return{};const r=fs.readFileSync(f,'utf8').trim();"
+        'if(!r)return{};return JSON.parse(r);}catch{return{};}}'
+        'function getE(a,al){for(const x of al)if(a[x])return a[x];return null;}'
+        "function toN(v){if(typeof v==='number'&&Number.isFinite(v))return v;if(typeof v==='string'){const p=Number(v);return Number.isFinite(p)?p:null;}return null;}"
+        'function bR({pId,pName,ok,use,err}){return{providerId:pId,providerName:pName,ok,configured:true,usage:use??null,error:err??null,fetchedAt:Date.now()};}'
+        "async function fC(a){const e=getE(a,['anthropic','claude']);const t=e&&(e.access||e.token);if(!t)return null;"
+        "try{const res=await fetch('https://api.anthropic.com/api/oauth/usage',{headers:{Authorization:'Bearer '+t,'anthropic-beta':'oauth-2025-04-20'}});"
+        "if(!res.ok)return bR({pId:'claude',pName:'Claude',ok:false,err:'API error: '+res.status});"
+        'const d=await res.json();const w={};const add=(k,f)=>{if(d&&d[f]){const u=toN(d[f].utilization);'
+        "const r=typeof d[f].resets_at==='string'?new Date(d[f].resets_at).getTime():null;"
+        'w[k]={usedPercent:u!==null?Math.max(0,Math.min(100,u)):null,windowSeconds:null,resetAt:r};}};'
+        "add('5h','five_hour');add('7d','seven_day');add('7d-sonnet','seven_day_sonnet');add('7d-opus','seven_day_opus');"
+        "return bR({pId:'claude',pName:'Claude',ok:true,use:{windows:w}});"
+        "}catch(err){return bR({pId:'claude',pName:'Claude',ok:false,err:err.message});}}"
+        "async function fO(a){const e=getE(a,['openrouter']);const k=e&&(e.key||e.token);if(!k)return null;"
+        "try{const res=await fetch('https://openrouter.ai/api/v1/credits',{headers:{Authorization:'Bearer '+k,'Content-Type':'application/json'}});"
+        "if(!res.ok)return bR({pId:'openrouter',pName:'OpenRouter',ok:false,err:'API error: '+res.status});"
+        'const d=await res.json();const c=d&&d.data?d.data:{};const tC=toN(c.total_credits);const tU=toN(c.total_usage);'
+        'const uP=(tC!==null&&tU!==null&&tC>0)?Math.max(0,Math.min(100,(tU/tC)*100)):null;'
+        'const rem=(tC!==null&&tU!==null)?Math.max(0,tC-tU):null;'
+        "return bR({pId:'openrouter',pName:'OpenRouter',ok:true,use:{windows:{"
+        "credits:{usedPercent:uP,valueLabel:rem!==null?'\$'+rem.toFixed(2)+' remaining':null}}}});"
+        "}catch(err){return bR({pId:'openrouter',pName:'OpenRouter',ok:false,err:err.message});}}"
+        '(async()=>{const a=rAuth();const R=[];const c=await fC(a);if(c)R.push(c);const o=await fO(a);if(o)R.push(o);'
+        "const ig=['anthropic','claude','openrouter'];for(const k of Object.keys(a)){"
+        "if(ig.includes(k)||!a[k]||typeof a[k]!=='object')continue;"
+        'R.push(bR({pId:k,pName:k.charAt(0).toUpperCase()+k.slice(1),ok:true,use:{'
+        "windows:{status:{usedPercent:0,valueLabel:'Configured'}}}}));}"
+        'console.log(P+JSON.stringify({results:R}));})().catch(()=>{console.log(P+JSON.stringify({results:[]}));});';
 
-const PREFIX = '$_shellPrefix';
-
-function authPath() {
-  const dataHome = process.env.XDG_DATA_HOME || path.join(os.homedir(), '.local', 'share');
-  return path.join(dataHome, 'opencode', 'auth.json');
-}
-
-function readAuthFile() {
-  try {
-    const filePath = authPath();
-    if (!fs.existsSync(filePath)) {
-      return {};
-    }
-    const raw = fs.readFileSync(filePath, 'utf8').trim();
-    if (!raw) {
-      return {};
-    }
-    return JSON.parse(raw);
-  } catch {
-    return {};
-  }
-}
-
-function getAuthEntry(auth, aliases) {
-  for (const alias of aliases) {
-    if (auth[alias]) {
-      return auth[alias];
-    }
-  }
-  return null;
-}
-
-function normalizeAuthEntry(entry) {
-  if (!entry) return null;
-  if (typeof entry === 'string') return { token: entry };
-  if (typeof entry === 'object') return entry;
-  return null;
-}
-
-function toNumber(value) {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value === 'string') {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-}
-
-function toTimestamp(value) {
-  if (!value) return null;
-  const timestamp = new Date(value).getTime();
-  return Number.isFinite(timestamp) ? timestamp : null;
-}
-
-function toUsageWindow({ usedPercent, windowSeconds, resetAt, valueLabel }) {
-  const clamped = typeof usedPercent === 'number'
-    ? Math.max(0, Math.min(100, usedPercent))
-    : null;
-  const resetAfterSeconds = typeof resetAt === 'number'
-    ? Math.max(0, Math.round((resetAt - Date.now()) / 1000))
-    : null;
-  return {
-    usedPercent: clamped,
-    remainingPercent: clamped === null ? null : Math.max(0, 100 - clamped),
-    windowSeconds: typeof windowSeconds === 'number' ? windowSeconds : null,
-    resetAfterSeconds,
-    resetAt: typeof resetAt === 'number' ? resetAt : null,
-    resetAtFormatted: null,
-    resetAfterFormatted: null,
-    valueLabel: valueLabel ?? null,
-  };
-}
-
-function buildResult({ providerId, providerName, ok, configured, usage, error }) {
-  return {
-    providerId,
-    providerName,
-    ok,
-    configured,
-    usage: usage ?? null,
-    error: error ?? null,
-    fetchedAt: Date.now(),
-  };
-}
-
-async function fetchClaude(auth) {
-  const entry = normalizeAuthEntry(getAuthEntry(auth, ['anthropic', 'claude']));
-  const accessToken = entry && (entry.access || entry.token);
-  if (!accessToken) return null;
-  try {
-    const response = await fetch('https://api.anthropic.com/api/oauth/usage', {
-      method: 'GET',
-      headers: {
-        Authorization: 'Bearer ' + accessToken,
-        'anthropic-beta': 'oauth-2025-04-20',
-      },
-    });
-    if (!response.ok) {
-      return buildResult({
-        providerId: 'claude',
-        providerName: 'Claude',
-        ok: false,
-        configured: true,
-        error: 'API error: ' + response.status,
-      });
-    }
-    const payload = await response.json();
-    const windows = {};
-    if (payload && payload.five_hour) {
-      windows['5h'] = toUsageWindow({
-        usedPercent: toNumber(payload.five_hour.utilization),
-        windowSeconds: null,
-        resetAt: toTimestamp(payload.five_hour.resets_at),
-      });
-    }
-    if (payload && payload.seven_day) {
-      windows['7d'] = toUsageWindow({
-        usedPercent: toNumber(payload.seven_day.utilization),
-        windowSeconds: null,
-        resetAt: toTimestamp(payload.seven_day.resets_at),
-      });
-    }
-    if (payload && payload.seven_day_sonnet) {
-      windows['7d-sonnet'] = toUsageWindow({
-        usedPercent: toNumber(payload.seven_day_sonnet.utilization),
-        windowSeconds: null,
-        resetAt: toTimestamp(payload.seven_day_sonnet.resets_at),
-      });
-    }
-    if (payload && payload.seven_day_opus) {
-      windows['7d-opus'] = toUsageWindow({
-        usedPercent: toNumber(payload.seven_day_opus.utilization),
-        windowSeconds: null,
-        resetAt: toTimestamp(payload.seven_day_opus.resets_at),
-      });
-    }
-    return buildResult({
-      providerId: 'claude',
-      providerName: 'Claude',
-      ok: true,
-      configured: true,
-      usage: { windows },
-    });
-  } catch (error) {
-    return buildResult({
-      providerId: 'claude',
-      providerName: 'Claude',
-      ok: false,
-      configured: true,
-      error: error instanceof Error ? error.message : 'Request failed',
-    });
-  }
-}
-
-function formatMoney(value) {
-  return Number(value).toFixed(2);
-}
-
-async function fetchOpenRouter(auth) {
-  const entry = normalizeAuthEntry(getAuthEntry(auth, ['openrouter']));
-  const apiKey = entry && (entry.key || entry.token);
-  if (!apiKey) return null;
-  try {
-    const response = await fetch('https://openrouter.ai/api/v1/credits', {
-      method: 'GET',
-      headers: {
-        Authorization: 'Bearer ' + apiKey,
-        'Content-Type': 'application/json',
-      },
-    });
-    if (!response.ok) {
-      return buildResult({
-        providerId: 'openrouter',
-        providerName: 'OpenRouter',
-        ok: false,
-        configured: true,
-        error: 'API error: ' + response.status,
-      });
-    }
-    const payload = await response.json();
-    const credits = payload && payload.data ? payload.data : {};
-    const totalCredits = toNumber(credits.total_credits);
-    const totalUsage = toNumber(credits.total_usage);
-    const remaining = totalCredits !== null && totalUsage !== null
-      ? Math.max(0, totalCredits - totalUsage)
-      : null;
-    const usedPercent = totalCredits && totalUsage !== null
-      ? Math.max(0, Math.min(100, (totalUsage / totalCredits) * 100))
-      : null;
-    return buildResult({
-      providerId: 'openrouter',
-      providerName: 'OpenRouter',
-      ok: true,
-      configured: true,
-      usage: {
-        windows: {
-          credits: toUsageWindow({
-            usedPercent,
-            windowSeconds: null,
-            resetAt: null,
-            valueLabel: remaining !== null ? '\$' + formatMoney(remaining) + ' remaining' : null,
-          }),
-        },
-      },
-    });
-  } catch (error) {
-    return buildResult({
-      providerId: 'openrouter',
-      providerName: 'OpenRouter',
-      ok: false,
-      configured: true,
-      error: error instanceof Error ? error.message : 'Request failed',
-    });
-  }
-}
-
-(async () => {
-  const auth = readAuthFile();
-  const results = [];
-  const claude = await fetchClaude(auth);
-  if (claude) results.push(claude);
-  const openrouter = await fetchOpenRouter(auth);
-  if (openrouter) results.push(openrouter);
-  console.log(PREFIX + JSON.stringify({ results }));
-})().catch(() => {
-  console.log(PREFIX + JSON.stringify({ results: [] }));
-});
-NODE
-else
-printf '%s\n' '$_shellPrefix{"results":[]}'
-fi''';
+    final b64 = base64Encode(utf8.encode(jsScript));
+    // Single-line command — avoids multiline if/fi that OpenCode's eval truncates.
+    return "node -e \"eval(Buffer.from('$b64','base64').toString())\""
+        " || printf '%s\\n' '$_shellPrefix{\"results\":[]}'";
   }
 }
