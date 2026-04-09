@@ -1388,6 +1388,11 @@ The chat timeline experienced recurrent scroll jumping across three trigger scen
 3. **Active-turn assistant entrance animation suppression is scoped to tool-only bubbles** (`49c0f7d`) — the final assistant text response may still animate normally once the turn settles.
 4. **Active-turn structural shrink is treated as a forbidden regression source** — live tool-only merge/replacement during the active run is no longer allowed because it can shorten the rendered list above the viewport, create a temporary bottom vacuum, and amplify typing/repaint churn.
 
+**Note** (commit `0b1e5a6`): Active-turn shrink healing now closes the remaining bottom-vacuum gap without fighting manual reading:
+1. **Passive-follow active turns may heal shrink immediately** — when the user is still passively following the active turn, a non-animated bottom-anchor heal may run on content shrink to remove a temporary blank vacuum.
+2. **Manual scroll-away still wins** — the active-turn shrink heal is gated behind auto-follow/manual-pause state so it does not yank the viewport back after the user leaves the bottom.
+3. **Active-turn tool-chain size animation is disabled** — the tool-chain body no longer uses `AnimatedSize` while the session is actively responding, reducing shrink/reflow churn and typing lag.
+
 ### Key Files
 
 - `lib/presentation/pages/chat_page.dart` — `_ScrollOwner` enum definition, `_currentScrollOwner` state field, `_setScrollOwner()` helper

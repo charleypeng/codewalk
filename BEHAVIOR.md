@@ -533,6 +533,8 @@
 - **Then** tool-only assistant messages may merge/collapse only after the final assistant message arrives and the turn settles
 - **Then** active-turn tool/work rendering must not structurally shrink the visible timeline in a way that creates a temporary blank vacuum at the bottom while the user is still passively following the turn
 - **Then** if a future optimization would merge, compact, or replace active-turn tool-only messages before settlement, it must be rejected unless it proves it cannot create viewport shrink/reflow or typing-lag regressions
+- **Then** if active-turn content still shrinks while passive follow is enabled, the runtime may perform an immediate non-animated bottom-anchor heal to remove the bottom vacuum, but only while the user has not manually scrolled away
+- **Then** active-turn tool-chain body size transitions must not animate while the session is still responding if that animation would introduce shrink/reflow churn or typing lag
 
 ### Recoverable current-session refresh failures stay scoped
 
