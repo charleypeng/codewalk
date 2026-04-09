@@ -193,6 +193,7 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
           ),
           messageId: message.id,
           startPartId: chainStartPartId,
+          isSessionActivelyResponding: isSessionActivelyResponding,
           onExpandedChanged: (expanded) =>
               _setToolChainExpanded(chainIdentityToken, expanded),
           toolDescriptionLabelBuilder: _resolveToolDescriptionLabel,
@@ -318,6 +319,7 @@ class _CollapsibleToolChain extends StatelessWidget {
     required this.expanded,
     required this.messageId,
     required this.startPartId,
+    required this.isSessionActivelyResponding,
     required this.onExpandedChanged,
     required this.toolDescriptionLabelBuilder,
     required this.toolTypeLabelBuilder,
@@ -328,6 +330,7 @@ class _CollapsibleToolChain extends StatelessWidget {
   final bool expanded;
   final String messageId;
   final String startPartId;
+  final bool isSessionActivelyResponding;
   final ValueChanged<bool> onExpandedChanged;
   final String Function(ToolPart part) toolDescriptionLabelBuilder;
   final String Function(ToolPart part) toolTypeLabelBuilder;
@@ -500,6 +503,53 @@ class _CollapsibleToolChain extends StatelessWidget {
         ? collapsedSecondaryLabelRaw
         : null;
 
+    final expandedChild = !_expanded
+        ? const SizedBox.shrink()
+        : Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ...parts.map<Widget>(partBuilder),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    key: ValueKey<String>(
+                      'tool_chain_bottom_toggle_${messageId}_$startPartId',
+                    ),
+                    onPressed: _toggleExpanded,
+                    style: TextButton.styleFrom(
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                    ),
+                    icon: Icon(
+                      Symbols.unfold_less_rounded,
+                      size: 15,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    label: Text(
+                      'Hide',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+    final body = disableAnimations || isSessionActivelyResponding
+        ? expandedChild
+        : AnimatedSize(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: expandedChild,
+          );
+
     return Container(
       key: ValueKey<String>('tool_chain_container_${messageId}_$startPartId'),
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -565,51 +615,7 @@ class _CollapsibleToolChain extends StatelessWidget {
               ),
             ],
           ),
-          AnimatedSize(
-            duration: disableAnimations
-                ? Duration.zero
-                : const Duration(milliseconds: 180),
-            curve: Curves.easeOutCubic,
-            alignment: Alignment.topCenter,
-            child: !_expanded
-                ? const SizedBox.shrink()
-                : Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ...parts.map<Widget>(partBuilder),
-                        const SizedBox(height: 10),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton.icon(
-                            key: ValueKey<String>(
-                              'tool_chain_bottom_toggle_${messageId}_$startPartId',
-                            ),
-                            onPressed: _toggleExpanded,
-                            style: TextButton.styleFrom(
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                            ),
-                            icon: Icon(
-                              Symbols.unfold_less_rounded,
-                              size: 15,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                            label: Text(
-                              'Hide',
-                              style: Theme.of(context).textTheme.bodySmall,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-          ),
+          body,
         ],
       ),
     );

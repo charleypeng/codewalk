@@ -11777,6 +11777,219 @@ void main() {
   );
 
   testWidgets(
+    'heals bottom gap when active-turn content shrinks during passive follow',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      const sessionId = 'ses_active_turn_shrink_heal';
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: sessionId,
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Active Turn Shrink Heal',
+          ),
+        ],
+      );
+      final longActiveText = List<String>.filled(
+        320,
+        'active turn content should not leave a blank bottom vacuum while following',
+      ).join(' ');
+      repository.messagesBySession[sessionId] = <ChatMessage>[
+        ..._threadMessages(sessionId, 18),
+        AssistantMessage(
+          id: 'msg_active_turn_shrink',
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(90000),
+          parts: <MessagePart>[
+            TextPart(
+              id: 'part_active_turn_shrink',
+              messageId: 'msg_active_turn_shrink',
+              sessionId: sessionId,
+              text: longActiveText,
+            ),
+          ],
+        ),
+      ];
+      repository.sessionStatusById = const <String, SessionStatusInfo>{
+        sessionId: SessionStatusInfo(type: SessionStatusType.busy),
+      };
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      final listFinder = find.byKey(
+        const ValueKey<String>('chat_message_list'),
+      );
+      final scrollableFinder = find.descendant(
+        of: listFinder,
+        matching: find.byType(Scrollable),
+      );
+
+      double distanceToBottom() {
+        final position = tester
+            .state<ScrollableState>(scrollableFinder)
+            .position;
+        return position.maxScrollExtent - position.pixels;
+      }
+
+      expect(distanceToBottom(), lessThanOrEqualTo(1));
+
+      repository.messagesBySession[sessionId] = <ChatMessage>[
+        ..._threadMessages(sessionId, 18),
+        AssistantMessage(
+          id: 'msg_active_turn_shrink',
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(90000),
+          parts: <MessagePart>[
+            TextPart(
+              id: 'part_active_turn_shrink',
+              messageId: 'msg_active_turn_shrink',
+              sessionId: sessionId,
+              text: 'short active turn content',
+            ),
+          ],
+        ),
+      ];
+
+      await provider.refreshActiveSessionView(
+        reason: 'active-turn-shrink-heal',
+        includeStatus: false,
+      );
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(distanceToBottom(), lessThanOrEqualTo(1));
+      expect(find.byTooltip('Go to latest message'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'does not auto-heal active-turn shrink after the user scrolls away',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      const sessionId = 'ses_active_turn_shrink_manual_pause';
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: sessionId,
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Active Turn Shrink Manual Pause',
+          ),
+        ],
+      );
+      final longActiveText = List<String>.filled(
+        320,
+        'manual scroll away should block the active-turn shrink heal',
+      ).join(' ');
+      repository.messagesBySession[sessionId] = <ChatMessage>[
+        ..._threadMessages(sessionId, 40),
+        AssistantMessage(
+          id: 'msg_active_turn_manual_pause',
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(90000),
+          parts: <MessagePart>[
+            TextPart(
+              id: 'part_active_turn_manual_pause',
+              messageId: 'msg_active_turn_manual_pause',
+              sessionId: sessionId,
+              text: longActiveText,
+            ),
+          ],
+        ),
+      ];
+      repository.sessionStatusById = const <String, SessionStatusInfo>{
+        sessionId: SessionStatusInfo(type: SessionStatusType.busy),
+      };
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+      await tester.pumpAndSettle();
+
+      final listFinder = find.byKey(
+        const ValueKey<String>('chat_message_list'),
+      );
+      final scrollableFinder = find.descendant(
+        of: listFinder,
+        matching: find.byType(Scrollable),
+      );
+
+      double distanceToBottom() {
+        final position = tester
+            .state<ScrollableState>(scrollableFinder)
+            .position;
+        return position.maxScrollExtent - position.pixels;
+      }
+
+      await tester.drag(listFinder, const Offset(0, 140));
+      await tester.drag(listFinder, const Offset(0, 260));
+      await tester.pumpAndSettle();
+
+      expect(distanceToBottom(), greaterThan(1));
+
+      repository.messagesBySession[sessionId] = <ChatMessage>[
+        ..._threadMessages(sessionId, 40),
+        AssistantMessage(
+          id: 'msg_active_turn_manual_pause',
+          sessionId: sessionId,
+          time: DateTime.fromMillisecondsSinceEpoch(90000),
+          parts: <MessagePart>[
+            TextPart(
+              id: 'part_active_turn_manual_pause',
+              messageId: 'msg_active_turn_manual_pause',
+              sessionId: sessionId,
+              text: List<String>.filled(
+                260,
+                'slightly shorter active turn content should not yank the user back to bottom',
+              ).join(' '),
+            ),
+          ],
+        ),
+      ];
+
+      await provider.refreshActiveSessionView(
+        reason: 'active-turn-shrink-manual-pause',
+        includeStatus: false,
+      );
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(distanceToBottom(), greaterThan(1));
+      expect(find.byTooltip('Go to latest message'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'refresh keeps visible tool operations during optimistic echo reconcile',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(const Size(1000, 900));

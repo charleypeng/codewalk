@@ -56,13 +56,38 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     final contentGrew = currentMax > _lastKnownMaxScrollExtent;
     final contentShrank = currentMax < _lastKnownMaxScrollExtent;
     final chatProvider = _chatProvider;
+    final isActivelyResponding =
+        chatProvider?.isCurrentSessionActivelyResponding ?? false;
     final hasActiveViewportOwner =
         _deferAssistantWorkCollapse ||
         _responseSettleFramesRemaining > 0 ||
-        (chatProvider?.isCurrentSessionActivelyResponding ?? false);
+        isActivelyResponding;
     final hasScrollOwner =
         _currentScrollOwner != _ScrollOwner.none &&
         _currentScrollOwner != _ScrollOwner.contentShrinkSnap;
+    final shouldHealActiveTurnShrink =
+        _autoFollowToLatest &&
+        !_manualScrollFollowPaused &&
+        isActivelyResponding &&
+        !_isProgrammaticScrollInFlight &&
+        !_isReturnRevealInFlight &&
+        !_olderMessagesAnchorRestoreInFlight &&
+        !_suppressPostCompletionAutoSnap &&
+        _currentScrollOwner == _ScrollOwner.none &&
+        contentShrank;
+    if (shouldHealActiveTurnShrink) {
+      final gap = _distanceToBottom();
+      if (gap > _ChatPageState._scrollToBottomEpsilon) {
+        _traceFinalUi(
+          'active-turn-shrink-heal',
+          details: 'gap=$gap currentMax=$currentMax',
+        );
+        _setScrollOwner(_ScrollOwner.contentShrinkSnap);
+        _scrollController.jumpTo(currentMax);
+        _setScrollOwner(_ScrollOwner.none);
+      }
+    }
+
     if (_autoFollowToLatest &&
         !_isProgrammaticScrollInFlight &&
         !_isReturnRevealInFlight &&
