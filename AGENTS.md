@@ -57,7 +57,8 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | 025 | Settled Assistant-Work Disclosure Ownership — client-side architectural ownership to prevent open/close thrash, scroll jumps on session return | 1151–1193 |
 | 026 | ⚠️ SUPERSEDED — Local PTY shell replaced by server-hosted PTY (ADR-027) | 1195–1251 |
 | 027 | Server-hosted PTY terminal with embedded client rendering — runs on OpenCode host in active project directory, client renders via streaming transport, local flutter_pty removed, close/minimize/maximize semantics preserved, composer hides on compact/mobile | 1253–1313 |
-| 028 | Unified scroll ownership via `_ScrollOwner` enum — eliminate scroll jumping across send/return/pagination triggers, user drag priority, force scroll bypass; additive guardrails cover passive provider scroll suppression, manual follow pause near bottom, response-settle shrink-snap suppression, duplicate return-to-chat scoping, queued cached restore targets for settled-vs-active session return, active-turn/global-fallback guards against passive background settle, a single reading-mode final reveal path for long answers, deferred tool-only merge until settlement to prevent active-turn structural shrink, and a narrow active-turn shrink heal while passive follow remains enabled | 1318–1400 |
+| 028 | Unified scroll ownership via `_ScrollOwner` enum — eliminate scroll jumping across send/return/pagination triggers, user drag priority, force scroll bypass; additive guardrails cover passive provider scroll suppression, manual follow pause near bottom, response-settle shrink-snap suppression, duplicate return-to-chat scoping, queued cached restore targets for settled-vs-active session return, active-turn/global-fallback guards against passive background settle, a single reading-mode final reveal path for long answers, deferred tool-only merge until settlement to prevent active-turn structural shrink, and a narrow active-turn shrink heal while passive follow remains enabled | 1326–1407 |
+| 029 | Host-discovered quota and rate-limit monitoring for OpenChamber parity — server-host quota ownership, no manual credentials, strategy-chain transport (REST/Shell), popup-only UI (compact-first), grouped providers with pace/progress, explicit parity opt-in | 1411–1456 |
 
 ## 🗺 CODEBASE Quick Reference (details in `CODEBASE.md`)
 
@@ -68,13 +69,13 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | Project Snapshot | 3–10 |
 | Folder Structure | 12–51 |
 | Entry Points | 53–62 |
-| Core Modules | 64–131 |
-| Chat Architecture | 133–226 |
-| Data & Domain Layers | 228–238 |
-| Key API/DataSource locations | 240–258 |
-| Main Commands | 260–281 |
-| Testing/Quality Gates | 283–303 |
-| Notes | 305–464 |
+| Core Modules | 64–139 |
+| Chat Architecture | 141–234 |
+| Data & Domain Layers | 235–245 |
+| Key API/DataSource locations | 247–265 |
+| Main Commands | 267–288 |
+| Testing/Quality Gates | 290–310 |
+| Notes | 312–472 |
 
 ## ⚙️ Makefile Quick Reference (details in `Makefile`)
 

@@ -61,3 +61,16 @@ DoD: When the app starts offline and later regains connectivity, recent projects
 - [x] 5.02 Trigger automatic reload of recent projects when connectivity is restored - Commit hashes: fac3b79, bb16867
 - [x] 5.03 Ensure session data and sidebar content refreshes without requiring manual action - Commit hashes: fac3b79, bb16867
 - [x] 5.04 Handle edge cases: multiple rapid connection changes, server still unavailable after network recovery - Commit hashes: fac3b79, bb16867
+
+### Feature 6: Host-Discovered Quota and Rate-Limit Monitoring (ADR-029)
+
+Description: Implement a host-discovered quota tracking feature for the "Context usage" popup. Uses a strategy-chain transport (OpenChamber REST → hidden ephemeral shell fallback) to surface provider rate-limits without client-side credentials. UI shows grouped providers with severity progress bars and Pace predictions inside the existing Context usage popup.
+
+DoD: Context usage popup shows live provider quotas when data is available; falls back silently when neither REST nor shell path returns data; zero-credential client maintains ADR-001 security boundaries; grouped UI with Pace follows ADR-029 semantics.
+
+- [x] 6.01 Domain entities and Pace calculation utilities — `QuotaSnapshot`, `UsageWindow`, `PaceInfo`, `QuotaProviderGroup`, `QuotaEntry`; pure Dart pace predictor - Commit hashes: edf6b10
+- [x] 6.02 Strategy-chain `QuotaRemoteDataSource` — OpenChamber REST fast path + ephemeral shell fallback; DI wiring for `QuotaRemoteDataSource` and `QuotaProvider` - Commit hashes: edf6b10
+- [x] 6.03 `QuotaProvider` — TTL-cached polling (60s), server-scoped state, severity-ordered groups - Commit hashes: edf6b10
+- [x] 6.04 Quota popup widgets — `QuotaPopupSection`, `QuotaProviderGroupRow`, `QuotaEntryRow`, `PaceLabel` — integrate into Context usage popup after Compact now - Commit hashes: 013e285
+- [x] 6.05 Unit tests for pace utils and datasource strategy chain; all 841 tests passing - Commit hashes: 013e285
+- [x] 6.06 Update ADR-029, CODEBASE.md, BEHAVIOR.md, and ROADMAP.md to reflect completed implementation

@@ -641,6 +641,23 @@ Additional commands may be provided by the connected OpenCode server and merged 
 - **Then** CodeWalk opens an informational sheet explaining that the embedded server terminal is unavailable there and points the user to composer shell mode instead
 - **Then** composer shell mode remains a separate one-shot command path backed by `POST /session/:id/shell`
 
+### Host quota / rate-limit monitoring
+
+- **Given** the user opens the `Context usage` popup from the chat status bar
+- **When** quota data is available from the connected host
+- **Then** CodeWalk shows a `Provider Quotas` section at the bottom of that popup after the `Compact now` action
+- **Then** providers are grouped by parent organisation; each group shows a severity-colored progress bar for the most constrained sub-quota and a `Pace` chip that shows the predicted percentage of the window that will be consumed at the current usage rate
+- **Then** tapping a provider group row expands it to reveal individual quota entries (requests, tokens, cost, etc.) each with its own bar and remaining figure
+- **Then** on desktop, hovering the `Pace` chip shows a tooltip explaining the prediction; on mobile, tapping it shows a dismissible snackbar
+- **Given** the host exposes OpenChamber-compatible REST endpoints (`GET /api/quota/providers`)
+- **When** the popup is opened (or every 60 seconds in background)
+- **Then** CodeWalk fetches live quota data from those endpoints without any client-side credentials
+- **Given** the host does not expose OpenChamber endpoints
+- **When** quota data is requested
+- **Then** CodeWalk falls back to a hidden ephemeral shell session that probes `CW_QUOTA_JSON` without appearing in the user's conversation list
+- **Then** if neither path returns data, the `Provider Quotas` section is silently omitted from the popup
+- **Then** the client never stores, manages, or forwards provider credentials; all quota ownership stays on the server host
+
 ---
 
 ## Attachments

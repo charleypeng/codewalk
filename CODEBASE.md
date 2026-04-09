@@ -78,10 +78,14 @@ lib/data/cache/chat_cache_payload_store_base.dart # Abstract interface for cache
 lib/data/cache/chat_cache_payload_store_io.dart   # IO implementation: hybrid file+LRU memory cache (24 entries) for chat payloads
 lib/data/cache/chat_cache_payload_store_stub.dart # Non-IO platforms: disabled payload store (returns null)
 lib/data/repositories/*.dart                      # Domain repository implementations
+lib/data/datasources/quota_remote_datasource.dart # Strategy-chain quota discovery: tries OpenChamber REST (`GET /api/quota/providers`) then falls back to a hidden ephemeral shell probe (`CW_QUOTA_JSON:`) for vanilla OpenCode hosts
 lib/domain/usecases/*.dart                        # Application use cases consumed by providers
+lib/domain/entities/quota.dart                    # Quota domain entities: `QuotaSnapshot`, `UsageWindow`, `PaceInfo`, `QuotaEntry`, `QuotaProviderGroup`
 lib/presentation/providers/app_provider.dart      # Server profiles, health polling, local runtime state; guards health polling/connection when no active server profile is set; includes setup-debug state (SetupDebugEntry, SetupDebugSeverity) for OpenCode installation diagnostics with recordSetupDebugEvent(), exportSetupDebugReport(), clearSetupDebugData()
 lib/presentation/providers/project_provider.dart  # Project/worktree context selection and persistence
 lib/presentation/providers/settings_provider.dart # Experience settings, theme mode, dynamic color, AMOLED dark toggle, brand seed, contrast, composer tips visibility, sounds, update checks, and complete OpenCode shared settings coverage (default model, default agent, small model, autoupdate, share, username, snapshot); exposes `dynamicColorAvailable` (bool) and `updateDynamicColorAvailability()` for runtime platform signal; `setCheckUpdatesOnOpen()` now controls startup + hourly automatic checks via `_configureAutomaticUpdateChecks()` and `_performStartupUpdateCheck()`; `UpdateInstallState` enum (idle/downloading/installing/done/failed), `startInstall()`, and `restartDesktopApp()` manage APK/desktop install lifecycle
+lib/presentation/providers/quota_provider.dart # Host-discovered quota state: polls `QuotaRemoteDataSource`, TTL-based cache (60s) scoped per `serverId`, normalises raw data into `QuotaProviderGroup` list ordered by severity; `ensureLoaded()` for lazy UI-triggered fetch
+lib/presentation/utils/quota_pace_utils.dart # Pure Dart pace helpers: `predictedFinalPercent`, `PaceStatus` enum, window/label inference, and formatted `Pace xx%` / time-left strings
 lib/presentation/widgets/settings_provenance_chip.dart # Shared provenance badge widget for `OpenCode-backed`, `CodeWalk-local`, and `CodeWalk exception` labels used by Behavior, Notifications, and Shortcuts settings surfaces
 lib/presentation/widgets/searchable_dropdown_form_field.dart # Reusable FormField<T> searchable dropdown with modal bottom sheet picker; used by servers, speech, notifications, appearance, and behavior settings sections
 lib/presentation/theme/opencode_web_theme_registry.dart # Generated local mirror of the official OpenCode Web built-in theme registry with 37 theme definitions (light/dark palette + overrides); regenerate via `tool/theme/generate_opencode_web_themes.py`
@@ -128,6 +132,10 @@ lib/presentation/widgets/chat_session_list.dart    # Chat session list widget; u
 lib/presentation/widgets/message_entrance_animation.dart # Entrance animation wrapper; `role` parameter selects user (130 ms) or assistant (180 ms) motion profile from AppAnimations
 lib/presentation/widgets/chat_tour_showcase.dart   # Shared showcase wrapper for the first-use chat tour; provides MD3-compliant tooltip styling with consistent surface, shape, and action hierarchy using `showcaseview` package
 lib/presentation/widgets/modal_primary_action_shortcuts.dart # Reusable keyboard shortcut wrapper for modal dialogs; maps Enter/NumpadEnter to a configurable primary action; used by model download dialogs, onboarding wizard, workspace controller, and session list
+lib/presentation/widgets/quota/quota_popup_section.dart      # Root quota section embedded at the bottom of the Context usage popup; silent no-op when no data is available
+lib/presentation/widgets/quota/quota_provider_group_row.dart # Expandable provider-group row showing critical entry bar + Pace chip
+lib/presentation/widgets/quota/quota_entry_row.dart          # Individual quota entry: label, severity-colored progress bar, remaining/limit figures
+lib/presentation/widgets/quota/pace_label.dart               # Pace % chip: desktop tooltip, mobile snackbar explanation
 ```
 
 ## Chat Architecture

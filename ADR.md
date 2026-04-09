@@ -1402,6 +1402,55 @@ The chat timeline experienced recurrent scroll jumping across three trigger scen
 - `lib/presentation/pages/chat_page/chat_page_timeline_builder.dart` — cache invalidation logging
 - `test/widget/chat_page_test.dart` — 2 new regression tests for scroll stability and cache reuse
 
+---
+
+## ADR-029: Host-Discovered Quota and Rate-Limit Monitoring for OpenChamber Parity (2026-04-09)
+
+**Status**: Accepted
+
+### Context
+
+CodeWalk requires visibility into model quotas and rate-limits to prevent silent task failures due to exhausted provider balances. While official OpenCode (ADR-023) provides the core agent contract, it does not currently expose a unified real-time quota/rate-limit API for all backend providers. OpenChamber, as a community-driven server implementation, provides extended REST endpoints for this purpose. CodeWalk aims for functional parity with OpenChamber's monitoring capabilities while maintaining strict adherence to official OpenCode contracts as the primary source of truth.
+
+### Decision
+
+1. **Server-Host-Only Quota Ownership** — The app never manages or stores provider credentials for quota checking. It relies entirely on the connected host's environment and discovered provider configurations.
+2. **Strategy-Chain Transport** — Quota data is fetched using a tiered discovery strategy:
+    - **OpenChamber REST** — Use `GET /api/v1/quota` and related endpoints when detected.
+    - **Hidden Shell Fallback** — Fall back to execution of provider-specific CLI tools (e.g., `openai-quota`, `anthropic-limit`) via the existing server-hosted PTY transport (ADR-027) when REST endpoints are missing.
+3. **Popup-Only UI (Compact-First)** — The monitoring interface is restricted to the "Context usage" popup. It is hidden by default in compact/mobile layouts to preserve composer real-estate, appearing only on explicit user invocation.
+4. **Grouped Providers with Pace/Progress Semantics** — UI displays providers grouped by parent organization (OpenAI, Anthropic, etc.) using progress bars that reflect both absolute remaining quota and "Pace" (usage rate over time) to warn of imminent rate-limiting.
+5. **Explicit Feature-by-Feature Parity Opt-in** — Future OpenChamber features will not be auto-adopted. Each parity addition must be explicitly evaluated, documented via ADR, and gated behind feature-specific capability checks.
+
+### Rationale
+
+- **ADR-023 Priority** — Official OpenCode remains the primary contract. OpenChamber parity is additive and must never conflict with official lifecycle or API semantics.
+- **Security** — By enforcing server-host ownership, the client avoids the risk of credential leakage and maintains the security boundaries established in ADR-001.
+- **Resilience** — The strategy-chain ensures monitoring works across both official servers (via shell fallback) and OpenChamber-enhanced servers (via REST).
+- **UX** — Grouping and Pace semantics provide actionable insights rather than just raw numbers, helping users manage long-running agent tasks.
+
+### Consequences
+
+- ✅ Real-time visibility into provider limits prevents unexpected agent stalls.
+- ✅ Zero-credential client simplifies onboarding and improves security.
+- ✅ Graceful degradation between OpenChamber REST and official shell-only hosts.
+- ⚠️ Potential performance impact when using shell fallback (process spawn overhead on server).
+- ⚠️ UI density in the Context popup increases; requires careful MD3/Material You spacing.
+- ❌ No offline quota visibility; requires active server connection.
+
+### Key Files
+
+- `lib/data/datasources/quota_remote_datasource.dart` — Strategy-chain implementation (OpenChamber REST → shell fallback)
+- `lib/domain/entities/quota.dart` — Domain entities: `QuotaSnapshot`, `UsageWindow`, `PaceInfo`, `QuotaEntry`, `QuotaProviderGroup`
+- `lib/presentation/providers/quota_provider.dart` — Polling, TTL cache, server-scoped state, and provider grouping
+- `lib/presentation/utils/quota_pace_utils.dart` — Pure Dart pace calculation, window label inference, and formatting
+- `lib/presentation/widgets/quota/quota_popup_section.dart` — Root quota widget embedded in the Context usage popup
+- `lib/presentation/widgets/quota/quota_provider_group_row.dart` — Grouped provider expand/collapse row
+- `lib/presentation/widgets/quota/quota_entry_row.dart` — Individual quota entry with severity color progress bar
+- `lib/presentation/widgets/quota/pace_label.dart` — Desktop tooltip / mobile snackbar pace explanation
+- `lib/presentation/pages/chat_page/chat_page_status_presenter.dart` — Hosts `_buildContextUsagePopover` which includes `QuotaPopupSection`
+- `lib/core/di/injection_container.dart` — DI wiring for `QuotaRemoteDataSource` and `QuotaProvider`
+
 ### ADR-023 Compatibility
 
-This feature is fully compatible with ADR-023. No server contract change, no new API endpoints, no deviation from OpenCode lifecycle semantics. All state is client-side scroll coordination.
+This feature is compliant with ADR-023. Official OpenCode remains the primary source for all agent contracts and core app behavior. OpenChamber is used exclusively as an optional parity source for the quota/rate-limit feature. In the absence of OpenChamber REST endpoints, the app falls back to a hidden ephemeral shell probe without PTY process lifecycle changes, ensuring no divergence from official server capabilities.
