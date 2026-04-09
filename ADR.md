@@ -1386,6 +1386,7 @@ The chat timeline experienced recurrent scroll jumping across three trigger scen
 1. **Raw tool-call bubbles remain visible during the active turn** — consecutive tool-only assistant messages are rendered as separate entries while the current run is still responding.
 2. **Synthetic tool-only merge now happens only after settlement** — merged tool-run bubbles remain a settled/history presentation and are no longer used as a live-turn optimization.
 3. **Active-turn assistant entrance animation suppression is scoped to tool-only bubbles** (`49c0f7d`) — the final assistant text response may still animate normally once the turn settles.
+4. **Active-turn structural shrink is treated as a forbidden regression source** — live tool-only merge/replacement during the active run is no longer allowed because it can shorten the rendered list above the viewport, create a temporary bottom vacuum, and amplify typing/repaint churn.
 
 ### Key Files
 

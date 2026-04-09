@@ -531,6 +531,8 @@
 - **Then** when the user is still passively following the active turn, growth from tool/reasoning/text updates keeps the viewport visually pinned to bottom without per-delta jump churn
 - **Then** tool-only assistant messages stay as raw bubbles while the active turn is still responding; they are not live-merged into a synthetic grouped bubble mid-turn
 - **Then** tool-only assistant messages may merge/collapse only after the final assistant message arrives and the turn settles
+- **Then** active-turn tool/work rendering must not structurally shrink the visible timeline in a way that creates a temporary blank vacuum at the bottom while the user is still passively following the turn
+- **Then** if a future optimization would merge, compact, or replace active-turn tool-only messages before settlement, it must be rejected unless it proves it cannot create viewport shrink/reflow or typing-lag regressions
 
 ### Recoverable current-session refresh failures stay scoped
 
