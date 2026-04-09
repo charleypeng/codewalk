@@ -1,0 +1,80 @@
+import 'package:flutter/material.dart';
+
+import '../../../domain/entities/quota.dart';
+import 'quota_entry_row.dart';
+
+class QuotaProviderGroupRow extends StatefulWidget {
+  const QuotaProviderGroupRow({super.key, required this.group});
+
+  final QuotaProviderGroup group;
+
+  @override
+  State<QuotaProviderGroupRow> createState() => _QuotaProviderGroupRowState();
+}
+
+class _QuotaProviderGroupRowState extends State<QuotaProviderGroupRow> {
+  late bool _expanded;
+
+  @override
+  void initState() {
+    super.initState();
+    _expanded = false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.group.canExpand) {
+      return QuotaEntryRow(entry: widget.group.entries.first);
+    }
+
+    final critical = widget.group.criticalEntry;
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Icon(
+                    _expanded ? Icons.expand_more : Icons.chevron_right,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      widget.group.providerName,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (!_expanded)
+            Padding(
+              padding: const EdgeInsets.only(left: 22),
+              child: QuotaEntryRow(entry: critical, dense: true),
+            ),
+          if (_expanded)
+            Padding(
+              padding: const EdgeInsets.only(left: 22),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: widget.group.entries
+                    .map((entry) => QuotaEntryRow(entry: entry, dense: true))
+                    .toList(growable: false),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}

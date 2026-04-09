@@ -15,6 +15,7 @@ import 'presentation/pages/app_shell_page.dart';
 import 'presentation/providers/app_provider.dart';
 import 'presentation/providers/chat_provider.dart';
 import 'presentation/providers/project_provider.dart';
+import 'presentation/providers/quota_provider.dart';
 import 'presentation/providers/settings_provider.dart';
 import 'presentation/services/android_background_alert_worker.dart';
 import 'presentation/theme/app_theme.dart';
@@ -70,6 +71,7 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(create: (_) => di.sl<ProjectProvider>()),
         ChangeNotifierProvider(create: (_) => di.sl<ChatProvider>()),
+        ChangeNotifierProvider(create: (_) => di.sl<QuotaProvider>()),
         ChangeNotifierProvider(
           create: (_) {
             final provider = di.sl<SettingsProvider>();

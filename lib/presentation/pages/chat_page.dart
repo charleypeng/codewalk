@@ -31,6 +31,7 @@ import '../../domain/entities/server_profile.dart';
 import '../providers/app_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/project_provider.dart';
+import '../providers/quota_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/android_background_alert_logic.dart';
 import '../services/android_background_alert_worker.dart';
@@ -61,6 +62,7 @@ import '../widgets/message_entrance_animation.dart';
 import '../widgets/modal_primary_action_shortcuts.dart';
 import '../widgets/permission_request_card.dart';
 import '../widgets/question_request_card.dart';
+import '../widgets/quota/quota_popup_section.dart';
 import '../widgets/session_title_inline_editor.dart';
 import '../widgets/session_todo_list_widget.dart';
 import 'onboarding_wizard_page.dart';
@@ -86,8 +88,6 @@ part 'chat_page/chat_page_composer_widgets.dart';
 part 'chat_page/chat_page_model_selector_runtime.dart';
 part 'chat_page/chat_page_timeline_runtime.dart';
 part 'chat_page/chat_page_terminal_runtime.dart';
-
-enum _ContextUsageAction { compactNow }
 
 enum _DisplayToggleAction {
   thinkingBubbles,

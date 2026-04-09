@@ -8,6 +8,7 @@ import '../../data/datasources/app_local_datasource.dart';
 import '../../data/datasources/app_remote_datasource.dart';
 import '../../data/datasources/chat_remote_datasource.dart';
 import '../../data/datasources/project_remote_datasource.dart';
+import '../../data/datasources/quota_remote_datasource.dart';
 import '../../data/datasources/terminal_remote_datasource.dart';
 import '../../data/repositories/app_repository_impl.dart';
 import '../../data/repositories/chat_repository_impl.dart';
@@ -48,6 +49,7 @@ import '../../domain/usecases/watch_global_chat_events.dart';
 import '../../presentation/providers/app_provider.dart';
 import '../../presentation/providers/chat_provider.dart';
 import '../../presentation/providers/project_provider.dart';
+import '../../presentation/providers/quota_provider.dart';
 import '../../presentation/providers/settings_provider.dart';
 import '../../presentation/services/chat_title_generator.dart';
 import '../../presentation/services/cellular_data_saver_service.dart';
@@ -95,6 +97,10 @@ Future<void> init() async {
 
   sl.registerLazySingleton<ProjectRemoteDataSource>(
     () => ProjectRemoteDataSourceImpl(dio: sl<DioClient>().dio),
+  );
+
+  sl.registerLazySingleton<QuotaRemoteDataSource>(
+    () => QuotaRemoteDataSourceImpl(dio: sl<DioClient>().dio),
   );
 
   sl.registerLazySingleton<TerminalRemoteDataSource>(
@@ -247,6 +253,8 @@ Future<void> init() async {
       cellularDataSaverService: sl(),
     ),
   );
+
+  sl.registerFactory(() => QuotaProvider(remoteDataSource: sl()));
 
   sl.registerLazySingleton<EventFeedbackDispatcher>(
     () => EventFeedbackDispatcher(
