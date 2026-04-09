@@ -1,7 +1,7 @@
-/// Shared utilities for ChatProvider split test files.
-///
-/// Contains public versions of helpers that were originally private in the
-/// monolithic chat_provider_test.dart. No main() — this is not a test file.
+// Shared utilities for ChatProvider split test files.
+//
+// Contains public versions of helpers that were originally private in the
+// monolithic chat_provider_test.dart. No main() — this is not a test file.
 import 'dart:convert';
 
 import 'package:codewalk/core/network/dio_client.dart';
@@ -24,9 +24,9 @@ import 'package:codewalk/domain/usecases/get_session_todo.dart';
 import 'package:codewalk/domain/usecases/list_pending_permissions.dart';
 import 'package:codewalk/domain/usecases/list_pending_questions.dart';
 import 'package:codewalk/domain/usecases/reject_question.dart';
-import 'package:codewalk/domain/usecases/revert_chat_message.dart';
 import 'package:codewalk/domain/usecases/reply_permission.dart';
 import 'package:codewalk/domain/usecases/reply_question.dart';
+import 'package:codewalk/domain/usecases/revert_chat_message.dart';
 import 'package:codewalk/domain/usecases/send_chat_message.dart';
 import 'package:codewalk/domain/usecases/share_chat_session.dart';
 import 'package:codewalk/domain/usecases/unrevert_chat_messages.dart';

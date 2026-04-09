@@ -158,12 +158,15 @@ extension _ChatPageStatusPresenter on _ChatPageState {
     BuildContext context, {
     required _SessionContextUsageSnapshot usage,
     required bool isCompacting,
+    required bool canCompact,
+    required Future<void> Function() onCompactNow,
   }) {
     final textTheme = Theme.of(context).textTheme;
+    final serverId = context.read<AppProvider>().activeServer?.id;
 
     return SizedBox(
       key: const ValueKey<String>('context_usage_popover'),
-      width: 220,
+      width: 280,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
@@ -207,6 +210,46 @@ extension _ChatPageStatusPresenter on _ChatPageState {
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
+          const SizedBox(height: 10),
+          Divider(
+            color: Theme.of(context).colorScheme.outlineVariant,
+            height: 1,
+          ),
+          const SizedBox(height: 10),
+          InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: canCompact
+                ? () {
+                    Navigator.of(context).pop();
+                    unawaited(onCompactNow());
+                  }
+                : null,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Symbols.compress,
+                    size: 16,
+                    color: canCompact
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isCompacting ? 'Compacting...' : 'Compact now',
+                    style: textTheme.labelLarge?.copyWith(
+                      color: canCompact
+                          ? Theme.of(context).colorScheme.onSurface
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          QuotaPopupSection(serverId: serverId),
         ],
       ),
     );

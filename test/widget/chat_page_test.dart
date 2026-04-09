@@ -6,6 +6,7 @@ import 'package:codewalk/core/di/injection_container.dart' as di;
 import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/data/datasources/app_local_datasource.dart';
+import 'package:codewalk/data/datasources/quota_remote_datasource.dart';
 import 'package:codewalk/domain/entities/agent.dart';
 import 'package:codewalk/domain/entities/chat_message.dart';
 import 'package:codewalk/domain/entities/chat_realtime.dart';
@@ -13,6 +14,7 @@ import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/domain/entities/file_node.dart';
 import 'package:codewalk/domain/entities/project.dart';
 import 'package:codewalk/domain/entities/provider.dart';
+import 'package:codewalk/domain/entities/quota.dart';
 import 'package:codewalk/domain/usecases/abort_chat_session.dart';
 import 'package:codewalk/domain/usecases/check_connection.dart';
 import 'package:codewalk/domain/usecases/create_chat_session.dart';
@@ -31,9 +33,9 @@ import 'package:codewalk/domain/usecases/get_session_todo.dart';
 import 'package:codewalk/domain/usecases/list_pending_permissions.dart';
 import 'package:codewalk/domain/usecases/list_pending_questions.dart';
 import 'package:codewalk/domain/usecases/reject_question.dart';
-import 'package:codewalk/domain/usecases/revert_chat_message.dart';
 import 'package:codewalk/domain/usecases/reply_permission.dart';
 import 'package:codewalk/domain/usecases/reply_question.dart';
+import 'package:codewalk/domain/usecases/revert_chat_message.dart';
 import 'package:codewalk/domain/usecases/send_chat_message.dart';
 import 'package:codewalk/domain/usecases/share_chat_session.dart';
 import 'package:codewalk/domain/usecases/unrevert_chat_messages.dart';
@@ -46,6 +48,7 @@ import 'package:codewalk/presentation/pages/settings_page.dart';
 import 'package:codewalk/presentation/providers/app_provider.dart';
 import 'package:codewalk/presentation/providers/chat_provider.dart';
 import 'package:codewalk/presentation/providers/project_provider.dart';
+import 'package:codewalk/presentation/providers/quota_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/cellular_data_saver_service.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
@@ -57,8 +60,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart' hide Provider;
 import 'package:showcaseview/showcaseview.dart';
@@ -5250,6 +5253,128 @@ void main() {
     expect(find.text('Cost'), findsOneWidget);
     expect(find.text('300'), findsOneWidget);
     expect(find.text(r'$0.0000'), findsOneWidget);
+  });
+
+  testWidgets('context usage popover shows quota groups after compact action', (
+    WidgetTester tester,
+  ) async {
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_quota_usage',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Quota Session',
+        ),
+      ],
+    );
+    repository.messagesBySession['ses_quota_usage'] = <ChatMessage>[
+      AssistantMessage(
+        id: 'msg_quota_usage',
+        sessionId: 'ses_quota_usage',
+        time: DateTime.fromMillisecondsSinceEpoch(1100),
+        providerId: 'provider_1',
+        modelId: 'model_1',
+        cost: 0,
+        tokens: const MessageTokens(
+          input: 100,
+          output: 100,
+          reasoning: 50,
+          cacheRead: 50,
+          cacheWrite: 0,
+        ),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'part_quota_usage',
+            messageId: 'msg_quota_usage',
+            sessionId: 'ses_quota_usage',
+            text: 'Done',
+          ),
+        ],
+      ),
+    ];
+
+    final quotaDataSource = FakeQuotaRemoteDataSource(
+      results: <QuotaProviderResult>[
+        QuotaProviderResult.fromJson(<String, dynamic>{
+          'providerId': 'claude',
+          'providerName': 'Claude',
+          'ok': true,
+          'configured': true,
+          'usage': <String, dynamic>{
+            'windows': <String, dynamic>{
+              '5h': <String, dynamic>{
+                'usedPercent': 42,
+                'remainingPercent': 58,
+                'windowSeconds': 18000,
+                'resetAt': DateTime.now()
+                    .add(const Duration(hours: 2))
+                    .millisecondsSinceEpoch,
+              },
+              '7d': <String, dynamic>{
+                'usedPercent': 18,
+                'remainingPercent': 82,
+                'windowSeconds': 604800,
+                'resetAt': DateTime.now()
+                    .add(const Duration(days: 4))
+                    .millisecondsSinceEpoch,
+              },
+            },
+          },
+          'fetchedAt': DateTime.now().millisecondsSinceEpoch,
+        }),
+        QuotaProviderResult.fromJson(<String, dynamic>{
+          'providerId': 'openrouter',
+          'providerName': 'OpenRouter',
+          'ok': true,
+          'configured': true,
+          'usage': <String, dynamic>{
+            'windows': <String, dynamic>{
+              'credits': <String, dynamic>{
+                'usedPercent': 63,
+                'remainingPercent': 37,
+                'valueLabel': '\$12.00 remaining',
+              },
+            },
+          },
+          'fetchedAt': DateTime.now().millisecondsSinceEpoch,
+        }),
+      ],
+    );
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(
+      _testApp(provider, appProvider, quotaRemoteDataSource: quotaDataSource),
+    );
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('appbar_context_usage_button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Compact now'), findsOneWidget);
+    expect(find.text('Rate limits'), findsOneWidget);
+    expect(find.text('Claude'), findsOneWidget);
+    expect(find.text('OpenRouter'), findsOneWidget);
+
+    await tester.tap(find.text('Claude'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('5-Hour'), findsOneWidget);
+    expect(find.text('7-Day Limit'), findsOneWidget);
+    expect(find.textContaining('Pace '), findsWidgets);
   });
 
   testWidgets('file viewer shows binary and error states', (
@@ -14943,6 +15068,8 @@ Widget _testApp(
   ChatProvider provider,
   AppProvider appProvider, {
   SettingsProvider? settingsProvider,
+  QuotaProvider? quotaProvider,
+  QuotaRemoteDataSource? quotaRemoteDataSource,
   CellularDataSaverService? cellularDataSaverService,
   MediaQueryData? mediaQueryData,
 }) {
@@ -14967,6 +15094,12 @@ Widget _testApp(
     unawaited(effectiveSettingsProvider.initialize());
   }
 
+  final effectiveQuotaProvider =
+      quotaProvider ??
+      QuotaProvider(
+        remoteDataSource: quotaRemoteDataSource ?? FakeQuotaRemoteDataSource(),
+      );
+
   Widget home = const ChatPage();
   if (mediaQueryData != null) {
     home = MediaQuery(data: mediaQueryData, child: home);
@@ -14981,6 +15114,9 @@ Widget _testApp(
       ),
       ChangeNotifierProvider<SettingsProvider>.value(
         value: effectiveSettingsProvider,
+      ),
+      ChangeNotifierProvider<QuotaProvider>.value(
+        value: effectiveQuotaProvider,
       ),
     ],
     child: MaterialApp(

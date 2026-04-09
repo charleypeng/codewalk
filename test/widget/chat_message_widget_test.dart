@@ -1,11 +1,11 @@
 import 'package:codewalk/domain/entities/chat_message.dart';
 import 'package:codewalk/domain/entities/experience_settings.dart';
-import 'package:codewalk/presentation/utils/chat_abort_message.dart';
 import 'package:codewalk/presentation/theme/opencode_theme_presets.dart';
-import 'package:codewalk/presentation/widgets/message_entrance_animation.dart';
+import 'package:codewalk/presentation/utils/chat_abort_message.dart';
 import 'package:codewalk/presentation/widgets/chat_message_widget.dart';
-import 'package:flutter_highlight/flutter_highlight.dart';
+import 'package:codewalk/presentation/widgets/message_entrance_animation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -1169,7 +1169,7 @@ void main() {
       findsOneWidget,
     );
 
-    var outputText = tester.widget<Text>(
+    final outputText = tester.widget<Text>(
       find.byKey(const ValueKey<String>('tool_content_text')),
     );
     expect(outputText.maxLines, isNull);
@@ -1240,7 +1240,7 @@ void main() {
       findsOneWidget,
     );
 
-    var outputText = tester.widget<Text>(
+    final outputText = tester.widget<Text>(
       find.byKey(const ValueKey<String>('tool_content_text')),
     );
     expect(outputText.maxLines, isNull);

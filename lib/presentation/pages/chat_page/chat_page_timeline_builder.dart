@@ -353,30 +353,15 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                               !chatProvider
                                                   .canAbortActiveResponse;
 
-                                          return PopupMenuButton<
-                                            _ContextUsageAction
-                                          >(
+                                          return PopupMenuButton<void>(
                                             key: const ValueKey<String>(
                                               'appbar_context_usage_button',
                                             ),
                                             tooltip: 'Compact Context',
                                             padding: EdgeInsets.zero,
-                                            onSelected: (action) {
-                                              if (action ==
-                                                  _ContextUsageAction
-                                                      .compactNow) {
-                                                unawaited(
-                                                  _compactCurrentSession(
-                                                    chatProvider,
-                                                  ),
-                                                );
-                                              }
-                                            },
                                             itemBuilder: (context) {
                                               return [
-                                                PopupMenuItem<
-                                                  _ContextUsageAction
-                                                >(
+                                                PopupMenuItem<void>(
                                                   enabled: false,
                                                   padding:
                                                       const EdgeInsets.symmetric(
@@ -388,36 +373,11 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                                     usage: usage,
                                                     isCompacting: chatProvider
                                                         .isCompactingContext,
-                                                  ),
-                                                ),
-                                                const PopupMenuDivider(
-                                                  height: 0,
-                                                ),
-                                                PopupMenuItem<
-                                                  _ContextUsageAction
-                                                >(
-                                                  value: _ContextUsageAction
-                                                      .compactNow,
-                                                  enabled: canCompact,
-                                                  child: Row(
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      Icon(
-                                                        Symbols.compress,
-                                                        size: 16,
-                                                        color: Theme.of(
-                                                          context,
-                                                        ).colorScheme.primary,
-                                                      ),
-                                                      const SizedBox(width: 8),
-                                                      Text(
-                                                        chatProvider
-                                                                .isCompactingContext
-                                                            ? 'Compacting...'
-                                                            : 'Compact now',
-                                                      ),
-                                                    ],
+                                                    canCompact: canCompact,
+                                                    onCompactNow: () =>
+                                                        _compactCurrentSession(
+                                                          chatProvider,
+                                                        ),
                                                   ),
                                                 ),
                                               ];

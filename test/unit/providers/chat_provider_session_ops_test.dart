@@ -1017,7 +1017,7 @@ void main() {
       await provider.loadSessions();
       await provider.selectSession(provider.sessions.first);
 
-      bool sawLoading = false;
+      var sawLoading = false;
       provider.addListener(() {
         if (provider.isLoadingSessionInsights) {
           sawLoading = true;

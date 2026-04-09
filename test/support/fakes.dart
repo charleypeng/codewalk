@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/data/datasources/app_local_datasource.dart';
+import 'package:codewalk/data/datasources/quota_remote_datasource.dart';
 import 'package:codewalk/domain/entities/agent.dart';
 import 'package:codewalk/domain/entities/app_info.dart';
 import 'package:codewalk/domain/entities/chat_message.dart';
@@ -11,6 +12,7 @@ import 'package:codewalk/domain/entities/chat_session.dart';
 import 'package:codewalk/domain/entities/file_node.dart';
 import 'package:codewalk/domain/entities/project.dart';
 import 'package:codewalk/domain/entities/provider.dart';
+import 'package:codewalk/domain/entities/quota.dart';
 import 'package:codewalk/domain/entities/worktree.dart';
 import 'package:codewalk/domain/repositories/app_repository.dart';
 import 'package:codewalk/domain/repositories/chat_repository.dart';
@@ -130,6 +132,25 @@ class FakeLocalOpencodeServerRuntime implements LocalOpencodeServerRuntime {
     await _stdoutController.close();
     await _stderrController.close();
     await _exitCodeController.close();
+  }
+}
+
+class FakeQuotaRemoteDataSource implements QuotaRemoteDataSource {
+  FakeQuotaRemoteDataSource({
+    List<QuotaProviderResult> results = const <QuotaProviderResult>[],
+  }) : _results = results;
+
+  List<QuotaProviderResult> _results;
+  int fetchCallCount = 0;
+
+  set results(List<QuotaProviderResult> value) {
+    _results = value;
+  }
+
+  @override
+  Future<List<QuotaProviderResult>> fetchQuotaResults() async {
+    fetchCallCount += 1;
+    return _results;
   }
 }
 
