@@ -30,35 +30,35 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 
 | ADR | What / Why | Lines |
 |-----|------------|-------|
-| 001 | Multi-server with profiles, scoped persistence, and secure credentials — prevent cross-server leakage | 35–69 |
-| 002 | Context isolation `serverId::directory` with serialized transition queue — prevent race conditions on project switch | 70–107 |
-| 003 | Realtime-first sync with degraded fallback and platform-aware background policy — maintain live UX without losing offline data | 108–156 |
-| 004 | Chat with slim orchestrators and decomposed part-file clusters — maintainability on high-change surfaces | 157–192 |
-| 005 | Composer pipeline for multimodal input, triggers (`@!/`) and send/stop — rich composition without breaking flow | 193–229 |
-| 006 | Speech input with `SpeechInputService`, Sherpa/Moonshine, Parakeet V3, and SenseVoice (sherpa_onnx offline recognition) on desktop, native STT on Android; Linux defaults to Parakeet with native→Parakeet migration — pluggable by platform | 230–279 |
-| 007 | Modular settings with typed `SettingsProvider` + `ExperienceSettings` — unified persistence desktop/mobile | 281–317 |
-| 008 | Context-scoped file explorer with quick-open and diff-aware refresh — fast navigation without unnecessary reloads | 305–340 |
-| 009 | Title generation via internal `title` agent — eliminate external dependency for session titles | 341–374 |
-| 010 | Split CI pipeline: quality on push, release on tag, smoke on minor-tag — fast feedback without expensive builds | 375–410 |
-| 011 | Unified server setup wizard (onboarding + settings) — guide new users and consolidate setup flow | 411–449 |
-| 012 | Migration to Material Symbols via `material_symbols_icons` — broader icon coverage aligned with MD3 | 450–484 |
-| 013 | MD3 `WindowSizeClass` with 5 breakpoint tiers — consistent responsive layout without magic numbers | 485–528 |
-| 014 | Centralized design tokens (`AppShapes` + `BrandColor`) — MD3 shape scale and fallback colors without scattered hex values | 529–574 |
-| 015 | Platform-specific icon pipeline (tray, notification, macOS) via `make icons` — reproducible assets per target | 575–618 |
-| 016 | Hybrid file-backed cache for large chat payloads — eliminate SharedPreferences size limits | 619–655 |
-| 017 | Android foreground service with `START_STICKY` — reliable monitoring that survives process death | 656–692 |
-| 018 | Dedicated Dio instance for SSE with isolated connection pool — prevent stream eviction by regular HTTP requests | 693–744 |
-| 019 | Defer `PATCH /config` during active server processing — prevent false abort from `Instance.dispose()` on server | 745–789 |
-| 020 | Session-level SWR cache with persisted LRU snapshots — instant reopen of long sessions with background revalidation | 790–849 |
-| 021 | Context-scoped New Chat draft state — prevent cross-project draft leakage during fast SWR switches | 850–893 |
-| 022 | Unified project context controls with sidebar session previews — integrated navigation while preserving `serverId::scopeId` ownership | 894–934 |
-| 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web; community reference openchamber added as secondary source | 951–1074 |
-| 024 | Modal Enter keyboard policy for safe dialogs — speed up keyboard confirmation without enabling destructive or ambiguous modal flows | 1076–1149 |
-| 025 | Settled Assistant-Work Disclosure Ownership — client-side architectural ownership to prevent open/close thrash, scroll jumps on session return | 1151–1193 |
-| 026 | ⚠️ SUPERSEDED — Local PTY shell replaced by server-hosted PTY (ADR-027) | 1195–1251 |
-| 027 | Server-hosted PTY terminal with embedded client rendering — runs on OpenCode host in active project directory, client renders via streaming transport, local flutter_pty removed, close/minimize/maximize semantics preserved, composer hides on compact/mobile | 1253–1313 |
-| 028 | Unified scroll ownership via `_ScrollOwner` enum — eliminate scroll jumping across send/return/pagination triggers, user drag priority, force scroll bypass; additive guardrails cover passive provider scroll suppression, manual follow pause near bottom, response-settle shrink-snap suppression, duplicate return-to-chat scoping, queued cached restore targets for settled-vs-active session return, active-turn/global-fallback guards against passive background settle, a single reading-mode final reveal path for long answers, deferred tool-only merge until settlement to prevent active-turn structural shrink, and a narrow active-turn shrink heal while passive follow remains enabled | 1326–1407 |
-| 029 | Host-discovered quota and rate-limit monitoring for OpenChamber parity — server-host quota ownership, no manual credentials, strategy-chain transport (REST/Shell), popup-only UI (compact-first), grouped providers with pace/progress, explicit parity opt-in | 1411–1456 |
+| 001 | Multi-server with profiles, scoped persistence, and secure credentials — prevent cross-server leakage | 40–74 |
+| 002 | Context isolation `serverId::directory` with serialized transition queue — prevent race conditions on project switch | 75–112 |
+| 003 | Realtime-first sync with degraded fallback and platform-aware background policy — maintain live UX without losing offline data | 113–163 |
+| 004 | Chat with slim orchestrators and decomposed part-file clusters — maintainability on high-change surfaces | 164–199 |
+| 005 | Composer pipeline for multimodal input, triggers (`@!/`) and send/stop — rich composition without breaking flow | 200–236 |
+| 006 | Speech input with `SpeechInputService`, Sherpa/Moonshine, Parakeet V3, and SenseVoice (sherpa_onnx offline recognition) on desktop, native STT on Android; Linux defaults to Parakeet with native→Parakeet migration — pluggable by platform | 237–287 |
+| 007 | Modular settings with typed `SettingsProvider` + `ExperienceSettings` — unified persistence desktop/mobile | 288–324 |
+| 008 | Context-scoped file explorer with quick-open and diff-aware refresh — fast navigation without unnecessary reloads | 325–360 |
+| 009 | Title generation via internal `title` agent — eliminate external dependency for session titles | 361–394 |
+| 010 | Split CI pipeline: quality on push, release on tag, smoke on minor-tag — fast feedback without expensive builds | 395–430 |
+| 011 | Unified server setup wizard (onboarding + settings) — guide new users and consolidate setup flow | 431–469 |
+| 012 | Migration to Material Symbols via `material_symbols_icons` — broader icon coverage aligned with MD3 | 470–504 |
+| 013 | MD3 `WindowSizeClass` with 5 breakpoint tiers — consistent responsive layout without magic numbers | 505–548 |
+| 014 | Centralized design tokens (`AppShapes` + `BrandColor`) — MD3 shape scale and fallback colors without scattered hex values | 549–594 |
+| 015 | Platform-specific icon pipeline (tray, notification, macOS) via `make icons` — reproducible assets per target | 595–638 |
+| 016 | Hybrid file-backed cache for large chat payloads — eliminate SharedPreferences size limits | 639–675 |
+| 017 | Android foreground service with `START_STICKY` — reliable monitoring that survives process death | 676–712 |
+| 018 | Dedicated Dio instance for SSE with isolated connection pool — prevent stream eviction by regular HTTP requests | 713–764 |
+| 019 | Defer `PATCH /config` during active server processing — prevent false abort from `Instance.dispose()` on server | 765–809 |
+| 020 | Session-level SWR cache with persisted LRU snapshots — instant reopen of long sessions with background revalidation | 810–869 |
+| 021 | Context-scoped New Chat draft state — prevent cross-project draft leakage during fast SWR switches | 870–913 |
+| 022 | Unified project context controls with sidebar session previews — integrated navigation while preserving `serverId::scopeId` ownership | 914–954 |
+| 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web; community reference openchamber added as secondary source | 955–1077 |
+| 024 | Modal Enter keyboard policy for safe dialogs — speed up keyboard confirmation without enabling destructive or ambiguous modal flows | 1078–1152 |
+| 025 | Settled Assistant-Work Disclosure Ownership — client-side architectural ownership to prevent open/close thrash, scroll jumps on session return | 1153–1204 |
+| 026 | ⚠️ SUPERSEDED — Local PTY shell replaced by server-hosted PTY (ADR-027) | 1205–1263 |
+| 027 | Server-hosted PTY terminal with embedded client rendering — runs on OpenCode host in active project directory, client renders via streaming transport, local flutter_pty removed, close/minimize/maximize semantics preserved, composer hides on compact/mobile | 1264–1325 |
+| 028 | Unified scroll ownership via `_ScrollOwner` enum — eliminate scroll jumping across send/return/pagination triggers, user drag priority, force scroll bypass; additive guardrails cover passive provider scroll suppression, manual follow pause near bottom, response-settle shrink-snap suppression, duplicate return-to-chat scoping, queued cached restore targets for settled-vs-active session return, active-turn/global-fallback guards against passive background settle, a single reading-mode final reveal path for long answers, deferred tool-only merge until settlement to prevent active-turn structural shrink, and a narrow active-turn shrink heal while passive follow remains enabled | 1326–1406 |
+| 029 | Host-discovered quota and rate-limit monitoring for OpenChamber parity — server-host quota ownership, no manual credentials, strategy-chain transport (REST/Shell), popup-only UI (compact-first), grouped providers with pace/progress, explicit parity opt-in | 1407–1456 |
 
 ## 🗺 CODEBASE Quick Reference (details in `CODEBASE.md`)
 
@@ -83,17 +83,17 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 
 | Makefile Topic | Lines |
 |----------------|-------|
-| Help and command index (`help`) | 20–47 |
-| Dependencies, codegen, and theme sync (`deps`, `gen`, `theme-sync*`) | 49–59 |
-| Tray template preparation (`tray-prepare`) | 63–75 |
-| Platform tray icons (`icons-tray`) | 76–98 |
-| App icon generation (`icons-app`) | 99–149 |
-| Icon validation checks (`icons-check`) | 150–220 |
-| Analyze and test flows (`analyze`, `test*`, `coverage`, `smoke`) | 222–260 |
-| Desktop build and delivery (`desktop`) | 262–280 |
-| Android build and Telegram upload (`android`) | 281–313 |
-| Release/version flow (`release`) | 316–339 |
-| Cleanup (`clean`) | 340–342 |
+| Help and command index (`help`) | 29–56 |
+| Dependencies, codegen, and theme sync (`deps`, `gen`, `theme-sync*`) | 58–69 |
+| Tray template preparation (`tray-prepare`) | 73–85 |
+| Platform tray icons (`icons-tray`) | 86–108 |
+| App icon generation (`icons-app`) | 109–158 |
+| Icon validation checks (`icons-check`) | 159–229 |
+| Analyze and test flows (`analyze`, `test*`, `coverage`, `smoke`) | 231–266 |
+| Desktop build and delivery (`desktop`) | 271–304 |
+| Android build and Telegram upload (`android`) | 306–380 |
+| Release/version flow (`release`) | 384–407 |
+| Cleanup (`clean`) | 408–410 |
 
 ## 📌 Line-Scoped Read Policy (`ADR.md`, `CODEBASE.md`, and `Makefile`)
 

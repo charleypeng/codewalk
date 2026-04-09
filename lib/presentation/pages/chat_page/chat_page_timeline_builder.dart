@@ -359,7 +359,19 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                             ),
                                             tooltip: 'Compact Context',
                                             padding: EdgeInsets.zero,
-                                            itemBuilder: (context) {
+                                            itemBuilder: (popupContext) {
+                                              // Pre-trigger quota fetch using
+                                              // the main tree context that is
+                                              // guaranteed to have providers.
+                                              final serverId = context
+                                                  .read<AppProvider>()
+                                                  .activeServer
+                                                  ?.id;
+                                              context
+                                                  .read<QuotaProvider>()
+                                                  .ensureLoaded(
+                                                    serverId: serverId,
+                                                  );
                                               return [
                                                 PopupMenuItem<void>(
                                                   enabled: false,

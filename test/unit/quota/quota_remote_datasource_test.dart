@@ -136,4 +136,80 @@ void main() {
       );
     },
   );
+
+  test(
+    'falls back to shell when REST returns non-404 error (e.g. 500)',
+    () async {
+      final dio = Dio();
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            if (options.path == '/api/quota/providers') {
+              // Simulate a 500 internal server error – previously this
+              // returned an empty list instead of null, preventing the
+              // shell fallback from being attempted.
+              handler.reject(
+                DioException(
+                  requestOptions: options,
+                  response: Response<dynamic>(
+                    requestOptions: options,
+                    statusCode: 500,
+                  ),
+                ),
+              );
+              return;
+            }
+            if (options.path == '/session' && options.method == 'POST') {
+              handler.resolve(
+                Response<dynamic>(
+                  requestOptions: options,
+                  statusCode: 200,
+                  data: <String, dynamic>{'id': 'ses_500_fallback'},
+                ),
+              );
+              return;
+            }
+            if (options.path == '/session/ses_500_fallback/shell') {
+              handler.resolve(
+                Response<dynamic>(
+                  requestOptions: options,
+                  statusCode: 200,
+                  data: <String, dynamic>{
+                    'parts': <Map<String, dynamic>>[
+                      <String, dynamic>{
+                        'type': 'text',
+                        'text':
+                            'CW_QUOTA_JSON:{"results":[{"providerId":"claude","providerName":"Claude","ok":true,"configured":true,"usage":{"windows":{"5h":{"usedPercent":30}}},"fetchedAt":1}]}',
+                      },
+                    ],
+                  },
+                ),
+              );
+              return;
+            }
+            if (options.path == '/session/ses_500_fallback' &&
+                options.method == 'DELETE') {
+              handler.resolve(
+                Response<dynamic>(requestOptions: options, statusCode: 200),
+              );
+              return;
+            }
+            handler.reject(
+              DioException(
+                requestOptions: options,
+                error: 'Unexpected ${options.path}',
+              ),
+            );
+          },
+        ),
+      );
+
+      final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
+      final results = await dataSource.fetchQuotaResults();
+
+      expect(results, hasLength(1));
+      expect(results.first.providerId, 'claude');
+      expect(results.first.usage?.windows['5h']?.usedPercent, 30);
+    },
+  );
 }

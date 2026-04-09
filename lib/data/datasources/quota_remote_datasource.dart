@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 
+import '../../core/logging/app_logger.dart';
 import '../../domain/entities/quota.dart';
 import '../../presentation/services/chat_title_generator.dart';
 
@@ -21,8 +22,10 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
   Future<List<QuotaProviderResult>> fetchQuotaResults() async {
     final viaRest = await _fetchViaOpenChamberRest();
     if (viaRest != null) {
+      AppLogger.debug('[Quota] REST path returned ${viaRest.length} results');
       return viaRest;
     }
+    AppLogger.debug('[Quota] REST path unavailable, trying shell fallback');
     return _fetchViaShellFallback();
   }
 
@@ -30,10 +33,14 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
     try {
       final response = await dio.get<dynamic>('/api/quota/providers');
       if (response.statusCode != 200) {
+        AppLogger.debug(
+          '[Quota] REST /api/quota/providers returned ${response.statusCode}',
+        );
         return null;
       }
       final payload = response.data;
       if (payload is! Map) {
+        AppLogger.debug('[Quota] REST payload is not a Map: ${payload.runtimeType}');
         return null;
       }
       final providers =
@@ -43,19 +50,26 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
               .where((item) => item.isNotEmpty)
               .toList(growable: false);
       if (providers.isEmpty) {
+        AppLogger.debug('[Quota] REST returned empty providers list');
         return const <QuotaProviderResult>[];
       }
+      AppLogger.debug('[Quota] REST found providers: $providers');
       final results = await Future.wait(
         providers.map(_fetchQuotaForProviderRest),
       );
       return results.whereType<QuotaProviderResult>().toList(growable: false);
     } on DioException catch (error) {
-      if (error.response?.statusCode == 404) {
-        return null;
-      }
-      return const <QuotaProviderResult>[];
-    } catch (_) {
-      return const <QuotaProviderResult>[];
+      // Any DioException means the REST endpoint is not available on this
+      // host.  Return null so the strategy chain falls through to the shell
+      // fallback instead of silently returning an empty list.
+      AppLogger.debug(
+        '[Quota] REST DioException (status=${error.response?.statusCode}): '
+        '${error.type}',
+      );
+      return null;
+    } catch (error) {
+      AppLogger.debug('[Quota] REST unexpected error: $error');
+      return null;
     }
   }
 
@@ -85,8 +99,10 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
     try {
       sessionId = await _createEphemeralSession();
       if (sessionId == null) {
+        AppLogger.debug('[Quota] Shell fallback: failed to create session');
         return const <QuotaProviderResult>[];
       }
+      AppLogger.debug('[Quota] Shell fallback: session $sessionId created');
       final response = await dio.post<dynamic>(
         '/session/$sessionId/shell',
         data: <String, dynamic>{
@@ -95,19 +111,34 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
         },
       );
       if (response.statusCode != 200 || response.data is! Map) {
+        AppLogger.debug(
+          '[Quota] Shell fallback: bad response '
+          '(status=${response.statusCode}, '
+          'type=${response.data.runtimeType})',
+        );
         return const <QuotaProviderResult>[];
       }
-      final output = _extractShellJsonPayload(
-        Map<String, dynamic>.from(response.data as Map),
-      );
+      final envelope = Map<String, dynamic>.from(response.data as Map);
+      final output = _extractShellJsonPayload(envelope);
       if (output == null) {
+        AppLogger.debug(
+          '[Quota] Shell fallback: no CW_QUOTA_JSON found in response. '
+          'Keys: ${envelope.keys.toList()}',
+        );
         return const <QuotaProviderResult>[];
       }
       final decoded = jsonDecode(output);
       if (decoded is! Map) {
+        AppLogger.debug(
+          '[Quota] Shell fallback: decoded payload is not a Map',
+        );
         return const <QuotaProviderResult>[];
       }
-      final results = decoded['results'] as List<dynamic>? ?? const <dynamic>[];
+      final results =
+          decoded['results'] as List<dynamic>? ?? const <dynamic>[];
+      AppLogger.debug(
+        '[Quota] Shell fallback: got ${results.length} raw results',
+      );
       return results
           .whereType<Map>()
           .map(
@@ -115,7 +146,8 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
                 QuotaProviderResult.fromJson(Map<String, dynamic>.from(item)),
           )
           .toList(growable: false);
-    } catch (_) {
+    } catch (error) {
+      AppLogger.debug('[Quota] Shell fallback error: $error');
       return const <QuotaProviderResult>[];
     } finally {
       if (sessionId != null) {
