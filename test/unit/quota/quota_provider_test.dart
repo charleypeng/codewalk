@@ -62,24 +62,24 @@ QuotaProviderResult _buildOpenRouterResult() {
 }
 
 void main() {
-  test('QuotaEntry treats zero remaining currency labels as exhausted', () {
-    const entry = QuotaEntry(
-      providerId: 'openrouter',
-      providerName: 'OpenRouter',
-      label: 'Credits',
-      usedPercent: null,
-      remainingPercent: null,
-      windowSeconds: null,
-      resetAfterSeconds: null,
-      resetAt: null,
-      valueLabel: r'$0.00 remaining',
-      paceInfo: null,
-    );
+  test(
+    'UsageWindow hides zero remaining currency labels without usage data',
+    () {
+      const window = UsageWindow(
+        usedPercent: null,
+        remainingPercent: null,
+        windowSeconds: null,
+        resetAfterSeconds: null,
+        resetAt: null,
+        resetAtFormatted: null,
+        resetAfterFormatted: null,
+        valueLabel: r'$0.00 remaining',
+      );
 
-    expect(entry.hasZeroRemainingValueLabel, isTrue);
-    expect(entry.effectiveUsedPercent, 100);
-    expect(entry.severityScore, 100);
-  });
+      expect(window.isZeroRemainingCurrencyValue, isTrue);
+      expect(window.hasVisibleData, isFalse);
+    },
+  );
 
   test(
     'QuotaProvider orders mixed windows by highest used percent first',
@@ -132,7 +132,7 @@ void main() {
     },
   );
 
-  testWidgets('QuotaEntryRow shows determinate full bar for zero remaining', (
+  testWidgets('QuotaEntryRow keeps value-only credit rows indeterminate', (
     tester,
   ) async {
     const entry = QuotaEntry(
@@ -157,8 +157,45 @@ void main() {
     final indicator = tester.widget<LinearProgressIndicator>(
       find.byType(LinearProgressIndicator),
     );
-    expect(indicator.value, 1.0);
+    expect(indicator.value, isNull);
   });
+
+  test(
+    'QuotaProvider hides zero-credit only providers from visible groups',
+    () async {
+      final provider = QuotaProvider(
+        remoteDataSource: _FakeQuotaRemoteDataSource([
+          QuotaProviderResult(
+            providerId: 'openrouter',
+            providerName: 'OpenRouter',
+            ok: true,
+            configured: true,
+            usage: QuotaProviderUsage(
+              windows: const {
+                'credits': UsageWindow(
+                  usedPercent: null,
+                  remainingPercent: null,
+                  windowSeconds: null,
+                  resetAfterSeconds: null,
+                  resetAt: null,
+                  resetAtFormatted: null,
+                  resetAfterFormatted: null,
+                  valueLabel: r'$0.00 remaining',
+                ),
+              },
+              models: const {},
+            ),
+            error: null,
+            fetchedAt: 1,
+          ),
+        ]),
+      );
+
+      await provider.ensureLoaded(serverId: 'srv_test');
+
+      expect(provider.groups, isEmpty);
+    },
+  );
 
   testWidgets(
     'QuotaPopupSection shows subtle first-load state and then hides when empty',
