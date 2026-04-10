@@ -155,6 +155,8 @@ void main() {
       expect(script, contains("p.join(CFG, 'antigravity-accounts.json')"));
       expect(script, contains('function rGem(a)'));
       expect(script, contains('function rAnti()'));
+      expect(script, contains('v1internal:retrieveUserQuota'));
+      expect(script, contains('Client-Metadata'));
       expect(script, isNot(contains('GOCSPX-')));
       expect(script, isNot(contains('.apps.googleusercontent.com')));
     },

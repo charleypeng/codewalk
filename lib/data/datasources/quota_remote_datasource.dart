@@ -306,6 +306,11 @@ const AG = [
   p.join(DATA, 'antigravity-accounts.json'),
 ];
 const GEP = ['https://cloudcode-pa.googleapis.com'];
+const GHD = {
+  'User-Agent': 'antigravity/1.11.5 windows/amd64',
+  'X-Goog-Api-Client': 'google-cloud-sdk vscode_cloudshelleditor/0.1',
+  'Client-Metadata': '{"ideType":"IDE_UNSPECIFIED","platform":"PLATFORM_UNSPECIFIED","pluginType":"GEMINI"}',
+};
 
 function rAuth() {
   try {
@@ -596,10 +601,10 @@ async function fGM(src) {
       const tm = ac ? setTimeout(() => ac.abort(), 15000) : null;
       const res = await fetch(ep + '/v1internal:fetchAvailableModels', {
         method: 'POST',
-        headers: {
+        headers: Object.assign({
           Authorization: 'Bearer ' + src.accessToken,
           'Content-Type': 'application/json',
-        },
+        }, GHD),
         body: JSON.stringify(body),
         signal: ac && ac.signal,
       });
@@ -608,6 +613,29 @@ async function fGM(src) {
     } catch {}
   }
   return null;
+}
+
+async function fGQB(src) {
+  if (src.sourceId !== 'gemini') return null;
+  const body = src.projectId ? { project: src.projectId } : {};
+  try {
+    const ac = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const tm = ac ? setTimeout(() => ac.abort(), 15000) : null;
+    const res = await fetch('https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + src.accessToken,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+      signal: ac && ac.signal,
+    });
+    if (tm) clearTimeout(tm);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
 async function fG(a) {
@@ -625,9 +653,32 @@ async function fG(a) {
       errs.push(src.sourceLabel + ': Host access token expired');
       continue;
     }
+    let merged = false;
+    if (src.sourceId === 'gemini') {
+      const qp = await fGQB(src);
+      const buckets = Array.isArray(qp && qp.buckets) ? qp.buckets : [];
+      for (const b of buckets) {
+        const modelId = pickS(b && b.modelId);
+        if (!modelId) continue;
+        const remF = toN(b && b.remainingFraction);
+        const remP = remF !== null ? Math.round(remF * 100) : null;
+        const used = remP !== null ? Math.max(0, 100 - remP) : null;
+        const rA = toTs(b && b.resetTime);
+        const w = gWin(src.sourceId, rA);
+        const scoped = modelId.startsWith(src.sourceId + '/')
+          ? modelId
+          : src.sourceId + '/' + modelId;
+        models[scoped] = { windows: {} };
+        models[scoped].windows[w.label] = tUW({
+          uP: used,
+          wS: w.seconds,
+          rA: rA,
+        });
+        merged = true;
+      }
+    }
     const mp = await fGM(src);
     const raw = mp && typeof mp === 'object' && mp.models && typeof mp.models === 'object' ? mp.models : {};
-    let merged = false;
     for (const key of Object.keys(raw)) {
       const md = raw[key] || {};
       const qi = md && md.quotaInfo && typeof md.quotaInfo === 'object' ? md.quotaInfo : {};
