@@ -290,54 +290,460 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
   String _buildQuotaShellCommand() {
     // Full Base64-encoded JS keeps the shell transport to one line while still
     // allowing real host API fetches for supported providers.
-    const jsScript =
-        "const fs=require('fs'),os=require('os'),p=require('path');"
-        "const P='CW_QUOTA_JSON:';"
-        "function rAuth(){try{const f=p.join(process.env.XDG_DATA_HOME||p.join(os.homedir(),'.local','share'),'opencode','auth.json');"
-        "if(!fs.existsSync(f))return{};const r=fs.readFileSync(f,'utf8').trim();"
-        'if(!r)return{};return JSON.parse(r);}catch{return{};}}'
-        'function getE(a,al){for(const x of al)if(a[x])return a[x];return null;}'
-        "function nE(e){if(!e)return null;if(typeof e==='string')return{token:e};if(typeof e==='object')return e;return null;}"
-        "function toN(v){if(typeof v==='number'&&Number.isFinite(v))return v;if(typeof v==='string'){const p=Number(v);return Number.isFinite(p)?p:null;}return null;}"
-        "function toTs(v){if(!v)return null;if(typeof v==='number')return v<1e12?v*1000:v;if(typeof v==='string'){const p=Date.parse(v);return Number.isNaN(p)?null:p;}return null;}"
-        'function bR({pId,pName,ok,use,err}){return{providerId:pId,providerName:pName,ok,configured:true,usage:use??null,error:err??null,fetchedAt:Date.now()};}'
-        "function tUW({uP,wS,rA,vL}){const c=typeof uP==='number'?Math.max(0,Math.min(100,uP)):null;const rS=typeof rA==='number'?Math.max(0,Math.round((rA-Date.now())/1000)):null;return{usedPercent:c,remainingPercent:c===null?null:Math.max(0,100-c),windowSeconds:typeof wS==='number'?wS:null,resetAfterSeconds:rS,resetAt:typeof rA==='number'?rA:null,resetAtFormatted:null,resetAfterFormatted:null,valueLabel:vL??null};}"
-        "async function fC(a){const e=nE(getE(a,['anthropic','claude']));const t=e&&(e.access||e.token);if(!t)return null;"
-        "try{const res=await fetch('https://api.anthropic.com/api/oauth/usage',{headers:{Authorization:'Bearer '+t,'anthropic-beta':'oauth-2025-04-20'}});"
-        "if(!res.ok)return bR({pId:'claude',pName:'Claude',ok:false,err:'API error: '+res.status});"
-        'const d=await res.json();const w={};const add=(k,f)=>{if(d&&d[f]){const u=toN(d[f].utilization);'
-        'const r=toTs(d[f].resets_at);w[k]=tUW({uP:u,wS:null,rA:r});}};'
-        "add('5h','five_hour');add('7d','seven_day');add('7d-sonnet','seven_day_sonnet');add('7d-opus','seven_day_opus');"
-        "return bR({pId:'claude',pName:'Claude',ok:true,use:{windows:w}});"
-        "}catch(err){return bR({pId:'claude',pName:'Claude',ok:false,err:err.message});}}"
-        "async function fO(a){const e=nE(getE(a,['openrouter']));const k=e&&(e.key||e.token);if(!k)return null;"
-        "try{const res=await fetch('https://openrouter.ai/api/v1/credits',{headers:{Authorization:'Bearer '+k,'Content-Type':'application/json'}});"
-        "if(!res.ok)return bR({pId:'openrouter',pName:'OpenRouter',ok:false,err:'API error: '+res.status});"
-        'const d=await res.json();const c=d&&d.data?d.data:{};const tC=toN(c.total_credits);const tU=toN(c.total_usage);'
-        'const uP=(tC!==null&&tU!==null&&tC>0)?Math.max(0,Math.min(100,(tU/tC)*100)):null;'
-        'const rem=(tC!==null&&tU!==null)?Math.max(0,tC-tU):null;'
-        "return bR({pId:'openrouter',pName:'OpenRouter',ok:true,use:{windows:{"
-        "credits:tUW({uP:uP,wS:null,rA:null,vL:rem!==null?'\$'+rem.toFixed(2)+' remaining':null})}}});"
-        "}catch(err){return bR({pId:'openrouter',pName:'OpenRouter',ok:false,err:err.message});}}"
-        "async function fX(a){const e=nE(getE(a,['openai','codex','chatgpt']));const t=e&&(e.access||e.token),acc=e&&e.accountId;if(!t)return null;"
-        "try{const h={Authorization:'Bearer '+t,'Content-Type':'application/json'};if(acc)h['ChatGPT-Account-Id']=acc;"
-        "const res=await fetch('https://chatgpt.com/backend-api/wham/usage',{method:'GET',headers:h});"
-        "if(!res.ok)return bR({pId:'codex',pName:'Codex',ok:false,err:res.status===401?'Session expired — please re-authenticate with OpenAI':'API error: '+res.status});"
-        'const d=await res.json();const p=d&&d.rate_limit?d.rate_limit.primary_window:null;const s=d&&d.rate_limit?d.rate_limit.secondary_window:null;const cr=d&&d.credits?d.credits:null;const w={};'
-        "if(p)w['5h']=tUW({uP:toN(p.used_percent),wS:toN(p.limit_window_seconds),rA:toTs(p.reset_at)});"
-        "if(s)w['weekly']=tUW({uP:toN(s.used_percent),wS:toN(s.limit_window_seconds),rA:toTs(s.reset_at)});"
-        "if(cr){const bal=toN(cr.balance);const lab=cr.unlimited?'Unlimited':(bal!==null?'\$'+bal.toFixed(2)+' remaining':null);w['credits']=tUW({uP:null,wS:null,rA:null,vL:lab});}"
-        "return bR({pId:'codex',pName:'Codex',ok:true,use:{windows:w}});}catch(err){return bR({pId:'codex',pName:'Codex',ok:false,err:err.message});}}"
-        "async function fGH(a){const e=nE(getE(a,['github-copilot','copilot']));const t=e&&(e.access||e.token);if(!t)return null;"
-        "try{const res=await fetch('https://api.github.com/copilot_internal/user',{headers:{Authorization:'token '+t,Accept:'application/json','Editor-Version':'vscode/1.96.2','X-Github-Api-Version':'2025-04-01'}});"
-        "if(!res.ok)return bR({pId:'github-copilot',pName:'GitHub Copilot',ok:false,err:'API error: '+res.status});"
-        'const d=await res.json();const q=d&&d.quota_snapshots?d.quota_snapshots:{};const rA=toTs(d&&d.quota_reset_date);const w={};'
-        'const aw=(l,s)=>{if(!s)return;const en=toN(s.entitlement),re=toN(s.remaining);const uP=(en!==null&&re!==null&&en>0)?Math.max(0,100-(re/en)*100):null;const vL=(en!==null&&re!==null)?re.toFixed(0)+\' / \' + en.toFixed(0)+\' left\':null;w[l]=tUW({uP:uP,wS:null,rA:rA,vL:vL});};'
-        "aw('chat',q.chat);aw('completions',q.completions);aw('premium',q.premium_interactions);"
-        "return bR({pId:'github-copilot',pName:'GitHub Copilot',ok:true,use:{windows:w}});}catch(err){return bR({pId:'github-copilot',pName:'GitHub Copilot',ok:false,err:err.message});}}"
-        '(async()=>{const a=rAuth();const authKeys=Object.keys(a);const R=[];const c=await fC(a);if(c)R.push(c);const o=await fO(a);if(o)R.push(o);const x=await fX(a);if(x)R.push(x);const gh=await fGH(a);if(gh)R.push(gh);'
-        "const unsupported=authKeys.filter(k=>!['anthropic','claude','openrouter','openai','codex','chatgpt','github-copilot','copilot'].includes(k));"
-        'console.log(P+JSON.stringify({results:R,meta:{authKeys:authKeys,unsupportedConfigured:unsupported,resultProviderIds:R.map(r=>r.providerId)}}));})().catch(err=>{console.log(P+JSON.stringify({results:[],meta:{error:String(err)}}));});';
+    const jsScript = r'''
+const fs = require('fs');
+const os = require('os');
+const p = require('path');
+
+const P = 'CW_QUOTA_JSON:';
+const CFG = p.join(os.homedir(), '.config', 'opencode');
+const DATA = p.join(
+  process.env.XDG_DATA_HOME || p.join(os.homedir(), '.local', 'share'),
+  'opencode',
+);
+const AG = [
+  p.join(CFG, 'antigravity-accounts.json'),
+  p.join(DATA, 'antigravity-accounts.json'),
+];
+const GEP = [
+  'https://daily-cloudcode-pa.sandbox.googleapis.com',
+  'https://autopush-cloudcode-pa.sandbox.googleapis.com',
+  'https://cloudcode-pa.googleapis.com',
+];
+
+function rAuth() {
+  try {
+    const f = p.join(DATA, 'auth.json');
+    if (!fs.existsSync(f)) return {};
+    const r = fs.readFileSync(f, 'utf8').trim();
+    if (!r) return {};
+    return JSON.parse(r);
+  } catch {
+    return {};
+  }
+}
+
+function rJson(f) {
+  try {
+    if (!fs.existsSync(f)) return null;
+    const r = fs.readFileSync(f, 'utf8').trim();
+    if (!r) return null;
+    const j = JSON.parse(r);
+    return j && typeof j === 'object' ? j : null;
+  } catch {
+    return null;
+  }
+}
+
+function getE(a, al) {
+  for (const x of al) {
+    if (a[x]) return a[x];
+  }
+  return null;
+}
+
+function nE(e) {
+  if (!e) return null;
+  if (typeof e === 'string') return { token: e };
+  if (typeof e === 'object') return e;
+  return null;
+}
+
+function asO(v) {
+  return v && typeof v === 'object' && !Array.isArray(v) ? v : null;
+}
+
+function asS(v) {
+  if (typeof v !== 'string') return null;
+  const t = v.trim();
+  return t || null;
+}
+
+function pickS(...values) {
+  for (const value of values) {
+    const s = asS(value);
+    if (s) return s;
+  }
+  return null;
+}
+
+function toN(v) {
+  if (typeof v === 'number' && Number.isFinite(v)) return v;
+  if (typeof v === 'string') {
+    const p = Number(v);
+    return Number.isFinite(p) ? p : null;
+  }
+  return null;
+}
+
+function toTs(v) {
+  if (!v) return null;
+  if (typeof v === 'number') return v < 1e12 ? v * 1000 : v;
+  if (typeof v === 'string') {
+    const p = Date.parse(v);
+    return Number.isNaN(p) ? null : p;
+  }
+  return null;
+}
+
+function bR({ pId, pName, ok, use, err }) {
+  return {
+    providerId: pId,
+    providerName: pName,
+    ok,
+    configured: true,
+    usage: use ?? null,
+    error: err ?? null,
+    fetchedAt: Date.now(),
+  };
+}
+
+function tUW({ uP, wS, rA, vL }) {
+  const c = typeof uP === 'number' ? Math.max(0, Math.min(100, uP)) : null;
+  const rS =
+    typeof rA === 'number' ? Math.max(0, Math.round((rA - Date.now()) / 1000)) : null;
+  return {
+    usedPercent: c,
+    remainingPercent: c === null ? null : Math.max(0, 100 - c),
+    windowSeconds: typeof wS === 'number' ? wS : null,
+    resetAfterSeconds: rS,
+    resetAt: typeof rA === 'number' ? rA : null,
+    resetAtFormatted: null,
+    resetAfterFormatted: null,
+    valueLabel: vL ?? null,
+  };
+}
+
+function gWin(s, rA) {
+  if (s === 'antigravity') {
+    const rem =
+      typeof rA === 'number' ? Math.max(0, Math.round((rA - Date.now()) / 1000)) : null;
+    if (rem !== null && rem > 36000) return { label: 'daily', seconds: 86400 };
+    return { label: '5h', seconds: 18000 };
+  }
+  return { label: 'daily', seconds: 86400 };
+}
+
+async function fC(a) {
+  const e = nE(getE(a, ['anthropic', 'claude']));
+  const t = e && (e.access || e.token);
+  if (!t) return null;
+  try {
+    const res = await fetch('https://api.anthropic.com/api/oauth/usage', {
+      headers: {
+        Authorization: 'Bearer ' + t,
+        'anthropic-beta': 'oauth-2025-04-20',
+      },
+    });
+    if (!res.ok) {
+      return bR({ pId: 'claude', pName: 'Claude', ok: false, err: 'API error: ' + res.status });
+    }
+    const d = await res.json();
+    const w = {};
+    const add = (k, f) => {
+      if (d && d[f]) {
+        const u = toN(d[f].utilization);
+        const r = toTs(d[f].resets_at);
+        w[k] = tUW({ uP: u, wS: null, rA: r });
+      }
+    };
+    add('5h', 'five_hour');
+    add('7d', 'seven_day');
+    add('7d-sonnet', 'seven_day_sonnet');
+    add('7d-opus', 'seven_day_opus');
+    return bR({ pId: 'claude', pName: 'Claude', ok: true, use: { windows: w } });
+  } catch (err) {
+    return bR({ pId: 'claude', pName: 'Claude', ok: false, err: err.message });
+  }
+}
+
+async function fO(a) {
+  const e = nE(getE(a, ['openrouter']));
+  const k = e && (e.key || e.token);
+  if (!k) return null;
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/credits', {
+      headers: {
+        Authorization: 'Bearer ' + k,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!res.ok) {
+      return bR({
+        pId: 'openrouter',
+        pName: 'OpenRouter',
+        ok: false,
+        err: 'API error: ' + res.status,
+      });
+    }
+    const d = await res.json();
+    const c = d && d.data ? d.data : {};
+    const tC = toN(c.total_credits);
+    const tU = toN(c.total_usage);
+    const uP = tC !== null && tU !== null && tC > 0 ? Math.max(0, Math.min(100, (tU / tC) * 100)) : null;
+    const rem = tC !== null && tU !== null ? Math.max(0, tC - tU) : null;
+    return bR({
+      pId: 'openrouter',
+      pName: 'OpenRouter',
+      ok: true,
+      use: {
+        windows: {
+          credits: tUW({ uP: uP, wS: null, rA: null, vL: rem !== null ? '$' + rem.toFixed(2) + ' remaining' : null }),
+        },
+      },
+    });
+  } catch (err) {
+    return bR({ pId: 'openrouter', pName: 'OpenRouter', ok: false, err: err.message });
+  }
+}
+
+async function fX(a) {
+  const e = nE(getE(a, ['openai', 'codex', 'chatgpt']));
+  const t = e && (e.access || e.token);
+  const acc = e && e.accountId;
+  if (!t) return null;
+  try {
+    const h = {
+      Authorization: 'Bearer ' + t,
+      'Content-Type': 'application/json',
+    };
+    if (acc) h['ChatGPT-Account-Id'] = acc;
+    const res = await fetch('https://chatgpt.com/backend-api/wham/usage', {
+      method: 'GET',
+      headers: h,
+    });
+    if (!res.ok) {
+      return bR({
+        pId: 'codex',
+        pName: 'Codex',
+        ok: false,
+        err:
+          res.status === 401
+            ? 'Session expired — please re-authenticate with OpenAI'
+            : 'API error: ' + res.status,
+      });
+    }
+    const d = await res.json();
+    const p = d && d.rate_limit ? d.rate_limit.primary_window : null;
+    const s = d && d.rate_limit ? d.rate_limit.secondary_window : null;
+    const cr = d && d.credits ? d.credits : null;
+    const w = {};
+    if (p) {
+      w['5h'] = tUW({
+        uP: toN(p.used_percent),
+        wS: toN(p.limit_window_seconds),
+        rA: toTs(p.reset_at),
+      });
+    }
+    if (s) {
+      w.weekly = tUW({
+        uP: toN(s.used_percent),
+        wS: toN(s.limit_window_seconds),
+        rA: toTs(s.reset_at),
+      });
+    }
+    if (cr) {
+      const bal = toN(cr.balance);
+      const lab = cr.unlimited ? 'Unlimited' : bal !== null ? '$' + bal.toFixed(2) + ' remaining' : null;
+      w.credits = tUW({ uP: null, wS: null, rA: null, vL: lab });
+    }
+    return bR({ pId: 'codex', pName: 'Codex', ok: true, use: { windows: w } });
+  } catch (err) {
+    return bR({ pId: 'codex', pName: 'Codex', ok: false, err: err.message });
+  }
+}
+
+function rGem(a) {
+  const raw = nE(getE(a, ['google', 'google.oauth']));
+  const eo = asO(raw);
+  if (!eo) return null;
+  const oo = asO(eo.oauth) || eo;
+  const at = pickS(oo.access, oo.token, eo.access, eo.token);
+  if (!at) return null;
+  return {
+    sourceId: 'gemini',
+    sourceLabel: 'Gemini',
+    accessToken: at,
+    projectId: pickS(oo.projectId, oo.managedProjectId, eo.projectId, eo.managedProjectId),
+    expires: toTs(oo.expires || eo.expires),
+  };
+}
+
+function rAnti() {
+  for (const f of AG) {
+    const data = rJson(f);
+    const root = asO(data);
+    const accs = Array.isArray(root && root.accounts) ? root.accounts : [];
+    if (!accs.length) continue;
+    const idx = typeof (root && root.activeIndex) === 'number' ? root.activeIndex : 0;
+    const acc = asO(accs[idx]) || asO(accs[0]);
+    if (!acc) continue;
+    const at = pickS(acc.accessToken, acc.access);
+    if (!at) continue;
+    return {
+      sourceId: 'antigravity',
+      sourceLabel: 'Antigravity',
+      accessToken: at,
+      projectId: pickS(acc.projectId, acc.managedProjectId),
+      expires: toTs(acc.expires),
+      email: pickS(acc.email),
+    };
+  }
+  return null;
+}
+
+async function fGM(src) {
+  const body = src.projectId ? { project: src.projectId } : {};
+  for (const ep of GEP) {
+    try {
+      const ac = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const tm = ac ? setTimeout(() => ac.abort(), 15000) : null;
+      const res = await fetch(ep + '/v1internal:fetchAvailableModels', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + src.accessToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+        signal: ac && ac.signal,
+      });
+      if (tm) clearTimeout(tm);
+      if (res.ok) return await res.json();
+    } catch {}
+  }
+  return null;
+}
+
+async function fG(a) {
+  const srcs = [];
+  const gm = rGem(a);
+  if (gm) srcs.push(gm);
+  const ag = rAnti();
+  if (ag) srcs.push(ag);
+  if (!srcs.length) return null;
+
+  const models = {};
+  const errs = [];
+  for (const src of srcs) {
+    if (typeof src.expires === 'number' && src.expires <= Date.now()) {
+      errs.push(src.sourceLabel + ': Host access token expired');
+      continue;
+    }
+    const mp = await fGM(src);
+    const raw = mp && typeof mp === 'object' && mp.models && typeof mp.models === 'object' ? mp.models : {};
+    let merged = false;
+    for (const key of Object.keys(raw)) {
+      const md = raw[key] || {};
+      const qi = md && md.quotaInfo && typeof md.quotaInfo === 'object' ? md.quotaInfo : {};
+      const remF = toN(qi.remainingFraction);
+      const remP = remF !== null ? Math.round(remF * 100) : null;
+      const used = remP !== null ? Math.max(0, 100 - remP) : null;
+      const rA = toTs(qi.resetTime);
+      const w = gWin(src.sourceId, rA);
+      const scoped = key.startsWith(src.sourceId + '/') ? key : src.sourceId + '/' + key;
+      models[scoped] = {
+        windows: {},
+      };
+      models[scoped].windows[w.label] = tUW({ uP: used, wS: w.seconds, rA: rA });
+      merged = true;
+    }
+    if (!merged) errs.push(src.sourceLabel + ': No quota models visible');
+  }
+
+  if (!Object.keys(models).length) {
+    return bR({
+      pId: 'google',
+      pName: 'Google',
+      ok: false,
+      err: errs[0] || 'Failed to fetch Google quota',
+    });
+  }
+  return bR({
+    pId: 'google',
+    pName: 'Google',
+    ok: true,
+    use: {
+      windows: {},
+      models: models,
+    },
+  });
+}
+
+async function fGH(a) {
+  const e = nE(getE(a, ['github-copilot', 'copilot']));
+  const t = e && (e.access || e.token);
+  if (!t) return null;
+  try {
+    const res = await fetch('https://api.github.com/copilot_internal/user', {
+      headers: {
+        Authorization: 'token ' + t,
+        Accept: 'application/json',
+        'Editor-Version': 'vscode/1.96.2',
+        'X-Github-Api-Version': '2025-04-01',
+      },
+    });
+    if (!res.ok) {
+      return bR({
+        pId: 'github-copilot',
+        pName: 'GitHub Copilot',
+        ok: false,
+        err: 'API error: ' + res.status,
+      });
+    }
+    const d = await res.json();
+    const q = d && d.quota_snapshots ? d.quota_snapshots : {};
+    const rA = toTs(d && d.quota_reset_date);
+    const w = {};
+    const aw = (l, s) => {
+      if (!s) return;
+      const en = toN(s.entitlement);
+      const re = toN(s.remaining);
+      const uP = en !== null && re !== null && en > 0 ? Math.max(0, 100 - (re / en) * 100) : null;
+      const vL = en !== null && re !== null ? re.toFixed(0) + ' / ' + en.toFixed(0) + ' left' : null;
+      w[l] = tUW({ uP: uP, wS: null, rA: rA, vL: vL });
+    };
+    aw('chat', q.chat);
+    aw('completions', q.completions);
+    aw('premium', q.premium_interactions);
+    return bR({ pId: 'github-copilot', pName: 'GitHub Copilot', ok: true, use: { windows: w } });
+  } catch (err) {
+    return bR({ pId: 'github-copilot', pName: 'GitHub Copilot', ok: false, err: err.message });
+  }
+}
+
+(async () => {
+  const a = rAuth();
+  const authKeys = Object.keys(a);
+  const R = [];
+  const c = await fC(a);
+  if (c) R.push(c);
+  const o = await fO(a);
+  if (o) R.push(o);
+  const x = await fX(a);
+  if (x) R.push(x);
+  const g = await fG(a);
+  if (g) R.push(g);
+  const gh = await fGH(a);
+  if (gh) R.push(gh);
+  const unsupported = authKeys.filter(
+    (k) =>
+      !['anthropic', 'claude', 'openrouter', 'openai', 'codex', 'chatgpt', 'google', 'google.oauth', 'github-copilot', 'copilot'].includes(k),
+  );
+  console.log(
+    P +
+      JSON.stringify({
+        results: R,
+        meta: {
+          authKeys: authKeys,
+          unsupportedConfigured: unsupported,
+          resultProviderIds: R.map((r) => r.providerId),
+        },
+      }),
+  );
+})().catch((err) => {
+  console.log(P + JSON.stringify({ results: [], meta: { error: String(err) } }));
+});
+''';
 
     final b64 = base64Encode(utf8.encode(jsScript));
     // Single-line command — avoids multiline if/fi that OpenCode's eval truncates.
