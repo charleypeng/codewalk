@@ -347,19 +347,19 @@ android:
 	fi
 	@set -e; \
 	$(READ_PUBSPEC_VERSION_SH) \
-	flutter build apk --release --target-platform android-arm64 --split-per-abi --build-name "$$app_version_name" --build-number "$$app_version_code" $(QUIET); \
+	test_build_code=$$(date +%s); \
+	expected_metadata_version_code=$$((test_build_code + 2000)); \
+	flutter build apk --release --target-platform android-arm64 --split-per-abi --build-name "$$app_version_name" --build-number "$$test_build_code" $(QUIET); \
 	metadata_file="$(APK_METADATA_PATH)"; \
 	if [ ! -f "$$metadata_file" ]; then \
 		echo "Android build metadata not found: $$metadata_file"; \
 		exit 1; \
 	fi; \
-	metadata_pair=$$(python3 -c 'import json, sys; data = json.load(open(sys.argv[1])); element = data["elements"][0]; version_code = int(element["versionCode"]); print(f"{element['"'"'versionName'"'"']}+{version_code}+{version_code % 1000}")' "$$metadata_file"); \
+	metadata_pair=$$(python3 -c 'import json, sys; data = json.load(open(sys.argv[1])); element = data["elements"][0]; version_code = int(element["versionCode"]); print(f"{element['"'"'versionName'"'"']}+{version_code}")' "$$metadata_file"); \
 	metadata_version_name=$${metadata_pair%%+*}; \
-	metadata_rest=$${metadata_pair#*+}; \
-	metadata_version_code=$${metadata_rest%%+*}; \
-	metadata_build_code=$${metadata_pair##*+}; \
-	if [ "$$metadata_version_name" != "$$app_version_name" ] || [ "$$metadata_build_code" != "$$app_version_code" ]; then \
-		echo "Android build version mismatch: expected $$app_version_name+$$app_version_code but got versionName=$$metadata_version_name versionCode=$$metadata_version_code (build remainder $$metadata_build_code)"; \
+	metadata_version_code=$${metadata_pair#*+}; \
+	if [ "$$metadata_version_name" != "$$app_version_name" ] || [ "$$metadata_version_code" != "$$expected_metadata_version_code" ]; then \
+		echo "Android build version mismatch: expected $$app_version_name versionCode=$$expected_metadata_version_code but got versionName=$$metadata_version_name versionCode=$$metadata_version_code"; \
 		exit 1; \
 	fi; \
 	if [ -f "$(APK_DIR)/app-arm64-v8a-release.apk" ]; then \
@@ -371,11 +371,13 @@ android:
 		exit 1; \
 	fi; \
 	git_ref=$$(git rev-parse --short HEAD 2>/dev/null || echo local); \
-	upload_apk="$(APK_DIR)/codewalk-android-$${app_version_name}+$$app_version_code-$$git_ref.apk"; \
+	if [ -n "$$(git status --porcelain 2>/dev/null)" ]; then dirty_suffix='-dirty'; else dirty_suffix=''; fi; \
+	upload_apk="$(APK_DIR)/codewalk-android-$${app_version_name}+$$metadata_version_code-$$git_ref$$dirty_suffix.apk"; \
 	cp -f "$$source_apk" "$(APK_PATH)"; \
 	cp -f "$$source_apk" "$$upload_apk"; \
 	echo "APK ready (arm64-only): $(APK_PATH)"; \
 	echo "APK upload copy: $$upload_apk"; \
+	echo "APK Android version: $$app_version_name+$$metadata_version_code"; \
 	CAPTION_TEXT="$${HEY_CAPTION:-$$(git log -1 --pretty=%s 2>/dev/null || echo CodeWalk-Android-build)}"; \
 	HEY_ALLOW_DUPLICATE=1 HEY_SYNC=1 ~/bin/hey -f "$$upload_apk" "$$CAPTION_TEXT"
 
