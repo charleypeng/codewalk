@@ -7,6 +7,7 @@ ANDROID_KEY_PROPERTIES = android/key.properties
 ANALYZE_LOG = /tmp/flutter_analyze.log
 TEST_JOBS ?= 12
 FAST_EXCLUDE_TAGS ?= slow,integration
+ANDROID_BUILD_CODE_OFFSET ?= 2001
 
 READ_PUBSPEC_VERSION_SH = app_version=$$(awk '/^version:[[:space:]]*/{sub(/^version:[[:space:]]*/, "", $$0); print; exit}' pubspec.yaml); \
 	app_version_name=$$(printf '%s' "$$app_version" | cut -d+ -f1); \
@@ -17,7 +18,7 @@ READ_PUBSPEC_VERSION_SH = app_version=$$(awk '/^version:[[:space:]]*/{sub(/^vers
 	fi;
 
 NEXT_BUILD_CODE_SH = reference_build_code="$(1)"; \
-	next_build_code=$$(date +%s); \
+	next_build_code=$$(( $$(date +%s) + $(ANDROID_BUILD_CODE_OFFSET) )); \
 	if [ "$$next_build_code" -le "$$reference_build_code" ]; then \
 		next_build_code=$$((reference_build_code + 1)); \
 	fi;
@@ -355,7 +356,7 @@ android:
 	$(READ_PUBSPEC_VERSION_SH) \
 	$(call NEXT_BUILD_CODE_SH,$$app_version_code) \
 	test_build_code="$$next_build_code"; \
-	flutter build apk --release --target-platform android-arm64 --split-per-abi --build-name "$$app_version_name" --build-number "$$test_build_code" $(QUIET); \
+	flutter build apk --release --target-platform android-arm64 --build-name "$$app_version_name" --build-number "$$test_build_code" $(QUIET); \
 	metadata_file="$(APK_METADATA_PATH)"; \
 	if [ ! -f "$$metadata_file" ]; then \
 		echo "Android build metadata not found: $$metadata_file"; \
@@ -366,16 +367,18 @@ android:
 	metadata_rest=$${metadata_triplet#*|}; \
 	metadata_version_code=$${metadata_rest%%|*}; \
 	metadata_output_file=$${metadata_triplet##*|}; \
-	if [ "$$metadata_version_name" != "$$app_version_name" ] || [ "$$metadata_output_file" != "app-arm64-v8a-release.apk" ] || [ "$$metadata_version_code" -le "$$test_build_code" ]; then \
-		echo "Android build version mismatch: expected versionName=$$app_version_name outputFile=app-arm64-v8a-release.apk and versionCode greater than $$test_build_code but got versionName=$$metadata_version_name outputFile=$$metadata_output_file versionCode=$$metadata_version_code"; \
+	if [ "$$metadata_version_name" != "$$app_version_name" ] || [ "$$metadata_version_code" -lt "$$test_build_code" ]; then \
+		echo "Android build version mismatch: expected versionName=$$app_version_name and versionCode at least $$test_build_code but got versionName=$$metadata_version_name outputFile=$$metadata_output_file versionCode=$$metadata_version_code"; \
 		exit 1; \
 	fi; \
-	if [ -f "$(APK_DIR)/app-arm64-v8a-release.apk" ]; then \
-		source_apk="$(APK_DIR)/app-arm64-v8a-release.apk"; \
-	elif [ -f "$(APK_DIR)/app-release.apk" ]; then \
+	source_apk="$(APK_DIR)/$$metadata_output_file"; \
+	if [ ! -f "$$source_apk" ] && [ -f "$(APK_DIR)/app-release.apk" ]; then \
 		source_apk="$(APK_DIR)/app-release.apk"; \
-	else \
-		echo "APK output not found (expected arm64 build in $(APK_DIR))"; \
+	elif [ ! -f "$$source_apk" ] && [ -f "$(APK_DIR)/app-arm64-v8a-release.apk" ]; then \
+		source_apk="$(APK_DIR)/app-arm64-v8a-release.apk"; \
+	fi; \
+	if [ ! -f "$$source_apk" ]; then \
+		echo "APK output not found (expected $$metadata_output_file in $(APK_DIR))"; \
 		exit 1; \
 	fi; \
 	git_ref=$$(git rev-parse --short HEAD 2>/dev/null || echo local); \
@@ -392,29 +395,29 @@ android:
 precommit: check icons-check android
 
 release:
-	@if [ -z "$(V)" ]; then echo "Usage: make release V=patch|minor|major"; exit 1; fi
-	@# Parse current version from pubspec.yaml
-	$(eval CUR_VER := $(shell awk '/^version:[[:space:]]*/{sub(/^version:[[:space:]]*/, "", $$0); split($$0, parts, "+"); print parts[1]; exit}' pubspec.yaml))
-	$(eval CUR_BUILD := $(shell awk '/^version:[[:space:]]*/{sub(/^version:[[:space:]]*/, "", $$0); split($$0, parts, "+"); if (parts[2] != "") print parts[2]; exit}' pubspec.yaml))
-	$(eval MAJOR := $(shell echo $(CUR_VER) | cut -d. -f1))
-	$(eval MINOR := $(shell echo $(CUR_VER) | cut -d. -f2))
-	$(eval PATCH := $(shell echo $(CUR_VER) | cut -d. -f3))
-	$(eval NEW_BUILD := $(shell CUR_BUILD="$(CUR_BUILD)"; next_build=$$(date +%s); if [ "$$next_build" -le "$$CUR_BUILD" ]; then next_build=$$(($$CUR_BUILD + 1)); fi; echo $$next_build))
-	@if [ -z "$(CUR_VER)" ] || [ -z "$(CUR_BUILD)" ]; then echo "Unable to parse version from pubspec.yaml (expected name+build)."; exit 1; fi
-	@# Calculate new version
-	$(eval NEW_VER := $(if $(filter major,$(V)),$(shell echo $$(($(MAJOR) + 1))).0.0,\
-		$(if $(filter minor,$(V)),$(MAJOR).$(shell echo $$(($(MINOR) + 1))).0,\
-		$(if $(filter patch,$(V)),$(MAJOR).$(MINOR).$(shell echo $$(($(PATCH) + 1))),\
-		$(error V must be patch, minor, or major)))))
-	@echo "$(CUR_VER)+$(CUR_BUILD) -> $(NEW_VER)+$(NEW_BUILD)"
-	@# Update pubspec.yaml
-	@sed -i 's/^version: .*/version: $(NEW_VER)+$(NEW_BUILD)/' pubspec.yaml
-	@# Commit, tag, push
-	@git add pubspec.yaml
-	@git commit -m "release: cut v$(NEW_VER)"
-	@git tag -a "v$(NEW_VER)" -m "v$(NEW_VER)"
-	@git push --follow-tags
-	@echo "Released v$(NEW_VER) — CI and Release workflows triggered."
+	@set -e; \
+	if [ -z "$(V)" ]; then echo "Usage: make release V=patch|minor|major"; exit 1; fi; \
+	cur_ver=$$(awk '/^version:[[:space:]]*/{sub(/^version:[[:space:]]*/, "", $$0); sub(/\r$$/, "", $$0); split($$0, parts, "+"); print parts[1]; exit}' pubspec.yaml); \
+	cur_build=$$(awk '/^version:[[:space:]]*/{sub(/^version:[[:space:]]*/, "", $$0); sub(/\r$$/, "", $$0); split($$0, parts, "+"); if (parts[2] != "") print parts[2]; exit}' pubspec.yaml); \
+	if [ -z "$$cur_ver" ] || [ -z "$$cur_build" ]; then echo "Unable to parse version from pubspec.yaml (expected name+build)."; exit 1; fi; \
+	major=$$(printf '%s' "$$cur_ver" | cut -d. -f1); \
+	minor=$$(printf '%s' "$$cur_ver" | cut -d. -f2); \
+	patch=$$(printf '%s' "$$cur_ver" | cut -d. -f3); \
+	$(call NEXT_BUILD_CODE_SH,$$cur_build) \
+	new_build="$$next_build_code"; \
+	case "$(V)" in \
+		major) new_ver="$$((major + 1)).0.0" ;; \
+		minor) new_ver="$$major.$$((minor + 1)).0" ;; \
+		patch) new_ver="$$major.$$minor.$$((patch + 1))" ;; \
+		*) echo "V must be patch, minor, or major"; exit 1 ;; \
+	esac; \
+	echo "$$cur_ver+$$cur_build -> $$new_ver+$$new_build"; \
+	sed -i "s/^version: .*/version: $$new_ver+$$new_build/" pubspec.yaml; \
+	git add pubspec.yaml; \
+	git commit -m "release: cut v$$new_ver"; \
+	git tag -a "v$$new_ver" -m "v$$new_ver"; \
+	git push --follow-tags; \
+	echo "Released v$$new_ver — CI and Release workflows triggered."
 
 clean:
 	flutter clean

@@ -90,10 +90,10 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | App icon generation (`icons-app`) | 109–158 |
 | Icon validation checks (`icons-check`) | 159–229 |
 | Analyze and test flows (`analyze`, `test*`, `coverage`, `smoke`) | 231–266 |
-| Desktop build and delivery (`desktop`) | 271–304 |
-| Android build and Telegram upload (`android`) | 306–382 |
-| Release/version flow (`release`) | 386–409 |
-| Cleanup (`clean`) | 410–412 |
+| Desktop build and delivery (`desktop`) | 271–307 |
+| Android build and Telegram upload (`android`) | 313–393 |
+| Release/version flow (`release`) | 397–420 |
+| Cleanup (`clean`) | 422–424 |
 
 ## 📌 Line-Scoped Read Policy (`ADR.md`, `CODEBASE.md`, and `Makefile`)
 
