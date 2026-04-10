@@ -13,7 +13,8 @@ class QuotaEntryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final tone = resolveUsageTone(entry.usedPercent);
+    final effectiveUsedPercent = entry.effectiveUsedPercent;
+    final tone = resolveUsageTone(effectiveUsedPercent);
     final colorScheme = theme.colorScheme;
     final barColor = switch (tone) {
       'critical' => colorScheme.error,
@@ -21,7 +22,7 @@ class QuotaEntryRow extends StatelessWidget {
       _ => Colors.green,
     };
     final displayedValue = entry.valueLabel ?? formatPercent(entry.usedPercent);
-    final progress = ((entry.usedPercent ?? 0) / 100).clamp(0.0, 1.0);
+    final progress = ((effectiveUsedPercent ?? 0) / 100).clamp(0.0, 1.0);
 
     return Padding(
       padding: EdgeInsets.only(top: dense ? 6 : 8),
@@ -57,7 +58,7 @@ class QuotaEntryRow extends StatelessWidget {
             borderRadius: BorderRadius.circular(999),
             child: LinearProgressIndicator(
               minHeight: 3,
-              value: entry.usedPercent == null ? null : progress,
+              value: effectiveUsedPercent == null ? null : progress,
               backgroundColor: colorScheme.outlineVariant,
               valueColor: AlwaysStoppedAnimation<Color>(barColor),
             ),

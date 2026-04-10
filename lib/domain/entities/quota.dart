@@ -208,9 +208,32 @@ class QuotaEntry {
   final String? valueLabel;
   final PaceInfo? paceInfo;
 
+  static final RegExp _zeroRemainingCurrencyPattern = RegExp(
+    r'^\$?0(?:\.0+)?\s+remaining$',
+    caseSensitive: false,
+  );
+
+  bool get hasZeroRemainingValueLabel {
+    final value = valueLabel?.trim();
+    if (value == null || value.isEmpty) {
+      return false;
+    }
+    return _zeroRemainingCurrencyPattern.hasMatch(value);
+  }
+
+  double? get effectiveUsedPercent {
+    if (usedPercent != null) {
+      return usedPercent;
+    }
+    if (hasZeroRemainingValueLabel) {
+      return 100;
+    }
+    return null;
+  }
+
   double get severityScore {
     final pace = paceInfo?.predictedFinalPercent ?? 0;
-    final usage = usedPercent ?? 0;
+    final usage = effectiveUsedPercent ?? 0;
     return pace > usage ? pace : usage;
   }
 }
@@ -227,6 +250,8 @@ class QuotaProviderGroup {
   final List<QuotaEntry> entries;
 
   bool get canExpand => entries.length > 1;
+
+  QuotaEntry get leadingEntry => entries.first;
 
   QuotaEntry get criticalEntry {
     return entries.reduce((current, next) {

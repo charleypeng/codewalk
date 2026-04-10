@@ -151,9 +151,7 @@ class QuotaProvider extends ChangeNotifier {
       });
     });
 
-    entries.sort(
-      (left, right) => right.severityScore.compareTo(left.severityScore),
-    );
+    entries.sort(_compareEntriesForDisplay);
 
     return QuotaProviderGroup(
       providerId: result.providerId,
@@ -189,5 +187,30 @@ class QuotaProvider extends ChangeNotifier {
       valueLabel: window.valueLabel,
       paceInfo: paceInfo,
     );
+  }
+
+  int _compareEntriesForDisplay(QuotaEntry left, QuotaEntry right) {
+    final usageComparison = (right.effectiveUsedPercent ?? -1).compareTo(
+      left.effectiveUsedPercent ?? -1,
+    );
+    if (usageComparison != 0) {
+      return usageComparison;
+    }
+
+    final severityComparison = right.severityScore.compareTo(
+      left.severityScore,
+    );
+    if (severityComparison != 0) {
+      return severityComparison;
+    }
+
+    final windowComparison = (left.windowSeconds ?? 1 << 30).compareTo(
+      right.windowSeconds ?? 1 << 30,
+    );
+    if (windowComparison != 0) {
+      return windowComparison;
+    }
+
+    return left.label.compareTo(right.label);
   }
 }

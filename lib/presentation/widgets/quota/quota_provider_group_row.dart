@@ -27,7 +27,7 @@ class _QuotaProviderGroupRowState extends State<QuotaProviderGroupRow> {
       return QuotaEntryRow(entry: widget.group.entries.first);
     }
 
-    final critical = widget.group.criticalEntry;
+    final summaryEntry = widget.group.leadingEntry;
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Column(
@@ -61,7 +61,7 @@ class _QuotaProviderGroupRowState extends State<QuotaProviderGroupRow> {
           if (!_expanded)
             Padding(
               padding: const EdgeInsets.only(left: 22),
-              child: QuotaEntryRow(entry: critical, dense: true),
+              child: QuotaEntryRow(entry: summaryEntry, dense: true),
             ),
           if (_expanded)
             Padding(
