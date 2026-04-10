@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/logging/app_logger.dart';
 import '../../providers/quota_provider.dart';
 import 'quota_provider_group_row.dart';
 
@@ -47,8 +48,16 @@ class _QuotaPopupSectionState extends State<QuotaPopupSection> {
       builder: (context, quotaProvider, _) {
         final groups = quotaProvider.groups;
         if (groups.isEmpty) {
+          AppLogger.info(
+            '[QuotaUI] popup section hidden '
+            '(loading=${quotaProvider.isLoading}, serverId=${widget.serverId})',
+          );
           return const SizedBox.shrink();
         }
+        AppLogger.info(
+          '[QuotaUI] popup section render groups='
+          '${groups.map((group) => '${group.providerId}:${group.entries.length}').toList()}',
+        );
         final textTheme = Theme.of(context).textTheme;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
