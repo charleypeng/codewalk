@@ -348,18 +348,19 @@ android:
 	@set -e; \
 	$(READ_PUBSPEC_VERSION_SH) \
 	test_build_code=$$(date +%s); \
-	expected_metadata_version_code=$$((test_build_code + 2000)); \
 	flutter build apk --release --target-platform android-arm64 --split-per-abi --build-name "$$app_version_name" --build-number "$$test_build_code" $(QUIET); \
 	metadata_file="$(APK_METADATA_PATH)"; \
 	if [ ! -f "$$metadata_file" ]; then \
 		echo "Android build metadata not found: $$metadata_file"; \
 		exit 1; \
 	fi; \
-	metadata_pair=$$(python3 -c 'import json, sys; data = json.load(open(sys.argv[1])); element = data["elements"][0]; version_code = int(element["versionCode"]); print(f"{element['"'"'versionName'"'"']}+{version_code}")' "$$metadata_file"); \
+	metadata_triplet=$$(python3 -c 'import json, sys; data = json.load(open(sys.argv[1])); element = data["elements"][0]; version_code = int(element["versionCode"]); print(f"{element['"'"'versionName'"'"']}+{version_code}+{element['"'"'outputFile'"'"']}")' "$$metadata_file"); \
+	metadata_pair=$${metadata_triplet%+*}; \
 	metadata_version_name=$${metadata_pair%%+*}; \
 	metadata_version_code=$${metadata_pair#*+}; \
-	if [ "$$metadata_version_name" != "$$app_version_name" ] || [ "$$metadata_version_code" != "$$expected_metadata_version_code" ]; then \
-		echo "Android build version mismatch: expected $$app_version_name versionCode=$$expected_metadata_version_code but got versionName=$$metadata_version_name versionCode=$$metadata_version_code"; \
+	metadata_output_file=$${metadata_triplet##*+}; \
+	if [ "$$metadata_version_name" != "$$app_version_name" ] || [ "$$metadata_output_file" != "app-arm64-v8a-release.apk" ] || [ "$$metadata_version_code" -le "$$test_build_code" ]; then \
+		echo "Android build version mismatch: expected versionName=$$app_version_name outputFile=app-arm64-v8a-release.apk and versionCode greater than $$test_build_code but got versionName=$$metadata_version_name outputFile=$$metadata_output_file versionCode=$$metadata_version_code"; \
 		exit 1; \
 	fi; \
 	if [ -f "$(APK_DIR)/app-arm64-v8a-release.apk" ]; then \
