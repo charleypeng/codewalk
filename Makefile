@@ -394,12 +394,13 @@ precommit: check icons-check android
 release:
 	@if [ -z "$(V)" ]; then echo "Usage: make release V=patch|minor|major"; exit 1; fi
 	@# Parse current version from pubspec.yaml
-	$(eval CUR_VER := $(shell grep '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//'))
-	$(eval CUR_BUILD := $(shell grep '^version:' pubspec.yaml | sed 's/.*+//'))
+	$(eval CUR_VER := $(shell awk '/^version:[[:space:]]*/{sub(/^version:[[:space:]]*/, "", $$0); split($$0, parts, "+"); print parts[1]; exit}' pubspec.yaml))
+	$(eval CUR_BUILD := $(shell awk '/^version:[[:space:]]*/{sub(/^version:[[:space:]]*/, "", $$0); split($$0, parts, "+"); if (parts[2] != "") print parts[2]; exit}' pubspec.yaml))
 	$(eval MAJOR := $(shell echo $(CUR_VER) | cut -d. -f1))
 	$(eval MINOR := $(shell echo $(CUR_VER) | cut -d. -f2))
 	$(eval PATCH := $(shell echo $(CUR_VER) | cut -d. -f3))
 	$(eval NEW_BUILD := $(shell CUR_BUILD="$(CUR_BUILD)"; next_build=$$(date +%s); if [ "$$next_build" -le "$$CUR_BUILD" ]; then next_build=$$(($$CUR_BUILD + 1)); fi; echo $$next_build))
+	@if [ -z "$(CUR_VER)" ] || [ -z "$(CUR_BUILD)" ]; then echo "Unable to parse version from pubspec.yaml (expected name+build)."; exit 1; fi
 	@# Calculate new version
 	$(eval NEW_VER := $(if $(filter major,$(V)),$(shell echo $$(($(MAJOR) + 1))).0.0,\
 		$(if $(filter minor,$(V)),$(MAJOR).$(shell echo $$(($(MINOR) + 1))).0,\
