@@ -305,11 +305,7 @@ const AG = [
   p.join(CFG, 'antigravity-accounts.json'),
   p.join(DATA, 'antigravity-accounts.json'),
 ];
-const GEP = [
-  'https://daily-cloudcode-pa.sandbox.googleapis.com',
-  'https://autopush-cloudcode-pa.sandbox.googleapis.com',
-  'https://cloudcode-pa.googleapis.com',
-];
+const GEP = ['https://cloudcode-pa.googleapis.com'];
 
 function rAuth() {
   try {
@@ -747,7 +743,7 @@ async function fGH(a) {
 
     final b64 = base64Encode(utf8.encode(jsScript));
     // Single-line command — avoids multiline if/fi that OpenCode's eval truncates.
-    return "node -e \"eval(Buffer.from('$b64','base64').toString())\""
+    return "node -e \"eval(Buffer.from('$b64','base64').toString('utf8'))\""
         " || printf '%s\\n' '$_shellPrefix{\"results\":[]}'";
   }
 }
