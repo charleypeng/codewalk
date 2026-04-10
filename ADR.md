@@ -1454,3 +1454,14 @@ CodeWalk requires visibility into model quotas and rate-limits to prevent silent
 ### ADR-023 Compatibility
 
 This feature is compliant with ADR-023. Official OpenCode remains the primary source for all agent contracts and core app behavior. OpenChamber is used exclusively as an optional parity source for the quota/rate-limit feature. In the absence of OpenChamber REST endpoints, the app falls back to a hidden ephemeral shell probe without PTY process lifecycle changes, ensuring no divergence from official server capabilities.
+
+### Post-Mortem: Shell Transport Truncation & API Proxying
+
+During the implementation of the shell fallback, a critical flaw was discovered in the OpenCode `POST /session/:id/shell` endpoint. When multiline scripts using bash heredocs (`node <<'NODE' ... NODE`) or conditional blocks (`if ... fi`) were sent, the shell evaluation engine prematurely truncated the payload. This resulted in `unexpected end of file` or `SyntaxError` failures.
+
+**Evolution of the Solution:**
+1. **Initial Approach:** A full Node.js script was sent as a heredoc script to read `auth.json` and make `fetch()` HTTP calls to provider APIs (Anthropic, OpenRouter). Result: The script was truncated mid-way through.
+2. **First Attempted Fix (Minimal JS):** The JavaScript was aggressively minimized into a one-liner without any `fetch()` logic, simply parsing `auth.json` and returning `usage: null` to prove the transport worked. Result: The transport worked (returned 5 raw results), but `QuotaProviderResult.hasVisibleData` relies on the `usage` object to group and display the providers. Because all providers returned `usage: null`, the interface showed "0 visible groups" and rendered nothing.
+3. **Final Solution (Base64 One-Liner):** To restore the critical API-fetching logic without triggering the shell truncation bug, the full multi-provider JavaScript implementation was retained but minified aggressively. The entire JS string is now encoded into Base64 within Dart at compile time. The executed shell command is a strict one-liner:
+   `node -e "eval(Buffer.from('BASE64_PAYLOAD','base64').toString())"`
+   Result: The payload executes reliably on the host, properly queries remote provider APIs, formats the `hasVisibleData` structure, and bypasses the shell's AST parsing constraints entirely.
