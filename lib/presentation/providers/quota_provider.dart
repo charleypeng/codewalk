@@ -128,8 +128,9 @@ class QuotaProvider extends ChangeNotifier {
         window: window,
         windowLabel: windowLabel,
       );
-      if (entry != null) {
-        entries.add(entry);
+      final visibleEntry = _filterEntryForDisplay(entry);
+      if (visibleEntry != null) {
+        entries.add(visibleEntry);
       }
     });
 
@@ -145,8 +146,9 @@ class QuotaProvider extends ChangeNotifier {
           window: window,
           windowLabel: windowLabel,
         );
-        if (entry != null) {
-          entries.add(entry);
+        final visibleEntry = _filterEntryForDisplay(entry);
+        if (visibleEntry != null) {
+          entries.add(visibleEntry);
         }
       });
     });
@@ -187,6 +189,13 @@ class QuotaProvider extends ChangeNotifier {
       valueLabel: window.valueLabel,
       paceInfo: paceInfo,
     );
+  }
+
+  QuotaEntry? _filterEntryForDisplay(QuotaEntry? entry) {
+    if (entry == null || entry.hasZeroRemainingValueLabel) {
+      return null;
+    }
+    return entry;
   }
 
   int _compareEntriesForDisplay(QuotaEntry left, QuotaEntry right) {

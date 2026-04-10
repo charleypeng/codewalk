@@ -36,13 +36,13 @@ class _QueuedQuotaRemoteDataSource implements QuotaRemoteDataSource {
 }
 
 QuotaProviderResult _buildOpenRouterResult() {
-  return QuotaProviderResult(
+  return const QuotaProviderResult(
     providerId: 'openrouter',
     providerName: 'OpenRouter',
     ok: true,
     configured: true,
     usage: QuotaProviderUsage(
-      windows: const {
+      windows: {
         'credits': UsageWindow(
           usedPercent: null,
           remainingPercent: null,
@@ -54,7 +54,7 @@ QuotaProviderResult _buildOpenRouterResult() {
           valueLabel: r'$12.00 remaining',
         ),
       },
-      models: const {},
+      models: {},
     ),
     error: null,
     fetchedAt: 1,
@@ -86,13 +86,13 @@ void main() {
     () async {
       final provider = QuotaProvider(
         remoteDataSource: _FakeQuotaRemoteDataSource([
-          QuotaProviderResult(
+          const QuotaProviderResult(
             providerId: 'codex',
             providerName: 'Codex',
             ok: true,
             configured: true,
             usage: QuotaProviderUsage(
-              windows: const {
+              windows: {
                 'weekly': UsageWindow(
                   usedPercent: 35,
                   remainingPercent: 65,
@@ -114,7 +114,7 @@ void main() {
                   valueLabel: null,
                 ),
               },
-              models: const {},
+              models: {},
             ),
             error: null,
             fetchedAt: 1,
@@ -129,6 +129,109 @@ void main() {
       expect(provider.groups.first.leadingEntry.label, '5-Hour');
       expect(provider.groups.first.entries.first.label, '5-Hour');
       expect(provider.groups.first.entries.last.label, 'Weekly Limit');
+    },
+  );
+
+  test('QuotaProvider hides zero-credit only groups', () async {
+    final provider = QuotaProvider(
+      remoteDataSource: _FakeQuotaRemoteDataSource([
+        QuotaProviderResult(
+          providerId: 'openrouter',
+          providerName: 'OpenRouter',
+          ok: true,
+          configured: true,
+          usage: QuotaProviderUsage(
+            windows: const {
+              'credits': UsageWindow(
+                usedPercent: null,
+                remainingPercent: null,
+                windowSeconds: null,
+                resetAfterSeconds: null,
+                resetAt: null,
+                resetAtFormatted: null,
+                resetAfterFormatted: null,
+                valueLabel: r'$0.00 remaining',
+              ),
+            },
+            models: const {},
+          ),
+          error: null,
+          fetchedAt: 1,
+        ),
+      ]),
+    );
+
+    await provider.ensureLoaded(serverId: 'srv_test');
+
+    expect(provider.groups, isEmpty);
+  });
+
+  test(
+    'QuotaProvider keeps mixed groups and drops zero-credit entries',
+    () async {
+      final provider = QuotaProvider(
+        remoteDataSource: _FakeQuotaRemoteDataSource([
+          const QuotaProviderResult(
+            providerId: 'codex',
+            providerName: 'Codex',
+            ok: true,
+            configured: true,
+            usage: QuotaProviderUsage(
+              windows: {
+                'weekly': UsageWindow(
+                  usedPercent: 35,
+                  remainingPercent: 65,
+                  windowSeconds: 7 * 86400,
+                  resetAfterSeconds: 3600,
+                  resetAt: 1,
+                  resetAtFormatted: null,
+                  resetAfterFormatted: null,
+                  valueLabel: null,
+                ),
+                '5h': UsageWindow(
+                  usedPercent: 80,
+                  remainingPercent: 20,
+                  windowSeconds: 5 * 3600,
+                  resetAfterSeconds: 1800,
+                  resetAt: 1,
+                  resetAtFormatted: null,
+                  resetAfterFormatted: null,
+                  valueLabel: null,
+                ),
+                'credits': UsageWindow(
+                  usedPercent: null,
+                  remainingPercent: null,
+                  windowSeconds: null,
+                  resetAfterSeconds: null,
+                  resetAt: null,
+                  resetAtFormatted: null,
+                  resetAfterFormatted: null,
+                  valueLabel: r'$0.00 remaining',
+                ),
+              },
+              models: {},
+            ),
+            error: null,
+            fetchedAt: 1,
+          ),
+        ]),
+      );
+
+      await provider.ensureLoaded(serverId: 'srv_test');
+
+      expect(provider.groups, hasLength(1));
+      expect(provider.groups.first.providerId, 'codex');
+      expect(provider.groups.first.entries, hasLength(2));
+      expect(
+        provider.groups.first.entries.any(
+          (entry) => entry.hasZeroRemainingValueLabel,
+        ),
+        isFalse,
+      );
+      expect(
+        provider.groups.first.entries.map((entry) => entry.label).toList(),
+        <String>['5-Hour', 'Weekly Limit'],
+      );
     },
   );
 
