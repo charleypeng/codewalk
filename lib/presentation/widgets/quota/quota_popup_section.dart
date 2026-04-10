@@ -50,12 +50,19 @@ class _QuotaPopupSectionState extends State<QuotaPopupSection> {
         final groups = quotaProvider.groups;
         final isInitialLoading =
             quotaProvider.isLoading && quotaProvider.lastFetchedAt == null;
+        final hasFetchedResults = quotaProvider.results.isNotEmpty;
         if (groups.isEmpty && !isInitialLoading) {
+          if (!hasFetchedResults) {
+            AppLogger.info(
+              '[QuotaUI] popup section hidden '
+              '(loading=${quotaProvider.isLoading}, serverId=${widget.serverId})',
+            );
+            return const SizedBox.shrink();
+          }
           AppLogger.info(
-            '[QuotaUI] popup section hidden '
-            '(loading=${quotaProvider.isLoading}, serverId=${widget.serverId})',
+            '[QuotaUI] popup section render fallback '
+            '(results=${quotaProvider.results.length}, serverId=${widget.serverId})',
           );
-          return const SizedBox.shrink();
         }
         AppLogger.info(
           '[QuotaUI] popup section render groups='
@@ -127,6 +134,15 @@ class _QuotaPopupSectionState extends State<QuotaPopupSection> {
             if (isInitialLoading) ...[
               const SizedBox(height: 8),
               const _QuotaInitialLoadingState(),
+            ] else if (groups.isEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                'No applicable limits are available right now.',
+                key: const ValueKey('quota-empty-state'),
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
             ] else
               for (final group in groups) QuotaProviderGroupRow(group: group),
           ],

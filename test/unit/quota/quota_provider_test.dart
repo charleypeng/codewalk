@@ -198,7 +198,7 @@ void main() {
   );
 
   testWidgets(
-    'QuotaPopupSection shows subtle first-load state and then hides when empty',
+    'QuotaPopupSection shows subtle first-load state and then hides when no quota results exist',
     (tester) async {
       final firstLoad = Completer<List<QuotaProviderResult>>();
       final provider = QuotaProvider(
@@ -230,6 +230,57 @@ void main() {
       expect(
         find.byKey(const ValueKey('quota-initial-loading-state')),
         findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
+    'QuotaPopupSection keeps section visible with fallback text when results have no visible groups',
+    (tester) async {
+      final provider = QuotaProvider(
+        remoteDataSource: _FakeQuotaRemoteDataSource([
+          const QuotaProviderResult(
+            providerId: 'openrouter',
+            providerName: 'OpenRouter',
+            ok: true,
+            configured: true,
+            usage: QuotaProviderUsage(
+              windows: {
+                'credits': UsageWindow(
+                  usedPercent: null,
+                  remainingPercent: null,
+                  windowSeconds: null,
+                  resetAfterSeconds: null,
+                  resetAt: null,
+                  resetAtFormatted: null,
+                  resetAfterFormatted: null,
+                  valueLabel: r'$0.00 remaining',
+                ),
+              },
+              models: {},
+            ),
+            error: null,
+            fetchedAt: 1,
+          ),
+        ]),
+      );
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<QuotaProvider>.value(
+          value: provider,
+          child: const MaterialApp(
+            home: Scaffold(body: QuotaPopupSection(serverId: 'srv_test')),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      expect(find.text('Rate limits'), findsOneWidget);
+      expect(find.byKey(const ValueKey('quota-empty-state')), findsOneWidget);
+      expect(
+        find.text('No applicable limits are available right now.'),
+        findsOneWidget,
       );
     },
   );
