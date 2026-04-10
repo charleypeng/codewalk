@@ -52,11 +52,6 @@ class UsageWindow {
   final String? resetAfterFormatted;
   final String? valueLabel;
 
-  static final RegExp _zeroRemainingCurrencyPattern = RegExp(
-    r'^\$?0(?:\.0+)?\s+remaining$',
-    caseSensitive: false,
-  );
-
   factory UsageWindow.fromJson(Map<String, dynamic> json) {
     return UsageWindow(
       usedPercent: _readDouble(json['usedPercent']),
@@ -70,27 +65,9 @@ class UsageWindow {
     );
   }
 
-  bool get isZeroRemainingCurrencyValue {
-    final value = valueLabel?.trim();
-    if (value == null || value.isEmpty) {
-      return false;
-    }
-    return _zeroRemainingCurrencyPattern.hasMatch(value);
-  }
-
-  bool get hasVisibleData {
-    if (usedPercent != null) {
-      return true;
-    }
-    final value = valueLabel?.trim();
-    if (value == null || value.isEmpty) {
-      return false;
-    }
-    if (value.toLowerCase() == 'configured' || isZeroRemainingCurrencyValue) {
-      return false;
-    }
-    return true;
-  }
+  bool get hasVisibleData =>
+      usedPercent != null ||
+      (valueLabel != null && valueLabel!.trim().toLowerCase() != 'configured');
 }
 
 class QuotaProviderUsage {
@@ -231,7 +208,28 @@ class QuotaEntry {
   final String? valueLabel;
   final PaceInfo? paceInfo;
 
-  double? get effectiveUsedPercent => usedPercent;
+  static final RegExp _zeroRemainingCurrencyPattern = RegExp(
+    r'^\$?0(?:\.0+)?\s+remaining$',
+    caseSensitive: false,
+  );
+
+  bool get hasZeroRemainingValueLabel {
+    final value = valueLabel?.trim();
+    if (value == null || value.isEmpty) {
+      return false;
+    }
+    return _zeroRemainingCurrencyPattern.hasMatch(value);
+  }
+
+  double? get effectiveUsedPercent {
+    if (usedPercent != null) {
+      return usedPercent;
+    }
+    if (hasZeroRemainingValueLabel) {
+      return 100;
+    }
+    return null;
+  }
 
   double get severityScore {
     final pace = paceInfo?.predictedFinalPercent ?? 0;

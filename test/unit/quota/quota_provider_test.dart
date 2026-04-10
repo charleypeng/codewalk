@@ -36,13 +36,13 @@ class _QueuedQuotaRemoteDataSource implements QuotaRemoteDataSource {
 }
 
 QuotaProviderResult _buildOpenRouterResult() {
-  return const QuotaProviderResult(
+  return QuotaProviderResult(
     providerId: 'openrouter',
     providerName: 'OpenRouter',
     ok: true,
     configured: true,
     usage: QuotaProviderUsage(
-      windows: {
+      windows: const {
         'credits': UsageWindow(
           usedPercent: null,
           remainingPercent: null,
@@ -54,7 +54,7 @@ QuotaProviderResult _buildOpenRouterResult() {
           valueLabel: r'$12.00 remaining',
         ),
       },
-      models: {},
+      models: const {},
     ),
     error: null,
     fetchedAt: 1,
@@ -62,37 +62,37 @@ QuotaProviderResult _buildOpenRouterResult() {
 }
 
 void main() {
-  test(
-    'UsageWindow hides zero remaining currency labels without usage data',
-    () {
-      const window = UsageWindow(
-        usedPercent: null,
-        remainingPercent: null,
-        windowSeconds: null,
-        resetAfterSeconds: null,
-        resetAt: null,
-        resetAtFormatted: null,
-        resetAfterFormatted: null,
-        valueLabel: r'$0.00 remaining',
-      );
+  test('QuotaEntry treats zero remaining currency labels as exhausted', () {
+    const entry = QuotaEntry(
+      providerId: 'openrouter',
+      providerName: 'OpenRouter',
+      label: 'Credits',
+      usedPercent: null,
+      remainingPercent: null,
+      windowSeconds: null,
+      resetAfterSeconds: null,
+      resetAt: null,
+      valueLabel: r'$0.00 remaining',
+      paceInfo: null,
+    );
 
-      expect(window.isZeroRemainingCurrencyValue, isTrue);
-      expect(window.hasVisibleData, isFalse);
-    },
-  );
+    expect(entry.hasZeroRemainingValueLabel, isTrue);
+    expect(entry.effectiveUsedPercent, 100);
+    expect(entry.severityScore, 100);
+  });
 
   test(
     'QuotaProvider orders mixed windows by highest used percent first',
     () async {
       final provider = QuotaProvider(
         remoteDataSource: _FakeQuotaRemoteDataSource([
-          const QuotaProviderResult(
+          QuotaProviderResult(
             providerId: 'codex',
             providerName: 'Codex',
             ok: true,
             configured: true,
             usage: QuotaProviderUsage(
-              windows: {
+              windows: const {
                 'weekly': UsageWindow(
                   usedPercent: 35,
                   remainingPercent: 65,
@@ -114,7 +114,7 @@ void main() {
                   valueLabel: null,
                 ),
               },
-              models: {},
+              models: const {},
             ),
             error: null,
             fetchedAt: 1,
@@ -132,7 +132,7 @@ void main() {
     },
   );
 
-  testWidgets('QuotaEntryRow keeps value-only credit rows indeterminate', (
+  testWidgets('QuotaEntryRow shows determinate full bar for zero remaining', (
     tester,
   ) async {
     const entry = QuotaEntry(
@@ -157,48 +157,11 @@ void main() {
     final indicator = tester.widget<LinearProgressIndicator>(
       find.byType(LinearProgressIndicator),
     );
-    expect(indicator.value, isNull);
+    expect(indicator.value, 1.0);
   });
 
-  test(
-    'QuotaProvider hides zero-credit only providers from visible groups',
-    () async {
-      final provider = QuotaProvider(
-        remoteDataSource: _FakeQuotaRemoteDataSource([
-          const QuotaProviderResult(
-            providerId: 'openrouter',
-            providerName: 'OpenRouter',
-            ok: true,
-            configured: true,
-            usage: QuotaProviderUsage(
-              windows: {
-                'credits': UsageWindow(
-                  usedPercent: null,
-                  remainingPercent: null,
-                  windowSeconds: null,
-                  resetAfterSeconds: null,
-                  resetAt: null,
-                  resetAtFormatted: null,
-                  resetAfterFormatted: null,
-                  valueLabel: r'$0.00 remaining',
-                ),
-              },
-              models: {},
-            ),
-            error: null,
-            fetchedAt: 1,
-          ),
-        ]),
-      );
-
-      await provider.ensureLoaded(serverId: 'srv_test');
-
-      expect(provider.groups, isEmpty);
-    },
-  );
-
   testWidgets(
-    'QuotaPopupSection shows subtle first-load state and then hides when no quota results exist',
+    'QuotaPopupSection shows subtle first-load state and then hides when empty',
     (tester) async {
       final firstLoad = Completer<List<QuotaProviderResult>>();
       final provider = QuotaProvider(
@@ -230,57 +193,6 @@ void main() {
       expect(
         find.byKey(const ValueKey('quota-initial-loading-state')),
         findsNothing,
-      );
-    },
-  );
-
-  testWidgets(
-    'QuotaPopupSection keeps section visible with fallback text when results have no visible groups',
-    (tester) async {
-      final provider = QuotaProvider(
-        remoteDataSource: _FakeQuotaRemoteDataSource([
-          const QuotaProviderResult(
-            providerId: 'openrouter',
-            providerName: 'OpenRouter',
-            ok: true,
-            configured: true,
-            usage: QuotaProviderUsage(
-              windows: {
-                'credits': UsageWindow(
-                  usedPercent: null,
-                  remainingPercent: null,
-                  windowSeconds: null,
-                  resetAfterSeconds: null,
-                  resetAt: null,
-                  resetAtFormatted: null,
-                  resetAfterFormatted: null,
-                  valueLabel: r'$0.00 remaining',
-                ),
-              },
-              models: {},
-            ),
-            error: null,
-            fetchedAt: 1,
-          ),
-        ]),
-      );
-
-      await tester.pumpWidget(
-        ChangeNotifierProvider<QuotaProvider>.value(
-          value: provider,
-          child: const MaterialApp(
-            home: Scaffold(body: QuotaPopupSection(serverId: 'srv_test')),
-          ),
-        ),
-      );
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 250));
-
-      expect(find.text('Rate limits'), findsOneWidget);
-      expect(find.byKey(const ValueKey('quota-empty-state')), findsOneWidget);
-      expect(
-        find.text('No applicable limits are available right now.'),
-        findsOneWidget,
       );
     },
   );
