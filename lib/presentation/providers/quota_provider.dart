@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../core/logging/app_logger.dart';
 import '../../data/datasources/quota_remote_datasource.dart';
 import '../../domain/entities/quota.dart';
 import '../utils/quota_pace_utils.dart';
@@ -43,7 +44,12 @@ class QuotaProvider extends ChangeNotifier {
     bool force = false,
   }) async {
     final normalizedServerId = serverId?.trim();
+    AppLogger.info(
+      '[Quota] ensureLoaded called — serverId=$normalizedServerId '
+      'force=$force isLoading=$_isLoading',
+    );
     if (normalizedServerId == null || normalizedServerId.isEmpty) {
+      AppLogger.info('[Quota] ensureLoaded abort: serverId is null/empty');
       if (_serverId != null || _results.isNotEmpty || _lastFetchedAt != null) {
         _serverId = null;
         _results = const <QuotaProviderResult>[];
@@ -62,6 +68,7 @@ class QuotaProvider extends ChangeNotifier {
     }
 
     if (_isLoading) {
+      AppLogger.info('[Quota] ensureLoaded abort: already loading');
       return;
     }
 
@@ -72,14 +79,20 @@ class QuotaProvider extends ChangeNotifier {
         _lastFetchedAt != null &&
         now.difference(_lastFetchedAt!) < _cacheTtl;
     if (isFresh) {
+      AppLogger.info('[Quota] ensureLoaded abort: cache still fresh');
       return;
     }
 
     _isLoading = true;
     notifyListeners();
     try {
+      AppLogger.info('[Quota] ensureLoaded: starting fetch...');
       _results = await _remoteDataSource.fetchQuotaResults();
       _lastFetchedAt = DateTime.now();
+      AppLogger.info(
+        '[Quota] ensureLoaded: fetch complete — '
+        '${_results.length} results, ${groups.length} visible groups',
+      );
     } finally {
       _isLoading = false;
       notifyListeners();

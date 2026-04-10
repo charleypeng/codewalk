@@ -65,7 +65,9 @@ class UsageWindow {
     );
   }
 
-  bool get hasVisibleData => usedPercent != null || valueLabel != null;
+  bool get hasVisibleData =>
+      usedPercent != null ||
+      (valueLabel != null && valueLabel!.trim().toLowerCase() != 'configured');
 }
 
 class QuotaProviderUsage {

@@ -40,7 +40,9 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
       }
       final payload = response.data;
       if (payload is! Map) {
-        AppLogger.info('[Quota] REST payload is not a Map: ${payload.runtimeType}');
+        AppLogger.info(
+          '[Quota] REST payload is not a Map: ${payload.runtimeType}',
+        );
         return null;
       }
       final providers =
@@ -122,8 +124,7 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
       final output = _extractShellJsonPayload(envelope);
       if (output == null) {
         // Dump parts content for diagnosis.
-        final parts =
-            envelope['parts'] as List<dynamic>? ?? const <dynamic>[];
+        final parts = envelope['parts'] as List<dynamic>? ?? const <dynamic>[];
         for (var i = 0; i < parts.length; i++) {
           final part = parts[i];
           try {
@@ -173,23 +174,30 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
       }
       final decoded = jsonDecode(output);
       if (decoded is! Map) {
-        AppLogger.info(
-          '[Quota] Shell fallback: decoded payload is not a Map',
-        );
+        AppLogger.info('[Quota] Shell fallback: decoded payload is not a Map');
         return const <QuotaProviderResult>[];
       }
-      final results =
-          decoded['results'] as List<dynamic>? ?? const <dynamic>[];
+      final results = decoded['results'] as List<dynamic>? ?? const <dynamic>[];
+      final meta = decoded['meta'];
+      if (meta is Map) {
+        AppLogger.info(
+          '[Quota] Shell fallback meta: ${Map<String, dynamic>.from(meta)}',
+        );
+      }
       AppLogger.info(
         '[Quota] Shell fallback: got ${results.length} raw results',
       );
-      return results
+      final parsedResults = results
           .whereType<Map>()
           .map(
             (item) =>
                 QuotaProviderResult.fromJson(Map<String, dynamic>.from(item)),
           )
           .toList(growable: false);
+      AppLogger.info(
+        '[Quota] Shell fallback parsed results: ${parsedResults.map((item) => '${item.providerId}(ok=${item.ok}, configured=${item.configured}, visible=${item.hasVisibleData})').toList()}',
+      );
+      return parsedResults;
     } catch (error) {
       AppLogger.info('[Quota] Shell fallback error: $error');
       return const <QuotaProviderResult>[];
@@ -256,16 +264,14 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
           }
         }
       } else if (value is Map) {
-        final found =
-            _searchStringValues(Map<String, dynamic>.from(value));
+        final found = _searchStringValues(Map<String, dynamic>.from(value));
         if (found != null) {
           return found;
         }
       } else if (value is List) {
         for (final item in value) {
           if (item is Map) {
-            final found =
-                _searchStringValues(Map<String, dynamic>.from(item));
+            final found = _searchStringValues(Map<String, dynamic>.from(item));
             if (found != null) {
               return found;
             }
@@ -284,9 +290,8 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
   }
 
   String _buildQuotaShellCommand() {
-    // Minimal JS: reads auth.json on the OpenCode host and outputs
-    // configured providers. No HTTP calls, no multiline if/fi (which the
-    // OpenCode shell endpoint truncates). Full command is ~800 chars.
+    // Full Base64-encoded JS keeps the shell transport to one line while still
+    // allowing real host API fetches for supported providers.
     const jsScript =
         "const fs=require('fs'),os=require('os'),p=require('path');"
         "const P='CW_QUOTA_JSON:';"
@@ -294,32 +299,47 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
         "if(!fs.existsSync(f))return{};const r=fs.readFileSync(f,'utf8').trim();"
         'if(!r)return{};return JSON.parse(r);}catch{return{};}}'
         'function getE(a,al){for(const x of al)if(a[x])return a[x];return null;}'
+        "function nE(e){if(!e)return null;if(typeof e==='string')return{token:e};if(typeof e==='object')return e;return null;}"
         "function toN(v){if(typeof v==='number'&&Number.isFinite(v))return v;if(typeof v==='string'){const p=Number(v);return Number.isFinite(p)?p:null;}return null;}"
+        "function toTs(v){if(!v)return null;if(typeof v==='number')return v<1e12?v*1000:v;if(typeof v==='string'){const p=Date.parse(v);return Number.isNaN(p)?null:p;}return null;}"
         'function bR({pId,pName,ok,use,err}){return{providerId:pId,providerName:pName,ok,configured:true,usage:use??null,error:err??null,fetchedAt:Date.now()};}'
-        "async function fC(a){const e=getE(a,['anthropic','claude']);const t=e&&(e.access||e.token);if(!t)return null;"
+        "function tUW({uP,wS,rA,vL}){const c=typeof uP==='number'?Math.max(0,Math.min(100,uP)):null;const rS=typeof rA==='number'?Math.max(0,Math.round((rA-Date.now())/1000)):null;return{usedPercent:c,remainingPercent:c===null?null:Math.max(0,100-c),windowSeconds:typeof wS==='number'?wS:null,resetAfterSeconds:rS,resetAt:typeof rA==='number'?rA:null,resetAtFormatted:null,resetAfterFormatted:null,valueLabel:vL??null};}"
+        "async function fC(a){const e=nE(getE(a,['anthropic','claude']));const t=e&&(e.access||e.token);if(!t)return null;"
         "try{const res=await fetch('https://api.anthropic.com/api/oauth/usage',{headers:{Authorization:'Bearer '+t,'anthropic-beta':'oauth-2025-04-20'}});"
         "if(!res.ok)return bR({pId:'claude',pName:'Claude',ok:false,err:'API error: '+res.status});"
         'const d=await res.json();const w={};const add=(k,f)=>{if(d&&d[f]){const u=toN(d[f].utilization);'
-        "const r=typeof d[f].resets_at==='string'?new Date(d[f].resets_at).getTime():null;"
-        'w[k]={usedPercent:u!==null?Math.max(0,Math.min(100,u)):null,windowSeconds:null,resetAt:r};}};'
+        'const r=toTs(d[f].resets_at);w[k]=tUW({uP:u,wS:null,rA:r});}};'
         "add('5h','five_hour');add('7d','seven_day');add('7d-sonnet','seven_day_sonnet');add('7d-opus','seven_day_opus');"
         "return bR({pId:'claude',pName:'Claude',ok:true,use:{windows:w}});"
         "}catch(err){return bR({pId:'claude',pName:'Claude',ok:false,err:err.message});}}"
-        "async function fO(a){const e=getE(a,['openrouter']);const k=e&&(e.key||e.token);if(!k)return null;"
+        "async function fO(a){const e=nE(getE(a,['openrouter']));const k=e&&(e.key||e.token);if(!k)return null;"
         "try{const res=await fetch('https://openrouter.ai/api/v1/credits',{headers:{Authorization:'Bearer '+k,'Content-Type':'application/json'}});"
         "if(!res.ok)return bR({pId:'openrouter',pName:'OpenRouter',ok:false,err:'API error: '+res.status});"
         'const d=await res.json();const c=d&&d.data?d.data:{};const tC=toN(c.total_credits);const tU=toN(c.total_usage);'
         'const uP=(tC!==null&&tU!==null&&tC>0)?Math.max(0,Math.min(100,(tU/tC)*100)):null;'
         'const rem=(tC!==null&&tU!==null)?Math.max(0,tC-tU):null;'
         "return bR({pId:'openrouter',pName:'OpenRouter',ok:true,use:{windows:{"
-        "credits:{usedPercent:uP,valueLabel:rem!==null?'\$'+rem.toFixed(2)+' remaining':null}}}});"
+        "credits:tUW({uP:uP,wS:null,rA:null,vL:rem!==null?'\$'+rem.toFixed(2)+' remaining':null})}}});"
         "}catch(err){return bR({pId:'openrouter',pName:'OpenRouter',ok:false,err:err.message});}}"
-        '(async()=>{const a=rAuth();const R=[];const c=await fC(a);if(c)R.push(c);const o=await fO(a);if(o)R.push(o);'
-        "const ig=['anthropic','claude','openrouter'];for(const k of Object.keys(a)){"
-        "if(ig.includes(k)||!a[k]||typeof a[k]!=='object')continue;"
-        'R.push(bR({pId:k,pName:k.charAt(0).toUpperCase()+k.slice(1),ok:true,use:{'
-        "windows:{status:{usedPercent:0,valueLabel:'Configured'}}}}));}"
-        'console.log(P+JSON.stringify({results:R}));})().catch(()=>{console.log(P+JSON.stringify({results:[]}));});';
+        "async function fX(a){const e=nE(getE(a,['openai','codex','chatgpt']));const t=e&&(e.access||e.token),acc=e&&e.accountId;if(!t)return null;"
+        "try{const h={Authorization:'Bearer '+t,'Content-Type':'application/json'};if(acc)h['ChatGPT-Account-Id']=acc;"
+        "const res=await fetch('https://chatgpt.com/backend-api/wham/usage',{method:'GET',headers:h});"
+        "if(!res.ok)return bR({pId:'codex',pName:'Codex',ok:false,err:res.status===401?'Session expired — please re-authenticate with OpenAI':'API error: '+res.status});"
+        'const d=await res.json();const p=d&&d.rate_limit?d.rate_limit.primary_window:null;const s=d&&d.rate_limit?d.rate_limit.secondary_window:null;const cr=d&&d.credits?d.credits:null;const w={};'
+        "if(p)w['5h']=tUW({uP:toN(p.used_percent),wS:toN(p.limit_window_seconds),rA:toTs(p.reset_at)});"
+        "if(s)w['weekly']=tUW({uP:toN(s.used_percent),wS:toN(s.limit_window_seconds),rA:toTs(s.reset_at)});"
+        "if(cr){const bal=toN(cr.balance);const lab=cr.unlimited?'Unlimited':(bal!==null?'\$'+bal.toFixed(2)+' remaining':null);w['credits']=tUW({uP:null,wS:null,rA:null,vL:lab});}"
+        "return bR({pId:'codex',pName:'Codex',ok:true,use:{windows:w}});}catch(err){return bR({pId:'codex',pName:'Codex',ok:false,err:err.message});}}"
+        "async function fGH(a){const e=nE(getE(a,['github-copilot','copilot']));const t=e&&(e.access||e.token);if(!t)return null;"
+        "try{const res=await fetch('https://api.github.com/copilot_internal/user',{headers:{Authorization:'token '+t,Accept:'application/json','Editor-Version':'vscode/1.96.2','X-Github-Api-Version':'2025-04-01'}});"
+        "if(!res.ok)return bR({pId:'github-copilot',pName:'GitHub Copilot',ok:false,err:'API error: '+res.status});"
+        'const d=await res.json();const q=d&&d.quota_snapshots?d.quota_snapshots:{};const rA=toTs(d&&d.quota_reset_date);const w={};'
+        'const aw=(l,s)=>{if(!s)return;const en=toN(s.entitlement),re=toN(s.remaining);const uP=(en!==null&&re!==null&&en>0)?Math.max(0,100-(re/en)*100):null;const vL=(en!==null&&re!==null)?re.toFixed(0)+\' / \' + en.toFixed(0)+\' left\':null;w[l]=tUW({uP:uP,wS:null,rA:rA,vL:vL});};'
+        "aw('chat',q.chat);aw('completions',q.completions);aw('premium',q.premium_interactions);"
+        "return bR({pId:'github-copilot',pName:'GitHub Copilot',ok:true,use:{windows:w}});}catch(err){return bR({pId:'github-copilot',pName:'GitHub Copilot',ok:false,err:err.message});}}"
+        '(async()=>{const a=rAuth();const authKeys=Object.keys(a);const R=[];const c=await fC(a);if(c)R.push(c);const o=await fO(a);if(o)R.push(o);const x=await fX(a);if(x)R.push(x);const gh=await fGH(a);if(gh)R.push(gh);'
+        "const unsupported=authKeys.filter(k=>!['anthropic','claude','openrouter','openai','codex','chatgpt','github-copilot','copilot'].includes(k));"
+        'console.log(P+JSON.stringify({results:R,meta:{authKeys:authKeys,unsupportedConfigured:unsupported,resultProviderIds:R.map(r=>r.providerId)}}));})().catch(err=>{console.log(P+JSON.stringify({results:[],meta:{error:String(err)}}));});';
 
     final b64 = base64Encode(utf8.encode(jsScript));
     // Single-line command — avoids multiline if/fi that OpenCode's eval truncates.
