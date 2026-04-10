@@ -151,10 +151,10 @@ void main() {
       final script = _decodeShellScript(shellCommand!);
       expect(
         script,
-        contains("const AG=[p.join(CFG,'antigravity-accounts.json')"),
+        contains('const AG=[p.join(CFG,\'antigravity-accounts.json\')'),
       );
-      expect(script, contains("function rGem(a)"));
-      expect(script, contains("function rAnti()"));
+      expect(script, contains('function rGem(a)'));
+      expect(script, contains('function rAnti()'));
       expect(script, isNot(contains('GOCSPX-')));
       expect(script, isNot(contains('.apps.googleusercontent.com')));
     },

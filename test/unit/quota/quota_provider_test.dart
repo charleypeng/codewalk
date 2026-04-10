@@ -36,13 +36,13 @@ class _QueuedQuotaRemoteDataSource implements QuotaRemoteDataSource {
 }
 
 QuotaProviderResult _buildOpenRouterResult() {
-  return QuotaProviderResult(
+  return const QuotaProviderResult(
     providerId: 'openrouter',
     providerName: 'OpenRouter',
     ok: true,
     configured: true,
     usage: QuotaProviderUsage(
-      windows: const {
+      windows: {
         'credits': UsageWindow(
           usedPercent: null,
           remainingPercent: null,
@@ -54,7 +54,7 @@ QuotaProviderResult _buildOpenRouterResult() {
           valueLabel: r'$12.00 remaining',
         ),
       },
-      models: const {},
+      models: {},
     ),
     error: null,
     fetchedAt: 1,
@@ -86,13 +86,13 @@ void main() {
     () async {
       final provider = QuotaProvider(
         remoteDataSource: _FakeQuotaRemoteDataSource([
-          QuotaProviderResult(
+          const QuotaProviderResult(
             providerId: 'codex',
             providerName: 'Codex',
             ok: true,
             configured: true,
             usage: QuotaProviderUsage(
-              windows: const {
+              windows: {
                 'weekly': UsageWindow(
                   usedPercent: 35,
                   remainingPercent: 65,
@@ -114,7 +114,7 @@ void main() {
                   valueLabel: null,
                 ),
               },
-              models: const {},
+              models: {},
             ),
             error: null,
             fetchedAt: 1,
@@ -165,13 +165,13 @@ void main() {
     () async {
       final provider = QuotaProvider(
         remoteDataSource: _FakeQuotaRemoteDataSource([
-          QuotaProviderResult(
+          const QuotaProviderResult(
             providerId: 'openrouter',
             providerName: 'OpenRouter',
             ok: true,
             configured: true,
             usage: QuotaProviderUsage(
-              windows: const {
+              windows: {
                 'credits': UsageWindow(
                   usedPercent: null,
                   remainingPercent: null,
@@ -183,7 +183,7 @@ void main() {
                   valueLabel: r'$0.00 remaining',
                 ),
               },
-              models: const {},
+              models: {},
             ),
             error: null,
             fetchedAt: 1,
