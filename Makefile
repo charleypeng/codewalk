@@ -16,6 +16,12 @@ READ_PUBSPEC_VERSION_SH = app_version=$$(awk '/^version:[[:space:]]*/{sub(/^vers
 		exit 1; \
 	fi;
 
+NEXT_BUILD_CODE_SH = reference_build_code="$(1)"; \
+	next_build_code=$$(date +%s); \
+	if [ "$$next_build_code" -le "$$reference_build_code" ]; then \
+		next_build_code=$$((reference_build_code + 1)); \
+	fi;
+
 # TTY detection: suppress verbose output in non-interactive mode (CI/agents)
 ifneq ($(shell test -t 1 && echo yes),yes)
     LOG = /tmp/codewalk-make.log
@@ -347,18 +353,19 @@ android:
 	fi
 	@set -e; \
 	$(READ_PUBSPEC_VERSION_SH) \
-	test_build_code=$$(date +%s); \
+	$(call NEXT_BUILD_CODE_SH,$$app_version_code) \
+	test_build_code="$$next_build_code"; \
 	flutter build apk --release --target-platform android-arm64 --split-per-abi --build-name "$$app_version_name" --build-number "$$test_build_code" $(QUIET); \
 	metadata_file="$(APK_METADATA_PATH)"; \
 	if [ ! -f "$$metadata_file" ]; then \
 		echo "Android build metadata not found: $$metadata_file"; \
 		exit 1; \
 	fi; \
-	metadata_triplet=$$(python3 -c 'import json, sys; data = json.load(open(sys.argv[1])); element = data["elements"][0]; version_code = int(element["versionCode"]); print(f"{element['"'"'versionName'"'"']}+{version_code}+{element['"'"'outputFile'"'"']}")' "$$metadata_file"); \
-	metadata_pair=$${metadata_triplet%+*}; \
-	metadata_version_name=$${metadata_pair%%+*}; \
-	metadata_version_code=$${metadata_pair#*+}; \
-	metadata_output_file=$${metadata_triplet##*+}; \
+	metadata_triplet=$$(python3 -c 'import json, sys; data = json.load(open(sys.argv[1])); element = data["elements"][0]; version_code = int(element["versionCode"]); print(f"{element['"'"'versionName'"'"']}|{version_code}|{element['"'"'outputFile'"'"']}")' "$$metadata_file"); \
+	metadata_version_name=$${metadata_triplet%%|*}; \
+	metadata_rest=$${metadata_triplet#*|}; \
+	metadata_version_code=$${metadata_rest%%|*}; \
+	metadata_output_file=$${metadata_triplet##*|}; \
 	if [ "$$metadata_version_name" != "$$app_version_name" ] || [ "$$metadata_output_file" != "app-arm64-v8a-release.apk" ] || [ "$$metadata_version_code" -le "$$test_build_code" ]; then \
 		echo "Android build version mismatch: expected versionName=$$app_version_name outputFile=app-arm64-v8a-release.apk and versionCode greater than $$test_build_code but got versionName=$$metadata_version_name outputFile=$$metadata_output_file versionCode=$$metadata_version_code"; \
 		exit 1; \
@@ -392,7 +399,7 @@ release:
 	$(eval MAJOR := $(shell echo $(CUR_VER) | cut -d. -f1))
 	$(eval MINOR := $(shell echo $(CUR_VER) | cut -d. -f2))
 	$(eval PATCH := $(shell echo $(CUR_VER) | cut -d. -f3))
-	$(eval NEW_BUILD := $(shell echo $$(($(CUR_BUILD) + 1))))
+	$(eval NEW_BUILD := $(shell CUR_BUILD="$(CUR_BUILD)"; next_build=$$(date +%s); if [ "$$next_build" -le "$$CUR_BUILD" ]; then next_build=$$(($$CUR_BUILD + 1)); fi; echo $$next_build))
 	@# Calculate new version
 	$(eval NEW_VER := $(if $(filter major,$(V)),$(shell echo $$(($(MAJOR) + 1))).0.0,\
 		$(if $(filter minor,$(V)),$(MAJOR).$(shell echo $$(($(MINOR) + 1))).0,\

@@ -311,7 +311,7 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 
 ## Notes
 
-- `make android` builds an arm64 APK, generates a unique installable test build number (to ensure repeated local uploads replace the previous installation), and sends the artifact with `~/bin/hey`; use `HEY_CAPTION` to override the upload caption.
+- `make android` builds an arm64 APK, uses a monotonic installable build number aligned with release versioning (so repeated local uploads replace the previous installation without making later releases look like downgrades), and sends the artifact with `~/bin/hey`; use `HEY_CAPTION` to override the upload caption.
 - Android manifest declares `REQUEST_INSTALL_PACKAGES` permission and a `FileProvider` authority (`com.verseles.codewalk.fileprovider`) required for APK sideload installs via `open_filex`.
 - Sensitive server credentials are persisted through `flutter_secure_storage` (v10.0.0) via `AppLocalDataSource`.
 - Platform folders currently present: `android/`, `linux/`, `macos/`, `web/`, `windows/`.
