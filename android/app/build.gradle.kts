@@ -1,5 +1,6 @@
 import java.io.File
 import java.util.Properties
+import org.gradle.api.GradleException
 
 plugins {
     id("com.android.application")
@@ -12,6 +13,28 @@ plugins {
 val keyPropertiesFile = rootProject.file("key.properties")
 val keyProperties = Properties().apply {
     if (keyPropertiesFile.exists()) keyPropertiesFile.inputStream().use { load(it) }
+}
+
+val requestedTasks = gradle.startParameter.taskNames.map { it.lowercase() }
+val requiresReleaseSigning = requestedTasks.any {
+    "release" in it || "bundle" in it || "publish" in it
+}
+
+val releaseStoreFile = resolveSigningFile(
+    keyProperties.getProperty("storeFile"),
+)
+
+fun requireReleaseSigningConfig() {
+    if (!keyPropertiesFile.exists()) {
+        throw GradleException(
+            "Missing android/key.properties. Refusing to build a release APK with the debug key.",
+        )
+    }
+    if (releaseStoreFile == null || !releaseStoreFile.exists()) {
+        throw GradleException(
+            "Release keystore not found for android release signing. Check storeFile in android/key.properties.",
+        )
+    }
 }
 
 fun resolveSigningFile(rawValue: String?): File? {
@@ -81,7 +104,7 @@ android {
             create("release") {
                 keyAlias = keyProperties["keyAlias"] as String
                 keyPassword = keyProperties["keyPassword"] as String
-                storeFile = resolveSigningFile(keyProperties["storeFile"] as String)
+                storeFile = releaseStoreFile
                 storePassword = keyProperties["storePassword"] as String
             }
         }
@@ -89,7 +112,9 @@ android {
 
     buildTypes {
         release {
-            // Use release keystore when key.properties is available (CI), debug otherwise.
+            if (requiresReleaseSigning) {
+                requireReleaseSigningConfig()
+            }
             signingConfig = if (keyPropertiesFile.exists())
                 signingConfigs.getByName("release")
             else
