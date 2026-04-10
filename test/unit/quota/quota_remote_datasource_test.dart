@@ -157,6 +157,8 @@ void main() {
       expect(script, contains('function rAnti()'));
       expect(script, contains('v1internal:retrieveUserQuota'));
       expect(script, contains('Client-Metadata'));
+      expect(script, contains('https://oauth2.googleapis.com/token'));
+      expect(script, contains('function rGAccess(src)'));
       expect(script, isNot(contains('GOCSPX-')));
       expect(script, isNot(contains('.apps.googleusercontent.com')));
     },

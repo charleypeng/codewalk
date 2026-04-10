@@ -387,6 +387,46 @@ function toTs(v) {
   return null;
 }
 
+function pgR(v) {
+  const r = asS(v);
+  if (!r) {
+    return { refreshToken: null, projectId: null, managedProjectId: null };
+  }
+  const parts = r.split('|');
+  return {
+    refreshToken: asS(parts[0]),
+    projectId: asS(parts[1]),
+    managedProjectId: asS(parts[2]),
+  };
+}
+
+function gCred(obj, prefix) {
+  const o = asO(obj) || {};
+  const c = asO(o.client);
+  return {
+    clientId: pickS(
+      o.clientId,
+      o.client_id,
+      o.googleClientId,
+      o.google_client_id,
+      c && c.id,
+      c && c.clientId,
+      prefix ? process.env[prefix + '_GOOGLE_CLIENT_ID'] : null,
+      process.env.GOOGLE_CLIENT_ID,
+    ),
+    clientSecret: pickS(
+      o.clientSecret,
+      o.client_secret,
+      o.googleClientSecret,
+      o.google_client_secret,
+      c && c.secret,
+      c && c.clientSecret,
+      prefix ? process.env[prefix + '_GOOGLE_CLIENT_SECRET'] : null,
+      process.env.GOOGLE_CLIENT_SECRET,
+    ),
+  };
+}
+
 function bR({ pId, pName, ok, use, err }) {
   return {
     providerId: pId,
@@ -560,13 +600,26 @@ function rGem(a) {
   if (!eo) return null;
   const oo = asO(eo.oauth) || eo;
   const at = pickS(oo.access, oo.token, eo.access, eo.token);
-  if (!at) return null;
+  const rp = pgR(oo.refresh);
+  const gc = gCred(oo, 'GEMINI');
+  const ec = gCred(eo, 'GEMINI');
+  if (!at && !rp.refreshToken) return null;
   return {
     sourceId: 'gemini',
     sourceLabel: 'Gemini',
     accessToken: at,
-    projectId: pickS(oo.projectId, oo.managedProjectId, eo.projectId, eo.managedProjectId),
+    refreshToken: rp.refreshToken,
+    projectId: pickS(
+      oo.projectId,
+      oo.managedProjectId,
+      eo.projectId,
+      eo.managedProjectId,
+      rp.projectId,
+      rp.managedProjectId,
+    ),
     expires: toTs(oo.expires || eo.expires),
+    clientId: pickS(gc.clientId, ec.clientId),
+    clientSecret: pickS(gc.clientSecret, ec.clientSecret),
   };
 }
 
@@ -580,17 +633,56 @@ function rAnti() {
     const acc = asO(accs[idx]) || asO(accs[0]);
     if (!acc) continue;
     const at = pickS(acc.accessToken, acc.access);
-    if (!at) continue;
+    const rp = pgR(acc.refreshToken);
+    const ac = gCred(acc, 'ANTIGRAVITY');
+    const rc = gCred(root, 'ANTIGRAVITY');
+    if (!at && !rp.refreshToken) continue;
     return {
       sourceId: 'antigravity',
       sourceLabel: 'Antigravity',
       accessToken: at,
-      projectId: pickS(acc.projectId, acc.managedProjectId),
+      refreshToken: rp.refreshToken,
+      projectId: pickS(
+        acc.projectId,
+        acc.managedProjectId,
+        rp.projectId,
+        rp.managedProjectId,
+      ),
       expires: toTs(acc.expires),
+      clientId: pickS(ac.clientId, rc.clientId),
+      clientSecret: pickS(ac.clientSecret, rc.clientSecret),
       email: pickS(acc.email),
     };
   }
   return null;
+}
+
+async function rGAccess(src) {
+  if (src.accessToken && (!(typeof src.expires === 'number') || src.expires > Date.now())) {
+    return src.accessToken;
+  }
+  if (!src.refreshToken || !src.clientId || !src.clientSecret) {
+    return null;
+  }
+  try {
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        client_id: src.clientId,
+        client_secret: src.clientSecret,
+        refresh_token: src.refreshToken,
+        grant_type: 'refresh_token',
+      }),
+    });
+    if (!res.ok) return null;
+    const d = await res.json();
+    return asS(d && d.access_token);
+  } catch {
+    return null;
+  }
 }
 
 async function fGM(src) {
@@ -649,10 +741,12 @@ async function fG(a) {
   const models = {};
   const errs = [];
   for (const src of srcs) {
-    if (typeof src.expires === 'number' && src.expires <= Date.now()) {
-      errs.push(src.sourceLabel + ': Host access token expired');
+    const token = await rGAccess(src);
+    if (!token) {
+      errs.push(src.sourceLabel + ': Missing usable host OAuth data');
       continue;
     }
+    src.accessToken = token;
     let merged = false;
     if (src.sourceId === 'gemini') {
       const qp = await fGQB(src);
