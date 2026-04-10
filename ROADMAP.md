@@ -73,4 +73,4 @@ DoD: Context usage popup shows live provider quotas when data is available; fall
 - [x] 6.03 `QuotaProvider` — TTL-cached polling (60s), server-scoped state, severity-ordered groups - Commit hashes: edf6b10
 - [x] 6.04 Quota popup widgets — `QuotaPopupSection`, `QuotaProviderGroupRow`, `QuotaEntryRow`, `PaceLabel` — integrate into Context usage popup after Compact now - Commit hashes: 013e285
 - [x] 6.05 Unit tests for pace utils and datasource strategy chain; all 841 tests passing - Commit hashes: 013e285
-- [x] 6.06 Update ADR-029, CODEBASE.md, BEHAVIOR.md, and ROADMAP.md to reflect completed implementation
+- [x] 6.06 Update ADR-029, CODEBASE.md, BEHAVIOR.md, and ROADMAP.md to reflect completed implementation - Commit hashes: aaab12d, 5f45938, 533c306
