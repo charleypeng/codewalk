@@ -143,11 +143,9 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
                 for (final entry in sm.entries) {
                   final val = entry.value;
                   if (val is String) {
-                    final preview = val.length > 400
-                        ? '${val.substring(0, 400)}…'
-                        : val;
                     AppLogger.info(
-                      '[Quota] Shell parts[$i].state.${entry.key}: $preview',
+                      '[Quota] Shell parts[$i].state.${entry.key}: '
+                      'String(length=${val.length})',
                     );
                   } else {
                     AppLogger.info(
