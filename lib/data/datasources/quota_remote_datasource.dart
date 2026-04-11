@@ -428,6 +428,17 @@ function gCred(obj, prefix) {
   };
 }
 
+function gDiag(src) {
+  return [
+    'access=' + (src.accessToken ? 'yes' : 'no'),
+    'refresh=' + (src.refreshToken ? 'yes' : 'no'),
+    'clientId=' + (src.clientId ? 'yes' : 'no'),
+    'clientSecret=' + (src.clientSecret ? 'yes' : 'no'),
+    'project=' + (src.projectId ? 'yes' : 'no'),
+    'expires=' + (typeof src.expires === 'number' ? 'yes' : 'no'),
+  ].join(', ');
+}
+
 function bR({ pId, pName, ok, use, err }) {
   return {
     providerId: pId,
@@ -746,7 +757,7 @@ async function fG(a) {
   for (const src of srcs) {
     const token = await rGAccess(src);
     if (!token) {
-      errs.push(src.sourceLabel + ': Missing usable host OAuth data');
+      errs.push(src.sourceLabel + ': Missing usable host OAuth data (' + gDiag(src) + ')');
       continue;
     }
     src.accessToken = token;
