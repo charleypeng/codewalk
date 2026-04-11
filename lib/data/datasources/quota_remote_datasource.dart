@@ -193,7 +193,7 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
           )
           .toList(growable: false);
       AppLogger.info(
-        '[Quota] Shell fallback parsed results: ${parsedResults.map((item) => '${item.providerId}(ok=${item.ok}, configured=${item.configured}, visible=${item.hasVisibleData})').toList()}',
+        '[Quota] Shell fallback parsed results: ${parsedResults.map((item) => '${item.providerId}(ok=${item.ok}, configured=${item.configured}, visible=${item.hasVisibleData}, error=${item.error ?? '-'})').toList()}',
       );
       return parsedResults;
     } catch (error) {
@@ -306,6 +306,7 @@ const AG = [
   p.join(DATA, 'antigravity-accounts.json'),
 ];
 const GEP = ['https://cloudcode-pa.googleapis.com'];
+const GDP = 'rising-fact-p41fc';
 const GHD = {
   'User-Agent': 'antigravity/1.11.5 windows/amd64',
   'X-Goog-Api-Client': 'google-cloud-sdk vscode_cloudshelleditor/0.1',
@@ -686,7 +687,8 @@ async function rGAccess(src) {
 }
 
 async function fGM(src) {
-  const body = src.projectId ? { project: src.projectId } : {};
+  const projectId = src.projectId || GDP;
+  const body = { project: projectId };
   for (const ep of GEP) {
     try {
       const ac = typeof AbortController !== 'undefined' ? new AbortController() : null;
@@ -709,7 +711,8 @@ async function fGM(src) {
 
 async function fGQB(src) {
   if (src.sourceId !== 'gemini') return null;
-  const body = src.projectId ? { project: src.projectId } : {};
+  const projectId = src.projectId || GDP;
+  const body = { project: projectId };
   try {
     const ac = typeof AbortController !== 'undefined' ? new AbortController() : null;
     const tm = ac ? setTimeout(() => ac.abort(), 15000) : null;
