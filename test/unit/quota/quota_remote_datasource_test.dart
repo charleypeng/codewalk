@@ -73,97 +73,106 @@ void main() {
     expect(results.first.providerId, 'claude');
   });
 
-  test(
-    'falls back to shell discovery when REST endpoints are unavailable',
-    () async {
-      final dio = Dio();
-      String? shellCommand;
-      dio.interceptors.add(
-        InterceptorsWrapper(
-          onRequest: (options, handler) {
-            if (options.path == '/api/quota/providers') {
-              handler.reject(
-                DioException(
-                  requestOptions: options,
-                  response: Response<dynamic>(
-                    requestOptions: options,
-                    statusCode: 404,
-                  ),
-                ),
-              );
-              return;
-            }
-            if (options.path == '/session' && options.method == 'POST') {
-              handler.resolve(
-                Response<dynamic>(
-                  requestOptions: options,
-                  statusCode: 200,
-                  data: <String, dynamic>{'id': 'ses_quota_probe'},
-                ),
-              );
-              return;
-            }
-            if (options.path == '/session/ses_quota_probe/shell') {
-              shellCommand =
-                  (options.data as Map<String, dynamic>)['command'] as String?;
-              handler.resolve(
-                Response<dynamic>(
-                  requestOptions: options,
-                  statusCode: 200,
-                  data: <String, dynamic>{
-                    'parts': <Map<String, dynamic>>[
-                      <String, dynamic>{
-                        'type': 'text',
-                        'text':
-                            'CW_QUOTA_JSON:{"results":[{"providerId":"openrouter","providerName":"OpenRouter","ok":true,"configured":true,"usage":{"windows":{"credits":{"usedPercent":63,"valueLabel":"\$12.00 remaining"}}},"fetchedAt":1}]}',
-                      },
-                    ],
-                  },
-                ),
-              );
-              return;
-            }
-            if (options.path == '/session/ses_quota_probe' &&
-                options.method == 'DELETE') {
-              handler.resolve(
-                Response<dynamic>(requestOptions: options, statusCode: 200),
-              );
-              return;
-            }
+  test('falls back to shell discovery when REST endpoints are unavailable', () async {
+    final dio = Dio();
+    String? shellCommand;
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          if (options.path == '/api/quota/providers') {
             handler.reject(
               DioException(
                 requestOptions: options,
-                error: 'Unexpected ${options.path}',
+                response: Response<dynamic>(
+                  requestOptions: options,
+                  statusCode: 404,
+                ),
               ),
             );
-          },
-        ),
-      );
+            return;
+          }
+          if (options.path == '/session' && options.method == 'POST') {
+            handler.resolve(
+              Response<dynamic>(
+                requestOptions: options,
+                statusCode: 200,
+                data: <String, dynamic>{'id': 'ses_quota_probe'},
+              ),
+            );
+            return;
+          }
+          if (options.path == '/session/ses_quota_probe/shell') {
+            shellCommand =
+                (options.data as Map<String, dynamic>)['command'] as String?;
+            handler.resolve(
+              Response<dynamic>(
+                requestOptions: options,
+                statusCode: 200,
+                data: <String, dynamic>{
+                  'parts': <Map<String, dynamic>>[
+                    <String, dynamic>{
+                      'type': 'text',
+                      'text':
+                          'CW_QUOTA_JSON:{"results":[{"providerId":"openrouter","providerName":"OpenRouter","ok":true,"configured":true,"usage":{"windows":{"credits":{"usedPercent":63,"valueLabel":"\$12.00 remaining"}}},"fetchedAt":1}]}',
+                    },
+                  ],
+                },
+              ),
+            );
+            return;
+          }
+          if (options.path == '/session/ses_quota_probe' &&
+              options.method == 'DELETE') {
+            handler.resolve(
+              Response<dynamic>(requestOptions: options, statusCode: 200),
+            );
+            return;
+          }
+          handler.reject(
+            DioException(
+              requestOptions: options,
+              error: 'Unexpected ${options.path}',
+            ),
+          );
+        },
+      ),
+    );
 
-      final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
-      final results = await dataSource.fetchQuotaResults();
+    final dataSource = QuotaRemoteDataSourceImpl(dio: dio);
+    final results = await dataSource.fetchQuotaResults();
 
-      expect(results, hasLength(1));
-      expect(results.first.providerId, 'openrouter');
-      expect(
-        results.first.usage?.windows['credits']?.valueLabel,
-        '\$12.00 remaining',
-      );
+    expect(results, hasLength(1));
+    expect(results.first.providerId, 'openrouter');
+    expect(
+      results.first.usage?.windows['credits']?.valueLabel,
+      '\$12.00 remaining',
+    );
 
-      final script = _decodeShellScript(shellCommand!);
-      expect(script, contains("const AG = ["));
-      expect(script, contains("p.join(CFG, 'antigravity-accounts.json')"));
-      expect(script, contains('function rGem(a)'));
-      expect(script, contains('function rAnti()'));
-      expect(script, contains('v1internal:retrieveUserQuota'));
-      expect(script, contains('Client-Metadata'));
-      expect(script, contains('https://oauth2.googleapis.com/token'));
-      expect(script, contains('function rGAccess(src)'));
-      expect(script, contains("const GDP = 'rising-fact-p41fc';"));
-      expect(script, isNot(contains('GOCSPX-')));
-      expect(script, isNot(contains('.apps.googleusercontent.com')));
-    },
-  );
+    final script = _decodeShellScript(shellCommand!);
+    expect(script, contains("const AG = ["));
+    expect(script, contains("p.join(CFG, 'antigravity-accounts.json')"));
+    expect(script, contains('function rGem(a)'));
+    expect(script, contains('function rAnti()'));
+    expect(script, contains('v1internal:retrieveUserQuota'));
+    expect(script, contains('Client-Metadata'));
+    expect(script, contains('https://oauth2.googleapis.com/token'));
+    expect(script, contains('function rGAccess(src)'));
+    expect(script, contains("const GDP = 'rising-fact-p41fc';"));
+    expect(
+      script,
+      contains(
+        "const GGID = '681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com';",
+      ),
+    );
+    expect(
+      script,
+      contains(
+        "const AGID = '1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com';",
+      ),
+    );
+    expect(script, contains('const GGSC = '));
+    expect(script, contains('const AGSC = '));
+  });
 
   test('generated quota shell script is valid JavaScript', () async {
     final dio = Dio();

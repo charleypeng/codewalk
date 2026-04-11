@@ -307,6 +307,10 @@ const AG = [
 ];
 const GEP = ['https://cloudcode-pa.googleapis.com'];
 const GDP = 'rising-fact-p41fc';
+const GGID = '681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com';
+const GGSC = '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';
+const AGID = '1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com';
+const AGSC = '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';
 const GHD = {
   'User-Agent': 'antigravity/1.11.5 windows/amd64',
   'X-Goog-Api-Client': 'google-cloud-sdk vscode_cloudshelleditor/0.1',
@@ -404,6 +408,8 @@ function pgR(v) {
 function gCred(obj, prefix) {
   const o = asO(obj) || {};
   const c = asO(o.client);
+  const did = prefix === 'GEMINI' ? GGID : prefix === 'ANTIGRAVITY' ? AGID : null;
+  const dsc = prefix === 'GEMINI' ? GGSC : prefix === 'ANTIGRAVITY' ? AGSC : null;
   return {
     clientId: pickS(
       o.clientId,
@@ -414,6 +420,7 @@ function gCred(obj, prefix) {
       c && c.clientId,
       prefix ? process.env[prefix + '_GOOGLE_CLIENT_ID'] : null,
       process.env.GOOGLE_CLIENT_ID,
+      did,
     ),
     clientSecret: pickS(
       o.clientSecret,
@@ -424,6 +431,7 @@ function gCred(obj, prefix) {
       c && c.clientSecret,
       prefix ? process.env[prefix + '_GOOGLE_CLIENT_SECRET'] : null,
       process.env.GOOGLE_CLIENT_SECRET,
+      dsc,
     ),
   };
 }
