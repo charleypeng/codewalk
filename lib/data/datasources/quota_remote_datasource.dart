@@ -307,6 +307,9 @@ const AG = [
 ];
 const GEP = ['https://cloudcode-pa.googleapis.com'];
 const GDP = 'rising-fact-p41fc';
+// These are provider-level OAuth app credentials, not user account secrets.
+// OpenChamber ships the same fallback so installed builds can refresh
+// host-owned Gemini tokens even when the host auth files omit client metadata.
 const GGID = '681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com';
 const GGSC = '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';
 const AGID = '1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com';
