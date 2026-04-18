@@ -1791,7 +1791,11 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (responseData is Map) {
         final payload = Map<String, dynamic>.from(responseData);
         final infoRaw = payload['info'];
-        final info = infoRaw is Map<String, dynamic> ? infoRaw : payload;
+        final info = infoRaw is Map<String, dynamic>
+            ? infoRaw
+            : infoRaw is Map
+            ? Map<String, dynamic>.from(infoRaw)
+            : payload;
         final responseMessageId = info['id'] as String?;
         if (responseMessageId != null && responseMessageId.trim().isNotEmpty) {
           activeAssistantMessageId = responseMessageId.trim();
