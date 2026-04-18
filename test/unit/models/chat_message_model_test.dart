@@ -33,6 +33,36 @@ void main() {
       expect(textPart.text, contains('new content'));
     });
 
+    test('supports alternate diff keys in synthesized user summary text', () {
+      final model = ChatMessageModel.fromJson(<String, dynamic>{
+        'id': 'msg_user_alt_diff',
+        'sessionID': 'ses_1',
+        'role': 'user',
+        'time': <String, dynamic>{'created': 1000},
+        'summary': <String, dynamic>{
+          'title': 'Refactor',
+          'diffs': <dynamic>[
+            <String, dynamic>{
+              'path': 'lib/feature.dart',
+              'content': 'content style',
+            },
+            <String, dynamic>{
+              'path': 'lib/patch.dart',
+              'patch': '@@\n-old\n+new',
+            },
+          ],
+        },
+        'parts': <dynamic>[],
+      });
+
+      final message = model.toDomain() as UserMessage;
+      final textPart = message.parts.single as TextPart;
+      expect(textPart.text, contains('File: lib/feature.dart'));
+      expect(textPart.text, contains('content style'));
+      expect(textPart.text, contains('File: lib/patch.dart'));
+      expect(textPart.text, contains('@@'));
+    });
+
     test('parses assistant completion timestamp and summary flag', () {
       final model = ChatMessageModel.fromJson(<String, dynamic>{
         'id': 'msg_ai_1',

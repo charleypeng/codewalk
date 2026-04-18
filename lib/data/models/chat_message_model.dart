@@ -34,8 +34,14 @@ class ChatMessageModel {
       if (diffs != null && diffs.isNotEmpty) {
         for (final d in diffs) {
           if (d is Map<String, dynamic>) {
-            final file = (d['file'] as String?) ?? '';
-            final after = (d['after'] as String?) ?? '';
+            final file =
+                (d['file'] as String?) ?? (d['path'] as String?) ?? '';
+            final after =
+                (d['after'] as String?) ??
+                (d['content'] as String?) ??
+                (d['diff'] as String?) ??
+                (d['patch'] as String?) ??
+                '';
             if (file.isNotEmpty) buffer.writeln('File: $file');
             if (after.isNotEmpty) buffer.writeln(after);
           }

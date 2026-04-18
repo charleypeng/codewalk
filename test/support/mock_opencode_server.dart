@@ -13,6 +13,7 @@ class MockOpenCodeServer {
   bool promptAsyncSupported = true;
   bool streamMessageUpdates = false;
   bool preserveMessageHistoryOnPromptAsync = false;
+  bool promptAsyncReturnsCompletePayload = false;
   int promptAsyncSeedDelayMs = 0;
   int forceEmptySessionMessageListResponses = 0;
   bool simulateBusyThenIdleOnPromptAsync = false;
@@ -25,6 +26,7 @@ class MockOpenCodeServer {
   int messageRequestCount = 0;
   int sessionStatusRequestCount = 0;
   int sessionMessageListRequestCount = 0;
+  int messageDetailRequestCount = 0;
   String? lastSessionMessageListLimit;
   int eventConnectionCount = 0;
   int globalEventConnectionCount = 0;
@@ -105,6 +107,7 @@ class MockOpenCodeServer {
     lastQuestionRejectRequestId = null;
     promptAsyncSupported = true;
     preserveMessageHistoryOnPromptAsync = false;
+    promptAsyncReturnsCompletePayload = false;
     promptAsyncSeedDelayMs = 0;
     forceEmptySessionMessageListResponses = 0;
     simulateBusyThenIdleOnPromptAsync = false;
@@ -113,6 +116,7 @@ class MockOpenCodeServer {
     messageRequestCount = 0;
     sessionStatusRequestCount = 0;
     sessionMessageListRequestCount = 0;
+    messageDetailRequestCount = 0;
     lastSessionMessageListLimit = null;
     _assistantMessageCounter = 0;
     _latestAssistantMessageId = null;
@@ -945,6 +949,15 @@ class MockOpenCodeServer {
       } else {
         _seedAssistantMessageForSession(sessionId);
       }
+      if (promptAsyncReturnsCompletePayload) {
+        final messageId = _latestAssistantMessageId;
+        final payload =
+            messageId == null ? null : _messageDetails[messageId];
+        if (payload != null) {
+          await _writeJson(request.response, 200, payload);
+          return;
+        }
+      }
       request.response.statusCode = 204;
       await request.response.close();
       return;
@@ -956,6 +969,7 @@ class MockOpenCodeServer {
       final messageId = segments[3];
 
       if (method == 'GET') {
+        messageDetailRequestCount += 1;
         if (requiredMessageDirectory != null &&
             request.uri.queryParameters['directory'] !=
                 requiredMessageDirectory) {

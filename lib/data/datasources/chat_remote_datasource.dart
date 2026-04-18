@@ -1800,6 +1800,37 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
             details: 'activeAssistantMessageId=$activeAssistantMessageId',
           );
         }
+
+        // Some recent servers return the completed assistant payload directly
+        // on prompt_async. When that happens, prefer the authoritative payload
+        // instead of entering the fallback polling path.
+        final responseParts = payload['parts'];
+        final completedMs = (info['time'] is Map)
+            ? ((info['time'] as Map)['completed'] as num?)?.toInt()
+            : null;
+        final isCompletedAssistantResponse =
+            (info['role'] as String?) == 'assistant' &&
+            responseParts is List &&
+            completedMs != null &&
+            completedMs > 0;
+        if (isCompletedAssistantResponse) {
+          final directMessage = ChatMessageModel.fromJson({
+            ...Map<String, dynamic>.from(info),
+            'parts': List<dynamic>.from(responseParts),
+          });
+          messageCompleted = true;
+          emitCompletionMetric(
+            mode: 'prompt_async',
+            outcome: 'direct-response',
+          );
+          trace(
+            'prompt-async-direct-complete',
+            details:
+                'messageId=${directMessage.id} completed=${directMessage.completedTime?.millisecondsSinceEpoch ?? 0}',
+          );
+          yield directMessage;
+          return;
+        }
       }
 
       AppLogger.info('Async send request accepted for session=$sessionId');
@@ -2218,8 +2249,18 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       );
 
       if (response.statusCode == 200) {
-        final info = response.data['info'] as Map<String, dynamic>;
-        final parts = response.data['parts'] as List<dynamic>;
+        final payload = response.data;
+        if (payload is! Map) {
+          return null;
+        }
+        final normalizedPayload = Map<String, dynamic>.from(payload);
+        final infoRaw = normalizedPayload['info'];
+        final partsRaw = normalizedPayload['parts'];
+        if (infoRaw is! Map || partsRaw is! List) {
+          return null;
+        }
+        final info = Map<String, dynamic>.from(infoRaw);
+        final parts = List<dynamic>.from(partsRaw);
 
         return ChatMessageModel.fromJson({...info, 'parts': parts});
       }

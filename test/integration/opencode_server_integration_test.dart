@@ -520,6 +520,38 @@ void main() {
       expect(server.lastSendMessagePayload?['variant'], 'high');
     });
 
+    test(
+      'ChatRemoteDataSource short-circuits prompt_async when server returns completed payload',
+      () async {
+        server.promptAsyncReturnsCompletePayload = true;
+
+        final remote = ChatRemoteDataSourceImpl(
+          dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
+        );
+
+        final messages = await remote
+            .sendMessage(
+              'default',
+              'ses_1',
+              const ChatInputModel(
+                messageId: 'msg_user_prompt_async_200',
+                providerId: 'mock-provider',
+                modelId: 'mock-model',
+                parts: <ChatInputPartModel>[
+                  ChatInputPartModel(type: 'text', text: 'complete directly'),
+                ],
+              ),
+            )
+            .toList();
+
+        expect(messages, hasLength(1));
+        expect(messages.single.completedTime, isNotNull);
+        expect((messages.single.parts.single).text, 'done');
+        expect(server.promptAsyncRequestCount, 1);
+        expect(server.messageDetailRequestCount, 0);
+      },
+    );
+
     test('ChatRemoteDataSource includes agent in outbound payload', () async {
       final remote = ChatRemoteDataSourceImpl(
         dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
