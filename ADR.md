@@ -728,7 +728,7 @@ Create a second Dio instance (`_sseDio`) in `DioClient` with its own `IOHttpClie
 
 `ChatRemoteDataSourceImpl` accepts an optional `sseDio` parameter with fallback to the regular `dio` (for tests and web). Provider-level SSE connections (`/event`, `/global/event`) route through `sseDio`. `baseUrl` and auth configuration are mirrored to both Dio instances in `updateBaseUrl()`, `setBasicAuth()`, and `clearAuth()`.
 
-**Update (commit `61934e9`)**: Per-send SSE connections were removed entirely from the `prompt_async` path. The server monitors per-send SSE connections and aborts the AI agent when it detects disconnection (e.g. half-open TCP after background resume). Without per-send SSE, `prompt_async` processes fully async — message delivery relies on immediate polling (`startFallbackCompletionWatch` with zero delay) plus provider-level SSE. The dedicated SSE Dio remains in use for provider-level SSE streams.
+**Update (commit `61934e9`)**: Per-send SSE connections were removed entirely from the `prompt_async` path. The server monitors per-send SSE connections and aborts the AI agent when it detects disconnection (e.g. half-open TCP after background resume). Without per-send SSE, `prompt_async` processes fully async — message delivery relies on immediate polling (`startFallbackCompletionWatch` with zero delay) plus provider-level SSE. Some recent servers (e.g., OpenChamber or newer OpenCode builds) may return the completed assistant payload directly in the `200 OK` response; CodeWalk accepts this authoritative payload immediately, bypassing the fallback polling path. The dedicated SSE Dio remains in use for provider-level SSE streams.
 
 ### Rationale
 

@@ -423,6 +423,7 @@
 - **When** the client appends the optimistic user bubble and dispatches `prompt_async`
 - **Then** the client assigns the optimistic message a `local_user_<timestamp>_<seq>` ID — it intentionally does NOT use a server-format ID (`msg_*` or similar)
 - **Then** the `messageId` field is NOT forwarded in the `prompt_async` send payload — the server assigns its own canonical ID
+- **Then** if the server returns a fully completed assistant payload directly in the `prompt_async` HTTP response, the client accepts that payload immediately instead of waiting for the fallback polling path
 - **Then** duplicate detection for the server echo uses a content-signature match (normalized text), gated by the `local_user_` prefix check
 - **Then** server-echo replay may temporarily coexist with the optimistic bubble during an active turn, but reconciliation must never hide in-flight tool/work output or block the final assistant reveal
 
