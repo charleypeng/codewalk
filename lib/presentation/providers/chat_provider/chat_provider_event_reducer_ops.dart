@@ -556,7 +556,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
               incomingPart: incomingPart,
               delta: delta ?? '',
             )) {
-              _dedupeNextDeltaFieldKeys.add(partFieldKey);
+              _rememberNextDeltaDedupeField(partFieldKey);
             } else if (delta != null && delta.isNotEmpty) {
               _dedupeNextDeltaFieldKeys.remove(partFieldKey);
             }

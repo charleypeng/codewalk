@@ -2281,7 +2281,7 @@ class ChatProvider extends ChangeNotifier {
       return;
     }
     final tombstoneKey = _permissionInteractionKey(requestId);
-    _dismissedInteractionTombstones.add(tombstoneKey);
+    _rememberDismissedInteractionTombstone(tombstoneKey);
     _isRespondingInteraction = true;
     notifyListeners();
     final result = await replyPermission(
@@ -2324,7 +2324,7 @@ class ChatProvider extends ChangeNotifier {
       return;
     }
     final tombstoneKey = _questionInteractionKey(requestId);
-    _dismissedInteractionTombstones.add(tombstoneKey);
+    _rememberDismissedInteractionTombstone(tombstoneKey);
     _isRespondingInteraction = true;
     notifyListeners();
     final result = await replyQuestion(
@@ -2363,7 +2363,7 @@ class ChatProvider extends ChangeNotifier {
       return;
     }
     final tombstoneKey = _questionInteractionKey(requestId);
-    _dismissedInteractionTombstones.add(tombstoneKey);
+    _rememberDismissedInteractionTombstone(tombstoneKey);
     _isRespondingInteraction = true;
     notifyListeners();
     final result = await rejectQuestion(

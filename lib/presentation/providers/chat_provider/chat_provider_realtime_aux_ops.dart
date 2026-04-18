@@ -342,6 +342,15 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     return 'question:$requestId';
   }
 
+  void _rememberDismissedInteractionTombstone(String key) {
+    if (_dismissedInteractionTombstones.length >= 256) {
+      _dismissedInteractionTombstones.remove(
+        _dismissedInteractionTombstones.first,
+      );
+    }
+    _dismissedInteractionTombstones.add(key);
+  }
+
   Map<String, List<ChatPermissionRequest>> _mergePendingPermissionsBySession(
     Map<String, List<ChatPermissionRequest>> grouped,
   ) {

@@ -40,6 +40,13 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     return existing + delta;
   }
 
+  void _rememberNextDeltaDedupeField(String key) {
+    if (_dedupeNextDeltaFieldKeys.length >= 256) {
+      _dedupeNextDeltaFieldKeys.remove(_dedupeNextDeltaFieldKeys.first);
+    }
+    _dedupeNextDeltaFieldKeys.add(key);
+  }
+
   ChatMessage _copyMessageWithParts(
     ChatMessage message,
     List<MessagePart> parts,
