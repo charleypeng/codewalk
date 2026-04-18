@@ -32,6 +32,8 @@ This document contains only active architectural decisions that represent the cu
 - ADR-026: Cross-Platform Terminal Workspace with Local PTY Shell ⚠️ SUPERSEDED by ADR-027
 - ADR-027: Server-Hosted PTY Terminal with Embedded Client Rendering
 - ADR-028: Unified Scroll Ownership Model for Chat Timeline
+- ADR-029: Host-Discovered Quota and Rate-Limit Monitoring for OpenChamber Parity
+- ADR-030: OpenChamber-Driven Realtime Hardening and Permission Continuity
 
 ---
 
@@ -1465,3 +1467,47 @@ During the implementation of the shell fallback, a critical flaw was discovered 
 3. **Final Solution (Base64 One-Liner):** To restore the critical API-fetching logic without triggering the shell truncation bug, the full multi-provider JavaScript implementation was retained but minified aggressively. The entire JS string is now encoded into Base64 within Dart at compile time. The executed shell command is a strict one-liner:
    `node -e "eval(Buffer.from('BASE64_PAYLOAD','base64').toString())"`
    Result: The payload executes reliably on the host, properly queries remote provider APIs, formats the `hasVisibleData` structure, and bypasses the shell's AST parsing constraints entirely.
+
+---
+
+## ADR-030: OpenChamber-Driven Realtime Hardening and Permission Continuity (2026-04-18)
+
+**Status**: Accepted
+
+**Related**: ADR-003 (Realtime-First Sync), ADR-023 (OpenCode Contract), EXC-001 (Permission Auto-Approve)
+
+### Context
+
+High-latency or unstable connections during OpenChamber-driven sessions revealed edge cases in permission handling and session synchronization. Specifically, pending question/permission refreshes could race with active streams, user mutations (sends/deletes) were possible during confirmed realtime reconnect failures (risking state divergence), and pinned-session pruning occurred before authoritative session lists were fully loaded.
+
+### Decision
+
+1. **Safe Refresh Consolidation**: Merge pending question and permission refreshes into a single atomic lifecycle step that respects the active turn lock.
+2. **Mutation Guard during Reconnect Failures**: Block user-initiated state mutations (send message, delete session, rename) when the realtime transport is in a confirmed `reconnecting` or `failed` state and the fallback polling path has not yet established a verified authoritative bridge.
+3. **Authoritative Pruning Delay**: Delay the pruning of pinned or cached session references until the `loadSessions()` authoritative response is fully processed.
+4. **Bounded One-Shot Reconnect Helpers**: Bounded the set of one-shot reconnect helpers to prevent memory growth during extended disconnection periods.
+
+### Rationale
+
+- Atomic refreshes prevent UI flickering and race conditions between competing permission/question events.
+- Blocking mutations during confirmed disconnects prevents "ghost" state where the client accepts a change that the server never receives, protecting ADR-023 contract integrity.
+- Authoritative pruning prevents "flickering" sessions where a pinned item disappears and reappears because the local cache was cleaned before the server confirmation arrived.
+- Bounded helper sets ensure long-term stability in degraded network conditions.
+
+### Consequences
+
+- ✅ Improved stability during OpenChamber-driven high-latency sessions.
+- ✅ Stronger ADR-023 compliance by preventing un-syncable local mutations.
+- ✅ Eliminates UI flickering of pinned sessions during revalidation.
+- ⚠️ Users see explicit "Connection unstable - actions disabled" state during reconnect failures.
+- ❌ Mutation-only offline mode is intentionally not supported to preserve contract parity.
+
+### Key Files
+
+- `lib/presentation/providers/chat_provider/chat_provider_realtime_ops.dart`
+- `lib/presentation/providers/chat_provider/chat_provider_session_ops.dart`
+- `lib/presentation/providers/chat_provider/chat_provider_message_merge_ops.dart`
+
+### ADR-023 Compatibility
+
+This hardening is fully compliant with ADR-023. It enforces server-authoritative state by blocking local mutations when transport integrity is lost and ensures the client waits for authoritative server lists before modifying local visibility of pinned items.
