@@ -51,6 +51,7 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     if (snapshot == null) {
       _sessions = <ChatSession>[];
       _currentSession = null;
+      _hasLoadedSessionsAuthoritatively = false;
       _pendingCurrentSessionHydrationId = null;
       _messages = <ChatMessage>[];
       _messagesVersion++;
@@ -76,6 +77,7 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     }
 
     _sessions = _filterSessionsForCurrentContext(snapshot.sessions);
+    _hasLoadedSessionsAuthoritatively = false;
     _currentSession = snapshot.currentSession;
     _messages = List<ChatMessage>.from(snapshot.messages);
     final restoredSessionId = _currentSession?.id;

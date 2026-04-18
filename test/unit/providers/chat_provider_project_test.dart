@@ -150,6 +150,147 @@ void main() {
     );
 
     test(
+      'delayed pending permission reload does not resurrect a replied request',
+      () async {
+        const permission = ChatPermissionRequest(
+          id: 'perm_race_1',
+          sessionId: 'ses_1',
+          permission: 'edit',
+          patterns: <String>['lib/**'],
+          always: <String>[],
+          metadata: <String, dynamic>{},
+        );
+        chatRepository.pendingPermissions = const <ChatPermissionRequest>[
+          permission,
+        ];
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'model_a': testModel('model_a')},
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a'],
+          ),
+        );
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.initializeProviders();
+
+        expect(provider.currentPermissionRequest?.id, 'perm_race_1');
+
+        await provider.setForegroundActive(false);
+        final reloadGate = Completer<void>();
+        chatRepository.listPermissionsDelay = () => reloadGate.future;
+
+        final resumeFuture = provider.setForegroundActive(true);
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        await provider.respondPermissionRequest(
+          requestId: 'perm_race_1',
+          reply: 'once',
+        );
+
+        chatRepository.pendingPermissions = const <ChatPermissionRequest>[
+          permission,
+        ];
+        reloadGate.complete();
+        await resumeFuture;
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(chatRepository.lastPermissionRequestId, 'perm_race_1');
+        expect(provider.currentPermissionRequest, isNull);
+        expect(provider.currentThreadPermissionRequests, isEmpty);
+      },
+    );
+
+    test(
+      'respondPermissionRequest is blocked while realtime transport reconnects',
+      () async {
+        chatRepository.pendingPermissions = const <ChatPermissionRequest>[
+          ChatPermissionRequest(
+            id: 'perm_blocked_1',
+            sessionId: 'ses_1',
+            permission: 'edit',
+            patterns: <String>['lib/**'],
+            always: <String>[],
+            metadata: <String, dynamic>{},
+          ),
+        ];
+        appRepository.providersResult = Right(
+          ProvidersResponse(
+            providers: <Provider>[
+              Provider(
+                id: 'provider_a',
+                name: 'Provider A',
+                env: const <String>[],
+                models: <String, Model>{'model_a': testModel('model_a')},
+              ),
+            ],
+            defaultModels: const <String, String>{'provider_a': 'model_a'},
+            connected: const <String>['provider_a'],
+          ),
+        );
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.initializeProviders();
+
+        chatRepository.emitEventFailure(const NetworkFailure('stream offline'));
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        await provider.respondPermissionRequest(
+          requestId: 'perm_blocked_1',
+          reply: 'once',
+        );
+
+        expect(chatRepository.lastPermissionRequestId, isNull);
+        expect(provider.currentPermissionRequest?.id, 'perm_blocked_1');
+        expect(
+          provider.consumePendingUiNotice()?.message,
+          contains('Reconnecting'),
+        );
+      },
+    );
+
+    test(
+      'session.deleted does not clear pinned sessions before authoritative load completes',
+      () async {
+        await provider.projectProvider.initializeProject();
+        final scopeId = provider.projectProvider.currentDirectory;
+        await localDataSource.savePinnedSessionsJson(
+          jsonEncode(<String>['ses_ghost']),
+          serverId: 'srv_test',
+          scopeId: scopeId,
+        );
+
+        await provider.initializeProviders();
+        expect(provider.pinnedSessionIds, contains('ses_ghost'));
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.deleted',
+            properties: <String, dynamic>{'sessionID': 'ses_ghost'},
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(provider.pinnedSessionIds, contains('ses_ghost'));
+
+        await provider.loadSessions();
+
+        expect(provider.pinnedSessionIds, isNot(contains('ses_ghost')));
+      },
+    );
+
+    test(
       'collects current-thread permissions including subagent descendants',
       () async {
         chatRepository.sessions.add(

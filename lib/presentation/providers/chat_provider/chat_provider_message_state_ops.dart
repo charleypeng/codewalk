@@ -1,6 +1,45 @@
 part of '../chat_provider.dart';
 
 extension _ChatProviderMessageStateOps on ChatProvider {
+  String? _deltaDedupeFieldKey(MessagePart part) {
+    if (part is TextPart || part is ReasoningPart) {
+      return '${part.messageId}::${part.id}';
+    }
+    return null;
+  }
+
+  bool _shouldMarkNextDeltaDedupe({
+    required MessagePart existingPart,
+    required MessagePart incomingPart,
+    required String delta,
+  }) {
+    if (delta.isEmpty) {
+      return false;
+    }
+    if (existingPart is TextPart && incomingPart is TextPart) {
+      return incomingPart.text.length > existingPart.text.length &&
+          incomingPart.text.startsWith(existingPart.text);
+    }
+    if (existingPart is ReasoningPart && incomingPart is ReasoningPart) {
+      return incomingPart.text.length > existingPart.text.length &&
+          incomingPart.text.startsWith(existingPart.text);
+    }
+    return false;
+  }
+
+  String _appendNonOverlappingDelta(String existing, String delta) {
+    if (existing.isEmpty || delta.isEmpty) {
+      return '$existing$delta';
+    }
+    final maxOverlap = math.min(math.min(existing.length, delta.length), 4096);
+    for (var overlap = maxOverlap; overlap > 0; overlap -= 1) {
+      if (existing.endsWith(delta.substring(0, overlap))) {
+        return existing + delta.substring(overlap);
+      }
+    }
+    return existing + delta;
+  }
+
   ChatMessage _copyMessageWithParts(
     ChatMessage message,
     List<MessagePart> parts,
@@ -33,6 +72,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     required MessagePart existingPart,
     required MessagePart incomingPart,
     required String delta,
+    bool preferOverlapDedupe = false,
   }) {
     if (delta.isEmpty) {
       return incomingPart;
@@ -41,6 +81,8 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     if (existingPart is TextPart && incomingPart is TextPart) {
       final mergedText = incomingPart.text.startsWith(existingPart.text)
           ? incomingPart.text
+          : preferOverlapDedupe
+          ? _appendNonOverlappingDelta(existingPart.text, delta)
           : '${existingPart.text}$delta';
       return TextPart(
         id: incomingPart.id,
@@ -54,6 +96,8 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     if (existingPart is ReasoningPart && incomingPart is ReasoningPart) {
       final mergedText = incomingPart.text.startsWith(existingPart.text)
           ? incomingPart.text
+          : preferOverlapDedupe
+          ? _appendNonOverlappingDelta(existingPart.text, delta)
           : '${existingPart.text}$delta';
       return ReasoningPart(
         id: incomingPart.id,

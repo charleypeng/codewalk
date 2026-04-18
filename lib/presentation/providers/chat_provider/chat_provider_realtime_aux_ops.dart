@@ -234,11 +234,18 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
       (permissions) {
         final grouped = <String, List<ChatPermissionRequest>>{};
         for (final item in permissions) {
+          if (_dismissedInteractionTombstones.contains(
+            _permissionInteractionKey(item.id),
+          )) {
+            continue;
+          }
           grouped
               .putIfAbsent(item.sessionId, () => <ChatPermissionRequest>[])
               .add(item);
         }
-        _pendingPermissionsBySession = grouped;
+        _pendingPermissionsBySession = _mergePendingPermissionsBySession(
+          grouped,
+        );
         _threadPermissionsVersion++;
       },
     );
@@ -251,11 +258,16 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
       (questions) {
         final grouped = <String, List<ChatQuestionRequest>>{};
         for (final item in questions) {
+          if (_dismissedInteractionTombstones.contains(
+            _questionInteractionKey(item.id),
+          )) {
+            continue;
+          }
           grouped
               .putIfAbsent(item.sessionId, () => <ChatQuestionRequest>[])
               .add(item);
         }
-        _pendingQuestionsBySession = grouped;
+        _pendingQuestionsBySession = _mergePendingQuestionsBySession(grouped);
         _threadPermissionsVersion++;
       },
     );
@@ -283,7 +295,9 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
 
   void _removeSessionById(String sessionId) {
     _sessions.removeWhere((item) => item.id == sessionId);
-    final wasPinned = _pinnedSessionIds.remove(sessionId);
+    final wasPinned =
+        _hasLoadedSessionsAuthoritatively &&
+        _pinnedSessionIds.remove(sessionId);
     if (wasPinned) {
       unawaited(
         _persistModelPreferenceState(
@@ -318,6 +332,80 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     _sessionTodoById.remove(sessionId);
     _sessionDiffById.remove(sessionId);
     _threadPermissionsVersion++;
+  }
+
+  String _permissionInteractionKey(String requestId) {
+    return 'permission:$requestId';
+  }
+
+  String _questionInteractionKey(String requestId) {
+    return 'question:$requestId';
+  }
+
+  Map<String, List<ChatPermissionRequest>> _mergePendingPermissionsBySession(
+    Map<String, List<ChatPermissionRequest>> grouped,
+  ) {
+    final merged = <String, List<ChatPermissionRequest>>{};
+    for (final entry in _pendingPermissionsBySession.entries) {
+      final filtered = entry.value
+          .where(
+            (item) => !_dismissedInteractionTombstones.contains(
+              _permissionInteractionKey(item.id),
+            ),
+          )
+          .toList(growable: false);
+      if (filtered.isNotEmpty) {
+        merged[entry.key] = filtered;
+      }
+    }
+    for (final entry in grouped.entries) {
+      final byId = <String, ChatPermissionRequest>{
+        for (final item in merged[entry.key] ?? const <ChatPermissionRequest>[])
+          item.id: item,
+      };
+      for (final item in entry.value) {
+        byId[item.id] = item;
+      }
+      if (byId.isEmpty) {
+        merged.remove(entry.key);
+      } else {
+        merged[entry.key] = byId.values.toList(growable: false);
+      }
+    }
+    return merged;
+  }
+
+  Map<String, List<ChatQuestionRequest>> _mergePendingQuestionsBySession(
+    Map<String, List<ChatQuestionRequest>> grouped,
+  ) {
+    final merged = <String, List<ChatQuestionRequest>>{};
+    for (final entry in _pendingQuestionsBySession.entries) {
+      final filtered = entry.value
+          .where(
+            (item) => !_dismissedInteractionTombstones.contains(
+              _questionInteractionKey(item.id),
+            ),
+          )
+          .toList(growable: false);
+      if (filtered.isNotEmpty) {
+        merged[entry.key] = filtered;
+      }
+    }
+    for (final entry in grouped.entries) {
+      final byId = <String, ChatQuestionRequest>{
+        for (final item in merged[entry.key] ?? const <ChatQuestionRequest>[])
+          item.id: item,
+      };
+      for (final item in entry.value) {
+        byId[item.id] = item;
+      }
+      if (byId.isEmpty) {
+        merged.remove(entry.key);
+      } else {
+        merged[entry.key] = byId.values.toList(growable: false);
+      }
+    }
+    return merged;
   }
 
   bool _isEphemeralTitleEvent(ChatEvent event) {

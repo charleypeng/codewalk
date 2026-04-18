@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
@@ -284,6 +285,7 @@ class ChatProvider extends ChangeNotifier {
   Timer? _globalRefreshDebounce;
   final Map<String, Timer> _messageFallbackDebounceById = <String, Timer>{};
   bool _isRespondingInteraction = false;
+  final Set<String> _dismissedInteractionTombstones = <String>{};
   Map<String, SessionStatusInfo> _sessionStatusById =
       <String, SessionStatusInfo>{};
   Map<String, List<ChatPermissionRequest>> _pendingPermissionsBySession =
@@ -352,6 +354,7 @@ class ChatProvider extends ChangeNotifier {
       <String, List<String>>{};
   List<String> _favoriteModelKeys = <String>[];
   Set<String> _pinnedSessionIds = <String>{};
+  bool _hasLoadedSessionsAuthoritatively = false;
   Map<String, int> _modelUsageCounts = <String, int>{};
   Map<String, String> _selectedVariantByModel = <String, String>{};
   Map<String, _AgentSelectionMemory> _agentSelectionMemoryByAgent =
@@ -422,6 +425,7 @@ class ChatProvider extends ChangeNotifier {
   // from re-processing events already handled by the session stream.
   final Queue<String> _recentEventIds = Queue<String>();
   static const int _maxRecentEventIds = 64;
+  final Set<String> _dedupeNextDeltaFieldKeys = <String>{};
 
   static const Duration _sessionsCacheTtl = Duration(days: 3);
   static const Duration _lastSessionSnapshotTtl = Duration(days: 7);
@@ -1428,7 +1432,7 @@ class ChatProvider extends ChangeNotifier {
   }
 
   void _prunePinnedSessionIdsToKnownSessions() {
-    if (_pinnedSessionIds.isEmpty) {
+    if (!_hasLoadedSessionsAuthoritatively || _pinnedSessionIds.isEmpty) {
       return;
     }
     final knownSessionIds = _sessions.map((session) => session.id).toSet();
@@ -2272,9 +2276,12 @@ class ChatProvider extends ChangeNotifier {
     required String reply,
     String? message,
   }) async {
-    if (_isRespondingInteraction) {
+    if (_isRespondingInteraction ||
+        !_guardTransportForAction(actionLabel: 'reply to permission')) {
       return;
     }
+    final tombstoneKey = _permissionInteractionKey(requestId);
+    _dismissedInteractionTombstones.add(tombstoneKey);
     _isRespondingInteraction = true;
     notifyListeners();
     final result = await replyPermission(
@@ -2286,19 +2293,25 @@ class ChatProvider extends ChangeNotifier {
       ),
     );
     _isRespondingInteraction = false;
-    result.fold(_handleFailure, (_) {
-      for (final sessionId in _pendingPermissionsBySession.keys.toList()) {
-        final filtered = _pendingPermissionsBySession[sessionId]!
-            .where((item) => item.id != requestId)
-            .toList(growable: false);
-        if (filtered.isEmpty) {
-          _pendingPermissionsBySession.remove(sessionId);
-        } else {
-          _pendingPermissionsBySession[sessionId] = filtered;
+    result.fold(
+      (failure) {
+        _dismissedInteractionTombstones.remove(tombstoneKey);
+        _handleFailure(failure);
+      },
+      (_) {
+        for (final sessionId in _pendingPermissionsBySession.keys.toList()) {
+          final filtered = _pendingPermissionsBySession[sessionId]!
+              .where((item) => item.id != requestId)
+              .toList(growable: false);
+          if (filtered.isEmpty) {
+            _pendingPermissionsBySession.remove(sessionId);
+          } else {
+            _pendingPermissionsBySession[sessionId] = filtered;
+          }
         }
-      }
-      _threadPermissionsVersion++;
-    });
+        _threadPermissionsVersion++;
+      },
+    );
     notifyListeners();
   }
 
@@ -2306,9 +2319,12 @@ class ChatProvider extends ChangeNotifier {
     required String requestId,
     required List<List<String>> answers,
   }) async {
-    if (_isRespondingInteraction) {
+    if (_isRespondingInteraction ||
+        !_guardTransportForAction(actionLabel: 'reply to question')) {
       return;
     }
+    final tombstoneKey = _questionInteractionKey(requestId);
+    _dismissedInteractionTombstones.add(tombstoneKey);
     _isRespondingInteraction = true;
     notifyListeners();
     final result = await replyQuestion(
@@ -2319,26 +2335,35 @@ class ChatProvider extends ChangeNotifier {
       ),
     );
     _isRespondingInteraction = false;
-    result.fold(_handleFailure, (_) {
-      for (final sessionId in _pendingQuestionsBySession.keys.toList()) {
-        final filtered = _pendingQuestionsBySession[sessionId]!
-            .where((item) => item.id != requestId)
-            .toList(growable: false);
-        if (filtered.isEmpty) {
-          _pendingQuestionsBySession.remove(sessionId);
-        } else {
-          _pendingQuestionsBySession[sessionId] = filtered;
+    result.fold(
+      (failure) {
+        _dismissedInteractionTombstones.remove(tombstoneKey);
+        _handleFailure(failure);
+      },
+      (_) {
+        for (final sessionId in _pendingQuestionsBySession.keys.toList()) {
+          final filtered = _pendingQuestionsBySession[sessionId]!
+              .where((item) => item.id != requestId)
+              .toList(growable: false);
+          if (filtered.isEmpty) {
+            _pendingQuestionsBySession.remove(sessionId);
+          } else {
+            _pendingQuestionsBySession[sessionId] = filtered;
+          }
         }
-      }
-      _threadPermissionsVersion++;
-    });
+        _threadPermissionsVersion++;
+      },
+    );
     notifyListeners();
   }
 
   Future<void> rejectQuestionRequest({required String requestId}) async {
-    if (_isRespondingInteraction) {
+    if (_isRespondingInteraction ||
+        !_guardTransportForAction(actionLabel: 'reject question')) {
       return;
     }
+    final tombstoneKey = _questionInteractionKey(requestId);
+    _dismissedInteractionTombstones.add(tombstoneKey);
     _isRespondingInteraction = true;
     notifyListeners();
     final result = await rejectQuestion(
@@ -2348,19 +2373,25 @@ class ChatProvider extends ChangeNotifier {
       ),
     );
     _isRespondingInteraction = false;
-    result.fold(_handleFailure, (_) {
-      for (final sessionId in _pendingQuestionsBySession.keys.toList()) {
-        final filtered = _pendingQuestionsBySession[sessionId]!
-            .where((item) => item.id != requestId)
-            .toList(growable: false);
-        if (filtered.isEmpty) {
-          _pendingQuestionsBySession.remove(sessionId);
-        } else {
-          _pendingQuestionsBySession[sessionId] = filtered;
+    result.fold(
+      (failure) {
+        _dismissedInteractionTombstones.remove(tombstoneKey);
+        _handleFailure(failure);
+      },
+      (_) {
+        for (final sessionId in _pendingQuestionsBySession.keys.toList()) {
+          final filtered = _pendingQuestionsBySession[sessionId]!
+              .where((item) => item.id != requestId)
+              .toList(growable: false);
+          if (filtered.isEmpty) {
+            _pendingQuestionsBySession.remove(sessionId);
+          } else {
+            _pendingQuestionsBySession[sessionId] = filtered;
+          }
         }
-      }
-      _threadPermissionsVersion++;
-    });
+        _threadPermissionsVersion++;
+      },
+    );
     notifyListeners();
   }
 
@@ -2923,6 +2954,7 @@ class ChatProvider extends ChangeNotifier {
           return;
         }
         _sessions = filteredSessions;
+        _hasLoadedSessionsAuthoritatively = true;
         _threadPermissionsVersion++;
         _sessionVisibleLimit = 40;
         _prunePinnedSessionIdsToKnownSessions();
@@ -3595,6 +3627,9 @@ class ChatProvider extends ChangeNotifier {
     if (trimmedText.isEmpty && effectiveAttachments.isEmpty) {
       return false;
     }
+    if (!_guardTransportForAction(actionLabel: 'send message')) {
+      return false;
+    }
 
     _cellularDataSaverService.noteExplicitUserAction(reason: 'send-message');
     await _syncCellularDataSaverRealtimePolicy(
@@ -4100,6 +4135,9 @@ class ChatProvider extends ChangeNotifier {
 
   Future<bool> compactCurrentSession() async {
     if (_isCompactingContext) {
+      return false;
+    }
+    if (!_guardTransportForAction(actionLabel: 'compact session')) {
       return false;
     }
     if (canAbortActiveResponse) {

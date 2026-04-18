@@ -1972,6 +1972,89 @@ void main() {
     );
 
     test(
+      'question.asked survives delayed pending-question reload during foreground reconnect',
+      () async {
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_2',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1500),
+            title: 'Session 2',
+          ),
+        );
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.where((item) => item.id == 'ses_1').first,
+        );
+        await provider.initializeProviders();
+        await provider.setForegroundActive(false);
+
+        final reloadGate = Completer<void>();
+        chatRepository.listQuestionsDelay = () => reloadGate.future;
+
+        final resumeFuture = provider.setForegroundActive(true);
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'question.asked',
+            properties: <String, dynamic>{
+              'id': 'question_race_1',
+              'sessionID': 'ses_2',
+              'questions': <Map<String, dynamic>>[
+                <String, dynamic>{
+                  'question': 'Persist me?',
+                  'header': 'Race',
+                  'options': <Map<String, dynamic>>[
+                    <String, dynamic>{
+                      'label': 'Yes',
+                      'description': 'Keep pending',
+                    },
+                  ],
+                },
+              ],
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        reloadGate.complete();
+        await resumeFuture;
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        final attention = provider.sessionAttentionFor('ses_2');
+        expect(attention.hasPendingInteraction, isTrue);
+        expect(provider.outOfFocusAttentionCount, 1);
+      },
+    );
+
+    test(
+      'sendMessage is blocked while realtime transport is reconnecting',
+      () async {
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.initializeProviders();
+
+        chatRepository.emitEventFailure(const NetworkFailure('stream offline'));
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(provider.syncState, ChatSyncState.reconnecting);
+
+        final sent = await provider.sendMessage('blocked while reconnecting');
+
+        expect(sent, isFalse);
+        expect(chatRepository.lastSendInput, isNull);
+        expect(
+          provider.consumePendingUiNotice()?.message,
+          contains('Reconnecting'),
+        );
+      },
+    );
+
+    test(
       'sending again immediately after stop keeps provider stable and delivers next reply',
       () async {
         final firstStreamController =
@@ -2662,6 +2745,72 @@ void main() {
           ),
         );
         await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        final assistant = provider.messages.single as AssistantMessage;
+        final textPart = assistant.parts.single as TextPart;
+        expect(textPart.text, 'Draft answer');
+      },
+    );
+
+    test(
+      'message.part.updated ignores the next stale overlapping delta after a coalesced snapshot',
+      () async {
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_overlap_text',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_overlap_text',
+                messageId: 'msg_overlap_text',
+                sessionId: 'ses_1',
+                text: 'Draft',
+              ),
+            ],
+          ),
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.initializeProviders();
+
+        chatRepository.emitEvent(
+          ChatEvent(
+            type: 'message.part.updated',
+            properties: <String, dynamic>{
+              'part': MessagePartModel.fromDomain(
+                const TextPart(
+                  id: 'prt_overlap_text',
+                  messageId: 'msg_overlap_text',
+                  sessionId: 'ses_1',
+                  text: 'Draft answer',
+                ),
+              ).toJson(),
+              'delta': ' answer',
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        chatRepository.emitEvent(
+          ChatEvent(
+            type: 'message.part.updated',
+            properties: <String, dynamic>{
+              'part': MessagePartModel.fromDomain(
+                const TextPart(
+                  id: 'prt_overlap_text',
+                  messageId: 'msg_overlap_text',
+                  sessionId: 'ses_1',
+                  text: ' answer',
+                ),
+              ).toJson(),
+              'delta': ' answer',
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
 
         final assistant = provider.messages.single as AssistantMessage;
         final textPart = assistant.parts.single as TextPart;

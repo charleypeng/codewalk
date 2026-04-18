@@ -25,6 +25,20 @@ extension _ChatProviderRealtimeOps on ChatProvider {
     _notifyListeners();
   }
 
+  bool _guardTransportForAction({required String actionLabel}) {
+    final shouldBlock =
+        _syncState == ChatSyncState.reconnecting &&
+        _consecutiveRealtimeFailures > 0;
+    if (!shouldBlock) {
+      return true;
+    }
+    const message = 'Reconnecting to the server. Try again in a moment.';
+    AppLogger.warn('Blocked $actionLabel while realtime transport reconnects');
+    _enqueueUiNotice(type: ChatUiNoticeType.serverError, message: message);
+    _notifyListeners();
+    return false;
+  }
+
   void _startSyncHealthMonitor() {
     _syncHealthTimer?.cancel();
     _syncHealthTimer = Timer.periodic(_effectiveSyncHealthCheckInterval, (_) {

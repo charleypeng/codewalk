@@ -45,6 +45,9 @@ extension _ChatProviderSessionOps on ChatProvider {
       );
     }
     _consecutiveRealtimeFailures = 0;
+    _dismissedInteractionTombstones.clear();
+    _dedupeNextDeltaFieldKeys.clear();
+    _hasLoadedSessionsAuthoritatively = false;
     _lastRealtimeSignalAt = null;
     _degradedMode = false;
     _degradedModeStartedAt = null;

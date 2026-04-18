@@ -1523,6 +1523,8 @@ class FakeChatRepository implements ChatRepository {
   Failure? sessionChildrenFailure;
   Failure? sessionTodoFailure;
   Failure? sessionDiffFailure;
+  Future<void> Function()? listPermissionsDelay;
+  Future<void> Function()? listQuestionsDelay;
   final StreamController<Either<Failure, ChatEvent>> eventController =
       StreamController<Either<Failure, ChatEvent>>.broadcast();
   final StreamController<Either<Failure, ChatEvent>> globalEventController =
@@ -1798,6 +1800,7 @@ class FakeChatRepository implements ChatRepository {
   Future<Either<Failure, List<ChatPermissionRequest>>> listPermissions({
     String? directory,
   }) async {
+    if (listPermissionsDelay != null) await listPermissionsDelay!();
     return Right(List<ChatPermissionRequest>.from(pendingPermissions));
   }
 
@@ -1821,6 +1824,7 @@ class FakeChatRepository implements ChatRepository {
   Future<Either<Failure, List<ChatQuestionRequest>>> listQuestions({
     String? directory,
   }) async {
+    if (listQuestionsDelay != null) await listQuestionsDelay!();
     return Right(List<ChatQuestionRequest>.from(pendingQuestions));
   }
 

@@ -533,17 +533,33 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           }
           nextParts.add(incomingPart);
         } else {
+          final partFieldKey = _deltaDedupeFieldKey(incomingPart);
           if (delta != null && delta.isNotEmpty) {
+            final preferOverlapDedupe =
+                partFieldKey != null &&
+                _dedupeNextDeltaFieldKeys.remove(partFieldKey);
             final mergedPart = _mergeIncrementalPartUpdate(
               existingPart: nextParts[existingPartIndex],
               incomingPart: incomingPart,
               delta: delta,
+              preferOverlapDedupe: preferOverlapDedupe,
             );
             if (mergedPart == null) {
               unawaited(_fetchMessageFallback(sessionId, messageId));
               break;
             }
             resolvedPart = mergedPart;
+          }
+          if (partFieldKey != null) {
+            if (_shouldMarkNextDeltaDedupe(
+              existingPart: nextParts[existingPartIndex],
+              incomingPart: incomingPart,
+              delta: delta ?? '',
+            )) {
+              _dedupeNextDeltaFieldKeys.add(partFieldKey);
+            } else if (delta != null && delta.isNotEmpty) {
+              _dedupeNextDeltaFieldKeys.remove(partFieldKey);
+            }
           }
           if (nextParts[existingPartIndex] == resolvedPart) {
             break;
