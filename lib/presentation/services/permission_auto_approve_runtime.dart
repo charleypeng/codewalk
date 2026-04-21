@@ -132,3 +132,38 @@ Set<String> resolveThreadSessionIdsForBackgroundContext({
   );
   return output;
 }
+
+bool shouldClearBackgroundPermissionAutoApproveContextForTransition({
+  required String currentServerId,
+  required String currentScopeId,
+  String? currentDirectory,
+  required String nextServerId,
+  required String nextScopeId,
+  String? nextDirectory,
+}) {
+  final normalizedCurrentServerId = currentServerId.trim();
+  final normalizedCurrentScopeId = currentScopeId.trim();
+  if (normalizedCurrentServerId.isEmpty || normalizedCurrentScopeId.isEmpty) {
+    return false;
+  }
+
+  final normalizedNextServerId = nextServerId.trim();
+  final normalizedNextScopeId = nextScopeId.trim();
+  if (normalizedNextServerId.isEmpty || normalizedNextScopeId.isEmpty) {
+    return true;
+  }
+  if (normalizedCurrentServerId != normalizedNextServerId ||
+      normalizedCurrentScopeId != normalizedNextScopeId) {
+    return true;
+  }
+
+  final normalizedCurrentDirectory = currentDirectory?.trim() ?? '';
+  final normalizedNextDirectory = nextDirectory?.trim() ?? '';
+  if (normalizedCurrentDirectory.isNotEmpty &&
+      normalizedNextDirectory.isNotEmpty &&
+      normalizedCurrentDirectory != normalizedNextDirectory) {
+    return true;
+  }
+
+  return false;
+}

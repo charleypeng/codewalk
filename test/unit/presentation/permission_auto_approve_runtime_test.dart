@@ -66,4 +66,46 @@ void main() {
       );
     },
   );
+
+  test('clears background auto-approve context on server change', () {
+    expect(
+      shouldClearBackgroundPermissionAutoApproveContextForTransition(
+        currentServerId: 'srv_a',
+        currentScopeId: '/repo-a',
+        currentDirectory: '/repo-a',
+        nextServerId: 'srv_b',
+        nextScopeId: '/repo-a',
+        nextDirectory: '/repo-a',
+      ),
+      isTrue,
+    );
+  });
+
+  test('clears background auto-approve context on scope change', () {
+    expect(
+      shouldClearBackgroundPermissionAutoApproveContextForTransition(
+        currentServerId: 'srv_a',
+        currentScopeId: '/repo-a',
+        currentDirectory: '/repo-a',
+        nextServerId: 'srv_a',
+        nextScopeId: '/repo-b',
+        nextDirectory: '/repo-b',
+      ),
+      isTrue,
+    );
+  });
+
+  test('keeps background auto-approve context when scope is unchanged', () {
+    expect(
+      shouldClearBackgroundPermissionAutoApproveContextForTransition(
+        currentServerId: 'srv_a',
+        currentScopeId: '/repo-a',
+        currentDirectory: '/repo-a',
+        nextServerId: 'srv_a',
+        nextScopeId: '/repo-a',
+        nextDirectory: '/repo-a',
+      ),
+      isFalse,
+    );
+  });
 }

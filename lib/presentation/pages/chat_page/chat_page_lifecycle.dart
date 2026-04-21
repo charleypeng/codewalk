@@ -49,6 +49,38 @@ extension _ChatPageLifecycle on _ChatPageState {
     );
   }
 
+  Future<void> _clearBackgroundPermissionAutoApproveContext({
+    required String reason,
+    String? serverId,
+  }) async {
+    if (!_isMobileRuntime) {
+      return;
+    }
+
+    final normalizedServerId =
+        (serverId ??
+                _chatProvider?.activeServerId ??
+                _appProvider?.activeServerId)
+            ?.trim() ??
+        '';
+    if (normalizedServerId.isEmpty) {
+      _backgroundPermissionAutoApproveContextSignature = 'clear:-';
+      return;
+    }
+
+    final clearSignature = 'clear:$normalizedServerId';
+    if (_backgroundPermissionAutoApproveContextSignature == clearSignature) {
+      return;
+    }
+    _backgroundPermissionAutoApproveContextSignature = clearSignature;
+    AppLogger.debug(
+      'background_permission_auto_approve_context reason=$reason action=clear server=$normalizedServerId',
+    );
+    await AndroidBackgroundAlertWorker.clearPermissionAutoApproveContext(
+      serverId: normalizedServerId,
+    );
+  }
+
   String _autoApprovePermissionReply(ChatPermissionRequest request) {
     return permissionAutoApproveReplyForRequest(request);
   }
@@ -63,20 +95,9 @@ extension _ChatPageLifecycle on _ChatPageState {
     final chatProvider = _chatProvider;
     final settingsProvider = _settingsProvider;
     final serverId = chatProvider?.activeServerId.trim() ?? '';
-    final clearSignature = serverId.isEmpty ? 'clear:-' : 'clear:$serverId';
-
     Future<void> clearContext() async {
-      if (_backgroundPermissionAutoApproveContextSignature == clearSignature) {
-        return;
-      }
-      _backgroundPermissionAutoApproveContextSignature = clearSignature;
-      if (serverId.isEmpty) {
-        return;
-      }
-      AppLogger.debug(
-        'background_permission_auto_approve_context reason=$reason action=clear server=$serverId',
-      );
-      await AndroidBackgroundAlertWorker.clearPermissionAutoApproveContext(
+      await _clearBackgroundPermissionAutoApproveContext(
+        reason: reason,
         serverId: serverId,
       );
     }

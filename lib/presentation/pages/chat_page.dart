@@ -689,6 +689,9 @@ class _ChatPageState extends State<ChatPage>
     _projectProvider?.removeListener(_handleProjectProviderChange);
     _notificationTapSubscription?.cancel();
     _settingsProvider?.removeListener(_handleSettingsChanged);
+    unawaited(
+      _clearBackgroundPermissionAutoApproveContext(reason: 'chat-page-dispose'),
+    );
     _serverAlertRevealTimer?.cancel();
     _foregroundWarningUiRefreshTimer?.cancel();
     _foregroundWarningSnackbarTimer?.cancel();
@@ -862,6 +865,7 @@ class _ChatPageState extends State<ChatPage>
     if (appProvider == null) {
       return;
     }
+    final previousServerId = _lastServerId;
     final currentServerId = appProvider.activeServerId;
     final currentConnected = appProvider.isConnected;
     final activeServer = appProvider.activeServer;
@@ -871,6 +875,14 @@ class _ChatPageState extends State<ChatPage>
     final serverChanged = currentServerId != _lastServerId;
 
     if (serverChanged) {
+      if (previousServerId != null && previousServerId.trim().isNotEmpty) {
+        unawaited(
+          _clearBackgroundPermissionAutoApproveContext(
+            reason: 'server-changed',
+            serverId: previousServerId,
+          ),
+        );
+      }
       _lastServerId = currentServerId;
       _lastServerConnectionState = currentConnected;
       _lastActiveServerHealthStatus = currentHealth;

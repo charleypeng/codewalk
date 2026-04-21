@@ -15,6 +15,10 @@ extension _ChatPageWorkspaceController on _ChatPageState {
       return;
     }
 
+    await _clearBackgroundPermissionAutoApproveContext(
+      reason: 'project-scope-transition',
+    );
+
     final completion = Completer<void>();
     _projectScopeTransitionTask = completion.future;
 
@@ -91,9 +95,7 @@ extension _ChatPageWorkspaceController on _ChatPageState {
       if (!changed || !wasActiveProject) {
         return;
       }
-      await chatProvider.onProjectScopeChanged(
-        waitForRevalidation: false,
-      );
+      await chatProvider.onProjectScopeChanged(waitForRevalidation: false);
     });
   }
 
