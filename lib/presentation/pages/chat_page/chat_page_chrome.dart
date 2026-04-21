@@ -110,23 +110,28 @@ extension _ChatPageChrome on _ChatPageState {
       return;
     }
 
-    await chatProvider.loadSessionInsights(session.id, userInitiated: true);
-    if (!mounted) {
-      return;
-    }
-
     final title = _sessionDisplayTitle(chatProvider.currentSession ?? session);
     final isCompactLayout =
         context.windowSizeClass.isCompact || _isMobileRuntime;
-    final content = _buildCurrentSessionInsightsContent(
-      chatProvider,
-      reviewFirst: reviewFirst,
+    unawaited(
+      chatProvider.loadSessionInsights(session.id, userInitiated: true),
     );
 
     await showDialog<void>(
       context: context,
       barrierDismissible: true,
       builder: (dialogContext) {
+        final content = ChangeNotifierProvider<ChatProvider>.value(
+          value: chatProvider,
+          child: Consumer<ChatProvider>(
+            builder: (context, liveChatProvider, _) {
+              return _buildCurrentSessionInsightsContent(
+                liveChatProvider,
+                reviewFirst: reviewFirst,
+              );
+            },
+          ),
+        );
         if (isCompactLayout) {
           return Dialog.fullscreen(
             child: Scaffold(
