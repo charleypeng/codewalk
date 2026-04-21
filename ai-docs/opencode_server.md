@@ -5,93 +5,6 @@ URL Source: https://opencode.ai/docs/server/
 Markdown Content:
 # Server | OpenCode
 
-[![Image 1](https://opencode.ai/docs/_astro/logo-dark.DOStV66V.svg)![Image 2](https://opencode.ai/docs/_astro/logo-light.B0yzR0O5.svg) OpenCode](https://opencode.ai/docs/)
-
-[app.header.home](https://opencode.ai/) [app.header.docs](https://opencode.ai/docs/)
-
-[](https://github.com/anomalyco/opencode) [](https://opencode.ai/discord)
-
-Search Ctrl K
-
-Cancel
-
-* [Intro](https://opencode.ai/docs/)
-* [Config](https://opencode.ai/docs/config/)
-* [Providers](https://opencode.ai/docs/providers/)
-* [Network](https://opencode.ai/docs/network/)
-* [Enterprise](https://opencode.ai/docs/enterprise/)
-* [Troubleshooting](https://opencode.ai/docs/troubleshooting/)
-* [Windows](https://opencode.ai/docs/windows-wsl)
-*
-Usage
-    * [Go](https://opencode.ai/docs/go/)
-    * [TUI](https://opencode.ai/docs/tui/)
-    * [CLI](https://opencode.ai/docs/cli/)
-    * [Web](https://opencode.ai/docs/web/)
-    * [IDE](https://opencode.ai/docs/ide/)
-    * [Zen](https://opencode.ai/docs/zen/)
-    * [Share](https://opencode.ai/docs/share/)
-    * [GitHub](https://opencode.ai/docs/github/)
-    * [GitLab](https://opencode.ai/docs/gitlab/)
-
-*
-Configure
-    * [Tools](https://opencode.ai/docs/tools/)
-    * [Rules](https://opencode.ai/docs/rules/)
-    * [Agents](https://opencode.ai/docs/agents/)
-    * [Models](https://opencode.ai/docs/models/)
-    * [Themes](https://opencode.ai/docs/themes/)
-    * [Keybinds](https://opencode.ai/docs/keybinds/)
-    * [Commands](https://opencode.ai/docs/commands/)
-    * [Formatters](https://opencode.ai/docs/formatters/)
-    * [Permissions](https://opencode.ai/docs/permissions/)
-    * [LSP Servers](https://opencode.ai/docs/lsp/)
-    * [MCP servers](https://opencode.ai/docs/mcp-servers/)
-    * [ACP Support](https://opencode.ai/docs/acp/)
-    * [Agent Skills](https://opencode.ai/docs/skills/)
-    * [Custom Tools](https://opencode.ai/docs/custom-tools/)
-
-*
-Develop
-    * [SDK](https://opencode.ai/docs/sdk/)
-    * [Server](https://opencode.ai/docs/server/)
-    * [Plugins](https://opencode.ai/docs/plugins/)
-    * [Ecosystem](https://opencode.ai/docs/ecosystem/)
-
-[GitHub](https://github.com/anomalyco/opencode) [Discord](https://opencode.ai/discord)
-
-Select theme Select language
-
-On this page
-
-* [Overview](https://opencode.ai/docs/server/#_top)
-    * [Usage](https://opencode.ai/docs/server/#usage)
-    * [Authentication](https://opencode.ai/docs/server/#authentication)
-    * [How it works](https://opencode.ai/docs/server/#how-it-works)
-
-* [Spec](https://opencode.ai/docs/server/#spec)
-* [APIs](https://opencode.ai/docs/server/#apis)
-    * [Global](https://opencode.ai/docs/server/#global)
-    * [Project](https://opencode.ai/docs/server/#project)
-    * [Path & VCS](https://opencode.ai/docs/server/#path--vcs)
-    * [Instance](https://opencode.ai/docs/server/#instance)
-    * [Config](https://opencode.ai/docs/server/#config)
-    * [Provider](https://opencode.ai/docs/server/#provider)
-    * [Sessions](https://opencode.ai/docs/server/#sessions)
-    * [Messages](https://opencode.ai/docs/server/#messages)
-    * [Commands](https://opencode.ai/docs/server/#commands)
-    * [Files](https://opencode.ai/docs/server/#files)
-    * [Tools (Experimental)](https://opencode.ai/docs/server/#tools-experimental)
-    * [LSP, Formatters & MCP](https://opencode.ai/docs/server/#lsp-formatters--mcp)
-    * [Agents](https://opencode.ai/docs/server/#agents)
-    * [Logging](https://opencode.ai/docs/server/#logging)
-    * [TUI](https://opencode.ai/docs/server/#tui)
-    * [Auth](https://opencode.ai/docs/server/#auth)
-    * [Events](https://opencode.ai/docs/server/#events)
-    * [Docs](https://opencode.ai/docs/server/#docs)
-
-# Server
-
 Interact with opencode server over HTTP.
 
 The `opencode serve` command runs a headless HTTP server that exposes an OpenAPI endpoint that an opencode client can use.
@@ -305,7 +218,7 @@ The opencode server exposes the following APIs.
 ### [LSP, Formatters & MCP](https://opencode.ai/docs/server/#lsp-formatters--mcp)
 
 | Method | Path | Description | Response |
-| ------ | ---------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| ------ | ------------ | ---------------- | ---------------- |
 | `GET` | `/lsp` | Get LSP server status | [`LSPStatus[]`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
 | `GET` | `/formatter` | Get formatter status | [`FormatterStatus[]`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
 | `GET` | `/mcp` | Get MCP server status | `{ [name: string]:`[MCPStatus](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts)`}` |
@@ -316,7 +229,7 @@ The opencode server exposes the following APIs.
 ### [Agents](https://opencode.ai/docs/server/#agents)
 
 | Method | Path | Description | Response |
-| ------ | ------ | ------------------------- | --------------------------------------------------------------------------------------------- |
+| ------ | -------- | ---------------- | ---------------- |
 | `GET` | `/agent` | List all available agents | [`Agent[]`](https://github.com/anomalyco/opencode/blob/dev/packages/sdk/js/src/gen/types.gen.ts) |
 
 * * *
@@ -324,7 +237,7 @@ The opencode server exposes the following APIs.
 ### [Logging](https://opencode.ai/docs/server/#logging)
 
 | Method | Path | Description | Response |
-| ------ | ---- | ---------------------------------------------------------- | -------- |
+| ------ | -------- | ---------------- | ---------------- |
 | `POST` | `/log` | Write log entry. Body: `{ service, level, message, extra? }` | `boolean` |
 
 * * *
@@ -332,7 +245,7 @@ The opencode server exposes the following APIs.
 ### [TUI](https://opencode.ai/docs/server/#tui)
 
 | Method | Path | Description | Response |
-| ------ | --------------------- | ----------------------------------------- | ---------------------- |
+| ------ | ----------------------- | ---------------- | ---------------- |
 | `POST` | `/tui/append-prompt` | Append text to the prompt | `boolean` |
 | `POST` | `/tui/open-help` | Open the help dialog | `boolean` |
 | `POST` | `/tui/open-sessions` | Open the session selector | `boolean` |
@@ -350,7 +263,7 @@ The opencode server exposes the following APIs.
 ### [Auth](https://opencode.ai/docs/server/#auth)
 
 | Method | Path | Description | Response |
-| ------ | --------- | --------------------------------------------------------------- | -------- |
+| ------ | ----------- | ---------------- | ---------------- |
 | `PUT` | `/auth/:id` | Set authentication credentials. Body must match provider schema | `boolean` |
 
 * * *
@@ -358,7 +271,7 @@ The opencode server exposes the following APIs.
 ### [Events](https://opencode.ai/docs/server/#events)
 
 | Method | Path | Description | Response |
-| ------ | ------ | --------------------------------------------------------------------------- | ------------------------- |
+| ------ | -------- | ---------------- | ---------------- |
 | `GET` | `/event` | Server-sent events stream. First event is `server.connected`, then bus events | Server-sent events stream |
 
 * * *
@@ -366,13 +279,7 @@ The opencode server exposes the following APIs.
 ### [Docs](https://opencode.ai/docs/server/#docs)
 
 | Method | Path | Description | Response |
-| ------ | ---- | ------------------------- | --------------------------- |
+| ------ | -------- | ---------------- | ---------------- |
 | `GET` | `/doc` | OpenAPI 3.1 specification | HTML page with OpenAPI spec |
 
-[Edit page](https://github.com/anomalyco/opencode/edit/dev/packages/web/src/content/docs/server.mdx) [Found a bug? Open an issue](https://github.com/anomalyco/opencode/issues/new) [Join our Discord community](https://opencode.ai/discord)
-
-Select language
-
-© [Anomaly](https://anoma.ly/)
-
-Last updated: Mar 25, 2026
+Last updated: Apr 21, 2026
