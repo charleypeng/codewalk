@@ -146,13 +146,13 @@ void main() {
           modelId: 'model_b',
         );
 
-        final sentWhileBusy = dioClient.patchBodies.whereType<Map>().any((
-          body,
-        ) {
-          final selection = selectionPayloadFromPatch(body);
-          return selection?['providerId'] == 'provider_b' &&
-              selection?['modelId'] == 'model_b';
-        });
+        final sentWhileBusy = dioClient.patchBodies
+            .whereType<Map<String, dynamic>>()
+            .any((body) {
+              final selection = selectionPayloadFromPatch(body);
+              return selection?['providerId'] == 'provider_b' &&
+                  selection?['modelId'] == 'model_b';
+            });
         expect(sentWhileBusy, isFalse);
 
         chatRepository.emitEvent(
@@ -166,13 +166,13 @@ void main() {
         );
         await Future<void>.delayed(const Duration(milliseconds: 40));
 
-        final sentAfterIdle = dioClient.patchBodies.whereType<Map>().any((
-          body,
-        ) {
-          final selection = selectionPayloadFromPatch(body);
-          return selection?['providerId'] == 'provider_b' &&
-              selection?['modelId'] == 'model_b';
-        });
+        final sentAfterIdle = dioClient.patchBodies
+            .whereType<Map<String, dynamic>>()
+            .any((body) {
+              final selection = selectionPayloadFromPatch(body);
+              return selection?['providerId'] == 'provider_b' &&
+                  selection?['modelId'] == 'model_b';
+            });
         expect(sentAfterIdle, isTrue);
       },
     );
