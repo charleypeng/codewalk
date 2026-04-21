@@ -46,7 +46,9 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.byKey(const ValueKey<String>('session_diff_preview_list_0')),
+      find.byKey(
+        const ValueKey<String>('session_diff_preview_list_lib/main.dart'),
+      ),
       findsOneWidget,
     );
     expect(find.text('--- lib/main.dart'), findsOneWidget);
@@ -74,8 +76,54 @@ void main() {
     expect(find.text('+1'), findsOneWidget);
     expect(find.text('-1'), findsOneWidget);
     expect(
-      find.byKey(const ValueKey<String>('session_diff_preview_list_0')),
+      find.byKey(
+        const ValueKey<String>('session_diff_preview_list_lib/main.dart'),
+      ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('switching files rebuilds the preview for the selected diff', (
+    WidgetTester tester,
+  ) async {
+    const secondDiff = SessionDiff(
+      file: 'lib/second.dart',
+      before: 'before second',
+      after: 'after second',
+      additions: 1,
+      deletions: 1,
+      status: 'modified',
+    );
+
+    await tester.binding.setSurfaceSize(const Size(900, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      wrap(
+        const SessionDiffViewer(
+          diffs: <SessionDiff>[sampleDiff, secondDiff],
+          compact: false,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(
+        const ValueKey<String>('session_diff_preview_list_lib/main.dart'),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const ValueKey<String>('session_diff_file_1')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(
+        const ValueKey<String>('session_diff_preview_list_lib/second.dart'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('--- lib/second.dart'), findsOneWidget);
   });
 }
