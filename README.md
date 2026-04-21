@@ -142,6 +142,8 @@ The agent returns a release summary, impact/risk by area, proposed adjustments, 
 
 The project follows Clean Architecture with three layers: Domain, Data, and Presentation. Dependency injection via `get_it`, HTTP via `dio`, state management via `provider`.
 
+For the ADR-023 compatibility baseline and current OpenCode contract inventory, see [CONTRACT_MATRIX.md](CONTRACT_MATRIX.md).
+
 For full technical details, see [CODEBASE.md](CODEBASE.md).
 
 ## Tech Stack
