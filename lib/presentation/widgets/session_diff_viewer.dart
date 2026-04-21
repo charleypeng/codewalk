@@ -236,7 +236,9 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: ListView.builder(
-          key: ValueKey<String>('session_diff_preview_list_${diff.file}'),
+          key: ValueKey<String>(
+            'session_diff_preview_list_${_selectedIndex}_${diff.file}',
+          ),
           padding: const EdgeInsets.symmetric(vertical: 8),
           itemCount: lines.length,
           itemBuilder: (context, index) {

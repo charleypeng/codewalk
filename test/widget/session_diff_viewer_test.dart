@@ -47,7 +47,7 @@ void main() {
     );
     expect(
       find.byKey(
-        const ValueKey<String>('session_diff_preview_list_lib/main.dart'),
+        const ValueKey<String>('session_diff_preview_list_0_lib/main.dart'),
       ),
       findsOneWidget,
     );
@@ -77,7 +77,7 @@ void main() {
     expect(find.text('-1'), findsOneWidget);
     expect(
       find.byKey(
-        const ValueKey<String>('session_diff_preview_list_lib/main.dart'),
+        const ValueKey<String>('session_diff_preview_list_0_lib/main.dart'),
       ),
       findsOneWidget,
     );
@@ -110,7 +110,7 @@ void main() {
 
     expect(
       find.byKey(
-        const ValueKey<String>('session_diff_preview_list_lib/main.dart'),
+        const ValueKey<String>('session_diff_preview_list_0_lib/main.dart'),
       ),
       findsOneWidget,
     );
@@ -120,7 +120,7 @@ void main() {
 
     expect(
       find.byKey(
-        const ValueKey<String>('session_diff_preview_list_lib/second.dart'),
+        const ValueKey<String>('session_diff_preview_list_1_lib/second.dart'),
       ),
       findsOneWidget,
     );
