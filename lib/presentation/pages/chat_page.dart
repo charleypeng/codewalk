@@ -689,8 +689,8 @@ class _ChatPageState extends State<ChatPage>
     _projectProvider?.removeListener(_handleProjectProviderChange);
     _notificationTapSubscription?.cancel();
     _settingsProvider?.removeListener(_handleSettingsChanged);
-    unawaited(
-      _clearBackgroundPermissionAutoApproveContext(reason: 'chat-page-dispose'),
+    _clearBackgroundPermissionAutoApproveContextBestEffort(
+      reason: 'chat-page-dispose',
     );
     _serverAlertRevealTimer?.cancel();
     _foregroundWarningUiRefreshTimer?.cancel();
@@ -875,14 +875,6 @@ class _ChatPageState extends State<ChatPage>
     final serverChanged = currentServerId != _lastServerId;
 
     if (serverChanged) {
-      if (previousServerId != null && previousServerId.trim().isNotEmpty) {
-        unawaited(
-          _clearBackgroundPermissionAutoApproveContext(
-            reason: 'server-changed',
-            serverId: previousServerId,
-          ),
-        );
-      }
       _lastServerId = currentServerId;
       _lastServerConnectionState = currentConnected;
       _lastActiveServerHealthStatus = currentHealth;
@@ -893,7 +885,13 @@ class _ChatPageState extends State<ChatPage>
         unawaited(_terminalController.stop());
       }
       if (currentServerId != null) {
-        unawaited(_handleServerScopeChange());
+        unawaited(_handleServerScopeChange(previousServerId: previousServerId));
+      } else if (previousServerId != null &&
+          previousServerId.trim().isNotEmpty) {
+        _clearBackgroundPermissionAutoApproveContextBestEffort(
+          reason: 'server-changed',
+          serverId: previousServerId,
+        );
       }
       return;
     }

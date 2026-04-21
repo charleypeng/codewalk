@@ -81,6 +81,24 @@ extension _ChatPageLifecycle on _ChatPageState {
     );
   }
 
+  void _clearBackgroundPermissionAutoApproveContextBestEffort({
+    required String reason,
+    String? serverId,
+  }) {
+    unawaited(
+      _clearBackgroundPermissionAutoApproveContext(
+        reason: reason,
+        serverId: serverId,
+      ).catchError((Object error, StackTrace stackTrace) {
+        AppLogger.warn(
+          'Failed to clear background permission auto-approve context',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }),
+    );
+  }
+
   String _autoApprovePermissionReply(ChatPermissionRequest request) {
     return permissionAutoApproveReplyForRequest(request);
   }
@@ -428,9 +446,15 @@ extension _ChatPageLifecycle on _ChatPageState {
     }
   }
 
-  Future<void> _handleServerScopeChange() async {
+  Future<void> _handleServerScopeChange({String? previousServerId}) async {
     if (!mounted) {
       return;
+    }
+    if (previousServerId != null && previousServerId.trim().isNotEmpty) {
+      await _clearBackgroundPermissionAutoApproveContext(
+        reason: 'server-changed',
+        serverId: previousServerId,
+      );
     }
     final projectProvider = context.read<ProjectProvider>();
     await projectProvider.onServerScopeChanged();
