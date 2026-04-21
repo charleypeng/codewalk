@@ -101,6 +101,16 @@ enum _DisplayToggleAction {
 
 enum _HistoryToolbarAction { undo, redo }
 
+enum _CurrentSessionAction {
+  shareToggle,
+  copyLink,
+  viewTasks,
+  reviewChanges,
+  undo,
+  redo,
+  compactContext,
+}
+
 enum _PostOnboardingTourPhase { idle, intro, composer }
 
 enum _ScrollOwner {

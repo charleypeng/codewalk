@@ -313,35 +313,141 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                     horizontal: 12,
                                     vertical: 4,
                                   ),
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      Expanded(
-                                        child: SessionTitleInlineEditor(
-                                          key: ValueKey<String>(
-                                            'chat_header_session_title_editor_${currentSession.id}',
-                                          ),
-                                          title: _sessionDisplayTitle(
-                                            currentSession,
-                                          ),
-                                          editingValue: _sessionEditingValue(
-                                            currentSession,
-                                          ),
-                                          textStyle: Theme.of(context)
-                                              .textTheme
-                                              .titleSmall
-                                              ?.copyWith(
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                          onRename: (title) =>
-                                              chatProvider.renameSession(
-                                                currentSession,
-                                                title,
-                                              ),
+                                  child: LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      final titleEditor = SessionTitleInlineEditor(
+                                        key: ValueKey<String>(
+                                          'chat_header_session_title_editor_${currentSession.id}',
                                         ),
-                                      ),
-                                      Builder(
+                                        title: _sessionDisplayTitle(
+                                          currentSession,
+                                        ),
+                                        editingValue: _sessionEditingValue(
+                                          currentSession,
+                                        ),
+                                        textStyle: Theme.of(context)
+                                            .textTheme
+                                            .titleSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                        onRename: (title) =>
+                                            chatProvider.renameSession(
+                                              currentSession,
+                                              title,
+                                            ),
+                                      );
+                                      final sessionActionsButton = Builder(
+                                        builder: (context) {
+                                          final currentShareUrl = chatProvider
+                                              .currentSession
+                                              ?.shareUrl
+                                              ?.trim();
+                                          final hasShareUrl =
+                                              currentShareUrl != null &&
+                                              currentShareUrl.isNotEmpty;
+                                          final canCompact =
+                                              !chatProvider
+                                                  .isCompactingContext &&
+                                              !chatProvider
+                                                  .canAbortActiveResponse;
+
+                                          PopupMenuItem<_CurrentSessionAction>
+                                          buildActionItem(
+                                            _CurrentSessionAction action, {
+                                            bool enabled = true,
+                                          }) {
+                                            return PopupMenuItem<
+                                              _CurrentSessionAction
+                                            >(
+                                              value: action,
+                                              enabled: enabled,
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    _sessionActionIcon(
+                                                      action,
+                                                      isShared:
+                                                          currentSession.shared,
+                                                    ),
+                                                    size: 18,
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Flexible(
+                                                    child: Text(
+                                                      _sessionActionLabel(
+                                                        action,
+                                                        isShared: currentSession
+                                                            .shared,
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          }
+
+                                          return PopupMenuButton<
+                                            _CurrentSessionAction
+                                          >(
+                                            key: const ValueKey<String>(
+                                              'current_session_actions_button',
+                                            ),
+                                            tooltip: 'Session actions',
+                                            onSelected: (action) => unawaited(
+                                              _handleCurrentSessionAction(
+                                                chatProvider,
+                                                action: action,
+                                              ),
+                                            ),
+                                            itemBuilder: (context) {
+                                              return [
+                                                buildActionItem(
+                                                  _CurrentSessionAction
+                                                      .shareToggle,
+                                                ),
+                                                if (hasShareUrl)
+                                                  buildActionItem(
+                                                    _CurrentSessionAction
+                                                        .copyLink,
+                                                  ),
+                                                const PopupMenuDivider(),
+                                                buildActionItem(
+                                                  _CurrentSessionAction
+                                                      .viewTasks,
+                                                ),
+                                                buildActionItem(
+                                                  _CurrentSessionAction
+                                                      .reviewChanges,
+                                                ),
+                                                const PopupMenuDivider(),
+                                                buildActionItem(
+                                                  _CurrentSessionAction.undo,
+                                                  enabled: chatProvider
+                                                      .canUndoCurrentSession,
+                                                ),
+                                                buildActionItem(
+                                                  _CurrentSessionAction.redo,
+                                                  enabled: chatProvider
+                                                      .canRedoCurrentSession,
+                                                ),
+                                                buildActionItem(
+                                                  _CurrentSessionAction
+                                                      .compactContext,
+                                                  enabled: canCompact,
+                                                ),
+                                              ];
+                                            },
+                                            child: const Padding(
+                                              padding: EdgeInsets.all(4),
+                                              child: Icon(Symbols.more_horiz),
+                                            ),
+                                          );
+                                        },
+                                      );
+                                      final contextUsageButton = Builder(
                                         builder: (context) {
                                           final usage =
                                               _resolveSessionContextUsage(
@@ -360,9 +466,6 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                             tooltip: 'Compact Context',
                                             padding: EdgeInsets.zero,
                                             itemBuilder: (popupContext) {
-                                              // Pre-trigger quota fetch using
-                                              // the main tree context that is
-                                              // guaranteed to have providers.
                                               final serverId = context
                                                   .read<AppProvider>()
                                                   .activeServer
@@ -403,8 +506,42 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                             ),
                                           );
                                         },
-                                      ),
-                                    ],
+                                      );
+                                      final actionsRow = Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          sessionActionsButton,
+                                          contextUsageButton,
+                                        ],
+                                      );
+                                      final useStackedLayout =
+                                          constraints.maxWidth < 320;
+
+                                      if (useStackedLayout) {
+                                        return Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            titleEditor,
+                                            const SizedBox(height: 6),
+                                            Align(
+                                              alignment: Alignment.centerRight,
+                                              child: actionsRow,
+                                            ),
+                                          ],
+                                        );
+                                      }
+
+                                      return Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          Expanded(child: titleEditor),
+                                          const SizedBox(width: 4),
+                                          actionsRow,
+                                        ],
+                                      );
+                                    },
                                   ),
                                 ),
                               ),

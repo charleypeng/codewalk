@@ -14168,6 +14168,139 @@ void main() {
     expect(find.text('1 file changed'), findsOneWidget);
   });
 
+  testWidgets('shows labeled session actions for the active session', (
+    WidgetTester tester,
+  ) async {
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_session_actions',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Action Session',
+        ),
+      ],
+    );
+    repository.messagesBySession['ses_session_actions'] = <ChatMessage>[
+      UserMessage(
+        id: 'msg_user_1',
+        sessionId: 'ses_session_actions',
+        time: DateTime.fromMillisecondsSinceEpoch(1100),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'part_user_1',
+            messageId: 'msg_user_1',
+            sessionId: 'ses_session_actions',
+            text: 'hello',
+          ),
+        ],
+      ),
+    ];
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('current_session_actions_button')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Share session'), findsOneWidget);
+    expect(find.text('View tasks'), findsOneWidget);
+    expect(find.text('Review changes'), findsOneWidget);
+    expect(find.text('Undo last turn'), findsOneWidget);
+    expect(find.text('Redo last undone turn'), findsOneWidget);
+    expect(find.text('Compact context'), findsOneWidget);
+  });
+
+  testWidgets('session actions can open the current session details dialog', (
+    WidgetTester tester,
+  ) async {
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_session_details',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Details Session',
+        ),
+      ],
+    );
+    repository.sessionTodoById['ses_session_details'] = const <SessionTodo>[
+      SessionTodo(
+        id: 'todo_1',
+        content: 'Implement feature',
+        status: 'in_progress',
+        priority: 'high',
+      ),
+    ];
+    repository.sessionDiffById['ses_session_details'] = const <SessionDiff>[
+      SessionDiff(
+        file: 'lib/main.dart',
+        before: 'old line',
+        after: 'new line',
+        additions: 1,
+        deletions: 1,
+        status: 'modified',
+      ),
+    ];
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('current_session_actions_button')),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('View tasks'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pump(const Duration(milliseconds: 250));
+
+    expect(
+      find.byKey(const ValueKey<String>('current_session_insights_dialog')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('current_session_tasks_heading')),
+      findsOneWidget,
+    );
+    expect(find.text('Implement feature'), findsWidgets);
+    expect(
+      find.byKey(const ValueKey<String>('current_session_review_heading')),
+      findsOneWidget,
+    );
+    expect(find.text('lib/main.dart'), findsWidgets);
+  });
+
   testWidgets('keeps input editable while responding and stop aborts session', (
     WidgetTester tester,
   ) async {

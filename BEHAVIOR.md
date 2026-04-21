@@ -143,6 +143,14 @@
 - **When** the user interacts with sessions
 - **Then** the user can **create**, **rename**, **archive**, **fork**, and **delete** sessions
 
+### Active session header exposes official session actions
+
+- **Given** an existing session is open in chat
+- **When** the user opens the `Session actions` menu from the active session header
+- **Then** the app exposes labeled actions for share/unshare, copy share link when available, view tasks, review changes, undo, redo, and compact context
+- **Then** task and review actions open a dedicated session-details surface without requiring slash commands or sidebar knowledge
+- **Then** unavailable actions are disabled instead of invoking broken flows
+
 ### Archiving a root session hides descendant sessions from the active list
 
 - **Given** the active Conversations filter is `Active` and a root session has child/subsessions

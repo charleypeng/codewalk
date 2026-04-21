@@ -1,6 +1,277 @@
 part of '../chat_page.dart';
 
 extension _ChatPageChrome on _ChatPageState {
+  String _sessionActionLabel(
+    _CurrentSessionAction action, {
+    required bool isShared,
+  }) {
+    return switch (action) {
+      _CurrentSessionAction.shareToggle =>
+        isShared ? 'Unshare session' : 'Share session',
+      _CurrentSessionAction.copyLink => 'Copy share link',
+      _CurrentSessionAction.viewTasks => 'View tasks',
+      _CurrentSessionAction.reviewChanges => 'Review changes',
+      _CurrentSessionAction.undo => 'Undo last turn',
+      _CurrentSessionAction.redo => 'Redo last undone turn',
+      _CurrentSessionAction.compactContext => 'Compact context',
+    };
+  }
+
+  IconData _sessionActionIcon(
+    _CurrentSessionAction action, {
+    required bool isShared,
+  }) {
+    return switch (action) {
+      _CurrentSessionAction.shareToggle =>
+        isShared ? Symbols.link_off : Symbols.link,
+      _CurrentSessionAction.copyLink => Symbols.content_copy,
+      _CurrentSessionAction.viewTasks => Symbols.checklist,
+      _CurrentSessionAction.reviewChanges => Symbols.preview,
+      _CurrentSessionAction.undo => Symbols.undo_rounded,
+      _CurrentSessionAction.redo => Symbols.redo_rounded,
+      _CurrentSessionAction.compactContext => Symbols.compress,
+    };
+  }
+
+  Future<void> _handleCurrentSessionAction(
+    ChatProvider chatProvider, {
+    required _CurrentSessionAction action,
+  }) async {
+    final session = chatProvider.currentSession;
+    if (session == null) {
+      return;
+    }
+
+    switch (action) {
+      case _CurrentSessionAction.shareToggle:
+        final wasShared = session.shared;
+        final ok = await chatProvider.toggleSessionShare(session);
+        if (!mounted) {
+          return;
+        }
+        _showChatPageMessageSnackBar(
+          ok
+              ? (wasShared ? 'Conversation unshared' : 'Conversation shared')
+              : (chatProvider.errorMessage ?? 'Failed to update sharing state'),
+          hideCurrent: false,
+        );
+        return;
+      case _CurrentSessionAction.copyLink:
+        final link = chatProvider.currentSession?.shareUrl?.trim();
+        if (link == null || link.isEmpty) {
+          _showChatPageMessageSnackBar(
+            'Share link unavailable for this session',
+            hideCurrent: false,
+          );
+          return;
+        }
+        await Clipboard.setData(ClipboardData(text: link));
+        if (!mounted) {
+          return;
+        }
+        _showChatPageMessageSnackBar('Share link copied', hideCurrent: false);
+        return;
+      case _CurrentSessionAction.viewTasks:
+        await _openCurrentSessionInsightsDialog(
+          chatProvider,
+          reviewFirst: false,
+        );
+        return;
+      case _CurrentSessionAction.reviewChanges:
+        await _openCurrentSessionInsightsDialog(
+          chatProvider,
+          reviewFirst: true,
+        );
+        return;
+      case _CurrentSessionAction.undo:
+        await _triggerHistoryAction(
+          chatProvider,
+          action: _HistoryToolbarAction.undo,
+        );
+        return;
+      case _CurrentSessionAction.redo:
+        await _triggerHistoryAction(
+          chatProvider,
+          action: _HistoryToolbarAction.redo,
+        );
+        return;
+      case _CurrentSessionAction.compactContext:
+        await _compactCurrentSession(chatProvider);
+        return;
+    }
+  }
+
+  Future<void> _openCurrentSessionInsightsDialog(
+    ChatProvider chatProvider, {
+    required bool reviewFirst,
+  }) async {
+    final session = chatProvider.currentSession;
+    if (session == null) {
+      return;
+    }
+
+    await chatProvider.loadSessionInsights(session.id, userInitiated: true);
+    if (!mounted) {
+      return;
+    }
+
+    final title = _sessionDisplayTitle(chatProvider.currentSession ?? session);
+    final isCompactLayout =
+        context.windowSizeClass.isCompact || _isMobileRuntime;
+    final content = _buildCurrentSessionInsightsContent(
+      chatProvider,
+      reviewFirst: reviewFirst,
+    );
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        if (isCompactLayout) {
+          return Dialog.fullscreen(
+            child: Scaffold(
+              key: const ValueKey<String>('current_session_insights_dialog'),
+              appBar: AppBar(
+                title: Text(title),
+                leading: IconButton(
+                  icon: const Icon(Symbols.close),
+                  tooltip: 'Close',
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                ),
+              ),
+              body: SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: content,
+                ),
+              ),
+            ),
+          );
+        }
+
+        return Dialog(
+          key: const ValueKey<String>('current_session_insights_dialog'),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720, maxHeight: 680),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: Theme.of(dialogContext).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Symbols.close),
+                        tooltip: 'Close',
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(child: SingleChildScrollView(child: content)),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCurrentSessionInsightsContent(
+    ChatProvider chatProvider, {
+    required bool reviewFirst,
+  }) {
+    final children = <Widget>[
+      if (chatProvider.isLoadingSessionInsights)
+        const Padding(
+          padding: EdgeInsets.only(bottom: 12),
+          child: LinearProgressIndicator(minHeight: 2),
+        ),
+      if (chatProvider.sessionInsightsError != null)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Text(
+            chatProvider.sessionInsightsError!,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ),
+        ),
+    ];
+
+    if (reviewFirst) {
+      children.addAll(_buildCurrentSessionReviewSection(chatProvider));
+      children.addAll(_buildCurrentSessionTodoSection(chatProvider));
+    } else {
+      children.addAll(_buildCurrentSessionTodoSection(chatProvider));
+      children.addAll(_buildCurrentSessionReviewSection(chatProvider));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: children,
+    );
+  }
+
+  List<Widget> _buildCurrentSessionTodoSection(ChatProvider chatProvider) {
+    return <Widget>[
+      Text(
+        'Tasks',
+        key: const ValueKey<String>('current_session_tasks_heading'),
+        style: Theme.of(
+          context,
+        ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+      ),
+      const SizedBox(height: 8),
+      if (chatProvider.currentSessionTodo.isEmpty)
+        Text(
+          'No tasks are available for this session.',
+          style: Theme.of(context).textTheme.bodyMedium,
+        )
+      else
+        SessionTodoListWidget(
+          todos: chatProvider.currentSessionTodo,
+          collapsed: false,
+          onToggleCollapsed: () {},
+          maxVisibleItems: 10,
+        ),
+      const SizedBox(height: 16),
+    ];
+  }
+
+  List<Widget> _buildCurrentSessionReviewSection(ChatProvider chatProvider) {
+    return <Widget>[
+      Text(
+        'Review changes',
+        key: const ValueKey<String>('current_session_review_heading'),
+        style: Theme.of(
+          context,
+        ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+      ),
+      const SizedBox(height: 8),
+      if (chatProvider.currentSessionDiff.isEmpty)
+        Text(
+          'No changed files are available for this session.',
+          style: Theme.of(context).textTheme.bodyMedium,
+        )
+      else
+        SessionDiffViewer(
+          diffs: chatProvider.currentSessionDiff,
+          compact: false,
+        ),
+    ];
+  }
+
   VerticalDivider _buildPaneDivider() {
     return VerticalDivider(
       width: 1,
