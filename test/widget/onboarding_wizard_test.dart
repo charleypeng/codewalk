@@ -180,16 +180,20 @@ void main() {
       }
       expect(find.text('Server URL'), findsOneWidget);
       expect(find.text('Test connection'), findsOneWidget);
-      expect(find.text('Before you test'), findsOneWidget);
-      expect(
-        find.text('Default local OpenCode server URL: http://127.0.0.1:4096'),
-        findsOneWidget,
-      );
+      expect(find.text('Connection tips'), findsOneWidget);
       expect(
         find.byKey(const ValueKey('open_code_setup_debug_button_server_form')),
         findsOneWidget,
       );
       expect(find.text('Show setup steps'), findsOneWidget);
+
+      await tester.tap(find.text('Connection tips'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Suggested local OpenCode server URL:'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('server form can reopen the setup steps inline', (
@@ -259,13 +263,13 @@ void main() {
         await tester.pumpWidget(buildWizard());
         await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Connect to a running server'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Connect to a running server'));
+        await tester.pumpAndSettle();
 
-      await tester.ensureVisible(find.text('Test connection'));
-      await tester.tap(find.text('Test connection'));
-      await tester.runAsync(() async {
-        // Keep a small margin above the injected 120ms health timeout.
+        await tester.ensureVisible(find.text('Test connection'));
+        await tester.tap(find.text('Test connection'));
+        await tester.runAsync(() async {
+          // Keep a small margin above the injected 120ms health timeout.
           await Future<void>.delayed(const Duration(milliseconds: 180));
         });
         await tester.pump();

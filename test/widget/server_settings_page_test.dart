@@ -4,6 +4,7 @@ import 'package:codewalk/domain/usecases/get_app_info.dart';
 import 'package:codewalk/presentation/pages/server_settings_page.dart';
 import 'package:codewalk/presentation/providers/app_provider.dart';
 import 'package:codewalk/presentation/services/local_opencode_server_runtime_types.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -146,7 +147,10 @@ void main() {
       final urlField = tester.widget<TextFormField>(
         find.byType(TextFormField).first,
       );
-      expect(urlField.controller?.text, 'http://127.0.0.1:4096');
+      final expectedDefaultUrl = defaultTargetPlatform == TargetPlatform.android
+          ? 'http://10.0.2.2:4096'
+          : 'http://127.0.0.1:4096';
+      expect(urlField.controller?.text, expectedDefaultUrl);
 
       await tester.tap(find.text('Choose another path'));
       await tester.pumpAndSettle();

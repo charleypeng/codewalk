@@ -53,8 +53,6 @@ class OnboardingWizardPage extends StatefulWidget {
 }
 
 class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
-  static const String _suggestedServerUrl = 'http://127.0.0.1:4096';
-
   int _step = 0;
   bool _showQuickGuide = false;
   bool _connectionSuccess = false;
@@ -65,9 +63,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
   String? _addedServerId;
   String? _editingServerId;
 
-  final TextEditingController _urlController = TextEditingController(
-    text: _suggestedServerUrl,
-  );
+  final TextEditingController _urlController = TextEditingController();
   final TextEditingController _labelController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -78,7 +74,14 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
   @override
   void initState() {
     super.initState();
+    _urlController.text = _suggestedServerUrl;
     _configureInitialFlow();
+  }
+
+  String get _suggestedServerUrl {
+    final isAndroid =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+    return isAndroid ? 'http://10.0.2.2:4096' : 'http://127.0.0.1:4096';
   }
 
   void _configureInitialFlow() {
@@ -839,63 +842,63 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
             ),
             const SizedBox(height: 12),
             Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Before you test',
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: 10),
-                    _buildSetupHintRow(
-                      icon: Symbols.link,
-                      text:
-                          'Default local OpenCode server URL: $_suggestedServerUrl',
-                    ),
-                    const SizedBox(height: 8),
-                    _buildSetupHintRow(
-                      icon: Symbols.phone_android,
-                      text:
-                          'On Android emulator, localhost and 127.0.0.1 are remapped to 10.0.2.2 automatically.',
-                    ),
-                    const SizedBox(height: 8),
-                    _buildSetupHintRow(
-                      icon: Symbols.lock,
-                      text:
-                          'Enable Basic Auth only if your OpenCode server is password-protected.',
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        TextButton.icon(
-                          key: const ValueKey(
-                            'open_code_setup_debug_button_server_form',
-                          ),
-                          onPressed: _openSetupDebugPage,
-                          icon: const Icon(Symbols.bug_report_rounded),
-                          label: const Text('View setup debug'),
-                        ),
-                        TextButton.icon(
-                          key: const ValueKey(
-                            'show_setup_steps_button_server_form',
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _showQuickGuide = true;
-                            });
-                          },
-                          icon: const Icon(Symbols.menu_book_rounded),
-                          label: const Text('Show setup steps'),
-                        ),
-                      ],
-                    ),
-                  ],
+              child: ExpansionTile(
+                key: const ValueKey('server_connection_tips_tile'),
+                tilePadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
                 ),
+                childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                leading: const Icon(Symbols.info_rounded),
+                title: const Text('Connection tips'),
+                subtitle: const Text(
+                  'Default URL, emulator loopback, auth, and debug help.',
+                ),
+                children: [
+                  _buildSetupHintRow(
+                    icon: Symbols.link,
+                    text:
+                        'Suggested local OpenCode server URL: $_suggestedServerUrl',
+                  ),
+                  const SizedBox(height: 8),
+                  _buildSetupHintRow(
+                    icon: Symbols.phone_android,
+                    text:
+                        'On Android emulator, localhost and 127.0.0.1 are remapped to 10.0.2.2 automatically.',
+                  ),
+                  const SizedBox(height: 8),
+                  _buildSetupHintRow(
+                    icon: Symbols.lock,
+                    text:
+                        'Enable Basic Auth only if your OpenCode server is password-protected.',
+                  ),
+                ],
               ),
+            ),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                TextButton.icon(
+                  key: const ValueKey(
+                    'open_code_setup_debug_button_server_form',
+                  ),
+                  onPressed: _openSetupDebugPage,
+                  icon: const Icon(Symbols.bug_report_rounded),
+                  label: const Text('View setup debug'),
+                ),
+                TextButton.icon(
+                  key: const ValueKey('show_setup_steps_button_server_form'),
+                  onPressed: () {
+                    setState(() {
+                      _showQuickGuide = true;
+                    });
+                  },
+                  icon: const Icon(Symbols.menu_book_rounded),
+                  label: const Text('Show setup steps'),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             Form(
@@ -1020,15 +1023,6 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton.icon(
-                        onPressed: _openSetupDebugPage,
-                        icon: const Icon(Symbols.bug_report_rounded),
-                        label: const Text('View setup debug'),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
                   ],
                   FilledButton.icon(
                     onPressed: _testing ? null : _testConnection,
