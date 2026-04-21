@@ -180,6 +180,32 @@ void main() {
       }
       expect(find.text('Server URL'), findsOneWidget);
       expect(find.text('Test connection'), findsOneWidget);
+      expect(find.text('Before you test'), findsOneWidget);
+      expect(
+        find.text('Default local OpenCode server URL: http://127.0.0.1:4096'),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('open_code_setup_debug_button_server_form')),
+        findsOneWidget,
+      );
+      expect(find.text('Show setup steps'), findsOneWidget);
+    });
+
+    testWidgets('server form can reopen the setup steps inline', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(buildWizard());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Connect to a running server'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Show setup steps'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Quick setup'), findsOneWidget);
+      expect(find.text('Continue to server URL'), findsOneWidget);
     });
 
     testWidgets('need help shows quick guide then continues to form', (
@@ -214,6 +240,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap "Test connection" and let the async chain complete.
+      await tester.ensureVisible(find.text('Test connection'));
       await tester.tap(find.text('Test connection'));
       await tester.runAsync(() async {
         // Keep a small margin above the injected 120ms health timeout.
@@ -232,12 +259,13 @@ void main() {
         await tester.pumpWidget(buildWizard());
         await tester.pumpAndSettle();
 
-        await tester.tap(find.text('Connect to a running server'));
-        await tester.pumpAndSettle();
+      await tester.tap(find.text('Connect to a running server'));
+      await tester.pumpAndSettle();
 
-        await tester.tap(find.text('Test connection'));
-        await tester.runAsync(() async {
-          // Keep a small margin above the injected 120ms health timeout.
+      await tester.ensureVisible(find.text('Test connection'));
+      await tester.tap(find.text('Test connection'));
+      await tester.runAsync(() async {
+        // Keep a small margin above the injected 120ms health timeout.
           await Future<void>.delayed(const Duration(milliseconds: 180));
         });
         await tester.pump();
@@ -252,6 +280,7 @@ void main() {
 
           // Back on step 1, tap "Test connection" again.
           if (find.text('Test connection').evaluate().isNotEmpty) {
+            await tester.ensureVisible(find.text('Test connection'));
             await tester.tap(find.text('Test connection'));
             await tester.runAsync(() async {
               // Keep a small margin above the injected 120ms health timeout.

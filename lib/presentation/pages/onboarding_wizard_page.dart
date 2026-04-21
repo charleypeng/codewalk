@@ -837,6 +837,66 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                   : 'Edit server connection',
               style: Theme.of(context).textTheme.titleMedium,
             ),
+            const SizedBox(height: 12),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Before you test',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 10),
+                    _buildSetupHintRow(
+                      icon: Symbols.link,
+                      text:
+                          'Default local OpenCode server URL: $_suggestedServerUrl',
+                    ),
+                    const SizedBox(height: 8),
+                    _buildSetupHintRow(
+                      icon: Symbols.phone_android,
+                      text:
+                          'On Android emulator, localhost and 127.0.0.1 are remapped to 10.0.2.2 automatically.',
+                    ),
+                    const SizedBox(height: 8),
+                    _buildSetupHintRow(
+                      icon: Symbols.lock,
+                      text:
+                          'Enable Basic Auth only if your OpenCode server is password-protected.',
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        TextButton.icon(
+                          key: const ValueKey(
+                            'open_code_setup_debug_button_server_form',
+                          ),
+                          onPressed: _openSetupDebugPage,
+                          icon: const Icon(Symbols.bug_report_rounded),
+                          label: const Text('View setup debug'),
+                        ),
+                        TextButton.icon(
+                          key: const ValueKey(
+                            'show_setup_steps_button_server_form',
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _showQuickGuide = true;
+                            });
+                          },
+                          icon: const Icon(Symbols.menu_book_rounded),
+                          label: const Text('Show setup steps'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 16),
             Form(
               key: _formKey,
@@ -960,6 +1020,15 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                       ),
                     ),
                     const SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: _openSetupDebugPage,
+                        icon: const Icon(Symbols.bug_report_rounded),
+                        label: const Text('View setup debug'),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
                   ],
                   FilledButton.icon(
                     onPressed: _testing ? null : _testConnection,
@@ -1474,6 +1543,20 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
           onPressed: () => unawaited(_complete()),
           child: const Text('Skip for now'),
         ),
+      ],
+    );
+  }
+
+  Widget _buildSetupHintRow({required IconData icon, required String text}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Icon(icon, size: 18),
+        ),
+        const SizedBox(width: 10),
+        Expanded(child: Text(text)),
       ],
     );
   }

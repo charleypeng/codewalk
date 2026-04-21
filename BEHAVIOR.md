@@ -125,8 +125,6 @@
 - **Then** the composer input is blocked and the reason is displayed to the user
 - **Then** the user cannot send messages until the connection is restored
 
-> **Current state**: the offline error is too aggressive (full-screen error with "Retry"). The desired behavior is a subtle composer block with a clear reason message.
-
 ### Offline startup reloads initial data automatically after recovery
 
 - **Given** an active server is configured but the app starts while that server is unreachable
