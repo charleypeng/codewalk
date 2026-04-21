@@ -451,10 +451,18 @@ extension _ChatPageLifecycle on _ChatPageState {
       return;
     }
     if (previousServerId != null && previousServerId.trim().isNotEmpty) {
-      await _clearBackgroundPermissionAutoApproveContext(
-        reason: 'server-changed',
-        serverId: previousServerId,
-      );
+      try {
+        await _clearBackgroundPermissionAutoApproveContext(
+          reason: 'server-changed',
+          serverId: previousServerId,
+        );
+      } catch (error, stackTrace) {
+        AppLogger.warn(
+          'Failed to clear background permission auto-approve context before server switch',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
     }
     final projectProvider = context.read<ProjectProvider>();
     await projectProvider.onServerScopeChanged();
