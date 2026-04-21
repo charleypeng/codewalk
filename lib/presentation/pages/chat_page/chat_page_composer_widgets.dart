@@ -63,6 +63,29 @@ extension _ChatPageComposerWidgets on _ChatPageState {
     );
   }
 
+  Widget _buildInlineDiffCard(
+    BuildContext context,
+    ChatProvider chatProvider,
+  ) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+      child: Card(
+        margin: EdgeInsets.zero,
+        elevation: 0,
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          child: SessionDiffViewer(
+            diffs: chatProvider.currentSessionDiff,
+            compact: true,
+            initiallyExpanded: false,
+          ),
+        ),
+      ),
+    );
+  }
+
   void _queueComposerStatusSync(_ComposerStatusPresentation? target) {
     if (_composerStatusTargetInitialized &&
         _lastComposerStatusTarget == target) {

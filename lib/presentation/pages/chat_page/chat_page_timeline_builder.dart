@@ -446,6 +446,20 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                           );
                         },
                       ),
+                      Builder(
+                        builder: (context) {
+                          final sp = context.watch<SettingsProvider>();
+                          final sizeClass = context.windowSizeClass;
+                          final utilityPaneVisible =
+                              sizeClass.isAtLeastLarge &&
+                              sp.isDesktopPaneVisible(DesktopPane.utility);
+                          if (chatProvider.currentSessionDiff.isEmpty ||
+                              (!isCompactLayout && utilityPaneVisible)) {
+                            return const SizedBox.shrink();
+                          }
+                          return _buildInlineDiffCard(context, chatProvider);
+                        },
+                      ),
                       // Message list
                       Expanded(child: _buildMessageViewport(chatProvider)),
 

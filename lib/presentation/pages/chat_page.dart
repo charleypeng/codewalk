@@ -63,6 +63,7 @@ import '../widgets/modal_primary_action_shortcuts.dart';
 import '../widgets/permission_request_card.dart';
 import '../widgets/question_request_card.dart';
 import '../widgets/quota/quota_popup_section.dart';
+import '../widgets/session_diff_viewer.dart';
 import '../widgets/session_title_inline_editor.dart';
 import '../widgets/session_todo_list_widget.dart';
 import 'onboarding_wizard_page.dart';

@@ -14121,6 +14121,53 @@ void main() {
     );
   });
 
+  testWidgets('shows inline session diff review surface on compact layouts', (
+    WidgetTester tester,
+  ) async {
+    final repository = FakeChatRepository(
+      sessions: <ChatSession>[
+        ChatSession(
+          id: 'ses_diff_inline',
+          workspaceId: 'default',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          title: 'Diff Session',
+        ),
+      ],
+    );
+    repository.sessionDiffById['ses_diff_inline'] = const <SessionDiff>[
+      SessionDiff(
+        file: 'lib/main.dart',
+        before: 'old line',
+        after: 'new line',
+        additions: 1,
+        deletions: 1,
+        status: 'modified',
+      ),
+    ];
+
+    final localDataSource = InMemoryAppLocalDataSource()
+      ..activeServerId = 'srv_test';
+    final provider = _buildChatProvider(
+      chatRepository: repository,
+      localDataSource: localDataSource,
+    );
+    final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpAndSettle();
+
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    await provider.loadSessionInsights('ses_diff_inline', silent: true);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('session_diff_viewer_compact_tile')),
+      findsOneWidget,
+    );
+    expect(find.text('1 file changed'), findsOneWidget);
+  });
+
   testWidgets('keeps input editable while responding and stop aborts session', (
     WidgetTester tester,
   ) async {
