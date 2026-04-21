@@ -46,7 +46,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.byKey(const ValueKey<String>('session_diff_preview_list')),
+      find.byKey(const ValueKey<String>('session_diff_preview_list_0')),
       findsOneWidget,
     );
     expect(find.text('--- lib/main.dart'), findsOneWidget);
@@ -74,7 +74,7 @@ void main() {
     expect(find.text('+1'), findsOneWidget);
     expect(find.text('-1'), findsOneWidget);
     expect(
-      find.byKey(const ValueKey<String>('session_diff_preview_list')),
+      find.byKey(const ValueKey<String>('session_diff_preview_list_0')),
       findsOneWidget,
     );
   });

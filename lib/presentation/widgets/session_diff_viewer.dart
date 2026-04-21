@@ -81,7 +81,7 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
     final diff = widget.diffs[_selectedIndex];
     return LayoutBuilder(
       builder: (context, constraints) {
-        final useSplit = constraints.maxWidth >= 440;
+        final useSplit = constraints.maxWidth >= 560;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -236,7 +236,7 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: ListView.builder(
-          key: const ValueKey<String>('session_diff_preview_list'),
+          key: ValueKey<String>('session_diff_preview_list_$_selectedIndex'),
           padding: const EdgeInsets.symmetric(vertical: 8),
           itemCount: lines.length,
           itemBuilder: (context, index) {
@@ -276,8 +276,12 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
     final brightness = Theme.of(context).brightness;
     return switch (type) {
       DiffLineType.add => _DiffLineStyle(
-        textColor: Colors.green.shade700,
-        backgroundColor: Colors.green.shade50,
+        textColor: brightness == Brightness.dark
+            ? Colors.green.shade300
+            : Colors.green.shade700,
+        backgroundColor: brightness == Brightness.dark
+            ? Colors.green.shade900.withValues(alpha: 0.28)
+            : Colors.green.shade50,
       ),
       DiffLineType.remove => _DiffLineStyle(
         textColor: brightness == Brightness.dark
