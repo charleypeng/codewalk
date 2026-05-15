@@ -1,7 +1,5 @@
 # CodeWalk
 
-> **Archived:** CodeWalk started from a good idea, but it grew too complex for one person to maintain sustainably. Keeping it healthy required constant attention as OpenCode, Flutter, desktop/mobile platforms, and the surrounding tooling kept changing. The project would need dedicated ongoing care from one or more collaborators to execute the idea properly, so it is archived for now.
-
 <p align="center"><img src="demo-desktop.gif" alt="CodeWalk desktop demo" /></p>
 <p align="center">https://github.com/user-attachments/assets/032f64e2-e8ee-4024-b49a-ca95a774653f</p>
 
