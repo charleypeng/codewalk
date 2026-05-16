@@ -14,6 +14,7 @@
 ```text
 codewalk/
 ├── ai-docs/                            # AI docs and engineering artifacts
+│   └── implement.md                    # Synthesized upstream alignment plan (OpenCode v1.14.x - v1.15.0)
 ├── assets/
 │   ├── images/                           # Source and generated launcher/tray icon assets used by `make icons`
 │   ├── parakeet_models.json              # Parakeet STT model catalog (id, label, download URL, lang)

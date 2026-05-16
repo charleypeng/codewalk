@@ -74,3 +74,16 @@ DoD: Context usage popup shows live provider quotas when data is available; fall
 - [x] 6.04 Quota popup widgets — `QuotaPopupSection`, `QuotaProviderGroupRow`, `QuotaEntryRow`, `PaceLabel` — integrate into Context usage popup after Compact now - Commit hashes: 013e285
 - [x] 6.05 Unit tests for pace utils and datasource strategy chain; all 841 tests passing - Commit hashes: 013e285
 - [x] 6.06 Update ADR-029, CODEBASE.md, BEHAVIOR.md, and ROADMAP.md to reflect completed implementation - Commit hashes: aaab12d, 5f45938, 533c306
+
+### Feature 7: Upstream Alignment (OpenCode v1.14.x - v1.15.0)
+
+Description: Align CodeWalk with recent upstream changes in OpenCode and OpenChamber, following ADR-023 (Contract-First Compatibility). Includes migration to session-scoped permission routes, HTTP 409 busy handling, heartbeats suppression, and workspace-aware capability discovery.
+
+DoD: All 6 steps from `implement.md` implemented and verified; contract tests updated; no regressions on `prompt_async` or event delivery; compatible with both v1.14+ and legacy servers.
+
+- [ ] 7.01 Update Contract Test Harness (Safety First)
+- [ ] 7.02 Migrate Permission Responses to Session-Scoped Route
+- [ ] 7.03 Handle HTTP 409 Busy Errors & 400/422 Validation
+- [ ] 7.04 Ignore `server.heartbeat` Events
+- [ ] 7.05 Support Workspace Query Parameter
+- [ ] 7.06 Preserve Typed OpenCode Error Details
