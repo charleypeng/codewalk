@@ -202,5 +202,48 @@ void main() {
         expect(m.toolCall, isTrue);
       },
     );
+
+    test('gracefully handles malformed payload types without crashing', () {
+      final model = ProvidersResponseModel.fromJson(<String, dynamic>{
+        'all': <dynamic>[
+          <String, dynamic>{
+            'id': 123, // not a string
+            'name': <dynamic>[], // not a string
+            'env': <String>[],
+            'models': <String, dynamic>{
+              'bad-model': <String, dynamic>{
+                'id': 456, // not a string
+                'name': <String, dynamic>{}, // not a string
+                'release_date': 2026, // not a string
+                'modalities': <dynamic>['text', 'image'], // list instead of map
+                'options': <dynamic>['invalid'], // list instead of map
+                'cost': 'free', // string instead of map
+                'limit': 100, // int instead of map
+              },
+            },
+          },
+        ],
+      });
+
+      final provider = model.providers.single;
+      expect(provider.id, '123', reason: 'number coerced to string');
+      expect(provider.name, '123', reason: 'invalid name falls back to id');
+
+      final m = provider.models['bad-model'];
+      expect(m, isNotNull, reason: 'malformed model should still parse');
+      expect(m!.id, '456', reason: 'number coerced to string');
+      expect(m.name, '456', reason: 'invalid name falls back to id');
+      expect(m.releaseDate, '2026', reason: 'number coerced to string');
+      expect(m.modalities, <String, dynamic>{
+        'input': <String>['text', 'image'],
+      });
+      expect(
+        m.options,
+        isEmpty,
+        reason: 'invalid options fallback to empty map',
+      );
+      expect(m.cost.input, 0.0, reason: 'invalid cost fallback to default');
+      expect(m.limit.context, 0, reason: 'invalid limit fallback to default');
+    });
   });
 }

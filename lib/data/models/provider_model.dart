@@ -67,13 +67,19 @@ class ProviderModel {
 
     // Parse models map
     final modelsMap = <String, ModelModel>{};
-    final modelsJson = json['models'] as Map<String, dynamic>?;
+    final modelsJson = _safeMap(json['models']);
     if (modelsJson != null) {
       for (final entry in modelsJson.entries) {
         try {
-          modelsMap[entry.key] = ModelModel.fromJson(
-            entry.value as Map<String, dynamic>,
-          );
+          final modelJson = _safeMap(entry.value);
+          if (modelJson != null) {
+            modelsMap[entry.key] = ModelModel.fromJson(modelJson);
+          } else {
+            log(
+              'ProviderModel: skipping model "${entry.key}" — invalid JSON type',
+              name: 'ProviderModel',
+            );
+          }
         } catch (e) {
           // Log instead of silently swallowing — helps diagnose upstream payload drift
           log(
@@ -84,12 +90,17 @@ class ProviderModel {
       }
     }
 
+    final id = _safeString(json['id']);
+    if (id == null || id.isEmpty) {
+      throw const FormatException('Provider ID is missing or invalid');
+    }
+
     return ProviderModel(
-      id: json['id'] as String,
-      name: json['name'] as String? ?? json['id'] as String,
+      id: id,
+      name: _safeString(json['name']) ?? id,
       env: envList,
-      api: json['api'] is String ? json['api'] as String : null,
-      npm: json['npm'] as String?,
+      api: _safeString(json['api']),
+      npm: _safeString(json['npm']),
       models: modelsMap,
     );
   }
@@ -108,6 +119,25 @@ class ProviderModel {
   final String? api;
   final String? npm;
   final Map<String, ModelModel> models;
+
+  static Map<String, dynamic>? _safeMap(dynamic value) {
+    if (value is Map) {
+      final result = <String, dynamic>{};
+      for (final entry in value.entries) {
+        if (entry.key is String) {
+          result[entry.key as String] = entry.value;
+        }
+      }
+      return result;
+    }
+    return null;
+  }
+
+  static String? _safeString(dynamic value) {
+    if (value is String) return value;
+    if (value is num) return value.toString();
+    return null;
+  }
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -134,8 +164,8 @@ class ProviderModel {
 class ModelModel {
   /// Parse model from JSON, supporting both flat and capabilities-nested formats.
   factory ModelModel.fromJson(Map<String, dynamic> json) {
-    final capabilities = json['capabilities'] as Map<String, dynamic>?;
-    final variantsJson = json['variants'] as Map<String, dynamic>?;
+    final capabilities = ProviderModel._safeMap(json['capabilities']);
+    final variantsJson = ProviderModel._safeMap(json['variants']);
     final variants = <String, ModelVariantModel>{};
     if (variantsJson != null) {
       for (final entry in variantsJson.entries) {
@@ -161,28 +191,31 @@ class ModelModel {
     final toolCall = _coerceBool(
       capabilities?['toolcall'] ?? json['tool_call'],
     );
-    final modalities =
-        json['modalities'] as Map<String, dynamic>? ??
-        _modalitiesFromCapabilities(capabilities);
+    final modalities = _safeModalities(json['modalities'], capabilities);
+
+    final id = ProviderModel._safeString(json['id']);
+    if (id == null || id.isEmpty) {
+      throw const FormatException('Model ID is missing or invalid');
+    }
 
     return ModelModel(
-      id: json['id'] as String,
-      name: json['name'] as String? ?? json['id'] as String,
-      releaseDate: json['release_date'] as String? ?? '',
+      id: id,
+      name: ProviderModel._safeString(json['name']) ?? id,
+      releaseDate: ProviderModel._safeString(json['release_date']) ?? '',
       attachment: attachment,
       reasoning: reasoning,
       temperature: temperature,
       toolCall: toolCall,
       cost: ModelCostModel.fromJson(
-        (json['cost'] as Map<String, dynamic>?) ?? const <String, dynamic>{},
+        ProviderModel._safeMap(json['cost']) ?? const <String, dynamic>{},
       ),
       limit: ModelLimitModel.fromJson(
-        (json['limit'] as Map<String, dynamic>?) ?? const <String, dynamic>{},
+        ProviderModel._safeMap(json['limit']) ?? const <String, dynamic>{},
       ),
-      options: json['options'] as Map<String, dynamic>?,
+      options: ProviderModel._safeMap(json['options']),
       variants: variants,
-      knowledge: json['knowledge'] as String?,
-      lastUpdated: json['last_updated'] as String?,
+      knowledge: ProviderModel._safeString(json['knowledge']),
+      lastUpdated: ProviderModel._safeString(json['last_updated']),
       modalities: modalities,
       openWeights: json['open_weights'] as bool?,
     );
@@ -226,6 +259,28 @@ class ModelModel {
     // Structured objects (e.g. reasoning: {effort: "..."}) mean the capability exists
     if (value is Map || value is List) return true;
     return false;
+  }
+
+  static Map<String, dynamic>? _safeModalities(
+    dynamic value,
+    Map<String, dynamic>? capabilities,
+  ) {
+    if (value is Map) {
+      final result = <String, dynamic>{};
+      for (final entry in value.entries) {
+        if (entry.key is String) {
+          result[entry.key as String] = entry.value;
+        }
+      }
+      return result;
+    }
+    if (value is List) {
+      final list = _normalizeModalityList(value);
+      if (list != null && list.isNotEmpty) {
+        return <String, dynamic>{'input': list};
+      }
+    }
+    return _modalitiesFromCapabilities(capabilities);
   }
 
   static List<String>? _normalizeModalityList(dynamic raw) {
