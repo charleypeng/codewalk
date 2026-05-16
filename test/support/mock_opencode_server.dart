@@ -21,6 +21,8 @@ class MockOpenCodeServer {
   bool simulateStructuredValidationError = false;
   bool legacyPermissionRouteEnabled = true;
   int sessionPermissionRouteStatusCode = 200;
+  int? promptAsyncCustomErrorStatusCode;
+  Map<String, dynamic>? promptAsyncCustomErrorPayload;
   int promptAsyncBusyDurationMs = 300;
   String? requiredEventDirectory;
   String? requiredMessageDirectory;
@@ -124,6 +126,8 @@ class MockOpenCodeServer {
     simulateStructuredValidationError = false;
     legacyPermissionRouteEnabled = true;
     sessionPermissionRouteStatusCode = 200;
+    promptAsyncCustomErrorStatusCode = null;
+    promptAsyncCustomErrorPayload = null;
     promptAsyncBusyDurationMs = 300;
     promptAsyncRequestCount = 0;
     messageRequestCount = 0;
@@ -1002,6 +1006,16 @@ class MockOpenCodeServer {
         await _writeJson(request.response, 409, <String, dynamic>{
           'error': 'Session is busy processing another request.',
         });
+        return;
+      }
+
+      if (promptAsyncCustomErrorStatusCode != null &&
+          promptAsyncCustomErrorPayload != null) {
+        await _writeJson(
+          request.response,
+          promptAsyncCustomErrorStatusCode!,
+          promptAsyncCustomErrorPayload!,
+        );
         return;
       }
 

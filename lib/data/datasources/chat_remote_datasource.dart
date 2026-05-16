@@ -990,6 +990,64 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     return ValidationException(fallbackMessage);
   }
 
+  String _extractTypedDetails(dynamic payload) {
+    if (payload is Map) {
+      final map = Map<String, dynamic>.from(payload);
+      final details = <String>[];
+      for (final entry in map.entries) {
+        final value = entry.value;
+        if (value == null) {
+          continue;
+        }
+        if (value is String) {
+          final trimmed = value.trim();
+          if (trimmed.isNotEmpty) {
+            details.add('${entry.key}=$trimmed');
+          }
+          continue;
+        }
+        if (value is num || value is bool) {
+          details.add('${entry.key}=$value');
+        }
+      }
+      return details.join(', ');
+    }
+    if (payload is List) {
+      return payload.map((item) => item.toString().trim()).join(', ');
+    }
+    return payload?.toString().trim() ?? '';
+  }
+
+  String _composeTypedServerMessage({
+    String? code,
+    String? name,
+    String? message,
+    String? details,
+  }) {
+    final normalizedCode = code?.trim();
+    final normalizedName = name?.trim();
+    final normalizedMessage = message?.trim();
+    final normalizedDetails = details?.trim();
+    final prefix = <String>[
+      if (normalizedName != null && normalizedName.isNotEmpty) normalizedName,
+      if (normalizedCode != null && normalizedCode.isNotEmpty)
+        '[${normalizedCode}]',
+    ].join(' ');
+    final body = <String>[
+      if (normalizedMessage != null && normalizedMessage.isNotEmpty)
+        normalizedMessage,
+      if (normalizedDetails != null && normalizedDetails.isNotEmpty)
+        '($normalizedDetails)',
+    ].join(' ');
+    if (prefix.isNotEmpty && body.isNotEmpty) {
+      return '$prefix: $body';
+    }
+    if (body.isNotEmpty) {
+      return body;
+    }
+    return prefix;
+  }
+
   String _extractServerMessage(dynamic payload) {
     if (payload == null) {
       return '';
@@ -1012,10 +1070,6 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (validationErrors.isNotEmpty) {
         return validationErrors;
       }
-      final direct = map['message']?.toString().trim();
-      if (direct != null && direct.isNotEmpty) {
-        return direct;
-      }
       final errorPayload = map['error'];
       final nestedError = _extractServerMessage(errorPayload);
       if (nestedError.isNotEmpty) {
@@ -1026,9 +1080,16 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (nestedData.isNotEmpty) {
         return nestedData;
       }
+      final direct = map['message']?.toString().trim();
       final detail = map['detail']?.toString().trim();
-      if (detail != null && detail.isNotEmpty) {
-        return detail;
+      final typed = _composeTypedServerMessage(
+        code: map['code']?.toString(),
+        name: map['name']?.toString(),
+        message: direct != null && direct.isNotEmpty ? direct : detail,
+        details: _extractTypedDetails(map['details'] ?? map['meta']),
+      );
+      if (typed.isNotEmpty) {
+        return typed;
       }
       return '';
     }
@@ -2158,7 +2219,10 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Permission route not found');
       }
-      throw const ServerException('Failed to list permissions');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to list permissions',
+      );
     } catch (_) {
       throw const ServerException('Failed to list permissions');
     }
@@ -2215,10 +2279,16 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Permission request not found');
       }
-      if (e.response?.statusCode == 400) {
-        throw const ValidationException('Invalid permission reply');
+      if (e.response?.statusCode == 400 || e.response?.statusCode == 422) {
+        throw _validationExceptionFromDio(
+          e,
+          fallbackMessage: 'Invalid permission reply',
+        );
       }
-      throw const ServerException('Failed to reply permission');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to reply permission',
+      );
     } catch (_) {
       throw const ServerException('Failed to reply permission');
     }
@@ -2251,7 +2321,10 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Question route not found');
       }
-      throw const ServerException('Failed to list questions');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to list questions',
+      );
     } catch (_) {
       throw const ServerException('Failed to list questions');
     }
@@ -2281,10 +2354,16 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Question request not found');
       }
-      if (e.response?.statusCode == 400) {
-        throw const ValidationException('Invalid question reply');
+      if (e.response?.statusCode == 400 || e.response?.statusCode == 422) {
+        throw _validationExceptionFromDio(
+          e,
+          fallbackMessage: 'Invalid question reply',
+        );
       }
-      throw const ServerException('Failed to reply question');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to reply question',
+      );
     } catch (_) {
       throw const ServerException('Failed to reply question');
     }
@@ -2312,7 +2391,10 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Question request not found');
       }
-      throw const ServerException('Failed to reject question');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to reject question',
+      );
     } catch (_) {
       throw const ServerException('Failed to reject question');
     }

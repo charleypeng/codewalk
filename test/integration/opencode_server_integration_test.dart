@@ -583,6 +583,49 @@ void main() {
       },
     );
 
+    test(
+      'ChatRemoteDataSource preserves typed upstream error details',
+      () async {
+        server.promptAsyncCustomErrorStatusCode = 401;
+        server.promptAsyncCustomErrorPayload = <String, dynamic>{
+          'error': <String, dynamic>{
+            'name': 'ProviderAuthError',
+            'code': 'AUTH_FAILED',
+            'message': 'Reconnect the provider and try again.',
+            'details': <String, dynamic>{'provider': 'mock-provider'},
+          },
+        };
+
+        final remote = ChatRemoteDataSourceImpl(
+          dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
+        );
+
+        await expectLater(
+          () => remote
+              .sendMessage(
+                'default',
+                'ses_1',
+                const ChatInputModel(
+                  messageId: 'msg_user_auth_401',
+                  providerId: 'mock-provider',
+                  modelId: 'mock-model',
+                  parts: <ChatInputPartModel>[
+                    ChatInputPartModel(type: 'text', text: 'auth please'),
+                  ],
+                ),
+              )
+              .toList(),
+          throwsA(
+            isA<ServerException>().having(
+              (error) => error.message,
+              'message',
+              'ProviderAuthError [AUTH_FAILED]: Reconnect the provider and try again. (provider=mock-provider)',
+            ),
+          ),
+        );
+      },
+    );
+
     test('ChatRemoteDataSource includes variant in outbound payload', () async {
       final remote = ChatRemoteDataSourceImpl(
         dio: Dio(BaseOptions(baseUrl: server.baseUrl)),

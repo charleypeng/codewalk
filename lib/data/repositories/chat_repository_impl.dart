@@ -466,8 +466,11 @@ class ChatRepositoryImpl implements ChatRepository {
       );
     } on NotFoundException {
       return const Left(NotFoundFailure('Permission route not found'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to list permissions'));
+    } on ServerException catch (e) {
+      final message = e.message.trim().isEmpty
+          ? 'Failed to list permissions'
+          : e.message.trim();
+      return Left(ServerFailure(message, e.code));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (_) {
@@ -494,10 +497,16 @@ class ChatRepositoryImpl implements ChatRepository {
       return const Right(null);
     } on NotFoundException {
       return const Left(NotFoundFailure('Permission request not found'));
-    } on ValidationException {
-      return const Left(ValidationFailure('Invalid permission response'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to respond permission'));
+    } on ValidationException catch (e) {
+      final message = e.message.trim().isEmpty
+          ? 'Invalid permission response'
+          : e.message.trim();
+      return Left(ValidationFailure(message));
+    } on ServerException catch (e) {
+      final message = e.message.trim().isEmpty
+          ? 'Failed to respond permission'
+          : e.message.trim();
+      return Left(ServerFailure(message, e.code));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (_) {
@@ -516,8 +525,11 @@ class ChatRepositoryImpl implements ChatRepository {
       );
     } on NotFoundException {
       return const Left(NotFoundFailure('Question route not found'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to list questions'));
+    } on ServerException catch (e) {
+      final message = e.message.trim().isEmpty
+          ? 'Failed to list questions'
+          : e.message.trim();
+      return Left(ServerFailure(message, e.code));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (_) {
@@ -540,10 +552,16 @@ class ChatRepositoryImpl implements ChatRepository {
       return const Right(null);
     } on NotFoundException {
       return const Left(NotFoundFailure('Question request not found'));
-    } on ValidationException {
-      return const Left(ValidationFailure('Invalid question response'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to respond question'));
+    } on ValidationException catch (e) {
+      final message = e.message.trim().isEmpty
+          ? 'Invalid question response'
+          : e.message.trim();
+      return Left(ValidationFailure(message));
+    } on ServerException catch (e) {
+      final message = e.message.trim().isEmpty
+          ? 'Failed to respond question'
+          : e.message.trim();
+      return Left(ServerFailure(message, e.code));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (_) {
@@ -564,8 +582,11 @@ class ChatRepositoryImpl implements ChatRepository {
       return const Right(null);
     } on NotFoundException {
       return const Left(NotFoundFailure('Question request not found'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to reject question'));
+    } on ServerException catch (e) {
+      final message = e.message.trim().isEmpty
+          ? 'Failed to reject question'
+          : e.message.trim();
+      return Left(ServerFailure(message, e.code));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (_) {
