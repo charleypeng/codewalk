@@ -12540,7 +12540,6 @@ void main() {
         matching: find.byType(Scrollable),
       );
       final scrollableBefore = tester.state<ScrollableState>(scrollableFinder);
-      final pixelsBeforeResume = scrollableBefore.position.pixels;
       expect(
         scrollableBefore.position.maxScrollExtent -
             scrollableBefore.position.pixels,

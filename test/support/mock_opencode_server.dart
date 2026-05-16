@@ -17,6 +17,9 @@ class MockOpenCodeServer {
   int promptAsyncSeedDelayMs = 0;
   int forceEmptySessionMessageListResponses = 0;
   bool simulateBusyThenIdleOnPromptAsync = false;
+  bool simulate409OnPromptAsync = false;
+  bool simulateStructuredValidationError = false;
+  bool legacyPermissionRouteEnabled = true;
   int promptAsyncBusyDurationMs = 300;
   String? requiredEventDirectory;
   String? requiredMessageDirectory;
@@ -111,6 +114,9 @@ class MockOpenCodeServer {
     promptAsyncSeedDelayMs = 0;
     forceEmptySessionMessageListResponses = 0;
     simulateBusyThenIdleOnPromptAsync = false;
+    simulate409OnPromptAsync = false;
+    simulateStructuredValidationError = false;
+    legacyPermissionRouteEnabled = true;
     promptAsyncBusyDurationMs = 300;
     promptAsyncRequestCount = 0;
     messageRequestCount = 0;
@@ -635,7 +641,29 @@ class MockOpenCodeServer {
         segments[0] == 'permission' &&
         segments[2] == 'reply') {
       if (method == 'POST') {
+        if (!legacyPermissionRouteEnabled) {
+          await _writeJson(request.response, 404, <String, dynamic>{
+            'error': 'Not found',
+          });
+          return;
+        }
         final requestId = segments[1];
+        lastPermissionReplyRequestId = requestId;
+        lastPermissionReplyPayload = await _readJsonBody(request);
+        pendingPermissions = pendingPermissions
+            .where((item) => item['id'] != requestId)
+            .toList(growable: false);
+        await _writeJson(request.response, 200, true);
+        return;
+      }
+    }
+
+    if (segments.length == 4 &&
+        segments[0] == 'session' &&
+        segments[2] == 'permissions') {
+      if (method == 'POST') {
+        final sessionId = segments[1];
+        final requestId = segments[3];
         lastPermissionReplyRequestId = requestId;
         lastPermissionReplyPayload = await _readJsonBody(request);
         pendingPermissions = pendingPermissions
@@ -921,8 +949,28 @@ class MockOpenCodeServer {
       }
 
       if (sendMessageValidationError) {
-        await _writeJson(request.response, 400, <String, dynamic>{
-          'error': 'invalid',
+        if (simulateStructuredValidationError) {
+          await _writeJson(request.response, 400, <String, dynamic>{
+            'type': 'ErrorResponse',
+            'error': <String, dynamic>{
+              'code': 'VALIDATION_ERROR',
+              'message': 'Validation failed',
+              'errors': <dynamic>[
+                <String, dynamic>{'field': 'messageId', 'message': 'Cannot be empty'},
+              ],
+            },
+          });
+        } else {
+          await _writeJson(request.response, 400, <String, dynamic>{
+            'error': 'invalid',
+          });
+        }
+        return;
+      }
+
+      if (simulate409OnPromptAsync) {
+        await _writeJson(request.response, 409, <String, dynamic>{
+          'error': 'Session is busy processing another request.',
         });
         return;
       }
