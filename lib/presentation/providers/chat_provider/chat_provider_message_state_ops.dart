@@ -688,6 +688,20 @@ extension _ChatProviderMessageStateOps on ChatProvider {
       NetworkFailure(code: final code) => code,
       _ => null,
     };
+    if (statusCode == 409) {
+      _sessionStatusById[sessionId] = SessionStatusInfo(
+        type: SessionStatusType.busy,
+        message: failure.message,
+      );
+      _clearSessionAttentionForSession(sessionId);
+      _errorMessage = null;
+      _enqueueUiNotice(
+        type: ChatUiNoticeType.serverError,
+        message: failure.message,
+      );
+      _setState(ChatState.loaded);
+      return;
+    }
     _presentServerErrorForCurrentSession(
       sessionId: sessionId,
       rawMessage: failure.message,

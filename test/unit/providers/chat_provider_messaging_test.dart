@@ -448,6 +448,41 @@ void main() {
       },
     );
 
+    test('send 409 conflict keeps the session in busy state', () async {
+      final sendStream = StreamController<Either<Failure, ChatMessage>>();
+      addTearDown(() async {
+        await sendStream.close();
+      });
+      chatRepository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
+
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+
+      await provider.sendMessage('conflict now');
+      sendStream.add(
+        const Left(
+          ServerFailure('Session is busy processing another request.', 409),
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+
+      expect(provider.state, ChatState.loaded);
+      expect(provider.errorMessage, isNull);
+      expect(provider.currentSessionStatus?.type, SessionStatusType.busy);
+      expect(
+        provider.consumePendingUiNotice()?.message,
+        'Session is busy processing another request.',
+      );
+      expect(
+        provider.messages
+            .whereType<AssistantMessage>()
+            .where((message) => message.error != null)
+            .toList(),
+        isEmpty,
+      );
+    });
+
     test('send failure in background does not queue draft restore', () async {
       final sendStream = StreamController<Either<Failure, ChatMessage>>();
       addTearDown(() async {

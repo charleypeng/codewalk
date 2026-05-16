@@ -942,11 +942,52 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     return switch (statusCode) {
       401 ||
       403 => 'Authentication failed. Reconnect the provider and try again.',
+      409 => 'Session is busy processing another request.',
       429 => 'Rate limit exceeded. Wait a moment and try again.',
       _ when statusCode != null && statusCode >= 500 =>
         'Provider temporarily unavailable. Try again shortly.',
       _ => fallbackMessage,
     };
+  }
+
+  String _extractValidationErrors(dynamic payload) {
+    if (payload is! List) {
+      return '';
+    }
+    final messages = <String>[];
+    for (final item in payload) {
+      if (item is Map) {
+        final map = Map<String, dynamic>.from(item);
+        final field = map['field']?.toString().trim();
+        final message =
+            map['message']?.toString().trim() ??
+            map['detail']?.toString().trim() ??
+            '';
+        if (message.isEmpty) {
+          continue;
+        }
+        messages.add(
+          field != null && field.isNotEmpty ? '$field: $message' : message,
+        );
+        continue;
+      }
+      final message = item.toString().trim();
+      if (message.isNotEmpty) {
+        messages.add(message);
+      }
+    }
+    return messages.join('; ');
+  }
+
+  ValidationException _validationExceptionFromDio(
+    DioException exception, {
+    required String fallbackMessage,
+  }) {
+    final extractedMessage = _extractServerMessage(exception.response?.data);
+    if (extractedMessage.isNotEmpty) {
+      return ValidationException(extractedMessage);
+    }
+    return ValidationException(fallbackMessage);
   }
 
   String _extractServerMessage(dynamic payload) {
@@ -967,6 +1008,10 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     }
     if (payload is Map) {
       final map = Map<String, dynamic>.from(payload);
+      final validationErrors = _extractValidationErrors(map['errors']);
+      if (validationErrors.isNotEmpty) {
+        return validationErrors;
+      }
       final direct = map['message']?.toString().trim();
       if (direct != null && direct.isNotEmpty) {
         return direct;
@@ -1862,8 +1907,23 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Session not found');
       }
-      if (e.response?.statusCode == 400) {
-        throw const ValidationException('Invalid message format');
+      if (e.response?.statusCode == 400 || e.response?.statusCode == 422) {
+        throw _validationExceptionFromDio(
+          e,
+          fallbackMessage: 'Invalid message format',
+        );
+      }
+      if (e.response?.statusCode == 409) {
+        final message = _extractServerMessage(e.response?.data);
+        throw ConflictException(
+          message.isEmpty
+              ? _fallbackServerMessageForStatus(
+                  statusCode: 409,
+                  fallbackMessage: 'Failed to send message',
+                )
+              : message,
+          409,
+        );
       }
       throw _serverExceptionFromDio(
         e,
@@ -1875,6 +1935,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         'CW_TRACE_FINAL datasource event=send-exception session=$sessionId messageId=${input.messageId ?? "-"} error=${e.runtimeType}',
       );
       if (e is ServerException ||
+          e is ConflictException ||
           e is NotFoundException ||
           e is ValidationException) {
         rethrow;

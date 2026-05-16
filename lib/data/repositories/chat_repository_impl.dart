@@ -390,9 +390,18 @@ class ChatRepositoryImpl implements ChatRepository {
     } on NotFoundException {
       AppLogger.warn('Repository send failed: session not found $sessionId');
       yield const Left(NotFoundFailure('Session not found'));
-    } on ValidationException {
+    } on ValidationException catch (e) {
       AppLogger.warn('Repository send failed: validation error');
-      yield const Left(ValidationFailure('Invalid input parameters'));
+      final message = e.message.trim().isEmpty
+          ? 'Invalid input parameters'
+          : e.message.trim();
+      yield Left(ValidationFailure(message));
+    } on ConflictException catch (e) {
+      AppLogger.warn('Repository send failed: session conflict');
+      final message = e.message.trim().isEmpty
+          ? 'Session is busy processing another request.'
+          : e.message.trim();
+      yield Left(ServerFailure(message, e.code));
     } on ServerException catch (e) {
       AppLogger.warn('Repository send failed: server error');
       final message = e.message.trim().isEmpty

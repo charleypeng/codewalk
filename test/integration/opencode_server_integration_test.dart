@@ -495,6 +495,77 @@ void main() {
       },
     );
 
+    test(
+      'ChatRemoteDataSource surfaces prompt_async 409 as a conflict error',
+      () async {
+        server.simulate409OnPromptAsync = true;
+
+        final remote = ChatRemoteDataSourceImpl(
+          dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
+        );
+
+        await expectLater(
+          () => remote
+              .sendMessage(
+                'default',
+                'ses_1',
+                const ChatInputModel(
+                  messageId: 'msg_user_busy_409',
+                  providerId: 'mock-provider',
+                  modelId: 'mock-model',
+                  parts: <ChatInputPartModel>[
+                    ChatInputPartModel(type: 'text', text: 'busy please'),
+                  ],
+                ),
+              )
+              .toList(),
+          throwsA(
+            isA<ConflictException>().having(
+              (error) => error.message,
+              'message',
+              'Session is busy processing another request.',
+            ),
+          ),
+        );
+      },
+    );
+
+    test(
+      'ChatRemoteDataSource surfaces structured validation payloads',
+      () async {
+        server.sendMessageValidationError = true;
+        server.simulateStructuredValidationError = true;
+
+        final remote = ChatRemoteDataSourceImpl(
+          dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
+        );
+
+        await expectLater(
+          () => remote
+              .sendMessage(
+                'default',
+                'ses_1',
+                const ChatInputModel(
+                  messageId: 'msg_user_validation_400',
+                  providerId: 'mock-provider',
+                  modelId: 'mock-model',
+                  parts: <ChatInputPartModel>[
+                    ChatInputPartModel(type: 'text', text: 'invalid please'),
+                  ],
+                ),
+              )
+              .toList(),
+          throwsA(
+            isA<ValidationException>().having(
+              (error) => error.message,
+              'message',
+              'messageId: Cannot be empty',
+            ),
+          ),
+        );
+      },
+    );
+
     test('ChatRemoteDataSource includes variant in outbound payload', () async {
       final remote = ChatRemoteDataSourceImpl(
         dio: Dio(BaseOptions(baseUrl: server.baseUrl)),

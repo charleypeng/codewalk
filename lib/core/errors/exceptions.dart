@@ -20,6 +20,11 @@ class ServerException extends AppException {
   const ServerException(super.message, [super.code]);
 }
 
+/// Conflict exception
+class ConflictException extends AppException {
+  const ConflictException(super.message, [super.code]);
+}
+
 /// Authentication exception
 class AuthException extends AppException {
   const AuthException(super.message, [super.code]);
