@@ -206,6 +206,8 @@ extension _ChatProviderEventReducerOps on ChatProvider {
       unawaited(_syncSelectionFromRemote(reason: 'event-${event.type}'));
     }
     switch (event.type) {
+      case 'server.heartbeat':
+        break;
       case 'server.connected':
         unawaited(
           refreshActiveSessionView(reason: 'realtime-server-connected'),
@@ -723,6 +725,10 @@ extension _ChatProviderEventReducerOps on ChatProvider {
 
   void _handleGlobalEvent(ChatEvent event) {
     if (_isEphemeralTitleEvent(event)) return;
+
+    if (event.type == 'server.heartbeat') {
+      return;
+    }
 
     final type = event.type;
     final affectsContext =

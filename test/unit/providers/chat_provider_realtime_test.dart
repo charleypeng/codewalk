@@ -1225,6 +1225,30 @@ void main() {
       expect(provider.errorMessage, isNull);
     });
 
+    test('server.heartbeat is ignored without UI churn', () async {
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+
+      final initialState = provider.state;
+      final initialMessagesLength = provider.messages.length;
+      final initialSessionStatus = provider.currentSessionStatus;
+
+      chatRepository.emitEvent(
+        const ChatEvent(
+          type: 'server.heartbeat',
+          properties: <String, dynamic>{'timestamp': 1739079900000},
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+
+      expect(provider.state, initialState);
+      expect(provider.messages, hasLength(initialMessagesLength));
+      expect(provider.currentSessionStatus, initialSessionStatus);
+      expect(provider.consumePendingUiNotice(), isNull);
+    });
+
     test(
       'session.error from non-current session only settles background status',
       () async {
