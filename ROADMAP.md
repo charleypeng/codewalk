@@ -81,9 +81,9 @@ Description: Align CodeWalk with recent upstream changes in OpenCode and OpenCha
 
 DoD: All 6 steps from `implement.md` implemented and verified; contract tests updated; no regressions on `prompt_async` or event delivery; compatible with both v1.14+ and legacy servers.
 
-- [ ] 7.01 Update Contract Test Harness (Safety First)
-- [ ] 7.02 Migrate Permission Responses to Session-Scoped Route
-- [ ] 7.03 Handle HTTP 409 Busy Errors & 400/422 Validation
-- [ ] 7.04 Ignore `server.heartbeat` Events
-- [ ] 7.05 Support Workspace Query Parameter
-- [ ] 7.06 Preserve Typed OpenCode Error Details
+- [x] 7.01 Update Contract Test Harness (Safety First) - Commit hashes: fc93233, b81032e, 1949522, 379c0b6, 5ecd97c, d1e85e0, 67c60b6
+- [x] 7.02 Migrate Permission Responses to Session-Scoped Route - Commit hashes: fc93233, b81032e, 1949522, 379c0b6, 5ecd97c, d1e85e0, 67c60b6
+- [x] 7.03 Handle HTTP 409 Busy Errors & 400/422 Validation - Commit hashes: fc93233, b81032e, 1949522, 379c0b6, 5ecd97c, d1e85e0, 67c60b6
+- [x] 7.04 Ignore `server.heartbeat` Events - Commit hashes: fc93233, b81032e, 1949522, 379c0b6, 5ecd97c, d1e85e0, 67c60b6
+- [x] 7.05 Support Workspace Query Parameter - Commit hashes: fc93233, b81032e, 1949522, 379c0b6, 5ecd97c, d1e85e0, 67c60b6
+- [x] 7.06 Preserve Typed OpenCode Error Details - Commit hashes: fc93233, b81032e, 1949522, 379c0b6, 5ecd97c, d1e85e0, 67c60b6
