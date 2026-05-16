@@ -37,6 +37,11 @@ class MockOpenCodeServer {
   Map<String, String>? lastProviderQueryParameters;
   Map<String, String>? lastAgentQueryParameters;
   Map<String, String>? lastConfigQueryParameters;
+  dynamic customAgentResponsePayload;
+  bool returnEmptyAgentsWhenScoped = false;
+  bool failProviderWhenScoped = false;
+  bool failAgentWhenScoped = false;
+  bool failConfigWhenScoped = false;
   int eventConnectionCount = 0;
   int globalEventConnectionCount = 0;
   int eventCloseDelayMs = 900;
@@ -138,6 +143,11 @@ class MockOpenCodeServer {
     lastProviderQueryParameters = null;
     lastAgentQueryParameters = null;
     lastConfigQueryParameters = null;
+    customAgentResponsePayload = null;
+    returnEmptyAgentsWhenScoped = false;
+    failProviderWhenScoped = false;
+    failAgentWhenScoped = false;
+    failConfigWhenScoped = false;
     _assistantMessageCounter = 0;
     _latestAssistantMessageId = null;
     sessionStatusById = <String, Map<String, dynamic>>{
@@ -297,6 +307,12 @@ class MockOpenCodeServer {
 
     if (method == 'GET' && request.uri.path == '/provider') {
       lastProviderQueryParameters = request.uri.queryParameters;
+      if (failProviderWhenScoped && request.uri.queryParameters.isNotEmpty) {
+        await _writeJson(request.response, 500, <String, dynamic>{
+          'error': 'scoped provider query failed',
+        });
+        return;
+      }
       await _writeJson(request.response, 200, <String, dynamic>{
         'all': <dynamic>[
           <String, dynamic>{
@@ -332,6 +348,20 @@ class MockOpenCodeServer {
 
     if (method == 'GET' && request.uri.path == '/agent') {
       lastAgentQueryParameters = request.uri.queryParameters;
+      if (failAgentWhenScoped && request.uri.queryParameters.isNotEmpty) {
+        await _writeJson(request.response, 500, <String, dynamic>{
+          'error': 'scoped agent query failed',
+        });
+        return;
+      }
+      if (customAgentResponsePayload != null) {
+        await _writeJson(request.response, 200, customAgentResponsePayload);
+        return;
+      }
+      if (returnEmptyAgentsWhenScoped && request.uri.queryParameters.isNotEmpty) {
+        await _writeJson(request.response, 200, const <Map<String, dynamic>>[]);
+        return;
+      }
       await _writeJson(request.response, 200, <Map<String, dynamic>>[
         <String, dynamic>{
           'name': 'build',
@@ -363,6 +393,12 @@ class MockOpenCodeServer {
 
     if (method == 'GET' && request.uri.path == '/config') {
       lastConfigQueryParameters = request.uri.queryParameters;
+      if (failConfigWhenScoped && request.uri.queryParameters.isNotEmpty) {
+        await _writeJson(request.response, 500, <String, dynamic>{
+          'error': 'scoped config query failed',
+        });
+        return;
+      }
       await _writeJson(request.response, 200, <String, dynamic>{
         'model': 'mock-provider/mock-model',
         'default_agent': 'build',

@@ -111,6 +111,69 @@ void main() {
       expect(server.lastConfigQueryParameters?['workspace'], '/workspace/project');
     });
 
+    test('AppRemoteDataSource parses grouped agent payload shapes', () async {
+      server.customAgentResponsePayload = <String, dynamic>{
+        'primary': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'name': 'build',
+            'hidden': false,
+            'native': false,
+          },
+        ],
+        'subagent': <Map<String, dynamic>>[
+          <String, dynamic>{
+            'name': 'review',
+            'hidden': false,
+            'native': true,
+          },
+        ],
+      };
+
+      final remote = AppRemoteDataSourceImpl(
+        dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
+      );
+
+      final agents = await remote.getAgents(directory: '/workspace/project');
+
+      expect(agents.map((agent) => agent.name), <String>['build', 'review']);
+      expect(agents.first.mode, 'primary');
+      expect(agents.last.mode, 'subagent');
+    });
+
+    test('AppRemoteDataSource falls back when scoped agent query returns empty', () async {
+      server.returnEmptyAgentsWhenScoped = true;
+
+      final remote = AppRemoteDataSourceImpl(
+        dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
+      );
+
+      final agents = await remote.getAgents(directory: '/workspace/project');
+
+      expect(agents.map((agent) => agent.name), containsAll(<String>['build', 'plan']));
+      expect(server.lastAgentQueryParameters, isEmpty);
+    });
+
+    test('AppRemoteDataSource falls back when scoped discovery queries fail', () async {
+      server.failProviderWhenScoped = true;
+      server.failAgentWhenScoped = true;
+      server.failConfigWhenScoped = true;
+
+      final remote = AppRemoteDataSourceImpl(
+        dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
+      );
+
+      final providers = await remote.getProviders(directory: '/workspace/project');
+      final agents = await remote.getAgents(directory: '/workspace/project');
+      final config = await remote.getConfig(directory: '/workspace/project');
+
+      expect(providers.providers, hasLength(1));
+      expect(agents.map((agent) => agent.name), containsAll(<String>['build', 'plan']));
+      expect(config['default_agent'], 'build');
+      expect(server.lastProviderQueryParameters, isEmpty);
+      expect(server.lastAgentQueryParameters, isEmpty);
+      expect(server.lastConfigQueryParameters, isEmpty);
+    });
+
     test(
       'ProjectRemoteDataSource supports project context and worktrees',
       () async {

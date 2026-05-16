@@ -70,7 +70,7 @@ lib/core/network/dio_client.dart                  # HTTP client config, auth, ba
 lib/core/network/dio_sse_adapter.dart              # Conditional export: routes to IO or stub adapter
 lib/core/network/dio_sse_adapter_io.dart           # IO platforms: configures IOHttpClientAdapter with separate HttpClient for SSE (2h idle, 4 max connections)
 lib/core/network/dio_sse_adapter_stub.dart         # Web platform: no-op (browser manages connections natively)
-lib/data/datasources/app_remote_datasource.dart   # App bootstrap/config/providers/agents API access; scoped provider/agent/config discovery forwards both `directory` and `workspace` when a project directory is active
+lib/data/datasources/app_remote_datasource.dart   # App bootstrap/config/providers/agents API access; app discovery retries scoped `/provider`, `/agent`, and `/config` calls with `directory`-only and then unscoped fallbacks when workspace-scoped queries fail; `/agent` parsing tolerates multiple upstream payload shapes; scoped discovery/config calls forward both `directory` and `workspace` when a project directory is active
 lib/data/datasources/chat_remote_datasource.dart  # Chat/session/message/realtime API access; accepts optional `sseDio` for SSE stream isolation; sendMessage uses polling + provider-level SSE only (no per-send SSE) to prevent server-side abort on disconnect; provider `prompt_async` sends intentionally do not forward `messageId`; async completion fallback escalates to polling and uses stricter staleness guards when no-candidate/empty-baseline scenarios occur to prevent early finalization; bounds message-list tail fetches (`limit=120`); uses bounded per-session assistant-id cache (64-session cap + invalidation on unresolved completion); handles session-scoped permission replies with legacy fallback and preserves typed upstream error names/codes/details in surfaced failures
 lib/data/datasources/project_remote_datasource.dart # Project/worktree/file API access
 lib/data/datasources/app_local_datasource.dart    # Persistent settings, profiles, cache, credentials, favorite models, session composer drafts, and per-agent selection memory; uses ChatCachePayloadStore hybrid store with shared_preferences fallback for large payloads
@@ -249,7 +249,7 @@ lib/data/cache/            # Hybrid payload cache primitives used by AppLocalDat
 
 ```text
 lib/data/datasources/app_remote_datasource.dart
-  - /path, /app (fallback), /app/init (fallback), /provider, /agent, /config; scoped discovery/config calls add both directory and workspace query params
+  - /path, /app (fallback), /app/init (fallback), /provider, /agent, /config; scoped discovery/config calls add both directory and workspace query params; implements directory-only and unscoped retries for discovery contracts; `/agent` parsing handles multiple upstream response formats
 
 lib/data/datasources/chat_remote_datasource.dart
   - /session, /session/{id}, /session/{id}/message, /session/{id}/shell

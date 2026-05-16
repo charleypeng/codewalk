@@ -27,6 +27,13 @@ class AppRemoteDataSourceImpl implements AppRemoteDataSource {
   AppRemoteDataSourceImpl({required this.dio});
   final dynamic dio;
 
+  static const List<String> _agentResponseListKeys = <String>[
+    'agents',
+    'items',
+    'data',
+    'results',
+  ];
+
   Map<String, dynamic> _workspaceAwareQueryParameters(String? directory) {
     final normalizedDirectory = directory?.trim();
     if (normalizedDirectory == null || normalizedDirectory.isEmpty) {
@@ -36,6 +43,131 @@ class AppRemoteDataSourceImpl implements AppRemoteDataSource {
       'directory': normalizedDirectory,
       'workspace': normalizedDirectory,
     };
+  }
+
+  Map<String, dynamic> _directoryOnlyQueryParameters(String? directory) {
+    final normalizedDirectory = directory?.trim();
+    if (normalizedDirectory == null || normalizedDirectory.isEmpty) {
+      return <String, dynamic>{};
+    }
+    return <String, dynamic>{'directory': normalizedDirectory};
+  }
+
+  List<AgentModel> _agentModelsFromIterable(Iterable<dynamic> items) {
+    return items
+        .whereType<Map>()
+        .map((item) => AgentModel.fromJson(Map<String, dynamic>.from(item)))
+        .where((item) => item.name.trim().isNotEmpty)
+        .toList(growable: false);
+  }
+
+  List<AgentModel> _parseAgentPayload(dynamic payload) {
+    if (payload is List) {
+      return _agentModelsFromIterable(payload);
+    }
+    if (payload is! Map) {
+      return const <AgentModel>[];
+    }
+
+    final map = Map<String, dynamic>.from(payload);
+
+    for (final key in _agentResponseListKeys) {
+      final nested = map[key];
+      if (nested is List) {
+        final parsed = _agentModelsFromIterable(nested);
+        if (parsed.isNotEmpty) {
+          return parsed;
+        }
+      }
+    }
+
+    final grouped = <Map<String, dynamic>>[];
+    for (final entry in map.entries) {
+      final groupKey = entry.key.toString().trim();
+      final value = entry.value;
+      if (value is List) {
+        for (final rawItem in value.whereType<Map>()) {
+          final item = Map<String, dynamic>.from(rawItem);
+          item.putIfAbsent('mode', () => groupKey);
+          grouped.add(item);
+        }
+      }
+    }
+    if (grouped.isNotEmpty) {
+      return _agentModelsFromIterable(grouped);
+    }
+
+    final keyed = <Map<String, dynamic>>[];
+    for (final entry in map.entries) {
+      final name = entry.key.toString().trim();
+      final value = entry.value;
+      if (name.isEmpty || value is! Map) {
+        continue;
+      }
+      final item = Map<String, dynamic>.from(value);
+      item.putIfAbsent('name', () => name);
+      keyed.add(item);
+    }
+    if (keyed.isNotEmpty) {
+      return _agentModelsFromIterable(keyed);
+    }
+
+    return const <AgentModel>[];
+  }
+
+  Future<List<AgentModel>> _fetchAgentsWithQuery(
+    Map<String, dynamic> queryParams,
+  ) async {
+    final response = await dio.get(
+      '/agent',
+      queryParameters: queryParams.isEmpty ? null : queryParams,
+    );
+    return _parseAgentPayload(response.data);
+  }
+
+  Future<dynamic> _getWithScopedFallback(
+    String path, {
+    required String logLabel,
+    String? directory,
+  }) async {
+    final workspaceQueryParams = _workspaceAwareQueryParameters(directory);
+    if (workspaceQueryParams.isEmpty) {
+      final response = await dio.get(path);
+      return response.data;
+    }
+
+    try {
+      final response = await dio.get(path, queryParameters: workspaceQueryParams);
+      return response.data;
+    } on Exception catch (workspaceError, workspaceStackTrace) {
+      AppLogger.warn(
+        '$logLabel failed with workspace-scoped query; retrying fallback queries',
+        error: workspaceError,
+        stackTrace: workspaceStackTrace,
+      );
+    }
+
+    final directoryOnlyQueryParams = _directoryOnlyQueryParameters(directory);
+    if (directoryOnlyQueryParams.isNotEmpty) {
+      try {
+        final response = await dio.get(
+          path,
+          queryParameters: directoryOnlyQueryParams,
+        );
+        AppLogger.warn('$logLabel recovered with directory-only fallback query');
+        return response.data;
+      } on Exception catch (directoryError, directoryStackTrace) {
+        AppLogger.warn(
+          '$logLabel directory-only fallback failed; retrying unscoped query',
+          error: directoryError,
+          stackTrace: directoryStackTrace,
+        );
+      }
+    }
+
+    final response = await dio.get(path);
+    AppLogger.warn('$logLabel recovered with unscoped fallback query');
+    return response.data;
   }
 
   @override
@@ -92,29 +224,68 @@ class AppRemoteDataSourceImpl implements AppRemoteDataSource {
 
   @override
   Future<ProvidersResponseModel> getProviders({String? directory}) async {
-    final queryParams = _workspaceAwareQueryParameters(directory);
-    final response = await dio.get('/provider', queryParameters: queryParams);
-    return ProvidersResponseModel.fromJson(
-      response.data as Map<String, dynamic>,
+    final data = await _getWithScopedFallback(
+      '/provider',
+      logLabel: 'Provider discovery',
+      directory: directory,
     );
+    return ProvidersResponseModel.fromJson(data as Map<String, dynamic>);
   }
 
   @override
   Future<List<AgentModel>> getAgents({String? directory}) async {
-    final queryParams = _workspaceAwareQueryParameters(directory);
-    final response = await dio.get('/agent', queryParameters: queryParams);
-    final data = response.data as List<dynamic>? ?? const <dynamic>[];
-    return data
-        .whereType<Map>()
-        .map((item) => AgentModel.fromJson(Map<String, dynamic>.from(item)))
-        .toList(growable: false);
+    final workspaceQueryParams = _workspaceAwareQueryParameters(directory);
+    List<AgentModel> scopedAgents;
+    try {
+      scopedAgents = await _fetchAgentsWithQuery(workspaceQueryParams);
+    } on Exception catch (workspaceError, workspaceStackTrace) {
+      AppLogger.warn(
+        'Agent discovery failed with workspace-scoped query; retrying fallback queries',
+        error: workspaceError,
+        stackTrace: workspaceStackTrace,
+      );
+      scopedAgents = const <AgentModel>[];
+    }
+    if (scopedAgents.isNotEmpty || workspaceQueryParams.isEmpty) {
+      return scopedAgents;
+    }
+
+    final directoryOnlyQueryParams = _directoryOnlyQueryParameters(directory);
+    if (directoryOnlyQueryParams.isNotEmpty) {
+      try {
+        final directoryOnlyAgents = await _fetchAgentsWithQuery(
+          directoryOnlyQueryParams,
+        );
+        if (directoryOnlyAgents.isNotEmpty) {
+          AppLogger.warn(
+            'Agent discovery required directory-only fallback query',
+          );
+          return directoryOnlyAgents;
+        }
+      } on Exception catch (directoryError, directoryStackTrace) {
+        AppLogger.warn(
+          'Agent discovery directory-only fallback failed; retrying unscoped query',
+          error: directoryError,
+          stackTrace: directoryStackTrace,
+        );
+      }
+    }
+
+    final unscopedAgents = await _fetchAgentsWithQuery(const <String, dynamic>{});
+    if (unscopedAgents.isNotEmpty) {
+      AppLogger.warn('Agent discovery required unscoped fallback query');
+    }
+    return unscopedAgents;
   }
 
   @override
   Future<Map<String, dynamic>> getConfig({String? directory}) async {
-    final queryParams = _workspaceAwareQueryParameters(directory);
-    final response = await dio.get('/config', queryParameters: queryParams);
-    return response.data as Map<String, dynamic>;
+    final data = await _getWithScopedFallback(
+      '/config',
+      logLabel: 'Config discovery',
+      directory: directory,
+    );
+    return data as Map<String, dynamic>;
   }
 
   AppInfoModel _appInfoFromPath(Map<String, dynamic> pathData) {
