@@ -93,5 +93,114 @@ void main() {
       expect(provider.models.keys, <String>['valid-model']);
       expect(provider.models['valid-model']?.toolCall, isTrue);
     });
+
+    test('parses GPT-5.5 with structured reasoning object', () {
+      final model = ProvidersResponseModel.fromJson(<String, dynamic>{
+        'all': <dynamic>[
+          <String, dynamic>{
+            'id': 'openai',
+            'name': 'OpenAI',
+            'env': <String>['OPENAI_API_KEY'],
+            'models': <String, dynamic>{
+              'gpt-5.5': <String, dynamic>{
+                'id': 'gpt-5.5',
+                'name': 'GPT-5.5',
+                'release_date': '2026-01-01',
+                'reasoning': <String, dynamic>{'effort': 'medium'},
+                'attachment': true,
+                'tool_call': true,
+                'cost': <String, dynamic>{'input': 0.01, 'output': 0.03},
+                'limit': <String, dynamic>{'context': 128000, 'output': 16384},
+              },
+            },
+          },
+        ],
+        'default': <String, String>{'openai': 'gpt-5.5'},
+        'connected': <String>['openai'],
+      });
+
+      final provider = model.providers.single;
+      final gpt55 = provider.models['gpt-5.5'];
+      expect(gpt55, isNotNull, reason: 'gpt-5.5 must not be silently dropped');
+      expect(
+        gpt55!.reasoning,
+        isTrue,
+        reason: 'structured reasoning object should coerce to true',
+      );
+      expect(gpt55.attachment, isTrue);
+      expect(gpt55.toolCall, isTrue);
+      expect(gpt55.cost.input, closeTo(0.01, 0.0001));
+      expect(gpt55.limit.context, 128000);
+    });
+
+    test('parses model with missing cost and limit fields', () {
+      final model = ProvidersResponseModel.fromJson(<String, dynamic>{
+        'all': <dynamic>[
+          <String, dynamic>{
+            'id': 'openai',
+            'name': 'OpenAI',
+            'env': <String>[],
+            'models': <String, dynamic>{
+              'new-model': <String, dynamic>{
+                'id': 'new-model',
+                'name': 'New Model',
+              },
+            },
+          },
+        ],
+      });
+
+      final m = model.providers.single.models['new-model'];
+      expect(
+        m,
+        isNotNull,
+        reason: 'model without cost/limit must not be dropped',
+      );
+      expect(m!.cost.input, 0.0);
+      expect(m.cost.output, 0.0);
+      expect(m.limit.context, 0);
+      expect(m.limit.output, 0);
+    });
+
+    test(
+      'parses capabilities with structured reasoning inside capabilities map',
+      () {
+        final model = ProvidersResponseModel.fromJson(<String, dynamic>{
+          'all': <dynamic>[
+            <String, dynamic>{
+              'id': 'openai',
+              'name': 'OpenAI',
+              'env': <String>[],
+              'models': <String, dynamic>{
+                'o3-pro': <String, dynamic>{
+                  'id': 'o3-pro',
+                  'name': 'o3-pro',
+                  'capabilities': <String, dynamic>{
+                    'reasoning': <String, dynamic>{'effort': 'high'},
+                    'attachment': true,
+                    'toolcall': true,
+                  },
+                  'cost': <String, dynamic>{'input': 0.02, 'output': 0.08},
+                  'limit': <String, dynamic>{
+                    'context': 200000,
+                    'output': 100000,
+                  },
+                },
+              },
+            },
+          ],
+        });
+
+        final m = model.providers.single.models['o3-pro'];
+        expect(m, isNotNull);
+        expect(
+          m!.reasoning,
+          isTrue,
+          reason: 'structured reasoning in capabilities should coerce to true',
+        );
+        expect(m.attachment, isTrue);
+        expect(m.toolCall, isTrue);
+      },
+    );
   });
 }

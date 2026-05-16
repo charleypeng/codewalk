@@ -1,8 +1,9 @@
+import 'dart:developer';
+
 import '../../domain/entities/provider.dart';
 
 /// Technical comment translated to English.
 class ProvidersResponseModel {
-
   /// Parse both old (`{providers, default}`) and new (`{all, default, connected}`) schemas.
   factory ProvidersResponseModel.fromJson(Map<String, dynamic> json) {
     // New API uses 'all', old API uses 'providers'
@@ -58,7 +59,6 @@ class ProvidersResponseModel {
 
 /// Provider model - supports both old and new API formats.
 class ProviderModel {
-
   factory ProviderModel.fromJson(Map<String, dynamic> json) {
     // Parse env: may be List<String> or absent
     final envList =
@@ -75,7 +75,11 @@ class ProviderModel {
             entry.value as Map<String, dynamic>,
           );
         } catch (e) {
-          // Skip models that fail to parse
+          // Log instead of silently swallowing — helps diagnose upstream payload drift
+          log(
+            'ProviderModel: skipping model "${entry.key}" — $e',
+            name: 'ProviderModel',
+          );
         }
       }
     }
@@ -128,7 +132,6 @@ class ProviderModel {
 
 /// Model - supports both flat fields and nested capabilities format.
 class ModelModel {
-
   /// Parse model from JSON, supporting both flat and capabilities-nested formats.
   factory ModelModel.fromJson(Map<String, dynamic> json) {
     final capabilities = json['capabilities'] as Map<String, dynamic>?;
@@ -143,23 +146,21 @@ class ModelModel {
       }
     }
 
-    // Extract booleans from capabilities or flat fields
-    final attachment =
-        capabilities?['attachment'] as bool? ??
-        json['attachment'] as bool? ??
-        false;
-    final reasoning =
-        capabilities?['reasoning'] as bool? ??
-        json['reasoning'] as bool? ??
-        false;
-    final temperature =
-        capabilities?['temperature'] as bool? ??
-        json['temperature'] as bool? ??
-        false;
-    final toolCall =
-        capabilities?['toolcall'] as bool? ??
-        json['tool_call'] as bool? ??
-        false;
+    // Extract booleans from capabilities or flat fields.
+    // Upstream may send structured objects (e.g. reasoning: {effort: "..."})
+    // instead of plain bools — treat any non-null value as true (ADR-023).
+    final attachment = _coerceBool(
+      capabilities?['attachment'] ?? json['attachment'],
+    );
+    final reasoning = _coerceBool(
+      capabilities?['reasoning'] ?? json['reasoning'],
+    );
+    final temperature = _coerceBool(
+      capabilities?['temperature'] ?? json['temperature'],
+    );
+    final toolCall = _coerceBool(
+      capabilities?['toolcall'] ?? json['tool_call'],
+    );
     final modalities =
         json['modalities'] as Map<String, dynamic>? ??
         _modalitiesFromCapabilities(capabilities);
@@ -172,8 +173,12 @@ class ModelModel {
       reasoning: reasoning,
       temperature: temperature,
       toolCall: toolCall,
-      cost: ModelCostModel.fromJson(json['cost'] as Map<String, dynamic>),
-      limit: ModelLimitModel.fromJson(json['limit'] as Map<String, dynamic>),
+      cost: ModelCostModel.fromJson(
+        (json['cost'] as Map<String, dynamic>?) ?? const <String, dynamic>{},
+      ),
+      limit: ModelLimitModel.fromJson(
+        (json['limit'] as Map<String, dynamic>?) ?? const <String, dynamic>{},
+      ),
       options: json['options'] as Map<String, dynamic>?,
       variants: variants,
       knowledge: json['knowledge'] as String?,
@@ -215,6 +220,13 @@ class ModelModel {
   final String? lastUpdated;
   final Map<String, dynamic>? modalities;
   final bool? openWeights;
+
+  static bool _coerceBool(dynamic value) {
+    if (value is bool) return value;
+    // Structured objects (e.g. reasoning: {effort: "..."}) mean the capability exists
+    if (value is Map || value is List) return true;
+    return false;
+  }
 
   static List<String>? _normalizeModalityList(dynamic raw) {
     if (raw is List) {
@@ -294,7 +306,6 @@ class ModelModel {
 
 /// Model variant metadata.
 class ModelVariantModel {
-
   factory ModelVariantModel.fromJson(String id, dynamic rawJson) {
     if (rawJson is String) {
       return ModelVariantModel(id: id, name: rawJson);
@@ -346,7 +357,6 @@ class ModelVariantModel {
 
 /// Model cost - supports both flat fields and nested cache format.
 class ModelCostModel {
-
   /// Parse cost from JSON, supporting both `{cache_read, cache_write}` and `{cache: {read, write}}`.
   factory ModelCostModel.fromJson(Map<String, dynamic> json) {
     final cache = json['cache'] as Map<String, dynamic>?;
@@ -402,7 +412,6 @@ class ModelCostModel {
 
 /// Model limits.
 class ModelLimitModel {
-
   factory ModelLimitModel.fromJson(Map<String, dynamic> json) {
     return ModelLimitModel(
       context: (json['context'] as num?)?.toInt() ?? 0,
