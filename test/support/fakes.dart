@@ -1532,6 +1532,7 @@ class FakeChatRepository implements ChatRepository {
   List<ChatPermissionRequest> pendingPermissions = <ChatPermissionRequest>[];
   List<ChatQuestionRequest> pendingQuestions = <ChatQuestionRequest>[];
   String? lastPermissionRequestId;
+  String? lastPermissionSessionId;
   String? lastPermissionReply;
   String? lastPermissionMessage;
   String? lastQuestionReplyRequestId;
@@ -1806,11 +1807,13 @@ class FakeChatRepository implements ChatRepository {
 
   @override
   Future<Either<Failure, void>> replyPermission({
+    required String sessionId,
     required String requestId,
     required String reply,
     String? message,
     String? directory,
   }) async {
+    lastPermissionSessionId = sessionId;
     lastPermissionRequestId = requestId;
     lastPermissionReply = reply;
     lastPermissionMessage = message;

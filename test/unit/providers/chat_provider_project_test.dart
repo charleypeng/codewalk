@@ -130,6 +130,7 @@ void main() {
         expect(provider.currentQuestionRequest?.id, 'q_1');
 
         await provider.respondPermissionRequest(
+          sessionId: 'ses_1',
           requestId: 'perm_1',
           reply: 'once',
         );
@@ -193,6 +194,7 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 10));
 
         await provider.respondPermissionRequest(
+          sessionId: 'ses_1',
           requestId: 'perm_race_1',
           reply: 'once',
         );
@@ -247,6 +249,7 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 20));
 
         await provider.respondPermissionRequest(
+          sessionId: 'ses_1',
           requestId: 'perm_blocked_1',
           reply: 'once',
         );
@@ -2194,6 +2197,7 @@ void main() {
 
         // Respond to the permission request (removes it from pending map).
         await provider.respondPermissionRequest(
+          sessionId: 'ses_1',
           requestId: 'perm_inv_1',
           reply: 'once',
         );

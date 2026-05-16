@@ -2272,6 +2272,7 @@ class ChatProvider extends ChangeNotifier {
   }
 
   Future<void> respondPermissionRequest({
+    required String sessionId,
     required String requestId,
     required String reply,
     String? message,
@@ -2286,6 +2287,7 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
     final result = await replyPermission(
       ReplyPermissionParams(
+        sessionId: sessionId,
         requestId: requestId,
         reply: reply,
         message: message,

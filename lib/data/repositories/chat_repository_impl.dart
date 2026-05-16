@@ -468,6 +468,7 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<Either<Failure, void>> replyPermission({
+    required String sessionId,
     required String requestId,
     required String reply,
     String? message,
@@ -475,6 +476,7 @@ class ChatRepositoryImpl implements ChatRepository {
   }) async {
     try {
       await remoteDataSource.replyPermission(
+        sessionId: sessionId,
         requestId: requestId,
         reply: reply,
         message: message,

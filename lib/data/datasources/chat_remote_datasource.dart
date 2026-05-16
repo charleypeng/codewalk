@@ -135,6 +135,7 @@ abstract class ChatRemoteDataSource {
 
   /// Reply to a permission request.
   Future<void> replyPermission({
+    required String sessionId,
     required String requestId,
     required String reply,
     String? message,
@@ -2104,6 +2105,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   @override
   Future<void> replyPermission({
+    required String sessionId,
     required String requestId,
     required String reply,
     String? message,
@@ -2115,17 +2117,38 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     }
 
     try {
-      final body = <String, dynamic>{'reply': reply};
+      final body = <String, dynamic>{'response': reply};
       if (message != null && message.trim().isNotEmpty) {
         body['message'] = message.trim();
       }
-      final response = await dio.post(
-        '/permission/$requestId/reply',
-        data: body,
-        queryParameters: queryParams.isNotEmpty ? queryParams : null,
-      );
-      if (response.statusCode != 200) {
-        throw const ServerException('Failed to reply permission');
+      try {
+        final response = await dio.post(
+          '/session/$sessionId/permissions/$requestId',
+          data: body,
+          queryParameters: queryParams.isNotEmpty ? queryParams : null,
+        );
+        if (response.statusCode != 200) {
+          throw const ServerException('Failed to reply permission');
+        }
+        return;
+      } on DioException catch (e) {
+        if (e.response?.statusCode == 404 || e.response?.statusCode == 405) {
+          // Fallback to legacy route
+          final legacyBody = <String, dynamic>{'reply': reply};
+          if (message != null && message.trim().isNotEmpty) {
+            legacyBody['message'] = message.trim();
+          }
+          final legacyResponse = await dio.post(
+            '/permission/$requestId/reply',
+            data: legacyBody,
+            queryParameters: queryParams.isNotEmpty ? queryParams : null,
+          );
+          if (legacyResponse.statusCode != 200) {
+            throw const ServerException('Failed to reply permission');
+          }
+          return;
+        }
+        rethrow;
       }
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {

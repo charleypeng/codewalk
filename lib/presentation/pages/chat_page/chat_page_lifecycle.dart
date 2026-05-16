@@ -255,6 +255,7 @@ extension _ChatPageLifecycle on _ChatPageState {
           );
           try {
             await chatProvider.respondPermissionRequest(
+              sessionId: nextRequest.sessionId,
               requestId: nextRequest.id,
               reply: autoReply,
             );

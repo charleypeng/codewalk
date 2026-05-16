@@ -10,6 +10,7 @@ class ReplyPermission {
 
   Future<Either<Failure, void>> call(ReplyPermissionParams params) async {
     return repository.replyPermission(
+      sessionId: params.sessionId,
       requestId: params.requestId,
       reply: params.reply,
       message: params.message,
@@ -20,12 +21,14 @@ class ReplyPermission {
 
 class ReplyPermissionParams {
   const ReplyPermissionParams({
+    required this.sessionId,
     required this.requestId,
     required this.reply,
     this.message,
     this.directory,
   });
 
+  final String sessionId;
   final String requestId;
   final String reply;
   final String? message;

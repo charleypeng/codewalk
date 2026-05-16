@@ -671,9 +671,14 @@ void main() {
         expect(permissions.single.id, 'perm_1');
         expect(questions.single.id, 'q_1');
 
-        await remote.replyPermission(requestId: 'perm_1', reply: 'once');
+        await remote.replyPermission(
+          sessionId: 'ses_1',
+          requestId: 'perm_1',
+          reply: 'once',
+        );
         expect(server.lastPermissionReplyRequestId, 'perm_1');
-        expect(server.lastPermissionReplyPayload?['reply'], 'once');
+        expect(server.lastPermissionReplySessionId, 'ses_1');
+        expect(server.lastPermissionReplyPayload?['response'], 'once');
 
         await remote.replyQuestion(
           requestId: 'q_1',
@@ -688,6 +693,37 @@ void main() {
             <String>['Yes'],
           ],
         );
+      },
+    );
+
+    test(
+      'ChatRemoteDataSource falls back to legacy permission reply route on 405',
+      () async {
+        server.pendingPermissions = <Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'perm_legacy_1',
+            'sessionID': 'ses_1',
+            'permission': 'edit',
+            'patterns': <String>['lib/**'],
+            'always': <String>[],
+            'metadata': <String, dynamic>{},
+          },
+        ];
+        server.sessionPermissionRouteStatusCode = 405;
+
+        final remote = ChatRemoteDataSourceImpl(
+          dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
+        );
+
+        await remote.replyPermission(
+          sessionId: 'ses_1',
+          requestId: 'perm_legacy_1',
+          reply: 'always',
+        );
+
+        expect(server.lastPermissionReplyRequestId, 'perm_legacy_1');
+        expect(server.lastPermissionReplySessionId, isNull);
+        expect(server.lastPermissionReplyPayload?['reply'], 'always');
       },
     );
 

@@ -131,6 +131,7 @@ abstract class ChatRepository {
 
   /// Respond to a permission request.
   Future<Either<Failure, void>> replyPermission({
+    required String sessionId,
     required String requestId,
     required String reply,
     String? message,

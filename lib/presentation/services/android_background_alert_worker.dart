@@ -639,6 +639,7 @@ class _AndroidBackgroundAlertRunner {
       final reply = permissionAutoApproveReplyForAlwaysPatterns(request.always);
       final approved = await _replyPermission(
         dio: dio,
+        sessionId: sessionId,
         requestId: request.id,
         reply: reply,
         directory: context.directory,
@@ -660,6 +661,7 @@ class _AndroidBackgroundAlertRunner {
 
   Future<bool> _replyPermission({
     required Dio dio,
+    required String sessionId,
     required String requestId,
     required String reply,
     String? directory,
@@ -675,12 +677,24 @@ class _AndroidBackgroundAlertRunner {
     }
 
     try {
-      final response = await dio.post(
-        '/permission/$normalizedRequestId/reply',
-        data: <String, dynamic>{'reply': reply},
-        queryParameters: queryParameters.isEmpty ? null : queryParameters,
-      );
-      return response.statusCode == 200;
+      try {
+        final response = await dio.post(
+          '/session/$sessionId/permissions/$normalizedRequestId',
+          data: <String, dynamic>{'response': reply},
+          queryParameters: queryParameters.isEmpty ? null : queryParameters,
+        );
+        return response.statusCode == 200;
+      } on DioException catch (error) {
+        if (error.response?.statusCode == 404 || error.response?.statusCode == 405) {
+          final legacyResponse = await dio.post(
+            '/permission/$normalizedRequestId/reply',
+            data: <String, dynamic>{'reply': reply},
+            queryParameters: queryParameters.isEmpty ? null : queryParameters,
+          );
+          return legacyResponse.statusCode == 200;
+        }
+        rethrow;
+      }
     } on DioException catch (error, stackTrace) {
       if (error.response?.statusCode == 404) {
         AppLogger.debug(

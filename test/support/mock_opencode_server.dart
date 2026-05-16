@@ -20,6 +20,7 @@ class MockOpenCodeServer {
   bool simulate409OnPromptAsync = false;
   bool simulateStructuredValidationError = false;
   bool legacyPermissionRouteEnabled = true;
+  int sessionPermissionRouteStatusCode = 200;
   int promptAsyncBusyDurationMs = 300;
   String? requiredEventDirectory;
   String? requiredMessageDirectory;
@@ -41,6 +42,7 @@ class MockOpenCodeServer {
   List<Map<String, dynamic>> pendingPermissions = <Map<String, dynamic>>[];
   List<Map<String, dynamic>> pendingQuestions = <Map<String, dynamic>>[];
   String? lastPermissionReplyRequestId;
+  String? lastPermissionReplySessionId;
   Map<String, dynamic>? lastPermissionReplyPayload;
   String? lastQuestionReplyRequestId;
   Map<String, dynamic>? lastQuestionReplyPayload;
@@ -104,6 +106,7 @@ class MockOpenCodeServer {
     pendingPermissions = <Map<String, dynamic>>[];
     pendingQuestions = <Map<String, dynamic>>[];
     lastPermissionReplyRequestId = null;
+    lastPermissionReplySessionId = null;
     lastPermissionReplyPayload = null;
     lastQuestionReplyRequestId = null;
     lastQuestionReplyPayload = null;
@@ -117,6 +120,7 @@ class MockOpenCodeServer {
     simulate409OnPromptAsync = false;
     simulateStructuredValidationError = false;
     legacyPermissionRouteEnabled = true;
+    sessionPermissionRouteStatusCode = 200;
     promptAsyncBusyDurationMs = 300;
     promptAsyncRequestCount = 0;
     messageRequestCount = 0;
@@ -664,7 +668,16 @@ class MockOpenCodeServer {
       if (method == 'POST') {
         final sessionId = segments[1];
         final requestId = segments[3];
+        if (sessionPermissionRouteStatusCode != 200) {
+          await _writeJson(
+            request.response,
+            sessionPermissionRouteStatusCode,
+            <String, dynamic>{'error': 'session permission route unavailable'},
+          );
+          return;
+        }
         lastPermissionReplyRequestId = requestId;
+        lastPermissionReplySessionId = sessionId;
         lastPermissionReplyPayload = await _readJsonBody(request);
         pendingPermissions = pendingPermissions
             .where((item) => item['id'] != requestId)

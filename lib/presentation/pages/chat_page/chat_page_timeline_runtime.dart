@@ -30,6 +30,7 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
             onDecide: (reply) {
               unawaited(
                 chatProvider.respondPermissionRequest(
+                  sessionId: permissionRequest.sessionId,
                   requestId: permissionRequest.id,
                   reply: reply,
                 ),
@@ -82,6 +83,7 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
       onDecide: (reply) {
         unawaited(
           chatProvider.respondPermissionRequest(
+            sessionId: entry.request.sessionId,
             requestId: entry.request.id,
             reply: reply,
           ),
