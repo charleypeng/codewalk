@@ -465,6 +465,7 @@ void main() {
           ServerFailure('Session is busy processing another request.', 409),
         ),
       );
+      await sendStream.close();
       await Future<void>.delayed(const Duration(milliseconds: 30));
 
       expect(provider.state, ChatState.loaded);

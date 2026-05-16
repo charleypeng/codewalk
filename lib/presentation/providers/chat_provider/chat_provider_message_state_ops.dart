@@ -689,6 +689,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
       _ => null,
     };
     if (statusCode == 409) {
+      _preserveBusyStatusOnNextStreamDoneSessionId = sessionId;
       _sessionStatusById[sessionId] = SessionStatusInfo(
         type: SessionStatusType.busy,
         message: failure.message,

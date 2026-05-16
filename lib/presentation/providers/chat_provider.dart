@@ -324,6 +324,7 @@ class ChatProvider extends ChangeNotifier {
   ChatUiNotice? _pendingUiNotice;
   int _messageStreamGeneration = 0;
   String? _activeMessageStreamSessionId;
+  String? _preserveBusyStatusOnNextStreamDoneSessionId;
   ChatComposerDraft? _activeSendDraft;
   bool _isNewChatDraftActive = false;
   Future<void>? _lazySessionBootstrapTask;
@@ -3689,6 +3690,7 @@ class ChatProvider extends ChangeNotifier {
       attachments: effectiveAttachments,
       shellMode: shellMode,
     );
+    _preserveBusyStatusOnNextStreamDoneSessionId = null;
     _setState(ChatState.sending);
     _traceFinal('send-state-sending', sessionId: sendSessionId);
 
@@ -3995,6 +3997,17 @@ class ChatProvider extends ChangeNotifier {
               );
               final previousStatusType =
                   _sessionStatusById[streamSessionId]?.type;
+              final preserveBusyStatusOnDone =
+                  _preserveBusyStatusOnNextStreamDoneSessionId == streamSessionId;
+              if (preserveBusyStatusOnDone) {
+                _preserveBusyStatusOnNextStreamDoneSessionId = null;
+                if (_currentSession?.id == streamSessionId) {
+                  _setState(ChatState.loaded);
+                } else {
+                  _notifyListeners();
+                }
+                return;
+              }
               _sessionStatusById[streamSessionId] = const SessionStatusInfo(
                 type: SessionStatusType.idle,
               );
