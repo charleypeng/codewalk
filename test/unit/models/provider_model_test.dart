@@ -237,11 +237,7 @@ void main() {
       expect(m.modalities, <String, dynamic>{
         'input': <String>['text', 'image'],
       });
-      expect(
-        m.options,
-        isEmpty,
-        reason: 'invalid options fallback to empty map',
-      );
+      expect(m.options, isNull, reason: 'invalid options fallback to null');
       expect(m.cost.input, 0.0, reason: 'invalid cost fallback to default');
       expect(m.limit.context, 0, reason: 'invalid limit fallback to default');
     });
