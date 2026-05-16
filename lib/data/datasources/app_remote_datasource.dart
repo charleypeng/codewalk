@@ -27,6 +27,17 @@ class AppRemoteDataSourceImpl implements AppRemoteDataSource {
   AppRemoteDataSourceImpl({required this.dio});
   final dynamic dio;
 
+  Map<String, dynamic> _workspaceAwareQueryParameters(String? directory) {
+    final normalizedDirectory = directory?.trim();
+    if (normalizedDirectory == null || normalizedDirectory.isEmpty) {
+      return <String, dynamic>{};
+    }
+    return <String, dynamic>{
+      'directory': normalizedDirectory,
+      'workspace': normalizedDirectory,
+    };
+  }
+
   @override
   Future<AppInfoModel> getAppInfo({String? directory}) async {
     final queryParams = directory != null
@@ -81,9 +92,7 @@ class AppRemoteDataSourceImpl implements AppRemoteDataSource {
 
   @override
   Future<ProvidersResponseModel> getProviders({String? directory}) async {
-    final queryParams = directory != null
-        ? {'directory': directory}
-        : <String, dynamic>{};
+    final queryParams = _workspaceAwareQueryParameters(directory);
     final response = await dio.get('/provider', queryParameters: queryParams);
     return ProvidersResponseModel.fromJson(
       response.data as Map<String, dynamic>,
@@ -92,9 +101,7 @@ class AppRemoteDataSourceImpl implements AppRemoteDataSource {
 
   @override
   Future<List<AgentModel>> getAgents({String? directory}) async {
-    final queryParams = directory != null
-        ? {'directory': directory}
-        : <String, dynamic>{};
+    final queryParams = _workspaceAwareQueryParameters(directory);
     final response = await dio.get('/agent', queryParameters: queryParams);
     final data = response.data as List<dynamic>? ?? const <dynamic>[];
     return data
@@ -105,9 +112,7 @@ class AppRemoteDataSourceImpl implements AppRemoteDataSource {
 
   @override
   Future<Map<String, dynamic>> getConfig({String? directory}) async {
-    final queryParams = directory != null
-        ? {'directory': directory}
-        : <String, dynamic>{};
+    final queryParams = _workspaceAwareQueryParameters(directory);
     final response = await dio.get('/config', queryParameters: queryParams);
     return response.data as Map<String, dynamic>;
   }

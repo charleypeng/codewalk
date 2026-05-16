@@ -318,6 +318,63 @@ void main() {
       },
     );
 
+    test('selection sync includes workspace query parameters', () async {
+      appRepository.providersResult = Right(
+        ProvidersResponse(
+          providers: <Provider>[
+            Provider(
+              id: 'provider_a',
+              name: 'Provider A',
+              env: const <String>[],
+              models: <String, Model>{'model_a': testModel('model_a')},
+            ),
+            Provider(
+              id: 'provider_b',
+              name: 'Provider B',
+              env: const <String>[],
+              models: <String, Model>{'model_b': testModel('model_b')},
+            ),
+          ],
+          defaultModels: const <String, String>{'provider_a': 'model_a'},
+          connected: const <String>['provider_a', 'provider_b'],
+        ),
+      );
+      appRepository.agentsResult = const Right(<Agent>[
+        Agent(name: 'build', mode: 'primary', hidden: false, native: false),
+      ]);
+
+      final dioClient = RecordingDioClient(
+        configResponse: <String, dynamic>{
+          'model': 'provider_a/model_a',
+          'default_agent': 'build',
+        },
+      );
+      provider = buildProvider(dioClient: dioClient);
+
+      await provider.projectProvider.initializeProject();
+      await provider.initializeProviders();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+
+      final directory = provider.projectProvider.currentDirectory;
+      expect(directory, isNotNull);
+      expect(dioClient.getQueries.last?['directory'], directory);
+      expect(dioClient.getQueries.last?['workspace'], directory);
+
+      dioClient.patchBodies.clear();
+      dioClient.patchQueries.clear();
+
+      await provider.setSelectedModelByProvider(
+        providerId: 'provider_b',
+        modelId: 'model_b',
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+
+      expect(dioClient.patchQueries.last?['directory'], directory);
+      expect(dioClient.patchQueries.last?['workspace'], directory);
+    });
+
     test('session selection override wins when switching sessions', () async {
       chatRepository.sessions.add(
         ChatSession(

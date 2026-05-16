@@ -32,6 +32,9 @@ class MockOpenCodeServer {
   int sessionMessageListRequestCount = 0;
   int messageDetailRequestCount = 0;
   String? lastSessionMessageListLimit;
+  Map<String, String>? lastProviderQueryParameters;
+  Map<String, String>? lastAgentQueryParameters;
+  Map<String, String>? lastConfigQueryParameters;
   int eventConnectionCount = 0;
   int globalEventConnectionCount = 0;
   int eventCloseDelayMs = 900;
@@ -128,6 +131,9 @@ class MockOpenCodeServer {
     sessionMessageListRequestCount = 0;
     messageDetailRequestCount = 0;
     lastSessionMessageListLimit = null;
+    lastProviderQueryParameters = null;
+    lastAgentQueryParameters = null;
+    lastConfigQueryParameters = null;
     _assistantMessageCounter = 0;
     _latestAssistantMessageId = null;
     sessionStatusById = <String, Map<String, dynamic>>{
@@ -286,6 +292,7 @@ class MockOpenCodeServer {
     }
 
     if (method == 'GET' && request.uri.path == '/provider') {
+      lastProviderQueryParameters = request.uri.queryParameters;
       await _writeJson(request.response, 200, <String, dynamic>{
         'all': <dynamic>[
           <String, dynamic>{
@@ -320,6 +327,7 @@ class MockOpenCodeServer {
     }
 
     if (method == 'GET' && request.uri.path == '/agent') {
+      lastAgentQueryParameters = request.uri.queryParameters;
       await _writeJson(request.response, 200, <Map<String, dynamic>>[
         <String, dynamic>{
           'name': 'build',
@@ -346,6 +354,15 @@ class MockOpenCodeServer {
           'native': false,
         },
       ]);
+      return;
+    }
+
+    if (method == 'GET' && request.uri.path == '/config') {
+      lastConfigQueryParameters = request.uri.queryParameters;
+      await _writeJson(request.response, 200, <String, dynamic>{
+        'model': 'mock-provider/mock-model',
+        'default_agent': 'build',
+      });
       return;
     }
 

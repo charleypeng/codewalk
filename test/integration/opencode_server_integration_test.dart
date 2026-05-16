@@ -94,6 +94,23 @@ void main() {
       },
     );
 
+    test('AppRemoteDataSource sends workspace for scoped discovery calls', () async {
+      final remote = AppRemoteDataSourceImpl(
+        dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
+      );
+
+      await remote.getProviders(directory: '/workspace/project');
+      await remote.getAgents(directory: '/workspace/project');
+      await remote.getConfig(directory: '/workspace/project');
+
+      expect(server.lastProviderQueryParameters?['directory'], '/workspace/project');
+      expect(server.lastProviderQueryParameters?['workspace'], '/workspace/project');
+      expect(server.lastAgentQueryParameters?['directory'], '/workspace/project');
+      expect(server.lastAgentQueryParameters?['workspace'], '/workspace/project');
+      expect(server.lastConfigQueryParameters?['directory'], '/workspace/project');
+      expect(server.lastConfigQueryParameters?['workspace'], '/workspace/project');
+    });
+
     test(
       'ProjectRemoteDataSource supports project context and worktrees',
       () async {

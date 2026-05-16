@@ -22,7 +22,14 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
   }
 
   Map<String, dynamic>? _configQueryParameters() {
-    return null;
+    final directory = projectProvider.currentDirectory?.trim();
+    if (directory == null || directory.isEmpty) {
+      return null;
+    }
+    return <String, dynamic>{
+      'directory': directory,
+      'workspace': directory,
+    };
   }
 
   Map<String, dynamic>? _codewalkSyncConfig(Map<String, dynamic> config) {
