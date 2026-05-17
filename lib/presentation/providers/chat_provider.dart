@@ -297,6 +297,7 @@ class ChatProvider extends ChangeNotifier {
   final Map<String, DateTime> _sessionUnreadCompletionTimestamps =
       <String, DateTime>{};
   final Set<String> _sessionErrorAttentionIds = <String>{};
+  final Set<String> _sseSettledToIdleSessionIds = <String>{};
   Map<String, List<ChatSession>> _sessionChildrenById =
       <String, List<ChatSession>>{};
   Map<String, List<SessionTodo>> _sessionTodoById =
@@ -2094,17 +2095,28 @@ class ChatProvider extends ChangeNotifier {
         statusMap.removeWhere(
           (id, _) => ChatTitleGenerator.ephemeralSessionIds.contains(id),
         );
-        // Guard: preserve settled idle status for the current session.
+        // Guard: preserve settled idle status for the current session
+        // when SSE just settled to idle (onDone/session.idle) and the
+        // REST response carries a stale busy status. This prevents the
+        // REST overwrite from re-enabling Stop after the SSE stream has
+        // settled with a final revealable response.
+        // The flag is consumed only when the guard actually fires (all
+        // conditions met), so a non-busy REST response between SSE
+        // settlement and a subsequent stale-busy call still protects.
+        // The currentStatus check is a safety net against the race where
+        // SSE delivers a genuine busy between flag-set and guard-run.
         final currentId = _currentSession?.id;
         if (currentId != null) {
           final currentStatus = _sessionStatusById[currentId]?.type;
           const idle = SessionStatusType.idle;
-          if ((currentStatus == null || currentStatus == idle) &&
+          if (_sseSettledToIdleSessionIds.contains(currentId) &&
+              (currentStatus == null || currentStatus == idle) &&
               statusMap[currentId]?.type == SessionStatusType.busy &&
               hasCompletedRevealableAssistantMessage(
                 _messages,
                 currentId,
               )) {
+            _sseSettledToIdleSessionIds.remove(currentId);
             statusMap[currentId] = const SessionStatusInfo(type: idle);
           }
         }
@@ -2276,19 +2288,27 @@ class ChatProvider extends ChangeNotifier {
             (id, _) => ChatTitleGenerator.ephemeralSessionIds.contains(id),
           );
           // Guard: preserve settled idle status for the current session
-          // when the REST response carries a stale busy status. This
-          // prevents the REST overwrite from re-enabling Stop after the
-          // SSE stream has settled with a final revealable response.
+          // when SSE just settled to idle (onDone/session.idle) and the
+          // REST response carries a stale busy status. This prevents the
+          // REST overwrite from re-enabling Stop after the SSE stream has
+          // settled with a final revealable response.
+          // The flag is consumed only when the guard actually fires (all
+          // conditions met), so a non-busy REST response between SSE
+          // settlement and a subsequent stale-busy call still protects.
+          // The currentStatus check is a safety net against the race where
+          // SSE delivers a genuine busy between flag-set and guard-run.
           final currentId = _currentSession?.id;
           if (currentId != null) {
             final currentStatus = _sessionStatusById[currentId]?.type;
             const idle = SessionStatusType.idle;
-            if ((currentStatus == null || currentStatus == idle) &&
+            if (_sseSettledToIdleSessionIds.contains(currentId) &&
+                (currentStatus == null || currentStatus == idle) &&
                 statusMap[currentId]?.type == SessionStatusType.busy &&
                 hasCompletedRevealableAssistantMessage(
                   _messages,
                   currentId,
                 )) {
+              _sseSettledToIdleSessionIds.remove(currentId);
               statusMap[currentId] = const SessionStatusInfo(type: idle);
             }
           }
@@ -4043,6 +4063,7 @@ class ChatProvider extends ChangeNotifier {
               _sessionStatusById[streamSessionId] = const SessionStatusInfo(
                 type: SessionStatusType.idle,
               );
+              _sseSettledToIdleSessionIds.add(streamSessionId);
               if (_currentSession?.id == streamSessionId) {
                 _markIncompleteAssistantMessagesAsCompleted(
                   sessionId: streamSessionId,
