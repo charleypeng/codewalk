@@ -1681,6 +1681,62 @@ void main() {
     );
 
     test(
+      'refreshSessionStatusSnapshot handles session switch during in-flight await',
+      () async {
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_2',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1500),
+            title: 'Session 2',
+          ),
+        );
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+
+        final session1 =
+            provider.sessions.where((s) => s.id == 'ses_1').first;
+        final session2 =
+            provider.sessions.where((s) => s.id == 'ses_2').first;
+
+        await provider.selectSession(session1);
+        await provider.initializeProviders();
+
+        // Set gate and REST state AFTER initial load/refresh are done.
+        final statusGate = Completer<void>();
+        chatRepository.getSessionStatusDelay = () => statusGate.future;
+
+        chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+          'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
+        };
+
+        // Start refreshSessionStatusSnapshot — this captures
+        // currentIdAtCall = ses_1 (before any await), then blocks
+        // on getSessionStatus which hits the gate.
+        unawaited(provider.refreshSessionStatusSnapshot());
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        // Switch sessions while refreshSessionStatusSnapshot is blocked.
+        await provider.selectSession(session2);
+
+        // Unblock the gate — the fold runs with the captured currentIdAtCall.
+        statusGate.complete();
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        // No crash. Session B is current. Session A's status reflects the
+        // REST response (the guard didn't fire since onDone never set the
+        // SSE-settled flag in this test, but currentIdAtCall was correctly
+        // captured as ses_1, not ses_2).
+        expect(provider.currentSession?.id, 'ses_2');
+        expect(
+          provider.sessionStatusById['ses_1']?.type,
+          SessionStatusType.busy,
+        );
+      },
+    );
+
+    test(
       'active stream reports as actively responding even after settled session',
       () async {
         final textOnlyMessage = AssistantMessage(

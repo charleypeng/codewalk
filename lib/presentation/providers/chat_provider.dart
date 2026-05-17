@@ -2079,6 +2079,7 @@ class ChatProvider extends ChangeNotifier {
   }
 
   Future<void> refreshSessionStatusSnapshot({bool silent = true}) async {
+    final currentIdAtCall = _currentSession?.id;
     final result = await getSessionStatus(
       GetSessionStatusParams(directory: projectProvider.currentDirectory),
     );
@@ -2103,20 +2104,23 @@ class ChatProvider extends ChangeNotifier {
         // onDone is protected. Subsequent refreshes accept REST status
         // normally, avoiding turn-unscoped suppression of legitimate
         // later busy (e.g. resumed/reconnected work or another client).
-        final currentId = _currentSession?.id;
-        if (currentId != null) {
-          final currentStatus = _sessionStatusById[currentId]?.type;
+        // currentIdAtCall is captured before the await above so the guard
+        // applies to the session that was current when the request was
+        // made, not the session current when the response arrives
+        // (the user may have switched sessions during the in-flight await).
+        if (currentIdAtCall != null) {
+          final currentStatus = _sessionStatusById[currentIdAtCall]?.type;
           final sseSettledToIdle =
-              _sseSettledToIdleSessionIds.remove(currentId);
+              _sseSettledToIdleSessionIds.remove(currentIdAtCall);
           const idle = SessionStatusType.idle;
           if (sseSettledToIdle &&
               (currentStatus == null || currentStatus == idle) &&
-              statusMap[currentId]?.type == SessionStatusType.busy &&
+              statusMap[currentIdAtCall]?.type == SessionStatusType.busy &&
               hasCompletedRevealableAssistantMessage(
                 _messages,
-                currentId,
+                currentIdAtCall,
               )) {
-            statusMap[currentId] = const SessionStatusInfo(type: idle);
+            statusMap[currentIdAtCall] = const SessionStatusInfo(type: idle);
           }
         }
         _sessionStatusById = statusMap;
@@ -2188,6 +2192,10 @@ class ChatProvider extends ChangeNotifier {
       // so it is not stolen by lingering unawaited loadSessionInsights calls
       // from selectSession that interleave in the microtask queue. The flag
       // is a strict one-shot: only the method that first checks it gets it.
+      // Capture current session ID at the same time so the guard applies to
+      // the session that was current when the request was made, not the one
+      // current when the response arrives (user may switch during await).
+      final currentIdAtCall = _currentSession?.id;
       final guardSseSettled = _sseSettledToIdleSessionIds.remove(sessionId);
 
       final directory = projectProvider.currentDirectory;
@@ -2295,23 +2303,27 @@ class ChatProvider extends ChangeNotifier {
           // Guard: prevent stale REST busy (from the onDone-triggered
           // loadSessionInsights) from re-enabling Stop after the SSE
           // send-stream has settled with a final revealable response.
-          // The SSE-settled flag is consumed here immediately so it is
+          // The SSE-settled flag is consumed at method entry above so it is
           // strictly a one-shot: only the very first status refresh after
           // onDone is protected. Subsequent refreshes accept REST status
           // normally, avoiding turn-unscoped suppression of legitimate
           // later busy (e.g. resumed/reconnected work or another client).
-          final currentId = _currentSession?.id;
-          if (currentId != null) {
-            final currentStatus = _sessionStatusById[currentId]?.type;
+          // currentIdAtCall was captured before any await so the guard uses
+          // the session that was current when the request was made, not the
+          // one current now (user may have switched during the in-flight
+          // await above).
+          if (currentIdAtCall != null) {
+            final currentStatus = _sessionStatusById[currentIdAtCall]?.type;
             const idle = SessionStatusType.idle;
             if (guardSseSettled &&
                 (currentStatus == null || currentStatus == idle) &&
-                statusMap[currentId]?.type == SessionStatusType.busy &&
+                statusMap[currentIdAtCall]?.type == SessionStatusType.busy &&
                 hasCompletedRevealableAssistantMessage(
                   _messages,
-                  currentId,
+                  currentIdAtCall,
                 )) {
-              statusMap[currentId] = const SessionStatusInfo(type: idle);
+              statusMap[currentIdAtCall] =
+                  const SessionStatusInfo(type: idle);
             }
           }
           _sessionStatusById = statusMap;
