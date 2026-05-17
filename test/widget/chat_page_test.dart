@@ -257,7 +257,7 @@ void main() {
             sessionId: 'ses_1',
             time: DateTime.fromMillisecondsSinceEpoch(1000),
             parts: const <MessagePart>[
-              const TextPart(
+              TextPart(
                 id: 'part_user_1',
                 messageId: 'msg_user_1',
                 sessionId: 'ses_1',
