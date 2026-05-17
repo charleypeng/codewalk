@@ -2095,28 +2095,27 @@ class ChatProvider extends ChangeNotifier {
         statusMap.removeWhere(
           (id, _) => ChatTitleGenerator.ephemeralSessionIds.contains(id),
         );
-        // Guard: preserve settled idle status for the current session
-        // when SSE just settled to idle (onDone/session.idle) and the
-        // REST response carries a stale busy status. This prevents the
-        // REST overwrite from re-enabling Stop after the SSE stream has
-        // settled with a final revealable response.
-        // The flag is consumed only when the guard actually fires (all
-        // conditions met), so a non-busy REST response between SSE
-        // settlement and a subsequent stale-busy call still protects.
-        // The currentStatus check is a safety net against the race where
-        // SSE delivers a genuine busy between flag-set and guard-run.
+        // Guard: prevent stale REST busy (from the onDone-triggered
+        // loadSessionInsights) from re-enabling Stop after the SSE
+        // send-stream has settled with a final revealable response.
+        // The SSE-settled flag is consumed here immediately so it is
+        // strictly a one-shot: only the very first status refresh after
+        // onDone is protected. Subsequent refreshes accept REST status
+        // normally, avoiding turn-unscoped suppression of legitimate
+        // later busy (e.g. resumed/reconnected work or another client).
         final currentId = _currentSession?.id;
         if (currentId != null) {
           final currentStatus = _sessionStatusById[currentId]?.type;
+          final sseSettledToIdle =
+              _sseSettledToIdleSessionIds.remove(currentId);
           const idle = SessionStatusType.idle;
-          if (_sseSettledToIdleSessionIds.contains(currentId) &&
+          if (sseSettledToIdle &&
               (currentStatus == null || currentStatus == idle) &&
               statusMap[currentId]?.type == SessionStatusType.busy &&
               hasCompletedRevealableAssistantMessage(
                 _messages,
                 currentId,
               )) {
-            _sseSettledToIdleSessionIds.remove(currentId);
             statusMap[currentId] = const SessionStatusInfo(type: idle);
           }
         }
@@ -2185,6 +2184,12 @@ class ChatProvider extends ChangeNotifier {
     }
 
     try {
+      // Consume the SSE-settled-to-idle flag immediately (before any await)
+      // so it is not stolen by lingering unawaited loadSessionInsights calls
+      // from selectSession that interleave in the microtask queue. The flag
+      // is a strict one-shot: only the method that first checks it gets it.
+      final guardSseSettled = _sseSettledToIdleSessionIds.remove(sessionId);
+
       final directory = projectProvider.currentDirectory;
       final projectId = projectProvider.currentProjectId;
 
@@ -2287,28 +2292,25 @@ class ChatProvider extends ChangeNotifier {
           statusMap.removeWhere(
             (id, _) => ChatTitleGenerator.ephemeralSessionIds.contains(id),
           );
-          // Guard: preserve settled idle status for the current session
-          // when SSE just settled to idle (onDone/session.idle) and the
-          // REST response carries a stale busy status. This prevents the
-          // REST overwrite from re-enabling Stop after the SSE stream has
-          // settled with a final revealable response.
-          // The flag is consumed only when the guard actually fires (all
-          // conditions met), so a non-busy REST response between SSE
-          // settlement and a subsequent stale-busy call still protects.
-          // The currentStatus check is a safety net against the race where
-          // SSE delivers a genuine busy between flag-set and guard-run.
+          // Guard: prevent stale REST busy (from the onDone-triggered
+          // loadSessionInsights) from re-enabling Stop after the SSE
+          // send-stream has settled with a final revealable response.
+          // The SSE-settled flag is consumed here immediately so it is
+          // strictly a one-shot: only the very first status refresh after
+          // onDone is protected. Subsequent refreshes accept REST status
+          // normally, avoiding turn-unscoped suppression of legitimate
+          // later busy (e.g. resumed/reconnected work or another client).
           final currentId = _currentSession?.id;
           if (currentId != null) {
             final currentStatus = _sessionStatusById[currentId]?.type;
             const idle = SessionStatusType.idle;
-            if (_sseSettledToIdleSessionIds.contains(currentId) &&
+            if (guardSseSettled &&
                 (currentStatus == null || currentStatus == idle) &&
                 statusMap[currentId]?.type == SessionStatusType.busy &&
                 hasCompletedRevealableAssistantMessage(
                   _messages,
                   currentId,
                 )) {
-              _sseSettledToIdleSessionIds.remove(currentId);
               statusMap[currentId] = const SessionStatusInfo(type: idle);
             }
           }

@@ -1482,51 +1482,54 @@ void main() {
       );
     });
 
-    test(
-      'stale REST busy does not keep Stop visible after stream settles with revealable content',
-      () async {
-        final assistantCompleted = AssistantMessage(
-          id: 'msg_final',
-          sessionId: 'ses_1',
-          time: DateTime.fromMillisecondsSinceEpoch(2000),
-          completedTime: DateTime.fromMillisecondsSinceEpoch(2200),
-          parts: const <MessagePart>[
-            TextPart(
-              id: 'part_final',
-              messageId: 'msg_final',
-              sessionId: 'ses_1',
-              text: 'final answer',
-            ),
-          ],
-        );
+      test(
+        'stale REST busy does not keep Stop visible after stream settles with revealable content',
+        () async {
+          final assistantCompleted = AssistantMessage(
+            id: 'msg_final',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(2000),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(2200),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_final',
+                messageId: 'msg_final',
+                sessionId: 'ses_1',
+                text: 'final answer',
+              ),
+            ],
+          );
 
-        chatRepository.sendMessageHandler = (_, _, _, _) async* {
-          yield Right(assistantCompleted);
-        };
+          chatRepository.sendMessageHandler = (_, _, _, _) async* {
+            yield Right(assistantCompleted);
+          };
 
-        await provider.projectProvider.initializeProject();
-        await provider.loadSessions();
-        await provider.selectSession(provider.sessions.first);
+          await provider.projectProvider.initializeProject();
+          await provider.loadSessions();
+          await provider.selectSession(provider.sessions.first);
 
-        await provider.sendMessage('hello');
-        await Future<void>.delayed(const Duration(milliseconds: 20));
+          await provider.sendMessage('hello');
+          await Future<void>.delayed(const Duration(milliseconds: 20));
 
-        // After stream settles, state is loaded and Stop is hidden.
-        expect(provider.state, ChatState.loaded);
-        expect(provider.isCurrentSessionActivelyResponding, isFalse);
-        expect(provider.canAbortActiveResponse, isFalse);
+          // After stream settles, state is loaded and Stop is hidden.
+          expect(provider.state, ChatState.loaded);
+          expect(provider.isCurrentSessionActivelyResponding, isFalse);
+          expect(provider.canAbortActiveResponse, isFalse);
 
-        // Now simulate stale REST overwrite: loadSessionInsights returns busy.
-        chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
-          'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
-        };
-        await provider.loadSessionInsights('ses_1', silent: true);
+          // A subsequent REST refresh returns busy — the SSE-settled guard
+          // is a strict one-shot consumed by the onDone-triggered call, so
+          // this independent refresh accepts the REST busy. The session
+          // status is now busy but isSessionActivelyResponding still returns
+          // false because the latest message is text-only (no ToolPart/PatchPart).
+          chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+            'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
+          };
+          await provider.loadSessionInsights('ses_1', silent: true);
 
-        // Stop must still be hidden — the session is settled with revealable content.
-        expect(provider.isCurrentSessionActivelyResponding, isFalse);
-        expect(provider.canAbortActiveResponse, isFalse);
-      },
-    );
+          expect(provider.isCurrentSessionActivelyResponding, isFalse);
+          expect(provider.canAbortActiveResponse, isFalse);
+        },
+      );
 
     test(
       'stale REST busy from refreshSessionStatusSnapshot does not keep Stop visible',
@@ -1560,7 +1563,11 @@ void main() {
         expect(provider.state, ChatState.loaded);
         expect(provider.canAbortActiveResponse, isFalse);
 
-        // Simulate stale REST busy via refreshSessionStatusSnapshot.
+        // A subsequent REST refresh returns busy — the SSE-settled guard
+        // is a strict one-shot consumed by the onDone-triggered call, so
+        // this independent refresh accepts the REST busy. The session
+        // status is now busy but canAbortActiveResponse still returns false
+        // because the latest message is text-only (no ToolPart/PatchPart).
         chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
           'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
         };
@@ -1660,14 +1667,16 @@ void main() {
 
         expect(provider.state, ChatState.loaded);
 
-        // Stale busy — but the final message has revealable text content.
+        // A subsequent REST refresh returns busy — this is accepted normally
+        // because the SSE-settled guard is a strict one-shot consumed by the
+        // onDone-triggered loadSessionInsights.
         chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
           'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
         };
         await provider.loadSessionInsights('ses_1', silent: true);
 
-        expect(provider.isCurrentSessionActivelyResponding, isFalse);
-        expect(provider.canAbortActiveResponse, isFalse);
+        expect(provider.isCurrentSessionActivelyResponding, isTrue);
+        expect(provider.canAbortActiveResponse, isTrue);
       },
     );
 
