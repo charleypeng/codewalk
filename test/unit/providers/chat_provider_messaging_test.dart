@@ -1481,5 +1481,252 @@ void main() {
         '/release-monitor v1.2.3',
       );
     });
+
+    test(
+      'stale REST busy does not keep Stop visible after stream settles with revealable content',
+      () async {
+        final assistantCompleted = AssistantMessage(
+          id: 'msg_final',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(2000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(2200),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_final',
+              messageId: 'msg_final',
+              sessionId: 'ses_1',
+              text: 'final answer',
+            ),
+          ],
+        );
+
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
+          yield Right(assistantCompleted);
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('hello');
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        // After stream settles, state is loaded and Stop is hidden.
+        expect(provider.state, ChatState.loaded);
+        expect(provider.isCurrentSessionActivelyResponding, isFalse);
+        expect(provider.canAbortActiveResponse, isFalse);
+
+        // Now simulate stale REST overwrite: loadSessionInsights returns busy.
+        chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+          'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
+        };
+        await provider.loadSessionInsights('ses_1', silent: true);
+
+        // Stop must still be hidden — the session is settled with revealable content.
+        expect(provider.isCurrentSessionActivelyResponding, isFalse);
+        expect(provider.canAbortActiveResponse, isFalse);
+      },
+    );
+
+    test(
+      'stale REST busy from refreshSessionStatusSnapshot does not keep Stop visible',
+      () async {
+        final assistantCompleted = AssistantMessage(
+          id: 'msg_final_2',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(2000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(2200),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_final_2',
+              messageId: 'msg_final_2',
+              sessionId: 'ses_1',
+              text: 'final answer',
+            ),
+          ],
+        );
+
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
+          yield Right(assistantCompleted);
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('hello');
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(provider.state, ChatState.loaded);
+        expect(provider.canAbortActiveResponse, isFalse);
+
+        // Simulate stale REST busy via refreshSessionStatusSnapshot.
+        chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+          'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
+        };
+        await provider.refreshSessionStatusSnapshot();
+
+        expect(provider.canAbortActiveResponse, isFalse);
+      },
+    );
+
+    test(
+      'tool-only busy turn keeps Stop visible',
+      () async {
+        final toolOnlyMessage = AssistantMessage(
+          id: 'msg_tool_step',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(2000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(2010),
+          parts: <MessagePart>[
+            ToolPart(
+              id: 'part_tool_step',
+              messageId: 'msg_tool_step',
+              sessionId: 'ses_1',
+              callId: 'call_tool_step',
+              tool: 'bash',
+              state: ToolStateRunning(
+                input: const <String, dynamic>{'command': 'pwd'},
+                time: DateTime.fromMillisecondsSinceEpoch(2000),
+              ),
+            ),
+          ],
+        );
+
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
+          yield Right(toolOnlyMessage);
+        };
+        // Simulate server-side busy status (as if more tools are coming).
+        chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+          'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('run tool');
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        // Tool-only busy turn must keep Stop visible.
+        expect(provider.isCurrentSessionActivelyResponding, isTrue);
+        expect(provider.canAbortActiveResponse, isTrue);
+      },
+    );
+
+    test(
+      'final message with both tool parts and text parts settles when busy is stale',
+      () async {
+        final finalWithToolAndText = AssistantMessage(
+          id: 'msg_mixed',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(2000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(2200),
+          parts: <MessagePart>[
+            ToolPart(
+              id: 'part_mixed_tool',
+              messageId: 'msg_mixed',
+              sessionId: 'ses_1',
+              callId: 'call_mixed',
+              tool: 'bash',
+              state: ToolStateCompleted(
+                input: const <String, dynamic>{'command': 'echo hi'},
+                output: 'hi',
+                time: ToolTime(
+                  start: DateTime.fromMillisecondsSinceEpoch(2000),
+                  end: DateTime.fromMillisecondsSinceEpoch(2005),
+                ),
+              ),
+            ),
+            const TextPart(
+              id: 'part_mixed_text',
+              messageId: 'msg_mixed',
+              sessionId: 'ses_1',
+              text: 'final answer after tool',
+            ),
+          ],
+        );
+
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
+          yield Right(finalWithToolAndText);
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('hello');
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(provider.state, ChatState.loaded);
+
+        // Stale busy — but the final message has revealable text content.
+        chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+          'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
+        };
+        await provider.loadSessionInsights('ses_1', silent: true);
+
+        expect(provider.isCurrentSessionActivelyResponding, isFalse);
+        expect(provider.canAbortActiveResponse, isFalse);
+      },
+    );
+
+    test(
+      'active stream reports as actively responding even after settled session',
+      () async {
+        final textOnlyMessage = AssistantMessage(
+          id: 'msg_first',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_first',
+              messageId: 'msg_first',
+              sessionId: 'ses_1',
+              text: 'settled answer',
+            ),
+          ],
+        );
+
+        var callCount = 0;
+        StreamController<Either<Failure, ChatMessage>>? controller;
+        chatRepository.sendMessageHandler = (_, _, _, _) {
+          callCount += 1;
+          if (callCount == 1) {
+            return Stream<Either<Failure, ChatMessage>>.value(
+              Right(textOnlyMessage),
+            );
+          }
+          // Return a stream that stays alive until we close the controller.
+          controller = StreamController<Either<Failure, ChatMessage>>();
+          return controller!.stream;
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        // First send — settles immediately.
+        await provider.sendMessage('first');
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        expect(provider.state, ChatState.loaded);
+        expect(provider.canAbortActiveResponse, isFalse);
+
+        // Second send — stream is still alive (no data yet).
+        await provider.sendMessage('second');
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        // The active stream keeps Stop visible.
+        expect(provider.isCurrentSessionActivelyResponding, isTrue);
+        expect(provider.canAbortActiveResponse, isTrue);
+
+        // Close the controller so the stream settles.
+        await controller!.close();
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(provider.isCurrentSessionActivelyResponding, isFalse);
+      },
+    );
   });
 }

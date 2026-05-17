@@ -1,5 +1,4 @@
 import '../../domain/entities/chat_message.dart';
-import '../../domain/entities/message_part.dart';
 
 /// Determines whether a list of messages for a given session has a settled,
 /// revealable completed assistant response — meaning the assistant has produced

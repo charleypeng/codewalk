@@ -54,6 +54,7 @@ import '../services/chat_title_generator.dart';
 import '../services/cellular_data_saver_service.dart';
 import '../services/event_feedback_dispatcher.dart';
 import '../utils/chat_abort_message.dart';
+import '../utils/chat_assistant_settlement.dart';
 import '../utils/chat_event_property_extractors.dart';
 import '../utils/chat_server_error_formatter.dart';
 import '../utils/session_title_formatter.dart';
@@ -2093,6 +2094,20 @@ class ChatProvider extends ChangeNotifier {
         statusMap.removeWhere(
           (id, _) => ChatTitleGenerator.ephemeralSessionIds.contains(id),
         );
+        // Guard: preserve settled idle status for the current session.
+        final currentId = _currentSession?.id;
+        if (currentId != null) {
+          final currentStatus = _sessionStatusById[currentId]?.type;
+          const idle = SessionStatusType.idle;
+          if ((currentStatus == null || currentStatus == idle) &&
+              statusMap[currentId]?.type == SessionStatusType.busy &&
+              hasCompletedRevealableAssistantMessage(
+                _messages,
+                currentId,
+              )) {
+            statusMap[currentId] = const SessionStatusInfo(type: idle);
+          }
+        }
         _sessionStatusById = statusMap;
         _syncAttentionFromStatusMap(statusMap);
         if (!silent) {
@@ -2260,6 +2275,23 @@ class ChatProvider extends ChangeNotifier {
           statusMap.removeWhere(
             (id, _) => ChatTitleGenerator.ephemeralSessionIds.contains(id),
           );
+          // Guard: preserve settled idle status for the current session
+          // when the REST response carries a stale busy status. This
+          // prevents the REST overwrite from re-enabling Stop after the
+          // SSE stream has settled with a final revealable response.
+          final currentId = _currentSession?.id;
+          if (currentId != null) {
+            final currentStatus = _sessionStatusById[currentId]?.type;
+            const idle = SessionStatusType.idle;
+            if ((currentStatus == null || currentStatus == idle) &&
+                statusMap[currentId]?.type == SessionStatusType.busy &&
+                hasCompletedRevealableAssistantMessage(
+                  _messages,
+                  currentId,
+                )) {
+              statusMap[currentId] = const SessionStatusInfo(type: idle);
+            }
+          }
           _sessionStatusById = statusMap;
           _syncAttentionFromStatusMap(statusMap);
         },
