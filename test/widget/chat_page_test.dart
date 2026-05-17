@@ -9701,11 +9701,6 @@ void main() {
           .descendant(of: listFinder, matching: find.byType(Scrollable))
           .first;
       final scrollable = tester.state<ScrollableState>(scrollableFinder);
-      // TEMP DEBUG
-      // ignore: avoid_print
-      print(
-        'pixels=${scrollable.position.pixels} max=${scrollable.position.maxScrollExtent}',
-      );
 
       expect(
         scrollable.position.maxScrollExtent - scrollable.position.pixels,
