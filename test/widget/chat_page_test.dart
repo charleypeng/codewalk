@@ -9701,6 +9701,103 @@ void main() {
           .descendant(of: listFinder, matching: find.byType(Scrollable))
           .first;
       final scrollable = tester.state<ScrollableState>(scrollableFinder);
+      // TEMP DEBUG
+      // ignore: avoid_print
+      print(
+        'pixels=${scrollable.position.pixels} max=${scrollable.position.maxScrollExtent}',
+      );
+
+      expect(
+        scrollable.position.maxScrollExtent - scrollable.position.pixels,
+        greaterThan(1),
+      );
+    },
+  );
+
+  testWidgets(
+    'reopening a long settled cached session keeps virtualized return path stable',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_cached_virtualized_a',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Cached Virtualized A',
+          ),
+          ChatSession(
+            id: 'ses_cached_virtualized_b',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(2000),
+            title: 'Cached Virtualized B',
+          ),
+        ],
+      );
+      final longLatestText = List<String>.filled(
+        120,
+        'virtualized latest assistant start should be revealed after return',
+      ).join(' ');
+      repository.messagesBySession['ses_cached_virtualized_a'] = <ChatMessage>[
+        ..._threadMessages('ses_cached_virtualized_a', 90),
+        AssistantMessage(
+          id: 'msg_cached_virtualized_a_latest',
+          sessionId: 'ses_cached_virtualized_a',
+          time: DateTime.fromMillisecondsSinceEpoch(95000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(95500),
+          parts: <MessagePart>[
+            TextPart(
+              id: 'part_cached_virtualized_a_latest',
+              messageId: 'msg_cached_virtualized_a_latest',
+              sessionId: 'ses_cached_virtualized_a',
+              text: longLatestText,
+            ),
+          ],
+        ),
+      ];
+      repository.messagesBySession['ses_cached_virtualized_b'] =
+          _threadMessages('ses_cached_virtualized_b', 6);
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pumpAndSettle();
+
+      await provider.loadSessions();
+      final sessionA = provider.sessions
+          .where((session) => session.id == 'ses_cached_virtualized_a')
+          .first;
+      final sessionB = provider.sessions
+          .where((session) => session.id == 'ses_cached_virtualized_b')
+          .first;
+
+      await provider.selectSession(sessionA);
+      await tester.pumpAndSettle();
+
+      await provider.selectSession(sessionB);
+      await tester.pumpAndSettle();
+
+      await provider.selectSession(sessionA);
+      final listFinder = find.byKey(
+        const ValueKey<String>('chat_message_list'),
+      );
+      final scrollableFinder = find
+          .descendant(of: listFinder, matching: find.byType(Scrollable))
+          .first;
+      for (var frame = 0; frame < 40; frame += 1) {
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.idle();
+      }
+      await tester.pumpAndSettle();
+
+      final scrollable = tester.state<ScrollableState>(scrollableFinder);
 
       expect(
         scrollable.position.maxScrollExtent - scrollable.position.pixels,

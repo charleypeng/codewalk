@@ -776,21 +776,40 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     required String reason,
     required int attempt,
   }) async {
+    void releaseReturnRevealOwner() {
+      if (_currentScrollOwner == _ScrollOwner.returnReveal) {
+        _setScrollOwner(_ScrollOwner.none);
+      }
+    }
+
+    void fallbackToBottom(String fallbackReason) {
+      _traceFinalUi(
+        'return-reveal-fallback-to-bottom',
+        details:
+            'reason=$reason fallback=$fallbackReason session=$sessionId messageId=$messageId attempt=$attempt',
+      );
+      _setScrollOwner(_ScrollOwner.returnReveal);
+      _scrollToBottom(force: true, animate: false);
+    }
+
     if (!mounted) {
       return;
     }
 
     final chatProvider = _chatProvider;
     if (chatProvider == null || chatProvider.currentSession?.id != sessionId) {
+      releaseReturnRevealOwner();
       return;
     }
 
     if (chatProvider.isCurrentSessionActivelyResponding) {
+      releaseReturnRevealOwner();
       _scrollToBottom(force: false);
       return;
     }
 
     if (chatProvider.messages.isEmpty) {
+      releaseReturnRevealOwner();
       return;
     }
 
@@ -798,9 +817,11 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
         _resolveLatestRevealableAssistantMessageId(chatProvider.messages);
     if (latestRevealableAssistantMessageId == null ||
         latestRevealableAssistantMessageId.isEmpty) {
+      releaseReturnRevealOwner();
       return;
     }
     if (latestRevealableAssistantMessageId != messageId) {
+      _setScrollOwner(_ScrollOwner.returnReveal);
       _scheduleLatestMessageReturnReveal(
         sessionId: sessionId,
         messageId: latestRevealableAssistantMessageId,
@@ -811,12 +832,15 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
 
     if (!_scrollController.hasClients) {
       if (attempt + 1 < _ChatPageState._maxReturnLatestRevealAttempts) {
+        _setScrollOwner(_ScrollOwner.returnReveal);
         _scheduleLatestMessageReturnReveal(
           sessionId: sessionId,
           messageId: messageId,
           reason: reason,
           attempt: attempt + 1,
         );
+      } else {
+        fallbackToBottom('no-scroll-clients');
       }
       return;
     }
@@ -824,6 +848,19 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
     final anchorContext =
         _messageRevealAnchorKeysByMessageId[messageId]?.currentContext;
     if (anchorContext == null) {
+      _setScrollOwner(_ScrollOwner.returnReveal);
+      final isLongVirtualizedHistory = chatProvider.messages.length >= 80;
+      final shouldMaterializeTail =
+          isLongVirtualizedHistory &&
+          attempt == (_ChatPageState._maxReturnLatestRevealAttempts ~/ 2) - 1;
+      if (shouldMaterializeTail) {
+        _traceFinalUi(
+          'return-reveal-midway-tail-jump',
+          details:
+              'reason=$reason session=$sessionId messageId=$messageId attempt=$attempt max=${_scrollController.position.maxScrollExtent}',
+        );
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
       if (attempt + 1 < _ChatPageState._maxReturnLatestRevealAttempts) {
         _scheduleLatestMessageReturnReveal(
           sessionId: sessionId,
@@ -831,6 +868,12 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
           reason: reason,
           attempt: attempt + 1,
         );
+      } else {
+        if (isLongVirtualizedHistory) {
+          fallbackToBottom('missing-anchor-context');
+        } else {
+          releaseReturnRevealOwner();
+        }
       }
       return;
     }
