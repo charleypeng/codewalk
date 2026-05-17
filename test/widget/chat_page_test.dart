@@ -257,7 +257,7 @@ void main() {
             sessionId: 'ses_1',
             time: DateTime.fromMillisecondsSinceEpoch(1000),
             parts: const <MessagePart>[
-              TextPart(
+              const TextPart(
                 id: 'part_user_1',
                 messageId: 'msg_user_1',
                 sessionId: 'ses_1',
@@ -12073,7 +12073,7 @@ void main() {
           id: 'msg_active_turn_shrink',
           sessionId: sessionId,
           time: DateTime.fromMillisecondsSinceEpoch(90000),
-          parts: <MessagePart>[
+          parts: const <MessagePart>[
             TextPart(
               id: 'part_active_turn_shrink',
               messageId: 'msg_active_turn_shrink',

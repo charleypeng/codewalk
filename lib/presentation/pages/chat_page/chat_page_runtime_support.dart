@@ -845,13 +845,18 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       return;
     }
 
-    final anchorContext =
+    var anchorContext =
         _messageRevealAnchorKeysByMessageId[messageId]?.currentContext;
     if (anchorContext == null) {
       _setScrollOwner(_ScrollOwner.returnReveal);
-      final isLongVirtualizedHistory = chatProvider.messages.length >= 80;
+      final distanceFromTail =
+          _scrollController.position.maxScrollExtent -
+          _scrollController.position.pixels;
+      final isTailLikelyUnmaterialized =
+          chatProvider.messages.length >= 80 &&
+          distanceFromTail > _scrollController.position.viewportDimension * 2;
       final shouldMaterializeTail =
-          isLongVirtualizedHistory &&
+          isTailLikelyUnmaterialized &&
           attempt == (_ChatPageState._maxReturnLatestRevealAttempts ~/ 2) - 1;
       if (shouldMaterializeTail) {
         _traceFinalUi(
@@ -860,22 +865,36 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
               'reason=$reason session=$sessionId messageId=$messageId attempt=$attempt max=${_scrollController.position.maxScrollExtent}',
         );
         _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        await Future<void>.delayed(const Duration(milliseconds: 16));
+        if (!mounted || _chatProvider?.currentSession?.id != sessionId) {
+          releaseReturnRevealOwner();
+          return;
+        }
+        anchorContext =
+            _messageRevealAnchorKeysByMessageId[messageId]?.currentContext;
+        if (anchorContext != null) {
+          // Continue below so the normal ensureVisible path preserves reading
+          // alignment after the tail has been forced into the render tree.
+        }
       }
-      if (attempt + 1 < _ChatPageState._maxReturnLatestRevealAttempts) {
+      if (anchorContext == null &&
+          attempt + 1 < _ChatPageState._maxReturnLatestRevealAttempts) {
         _scheduleLatestMessageReturnReveal(
           sessionId: sessionId,
           messageId: messageId,
           reason: reason,
           attempt: attempt + 1,
         );
-      } else {
-        if (isLongVirtualizedHistory) {
+        return;
+      }
+      if (anchorContext == null) {
+        if (isTailLikelyUnmaterialized) {
           fallbackToBottom('missing-anchor-context');
         } else {
           releaseReturnRevealOwner();
         }
+        return;
       }
-      return;
     }
 
     _setScrollOwner(_ScrollOwner.returnReveal);
