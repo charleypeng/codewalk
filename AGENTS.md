@@ -52,7 +52,7 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | 020 | Session-level SWR cache with persisted LRU snapshots — instant reopen of long sessions with background revalidation | 810–869 |
 | 021 | Context-scoped New Chat draft state — prevent cross-project draft leakage during fast SWR switches | 870–913 |
 | 022 | Unified project context controls with sidebar session previews — integrated navigation while preserving `serverId::scopeId` ownership | 914–954 |
-| 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web; OpenChamber added as mandatory community reference for bug investigation, fix cloning, and feature parity (JS/TS counterpart to CodeWalk) | 955–1077 |
+| 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web; community reference openchamber added as secondary source | 955–1077 |
 | 024 | Modal Enter keyboard policy for safe dialogs — speed up keyboard confirmation without enabling destructive or ambiguous modal flows | 1078–1152 |
 | 025 | Settled Assistant-Work Disclosure Ownership — client-side architectural ownership to prevent open/close thrash, scroll jumps on session return | 1153–1204 |
 | 026 | ⚠️ SUPERSEDED — Local PTY shell replaced by server-hosted PTY (ADR-027) | 1205–1263 |
