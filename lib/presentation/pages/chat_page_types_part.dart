@@ -151,3 +151,64 @@ class _HamburgerBadgeReasonState {
 
   bool get hasBadge => kind != _HamburgerBadgeReasonKind.none;
 }
+
+class _ViewportBuildKey {
+  const _ViewportBuildKey({
+    required this.sessionId,
+    required this.messagesVersion,
+    required this.isActivelyResponding,
+  });
+
+  final String? sessionId;
+  final int messagesVersion;
+  final bool isActivelyResponding;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! _ViewportBuildKey) return false;
+    return other.sessionId == sessionId &&
+        other.messagesVersion == messagesVersion &&
+        other.isActivelyResponding == isActivelyResponding;
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(sessionId, messagesVersion, isActivelyResponding);
+}
+
+class _ComposerBuildKey {
+  const _ComposerBuildKey({
+    required this.sessionId,
+    required this.isDraftingNewChat,
+    required this.isActivelyResponding,
+    required this.composerEnabled,
+    required this.composerStatusSignature,
+  });
+
+  final String? sessionId;
+  final bool isDraftingNewChat;
+  final bool isActivelyResponding;
+  final bool composerEnabled;
+  final int composerStatusSignature;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! _ComposerBuildKey) return false;
+    return other.sessionId == sessionId &&
+        other.isDraftingNewChat == isDraftingNewChat &&
+        other.isActivelyResponding == isActivelyResponding &&
+        other.composerEnabled == composerEnabled &&
+        other.composerStatusSignature == composerStatusSignature;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        sessionId,
+        isDraftingNewChat,
+        isActivelyResponding,
+        composerEnabled,
+        composerStatusSignature,
+      );
+}

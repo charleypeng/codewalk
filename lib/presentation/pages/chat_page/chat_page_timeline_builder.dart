@@ -597,8 +597,20 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                           return _buildInlineDiffCard(context, chatProvider);
                         },
                       ),
-                      // Message list
-                      Expanded(child: _buildMessageViewport(chatProvider)),
+                      // Message list — guarded by Selector to skip rebuild on selection-only changes
+                      Expanded(
+                        child: Selector<ChatProvider, _ViewportBuildKey>(
+                          selector: (_, p) => _ViewportBuildKey(
+                            sessionId: p.currentSession?.id,
+                            messagesVersion: p.messagesVersion,
+                            isActivelyResponding:
+                                p.isCurrentSessionActivelyResponding,
+                          ),
+                          builder: (context, _, __) =>
+                              _buildMessageViewport(
+                                  context.read<ChatProvider>()),
+                        ),
+                      ),
 
                       if (!hideComposerForTerminal)
                         _buildInteractionPrompts(chatProvider),
