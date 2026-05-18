@@ -377,7 +377,8 @@ class ChatProvider extends ChangeNotifier {
   _SelectionSyncTransactionPhase _selectionSyncTransactionPhase =
       _SelectionSyncTransactionPhase.idle;
   Future<void>? _selectionPersistenceTask;
-  _SelectionPersistenceSnapshot? _pendingSelectionPersistenceSnapshot;
+  bool _selectionPersistenceDirty = false;
+  bool _selectionPersistenceSyncRemote = false;
   String _activeContextKey = 'legacy::default';
   final Map<String, _ChatContextSnapshot> _contextSnapshots =
       <String, _ChatContextSnapshot>{};
@@ -2628,10 +2629,9 @@ class ChatProvider extends ChangeNotifier {
   }
 
   void _scheduleSelectionPersistence({bool syncRemote = true}) {
-    final existing = _pendingSelectionPersistenceSnapshot;
-    _pendingSelectionPersistenceSnapshot = _captureSelectionPersistenceSnapshot(
-      syncRemote: syncRemote || (existing?.syncRemote ?? false),
-    );
+    _selectionPersistenceDirty = true;
+    _selectionPersistenceSyncRemote =
+        syncRemote || _selectionPersistenceSyncRemote;
     final inFlight = _selectionPersistenceTask;
     if (inFlight != null) {
       return;
@@ -2644,14 +2644,18 @@ class ChatProvider extends ChangeNotifier {
   Future<void> _flushScheduledSelectionPersistence() async {
     try {
       while (true) {
-        final snapshot = _pendingSelectionPersistenceSnapshot;
-        if (snapshot == null) {
+        if (!_selectionPersistenceDirty) {
           break;
         }
-        _pendingSelectionPersistenceSnapshot = null;
+        _selectionPersistenceDirty = false;
+        final syncRemote = _selectionPersistenceSyncRemote;
+        _selectionPersistenceSyncRemote = false;
+        final snapshot = _captureSelectionPersistenceSnapshot(
+          syncRemote: syncRemote,
+        );
         await _persistSelectionSnapshot(
           snapshot,
-          syncRemote: snapshot.syncRemote,
+          syncRemote: syncRemote,
         );
       }
     } catch (error, stackTrace) {
@@ -2663,7 +2667,7 @@ class ChatProvider extends ChangeNotifier {
     } finally {
       _selectionPersistenceTask = null;
     }
-    if (_pendingSelectionPersistenceSnapshot != null) {
+    if (_selectionPersistenceDirty) {
       final retryTask = _flushScheduledSelectionPersistence();
       _selectionPersistenceTask = retryTask;
       unawaited(retryTask);
