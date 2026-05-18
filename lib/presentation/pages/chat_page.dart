@@ -305,6 +305,9 @@ class _ChatPageState extends State<ChatPage>
   bool _manualScrollFollowPaused = false;
   int _responseSettleFramesRemaining = 0;
   bool _wasCurrentSessionActivelyResponding = false;
+  // Cached values for _syncResponseViewportPolicy early-return guard.
+  int _lastSyncedMessagesVersion = -1;
+  bool _lastSyncedIsResponding = false;
   bool _deferAssistantWorkCollapse = false;
   bool _suppressPostCompletionAutoSnap = false;
   bool _shouldRevealFinalAssistantOnCompletion = false;

@@ -641,6 +641,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                             final projectProvider = context
                                 .read<ProjectProvider>();
                             return ChatInputWidget(
+                              key: ValueKey('chat_input_${currentSessionId ?? 'draft'}'),
                               onSendMessage: (submission) async {
                                 Future<void>
                                 clearComposerContextIfNeeded() async {

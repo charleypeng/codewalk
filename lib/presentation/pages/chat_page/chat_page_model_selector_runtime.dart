@@ -763,7 +763,10 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
     if (selected == null) {
       return;
     }
-    unawaited(chatProvider.setSelectedAgent(selected));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(chatProvider.setSelectedAgent(selected));
+    });
   }
 
   List<_ModelSelectorEntry> _buildModelSelectorEntries(
@@ -1137,13 +1140,16 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                           Navigator.of(
                                             bottomSheetContext,
                                           ).pop();
-                                          unawaited(
-                                            chatProvider
-                                                .setSelectedModelByProvider(
-                                                  providerId: entry.providerId,
-                                                  modelId: entry.modelId,
-                                                ),
-                                          );
+                                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                                            if (!mounted) return;
+                                            unawaited(
+                                              chatProvider
+                                                  .setSelectedModelByProvider(
+                                                    providerId: entry.providerId,
+                                                    modelId: entry.modelId,
+                                                  ),
+                                            );
+                                          });
                                         },
                                       ),
                                   ],
@@ -1202,13 +1208,16 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                           Navigator.of(
                                             bottomSheetContext,
                                           ).pop();
-                                          unawaited(
-                                            chatProvider
-                                                .setSelectedModelByProvider(
-                                                  providerId: entry.providerId,
-                                                  modelId: entry.modelId,
-                                                ),
-                                          );
+                                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                                            if (!mounted) return;
+                                            unawaited(
+                                              chatProvider
+                                                  .setSelectedModelByProvider(
+                                                    providerId: entry.providerId,
+                                                    modelId: entry.modelId,
+                                                  ),
+                                            );
+                                          });
                                         },
                                       ),
                                   ],
@@ -1379,7 +1388,10 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
     if (selected == null && chatProvider.selectedVariantId == null) {
       return;
     }
-    unawaited(chatProvider.setSelectedVariant(selected));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(chatProvider.setSelectedVariant(selected));
+    });
   }
 
   Future<void> _createNewSession() async {
