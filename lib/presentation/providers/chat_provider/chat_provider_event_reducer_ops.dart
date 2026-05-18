@@ -312,20 +312,42 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           final parsed = diffRaw
               .whereType<Map>()
               .map(
-                (item) => SessionDiff(
-                  file: item['file'] as String? ?? '',
-                  before: item['before'] as String? ?? '',
-                  after: item['after'] as String? ?? '',
-                  additions: (item['additions'] as num?)?.toInt() ?? 0,
-                  deletions: (item['deletions'] as num?)?.toInt() ?? 0,
-                  status: item['status'] as String?,
-                ),
+                (item) => SessionDiffModel.fromJson(
+                  Map<String, dynamic>.from(item),
+                ).toDomain(),
               )
               .toList(growable: false);
-          _sessionDiffById[sessionId] = parsed;
-          _notifyListeners();
-        }
-        break;
+
+          // Merge guard: if incoming SSE item has empty before AND after,
+          // preserve existing non-empty stored content for the same file
+          final existing = _sessionDiffById[sessionId];
+          if (existing != null && existing.isNotEmpty) {
+            final merged = <SessionDiff>[];
+            final existingByFile = {for (final e in existing) e.file: e};
+
+            for (final incoming in parsed) {
+              final prev = existingByFile[incoming.file];
+              if (prev != null &&
+                  incoming.before.isEmpty &&
+                  incoming.after.isEmpty &&
+                  (prev.before.isNotEmpty || prev.after.isNotEmpty)) {
+                // Keep existing content — incoming SSE has no snapshot
+                merged.add(prev);
+              } else {
+                merged.add(incoming);
+              }
+            }
+            _sessionDiffById[sessionId] = merged;
+          } else {
+            // Skip overwrite if entire incoming list is empty but existing exists
+            if (parsed.isEmpty && existing != null && existing.isNotEmpty) {
+              break;
+            }
+            _sessionDiffById[sessionId] = parsed;
+          }
+      _notifyListeners();
+      }
+      break;
       case 'todo.updated':
         final sessionId = properties['sessionID'] as String?;
         final todosRaw = properties['todos'];

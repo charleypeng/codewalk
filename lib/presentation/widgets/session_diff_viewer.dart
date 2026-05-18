@@ -226,52 +226,88 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
   }
 
   Widget _buildDiffPreview(BuildContext context, SessionDiff diff) {
-    final unifiedDiff = _buildUnifiedDiff(diff);
-    final lines = parseDiffLines(unifiedDiff);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).dividerColor),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: ListView.builder(
-          key: ValueKey<String>(
-            'session_diff_preview_list_${_selectedIndex}_${diff.file}',
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          itemCount: lines.length,
-          itemBuilder: (context, index) {
-            final line = lines[index];
-            final style = _lineStyle(context, line.type);
-            return Container(
-              width: double.infinity,
-              color: style.backgroundColor,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-              child: Text(
-                line.content,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontFamily: 'monospace',
-                  color: style.textColor,
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
+  final lines = computeDiffLines(diff.before, diff.after, diff.file);
+
+  // Both before/after were empty — show fallback instead of phantom diff
+  if (lines.length <= 3 &&
+      lines.every((l) => l.type == DiffLineType.metadata || l.type == DiffLineType.hunk)) {
+    return _buildEmptyContentFallback(context, diff);
   }
 
-  String _buildUnifiedDiff(SessionDiff diff) {
-    final beforeLines = diff.before
-        .split('\n')
-        .map((line) => '-$line')
-        .join('\n');
-    final afterLines = diff.after
-        .split('\n')
-        .map((line) => '+$line')
-        .join('\n');
-    return '--- ${diff.file}\n+++ ${diff.file}\n@@\n$beforeLines\n$afterLines';
+  return DecoratedBox(
+    decoration: BoxDecoration(
+      border: Border.all(color: Theme.of(context).dividerColor),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: ListView.builder(
+        key: ValueKey<String>(
+          'session_diff_preview_list_${_selectedIndex}_${diff.file}',
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: lines.length,
+        itemBuilder: (context, index) {
+          final line = lines[index];
+          final style = _lineStyle(context, line.type);
+          return Container(
+            width: double.infinity,
+            color: style.backgroundColor,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+            child: Text(
+              line.content,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontFamily: 'monospace',
+                color: style.textColor,
+              ),
+            ),
+          );
+        },
+      ),
+    ),
+  );
+  }
+
+  /// Fallback widget when server provides no file content (empty before/after).
+  Widget _buildEmptyContentFallback(BuildContext context, SessionDiff diff) {
+  final theme = Theme.of(context);
+  return DecoratedBox(
+    decoration: BoxDecoration(
+      border: Border.all(color: theme.dividerColor),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Symbols.preview_off, size: 32, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(height: 12),
+          Text(
+            diff.file,
+            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+'+${diff.additions} lines added -${diff.deletions} lines removed',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'File content not captured by the server',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    ),
+  );
   }
 
   _DiffLineStyle _lineStyle(BuildContext context, DiffLineType type) {

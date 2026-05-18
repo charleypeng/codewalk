@@ -16,6 +16,7 @@ import '../../data/models/chat_message_model.dart';
 import '../../data/models/chat_realtime_model.dart';
 import '../../data/models/chat_session_model.dart';
 import '../../data/models/provider_model.dart';
+import '../../data/models/session_lifecycle_model.dart';
 import '../../domain/entities/agent.dart';
 import '../../domain/entities/chat_composer_draft.dart';
 import '../../domain/entities/chat_message.dart';
