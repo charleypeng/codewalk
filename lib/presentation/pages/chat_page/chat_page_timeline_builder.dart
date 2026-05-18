@@ -607,9 +607,11 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                         _buildComposerReasoningStatusSlot(composerStatus),
 
                       if (!hideComposerForTerminal)
-                        _buildModelControls(
-                          chatProvider,
-                          isSubConversation: isSubConversation,
+                        Consumer<ChatProvider>(
+                          builder: (_, cp, __) => _buildModelControls(
+                            cp,
+                            isSubConversation: isSubConversation,
+                          ),
                         ),
 
                       // Input field
