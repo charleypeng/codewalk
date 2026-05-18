@@ -1,6 +1,6 @@
 # Contract Matrix
 
-CodeWalk follows ADR-023: official OpenCode docs/source are the primary contract, and OpenChamber is a secondary UX reference only.
+CodeWalk follows ADR-023: official OpenCode docs/source are the primary contract. OpenChamber is a mandatory community reference for bug investigation, behavior corrections, and feature cloning — it shares CodeWalk’s goals and is built on the same OpenCode foundation using JS/TS. It must never override official OpenCode on protocol or lifecycle semantics.
 
 ## Source Priority
 
@@ -10,13 +10,14 @@ CodeWalk follows ADR-023: official OpenCode docs/source are the primary contract
 4. `ai-docs/opencode_web.md`
 5. `ai-docs/opencode_models.md`
 6. Official OpenCode docs/source
-7. OpenChamber references, only after official confirmation
+7. OpenChamber — mandatory for bug fixes, regressions, and feature cloning; non-authoritative for protocol/lifecycle semantics
 
 ## Decision Rules
 
 - Follow official OpenCode lifecycle and payload semantics first.
 - Keep legacy compatibility fallbacks explicit and temporary.
-- Do not introduce protocol behavior from OpenChamber alone.
+- Do not introduce **new protocol behavior** from OpenChamber alone — official contract applies.
+- **Always check OpenChamber first** when investigating a bug or planning a feature: if it already has a working fix or similar feature, clone and adapt the approach to Dart/Flutter.
 - Prefer capability-gated UI for official-but-optional server surfaces.
 - Treat drift around `prompt_async`, SSE reconciliation, and config mutation as high risk.
 
@@ -56,14 +57,23 @@ CodeWalk follows ADR-023: official OpenCode docs/source are the primary contract
 - Permission/question routes where local client behavior may span mixed server generations
 - PTY endpoint assumptions that are implemented client-side but under-documented in the local official snapshot
 
-## OpenChamber-Only Inspiration (Non-Authoritative)
+## OpenChamber — Bug Fix and Feature Cloning Reference
 
-These are useful as UX ideas only after official OpenCode compatibility is confirmed:
+OpenChamber (https://github.com/openchamber/openchamber) runs on the same OpenCode foundation as CodeWalk and pursues identical goals using JS/TS. It is the closest community analog to CodeWalk.
 
+**Mandatory uses**:
+- Investigate OpenChamber when debugging a regression — it may have already fixed the root cause.
+- Review OpenChamber before implementing a new feature — it may have a proven pattern to clone.
+- Use OpenChamber as a UX and behavior reference when official OpenCode docs are silent on UX details.
+
+**Limitations** (non-negotiable):
+- Must not redefine CodeWalk’s protocol or lifecycle assumptions.
+- Must not override official OpenCode API/event semantics.
+- Dart/Flutter adaptation is always required; do not copy JS/TS patterns verbatim.
+
+**OpenChamber-Only UX inspiration** (useful after official compatibility is confirmed):
 - richer diff/review surfaces
 - quota grouping/provenance clarity
 - stronger multi-device continuity affordances
 - broader workspace control panels
 - advanced Git/GitHub workflows
-
-They must not redefine CodeWalk's protocol or lifecycle assumptions.
