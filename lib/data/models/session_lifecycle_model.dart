@@ -42,6 +42,7 @@ class SessionDiffModel {
       additions: (json['additions'] as num?)?.toInt() ?? 0,
       deletions: (json['deletions'] as num?)?.toInt() ?? 0,
       status: json['status'] as String?,
+      patch: json['patch'] as String?,
     );
   }
   const SessionDiffModel({
@@ -51,6 +52,7 @@ class SessionDiffModel {
     required this.additions,
     required this.deletions,
     this.status,
+    this.patch,
   });
 
   final String file;
@@ -60,6 +62,9 @@ class SessionDiffModel {
   final int deletions;
   final String? status;
 
+  /// Unified diff text from the server (FileDiff.patch in OpenCode schema).
+  final String? patch;
+
   SessionDiff toDomain() {
     return SessionDiff(
       file: file,
@@ -68,6 +73,7 @@ class SessionDiffModel {
       additions: additions,
       deletions: deletions,
       status: status,
+      patch: patch,
     );
   }
 }

@@ -168,23 +168,54 @@ index abc123..def456 100644
       expect(addLines[0].content, '+line2');
     });
 
-    test('large-file guard triggers degenerative diff', () {
-      // Create inputs that exceed 4M cells
-      final bLines = List.generate(2500, (i) => 'before $i');
-      final aLines = List.generate(2500, (i) => 'after $i');
-      final lines = computeDiffLines(
-        bLines.join('\n'),
-        aLines.join('\n'),
-        'big.dart',
-      );
-      // Degenerative diff: all before as remove, all after as add
-      expect(lines[0].content, '--- big.dart');
-      expect(lines[1].content, '+++ big.dart');
-      expect(lines[2].type, DiffLineType.hunk);
-      final removeLines = lines.where((l) => l.type == DiffLineType.remove).toList();
-      final addLines = lines.where((l) => l.type == DiffLineType.add).toList();
-      expect(removeLines.length, 2500);
-      expect(addLines.length, 2500);
-    });
+  test('large-file guard triggers degenerative diff', () {
+    // Create inputs that exceed 4M cells
+    final bLines = List.generate(2500, (i) => 'before $i');
+    final aLines = List.generate(2500, (i) => 'after $i');
+    final lines = computeDiffLines(
+      bLines.join('\n'),
+      aLines.join('\n'),
+      'big.dart',
+    );
+    // Degenerative diff: all before as remove, all after as add
+    expect(lines[0].content, '--- big.dart');
+    expect(lines[1].content, '+++ big.dart');
+    expect(lines[2].type, DiffLineType.hunk);
+    final removeLines = lines.where((l) => l.type == DiffLineType.remove).toList();
+    final addLines = lines.where((l) => l.type == DiffLineType.add).toList();
+    expect(removeLines.length, 2500);
+    expect(addLines.length, 2500);
+  });
+
+  test('parseDiffLines correctly parses server-provided unified patch', () {
+    const patch = '''--- a/lib/main.dart
++++ b/lib/main.dart
+@@ -1,3 +1,4 @@
+ void main() {
+-  print('hello');
++  print('hello world');
++  print('added');
+ }''';
+    final lines = parseDiffLines(patch);
+    expect(lines[0].type, DiffLineType.metadata);
+    expect(lines[0].content, '--- a/lib/main.dart');
+    expect(lines[1].type, DiffLineType.metadata);
+    expect(lines[1].content, '+++ b/lib/main.dart');
+    expect(lines[2].type, DiffLineType.hunk);
+    expect(lines[3].type, DiffLineType.context);
+    expect(lines[4].type, DiffLineType.remove);
+    expect(lines[4].content, "-  print('hello');");
+    expect(lines[5].type, DiffLineType.add);
+    expect(lines[5].content, "+  print('hello world');");
+    expect(lines[6].type, DiffLineType.add);
+    expect(lines[7].type, DiffLineType.context);
+  });
+
+  test('parseDiffLines handles empty patch string', () {
+    final lines = parseDiffLines('');
+    expect(lines.length, 1);
+    expect(lines[0].content, '');
+    expect(lines[0].type, DiffLineType.context);
+  });
   });
 }

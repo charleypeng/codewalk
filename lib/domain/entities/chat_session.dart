@@ -311,6 +311,7 @@ class SessionDiff extends Equatable {
     required this.additions,
     required this.deletions,
     this.status,
+    this.patch,
   });
 
   final String file;
@@ -320,6 +321,10 @@ class SessionDiff extends Equatable {
   final int deletions;
   final String? status;
 
+  /// Unified diff text returned by the server (ADR-023 contract: FileDiff.patch).
+  /// When present, takes priority over before/after for rendering.
+  final String? patch;
+
   @override
   List<Object?> get props => [
     file,
@@ -328,5 +333,6 @@ class SessionDiff extends Equatable {
     additions,
     deletions,
     status,
+    patch,
   ];
 }

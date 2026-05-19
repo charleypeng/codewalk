@@ -274,4 +274,93 @@ void main() {
     expect(find.text('+changed2'), findsOneWidget);
     expect(find.text('+added5'), findsOneWidget);
   });
+
+  testWidgets('patch field renders server-provided unified diff directly', (
+    WidgetTester tester,
+  ) async {
+    const patchDiff = SessionDiff(
+      file: 'lib/patched.dart',
+      before: '',
+      after: '',
+      additions: 1,
+      deletions: 1,
+      status: 'modified',
+      patch: '--- a/lib/patched.dart\n+++ b/lib/patched.dart\n@@ -1,3 +1,4 @@\n void main() {\n-  print(\'hello\');\n+  print(\'hello world\');\n }',
+    );
+
+    await tester.pumpWidget(
+      wrap(
+        const SessionDiffViewer(
+          diffs: <SessionDiff>[patchDiff],
+          compact: true,
+          initiallyExpanded: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Server patch renders with its original metadata headers
+    expect(find.text('--- a/lib/patched.dart'), findsOneWidget);
+    expect(find.text('+++ b/lib/patched.dart'), findsOneWidget);
+    expect(find.text("-  print('hello');"), findsOneWidget);
+    expect(find.text("+  print('hello world');"), findsOneWidget);
+  });
+
+  testWidgets('patch field takes priority over before/after', (
+    WidgetTester tester,
+  ) async {
+    const diffWithBoth = SessionDiff(
+      file: 'lib/both.dart',
+      before: 'old content',
+      after: 'new content',
+      additions: 1,
+      deletions: 1,
+      status: 'modified',
+      patch: '--- a/lib/both.dart\n+++ b/lib/both.dart\n@@ -1 +1 @@\n-old content\n+new from patch',
+    );
+
+    await tester.pumpWidget(
+      wrap(
+        const SessionDiffViewer(
+          diffs: <SessionDiff>[diffWithBoth],
+          compact: true,
+          initiallyExpanded: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Patch content wins — shows "new from patch", not "new content"
+    expect(find.text('+new from patch'), findsOneWidget);
+    expect(find.text('+new content'), findsNothing);
+  });
+
+  testWidgets('empty patch with empty before/after shows fallback', (
+    WidgetTester tester,
+  ) async {
+    const emptyPatchDiff = SessionDiff(
+      file: 'lib/nopatch.dart',
+      before: '',
+      after: '',
+      additions: 3,
+      deletions: 1,
+      status: 'modified',
+      patch: '',
+    );
+
+    await tester.pumpWidget(
+      wrap(
+        const SessionDiffViewer(
+          diffs: <SessionDiff>[emptyPatchDiff],
+          compact: true,
+          initiallyExpanded: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Empty patch falls back to LCS with empty before/after → fallback UI
+    expect(find.text('+3 lines added -1 lines removed'), findsOneWidget);
+  expect(find.text('File content not captured by the server'), findsOneWidget);
+  });
 }

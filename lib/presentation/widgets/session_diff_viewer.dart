@@ -226,11 +226,20 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
   }
 
   Widget _buildDiffPreview(BuildContext context, SessionDiff diff) {
-  final lines = computeDiffLines(diff.before, diff.after, diff.file);
+  // Prefer server-provided unified patch text (ADR-023: FileDiff.patch)
+  // over client-side LCS computed from before/after snapshots.
+  final List<DiffLine> lines;
+  final hasPatch = diff.patch != null && diff.patch!.trim().isNotEmpty;
+  if (hasPatch) {
+    lines = parseDiffLines(diff.patch!);
+  } else {
+    lines = computeDiffLines(diff.before, diff.after, diff.file);
+  }
 
-  // Both before/after were empty — show fallback instead of phantom diff
-  if (lines.length <= 3 &&
-      lines.every((l) => l.type == DiffLineType.metadata || l.type == DiffLineType.hunk)) {
+  // No meaningful diff content — show fallback instead of phantom diff
+  if (lines.isEmpty ||
+      (lines.length <= 3 &&
+          lines.every((l) => l.type == DiffLineType.metadata || l.type == DiffLineType.hunk))) {
     return _buildEmptyContentFallback(context, diff);
   }
 

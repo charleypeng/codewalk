@@ -318,26 +318,29 @@ extension _ChatProviderEventReducerOps on ChatProvider {
               )
               .toList(growable: false);
 
-          // Merge guard: if incoming SSE item has empty before AND after,
-          // preserve existing non-empty stored content for the same file
-          final existing = _sessionDiffById[sessionId];
-          if (existing != null && existing.isNotEmpty) {
-            final merged = <SessionDiff>[];
-            final existingByFile = {for (final e in existing) e.file: e};
+    // Merge guard: if incoming SSE item has no content (empty before/after
+    // AND no patch), preserve existing non-empty stored content for same file
+    final existing = _sessionDiffById[sessionId];
+    if (existing != null && existing.isNotEmpty) {
+      final merged = <SessionDiff>[];
+      final existingByFile = {for (final e in existing) e.file: e};
 
-            for (final incoming in parsed) {
-              final prev = existingByFile[incoming.file];
-              if (prev != null &&
-                  incoming.before.isEmpty &&
-                  incoming.after.isEmpty &&
-                  (prev.before.isNotEmpty || prev.after.isNotEmpty)) {
-                // Keep existing content — incoming SSE has no snapshot
-                merged.add(prev);
-              } else {
-                merged.add(incoming);
-              }
-            }
-            _sessionDiffById[sessionId] = merged;
+      for (final incoming in parsed) {
+        final prev = existingByFile[incoming.file];
+        final incomingHasContent = incoming.patch != null && incoming.patch!.isNotEmpty ||
+            incoming.before.isNotEmpty ||
+            incoming.after.isNotEmpty;
+        final prevHasContent = (prev?.patch != null && prev!.patch!.isNotEmpty) ||
+            (prev?.before.isNotEmpty ?? false) ||
+            (prev?.after.isNotEmpty ?? false);
+        if (prev != null && !incomingHasContent && prevHasContent) {
+          // Keep existing content — incoming SSE has no snapshot or patch
+          merged.add(prev);
+        } else {
+          merged.add(incoming);
+        }
+      }
+      _sessionDiffById[sessionId] = merged;
           } else {
             // Skip overwrite if entire incoming list is empty but existing exists
             if (parsed.isEmpty && existing != null && existing.isNotEmpty) {
