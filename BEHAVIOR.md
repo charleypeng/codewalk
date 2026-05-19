@@ -473,6 +473,14 @@
 - **Then** that now-empty group is omitted entirely instead of rendering an empty shell
 - **Then** display-toggle state participates in timeline cache reuse so stale filtered groups are not resurrected
 
+### Review changes display can be hidden
+
+- **Given** the active session has changed files available for review
+- **When** `Review changes` is enabled in `Display toggles`
+- **Then** the timeline or desktop utility pane shows the review-changes file list when that surface is otherwise eligible to render it
+- **When** the user disables `Review changes` in `Display toggles`
+- **Then** the review-changes file list block is hidden without clearing or mutating the session diff data
+
 ### Sub-conversation threads keep a full composer with parent return
 
 - **Given** the user opens a child thread from a subtask/task bubble in the main conversation
