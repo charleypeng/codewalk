@@ -576,6 +576,7 @@ class ExperienceSettings {
       showThinkingBubbles: true,
       showToolCallBubbles: true,
       showTaskList: true,
+      showReviewChanges: true,
       showRecentSessions: true,
       taskListCollapsed: false,
       showComposerTips: true,
@@ -620,6 +621,7 @@ class ExperienceSettings {
     required this.showThinkingBubbles,
     required this.showToolCallBubbles,
     required this.showTaskList,
+    required this.showReviewChanges,
     required this.showRecentSessions,
     required this.taskListCollapsed,
     required this.showComposerTips,
@@ -664,6 +666,7 @@ class ExperienceSettings {
   final bool showThinkingBubbles;
   final bool showToolCallBubbles;
   final bool showTaskList;
+  final bool showReviewChanges;
   final bool showRecentSessions;
   final bool taskListCollapsed;
   final bool showComposerTips;
@@ -708,6 +711,7 @@ class ExperienceSettings {
     bool? showThinkingBubbles,
     bool? showToolCallBubbles,
     bool? showTaskList,
+    bool? showReviewChanges,
     bool? showRecentSessions,
     bool? taskListCollapsed,
     bool? showComposerTips,
@@ -757,6 +761,7 @@ class ExperienceSettings {
       showThinkingBubbles: showThinkingBubbles ?? this.showThinkingBubbles,
       showToolCallBubbles: showToolCallBubbles ?? this.showToolCallBubbles,
       showTaskList: showTaskList ?? this.showTaskList,
+      showReviewChanges: showReviewChanges ?? this.showReviewChanges,
       showRecentSessions: showRecentSessions ?? this.showRecentSessions,
       taskListCollapsed: taskListCollapsed ?? this.taskListCollapsed,
       showComposerTips: showComposerTips ?? this.showComposerTips,
@@ -848,6 +853,7 @@ class ExperienceSettings {
       'showThinkingBubbles': showThinkingBubbles,
       'showToolCallBubbles': showToolCallBubbles,
       'showTaskList': showTaskList,
+      'showReviewChanges': showReviewChanges,
       'showRecentSessions': showRecentSessions,
       'taskListCollapsed': taskListCollapsed,
       'showComposerTips': showComposerTips,
@@ -909,6 +915,7 @@ class ExperienceSettings {
     var showThinkingBubbles = defaults.showThinkingBubbles;
     var showToolCallBubbles = defaults.showToolCallBubbles;
     var showTaskList = defaults.showTaskList;
+    var showReviewChanges = defaults.showReviewChanges;
     var showRecentSessions = defaults.showRecentSessions;
     var taskListCollapsed = defaults.taskListCollapsed;
     var showComposerTips = defaults.showComposerTips;
@@ -1075,6 +1082,11 @@ class ExperienceSettings {
     final showTaskListJson = json['showTaskList'];
     if (showTaskListJson is bool) {
       showTaskList = showTaskListJson;
+    }
+
+    final showReviewChangesJson = json['showReviewChanges'];
+    if (showReviewChangesJson is bool) {
+      showReviewChanges = showReviewChangesJson;
     }
 
     final showRecentSessionsJson = json['showRecentSessions'];
@@ -1252,6 +1264,7 @@ class ExperienceSettings {
       showThinkingBubbles: showThinkingBubbles,
       showToolCallBubbles: showToolCallBubbles,
       showTaskList: showTaskList,
+      showReviewChanges: showReviewChanges,
       showRecentSessions: showRecentSessions,
       taskListCollapsed: taskListCollapsed,
       showComposerTips: showComposerTips,

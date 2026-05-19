@@ -94,6 +94,7 @@ enum _DisplayToggleAction {
   thinkingBubbles,
   toolCallBubbles,
   taskList,
+  reviewChanges,
   recentSessions,
   composerTips,
   replayTour,

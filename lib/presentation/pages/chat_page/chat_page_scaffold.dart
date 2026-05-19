@@ -1083,17 +1083,19 @@ extension _ChatPageScaffold on _ChatPageState {
                       ),
                       maxVisibleItems: 10,
                     ),
-                    if (chatProvider.currentSessionDiff.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      SessionDiffViewer(
-                        diffs: chatProvider.currentSessionDiff,
-                        compact: false,
-                      ),
-                    ] else
-                      Text(
-                        'Diff files: 0',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
+                    if (settingsProvider.showReviewChanges) ...[
+                      if (chatProvider.currentSessionDiff.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        SessionDiffViewer(
+                          diffs: chatProvider.currentSessionDiff,
+                          compact: false,
+                        ),
+                      ] else
+                        Text(
+                          'Diff files: 0',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                    ],
                     if (chatProvider.isLoadingSessionInsights)
                       const Padding(
                         padding: EdgeInsets.only(top: 8),

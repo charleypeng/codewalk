@@ -3260,7 +3260,6 @@ void main() {
       ),
     );
     final appProvider = _buildAppProvider(localDataSource: localDataSource);
-
     await tester.pumpWidget(_testApp(provider, appProvider));
     await tester.pumpAndSettle();
     await provider.loadSessions();
@@ -5223,7 +5222,6 @@ void main() {
       localDataSource: localDataSource,
     );
     final appProvider = _buildAppProvider(localDataSource: localDataSource);
-
     await tester.pumpWidget(_testApp(provider, appProvider));
     await tester.pumpAndSettle();
 
@@ -5522,7 +5520,6 @@ void main() {
       localDataSource: localDataSource,
     );
     final appProvider = _buildAppProvider(localDataSource: localDataSource);
-
     await tester.pumpWidget(_testApp(provider, appProvider));
     await tester.pump(const Duration(milliseconds: 150));
 
@@ -14243,8 +14240,18 @@ void main() {
       localDataSource: localDataSource,
     );
     final appProvider = _buildAppProvider(localDataSource: localDataSource);
+    final settingsProvider = SettingsProvider(
+      localDataSource: localDataSource,
+      dioClient: DioClient(),
+      soundService: SoundService(),
+    );
+    await settingsProvider.initialize();
+    await settingsProvider.setCheckUpdatesOnOpen(false);
+    addTearDown(settingsProvider.dispose);
 
-    await tester.pumpWidget(_testApp(provider, appProvider));
+    await tester.pumpWidget(
+      _testApp(provider, appProvider, settingsProvider: settingsProvider),
+    );
     await tester.pumpAndSettle();
 
     await provider.loadSessions();
@@ -14257,6 +14264,27 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('1 file changed'), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('appbar_display_toggles_button')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('display_toggle_item_review_changes')),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('display_toggle_item_review_changes')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(settingsProvider.showReviewChanges, isFalse);
+    expect(
+      find.byKey(const ValueKey<String>('session_diff_viewer_compact_tile')),
+      findsNothing,
+    );
   });
 
   testWidgets('shows labeled session actions for the active session', (

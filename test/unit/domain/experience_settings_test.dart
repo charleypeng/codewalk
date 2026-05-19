@@ -21,6 +21,24 @@ void main() {
     });
   });
 
+  group('review changes serialization', () {
+    test('defaults review changes display to enabled', () {
+      expect(ExperienceSettings.defaults().showReviewChanges, isTrue);
+    });
+
+    test('serializes and deserializes review changes display', () {
+      final settings = ExperienceSettings.defaults().copyWith(
+        showReviewChanges: false,
+      );
+
+      final json = settings.toJson();
+      final restored = ExperienceSettings.fromJson(json);
+
+      expect(json['showReviewChanges'], isFalse);
+      expect(restored.showReviewChanges, isFalse);
+    });
+  });
+
   group('OpenCodeThemePreset serialization', () {
     test('serializes and deserializes catppuccin-macchiato', () {
       final settings = ExperienceSettings.defaults().copyWith(

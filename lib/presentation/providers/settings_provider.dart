@@ -147,6 +147,7 @@ class SettingsProvider extends ChangeNotifier {
   bool get showThinkingBubbles => _settings.showThinkingBubbles;
   bool get showToolCallBubbles => _settings.showToolCallBubbles;
   bool get showTaskList => _settings.showTaskList;
+  bool get showReviewChanges => _settings.showReviewChanges;
   bool get showRecentSessions => _settings.showRecentSessions;
   bool get taskListCollapsed => _settings.taskListCollapsed;
   bool get showComposerTips => _settings.showComposerTips;
@@ -796,6 +797,15 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(showTaskList: visible);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setShowReviewChanges(bool visible) async {
+    if (_settings.showReviewChanges == visible) {
+      return;
+    }
+    _settings = _settings.copyWith(showReviewChanges: visible);
     notifyListeners();
     await _persist();
   }

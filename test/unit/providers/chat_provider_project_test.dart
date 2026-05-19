@@ -2107,7 +2107,9 @@ void main() {
         await scopedProvider.initializeProviders();
         expect(scopedProvider.providers, isNotEmpty);
 
-        appRepository.providersResult = Left(NetworkFailure('refresh failed'));
+        appRepository.providersResult = const Left(
+          NetworkFailure('refresh failed'),
+        );
 
         await scopedProjectProvider.switchProject('proj_b');
         await scopedProvider.onProjectScopeChanged(waitForRevalidation: false);

@@ -298,6 +298,7 @@ extension _ChatPageChrome on _ChatPageState {
       _DisplayToggleAction.thinkingBubbles => 'Thinking bubbles',
       _DisplayToggleAction.toolCallBubbles => 'Tool call bubbles',
       _DisplayToggleAction.taskList => 'Task list',
+      _DisplayToggleAction.reviewChanges => 'Review changes',
       _DisplayToggleAction.recentSessions => 'Recent sessions',
       _DisplayToggleAction.composerTips => 'Composer tips',
       _DisplayToggleAction.replayTour => 'Replay chat tour',
@@ -653,6 +654,13 @@ extension _ChatPageChrome on _ChatPageState {
                   ),
                 );
                 break;
+              case _DisplayToggleAction.reviewChanges:
+                unawaited(
+                  settingsProvider.setShowReviewChanges(
+                    !settingsProvider.showReviewChanges,
+                  ),
+                );
+                break;
               case _DisplayToggleAction.recentSessions:
                 unawaited(
                   settingsProvider.setShowRecentSessions(
@@ -702,6 +710,16 @@ extension _ChatPageChrome on _ChatPageState {
                 value: _DisplayToggleAction.taskList,
                 checked: settingsProvider.showTaskList,
                 child: Text(_displayToggleLabel(_DisplayToggleAction.taskList)),
+              ),
+              CheckedPopupMenuItem<_DisplayToggleAction>(
+                key: const ValueKey<String>(
+                  'display_toggle_item_review_changes',
+                ),
+                value: _DisplayToggleAction.reviewChanges,
+                checked: settingsProvider.showReviewChanges,
+                child: Text(
+                  _displayToggleLabel(_DisplayToggleAction.reviewChanges),
+                ),
               ),
               CheckedPopupMenuItem<_DisplayToggleAction>(
                 key: const ValueKey<String>(

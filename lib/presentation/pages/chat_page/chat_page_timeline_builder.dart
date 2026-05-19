@@ -591,6 +591,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                               sizeClass.isAtLeastLarge &&
                               sp.isDesktopPaneVisible(DesktopPane.utility);
                           if (chatProvider.currentSessionDiff.isEmpty ||
+                              !sp.showReviewChanges ||
                               (!isCompactLayout && utilityPaneVisible)) {
                             return const SizedBox.shrink();
                           }
@@ -606,9 +607,9 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                             isActivelyResponding:
                                 p.isCurrentSessionActivelyResponding,
                           ),
-                          builder: (context, _, __) =>
-                              _buildMessageViewport(
-                                  context.read<ChatProvider>()),
+                          builder: (context, _, __) => _buildMessageViewport(
+                            context.read<ChatProvider>(),
+                          ),
                         ),
                       ),
 
@@ -641,7 +642,9 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                             final projectProvider = context
                                 .read<ProjectProvider>();
                             return ChatInputWidget(
-                              key: ValueKey('chat_input_${currentSessionId ?? 'draft'}'),
+                              key: ValueKey(
+                                'chat_input_${currentSessionId ?? 'draft'}',
+                              ),
                               onSendMessage: (submission) async {
                                 Future<void>
                                 clearComposerContextIfNeeded() async {

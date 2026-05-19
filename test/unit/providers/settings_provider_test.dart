@@ -369,6 +369,29 @@ void main() {
       expect(second.taskListCollapsed, isTrue);
     });
 
+    test('persists review changes visibility toggle', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+
+      expect(first.showReviewChanges, isTrue);
+
+      await first.setShowReviewChanges(false);
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(second.showReviewChanges, isFalse);
+    });
+
     test('persists recent sessions visibility toggle', () async {
       final local = InMemoryAppLocalDataSource();
       final first = SettingsProvider(
