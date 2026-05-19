@@ -3260,6 +3260,7 @@ void main() {
       ),
     );
     final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
     await tester.pumpWidget(_testApp(provider, appProvider));
     await tester.pumpAndSettle();
     await provider.loadSessions();
@@ -5222,6 +5223,7 @@ void main() {
       localDataSource: localDataSource,
     );
     final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
     await tester.pumpWidget(_testApp(provider, appProvider));
     await tester.pumpAndSettle();
 
@@ -5520,6 +5522,7 @@ void main() {
       localDataSource: localDataSource,
     );
     final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
     await tester.pumpWidget(_testApp(provider, appProvider));
     await tester.pump(const Duration(milliseconds: 150));
 
