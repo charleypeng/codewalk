@@ -951,7 +951,7 @@ void main() {
     test(
       'loadOlderMessages requests incremental limit and updates hasMore',
       () async {
-        const sessionId = 'ses_1';
+        final sessionId = 'ses_1';
         final messages = List<ChatMessage>.generate(450, (index) {
           final timestamp = DateTime.fromMillisecondsSinceEpoch(1000 + index);
           if (index.isEven) {
@@ -1482,54 +1482,54 @@ void main() {
       );
     });
 
-    test(
-      'stale REST busy does not keep Stop visible after stream settles with revealable content',
-      () async {
-        final assistantCompleted = AssistantMessage(
-          id: 'msg_final',
-          sessionId: 'ses_1',
-          time: DateTime.fromMillisecondsSinceEpoch(2000),
-          completedTime: DateTime.fromMillisecondsSinceEpoch(2200),
-          parts: const <MessagePart>[
-            TextPart(
-              id: 'part_final',
-              messageId: 'msg_final',
-              sessionId: 'ses_1',
-              text: 'final answer',
-            ),
-          ],
-        );
+      test(
+        'stale REST busy does not keep Stop visible after stream settles with revealable content',
+        () async {
+          final assistantCompleted = AssistantMessage(
+            id: 'msg_final',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(2000),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(2200),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_final',
+                messageId: 'msg_final',
+                sessionId: 'ses_1',
+                text: 'final answer',
+              ),
+            ],
+          );
 
-        chatRepository.sendMessageHandler = (_, _, _, _) async* {
-          yield Right(assistantCompleted);
-        };
+          chatRepository.sendMessageHandler = (_, _, _, _) async* {
+            yield Right(assistantCompleted);
+          };
 
-        await provider.projectProvider.initializeProject();
-        await provider.loadSessions();
-        await provider.selectSession(provider.sessions.first);
+          await provider.projectProvider.initializeProject();
+          await provider.loadSessions();
+          await provider.selectSession(provider.sessions.first);
 
-        await provider.sendMessage('hello');
-        await Future<void>.delayed(const Duration(milliseconds: 20));
+          await provider.sendMessage('hello');
+          await Future<void>.delayed(const Duration(milliseconds: 20));
 
-        // After stream settles, state is loaded and Stop is hidden.
-        expect(provider.state, ChatState.loaded);
-        expect(provider.isCurrentSessionActivelyResponding, isFalse);
-        expect(provider.canAbortActiveResponse, isFalse);
+          // After stream settles, state is loaded and Stop is hidden.
+          expect(provider.state, ChatState.loaded);
+          expect(provider.isCurrentSessionActivelyResponding, isFalse);
+          expect(provider.canAbortActiveResponse, isFalse);
 
-        // A subsequent REST refresh returns busy — the SSE-settled guard
-        // is a strict one-shot consumed by the onDone-triggered call, so
-        // this independent refresh accepts the REST busy. The session
-        // status is now busy but isSessionActivelyResponding still returns
-        // false because the latest message is text-only (no ToolPart/PatchPart).
-        chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
-          'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
-        };
-        await provider.loadSessionInsights('ses_1', silent: true);
+          // A subsequent REST refresh returns busy — the SSE-settled guard
+          // is a strict one-shot consumed by the onDone-triggered call, so
+          // this independent refresh accepts the REST busy. The session
+          // status is now busy but isSessionActivelyResponding still returns
+          // false because the latest message is text-only (no ToolPart/PatchPart).
+          chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+            'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
+          };
+          await provider.loadSessionInsights('ses_1', silent: true);
 
-        expect(provider.isCurrentSessionActivelyResponding, isFalse);
-        expect(provider.canAbortActiveResponse, isFalse);
-      },
-    );
+          expect(provider.isCurrentSessionActivelyResponding, isFalse);
+          expect(provider.canAbortActiveResponse, isFalse);
+        },
+      );
 
     test(
       'stale REST busy from refreshSessionStatusSnapshot does not keep Stop visible',
@@ -1577,46 +1577,49 @@ void main() {
       },
     );
 
-    test('tool-only busy turn keeps Stop visible', () async {
-      final toolOnlyMessage = AssistantMessage(
-        id: 'msg_tool_step',
-        sessionId: 'ses_1',
-        time: DateTime.fromMillisecondsSinceEpoch(2000),
-        completedTime: DateTime.fromMillisecondsSinceEpoch(2010),
-        parts: <MessagePart>[
-          ToolPart(
-            id: 'part_tool_step',
-            messageId: 'msg_tool_step',
-            sessionId: 'ses_1',
-            callId: 'call_tool_step',
-            tool: 'bash',
-            state: ToolStateRunning(
-              input: const <String, dynamic>{'command': 'pwd'},
-              time: DateTime.fromMillisecondsSinceEpoch(2000),
+    test(
+      'tool-only busy turn keeps Stop visible',
+      () async {
+        final toolOnlyMessage = AssistantMessage(
+          id: 'msg_tool_step',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(2000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(2010),
+          parts: <MessagePart>[
+            ToolPart(
+              id: 'part_tool_step',
+              messageId: 'msg_tool_step',
+              sessionId: 'ses_1',
+              callId: 'call_tool_step',
+              tool: 'bash',
+              state: ToolStateRunning(
+                input: const <String, dynamic>{'command': 'pwd'},
+                time: DateTime.fromMillisecondsSinceEpoch(2000),
+              ),
             ),
-          ),
-        ],
-      );
+          ],
+        );
 
-      chatRepository.sendMessageHandler = (_, _, _, _) async* {
-        yield Right(toolOnlyMessage);
-      };
-      // Simulate server-side busy status (as if more tools are coming).
-      chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
-        'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
-      };
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
+          yield Right(toolOnlyMessage);
+        };
+        // Simulate server-side busy status (as if more tools are coming).
+        chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+          'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
+        };
 
-      await provider.projectProvider.initializeProject();
-      await provider.loadSessions();
-      await provider.selectSession(provider.sessions.first);
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
 
-      await provider.sendMessage('run tool');
-      await Future<void>.delayed(const Duration(milliseconds: 20));
+        await provider.sendMessage('run tool');
+        await Future<void>.delayed(const Duration(milliseconds: 20));
 
-      // Tool-only busy turn must keep Stop visible.
-      expect(provider.isCurrentSessionActivelyResponding, isTrue);
-      expect(provider.canAbortActiveResponse, isTrue);
-    });
+        // Tool-only busy turn must keep Stop visible.
+        expect(provider.isCurrentSessionActivelyResponding, isTrue);
+        expect(provider.canAbortActiveResponse, isTrue);
+      },
+    );
 
     test(
       'final message with both tool parts and text parts settles when busy is stale',
@@ -1692,8 +1695,10 @@ void main() {
         await provider.projectProvider.initializeProject();
         await provider.loadSessions();
 
-        final session1 = provider.sessions.where((s) => s.id == 'ses_1').first;
-        final session2 = provider.sessions.where((s) => s.id == 'ses_2').first;
+        final session1 =
+            provider.sessions.where((s) => s.id == 'ses_1').first;
+        final session2 =
+            provider.sessions.where((s) => s.id == 'ses_2').first;
 
         await provider.selectSession(session1);
         await provider.initializeProviders();

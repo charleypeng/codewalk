@@ -1097,11 +1097,11 @@ void main() {
 }
 
 class _MockResponse {
-  _MockResponse(this.statusCode, this.data, {this.isError = false});
+  _MockResponse(this.statusCode, this.data);
 
   final int statusCode;
   final dynamic data;
-  final bool isError;
+  bool get isError => statusCode >= 400;
 }
 
 class _MockDioAdapter implements HttpClientAdapter {
