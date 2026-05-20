@@ -1944,5 +1944,56 @@ void main() {
       expect(provider.isCurrentSessionActivelyResponding, isTrue);
       expect(provider.canAbortActiveResponse, isTrue);
     });
+
+    test(
+      'historical incomplete assistant does not keep Stop visible after final',
+      () async {
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        // A stale orphaned incomplete assistant earlier in history should not
+        // keep the composer in Stop mode once the latest message is a completed
+        // revealable assistant. Only the latest tail is abort-relevant.
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_old_incomplete',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_old_incomplete',
+                messageId: 'msg_old_incomplete',
+                sessionId: 'ses_1',
+                text: 'old interrupted response',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_latest_final',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(3000),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(3200),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'part_latest_final',
+                messageId: 'msg_latest_final',
+                sessionId: 'ses_1',
+                text: 'latest completed answer',
+              ),
+            ],
+          ),
+        ];
+        chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+          'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
+        };
+
+        await provider.loadMessages('ses_1');
+        await provider.loadSessionInsights('ses_1', silent: true);
+
+        expect(provider.isCurrentSessionActivelyResponding, isTrue);
+        expect(provider.canAbortActiveResponse, isFalse);
+      },
+    );
   });
 }

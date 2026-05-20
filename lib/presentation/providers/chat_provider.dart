@@ -1241,14 +1241,6 @@ class ChatProvider extends ChangeNotifier {
     if (_state == ChatState.sending) {
       return true;
     }
-    // An in-progress assistant (no completedTime) is still actively
-    // generating. The user must be able to abort.
-    final hasInProgressAssistant = _messages.whereType<AssistantMessage>().any(
-      (message) => message.sessionId == sessionId && !message.isCompleted,
-    );
-    if (hasInProgressAssistant) {
-      return true;
-    }
     if (!isCurrentSessionActivelyResponding) {
       return false;
     }
