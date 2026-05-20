@@ -670,7 +670,7 @@ Additional commands may be provided by the connected OpenCode server and merged 
 - **Given** the host does not expose OpenChamber endpoints
 - **When** quota data is requested
 - **Then** CodeWalk falls back to a hidden ephemeral shell session that probes `CW_QUOTA_JSON` without appearing in the user's conversation list
-- **Given** the host's OpenCode `auth.json` has an `opencode-go` key and the host process has `OPENCODE_GO_WORKSPACE_ID` and `OPENCODE_GO_SESSION_COOKIE` environment variables set
+- **Given** the host's OpenCode `auth.json` has an `opencode-go` key and the host process has `OPENCODE_GO_WORKSPACE_ID` and `OPENCODE_GO_AUTH_COOKIE` environment variables set
 - **When** the `Provider Quotas` popup is opened
 - **Then** CodeWalk shows rolling, weekly, and monthly usage bars for the `OpenCode Go` provider
 - **Then** if neither path returns data, the `Provider Quotas` section is silently omitted from the popup

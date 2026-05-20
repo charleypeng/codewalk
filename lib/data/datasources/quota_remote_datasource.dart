@@ -955,13 +955,13 @@ async function fOCG(a) {
       return bR({ pId: 'opencode-go', pName: 'OpenCode Go', ok: false, err: 'API error: ' + vRes.status });
     }
     const wsId = asS(process.env.OPENCODE_GO_WORKSPACE_ID);
-    const rawCk = asS(process.env.OPENCODE_GO_SESSION_COOKIE);
+    const rawCk = asS(process.env.OPENCODE_GO_AUTH_COOKIE) || asS(process.env.OPENCODE_GO_SESSION_COOKIE);
     if (!wsId || !rawCk) {
       return bR({
         pId: 'opencode-go',
         pName: 'OpenCode Go',
         ok: false,
-        err: 'OpenCode Go is configured, but subscription usage requires OPENCODE_GO_WORKSPACE_ID and OPENCODE_GO_SESSION_COOKIE env vars on the host.',
+        err: 'OpenCode Go is configured, but subscription usage requires OPENCODE_GO_WORKSPACE_ID and OPENCODE_GO_AUTH_COOKIE env vars on the host.',
       });
     }
     const ck = nOC(rawCk);

@@ -161,6 +161,7 @@ void main() {
     expect(script, contains("getE(a, ['opencode-go'])"));
     expect(script, contains('https://opencode.ai/zen/go/v1/models'));
     expect(script, contains('process.env.OPENCODE_GO_WORKSPACE_ID'));
+    expect(script, contains('process.env.OPENCODE_GO_AUTH_COOKIE'));
     expect(script, contains('process.env.OPENCODE_GO_SESSION_COOKIE'));
     expect(script, contains("t.indexOf('auth=') === 0"));
     expect(script, contains("label === 'rolling usage'"));
