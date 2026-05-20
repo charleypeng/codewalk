@@ -1482,54 +1482,55 @@ void main() {
       );
     });
 
-      test(
-        'stale REST busy does not keep Stop visible after stream settles with revealable content',
-        () async {
-          final assistantCompleted = AssistantMessage(
-            id: 'msg_final',
-            sessionId: 'ses_1',
-            time: DateTime.fromMillisecondsSinceEpoch(2000),
-            completedTime: DateTime.fromMillisecondsSinceEpoch(2200),
-            parts: const <MessagePart>[
-              TextPart(
-                id: 'part_final',
-                messageId: 'msg_final',
-                sessionId: 'ses_1',
-                text: 'final answer',
-              ),
-            ],
-          );
+    test(
+      'stale REST busy does not keep Stop visible after stream settles with revealable content',
+      () async {
+        final assistantCompleted = AssistantMessage(
+          id: 'msg_final',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(2000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(2200),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_final',
+              messageId: 'msg_final',
+              sessionId: 'ses_1',
+              text: 'final answer',
+            ),
+          ],
+        );
 
-          chatRepository.sendMessageHandler = (_, _, _, _) async* {
-            yield Right(assistantCompleted);
-          };
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
+          yield Right(assistantCompleted);
+        };
 
-          await provider.projectProvider.initializeProject();
-          await provider.loadSessions();
-          await provider.selectSession(provider.sessions.first);
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
 
-          await provider.sendMessage('hello');
-          await Future<void>.delayed(const Duration(milliseconds: 20));
+        await provider.sendMessage('hello');
+        await Future<void>.delayed(const Duration(milliseconds: 20));
 
-          // After stream settles, state is loaded and Stop is hidden.
-          expect(provider.state, ChatState.loaded);
-          expect(provider.isCurrentSessionActivelyResponding, isFalse);
-          expect(provider.canAbortActiveResponse, isFalse);
+        // After stream settles, state is loaded and Stop is hidden.
+        expect(provider.state, ChatState.loaded);
+        expect(provider.isCurrentSessionActivelyResponding, isFalse);
+        expect(provider.canAbortActiveResponse, isFalse);
 
-          // A subsequent REST refresh returns busy — the SSE-settled guard
-          // is a strict one-shot consumed by the onDone-triggered call, so
-          // this independent refresh accepts the REST busy. The session
-          // status is now busy but isSessionActivelyResponding still returns
-          // false because the latest message is text-only (no ToolPart/PatchPart).
-          chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
-            'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
-          };
-          await provider.loadSessionInsights('ses_1', silent: true);
+        // A subsequent REST refresh returns busy. The SSE-settled guard
+        // is a strict one-shot consumed by the onDone-triggered call, so
+        // this independent refresh accepts the REST busy. The session
+        // status is now busy but isSessionActivelyResponding still returns
+        // false because the latest message is text-only (no ToolPart/PatchPart).
+        // canAbortActiveResponse is also false for the same reason.
+        chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+          'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
+        };
+        await provider.loadSessionInsights('ses_1', silent: true);
 
-          expect(provider.isCurrentSessionActivelyResponding, isFalse);
-          expect(provider.canAbortActiveResponse, isFalse);
-        },
-      );
+        expect(provider.isCurrentSessionActivelyResponding, isFalse);
+        expect(provider.canAbortActiveResponse, isFalse);
+      },
+    );
 
     test(
       'stale REST busy from refreshSessionStatusSnapshot does not keep Stop visible',
@@ -1563,7 +1564,7 @@ void main() {
         expect(provider.state, ChatState.loaded);
         expect(provider.canAbortActiveResponse, isFalse);
 
-        // A subsequent REST refresh returns busy — the SSE-settled guard
+        // A subsequent REST refresh returns busy. The SSE-settled guard
         // is a strict one-shot consumed by the onDone-triggered call, so
         // this independent refresh accepts the REST busy. The session
         // status is now busy but canAbortActiveResponse still returns false
@@ -1577,52 +1578,49 @@ void main() {
       },
     );
 
-    test(
-      'tool-only busy turn keeps Stop visible',
-      () async {
-        final toolOnlyMessage = AssistantMessage(
-          id: 'msg_tool_step',
-          sessionId: 'ses_1',
-          time: DateTime.fromMillisecondsSinceEpoch(2000),
-          completedTime: DateTime.fromMillisecondsSinceEpoch(2010),
-          parts: <MessagePart>[
-            ToolPart(
-              id: 'part_tool_step',
-              messageId: 'msg_tool_step',
-              sessionId: 'ses_1',
-              callId: 'call_tool_step',
-              tool: 'bash',
-              state: ToolStateRunning(
-                input: const <String, dynamic>{'command': 'pwd'},
-                time: DateTime.fromMillisecondsSinceEpoch(2000),
-              ),
+    test('tool-only busy turn keeps Stop visible', () async {
+      final toolOnlyMessage = AssistantMessage(
+        id: 'msg_tool_step',
+        sessionId: 'ses_1',
+        time: DateTime.fromMillisecondsSinceEpoch(2000),
+        completedTime: DateTime.fromMillisecondsSinceEpoch(2010),
+        parts: <MessagePart>[
+          ToolPart(
+            id: 'part_tool_step',
+            messageId: 'msg_tool_step',
+            sessionId: 'ses_1',
+            callId: 'call_tool_step',
+            tool: 'bash',
+            state: ToolStateRunning(
+              input: const <String, dynamic>{'command': 'pwd'},
+              time: DateTime.fromMillisecondsSinceEpoch(2000),
             ),
-          ],
-        );
+          ),
+        ],
+      );
 
-        chatRepository.sendMessageHandler = (_, _, _, _) async* {
-          yield Right(toolOnlyMessage);
-        };
-        // Simulate server-side busy status (as if more tools are coming).
-        chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
-          'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
-        };
+      chatRepository.sendMessageHandler = (_, _, _, _) async* {
+        yield Right(toolOnlyMessage);
+      };
+      // Simulate server-side busy status (as if more tools are coming).
+      chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+        'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
+      };
 
-        await provider.projectProvider.initializeProject();
-        await provider.loadSessions();
-        await provider.selectSession(provider.sessions.first);
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
 
-        await provider.sendMessage('run tool');
-        await Future<void>.delayed(const Duration(milliseconds: 20));
+      await provider.sendMessage('run tool');
+      await Future<void>.delayed(const Duration(milliseconds: 20));
 
-        // Tool-only busy turn must keep Stop visible.
-        expect(provider.isCurrentSessionActivelyResponding, isTrue);
-        expect(provider.canAbortActiveResponse, isTrue);
-      },
-    );
+      // Tool-only busy turn must keep Stop visible.
+      expect(provider.isCurrentSessionActivelyResponding, isTrue);
+      expect(provider.canAbortActiveResponse, isTrue);
+    });
 
     test(
-      'final message with both tool parts and text parts settles when busy is stale',
+      'completed mixed tool+text final hides Stop while stale busy stays active',
       () async {
         final finalWithToolAndText = AssistantMessage(
           id: 'msg_mixed',
@@ -1667,16 +1665,19 @@ void main() {
 
         expect(provider.state, ChatState.loaded);
 
-        // A subsequent REST refresh returns busy — this is accepted normally
+        // A subsequent REST refresh returns busy. This is accepted normally
         // because the SSE-settled guard is a strict one-shot consumed by the
-        // onDone-triggered loadSessionInsights.
+        // onDone-triggered loadSessionInsights. The session is still
+        // actively responding for scroll/follow purposes (busy with tool
+        // surface parts), but canAbortActiveResponse returns false because
+        // the latest completed assistant has revealable text content.
         chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
           'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
         };
         await provider.loadSessionInsights('ses_1', silent: true);
 
         expect(provider.isCurrentSessionActivelyResponding, isTrue);
-        expect(provider.canAbortActiveResponse, isTrue);
+        expect(provider.canAbortActiveResponse, isFalse);
       },
     );
 
@@ -1695,10 +1696,8 @@ void main() {
         await provider.projectProvider.initializeProject();
         await provider.loadSessions();
 
-        final session1 =
-            provider.sessions.where((s) => s.id == 'ses_1').first;
-        final session2 =
-            provider.sessions.where((s) => s.id == 'ses_2').first;
+        final session1 = provider.sessions.where((s) => s.id == 'ses_1').first;
+        final session2 = provider.sessions.where((s) => s.id == 'ses_2').first;
 
         await provider.selectSession(session1);
         await provider.initializeProviders();
@@ -1772,13 +1771,13 @@ void main() {
         await provider.loadSessions();
         await provider.selectSession(provider.sessions.first);
 
-        // First send — settles immediately.
+        // First send settles immediately.
         await provider.sendMessage('first');
         await Future<void>.delayed(const Duration(milliseconds: 20));
         expect(provider.state, ChatState.loaded);
         expect(provider.canAbortActiveResponse, isFalse);
 
-        // Second send — stream is still alive (no data yet).
+        // Second send keeps the stream alive without data yet.
         await provider.sendMessage('second');
         await Future<void>.delayed(const Duration(milliseconds: 10));
 
@@ -1793,5 +1792,157 @@ void main() {
         expect(provider.isCurrentSessionActivelyResponding, isFalse);
       },
     );
+
+    test(
+      'SSE session.status busy after completed mixed final does not re-enable Stop',
+      () async {
+        final finalWithToolAndText = AssistantMessage(
+          id: 'msg_mixed_sse',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(2000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(2200),
+          parts: <MessagePart>[
+            ToolPart(
+              id: 'part_mixed_sse_tool',
+              messageId: 'msg_mixed_sse',
+              sessionId: 'ses_1',
+              callId: 'call_mixed_sse',
+              tool: 'bash',
+              state: ToolStateCompleted(
+                input: const <String, dynamic>{'command': 'echo hi'},
+                output: 'hi',
+                time: ToolTime(
+                  start: DateTime.fromMillisecondsSinceEpoch(2000),
+                  end: DateTime.fromMillisecondsSinceEpoch(2005),
+                ),
+              ),
+            ),
+            const TextPart(
+              id: 'part_mixed_sse_text',
+              messageId: 'msg_mixed_sse',
+              sessionId: 'ses_1',
+              text: 'final answer after tool',
+            ),
+          ],
+        );
+
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
+          yield Right(finalWithToolAndText);
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('hello');
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        expect(provider.state, ChatState.loaded);
+        expect(provider.isCurrentSessionActivelyResponding, isFalse);
+        expect(provider.canAbortActiveResponse, isFalse);
+
+        // Simulate an SSE session.status busy event arriving after the
+        // final response has already settled. The session is still
+        // actively responding for scroll/follow purposes (busy with tool
+        // surface parts), but canAbortActiveResponse remains false because
+        // the latest completed assistant has revealable content. Stale
+        // busy from any source must not re-enable Stop.
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.status',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_1',
+              'status': <String, dynamic>{'type': 'busy'},
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(provider.isCurrentSessionActivelyResponding, isTrue);
+        expect(provider.canAbortActiveResponse, isFalse);
+      },
+    );
+
+    test('latest user message under busy keeps Stop visible', () async {
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+
+      // Set up a previous completed assistant followed by a user message as
+      // the latest tail, then mark the session as busy. The latest user
+      // message must win over the previous completed assistant for abort
+      // eligibility.
+      chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+        AssistantMessage(
+          id: 'msg_previous_final',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(2000),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(2200),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_previous_final',
+              messageId: 'msg_previous_final',
+              sessionId: 'ses_1',
+              text: 'previous answer',
+            ),
+          ],
+        ),
+        UserMessage(
+          id: 'msg_user_busy',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(3000),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_user_busy',
+              messageId: 'msg_user_busy',
+              sessionId: 'ses_1',
+              text: 'pending prompt',
+            ),
+          ],
+        ),
+      ];
+      chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+        'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
+      };
+
+      await provider.loadMessages('ses_1');
+      await provider.loadSessionInsights('ses_1', silent: true);
+
+      expect(provider.isCurrentSessionActivelyResponding, isTrue);
+      expect(provider.canAbortActiveResponse, isTrue);
+    });
+
+    test('incomplete assistant under busy keeps Stop visible', () async {
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+
+      // An incomplete assistant message (no completedTime) under busy
+      // must keep Stop visible. The turn is still in progress.
+      chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+        AssistantMessage(
+          id: 'msg_incomplete',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(3000),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_incomplete',
+              messageId: 'msg_incomplete',
+              sessionId: 'ses_1',
+              text: 'still generating...',
+            ),
+          ],
+        ),
+      ];
+      chatRepository.sessionStatusById = const <String, SessionStatusInfo>{
+        'ses_1': SessionStatusInfo(type: SessionStatusType.busy),
+      };
+
+      await provider.loadMessages('ses_1');
+      await provider.loadSessionInsights('ses_1', silent: true);
+
+      expect(provider.isCurrentSessionActivelyResponding, isTrue);
+      expect(provider.canAbortActiveResponse, isTrue);
+    });
   });
 }

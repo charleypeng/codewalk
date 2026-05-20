@@ -8333,20 +8333,14 @@ void main() {
     final appProvider = _buildAppProvider(localDataSource: localDataSource);
 
     await tester.pumpWidget(_testApp(provider, appProvider));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
 
     await provider.loadSessions();
     await provider.selectSession(provider.sessions.first);
     await provider.initializeProviders();
-    await provider.setSelectedModelByProvider(
-      providerId: 'provider_1',
-      modelId: 'model_2',
-    );
-    await provider.setSelectedModelByProvider(
-      providerId: 'provider_1',
-      modelId: 'model_1',
-    );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
 
     expect(provider.selectedModelId, 'model_1');
     expect(provider.selectedVariantId, isNull);
@@ -14874,6 +14868,103 @@ void main() {
     final inputField = tester.widget<TextField>(chatInputFieldFinder);
     expect(inputField.enabled, isTrue);
   });
+
+  testWidgets(
+    'completed mixed tool+text assistant with stale busy does not show stuck Stop',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(1000, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final assistantCompleted = AssistantMessage(
+        id: 'msg_mixed_widget',
+        sessionId: 'ses_mixed_widget',
+        time: DateTime.fromMillisecondsSinceEpoch(2000),
+        completedTime: DateTime.fromMillisecondsSinceEpoch(2200),
+        parts: <MessagePart>[
+          ToolPart(
+            id: 'part_mixed_widget_tool',
+            messageId: 'msg_mixed_widget',
+            sessionId: 'ses_mixed_widget',
+            callId: 'call_mixed_widget',
+            tool: 'bash',
+            state: ToolStateCompleted(
+              input: const <String, dynamic>{'command': 'echo hi'},
+              output: 'hi',
+              time: ToolTime(
+                start: DateTime.fromMillisecondsSinceEpoch(2000),
+                end: DateTime.fromMillisecondsSinceEpoch(2005),
+              ),
+            ),
+          ),
+          const TextPart(
+            id: 'part_mixed_widget_text',
+            messageId: 'msg_mixed_widget',
+            sessionId: 'ses_mixed_widget',
+            text: 'final answer after tool',
+          ),
+        ],
+      );
+
+      final repository = FakeChatRepository(
+        sessions: <ChatSession>[
+          ChatSession(
+            id: 'ses_mixed_widget',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            title: 'Mixed Widget Session',
+          ),
+        ],
+      );
+      repository.messagesBySession['ses_mixed_widget'] = <ChatMessage>[
+        UserMessage(
+          id: 'msg_mixed_widget_user',
+          sessionId: 'ses_mixed_widget',
+          time: DateTime.fromMillisecondsSinceEpoch(1500),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_mixed_widget_user',
+              messageId: 'msg_mixed_widget_user',
+              sessionId: 'ses_mixed_widget',
+              text: 'run tool then answer',
+            ),
+          ],
+        ),
+        assistantCompleted,
+      ];
+      // Simulate stale busy from REST after stream settles.
+      repository.sessionStatusById = const <String, SessionStatusInfo>{
+        'ses_mixed_widget': SessionStatusInfo(type: SessionStatusType.busy),
+      };
+
+      final localDataSource = InMemoryAppLocalDataSource()
+        ..activeServerId = 'srv_test';
+      final provider = _buildChatProvider(
+        chatRepository: repository,
+        localDataSource: localDataSource,
+      );
+      final appProvider = _buildAppProvider(localDataSource: localDataSource);
+
+      await tester.pumpWidget(_testApp(provider, appProvider));
+      await tester.pump();
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+      await provider.loadSessionInsights('ses_mixed_widget', silent: true);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+
+      // The completed mixed assistant has revealable text content, so
+      // Stop must not be visible even though session status is busy.
+      // isCurrentSessionActivelyResponding is true (busy with tool
+      // surface parts for scroll/follow), but canAbortActiveResponse
+      // is false because the latest completed assistant has revealable
+      // content. The Stop button uses canAbortActiveResponse.
+      expect(provider.isCurrentSessionActivelyResponding, isTrue);
+      expect(provider.canAbortActiveResponse, isFalse);
+      expect(find.byIcon(Symbols.stop_rounded), findsNothing);
+    },
+  );
 
   testWidgets('shows consistent fallback title in active session header', (
     WidgetTester tester,

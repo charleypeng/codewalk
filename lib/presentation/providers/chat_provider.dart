@@ -1231,7 +1231,53 @@ class ChatProvider extends ChangeNotifier {
     if (_isAbortingResponse || _currentSession == null) {
       return false;
     }
-    return isCurrentSessionActivelyResponding;
+    final sessionId = _currentSession!.id;
+    // Active stream or sending state always allows abort. The
+    // server connection is live and the user may need to stop it.
+    if (_activeMessageStreamSessionId == sessionId &&
+        _messageSubscription != null) {
+      return true;
+    }
+    if (_state == ChatState.sending) {
+      return true;
+    }
+    // An in-progress assistant (no completedTime) is still actively
+    // generating. The user must be able to abort.
+    final hasInProgressAssistant = _messages.whereType<AssistantMessage>().any(
+      (message) => message.sessionId == sessionId && !message.isCompleted,
+    );
+    if (hasInProgressAssistant) {
+      return true;
+    }
+    if (!isCurrentSessionActivelyResponding) {
+      return false;
+    }
+    final latestMessage = _latestMessageForSession(sessionId);
+    if (latestMessage is! AssistantMessage) {
+      return true;
+    }
+    // A completed assistant with revealable content (text, reasoning,
+    // etc.) means the turn has settled. There is nothing locally
+    // abortable even if the server still reports busy/retry. This
+    // prevents the composer from showing a stuck Stop button after
+    // the final response is already visible.
+    if (latestMessage.isCompleted &&
+        hasRevealableAssistantContent(latestMessage)) {
+      return false;
+    }
+    return true;
+  }
+
+  /// Returns the latest message for the given session by searching
+  /// backwards through [_messages], or null if none exists.
+  ChatMessage? _latestMessageForSession(String sessionId) {
+    for (var i = _messages.length - 1; i >= 0; i--) {
+      final candidate = _messages[i];
+      if (candidate.sessionId == sessionId) {
+        return candidate;
+      }
+    }
+    return null;
   }
 
   // Generates a unique ID for optimistic (locally-appended) user messages.
@@ -2112,8 +2158,9 @@ class ChatProvider extends ChangeNotifier {
         // (the user may have switched sessions during the in-flight await).
         if (currentIdAtCall != null) {
           final currentStatus = _sessionStatusById[currentIdAtCall]?.type;
-          final sseSettledToIdle =
-              _sseSettledToIdleSessionIds.remove(currentIdAtCall);
+          final sseSettledToIdle = _sseSettledToIdleSessionIds.remove(
+            currentIdAtCall,
+          );
           const idle = SessionStatusType.idle;
           if (sseSettledToIdle &&
               (currentStatus == null || currentStatus == idle) &&
@@ -2324,8 +2371,7 @@ class ChatProvider extends ChangeNotifier {
                   _messages,
                   currentIdAtCall,
                 )) {
-              statusMap[currentIdAtCall] =
-                  const SessionStatusInfo(type: idle);
+              statusMap[currentIdAtCall] = const SessionStatusInfo(type: idle);
             }
           }
           _sessionStatusById = statusMap;
@@ -2654,10 +2700,7 @@ class ChatProvider extends ChangeNotifier {
         final snapshot = _captureSelectionPersistenceSnapshot(
           syncRemote: syncRemote,
         );
-        await _persistSelectionSnapshot(
-          snapshot,
-          syncRemote: syncRemote,
-        );
+        await _persistSelectionSnapshot(snapshot, syncRemote: syncRemote);
       }
     } catch (error, stackTrace) {
       AppLogger.warn(
@@ -4069,7 +4112,8 @@ class ChatProvider extends ChangeNotifier {
               final previousStatusType =
                   _sessionStatusById[streamSessionId]?.type;
               final preserveBusyStatusOnDone =
-                  _preserveBusyStatusOnNextStreamDoneSessionId == streamSessionId;
+                  _preserveBusyStatusOnNextStreamDoneSessionId ==
+                  streamSessionId;
               if (preserveBusyStatusOnDone) {
                 _preserveBusyStatusOnNextStreamDoneSessionId = null;
                 if (_currentSession?.id == streamSessionId) {
