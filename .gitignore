@@ -67,3 +67,6 @@ android/key.properties
 # Local quality/scanner artifacts
 scorecard.png
 .desloppify/
+
+# Stale execution plans
+final_plan.md
