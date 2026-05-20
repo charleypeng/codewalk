@@ -50,6 +50,19 @@ abstract class AppLocalDataSource {
   /// Technical comment translated to English.
   Future<void> saveApiKey(String apiKey, {String? serverId});
 
+  Future<String?> getOpenCodeGoWorkspaceId({String? serverId});
+
+  Future<void> saveOpenCodeGoWorkspaceId(
+    String workspaceId, {
+    String? serverId,
+  });
+
+  Future<String?> getOpenCodeGoAuthCookie({String? serverId});
+
+  Future<void> saveOpenCodeGoAuthCookie(String authCookie, {String? serverId});
+
+  Future<void> clearOpenCodeGoDashboardCredentials({String? serverId});
+
   /// Technical comment translated to English.
   Future<String?> getSelectedProvider({String? serverId, String? scopeId});
 
@@ -822,6 +835,64 @@ class AppLocalDataSourceImpl implements AppLocalDataSource {
     }
     await _writeSecureValue(secureKey, normalizedApiKey);
     await sharedPreferences.remove(legacyKey);
+  }
+
+  @override
+  Future<String?> getOpenCodeGoWorkspaceId({String? serverId}) async {
+    final secureKey = _secureScopedKey(
+      AppConstants.opencodeGoWorkspaceIdKey,
+      serverId: serverId,
+    );
+    return _readSecureValue(secureKey);
+  }
+
+  @override
+  Future<void> saveOpenCodeGoWorkspaceId(
+    String workspaceId, {
+    String? serverId,
+  }) async {
+    final secureKey = _secureScopedKey(
+      AppConstants.opencodeGoWorkspaceIdKey,
+      serverId: serverId,
+    );
+    final normalized = workspaceId.trim();
+    if (normalized.isEmpty) {
+      await _deleteSecureValue(secureKey);
+      return;
+    }
+    await _writeSecureValue(secureKey, normalized);
+  }
+
+  @override
+  Future<String?> getOpenCodeGoAuthCookie({String? serverId}) async {
+    final secureKey = _secureScopedKey(
+      AppConstants.opencodeGoAuthCookieKey,
+      serverId: serverId,
+    );
+    return _readSecureValue(secureKey);
+  }
+
+  @override
+  Future<void> saveOpenCodeGoAuthCookie(
+    String authCookie, {
+    String? serverId,
+  }) async {
+    final secureKey = _secureScopedKey(
+      AppConstants.opencodeGoAuthCookieKey,
+      serverId: serverId,
+    );
+    final normalized = authCookie.trim();
+    if (normalized.isEmpty) {
+      await _deleteSecureValue(secureKey);
+      return;
+    }
+    await _writeSecureValue(secureKey, normalized);
+  }
+
+  @override
+  Future<void> clearOpenCodeGoDashboardCredentials({String? serverId}) async {
+    await saveOpenCodeGoWorkspaceId('', serverId: serverId);
+    await saveOpenCodeGoAuthCookie('', serverId: serverId);
   }
 
   @override

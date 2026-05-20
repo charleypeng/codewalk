@@ -254,7 +254,9 @@ Future<void> init() async {
     ),
   );
 
-  sl.registerFactory(() => QuotaProvider(remoteDataSource: sl()));
+  sl.registerFactory(
+    () => QuotaProvider(remoteDataSource: sl(), localDataSource: sl()),
+  );
 
   sl.registerLazySingleton<EventFeedbackDispatcher>(
     () => EventFeedbackDispatcher(

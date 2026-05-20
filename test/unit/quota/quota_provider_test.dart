@@ -9,13 +9,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
+import '../../support/fakes.dart' as support;
+
 class _FakeQuotaRemoteDataSource implements QuotaRemoteDataSource {
   _FakeQuotaRemoteDataSource(this.results);
 
   final List<QuotaProviderResult> results;
+  OpenCodeGoDashboardCredentials? lastOpenCodeGoCredentials;
 
   @override
-  Future<List<QuotaProviderResult>> fetchQuotaResults() async => results;
+  Future<List<QuotaProviderResult>> fetchQuotaResults({
+    OpenCodeGoDashboardCredentials? openCodeGoCredentials,
+  }) async {
+    lastOpenCodeGoCredentials = openCodeGoCredentials;
+    return results;
+  }
 }
 
 class _QueuedQuotaRemoteDataSource implements QuotaRemoteDataSource {
@@ -25,7 +33,9 @@ class _QueuedQuotaRemoteDataSource implements QuotaRemoteDataSource {
   int callCount = 0;
 
   @override
-  Future<List<QuotaProviderResult>> fetchQuotaResults() {
+  Future<List<QuotaProviderResult>> fetchQuotaResults({
+    OpenCodeGoDashboardCredentials? openCodeGoCredentials,
+  }) {
     if (callCount >= responses.length) {
       return Future<List<QuotaProviderResult>>.value(
         const <QuotaProviderResult>[],
@@ -62,6 +72,38 @@ QuotaProviderResult _buildOpenRouterResult() {
 }
 
 void main() {
+  test(
+    'QuotaProvider passes stored OpenCode Go dashboard credentials',
+    () async {
+      final remoteDataSource = _FakeQuotaRemoteDataSource(const []);
+      final localDataSource = support.InMemoryAppLocalDataSource();
+      await localDataSource.saveOpenCodeGoWorkspaceId(
+        'wrk_test',
+        serverId: 'srv_test',
+      );
+      await localDataSource.saveOpenCodeGoAuthCookie(
+        'auth=secret',
+        serverId: 'srv_test',
+      );
+      final provider = QuotaProvider(
+        remoteDataSource: remoteDataSource,
+        localDataSource: localDataSource,
+      );
+
+      await provider.ensureLoaded(serverId: 'srv_test');
+
+      expect(remoteDataSource.lastOpenCodeGoCredentials, isNotNull);
+      expect(
+        remoteDataSource.lastOpenCodeGoCredentials!.workspaceId,
+        'wrk_test',
+      );
+      expect(
+        remoteDataSource.lastOpenCodeGoCredentials!.authCookie,
+        'auth=secret',
+      );
+    },
+  );
+
   test('QuotaEntry treats zero remaining currency labels as exhausted', () {
     const entry = QuotaEntry(
       providerId: 'openrouter',
@@ -296,6 +338,44 @@ void main() {
       expect(
         find.byKey(const ValueKey('quota-initial-loading-state')),
         findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
+    'QuotaPopupSection shows OpenCode Go setup when dashboard credentials are missing',
+    (tester) async {
+      final provider = QuotaProvider(
+        remoteDataSource: _FakeQuotaRemoteDataSource(const [
+          QuotaProviderResult(
+            providerId: 'opencode-go',
+            providerName: 'OpenCode Go',
+            ok: false,
+            configured: true,
+            usage: null,
+            error:
+                'OpenCode Go is configured, but subscription usage requires setup.',
+            fetchedAt: 1,
+          ),
+        ]),
+      );
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<QuotaProvider>.value(
+          value: provider,
+          child: const MaterialApp(
+            home: Scaffold(body: QuotaPopupSection(serverId: 'srv_test')),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Rate limits'), findsOneWidget);
+      expect(find.text('OpenCode Go detected'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('opencode-go-connect-usage-dashboard')),
+        findsOneWidget,
       );
     },
   );

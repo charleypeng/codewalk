@@ -1434,11 +1434,12 @@ CodeWalk requires visibility into model quotas and rate-limits to prevent silent
 ### Consequences
 
 - ✅ Real-time visibility into provider limits prevents unexpected agent stalls.
-- ✅ Zero-credential client simplifies onboarding and improves security.
+- ✅ Near-zero-credential client simplifies onboarding and improves security (narrow opt-in exception for `opencode-go` dashboard cookie only).
 - ✅ Graceful degradation between OpenChamber REST and official shell-only hosts.
 - ⚠️ Potential performance impact when using shell fallback (process spawn overhead on server).
 - ⚠️ UI density in the Context popup increases; requires careful MD3/Material You spacing.
 - ❌ No offline quota visibility; requires active server connection.
+- ⚠️ `opencode-go` dashboard credential opt-in stores an auth cookie client-side; mitigated by opt-in gate, `serverId` scoping, quota-probe-only use, and UI removability.
 
 ### Key Files
 
@@ -1453,9 +1454,24 @@ CodeWalk requires visibility into model quotas and rate-limits to prevent silent
 - `lib/presentation/pages/chat_page/chat_page_status_presenter.dart` — Hosts `_buildContextUsagePopover` which includes `QuotaPopupSection`
 - `lib/core/di/injection_container.dart` — DI wiring for `QuotaRemoteDataSource` and `QuotaProvider`
 
+### Exception: OpenCode Go Dashboard Credential Opt-In
+
+OpenCode Go does not expose a quota API usable via the standard OpenCode Go API key. When `opencode-go` is detected as the server type, the strategy-chain (Decision §2) has no REST or shell endpoint to probe for dashboard quota data. To preserve the user's ability to monitor quotas on OpenCode Go hosts, a narrow explicit exception is added:
+
+1. **Opt-In Only** — When `opencode-go` is detected, the app presents a one-time opt-in prompt explaining that the OpenCode Go dashboard workspace ID and auth cookie are required for quota probing. The user must explicitly consent; nothing is stored without consent.
+2. **Minimal Credential Set** — Only two values are stored: the OpenCode Go dashboard workspace ID and the dashboard auth cookie. No passwords, tokens, or other secrets.
+3. **Existing Secure Storage** — Credentials are stored in CodeWalk's existing secure credential storage (ADR-001), scoped by `serverId` to prevent cross-server leakage. No new storage mechanism is introduced.
+4. **Quota-Probe Only** — The stored workspace ID and auth cookie are used exclusively for quota probing against the OpenCode Go dashboard. They are never transmitted to any other endpoint, never logged, and never included in error reports or analytics.
+5. **UI Removability** — The user can clear the stored credentials at any time via the existing server settings UI. Removal immediately disables quota probing for that server.
+6. **No Logging** — The auth cookie and workspace ID are treated as secrets at the same level as server API keys. They are excluded from all log output, crash reports, and debug surfaces.
+
+**Rationale**: The OpenCode Go API key does not grant access to dashboard quota data. Without this exception, `opencode-go` users would have zero quota visibility — a functional regression vs. OpenChamber and shell-fallback hosts. The opt-in gate, minimal scope, existing secure storage, and removability ensure this exception does not erode the security posture established by ADR-001 and ADR-023.
+
 ### ADR-023 Compatibility
 
 This feature is compliant with ADR-023. Official OpenCode remains the primary source for all agent contracts and core app behavior. OpenChamber is used exclusively as an optional parity source for the quota/rate-limit feature. In the absence of OpenChamber REST endpoints, the app falls back to a hidden ephemeral shell probe without PTY process lifecycle changes, ensuring no divergence from official server capabilities.
+
+**Exception for `opencode-go`**: The OpenCode Go Dashboard Credential Opt-In (above) stores a dashboard auth cookie and workspace ID in existing secure credential storage, scoped by `serverId`, used exclusively for quota probing. This is a narrow, opt-in exception to the server-host-only credential ownership rule (Decision §1). It does not alter any OpenCode agent contract, lifecycle, or API semantic. The cookie is never forwarded to any OpenCode endpoint beyond the dashboard's quota probe path, preserving ADR-023's non-regression guarantee.
 
 ### Post-Mortem: Shell Transport Truncation & API Proxying
 

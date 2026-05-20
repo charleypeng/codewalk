@@ -7,8 +7,23 @@ import '../../core/logging/app_logger.dart';
 import '../../domain/entities/quota.dart';
 import '../../presentation/services/chat_title_generator.dart';
 
+class OpenCodeGoDashboardCredentials {
+  const OpenCodeGoDashboardCredentials({
+    required this.workspaceId,
+    required this.authCookie,
+  });
+
+  final String workspaceId;
+  final String authCookie;
+
+  bool get isComplete =>
+      workspaceId.trim().isNotEmpty && authCookie.trim().isNotEmpty;
+}
+
 abstract class QuotaRemoteDataSource {
-  Future<List<QuotaProviderResult>> fetchQuotaResults();
+  Future<List<QuotaProviderResult>> fetchQuotaResults({
+    OpenCodeGoDashboardCredentials? openCodeGoCredentials,
+  });
 }
 
 class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
@@ -19,14 +34,16 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
   static const String _shellPrefix = 'CW_QUOTA_JSON:';
 
   @override
-  Future<List<QuotaProviderResult>> fetchQuotaResults() async {
+  Future<List<QuotaProviderResult>> fetchQuotaResults({
+    OpenCodeGoDashboardCredentials? openCodeGoCredentials,
+  }) async {
     final viaRest = await _fetchViaOpenChamberRest();
     if (viaRest != null) {
       AppLogger.info('[Quota] REST path returned ${viaRest.length} results');
       return viaRest;
     }
     AppLogger.info('[Quota] REST path unavailable, trying shell fallback');
-    return _fetchViaShellFallback();
+    return _fetchViaShellFallback(openCodeGoCredentials: openCodeGoCredentials);
   }
 
   Future<List<QuotaProviderResult>?> _fetchViaOpenChamberRest() async {
@@ -96,7 +113,9 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
     }
   }
 
-  Future<List<QuotaProviderResult>> _fetchViaShellFallback() async {
+  Future<List<QuotaProviderResult>> _fetchViaShellFallback({
+    OpenCodeGoDashboardCredentials? openCodeGoCredentials,
+  }) async {
     String? sessionId;
     try {
       sessionId = await _createEphemeralSession();
@@ -109,7 +128,9 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
         '/session/$sessionId/shell',
         data: <String, dynamic>{
           'agent': 'build',
-          'command': _buildQuotaShellCommand(),
+          'command': _buildQuotaShellCommand(
+            openCodeGoCredentials: openCodeGoCredentials,
+          ),
         },
       );
       if (response.statusCode != 200 || response.data is! Map) {
@@ -287,15 +308,25 @@ class QuotaRemoteDataSourceImpl implements QuotaRemoteDataSource {
     return null;
   }
 
-  String _buildQuotaShellCommand() {
+  String _buildQuotaShellCommand({
+    OpenCodeGoDashboardCredentials? openCodeGoCredentials,
+  }) {
     // Full Base64-encoded JS keeps the shell transport to one line while still
     // allowing real host API fetches for supported providers.
-    const jsScript = r'''
+    final openCodeGoWorkspaceIdB64 = openCodeGoCredentials?.isComplete == true
+        ? base64Encode(utf8.encode(openCodeGoCredentials!.workspaceId.trim()))
+        : '';
+    final openCodeGoAuthCookieB64 = openCodeGoCredentials?.isComplete == true
+        ? base64Encode(utf8.encode(openCodeGoCredentials!.authCookie.trim()))
+        : '';
+    final jsScript = r'''
 const fs = require('fs');
 const os = require('os');
 const p = require('path');
 
 const P = 'CW_QUOTA_JSON:';
+const OCG_WS_B64 = '__OCG_WS_B64__';
+const OCG_CK_B64 = '__OCG_CK_B64__';
 const CFG = p.join(os.homedir(), '.config', 'opencode');
 const DATA = p.join(
   process.env.XDG_DATA_HOME || p.join(os.homedir(), '.local', 'share'),
@@ -374,6 +405,16 @@ function pickS(...values) {
     if (s) return s;
   }
   return null;
+}
+
+function fromB64(v) {
+  const s = asS(v);
+  if (!s) return null;
+  try {
+    return Buffer.from(s, 'base64').toString('utf8').trim() || null;
+  } catch {
+    return null;
+  }
 }
 
 function toN(v) {
@@ -954,8 +995,8 @@ async function fOCG(a) {
     if (!vRes.ok) {
       return bR({ pId: 'opencode-go', pName: 'OpenCode Go', ok: false, err: 'API error: ' + vRes.status });
     }
-    const wsId = asS(process.env.OPENCODE_GO_WORKSPACE_ID);
-    const rawCk = asS(process.env.OPENCODE_GO_AUTH_COOKIE) || asS(process.env.OPENCODE_GO_SESSION_COOKIE);
+    const wsId = fromB64(OCG_WS_B64) || asS(process.env.OPENCODE_GO_WORKSPACE_ID);
+    const rawCk = fromB64(OCG_CK_B64) || asS(process.env.OPENCODE_GO_AUTH_COOKIE) || asS(process.env.OPENCODE_GO_SESSION_COOKIE);
     if (!wsId || !rawCk) {
       return bR({
         pId: 'opencode-go',
@@ -1029,7 +1070,10 @@ async function fOCG(a) {
 });
 ''';
 
-    final b64 = base64Encode(utf8.encode(jsScript));
+    final hydratedScript = jsScript
+        .replaceAll('__OCG_WS_B64__', openCodeGoWorkspaceIdB64)
+        .replaceAll('__OCG_CK_B64__', openCodeGoAuthCookieB64);
+    final b64 = base64Encode(utf8.encode(hydratedScript));
     // Single-line command — avoids multiline if/fi that OpenCode's eval truncates.
     return "node -e \"eval(Buffer.from('$b64','base64').toString('utf8'))\""
         " || printf '%s\\n' '$_shellPrefix{\"results\":[]}'";

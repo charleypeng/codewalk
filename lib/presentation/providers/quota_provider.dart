@@ -1,15 +1,20 @@
 import 'package:flutter/foundation.dart';
 
 import '../../core/logging/app_logger.dart';
+import '../../data/datasources/app_local_datasource.dart';
 import '../../data/datasources/quota_remote_datasource.dart';
 import '../../domain/entities/quota.dart';
 import '../utils/quota_pace_utils.dart';
 
 class QuotaProvider extends ChangeNotifier {
-  QuotaProvider({required QuotaRemoteDataSource remoteDataSource})
-    : _remoteDataSource = remoteDataSource;
+  QuotaProvider({
+    required QuotaRemoteDataSource remoteDataSource,
+    AppLocalDataSource? localDataSource,
+  }) : _remoteDataSource = remoteDataSource,
+       _localDataSource = localDataSource;
 
   final QuotaRemoteDataSource _remoteDataSource;
+  final AppLocalDataSource? _localDataSource;
 
   static const Duration _cacheTtl = Duration(seconds: 60);
 
@@ -22,6 +27,29 @@ class QuotaProvider extends ChangeNotifier {
   DateTime? get lastFetchedAt => _lastFetchedAt;
   List<QuotaProviderResult> get results =>
       List<QuotaProviderResult>.unmodifiable(_results);
+
+  bool get openCodeGoSetupRequired {
+    final result = _openCodeGoResult;
+    return result != null && result.configured && !result.hasVisibleData;
+  }
+
+  bool get hasOpenCodeGoDashboardCredentials =>
+      (_openCodeGoWorkspaceId?.trim().isNotEmpty ?? false) &&
+      (_openCodeGoAuthCookie?.trim().isNotEmpty ?? false);
+
+  String? get openCodeGoError => _openCodeGoResult?.error;
+
+  QuotaProviderResult? get _openCodeGoResult {
+    for (final result in _results) {
+      if (result.providerId == 'opencode-go') {
+        return result;
+      }
+    }
+    return null;
+  }
+
+  String? _openCodeGoWorkspaceId;
+  String? _openCodeGoAuthCookie;
 
   bool get hasAnyQuotaData => groups.isNotEmpty;
 
@@ -87,7 +115,15 @@ class QuotaProvider extends ChangeNotifier {
     notifyListeners();
     try {
       AppLogger.info('[Quota] ensureLoaded: starting fetch...');
-      _results = await _remoteDataSource.fetchQuotaResults();
+      await _loadOpenCodeGoDashboardCredentials(normalizedServerId);
+      _results = await _remoteDataSource.fetchQuotaResults(
+        openCodeGoCredentials: hasOpenCodeGoDashboardCredentials
+            ? OpenCodeGoDashboardCredentials(
+                workspaceId: _openCodeGoWorkspaceId!,
+                authCookie: _openCodeGoAuthCookie!,
+              )
+            : null,
+      );
       _lastFetchedAt = DateTime.now();
       final groupSummaries = groups
           .map(
@@ -105,6 +141,62 @@ class QuotaProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> saveOpenCodeGoDashboardCredentials({
+    required String? serverId,
+    required String workspaceId,
+    required String authCookie,
+  }) async {
+    final localDataSource = _localDataSource;
+    final normalizedServerId = serverId?.trim();
+    if (localDataSource == null ||
+        normalizedServerId == null ||
+        normalizedServerId.isEmpty) {
+      return;
+    }
+    await localDataSource.saveOpenCodeGoWorkspaceId(
+      workspaceId,
+      serverId: normalizedServerId,
+    );
+    await localDataSource.saveOpenCodeGoAuthCookie(
+      authCookie,
+      serverId: normalizedServerId,
+    );
+    await ensureLoaded(serverId: normalizedServerId, force: true);
+  }
+
+  Future<void> forgetOpenCodeGoDashboardCredentials({
+    required String? serverId,
+  }) async {
+    final localDataSource = _localDataSource;
+    final normalizedServerId = serverId?.trim();
+    if (localDataSource == null ||
+        normalizedServerId == null ||
+        normalizedServerId.isEmpty) {
+      return;
+    }
+    await localDataSource.clearOpenCodeGoDashboardCredentials(
+      serverId: normalizedServerId,
+    );
+    _openCodeGoWorkspaceId = null;
+    _openCodeGoAuthCookie = null;
+    await ensureLoaded(serverId: normalizedServerId, force: true);
+  }
+
+  Future<void> _loadOpenCodeGoDashboardCredentials(String serverId) async {
+    final localDataSource = _localDataSource;
+    if (localDataSource == null) {
+      _openCodeGoWorkspaceId = null;
+      _openCodeGoAuthCookie = null;
+      return;
+    }
+    _openCodeGoWorkspaceId = await localDataSource.getOpenCodeGoWorkspaceId(
+      serverId: serverId,
+    );
+    _openCodeGoAuthCookie = await localDataSource.getOpenCodeGoAuthCookie(
+      serverId: serverId,
+    );
   }
 
   QuotaProviderGroup _buildGroup(QuotaProviderResult result) {

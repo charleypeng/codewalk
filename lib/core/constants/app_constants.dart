@@ -64,6 +64,8 @@ class AppConstants {
       'server_profile_basic_auth_username';
   static const String secureServerProfileBasicAuthPasswordKey =
       'server_profile_basic_auth_password';
+  static const String opencodeGoWorkspaceIdKey = 'opencode_go_workspace_id';
+  static const String opencodeGoAuthCookieKey = 'opencode_go_auth_cookie';
 
   // Default configuration
   static const String defaultTheme = 'system';
