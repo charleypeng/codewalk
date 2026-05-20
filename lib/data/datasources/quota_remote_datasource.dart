@@ -877,6 +877,122 @@ async function fGH(a) {
   }
 }
 
+function nOC(v) {
+  if (typeof v !== 'string') return null;
+  const t = v.trim();
+  if (!t) return null;
+  // Normalize browser-copied values without treating base64 padding as a cookie name.
+  if (t.indexOf('auth=') === 0) return t;
+  return 'auth=' + t;
+}
+
+function sHC(h) {
+  if (typeof h !== 'string') return h;
+  return h.replace(/<!--[^]*?-->/g, '');
+}
+
+function nTx(v) {
+  if (typeof v !== 'string') return v;
+  return v.replace(/\s+/g, ' ').trim();
+}
+
+function pRD(v) {
+  if (typeof v !== 'string') return null;
+  const t = v.trim().toLowerCase();
+  if (!t) return null;
+  if (t.indexOf('few seconds') !== -1) return 15;
+  const ms = Array.from(t.matchAll(/(\d+)\s+(day|days|hour|hours|minute|minutes)/g));
+  if (!ms.length) return null;
+  let total = 0;
+  for (const m of ms) {
+    const amt = Number(m[1]);
+    if (!Number.isFinite(amt)) continue;
+    const u = m[2];
+    if (u.indexOf('day') === 0) total += amt * 86400;
+    else if (u.indexOf('hour') === 0) total += amt * 3600;
+    else if (u.indexOf('minute') === 0) total += amt * 60;
+  }
+  return total > 0 ? total : null;
+}
+
+function pDH(h) {
+  if (typeof h !== 'string' || h.indexOf('You are subscribed to OpenCode Go.') === -1) return null;
+  const sh = sHC(h);
+  const sm = sh.match(/<div data-slot="usage">([\s\S]*?)<\/div><form action=/);
+  if (!sm) return null;
+  const u = {};
+  const ims = Array.from(sm[1].matchAll(
+    /<div data-slot="usage-item">[\s\S]*?<span data-slot="usage-label">([^<]+)<\/span><span data-slot="usage-value">(\d+)%<\/span>[\s\S]*?<span data-slot="reset-time">\s*Resets in\s*([^<]+)<\/span>[\s\S]*?<\/div>/g,
+  ));
+  for (const im of ims) {
+    const label = nTx(im[1] || '').toLowerCase();
+    let key = null;
+    if (label === 'rolling usage') key = 'rolling';
+    if (label === 'weekly usage') key = 'weekly';
+    if (label === 'monthly usage') key = 'monthly';
+    if (!key) continue;
+    const used = toN(im[2]);
+    const resetAfter = pRD(nTx(im[3] || ''));
+    u[key] = {
+      usedPercent: used,
+      resetAt: resetAfter !== null ? Date.now() + resetAfter * 1000 : null,
+    };
+  }
+  if (!u.rolling || !u.weekly || !u.monthly) return null;
+  return u;
+}
+
+async function fOCG(a) {
+  const e = nE(getE(a, ['opencode-go']));
+  const k = e && (e.key || e.access || e.token);
+  if (!k) return null;
+  try {
+    const vRes = await fetch('https://opencode.ai/zen/go/v1/models', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer ' + k, Accept: 'application/json' },
+    });
+    if (!vRes.ok) {
+      return bR({ pId: 'opencode-go', pName: 'OpenCode Go', ok: false, err: 'API error: ' + vRes.status });
+    }
+    const wsId = asS(process.env.OPENCODE_GO_WORKSPACE_ID);
+    const rawCk = asS(process.env.OPENCODE_GO_SESSION_COOKIE);
+    if (!wsId || !rawCk) {
+      return bR({
+        pId: 'opencode-go',
+        pName: 'OpenCode Go',
+        ok: false,
+        err: 'OpenCode Go is configured, but subscription usage requires OPENCODE_GO_WORKSPACE_ID and OPENCODE_GO_SESSION_COOKIE env vars on the host.',
+      });
+    }
+    const ck = nOC(rawCk);
+    if (!ck) {
+      return bR({ pId: 'opencode-go', pName: 'OpenCode Go', ok: false, err: 'Invalid session cookie.' });
+    }
+    const dRes = await fetch('https://opencode.ai/workspace/' + encodeURIComponent(wsId) + '/go', {
+      method: 'GET',
+      headers: { Accept: 'text/html,application/xhtml+xml', Cookie: ck },
+    });
+    const payload = await dRes.text().catch(function() { return null; });
+    if (!dRes.ok) {
+      const msg = typeof payload === 'string' && payload.indexOf('/auth/authorize') !== -1
+        ? 'Dashboard session is not authorized for this workspace'
+        : 'Dashboard API error: ' + dRes.status;
+      return bR({ pId: 'opencode-go', pName: 'OpenCode Go', ok: false, err: msg });
+    }
+    const sub = pDH(payload);
+    if (!sub) {
+      return bR({ pId: 'opencode-go', pName: 'OpenCode Go', ok: false, err: 'Failed to parse OpenCode Go subscription usage from dashboard page.' });
+    }
+    const w = {};
+    w.rolling = tUW({ uP: sub.rolling.usedPercent, wS: null, rA: sub.rolling.resetAt });
+    w.weekly = tUW({ uP: sub.weekly.usedPercent, wS: 7 * 86400, rA: sub.weekly.resetAt });
+    w.monthly = tUW({ uP: sub.monthly.usedPercent, wS: 30 * 86400, rA: sub.monthly.resetAt });
+    return bR({ pId: 'opencode-go', pName: 'OpenCode Go', ok: true, use: { windows: w } });
+  } catch (err) {
+    return bR({ pId: 'opencode-go', pName: 'OpenCode Go', ok: false, err: err.message });
+  }
+}
+
 (async () => {
   const a = rAuth();
   const authKeys = Object.keys(a);
@@ -891,9 +1007,11 @@ async function fGH(a) {
   if (g) R.push(g);
   const gh = await fGH(a);
   if (gh) R.push(gh);
+  const ocg = await fOCG(a);
+  if (ocg) R.push(ocg);
   const unsupported = authKeys.filter(
     (k) =>
-      !['anthropic', 'claude', 'openrouter', 'openai', 'codex', 'chatgpt', 'google', 'google.oauth', 'github-copilot', 'copilot'].includes(k),
+      !['anthropic', 'claude', 'openrouter', 'openai', 'codex', 'chatgpt', 'google', 'google.oauth', 'github-copilot', 'copilot', 'opencode-go'].includes(k),
   );
   console.log(
     P +

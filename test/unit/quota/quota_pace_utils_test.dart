@@ -38,7 +38,9 @@ void main() {
     'formatWindowLabel and inferWindowSeconds follow OpenChamber labels',
     () {
       expect(formatWindowLabel('7d-sonnet'), '7-Day Sonnet Limit');
+      expect(formatWindowLabel('rolling'), 'Rolling Usage');
       expect(inferWindowSeconds('5h'), 18000);
+      expect(inferWindowSeconds('rolling'), 18000);
       expect(inferWindowSeconds('weekly'), 604800);
     },
   );

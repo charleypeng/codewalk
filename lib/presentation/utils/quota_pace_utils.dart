@@ -39,6 +39,8 @@ String formatWindowLabel(String label) {
       return '7-Day Opus Limit';
     case 'weekly':
       return 'Weekly Limit';
+    case 'rolling':
+      return 'Rolling Usage';
     case 'daily':
       return 'Daily';
     case 'monthly':
@@ -62,6 +64,7 @@ String formatWindowLabel(String label) {
 
 int? inferWindowSeconds(String label) {
   final normalized = label.toLowerCase().trim();
+  if (normalized == 'rolling') return 5 * 3600;
   if (normalized == '5h') return 5 * 3600;
   if (normalized == '7d' ||
       normalized == 'weekly' ||

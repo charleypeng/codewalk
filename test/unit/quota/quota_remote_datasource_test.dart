@@ -149,7 +149,7 @@ void main() {
     );
 
     final script = _decodeShellScript(shellCommand!);
-    expect(script, contains("const AG = ["));
+    expect(script, contains('const AG = ['));
     expect(script, contains("p.join(CFG, 'antigravity-accounts.json')"));
     expect(script, contains('function rGem(a)'));
     expect(script, contains('function rAnti()'));
@@ -157,6 +157,18 @@ void main() {
     expect(script, contains('Client-Metadata'));
     expect(script, contains('https://oauth2.googleapis.com/token'));
     expect(script, contains('function rGAccess(src)'));
+    expect(script, contains('function fOCG(a)'));
+    expect(script, contains("getE(a, ['opencode-go'])"));
+    expect(script, contains('https://opencode.ai/zen/go/v1/models'));
+    expect(script, contains('process.env.OPENCODE_GO_WORKSPACE_ID'));
+    expect(script, contains('process.env.OPENCODE_GO_SESSION_COOKIE'));
+    expect(script, contains("t.indexOf('auth=') === 0"));
+    expect(script, contains("label === 'rolling usage'"));
+    expect(
+      script,
+      contains('w.rolling = tUW({ uP: sub.rolling.usedPercent, wS: null'),
+    );
+    expect(script, contains("'opencode-go'].includes(k)"));
     expect(script, contains("const GDP = 'rising-fact-p41fc';"));
     expect(
       script,
