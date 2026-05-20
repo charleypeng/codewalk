@@ -48,6 +48,7 @@ class AppConstants {
   static const String archivedProjectIdsKey = 'archived_project_ids';
   static const String hiddenProjectPathsKey = 'hidden_project_paths';
   static const String experienceSettingsKey = 'experience_settings';
+  static const String localeCodeKey = 'locale_code';
 
   // Update check keys
   static const String dismissedUpdateVersionKey = 'dismissed_update_version';

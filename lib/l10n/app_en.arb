@@ -1,0 +1,31 @@
+{
+  "@@locale": "en",
+  "settingsLanguageTitle": "Language",
+  "@settingsLanguageTitle": {
+    "description": "Title for the app language selector in Behavior settings."
+  },
+  "settingsLanguageDescription": "Choose the language used by CodeWalk. System default follows your device language.",
+  "@settingsLanguageDescription": {
+    "description": "Description for the app language selector in Behavior settings."
+  },
+  "settingsLanguageFieldLabel": "App language",
+  "@settingsLanguageFieldLabel": {
+    "description": "Input label for the app language selector."
+  },
+  "settingsLanguageFieldHelper": "Applies immediately and persists across restarts.",
+  "@settingsLanguageFieldHelper": {
+    "description": "Helper text under the app language selector."
+  },
+  "settingsLanguageSearchHint": "Search languages",
+  "@settingsLanguageSearchHint": {
+    "description": "Search hint inside the language selector bottom sheet."
+  },
+  "settingsLanguageEmptyText": "No languages found",
+  "@settingsLanguageEmptyText": {
+    "description": "Empty state shown when language search has no matches."
+  },
+  "settingsLanguageSystemDefault": "System default",
+  "@settingsLanguageSystemDefault": {
+    "description": "Option that makes CodeWalk follow the platform locale."
+  }
+}

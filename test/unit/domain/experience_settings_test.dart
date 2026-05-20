@@ -39,6 +39,24 @@ void main() {
     });
   });
 
+  group('locale serialization', () {
+    test('defaults to system locale', () {
+      expect(ExperienceSettings.defaults().localeCode, isNull);
+    });
+
+    test('serializes and deserializes explicit locale code', () {
+      final settings = ExperienceSettings.defaults().copyWith(
+        localeCode: () => 'ar',
+      );
+
+      final json = settings.toJson();
+      final restored = ExperienceSettings.fromJson(json);
+
+      expect(json['localeCode'], 'ar');
+      expect(restored.localeCode, 'ar');
+    });
+  });
+
   group('OpenCodeThemePreset serialization', () {
     test('serializes and deserializes catppuccin-macchiato', () {
       final settings = ExperienceSettings.defaults().copyWith(

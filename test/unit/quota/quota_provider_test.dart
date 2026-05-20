@@ -176,14 +176,14 @@ void main() {
 
   test('QuotaProvider hides zero-credit only groups', () async {
     final provider = QuotaProvider(
-      remoteDataSource: _FakeQuotaRemoteDataSource([
+      remoteDataSource: _FakeQuotaRemoteDataSource(const [
         QuotaProviderResult(
           providerId: 'openrouter',
           providerName: 'OpenRouter',
           ok: true,
           configured: true,
           usage: QuotaProviderUsage(
-            windows: const {
+            windows: {
               'credits': UsageWindow(
                 usedPercent: null,
                 remainingPercent: null,
@@ -195,7 +195,7 @@ void main() {
                 valueLabel: r'$0.00 remaining',
               ),
             },
-            models: const {},
+            models: {},
           ),
           error: null,
           fetchedAt: 1,

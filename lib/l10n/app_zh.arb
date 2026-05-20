@@ -1,0 +1,10 @@
+{
+  "@@locale": "zh",
+  "settingsLanguageTitle": "语言",
+  "settingsLanguageDescription": "选择 CodeWalk 使用的语言。系统默认会跟随设备语言。",
+  "settingsLanguageFieldLabel": "应用语言",
+  "settingsLanguageFieldHelper": "立即生效，并在重启后保留。",
+  "settingsLanguageSearchHint": "搜索语言",
+  "settingsLanguageEmptyText": "未找到语言",
+  "settingsLanguageSystemDefault": "系统默认"
+}

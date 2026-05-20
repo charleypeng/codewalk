@@ -4,16 +4,21 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'core/constants/app_constants.dart';
-import 'domain/entities/experience_settings.dart';
 import 'core/di/injection_container.dart' as di;
+import 'core/i18n/app_locales.dart';
+import 'core/i18n/l10n_bridge.dart';
 import 'core/logging/app_logger.dart';
+import 'domain/entities/experience_settings.dart';
+import 'l10n/generated/app_localizations.dart';
 import 'presentation/pages/app_shell_page.dart';
 import 'presentation/providers/app_provider.dart';
 import 'presentation/providers/chat_provider.dart';
+import 'presentation/providers/locale_provider.dart';
 import 'presentation/providers/project_provider.dart';
 import 'presentation/providers/quota_provider.dart';
 import 'presentation/providers/settings_provider.dart';
@@ -79,11 +84,18 @@ class MyApp extends StatelessWidget {
             return provider;
           },
         ),
+        ChangeNotifierProvider(
+          create: (_) {
+            final provider = di.sl<LocaleProvider>();
+            unawaited(provider.initialize());
+            return provider;
+          },
+        ),
       ],
       child: DynamicColorBuilder(
         builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-          return Consumer<SettingsProvider>(
-            builder: (context, settingsProvider, _) {
+          return Consumer2<SettingsProvider, LocaleProvider>(
+            builder: (context, settingsProvider, localeProvider, _) {
               final appDensity = settingsProvider.appDensity;
               final useDynamic = settingsProvider.useDynamicColor;
               final useAmoledDark = settingsProvider.useAmoledDark;
@@ -173,6 +185,19 @@ class MyApp extends StatelessWidget {
                   ],
                 ),
                 themeMode: themeMode,
+                locale: localeProvider.effectiveLocale,
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                supportedLocales: AppLocales.supported,
+                localeResolutionCallback: AppLocales.resolutionCallback,
+                builder: (context, child) {
+                  L10nBridge.update(AppLocalizations.of(context));
+                  return child ?? const SizedBox.shrink();
+                },
                 home: const AppShellPage(),
                 debugShowCheckedModeBanner: false,
               );

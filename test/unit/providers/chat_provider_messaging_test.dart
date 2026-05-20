@@ -951,7 +951,7 @@ void main() {
     test(
       'loadOlderMessages requests incremental limit and updates hasMore',
       () async {
-        final sessionId = 'ses_1';
+        const sessionId = 'ses_1';
         final messages = List<ChatMessage>.generate(450, (index) {
           final timestamp = DateTime.fromMillisecondsSinceEpoch(1000 + index);
           if (index.isEven) {
@@ -1009,7 +1009,7 @@ void main() {
     test(
       'loadMessages preserveVisibleState fetches tail first and falls back to full fetch when needed',
       () async {
-        final sessionId = 'ses_1';
+        const sessionId = 'ses_1';
         final baseMessages = <ChatMessage>[
           AssistantMessage(
             id: 'base_1',
@@ -1096,7 +1096,7 @@ void main() {
     test(
       'loadMessages gap recovery promotes latest server tail before full backfill',
       () async {
-        final sessionId = 'ses_1';
+        const sessionId = 'ses_1';
         final staleSnapshot = List<ChatMessage>.generate(150, (index) {
           final messageId = 'cached_$index';
           return AssistantMessage(
@@ -1206,7 +1206,7 @@ void main() {
     test(
       'refreshActiveSessionView completes deferred no-overlap fallback after lock release',
       () async {
-        final sessionId = 'ses_1';
+        const sessionId = 'ses_1';
         final staleSnapshot = List<ChatMessage>.generate(250, (index) {
           final messageId = 'cached_$index';
           return AssistantMessage(

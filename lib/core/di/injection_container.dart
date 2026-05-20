@@ -48,6 +48,7 @@ import '../../domain/usecases/watch_chat_events.dart';
 import '../../domain/usecases/watch_global_chat_events.dart';
 import '../../presentation/providers/app_provider.dart';
 import '../../presentation/providers/chat_provider.dart';
+import '../../presentation/providers/locale_provider.dart';
 import '../../presentation/providers/project_provider.dart';
 import '../../presentation/providers/quota_provider.dart';
 import '../../presentation/providers/settings_provider.dart';
@@ -252,6 +253,10 @@ Future<void> init() async {
       updateCheckService: sl(),
       cellularDataSaverService: sl(),
     ),
+  );
+
+  sl.registerLazySingleton<LocaleProvider>(
+    () => LocaleProvider(settingsProvider: sl()),
   );
 
   sl.registerFactory(

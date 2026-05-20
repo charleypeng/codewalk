@@ -139,6 +139,7 @@ class SettingsProvider extends ChangeNotifier {
   List<String> get openCodeDefaultAgentOptions =>
       List<String>.unmodifiable(_openCodeDefaultAgentOptions);
   ThemeModeOption get themeMode => _settings.themeMode;
+  String? get localeCode => _settings.localeCode;
   bool get useAmoledDark => _settings.useAmoledDark;
   bool get useDynamicColor => _settings.useDynamicColor;
   int? get customColorSeed => _settings.customColorSeed;
@@ -441,6 +442,19 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(themeMode: mode);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setLocaleCode(String? code) async {
+    final normalized = code?.trim().toLowerCase();
+    final nextCode = normalized == null || normalized.isEmpty
+        ? null
+        : normalized;
+    if (_settings.localeCode == nextCode) {
+      return;
+    }
+    _settings = _settings.copyWith(localeCode: () => nextCode);
     notifyListeners();
     await _persist();
   }

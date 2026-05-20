@@ -1,0 +1,10 @@
+{
+  "@@locale": "bn",
+  "settingsLanguageTitle": "ভাষা",
+  "settingsLanguageDescription": "CodeWalk যে ভাষা ব্যবহার করবে তা বেছে নিন। সিস্টেম ডিফল্ট আপনার ডিভাইসের ভাষা অনুসরণ করে।",
+  "settingsLanguageFieldLabel": "অ্যাপের ভাষা",
+  "settingsLanguageFieldHelper": "তাৎক্ষণিকভাবে প্রয়োগ হয় এবং পুনরায় চালুর পরেও থাকে।",
+  "settingsLanguageSearchHint": "ভাষা খুঁজুন",
+  "settingsLanguageEmptyText": "কোনো ভাষা পাওয়া যায়নি",
+  "settingsLanguageSystemDefault": "সিস্টেম ডিফল্ট"
+}

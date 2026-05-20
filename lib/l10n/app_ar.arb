@@ -1,0 +1,10 @@
+{
+  "@@locale": "ar",
+  "settingsLanguageTitle": "اللغة",
+  "settingsLanguageDescription": "اختر اللغة التي يستخدمها CodeWalk. يتبع خيار النظام الافتراضي لغة جهازك.",
+  "settingsLanguageFieldLabel": "لغة التطبيق",
+  "settingsLanguageFieldHelper": "يُطبّق فورًا ويستمر بعد إعادة التشغيل.",
+  "settingsLanguageSearchHint": "ابحث عن اللغات",
+  "settingsLanguageEmptyText": "لم يتم العثور على لغات",
+  "settingsLanguageSystemDefault": "النظام الافتراضي"
+}

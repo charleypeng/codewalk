@@ -1,0 +1,10 @@
+{
+  "@@locale": "it",
+  "settingsLanguageTitle": "Lingua",
+  "settingsLanguageDescription": "Scegli la lingua usata da CodeWalk. L’impostazione predefinita di sistema segue la lingua del dispositivo.",
+  "settingsLanguageFieldLabel": "Lingua dell’app",
+  "settingsLanguageFieldHelper": "Si applica subito e resta dopo il riavvio.",
+  "settingsLanguageSearchHint": "Cerca lingue",
+  "settingsLanguageEmptyText": "Nessuna lingua trovata",
+  "settingsLanguageSystemDefault": "Predefinita di sistema"
+}

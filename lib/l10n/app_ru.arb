@@ -1,0 +1,10 @@
+{
+  "@@locale": "ru",
+  "settingsLanguageTitle": "Язык",
+  "settingsLanguageDescription": "Выберите язык CodeWalk. Системный вариант следует языку устройства.",
+  "settingsLanguageFieldLabel": "Язык приложения",
+  "settingsLanguageFieldHelper": "Применяется сразу и сохраняется после перезапуска.",
+  "settingsLanguageSearchHint": "Поиск языков",
+  "settingsLanguageEmptyText": "Языки не найдены",
+  "settingsLanguageSystemDefault": "Системный по умолчанию"
+}

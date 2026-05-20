@@ -587,6 +587,7 @@ class ExperienceSettings {
       keepMobileRealtimeForShortPeriod: true,
       enableExperimentalMultiDeviceSync: false,
       themeMode: ThemeModeOption.system,
+      localeCode: null,
       themePreset: null,
       useAmoledDark: false,
       useDynamicColor: true,
@@ -632,6 +633,7 @@ class ExperienceSettings {
     required this.keepMobileRealtimeForShortPeriod,
     this.enableExperimentalMultiDeviceSync = false,
     this.themeMode = ThemeModeOption.system,
+    this.localeCode,
     this.themePreset,
     this.useAmoledDark = false,
     this.useDynamicColor = true,
@@ -677,6 +679,7 @@ class ExperienceSettings {
   final bool keepMobileRealtimeForShortPeriod;
   final bool enableExperimentalMultiDeviceSync;
   final ThemeModeOption themeMode;
+  final String? localeCode;
   final OpenCodeThemePreset? themePreset;
   final bool useAmoledDark;
   final bool useDynamicColor;
@@ -722,6 +725,7 @@ class ExperienceSettings {
     bool? keepMobileRealtimeForShortPeriod,
     bool? enableExperimentalMultiDeviceSync,
     ThemeModeOption? themeMode,
+    String? Function()? localeCode,
     OpenCodeThemePreset? Function()? themePreset,
     bool? useAmoledDark,
     bool? useDynamicColor,
@@ -778,6 +782,7 @@ class ExperienceSettings {
           enableExperimentalMultiDeviceSync ??
           this.enableExperimentalMultiDeviceSync,
       themeMode: themeMode ?? this.themeMode,
+      localeCode: localeCode != null ? localeCode() : this.localeCode,
       themePreset: themePreset != null ? themePreset() : this.themePreset,
       useAmoledDark: useAmoledDark ?? this.useAmoledDark,
       useDynamicColor: useDynamicColor ?? this.useDynamicColor,
@@ -866,6 +871,7 @@ class ExperienceSettings {
       'keepMobileRealtimeForShortPeriod': keepMobileRealtimeForShortPeriod,
       'enableExperimentalMultiDeviceSync': enableExperimentalMultiDeviceSync,
       'themeMode': themeModeOptionKey(themeMode),
+      if (localeCode != null) 'localeCode': localeCode,
       if (themePreset != null)
         'themePreset': openCodeThemePresetKey(themePreset!),
       'useAmoledDark': useAmoledDark,
@@ -1154,6 +1160,12 @@ class ExperienceSettings {
       themeMode = themeModeOptionFromKey(themeModeJson.trim().toLowerCase());
     }
 
+    String? localeCode;
+    final localeCodeJson = json['localeCode'];
+    if (localeCodeJson is String && localeCodeJson.trim().isNotEmpty) {
+      localeCode = localeCodeJson.trim().toLowerCase();
+    }
+
     var themePreset = defaults.themePreset;
     final themePresetJson = json['themePreset'];
     if (themePresetJson is String && themePresetJson.trim().isNotEmpty) {
@@ -1275,6 +1287,7 @@ class ExperienceSettings {
       keepMobileRealtimeForShortPeriod: keepMobileRealtimeForShortPeriod,
       enableExperimentalMultiDeviceSync: enableExperimentalMultiDeviceSync,
       themeMode: themeMode,
+      localeCode: localeCode,
       themePreset: themePreset,
       useAmoledDark: useAmoledDark,
       useDynamicColor: useDynamicColor,

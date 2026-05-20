@@ -5,7 +5,10 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/i18n/app_locales.dart';
+import '../../../../core/i18n/l10n_context.dart';
 import '../../../providers/chat_provider.dart';
+import '../../../providers/locale_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../widgets/searchable_dropdown_form_field.dart';
 import '../../../widgets/settings_provenance_chip.dart';
@@ -60,6 +63,8 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
+            _buildLanguageCard(context),
+            const SizedBox(height: 16),
             _buildOpenCodeDefaultsCard(context, settingsProvider),
             const SizedBox(height: 16),
             _buildPermissionParityCard(context),
@@ -101,6 +106,76 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildLanguageCard(BuildContext context) {
+    const systemLocaleValue = 'system';
+    late final LocaleProvider localeProvider;
+    try {
+      localeProvider = Provider.of<LocaleProvider>(context);
+    } on ProviderNotFoundException {
+      return const SizedBox.shrink();
+    }
+    final currentValue = localeProvider.localeCode ?? systemLocaleValue;
+    final l10n = context.l10n;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.defaultPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.settingsLanguageTitle,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              l10n.settingsLanguageDescription,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            SearchableDropdownFormField<String>(
+              key: const ValueKey<String>('settings_language_selector'),
+              value: currentValue,
+              decoration: InputDecoration(
+                labelText: l10n.settingsLanguageFieldLabel,
+                border: const OutlineInputBorder(),
+                helperText: l10n.settingsLanguageFieldHelper,
+              ),
+              isExpanded: true,
+              searchHintText: l10n.settingsLanguageSearchHint,
+              emptyText: l10n.settingsLanguageEmptyText,
+              searchTermsBuilder: (value) {
+                final info = AppLocales.infoForCode(value);
+                if (value == systemLocaleValue || info == null) {
+                  return <String>[
+                    l10n.settingsLanguageSystemDefault,
+                    'system default',
+                  ];
+                }
+                return <String>[info.nativeName, info.englishName, info.code];
+              },
+              items: [
+                DropdownMenuItem<String>(
+                  value: systemLocaleValue,
+                  child: Text(l10n.settingsLanguageSystemDefault),
+                ),
+                for (final info in AppLocales.infos)
+                  DropdownMenuItem<String>(
+                    value: info.code,
+                    child: Text(info.displayName),
+                  ),
+              ],
+              onChanged: (value) {
+                final code = value == systemLocaleValue ? null : value;
+                unawaited(localeProvider.setLocaleCode(code));
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
