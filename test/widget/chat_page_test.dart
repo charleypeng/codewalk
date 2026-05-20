@@ -8333,14 +8333,20 @@ void main() {
     final appProvider = _buildAppProvider(localDataSource: localDataSource);
 
     await tester.pumpWidget(_testApp(provider, appProvider));
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
 
     await provider.loadSessions();
     await provider.selectSession(provider.sessions.first);
     await provider.initializeProviders();
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
+    await provider.setSelectedModelByProvider(
+      providerId: 'provider_1',
+      modelId: 'model_2',
+    );
+    await provider.setSelectedModelByProvider(
+      providerId: 'provider_1',
+      modelId: 'model_1',
+    );
+    await tester.pumpAndSettle();
 
     expect(provider.selectedModelId, 'model_1');
     expect(provider.selectedVariantId, isNull);
