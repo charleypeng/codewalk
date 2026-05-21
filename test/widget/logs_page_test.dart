@@ -1,3 +1,4 @@
+import '../support/pump_localized_app.dart';
 import 'package:codewalk/core/logging/app_logger.dart';
 import 'package:codewalk/presentation/pages/logs_page.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +11,7 @@ void main() {
     AppLogger.info('alpha message');
     AppLogger.warn('beta message');
 
-    await tester.pumpWidget(const MaterialApp(home: LogsPage()));
+    await tester.pumpWidget(localizedMaterialApp(home: const LogsPage()));
     await tester.pumpAndSettle();
 
     expect(find.text('App Logs'), findsOneWidget);

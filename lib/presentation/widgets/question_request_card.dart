@@ -1,3 +1,4 @@
+import '../../core/i18n/l10n_context.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -343,7 +344,7 @@ class _QuestionRequestCardState extends State<QuestionRequestCard> {
           TextField(
             enabled: !widget.busy,
             controller: _controllerFor(questionIndex),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               isDense: true,
               labelText: 'Custom answer',
               hintText: 'Comma-separated values',
@@ -442,11 +443,11 @@ class _QuestionRequestCardState extends State<QuestionRequestCard> {
               OutlinedButton(
                 autofocus: true,
                 onPressed: widget.busy ? null : _reopenRejectedQuestion,
-                child: const Text('Reopen'),
+                child: Text(context.l10n.permissionReopen),
               ),
               FilledButton(
                 onPressed: widget.busy ? null : widget.onReject,
-                child: const Text('Confirm Reject'),
+                child: Text(context.l10n.permissionConfirmReject),
               ),
             ],
           ),
@@ -473,12 +474,12 @@ class _QuestionRequestCardState extends State<QuestionRequestCard> {
       children: [
         TextButton(
           onPressed: widget.busy ? null : _showRejectState,
-          child: const Text('Reject'),
+          child: Text(context.l10n.permissionReject),
         ),
         if (_stepIndex > 0)
           OutlinedButton(
             onPressed: widget.busy ? null : _goToPreviousStep,
-            child: const Text('Back'),
+            child: Text(context.l10n.permissionBack),
           ),
         FilledButton(
           onPressed: widget.busy

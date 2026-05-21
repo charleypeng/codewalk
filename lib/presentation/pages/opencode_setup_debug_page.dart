@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/i18n/l10n_context.dart';
 import '../providers/app_provider.dart';
 import '../services/local_opencode_server_runtime_types.dart';
 
@@ -15,9 +16,9 @@ class OpenCodeSetupDebugPage extends StatelessWidget {
     if (!context.mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('OpenCode setup debug copied to clipboard')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.l10n.msgSetupDebugCopied)));
   }
 
   @override

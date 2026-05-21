@@ -1,3 +1,4 @@
+import '../support/pump_localized_app.dart';
 import 'package:codewalk/domain/entities/chat_realtime.dart';
 import 'package:codewalk/presentation/widgets/permission_request_card.dart';
 import 'package:codewalk/presentation/widgets/question_request_card.dart';
@@ -20,7 +21,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: PermissionRequestCard(
             request: request,
@@ -62,7 +63,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: QuestionRequestCard(
             request: request,
@@ -132,7 +133,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: QuestionRequestCard(
             request: request,
@@ -198,7 +199,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: QuestionRequestCard(
             request: request,

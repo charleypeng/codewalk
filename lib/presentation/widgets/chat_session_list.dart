@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../domain/entities/chat_session.dart';
+import '../../core/i18n/l10n_context.dart';
 import '../providers/chat_provider.dart';
 import 'modal_primary_action_shortcuts.dart';
 import '../utils/session_title_formatter.dart';
@@ -569,13 +570,13 @@ class _ChatSessionListState extends State<ChatSessionList> {
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'rename',
                       child: Row(
                         children: [
                           Icon(Symbols.edit),
                           SizedBox(width: 8),
-                          Text('Rename'),
+                          Text(context.l10n.sessionRename),
                         ],
                       ),
                     ),
@@ -593,13 +594,13 @@ class _ChatSessionListState extends State<ChatSessionList> {
                     ),
                     if (session.shareUrl != null &&
                         session.shareUrl!.isNotEmpty)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'copy-link',
                         child: Row(
                           children: [
                             Icon(Symbols.content_copy),
                             SizedBox(width: 8),
-                            Text('Copy Link'),
+                            Text(context.l10n.sessionCopyLink),
                           ],
                         ),
                       ),
@@ -617,23 +618,26 @@ class _ChatSessionListState extends State<ChatSessionList> {
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'fork',
                       child: Row(
                         children: [
                           Icon(Symbols.call_split),
                           SizedBox(width: 8),
-                          Text('Fork'),
+                          Text(context.l10n.sessionFork),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'delete',
                       child: Row(
                         children: [
                           Icon(Symbols.delete, color: Colors.red),
                           SizedBox(width: 8),
-                          Text('Delete', style: TextStyle(color: Colors.red)),
+                          Text(
+                            context.l10n.sessionDelete,
+                            style: TextStyle(color: Colors.red),
+                          ),
                         ],
                       ),
                     ),
@@ -776,7 +780,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
       final ok = await callback(session, newTitle);
       if (!ok && dialogContext.mounted) {
         ScaffoldMessenger.of(dialogContext).showSnackBar(
-          const SnackBar(content: Text('Failed to rename conversation')),
+          SnackBar(content: Text(context.l10n.sessionFailedRename)),
         );
       }
     }
@@ -788,25 +792,25 @@ class _ChatSessionListState extends State<ChatSessionList> {
           unawaited(submitRename(context));
         },
         child: AlertDialog(
-          title: const Text('Rename Conversation'),
+          title: Text(context.l10n.sessionRenameTitle),
           content: TextField(
             controller: controller,
             autofocus: true,
-            decoration: const InputDecoration(
-              hintText: 'Enter new conversation name',
+            decoration: InputDecoration(
+              hintText: context.l10n.sessionRenameHint,
               border: OutlineInputBorder(),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.commonCancel),
             ),
             TextButton(
               onPressed: () {
                 unawaited(submitRename(context));
               },
-              child: const Text('Save'),
+              child: Text(context.l10n.commonSave),
             ),
           ],
         ),
@@ -826,7 +830,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
     }
     if (!ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update sharing state')),
+        SnackBar(content: Text(context.l10n.sessionFailedUpdateSharing)),
       );
       return;
     }
@@ -846,9 +850,9 @@ class _ChatSessionListState extends State<ChatSessionList> {
     if (!context.mounted) {
       return;
     }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Share link copied')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.sessionShareLinkCopied)),
+    );
   }
 
   Future<void> _toggleArchive(BuildContext context, ChatSession session) async {
@@ -864,7 +868,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
     }
     if (!ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update archive state')),
+        SnackBar(content: Text(context.l10n.sessionFailedUpdateArchive)),
       );
       return;
     }
@@ -910,14 +914,14 @@ class _ChatSessionListState extends State<ChatSessionList> {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Conversation'),
+        title: Text(context.l10n.sessionDeleteTitle),
         content: Text(
           'Are you sure you want to delete the conversation "${SessionTitleFormatter.displayTitle(time: session.time, title: session.title)}"? This action cannot be undone.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () {
@@ -930,7 +934,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
             style: TextButton.styleFrom(
               foregroundColor: Theme.of(context).colorScheme.error,
             ),
-            child: const Text('Delete'),
+            child: Text(context.l10n.sessionDelete),
           ),
         ],
       ),

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/config/feature_flags.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/i18n/l10n_context.dart';
 import '../../../../domain/entities/experience_settings.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../utils/shortcut_binding_codec.dart';

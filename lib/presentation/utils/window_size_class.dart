@@ -3,10 +3,10 @@ import 'package:flutter/widgets.dart';
 /// MD3 window size classes based on width breakpoints.
 /// See: https://m3.material.io/foundations/layout/applying-layout/window-size-classes
 enum WindowSizeClass {
-  compact,   // < 600dp
-  medium,    // 600–839dp
-  expanded,  // 840–1199dp
-  large,     // 1200–1599dp
+  compact, // < 600dp
+  medium, // 600–839dp
+  expanded, // 840–1199dp
+  large, // 1200–1599dp
   extraLarge // >= 1600dp
   ;
 

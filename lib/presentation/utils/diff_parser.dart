@@ -1,9 +1,9 @@
 enum DiffLineType {
-  add,      // + linha
-  remove,   // - linha
-  hunk,     // @@ -l1,c1 +l2,c2 @@
+  add, // + linha
+  remove, // - linha
+  hunk, // @@ -l1,c1 +l2,c2 @@
   metadata, // ---, +++, diff --git, index
-  context,  // linhas sem modificação
+  context, // linhas sem modificação
 }
 
 class DiffLine {
@@ -29,8 +29,7 @@ List<DiffLine> parseDiffLines(String text) {
       type = DiffLineType.remove;
     } else if (line.startsWith('@@')) {
       type = DiffLineType.hunk;
-    } else if (line.startsWith('diff --git') ||
-               line.startsWith('index ')) {
+    } else if (line.startsWith('diff --git') || line.startsWith('index ')) {
       type = DiffLineType.metadata;
     } else {
       type = DiffLineType.context;
@@ -135,11 +134,18 @@ List<DiffLine> computeDiffLines(String before, String after, String filename) {
 }
 
 /// Degenerative whole-file diff for large files that exceed the LCS cell guard.
-List<DiffLine> _degenerateDiff(List<String> bLines, List<String> aLines, String filename) {
+List<DiffLine> _degenerateDiff(
+  List<String> bLines,
+  List<String> aLines,
+  String filename,
+) {
   return [
     DiffLine('--- $filename', DiffLineType.metadata),
     DiffLine('+++ $filename', DiffLineType.metadata),
-    DiffLine('@@ -1,${bLines.length} +1,${aLines.length} @@', DiffLineType.hunk),
+    DiffLine(
+      '@@ -1,${bLines.length} +1,${aLines.length} @@',
+      DiffLineType.hunk,
+    ),
     for (final line in bLines) DiffLine('-$line', DiffLineType.remove),
     for (final line in aLines) DiffLine('+$line', DiffLineType.add),
   ];
@@ -226,7 +232,9 @@ List<DiffLine> _buildHunks(
       aStart = 1;
     }
 
-    result.add(DiffLine('@@ -$bStart,$bCount +$aStart,$aCount @@', DiffLineType.hunk));
+    result.add(
+      DiffLine('@@ -$bStart,$bCount +$aStart,$aCount @@', DiffLineType.hunk),
+    );
 
     for (var k = range.$1; k <= range.$2; k++) {
       final (op, bIdx, aIdx) = edits[k];

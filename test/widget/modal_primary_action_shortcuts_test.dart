@@ -2,13 +2,14 @@ import 'package:codewalk/presentation/widgets/modal_primary_action_shortcuts.dar
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../support/pump_localized_app.dart';
 
 void main() {
   testWidgets('Enter triggers the modal primary action', (tester) async {
     var activations = 0;
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ModalPrimaryActionShortcuts(
             autofocus: true,
@@ -32,7 +33,7 @@ void main() {
     var activations = 0;
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ModalPrimaryActionShortcuts(
             autofocus: true,
@@ -58,7 +59,7 @@ void main() {
     var activations = 0;
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ModalPrimaryActionShortcuts(
             autofocus: true,

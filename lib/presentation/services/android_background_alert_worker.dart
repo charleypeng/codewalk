@@ -685,7 +685,8 @@ class _AndroidBackgroundAlertRunner {
         );
         return response.statusCode == 200;
       } on DioException catch (error) {
-        if (error.response?.statusCode == 404 || error.response?.statusCode == 405) {
+        if (error.response?.statusCode == 404 ||
+            error.response?.statusCode == 405) {
           final legacyResponse = await dio.post(
             '/permission/$normalizedRequestId/reply',
             data: <String, dynamic>{'reply': reply},

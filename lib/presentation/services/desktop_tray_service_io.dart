@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
+import '../../core/i18n/l10n_bridge.dart';
 import '../../core/logging/app_logger.dart';
 import '../../domain/entities/experience_settings.dart';
 import 'desktop_tray_service_types.dart';
@@ -87,9 +88,15 @@ class _DesktopTrayServiceIo
       await trayManager.setContextMenu(
         Menu(
           items: <MenuItem>[
-            MenuItem(key: 'show', label: 'Show'),
+            MenuItem(
+              key: 'show',
+              label: L10nBridge.current?.trayShow ?? 'Show',
+            ),
             MenuItem.separator(),
-            MenuItem(key: 'quit', label: 'Quit'),
+            MenuItem(
+              key: 'quit',
+              label: L10nBridge.current?.trayQuit ?? 'Quit',
+            ),
           ],
         ),
       );

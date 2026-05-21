@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import '../../core/i18n/l10n_context.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -129,7 +130,7 @@ class _MoonshineModelDownloadDialogState
         unawaited(_startDownload());
       },
       child: AlertDialog(
-        title: const Text('Moonshine Voice Setup'),
+        title: Text(context.l10n.dialogMoonshineVoiceSetup),
         content: SizedBox(
           width: 380,
           child: _isLoading
@@ -141,11 +142,11 @@ class _MoonshineModelDownloadDialogState
             : <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(null),
-                  child: const Text('Cancel'),
+                  child: Text(context.l10n.commonCancel),
                 ),
                 FilledButton(
                   onPressed: _selectedId == null ? null : _startDownload,
-                  child: const Text('Download'),
+                  child: Text(context.l10n.dialogDownload),
                 ),
               ],
       ),
@@ -171,7 +172,7 @@ class _MoonshineModelDownloadDialogState
         DropdownButtonFormField<String>(
           value: _selectedId,
           isExpanded: true,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Model size',
             border: OutlineInputBorder(),
           ),

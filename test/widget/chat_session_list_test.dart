@@ -1,3 +1,4 @@
+import '../support/pump_localized_app.dart';
 import 'dart:async';
 
 import 'package:codewalk/domain/entities/chat_session.dart';
@@ -25,7 +26,7 @@ void main() {
     String? renamedTitle;
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatSessionList(
             sessions: <ChatSession>[session()],
@@ -54,7 +55,7 @@ void main() {
     String? renamedTitle;
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatSessionList(
             sessions: <ChatSession>[session()],
@@ -83,7 +84,7 @@ void main() {
     var calls = 0;
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatSessionList(
             sessions: <ChatSession>[session(shared: false)],
@@ -110,7 +111,7 @@ void main() {
     var calls = 0;
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatSessionList(
             sessions: <ChatSession>[session()],
@@ -138,7 +139,7 @@ void main() {
     var deleteCalls = 0;
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatSessionList(
             sessions: <ChatSession>[session()],
@@ -173,7 +174,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatSessionList(
             sessions: <ChatSession>[session()],
@@ -196,7 +197,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatSessionList(
             sessions: <ChatSession>[session()],
@@ -221,7 +222,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatSessionList(
             sessions: <ChatSession>[session()],
@@ -250,7 +251,7 @@ void main() {
     final inFlightSelection = Completer<void>();
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatSessionList(
             sessions: <ChatSession>[session()],
@@ -288,7 +289,7 @@ void main() {
     final inFlightSelection = Completer<void>();
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatSessionList(
             sessions: <ChatSession>[
@@ -349,7 +350,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatSessionList(sessions: <ChatSession>[parent, child]),
         ),
@@ -383,7 +384,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: SizedBox(
             height: 420,
@@ -419,7 +420,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatSessionList(
             sessions: <ChatSession>[session()],
@@ -441,7 +442,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatSessionList(
             sessions: <ChatSession>[session()],
@@ -461,7 +462,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatSessionList(
             sessions: <ChatSession>[
@@ -504,7 +505,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatSessionList(
             sessions: <ChatSession>[root, child],

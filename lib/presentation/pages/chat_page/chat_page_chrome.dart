@@ -11,8 +11,8 @@ extension _ChatPageChrome on _ChatPageState {
       _CurrentSessionAction.copyLink => 'Copy share link',
       _CurrentSessionAction.viewTasks => 'View tasks',
       _CurrentSessionAction.reviewChanges => 'Review changes',
-      _CurrentSessionAction.undo => 'Undo last turn',
-      _CurrentSessionAction.redo => 'Redo last undone turn',
+      _CurrentSessionAction.undo => context.l10n.chatUndoLastTurn,
+      _CurrentSessionAction.redo => context.l10n.chatRedoLastTurn,
       _CurrentSessionAction.compactContext => 'Compact context',
     };
   }
@@ -52,7 +52,8 @@ extension _ChatPageChrome on _ChatPageState {
         _showChatPageMessageSnackBar(
           ok
               ? (wasShared ? 'Conversation unshared' : 'Conversation shared')
-              : (chatProvider.errorMessage ?? 'Failed to update sharing state'),
+              : (chatProvider.errorMessage ??
+                    context.l10n.sessionFailedUpdateSharing),
           hideCurrent: false,
         );
         return;
@@ -69,7 +70,10 @@ extension _ChatPageChrome on _ChatPageState {
         if (!mounted) {
           return;
         }
-        _showChatPageMessageSnackBar('Share link copied', hideCurrent: false);
+        _showChatPageMessageSnackBar(
+          context.l10n.sessionShareLinkCopied,
+          hideCurrent: false,
+        );
         return;
       case _CurrentSessionAction.viewTasks:
         await _openCurrentSessionInsightsDialog(
@@ -140,7 +144,7 @@ extension _ChatPageChrome on _ChatPageState {
                 title: Text(title),
                 leading: IconButton(
                   icon: const Icon(Symbols.close),
-                  tooltip: 'Close',
+                  tooltip: context.l10n.chatClose,
                   onPressed: () => Navigator.of(dialogContext).pop(),
                 ),
               ),
@@ -175,7 +179,7 @@ extension _ChatPageChrome on _ChatPageState {
                       ),
                       IconButton(
                         icon: const Icon(Symbols.close),
-                        tooltip: 'Close',
+                        tooltip: context.l10n.chatClose,
                         onPressed: () => Navigator.of(dialogContext).pop(),
                       ),
                     ],
@@ -287,8 +291,8 @@ extension _ChatPageChrome on _ChatPageState {
 
   String _desktopPaneLabel(DesktopPane pane) {
     return switch (pane) {
-      DesktopPane.conversations => 'Conversations',
-      DesktopPane.files => 'Files',
+      DesktopPane.conversations => context.l10n.chatConversations,
+      DesktopPane.files => context.l10n.filesTitle,
       DesktopPane.utility => 'Utility',
     };
   }
@@ -299,9 +303,10 @@ extension _ChatPageChrome on _ChatPageState {
       _DisplayToggleAction.toolCallBubbles => 'Tool call bubbles',
       _DisplayToggleAction.taskList => 'Task list',
       _DisplayToggleAction.reviewChanges => 'Review changes',
-      _DisplayToggleAction.recentSessions => 'Recent sessions',
+      _DisplayToggleAction.recentSessions => context.l10n.chatRecentSessions,
       _DisplayToggleAction.composerTips => 'Composer tips',
-      _DisplayToggleAction.replayTour => 'Replay chat tour',
+      _DisplayToggleAction.replayTour =>
+        context.l10n.settingsAboutReplayChatTour,
     };
   }
 
@@ -561,7 +566,7 @@ extension _ChatPageChrome on _ChatPageState {
             tooltipPosition: TooltipPosition.bottom,
             child: PopupMenuButton<DesktopPane>(
               key: const ValueKey<String>('desktop_sidebars_menu_button'),
-              tooltip: 'Toggle sidebars',
+              tooltip: context.l10n.chatToggleSidebars,
               onSelected: (pane) {
                 final next = !settingsProvider.isDesktopPaneVisible(pane);
                 unawaited(settingsProvider.setDesktopPaneVisible(pane, next));
@@ -598,7 +603,7 @@ extension _ChatPageChrome on _ChatPageState {
             return IconButton(
               key: const ValueKey<String>('appbar_undo_button'),
               icon: const Icon(Symbols.undo_rounded),
-              tooltip: 'Undo last turn',
+              tooltip: context.l10n.chatUndoLastTurn,
               onPressed: chatProvider.canUndoCurrentSession
                   ? () => unawaited(
                       _triggerHistoryAction(
@@ -618,7 +623,7 @@ extension _ChatPageChrome on _ChatPageState {
             return IconButton(
               key: const ValueKey<String>('appbar_redo_button'),
               icon: const Icon(Symbols.redo_rounded),
-              tooltip: 'Redo last undone turn',
+              tooltip: context.l10n.chatRedoLastTurn,
               onPressed: () => unawaited(
                 _triggerHistoryAction(
                   chatProvider,
@@ -630,7 +635,7 @@ extension _ChatPageChrome on _ChatPageState {
         ),
         PopupMenuButton<_DisplayToggleAction>(
           key: const ValueKey<String>('appbar_display_toggles_button'),
-          tooltip: 'Display toggles',
+          tooltip: context.l10n.chatDisplayToggles,
           onSelected: (action) {
             switch (action) {
               case _DisplayToggleAction.thinkingBubbles:
@@ -797,42 +802,42 @@ extension _ChatPageChrome on _ChatPageState {
           IconButton(
             key: const ValueKey<String>('appbar_quick_open_button'),
             icon: const Icon(Symbols.account_tree),
-            tooltip: 'Open Files',
+            tooltip: context.l10n.chatOpenFiles,
             onPressed: () => unawaited(_openMobileFilesDialog()),
           ),
         if (!isMobile)
           _buildTourTarget(
             showcaseKey: _newChatTourKey,
             targetKey: _newChatTourTargetKey,
-            title: 'New chat',
-            description: 'Start a new conversation here.',
+            title: context.l10n.chatNewChatTourTitle,
+            description: context.l10n.chatNewChatTourDescription,
             tooltipPosition: TooltipPosition.bottom,
             includePrevious: true,
             onNext: () => unawaited(_advancePostOnboardingTourToComposer()),
             child: IconButton(
               icon: const Icon(Symbols.add_comment),
-              tooltip: 'New Chat',
+              tooltip: context.l10n.chatNewChat,
               onPressed: _createNewSession,
             ),
           ),
         if (!refreshlessEnabled)
           IconButton(
             icon: const Icon(Symbols.refresh),
-            tooltip: 'Refresh',
+            tooltip: context.l10n.chatRefresh,
             onPressed: _refreshData,
           ),
         if (isMobile)
           _buildTourTarget(
             showcaseKey: _newChatTourKey,
             targetKey: _newChatTourTargetKey,
-            title: 'New chat',
-            description: 'Start a new conversation here.',
+            title: context.l10n.chatNewChatTourTitle,
+            description: context.l10n.chatNewChatTourDescription,
             tooltipPosition: TooltipPosition.bottom,
             includePrevious: true,
             onNext: () => unawaited(_advancePostOnboardingTourToComposer()),
             child: IconButton(
               icon: const Icon(Symbols.add_comment),
-              tooltip: 'New Chat',
+              tooltip: context.l10n.chatNewChat,
               onPressed: _createNewSession,
             ),
           ),
@@ -864,10 +869,10 @@ extension _ChatPageChrome on _ChatPageState {
             key: const ValueKey<String>('mobile_files_dialog_fullscreen'),
             child: Scaffold(
               appBar: AppBar(
-                title: const Text('Files'),
+                title: Text(context.l10n.filesTitle),
                 leading: IconButton(
                   icon: const Icon(Symbols.close),
-                  tooltip: 'Close',
+                  tooltip: context.l10n.chatClose,
                   onPressed: () => Navigator.of(dialogContext).pop(),
                 ),
               ),
@@ -1365,13 +1370,13 @@ extension _ChatPageChrome on _ChatPageState {
         trimmed.isEmpty ||
         trimmed == '/' ||
         trimmed == '-') {
-      return 'Global';
+      return context.l10n.composerCannedScopeGlobal;
     }
     return trimmed;
   }
 
   String _directoryBasename(String directoryLabel) {
-    if (directoryLabel == 'Global') {
+    if (directoryLabel == context.l10n.composerCannedScopeGlobal) {
       return directoryLabel;
     }
     final normalized = directoryLabel.replaceAll('\\', '/');

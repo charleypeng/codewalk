@@ -1,3 +1,4 @@
+import '../../core/i18n/l10n_context.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -109,7 +110,7 @@ class _SessionTitleInlineEditorState extends State<SessionTitleInlineEditor> {
     if (!ok) {
       setState(() {
         _saving = false;
-        _errorText = 'Failed to rename conversation';
+        _errorText = context.l10n.sessionFailedRename;
       });
       return;
     }
@@ -167,14 +168,14 @@ class _SessionTitleInlineEditorState extends State<SessionTitleInlineEditor> {
                     onSubmitted: (_) => _save(),
                     decoration: InputDecoration(
                       isDense: true,
-                      hintText: 'Conversation title',
+                      hintText: context.l10n.sessionTitleHint,
                       errorText: _errorText,
                     ),
                   ),
                 ),
                 IconButton(
                   key: const ValueKey<String>('session_title_save_button'),
-                  tooltip: 'Save title',
+                  tooltip: context.l10n.sessionSaveTitle,
                   onPressed: _saving ? null : _save,
                   icon: _saving
                       ? const SizedBox(
@@ -187,7 +188,7 @@ class _SessionTitleInlineEditorState extends State<SessionTitleInlineEditor> {
                 ),
                 IconButton(
                   key: const ValueKey<String>('session_title_cancel_button'),
-                  tooltip: 'Cancel rename',
+                  tooltip: context.l10n.sessionCancelRename,
                   onPressed: _saving ? null : _cancelEditing,
                   icon: const Icon(Symbols.close, size: 18),
                   visualDensity: Theme.of(context).visualDensity,

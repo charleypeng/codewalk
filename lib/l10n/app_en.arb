@@ -1,144 +1,1663 @@
 {
   "@@locale": "en",
-  "settingsLanguageTitle": "Language",
-  "@settingsLanguageTitle": {
-    "description": "Title for the app language selector in Behavior settings."
+  "cannedNoSuggestions": "No suggestions",
+  "@cannedNoSuggestions": {
+    "description": "CodeWalk UI string — cannedNoSuggestions"
   },
-  "settingsLanguageDescription": "Choose the language used by CodeWalk. System default follows your device language.",
-  "@settingsLanguageDescription": {
-    "description": "Description for the app language selector in Behavior settings."
+  "chatAddServerToStart": "Add a server to start chatting.",
+  "@chatAddServerToStart": {
+    "description": "CodeWalk UI string — chatAddServerToStart"
   },
-  "settingsLanguageFieldLabel": "App language",
-  "@settingsLanguageFieldLabel": {
-    "description": "Input label for the app language selector."
+  "chatClose": "Close",
+  "@chatClose": {
+    "description": "CodeWalk UI string — chatClose"
   },
-  "settingsLanguageFieldHelper": "Applies immediately and persists across restarts.",
-  "@settingsLanguageFieldHelper": {
-    "description": "Helper text under the app language selector."
+  "chatCompactContext": "Compact Context",
+  "@chatCompactContext": {
+    "description": "CodeWalk UI string — chatCompactContext"
   },
-  "settingsLanguageSearchHint": "Search languages",
-  "@settingsLanguageSearchHint": {
-    "description": "Search hint inside the language selector bottom sheet."
+  "chatConversations": "Conversations",
+  "@chatConversations": {
+    "description": "CodeWalk UI string — chatConversations"
   },
-  "settingsLanguageEmptyText": "No languages found",
-  "@settingsLanguageEmptyText": {
-    "description": "Empty state shown when language search has no matches."
+  "chatConversationsPane": "Conversations",
+  "@chatConversationsPane": {
+    "description": "CodeWalk UI string — chatConversationsPane"
   },
-  "settingsLanguageSystemDefault": "System default",
-  "@settingsLanguageSystemDefault": {
-    "description": "Option that makes CodeWalk follow the platform locale."
+  "chatDisplayToggles": "Display toggles",
+  "@chatDisplayToggles": {
+    "description": "CodeWalk UI string — chatDisplayToggles"
   },
-  "settingsAboutVersion": "Version",
-  "@settingsAboutVersion": {
-    "description": "Title for the app version row in About settings."
+  "chatFilterActive": "Active",
+  "@chatFilterActive": {
+    "description": "CodeWalk UI string — chatFilterActive"
   },
-  "settingsAboutLoading": "Loading...",
-  "@settingsAboutLoading": {
-    "description": "Loading placeholder while app version information is read."
+  "chatFilterAll": "All",
+  "@chatFilterAll": {
+    "description": "CodeWalk UI string — chatFilterAll"
   },
-  "settingsAboutVersionBuild": "{version} (build {buildNumber})",
-  "@settingsAboutVersionBuild": {
-    "description": "Version and build number shown in About settings.",
-    "placeholders": {
-      "version": { "type": "String" },
-      "buildNumber": { "type": "String" }
-    }
+  "chatFilterArchived": "Archived",
+  "@chatFilterArchived": {
+    "description": "CodeWalk UI string — chatFilterArchived"
   },
-  "settingsAboutUpdateAvailable": "Update available: v{version}",
-  "@settingsAboutUpdateAvailable": {
-    "description": "Title shown when a newer CodeWalk version is available.",
-    "placeholders": {
-      "version": { "type": "String" }
-    }
+  "chatFilterSessions": "Filter sessions",
+  "@chatFilterSessions": {
+    "description": "CodeWalk UI string — chatFilterSessions"
   },
-  "settingsAboutDownloading": "Downloading... {percent}%",
-  "@settingsAboutDownloading": {
-    "description": "Update download progress label.",
-    "placeholders": {
-      "percent": { "type": "String" }
-    }
+  "chatGoToFirst": "Go to first message",
+  "@chatGoToFirst": {
+    "description": "CodeWalk UI string — chatGoToFirst"
   },
-  "settingsAboutInstalling": "Installing...",
-  "@settingsAboutInstalling": {
-    "description": "Update installation progress label."
+  "chatGoToLatest": "Go to latest message",
+  "@chatGoToLatest": {
+    "description": "CodeWalk UI string — chatGoToLatest"
   },
-  "settingsAboutUpdateInstalled": "Update installed. Restart the app to apply.",
-  "@settingsAboutUpdateInstalled": {
-    "description": "Message shown after an app update was installed."
+  "chatHelloAssistant": "Hello! I am your AI assistant",
+  "@chatHelloAssistant": {
+    "description": "CodeWalk UI string — chatHelloAssistant"
   },
-  "settingsAboutRetryInstall": "Retry install",
-  "@settingsAboutRetryInstall": {
-    "description": "Button label to retry a failed update installation."
+  "chatHideConversationsSidebar": "Hide Conversations sidebar",
+  "@chatHideConversationsSidebar": {
+    "description": "CodeWalk UI string — chatHideConversationsSidebar"
   },
-  "settingsAboutInstallUpdate": "Install update",
-  "@settingsAboutInstallUpdate": {
-    "description": "Button label to install an available app update."
+  "chatHideUtilitySidebar": "Hide Utility sidebar",
+  "@chatHideUtilitySidebar": {
+    "description": "CodeWalk UI string — chatHideUtilitySidebar"
   },
-  "settingsAboutDismiss": "Dismiss",
-  "@settingsAboutDismiss": {
-    "description": "Button label to dismiss the available update card."
+  "chatKeepWorking": "Keep working",
+  "@chatKeepWorking": {
+    "description": "CodeWalk UI string — chatKeepWorking"
   },
-  "settingsAboutUpToDate": "You''re up to date",
-  "@settingsAboutUpToDate": {
-    "description": "Title shown when no app update is available."
+  "chatLoadMore": "Load more",
+  "@chatLoadMore": {
+    "description": "CodeWalk UI string — chatLoadMore"
   },
-  "settingsAboutLatestVersion": "v{version} is the latest version",
-  "@settingsAboutLatestVersion": {
-    "description": "Subtitle shown when the installed app version is current.",
-    "placeholders": {
-      "version": { "type": "String" }
-    }
+  "chatNewChat": "New Chat",
+  "@chatNewChat": {
+    "description": "CodeWalk UI string — chatNewChat"
   },
-  "settingsAboutCheckOnOpen": "Check for updates on open",
-  "@settingsAboutCheckOnOpen": {
-    "description": "Switch title for checking app updates at startup."
+  "chatNewChatTourDescription": "Start a new conversation here.",
+  "@chatNewChatTourDescription": {
+    "description": "CodeWalk UI string — chatNewChatTourDescription"
   },
-  "settingsAboutCheckOnOpenDescription": "Automatically check when the app starts",
-  "@settingsAboutCheckOnOpenDescription": {
-    "description": "Switch subtitle for checking app updates at startup."
+  "chatNewChatTourTitle": "New chat",
+  "@chatNewChatTourTitle": {
+    "description": "CodeWalk UI string — chatNewChatTourTitle"
   },
-  "settingsAboutCheckForUpdates": "Check for updates",
-  "@settingsAboutCheckForUpdates": {
-    "description": "List tile title to manually check for app updates."
+  "chatNoServerYet": "No server configured yet",
+  "@chatNoServerYet": {
+    "description": "CodeWalk UI string — chatNoServerYet"
   },
-  "settingsAboutChecking": "Checking...",
-  "@settingsAboutChecking": {
-    "description": "Status shown while checking for app updates."
+  "chatOpenFiles": "Open Files",
+  "@chatOpenFiles": {
+    "description": "CodeWalk UI string — chatOpenFiles"
   },
-  "settingsAboutTapToCheck": "Tap to check for new versions",
-  "@settingsAboutTapToCheck": {
-    "description": "Subtitle for the manual update check action."
+  "chatProjectContext": "Project Context",
+  "@chatProjectContext": {
+    "description": "CodeWalk UI string — chatProjectContext"
   },
-  "settingsAboutReplayChatTour": "Replay chat tour",
-  "@settingsAboutReplayChatTour": {
-    "description": "About settings action that replays the guided chat tour."
+  "chatRecentSessions": "Recent sessions",
+  "@chatRecentSessions": {
+    "description": "CodeWalk UI string — chatRecentSessions"
   },
-  "settingsAboutReplayChatTourDescription": "Close settings and show the guided chat walkthrough",
-  "@settingsAboutReplayChatTourDescription": {
-    "description": "Subtitle for the guided chat tour replay action."
+  "chatRecentSessionsToggle": "Recent sessions",
+  "@chatRecentSessionsToggle": {
+    "description": "CodeWalk UI string — chatRecentSessionsToggle"
   },
-  "settingsAboutResetApp": "Reset app",
-  "@settingsAboutResetApp": {
-    "description": "Danger action title that resets all app data."
+  "chatRedoLastTurn": "Redo last undone turn",
+  "@chatRedoLastTurn": {
+    "description": "CodeWalk UI string — chatRedoLastTurn"
   },
-  "settingsAboutEraseAllData": "Erase all data and restart",
-  "@settingsAboutEraseAllData": {
-    "description": "Subtitle for the reset app danger action."
+  "chatRefresh": "Refresh",
+  "@chatRefresh": {
+    "description": "CodeWalk UI string — chatRefresh"
   },
-  "settingsAboutResetAppQuestion": "Reset app?",
-  "@settingsAboutResetAppQuestion": {
-    "description": "Confirmation dialog title before resetting app data."
+  "chatRefreshSessionDetails": "Refresh session details",
+  "@chatRefreshSessionDetails": {
+    "description": "CodeWalk UI string — chatRefreshSessionDetails"
   },
-  "settingsAboutResetAppWarning": "This will erase all servers, settings, and cached data. This action cannot be undone.",
-  "@settingsAboutResetAppWarning": {
-    "description": "Confirmation dialog warning before resetting app data."
+  "chatRetry": "Retry",
+  "@chatRetry": {
+    "description": "CodeWalk UI string — chatRetry"
+  },
+  "chatRetryRefresh": "Retry refresh",
+  "@chatRetryRefresh": {
+    "description": "CodeWalk UI string — chatRetryRefresh"
+  },
+  "chatReturnToMainConversation": "Return to main conversation",
+  "@chatReturnToMainConversation": {
+    "description": "CodeWalk UI string — chatReturnToMainConversation"
+  },
+  "chatSearchConversations": "Search conversations",
+  "@chatSearchConversations": {
+    "description": "CodeWalk UI string — chatSearchConversations"
+  },
+  "chatSelectOrCreate": "Select or create a conversation to start chatting",
+  "@chatSelectOrCreate": {
+    "description": "CodeWalk UI string — chatSelectOrCreate"
+  },
+  "chatSessionActions": "Session actions",
+  "@chatSessionActions": {
+    "description": "CodeWalk UI string — chatSessionActions"
+  },
+  "chatSetUpServer": "Set up server",
+  "@chatSetUpServer": {
+    "description": "CodeWalk UI string — chatSetUpServer"
+  },
+  "chatSortMostRecent": "Most Recent",
+  "@chatSortMostRecent": {
+    "description": "CodeWalk UI string — chatSortMostRecent"
+  },
+  "chatSortOldest": "Oldest",
+  "@chatSortOldest": {
+    "description": "CodeWalk UI string — chatSortOldest"
+  },
+  "chatSortRecent": "Recent",
+  "@chatSortRecent": {
+    "description": "CodeWalk UI string — chatSortRecent"
+  },
+  "chatSortSessions": "Sort sessions",
+  "@chatSortSessions": {
+    "description": "CodeWalk UI string — chatSortSessions"
+  },
+  "chatSortTitle": "Title",
+  "@chatSortTitle": {
+    "description": "CodeWalk UI string — chatSortTitle"
+  },
+  "chatToggleSidebars": "Toggle sidebars",
+  "@chatToggleSidebars": {
+    "description": "CodeWalk UI string — chatToggleSidebars"
+  },
+  "chatUndoLastTurn": "Undo last turn",
+  "@chatUndoLastTurn": {
+    "description": "CodeWalk UI string — chatUndoLastTurn"
+  },
+  "chatUseCurrent": "Use current",
+  "@chatUseCurrent": {
+    "description": "CodeWalk UI string — chatUseCurrent"
   },
   "commonCancel": "Cancel",
   "@commonCancel": {
-    "description": "Generic cancel button label."
+    "description": "CodeWalk UI string — commonCancel"
+  },
+  "commonDelete": "Delete",
+  "@commonDelete": {
+    "description": "CodeWalk UI string — commonDelete"
   },
   "commonReset": "Reset",
   "@commonReset": {
-    "description": "Generic reset button label."
-  }
+    "description": "CodeWalk UI string — commonReset"
+  },
+  "commonSave": "Save",
+  "@commonSave": {
+    "description": "CodeWalk UI string — commonSave"
+  },
+  "composerAddAttachment": "Add attachment",
+  "@composerAddAttachment": {
+    "description": "CodeWalk UI string — composerAddAttachment"
+  },
+  "composerAttachFiles": "Attach files",
+  "@composerAttachFiles": {
+    "description": "CodeWalk UI string — composerAttachFiles"
+  },
+  "composerCannedAppendAtCursor": "Append at cursor",
+  "@composerCannedAppendAtCursor": {
+    "description": "CodeWalk UI string — composerCannedAppendAtCursor"
+  },
+  "composerCannedLabel": "Label (optional)",
+  "@composerCannedLabel": {
+    "description": "CodeWalk UI string — composerCannedLabel"
+  },
+  "composerCannedNoReplies": "No quick replies yet.",
+  "@composerCannedNoReplies": {
+    "description": "CodeWalk UI string — composerCannedNoReplies"
+  },
+  "composerCannedReplace": "Replace",
+  "@composerCannedReplace": {
+    "description": "CodeWalk UI string — composerCannedReplace"
+  },
+  "composerCannedSave": "Save",
+  "@composerCannedSave": {
+    "description": "CodeWalk UI string — composerCannedSave"
+  },
+  "composerCannedScopeGlobal": "Global",
+  "@composerCannedScopeGlobal": {
+    "description": "CodeWalk UI string — composerCannedScopeGlobal"
+  },
+  "composerCannedScopeProject": "Project-only",
+  "@composerCannedScopeProject": {
+    "description": "CodeWalk UI string — composerCannedScopeProject"
+  },
+  "composerCannedSendAutomatically": "Send automatically",
+  "@composerCannedSendAutomatically": {
+    "description": "CodeWalk UI string — composerCannedSendAutomatically"
+  },
+  "composerCannedText": "Text",
+  "@composerCannedText": {
+    "description": "CodeWalk UI string — composerCannedText"
+  },
+  "composerChatInput": "Chat input",
+  "@composerChatInput": {
+    "description": "CodeWalk UI string — composerChatInput"
+  },
+  "composerDeleteAction": "Delete",
+  "@composerDeleteAction": {
+    "description": "CodeWalk UI string — composerDeleteAction"
+  },
+  "composerEdit": "Edit",
+  "@composerEdit": {
+    "description": "CodeWalk UI string — composerEdit"
+  },
+  "composerExtras": "Extras",
+  "@composerExtras": {
+    "description": "CodeWalk UI string — composerExtras"
+  },
+  "composerNewQuickReply": "New quick reply",
+  "@composerNewQuickReply": {
+    "description": "CodeWalk UI string — composerNewQuickReply"
+  },
+  "composerSelectImages": "Select Images",
+  "@composerSelectImages": {
+    "description": "CodeWalk UI string — composerSelectImages"
+  },
+  "composerSelectPdf": "Select PDF",
+  "@composerSelectPdf": {
+    "description": "CodeWalk UI string — composerSelectPdf"
+  },
+  "composerSend": "Send",
+  "@composerSend": {
+    "description": "CodeWalk UI string — composerSend"
+  },
+  "composerShellMode": "Shell mode",
+  "@composerShellMode": {
+    "description": "CodeWalk UI string — composerShellMode"
+  },
+  "dialogDownload": "Download",
+  "@dialogDownload": {
+    "description": "CodeWalk UI string — dialogDownload"
+  },
+  "dialogLanguage": "Language",
+  "@dialogLanguage": {
+    "description": "CodeWalk UI string — dialogLanguage"
+  },
+  "dialogMoonshineModelSize": "Model size",
+  "@dialogMoonshineModelSize": {
+    "description": "CodeWalk UI string — dialogMoonshineModelSize"
+  },
+  "dialogMoonshineVoiceSetup": "Moonshine Voice Setup",
+  "@dialogMoonshineVoiceSetup": {
+    "description": "CodeWalk UI string — dialogMoonshineVoiceSetup"
+  },
+  "dialogParakeetModel": "Parakeet model",
+  "@dialogParakeetModel": {
+    "description": "CodeWalk UI string — dialogParakeetModel"
+  },
+  "dialogParakeetVoiceSetup": "Parakeet Voice Setup",
+  "@dialogParakeetVoiceSetup": {
+    "description": "CodeWalk UI string — dialogParakeetVoiceSetup"
+  },
+  "dialogSenseVoiceModel": "SenseVoice model",
+  "@dialogSenseVoiceModel": {
+    "description": "CodeWalk UI string — dialogSenseVoiceModel"
+  },
+  "dialogSenseVoiceSetup": "SenseVoice Setup",
+  "@dialogSenseVoiceSetup": {
+    "description": "CodeWalk UI string — dialogSenseVoiceSetup"
+  },
+  "dialogVoiceInputSetup": "Voice Input Setup",
+  "@dialogVoiceInputSetup": {
+    "description": "CodeWalk UI string — dialogVoiceInputSetup"
+  },
+  "filesHideSidebar": "Hide Files sidebar",
+  "@filesHideSidebar": {
+    "description": "CodeWalk UI string — filesHideSidebar"
+  },
+  "filesQuickOpen": "Quick Open",
+  "@filesQuickOpen": {
+    "description": "CodeWalk UI string — filesQuickOpen"
+  },
+  "filesRefresh": "Refresh files",
+  "@filesRefresh": {
+    "description": "CodeWalk UI string — filesRefresh"
+  },
+  "filesSearchHint": "Search files by name or path",
+  "@filesSearchHint": {
+    "description": "CodeWalk UI string — filesSearchHint"
+  },
+  "filesTitle": "Files",
+  "@filesTitle": {
+    "description": "CodeWalk UI string — filesTitle"
+  },
+  "logsClear": "Clear logs",
+  "@logsClear": {
+    "description": "CodeWalk UI string — logsClear"
+  },
+  "logsCloseSearch": "Close search",
+  "@logsCloseSearch": {
+    "description": "CodeWalk UI string — logsCloseSearch"
+  },
+  "logsCopyFiltered": "Copy filtered logs",
+  "@logsCopyFiltered": {
+    "description": "CodeWalk UI string — logsCopyFiltered"
+  },
+  "logsSearch": "Search logs",
+  "@logsSearch": {
+    "description": "CodeWalk UI string — logsSearch"
+  },
+  "modelAuto": "Auto",
+  "@modelAuto": {
+    "description": "CodeWalk UI string — modelAuto"
+  },
+  "modelLoadingModels": "Loading models",
+  "@modelLoadingModels": {
+    "description": "CodeWalk UI string — modelLoadingModels"
+  },
+  "modelRetryModels": "Retry models",
+  "@modelRetryModels": {
+    "description": "CodeWalk UI string — modelRetryModels"
+  },
+  "modelSearchHint": "Search model or provider",
+  "@modelSearchHint": {
+    "description": "CodeWalk UI string — modelSearchHint"
+  },
+  "msgBatterySettingsFailed": "Could not open Android battery optimization settings.",
+  "@msgBatterySettingsFailed": {
+    "description": "CodeWalk UI string — msgBatterySettingsFailed"
+  },
+  "msgBatterySettingsOpened": "Android battery settings opened. Allow unrestricted battery for CodeWalk.",
+  "@msgBatterySettingsOpened": {
+    "description": "CodeWalk UI string — msgBatterySettingsOpened"
+  },
+  "msgClearUsernameNeedsConfigEdit": "Clearing the OpenCode conversation username still requires editing config outside the app.",
+  "@msgClearUsernameNeedsConfigEdit": {
+    "description": "CodeWalk UI string — msgClearUsernameNeedsConfigEdit"
+  },
+  "msgCommandCopied": "Command copied",
+  "@msgCommandCopied": {
+    "description": "CodeWalk UI string — msgCommandCopied"
+  },
+  "msgCopiedToClipboard": "Copied to clipboard",
+  "@msgCopiedToClipboard": {
+    "description": "CodeWalk UI string — msgCopiedToClipboard"
+  },
+  "msgEnterUsernameToSave": "Enter a username to save a custom OpenCode conversation name.",
+  "@msgEnterUsernameToSave": {
+    "description": "CodeWalk UI string — msgEnterUsernameToSave"
+  },
+  "msgFailedToSendMessage": "Failed to send message. Draft kept for retry.",
+  "@msgFailedToSendMessage": {
+    "description": "CodeWalk UI string — msgFailedToSendMessage"
+  },
+  "msgFailedToStartVoiceInput": "Failed to start voice input",
+  "@msgFailedToStartVoiceInput": {
+    "description": "CodeWalk UI string — msgFailedToStartVoiceInput"
+  },
+  "msgFilteredLogsCopied": "Filtered logs copied to clipboard",
+  "@msgFilteredLogsCopied": {
+    "description": "CodeWalk UI string — msgFilteredLogsCopied"
+  },
+  "msgInfoAgent": "Agent",
+  "@msgInfoAgent": {
+    "description": "CodeWalk UI string — msgInfoAgent"
+  },
+  "msgInfoCompaction": "Compaction",
+  "@msgInfoCompaction": {
+    "description": "CodeWalk UI string — msgInfoCompaction"
+  },
+  "msgInfoCost": "Cost: ${cost}",
+  "@msgInfoCost": {
+    "description": "CodeWalk UI string — msgInfoCost"
+,
+    "placeholders": {
+      "cost": { "type": "String" }
+    }  },
+  "msgInfoMessageInfo": "Message Info",
+  "@msgInfoMessageInfo": {
+    "description": "CodeWalk UI string — msgInfoMessageInfo"
+  },
+  "msgInfoModel": "Model: {modelId}",
+  "@msgInfoModel": {
+    "description": "CodeWalk UI string — msgInfoModel"
+,
+    "placeholders": {
+      "modelId": { "type": "String" }
+    }  },
+  "msgInfoNoMetadata": "No metadata available",
+  "@msgInfoNoMetadata": {
+    "description": "CodeWalk UI string — msgInfoNoMetadata"
+  },
+  "msgInfoPatch": "Patch",
+  "@msgInfoPatch": {
+    "description": "CodeWalk UI string — msgInfoPatch"
+  },
+  "msgInfoProvider": "Provider: {providerId}",
+  "@msgInfoProvider": {
+    "description": "CodeWalk UI string — msgInfoProvider"
+,
+    "placeholders": {
+      "providerId": { "type": "String" }
+    }  },
+  "msgInfoRetry": "Retry",
+  "@msgInfoRetry": {
+    "description": "CodeWalk UI string — msgInfoRetry"
+  },
+  "msgInfoSnapshot": "Snapshot",
+  "@msgInfoSnapshot": {
+    "description": "CodeWalk UI string — msgInfoSnapshot"
+  },
+  "msgInfoTokens": "Tokens: {total}",
+  "@msgInfoTokens": {
+    "description": "CodeWalk UI string — msgInfoTokens"
+,
+    "placeholders": {
+      "total": { "type": "String" }
+    }  },
+  "msgInfoUndoThisTurn": "Undo this turn",
+  "@msgInfoUndoThisTurn": {
+    "description": "CodeWalk UI string — msgInfoUndoThisTurn"
+  },
+  "msgInfoView": "View",
+  "@msgInfoView": {
+    "description": "CodeWalk UI string — msgInfoView"
+  },
+  "msgNoSystemSoundsFound": "No system sound was found on this device.",
+  "@msgNoSystemSoundsFound": {
+    "description": "CodeWalk UI string — msgNoSystemSoundsFound"
+  },
+  "msgNoValidFilesSelected": "No valid files were selected",
+  "@msgNoValidFilesSelected": {
+    "description": "CodeWalk UI string — msgNoValidFilesSelected"
+  },
+  "msgSetupDebugCopied": "OpenCode setup debug copied to clipboard",
+  "@msgSetupDebugCopied": {
+    "description": "CodeWalk UI string — msgSetupDebugCopied"
+  },
+  "msgSystemSoundPickerUnavailable": "System sound picker is not available on this platform.",
+  "@msgSystemSoundPickerUnavailable": {
+    "description": "CodeWalk UI string — msgSystemSoundPickerUnavailable"
+  },
+  "msgUpdatedButRefreshFailed": "Updated the server setting, but could not refresh chat providers.",
+  "@msgUpdatedButRefreshFailed": {
+    "description": "CodeWalk UI string — msgUpdatedButRefreshFailed"
+  },
+  "msgVoiceInputUnavailable": "Voice input is unavailable on this device",
+  "@msgVoiceInputUnavailable": {
+    "description": "CodeWalk UI string — msgVoiceInputUnavailable"
+  },
+  "notifConversationUpdates": "Conversation updates",
+  "@notifConversationUpdates": {
+    "description": "CodeWalk UI string — notifConversationUpdates"
+  },
+  "onboardingClear": "Clear",
+  "@onboardingClear": {
+    "description": "CodeWalk UI string — onboardingClear"
+  },
+  "onboardingLabel": "Label (optional)",
+  "@onboardingLabel": {
+    "description": "CodeWalk UI string — onboardingLabel"
+  },
+  "onboardingLabelHint": "My server",
+  "@onboardingLabelHint": {
+    "description": "CodeWalk UI string — onboardingLabelHint"
+  },
+  "onboardingPassword": "Password",
+  "@onboardingPassword": {
+    "description": "CodeWalk UI string — onboardingPassword"
+  },
+  "onboardingServerUrl": "Server URL",
+  "@onboardingServerUrl": {
+    "description": "CodeWalk UI string — onboardingServerUrl"
+  },
+  "onboardingUsername": "Username",
+  "@onboardingUsername": {
+    "description": "CodeWalk UI string — onboardingUsername"
+  },
+  "permissionAllowOnce": "Allow Once",
+  "@permissionAllowOnce": {
+    "description": "CodeWalk UI string — permissionAllowOnce"
+  },
+  "permissionAlways": "Always",
+  "@permissionAlways": {
+    "description": "CodeWalk UI string — permissionAlways"
+  },
+  "permissionBack": "Back",
+  "@permissionBack": {
+    "description": "CodeWalk UI string — permissionBack"
+  },
+  "permissionConfirmReject": "Confirm Reject",
+  "@permissionConfirmReject": {
+    "description": "CodeWalk UI string — permissionConfirmReject"
+  },
+  "permissionReject": "Reject",
+  "@permissionReject": {
+    "description": "CodeWalk UI string — permissionReject"
+  },
+  "permissionReopen": "Reopen",
+  "@permissionReopen": {
+    "description": "CodeWalk UI string — permissionReopen"
+  },
+  "quotaAuthCookie": "Auth cookie",
+  "@quotaAuthCookie": {
+    "description": "CodeWalk UI string — quotaAuthCookie"
+  },
+  "quotaForget": "Forget",
+  "@quotaForget": {
+    "description": "CodeWalk UI string — quotaForget"
+  },
+  "quotaOpenCodeGoUsage": "OpenCode Go usage",
+  "@quotaOpenCodeGoUsage": {
+    "description": "CodeWalk UI string — quotaOpenCodeGoUsage"
+  },
+  "quotaOpenDashboard": "Open OpenCode dashboard",
+  "@quotaOpenDashboard": {
+    "description": "CodeWalk UI string — quotaOpenDashboard"
+  },
+  "quotaSaving": "Saving...",
+  "@quotaSaving": {
+    "description": "CodeWalk UI string — quotaSaving"
+  },
+  "quotaWorkspaceId": "Workspace ID",
+  "@quotaWorkspaceId": {
+    "description": "CodeWalk UI string — quotaWorkspaceId"
+  },
+  "sessionActionArchived": "archived",
+  "@sessionActionArchived": {
+    "description": "CodeWalk UI string — sessionActionArchived"
+  },
+  "sessionActionDeleted": "deleted",
+  "@sessionActionDeleted": {
+    "description": "CodeWalk UI string — sessionActionDeleted"
+  },
+  "sessionActionForked": "forked",
+  "@sessionActionForked": {
+    "description": "CodeWalk UI string — sessionActionForked"
+  },
+  "sessionActionUnarchived": "unarchived",
+  "@sessionActionUnarchived": {
+    "description": "CodeWalk UI string — sessionActionUnarchived"
+  },
+  "sessionCancelRename": "Cancel rename",
+  "@sessionCancelRename": {
+    "description": "CodeWalk UI string — sessionCancelRename"
+  },
+  "sessionCopyLink": "Copy Link",
+  "@sessionCopyLink": {
+    "description": "CodeWalk UI string — sessionCopyLink"
+  },
+  "sessionDelete": "Delete",
+  "@sessionDelete": {
+    "description": "CodeWalk UI string — sessionDelete"
+  },
+  "sessionDeleteTitle": "Delete Conversation",
+  "@sessionDeleteTitle": {
+    "description": "CodeWalk UI string — sessionDeleteTitle"
+  },
+  "sessionFailedRename": "Failed to rename conversation",
+  "@sessionFailedRename": {
+    "description": "CodeWalk UI string — sessionFailedRename"
+  },
+  "sessionFailedUpdateArchive": "Failed to update archive state",
+  "@sessionFailedUpdateArchive": {
+    "description": "CodeWalk UI string — sessionFailedUpdateArchive"
+  },
+  "sessionFailedUpdateSharing": "Failed to update sharing state",
+  "@sessionFailedUpdateSharing": {
+    "description": "CodeWalk UI string — sessionFailedUpdateSharing"
+  },
+  "sessionFork": "Fork",
+  "@sessionFork": {
+    "description": "CodeWalk UI string — sessionFork"
+  },
+  "sessionKeyboardShortcuts": "Keyboard shortcuts",
+  "@sessionKeyboardShortcuts": {
+    "description": "CodeWalk UI string — sessionKeyboardShortcuts"
+  },
+  "sessionNotAvailable": "Conversation is not available for this project yet",
+  "@sessionNotAvailable": {
+    "description": "CodeWalk UI string — sessionNotAvailable"
+  },
+  "sessionRename": "Rename",
+  "@sessionRename": {
+    "description": "CodeWalk UI string — sessionRename"
+  },
+  "sessionRenameHint": "Enter new conversation name",
+  "@sessionRenameHint": {
+    "description": "CodeWalk UI string — sessionRenameHint"
+  },
+  "sessionRenameTitle": "Rename Conversation",
+  "@sessionRenameTitle": {
+    "description": "CodeWalk UI string — sessionRenameTitle"
+  },
+  "sessionSaveTitle": "Save title",
+  "@sessionSaveTitle": {
+    "description": "CodeWalk UI string — sessionSaveTitle"
+  },
+  "sessionShareLinkCopied": "Share link copied",
+  "@sessionShareLinkCopied": {
+    "description": "CodeWalk UI string — sessionShareLinkCopied"
+  },
+  "sessionTitleHint": "Conversation title",
+  "@sessionTitleHint": {
+    "description": "CodeWalk UI string — sessionTitleHint"
+  },
+  "settingsAboutCheckForUpdates": "Check for updates",
+  "@settingsAboutCheckForUpdates": {
+    "description": "CodeWalk UI string — settingsAboutCheckForUpdates"
+  },
+  "settingsAboutCheckOnOpen": "Check for updates on open",
+  "@settingsAboutCheckOnOpen": {
+    "description": "CodeWalk UI string — settingsAboutCheckOnOpen"
+  },
+  "settingsAboutCheckOnOpenDescription": "Automatically check when the app starts",
+  "@settingsAboutCheckOnOpenDescription": {
+    "description": "CodeWalk UI string — settingsAboutCheckOnOpenDescription"
+  },
+  "settingsAboutChecking": "Checking...",
+  "@settingsAboutChecking": {
+    "description": "CodeWalk UI string — settingsAboutChecking"
+  },
+  "settingsAboutDescription": "Version, updates and links",
+  "@settingsAboutDescription": {
+    "description": "CodeWalk UI string — settingsAboutDescription"
+  },
+  "settingsAboutDismiss": "Dismiss",
+  "@settingsAboutDismiss": {
+    "description": "CodeWalk UI string — settingsAboutDismiss"
+  },
+  "settingsAboutDownloading": "Downloading... {percent}%",
+  "@settingsAboutDownloading": {
+    "description": "CodeWalk UI string — settingsAboutDownloading"
+,
+    "placeholders": {
+      "percent": { "type": "String" }
+    }  },
+  "settingsAboutEraseAllData": "Erase all data and restart",
+  "@settingsAboutEraseAllData": {
+    "description": "CodeWalk UI string — settingsAboutEraseAllData"
+  },
+  "settingsAboutInstallUpdate": "Install update",
+  "@settingsAboutInstallUpdate": {
+    "description": "CodeWalk UI string — settingsAboutInstallUpdate"
+  },
+  "settingsAboutInstalling": "Installing...",
+  "@settingsAboutInstalling": {
+    "description": "CodeWalk UI string — settingsAboutInstalling"
+  },
+  "settingsAboutLatestVersion": "v{version} is the latest version",
+  "@settingsAboutLatestVersion": {
+    "description": "CodeWalk UI string — settingsAboutLatestVersion"
+,
+    "placeholders": {
+      "version": { "type": "String" }
+    }  },
+  "settingsAboutLoading": "Loading...",
+  "@settingsAboutLoading": {
+    "description": "CodeWalk UI string — settingsAboutLoading"
+  },
+  "settingsAboutReplayChatTour": "Replay chat tour",
+  "@settingsAboutReplayChatTour": {
+    "description": "CodeWalk UI string — settingsAboutReplayChatTour"
+  },
+  "settingsAboutReplayChatTourDescription": "Close settings and show the guided chat walkthrough",
+  "@settingsAboutReplayChatTourDescription": {
+    "description": "CodeWalk UI string — settingsAboutReplayChatTourDescription"
+  },
+  "settingsAboutResetApp": "Reset app",
+  "@settingsAboutResetApp": {
+    "description": "CodeWalk UI string — settingsAboutResetApp"
+  },
+  "settingsAboutResetAppQuestion": "Reset app?",
+  "@settingsAboutResetAppQuestion": {
+    "description": "CodeWalk UI string — settingsAboutResetAppQuestion"
+  },
+  "settingsAboutResetAppWarning": "This will erase all servers, settings, and cached data. This action cannot be undone.",
+  "@settingsAboutResetAppWarning": {
+    "description": "CodeWalk UI string — settingsAboutResetAppWarning"
+  },
+  "settingsAboutRetryInstall": "Retry install",
+  "@settingsAboutRetryInstall": {
+    "description": "CodeWalk UI string — settingsAboutRetryInstall"
+  },
+  "settingsAboutTapToCheck": "Tap to check for new versions",
+  "@settingsAboutTapToCheck": {
+    "description": "CodeWalk UI string — settingsAboutTapToCheck"
+  },
+  "settingsAboutTitle": "About",
+  "@settingsAboutTitle": {
+    "description": "CodeWalk UI string — settingsAboutTitle"
+  },
+  "settingsAboutUpToDate": "You''re up to date",
+  "@settingsAboutUpToDate": {
+    "description": "CodeWalk UI string — settingsAboutUpToDate"
+  },
+  "settingsAboutUpdateAvailable": "Update available: v{version}",
+  "@settingsAboutUpdateAvailable": {
+    "description": "CodeWalk UI string — settingsAboutUpdateAvailable"
+,
+    "placeholders": {
+      "version": { "type": "String" }
+    }  },
+  "settingsAboutUpdateInstalled": "Update installed. Restart the app to apply.",
+  "@settingsAboutUpdateInstalled": {
+    "description": "CodeWalk UI string — settingsAboutUpdateInstalled"
+  },
+  "settingsAboutVersion": "Version",
+  "@settingsAboutVersion": {
+    "description": "CodeWalk UI string — settingsAboutVersion"
+  },
+  "settingsAboutVersionBuild": "{version} (build {buildNumber})",
+  "@settingsAboutVersionBuild": {
+    "description": "CodeWalk UI string — settingsAboutVersionBuild"
+,
+    "placeholders": {
+      "buildNumber": { "type": "String" },
+      "version": { "type": "String" }
+    }  },
+  "settingsAppearanceAmoledDark": "AMOLED dark mode",
+  "@settingsAppearanceAmoledDark": {
+    "description": "CodeWalk UI string — settingsAppearanceAmoledDark"
+  },
+  "settingsAppearanceAmoledDarkActive": "Use pure black surfaces while dark mode is active.",
+  "@settingsAppearanceAmoledDarkActive": {
+    "description": "CodeWalk UI string — settingsAppearanceAmoledDarkActive"
+  },
+  "settingsAppearanceAmoledDarkInactive": "Switch to dark mode to enable AMOLED surfaces.",
+  "@settingsAppearanceAmoledDarkInactive": {
+    "description": "CodeWalk UI string — settingsAppearanceAmoledDarkInactive"
+  },
+  "settingsAppearanceBrandColor": "Brand color",
+  "@settingsAppearanceBrandColor": {
+    "description": "CodeWalk UI string — settingsAppearanceBrandColor"
+  },
+  "settingsAppearanceBrandColorDynamicBlocked": "Disable wallpaper colors to pick a brand color.",
+  "@settingsAppearanceBrandColorDynamicBlocked": {
+    "description": "CodeWalk UI string — settingsAppearanceBrandColorDynamicBlocked"
+  },
+  "settingsAppearanceBrandColorNormal": "Pick a seed color for the app palette.",
+  "@settingsAppearanceBrandColorNormal": {
+    "description": "CodeWalk UI string — settingsAppearanceBrandColorNormal"
+  },
+  "settingsAppearanceBrandColorPresetBlocked": "Switch to CodeWalk Classic to pick a brand color.",
+  "@settingsAppearanceBrandColorPresetBlocked": {
+    "description": "CodeWalk UI string — settingsAppearanceBrandColorPresetBlocked"
+  },
+  "settingsAppearanceCodeWalkClassic": "CodeWalk Classic",
+  "@settingsAppearanceCodeWalkClassic": {
+    "description": "CodeWalk UI string — settingsAppearanceCodeWalkClassic"
+  },
+  "settingsAppearanceComposerTips": "Composer tips",
+  "@settingsAppearanceComposerTips": {
+    "description": "CodeWalk UI string — settingsAppearanceComposerTips"
+  },
+  "settingsAppearanceComposerTipsDescription": "Show or hide rotating tips while the assistant is reasoning.",
+  "@settingsAppearanceComposerTipsDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceComposerTipsDescription"
+  },
+  "settingsAppearanceContrast": "Contrast",
+  "@settingsAppearanceContrast": {
+    "description": "CodeWalk UI string — settingsAppearanceContrast"
+  },
+  "settingsAppearanceContrastDynamicBlocked": "Disable wallpaper colors to adjust contrast.",
+  "@settingsAppearanceContrastDynamicBlocked": {
+    "description": "CodeWalk UI string — settingsAppearanceContrastDynamicBlocked"
+  },
+  "settingsAppearanceContrastHigh": "High",
+  "@settingsAppearanceContrastHigh": {
+    "description": "CodeWalk UI string — settingsAppearanceContrastHigh"
+  },
+  "settingsAppearanceContrastNormal": "Adjust the contrast level of the color scheme.",
+  "@settingsAppearanceContrastNormal": {
+    "description": "CodeWalk UI string — settingsAppearanceContrastNormal"
+  },
+  "settingsAppearanceContrastPresetBlocked": "Switch to CodeWalk Classic to adjust contrast.",
+  "@settingsAppearanceContrastPresetBlocked": {
+    "description": "CodeWalk UI string — settingsAppearanceContrastPresetBlocked"
+  },
+  "settingsAppearanceContrastReduced": "Reduced",
+  "@settingsAppearanceContrastReduced": {
+    "description": "CodeWalk UI string — settingsAppearanceContrastReduced"
+  },
+  "settingsAppearanceDark": "Dark",
+  "@settingsAppearanceDark": {
+    "description": "CodeWalk UI string — settingsAppearanceDark"
+  },
+  "settingsAppearanceDensity": "Density",
+  "@settingsAppearanceDensity": {
+    "description": "CodeWalk UI string — settingsAppearanceDensity"
+  },
+  "settingsAppearanceDensityDense": "Dense",
+  "@settingsAppearanceDensityDense": {
+    "description": "CodeWalk UI string — settingsAppearanceDensityDense"
+  },
+  "settingsAppearanceDensityDescription": "Apply spacing and component density across the app.",
+  "@settingsAppearanceDensityDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceDensityDescription"
+  },
+  "settingsAppearanceDensityExtraDense": "Extra Dense",
+  "@settingsAppearanceDensityExtraDense": {
+    "description": "CodeWalk UI string — settingsAppearanceDensityExtraDense"
+  },
+  "settingsAppearanceDensityExtraSpacious": "Extra Spacious",
+  "@settingsAppearanceDensityExtraSpacious": {
+    "description": "CodeWalk UI string — settingsAppearanceDensityExtraSpacious"
+  },
+  "settingsAppearanceDensityNormal": "Normal",
+  "@settingsAppearanceDensityNormal": {
+    "description": "CodeWalk UI string — settingsAppearanceDensityNormal"
+  },
+  "settingsAppearanceDensitySpacious": "Spacious",
+  "@settingsAppearanceDensitySpacious": {
+    "description": "CodeWalk UI string — settingsAppearanceDensitySpacious"
+  },
+  "settingsAppearanceDescription": "Density and timeline bubble visibility",
+  "@settingsAppearanceDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceDescription"
+  },
+  "settingsAppearanceLight": "Light",
+  "@settingsAppearanceLight": {
+    "description": "CodeWalk UI string — settingsAppearanceLight"
+  },
+  "settingsAppearanceNoPresets": "No preset palettes found",
+  "@settingsAppearanceNoPresets": {
+    "description": "CodeWalk UI string — settingsAppearanceNoPresets"
+  },
+  "settingsAppearanceOpenCodePresets": "OpenCode Presets",
+  "@settingsAppearanceOpenCodePresets": {
+    "description": "CodeWalk UI string — settingsAppearanceOpenCodePresets"
+  },
+  "settingsAppearancePresetHelper": "Mirrors the official OpenCode Web built-in theme list.",
+  "@settingsAppearancePresetHelper": {
+    "description": "CodeWalk UI string — settingsAppearancePresetHelper"
+  },
+  "settingsAppearancePresetNote": "Theme colors now follow the official OpenCode Web registry and drive markdown/code surfaces too.",
+  "@settingsAppearancePresetNote": {
+    "description": "CodeWalk UI string — settingsAppearancePresetNote"
+  },
+  "settingsAppearancePresetPalette": "Preset palette",
+  "@settingsAppearancePresetPalette": {
+    "description": "CodeWalk UI string — settingsAppearancePresetPalette"
+  },
+  "settingsAppearanceSearchPreset": "Search preset palette",
+  "@settingsAppearanceSearchPreset": {
+    "description": "CodeWalk UI string — settingsAppearanceSearchPreset"
+  },
+  "settingsAppearanceSectionDescription": "Tune visual density and message surfaces for your workflow.",
+  "@settingsAppearanceSectionDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceSectionDescription"
+  },
+  "settingsAppearanceSectionTitle": "Appearance",
+  "@settingsAppearanceSectionTitle": {
+    "description": "CodeWalk UI string — settingsAppearanceSectionTitle"
+  },
+  "settingsAppearanceSystem": "System",
+  "@settingsAppearanceSystem": {
+    "description": "CodeWalk UI string — settingsAppearanceSystem"
+  },
+  "settingsAppearanceTaskList": "Task list",
+  "@settingsAppearanceTaskList": {
+    "description": "CodeWalk UI string — settingsAppearanceTaskList"
+  },
+  "settingsAppearanceTaskListDescription": "Show or hide the session task list widget.",
+  "@settingsAppearanceTaskListDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceTaskListDescription"
+  },
+  "settingsAppearanceTheme": "Theme",
+  "@settingsAppearanceTheme": {
+    "description": "CodeWalk UI string — settingsAppearanceTheme"
+  },
+  "settingsAppearanceThemeDescription": "Choose light, dark, or system mode, then keep the CodeWalk classic palette or switch to an OpenCode preset.",
+  "@settingsAppearanceThemeDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceThemeDescription"
+  },
+  "settingsAppearanceThinkingBubbles": "Thinking bubbles",
+  "@settingsAppearanceThinkingBubbles": {
+    "description": "CodeWalk UI string — settingsAppearanceThinkingBubbles"
+  },
+  "settingsAppearanceThinkingBubblesDescription": "Show or hide reasoning blocks in assistant messages.",
+  "@settingsAppearanceThinkingBubblesDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceThinkingBubblesDescription"
+  },
+  "settingsAppearanceTitle": "Appearance",
+  "@settingsAppearanceTitle": {
+    "description": "CodeWalk UI string — settingsAppearanceTitle"
+  },
+  "settingsAppearanceToolCallBubbles": "Tool call bubbles",
+  "@settingsAppearanceToolCallBubbles": {
+    "description": "CodeWalk UI string — settingsAppearanceToolCallBubbles"
+  },
+  "settingsAppearanceToolCallBubblesDescription": "Show or hide tool execution cards in assistant messages.",
+  "@settingsAppearanceToolCallBubblesDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceToolCallBubblesDescription"
+  },
+  "settingsAppearanceWallpaperColors": "Use wallpaper colors",
+  "@settingsAppearanceWallpaperColors": {
+    "description": "CodeWalk UI string — settingsAppearanceWallpaperColors"
+  },
+  "settingsAppearanceWallpaperNormal": "Extract color scheme from your device wallpaper.",
+  "@settingsAppearanceWallpaperNormal": {
+    "description": "CodeWalk UI string — settingsAppearanceWallpaperNormal"
+  },
+  "settingsAppearanceWallpaperPresetBlocked": "Switch to CodeWalk Classic to use wallpaper colors.",
+  "@settingsAppearanceWallpaperPresetBlocked": {
+    "description": "CodeWalk UI string — settingsAppearanceWallpaperPresetBlocked"
+  },
+  "settingsBack": "Back",
+  "@settingsBack": {
+    "description": "CodeWalk UI string — settingsBack"
+  },
+  "settingsBehaviorAutoupdateCaveat": "Use About for CodeWalk release checks. This setting only mirrors the official OpenCode `autoupdate` config.",
+  "@settingsBehaviorAutoupdateCaveat": {
+    "description": "CodeWalk UI string — settingsBehaviorAutoupdateCaveat"
+  },
+  "settingsBehaviorAutoupdateHelp": "Controls upstream OpenCode runtime updates, not CodeWalk app update checks.",
+  "@settingsBehaviorAutoupdateHelp": {
+    "description": "CodeWalk UI string — settingsBehaviorAutoupdateHelp"
+  },
+  "settingsBehaviorCellularDataSaver": "Cellular data saver",
+  "@settingsBehaviorCellularDataSaver": {
+    "description": "CodeWalk UI string — settingsBehaviorCellularDataSaver"
+  },
+  "settingsBehaviorConfigDeferred": "CodeWalk will apply this OpenCode setting after the current response finishes.",
+  "@settingsBehaviorConfigDeferred": {
+    "description": "CodeWalk UI string — settingsBehaviorConfigDeferred"
+  },
+  "settingsBehaviorConfigUpdateFailed": "Could not update the OpenCode {field}.",
+  "@settingsBehaviorConfigUpdateFailed": {
+    "description": "CodeWalk UI string — settingsBehaviorConfigUpdateFailed"
+,
+    "placeholders": {
+      "field": { "type": "String" }
+    }  },
+  "settingsBehaviorConversationUsername": "Conversation username",
+  "@settingsBehaviorConversationUsername": {
+    "description": "CodeWalk UI string — settingsBehaviorConversationUsername"
+  },
+  "settingsBehaviorConversationUsernameHelp": "Custom display name shown in conversations instead of the system username.",
+  "@settingsBehaviorConversationUsernameHelp": {
+    "description": "CodeWalk UI string — settingsBehaviorConversationUsernameHelp"
+  },
+  "settingsBehaviorDataSaverActive": "Active now on mobile data.",
+  "@settingsBehaviorDataSaverActive": {
+    "description": "CodeWalk UI string — settingsBehaviorDataSaverActive"
+  },
+  "settingsBehaviorDataSaverCellularOnly": "Only applies when the connection is cellular/mobile.",
+  "@settingsBehaviorDataSaverCellularOnly": {
+    "description": "CodeWalk UI string — settingsBehaviorDataSaverCellularOnly"
+  },
+  "settingsBehaviorDataSaverDescription": "Cuts automatic mobile-data usage by stopping background downloads and throttling automatic foreground refreshes.",
+  "@settingsBehaviorDataSaverDescription": {
+    "description": "CodeWalk UI string — settingsBehaviorDataSaverDescription"
+  },
+  "settingsBehaviorDataSaverWaiting": "Waiting for the next mobile-data sync window.",
+  "@settingsBehaviorDataSaverWaiting": {
+    "description": "CodeWalk UI string — settingsBehaviorDataSaverWaiting"
+  },
+  "settingsBehaviorDefaultAgent": "Default agent",
+  "@settingsBehaviorDefaultAgent": {
+    "description": "CodeWalk UI string — settingsBehaviorDefaultAgent"
+  },
+  "settingsBehaviorDefaultAgentHelp": "Primary agent used when no agent is explicitly chosen.",
+  "@settingsBehaviorDefaultAgentHelp": {
+    "description": "CodeWalk UI string — settingsBehaviorDefaultAgentHelp"
+  },
+  "settingsBehaviorDefaultModel": "Default model",
+  "@settingsBehaviorDefaultModel": {
+    "description": "CodeWalk UI string — settingsBehaviorDefaultModel"
+  },
+  "settingsBehaviorDefaultModelHelp": "Shared across OpenCode clients through config.",
+  "@settingsBehaviorDefaultModelHelp": {
+    "description": "CodeWalk UI string — settingsBehaviorDefaultModelHelp"
+  },
+  "settingsBehaviorDescription": "OpenCode defaults, provenance, and composer sync safety",
+  "@settingsBehaviorDescription": {
+    "description": "CodeWalk UI string — settingsBehaviorDescription"
+  },
+  "settingsBehaviorEnableDataSaver": "Enable cellular data saver",
+  "@settingsBehaviorEnableDataSaver": {
+    "description": "CodeWalk UI string — settingsBehaviorEnableDataSaver"
+  },
+  "settingsBehaviorMultiDeviceSync": "Enable experimental multi-device sync",
+  "@settingsBehaviorMultiDeviceSync": {
+    "description": "CodeWalk UI string — settingsBehaviorMultiDeviceSync"
+  },
+  "settingsBehaviorMultiDeviceSyncDescription": "Sync composer selection (agent/model/variant) with the active server config.",
+  "@settingsBehaviorMultiDeviceSyncDescription": {
+    "description": "CodeWalk UI string — settingsBehaviorMultiDeviceSyncDescription"
+  },
+  "settingsBehaviorMultiDeviceSyncWarning": "Can abort ongoing sessions when working in more than one session at the same time.",
+  "@settingsBehaviorMultiDeviceSyncWarning": {
+    "description": "CodeWalk UI string — settingsBehaviorMultiDeviceSyncWarning"
+  },
+  "settingsBehaviorNoAgents": "No agents found",
+  "@settingsBehaviorNoAgents": {
+    "description": "CodeWalk UI string — settingsBehaviorNoAgents"
+  },
+  "settingsBehaviorNoModels": "No models found",
+  "@settingsBehaviorNoModels": {
+    "description": "CodeWalk UI string — settingsBehaviorNoModels"
+  },
+  "settingsBehaviorOpenCodeAutoupdate": "OpenCode auto-update",
+  "@settingsBehaviorOpenCodeAutoupdate": {
+    "description": "CodeWalk UI string — settingsBehaviorOpenCodeAutoupdate"
+  },
+  "settingsBehaviorOpenCodeDefaults": "OpenCode-backed defaults",
+  "@settingsBehaviorOpenCodeDefaults": {
+    "description": "CodeWalk UI string — settingsBehaviorOpenCodeDefaults"
+  },
+  "settingsBehaviorOpenCodeDefaultsDescription": "These values write to `/config` on the active server and match official OpenCode shared config.",
+  "@settingsBehaviorOpenCodeDefaultsDescription": {
+    "description": "CodeWalk UI string — settingsBehaviorOpenCodeDefaultsDescription"
+  },
+  "settingsBehaviorOpenCodeSnapshots": "OpenCode snapshots",
+  "@settingsBehaviorOpenCodeSnapshots": {
+    "description": "CodeWalk UI string — settingsBehaviorOpenCodeSnapshots"
+  },
+  "settingsBehaviorOpenCodeSnapshotsDescription": "Keep upstream git-backed snapshots enabled for undo/redo and recovery history.",
+  "@settingsBehaviorOpenCodeSnapshotsDescription": {
+    "description": "CodeWalk UI string — settingsBehaviorOpenCodeSnapshotsDescription"
+  },
+  "settingsBehaviorPermissionDeferred": "Advanced permission rule editing stays out of Settings for now and is deferred to later parity work.",
+  "@settingsBehaviorPermissionDeferred": {
+    "description": "CodeWalk UI string — settingsBehaviorPermissionDeferred"
+  },
+  "settingsBehaviorPermissionProvenance": "Permission handling provenance",
+  "@settingsBehaviorPermissionProvenance": {
+    "description": "CodeWalk UI string — settingsBehaviorPermissionProvenance"
+  },
+  "settingsBehaviorPermissionProvenanceDescription": "Official OpenCode permission policy is configured in `opencode.json` with allow/ask/deny rules per tool. CodeWalk keeps the official permission-request cards and adds one approved ADR-023 exception: the composer auto-approve toggle replies with `Always` when the request supports remembered approval, otherwise `Allow Once`, and keeps the same thread-scoped continuity path active in the Android background worker.",
+  "@settingsBehaviorPermissionProvenanceDescription": {
+    "description": "CodeWalk UI string — settingsBehaviorPermissionProvenanceDescription"
+  },
+  "settingsBehaviorRefreshDefaults": "Refresh defaults",
+  "@settingsBehaviorRefreshDefaults": {
+    "description": "CodeWalk UI string — settingsBehaviorRefreshDefaults"
+  },
+  "settingsBehaviorSaveUsername": "Save username",
+  "@settingsBehaviorSaveUsername": {
+    "description": "CodeWalk UI string — settingsBehaviorSaveUsername"
+  },
+  "settingsBehaviorSearchAutoupdate": "Search auto-update mode",
+  "@settingsBehaviorSearchAutoupdate": {
+    "description": "CodeWalk UI string — settingsBehaviorSearchAutoupdate"
+  },
+  "settingsBehaviorSearchDefaultAgent": "Search default agent",
+  "@settingsBehaviorSearchDefaultAgent": {
+    "description": "CodeWalk UI string — settingsBehaviorSearchDefaultAgent"
+  },
+  "settingsBehaviorSearchDefaultModel": "Search default model",
+  "@settingsBehaviorSearchDefaultModel": {
+    "description": "CodeWalk UI string — settingsBehaviorSearchDefaultModel"
+  },
+  "settingsBehaviorSearchShareMode": "Search sharing mode",
+  "@settingsBehaviorSearchShareMode": {
+    "description": "CodeWalk UI string — settingsBehaviorSearchShareMode"
+  },
+  "settingsBehaviorSearchSmallModel": "Search small model",
+  "@settingsBehaviorSearchSmallModel": {
+    "description": "CodeWalk UI string — settingsBehaviorSearchSmallModel"
+  },
+  "settingsBehaviorShareMode": "OpenCode sharing default",
+  "@settingsBehaviorShareMode": {
+    "description": "CodeWalk UI string — settingsBehaviorShareMode"
+  },
+  "settingsBehaviorShareModeCaveat": "Use the chat-level share action to publish one session now. This setting only changes OpenCode''s default sharing policy.",
+  "@settingsBehaviorShareModeCaveat": {
+    "description": "CodeWalk UI string — settingsBehaviorShareModeCaveat"
+  },
+  "settingsBehaviorShareModeHelp": "Controls the official global `share` config, not the share button for an individual chat.",
+  "@settingsBehaviorShareModeHelp": {
+    "description": "CodeWalk UI string — settingsBehaviorShareModeHelp"
+  },
+  "settingsBehaviorSmallModel": "Small model",
+  "@settingsBehaviorSmallModel": {
+    "description": "CodeWalk UI string — settingsBehaviorSmallModel"
+  },
+  "settingsBehaviorSmallModelAutoFallback": "Automatic fallback",
+  "@settingsBehaviorSmallModelAutoFallback": {
+    "description": "CodeWalk UI string — settingsBehaviorSmallModelAutoFallback"
+  },
+  "settingsBehaviorSmallModelFallbackActive": "OpenCode automatic fallback is active because `small_model` is unset.",
+  "@settingsBehaviorSmallModelFallbackActive": {
+    "description": "CodeWalk UI string — settingsBehaviorSmallModelFallbackActive"
+  },
+  "settingsBehaviorSmallModelHelp": "Used for lightweight tasks like title generation.",
+  "@settingsBehaviorSmallModelHelp": {
+    "description": "CodeWalk UI string — settingsBehaviorSmallModelHelp"
+  },
+  "settingsBehaviorSmallModelResetCaveat": "Resetting `small_model` back to automatic fallback still requires editing config outside the app because `/config` patch updates cannot remove keys.",
+  "@settingsBehaviorSmallModelResetCaveat": {
+    "description": "CodeWalk UI string — settingsBehaviorSmallModelResetCaveat"
+  },
+  "settingsBehaviorSnapshotCaveat": "This controls OpenCode snapshot storage and undo/redo support, not CodeWalk local cache snapshots.",
+  "@settingsBehaviorSnapshotCaveat": {
+    "description": "CodeWalk UI string — settingsBehaviorSnapshotCaveat"
+  },
+  "settingsBehaviorTitle": "Behavior",
+  "@settingsBehaviorTitle": {
+    "description": "CodeWalk UI string — settingsBehaviorTitle"
+  },
+  "settingsBehaviorUsernameFallback": "OpenCode uses the system username because `username` is unset.",
+  "@settingsBehaviorUsernameFallback": {
+    "description": "CodeWalk UI string — settingsBehaviorUsernameFallback"
+  },
+  "settingsBehaviorUsernamePatchCaveat": "Resetting `username` back to the system default still requires editing config outside the app because `/config` patch updates cannot remove keys.",
+  "@settingsBehaviorUsernamePatchCaveat": {
+    "description": "CodeWalk UI string — settingsBehaviorUsernamePatchCaveat"
+  },
+  "settingsLanguageDescription": "Choose the language used by CodeWalk. System default follows your device language.",
+  "@settingsLanguageDescription": {
+    "description": "CodeWalk UI string — settingsLanguageDescription"
+  },
+  "settingsLanguageEmptyText": "No languages found",
+  "@settingsLanguageEmptyText": {
+    "description": "CodeWalk UI string — settingsLanguageEmptyText"
+  },
+  "settingsLanguageFieldHelper": "Applies immediately and persists across restarts.",
+  "@settingsLanguageFieldHelper": {
+    "description": "CodeWalk UI string — settingsLanguageFieldHelper"
+  },
+  "settingsLanguageFieldLabel": "App language",
+  "@settingsLanguageFieldLabel": {
+    "description": "CodeWalk UI string — settingsLanguageFieldLabel"
+  },
+  "settingsLanguageSearchHint": "Search languages",
+  "@settingsLanguageSearchHint": {
+    "description": "CodeWalk UI string — settingsLanguageSearchHint"
+  },
+  "settingsLanguageSystemDefault": "System default",
+  "@settingsLanguageSystemDefault": {
+    "description": "CodeWalk UI string — settingsLanguageSystemDefault"
+  },
+  "settingsLanguageTitle": "Language",
+  "@settingsLanguageTitle": {
+    "description": "CodeWalk UI string — settingsLanguageTitle"
+  },
+  "settingsLogsDescription": "Runtime diagnostics and troubleshooting data",
+  "@settingsLogsDescription": {
+    "description": "CodeWalk UI string — settingsLogsDescription"
+  },
+  "settingsLogsTitle": "Logs",
+  "@settingsLogsTitle": {
+    "description": "CodeWalk UI string — settingsLogsTitle"
+  },
+  "settingsNotificationsAgentSubtitle": "When a response finishes",
+  "@settingsNotificationsAgentSubtitle": {
+    "description": "CodeWalk UI string — settingsNotificationsAgentSubtitle"
+  },
+  "settingsNotificationsAgentUpdates": "Agent updates",
+  "@settingsNotificationsAgentUpdates": {
+    "description": "CodeWalk UI string — settingsNotificationsAgentUpdates"
+  },
+  "settingsNotificationsAnotherConversation": "Another conversation",
+  "@settingsNotificationsAnotherConversation": {
+    "description": "CodeWalk UI string — settingsNotificationsAnotherConversation"
+  },
+  "settingsNotificationsAppInBackground": "App in background",
+  "@settingsNotificationsAppInBackground": {
+    "description": "CodeWalk UI string — settingsNotificationsAppInBackground"
+  },
+  "settingsNotificationsBackgroundAlerts": "Android background alerts",
+  "@settingsNotificationsBackgroundAlerts": {
+    "description": "CodeWalk UI string — settingsNotificationsBackgroundAlerts"
+  },
+  "settingsNotificationsBackgroundBehavior": "Background behavior",
+  "@settingsNotificationsBackgroundBehavior": {
+    "description": "CodeWalk UI string — settingsNotificationsBackgroundBehavior"
+  },
+  "settingsNotificationsBackgroundBehaviorDescription": "Choose how CodeWalk behaves after the app leaves the foreground.",
+  "@settingsNotificationsBackgroundBehaviorDescription": {
+    "description": "CodeWalk UI string — settingsNotificationsBackgroundBehaviorDescription"
+  },
+  "settingsNotificationsBackgroundDescription": "Use low-data background monitoring for response completions, permission requests, questions, and errors while the app is not on screen.",
+  "@settingsNotificationsBackgroundDescription": {
+    "description": "CodeWalk UI string — settingsNotificationsBackgroundDescription"
+  },
+  "settingsNotificationsBackgroundToggle": "Background alerts on Android",
+  "@settingsNotificationsBackgroundToggle": {
+    "description": "CodeWalk UI string — settingsNotificationsBackgroundToggle"
+  },
+  "settingsNotificationsBackgroundToggleDescription": "Turn off all Android background checks and hide the persistent monitor notification.",
+  "@settingsNotificationsBackgroundToggleDescription": {
+    "description": "CodeWalk UI string — settingsNotificationsBackgroundToggleDescription"
+  },
+  "settingsNotificationsBatteryDescription": "If notifications only arrive when reopening the app, allow CodeWalk to run without optimization on this device.",
+  "@settingsNotificationsBatteryDescription": {
+    "description": "CodeWalk UI string — settingsNotificationsBatteryDescription"
+  },
+  "settingsNotificationsBatteryDisabled": "Battery optimization is disabled for CodeWalk.",
+  "@settingsNotificationsBatteryDisabled": {
+    "description": "CodeWalk UI string — settingsNotificationsBatteryDisabled"
+  },
+  "settingsNotificationsBatteryEnabled": "Battery optimization is enabled. Some devices may delay background alerts.",
+  "@settingsNotificationsBatteryEnabled": {
+    "description": "CodeWalk UI string — settingsNotificationsBatteryEnabled"
+  },
+  "settingsNotificationsBatteryOptimization": "Android battery optimization",
+  "@settingsNotificationsBatteryOptimization": {
+    "description": "CodeWalk UI string — settingsNotificationsBatteryOptimization"
+  },
+  "settingsNotificationsBatteryUnknown": "Could not read battery optimization status yet.",
+  "@settingsNotificationsBatteryUnknown": {
+    "description": "CodeWalk UI string — settingsNotificationsBatteryUnknown"
+  },
+  "settingsNotificationsChooseAudioFile": "Choose audio file",
+  "@settingsNotificationsChooseAudioFile": {
+    "description": "CodeWalk UI string — settingsNotificationsChooseAudioFile"
+  },
+  "settingsNotificationsChooseSystemSound": "Choose system sound",
+  "@settingsNotificationsChooseSystemSound": {
+    "description": "CodeWalk UI string — settingsNotificationsChooseSystemSound"
+  },
+  "settingsNotificationsCloseToTray": "Close to tray",
+  "@settingsNotificationsCloseToTray": {
+    "description": "CodeWalk UI string — settingsNotificationsCloseToTray"
+  },
+  "settingsNotificationsCloseToTrayDescription": "Hide window and keep running in system tray.",
+  "@settingsNotificationsCloseToTrayDescription": {
+    "description": "CodeWalk UI string — settingsNotificationsCloseToTrayDescription"
+  },
+  "settingsNotificationsDescription": "Per-category notify and sound controls",
+  "@settingsNotificationsDescription": {
+    "description": "CodeWalk UI string — settingsNotificationsDescription"
+  },
+  "settingsNotificationsDisableOptimization": "Disable optimization",
+  "@settingsNotificationsDisableOptimization": {
+    "description": "CodeWalk UI string — settingsNotificationsDisableOptimization"
+  },
+  "settingsNotificationsErrors": "Errors",
+  "@settingsNotificationsErrors": {
+    "description": "CodeWalk UI string — settingsNotificationsErrors"
+  },
+  "settingsNotificationsErrorsSubtitle": "When a session reports a failure",
+  "@settingsNotificationsErrorsSubtitle": {
+    "description": "CodeWalk UI string — settingsNotificationsErrorsSubtitle"
+  },
+  "settingsNotificationsJustClose": "Just close",
+  "@settingsNotificationsJustClose": {
+    "description": "CodeWalk UI string — settingsNotificationsJustClose"
+  },
+  "settingsNotificationsJustCloseDescription": "Exit the application completely.",
+  "@settingsNotificationsJustCloseDescription": {
+    "description": "CodeWalk UI string — settingsNotificationsJustCloseDescription"
+  },
+  "settingsNotificationsKeepLive": "Keep alerts live for 3 min",
+  "@settingsNotificationsKeepLive": {
+    "description": "CodeWalk UI string — settingsNotificationsKeepLive"
+  },
+  "settingsNotificationsKeepLiveDescription": "When a response is already running, keep realtime active briefly after leaving the app.",
+  "@settingsNotificationsKeepLiveDescription": {
+    "description": "CodeWalk UI string — settingsNotificationsKeepLiveDescription"
+  },
+  "settingsNotificationsLocal": "Local",
+  "@settingsNotificationsLocal": {
+    "description": "CodeWalk UI string — settingsNotificationsLocal"
+  },
+  "settingsNotificationsMinimizeWhenClose": "Minimize when close",
+  "@settingsNotificationsMinimizeWhenClose": {
+    "description": "CodeWalk UI string — settingsNotificationsMinimizeWhenClose"
+  },
+  "settingsNotificationsMinimizeWhenCloseDescription": "Minimize to taskbar/dock and keep running.",
+  "@settingsNotificationsMinimizeWhenCloseDescription": {
+    "description": "CodeWalk UI string — settingsNotificationsMinimizeWhenCloseDescription"
+  },
+  "settingsNotificationsNoCondition": "If no condition is selected, alerts are allowed in any context.",
+  "@settingsNotificationsNoCondition": {
+    "description": "CodeWalk UI string — settingsNotificationsNoCondition"
+  },
+  "settingsNotificationsNotify": "Notify",
+  "@settingsNotificationsNotify": {
+    "description": "CodeWalk UI string — settingsNotificationsNotify"
+  },
+  "settingsNotificationsNotifyOnlyWhen": "Notify only when",
+  "@settingsNotificationsNotifyOnlyWhen": {
+    "description": "CodeWalk UI string — settingsNotificationsNotifyOnlyWhen"
+  },
+  "settingsNotificationsOpenBatterySettings": "Open battery settings",
+  "@settingsNotificationsOpenBatterySettings": {
+    "description": "CodeWalk UI string — settingsNotificationsOpenBatterySettings"
+  },
+  "settingsNotificationsPermissions": "Permissions and questions",
+  "@settingsNotificationsPermissions": {
+    "description": "CodeWalk UI string — settingsNotificationsPermissions"
+  },
+  "settingsNotificationsPermissionsSubtitle": "When tools request your input",
+  "@settingsNotificationsPermissionsSubtitle": {
+    "description": "CodeWalk UI string — settingsNotificationsPermissionsSubtitle"
+  },
+  "settingsNotificationsPreview": "Preview",
+  "@settingsNotificationsPreview": {
+    "description": "CodeWalk UI string — settingsNotificationsPreview"
+  },
+  "settingsNotificationsRefreshStatus": "Refresh status",
+  "@settingsNotificationsRefreshStatus": {
+    "description": "CodeWalk UI string — settingsNotificationsRefreshStatus"
+  },
+  "settingsNotificationsSearchSoundType": "Search sound type",
+  "@settingsNotificationsSearchSoundType": {
+    "description": "CodeWalk UI string — settingsNotificationsSearchSoundType"
+  },
+  "settingsNotificationsSectionDescription": "Control when alerts appear and when they can play sound.",
+  "@settingsNotificationsSectionDescription": {
+    "description": "CodeWalk UI string — settingsNotificationsSectionDescription"
+  },
+  "settingsNotificationsSectionTitle": "Notifications",
+  "@settingsNotificationsSectionTitle": {
+    "description": "CodeWalk UI string — settingsNotificationsSectionTitle"
+  },
+  "settingsNotificationsSelectedSound": "Selected: {label}",
+  "@settingsNotificationsSelectedSound": {
+    "description": "CodeWalk UI string — settingsNotificationsSelectedSound"
+,
+    "placeholders": {
+      "label": { "type": "String" }
+    }  },
+  "settingsNotificationsServer": "Server",
+  "@settingsNotificationsServer": {
+    "description": "CodeWalk UI string — settingsNotificationsServer"
+  },
+  "settingsNotificationsSound": "Sound",
+  "@settingsNotificationsSound": {
+    "description": "CodeWalk UI string — settingsNotificationsSound"
+  },
+  "settingsNotificationsSoundOnlyWhen": "Sound only when",
+  "@settingsNotificationsSoundOnlyWhen": {
+    "description": "CodeWalk UI string — settingsNotificationsSoundOnlyWhen"
+  },
+  "settingsNotificationsSoundType": "Sound type",
+  "@settingsNotificationsSoundType": {
+    "description": "CodeWalk UI string — settingsNotificationsSoundType"
+  },
+  "settingsNotificationsSyncInfo": "Some category on/off toggles are synced from /config on the active server.",
+  "@settingsNotificationsSyncInfo": {
+    "description": "CodeWalk UI string — settingsNotificationsSyncInfo"
+  },
+  "settingsNotificationsSyncInfoLocal": "Current server does not expose notification toggles in /config; local values are active.",
+  "@settingsNotificationsSyncInfoLocal": {
+    "description": "CodeWalk UI string — settingsNotificationsSyncInfoLocal"
+  },
+  "settingsNotificationsSystemSoundPickerTitle": "Choose system sound",
+  "@settingsNotificationsSystemSoundPickerTitle": {
+    "description": "CodeWalk UI string — settingsNotificationsSystemSoundPickerTitle"
+  },
+  "settingsNotificationsTitle": "Notifications",
+  "@settingsNotificationsTitle": {
+    "description": "CodeWalk UI string — settingsNotificationsTitle"
+  },
+  "settingsNotificationsWhenClosing": "When closing the window",
+  "@settingsNotificationsWhenClosing": {
+    "description": "CodeWalk UI string — settingsNotificationsWhenClosing"
+  },
+  "settingsServersActive": "Active",
+  "@settingsServersActive": {
+    "description": "CodeWalk UI string — settingsServersActive"
+  },
+  "settingsServersChooseActive": "Choose active server",
+  "@settingsServersChooseActive": {
+    "description": "CodeWalk UI string — settingsServersChooseActive"
+  },
+  "settingsServersDefault": "Default",
+  "@settingsServersDefault": {
+    "description": "CodeWalk UI string — settingsServersDefault"
+  },
+  "settingsServersDescription": "OpenCode servers and health routing",
+  "@settingsServersDescription": {
+    "description": "CodeWalk UI string — settingsServersDescription"
+  },
+  "settingsServersTitle": "Servers",
+  "@settingsServersTitle": {
+    "description": "CodeWalk UI string — settingsServersTitle"
+  },
+  "settingsSetupWizard": "Setup Wizard",
+  "@settingsSetupWizard": {
+    "description": "CodeWalk UI string — settingsSetupWizard"
+  },
+  "settingsShortcutsDescription": "Portable app key bindings",
+  "@settingsShortcutsDescription": {
+    "description": "CodeWalk UI string — settingsShortcutsDescription"
+  },
+  "settingsShortcutsKeyboard": "Keyboard shortcuts",
+  "@settingsShortcutsKeyboard": {
+    "description": "CodeWalk UI string — settingsShortcutsKeyboard"
+  },
+  "settingsShortcutsSearch": "Search shortcuts",
+  "@settingsShortcutsSearch": {
+    "description": "CodeWalk UI string — settingsShortcutsSearch"
+  },
+  "settingsShortcutsTitle": "Shortcuts",
+  "@settingsShortcutsTitle": {
+    "description": "CodeWalk UI string — settingsShortcutsTitle"
+  },
+  "settingsSpeechDescription": "Engine, silence timeout, and model options",
+  "@settingsSpeechDescription": {
+    "description": "CodeWalk UI string — settingsSpeechDescription"
+  },
+  "settingsSpeechRefreshStatus": "Refresh status",
+  "@settingsSpeechRefreshStatus": {
+    "description": "CodeWalk UI string — settingsSpeechRefreshStatus"
+  },
+  "settingsSpeechSilenceTimeout": "Silence timeout: {value}s",
+  "@settingsSpeechSilenceTimeout": {
+    "description": "CodeWalk UI string — settingsSpeechSilenceTimeout"
+,
+    "placeholders": {
+      "value": { "type": "String" }
+    }  },
+  "settingsSpeechTitle": "Speech to text",
+  "@settingsSpeechTitle": {
+    "description": "CodeWalk UI string — settingsSpeechTitle"
+  },
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "CodeWalk UI string — settingsTitle"
+  },
+  "setupDebugBun": "Bun",
+  "@setupDebugBun": {
+    "description": "CodeWalk UI string — setupDebugBun"
+  },
+  "setupDebugClear": "Clear setup debug",
+  "@setupDebugClear": {
+    "description": "CodeWalk UI string — setupDebugClear"
+  },
+  "setupDebugCommandPath": "Command path",
+  "@setupDebugCommandPath": {
+    "description": "CodeWalk UI string — setupDebugCommandPath"
+  },
+  "setupDebugCopy": "Copy setup debug",
+  "@setupDebugCopy": {
+    "description": "CodeWalk UI string — setupDebugCopy"
+  },
+  "setupDebugEnvironment": "Environment diagnostics",
+  "@setupDebugEnvironment": {
+    "description": "CodeWalk UI string — setupDebugEnvironment"
+  },
+  "setupDebugInstallDir": "Install directory",
+  "@setupDebugInstallDir": {
+    "description": "CodeWalk UI string — setupDebugInstallDir"
+  },
+  "setupDebugLogs": "Captured setup logs",
+  "@setupDebugLogs": {
+    "description": "CodeWalk UI string — setupDebugLogs"
+  },
+  "setupDebugManual": "Manual troubleshooting",
+  "@setupDebugManual": {
+    "description": "CodeWalk UI string — setupDebugManual"
+  },
+  "setupDebugNetwork": "Network",
+  "@setupDebugNetwork": {
+    "description": "CodeWalk UI string — setupDebugNetwork"
+  },
+  "setupDebugNoDetails": "No captured setup details yet",
+  "@setupDebugNoDetails": {
+    "description": "CodeWalk UI string — setupDebugNoDetails"
+  },
+  "setupDebugNodeJs": "Node.js",
+  "@setupDebugNodeJs": {
+    "description": "CodeWalk UI string — setupDebugNodeJs"
+  },
+  "setupDebugNpm": "npm",
+  "@setupDebugNpm": {
+    "description": "CodeWalk UI string — setupDebugNpm"
+  },
+  "setupDebugOpenCode": "OpenCode",
+  "@setupDebugOpenCode": {
+    "description": "CodeWalk UI string — setupDebugOpenCode"
+  },
+  "setupDebugPlatform": "Platform",
+  "@setupDebugPlatform": {
+    "description": "CodeWalk UI string — setupDebugPlatform"
+  },
+  "setupDebugServerOutput": "Latest local server output",
+  "@setupDebugServerOutput": {
+    "description": "CodeWalk UI string — setupDebugServerOutput"
+  },
+  "setupDebugStatus": "Current status",
+  "@setupDebugStatus": {
+    "description": "CodeWalk UI string — setupDebugStatus"
+  },
+  "setupDebugTimeline": "Timeline",
+  "@setupDebugTimeline": {
+    "description": "CodeWalk UI string — setupDebugTimeline"
+  },
+  "setupDebugTitle": "Focused on OpenCode setup",
+  "@setupDebugTitle": {
+    "description": "CodeWalk UI string — setupDebugTitle"
+  },
+  "setupDebugWsl": "WSL",
+  "@setupDebugWsl": {
+    "description": "CodeWalk UI string — setupDebugWsl"
+  },
+  "terminalClose": "Close terminal",
+  "@terminalClose": {
+    "description": "CodeWalk UI string — terminalClose"
+  },
+  "terminalMinimize": "Minimize terminal",
+  "@terminalMinimize": {
+    "description": "CodeWalk UI string — terminalMinimize"
+  },
+  "terminalReconnect": "Reconnect terminal",
+  "@terminalReconnect": {
+    "description": "CodeWalk UI string — terminalReconnect"
+  },
+  "terminalTryAgain": "Try again",
+  "@terminalTryAgain": {
+    "description": "CodeWalk UI string — terminalTryAgain"
+  },
+  "toolAwaitingInput": "Awaiting input",
+  "@toolAwaitingInput": {
+    "description": "CodeWalk UI string — toolAwaitingInput"
+  },
+  "toolEditing": "Editing",
+  "@toolEditing": {
+    "description": "CodeWalk UI string — toolEditing"
+  },
+  "toolEditingFiles": "Editing files",
+  "@toolEditingFiles": {
+    "description": "CodeWalk UI string — toolEditingFiles"
+  },
+  "toolFinding": "Finding",
+  "@toolFinding": {
+    "description": "CodeWalk UI string — toolFinding"
+  },
+  "toolFindingFiles": "Finding files",
+  "@toolFindingFiles": {
+    "description": "CodeWalk UI string — toolFindingFiles"
+  },
+  "toolReading": "Reading",
+  "@toolReading": {
+    "description": "CodeWalk UI string — toolReading"
+  },
+  "toolReadingFile": "Reading file",
+  "@toolReadingFile": {
+    "description": "CodeWalk UI string — toolReadingFile"
+  },
+  "toolRunning": "Running",
+  "@toolRunning": {
+    "description": "CodeWalk UI string — toolRunning"
+  },
+  "toolRunningCommand": "Running command",
+  "@toolRunningCommand": {
+    "description": "CodeWalk UI string — toolRunningCommand"
+  },
+  "toolRunningTask": "Running task",
+  "@toolRunningTask": {
+    "description": "CodeWalk UI string — toolRunningTask"
+  },
+  "toolSearching": "Searching",
+  "@toolSearching": {
+    "description": "CodeWalk UI string — toolSearching"
+  },
+  "toolSearchingCode": "Searching code",
+  "@toolSearchingCode": {
+    "description": "CodeWalk UI string — toolSearchingCode"
+  },
+  "toolSearchingWeb": "Searching the web",
+  "@toolSearchingWeb": {
+    "description": "CodeWalk UI string — toolSearchingWeb"
+  },
+  "toolUpdatingTaskList": "Updating task list",
+  "@toolUpdatingTaskList": {
+    "description": "CodeWalk UI string — toolUpdatingTaskList"
+  },
+  "toolUpdatingTasks": "Updating tasks",
+  "@toolUpdatingTasks": {
+    "description": "CodeWalk UI string — toolUpdatingTasks"
+  },
+  "toolWaitingForInput": "Waiting for your input",
+  "@toolWaitingForInput": {
+    "description": "CodeWalk UI string — toolWaitingForInput"
+  },
+  "toolWriting": "Writing",
+  "@toolWriting": {
+    "description": "CodeWalk UI string — toolWriting"
+  },
+  "toolWritingFile": "Writing file",
+  "@toolWritingFile": {
+    "description": "CodeWalk UI string — toolWritingFile"
+  },
+  "tourBack": "Back",
+  "@tourBack": {
+    "description": "CodeWalk UI string — tourBack"
+  },
+  "tourSkip": "Skip",
+  "@tourSkip": {
+    "description": "CodeWalk UI string — tourSkip"
+  },
+  "trayQuit": "Quit",
+  "@trayQuit": {
+    "description": "CodeWalk UI string — trayQuit"
+  },
+  "trayShow": "Show",
+  "@trayShow": {
+    "description": "CodeWalk UI string — trayShow"
+  },
+  "workspaceBrowseDirs": "Browse directories",
+  "@workspaceBrowseDirs": {
+    "description": "CodeWalk UI string — workspaceBrowseDirs"
+  },
+  "workspaceCloseProject": "Close {project}",
+  "@workspaceCloseProject": {
+    "description": "CodeWalk UI string — workspaceCloseProject"
+,
+    "placeholders": {
+      "project": { "type": "String" }
+    }  },
+  "workspaceFilterDirs": "Filter directories",
+  "@workspaceFilterDirs": {
+    "description": "CodeWalk UI string — workspaceFilterDirs"
+  },
+  "workspaceProjectDirectory": "Project directory",
+  "@workspaceProjectDirectory": {
+    "description": "CodeWalk UI string — workspaceProjectDirectory"
+  },
+  "workspaceProjectHint": "/repo/my-project",
+  "@workspaceProjectHint": {
+    "description": "CodeWalk UI string — workspaceProjectHint"
+  },
+  "workspaceRemoveFromHistory": "Remove {name} from history",
+  "@workspaceRemoveFromHistory": {
+    "description": "CodeWalk UI string — workspaceRemoveFromHistory"
+,
+    "placeholders": {
+      "name": { "type": "String" }
+    }  }
 }

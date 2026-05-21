@@ -209,12 +209,12 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
             children: [
               ListTile(
                 leading: const Icon(Symbols.edit_rounded),
-                title: const Text('Edit'),
+                title: Text(context.l10n.composerEdit),
                 onTap: () => Navigator.of(context).pop('edit'),
               ),
               ListTile(
                 leading: const Icon(Symbols.delete_rounded),
-                title: const Text('Delete'),
+                title: Text(context.l10n.sessionDelete),
                 onTap: () => Navigator.of(context).pop('delete'),
               ),
             ],
@@ -297,8 +297,8 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
                   children: [
                     TextField(
                       controller: labelController,
-                      decoration: const InputDecoration(
-                        labelText: 'Label (optional)',
+                      decoration: InputDecoration(
+                        labelText: context.l10n.onboardingLabel,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -306,11 +306,11 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
                       controller: textController,
                       minLines: 2,
                       maxLines: 6,
-                      decoration: const InputDecoration(labelText: 'Text'),
+                      decoration: InputDecoration(labelText: 'Text'),
                     ),
                     const SizedBox(height: 12),
                     SwitchListTile(
-                      title: const Text('Append at cursor'),
+                      title: Text(context.l10n.composerCannedAppendAtCursor),
                       subtitle: const Text(
                         'Off means replace current composer text',
                       ),
@@ -324,7 +324,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
                       },
                     ),
                     SwitchListTile(
-                      title: const Text('Send automatically'),
+                      title: Text(context.l10n.composerCannedSendAutomatically),
                       subtitle: const Text(
                         'Send immediately after inserting this quick reply',
                       ),
@@ -336,7 +336,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
                       },
                     ),
                     SwitchListTile(
-                      title: const Text('Global'),
+                      title: Text(context.l10n.composerCannedScopeGlobal),
                       subtitle: Text(
                         isProjectScopeAvailable
                             ? 'Disable for project-only item'
@@ -359,7 +359,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
+                  child: Text(context.l10n.commonCancel),
                 ),
                 FilledButton(
                   onPressed: () {
@@ -381,7 +381,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
                       ),
                     );
                   },
-                  child: const Text('Save'),
+                  child: Text(context.l10n.commonSave),
                 ),
               ],
             );
@@ -460,9 +460,9 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
               color: colorScheme.outlineVariant.withValues(alpha: 0.7),
             ),
             if (items.isEmpty)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.fromLTRB(16, 12, 16, 16),
-                child: Text('No quick replies yet.'),
+                child: Text(context.l10n.composerCannedNoReplies),
               )
             else
               for (var index = 0; index < items.length; index++)

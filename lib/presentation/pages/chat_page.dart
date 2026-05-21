@@ -13,6 +13,7 @@ import 'package:simple_icons/simple_icons.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../core/config/feature_flags.dart';
+import '../../core/i18n/l10n_context.dart';
 import '../../core/di/injection_container.dart' as di;
 import '../../core/logging/app_logger.dart';
 import '../../core/network/dio_client.dart';

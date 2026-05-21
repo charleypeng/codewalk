@@ -272,7 +272,8 @@ Future<FilePartActionResult> _launchUri(
 }
 
 // Delegate to shared implementation to avoid duplication with web variant.
-Future<bool> _safeLaunch(Uri uri, {LaunchMode? mode}) => safeLaunch(uri, mode: mode);
+Future<bool> _safeLaunch(Uri uri, {LaunchMode? mode}) =>
+    safeLaunch(uri, mode: mode);
 
 String? _toFilePath(Uri uri) {
   try {

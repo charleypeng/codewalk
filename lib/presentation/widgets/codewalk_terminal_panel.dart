@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../../core/i18n/l10n_context.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:xterm/xterm.dart';
@@ -99,7 +100,7 @@ class _CodewalkTerminalPanelState extends State<CodewalkTerminalPanel> {
                       key: const ValueKey<String>(
                         'terminal_panel_reconnect_button',
                       ),
-                      tooltip: 'Reconnect terminal',
+                      tooltip: context.l10n.terminalReconnect,
                       onPressed: widget.onReconnect,
                       icon: const Icon(Symbols.refresh_rounded),
                     ),
@@ -119,13 +120,13 @@ class _CodewalkTerminalPanelState extends State<CodewalkTerminalPanel> {
                     ),
                     IconButton(
                       key: const ValueKey<String>('terminal_panel_stop_button'),
-                      tooltip: 'Close terminal',
+                      tooltip: context.l10n.terminalClose,
                       onPressed: widget.onStop,
                       icon: const Icon(Symbols.close_rounded),
                     ),
                     IconButton(
                       key: const ValueKey<String>('terminal_panel_hide_button'),
-                      tooltip: 'Minimize terminal',
+                      tooltip: context.l10n.terminalMinimize,
                       onPressed: widget.onHide,
                       icon: const Icon(Symbols.keyboard_arrow_down_rounded),
                     ),
@@ -185,7 +186,7 @@ class _CodewalkTerminalPanelState extends State<CodewalkTerminalPanel> {
             FilledButton.tonalIcon(
               onPressed: widget.onReconnect,
               icon: const Icon(Symbols.refresh_rounded),
-              label: const Text('Try again'),
+              label: Text(context.l10n.terminalTryAgain),
             ),
           ],
         ),

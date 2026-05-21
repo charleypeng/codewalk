@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import '../../core/i18n/l10n_context.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -126,7 +127,7 @@ class _SherpaModelDownloadDialogState extends State<SherpaModelDownloadDialog> {
         unawaited(_startDownload());
       },
       child: AlertDialog(
-        title: const Text('Voice Input Setup'),
+        title: Text(context.l10n.dialogVoiceInputSetup),
         content: SizedBox(
           width: 380,
           child: _isLoading
@@ -138,7 +139,7 @@ class _SherpaModelDownloadDialogState extends State<SherpaModelDownloadDialog> {
             : [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(null),
-                  child: const Text('Cancel'),
+                  child: Text(context.l10n.commonCancel),
                 ),
                 FilledButton(
                   onPressed:
@@ -146,7 +147,7 @@ class _SherpaModelDownloadDialogState extends State<SherpaModelDownloadDialog> {
                           _errorMessage != null && _isDownloading
                       ? null
                       : _startDownload,
-                  child: const Text('Download'),
+                  child: Text(context.l10n.dialogDownload),
                 ),
               ],
       ),
@@ -173,7 +174,7 @@ class _SherpaModelDownloadDialogState extends State<SherpaModelDownloadDialog> {
         DropdownButtonFormField<String>(
           value: _selectedCode,
           isExpanded: true,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Language',
             border: OutlineInputBorder(),
           ),

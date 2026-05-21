@@ -63,10 +63,7 @@ extension _ChatPageComposerWidgets on _ChatPageState {
     );
   }
 
-  Widget _buildInlineDiffCard(
-    BuildContext context,
-    ChatProvider chatProvider,
-  ) {
+  Widget _buildInlineDiffCard(BuildContext context, ChatProvider chatProvider) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(8, 0, 8, 0),

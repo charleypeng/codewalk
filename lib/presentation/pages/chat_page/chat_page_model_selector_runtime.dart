@@ -159,7 +159,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                   color: colorScheme.primary,
                 ),
               ),
-              label: const Text('Loading models'),
+              label: Text(context.l10n.modelLoadingModels),
               side: BorderSide.none,
               backgroundColor: colorScheme.surfaceContainerHighest,
             )
@@ -173,7 +173,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                 avatar: const Icon(Symbols.refresh_rounded, size: 16),
                 side: BorderSide.none,
                 shape: const StadiumBorder(),
-                label: const Text('Retry models'),
+                label: Text(context.l10n.modelRetryModels),
                 onPressed: () =>
                     unawaited(chatProvider.retryProvidersRefresh()),
               ),
@@ -1066,7 +1066,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                             });
                           },
                           decoration: InputDecoration(
-                            hintText: 'Search model or provider',
+                            hintText: context.l10n.modelSearchHint,
                             prefixIcon: const Icon(Symbols.search),
                             isDense: true,
                             border: OutlineInputBorder(
@@ -1140,16 +1140,18 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                           Navigator.of(
                                             bottomSheetContext,
                                           ).pop();
-                                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                                            if (!mounted) return;
-                                            unawaited(
-                                              chatProvider
-                                                  .setSelectedModelByProvider(
-                                                    providerId: entry.providerId,
-                                                    modelId: entry.modelId,
-                                                  ),
-                                            );
-                                          });
+                                          WidgetsBinding.instance
+                                              .addPostFrameCallback((_) {
+                                                if (!mounted) return;
+                                                unawaited(
+                                                  chatProvider
+                                                      .setSelectedModelByProvider(
+                                                        providerId:
+                                                            entry.providerId,
+                                                        modelId: entry.modelId,
+                                                      ),
+                                                );
+                                              });
                                         },
                                       ),
                                   ],
@@ -1166,7 +1168,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                         4,
                                       ),
                                       child: Text(
-                                        'Recent',
+                                        context.l10n.chatSortRecent,
                                         style: Theme.of(context)
                                             .textTheme
                                             .labelMedium
@@ -1208,16 +1210,18 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                           Navigator.of(
                                             bottomSheetContext,
                                           ).pop();
-                                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                                            if (!mounted) return;
-                                            unawaited(
-                                              chatProvider
-                                                  .setSelectedModelByProvider(
-                                                    providerId: entry.providerId,
-                                                    modelId: entry.modelId,
-                                                  ),
-                                            );
-                                          });
+                                          WidgetsBinding.instance
+                                              .addPostFrameCallback((_) {
+                                                if (!mounted) return;
+                                                unawaited(
+                                                  chatProvider
+                                                      .setSelectedModelByProvider(
+                                                        providerId:
+                                                            entry.providerId,
+                                                        modelId: entry.modelId,
+                                                      ),
+                                                );
+                                              });
                                         },
                                       ),
                                   ],
@@ -1333,7 +1337,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
     // Auto-fit width based on the longest label text.
     final textStyle =
         Theme.of(context).textTheme.labelLarge ?? const TextStyle(fontSize: 14);
-    final labels = ['Auto', ...variants.map((v) => v.name)];
+    final labels = [context.l10n.modelAuto, ...variants.map((v) => v.name)];
     final longestLabel = labels.reduce((a, b) => a.length > b.length ? a : b);
     final textPainter = TextPainter(
       text: TextSpan(text: longestLabel, style: textStyle),
@@ -1363,7 +1367,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
           value: null,
           child: Row(
             children: [
-              const Expanded(child: Text('Auto')),
+              Expanded(child: Text(context.l10n.modelAuto)),
               if (chatProvider.selectedVariantId == null)
                 const Icon(Symbols.check_rounded, size: 18),
             ],

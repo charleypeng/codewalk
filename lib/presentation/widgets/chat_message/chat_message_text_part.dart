@@ -70,7 +70,7 @@ extension _ChatMessageTextPartBuilder on _ChatMessageWidgetState {
     }
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Copied to clipboard')));
+    ).showSnackBar(SnackBar(content: Text(context.l10n.msgCopiedToClipboard)));
   }
 
   Future<void> _openMarkdownLink(BuildContext context, String href) async {

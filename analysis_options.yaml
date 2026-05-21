@@ -5,6 +5,7 @@ analyzer:
     - "**/*.g.dart"
     - "**/generated_plugin_registrant.dart"
     - "third_party/**"
+    - "tool/**"
 
 linter:
   rules:

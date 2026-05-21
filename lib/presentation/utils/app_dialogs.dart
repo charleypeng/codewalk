@@ -13,7 +13,8 @@ Future<T?> showAppDialog<T>({
   return showGeneralDialog<T>(
     context: context,
     barrierDismissible: barrierDismissible,
-    barrierLabel: barrierLabel ??
+    barrierLabel:
+        barrierLabel ??
         MaterialLocalizations.of(context).modalBarrierDismissLabel,
     barrierColor: Colors.black54,
     transitionDuration: AppAnimations.emphasized,
@@ -27,16 +28,14 @@ Future<T?> showAppDialog<T>({
         CurveTween(curve: AppAnimations.emphasizedCurve),
       );
       final scale = animation.drive(
-        Tween<double>(begin: 0.92, end: 1.0).chain(
-          CurveTween(curve: AppAnimations.emphasizedCurve),
-        ),
+        Tween<double>(
+          begin: 0.92,
+          end: 1.0,
+        ).chain(CurveTween(curve: AppAnimations.emphasizedCurve)),
       );
       return FadeTransition(
         opacity: fade,
-        child: ScaleTransition(
-          scale: scale,
-          child: child,
-        ),
+        child: ScaleTransition(scale: scale, child: child),
       );
     },
   );

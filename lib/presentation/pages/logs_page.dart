@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../core/i18n/l10n_context.dart';
 import '../../core/logging/app_logger.dart';
 
 enum _LogTimeRange {
@@ -52,9 +53,9 @@ class _LogsPageState extends State<LogsPage> {
     if (!context.mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Filtered logs copied to clipboard')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.l10n.msgFilteredLogsCopied)));
   }
 
   @override
@@ -65,9 +66,9 @@ class _LogsPageState extends State<LogsPage> {
             ? TextField(
                 controller: _searchController,
                 autofocus: true,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   border: InputBorder.none,
-                  hintText: 'Search logs',
+                  hintText: context.l10n.logsSearch,
                 ),
                 onChanged: (_) => setState(() {}),
               )
@@ -76,7 +77,7 @@ class _LogsPageState extends State<LogsPage> {
           if (_searchEnabled)
             IconButton(
               icon: const Icon(Symbols.close),
-              tooltip: 'Close search',
+              tooltip: context.l10n.logsCloseSearch,
               onPressed: () {
                 _searchController.clear();
                 setState(() {
@@ -87,7 +88,7 @@ class _LogsPageState extends State<LogsPage> {
           else
             IconButton(
               icon: const Icon(Symbols.search),
-              tooltip: 'Search logs',
+              tooltip: context.l10n.logsSearch,
               onPressed: () {
                 setState(() {
                   _searchEnabled = true;
@@ -100,7 +101,7 @@ class _LogsPageState extends State<LogsPage> {
               final filtered = _filteredEntries();
               return IconButton(
                 icon: const Icon(Symbols.copy_all),
-                tooltip: 'Copy filtered logs',
+                tooltip: context.l10n.logsCopyFiltered,
                 onPressed: filtered.isEmpty
                     ? null
                     : () => _copyLogs(context, filtered),
@@ -109,7 +110,7 @@ class _LogsPageState extends State<LogsPage> {
           ),
           IconButton(
             icon: const Icon(Symbols.delete_outline),
-            tooltip: 'Clear logs',
+            tooltip: context.l10n.logsClear,
             onPressed: AppLogger.clearEntries,
           ),
         ],

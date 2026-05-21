@@ -395,7 +395,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                             key: const ValueKey<String>(
                                               'current_session_actions_button',
                                             ),
-                                            tooltip: 'Session actions',
+                                            tooltip:
+                                                context.l10n.chatSessionActions,
                                             onSelected: (action) => unawaited(
                                               _handleCurrentSessionAction(
                                                 chatProvider,
@@ -463,7 +464,8 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                             key: const ValueKey<String>(
                                               'appbar_context_usage_button',
                                             ),
-                                            tooltip: 'Compact Context',
+                                            tooltip:
+                                                context.l10n.chatCompactContext,
                                             padding: EdgeInsets.zero,
                                             itemBuilder: (popupContext) {
                                               final serverId = context
@@ -772,7 +774,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           onPressed: () => unawaited(_returnToMainConversation(chatProvider)),
           style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
           icon: const Icon(Symbols.arrow_back_rounded),
-          label: const Text('Return to main conversation'),
+          label: Text(context.l10n.chatReturnToMainConversation),
         ),
       ),
     );
@@ -1147,7 +1149,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                 padding: const EdgeInsets.only(bottom: 8),
                                 child: FloatingActionButton.small(
                                   heroTag: 'jump_to_first_fab',
-                                  tooltip: 'Go to first message',
+                                  tooltip: context.l10n.chatGoToFirst,
                                   onPressed: _scrollToFirstMessage,
                                   backgroundColor:
                                       colorScheme.surfaceContainerHigh,
@@ -1166,7 +1168,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                       FloatingActionButton.small(
                         key: const ValueKey<String>('jump_to_latest_fab'),
                         heroTag: 'jump_to_latest_fab',
-                        tooltip: 'Go to latest message',
+                        tooltip: context.l10n.chatGoToLatest,
                         onPressed: _jumpToLatestAndResumeAutoFollow,
                         backgroundColor: _hasUnreadMessagesBelow
                             ? colorScheme.primary
@@ -1232,7 +1234,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                   chatProvider.clearError();
                   chatProvider.refresh();
                 },
-                child: const Text('Retry'),
+                child: Text(context.l10n.chatRetry),
               ),
             ],
           ),
@@ -1285,14 +1287,14 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                       children: [
                         OutlinedButton(
                           onPressed: chatProvider.clearError,
-                          child: const Text('Keep working'),
+                          child: Text(context.l10n.chatKeepWorking),
                         ),
                         FilledButton(
                           onPressed: () {
                             chatProvider.clearError();
                             chatProvider.refresh();
                           },
-                          child: const Text('Retry refresh'),
+                          child: Text(context.l10n.chatRetryRefresh),
                         ),
                       ],
                     ),
@@ -1324,13 +1326,13 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'No server configured yet',
+                    context.l10n.chatNoServerYet,
                     style: Theme.of(context).textTheme.titleMedium,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Add a server to start chatting.',
+                    context.l10n.chatAddServerToStart,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -1355,7 +1357,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                       );
                     },
                     icon: const Icon(Symbols.add),
-                    label: const Text('Set up server'),
+                    label: Text(context.l10n.chatSetUpServer),
                   ),
                 ],
               ),
@@ -1376,7 +1378,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
               ),
               const SizedBox(height: 16),
               Text(
-                'Select or create a conversation to start chatting',
+                context.l10n.chatSelectOrCreate,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -1385,7 +1387,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
               FilledButton.icon(
                 onPressed: _createNewSession,
                 icon: const Icon(Symbols.add),
-                label: const Text('New Chat'),
+                label: Text(context.l10n.chatNewChat),
               ),
             ],
           ),
@@ -1417,7 +1419,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
               ),
               const SizedBox(height: 16),
               Text(
-                'Hello! I am your AI assistant',
+                context.l10n.chatHelloAssistant,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),

@@ -16,10 +16,14 @@ class AppShapes {
 
   // Pre-built BorderRadius for convenience
   static final BorderRadius borderNone = BorderRadius.circular(none);
-  static final BorderRadius borderExtraSmall = BorderRadius.circular(extraSmall);
+  static final BorderRadius borderExtraSmall = BorderRadius.circular(
+    extraSmall,
+  );
   static final BorderRadius borderSmall = BorderRadius.circular(small);
   static final BorderRadius borderMedium = BorderRadius.circular(medium);
   static final BorderRadius borderLarge = BorderRadius.circular(large);
-  static final BorderRadius borderExtraLarge = BorderRadius.circular(extraLarge);
+  static final BorderRadius borderExtraLarge = BorderRadius.circular(
+    extraLarge,
+  );
   static final BorderRadius borderFull = BorderRadius.circular(full);
 }

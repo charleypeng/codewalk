@@ -76,7 +76,7 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
     return _buildInfoContainer(
       context,
       icon: Symbols.support_agent,
-      title: 'Agent',
+      title: context.l10n.msgInfoAgent,
       subtitle: part.name,
     );
   }
@@ -85,7 +85,7 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
     return _buildInfoContainer(
       context,
       icon: Symbols.camera_alt,
-      title: 'Snapshot',
+      title: context.l10n.msgInfoSnapshot,
       subtitle: part.snapshot,
     );
   }
@@ -98,7 +98,7 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
     return _buildInfoContainer(
       context,
       icon: Symbols.compare_arrows,
-      title: 'Patch',
+      title: context.l10n.msgInfoPatch,
       subtitle: files.isEmpty ? part.hash : '$files$suffix',
     );
   }
@@ -161,7 +161,7 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
               visualDensity: VisualDensity.compact,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             ),
-            child: const Text('View'),
+            child: Text(context.l10n.msgInfoView),
           ),
         ],
       ),
@@ -172,7 +172,7 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
     return _buildInfoContainer(
       context,
       icon: Symbols.refresh,
-      title: 'Retry #${part.attempt}',
+      title: context.l10n.msgInfoRetry + ' #${part.attempt}',
       subtitle: part.error.message,
     );
   }
@@ -181,7 +181,7 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
     return _buildInfoContainer(
       context,
       icon: Symbols.compress,
-      title: 'Compaction',
+      title: context.l10n.msgInfoCompaction,
       subtitle: part.auto ? 'automatic' : 'manual',
     );
   }

@@ -1,3 +1,4 @@
+import '../../core/i18n/l10n_context.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -117,15 +118,15 @@ class PermissionRequestCard extends StatelessWidget {
             children: [
               OutlinedButton(
                 onPressed: busy ? null : () => onDecide('reject'),
-                child: const Text('Reject'),
+                child: Text(context.l10n.permissionReject),
               ),
               OutlinedButton(
                 onPressed: busy ? null : () => onDecide('always'),
-                child: const Text('Always'),
+                child: Text(context.l10n.permissionAlways),
               ),
               FilledButton(
                 onPressed: busy ? null : () => onDecide('once'),
-                child: const Text('Allow Once'),
+                child: Text(context.l10n.permissionAllowOnce),
               ),
             ],
           ),

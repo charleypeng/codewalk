@@ -142,7 +142,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                 ),
                 IconButton(
                   icon: const Icon(Symbols.close),
-                  tooltip: 'Close',
+                  tooltip: context.l10n.chatClose,
                   onPressed: () => Navigator.of(dialogContext).pop(),
                 ),
               ],

@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/i18n/l10n_context.dart';
 import '../../core/constants/app_constants.dart';
 import '../../domain/entities/server_profile.dart';
 import '../providers/app_provider.dart';
@@ -200,11 +201,11 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(dialogContext).pop(false),
-                    child: const Text('Cancel'),
+                    child: Text(context.l10n.commonCancel),
                   ),
                   FilledButton(
                     onPressed: submitSkip,
-                    child: const Text('Skip'),
+                    child: Text(context.l10n.tourSkip),
                   ),
                 ],
               ),
@@ -460,7 +461,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Command copied')));
+    ).showSnackBar(SnackBar(content: Text(context.l10n.msgCommandCopied)));
   }
 
   @override
@@ -487,7 +488,10 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
               : null,
           actions: [
             if (widget.showSkipAction && (_step < 2 || !_connectionSuccess))
-              TextButton(onPressed: _handleSkip, child: const Text('Skip')),
+              TextButton(
+                onPressed: _handleSkip,
+                child: Text(context.l10n.tourSkip),
+              ),
           ],
         ),
         body: Center(
@@ -909,12 +913,12 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                   TextFormField(
                     controller: _urlController,
                     decoration: InputDecoration(
-                      labelText: 'Server URL',
+                      labelText: context.l10n.onboardingServerUrl,
                       hintText: _suggestedServerUrl,
                       suffixIcon: _urlController.text.trim().isEmpty
                           ? null
                           : IconButton(
-                              tooltip: 'Clear',
+                              tooltip: context.l10n.onboardingClear,
                               icon: const Icon(Symbols.clear),
                               onPressed: () {
                                 _urlController.clear();
@@ -937,9 +941,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _labelController,
-                    decoration: const InputDecoration(
-                      labelText: 'Label (optional)',
-                      hintText: 'My server',
+                    decoration: InputDecoration(
+                      labelText: context.l10n.onboardingLabel,
+                      hintText: context.l10n.onboardingLabelHint,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -956,7 +960,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                   if (_basicAuthEnabled) ...[
                     TextFormField(
                       controller: _usernameController,
-                      decoration: const InputDecoration(labelText: 'Username'),
+                      decoration: InputDecoration(
+                        labelText: context.l10n.onboardingUsername,
+                      ),
                       validator: (value) {
                         if (!_basicAuthEnabled) return null;
                         if ((value ?? '').trim().isEmpty) {
@@ -968,7 +974,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                     const SizedBox(height: 8),
                     TextFormField(
                       controller: _passwordController,
-                      decoration: const InputDecoration(labelText: 'Password'),
+                      decoration: InputDecoration(
+                        labelText: context.l10n.onboardingPassword,
+                      ),
                       obscureText: true,
                       validator: (value) {
                         if (!_basicAuthEnabled) return null;
@@ -1511,7 +1519,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
             });
           },
           icon: const Icon(Symbols.refresh_rounded),
-          label: const Text('Try again'),
+          label: Text(context.l10n.terminalTryAgain),
         ),
         const SizedBox(height: 12),
         OutlinedButton.icon(

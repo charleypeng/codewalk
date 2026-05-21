@@ -48,8 +48,7 @@ class OpenCodeTitleGenerator implements ChatTitleGenerator {
         '/session',
         data: <String, dynamic>{'title': '_title_gen'},
       );
-      sessionId =
-          (createResp.data as Map<String, dynamic>)['id'] as String?;
+      sessionId = (createResp.data as Map<String, dynamic>)['id'] as String?;
       if (sessionId == null) return null;
       ChatTitleGenerator.ephemeralSessionIds.add(sessionId);
 
@@ -70,9 +69,7 @@ class OpenCodeTitleGenerator implements ChatTitleGenerator {
       // 3. Poll for completed assistant message
       for (var i = 0; i < _maxPollAttempts; i++) {
         await Future<void>.delayed(_pollInterval);
-        final msgResp = await _dio.get<dynamic>(
-          '/session/$sessionId/message',
-        );
+        final msgResp = await _dio.get<dynamic>('/session/$sessionId/message');
         final list = msgResp.data as List<dynamic>? ?? <dynamic>[];
         final title = _extractAssistantTitle(list);
         if (title != null) return _normalizeTitle(title);

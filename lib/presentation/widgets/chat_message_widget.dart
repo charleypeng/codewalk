@@ -17,6 +17,7 @@ import '../theme/opencode_theme_presets.dart';
 import 'message_entrance_animation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/i18n/l10n_context.dart';
 import '../../core/logging/app_logger.dart';
 import '../../domain/entities/chat_message.dart';
 import '../services/file_part_action_service.dart' as file_part_action;

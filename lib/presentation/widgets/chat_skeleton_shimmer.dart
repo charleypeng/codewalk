@@ -52,8 +52,7 @@ class _ChatSkeletonShimmerState extends State<ChatSkeletonShimmer>
 
   @override
   Widget build(BuildContext context) {
-    final baseColor =
-        Theme.of(context).colorScheme.surfaceContainerHighest;
+    final baseColor = Theme.of(context).colorScheme.surfaceContainerHighest;
     final animate = AppAnimations.enabled(context);
 
     return Center(
@@ -66,8 +65,9 @@ class _ChatSkeletonShimmerState extends State<ChatSkeletonShimmer>
             children: [
               for (final (alignLeft, widthFrac) in _rows) ...[
                 Align(
-                  alignment:
-                      alignLeft ? Alignment.centerLeft : Alignment.centerRight,
+                  alignment: alignLeft
+                      ? Alignment.centerLeft
+                      : Alignment.centerRight,
                   child: animate
                       ? AnimatedBuilder(
                           animation: _controller,
@@ -111,10 +111,7 @@ class _ChatSkeletonShimmerState extends State<ChatSkeletonShimmer>
 }
 
 class _SkeletonRow extends StatelessWidget {
-  const _SkeletonRow({
-    required this.widthFraction,
-    required this.color,
-  });
+  const _SkeletonRow({required this.widthFraction, required this.color});
 
   final double widthFraction;
   final Color color;

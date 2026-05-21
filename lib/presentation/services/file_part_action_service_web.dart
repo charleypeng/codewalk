@@ -96,7 +96,8 @@ FilePartActionResult _downloadInlineAttachment({
 }
 
 // Delegate to shared implementation to avoid duplication with io variant.
-Future<bool> _safeLaunch(Uri uri, {LaunchMode? mode}) => safeLaunch(uri, mode: mode);
+Future<bool> _safeLaunch(Uri uri, {LaunchMode? mode}) =>
+    safeLaunch(uri, mode: mode);
 
 String _resolveOutputName({
   required String? filename,

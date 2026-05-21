@@ -429,7 +429,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
                     ),
                     leading: IconButton(
                       icon: const Icon(Symbols.close),
-                      tooltip: 'Close',
+                      tooltip: context.l10n.chatClose,
                       onPressed: () => Navigator.of(dialogContext).pop(),
                     ),
                   ),
@@ -479,7 +479,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
                               ),
                             ),
                             IconButton(
-                              tooltip: 'Close',
+                              tooltip: context.l10n.chatClose,
                               onPressed: () =>
                                   Navigator.of(dialogContext).pop(),
                               icon: const Icon(Symbols.close),
@@ -953,7 +953,6 @@ extension _ChatPageFileRuntime on _ChatPageState {
         return Symbols.insert_drive_file;
     }
   }
-
 
   String _fileExtension(String fileName) {
     final separator = fileName.lastIndexOf('.');

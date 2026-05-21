@@ -1,3 +1,7 @@
+import '../support/pump_localized_app.dart';
+import 'package:codewalk/core/i18n/app_locales.dart';
+import 'package:codewalk/l10n/generated/app_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -307,6 +311,14 @@ Widget _testApp(ChatProvider chatProvider, AppProvider appProvider) {
       ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
     ],
     child: MaterialApp(
+      locale: const Locale('en'),
+      localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocales.supported,
       theme: AppTheme.lightFrom(
         ColorScheme.fromSeed(seedColor: AppTheme.seedColor),
       ),
@@ -335,6 +347,14 @@ Widget _testAppWithSettings(
       ChangeNotifierProvider<SettingsProvider>.value(value: settingsProvider),
     ],
     child: MaterialApp(
+      locale: const Locale('en'),
+      localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocales.supported,
       theme: AppTheme.lightFrom(
         ColorScheme.fromSeed(seedColor: AppTheme.seedColor),
       ),

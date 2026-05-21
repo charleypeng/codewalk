@@ -1,3 +1,4 @@
+import '../../../core/i18n/l10n_context.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -117,7 +118,7 @@ class _QuotaPopupSectionState extends State<QuotaPopupSection> {
                             visualDensity: VisualDensity.compact,
                           ),
                           child: Text(
-                            'Refresh',
+                            context.l10n.chatRefresh,
                             style: textTheme.labelMedium?.copyWith(
                               fontWeight: FontWeight.w700,
                             ),
@@ -222,7 +223,7 @@ class _OpenCodeGoSetupCard extends StatelessWidget {
                           serverId: serverId,
                         );
                   },
-                  child: const Text('Forget'),
+                  child: Text(context.l10n.quotaForget),
                 ),
             ],
           ),
@@ -267,7 +268,7 @@ class _OpenCodeGoDashboardDialogState
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('OpenCode Go usage'),
+      title: Text(context.l10n.quotaOpenCodeGoUsage),
       content: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 420),
         child: Column(
@@ -280,16 +281,16 @@ class _OpenCodeGoDashboardDialogState
                 key: const ValueKey('opencode-go-open-dashboard'),
                 onPressed: _openDashboard,
                 icon: const Icon(Icons.open_in_new, size: 18),
-                label: const Text('Open OpenCode dashboard'),
+                label: Text(context.l10n.quotaOpenDashboard),
               ),
             ),
             const SizedBox(height: 8),
             TextField(
               key: const ValueKey('opencode-go-workspace-field'),
               controller: _workspaceController,
-              decoration: const InputDecoration(
-                labelText: 'Workspace ID',
-                hintText: 'workspace_...',
+              decoration: InputDecoration(
+                labelText: context.l10n.quotaWorkspaceId,
+                hintText: context.l10n.quotaWorkspaceId,
                 border: OutlineInputBorder(),
               ),
               textInputAction: TextInputAction.next,
@@ -298,9 +299,9 @@ class _OpenCodeGoDashboardDialogState
             TextField(
               key: const ValueKey('opencode-go-cookie-field'),
               controller: _cookieController,
-              decoration: const InputDecoration(
-                labelText: 'Auth cookie',
-                hintText: 'auth=...',
+              decoration: InputDecoration(
+                labelText: context.l10n.quotaAuthCookie,
+                hintText: context.l10n.quotaAuthCookie,
                 border: OutlineInputBorder(),
               ),
               obscureText: true,
@@ -311,12 +312,14 @@ class _OpenCodeGoDashboardDialogState
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.commonCancel),
         ),
         FilledButton(
           key: const ValueKey('opencode-go-save-dashboard-credentials'),
           onPressed: _saving ? null : _save,
-          child: _saving ? const Text('Saving...') : const Text('Save'),
+          child: _saving
+              ? Text(context.l10n.quotaSaving)
+              : Text(context.l10n.commonSave),
         ),
       ],
     );

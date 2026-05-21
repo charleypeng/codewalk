@@ -239,15 +239,15 @@ extension _ChatPageWorkspaceController on _ChatPageState {
                         autofocus: true,
                         onChanged: (_) => scheduleDirectorySuggestions(),
                         decoration: InputDecoration(
-                          labelText: 'Project directory',
-                          hintText: '/repo/my-project',
+                          labelText: context.l10n.workspaceProjectDirectory,
+                          hintText: context.l10n.workspaceProjectHint,
                           helperText:
                               'Choose any folder to open as project context.',
                           suffixIcon: IconButton(
                             key: const ValueKey<String>(
                               'workspace_open_directory_picker_button',
                             ),
-                            tooltip: 'Browse directories',
+                            tooltip: context.l10n.workspaceBrowseDirs,
                             onPressed: () async {
                               final picked = await _openDirectoryPicker(
                                 initialDirectory:
@@ -328,7 +328,7 @@ extension _ChatPageWorkspaceController on _ChatPageState {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(dialogContext).pop(),
-                    child: const Text('Cancel'),
+                    child: Text(context.l10n.commonCancel),
                   ),
                   FilledButton(
                     onPressed: submitSelectedDirectory,

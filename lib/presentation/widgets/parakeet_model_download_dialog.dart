@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import '../../core/i18n/l10n_context.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -128,7 +129,7 @@ class _ParakeetModelDownloadDialogState
         unawaited(_startDownload());
       },
       child: AlertDialog(
-        title: const Text('Parakeet Voice Setup'),
+        title: Text(context.l10n.dialogParakeetVoiceSetup),
         content: SizedBox(
           width: 380,
           child: _isLoading
@@ -140,11 +141,11 @@ class _ParakeetModelDownloadDialogState
             : <Widget>[
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(null),
-                  child: const Text('Cancel'),
+                  child: Text(context.l10n.commonCancel),
                 ),
                 FilledButton(
                   onPressed: _selectedId == null ? null : _startDownload,
-                  child: const Text('Download'),
+                  child: Text(context.l10n.dialogDownload),
                 ),
               ],
       ),
@@ -170,7 +171,7 @@ class _ParakeetModelDownloadDialogState
         DropdownButtonFormField<String>(
           value: _selectedId,
           isExpanded: true,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Parakeet model',
             border: OutlineInputBorder(),
           ),

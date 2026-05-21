@@ -39,9 +39,7 @@ extension _ChatInputSuggestionPopover on _ChatInputWidgetState {
                 (item) => (
                   title: '/${item.name}',
                   subtitle: item.description,
-                  icon: item.isBuiltin
-                      ? Symbols.bolt
-                      : Symbols.extension,
+                  icon: item.isBuiltin ? Symbols.bolt : Symbols.extension,
                   badge: item.source,
                 ),
               )
@@ -69,9 +67,9 @@ extension _ChatInputSuggestionPopover on _ChatInputWidgetState {
                   ),
                 )
               : suggestions.isEmpty
-              ? const SizedBox(
+              ? SizedBox(
                   height: 72,
-                  child: Center(child: Text('No suggestions')),
+                  child: Center(child: Text(context.l10n.cannedNoSuggestions)),
                 )
               : ListView.builder(
                   key: ValueKey<String>(

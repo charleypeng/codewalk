@@ -7,6 +7,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../core/i18n/l10n_context.dart';
 import '../providers/settings_provider.dart';
 import '../theme/app_animations.dart';
 import '../utils/app_page_route.dart';
@@ -74,57 +75,57 @@ class _SettingsPageState extends State<SettingsPage> {
   late final List<_SettingsSection> _sections = <_SettingsSection>[
     _section(
       id: 'servers',
-      title: 'Servers',
-      description: 'OpenCode servers and health routing',
+      title: context.l10n.settingsServersTitle,
+      description: context.l10n.settingsServersDescription,
       icon: Symbols.dns,
       builder: (_) => const ServersSettingsSection(),
     ),
     _section(
       id: 'appearance',
-      title: 'Appearance',
-      description: 'Density and timeline bubble visibility',
+      title: context.l10n.settingsAppearanceTitle,
+      description: context.l10n.settingsAppearanceDescription,
       icon: Symbols.tune_rounded,
       builder: (_) => const AppearanceSettingsSection(),
     ),
     _section(
       id: 'behavior',
-      title: 'Behavior',
-      description: 'OpenCode defaults, provenance, and composer sync safety',
+      title: context.l10n.settingsBehaviorTitle,
+      description: context.l10n.settingsBehaviorDescription,
       icon: Symbols.settings,
       builder: (_) => const BehaviorSettingsSection(),
     ),
     _section(
       id: 'notifications',
-      title: 'Notifications',
-      description: 'Per-category notify and sound controls',
+      title: context.l10n.settingsNotificationsTitle,
+      description: context.l10n.settingsNotificationsDescription,
       icon: Symbols.notifications_active,
       builder: (_) => const NotificationsSettingsSection(),
     ),
     _section(
       id: 'speech',
-      title: 'Speech to text',
-      description: 'Engine, silence timeout, and model options',
+      title: context.l10n.settingsSpeechTitle,
+      description: context.l10n.settingsSpeechDescription,
       icon: Symbols.mic_none_rounded,
       builder: (_) => const SpeechSettingsSection(),
     ),
     _section(
       id: 'logs',
-      title: 'Logs',
-      description: 'Runtime diagnostics and troubleshooting data',
+      title: context.l10n.settingsLogsTitle,
+      description: context.l10n.settingsLogsDescription,
       icon: Symbols.receipt_long_rounded,
       builder: (_) => const SizedBox.shrink(),
     ),
     _section(
       id: 'shortcuts',
-      title: 'Shortcuts',
-      description: 'Portable app key bindings',
+      title: context.l10n.settingsShortcutsTitle,
+      description: context.l10n.settingsShortcutsDescription,
       icon: Symbols.keyboard_command_key_rounded,
       builder: (_) => const ShortcutsSettingsSection(),
     ),
     _section(
       id: 'about',
-      title: 'About',
-      description: 'Version, updates and links',
+      title: context.l10n.settingsAboutTitle,
+      description: context.l10n.settingsAboutDescription,
       icon: Symbols.info,
       builder: (_) => const AboutSettingsSection(),
     ),
@@ -257,7 +258,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             leading: _showMobileDetail
                 ? IconButton(
-                    tooltip: 'Back',
+                    tooltip: context.l10n.permissionBack,
                     onPressed: () {
                       setState(() {
                         _showMobileDetail = false;
@@ -374,14 +375,14 @@ class _SettingsPageState extends State<SettingsPage> {
         FilledButton.icon(
           onPressed: _openSetupWizard,
           icon: const Icon(Symbols.auto_fix_high_rounded),
-          label: const Text('Setup Wizard'),
+          label: Text(context.l10n.settingsSetupWizard),
         ),
         const SizedBox(height: 10),
         OutlinedButton.icon(
           key: const ValueKey<String>('settings_replay_chat_tour_button'),
           onPressed: () => unawaited(_replayChatTour()),
           icon: const Icon(Symbols.play_circle_rounded),
-          label: const Text('Replay chat tour'),
+          label: Text(context.l10n.settingsAboutReplayChatTour),
         ),
         const SizedBox(height: 12),
         ..._visibleSections.map((section) {

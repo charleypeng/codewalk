@@ -84,9 +84,7 @@ extension _ChatInputStateMachine on _ChatInputWidgetState {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to send message. Draft kept for retry.'),
-        ),
+        SnackBar(content: Text(context.l10n.msgFailedToSendMessage)),
       );
       _ensureInputFocus();
     } finally {

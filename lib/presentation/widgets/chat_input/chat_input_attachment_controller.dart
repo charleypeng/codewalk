@@ -15,7 +15,7 @@ extension _ChatInputAttachmentController on _ChatInputWidgetState {
             if (widget.allowImageAttachment)
               ListTile(
                 leading: const Icon(Symbols.photo_library),
-                title: const Text('Select Images'),
+                title: Text(context.l10n.composerSelectImages),
                 onTap: () {
                   Navigator.of(context).pop();
                   unawaited(_pickImages());
@@ -24,7 +24,7 @@ extension _ChatInputAttachmentController on _ChatInputWidgetState {
             if (widget.allowPdfAttachment)
               ListTile(
                 leading: const Icon(Symbols.picture_as_pdf),
-                title: const Text('Select PDF'),
+                title: Text(context.l10n.composerSelectPdf),
                 onTap: () {
                   Navigator.of(context).pop();
                   unawaited(_pickPdf());
@@ -83,7 +83,7 @@ extension _ChatInputAttachmentController on _ChatInputWidgetState {
 
     if (nextAttachments.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No valid files were selected')),
+        SnackBar(content: Text(context.l10n.msgNoValidFilesSelected)),
       );
       return;
     }

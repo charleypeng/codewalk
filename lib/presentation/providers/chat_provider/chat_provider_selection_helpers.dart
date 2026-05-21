@@ -26,10 +26,7 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
     if (directory == null || directory.isEmpty) {
       return null;
     }
-    return <String, dynamic>{
-      'directory': directory,
-      'workspace': directory,
-    };
+    return <String, dynamic>{'directory': directory, 'workspace': directory};
   }
 
   Map<String, dynamic>? _codewalkSyncConfig(Map<String, dynamic> config) {

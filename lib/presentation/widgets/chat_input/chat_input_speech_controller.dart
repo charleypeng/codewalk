@@ -118,9 +118,7 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
       _finishListeningLoading();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Voice input is unavailable on this device'),
-        ),
+        SnackBar(content: Text(context.l10n.msgVoiceInputUnavailable)),
       );
       return;
     }
@@ -176,7 +174,7 @@ extension _ChatInputSpeechController on _ChatInputWidgetState {
       });
       _finishListeningLoading();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to start voice input')),
+        SnackBar(content: Text(context.l10n.msgFailedToStartVoiceInput)),
       );
     }
   }

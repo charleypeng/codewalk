@@ -175,7 +175,7 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Tooltip(
-                  message: 'Undo this turn',
+                  message: context.l10n.msgInfoUndoThisTurn,
                   child: IconButton(
                     key: ValueKey<String>(
                       'chat_message_undo_button_${message.id}',
@@ -188,7 +188,7 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
                       minHeight: 48,
                     ),
                     splashRadius: 18,
-                    tooltip: 'Undo this turn',
+                    tooltip: context.l10n.msgInfoUndoThisTurn,
                     onPressed: onInlineUndo,
                   ),
                 ),
@@ -265,7 +265,7 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
         size: 16,
         color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
-      tooltip: 'Message Info',
+      tooltip: context.l10n.msgInfoMessageInfo,
       itemBuilder: (context) {
         final items = <PopupMenuEntry<String>>[
           if (message.modelId != null)

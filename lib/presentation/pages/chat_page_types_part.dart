@@ -205,10 +205,10 @@ class _ComposerBuildKey {
 
   @override
   int get hashCode => Object.hash(
-        sessionId,
-        isDraftingNewChat,
-        isActivelyResponding,
-        composerEnabled,
-        composerStatusSignature,
-      );
+    sessionId,
+    isDraftingNewChat,
+    isActivelyResponding,
+    composerEnabled,
+    composerStatusSignature,
+  );
 }

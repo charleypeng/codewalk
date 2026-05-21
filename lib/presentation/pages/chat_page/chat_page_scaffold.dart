@@ -89,7 +89,7 @@ extension _ChatPageScaffold on _ChatPageState {
                         children: [
                           Expanded(
                             child: Text(
-                              'Conversations',
+                              context.l10n.chatConversations,
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                           ),
@@ -112,19 +112,19 @@ extension _ChatPageScaffold on _ChatPageState {
                               icon: const Icon(Symbols.folder_open),
                               onPressed: () =>
                                   unawaited(_openProjectSelectorDialog()),
-                              tooltip: 'Project Context',
+                              tooltip: context.l10n.chatProjectContext,
                             ),
                           ),
                           IconButton(
                             icon: const Icon(Symbols.add),
                             onPressed: _createNewSession,
-                            tooltip: 'New Chat',
+                            tooltip: context.l10n.chatNewChat,
                           ),
                           if (!FeatureFlags.refreshlessRealtime)
                             IconButton(
                               icon: const Icon(Symbols.refresh),
                               onPressed: _refreshData,
-                              tooltip: 'Refresh',
+                              tooltip: context.l10n.chatRefresh,
                             ),
                           if (onCollapseRequested != null)
                             IconButton(
@@ -135,7 +135,8 @@ extension _ChatPageScaffold on _ChatPageState {
                                 Symbols.left_panel_close_rounded,
                               ),
                               onPressed: onCollapseRequested,
-                              tooltip: 'Hide Conversations sidebar',
+                              tooltip:
+                                  context.l10n.chatHideConversationsSidebar,
                             ),
                         ],
                       ),
@@ -144,56 +145,62 @@ extension _ChatPageScaffold on _ChatPageState {
                         runSpacing: 6,
                         children: [
                           PopupMenuButton<SessionListFilter>(
-                            tooltip: 'Filter sessions',
+                            tooltip: context.l10n.chatFilterSessions,
                             onSelected: chatProvider.setSessionListFilter,
-                            itemBuilder: (context) => const [
+                            itemBuilder: (context) => [
                               PopupMenuItem(
                                 value: SessionListFilter.active,
-                                child: Text('Active'),
+                                child: Text(context.l10n.chatFilterActive),
                               ),
                               PopupMenuItem(
                                 value: SessionListFilter.archived,
-                                child: Text('Archived'),
+                                child: Text(context.l10n.chatFilterArchived),
                               ),
                               PopupMenuItem(
                                 value: SessionListFilter.all,
-                                child: Text('All'),
+                                child: Text(context.l10n.chatFilterAll),
                               ),
                             ],
                             child: _headerChip(
                               context,
                               icon: Symbols.filter_list,
                               label: switch (chatProvider.sessionListFilter) {
-                                SessionListFilter.active => 'Active',
-                                SessionListFilter.archived => 'Archived',
-                                SessionListFilter.all => 'All',
+                                SessionListFilter.active =>
+                                  context.l10n.chatFilterActive,
+                                SessionListFilter.archived =>
+                                  context.l10n.chatFilterArchived,
+                                SessionListFilter.all =>
+                                  context.l10n.chatFilterAll,
                               },
                             ),
                           ),
                           PopupMenuButton<SessionListSort>(
-                            tooltip: 'Sort sessions',
+                            tooltip: context.l10n.chatSortSessions,
                             onSelected: chatProvider.setSessionListSort,
-                            itemBuilder: (context) => const [
+                            itemBuilder: (context) => [
                               PopupMenuItem(
                                 value: SessionListSort.recent,
-                                child: Text('Most Recent'),
+                                child: Text(context.l10n.chatSortMostRecent),
                               ),
                               PopupMenuItem(
                                 value: SessionListSort.oldest,
-                                child: Text('Oldest'),
+                                child: Text(context.l10n.chatSortOldest),
                               ),
                               PopupMenuItem(
                                 value: SessionListSort.title,
-                                child: Text('Title'),
+                                child: Text(context.l10n.chatSortTitle),
                               ),
                             ],
                             child: _headerChip(
                               context,
                               icon: Symbols.sort,
                               label: switch (chatProvider.sessionListSort) {
-                                SessionListSort.recent => 'Recent',
-                                SessionListSort.oldest => 'Oldest',
-                                SessionListSort.title => 'Title',
+                                SessionListSort.recent =>
+                                  context.l10n.chatSortRecent,
+                                SessionListSort.oldest =>
+                                  context.l10n.chatSortOldest,
+                                SessionListSort.title =>
+                                  context.l10n.chatSortTitle,
                               },
                             ),
                           ),
@@ -204,7 +211,7 @@ extension _ChatPageScaffold on _ChatPageState {
                         controller: _sessionSearchController,
                         onChanged: chatProvider.setSessionSearchQuery,
                         decoration: InputDecoration(
-                          hintText: 'Search conversations',
+                          hintText: context.l10n.chatSearchConversations,
                           prefixIcon: const Icon(Symbols.search),
                           isDense: true,
                           border: OutlineInputBorder(
@@ -494,7 +501,7 @@ extension _ChatPageScaffold on _ChatPageState {
             Padding(
               padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
               child: Text(
-                'Recent sessions',
+                context.l10n.chatRecentSessions,
                 style: Theme.of(
                   context,
                 ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
@@ -820,7 +827,7 @@ extension _ChatPageScaffold on _ChatPageState {
                         child: OutlinedButton.icon(
                           onPressed: chatProvider.loadMoreSessions,
                           icon: const Icon(Symbols.expand_more),
-                          label: const Text('Load more'),
+                          label: Text(context.l10n.chatLoadMore),
                         ),
                       ),
                   ],
@@ -935,7 +942,7 @@ extension _ChatPageScaffold on _ChatPageState {
         return;
       }
       _showChatPageMessageSnackBar(
-        'Conversation is not available for this project yet',
+        context.l10n.sessionNotAvailable,
         hideCurrent: false,
       );
       return;
@@ -967,7 +974,7 @@ extension _ChatPageScaffold on _ChatPageState {
               alignment: Alignment.centerRight,
               child: IconButton(
                 key: const ValueKey<String>('hide_utility_sidebar_button'),
-                tooltip: 'Hide Utility sidebar',
+                tooltip: context.l10n.chatHideUtilitySidebar,
                 onPressed: onCollapseRequested,
                 icon: const Icon(Symbols.right_panel_close_rounded),
               ),
@@ -979,7 +986,7 @@ extension _ChatPageScaffold on _ChatPageState {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Keyboard shortcuts',
+                    context.l10n.sessionKeyboardShortcuts,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -995,14 +1002,14 @@ extension _ChatPageScaffold on _ChatPageState {
           FilledButton.icon(
             onPressed: _createNewSession,
             icon: const Icon(Symbols.add_comment),
-            label: const Text('New Chat'),
+            label: Text(context.l10n.chatNewChat),
           ),
           if (!FeatureFlags.refreshlessRealtime) ...[
             const SizedBox(height: 8),
             OutlinedButton.icon(
               onPressed: _refreshData,
               icon: const Icon(Symbols.refresh),
-              label: const Text('Refresh'),
+              label: Text(context.l10n.chatRefresh),
             ),
           ],
           const SizedBox(height: 12),
@@ -1054,7 +1061,7 @@ extension _ChatPageScaffold on _ChatPageState {
                               }
                             },
                             icon: const Icon(Symbols.sync, size: 18),
-                            tooltip: 'Refresh session details',
+                            tooltip: context.l10n.chatRefreshSessionDetails,
                           ),
                       ],
                     ),

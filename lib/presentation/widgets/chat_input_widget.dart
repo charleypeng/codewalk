@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:showcaseview/showcaseview.dart' show TooltipPosition;
 
 import '../../core/di/injection_container.dart' as di;
+import '../../core/i18n/l10n_context.dart';
 import '../../core/logging/app_logger.dart';
 import '../../data/datasources/app_local_datasource.dart';
 import '../../domain/entities/canned_answer.dart';
@@ -963,7 +964,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
       return ChatTourShowcase(
         showcaseKey: showcaseKey,
         targetKey: widget.composerShowcaseTargetKey!,
-        title: 'Chat input',
+        title: context.l10n.composerChatInput,
         description: 'Type your request here.',
         tooltipPosition: TooltipPosition.top,
         onSkipAction: widget.onTourSkip,
@@ -980,7 +981,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
       return ChatTourShowcase(
         showcaseKey: showcaseKey,
         targetKey: widget.sendButtonShowcaseTargetKey!,
-        title: 'Send',
+        title: context.l10n.composerSend,
         description: 'Send your message here.',
         tooltipPosition: TooltipPosition.top,
         includePrevious: true,
@@ -1010,7 +1011,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                   child: Chip(
                     key: const ValueKey<String>('composer_shell_mode_chip'),
                     avatar: const Icon(Symbols.terminal_rounded, size: 16),
-                    label: const Text('Shell mode'),
+                    label: Text(context.l10n.composerShellMode),
                     onDeleted: widget.enabled
                         ? () {
                             setState(() {
@@ -1183,7 +1184,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                       _mode == ChatComposerMode.normal) ...[
                     IconButton(
                       onPressed: widget.enabled ? _showAttachmentOptions : null,
-                      tooltip: 'Add attachment',
+                      tooltip: context.l10n.composerAddAttachment,
                       style: attachButtonStyle,
                       icon: const Icon(Symbols.attach_file_rounded),
                     ),
@@ -1221,7 +1222,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                                       onPressed: widget.enabled
                                           ? _toggleExtrasPopover
                                           : null,
-                                      tooltip: 'Extras',
+                                      tooltip: context.l10n.composerExtras,
                                       style: IconButton.styleFrom(
                                         minimumSize: const Size(40, 40),
                                         maximumSize: const Size(40, 40),

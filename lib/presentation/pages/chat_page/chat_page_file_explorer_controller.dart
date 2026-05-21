@@ -282,8 +282,8 @@ extension _ChatPageFileExplorerController on _ChatPageState {
                         key: const ValueKey<String>('quick_open_input'),
                         controller: queryController,
                         autofocus: true,
-                        decoration: const InputDecoration(
-                          hintText: 'Search files by name or path',
+                        decoration: InputDecoration(
+                          hintText: context.l10n.filesSearchHint,
                           prefixIcon: Icon(Symbols.search),
                         ),
                         onChanged: (value) {
@@ -355,7 +355,7 @@ extension _ChatPageFileExplorerController on _ChatPageState {
                       dialogActive = false;
                       Navigator.of(dialogContext).pop();
                     },
-                    child: const Text('Close'),
+                    child: Text(context.l10n.chatClose),
                   ),
                 ],
               ),
@@ -429,7 +429,7 @@ extension _ChatPageFileExplorerController on _ChatPageState {
                 children: [
                   Expanded(
                     child: Text(
-                      'Files',
+                      context.l10n.filesTitle,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                   ),
@@ -463,7 +463,7 @@ extension _ChatPageFileExplorerController on _ChatPageState {
                     ),
                   IconButton(
                     key: const ValueKey<String>('file_tree_quick_open_button'),
-                    tooltip: 'Quick Open',
+                    tooltip: context.l10n.filesQuickOpen,
                     visualDensity: Theme.of(context).visualDensity,
                     constraints: const BoxConstraints(
                       minWidth: 36,
@@ -484,7 +484,7 @@ extension _ChatPageFileExplorerController on _ChatPageState {
                   ),
                   IconButton(
                     key: const ValueKey<String>('file_tree_refresh_button'),
-                    tooltip: 'Refresh files',
+                    tooltip: context.l10n.filesRefresh,
                     visualDensity: Theme.of(context).visualDensity,
                     constraints: const BoxConstraints(
                       minWidth: 36,
@@ -504,7 +504,7 @@ extension _ChatPageFileExplorerController on _ChatPageState {
                   if (onCollapseRequested != null)
                     IconButton(
                       key: const ValueKey<String>('hide_files_sidebar_button'),
-                      tooltip: 'Hide Files sidebar',
+                      tooltip: context.l10n.filesHideSidebar,
                       visualDensity: Theme.of(context).visualDensity,
                       constraints: const BoxConstraints(
                         minWidth: 36,
@@ -558,7 +558,7 @@ extension _ChatPageFileExplorerController on _ChatPageState {
                                   ),
                                 );
                               },
-                              child: const Text('Retry'),
+                              child: Text(context.l10n.chatRetry),
                             ),
                           ],
                         ),

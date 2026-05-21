@@ -1,11 +1,14 @@
 import 'dart:async';
 
+import 'package:codewalk/core/i18n/app_locales.dart';
 import 'package:codewalk/data/datasources/quota_remote_datasource.dart';
 import 'package:codewalk/domain/entities/quota.dart';
 import 'package:codewalk/presentation/providers/quota_provider.dart';
 import 'package:codewalk/presentation/widgets/quota/quota_entry_row.dart';
 import 'package:codewalk/presentation/widgets/quota/quota_popup_section.dart';
+import 'package:codewalk/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
@@ -294,7 +297,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      const MaterialApp(
+      _buildApp(
         home: Scaffold(body: QuotaEntryRow(entry: entry)),
       ),
     );
@@ -316,7 +319,7 @@ void main() {
       await tester.pumpWidget(
         ChangeNotifierProvider<QuotaProvider>.value(
           value: provider,
-          child: const MaterialApp(
+          child: _buildApp(
             home: Scaffold(body: QuotaPopupSection(serverId: 'srv_test')),
           ),
         ),
@@ -363,7 +366,7 @@ void main() {
       await tester.pumpWidget(
         ChangeNotifierProvider<QuotaProvider>.value(
           value: provider,
-          child: const MaterialApp(
+          child: _buildApp(
             home: Scaffold(body: QuotaPopupSection(serverId: 'srv_test')),
           ),
         ),
@@ -394,7 +397,7 @@ void main() {
       await tester.pumpWidget(
         ChangeNotifierProvider<QuotaProvider>.value(
           value: provider,
-          child: const MaterialApp(
+          child: _buildApp(
             home: Scaffold(body: QuotaPopupSection(serverId: 'srv_test')),
           ),
         ),
@@ -435,5 +438,18 @@ void main() {
         findsNothing,
       );
     },
+  );
+}
+
+Widget _buildApp({required Widget home}) {
+  return MaterialApp(
+    locale: const Locale('en'),
+    localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+      AppLocalizations.delegate,
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+    ],
+    supportedLocales: AppLocales.supported,
+    home: home,
   );
 }

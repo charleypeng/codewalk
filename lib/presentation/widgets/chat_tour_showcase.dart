@@ -1,3 +1,4 @@
+import '../../core/i18n/l10n_context.dart';
 import 'package:flutter/material.dart';
 import 'package:showcaseview/showcaseview.dart';
 
@@ -109,14 +110,14 @@ class ChatTourShowcase extends StatelessWidget {
                         style: TextButton.styleFrom(
                           foregroundColor: colorScheme.onSurfaceVariant,
                         ),
-                        child: const Text('Skip'),
+                        child: Text(context.l10n.tourSkip),
                       ),
                     if (includePrevious)
                       TextButton(
                         onPressed:
                             onPreviousAction ??
                             () => ShowcaseView.get().previous(),
-                        child: const Text('Back'),
+                        child: Text(context.l10n.permissionBack),
                       ),
                     FilledButton(
                       onPressed:
