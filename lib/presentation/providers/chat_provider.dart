@@ -335,6 +335,7 @@ class ChatProvider extends ChangeNotifier {
   _HistoryComposerSync? _pendingHistoryComposerSync;
   _PendingReplacementBranch? _pendingReplacementBranch;
   int _historyComposerSyncToken = 0;
+  bool _historyRevertInFlight = false;
   final LinkedHashMap<String, List<ChatMessage>> _sessionMessagesLruCache =
       LinkedHashMap<String, List<ChatMessage>>();
 
@@ -4533,12 +4534,29 @@ class ChatProvider extends ChangeNotifier {
   }
 
   Future<bool> revertToTurn(String messageId) async {
+    if (_isOptimisticLocalUserMessageId(messageId) || _historyRevertInFlight) {
+      return false;
+    }
+
     final session = _currentSession;
     final useCase = revertChatMessage;
     if (session == null || useCase == null) {
       return false;
     }
 
+    _historyRevertInFlight = true;
+    try {
+      return await _performRevertToTurn(session: session, messageId: messageId);
+    } finally {
+      _historyRevertInFlight = false;
+    }
+  }
+
+  Future<bool> _performRevertToTurn({
+    required ChatSession session,
+    required String messageId,
+  }) async {
+    final useCase = revertChatMessage!;
     _clearPendingReplacementBranch(sessionId: session.id);
 
     final revertedMessage = _findUserMessageById(messageId);
@@ -4555,8 +4573,8 @@ class ChatProvider extends ChangeNotifier {
       ),
     );
 
-    return result.fold(
-      (failure) {
+    return result.fold<Future<bool>>(
+      (failure) async {
         _handleFailure(failure);
         notifyListeners();
         return false;

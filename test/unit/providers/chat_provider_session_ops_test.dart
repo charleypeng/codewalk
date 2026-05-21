@@ -369,6 +369,16 @@ void main() {
       expect(pendingSync.draft?.text, 'first prompt');
     });
 
+    test('revertToTurn rejects optimistic local user message ids', () async {
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+
+      final ok = await provider.revertToTurn('local_user_1000_1');
+
+      expect(ok, isFalse);
+      expect(chatRepository.lastRevertMessageId, isNull);
+    });
+
     test(
       'redoLastTurn advances revert boundary before full unrevert',
       () async {
