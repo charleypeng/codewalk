@@ -873,6 +873,10 @@ void main() {
         expect(server.lastPermissionReplyRequestId, 'perm_1');
         expect(server.lastPermissionReplySessionId, 'ses_1');
         expect(server.lastPermissionReplyPayload?['response'], 'once');
+        expect(
+          server.lastPermissionReplyPayload?.containsKey('remember'),
+          isFalse,
+        );
 
         await remote.replyQuestion(
           requestId: 'q_1',
@@ -918,6 +922,38 @@ void main() {
         expect(server.lastPermissionReplyRequestId, 'perm_legacy_1');
         expect(server.lastPermissionReplySessionId, isNull);
         expect(server.lastPermissionReplyPayload?['reply'], 'always');
+        expect(server.lastPermissionReplyPayload?['remember'], isTrue);
+      },
+    );
+
+    test(
+      'ChatRemoteDataSource includes remember for always permission replies',
+      () async {
+        server.pendingPermissions = <Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'perm_remember_1',
+            'sessionID': 'ses_1',
+            'permission': 'edit',
+            'patterns': <String>['lib/**'],
+            'always': <String>[],
+            'metadata': <String, dynamic>{},
+          },
+        ];
+
+        final remote = ChatRemoteDataSourceImpl(
+          dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
+        );
+
+        await remote.replyPermission(
+          sessionId: 'ses_1',
+          requestId: 'perm_remember_1',
+          reply: 'always',
+        );
+
+        expect(server.lastPermissionReplyRequestId, 'perm_remember_1');
+        expect(server.lastPermissionReplySessionId, 'ses_1');
+        expect(server.lastPermissionReplyPayload?['response'], 'always');
+        expect(server.lastPermissionReplyPayload?['remember'], isTrue);
       },
     );
 

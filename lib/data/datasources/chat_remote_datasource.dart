@@ -2243,6 +2243,9 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
     try {
       final body = <String, dynamic>{'response': reply};
+      if (reply == 'always') {
+        body['remember'] = true;
+      }
       if (message != null && message.trim().isNotEmpty) {
         body['message'] = message.trim();
       }
@@ -2260,6 +2263,9 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         if (e.response?.statusCode == 404 || e.response?.statusCode == 405) {
           // Fallback to legacy route
           final legacyBody = <String, dynamic>{'reply': reply};
+          if (reply == 'always') {
+            legacyBody['remember'] = true;
+          }
           if (message != null && message.trim().isNotEmpty) {
             legacyBody['message'] = message.trim();
           }
