@@ -15,9 +15,8 @@ class AppLocaleInfo {
 
   String get code => locale.languageCode;
 
-  String get displayName => nativeName == englishName
-      ? nativeName
-      : '$nativeName ($englishName)';
+  String get displayName =>
+      nativeName == englishName ? nativeName : '$nativeName ($englishName)';
 }
 
 class AppLocales {
@@ -88,8 +87,8 @@ class AppLocales {
     ),
     AppLocaleInfo(
       locale: Locale('pt'),
-      englishName: 'Portuguese',
-      nativeName: 'Português',
+      englishName: 'Brazilian Portuguese',
+      nativeName: 'Português (Brasil)',
       textDirection: TextDirection.ltr,
     ),
     AppLocaleInfo(
@@ -134,8 +133,9 @@ class AppLocales {
     if (normalized == null || normalized.isEmpty) {
       return null;
     }
+    final languageCode = normalized.split(RegExp('[-_]')).first;
     for (final info in infos) {
-      if (info.code == normalized) {
+      if (info.code == languageCode) {
         return info;
       }
     }

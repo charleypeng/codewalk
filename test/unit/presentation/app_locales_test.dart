@@ -38,4 +38,21 @@ void main() {
 
     expect(resolved, AppLocales.english);
   });
+
+  test(
+    'resolves Portuguese region variants to Brazilian Portuguese fallback',
+    () {
+      final resolved = AppLocales.resolutionCallback(
+        const Locale('pt', 'BR'),
+        AppLocales.supported,
+      );
+
+      expect(resolved, const Locale('pt'));
+      expect(AppLocales.infoForCode('pt_BR')?.locale, const Locale('pt'));
+      expect(
+        AppLocales.infoForCode('pt-BR')?.displayName,
+        'Português (Brasil) (Brazilian Portuguese)',
+      );
+    },
+  );
 }
