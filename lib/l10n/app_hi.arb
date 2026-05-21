@@ -145,6 +145,7 @@
   "sessionCopyLink": "Copy Link",
   "sessionDelete": "Delete",
   "sessionDeleteTitle": "Delete Conversation",
+  "sessionDiffReview": "Review changes",
   "sessionFailedRename": "Failed to rename conversation",
   "sessionFailedUpdateArchive": "Failed to update archive state",
   "sessionFailedUpdateSharing": "Failed to update sharing state",

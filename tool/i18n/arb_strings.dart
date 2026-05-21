@@ -460,6 +460,7 @@ const englishTemplate = <String, String>{
       'Enter a username to save a custom OpenCode conversation name.',
   'msgClearUsernameNeedsConfigEdit':
       'Clearing the OpenCode conversation username still requires editing config outside the app.',
+  'sessionDiffReview': 'Review changes',
 
   // ── Desktop Tray ────────────────────────────────────────────────
   'trayShow': 'Show',
@@ -1034,6 +1035,7 @@ const translations = <String, Map<String, String>>{
         'Digite um nome de usuário para salvar um nome de conversa personalizado do OpenCode.',
     'msgClearUsernameNeedsConfigEdit':
         'Limpar o nome de usuário da conversa do OpenCode ainda requer editar a config fora do app.',
+    'sessionDiffReview': 'Revisar alterações',
 
     // ── Desktop Tray ──────────────────────────────────────────
     'trayShow': 'Mostrar',

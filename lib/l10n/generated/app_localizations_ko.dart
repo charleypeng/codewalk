@@ -462,6 +462,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get sessionDeleteTitle => 'Delete Conversation';
 
   @override
+  String get sessionDiffReview => 'Review changes';
+
+  @override
   String get sessionFailedRename => 'Failed to rename conversation';
 
   @override

@@ -992,6 +992,12 @@ abstract class AppLocalizations {
   /// **'Delete Conversation'**
   String get sessionDeleteTitle;
 
+  /// CodeWalk UI string — sessionDiffReview
+  ///
+  /// In en, this message translates to:
+  /// **'Review changes'**
+  String get sessionDiffReview;
+
   /// CodeWalk UI string — sessionFailedRename
   ///
   /// In en, this message translates to:

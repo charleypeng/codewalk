@@ -145,6 +145,7 @@
   "sessionCopyLink": "Copiar Link",
   "sessionDelete": "Excluir",
   "sessionDeleteTitle": "Excluir Conversa",
+  "sessionDiffReview": "Revisar alterações",
   "sessionFailedRename": "Falha ao renomear conversa",
   "sessionFailedUpdateArchive": "Falha ao atualizar estado de arquivamento",
   "sessionFailedUpdateSharing": "Falha ao atualizar estado de compartilhamento",

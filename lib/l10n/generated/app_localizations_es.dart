@@ -467,6 +467,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sessionDeleteTitle => 'Eliminar Conversación';
 
   @override
+  String get sessionDiffReview => 'Review changes';
+
+  @override
   String get sessionFailedRename => 'Error al renombrar conversación';
 
   @override
