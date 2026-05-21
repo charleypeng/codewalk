@@ -307,20 +307,21 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
+        final l10n = dialogContext.l10n;
         return AlertDialog(
-          title: Text(context.l10n.settingsAboutResetAppQuestion),
-          content: Text(context.l10n.settingsAboutResetAppWarning),
+          title: Text(l10n.settingsAboutResetAppQuestion),
+          content: Text(l10n.settingsAboutResetAppWarning),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: Text(context.l10n.commonCancel),
+              child: Text(l10n.commonCancel),
             ),
             FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.error,
               ),
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: Text(context.l10n.commonReset),
+              child: Text(l10n.commonReset),
             ),
           ],
         );
