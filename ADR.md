@@ -34,6 +34,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-028: Unified Scroll Ownership Model for Chat Timeline
 - ADR-029: Host-Discovered Quota and Rate-Limit Monitoring for OpenChamber Parity
 - ADR-030: OpenChamber-Driven Realtime Hardening and Permission Continuity
+- ADR-031: Historical Inline Revert via OpenCode Session Revert Endpoint
 
 ---
 
@@ -1062,6 +1063,8 @@ Related: ADR-003, ADR-018, ADR-019, ADR-022.
 - Product rollback: revert the composer toggle and drain coordinator commits; the background context key (`codewalk.android.background.permission_auto_approve.v1`) is removed from SharedPreferences on clear.
 - Safe fallback: existing inline permission cards remain available as the manual approval path in both foreground and background flows.
 
+**`remember: true` with `always` permission replies**: When CodeWalk auto-approves a permission request using the `always` response type, it sends `remember: true` in the permission reply body per the documented OpenCode permission reply contract. This ensures the server persists the grant so that future identical permission requests from the same session hierarchy are automatically approved server-side, reducing repeated auto-approve round-trips. When the request exposes only `once` semantics, `remember` is omitted (or `false`), keeping the single-shot grant behavior.
+
 **Regression coverage**:
 - Widget coverage verifies default-on behavior, persisted opt-out, mirrored subsession auto-approval, and non-regression for question prompts.
 - The drain coordinator uses `always` when available, otherwise `Allow Once`, and cools down requests that throw during auto-approval.
@@ -1527,3 +1530,71 @@ High-latency or unstable connections during OpenChamber-driven sessions revealed
 ### ADR-023 Compatibility
 
 This hardening is fully compliant with ADR-023. It enforces server-authoritative state by blocking local mutations when transport integrity is lost and ensures the client waits for authoritative server lists before modifying local visibility of pinned items.
+
+---
+
+## ADR-031: Historical Inline Revert via OpenCode Session Revert Endpoint (2026-05-21)
+
+**Status**: Accepted
+
+**Related**: ADR-023 (Official OpenCode Contract-First Compatibility Policy), ADR-020 (Session-Level SWR Cache), ADR-028 (Unified Scroll Ownership)
+
+### Context
+
+Users need the ability to rewind a conversation to a specific historical user message — undoing all subsequent turns (assistant responses, tool calls, follow-ups) and restoring the session state as it existed at that point. Without this capability, the only way to "undo" a conversation branch is to create a new session and re-prompt, losing all prior context and work.
+
+OpenCode provides `POST /session/:id/revert` with a `messageID` body field. CodeWalk already used that endpoint for latest-turn Undo. Historical inline rewind extends the same official endpoint to any older server-confirmed user message, keeping the server authoritative for the revert boundary while reusing the existing refresh/reconcile path.
+
+Key challenges:
+- **In-flight operation protection**: Repeated rewind taps must not dispatch overlapping revert requests.
+- **Local optimistic message guard**: Messages with `local_user_*` IDs are client-only artifacts that the server does not know about. They must not be exposed as rewind targets or sent to the server.
+- **Composer draft restoration**: After a revert, the composer should restore the text that was present at the reverted-to user turn, enabling the user to continue from that point.
+- **ADR-023 compliance**: The revert uses the official session revert endpoint; local visibility updates are an immediate reflection of the server revert boundary, not a replacement protocol.
+
+### Decision
+
+1. **Server-authoritative revert via `revertToTurn(messageId)`**: `ChatProvider.revertToTurn(String messageId)` calls the existing `RevertChatMessage` use case, which sends `POST /session/:id/revert` with the selected server-confirmed user `messageID`. The provider then applies `SessionRevert(messageId: messageId)`, queues composer draft restoration, refreshes the active session view, and reloads session insights.
+
+2. **Inline historical user-message rewind trigger**: Each historical, server-confirmed user message in the chat timeline exposes a dedicated inline rewind action. The latest revertible user message keeps the existing inline Undo action. Assistant messages, non-user messages, and optimistic local user messages do not expose historical rewind.
+
+3. **`_historyRevertInFlight` guard**: A boolean flag `_historyRevertInFlight` serializes calls to `revertToTurn`. While one revert call is in flight, subsequent `revertToTurn` requests return `false` without dispatching another server request. This narrowly prevents repeated-tap duplicate reverts without changing unrelated send, realtime, or revalidation behavior.
+
+4. **`local_user_*` message guard**: The timeline builder only wires `onInlineRevertToHere` when the message is a `UserMessage`, is not the latest revertible message, and does not start with `local_user_`. The provider also rejects `local_user_*` IDs at the `revertToTurn` entry point so future callers cannot bypass the UI guard.
+
+5. **Composer draft restoration**: After a successful revert, the provider restores the selected user message into the pending history composer sync via `_buildComposerDraftFromUserMessage`. The composer can then show the reverted prompt so the user can edit and resend from that point.
+
+6. **Widget ownership**: `ChatMessageWidget` exposes an optional `onInlineRevertToHere` callback, includes that callback in its build-skip cache invalidation, and renders a distinct `settings_backup_restore` action labeled `Rewind and edit from here` when the callback is present and the latest Undo action is not shown.
+
+7. **Permission remember companion fix**: For permission replies using `always`, CodeWalk sends `remember: true` in both the documented session-scoped reply body and the existing top-level legacy fallback. This implements ADR-023 EXC-001's durable-grant intent without changing question flows or non-`always` permission semantics.
+
+### Rationale
+
+- **Server-authoritative revert** follows ADR-023 contract-first policy by reusing `POST /session/:id/revert` instead of inventing client-only history truncation.
+- **`_historyRevertInFlight`** prevents duplicate requests from repeated taps while keeping the change narrow and low risk.
+- **`local_user_*` guard** is necessary because optimistic IDs are client-only artifacts. Sending them to the server would violate ADR-023 Pitfall P-001's ownership boundary.
+- **Composer draft restoration** is a natural UX expectation: after rewinding, the user wants to continue from that point, not start from an empty composer.
+- **Distinct inline action** avoids conflating latest-turn Undo with historical branch/rewind semantics.
+
+### Consequences
+
+- ✅ Users can rewind conversations to historical server-confirmed user messages through the official session revert endpoint.
+- ✅ ADR-023 compliance maintained: the server owns the revert boundary and the client refreshes from that authoritative state.
+- ✅ `_historyRevertInFlight` guard prevents duplicate historical revert requests.
+- ✅ `local_user_*` messages are excluded in both UI wiring and provider entry-point validation.
+- ✅ Composer draft restoration enables seamless continuation after rewind.
+- ⚠ The revert operation is network-dependent; offline or disconnected sessions cannot be rewound until connectivity is restored.
+- ⚠ `_historyRevertInFlight` adds another state flag to the chat provider; it must remain tightly scoped to revert dispatch unless a future ADR expands history-action serialization.
+- ❌ Local-only message truncation (client-side rewind without server) is intentionally not supported to preserve ADR-023 contract integrity.
+
+### ADR-023 Compatibility
+
+This feature is fully compliant with ADR-023. The revert uses the official OpenCode `POST /session/:id/revert` endpoint as the server-authoritative history operation. The client never introduces a separate local-only rewind protocol. The `local_user_*` ID guard (Pitfall P-001) is respected in both timeline wiring and provider validation. No new API endpoints or contract deviations are introduced.
+
+### Key Files
+
+- `lib/presentation/providers/chat_provider.dart` — `revertToTurn`, `_historyRevertInFlight`, `local_user_*` guard, composer draft restoration, and refresh/insights reload after revert
+- `lib/domain/usecases/revert_chat_message.dart` — use case boundary for `POST /session/:id/revert`
+- `lib/data/datasources/chat_remote_datasource.dart` — session revert API call and permission `remember: true` reply payloads
+- `lib/presentation/pages/chat_page/chat_page_timeline_builder.dart` — historical server-confirmed user-message callback wiring
+- `lib/presentation/widgets/chat_message_widget.dart` — optional `onInlineRevertToHere` callback and rebuild cache invalidation
+- `lib/presentation/widgets/chat_message/chat_message_content.dart` — inline rewind action rendering

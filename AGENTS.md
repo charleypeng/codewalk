@@ -52,14 +52,15 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | 020 | Session-level SWR cache with persisted LRU snapshots — instant reopen of long sessions with background revalidation | 810–869 |
 | 021 | Context-scoped New Chat draft state — prevent cross-project draft leakage during fast SWR switches | 870–913 |
 | 022 | Unified project context controls with sidebar session previews — integrated navigation while preserving `serverId::scopeId` ownership | 914–954 |
-| 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web; community reference openchamber added as secondary source | 955–1077 |
-| 024 | Modal Enter keyboard policy for safe dialogs — speed up keyboard confirmation without enabling destructive or ambiguous modal flows | 1078–1152 |
-| 025 | Settled Assistant-Work Disclosure Ownership — client-side architectural ownership to prevent open/close thrash, scroll jumps on session return | 1153–1204 |
-| 026 | ⚠️ SUPERSEDED — Local PTY shell replaced by server-hosted PTY (ADR-027) | 1205–1263 |
-| 027 | Server-hosted PTY terminal with embedded client rendering — runs on OpenCode host in active project directory, client renders via streaming transport, local flutter_pty removed, close/minimize/maximize semantics preserved, composer hides on compact/mobile | 1264–1325 |
-| 028 | Unified scroll ownership via `_ScrollOwner` enum — eliminate scroll jumping across send/return/pagination triggers, user drag priority, force scroll bypass; additive guardrails cover passive provider scroll suppression, manual follow pause near bottom, response-settle shrink-snap suppression, duplicate return-to-chat scoping, queued cached restore targets for settled-vs-active session return, active-turn/global-fallback guards against passive background settle, a single reading-mode final reveal path for long answers, deferred tool-only merge until settlement to prevent active-turn structural shrink, and a narrow active-turn shrink heal while passive follow remains enabled | 1326–1405 |
-| 029 | Host-discovered quota and rate-limit monitoring for OpenChamber parity — server-host quota ownership, strategy-chain transport (REST/Shell), popup-only UI (compact-first), grouped providers with pace/progress, explicit parity opt-in; narrow `opencode-go` exception for dashboard credential opt-in (workspace ID + auth cookie, scoped by serverId, quota-probe only, removable via UI) | 1409–1486 |
-| 030 | OpenChamber-driven realtime hardening and permission continuity — atomic refresh consolidation, mutation guard during reconnect failures, authoritative pruning delay, and bounded reconnect helpers | 1489–1529 |
+| 023 | Official OpenCode contract-first compatibility policy — prevent regressions from lifecycle/API semantic drift across app vs server/CLI/web; community reference openchamber added as secondary source | 958–1080 |
+| 024 | Modal Enter keyboard policy for safe dialogs — speed up keyboard confirmation without enabling destructive or ambiguous modal flows | 1083–1157 |
+| 025 | Settled Assistant-Work Disclosure Ownership — client-side architectural ownership to prevent open/close thrash, scroll jumps on session return | 1158–1209 |
+| 026 | ⚠️ SUPERSEDED — Local PTY shell replaced by server-hosted PTY (ADR-027) | 1210–1268 |
+| 027 | Server-hosted PTY terminal with embedded client rendering — runs on OpenCode host in active project directory, client renders via streaming transport, local flutter_pty removed, close/minimize/maximize semantics preserved, composer hides on compact/mobile | 1269–1330 |
+| 028 | Unified scroll ownership via `_ScrollOwner` enum — eliminate scroll jumping across send/return/pagination triggers, user drag priority, force scroll bypass; additive guardrails cover passive provider scroll suppression, manual follow pause near bottom, response-settle shrink-snap suppression, duplicate return-to-chat scoping, queued cached restore targets for settled-vs-active session return, active-turn/global-fallback guards against passive background settle, a single reading-mode final reveal path for long answers, deferred tool-only merge until settlement to prevent active-turn structural shrink, and a narrow active-turn shrink heal while passive follow remains enabled | 1331–1411 |
+| 029 | Host-discovered quota and rate-limit monitoring for OpenChamber parity — server-host quota ownership, strategy-chain transport (REST/Shell), popup-only UI (compact-first), grouped providers with pace/progress, explicit parity opt-in; narrow `opencode-go` exception for dashboard credential opt-in (workspace ID + auth cookie, scoped by serverId, quota-probe only, removable via UI) | 1412–1491 |
+| 030 | OpenChamber-driven realtime hardening and permission continuity — atomic refresh consolidation, mutation guard during reconnect failures, authoritative pruning delay, and bounded reconnect helpers | 1492–1534 |
+| 031 | Historical inline revert through the official session revert endpoint — `revertToTurn`, duplicate-revert guard, `local_user_*` validation, composer draft restoration, and distinct inline rewind action for server-confirmed user messages | 1536–1600 |
 
 ## 🗺 CODEBASE Quick Reference (details in `CODEBASE.md`)
 
@@ -68,15 +69,16 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | CODEBASE Topic | Lines |
 |----------------|-------|
 | Project Snapshot | 3–10 |
-| Folder Structure | 12–51 |
-| Entry Points | 53–62 |
-| Core Modules | 64–139 |
-| Chat Architecture | 141–234 |
-| Data & Domain Layers | 235–245 |
-| Key API/DataSource locations | 247–265 |
-| Main Commands | 267–288 |
-| Testing/Quality Gates | 290–310 |
-| Notes | 312–472 |
+| Folder Structure | 12–58 |
+| Entry Points | 60–69 |
+| Core Modules | 71–149 |
+| Chat Architecture | 151–244 |
+| Data & Domain Layers | 246–256 |
+| Key API/DataSource locations | 258–275 |
+| Main Commands | 278–300 |
+| Testing/Quality Gates | 302–322 |
+| Internationalization (i18n) | 324–334 |
+| Notes | 336–496 |
 
 ## ⚙️ Makefile Quick Reference (details in `Makefile`)
 
