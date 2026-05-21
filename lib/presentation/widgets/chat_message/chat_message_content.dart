@@ -164,38 +164,71 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
               ),
             );
 
-            if (!isUser || !showInlineUndoAction) {
+            if (!isUser) {
               return bubble;
             }
 
-            // Keep the undo control tied to the latest user turn while leaving
-            // the bubble header free for message metadata and content.
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Tooltip(
-                  message: context.l10n.msgInfoUndoThisTurn,
-                  child: IconButton(
-                    key: ValueKey<String>(
-                      'chat_message_undo_button_${message.id}',
+            if (showInlineUndoAction) {
+              // Keep the undo control tied to the latest user turn while
+              // leaving the bubble header free for message metadata and content.
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Tooltip(
+                    message: context.l10n.msgInfoUndoThisTurn,
+                    child: IconButton(
+                      key: ValueKey<String>(
+                        'chat_message_undo_button_${message.id}',
+                      ),
+                      icon: const Icon(Symbols.undo_rounded),
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 48,
+                        minHeight: 48,
+                      ),
+                      splashRadius: 18,
+                      tooltip: context.l10n.msgInfoUndoThisTurn,
+                      onPressed: onInlineUndo,
                     ),
-                    icon: const Icon(Symbols.undo_rounded),
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 48,
-                      minHeight: 48,
-                    ),
-                    splashRadius: 18,
-                    tooltip: context.l10n.msgInfoUndoThisTurn,
-                    onPressed: onInlineUndo,
                   ),
-                ),
-                const SizedBox(width: 8),
-                Flexible(fit: FlexFit.loose, child: bubble),
-              ],
-            );
+                  const SizedBox(width: 8),
+                  Flexible(fit: FlexFit.loose, child: bubble),
+                ],
+              );
+            }
+
+            if (onInlineRevertToHere != null) {
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Tooltip(
+                    message: 'Rewind and edit from here',
+                    child: IconButton(
+                      key: ValueKey<String>(
+                        'chat_message_revert_button_${message.id}',
+                      ),
+                      icon: const Icon(Symbols.settings_backup_restore),
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 48,
+                        minHeight: 48,
+                      ),
+                      splashRadius: 18,
+                      tooltip: 'Rewind and edit from here',
+                      onPressed: onInlineRevertToHere,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(fit: FlexFit.loose, child: bubble),
+                ],
+              );
+            }
+
+            return bubble;
           },
         ),
       ),

@@ -11,6 +11,49 @@ import 'package:material_symbols_icons/symbols.dart';
 
 @Tags(<String>['slow'])
 void main() {
+  testWidgets('renders historical revert action for user message callback', (
+    WidgetTester tester,
+  ) async {
+    var tapped = 0;
+    final message = UserMessage(
+      id: 'msg_user_revert_widget',
+      sessionId: 'ses_revert_widget',
+      time: DateTime.fromMillisecondsSinceEpoch(1000),
+      parts: const <MessagePart>[
+        TextPart(
+          id: 'part_user_revert_widget',
+          messageId: 'msg_user_revert_widget',
+          sessionId: 'ses_revert_widget',
+          text: 'edit this older prompt',
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: message,
+            onInlineRevertToHere: () {
+              tapped += 1;
+            },
+          ),
+        ),
+      ),
+    );
+
+    final button = find.byKey(
+      const ValueKey<String>(
+        'chat_message_revert_button_msg_user_revert_widget',
+      ),
+    );
+    expect(button, findsOneWidget);
+    expect(find.byIcon(Symbols.settings_backup_restore), findsOneWidget);
+
+    await tester.tap(button);
+    expect(tapped, 1);
+  });
+
   testWidgets('does not animate part entrances for initial history render', (
     WidgetTester tester,
   ) async {

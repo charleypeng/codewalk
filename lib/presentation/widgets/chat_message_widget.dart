@@ -56,6 +56,7 @@ class ChatMessageWidget extends StatefulWidget {
     this.showInlineUndoAction = false,
     this.isSessionActivelyResponding = false,
     this.onInlineUndo,
+    this.onInlineRevertToHere,
     this.onBackgroundLongPress,
     this.onBackgroundLongPressEnd,
     this.onSubtaskNavigate,
@@ -71,6 +72,7 @@ class ChatMessageWidget extends StatefulWidget {
   final bool showInlineUndoAction;
   final bool isSessionActivelyResponding;
   final VoidCallback? onInlineUndo;
+  final VoidCallback? onInlineRevertToHere;
   final VoidCallback? onBackgroundLongPress;
   final VoidCallback? onBackgroundLongPressEnd;
   final ValueChanged<SubtaskPart>? onSubtaskNavigate;
@@ -103,6 +105,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   bool _lastResponding = false;
   int _lastLocalUiStateVersion = 0;
   int _lastTaskToolSummaryHash = 0;
+  VoidCallback? _lastInlineRevertToHere;
   ValueChanged<SubtaskPart>? _lastSubtaskNavigate;
   ValueChanged<ToolPart>? _lastTaskToolNavigate;
   double _lastVisualDensityVertical = 0;
@@ -249,6 +252,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         widget.showThinkingBubbles == _lastShowThinking &&
         widget.showToolCallBubbles == _lastShowToolCalls &&
         widget.showInlineUndoAction == _lastShowInlineUndoAction &&
+        identical(widget.onInlineRevertToHere, _lastInlineRevertToHere) &&
         widget.isSessionActivelyResponding == _lastResponding &&
         _localUiStateVersion == _lastLocalUiStateVersion &&
         taskToolSummaryHash == _lastTaskToolSummaryHash &&
@@ -271,6 +275,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     _lastShowThinking = widget.showThinkingBubbles;
     _lastShowToolCalls = widget.showToolCallBubbles;
     _lastShowInlineUndoAction = widget.showInlineUndoAction;
+    _lastInlineRevertToHere = widget.onInlineRevertToHere;
     _lastResponding = widget.isSessionActivelyResponding;
     _lastLocalUiStateVersion = _localUiStateVersion;
     _lastTaskToolSummaryHash = taskToolSummaryHash;
@@ -381,6 +386,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   bool get showInlineUndoAction => widget.showInlineUndoAction;
   bool get isSessionActivelyResponding => widget.isSessionActivelyResponding;
   VoidCallback? get onInlineUndo => widget.onInlineUndo;
+  VoidCallback? get onInlineRevertToHere => widget.onInlineRevertToHere;
   VoidCallback? get onBackgroundLongPress => widget.onBackgroundLongPress;
   VoidCallback? get onBackgroundLongPressEnd => widget.onBackgroundLongPressEnd;
   ValueChanged<SubtaskPart>? get onSubtaskNavigate => widget.onSubtaskNavigate;
