@@ -156,13 +156,8 @@ class ParakeetModelManager {
   }
 
   List<int> _fileBytes(ArchiveFile entry) {
-    final content = entry.content;
-    if (content is Uint8List) {
-      return content;
-    }
-    if (content is List<int>) {
-      return content;
-    }
-    return <int>[];
+    // archive 4.x: entry.content is now FileContent; use readBytes() instead
+    final bytes = entry.readBytes();
+    return bytes ?? <int>[];
   }
 }

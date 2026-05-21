@@ -58,7 +58,7 @@ class _NotificationSoundSourceServiceIo
       return null;
     }
 
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: _audioExtensions,
       withData: true,

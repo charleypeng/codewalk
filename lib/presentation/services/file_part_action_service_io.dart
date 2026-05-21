@@ -153,7 +153,7 @@ Future<FilePartActionResult?> _saveWithSystemDialog({
   required String fileName,
 }) async {
   try {
-    final savedPath = await FilePicker.platform.saveFile(
+    final savedPath = await FilePicker.saveFile(
       dialogTitle: 'Save attachment',
       fileName: fileName,
       bytes: Uint8List.fromList(bytes),

@@ -37,7 +37,7 @@ extension _ChatInputAttachmentController on _ChatInputWidgetState {
   }
 
   Future<void> _pickImages() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.image,
       allowMultiple: true,
       withData: true,
@@ -49,7 +49,7 @@ extension _ChatInputAttachmentController on _ChatInputWidgetState {
   }
 
   Future<void> _pickPdf() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: const <String>['pdf'],
       allowMultiple: true,
