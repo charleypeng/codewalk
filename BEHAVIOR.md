@@ -5,6 +5,33 @@
 
 ---
 
+## Internationalization (i18n)
+
+### Language selection
+
+- **Given** the user is in Settings > Behavior
+- **When** the user opens the Language selector
+- **Then** the app shows `System default` plus all 14 supported languages with native script display names
+- **Then** selecting a language applies immediately and persists across app restarts
+- **Then** selecting `System default` makes CodeWalk follow the device locale
+
+### Locale fallback
+
+- **Given** the device locale is a regional variant (e.g. `pt_BR`)
+- **When** CodeWalk resolves the active locale
+- **Then** `pt_BR` falls back to the `pt` (Brazilian Portuguese) locale
+- **Then** unsupported locales fall back to English
+
+### Supported locales
+
+- `ar` (Arabic — RTL), `bn` (Bengali), `de` (German), `en` (English), `es` (Spanish), `fr` (French), `hi` (Hindi), `it` (Italian), `ja` (Japanese), `ko` (Korean), `pt` (Brazilian Portuguese), `ru` (Russian), `zh` (Simplified Chinese), `ur` (Urdu — RTL)
+
+### Non-translatable invariants
+
+- OpenCode wire event types, permission key names, tool state values, `prompt_async` contract fields, REST paths, config key names, model/provider/agent identifiers, and server-originated content remain untranslated (ADR-023 compliance)
+
+---
+
 ## Onboarding
 
 ### First launch shows setup wizard

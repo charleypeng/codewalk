@@ -22,9 +22,14 @@ codewalk/
 ├── lib/                                # Application source
 │   ├── main.dart                       # App bootstrap (DI, providers, shell)
 │   ├── core/                           # Config, constants, DI, errors, logging, network
+│   │   └── i18n/                        # Locale registry, context bridge, localization helpers
 │   ├── data/                           # Data layer: datasources, models, repositories, cache
 │   │   └── cache/                      # Hybrid file+memory cache for large chat payloads
 │   ├── domain/                         # Domain layer: entities, repository contracts, use cases
+│   ├── l10n/                           # Flutter gen_l10n ARB files (14 locales) and generated delegates
+│   │   ├── app_en.arb                  # English source ARB (~200 UI keys with metadata)
+│   │   ├── app_*.arb                   # Translation ARBs (ar, bn, de, es, fr, hi, it, ja, ko, pt, ru, ur, zh)
+│   │   └── generated/                  # Auto-generated AppLocalizations classes via flutter gen-l10n
 │   └── presentation/                   # UI, state providers, runtime services
 │       ├── pages/                      # App pages and page-level orchestration
 │       │   ├── app_shell_page.dart
@@ -43,6 +48,7 @@ codewalk/
 │       └── theme/                      # Material You theme: AppTheme, AppShapes, BrandColor seeds, AppSemanticColors
 ├── test/                               # Unit, widget, integration, presentation, support tests
 ├── tool/ci/                            # Analyzer budget and coverage gate scripts
+├── tool/i18n/                          # ARB generation and code migration tooling
 ├── .github/workflows/                  # CI and release workflows
 ├── .opencode/agents/                  # Repo-local OpenCode agents
 ├── android/ linux/ macos/ web/ windows/ # Platform runners/build configs
@@ -66,6 +72,9 @@ lib/presentation/pages/chat_page.dart         # Main chat/session/file UI entry;
 
 ```text
 lib/core/di/injection_container.dart              # Registers datasources, repositories, usecases, providers
+lib/core/i18n/app_locales.dart                     # Locale registry: 14 supported locales, resolution callback, native-name metadata, PT_BR normalization
+lib/core/i18n/l10n_context.dart                    # BuildContext extension: `context.l10n` shorthand for AppLocalizations access
+lib/core/i18n/l10n_bridge.dart                     # Static L10nBridge for context-free localization (tray, background services)
 lib/core/network/dio_client.dart                  # HTTP client config, auth, base URL updates; exposes `dio` (regular) and `sseDio` (dedicated SSE instance with isolated connection pool)
 lib/core/network/dio_sse_adapter.dart              # Conditional export: routes to IO or stub adapter
 lib/core/network/dio_sse_adapter_io.dart           # IO platforms: configures IOHttpClientAdapter with separate HttpClient for SSE (2h idle, 4 max connections)
@@ -278,6 +287,7 @@ make analyze
 make test
 make coverage
 make check
+dart tool/i18n/generate_arb.dart && flutter gen-l10n  # Regenerate all 14 locale ARBs and localization delegates
 make android
 make desktop
 make release V=patch|minor|major
@@ -304,11 +314,23 @@ test/unit/providers/                   # ChatProvider split tests (7 files, 129 
 test/widget/                           # Widget tests (includes icon assertions with Symbols.* and explicit compact/mobile collapsed-copy coverage for chat message and session todo surfaces, plus desktop/mobile spacing coverage for ChatSessionList; includes toolbar undo/redo and slash-command parity coverage)
 test/integration/                      # Integration tests; includes data-usage optimization coverage in `opencode_server_integration_test.dart`
 test/presentation/                     # Presentation-focused tests (incl. window_size_class_test.dart)
-test/support/                          # Test helpers/fakes; `mock_opencode_server.dart` includes extra counters for usage optimization tracking
+test/support/                          # Test helpers/fakes; `mock_opencode_server.dart` includes extra counters for usage optimization tracking; `pump_localized_app.dart` wraps widgets with all l10n delegates for locale-aware tests
 tool/ci/check_analyze_budget.sh        # Analyzer issue budget gate (default: 186)
 tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 .github/workflows/ci.yml               # CI executes analyze + tests + coverage gate
 ```
+
+## Internationalization (i18n)
+
+- ARB source files live in `lib/l10n/` (14 locales), with English as the template (`app_en.arb`, ~200 keys).
+- Generated `AppLocalizations` classes in `lib/l10n/generated/` provide type-safe translation accessors.
+- UI code uses `context.l10n.keyName` via the `L10nContext` extension (`lib/core/i18n/l10n_context.dart`).
+- Context-free services use `L10nBridge.current?.key ?? 'English fallback'` (`lib/core/i18n/l10n_bridge.dart`).
+- The locale registry (`lib/core/i18n/app_locales.dart`) defines supported locales, RTL metadata, resolution callback, and PT_BR normalization.
+- `L10nBridge.current` is set at app boot and on locale change via `LocaleProvider` in `lib/main.dart`.
+- Non-translatable invariants: OpenCode wire event types, permission keys, tool state discriminators, REST paths, config key names, and `prompt_async` contract fields.
+- To add new strings: edit `tool/i18n/arb_strings.dart` (+ per-locale translation maps), run `dart tool/i18n/generate_arb.dart && flutter gen-l10n`.
+- To migrate remaining hardcoded strings: follow the `context.l10n` pattern; use `tool/i18n/migrate_code_v2.dart` as reference.
 
 ## Notes
 
