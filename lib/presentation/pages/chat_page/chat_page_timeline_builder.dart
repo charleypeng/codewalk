@@ -16,6 +16,12 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       chatProvider: chatProvider,
       message: message,
     );
+    final isLatestRevertible =
+        message is UserMessage && message.id == latestRevertibleMessageId;
+    final isHistoricalUserMessage =
+        message is UserMessage &&
+        message.id != latestRevertibleMessageId &&
+        !message.id.startsWith('local_user_');
     Widget messageWidget = ChatMessageWidget(
       key: ValueKey<String>(
         '${keyPrefix ?? 'chat_message_widget'}_${message.id}',
@@ -24,18 +30,19 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       activeReasoningPartKey: latestReasoningPartKey,
       showThinkingBubbles: settingsProvider.showThinkingBubbles,
       showToolCallBubbles: settingsProvider.showToolCallBubbles,
-      showInlineUndoAction:
-          message is UserMessage && message.id == latestRevertibleMessageId,
+      showInlineUndoAction: isLatestRevertible,
       isSessionActivelyResponding:
           chatProvider.isCurrentSessionActivelyResponding,
-      onInlineUndo:
-          message is UserMessage && message.id == latestRevertibleMessageId
+      onInlineUndo: isLatestRevertible
           ? () => unawaited(
               _triggerHistoryAction(
                 chatProvider,
                 action: _HistoryToolbarAction.undo,
               ),
             )
+          : null,
+      onInlineRevertToHere: isHistoricalUserMessage
+          ? () => unawaited(chatProvider.revertToTurn(message.id))
           : null,
       onBackgroundLongPress: () => _handleMessageBackgroundLongPress(message),
       onBackgroundLongPressEnd: () =>
