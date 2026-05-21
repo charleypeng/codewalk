@@ -1,13 +1,16 @@
 import 'dart:convert';
 
 import 'package:codewalk/core/network/dio_client.dart';
+import 'package:codewalk/core/i18n/app_locales.dart';
 import 'package:codewalk/domain/entities/experience_settings.dart';
+import 'package:codewalk/l10n/generated/app_localizations.dart';
 import 'package:codewalk/presentation/pages/settings_page.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
@@ -83,7 +86,7 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider<SettingsProvider>.value(
         value: settingsProvider,
-        child: const MaterialApp(home: SettingsPage()),
+        child: _localizedMaterialApp(home: const SettingsPage()),
       ),
     );
     await tester.pumpAndSettle();
@@ -335,7 +338,7 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider<SettingsProvider>.value(
         value: settingsProvider,
-        child: MaterialApp(
+        child: _localizedMaterialApp(
           home: Builder(
             builder: (context) {
               return Scaffold(
@@ -404,7 +407,7 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider<SettingsProvider>.value(
         value: settingsProvider,
-        child: MaterialApp(
+        child: _localizedMaterialApp(
           home: Builder(
             builder: (context) {
               return Scaffold(
@@ -461,7 +464,7 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider<SettingsProvider>.value(
         value: settingsProvider,
-        child: MaterialApp(
+        child: _localizedMaterialApp(
           home: Builder(
             builder: (context) {
               return Scaffold(
@@ -527,7 +530,7 @@ void main() {
       await tester.pumpWidget(
         ChangeNotifierProvider<SettingsProvider>.value(
           value: settingsProvider,
-          child: const MaterialApp(home: SettingsPage()),
+          child: _localizedMaterialApp(home: const SettingsPage()),
         ),
       );
       await tester.pumpAndSettle();
@@ -575,7 +578,7 @@ void main() {
       await tester.pumpWidget(
         ChangeNotifierProvider<SettingsProvider>.value(
           value: settingsProvider,
-          child: const MaterialApp(home: SettingsPage()),
+          child: _localizedMaterialApp(home: const SettingsPage()),
         ),
       );
       await tester.pumpAndSettle();
@@ -669,4 +672,18 @@ DioClient _buildDioClient(_MockDioAdapter adapter) {
   final dioClient = DioClient();
   dioClient.dio.httpClientAdapter = adapter;
   return dioClient;
+}
+
+MaterialApp _localizedMaterialApp({required Widget home}) {
+  return MaterialApp(
+    locale: const Locale('en'),
+    localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+      AppLocalizations.delegate,
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+    ],
+    supportedLocales: AppLocales.supported,
+    home: home,
+  );
 }

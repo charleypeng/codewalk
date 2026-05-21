@@ -163,6 +163,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'System default'**
   String get settingsLanguageSystemDefault;
+
+  /// Title for the app version row in About settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get settingsAboutVersion;
+
+  /// Loading placeholder while app version information is read.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get settingsAboutLoading;
+
+  /// Version and build number shown in About settings.
+  ///
+  /// In en, this message translates to:
+  /// **'{version} (build {buildNumber})'**
+  String settingsAboutVersionBuild(String version, String buildNumber);
+
+  /// Title shown when a newer CodeWalk version is available.
+  ///
+  /// In en, this message translates to:
+  /// **'Update available: v{version}'**
+  String settingsAboutUpdateAvailable(String version);
+
+  /// Update download progress label.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading... {percent}%'**
+  String settingsAboutDownloading(String percent);
+
+  /// Update installation progress label.
+  ///
+  /// In en, this message translates to:
+  /// **'Installing...'**
+  String get settingsAboutInstalling;
+
+  /// Message shown after an app update was installed.
+  ///
+  /// In en, this message translates to:
+  /// **'Update installed. Restart the app to apply.'**
+  String get settingsAboutUpdateInstalled;
+
+  /// Button label to retry a failed update installation.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry install'**
+  String get settingsAboutRetryInstall;
+
+  /// Button label to install an available app update.
+  ///
+  /// In en, this message translates to:
+  /// **'Install update'**
+  String get settingsAboutInstallUpdate;
+
+  /// Button label to dismiss the available update card.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get settingsAboutDismiss;
+
+  /// Title shown when no app update is available.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'\'re up to date'**
+  String get settingsAboutUpToDate;
+
+  /// Subtitle shown when the installed app version is current.
+  ///
+  /// In en, this message translates to:
+  /// **'v{version} is the latest version'**
+  String settingsAboutLatestVersion(String version);
+
+  /// Switch title for checking app updates at startup.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for updates on open'**
+  String get settingsAboutCheckOnOpen;
+
+  /// Switch subtitle for checking app updates at startup.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically check when the app starts'**
+  String get settingsAboutCheckOnOpenDescription;
+
+  /// List tile title to manually check for app updates.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for updates'**
+  String get settingsAboutCheckForUpdates;
+
+  /// Status shown while checking for app updates.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking...'**
+  String get settingsAboutChecking;
+
+  /// Subtitle for the manual update check action.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to check for new versions'**
+  String get settingsAboutTapToCheck;
+
+  /// About settings action that replays the guided chat tour.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay chat tour'**
+  String get settingsAboutReplayChatTour;
+
+  /// Subtitle for the guided chat tour replay action.
+  ///
+  /// In en, this message translates to:
+  /// **'Close settings and show the guided chat walkthrough'**
+  String get settingsAboutReplayChatTourDescription;
+
+  /// Danger action title that resets all app data.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset app'**
+  String get settingsAboutResetApp;
+
+  /// Subtitle for the reset app danger action.
+  ///
+  /// In en, this message translates to:
+  /// **'Erase all data and restart'**
+  String get settingsAboutEraseAllData;
+
+  /// Confirmation dialog title before resetting app data.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset app?'**
+  String get settingsAboutResetAppQuestion;
+
+  /// Confirmation dialog warning before resetting app data.
+  ///
+  /// In en, this message translates to:
+  /// **'This will erase all servers, settings, and cached data. This action cannot be undone.'**
+  String get settingsAboutResetAppWarning;
+
+  /// Generic cancel button label.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get commonCancel;
+
+  /// Generic reset button label.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get commonReset;
 }
 
 class _AppLocalizationsDelegate

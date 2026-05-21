@@ -7,6 +7,7 @@ import 'dart:async';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/injection_container.dart' as di;
+import '../../../../core/i18n/l10n_context.dart';
 import '../../../../data/datasources/app_local_datasource.dart';
 import '../../../providers/app_provider.dart';
 import '../../../providers/settings_provider.dart';
@@ -68,11 +69,14 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
   }
 
   Widget _buildVersionTile(BuildContext context) {
+    final l10n = context.l10n;
     return ListTile(
       leading: const Icon(Symbols.info),
-      title: const Text('Version'),
+      title: Text(l10n.settingsAboutVersion),
       subtitle: Text(
-        _version.isEmpty ? 'Loading...' : '$_version (build $_buildNumber)',
+        _version.isEmpty
+            ? l10n.settingsAboutLoading
+            : l10n.settingsAboutVersionBuild(_version, _buildNumber),
       ),
     );
   }
@@ -82,6 +86,7 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
     SettingsProvider settings,
     UpdateCheckResult result,
   ) {
+    final l10n = context.l10n;
     final installState = settings.installState;
     return Card(
       color: Theme.of(context).colorScheme.primaryContainer,
@@ -99,7 +104,7 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Update available: v${result.latestVersion}',
+                    l10n.settingsAboutUpdateAvailable(result.latestVersion),
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
@@ -135,6 +140,7 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
     UpdateInstallState installState,
   ) {
     if (installState == UpdateInstallState.downloading) {
+      final l10n = context.l10n;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -145,7 +151,9 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Downloading… ${(settings.installProgress * 100).toStringAsFixed(0)}%',
+            l10n.settingsAboutDownloading(
+              (settings.installProgress * 100).toStringAsFixed(0),
+            ),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onPrimaryContainer,
             ),
@@ -155,6 +163,7 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
     }
 
     if (installState == UpdateInstallState.installing) {
+      final l10n = context.l10n;
       return Row(
         children: [
           const SizedBox(
@@ -164,7 +173,7 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
           ),
           const SizedBox(width: 8),
           Text(
-            'Installing…',
+            l10n.settingsAboutInstalling,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onPrimaryContainer,
             ),
@@ -175,7 +184,7 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
 
     if (installState == UpdateInstallState.done) {
       return Text(
-        'Update installed. Restart the app to apply.',
+        context.l10n.settingsAboutUpdateInstalled,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
           color: Theme.of(context).colorScheme.onPrimaryContainer,
         ),
@@ -190,30 +199,31 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
           FilledButton.icon(
             onPressed: () => unawaited(settings.startInstall()),
             icon: const Icon(Symbols.refresh, size: 16),
-            label: const Text('Retry install'),
+            label: Text(context.l10n.settingsAboutRetryInstall),
           )
         else
           FilledButton.icon(
             onPressed: () => unawaited(settings.startInstall()),
             icon: const Icon(Symbols.download, size: 16),
-            label: const Text('Install update'),
+            label: Text(context.l10n.settingsAboutInstallUpdate),
           ),
         OutlinedButton(
           onPressed: () => settings.dismissUpdate(result.latestVersion),
-          child: const Text('Dismiss'),
+          child: Text(context.l10n.settingsAboutDismiss),
         ),
       ],
     );
   }
 
   Widget _buildUpToDateTile(BuildContext context) {
+    final l10n = context.l10n;
     return ListTile(
       leading: Icon(
         Symbols.check_circle_outline,
         color: Theme.of(context).colorScheme.primary,
       ),
-      title: const Text('You\'re up to date'),
-      subtitle: Text('v$_version is the latest version'),
+      title: Text(l10n.settingsAboutUpToDate),
+      subtitle: Text(l10n.settingsAboutLatestVersion(_version)),
     );
   }
 
@@ -223,8 +233,8 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
   ) {
     return SwitchListTile(
       secondary: const Icon(Symbols.update),
-      title: const Text('Check for updates on open'),
-      subtitle: const Text('Automatically check when the app starts'),
+      title: Text(context.l10n.settingsAboutCheckOnOpen),
+      subtitle: Text(context.l10n.settingsAboutCheckOnOpenDescription),
       value: settings.settings.checkUpdatesOnOpen,
       onChanged: (value) => settings.setCheckUpdatesOnOpen(value),
     );
@@ -243,9 +253,11 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           : const Icon(Symbols.refresh),
-      title: const Text('Check for updates'),
+      title: Text(context.l10n.settingsAboutCheckForUpdates),
       subtitle: Text(
-        checking ? 'Checking...' : 'Tap to check for new versions',
+        checking
+            ? context.l10n.settingsAboutChecking
+            : context.l10n.settingsAboutTapToCheck,
       ),
       onTap: checking ? null : () => settings.checkForUpdate(),
     );
@@ -255,8 +267,11 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
     final colorScheme = Theme.of(context).colorScheme;
     return ListTile(
       leading: Icon(Symbols.restart_alt_rounded, color: colorScheme.error),
-      title: Text('Reset app', style: TextStyle(color: colorScheme.error)),
-      subtitle: const Text('Erase all data and restart'),
+      title: Text(
+        context.l10n.settingsAboutResetApp,
+        style: TextStyle(color: colorScheme.error),
+      ),
+      subtitle: Text(context.l10n.settingsAboutEraseAllData),
       onTap: () => _confirmResetApp(context),
     );
   }
@@ -268,10 +283,8 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
     return ListTile(
       key: const ValueKey<String>('about_replay_chat_tour_tile'),
       leading: const Icon(Symbols.play_circle_rounded),
-      title: const Text('Replay chat tour'),
-      subtitle: const Text(
-        'Close settings and show the guided chat walkthrough',
-      ),
+      title: Text(context.l10n.settingsAboutReplayChatTour),
+      subtitle: Text(context.l10n.settingsAboutReplayChatTourDescription),
       onTap: () => unawaited(_replayChatTour(context, settings)),
     );
   }
@@ -295,22 +308,19 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Reset app?'),
-          content: const Text(
-            'This will erase all servers, settings, and cached data. '
-            'This action cannot be undone.',
-          ),
+          title: Text(context.l10n.settingsAboutResetAppQuestion),
+          content: Text(context.l10n.settingsAboutResetAppWarning),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.commonCancel),
             ),
             FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.error,
               ),
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Reset'),
+              child: Text(context.l10n.commonReset),
             ),
           ],
         );

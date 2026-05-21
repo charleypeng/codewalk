@@ -30,4 +30,91 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get settingsLanguageSystemDefault => 'Системный по умолчанию';
+
+  @override
+  String get settingsAboutVersion => 'Версия';
+
+  @override
+  String get settingsAboutLoading => 'Загрузка...';
+
+  @override
+  String settingsAboutVersionBuild(String version, String buildNumber) {
+    return '$version (сборка $buildNumber)';
+  }
+
+  @override
+  String settingsAboutUpdateAvailable(String version) {
+    return 'Доступно обновление: v$version';
+  }
+
+  @override
+  String settingsAboutDownloading(String percent) {
+    return 'Загрузка... $percent%';
+  }
+
+  @override
+  String get settingsAboutInstalling => 'Установка...';
+
+  @override
+  String get settingsAboutUpdateInstalled =>
+      'Обновление установлено. Перезапустите приложение, чтобы применить его.';
+
+  @override
+  String get settingsAboutRetryInstall => 'Повторить установку';
+
+  @override
+  String get settingsAboutInstallUpdate => 'Установить обновление';
+
+  @override
+  String get settingsAboutDismiss => 'Скрыть';
+
+  @override
+  String get settingsAboutUpToDate => 'У вас актуальная версия';
+
+  @override
+  String settingsAboutLatestVersion(String version) {
+    return 'v$version — последняя версия';
+  }
+
+  @override
+  String get settingsAboutCheckOnOpen => 'Проверять обновления при запуске';
+
+  @override
+  String get settingsAboutCheckOnOpenDescription =>
+      'Автоматически проверять при запуске приложения';
+
+  @override
+  String get settingsAboutCheckForUpdates => 'Проверить обновления';
+
+  @override
+  String get settingsAboutChecking => 'Проверка...';
+
+  @override
+  String get settingsAboutTapToCheck => 'Нажмите, чтобы проверить новые версии';
+
+  @override
+  String get settingsAboutReplayChatTour => 'Повторить тур по чату';
+
+  @override
+  String get settingsAboutReplayChatTourDescription =>
+      'Закрыть настройки и показать гид по чату';
+
+  @override
+  String get settingsAboutResetApp => 'Сбросить приложение';
+
+  @override
+  String get settingsAboutEraseAllData => 'Удалить все данные и перезапустить';
+
+  @override
+  String get settingsAboutResetAppQuestion => 'Сбросить приложение?';
+
+  @override
+  String get settingsAboutResetAppWarning =>
+      'Это удалит все серверы, настройки и кэшированные данные. Это действие нельзя отменить.';
+
+  @override
+  String get commonCancel => 'Отмена';
+
+  @override
+  String get commonReset => 'Сбросить';
 }

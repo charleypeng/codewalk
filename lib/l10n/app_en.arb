@@ -27,5 +27,118 @@
   "settingsLanguageSystemDefault": "System default",
   "@settingsLanguageSystemDefault": {
     "description": "Option that makes CodeWalk follow the platform locale."
+  },
+  "settingsAboutVersion": "Version",
+  "@settingsAboutVersion": {
+    "description": "Title for the app version row in About settings."
+  },
+  "settingsAboutLoading": "Loading...",
+  "@settingsAboutLoading": {
+    "description": "Loading placeholder while app version information is read."
+  },
+  "settingsAboutVersionBuild": "{version} (build {buildNumber})",
+  "@settingsAboutVersionBuild": {
+    "description": "Version and build number shown in About settings.",
+    "placeholders": {
+      "version": { "type": "String" },
+      "buildNumber": { "type": "String" }
+    }
+  },
+  "settingsAboutUpdateAvailable": "Update available: v{version}",
+  "@settingsAboutUpdateAvailable": {
+    "description": "Title shown when a newer CodeWalk version is available.",
+    "placeholders": {
+      "version": { "type": "String" }
+    }
+  },
+  "settingsAboutDownloading": "Downloading... {percent}%",
+  "@settingsAboutDownloading": {
+    "description": "Update download progress label.",
+    "placeholders": {
+      "percent": { "type": "String" }
+    }
+  },
+  "settingsAboutInstalling": "Installing...",
+  "@settingsAboutInstalling": {
+    "description": "Update installation progress label."
+  },
+  "settingsAboutUpdateInstalled": "Update installed. Restart the app to apply.",
+  "@settingsAboutUpdateInstalled": {
+    "description": "Message shown after an app update was installed."
+  },
+  "settingsAboutRetryInstall": "Retry install",
+  "@settingsAboutRetryInstall": {
+    "description": "Button label to retry a failed update installation."
+  },
+  "settingsAboutInstallUpdate": "Install update",
+  "@settingsAboutInstallUpdate": {
+    "description": "Button label to install an available app update."
+  },
+  "settingsAboutDismiss": "Dismiss",
+  "@settingsAboutDismiss": {
+    "description": "Button label to dismiss the available update card."
+  },
+  "settingsAboutUpToDate": "You''re up to date",
+  "@settingsAboutUpToDate": {
+    "description": "Title shown when no app update is available."
+  },
+  "settingsAboutLatestVersion": "v{version} is the latest version",
+  "@settingsAboutLatestVersion": {
+    "description": "Subtitle shown when the installed app version is current.",
+    "placeholders": {
+      "version": { "type": "String" }
+    }
+  },
+  "settingsAboutCheckOnOpen": "Check for updates on open",
+  "@settingsAboutCheckOnOpen": {
+    "description": "Switch title for checking app updates at startup."
+  },
+  "settingsAboutCheckOnOpenDescription": "Automatically check when the app starts",
+  "@settingsAboutCheckOnOpenDescription": {
+    "description": "Switch subtitle for checking app updates at startup."
+  },
+  "settingsAboutCheckForUpdates": "Check for updates",
+  "@settingsAboutCheckForUpdates": {
+    "description": "List tile title to manually check for app updates."
+  },
+  "settingsAboutChecking": "Checking...",
+  "@settingsAboutChecking": {
+    "description": "Status shown while checking for app updates."
+  },
+  "settingsAboutTapToCheck": "Tap to check for new versions",
+  "@settingsAboutTapToCheck": {
+    "description": "Subtitle for the manual update check action."
+  },
+  "settingsAboutReplayChatTour": "Replay chat tour",
+  "@settingsAboutReplayChatTour": {
+    "description": "About settings action that replays the guided chat tour."
+  },
+  "settingsAboutReplayChatTourDescription": "Close settings and show the guided chat walkthrough",
+  "@settingsAboutReplayChatTourDescription": {
+    "description": "Subtitle for the guided chat tour replay action."
+  },
+  "settingsAboutResetApp": "Reset app",
+  "@settingsAboutResetApp": {
+    "description": "Danger action title that resets all app data."
+  },
+  "settingsAboutEraseAllData": "Erase all data and restart",
+  "@settingsAboutEraseAllData": {
+    "description": "Subtitle for the reset app danger action."
+  },
+  "settingsAboutResetAppQuestion": "Reset app?",
+  "@settingsAboutResetAppQuestion": {
+    "description": "Confirmation dialog title before resetting app data."
+  },
+  "settingsAboutResetAppWarning": "This will erase all servers, settings, and cached data. This action cannot be undone.",
+  "@settingsAboutResetAppWarning": {
+    "description": "Confirmation dialog warning before resetting app data."
+  },
+  "commonCancel": "Cancel",
+  "@commonCancel": {
+    "description": "Generic cancel button label."
+  },
+  "commonReset": "Reset",
+  "@commonReset": {
+    "description": "Generic reset button label."
   }
 }
