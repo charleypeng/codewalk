@@ -48,7 +48,7 @@ dependencies:
   # Local storage
   shared_preferences: ^2.5.5
   flutter_secure_storage: ^10.2.0
-  connectivity_plus: ^7.1.1
+  connectivity_plus: ^6.1.5
 
   # Markdown rendering
 
