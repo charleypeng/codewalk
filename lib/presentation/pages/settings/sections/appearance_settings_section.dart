@@ -43,23 +43,23 @@ class AppearanceSettingsSection extends StatelessWidget {
         // The switch is disabled when dark mode is inactive.
         final amoledSwitchValue = settingsProvider.useAmoledDark;
         final selectedDensity = settingsProvider.appDensity;
-        const densityOptions = <({AppDensity value, String label})>[
-          (value: AppDensity.extraDense, label: 'Extra Dense'),
-          (value: AppDensity.dense, label: 'Dense'),
-          (value: AppDensity.normal, label: 'Normal'),
-          (value: AppDensity.spacious, label: 'Spacious'),
-          (value: AppDensity.extraSpacious, label: 'Extra Spacious'),
+        final densityOptions = <({AppDensity value, String label})>[
+          (value: AppDensity.extraDense, label: context.l10n.settingsAppearanceDensityExtraDense),
+          (value: AppDensity.dense, label: context.l10n.settingsAppearanceDensityDense),
+          (value: AppDensity.normal, label: context.l10n.settingsAppearanceDensityNormal),
+          (value: AppDensity.spacious, label: context.l10n.settingsAppearanceDensitySpacious),
+          (value: AppDensity.extraSpacious, label: context.l10n.settingsAppearanceDensityExtraSpacious),
         ];
         return ListView(
           padding: const EdgeInsets.all(AppConstants.defaultPadding),
           children: [
             Text(
-              'Appearance',
+              context.l10n.settingsAppearanceSectionTitle,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
-              'Tune visual density and message surfaces for your workflow.',
+              context.l10n.settingsAppearanceSectionDescription,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
@@ -71,12 +71,12 @@ class AppearanceSettingsSection extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Theme',
+                      context.l10n.settingsAppearanceTheme,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Choose light, dark, or system mode, then keep the CodeWalk classic palette or switch to an OpenCode preset.',
+                      context.l10n.settingsAppearanceThemeDescription,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 12),
@@ -86,20 +86,20 @@ class AppearanceSettingsSection extends StatelessWidget {
                         key: const ValueKey<String>(
                           'settings_theme_mode_segmented',
                         ),
-                        segments: const <ButtonSegment<ThemeModeOption>>[
+                        segments: <ButtonSegment<ThemeModeOption>>[
                           ButtonSegment<ThemeModeOption>(
                             value: ThemeModeOption.system,
-                            label: Text('System'),
+                            label: Text(context.l10n.settingsAppearanceSystem),
                             icon: Icon(Symbols.brightness_auto),
                           ),
                           ButtonSegment<ThemeModeOption>(
                             value: ThemeModeOption.light,
-                            label: Text('Light'),
+                            label: Text(context.l10n.settingsAppearanceLight),
                             icon: Icon(Symbols.light_mode),
                           ),
                           ButtonSegment<ThemeModeOption>(
                             value: ThemeModeOption.dark,
-                            label: Text('Dark'),
+                            label: Text(context.l10n.settingsAppearanceDark),
                             icon: Icon(Symbols.dark_mode),
                           ),
                         ],
@@ -116,15 +116,15 @@ class AppearanceSettingsSection extends StatelessWidget {
                         key: const ValueKey<String>(
                           'settings_theme_family_segmented',
                         ),
-                        segments: const <ButtonSegment<_AppearanceThemeFamily>>[
+                        segments: <ButtonSegment<_AppearanceThemeFamily>>[
                           ButtonSegment<_AppearanceThemeFamily>(
                             value: _AppearanceThemeFamily.classic,
-                            label: Text('CodeWalk Classic'),
+                            label: Text(context.l10n.settingsAppearanceCodeWalkClassic),
                             icon: Icon(Symbols.palette),
                           ),
                           ButtonSegment<_AppearanceThemeFamily>(
                             value: _AppearanceThemeFamily.presets,
-                            label: Text('OpenCode Presets'),
+                            label: Text(context.l10n.settingsAppearanceOpenCodePresets),
                             icon: Icon(Symbols.format_paint),
                           ),
                         ],
@@ -148,15 +148,15 @@ class AppearanceSettingsSection extends StatelessWidget {
                           'settings_theme_preset_dropdown',
                         ),
                         value: selectedPreset,
-                        decoration: const InputDecoration(
-                          labelText: 'Preset palette',
+                        decoration: InputDecoration(
+                          labelText: context.l10n.settingsAppearancePresetPalette,
                           border: OutlineInputBorder(),
                           helperText:
-                              'Mirrors the official OpenCode Web built-in theme list.',
+                              context.l10n.settingsAppearancePresetHelper,
                         ),
                         isExpanded: true,
-                        searchHintText: 'Search preset palette',
-                        emptyText: 'No preset palettes found',
+                        searchHintText: context.l10n.settingsAppearanceSearchPreset,
+                        emptyText: context.l10n.settingsAppearanceNoPresets,
                         searchTermsBuilder: (value) => <String>[
                           openCodeThemePresetLabel(value),
                           value.name,
@@ -178,7 +178,7 @@ class AppearanceSettingsSection extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Theme colors now follow the official OpenCode Web registry and drive markdown/code surfaces too.',
+                        context.l10n.settingsAppearancePresetNote,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
@@ -188,11 +188,11 @@ class AppearanceSettingsSection extends StatelessWidget {
                         'settings_toggle_amoled_dark',
                       ),
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('AMOLED dark mode'),
+                      title: Text(context.l10n.settingsAppearanceAmoledDark),
                       subtitle: Text(
                         isDarkModeActive
-                            ? 'Use pure black surfaces while dark mode is active.'
-                            : 'Switch to dark mode to enable AMOLED surfaces.',
+                            ? context.l10n.settingsAppearanceAmoledDarkActive
+                            : context.l10n.settingsAppearanceAmoledDarkInactive,
                       ),
                       value: amoledSwitchValue,
                       onChanged: isDarkModeActive
@@ -217,11 +217,11 @@ class AppearanceSettingsSection extends StatelessWidget {
                       key: const ValueKey<String>(
                         'settings_toggle_dynamic_color',
                       ),
-                      title: const Text('Use wallpaper colors'),
+                      title: Text(context.l10n.settingsAppearanceWallpaperColors),
                       subtitle: Text(
                         isPresetThemeActive
-                            ? 'Switch to CodeWalk Classic to use wallpaper colors.'
-                            : 'Extract color scheme from your device wallpaper.',
+                            ? context.l10n.settingsAppearanceWallpaperPresetBlocked
+                            : context.l10n.settingsAppearanceWallpaperNormal,
                       ),
                       value: settingsProvider.useDynamicColor,
                       onChanged: isPresetThemeActive
@@ -238,17 +238,17 @@ class AppearanceSettingsSection extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Brand color',
+                          context.l10n.settingsAppearanceBrandColor,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 4),
                         Text(
                           isPresetThemeActive
-                              ? 'Switch to CodeWalk Classic to pick a brand color.'
+                              ? context.l10n.settingsAppearanceBrandColorPresetBlocked
                               : settingsProvider.useDynamicColor &&
                                     settingsProvider.dynamicColorAvailable
-                              ? 'Disable wallpaper colors to pick a brand color.'
-                              : 'Pick a seed color for the app palette.',
+                              ? context.l10n.settingsAppearanceBrandColorDynamicBlocked
+                              : context.l10n.settingsAppearanceBrandColorNormal,
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                         const SizedBox(height: 12),
@@ -316,22 +316,22 @@ class AppearanceSettingsSection extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Contrast',
+                          context.l10n.settingsAppearanceContrast,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 4),
                         Text(
                           isDynamicActive
                               ? isPresetThemeActive
-                                    ? 'Switch to CodeWalk Classic to adjust contrast.'
-                                    : 'Disable wallpaper colors to adjust contrast.'
-                              : 'Adjust the contrast level of the color scheme.',
+                                    ? context.l10n.settingsAppearanceContrastPresetBlocked
+                                    : context.l10n.settingsAppearanceContrastDynamicBlocked
+                              : context.l10n.settingsAppearanceContrastNormal,
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            const Text('Reduced'),
+                            Text(context.l10n.settingsAppearanceContrastReduced),
                             Expanded(
                               child: Slider(
                                 key: const ValueKey<String>(
@@ -353,7 +353,7 @@ class AppearanceSettingsSection extends StatelessWidget {
                                       ),
                               ),
                             ),
-                            const Text('High'),
+                            Text(context.l10n.settingsAppearanceContrastHigh),
                           ],
                         ),
                       ],
@@ -371,12 +371,12 @@ class AppearanceSettingsSection extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Density',
+                      context.l10n.settingsAppearanceDensity,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Apply spacing and component density across the app.',
+                      context.l10n.settingsAppearanceDensityDescription,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 12),
@@ -413,9 +413,9 @@ class AppearanceSettingsSection extends StatelessWidget {
                     key: const ValueKey<String>(
                       'settings_toggle_thinking_bubbles',
                     ),
-                    title: const Text('Thinking bubbles'),
-                    subtitle: const Text(
-                      'Show or hide reasoning blocks in assistant messages.',
+                    title: Text(context.l10n.settingsAppearanceThinkingBubbles),
+                    subtitle: Text(
+                      context.l10n.settingsAppearanceThinkingBubblesDescription,
                     ),
                     value: settingsProvider.showThinkingBubbles,
                     onChanged: (value) => unawaited(
@@ -427,9 +427,9 @@ class AppearanceSettingsSection extends StatelessWidget {
                     key: const ValueKey<String>(
                       'settings_toggle_tool_call_bubbles',
                     ),
-                    title: const Text('Tool call bubbles'),
-                    subtitle: const Text(
-                      'Show or hide tool execution cards in assistant messages.',
+                    title: Text(context.l10n.settingsAppearanceToolCallBubbles),
+                    subtitle: Text(
+                      context.l10n.settingsAppearanceToolCallBubblesDescription,
                     ),
                     value: settingsProvider.showToolCallBubbles,
                     onChanged: (value) => unawaited(
@@ -439,9 +439,9 @@ class AppearanceSettingsSection extends StatelessWidget {
                   const Divider(height: 1),
                   SwitchListTile.adaptive(
                     key: const ValueKey<String>('settings_toggle_task_list'),
-                    title: const Text('Task list'),
-                    subtitle: const Text(
-                      'Show or hide the session task list widget.',
+                    title: Text(context.l10n.settingsAppearanceTaskList),
+                    subtitle: Text(
+                      context.l10n.settingsAppearanceTaskListDescription,
                     ),
                     value: settingsProvider.showTaskList,
                     onChanged: (value) =>
@@ -452,9 +452,9 @@ class AppearanceSettingsSection extends StatelessWidget {
                     key: const ValueKey<String>(
                       'settings_toggle_composer_tips',
                     ),
-                    title: const Text('Composer tips'),
-                    subtitle: const Text(
-                      'Show or hide rotating tips while the assistant is reasoning.',
+                    title: Text(context.l10n.settingsAppearanceComposerTips),
+                    subtitle: Text(
+                      context.l10n.settingsAppearanceComposerTipsDescription,
                     ),
                     value: settingsProvider.showComposerTips,
                     onChanged: (value) =>

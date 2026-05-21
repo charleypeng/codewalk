@@ -75,7 +75,7 @@ class _ShortcutsSettingsSectionState extends State<ShortcutsSettingsSection> {
             TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search shortcuts',
+                hintText: context.l10n.settingsShortcutsSearch,
                 prefixIcon: const Icon(Symbols.search),
                 suffixIcon: _searchController.text.isEmpty
                     ? null
@@ -185,12 +185,12 @@ class _ShortcutTile extends StatelessWidget {
           spacing: 4,
           children: [
             IconButton(
-              tooltip: 'Edit shortcut',
+              tooltip: context.l10n.settingsShortcutsEdit,
               onPressed: onEdit,
               icon: const Icon(Symbols.keyboard_rounded),
             ),
             IconButton(
-              tooltip: 'Reset shortcut',
+              tooltip: context.l10n.settingsShortcutsReset,
               onPressed: onReset,
               icon: const Icon(Symbols.undo_rounded),
             ),

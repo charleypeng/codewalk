@@ -88,12 +88,12 @@ class _NotificationsSettingsSectionState
           padding: const EdgeInsets.all(AppConstants.defaultPadding),
           children: [
             Text(
-              'Notifications',
+              context.l10n.settingsNotificationsSectionTitle,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
-              'Control when alerts appear and when they can play sound.',
+              context.l10n.settingsNotificationsSectionDescription,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
@@ -107,8 +107,8 @@ class _NotificationsSettingsSectionState
               context: context,
               settingsProvider: settingsProvider,
               category: NotificationCategory.agent,
-              title: 'Agent updates',
-              subtitle: 'When a response finishes',
+              title: context.l10n.settingsNotificationsAgentUpdates,
+              subtitle: context.l10n.settingsNotificationsAgentSubtitle,
               icon: Symbols.smart_toy,
             ),
             const SizedBox(height: 12),
@@ -116,8 +116,8 @@ class _NotificationsSettingsSectionState
               context: context,
               settingsProvider: settingsProvider,
               category: NotificationCategory.permissions,
-              title: 'Permissions and questions',
-              subtitle: 'When tools request your input',
+              title: context.l10n.settingsNotificationsPermissions,
+              subtitle: context.l10n.settingsNotificationsPermissionsSubtitle,
               icon: Symbols.rule_folder,
             ),
             const SizedBox(height: 12),
@@ -125,8 +125,8 @@ class _NotificationsSettingsSectionState
               context: context,
               settingsProvider: settingsProvider,
               category: NotificationCategory.errors,
-              title: 'Errors',
-              subtitle: 'When a session reports a failure',
+              title: context.l10n.settingsNotificationsErrors,
+              subtitle: context.l10n.settingsNotificationsErrorsSubtitle,
               icon: Symbols.error_outline,
             ),
             if (_isDesktopPlatform ||
@@ -185,12 +185,12 @@ class _NotificationsSettingsSectionState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Android background alerts',
+              context.l10n.settingsNotificationsBackgroundAlerts,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 6),
             Text(
-              'Use low-data background monitoring for response completions, permission requests, questions, and errors while the app is not on screen.',
+              context.l10n.settingsNotificationsBackgroundDescription,
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
@@ -199,9 +199,9 @@ class _NotificationsSettingsSectionState
                 'settings_toggle_android_background_alerts',
               ),
               contentPadding: EdgeInsets.zero,
-              title: const Text('Background alerts on Android'),
-              subtitle: const Text(
-                'Turn off all Android background checks and hide the persistent monitor notification.',
+              title: Text(context.l10n.settingsNotificationsBackgroundToggle),
+              subtitle: Text(
+                context.l10n.settingsNotificationsBackgroundToggleDescription,
               ),
               value: enabled,
               onChanged: (value) => unawaited(
@@ -214,9 +214,9 @@ class _NotificationsSettingsSectionState
                 'settings_toggle_keep_mobile_realtime',
               ),
               contentPadding: EdgeInsets.zero,
-              title: const Text('Keep alerts live for 3 min'),
-              subtitle: const Text(
-                'When a response is already running, keep realtime active briefly after leaving the app.',
+              title: Text(context.l10n.settingsNotificationsKeepLive),
+              subtitle: Text(
+                context.l10n.settingsNotificationsKeepLiveDescription,
               ),
               value: settingsProvider.keepMobileRealtimeForShortPeriod,
               onChanged: enabled
@@ -250,26 +250,26 @@ class _NotificationsSettingsSectionState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Background behavior',
+              context.l10n.settingsNotificationsBackgroundBehavior,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 6),
             Text(
-              'Choose how CodeWalk behaves after the app leaves the foreground.',
+              context.l10n.settingsNotificationsBackgroundBehaviorDescription,
               style: Theme.of(context).textTheme.bodySmall,
             ),
             if (_isDesktopPlatform) ...[
               const SizedBox(height: 12),
               Text(
-                'When closing the window',
+                context.l10n.settingsNotificationsWhenClosing,
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               const SizedBox(height: 6),
               RadioListTile<DesktopCloseBehavior>.adaptive(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Close to tray'),
-                subtitle: const Text(
-                  'Hide window and keep running in system tray.',
+                title: Text(context.l10n.settingsNotificationsCloseToTray),
+                subtitle: Text(
+                  context.l10n.settingsNotificationsCloseToTrayDescription,
                 ),
                 value: DesktopCloseBehavior.tray,
                 groupValue: settingsProvider.desktopCloseBehavior,
@@ -282,9 +282,9 @@ class _NotificationsSettingsSectionState
               ),
               RadioListTile<DesktopCloseBehavior>.adaptive(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Minimize when close'),
-                subtitle: const Text(
-                  'Minimize to taskbar/dock and keep running.',
+                title: Text(context.l10n.settingsNotificationsMinimizeWhenClose),
+                subtitle: Text(
+                  context.l10n.settingsNotificationsMinimizeWhenCloseDescription,
                 ),
                 value: DesktopCloseBehavior.minimize,
                 groupValue: settingsProvider.desktopCloseBehavior,
@@ -297,8 +297,8 @@ class _NotificationsSettingsSectionState
               ),
               RadioListTile<DesktopCloseBehavior>.adaptive(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Just close'),
-                subtitle: const Text('Exit the application completely.'),
+                title: Text(context.l10n.settingsNotificationsJustClose),
+                subtitle: Text(context.l10n.settingsNotificationsJustCloseDescription),
                 value: DesktopCloseBehavior.close,
                 groupValue: settingsProvider.desktopCloseBehavior,
                 onChanged: (value) {
@@ -313,7 +313,7 @@ class _NotificationsSettingsSectionState
               const SizedBox(height: 12),
               SwitchListTile.adaptive(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Keep alerts live for 3 min'),
+                title: Text(context.l10n.settingsNotificationsKeepLive),
                 subtitle: const Text(
                   'When a response is running, keep realtime active briefly after you leave the app.',
                 ),
@@ -414,7 +414,7 @@ class _NotificationsSettingsSectionState
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Symbols.refresh),
-              label: const Text('Refresh status'),
+              label: Text(context.l10n.settingsSpeechRefreshStatus),
             ),
           ],
         ),
@@ -537,7 +537,7 @@ class _NotificationsSettingsSectionState
             if (notifyEnabled) ...[
               const SizedBox(height: 10),
               _buildOnlyWhenChips(
-                title: 'Notify only when',
+                title: context.l10n.settingsNotificationsNotifyOnlyWhen,
                 backgroundEnabled: settingsProvider.notifyOnlyWhenBackground(
                   category,
                 ),
@@ -552,7 +552,7 @@ class _NotificationsSettingsSectionState
             if (soundEnabled) ...[
               const SizedBox(height: 10),
               _buildOnlyWhenChips(
-                title: 'Sound only when',
+                title: context.l10n.settingsNotificationsSoundOnlyWhen,
                 backgroundEnabled: settingsProvider.soundOnlyWhenBackground(
                   category,
                 ),
@@ -591,7 +591,7 @@ class _NotificationsSettingsSectionState
                         ),
                       ),
                       icon: const Icon(Symbols.tune),
-                      label: const Text('Choose system sound'),
+                      label: Text(context.l10n.settingsNotificationsChooseSystemSound),
                     ),
                   if (soundOption == SoundOption.customFile)
                     OutlinedButton.icon(
@@ -602,13 +602,13 @@ class _NotificationsSettingsSectionState
                         ),
                       ),
                       icon: const Icon(Symbols.library_music),
-                      label: const Text('Choose audio file'),
+                      label: Text(context.l10n.settingsNotificationsChooseAudioFile),
                     ),
                   FilledButton.tonalIcon(
                     onPressed: () =>
                         settingsProvider.previewSound(soundCategory),
                     icon: const Icon(Symbols.play_arrow_rounded),
-                    label: const Text('Preview'),
+                    label: Text(context.l10n.settingsNotificationsPreview),
                   ),
                 ],
               ),
@@ -645,7 +645,7 @@ class _NotificationsSettingsSectionState
           child: SwitchListTile.adaptive(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            title: const Text('Notify'),
+            title: Text(context.l10n.settingsNotificationsNotify),
             value: settingsProvider.isNotificationEnabled(category),
             onChanged: (value) =>
                 settingsProvider.setNotificationEnabled(category, value),
@@ -656,7 +656,7 @@ class _NotificationsSettingsSectionState
           child: SwitchListTile.adaptive(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            title: const Text('Sound'),
+            title: Text(context.l10n.settingsNotificationsSound),
             value: settingsProvider.isSoundEnabledForNotification(category),
             onChanged: (value) => settingsProvider
                 .setSoundEnabledForNotification(category, value),
@@ -683,12 +683,12 @@ class _NotificationsSettingsSectionState
           runSpacing: 8,
           children: [
             FilterChip(
-              label: const Text('App in background'),
+              label: Text(context.l10n.settingsNotificationsAppInBackground),
               selected: backgroundEnabled,
               onSelected: onBackgroundChanged,
             ),
             FilterChip(
-              label: const Text('Another conversation'),
+              label: Text(context.l10n.settingsNotificationsAnotherConversation),
               selected: anotherSessionEnabled,
               onSelected: onAnotherSessionChanged,
             ),
@@ -696,7 +696,7 @@ class _NotificationsSettingsSectionState
         ),
         const SizedBox(height: 4),
         Text(
-          'If no condition is selected, alerts are allowed in any context.',
+          context.l10n.settingsNotificationsNoCondition,
           style: Theme.of(context).textTheme.bodySmall,
         ),
       ],
@@ -843,7 +843,7 @@ class _NotificationsSettingsSectionState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Choose system sound',
+                      context.l10n.settingsNotificationsChooseSystemSound,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 4),

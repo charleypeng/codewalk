@@ -31,7 +31,7 @@ const englishTemplate = <String, String>{
       'Per-category notify and sound controls',
   'settingsSpeechTitle': 'Speech to text',
   'settingsSpeechDescription': 'Engine, silence timeout, and model options',
-  'settingsLogsTitle': 'Logs',
+  'settingsLogsTitle': 'Registros',
   'settingsLogsDescription': 'Runtime diagnostics and troubleshooting data',
   'settingsShortcutsTitle': 'Shortcuts',
   'settingsShortcutsDescription': 'Portable app key bindings',
@@ -271,6 +271,8 @@ const englishTemplate = <String, String>{
   // ── Settings ─ Shortcuts section ─────────────────────────────────
   'settingsShortcutsKeyboard': 'Keyboard shortcuts',
   'settingsShortcutsSearch': 'Search shortcuts',
+  'settingsShortcutsEdit': 'Edit shortcut',
+  'settingsShortcutsReset': 'Reset shortcut',
 
   // ── Settings ─ Speech section ──────────────────────────────────
   'settingsSpeechRefreshStatus': 'Refresh status',
@@ -461,6 +463,7 @@ const englishTemplate = <String, String>{
   'msgClearUsernameNeedsConfigEdit':
       'Clearing the OpenCode conversation username still requires editing config outside the app.',
   'sessionDiffReview': 'Review changes',
+  'sessionDiffChangedFile': 'Changed file',
 
   // ── Desktop Tray ────────────────────────────────────────────────
   'trayShow': 'Show',
@@ -606,7 +609,7 @@ const translations = <String, Map<String, String>>{
     'settingsNotificationsDescription': 'Controles de notificação e som por categoria',
     'settingsSpeechTitle': 'Fala para texto',
     'settingsSpeechDescription': 'Motor, tempo de silêncio e opções de modelo',
-    'settingsLogsTitle': 'Logs',
+    'settingsLogsTitle': 'Registros',
     'settingsLogsDescription': 'Diagnóstico em tempo de execução e dados de solução de problemas',
     'settingsShortcutsTitle': 'Atalhos',
     'settingsShortcutsDescription': 'Atalhos de teclado portáteis do app',
@@ -846,6 +849,8 @@ const translations = <String, Map<String, String>>{
     // ── Settings ─ Shortcuts ──────────────────────────────────
     'settingsShortcutsKeyboard': 'Atalhos de teclado',
     'settingsShortcutsSearch': 'Buscar atalhos',
+    'settingsShortcutsEdit': 'Editar atalho',
+    'settingsShortcutsReset': 'Redefinir atalho',
 
     // ── Settings ─ Speech ─────────────────────────────────────
     'settingsSpeechRefreshStatus': 'Atualizar status',
@@ -854,7 +859,7 @@ const translations = <String, Map<String, String>>{
     // ── Settings ─ About ──────────────────────────────────────
     'settingsAboutVersion': 'Versão',
     'settingsAboutLoading': 'Carregando...',
-    'settingsAboutVersionBuild': '{version} (build {buildNumber})',
+    'settingsAboutVersionBuild': '{version} (compilação {buildNumber})',
     'settingsAboutUpdateAvailable': 'Atualização disponível: v{version}',
     'settingsAboutDownloading': 'Baixando... {percent}%',
     'settingsAboutInstalling': 'Instalando...',
@@ -1036,6 +1041,7 @@ const translations = <String, Map<String, String>>{
     'msgClearUsernameNeedsConfigEdit':
         'Limpar o nome de usuário da conversa do OpenCode ainda requer editar a config fora do app.',
     'sessionDiffReview': 'Revisar alterações',
+    'sessionDiffChangedFile': 'Arquivo alterado',
 
     // ── Desktop Tray ──────────────────────────────────────────
     'trayShow': 'Mostrar',
@@ -1327,6 +1333,8 @@ const translations = <String, Map<String, String>>{
     'settingsServersChooseActive': 'Elegir servidor activo',
     'settingsShortcutsKeyboard': 'Atajos de teclado',
     'settingsShortcutsSearch': 'Buscar atajos',
+    'settingsShortcutsEdit': 'Editar atajo',
+    'settingsShortcutsReset': 'Restablecer atajo',
     'settingsSpeechRefreshStatus': 'Actualizar estado',
     'settingsSpeechSilenceTimeout': 'Tiempo de silencio: {value}s',
     'settingsAboutVersion': 'Versión',

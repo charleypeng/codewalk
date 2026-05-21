@@ -56,10 +56,10 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
         return ListView(
           padding: const EdgeInsets.all(AppConstants.defaultPadding),
           children: [
-            Text('Behavior', style: Theme.of(context).textTheme.headlineSmall),
+            Text(context.l10n.settingsBehaviorTitle, style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 8),
             Text(
-              'Control shared OpenCode defaults and local composer sync behavior.',
+              context.l10n.settingsBehaviorDescription,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
@@ -78,9 +78,9 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                     key: const ValueKey<String>(
                       'settings_toggle_experimental_multi_device_sync',
                     ),
-                    title: const Text('Enable experimental multi-device sync'),
-                    subtitle: const Text(
-                      'Sync composer selection (agent/model/variant) with the active server config.',
+                    title: Text(context.l10n.settingsBehaviorMultiDeviceSync),
+                    subtitle: Text(
+                      context.l10n.settingsBehaviorMultiDeviceSyncDescription,
                     ),
                     value: settingsProvider.enableExperimentalMultiDeviceSync,
                     onChanged: (value) => unawaited(
@@ -95,7 +95,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'Can abort ongoing sessions when working in more than one session at the same time.',
+                        context.l10n.settingsBehaviorMultiDeviceSyncWarning,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
@@ -354,7 +354,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                       ? null
                       : () => unawaited(_applyUsername(context)),
                   icon: const Icon(Symbols.save),
-                  label: const Text('Save username'),
+                  label: Text(context.l10n.settingsBehaviorSaveUsername),
                 ),
               ),
               const SizedBox(height: 8),
@@ -368,9 +368,9 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
               SwitchListTile.adaptive(
                 key: const ValueKey<String>('settings_opencode_snapshot'),
                 contentPadding: EdgeInsets.zero,
-                title: const Text('OpenCode snapshots'),
-                subtitle: const Text(
-                  'Keep upstream git-backed snapshots enabled for undo/redo and recovery history.',
+                title: Text(context.l10n.settingsBehaviorOpenCodeSnapshots),
+                subtitle: Text(
+                  context.l10n.settingsBehaviorOpenCodeSnapshotsDescription,
                 ),
                 value: snapshotEnabled,
                 onChanged: settingsProvider.openCodeDefaultsLoading
@@ -380,7 +380,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
               ),
               const SizedBox(height: 8),
               Text(
-                'This controls OpenCode snapshot storage and undo/redo support, not CodeWalk local cache snapshots.',
+                context.l10n.settingsBehaviorSnapshotCaveat,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
@@ -557,7 +557,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                 'settings_toggle_cellular_data_saver',
               ),
               contentPadding: EdgeInsets.zero,
-              title: const Text('Enable cellular data saver'),
+              title: Text(context.l10n.settingsBehaviorEnableDataSaver),
               subtitle: Text(
                 saverActive
                     ? 'Active now on mobile data.'
@@ -671,7 +671,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
     if (!updated) {
       _showFailureSnackBar(
         context,
-        'Could not update the OpenCode default model.',
+        context.l10n.settingsBehaviorConfigUpdateFailed('default model'),
       );
       return;
     }
@@ -694,7 +694,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
     if (!updated) {
       _showFailureSnackBar(
         context,
-        'Could not update the OpenCode default agent.',
+        context.l10n.settingsBehaviorConfigUpdateFailed('default agent'),
       );
       return;
     }
@@ -714,7 +714,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
     if (!updated) {
       _showFailureSnackBar(
         context,
-        'Could not update the OpenCode small model.',
+        context.l10n.settingsBehaviorConfigUpdateFailed('small model'),
       );
       return;
     }
@@ -737,7 +737,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
     if (!updated) {
       _showFailureSnackBar(
         context,
-        'Could not update the OpenCode auto-update mode.',
+        context.l10n.settingsBehaviorConfigUpdateFailed('auto-update mode'),
       );
     }
   }
@@ -755,7 +755,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
     if (!updated) {
       _showFailureSnackBar(
         context,
-        'Could not update the OpenCode snapshot setting.',
+        context.l10n.settingsBehaviorConfigUpdateFailed('snapshot setting'),
       );
     }
   }
@@ -787,7 +787,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
     if (!updated) {
       _showFailureSnackBar(
         context,
-        'Could not update the OpenCode conversation username.',
+        context.l10n.settingsBehaviorConfigUpdateFailed('conversation username'),
       );
     }
   }
@@ -807,7 +807,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
     if (!updated) {
       _showFailureSnackBar(
         context,
-        'Could not update the OpenCode sharing default.',
+        context.l10n.settingsBehaviorConfigUpdateFailed('sharing default'),
       );
     }
   }

@@ -467,6 +467,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sessionDeleteTitle => 'Eliminar Conversación';
 
   @override
+  String get sessionDiffChangedFile => 'Changed file';
+
+  @override
   String get sessionDiffReview => 'Review changes';
 
   @override
@@ -1181,7 +1184,13 @@ class AppLocalizationsEs extends AppLocalizations {
       'Combinaciones de teclas portátiles de la app';
 
   @override
+  String get settingsShortcutsEdit => 'Editar atajo';
+
+  @override
   String get settingsShortcutsKeyboard => 'Atajos de teclado';
+
+  @override
+  String get settingsShortcutsReset => 'Restablecer atajo';
 
   @override
   String get settingsShortcutsSearch => 'Buscar atajos';

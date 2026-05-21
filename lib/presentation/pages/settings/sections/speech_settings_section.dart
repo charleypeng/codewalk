@@ -560,7 +560,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    tooltip: 'Refresh status',
+                    tooltip: context.l10n.settingsSpeechRefreshStatus,
                     onPressed: _isMutatingMoonshineModel
                         ? null
                         : () => unawaited(_refreshMoonshineModelStatuses()),
@@ -691,7 +691,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    tooltip: 'Refresh status',
+                    tooltip: context.l10n.settingsSpeechRefreshStatus,
                     onPressed: _isMutatingParakeetModel
                         ? null
                         : () => unawaited(_refreshParakeetModelStatuses()),
@@ -822,7 +822,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    tooltip: 'Refresh status',
+                    tooltip: context.l10n.settingsSpeechRefreshStatus,
                     onPressed: _isMutatingSenseVoiceModel
                         ? null
                         : () => unawaited(_refreshSenseVoiceModelStatuses()),
@@ -982,7 +982,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    tooltip: 'Refresh status',
+                    tooltip: context.l10n.settingsSpeechRefreshStatus,
                     onPressed: _isMutatingModel
                         ? null
                         : () => unawaited(_refreshModelStatuses()),

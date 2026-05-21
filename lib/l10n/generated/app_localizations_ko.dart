@@ -462,6 +462,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get sessionDeleteTitle => 'Delete Conversation';
 
   @override
+  String get sessionDiffChangedFile => 'Changed file';
+
+  @override
   String get sessionDiffReview => 'Review changes';
 
   @override
@@ -955,7 +958,7 @@ class AppLocalizationsKo extends AppLocalizations {
       'Runtime diagnostics and troubleshooting data';
 
   @override
-  String get settingsLogsTitle => 'Logs';
+  String get settingsLogsTitle => 'Registros';
 
   @override
   String get settingsNotificationsAgentSubtitle => 'When a response finishes';
@@ -1158,7 +1161,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsShortcutsDescription => 'Portable app key bindings';
 
   @override
+  String get settingsShortcutsEdit => 'Edit shortcut';
+
+  @override
   String get settingsShortcutsKeyboard => 'Keyboard shortcuts';
+
+  @override
+  String get settingsShortcutsReset => 'Reset shortcut';
 
   @override
   String get settingsShortcutsSearch => 'Search shortcuts';

@@ -178,8 +178,8 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                   _showMessage(appProvider.errorMessage);
                 }
               },
-              decoration: const InputDecoration(
-                labelText: 'Choose active server',
+              decoration: InputDecoration(
+                labelText: context.l10n.settingsServersChooseActive,
                 border: OutlineInputBorder(),
               ),
             ),

@@ -992,6 +992,12 @@ abstract class AppLocalizations {
   /// **'Delete Conversation'**
   String get sessionDeleteTitle;
 
+  /// CodeWalk UI string — sessionDiffChangedFile
+  ///
+  /// In en, this message translates to:
+  /// **'Changed file'**
+  String get sessionDiffChangedFile;
+
   /// CodeWalk UI string — sessionDiffReview
   ///
   /// In en, this message translates to:
@@ -1853,7 +1859,7 @@ abstract class AppLocalizations {
   /// CodeWalk UI string — settingsLogsTitle
   ///
   /// In en, this message translates to:
-  /// **'Logs'**
+  /// **'Registros'**
   String get settingsLogsTitle;
 
   /// CodeWalk UI string — settingsNotificationsAgentSubtitle
@@ -2204,11 +2210,23 @@ abstract class AppLocalizations {
   /// **'Portable app key bindings'**
   String get settingsShortcutsDescription;
 
+  /// CodeWalk UI string — settingsShortcutsEdit
+  ///
+  /// In en, this message translates to:
+  /// **'Edit shortcut'**
+  String get settingsShortcutsEdit;
+
   /// CodeWalk UI string — settingsShortcutsKeyboard
   ///
   /// In en, this message translates to:
   /// **'Keyboard shortcuts'**
   String get settingsShortcutsKeyboard;
+
+  /// CodeWalk UI string — settingsShortcutsReset
+  ///
+  /// In en, this message translates to:
+  /// **'Reset shortcut'**
+  String get settingsShortcutsReset;
 
   /// CodeWalk UI string — settingsShortcutsSearch
   ///

@@ -464,6 +464,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get sessionDeleteTitle => 'Excluir Conversa';
 
   @override
+  String get sessionDiffChangedFile => 'Arquivo alterado';
+
+  @override
   String get sessionDiffReview => 'Revisar alterações';
 
   @override
@@ -589,7 +592,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String settingsAboutVersionBuild(String buildNumber, String version) {
-    return '$version (build $buildNumber)';
+    return '$version (compilação $buildNumber)';
   }
 
   @override
@@ -966,7 +969,7 @@ class AppLocalizationsPt extends AppLocalizations {
       'Diagnóstico em tempo de execução e dados de solução de problemas';
 
   @override
-  String get settingsLogsTitle => 'Logs';
+  String get settingsLogsTitle => 'Registros';
 
   @override
   String get settingsNotificationsAgentSubtitle =>
@@ -1174,7 +1177,13 @@ class AppLocalizationsPt extends AppLocalizations {
       'Atalhos de teclado portáteis do app';
 
   @override
+  String get settingsShortcutsEdit => 'Editar atalho';
+
+  @override
   String get settingsShortcutsKeyboard => 'Atalhos de teclado';
+
+  @override
+  String get settingsShortcutsReset => 'Redefinir atalho';
 
   @override
   String get settingsShortcutsSearch => 'Buscar atalhos';

@@ -592,6 +592,10 @@
   "@sessionDeleteTitle": {
     "description": "CodeWalk UI string — sessionDeleteTitle"
   },
+  "sessionDiffChangedFile": "Changed file",
+  "@sessionDiffChangedFile": {
+    "description": "CodeWalk UI string — sessionDiffChangedFile"
+  },
   "sessionDiffReview": "Review changes",
   "@sessionDiffReview": {
     "description": "CodeWalk UI string — sessionDiffReview"
@@ -1180,7 +1184,7 @@
   "@settingsLogsDescription": {
     "description": "CodeWalk UI string — settingsLogsDescription"
   },
-  "settingsLogsTitle": "Logs",
+  "settingsLogsTitle": "Registros",
   "@settingsLogsTitle": {
     "description": "CodeWalk UI string — settingsLogsTitle"
   },
@@ -1419,9 +1423,17 @@
   "@settingsShortcutsDescription": {
     "description": "CodeWalk UI string — settingsShortcutsDescription"
   },
+  "settingsShortcutsEdit": "Edit shortcut",
+  "@settingsShortcutsEdit": {
+    "description": "CodeWalk UI string — settingsShortcutsEdit"
+  },
   "settingsShortcutsKeyboard": "Keyboard shortcuts",
   "@settingsShortcutsKeyboard": {
     "description": "CodeWalk UI string — settingsShortcutsKeyboard"
+  },
+  "settingsShortcutsReset": "Reset shortcut",
+  "@settingsShortcutsReset": {
+    "description": "CodeWalk UI string — settingsShortcutsReset"
   },
   "settingsShortcutsSearch": "Search shortcuts",
   "@settingsShortcutsSearch": {

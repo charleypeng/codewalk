@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../core/i18n/l10n_context.dart';
 import '../../domain/entities/chat_session.dart';
 import '../utils/diff_parser.dart';
 
@@ -155,8 +156,8 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
         }
         setState(() => _selectedIndex = value);
       },
-      decoration: const InputDecoration(
-        labelText: 'Changed file',
+      decoration: InputDecoration(
+        labelText: context.l10n.sessionDiffChangedFile,
         border: OutlineInputBorder(),
         isDense: true,
       ),
@@ -317,7 +318,7 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
             ),
             const SizedBox(height: 4),
             Text(
-              'File content not captured by the server',
+              context.l10n.sessionDiffReview,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
