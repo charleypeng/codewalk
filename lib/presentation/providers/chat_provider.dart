@@ -4524,10 +4524,18 @@ class ChatProvider extends ChangeNotifier {
       _hasAnyBusySessionStatus;
 
   Future<bool> undoLastTurn() async {
-    final session = _currentSession;
     final messageId = latestRevertibleMessageId;
+    if (messageId == null) {
+      return false;
+    }
+
+    return revertToTurn(messageId);
+  }
+
+  Future<bool> revertToTurn(String messageId) async {
+    final session = _currentSession;
     final useCase = revertChatMessage;
-    if (session == null || messageId == null || useCase == null) {
+    if (session == null || useCase == null) {
       return false;
     }
 

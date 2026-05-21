@@ -291,6 +291,84 @@ void main() {
       expect(pendingSync.draft?.text, 'hello');
     });
 
+    test('revertToTurn reverts a historical persisted user message', () async {
+      chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+        UserMessage(
+          id: 'msg_user_1',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1000),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_user_1',
+              messageId: 'msg_user_1',
+              sessionId: 'ses_1',
+              text: 'first prompt',
+            ),
+          ],
+        ),
+        AssistantMessage(
+          id: 'msg_assistant_1',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1100),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1200),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_assistant_1',
+              messageId: 'msg_assistant_1',
+              sessionId: 'ses_1',
+              text: 'first answer',
+            ),
+          ],
+        ),
+        UserMessage(
+          id: 'msg_user_2',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1300),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_user_2',
+              messageId: 'msg_user_2',
+              sessionId: 'ses_1',
+              text: 'second prompt',
+            ),
+          ],
+        ),
+        AssistantMessage(
+          id: 'msg_assistant_2',
+          sessionId: 'ses_1',
+          time: DateTime.fromMillisecondsSinceEpoch(1400),
+          completedTime: DateTime.fromMillisecondsSinceEpoch(1500),
+          parts: const <MessagePart>[
+            TextPart(
+              id: 'part_assistant_2',
+              messageId: 'msg_assistant_2',
+              sessionId: 'ses_1',
+              text: 'second answer',
+            ),
+          ],
+        ),
+      ];
+
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+
+      final ok = await provider.revertToTurn('msg_user_1');
+
+      expect(ok, isTrue);
+      expect(chatRepository.lastRevertProjectId, 'default');
+      expect(chatRepository.lastRevertSessionId, 'ses_1');
+      expect(chatRepository.lastRevertMessageId, 'msg_user_1');
+      expect(provider.currentSessionRevert?.messageId, 'msg_user_1');
+      expect(provider.messages, isEmpty);
+
+      final pendingSync = provider.consumePendingHistoryComposerSync(
+        sessionId: 'ses_1',
+      );
+      expect(pendingSync, isNotNull);
+      expect(pendingSync!.clear, isFalse);
+      expect(pendingSync.draft?.text, 'first prompt');
+    });
+
     test(
       'redoLastTurn advances revert boundary before full unrevert',
       () async {
