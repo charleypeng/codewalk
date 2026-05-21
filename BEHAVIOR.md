@@ -414,6 +414,8 @@
 
 - **Given** the active session has at least one persisted user turn
 - **Then** the latest visible revertible user bubble exposes an inline `Undo this turn` action that triggers the same undo flow as the toolbar and `/undo`
+- **Then** older visible persisted user bubbles expose an inline `Rewind and edit from here` action that reverts the session to that historical user turn and restores that prompt text into the composer
+- **Then** optimistic local user bubbles whose IDs start with `local_user_` never expose historical rewind because the server has not confirmed those message IDs
 - **When** the user triggers `Undo` from the toolbar or `/undo` from the composer
 - **Then** the current client immediately hides the reverted user turn and every later turn from the visible timeline without waiting for another client or a manual refresh
 - **Then** the reverted user prompt is restored into the composer so the user can edit or resend it locally
