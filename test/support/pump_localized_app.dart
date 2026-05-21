@@ -22,9 +22,15 @@ Future<void> pumpLocalizedApp(
   ));
 }
 
-Widget localizedMaterialApp({required Widget home}) {
+Widget localizedMaterialApp({
+  required Widget home,
+  ThemeData? theme,
+  TransitionBuilder? builder,
+}) {
   return MaterialApp(
     locale: const Locale('en'),
+    theme: theme,
+    builder: builder,
     localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
       AppLocalizations.delegate,
       GlobalMaterialLocalizations.delegate,

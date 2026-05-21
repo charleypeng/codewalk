@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../support/pump_localized_app.dart';
+
 void main() {
   const sampleDiff = SessionDiff(
     file: 'lib/main.dart',
@@ -15,7 +17,7 @@ void main() {
   );
 
   Widget wrap(Widget child) {
-    return MaterialApp(
+    return localizedMaterialApp(
       home: Scaffold(
         body: Padding(padding: const EdgeInsets.all(16), child: child),
       ),

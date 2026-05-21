@@ -958,7 +958,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Runtime diagnostics and troubleshooting data';
 
   @override
-  String get settingsLogsTitle => 'Registros';
+  String get settingsLogsTitle => 'Logs';
 
   @override
   String get settingsNotificationsAgentSubtitle => 'When a response finishes';

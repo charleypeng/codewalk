@@ -318,7 +318,7 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
             ),
             const SizedBox(height: 4),
             Text(
-              context.l10n.sessionDiffReview,
+              'File content not captured by the server',
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

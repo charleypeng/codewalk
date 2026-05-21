@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/pump_localized_app.dart';
+
 void main() {
   testWidgets('edits and saves title inline', (tester) async {
     String? saved;
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: SessionTitleInlineEditor(
             title: 'Session A',
@@ -45,7 +47,7 @@ void main() {
 
   testWidgets('escape cancels inline edit mode', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: SessionTitleInlineEditor(
             title: 'Session A',

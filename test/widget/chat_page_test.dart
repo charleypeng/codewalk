@@ -68,6 +68,7 @@ import 'package:showcaseview/showcaseview.dart';
 import 'package:simple_icons/simple_icons.dart';
 
 import '../support/fakes.dart';
+import '../support/pump_localized_app.dart';
 
 class _ConfigurableDelayFakeChatRepository extends FakeChatRepository {
   _ConfigurableDelayFakeChatRepository({required super.sessions});
@@ -15518,7 +15519,7 @@ Widget _testApp(
         value: effectiveQuotaProvider,
       ),
     ],
-    child: MaterialApp(
+    child: localizedMaterialApp(
       theme: AppTheme.lightFrom(
         ColorScheme.fromSeed(seedColor: AppTheme.seedColor),
       ),

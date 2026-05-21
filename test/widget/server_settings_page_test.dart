@@ -11,6 +11,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../support/fakes.dart';
+import '../support/pump_localized_app.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -206,7 +207,7 @@ void main() {
 Widget _testApp(AppProvider appProvider) {
   return ChangeNotifierProvider<AppProvider>.value(
     value: appProvider,
-    child: const MaterialApp(home: ServerSettingsPage()),
+    child: localizedMaterialApp(home: const ServerSettingsPage()),
   );
 }
 

@@ -1859,7 +1859,7 @@ abstract class AppLocalizations {
   /// CodeWalk UI string — settingsLogsTitle
   ///
   /// In en, this message translates to:
-  /// **'Registros'**
+  /// **'Logs'**
   String get settingsLogsTitle;
 
   /// CodeWalk UI string — settingsNotificationsAgentSubtitle

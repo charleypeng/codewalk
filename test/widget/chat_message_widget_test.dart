@@ -9,6 +9,8 @@ import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../support/pump_localized_app.dart';
+
 @Tags(<String>['slow'])
 void main() {
   testWidgets('renders historical revert action for user message callback', (
@@ -30,7 +32,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: message,
@@ -77,7 +79,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: message,
@@ -114,7 +116,7 @@ void main() {
     late StateSetter setHostState;
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: StatefulBuilder(
             builder: (context, setState) {
@@ -203,7 +205,7 @@ void main() {
       late StateSetter setHostState;
 
       await tester.pumpWidget(
-        MaterialApp(
+        localizedMaterialApp(
           home: Scaffold(
             body: StatefulBuilder(
               builder: (context, setState) {
@@ -274,7 +276,7 @@ void main() {
       late StateSetter setHostState;
 
       await tester.pumpWidget(
-        MaterialApp(
+        localizedMaterialApp(
           home: Scaffold(
             body: StatefulBuilder(
               builder: (context, setState) {
@@ -347,7 +349,7 @@ void main() {
       late StateSetter setHostState;
 
       await tester.pumpWidget(
-        MaterialApp(
+        localizedMaterialApp(
           home: Scaffold(
             body: StatefulBuilder(
               builder: (context, setState) {
@@ -387,7 +389,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -431,7 +433,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -457,7 +459,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -510,7 +512,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -539,7 +541,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: UserMessage(
@@ -567,7 +569,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: UserMessage(
@@ -596,7 +598,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: UserMessage(
@@ -633,7 +635,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: UserMessage(
@@ -674,7 +676,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         theme: ThemeData(platform: TargetPlatform.windows),
         home: Scaffold(
           body: ChatMessageWidget(
@@ -714,7 +716,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         theme: ThemeData(platform: TargetPlatform.android),
         home: Scaffold(
           body: ChatMessageWidget(
@@ -748,7 +750,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         theme: ThemeData(platform: TargetPlatform.windows),
         home: Scaffold(
           body: ChatMessageWidget(
@@ -782,7 +784,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         theme: ThemeData(platform: TargetPlatform.windows),
         home: Scaffold(
           body: ChatMessageWidget(
@@ -817,7 +819,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         theme: ThemeData(platform: TargetPlatform.windows),
         home: Scaffold(
           body: ChatMessageWidget(
@@ -854,7 +856,7 @@ void main() {
     )!;
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         theme: ThemeData(
           brightness: Brightness.dark,
           extensions: <ThemeExtension<dynamic>>[themeTokens],
@@ -900,7 +902,7 @@ void main() {
     'multi-line markdown code block keeps monospace font in classic dark theme',
     (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        localizedMaterialApp(
           theme: ThemeData(brightness: Brightness.dark),
           home: Scaffold(
             body: ChatMessageWidget(
@@ -951,7 +953,7 @@ void main() {
     var showLeadingPanel = true;
 
     Widget buildHost() {
-      return MaterialApp(
+      return localizedMaterialApp(
         theme: ThemeData(platform: TargetPlatform.windows),
         home: Scaffold(
           body: StatefulBuilder(
@@ -1021,7 +1023,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -1054,7 +1056,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -1088,7 +1090,7 @@ void main() {
   ) async {
     var userLongPressCount = 0;
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             onBackgroundLongPress: () {
@@ -1118,7 +1120,7 @@ void main() {
 
     var assistantLongPressCount = 0;
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             onBackgroundLongPress: () {
@@ -1155,7 +1157,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -1232,7 +1234,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -1301,7 +1303,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -1364,7 +1366,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         theme: ThemeData.dark(),
         home: Scaffold(
           body: ChatMessageWidget(
@@ -1453,7 +1455,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(body: ChatMessageWidget(message: message)),
       ),
     );
@@ -1561,7 +1563,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(body: ChatMessageWidget(message: message)),
       ),
     );
@@ -1627,7 +1629,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
+        localizedMaterialApp(
           home: Scaffold(
             body: ChatMessageWidget(
               message: message,
@@ -1696,7 +1698,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
+        localizedMaterialApp(
           home: Scaffold(
             body: ChatMessageWidget(
               message: message,
@@ -1775,7 +1777,7 @@ void main() {
       late StateSetter setHostState;
 
       await tester.pumpWidget(
-        MaterialApp(
+        localizedMaterialApp(
           home: Scaffold(
             body: StatefulBuilder(
               builder: (context, setState) {
@@ -1876,7 +1878,7 @@ void main() {
     );
 
     Widget buildWidget() {
-      return MaterialApp(
+      return localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: message,
@@ -1954,7 +1956,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: message,
@@ -2040,7 +2042,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(body: ChatMessageWidget(message: message)),
       ),
     );
@@ -2084,7 +2086,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: message,
@@ -2148,7 +2150,7 @@ void main() {
     );
 
     Widget buildWidget() {
-      return MaterialApp(
+      return localizedMaterialApp(
         home: Scaffold(body: ChatMessageWidget(message: message)),
       );
     }
@@ -2211,7 +2213,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: Column(
             children: [
@@ -2268,7 +2270,7 @@ void main() {
     Widget buildFrame(Widget child) {
       // Default widget-test surface is 800px wide; 900 here intentionally
       // clamps to the available viewport after scaffold/padding constraints.
-      return MaterialApp(
+      return localizedMaterialApp(
         home: Scaffold(body: SizedBox(width: 900, child: child)),
       );
     }
@@ -2322,7 +2324,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: SizedBox(
             width: 280,
@@ -2363,7 +2365,7 @@ void main() {
 
     Future<double> pumpAndReadSpacing(VisualDensity density) async {
       await tester.pumpWidget(
-        MaterialApp(
+        localizedMaterialApp(
           theme: ThemeData(useMaterial3: true, visualDensity: density),
           home: Scaffold(body: ChatMessageWidget(message: message)),
         ),
@@ -2402,7 +2404,7 @@ void main() {
       }
 
       Widget buildWidget(AssistantMessage message) {
-        return MaterialApp(
+        return localizedMaterialApp(
           home: Scaffold(body: ChatMessageWidget(message: message)),
         );
       }
@@ -2512,7 +2514,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
+        localizedMaterialApp(
           home: Scaffold(body: ChatMessageWidget(message: message)),
         ),
       );
@@ -2547,7 +2549,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
+        localizedMaterialApp(
           home: Scaffold(
             body: ChatMessageWidget(
               message: message,
@@ -2574,7 +2576,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
+        localizedMaterialApp(
           home: Scaffold(
             body: ChatMessageWidget(
               message: message,
@@ -2614,7 +2616,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: message,
@@ -2686,7 +2688,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
+        localizedMaterialApp(
           home: Scaffold(
             body: ChatMessageWidget(
               message: message,
@@ -2722,7 +2724,7 @@ void main() {
 +new line''';
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -2779,7 +2781,7 @@ void main() {
 +new line''';
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -2859,7 +2861,7 @@ void main() {
 *** End Patch''';
 
       await tester.pumpWidget(
-        MaterialApp(
+        localizedMaterialApp(
           home: Scaffold(
             body: ChatMessageWidget(
               message: AssistantMessage(
@@ -2918,7 +2920,7 @@ void main() {
 *** End Patch''';
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -2993,7 +2995,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         builder: (context, child) {
           final mediaQuery = MediaQuery.of(
             context,
@@ -3057,7 +3059,7 @@ void main() {
         .height;
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -3109,7 +3111,7 @@ void main() {
 +new''';
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -3161,7 +3163,7 @@ void main() {
     const plainOutput = 'file1.txt\nfile2.txt';
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -3214,7 +3216,7 @@ void main() {
     const diff = '@@ -1,1 +1,2 @@\n-old\n+new';
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -3275,7 +3277,7 @@ index abc123..def456 100644
  another normal line''';
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -3327,7 +3329,7 @@ index abc123..def456 100644
     tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -3396,7 +3398,7 @@ index abc123..def456 100644
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(message: message, showThinkingBubbles: false),
         ),
@@ -3441,7 +3443,7 @@ index abc123..def456 100644
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(message: message, showToolCallBubbles: false),
         ),
@@ -3475,7 +3477,7 @@ index abc123..def456 100644
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(message: message, showToolCallBubbles: false),
         ),
@@ -3528,7 +3530,7 @@ index abc123..def456 100644
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(body: ChatMessageWidget(message: message)),
       ),
     );
@@ -3550,7 +3552,7 @@ index abc123..def456 100644
     ).join('\n');
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -3601,7 +3603,7 @@ index abc123..def456 100644
     final hugeOutput = List<String>.filled(12000, 'line payload').join('\n');
 
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -3650,7 +3652,7 @@ index abc123..def456 100644
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -3682,7 +3684,7 @@ index abc123..def456 100644
   ) async {
     SubtaskPart? tappedSubtask;
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -3723,7 +3725,7 @@ index abc123..def456 100644
   ) async {
     ToolPart? tappedToolPart;
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -3772,7 +3774,7 @@ index abc123..def456 100644
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -3809,7 +3811,7 @@ index abc123..def456 100644
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -3857,7 +3859,7 @@ index abc123..def456 100644
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(
@@ -3903,7 +3905,7 @@ index abc123..def456 100644
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      MaterialApp(
+      localizedMaterialApp(
         home: Scaffold(
           body: ChatMessageWidget(
             message: AssistantMessage(

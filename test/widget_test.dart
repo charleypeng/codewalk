@@ -17,6 +17,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import 'support/fakes.dart';
+import 'support/pump_localized_app.dart';
 
 Widget _buildChatInputHarness({
   required ChatInputWidget child,
@@ -37,7 +38,7 @@ Widget _buildChatInputHarness({
       child: home,
     );
   }
-  return MaterialApp(home: home);
+  return localizedMaterialApp(home: home);
 }
 
 class _FakeSttSpeechInputService extends SttSpeechInputService {

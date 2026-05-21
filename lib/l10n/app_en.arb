@@ -1184,7 +1184,7 @@
   "@settingsLogsDescription": {
     "description": "CodeWalk UI string — settingsLogsDescription"
   },
-  "settingsLogsTitle": "Registros",
+  "settingsLogsTitle": "Logs",
   "@settingsLogsTitle": {
     "description": "CodeWalk UI string — settingsLogsTitle"
   },

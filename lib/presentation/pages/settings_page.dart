@@ -72,7 +72,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  late final List<_SettingsSection> _sections = <_SettingsSection>[
+  List<_SettingsSection> get _sections => <_SettingsSection>[
     _section(
       id: 'servers',
       title: context.l10n.settingsServersTitle,
@@ -162,12 +162,9 @@ class _SettingsPageState extends State<SettingsPage> {
     final initialSectionId = widget.initialSectionId == 'logs'
         ? ''
         : widget.initialSectionId;
-    final visibleSections = _visibleSections;
-    _selectedSectionId = visibleSections
-        .where((section) => section.id == initialSectionId)
-        .firstOrNull
-        ?.id;
-    _selectedSectionId ??= visibleSections.first.id;
+    // Section labels depend on Localizations, so the localized section list is
+    // resolved during build instead of during initState.
+    _selectedSectionId = initialSectionId.isEmpty ? 'servers' : initialSectionId;
     _showMobileDetail = initialSectionId.isNotEmpty;
     if (widget.initialSectionId == 'logs') {
       WidgetsBinding.instance.addPostFrameCallback((_) {
