@@ -24,7 +24,14 @@ class LocaleProvider extends ChangeNotifier {
   Future<void> _initializeInternal() async {
     await _settingsProvider.initialize();
     _localeCode = _settingsProvider.localeCode;
+    _settingsProvider.addListener(_handleSettingsChanged);
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _settingsProvider.removeListener(_handleSettingsChanged);
+    super.dispose();
   }
 
   Future<void> setLocaleCode(String? code) async {
@@ -43,5 +50,14 @@ class LocaleProvider extends ChangeNotifier {
       return null;
     }
     return AppLocales.infoForCode(value)?.code;
+  }
+
+  void _handleSettingsChanged() {
+    final next = _normalizeLocaleCode(_settingsProvider.localeCode);
+    if (_localeCode == next) {
+      return;
+    }
+    _localeCode = next;
+    notifyListeners();
   }
 }
