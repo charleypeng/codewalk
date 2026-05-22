@@ -7,33 +7,25 @@ extension _ChatPageCommandQuery on _ChatPageState {
     final normalizedQuery = query.trim().toLowerCase();
     final projectProvider = context.read<ProjectProvider>();
     final chatProvider = context.read<ChatProvider>();
-    final dio = di.sl<DioClient>().dio;
 
     try {
-      final response = await dio.get(
-        '/find/file',
-        queryParameters: <String, String>{
-          'query': normalizedQuery,
-          if ((projectProvider.currentDirectory ?? '').isNotEmpty)
-            'directory': projectProvider.currentDirectory!,
-          'limit': '12',
-        },
+      final filesFuture = projectProvider.findFiles(
+        query: normalizedQuery,
+        limit: 12,
+        updateProviderError: false,
       );
+      final symbolsFuture = projectProvider.findSymbols(
+        query: normalizedQuery,
+        limit: 8,
+      );
+      final foundFiles = await filesFuture;
+      final foundSymbols = await symbolsFuture;
 
-      final fileData = response.data as List<dynamic>? ?? const <dynamic>[];
       final suggestions = <ChatComposerMentionSuggestion>[];
 
-      for (final raw in fileData) {
-        String? path;
-        if (raw is String) {
-          path = raw;
-        } else if (raw is Map) {
-          path =
-              raw['path'] as String? ??
-              raw['name'] as String? ??
-              raw['file'] as String?;
-        }
-        if (path == null || path.trim().isEmpty) {
+      for (final file in foundFiles ?? const <FileNode>[]) {
+        final path = file.path.trim();
+        if (path.isEmpty) {
           continue;
         }
         suggestions.add(
@@ -41,6 +33,22 @@ extension _ChatPageCommandQuery on _ChatPageState {
             value: path.trim(),
             type: ChatComposerSuggestionType.file,
             subtitle: 'file',
+          ),
+        );
+      }
+
+      for (final symbol in foundSymbols ?? const <WorkspaceSymbol>[]) {
+        final name = symbol.name.trim();
+        if (name.isEmpty) {
+          continue;
+        }
+        suggestions.add(
+          ChatComposerMentionSuggestion(
+            value: name,
+            type: ChatComposerSuggestionType.symbol,
+            subtitle: symbol.path.isEmpty
+                ? symbol.kind ?? 'symbol'
+                : symbol.path,
           ),
         );
       }

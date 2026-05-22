@@ -45,7 +45,7 @@ part 'chat_input/chat_input_canned_controller.dart';
 
 enum ChatComposerMode { normal, shell }
 
-enum ChatComposerSuggestionType { file, agent }
+enum ChatComposerSuggestionType { file, symbol, agent }
 
 enum ChatComposerPopoverType { none, mention, slash, canned }
 
@@ -57,8 +57,7 @@ class ChatInputController {
 
   bool get hasDraftContent => _state?._hasDraftContent ?? false;
 
-  bool get hasMaterialDraftContent =>
-      _state?._hasMaterialDraftContent ?? false;
+  bool get hasMaterialDraftContent => _state?._hasMaterialDraftContent ?? false;
 
   bool get canToggleVoiceInput => _state?._canToggleVoiceInput ?? false;
 

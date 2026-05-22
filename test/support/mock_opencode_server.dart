@@ -560,6 +560,32 @@ class MockOpenCodeServer {
       return;
     }
 
+    if (method == 'GET' && request.uri.path == '/find/symbol') {
+      final query = (request.uri.queryParameters['query'] ?? '')
+          .trim()
+          .toLowerCase();
+      final limit =
+          int.tryParse(request.uri.queryParameters['limit'] ?? '') ?? 10;
+      final symbols = <Map<String, dynamic>>[
+        <String, dynamic>{
+          'name': 'CodeWalkController',
+          'kind': 'class',
+          'location': <String, dynamic>{
+            'uri': 'file:///workspace/project/lib/codewalk_controller.dart',
+          },
+        },
+      ];
+      final filtered = symbols
+          .where((item) {
+            final name = (item['name'] as String).toLowerCase();
+            return query.isEmpty || name.contains(query);
+          })
+          .take(limit)
+          .toList(growable: false);
+      await _writeJson(request.response, 200, filtered);
+      return;
+    }
+
     if (method == 'PATCH' && segments.length == 2 && segments[0] == 'project') {
       final projectId = segments[1];
       final project = _projectsById[projectId];

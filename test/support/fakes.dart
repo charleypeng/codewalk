@@ -2180,6 +2180,8 @@ class FakeProjectRepository implements ProjectRepository {
       <String, List<FileNode>>{};
   final Map<String, List<FileSearchMatch>> contentSearchResultsByPattern =
       <String, List<FileSearchMatch>>{};
+  final Map<String, List<WorkspaceSymbol>> symbolsByQuery =
+      <String, List<WorkspaceSymbol>>{};
 
   @override
   Future<Either<Failure, Project>> getCurrentProject({
@@ -2382,6 +2384,23 @@ class FakeProjectRepository implements ProjectRepository {
       return Right(List<FileSearchMatch>.from(seeded.take(limit)));
     }
     return const Right(<FileSearchMatch>[]);
+  }
+
+  @override
+  Future<Either<Failure, List<WorkspaceSymbol>>> findSymbols({
+    String? directory,
+    required String query,
+    int limit = 10,
+  }) async {
+    if (directoryFailure != null) {
+      return Left(directoryFailure!);
+    }
+    final normalized = query.trim().toLowerCase();
+    final seeded = symbolsByQuery[normalized];
+    if (seeded != null) {
+      return Right(List<WorkspaceSymbol>.from(seeded.take(limit)));
+    }
+    return const Right(<WorkspaceSymbol>[]);
   }
 
   @override

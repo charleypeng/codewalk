@@ -63,6 +63,13 @@ abstract class ProjectRepository {
     int limit,
   });
 
+  /// Search workspace symbols for composer mentions.
+  Future<Either<Failure, List<WorkspaceSymbol>>> findSymbols({
+    String? directory,
+    required String query,
+    int limit,
+  });
+
   /// Read file content.
   Future<Either<Failure, FileContent>> readFileContent({
     String? directory,

@@ -59,3 +59,14 @@ class FileSearchMatch extends Equatable {
     submatches,
   ];
 }
+
+class WorkspaceSymbol extends Equatable {
+  const WorkspaceSymbol({required this.name, required this.path, this.kind});
+
+  final String name;
+  final String path;
+  final String? kind;
+
+  @override
+  List<Object?> get props => [name, path, kind];
+}

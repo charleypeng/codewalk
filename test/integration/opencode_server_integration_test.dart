@@ -255,6 +255,14 @@ void main() {
           contentMatches.single.lineContent,
           'CodeWalk quick open content search',
         );
+
+        final symbols = await remote.findSymbols(query: 'controller', limit: 5);
+        expect(symbols, hasLength(1));
+        expect(symbols.single.name, 'CodeWalkController');
+        expect(
+          symbols.single.path,
+          '/workspace/project/lib/codewalk_controller.dart',
+        );
       },
     );
 

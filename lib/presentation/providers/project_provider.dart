@@ -721,6 +721,37 @@ class ProjectProvider extends ChangeNotifier {
     }, (matches) => matches);
   }
 
+  Future<List<WorkspaceSymbol>?> findSymbols({
+    required String query,
+    String? directory,
+    int limit = 10,
+    bool updateProviderError = false,
+  }) async {
+    final normalizedQuery = query.trim();
+    if (normalizedQuery.isEmpty) {
+      return const <WorkspaceSymbol>[];
+    }
+    final requestDirectory = directory?.trim();
+    final targetDirectory = requestDirectory == null || requestDirectory.isEmpty
+        ? currentDirectory
+        : requestDirectory;
+    final result = await _projectRepository.findSymbols(
+      directory: targetDirectory,
+      query: normalizedQuery,
+      limit: limit,
+    );
+    return result.fold((failure) {
+      AppLogger.warn(
+        'Workspace symbol search failed query=$normalizedQuery directory=${targetDirectory ?? "-"}',
+        error: failure,
+      );
+      if (updateProviderError) {
+        _setError('Failed to search symbols: ${failure.message}');
+      }
+      return null;
+    }, (symbols) => symbols);
+  }
+
   Future<FileContent?> readFileContent({
     required String path,
     String? directory,

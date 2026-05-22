@@ -25,12 +25,17 @@ extension _ChatInputSuggestionPopover on _ChatInputWidgetState {
                 (item) => (
                   title: item.value,
                   subtitle: item.subtitle,
-                  icon: item.type == ChatComposerSuggestionType.file
-                      ? Symbols.insert_drive_file
-                      : Symbols.smart_toy,
-                  badge: item.type == ChatComposerSuggestionType.file
-                      ? 'file'
-                      : 'agent',
+                  icon: switch (item.type) {
+                    ChatComposerSuggestionType.file =>
+                      Symbols.insert_drive_file,
+                    ChatComposerSuggestionType.symbol => Symbols.code_rounded,
+                    ChatComposerSuggestionType.agent => Symbols.smart_toy,
+                  },
+                  badge: switch (item.type) {
+                    ChatComposerSuggestionType.file => 'file',
+                    ChatComposerSuggestionType.symbol => 'symbol',
+                    ChatComposerSuggestionType.agent => 'agent',
+                  },
                 ),
               )
               .toList(growable: false)

@@ -2,6 +2,7 @@ import '../models/file_content_model.dart';
 import '../models/file_node_model.dart';
 import '../models/file_search_match_model.dart';
 import '../models/project_model.dart';
+import '../models/workspace_symbol_model.dart';
 import '../models/worktree_model.dart';
 
 /// Technical comment translated to English.
@@ -51,6 +52,13 @@ abstract class ProjectRemoteDataSource {
   Future<List<FileSearchMatchModel>> searchFileContents({
     String? directory,
     required String pattern,
+    int limit,
+  });
+
+  /// Search workspace symbols by query in current context.
+  Future<List<WorkspaceSymbolModel>> findSymbols({
+    String? directory,
+    required String query,
     int limit,
   });
 
@@ -310,6 +318,36 @@ class ProjectRemoteDataSourceImpl implements ProjectRemoteDataSource {
         .map(Map<String, dynamic>.from)
         .map(FileSearchMatchModel.fromJson)
         .where((item) => item.path.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  @override
+  Future<List<WorkspaceSymbolModel>> findSymbols({
+    String? directory,
+    required String query,
+    int limit = 10,
+  }) async {
+    final queryParams = <String, dynamic>{
+      'query': query.trim(),
+      'limit': '$limit',
+    };
+    if (directory != null && directory.trim().isNotEmpty) {
+      queryParams['directory'] = directory.trim();
+    }
+    final response = await dio.get(
+      '/find/symbol',
+      queryParameters: queryParams,
+    );
+    final data = response.data;
+    if (data is! List) {
+      return const <WorkspaceSymbolModel>[];
+    }
+    return data
+        .whereType<Map>()
+        .map(Map<String, dynamic>.from)
+        .map(WorkspaceSymbolModel.fromJson)
+        .where((item) => item.name.isNotEmpty)
+        .take(limit)
         .toList(growable: false);
   }
 
