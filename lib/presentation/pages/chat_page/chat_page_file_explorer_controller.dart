@@ -1,5 +1,21 @@
 part of '../chat_page.dart';
 
+enum _QuickOpenSearchMode { names, contents }
+
+class _QuickOpenResult {
+  const _QuickOpenResult({
+    required this.path,
+    required this.title,
+    required this.subtitle,
+    this.lineNumber,
+  });
+
+  final String path;
+  final String title;
+  final String subtitle;
+  final int? lineNumber;
+}
+
 extension _ChatPageFileExplorerController on _ChatPageState {
   Widget _buildDesktopFilePane(
     ChatProvider chatProvider, {
@@ -124,7 +140,8 @@ extension _ChatPageFileExplorerController on _ChatPageState {
     final queryController = TextEditingController();
     var loading = false;
     var errorMessage = '';
-    var resultNodes = <FileNode>[];
+    var resultNodes = <_QuickOpenResult>[];
+    var searchMode = _QuickOpenSearchMode.names;
     var searchRequestId = 0;
     var dialogActive = true;
     var openingSelection = false;
@@ -173,10 +190,10 @@ extension _ChatPageFileExplorerController on _ChatPageState {
 
     resultNodes = fileState.tabSelection.openPaths
         .map(
-          (path) => FileNode(
+          (path) => _QuickOpenResult(
             path: path,
-            name: _fileBasename(path),
-            type: FileNodeType.file,
+            title: _fileBasename(path),
+            subtitle: _normalizeFilePath(path),
           ),
         )
         .toList(growable: false);
@@ -188,10 +205,10 @@ extension _ChatPageFileExplorerController on _ChatPageState {
       if (normalized.isEmpty) {
         final recent = fileState.tabSelection.openPaths
             .map(
-              (path) => FileNode(
+              (path) => _QuickOpenResult(
                 path: path,
-                name: _fileBasename(path),
-                type: FileNodeType.file,
+                title: _fileBasename(path),
+                subtitle: _normalizeFilePath(path),
               ),
             )
             .toList(growable: false);
@@ -214,24 +231,48 @@ extension _ChatPageFileExplorerController on _ChatPageState {
         errorMessage = '';
       });
 
-      final found = await projectProvider.findFiles(
-        query: normalized,
-        limit: 120,
-      );
+      final found = searchMode == _QuickOpenSearchMode.names
+          ? await projectProvider.findFiles(query: normalized, limit: 120)
+          : null;
+      final contentMatches = searchMode == _QuickOpenSearchMode.contents
+          ? await projectProvider.searchFileContents(
+              pattern: normalized,
+              limit: 50,
+            )
+          : null;
       if (!mounted || requestId != searchRequestId || !dialogActive) {
         return;
       }
-      if (found == null) {
+      if (found == null && contentMatches == null) {
         setModalState(() {
           loading = false;
-          resultNodes = <FileNode>[];
+          resultNodes = <_QuickOpenResult>[];
           errorMessage = projectProvider.error ?? 'Failed to search files';
         });
         return;
       }
 
+      if (contentMatches != null) {
+        setModalState(() {
+          loading = false;
+          errorMessage = '';
+          resultNodes = contentMatches
+              .map(
+                (match) => _QuickOpenResult(
+                  path: match.path,
+                  title: _fileBasename(match.path),
+                  subtitle:
+                      '${_normalizeFilePath(match.path)}:${match.lineNumber}  ${match.lineContent}',
+                  lineNumber: match.lineNumber,
+                ),
+              )
+              .toList(growable: false);
+        });
+        return;
+      }
+
       final byPath = <String, FileNode>{
-        for (final node in found)
+        for (final node in found ?? const <FileNode>[])
           if (node.path.trim().isNotEmpty) _normalizeFilePath(node.path): node,
       };
       final rankedPaths = rankQuickOpenPaths(
@@ -246,15 +287,18 @@ extension _ChatPageFileExplorerController on _ChatPageState {
             .map((path) {
               final node = byPath[path];
               if (node != null) {
-                return node;
+                return _QuickOpenResult(
+                  path: node.path,
+                  title: node.name,
+                  subtitle: _normalizeFilePath(node.path),
+                );
               }
-              return FileNode(
+              return _QuickOpenResult(
                 path: path,
-                name: _fileBasename(path),
-                type: FileNodeType.file,
+                title: _fileBasename(path),
+                subtitle: path,
               );
             })
-            .where((node) => !node.isDirectory)
             .toList(growable: false);
       });
     }
@@ -284,13 +328,37 @@ extension _ChatPageFileExplorerController on _ChatPageState {
                         autofocus: true,
                         decoration: InputDecoration(
                           hintText: context.l10n.filesSearchHint,
-                          prefixIcon: Icon(Symbols.search),
+                          prefixIcon: const Icon(Symbols.search),
                         ),
                         onChanged: (value) {
                           unawaited(runSearch(setModalState, value));
                         },
                         onSubmitted: (value) async {
                           await openFirstQuickOpenResult(dialogContext);
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      SegmentedButton<_QuickOpenSearchMode>(
+                        segments: const <ButtonSegment<_QuickOpenSearchMode>>[
+                          ButtonSegment<_QuickOpenSearchMode>(
+                            value: _QuickOpenSearchMode.names,
+                            label: Text('Names'),
+                            icon: Icon(Symbols.description),
+                          ),
+                          ButtonSegment<_QuickOpenSearchMode>(
+                            value: _QuickOpenSearchMode.contents,
+                            label: Text('Contents'),
+                            icon: Icon(Symbols.manage_search),
+                          ),
+                        ],
+                        selected: <_QuickOpenSearchMode>{searchMode},
+                        onSelectionChanged: (selected) {
+                          setModalState(() {
+                            searchMode = selected.single;
+                          });
+                          unawaited(
+                            runSearch(setModalState, queryController.text),
+                          );
                         },
                       ),
                       const SizedBox(height: 12),
@@ -309,7 +377,9 @@ extension _ChatPageFileExplorerController on _ChatPageState {
                                 child: Text(
                                   queryController.text.trim().isEmpty
                                       ? 'No open files yet. Type to search.'
-                                      : 'No files found',
+                                      : searchMode == _QuickOpenSearchMode.names
+                                      ? 'No files found'
+                                      : 'No content matches found',
                                 ),
                               )
                             : ListView.builder(
@@ -325,15 +395,17 @@ extension _ChatPageFileExplorerController on _ChatPageState {
                                     ),
                                     dense: _useDenseListTiles(context),
                                     leading: Icon(
-                                      _fileIconForNode(node),
+                                      node.lineNumber == null
+                                          ? Symbols.description
+                                          : Symbols.manage_search,
                                       size: 18,
                                     ),
                                     title: Text(
-                                      node.name,
+                                      node.title,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     subtitle: Text(
-                                      normalizedPath,
+                                      node.subtitle,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     onTap: () async {

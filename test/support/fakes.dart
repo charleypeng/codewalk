@@ -2178,6 +2178,8 @@ class FakeProjectRepository implements ProjectRepository {
   final Map<String, FileContent> fileContentsByPath = <String, FileContent>{};
   final Map<String, List<FileNode>> searchResultsByQuery =
       <String, List<FileNode>>{};
+  final Map<String, List<FileSearchMatch>> contentSearchResultsByPattern =
+      <String, List<FileSearchMatch>>{};
 
   @override
   Future<Either<Failure, Project>> getCurrentProject({
@@ -2363,6 +2365,23 @@ class FakeProjectRepository implements ProjectRepository {
       return Right(List<FileNode>.from(filtered.take(limit)));
     }
     return const Right(<FileNode>[]);
+  }
+
+  @override
+  Future<Either<Failure, List<FileSearchMatch>>> searchFileContents({
+    String? directory,
+    required String pattern,
+    int limit = 50,
+  }) async {
+    if (directoryFailure != null) {
+      return Left(directoryFailure!);
+    }
+    final normalized = pattern.trim().toLowerCase();
+    final seeded = contentSearchResultsByPattern[normalized];
+    if (seeded != null) {
+      return Right(List<FileSearchMatch>.from(seeded.take(limit)));
+    }
+    return const Right(<FileSearchMatch>[]);
   }
 
   @override

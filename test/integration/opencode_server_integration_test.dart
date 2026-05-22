@@ -1,5 +1,5 @@
-import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/core/errors/exceptions.dart';
+import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/data/datasources/app_remote_datasource.dart';
 import 'package:codewalk/data/datasources/chat_remote_datasource.dart';
@@ -242,6 +242,18 @@ void main() {
         expect(
           directories.every((item) => item.type.name == 'directory'),
           isTrue,
+        );
+
+        final contentMatches = await remote.searchFileContents(
+          pattern: 'content',
+          limit: 10,
+        );
+        expect(contentMatches, hasLength(1));
+        expect(contentMatches.single.path, '/workspace/project/README.md');
+        expect(contentMatches.single.lineNumber, 12);
+        expect(
+          contentMatches.single.lineContent,
+          'CodeWalk quick open content search',
         );
       },
     );

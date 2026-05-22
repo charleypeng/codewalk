@@ -56,6 +56,13 @@ abstract class ProjectRepository {
     int limit,
   });
 
+  /// Search file contents for quick open.
+  Future<Either<Failure, List<FileSearchMatch>>> searchFileContents({
+    String? directory,
+    required String pattern,
+    int limit,
+  });
+
   /// Read file content.
   Future<Either<Failure, FileContent>> readFileContent({
     String? directory,

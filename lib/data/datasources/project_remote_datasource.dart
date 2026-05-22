@@ -1,5 +1,6 @@
 import '../models/file_content_model.dart';
 import '../models/file_node_model.dart';
+import '../models/file_search_match_model.dart';
 import '../models/project_model.dart';
 import '../models/worktree_model.dart';
 
@@ -43,6 +44,13 @@ abstract class ProjectRemoteDataSource {
     String? directory,
     required String query,
     String? type,
+    int limit,
+  });
+
+  /// Search file contents by text pattern in current context.
+  Future<List<FileSearchMatchModel>> searchFileContents({
+    String? directory,
+    required String pattern,
     int limit,
   });
 
@@ -275,6 +283,32 @@ class ProjectRemoteDataSourceImpl implements ProjectRemoteDataSource {
             'type': 'unknown',
           }, parentPath: '/');
         })
+        .where((item) => item.path.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  @override
+  Future<List<FileSearchMatchModel>> searchFileContents({
+    String? directory,
+    required String pattern,
+    int limit = 50,
+  }) async {
+    final queryParams = <String, dynamic>{
+      'pattern': pattern.trim(),
+      'limit': '$limit',
+    };
+    if (directory != null && directory.trim().isNotEmpty) {
+      queryParams['directory'] = directory.trim();
+    }
+    final response = await dio.get('/find', queryParameters: queryParams);
+    final data = response.data;
+    if (data is! List) {
+      return const <FileSearchMatchModel>[];
+    }
+    return data
+        .whereType<Map>()
+        .map(Map<String, dynamic>.from)
+        .map(FileSearchMatchModel.fromJson)
         .where((item) => item.path.isNotEmpty)
         .toList(growable: false);
   }

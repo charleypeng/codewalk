@@ -34,3 +34,28 @@ class FileContent extends Equatable {
   @override
   List<Object?> get props => [path, content, isBinary, mimeType];
 }
+
+class FileSearchMatch extends Equatable {
+  const FileSearchMatch({
+    required this.path,
+    required this.lineNumber,
+    required this.lineContent,
+    this.absoluteOffset,
+    this.submatches = const <String>[],
+  });
+
+  final String path;
+  final int lineNumber;
+  final String lineContent;
+  final int? absoluteOffset;
+  final List<String> submatches;
+
+  @override
+  List<Object?> get props => [
+    path,
+    lineNumber,
+    lineContent,
+    absoluteOffset,
+    submatches,
+  ];
+}

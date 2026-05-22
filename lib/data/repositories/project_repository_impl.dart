@@ -190,6 +190,28 @@ class ProjectRepositoryImpl
   }
 
   @override
+  Future<Either<Failure, List<FileSearchMatch>>> searchFileContents({
+    String? directory,
+    required String pattern,
+    int limit = 50,
+  }) async {
+    try {
+      final items = await remoteDataSource.searchFileContents(
+        directory: directory,
+        pattern: pattern,
+        limit: limit,
+      );
+      return Right(
+        items.map((item) => item.toDomain()).toList(growable: false),
+      );
+    } on DioException catch (e) {
+      return Left(handleDioException(e));
+    } on Exception catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, FileContent>> readFileContent({
     String? directory,
     required String path,

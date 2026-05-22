@@ -530,6 +530,36 @@ class MockOpenCodeServer {
       return;
     }
 
+    if (method == 'GET' && request.uri.path == '/find') {
+      final pattern = (request.uri.queryParameters['pattern'] ?? '')
+          .trim()
+          .toLowerCase();
+      final limit =
+          int.tryParse(request.uri.queryParameters['limit'] ?? '') ?? 50;
+      final matches = <Map<String, dynamic>>[
+        <String, dynamic>{
+          'path': '/workspace/project/README.md',
+          'lines': <String>['CodeWalk quick open content search'],
+          'line_number': 12,
+          'absolute_offset': 120,
+          'submatches': <Map<String, dynamic>>[
+            <String, dynamic>{
+              'match': <String, dynamic>{'text': 'content'},
+            },
+          ],
+        },
+      ];
+      final filtered = matches
+          .where((item) {
+            final lines = (item['lines'] as List).join('\n').toLowerCase();
+            return pattern.isEmpty || lines.contains(pattern);
+          })
+          .take(limit)
+          .toList(growable: false);
+      await _writeJson(request.response, 200, filtered);
+      return;
+    }
+
     if (method == 'PATCH' && segments.length == 2 && segments[0] == 'project') {
       final projectId = segments[1];
       final project = _projectsById[projectId];

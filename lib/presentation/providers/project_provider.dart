@@ -690,6 +690,37 @@ class ProjectProvider extends ChangeNotifier {
     }, (nodes) => nodes);
   }
 
+  Future<List<FileSearchMatch>?> searchFileContents({
+    required String pattern,
+    String? directory,
+    int limit = 50,
+    bool updateProviderError = true,
+  }) async {
+    final normalizedPattern = pattern.trim();
+    if (normalizedPattern.isEmpty) {
+      return const <FileSearchMatch>[];
+    }
+    final requestDirectory = directory?.trim();
+    final targetDirectory = requestDirectory == null || requestDirectory.isEmpty
+        ? currentDirectory
+        : requestDirectory;
+    final result = await _projectRepository.searchFileContents(
+      directory: targetDirectory,
+      pattern: normalizedPattern,
+      limit: limit,
+    );
+    return result.fold((failure) {
+      AppLogger.warn(
+        'File content search failed pattern=$normalizedPattern directory=${targetDirectory ?? "-"}',
+        error: failure,
+      );
+      if (updateProviderError) {
+        _setError('Content search not available: ${failure.message}');
+      }
+      return null;
+    }, (matches) => matches);
+  }
+
   Future<FileContent?> readFileContent({
     required String path,
     String? directory,
