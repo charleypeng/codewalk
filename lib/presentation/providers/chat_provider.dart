@@ -220,6 +220,21 @@ class ChatProvider extends ChangeNotifier {
     _cellularDataSaverService.addListener(_handleCellularDataSaverChanged);
   }
 
+  @visibleForTesting
+  bool debugIsOptimisticLocalUserMessageId(String messageId) =>
+      _isOptimisticLocalUserMessageId(messageId);
+
+  @visibleForTesting
+  bool debugShouldSkipLocalUserAppendAsDuplicateEcho({
+    required UserMessage localMessage,
+    required List<ChatMessage> mergedMessages,
+  }) {
+    return _shouldSkipLocalUserAppendAsDuplicateEcho(
+      localMessage: localMessage,
+      mergedMessages: mergedMessages,
+    );
+  }
+
   // Scroll callback
   void Function({required String reason})? _scrollToBottomCallback;
 

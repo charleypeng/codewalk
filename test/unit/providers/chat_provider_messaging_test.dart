@@ -93,6 +93,142 @@ void main() {
       provider = buildProvider();
     });
 
+    test('optimistic user ids are recognized only by local_user prefix', () {
+      expect(
+        provider.debugIsOptimisticLocalUserMessageId('local_user_123_1'),
+        isTrue,
+      );
+      expect(
+        provider.debugIsOptimisticLocalUserMessageId(
+          'local_user_1700000000000_2',
+        ),
+        isTrue,
+      );
+      expect(
+        provider.debugIsOptimisticLocalUserMessageId('msg_server_123'),
+        isFalse,
+      );
+      expect(provider.debugIsOptimisticLocalUserMessageId(''), isFalse);
+      expect(
+        provider.debugIsOptimisticLocalUserMessageId('LOCAL_USER_123'),
+        isFalse,
+      );
+    });
+
+    test('duplicate echo suppression ignores server-format local ids', () {
+      final time = DateTime.fromMillisecondsSinceEpoch(2000);
+      final localServerFormat = UserMessage(
+        id: 'msg_local_wrong_prefix',
+        sessionId: 'ses_1',
+        time: time,
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'prt_local_wrong_prefix',
+            messageId: 'msg_local_wrong_prefix',
+            sessionId: 'ses_1',
+            text: 'same content',
+          ),
+        ],
+      );
+      final serverEcho = UserMessage(
+        id: 'msg_server_echo',
+        sessionId: 'ses_1',
+        time: time.add(const Duration(milliseconds: 100)),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'prt_server_echo',
+            messageId: 'msg_server_echo',
+            sessionId: 'ses_1',
+            text: 'same content',
+          ),
+        ],
+      );
+
+      expect(
+        provider.debugShouldSkipLocalUserAppendAsDuplicateEcho(
+          localMessage: localServerFormat,
+          mergedMessages: <ChatMessage>[serverEcho],
+        ),
+        isFalse,
+      );
+    });
+
+    test('duplicate echo suppression accepts local_user matching content', () {
+      final time = DateTime.fromMillisecondsSinceEpoch(3000);
+      final localOptimistic = UserMessage(
+        id: 'local_user_3000_1',
+        sessionId: 'ses_1',
+        time: time,
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'prt_local_optimistic',
+            messageId: 'local_user_3000_1',
+            sessionId: 'ses_1',
+            text: 'same content',
+          ),
+        ],
+      );
+      final serverEcho = UserMessage(
+        id: 'msg_server_echo',
+        sessionId: 'ses_1',
+        time: time.add(const Duration(milliseconds: 100)),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'prt_server_echo',
+            messageId: 'msg_server_echo',
+            sessionId: 'ses_1',
+            text: 'same content',
+          ),
+        ],
+      );
+
+      expect(
+        provider.debugShouldSkipLocalUserAppendAsDuplicateEcho(
+          localMessage: localOptimistic,
+          mergedMessages: <ChatMessage>[serverEcho],
+        ),
+        isTrue,
+      );
+    });
+
+    test('duplicate echo suppression rejects stale local_user echoes', () {
+      final time = DateTime.fromMillisecondsSinceEpoch(4000);
+      final localOptimistic = UserMessage(
+        id: 'local_user_4000_1',
+        sessionId: 'ses_1',
+        time: time,
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'prt_local_stale',
+            messageId: 'local_user_4000_1',
+            sessionId: 'ses_1',
+            text: 'same content',
+          ),
+        ],
+      );
+      final staleServerEcho = UserMessage(
+        id: 'msg_server_stale_echo',
+        sessionId: 'ses_1',
+        time: time.add(const Duration(seconds: 46)),
+        parts: const <MessagePart>[
+          TextPart(
+            id: 'prt_server_stale_echo',
+            messageId: 'msg_server_stale_echo',
+            sessionId: 'ses_1',
+            text: 'same content',
+          ),
+        ],
+      );
+
+      expect(
+        provider.debugShouldSkipLocalUserAppendAsDuplicateEcho(
+          localMessage: localOptimistic,
+          mergedMessages: <ChatMessage>[staleServerEcho],
+        ),
+        isFalse,
+      );
+    });
+
     test('loadSessions merges cache startup with remote refresh', () async {
       await provider.projectProvider.initializeProject();
 

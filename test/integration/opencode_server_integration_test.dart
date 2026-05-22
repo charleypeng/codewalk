@@ -94,38 +94,51 @@ void main() {
       },
     );
 
-    test('AppRemoteDataSource sends workspace for scoped discovery calls', () async {
-      final remote = AppRemoteDataSourceImpl(
-        dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
-      );
+    test(
+      'AppRemoteDataSource sends workspace for scoped discovery calls',
+      () async {
+        final remote = AppRemoteDataSourceImpl(
+          dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
+        );
 
-      await remote.getProviders(directory: '/workspace/project');
-      await remote.getAgents(directory: '/workspace/project');
-      await remote.getConfig(directory: '/workspace/project');
+        await remote.getProviders(directory: '/workspace/project');
+        await remote.getAgents(directory: '/workspace/project');
+        await remote.getConfig(directory: '/workspace/project');
 
-      expect(server.lastProviderQueryParameters?['directory'], '/workspace/project');
-      expect(server.lastProviderQueryParameters?['workspace'], '/workspace/project');
-      expect(server.lastAgentQueryParameters?['directory'], '/workspace/project');
-      expect(server.lastAgentQueryParameters?['workspace'], '/workspace/project');
-      expect(server.lastConfigQueryParameters?['directory'], '/workspace/project');
-      expect(server.lastConfigQueryParameters?['workspace'], '/workspace/project');
-    });
+        expect(
+          server.lastProviderQueryParameters?['directory'],
+          '/workspace/project',
+        );
+        expect(
+          server.lastProviderQueryParameters?['workspace'],
+          '/workspace/project',
+        );
+        expect(
+          server.lastAgentQueryParameters?['directory'],
+          '/workspace/project',
+        );
+        expect(
+          server.lastAgentQueryParameters?['workspace'],
+          '/workspace/project',
+        );
+        expect(
+          server.lastConfigQueryParameters?['directory'],
+          '/workspace/project',
+        );
+        expect(
+          server.lastConfigQueryParameters?['workspace'],
+          '/workspace/project',
+        );
+      },
+    );
 
     test('AppRemoteDataSource parses grouped agent payload shapes', () async {
       server.customAgentResponsePayload = <String, dynamic>{
         'primary': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'name': 'build',
-            'hidden': false,
-            'native': false,
-          },
+          <String, dynamic>{'name': 'build', 'hidden': false, 'native': false},
         ],
         'subagent': <Map<String, dynamic>>[
-          <String, dynamic>{
-            'name': 'review',
-            'hidden': false,
-            'native': true,
-          },
+          <String, dynamic>{'name': 'review', 'hidden': false, 'native': true},
         ],
       };
 
@@ -140,39 +153,53 @@ void main() {
       expect(agents.last.mode, 'subagent');
     });
 
-    test('AppRemoteDataSource falls back when scoped agent query returns empty', () async {
-      server.returnEmptyAgentsWhenScoped = true;
+    test(
+      'AppRemoteDataSource falls back when scoped agent query returns empty',
+      () async {
+        server.returnEmptyAgentsWhenScoped = true;
 
-      final remote = AppRemoteDataSourceImpl(
-        dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
-      );
+        final remote = AppRemoteDataSourceImpl(
+          dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
+        );
 
-      final agents = await remote.getAgents(directory: '/workspace/project');
+        final agents = await remote.getAgents(directory: '/workspace/project');
 
-      expect(agents.map((agent) => agent.name), containsAll(<String>['build', 'plan']));
-      expect(server.lastAgentQueryParameters, isEmpty);
-    });
+        expect(
+          agents.map((agent) => agent.name),
+          containsAll(<String>['build', 'plan']),
+        );
+        expect(server.lastAgentQueryParameters, isEmpty);
+      },
+    );
 
-    test('AppRemoteDataSource falls back when scoped discovery queries fail', () async {
-      server.failProviderWhenScoped = true;
-      server.failAgentWhenScoped = true;
-      server.failConfigWhenScoped = true;
+    test(
+      'AppRemoteDataSource falls back when scoped discovery queries fail',
+      () async {
+        server.failProviderWhenScoped = true;
+        server.failAgentWhenScoped = true;
+        server.failConfigWhenScoped = true;
 
-      final remote = AppRemoteDataSourceImpl(
-        dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
-      );
+        final remote = AppRemoteDataSourceImpl(
+          dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
+        );
 
-      final providers = await remote.getProviders(directory: '/workspace/project');
-      final agents = await remote.getAgents(directory: '/workspace/project');
-      final config = await remote.getConfig(directory: '/workspace/project');
+        final providers = await remote.getProviders(
+          directory: '/workspace/project',
+        );
+        final agents = await remote.getAgents(directory: '/workspace/project');
+        final config = await remote.getConfig(directory: '/workspace/project');
 
-      expect(providers.providers, hasLength(1));
-      expect(agents.map((agent) => agent.name), containsAll(<String>['build', 'plan']));
-      expect(config['default_agent'], 'build');
-      expect(server.lastProviderQueryParameters, isEmpty);
-      expect(server.lastAgentQueryParameters, isEmpty);
-      expect(server.lastConfigQueryParameters, isEmpty);
-    });
+        expect(providers.providers, hasLength(1));
+        expect(
+          agents.map((agent) => agent.name),
+          containsAll(<String>['build', 'plan']),
+        );
+        expect(config['default_agent'], 'build');
+        expect(server.lastProviderQueryParameters, isEmpty);
+        expect(server.lastAgentQueryParameters, isEmpty);
+        expect(server.lastConfigQueryParameters, isEmpty);
+      },
+    );
 
     test(
       'ProjectRemoteDataSource supports project context and worktrees',
@@ -646,48 +673,45 @@ void main() {
       },
     );
 
-    test(
-      'ChatRemoteDataSource preserves typed upstream error details',
-      () async {
-        server.promptAsyncCustomErrorStatusCode = 401;
-        server.promptAsyncCustomErrorPayload = <String, dynamic>{
-          'error': <String, dynamic>{
-            'name': 'ProviderAuthError',
-            'code': 'AUTH_FAILED',
-            'message': 'Reconnect the provider and try again.',
-            'details': <String, dynamic>{'provider': 'mock-provider'},
-          },
-        };
+    test('ChatRemoteDataSource preserves typed upstream error details', () async {
+      server.promptAsyncCustomErrorStatusCode = 401;
+      server.promptAsyncCustomErrorPayload = <String, dynamic>{
+        'error': <String, dynamic>{
+          'name': 'ProviderAuthError',
+          'code': 'AUTH_FAILED',
+          'message': 'Reconnect the provider and try again.',
+          'details': <String, dynamic>{'provider': 'mock-provider'},
+        },
+      };
 
-        final remote = ChatRemoteDataSourceImpl(
-          dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
-        );
+      final remote = ChatRemoteDataSourceImpl(
+        dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
+      );
 
-        await expectLater(
-          () => remote
-              .sendMessage(
-                'default',
-                'ses_1',
-                const ChatInputModel(
-                  messageId: 'msg_user_auth_401',
-                  providerId: 'mock-provider',
-                  modelId: 'mock-model',
-                  parts: <ChatInputPartModel>[
-                    ChatInputPartModel(type: 'text', text: 'auth please'),
-                  ],
-                ),
-              )
-              .toList(),
-          throwsA(
-            isA<ServerException>().having(
-              (error) => error.message,
-              'message',
-              'ProviderAuthError [AUTH_FAILED]: Reconnect the provider and try again. (provider=mock-provider)',
-            ),
+      await expectLater(
+        () => remote
+            .sendMessage(
+              'default',
+              'ses_1',
+              const ChatInputModel(
+                messageId: 'msg_user_auth_401',
+                providerId: 'mock-provider',
+                modelId: 'mock-model',
+                parts: <ChatInputPartModel>[
+                  ChatInputPartModel(type: 'text', text: 'auth please'),
+                ],
+              ),
+            )
+            .toList(),
+        throwsA(
+          isA<ServerException>().having(
+            (error) => error.message,
+            'message',
+            'ProviderAuthError [AUTH_FAILED]: Reconnect the provider and try again. (provider=mock-provider)',
           ),
-        );
-      },
-    );
+        ),
+      );
+    });
 
     test('ChatRemoteDataSource includes variant in outbound payload', () async {
       final remote = ChatRemoteDataSourceImpl(
@@ -879,17 +903,52 @@ void main() {
         );
 
         await remote.replyQuestion(
+          sessionId: 'ses_1',
           requestId: 'q_1',
           answers: const <List<String>>[
             <String>['Yes'],
           ],
         );
         expect(server.lastQuestionReplyRequestId, 'q_1');
+        expect(server.lastQuestionReplyQueryParameters?['sessionID'], 'ses_1');
         expect(
           server.lastQuestionReplyPayload?['answers'],
           const <List<String>>[
             <String>['Yes'],
           ],
+        );
+      },
+    );
+
+    test(
+      'ChatRemoteDataSource omits remember for reject permission replies',
+      () async {
+        server.pendingPermissions = <Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'perm_reject_1',
+            'sessionID': 'ses_1',
+            'permission': 'edit',
+            'patterns': <String>['lib/**'],
+            'always': <String>[],
+            'metadata': <String, dynamic>{},
+          },
+        ];
+
+        final remote = ChatRemoteDataSourceImpl(
+          dio: Dio(BaseOptions(baseUrl: server.baseUrl)),
+        );
+
+        await remote.replyPermission(
+          sessionId: 'ses_1',
+          requestId: 'perm_reject_1',
+          reply: 'reject',
+        );
+
+        expect(server.lastPermissionReplyRequestId, 'perm_reject_1');
+        expect(server.lastPermissionReplyPayload?['response'], 'reject');
+        expect(
+          server.lastPermissionReplyPayload?.containsKey('remember'),
+          isFalse,
         );
       },
     );
@@ -984,8 +1043,9 @@ void main() {
       final before = await remote.listQuestions();
       expect(before.single.id, 'q_reject_1');
 
-      await remote.rejectQuestion(requestId: 'q_reject_1');
+      await remote.rejectQuestion(sessionId: 'ses_1', requestId: 'q_reject_1');
       expect(server.lastQuestionRejectRequestId, 'q_reject_1');
+      expect(server.lastQuestionRejectQueryParameters?['sessionID'], 'ses_1');
 
       final after = await remote.listQuestions();
       expect(after, isEmpty);

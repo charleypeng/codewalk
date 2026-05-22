@@ -139,7 +139,15 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
         }
         final serverSignature = _normalizedUserMessageSignature(serverMessage);
         if (serverSignature.isNotEmpty && serverSignature == localSignature) {
-          return true;
+          final earliestEchoTime = localMessage.time.subtract(
+            const Duration(seconds: 2),
+          );
+          final latestEchoTime = localMessage.time.add(
+            const Duration(seconds: 45),
+          );
+          final serverTime = serverMessage.time;
+          return !serverTime.isBefore(earliestEchoTime) &&
+              !serverTime.isAfter(latestEchoTime);
         }
       }
     }

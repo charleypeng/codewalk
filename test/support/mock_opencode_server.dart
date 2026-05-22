@@ -56,7 +56,9 @@ class MockOpenCodeServer {
   Map<String, dynamic>? lastPermissionReplyPayload;
   String? lastQuestionReplyRequestId;
   Map<String, dynamic>? lastQuestionReplyPayload;
+  Map<String, String>? lastQuestionReplyQueryParameters;
   String? lastQuestionRejectRequestId;
+  Map<String, String>? lastQuestionRejectQueryParameters;
   Map<String, Map<String, dynamic>> sessionStatusById =
       <String, Map<String, dynamic>>{};
   final Map<String, List<Map<String, dynamic>>> sessionTodoById =
@@ -120,7 +122,9 @@ class MockOpenCodeServer {
     lastPermissionReplyPayload = null;
     lastQuestionReplyRequestId = null;
     lastQuestionReplyPayload = null;
+    lastQuestionReplyQueryParameters = null;
     lastQuestionRejectRequestId = null;
+    lastQuestionRejectQueryParameters = null;
     promptAsyncSupported = true;
     preserveMessageHistoryOnPromptAsync = false;
     promptAsyncReturnsCompletePayload = false;
@@ -358,7 +362,8 @@ class MockOpenCodeServer {
         await _writeJson(request.response, 200, customAgentResponsePayload);
         return;
       }
-      if (returnEmptyAgentsWhenScoped && request.uri.queryParameters.isNotEmpty) {
+      if (returnEmptyAgentsWhenScoped &&
+          request.uri.queryParameters.isNotEmpty) {
         await _writeJson(request.response, 200, const <Map<String, dynamic>>[]);
         return;
       }
@@ -766,6 +771,7 @@ class MockOpenCodeServer {
       if (method == 'POST') {
         final requestId = segments[1];
         lastQuestionReplyRequestId = requestId;
+        lastQuestionReplyQueryParameters = request.uri.queryParameters;
         lastQuestionReplyPayload = await _readJsonBody(request);
         pendingQuestions = pendingQuestions
             .where((item) => item['id'] != requestId)
@@ -781,6 +787,7 @@ class MockOpenCodeServer {
       if (method == 'POST') {
         final requestId = segments[1];
         lastQuestionRejectRequestId = requestId;
+        lastQuestionRejectQueryParameters = request.uri.queryParameters;
         pendingQuestions = pendingQuestions
             .where((item) => item['id'] != requestId)
             .toList(growable: false);
@@ -1026,7 +1033,10 @@ class MockOpenCodeServer {
               'code': 'VALIDATION_ERROR',
               'message': 'Validation failed',
               'errors': <dynamic>[
-                <String, dynamic>{'field': 'messageId', 'message': 'Cannot be empty'},
+                <String, dynamic>{
+                  'field': 'messageId',
+                  'message': 'Cannot be empty',
+                },
               ],
             },
           });
@@ -1079,8 +1089,7 @@ class MockOpenCodeServer {
       }
       if (promptAsyncReturnsCompletePayload) {
         final messageId = _latestAssistantMessageId;
-        final payload =
-            messageId == null ? null : _messageDetails[messageId];
+        final payload = messageId == null ? null : _messageDetails[messageId];
         if (payload != null) {
           await _writeJson(request.response, 200, payload);
           return;
