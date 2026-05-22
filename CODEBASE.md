@@ -23,7 +23,7 @@ codewalk/
 │   ├── main.dart                       # App bootstrap (DI, providers, shell)
 │   ├── core/                           # Config, constants, DI, errors, logging, network
 │   │   └── i18n/                        # Locale registry, context bridge, localization helpers
-│   ├── data/                           # Data layer: datasources, models, repositories, cache
+│   ├── data/                           # Data layer: datasources, search models, repositories, cache
 │   │   └── cache/                      # Hybrid file+memory cache for large chat payloads
 │   ├── domain/                         # Domain layer: entities, repository contracts, use cases
 │   ├── l10n/                           # Flutter gen_l10n ARB files (14 locales) and generated delegates
@@ -81,7 +81,7 @@ lib/core/network/dio_sse_adapter_io.dart           # IO platforms: configures IO
 lib/core/network/dio_sse_adapter_stub.dart         # Web platform: no-op (browser manages connections natively)
 lib/data/datasources/app_remote_datasource.dart   # App bootstrap/config/providers/agents API access; app discovery retries scoped `/provider`, `/agent`, and `/config` calls with `directory`-only and then unscoped fallbacks when workspace-scoped queries fail; `/agent` parsing tolerates multiple upstream payload shapes; scoped discovery/config calls forward both `directory` and `workspace` when a project directory is active
 lib/data/datasources/chat_remote_datasource.dart  # Chat/session/message/realtime API access; accepts optional `sseDio` for SSE stream isolation; sendMessage uses polling + provider-level SSE only (no per-send SSE) to prevent server-side abort on disconnect; provider `prompt_async` sends intentionally do not forward `messageId`; async completion fallback escalates to polling and uses stricter staleness guards when no-candidate/empty-baseline scenarios occur to prevent early finalization; bounds message-list tail fetches (`limit=120`); uses bounded per-session assistant-id cache (64-session cap + invalidation on unresolved completion); handles session-scoped permission replies with legacy fallback, sends `remember: true` for `always` replies, and preserves typed upstream error names/codes/details in surfaced failures
-lib/data/datasources/project_remote_datasource.dart # Project/worktree/file API access
+lib/data/datasources/project_remote_datasource.dart # Project/worktree/file API access; file-name search (`/find/file`), file-content search (`/find?pattern=`), and workspace symbol search (`/find/symbol`)
 lib/data/datasources/app_local_datasource.dart    # Persistent settings, profiles, cache, credentials, favorite models, session composer drafts, and per-agent selection memory; uses ChatCachePayloadStore hybrid store with shared_preferences fallback for large payloads
 lib/data/cache/chat_cache_payload_store.dart      # Factory with conditional import for platform-specific store
 lib/data/cache/chat_cache_payload_store_base.dart # Abstract interface for cache store (read/write/remove/clear)
@@ -92,7 +92,7 @@ lib/data/datasources/quota_remote_datasource.dart # Strategy-chain quota discove
 lib/domain/usecases/*.dart                        # Application use cases consumed by providers
 lib/domain/entities/quota.dart                    # Quota domain entities: `QuotaSnapshot`, `UsageWindow`, `PaceInfo`, `QuotaEntry`, `QuotaProviderGroup`
 lib/presentation/providers/app_provider.dart      # Server profiles, health polling, local runtime state; guards health polling/connection when no active server profile is set; includes setup-debug state (SetupDebugEntry, SetupDebugSeverity) for OpenCode installation diagnostics with recordSetupDebugEvent(), exportSetupDebugReport(), clearSetupDebugData()
-lib/presentation/providers/project_provider.dart  # Project/worktree context selection and persistence
+lib/presentation/providers/project_provider.dart  # Project/worktree context selection and persistence; exposes file-name, file-content, and workspace-symbol search for Quick Open and composer mentions
 lib/presentation/providers/settings_provider.dart # Experience settings, theme mode, dynamic color, AMOLED dark toggle, brand seed, contrast, composer tips visibility, sounds, update checks, and complete OpenCode shared settings coverage (default model, default agent, small model, autoupdate, share, username, snapshot); exposes `dynamicColorAvailable` (bool) and `updateDynamicColorAvailability()` for runtime platform signal; `setCheckUpdatesOnOpen()` now controls startup + hourly automatic checks via `_configureAutomaticUpdateChecks()` and `_performStartupUpdateCheck()`; `UpdateInstallState` enum (idle/downloading/installing/done/failed), `startInstall()`, and `restartDesktopApp()` manage APK/desktop install lifecycle
 lib/presentation/providers/quota_provider.dart # Host-discovered quota state: polls `QuotaRemoteDataSource`, TTL-based cache (60s) scoped per `serverId`, normalises raw data into `QuotaProviderGroup` list ordered by severity; `ensureLoaded()` for lazy UI-triggered fetch
 lib/presentation/utils/quota_pace_utils.dart # Pure Dart pace helpers: `predictedFinalPercent`, `PaceStatus` enum, window/label inference, and formatted `Pace xx%` / time-left strings
@@ -168,10 +168,10 @@ chat_page_shortcuts.dart
 chat_page_status_presenter.dart                    # Simplified active-server status presentation (`Online` / `Delayed` / `Offline`) and context-usage controls
 chat_page_selector_flow.dart               # ConstrainedBox wrapped in Flexible to prevent overflow at medium breakpoint
 chat_page_scaffold.dart                          # Session selection reordered to close-first; _handleSessionSwitch() guard prevents concurrent switches; conversations sidebar includes project groups card with open-project controls and session previews; applies compact desktop spacing and passes responsive row spacing to ChatSessionList
-chat_page_file_explorer_controller.dart
+chat_page_file_explorer_controller.dart        # File explorer plus Quick Open; supports Names and Contents modes backed by `/find/file` and `/find?pattern=`
 chat_page_file_viewer.dart
 chat_page_composer_status.dart                    # Resolves the fixed composer live-progress surface for latest busy tool/patch/reasoning activity using composer-specific compact labels via toolResolveComposerDescriptionLabel
-chat_page_command_query.dart
+chat_page_command_query.dart                   # Composer slash and mention query source; `@` suggestions merge files, workspace symbols, and agents while preserving agent suggestions when remote search fails
 chat_page_runtime_support.dart                   # Content-shrink snap hardened against competing scroll owners; _handleScrollMetricsChanged gates on return reveal, pagination restore, and scroll owner enum; per-session collapse state cache via _sessionCollapseHistoryCache
 chat_page_chrome.dart
 chat_page_file_runtime.dart
@@ -220,7 +220,7 @@ chat_input_state_machine.dart
 chat_input_history_controller.dart             # Local command/prompt history and external draft restoration/clear support for undo/redo parity
 chat_input_mentions_controller.dart
 chat_input_commands_controller.dart
-chat_input_suggestion_popover.dart
+chat_input_suggestion_popover.dart             # Mention/slash/canned popover; renders file, workspace-symbol, and agent badges/icons
 chat_input_attachment_controller.dart
 chat_input_send_controller.dart
 chat_input_speech_controller.dart
@@ -272,7 +272,7 @@ lib/data/datasources/chat_remote_datasource.dart
 lib/data/datasources/project_remote_datasource.dart
   - /project, /project/current
   - /experimental/worktree, /experimental/worktree/reset
-  - /file, /file/content, /find/file, /vcs
+  - /file, /file/content, /find/file, /find?pattern=, /find/symbol, /vcs
 ```
 
 ## Main Commands

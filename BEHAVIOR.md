@@ -229,6 +229,23 @@
 - **Then** removing a closed project from history hides that exact project path from the closed-project history across reloads until the user explicitly reopens or re-enters that path again
 - **Then** selector actions are serialized so repeated rapid taps do not trigger overlapping switch/reopen/close/archive operations
 
+### Quick Open searches names and contents
+
+- **Given** a connected server and an active project context
+- **When** the user opens Quick Open from the chat chrome or shortcut
+- **Then** the dialog offers `Names` and `Contents` search modes
+- **Then** `Names` searches file and directory names through the OpenCode file search endpoint
+- **Then** `Contents` searches file text through the OpenCode content search endpoint and shows path, line number, and matching line preview
+- **Then** selecting a content result opens the matched file path while preserving the visible line context in the result subtitle
+
+### Composer mentions include workspace symbols
+
+- **Given** the user types `@` in the composer
+- **When** mention suggestions are queried
+- **Then** the suggestion list can include file paths, workspace symbols, and agents
+- **Then** symbol suggestions show a distinct symbol badge/icon and the source path when available
+- **Then** if file or symbol search fails, local agent suggestions remain available
+
 ### Conversations are grouped by project context
 
 - **Given** the user has conversations from multiple project directories
