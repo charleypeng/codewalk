@@ -214,7 +214,11 @@ extension _ChatPageRuntimeSupport on _ChatPageState {
       return;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _chatInputController.hasDraftContent) {
+      if (!mounted) {
+        return;
+      }
+      if (_chatInputController.hasDraftContent &&
+          _chatInputController.hasMaterialDraftContent) {
         return;
       }
       _setState(() {

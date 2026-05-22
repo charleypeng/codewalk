@@ -57,6 +57,9 @@ class ChatInputController {
 
   bool get hasDraftContent => _state?._hasDraftContent ?? false;
 
+  bool get hasMaterialDraftContent =>
+      _state?._hasMaterialDraftContent ?? false;
+
   bool get canToggleVoiceInput => _state?._canToggleVoiceInput ?? false;
 
   void openAttachmentOptions() {
@@ -365,6 +368,15 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
       _controller.text.trim().isNotEmpty ||
       _attachments.isNotEmpty ||
       widget.contextItems.isNotEmpty;
+
+  bool get _hasMaterialDraftContent {
+    // Protect meaningful user input while allowing failed-send recovery to
+    // restore over transient cursor/short-text noise that should not eat data.
+    if (_attachments.isNotEmpty || widget.contextItems.isNotEmpty) {
+      return true;
+    }
+    return _controller.text.trim().length >= 3;
+  }
 
   bool get _canToggleVoiceInput => widget.enabled && !_isStartingListening;
 

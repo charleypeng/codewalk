@@ -680,16 +680,23 @@ class _AndroidBackgroundAlertRunner {
       try {
         final response = await dio.post(
           '/session/$sessionId/permissions/$normalizedRequestId',
-          data: <String, dynamic>{'response': reply},
+          data: <String, dynamic>{
+            'response': reply,
+            if (reply == 'always') 'remember': true,
+          },
           queryParameters: queryParameters.isEmpty ? null : queryParameters,
         );
         return response.statusCode == 200;
       } on DioException catch (error) {
         if (error.response?.statusCode == 404 ||
             error.response?.statusCode == 405) {
+          final legacyBody = <String, dynamic>{
+            'reply': reply,
+            if (reply == 'always') 'remember': true,
+          };
           final legacyResponse = await dio.post(
             '/permission/$normalizedRequestId/reply',
-            data: <String, dynamic>{'reply': reply},
+            data: legacyBody,
             queryParameters: queryParameters.isEmpty ? null : queryParameters,
           );
           return legacyResponse.statusCode == 200;
