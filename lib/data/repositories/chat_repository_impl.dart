@@ -549,12 +549,14 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<Either<Failure, void>> replyQuestion({
+    String? sessionId,
     required String requestId,
     required List<List<String>> answers,
     String? directory,
   }) async {
     try {
       await remoteDataSource.replyQuestion(
+        sessionId: sessionId,
         requestId: requestId,
         answers: answers,
         directory: directory,
@@ -581,11 +583,13 @@ class ChatRepositoryImpl implements ChatRepository {
 
   @override
   Future<Either<Failure, void>> rejectQuestion({
+    String? sessionId,
     required String requestId,
     String? directory,
   }) async {
     try {
       await remoteDataSource.rejectQuestion(
+        sessionId: sessionId,
         requestId: requestId,
         directory: directory,
       );

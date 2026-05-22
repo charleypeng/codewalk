@@ -2425,6 +2425,22 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  String? _sessionIdForPendingQuestion(String requestId) {
+    final normalizedRequestId = requestId.trim();
+    if (normalizedRequestId.isEmpty) {
+      return null;
+    }
+    for (final entry in _pendingQuestionsBySession.entries) {
+      final ownsQuestion = entry.value.any(
+        (question) => question.id == normalizedRequestId,
+      );
+      if (ownsQuestion) {
+        return entry.key;
+      }
+    }
+    return null;
+  }
+
   Future<void> submitQuestionAnswers({
     required String requestId,
     required List<List<String>> answers,
@@ -2434,11 +2450,13 @@ class ChatProvider extends ChangeNotifier {
       return;
     }
     final tombstoneKey = _questionInteractionKey(requestId);
+    final owningSessionId = _sessionIdForPendingQuestion(requestId);
     _rememberDismissedInteractionTombstone(tombstoneKey);
     _isRespondingInteraction = true;
     notifyListeners();
     final result = await replyQuestion(
       ReplyQuestionParams(
+        sessionId: owningSessionId,
         requestId: requestId,
         answers: answers,
         directory: projectProvider.currentDirectory,
@@ -2473,11 +2491,13 @@ class ChatProvider extends ChangeNotifier {
       return;
     }
     final tombstoneKey = _questionInteractionKey(requestId);
+    final owningSessionId = _sessionIdForPendingQuestion(requestId);
     _rememberDismissedInteractionTombstone(tombstoneKey);
     _isRespondingInteraction = true;
     notifyListeners();
     final result = await rejectQuestion(
       RejectQuestionParams(
+        sessionId: owningSessionId,
         requestId: requestId,
         directory: projectProvider.currentDirectory,
       ),

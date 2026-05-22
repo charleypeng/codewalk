@@ -1582,8 +1582,10 @@ class FakeChatRepository implements ChatRepository {
   String? lastPermissionReply;
   String? lastPermissionMessage;
   String? lastQuestionReplyRequestId;
+  String? lastQuestionReplySessionId;
   List<List<String>>? lastQuestionAnswers;
   String? lastQuestionRejectRequestId;
+  String? lastQuestionRejectSessionId;
   int abortSessionCallCount = 0;
   String? lastAbortProjectId;
   String? lastAbortSessionId;
@@ -1879,10 +1881,12 @@ class FakeChatRepository implements ChatRepository {
 
   @override
   Future<Either<Failure, void>> replyQuestion({
+    String? sessionId,
     required String requestId,
     required List<List<String>> answers,
     String? directory,
   }) async {
+    lastQuestionReplySessionId = sessionId;
     lastQuestionReplyRequestId = requestId;
     lastQuestionAnswers = answers;
     pendingQuestions = pendingQuestions
@@ -1893,9 +1897,11 @@ class FakeChatRepository implements ChatRepository {
 
   @override
   Future<Either<Failure, void>> rejectQuestion({
+    String? sessionId,
     required String requestId,
     String? directory,
   }) async {
+    lastQuestionRejectSessionId = sessionId;
     lastQuestionRejectRequestId = requestId;
     pendingQuestions = pendingQuestions
         .where((item) => item.id != requestId)

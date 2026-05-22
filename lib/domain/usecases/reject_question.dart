@@ -10,6 +10,7 @@ class RejectQuestion {
 
   Future<Either<Failure, void>> call(RejectQuestionParams params) async {
     return repository.rejectQuestion(
+      sessionId: params.sessionId,
       requestId: params.requestId,
       directory: params.directory,
     );
@@ -17,8 +18,13 @@ class RejectQuestion {
 }
 
 class RejectQuestionParams {
-  const RejectQuestionParams({required this.requestId, this.directory});
+  const RejectQuestionParams({
+    this.sessionId,
+    required this.requestId,
+    this.directory,
+  });
 
+  final String? sessionId;
   final String requestId;
   final String? directory;
 }

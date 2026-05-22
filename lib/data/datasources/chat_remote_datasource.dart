@@ -147,13 +147,18 @@ abstract class ChatRemoteDataSource {
 
   /// Reply to a question request.
   Future<void> replyQuestion({
+    String? sessionId,
     required String requestId,
     required List<List<String>> answers,
     String? directory,
   });
 
   /// Reject a question request.
-  Future<void> rejectQuestion({required String requestId, String? directory});
+  Future<void> rejectQuestion({
+    String? sessionId,
+    required String requestId,
+    String? directory,
+  });
 
   /// Abort session
   Future<void> abortSession(
@@ -2386,6 +2391,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   @override
   Future<void> replyQuestion({
+    String? sessionId,
     required String requestId,
     required List<List<String>> answers,
     String? directory,
@@ -2393,6 +2399,11 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     final queryParams = <String, String>{};
     if (directory != null && directory.trim().isNotEmpty) {
       queryParams['directory'] = directory;
+    }
+    if (sessionId != null && sessionId.trim().isNotEmpty) {
+      // Official scoped HTTP routes are not confirmed; keep the legacy route
+      // primary while forwarding ownership as additive routing metadata.
+      queryParams['sessionID'] = sessionId.trim();
     }
 
     try {
@@ -2425,12 +2436,18 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   @override
   Future<void> rejectQuestion({
+    String? sessionId,
     required String requestId,
     String? directory,
   }) async {
     final queryParams = <String, String>{};
     if (directory != null && directory.trim().isNotEmpty) {
       queryParams['directory'] = directory;
+    }
+    if (sessionId != null && sessionId.trim().isNotEmpty) {
+      // Official scoped HTTP routes are not confirmed; keep the legacy route
+      // primary while forwarding ownership as additive routing metadata.
+      queryParams['sessionID'] = sessionId.trim();
     }
 
     try {

@@ -10,6 +10,7 @@ class ReplyQuestion {
 
   Future<Either<Failure, void>> call(ReplyQuestionParams params) async {
     return repository.replyQuestion(
+      sessionId: params.sessionId,
       requestId: params.requestId,
       answers: params.answers,
       directory: params.directory,
@@ -19,11 +20,13 @@ class ReplyQuestion {
 
 class ReplyQuestionParams {
   const ReplyQuestionParams({
+    this.sessionId,
     required this.requestId,
     required this.answers,
     this.directory,
   });
 
+  final String? sessionId;
   final String requestId;
   final List<List<String>> answers;
   final String? directory;
