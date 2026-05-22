@@ -295,15 +295,18 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         final List<dynamic> data = response.data;
         return data.map((json) => ChatSessionModel.fromJson(json)).toList();
       } else {
-        throw const ServerException('Server error');
+        throw const ServerException('Failed to load sessions');
       }
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Resource not found');
       }
-      throw const ServerException('Server error');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to load sessions',
+      );
     } catch (e) {
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to load sessions');
     }
   }
 
@@ -328,15 +331,18 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (response.statusCode == 200) {
         return ChatSessionModel.fromJson(response.data);
       } else {
-        throw const ServerException('Server error');
+        throw const ServerException('Failed to load session');
       }
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Resource not found');
       }
-      throw const ServerException('Server error');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to load session',
+      );
     } catch (e) {
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to load session');
     }
   }
 
@@ -362,15 +368,18 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (response.statusCode == 200) {
         return ChatSessionModel.fromJson(response.data);
       } else {
-        throw const ServerException('Server error');
+        throw const ServerException('Failed to create session');
       }
     } on DioException catch (e) {
       if (e.response?.statusCode == 400) {
         throw const ValidationException('Invalid input parameters');
       }
-      throw const ServerException('Server error');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to create session',
+      );
     } catch (e) {
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to create session');
     }
   }
 
@@ -397,7 +406,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (response.statusCode == 200) {
         return ChatSessionModel.fromJson(response.data);
       } else {
-        throw const ServerException('Server error');
+        throw const ServerException('Failed to update session');
       }
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
@@ -406,9 +415,12 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (e.response?.statusCode == 400) {
         throw const ValidationException('Invalid input parameters');
       }
-      throw const ServerException('Server error');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to update session',
+      );
     } catch (e) {
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to update session');
     }
   }
 
@@ -431,15 +443,18 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       );
 
       if (response.statusCode != 200) {
-        throw const ServerException('Server error');
+        throw const ServerException('Failed to delete session');
       }
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Resource not found');
       }
-      throw const ServerException('Server error');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to delete session',
+      );
     } catch (e) {
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to delete session');
     }
   }
 
@@ -464,15 +479,18 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (response.statusCode == 200) {
         return ChatSessionModel.fromJson(response.data);
       } else {
-        throw const ServerException('Server error');
+        throw const ServerException('Failed to share session');
       }
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Resource not found');
       }
-      throw const ServerException('Server error');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to share session',
+      );
     } catch (e) {
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to share session');
     }
   }
 
@@ -497,15 +515,18 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (response.statusCode == 200) {
         return ChatSessionModel.fromJson(response.data);
       } else {
-        throw const ServerException('Server error');
+        throw const ServerException('Failed to unshare session');
       }
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Resource not found');
       }
-      throw const ServerException('Server error');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to unshare session',
+      );
     } catch (e) {
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to unshare session');
     }
   }
 
@@ -535,7 +556,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (response.statusCode == 200) {
         return ChatSessionModel.fromJson(response.data);
       }
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to fork session');
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Resource not found');
@@ -543,9 +564,12 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (e.response?.statusCode == 400) {
         throw const ValidationException('Invalid input parameters');
       }
-      throw const ServerException('Server error');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to fork session',
+      );
     } catch (e) {
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to fork session');
     }
   }
 
@@ -564,7 +588,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         queryParameters: queryParams.isNotEmpty ? queryParams : null,
       );
       if (response.statusCode != 200) {
-        throw const ServerException('Server error');
+        throw const ServerException('Failed to load session status');
       }
       final raw = response.data;
       if (raw is! Map) {
@@ -583,9 +607,12 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Resource not found');
       }
-      throw const ServerException('Server error');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to load session status',
+      );
     } catch (_) {
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to load session status');
     }
   }
 
@@ -606,7 +633,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         queryParameters: queryParams.isNotEmpty ? queryParams : null,
       );
       if (response.statusCode != 200) {
-        throw const ServerException('Server error');
+        throw const ServerException('Failed to load session children');
       }
       final data = response.data as List<dynamic>? ?? const <dynamic>[];
       return data
@@ -620,9 +647,12 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Resource not found');
       }
-      throw const ServerException('Server error');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to load session children',
+      );
     } catch (_) {
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to load session children');
     }
   }
 
@@ -643,7 +673,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         queryParameters: queryParams.isNotEmpty ? queryParams : null,
       );
       if (response.statusCode != 200) {
-        throw const ServerException('Server error');
+        throw const ServerException('Failed to load session todo');
       }
       final data = response.data as List<dynamic>? ?? const <dynamic>[];
       return data
@@ -657,9 +687,12 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Resource not found');
       }
-      throw const ServerException('Server error');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to load session todo',
+      );
     } catch (_) {
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to load session todo');
     }
   }
 
@@ -684,7 +717,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         queryParameters: queryParams.isNotEmpty ? queryParams : null,
       );
       if (response.statusCode != 200) {
-        throw const ServerException('Server error');
+        throw const ServerException('Failed to load session diff');
       }
       final data = response.data as List<dynamic>? ?? const <dynamic>[];
       return data
@@ -698,9 +731,12 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Resource not found');
       }
-      throw const ServerException('Server error');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to load session diff',
+      );
     } catch (_) {
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to load session diff');
     }
   }
 
@@ -741,15 +777,18 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           return ChatMessageModel.fromJson({...info, 'parts': parts});
         }).toList();
       } else {
-        throw const ServerException('Server error');
+        throw const ServerException('Failed to load message list');
       }
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Resource not found');
       }
-      throw const ServerException('Server error');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to load message list',
+      );
     } catch (e) {
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to load message list');
     }
   }
 
@@ -782,15 +821,18 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         final parts = (map['parts'] as List<dynamic>?) ?? <dynamic>[];
         return ChatMessageModel.fromJson({...info, 'parts': parts});
       } else {
-        throw const ServerException('Server error');
+        throw const ServerException('Failed to load message');
       }
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Resource not found');
       }
-      throw const ServerException('Server error');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to load message',
+      );
     } catch (e) {
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to load message');
     }
   }
 
@@ -820,7 +862,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         queryParameters: queryParams.isNotEmpty ? queryParams : null,
       );
       if (response.statusCode != 200) {
-        throw const ServerException('Server error');
+        throw const ServerException('Failed to run shell command');
       }
 
       final map = response.data as Map<String, dynamic>;
@@ -834,12 +876,15 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (e.response?.statusCode == 400) {
         throw const ValidationException('Invalid input parameters');
       }
-      throw const ServerException('Server error');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to run shell command',
+      );
     } catch (e) {
       if (e is ValidationException) {
         rethrow;
       }
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to run shell command');
     }
   }
 
@@ -897,7 +942,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         queryParameters: queryParams.isNotEmpty ? queryParams : null,
       );
       if (response.statusCode != 200) {
-        throw const ServerException('Server error');
+        throw const ServerException('Failed to run slash command');
       }
 
       final map = response.data as Map<String, dynamic>;
@@ -911,12 +956,15 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (e.response?.statusCode == 400) {
         throw const ValidationException('Invalid input parameters');
       }
-      throw const ServerException('Server error');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to run slash command',
+      );
     } catch (e) {
       if (e is ValidationException) {
         rethrow;
       }
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to run slash command');
     }
   }
 
@@ -2464,15 +2512,18 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       );
 
       if (response.statusCode != 200) {
-        throw const ServerException('Server error');
+        throw const ServerException('Failed to abort session');
       }
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Resource not found');
       }
-      throw const ServerException('Server error');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to abort session',
+      );
     } catch (e) {
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to abort session');
     }
   }
 
@@ -2496,15 +2547,18 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       );
 
       if (response.statusCode != 200) {
-        throw const ServerException('Server error');
+        throw const ServerException('Failed to revert message');
       }
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Resource not found');
       }
-      throw const ServerException('Server error');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to revert message',
+      );
     } catch (e) {
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to revert message');
     }
   }
 
@@ -2526,15 +2580,18 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       );
 
       if (response.statusCode != 200) {
-        throw const ServerException('Server error');
+        throw const ServerException('Failed to restore messages');
       }
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Resource not found');
       }
-      throw const ServerException('Server error');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to restore messages',
+      );
     } catch (e) {
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to restore messages');
     }
   }
 
@@ -2564,7 +2621,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       );
 
       if (response.statusCode != 200) {
-        throw const ServerException('Server error');
+        throw const ServerException('Failed to initialize session');
       }
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
@@ -2573,9 +2630,12 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       if (e.response?.statusCode == 400) {
         throw const ValidationException('Invalid input parameters');
       }
-      throw const ServerException('Server error');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to initialize session',
+      );
     } catch (e) {
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to initialize session');
     }
   }
 
@@ -2600,15 +2660,18 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
       );
 
       if (response.statusCode != 200) {
-        throw const ServerException('Server error');
+        throw const ServerException('Failed to summarize session');
       }
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
         throw const NotFoundException('Resource not found');
       }
-      throw const ServerException('Server error');
+      throw _serverExceptionFromDio(
+        e,
+        fallbackMessage: 'Failed to summarize session',
+      );
     } catch (e) {
-      throw const ServerException('Server error');
+      throw const ServerException('Failed to summarize session');
     }
   }
 }

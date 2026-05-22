@@ -16,6 +16,16 @@ class ChatRepositoryImpl implements ChatRepository {
 
   final ChatRemoteDataSource remoteDataSource;
 
+  ServerFailure _serverFailure(
+    ServerException exception,
+    String fallbackMessage,
+  ) {
+    final message = exception.message.trim().isEmpty
+        ? fallbackMessage
+        : exception.message.trim();
+    return ServerFailure(message, exception.code);
+  }
+
   @override
   Future<Either<Failure, List<ChatSession>>> getSessions({
     String? directory,
@@ -33,8 +43,8 @@ class ChatRepositoryImpl implements ChatRepository {
         limit: limit,
       );
       return Right(sessions.map((s) => s.toDomain()).toList());
-    } on ServerException {
-      return const Left(ServerFailure('Failed to load sessions'));
+    } on ServerException catch (e) {
+      return Left(_serverFailure(e, 'Failed to load sessions'));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (e) {
@@ -57,8 +67,8 @@ class ChatRepositoryImpl implements ChatRepository {
       return Right(session.toDomain());
     } on NotFoundException {
       return const Left(NotFoundFailure('Session not found'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to load session'));
+    } on ServerException catch (e) {
+      return Left(_serverFailure(e, 'Failed to load session'));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (e) {
@@ -82,8 +92,8 @@ class ChatRepositoryImpl implements ChatRepository {
       return Right(session.toDomain());
     } on ValidationException {
       return const Left(ValidationFailure('Invalid input parameters'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to create session'));
+    } on ServerException catch (e) {
+      return Left(_serverFailure(e, 'Failed to create session'));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (e) {
@@ -111,8 +121,8 @@ class ChatRepositoryImpl implements ChatRepository {
       return const Left(NotFoundFailure('Session not found'));
     } on ValidationException {
       return const Left(ValidationFailure('Invalid input parameters'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to update session'));
+    } on ServerException catch (e) {
+      return Left(_serverFailure(e, 'Failed to update session'));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (e) {
@@ -135,8 +145,8 @@ class ChatRepositoryImpl implements ChatRepository {
       return const Right(null);
     } on NotFoundException {
       return const Left(NotFoundFailure('Session not found'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to delete session'));
+    } on ServerException catch (e) {
+      return Left(_serverFailure(e, 'Failed to delete session'));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (e) {
@@ -159,8 +169,8 @@ class ChatRepositoryImpl implements ChatRepository {
       return Right(session.toDomain());
     } on NotFoundException {
       return const Left(NotFoundFailure('Session not found'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to share session'));
+    } on ServerException catch (e) {
+      return Left(_serverFailure(e, 'Failed to share session'));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (e) {
@@ -183,8 +193,8 @@ class ChatRepositoryImpl implements ChatRepository {
       return Right(session.toDomain());
     } on NotFoundException {
       return const Left(NotFoundFailure('Session not found'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to unshare session'));
+    } on ServerException catch (e) {
+      return Left(_serverFailure(e, 'Failed to unshare session'));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (e) {
@@ -211,8 +221,8 @@ class ChatRepositoryImpl implements ChatRepository {
       return const Left(NotFoundFailure('Session not found'));
     } on ValidationException {
       return const Left(ValidationFailure('Invalid input parameters'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to fork session'));
+    } on ServerException catch (e) {
+      return Left(_serverFailure(e, 'Failed to fork session'));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (_) {
@@ -229,8 +239,8 @@ class ChatRepositoryImpl implements ChatRepository {
       return Right(map.map((key, value) => MapEntry(key, value.toDomain())));
     } on NotFoundException {
       return const Left(NotFoundFailure('Session status not found'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to load session status'));
+    } on ServerException catch (e) {
+      return Left(_serverFailure(e, 'Failed to load session status'));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (_) {
@@ -253,8 +263,8 @@ class ChatRepositoryImpl implements ChatRepository {
       return Right(children.map((item) => item.toDomain()).toList());
     } on NotFoundException {
       return const Left(NotFoundFailure('Session not found'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to load session children'));
+    } on ServerException catch (e) {
+      return Left(_serverFailure(e, 'Failed to load session children'));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (_) {
@@ -277,8 +287,8 @@ class ChatRepositoryImpl implements ChatRepository {
       return Right(todos.map((item) => item.toDomain()).toList());
     } on NotFoundException {
       return const Left(NotFoundFailure('Session not found'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to load session todo'));
+    } on ServerException catch (e) {
+      return Left(_serverFailure(e, 'Failed to load session todo'));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (_) {
@@ -303,8 +313,8 @@ class ChatRepositoryImpl implements ChatRepository {
       return Right(diff.map((item) => item.toDomain()).toList());
     } on NotFoundException {
       return const Left(NotFoundFailure('Session not found'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to load session diff'));
+    } on ServerException catch (e) {
+      return Left(_serverFailure(e, 'Failed to load session diff'));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (_) {
@@ -329,8 +339,8 @@ class ChatRepositoryImpl implements ChatRepository {
       return Right(messages.map((m) => m.toDomain()).toList());
     } on NotFoundException {
       return const Left(NotFoundFailure('Session not found'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to load message list'));
+    } on ServerException catch (e) {
+      return Left(_serverFailure(e, 'Failed to load message list'));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (e) {
@@ -355,8 +365,8 @@ class ChatRepositoryImpl implements ChatRepository {
       return Right(message.toDomain());
     } on NotFoundException {
       return const Left(NotFoundFailure('Message not found'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to load message'));
+    } on ServerException catch (e) {
+      return Left(_serverFailure(e, 'Failed to load message'));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (e) {
@@ -428,8 +438,8 @@ class ChatRepositoryImpl implements ChatRepository {
       await for (final event in eventStream) {
         yield Right(event.toDomain());
       }
-    } on ServerException {
-      yield const Left(ServerFailure('Failed to subscribe to realtime events'));
+    } on ServerException catch (e) {
+      yield Left(_serverFailure(e, 'Failed to subscribe to realtime events'));
     } on NetworkException {
       yield const Left(NetworkFailure('Network connection failed'));
     } catch (_) {
@@ -444,8 +454,8 @@ class ChatRepositoryImpl implements ChatRepository {
       await for (final event in eventStream) {
         yield Right(event.toDomain());
       }
-    } on ServerException {
-      yield const Left(ServerFailure('Failed to subscribe to global events'));
+    } on ServerException catch (e) {
+      yield Left(_serverFailure(e, 'Failed to subscribe to global events'));
     } on NetworkException {
       yield const Left(NetworkFailure('Network connection failed'));
     } catch (_) {
@@ -609,8 +619,8 @@ class ChatRepositoryImpl implements ChatRepository {
       return const Right(null);
     } on NotFoundException {
       return const Left(NotFoundFailure('Session not found'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to abort session'));
+    } on ServerException catch (e) {
+      return Left(_serverFailure(e, 'Failed to abort session'));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (e) {
@@ -635,8 +645,8 @@ class ChatRepositoryImpl implements ChatRepository {
       return const Right(null);
     } on NotFoundException {
       return const Left(NotFoundFailure('Message not found'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to revert message'));
+    } on ServerException catch (e) {
+      return Left(_serverFailure(e, 'Failed to revert message'));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (e) {
@@ -659,8 +669,8 @@ class ChatRepositoryImpl implements ChatRepository {
       return const Right(null);
     } on NotFoundException {
       return const Left(NotFoundFailure('Session not found'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to restore messages'));
+    } on ServerException catch (e) {
+      return Left(_serverFailure(e, 'Failed to restore messages'));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (e) {
@@ -691,8 +701,8 @@ class ChatRepositoryImpl implements ChatRepository {
       return const Left(NotFoundFailure('Session not found'));
     } on ValidationException {
       return const Left(ValidationFailure('Invalid input parameters'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to initialize session'));
+    } on ServerException catch (e) {
+      return Left(_serverFailure(e, 'Failed to initialize session'));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (e) {
@@ -719,8 +729,8 @@ class ChatRepositoryImpl implements ChatRepository {
       return const Right(null);
     } on NotFoundException {
       return const Left(NotFoundFailure('Session not found'));
-    } on ServerException {
-      return const Left(ServerFailure('Failed to summarize session'));
+    } on ServerException catch (e) {
+      return Left(_serverFailure(e, 'Failed to summarize session'));
     } on NetworkException {
       return const Left(NetworkFailure('Network connection failed'));
     } catch (e) {
