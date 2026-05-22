@@ -8,79 +8,83 @@ extension _ChatPageCommandQuery on _ChatPageState {
     final projectProvider = context.read<ProjectProvider>();
     final chatProvider = context.read<ChatProvider>();
 
-    try {
-      final filesFuture = projectProvider.findFiles(
-        query: normalizedQuery,
-        limit: 12,
-        updateProviderError: false,
-      );
-      final symbolsFuture = projectProvider.findSymbols(
-        query: normalizedQuery,
-        limit: 8,
-      );
-      final foundFiles = await filesFuture;
-      final foundSymbols = await symbolsFuture;
+    final filesFuture = projectProvider
+        .findFiles(
+          query: normalizedQuery,
+          limit: 12,
+          updateProviderError: false,
+        )
+        .catchError((Object error, StackTrace stackTrace) {
+          AppLogger.warn(
+            'Composer file mention query failed',
+            error: error,
+            stackTrace: stackTrace,
+          );
+          return null;
+        });
+    final symbolsFuture = projectProvider
+        .findSymbols(query: normalizedQuery, limit: 8)
+        .catchError((Object error, StackTrace stackTrace) {
+          AppLogger.warn(
+            'Composer symbol mention query failed',
+            error: error,
+            stackTrace: stackTrace,
+          );
+          return null;
+        });
 
-      final suggestions = <ChatComposerMentionSuggestion>[];
+    final foundFiles = await filesFuture;
+    final foundSymbols = await symbolsFuture;
+    final suggestions = <ChatComposerMentionSuggestion>[];
 
-      for (final file in foundFiles ?? const <FileNode>[]) {
-        final path = file.path.trim();
-        if (path.isEmpty) {
-          continue;
-        }
-        suggestions.add(
-          ChatComposerMentionSuggestion(
-            value: path.trim(),
-            type: ChatComposerSuggestionType.file,
-            subtitle: 'file',
-          ),
-        );
+    for (final file in foundFiles ?? const <FileNode>[]) {
+      final path = file.path.trim();
+      if (path.isEmpty) {
+        continue;
       }
-
-      for (final symbol in foundSymbols ?? const <WorkspaceSymbol>[]) {
-        final name = symbol.name.trim();
-        if (name.isEmpty) {
-          continue;
-        }
-        suggestions.add(
-          ChatComposerMentionSuggestion(
-            value: name,
-            type: ChatComposerSuggestionType.symbol,
-            subtitle: symbol.path.isEmpty
-                ? symbol.kind ?? 'symbol'
-                : symbol.path,
-          ),
-        );
-      }
-
-      for (final agent in chatProvider.agents) {
-        final name = agent.name.trim();
-        if (name.isEmpty || agent.hidden) {
-          continue;
-        }
-        final normalizedName = name.toLowerCase();
-        if (normalizedQuery.isNotEmpty &&
-            !normalizedName.contains(normalizedQuery)) {
-          continue;
-        }
-        suggestions.add(
-          ChatComposerMentionSuggestion(
-            value: name,
-            type: ChatComposerSuggestionType.agent,
-            subtitle: agent.mode.isEmpty ? 'agent' : agent.mode,
-          ),
-        );
-      }
-
-      return suggestions.take(20).toList(growable: false);
-    } catch (error, stackTrace) {
-      AppLogger.warn(
-        'Composer mention query failed',
-        error: error,
-        stackTrace: stackTrace,
+      suggestions.add(
+        ChatComposerMentionSuggestion(
+          value: path.trim(),
+          type: ChatComposerSuggestionType.file,
+          subtitle: 'file',
+        ),
       );
-      return const <ChatComposerMentionSuggestion>[];
     }
+
+    for (final symbol in foundSymbols ?? const <WorkspaceSymbol>[]) {
+      final name = symbol.name.trim();
+      if (name.isEmpty) {
+        continue;
+      }
+      suggestions.add(
+        ChatComposerMentionSuggestion(
+          value: name,
+          type: ChatComposerSuggestionType.symbol,
+          subtitle: symbol.path.isEmpty ? symbol.kind ?? 'symbol' : symbol.path,
+        ),
+      );
+    }
+
+    for (final agent in chatProvider.agents) {
+      final name = agent.name.trim();
+      if (name.isEmpty || agent.hidden) {
+        continue;
+      }
+      final normalizedName = name.toLowerCase();
+      if (normalizedQuery.isNotEmpty &&
+          !normalizedName.contains(normalizedQuery)) {
+        continue;
+      }
+      suggestions.add(
+        ChatComposerMentionSuggestion(
+          value: name,
+          type: ChatComposerSuggestionType.agent,
+          subtitle: agent.mode.isEmpty ? 'agent' : agent.mode,
+        ),
+      );
+    }
+
+    return suggestions.take(20).toList(growable: false);
   }
 
   Future<List<ChatComposerSlashCommandSuggestion>> _querySlashSuggestions(
