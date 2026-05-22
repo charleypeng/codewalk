@@ -79,7 +79,7 @@ dependencies:
   # Dependency injection
   get_it: ^9.2.1
   dynamic_color: ^1.8.1
-  speech_to_text: ^7.4.0
+  speech_to_text: 7.3.0
   # On-device STT for Linux desktop via streaming transducer models (Kroko).
   sherpa_onnx: ^1.13.2
   # Microphone capture for Linux STT — feeds raw PCM to sherpa_onnx recognizer.
