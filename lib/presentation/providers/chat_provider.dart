@@ -1894,7 +1894,6 @@ class ChatProvider extends ChangeNotifier {
     _isForegroundActive = isActive;
     _cellularDataSaverService.setAppForeground(isActive);
     if (!isActive) {
-      _clearRejectedDraft();
       _stopForegroundResumeSyncIndicator(reason: 'background');
     }
 
@@ -1935,16 +1934,10 @@ class ChatProvider extends ChangeNotifier {
 
   void setAppInForeground(bool isForeground) {
     _isAppInForeground = isForeground;
-    if (!isForeground) {
-      _clearRejectedDraft();
-    }
   }
 
   void setChatRouteActive(bool isActive) {
     _isChatRouteActive = isActive;
-    if (!isActive) {
-      _clearRejectedDraft();
-    }
   }
 
   /// Returns true if [event] belongs to an ephemeral title-generation session.

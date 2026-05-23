@@ -163,11 +163,14 @@ extension _ChatProviderDraftState on ChatProvider {
       return;
     }
     final effectiveSessionId = sessionId?.trim();
-    if (!_isAppInForeground ||
-        !_isForegroundActive ||
-        !_isChatRouteActive ||
-        effectiveSessionId == null ||
-        effectiveSessionId.isEmpty) {
+    // Only check for a missing session ID — do NOT discard the draft
+    // when the app is briefly backgrounded, not foreground-active, or
+    // off the chat route. The foreground/activity guards that were here
+    // previously caused permanent text loss during brief background
+    // transitions (notification swipe, incoming call, screen off).
+    // consumeRejectedDraft already validates session match and
+    // chat-screen-active state at restore time.
+    if (effectiveSessionId == null || effectiveSessionId.isEmpty) {
       _clearRejectedDraft();
       return;
     }
