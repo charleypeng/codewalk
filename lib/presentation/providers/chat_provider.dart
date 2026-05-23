@@ -422,6 +422,7 @@ class ChatProvider extends ChangeNotifier {
   DateTime? _degradedModeStartedAt;
   int _consecutiveRealtimeFailures = 0;
   bool _postReconnectRecoveryInFlight = false;
+  bool _wasDegradedModeBeforeBackground = false;
   bool _pendingRefreshSessions = false;
   bool _pendingRefreshStatus = false;
   bool _pendingRefreshActiveSession = false;
@@ -1907,29 +1908,41 @@ class ChatProvider extends ChangeNotifier {
       return;
     }
 
-    if (!isActive) {
-      // Pause automatic network work in background. When cellular data saver is
-      // active we also close idle realtime streams so no background downloads continue.
-      _syncHealthTimer?.cancel();
-      _syncHealthTimer = null;
-      _degradedPollingTimer?.cancel();
-      _degradedPollingTimer = null;
-      _degradedMode = false;
-      _degradedModeStartedAt = null;
-      if (_cellularDataSaverService.shouldDisableBackgroundNetworkTasks) {
-        _idleRealtimePausedForDataSaver = true;
-        await _stopRealtimeEventSubscriptions(reason: 'background-data-saver');
-      }
-      return;
+  if (!isActive) {
+    // Pause automatic network work in background. When cellular data saver is
+    // active we also close idle realtime streams so no background downloads continue.
+    // Preserve degraded mode state so we can re-enter it immediately on
+    // foreground return instead of requiring 3 new SSE failures.
+    _wasDegradedModeBeforeBackground = _degradedMode;
+    _syncHealthTimer?.cancel();
+    _syncHealthTimer = null;
+    _degradedPollingTimer?.cancel();
+    _degradedPollingTimer = null;
+    _degradedMode = false;
+    _degradedModeStartedAt = null;
+    if (_cellularDataSaverService.shouldDisableBackgroundNetworkTasks) {
+      _idleRealtimePausedForDataSaver = true;
+      await _stopRealtimeEventSubscriptions(reason: 'background-data-saver');
     }
+    return;
+  }
 
-    if (!wasActive) {
-      _startForegroundResumeSyncIndicator(reason: 'foreground');
-    }
+  if (!wasActive) {
+    _startForegroundResumeSyncIndicator(reason: 'foreground');
+  }
 
-    _startSyncHealthMonitor();
-    await _syncCellularDataSaverRealtimePolicy(reason: 'foreground-return');
-    await _resumeRealtimeAfterForeground();
+  _startSyncHealthMonitor();
+  // If degraded mode was active when the app went to background, re-enter
+  // it immediately instead of attempting realtime subscription (which will
+  // likely fail again and require 3+ failures before re-entering degraded).
+  if (_wasDegradedModeBeforeBackground) {
+    _wasDegradedModeBeforeBackground = false;
+    _enterDegradedMode(reason: 'foreground-resume-degraded');
+    return;
+  }
+  _wasDegradedModeBeforeBackground = false;
+  await _syncCellularDataSaverRealtimePolicy(reason: 'foreground-return');
+  await _resumeRealtimeAfterForeground();
   }
 
   void setAppInForeground(bool isForeground) {
