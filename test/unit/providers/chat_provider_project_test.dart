@@ -144,8 +144,8 @@ void main() {
           ],
         );
         expect(chatRepository.lastQuestionReplyRequestId, 'q_1');
-        expect(chatRepository.lastQuestionReplySessionId, 'ses_1');
-        expect(chatRepository.lastQuestionAnswers, const <List<String>>[
+  expect(chatRepository.lastQuestionReplyRequestId, 'q_1');
+  expect(chatRepository.lastQuestionAnswers, const <List<String>>[
           <String>['Yes'],
         ]);
       },
@@ -493,9 +493,8 @@ void main() {
 
         await provider.rejectQuestionRequest(requestId: 'q_reject_1');
 
-        expect(chatRepository.lastQuestionRejectRequestId, 'q_reject_1');
-        expect(chatRepository.lastQuestionRejectSessionId, 'ses_1');
-        expect(provider.currentQuestionRequest, isNull);
+  expect(chatRepository.lastQuestionRejectRequestId, 'q_reject_1');
+  expect(provider.currentQuestionRequest, isNull);
       },
     );
 

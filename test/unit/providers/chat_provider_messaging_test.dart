@@ -620,26 +620,30 @@ void main() {
       );
     });
 
-    test('send failure in background does not queue draft restore', () async {
-      final sendStream = StreamController<Either<Failure, ChatMessage>>();
-      addTearDown(() async {
-        await sendStream.close();
-      });
-      chatRepository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
-
-      await provider.projectProvider.initializeProject();
-      await provider.loadSessions();
-      await provider.selectSession(provider.sessions.first);
-      provider.setAppInForeground(false);
-
-      await provider.sendMessage('do not resurrect this text');
-      sendStream.add(
-        const Left(NetworkFailure('stream dropped in background')),
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 30));
-
-      expect(provider.consumeRejectedDraft(sessionId: 'ses_1'), isNull);
+  test('send failure in background preserves draft for retry', () async {
+    final sendStream = StreamController<Either<Failure, ChatMessage>>();
+    addTearDown(() async {
+      await sendStream.close();
     });
+    chatRepository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
+
+    await provider.projectProvider.initializeProject();
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    provider.setAppInForeground(false);
+
+    await provider.sendMessage('do not resurrect this text');
+    sendStream.add(
+      const Left(NetworkFailure('stream dropped in background')),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+
+    // Step 4 invariant: drafts are unconditionally preserved across
+    // background transitions to prevent text loss.
+    final draft = provider.consumeRejectedDraft(sessionId: 'ses_1');
+    expect(draft, isNotNull);
+    expect(draft!.text, 'do not resurrect this text');
+  });
 
     test('send failure preserves attachment-only draft for retry', () async {
       final sendStream = StreamController<Either<Failure, ChatMessage>>();
@@ -671,27 +675,31 @@ void main() {
       expect(rejectedDraft?.shellMode, isFalse);
     });
 
-    test(
-      'send failure outside active chat route does not queue retry draft',
-      () async {
-        final sendStream = StreamController<Either<Failure, ChatMessage>>();
-        addTearDown(() async {
-          await sendStream.close();
-        });
-        chatRepository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
+  test(
+  'send failure outside active chat route preserves draft for retry',
+  () async {
+    final sendStream = StreamController<Either<Failure, ChatMessage>>();
+    addTearDown(() async {
+      await sendStream.close();
+    });
+    chatRepository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
 
-        await provider.projectProvider.initializeProject();
-        await provider.loadSessions();
-        await provider.selectSession(provider.sessions.first);
-        provider.setChatRouteActive(false);
+    await provider.projectProvider.initializeProject();
+    await provider.loadSessions();
+    await provider.selectSession(provider.sessions.first);
+    provider.setChatRouteActive(false);
 
-        await provider.sendMessage('draft from inactive route');
-        sendStream.add(const Left(NetworkFailure('temporary failure')));
-        await Future<void>.delayed(const Duration(milliseconds: 30));
+    await provider.sendMessage('draft from inactive route');
+    sendStream.add(const Left(NetworkFailure('temporary failure')));
+    await Future<void>.delayed(const Duration(milliseconds: 30));
 
-        expect(provider.consumeRejectedDraft(sessionId: 'ses_1'), isNull);
-      },
-    );
+    // Step 4 invariant: drafts are unconditionally preserved even when
+    // the chat route is inactive, to prevent text loss.
+    final draft = provider.consumeRejectedDraft(sessionId: 'ses_1');
+    expect(draft, isNotNull);
+    expect(draft!.text, 'draft from inactive route');
+  },
+  );
 
     test(
       'submitMessage lazily creates a new session from draft state',
