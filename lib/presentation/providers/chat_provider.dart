@@ -2465,7 +2465,6 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
     final result = await replyQuestion(
       ReplyQuestionParams(
-        sessionId: owningSessionId,
         requestId: requestId,
         answers: answers,
         directory: projectProvider.currentDirectory,
@@ -2506,7 +2505,6 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
     final result = await rejectQuestion(
       RejectQuestionParams(
-        sessionId: owningSessionId,
         requestId: requestId,
         directory: projectProvider.currentDirectory,
       ),

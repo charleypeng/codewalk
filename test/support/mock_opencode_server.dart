@@ -826,6 +826,19 @@ class MockOpenCodeServer {
         segments[2] == 'reply') {
       if (method == 'POST') {
         final requestId = segments[1];
+        // The official OpenCode question endpoints accept only
+        // WorkspaceRoutingQuery fields (directory, workspace).
+        // Reject undocumented sessionID to enforce contract compliance.
+        if (request.uri.queryParameters.containsKey('sessionID')) {
+          await _writeJson(
+            request.response,
+            400,
+            <String, dynamic>{
+              'error': 'undocumented parameter: sessionID',
+            },
+          );
+          return;
+        }
         lastQuestionReplyRequestId = requestId;
         lastQuestionReplyQueryParameters = request.uri.queryParameters;
         lastQuestionReplyPayload = await _readJsonBody(request);
@@ -842,6 +855,19 @@ class MockOpenCodeServer {
         segments[2] == 'reject') {
       if (method == 'POST') {
         final requestId = segments[1];
+        // The official OpenCode question endpoints accept only
+        // WorkspaceRoutingQuery fields (directory, workspace).
+        // Reject undocumented sessionID to enforce contract compliance.
+        if (request.uri.queryParameters.containsKey('sessionID')) {
+          await _writeJson(
+            request.response,
+            400,
+            <String, dynamic>{
+              'error': 'undocumented parameter: sessionID',
+            },
+          );
+          return;
+        }
         lastQuestionRejectRequestId = requestId;
         lastQuestionRejectQueryParameters = request.uri.queryParameters;
         pendingQuestions = pendingQuestions

@@ -145,7 +145,6 @@ abstract class ChatRepository {
 
   /// Submit answers for a question request.
   Future<Either<Failure, void>> replyQuestion({
-    String? sessionId,
     required String requestId,
     required List<List<String>> answers,
     String? directory,
@@ -153,7 +152,6 @@ abstract class ChatRepository {
 
   /// Reject a question request.
   Future<Either<Failure, void>> rejectQuestion({
-    String? sessionId,
     required String requestId,
     String? directory,
   });

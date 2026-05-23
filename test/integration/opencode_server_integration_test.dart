@@ -922,15 +922,20 @@ void main() {
           isFalse,
         );
 
-        await remote.replyQuestion(
-          sessionId: 'ses_1',
-          requestId: 'q_1',
-          answers: const <List<String>>[
-            <String>['Yes'],
-          ],
-        );
-        expect(server.lastQuestionReplyRequestId, 'q_1');
-        expect(server.lastQuestionReplyQueryParameters?['sessionID'], 'ses_1');
+      await remote.replyQuestion(
+        requestId: 'q_1',
+        answers: const <List<String>>[
+          <String>['Yes'],
+        ],
+      );
+      expect(server.lastQuestionReplyRequestId, 'q_1');
+      // The official OpenCode question endpoints accept only
+      // WorkspaceRoutingQuery fields (directory, workspace).
+      // sessionID must not be present in the query parameters.
+      expect(
+        server.lastQuestionReplyQueryParameters?.containsKey('sessionID'),
+        isFalse,
+      );
         expect(
           server.lastQuestionReplyPayload?['answers'],
           const <List<String>>[
@@ -1063,9 +1068,15 @@ void main() {
       final before = await remote.listQuestions();
       expect(before.single.id, 'q_reject_1');
 
-      await remote.rejectQuestion(sessionId: 'ses_1', requestId: 'q_reject_1');
+      await remote.rejectQuestion(requestId: 'q_reject_1');
       expect(server.lastQuestionRejectRequestId, 'q_reject_1');
-      expect(server.lastQuestionRejectQueryParameters?['sessionID'], 'ses_1');
+      // The official OpenCode question endpoints accept only
+      // WorkspaceRoutingQuery fields (directory, workspace).
+      // sessionID must not be present in the query parameters.
+      expect(
+        server.lastQuestionRejectQueryParameters?.containsKey('sessionID'),
+        isFalse,
+      );
 
       final after = await remote.listQuestions();
       expect(after, isEmpty);
