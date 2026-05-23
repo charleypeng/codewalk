@@ -216,6 +216,12 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   static const Duration _resolveAssistantIdRetryDelay = Duration(seconds: 2);
   static const int _knownAssistantIdsCacheMaxSessions = 64;
 
+  /// Minimum seconds an SSE stream must stay alive before the
+  /// reconnect-attempt counter is reset. Prevents infinite tight
+  /// reconnection loops when a server accepts connections but
+  /// immediately drops them.
+  static const int _sseReconnectResetThresholdSeconds = 5;
+
   final Dio dio;
 
   /// Dedicated Dio for SSE streams, isolated from the regular HTTP pool.
@@ -2125,10 +2131,10 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
             throw const ServerException('Failed to subscribe to events');
           }
 
-          reconnectAttempt = 0;
-          final responseBody = response.data as ResponseBody;
-          final streamDone = Completer<void>();
-          activeConnectionDone = streamDone;
+        final streamAliveStart = DateTime.now();
+        final responseBody = response.data as ResponseBody;
+        final streamDone = Completer<void>();
+        activeConnectionDone = streamDone;
           lineSubscription = responseBody.stream
               .transform(
                 StreamTransformer.fromHandlers(
@@ -2179,6 +2185,17 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
               );
 
           await streamDone.future;
+
+        // Only reset the reconnect counter when the SSE stream survived
+        // long enough to prove it was healthy. Without this guard, a
+        // server that accepts connections but immediately drops them
+        // keeps the counter at 0 → always 600ms delay → ~500 reconnects
+        // in 5 min instead of the intended ~38.
+        final streamAliveDuration = DateTime.now().difference(streamAliveStart);
+        if (streamAliveDuration.inSeconds >=
+            _sseReconnectResetThresholdSeconds) {
+          reconnectAttempt = 0;
+        }
         } catch (error) {
           final isCancelledRequest =
               error is DioException && error.type == DioExceptionType.cancel;
@@ -2216,11 +2233,15 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           break;
         }
 
-        reconnectAttempt += 1;
-        final clampedPower = reconnectAttempt > 5 ? 5 : reconnectAttempt;
-        final delayMs = 300 * (1 << clampedPower);
-        final boundedDelayMs = delayMs > 8000 ? 8000 : delayMs;
-        await Future<void>.delayed(Duration(milliseconds: boundedDelayMs));
+      reconnectAttempt += 1;
+      final clampedPower = reconnectAttempt > 5 ? 5 : reconnectAttempt;
+      final delayMs = 300 * (1 << clampedPower);
+      final boundedDelayMs = delayMs > 8000 ? 8000 : delayMs;
+      // Apply ±20% jitter to prevent thundering-herd on coordinated
+      // reconnects when multiple clients reconnect simultaneously.
+      final jitterFactor = 1.0 + (0.4 * (_microsecondJitter() - 0.5));
+      final jitteredMs = (boundedDelayMs * jitterFactor).round();
+      await Future<void>.delayed(Duration(milliseconds: jitteredMs));
       }
 
       if (!controller.isClosed) {
@@ -2690,5 +2711,12 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     } catch (e) {
       throw const ServerException('Failed to summarize session');
     }
+  }
+
+  /// Returns a deterministic-ish jitter value in [0, 1) derived from
+  /// the current microsecond clock. Used to spread SSE reconnection
+  /// attempts across time and avoid thundering-herd effects.
+  double _microsecondJitter() {
+    return (DateTime.now().microsecondsSinceEpoch % 1000) / 1000.0;
   }
 }
