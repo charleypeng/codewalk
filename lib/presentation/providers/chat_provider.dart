@@ -421,6 +421,7 @@ class ChatProvider extends ChangeNotifier {
   bool _recoverableSyncAlertEscalated = false;
   DateTime? _degradedModeStartedAt;
   int _consecutiveRealtimeFailures = 0;
+  bool _postReconnectRecoveryInFlight = false;
   bool _pendingRefreshSessions = false;
   bool _pendingRefreshStatus = false;
   bool _pendingRefreshActiveSession = false;

@@ -166,12 +166,22 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
 
   void _markRealtimeSignal({required String source}) {
     _lastRealtimeSignalAt = DateTime.now();
+    // Capture whether we were previously disconnected before resetting
+    // the counter. When SSE reconnects after a gap, the OpenCode server
+    // does NOT support Last-Event-ID replay (upstream issue #25657),
+    // so any events emitted during the gap are permanently lost. We
+    // must refresh state to recover missed permission requests, session
+    // status changes, and completion notifications.
+    final needsRecovery = _consecutiveRealtimeFailures > 0;
     _consecutiveRealtimeFailures = 0;
     _stopForegroundResumeSyncIndicator(reason: 'signal:$source');
     if (_degradedMode) {
       _exitDegradedMode(reason: 'signal-restored:$source');
     }
     _setSyncState(ChatSyncState.connected, reason: 'signal:$source');
+    if (needsRecovery) {
+      _schedulePostReconnectRecovery();
+    }
   }
 
   void _handleRealtimeStreamFailure({required String source, Object? error}) {
@@ -184,6 +194,32 @@ extension _ChatProviderRealtimeAuxOps on ChatProvider {
     if (_refreshlessRealtimeEnabled &&
         _consecutiveRealtimeFailures >= _degradedFailureThreshold) {
       _enterDegradedMode(reason: 'stream-failure:$source');
+    }
+  }
+
+  /// Schedule a post-reconnect recovery pass. Guards against duplicate
+  /// recovery when both session and global event streams fire
+  /// near-simultaneously after reconnection.
+  void _schedulePostReconnectRecovery() {
+    if (!_isForegroundActive || _postReconnectRecoveryInFlight) {
+      return;
+    }
+    _postReconnectRecoveryInFlight = true;
+    unawaited(_runPostReconnectRecovery());
+  }
+
+  /// Refresh pending interactions, active session view, and session list
+  /// after SSE reconnection to recover events lost during the gap.
+  /// The OpenCode server does NOT support Last-Event-ID replay.
+  Future<void> _runPostReconnectRecovery() async {
+    try {
+      AppLogger.info('post_reconnect_recovery_start');
+      await _loadPendingInteractions();
+      await refreshActiveSessionView(includeStatus: true);
+      await loadSessions(preserveVisibleState: true);
+      AppLogger.info('post_reconnect_recovery_complete');
+    } finally {
+      _postReconnectRecoveryInFlight = false;
     }
   }
 
