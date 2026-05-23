@@ -3774,6 +3774,17 @@ class ChatProvider extends ChangeNotifier {
       return false;
     }
     if (!_guardTransportForAction(actionLabel: 'send message')) {
+      // Preserve the user's draft so it is restored to the composer
+      // instead of being silently discarded. This upholds the
+      // BEHAVIOR.md invariant that user text is never lost on send
+      // failure. The same _setActiveSendDraft + _stashRejectedDraftForRetry
+      // pair is used by existing stream-failure recovery paths.
+      _setActiveSendDraft(
+        trimmedText,
+        attachments: effectiveAttachments,
+        shellMode: shellMode,
+      );
+      _stashRejectedDraftForRetry(sessionId: _currentSession?.id);
       return false;
     }
 
