@@ -132,6 +132,12 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 - **Avoid**: "Latest adjustments made"
 - **Prefer**: "Fixed height of Thinking Process box"
 
+### ARM64 Linux Host — Android Build Not Supported
+
+- **Android APK builds do not work on ARM64 Linux hosts.** The Android SDK build-tools (`aapt2`, `zipalign`, NDK toolchains) are only distributed as x86_64 binaries. Even with QEMU/binfmt and Box64 translation, the resulting APKs are unreliable and crash on startup — including minimal blank Flutter apps.
+- **Use GitHub Actions CI for Android builds.** The CI workflow runs on `ubuntu-latest` (x86_64) and produces working APKs.
+- `make check` (analyze + test) works fine on ARM64 — only the Android APK build step is affected.
+
 ## 📦 New Tag / Release
 
 - **Use `make release V=<type>`** for new versions:
