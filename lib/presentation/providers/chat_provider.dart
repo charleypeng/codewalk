@@ -1933,14 +1933,14 @@ class ChatProvider extends ChangeNotifier {
 
   _startSyncHealthMonitor();
   // If degraded mode was active when the app went to background, re-enter
-  // it immediately instead of attempting realtime subscription (which will
-  // likely fail again and require 3+ failures before re-entering degraded).
+  // it immediately for UI continuity (polling starts right away). Do NOT
+  // return early — the realtime subscription must still be started so
+  // that _markRealtimeSignal can eventually exit degraded mode when the
+  // SSE connection succeeds.
   if (_wasDegradedModeBeforeBackground) {
     _wasDegradedModeBeforeBackground = false;
     _enterDegradedMode(reason: 'foreground-resume-degraded');
-    return;
   }
-  _wasDegradedModeBeforeBackground = false;
   await _syncCellularDataSaverRealtimePolicy(reason: 'foreground-return');
   await _resumeRealtimeAfterForeground();
   }
