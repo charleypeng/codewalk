@@ -1005,8 +1005,12 @@ class MessageTokensModel {
 }
 
 /// Message error model - supports both `{name, message}` and `{name, data}` formats.
+///
+/// V2 alignment (OpenCode >=v1.15.7): extracts `statusCode` and `isRetryable`
+/// from structured error payloads (ApiError, ProviderAuthError, etc.).
+/// Fields are extracted from both top-level and nested `data` sub-map to
+/// handle upstream JSON variance (direct + nested formats).
 class MessageErrorModel {
-
   factory MessageErrorModel.fromJson(Map<String, dynamic> json) {
     final name = json['name'] as String? ?? 'UnknownError';
     // Try 'message' first, then extract from 'data'
@@ -1019,6 +1023,64 @@ class MessageErrorModel {
     } else {
       message = name;
     }
+
+    // V2: extract structured metadata from top-level or nested data
+    final dataMap =
+        json['data'] is Map<String, dynamic>
+            ? json['data'] as Map<String, dynamic>
+            : null;
+    final int? statusCode =
+        (json['statusCode'] as int?) ?? (dataMap?['statusCode'] as int?);
+    final bool isRetryable =
+        (json['isRetryable'] as bool?) ??
+        (dataMap?['isRetryable'] as bool?) ??
+        false;
+
+    return MessageErrorModel(
+      name: name,
+      message: message,
+      statusCode: statusCode,
+      isRetryable: isRetryable,
+    );
+  }
+
+  const MessageErrorModel({
+    required this.name,
+    required this.message,
+    this.statusCode,
+    this.isRetryable = false,
+  });
+
+  final String name;
+  final String message;
+  final int? statusCode;
+  final bool isRetryable;
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'message': message,
+    if (statusCode != null) 'statusCode': statusCode,
+    if (isRetryable) 'isRetryable': isRetryable,
+  };
+
+  MessageError toDomain() {
+    return MessageError(
+      name: name,
+      message: message,
+      statusCode: statusCode,
+      isRetryable: isRetryable,
+    );
+  }
+
+  static MessageErrorModel fromDomain(MessageError error) {
+    return MessageErrorModel(
+      name: error.name,
+      message: error.message,
+      statusCode: error.statusCode,
+      isRetryable: error.isRetryable,
+    );
+  }
+}
     return MessageErrorModel(name: name, message: message);
   }
   const MessageErrorModel({required this.name, required this.message});
