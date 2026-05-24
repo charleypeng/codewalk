@@ -80,7 +80,7 @@ lib/core/network/dio_sse_adapter.dart              # Conditional export: routes 
 lib/core/network/dio_sse_adapter_io.dart           # IO platforms: configures IOHttpClientAdapter with separate HttpClient for SSE (2h idle, 4 max connections)
 lib/core/network/dio_sse_adapter_stub.dart         # Web platform: no-op (browser manages connections natively)
 lib/data/datasources/app_remote_datasource.dart   # App bootstrap/config/providers/agents API access; app discovery retries scoped `/provider`, `/agent`, and `/config` calls with `directory`-only and then unscoped fallbacks when workspace-scoped queries fail; `/agent` parsing tolerates multiple upstream payload shapes; scoped discovery/config calls forward both `directory` and `workspace` when a project directory is active
-lib/data/datasources/chat_remote_datasource.dart  # Chat/session/message/realtime API access; accepts optional `sseDio` for SSE stream isolation; sendMessage uses polling + provider-level SSE only (no per-send SSE) to prevent server-side abort on disconnect; provider `prompt_async` sends intentionally do not forward `messageId`; async completion fallback escalates to polling and uses stricter staleness guards when no-candidate/empty-baseline scenarios occur to prevent early finalization; bounds message-list tail fetches (`limit=120`); uses bounded per-session assistant-id cache (64-session cap + invalidation on unresolved completion); handles session-scoped permission replies with legacy fallback, sends `remember: true` for `always` replies, and preserves typed upstream error names/codes/details in surfaced failures
+lib/data/datasources/chat_remote_datasource.dart  # Chat/session/message/realtime API access; accepts optional `sseDio` for SSE stream isolation; sendMessage uses polling + provider-level SSE only (no per-send SSE) to prevent server-side abort on disconnect; provider `prompt_async` sends intentionally do not forward `messageId`; async completion fallback escalates to polling and uses stricter staleness guards when no-candidate/empty-baseline scenarios occur to prevent early finalization; bounds message-list tail fetches (`limit=120`); uses bounded per-session assistant-id cache (64-session cap + invalidation on unresolved completion); handles session-scoped permission replies with legacy fallback, sends `remember: true` for `always` replies, and preserves typed upstream error names/codes/details in surfaced failures; SSE backoff loop fix — streamAliveStart enforces 5-second threshold before resetting reconnect counter, ±20% jitter to prevent thundering-herd
 lib/data/datasources/project_remote_datasource.dart # Project/worktree/file API access; file-name search (`/find/file`), file-content search (`/find?pattern=`), and workspace symbol search (`/find/symbol`)
 lib/data/datasources/app_local_datasource.dart    # Persistent settings, profiles, cache, credentials, favorite models, session composer drafts, and per-agent selection memory; uses ChatCachePayloadStore hybrid store with shared_preferences fallback for large payloads
 lib/data/cache/chat_cache_payload_store.dart      # Factory with conditional import for platform-specific store
@@ -197,11 +197,11 @@ lib/presentation/utils/tool_presentation.dart                      # Shared tool
 chat_provider_core.dart
 chat_provider_session_ops.dart           # Implements undo/redo turn logic, guarded historical `revertToTurn`, revert boundary advancement, and composer draft restoration
 chat_provider_realtime_ops.dart           # Realtime event handling; defers stale `session.idle` reconciliation until the active send stream settles so server-driven lifecycle stays authoritative across follow-up sends
-chat_provider_realtime_aux_ops.dart
+chat_provider_realtime_aux_ops.dart                # Post-reconnect recovery with _postReconnectRecoveryInFlight guard; degraded mode preservation across background/foreground transitions
 chat_provider_event_reducer_ops.dart             # Reconcile one-shot guard via _messageStreamGeneration; dedup key composition
 chat_provider_message_merge_ops.dart
 chat_provider_message_state_ops.dart             # Message state mutations; auto-title scheduling guard skips subsessions
-chat_provider_draft_part.dart                    # Loads/persists per-session composer drafts and manages rejected-draft envelopes
+chat_provider_draft_part.dart                    # Loads/persists per-session composer drafts and manages rejected-draft envelopes; unconditional draft preservation across background transitions (removed foreground guards from _stashRejectedDraftForRetry)
 chat_provider_selection_sync_ops.dart
 chat_provider_selection_helpers.dart
 chat_provider_context_state_ops.dart
@@ -250,7 +250,7 @@ lib/domain/entities/       # Core business entities (chat, provider, project, wo
 lib/domain/repositories/   # Repository contracts
 lib/domain/usecases/       # Use case boundaries used by providers
 lib/data/models/           # API/storage models and JSON adapters
-lib/data/repositories/     # Repository implementations
+lib/data/repositories/     # Repository implementations (includes chat_repository.dart, reply_question.dart, reject_question.dart); sessionId removed from replyQuestion/rejectQuestion (ADR-023 contract compliance)
 lib/data/datasources/      # Remote/local IO boundaries
 lib/data/cache/            # Hybrid payload cache primitives used by AppLocalDataSource
 ```
@@ -267,7 +267,7 @@ lib/data/datasources/chat_remote_datasource.dart
   - /session/{id}/abort, /session/{id}/revert, /session/{id}/unrevert, /session/{id}/init, /session/{id}/summarize
   - /event (provider-level SSE only; per-send SSE removed), /global/event
   - /permission, /permission/{requestId}/reply (legacy fallback), /session/{id}/permissions/{permissionId} (canonical, `remember: true` for `always` replies)
-  - /question, /question/{requestId}/reply, /question/{requestId}/reject
+  - /question, /question/{requestId}/reply, /question/{requestId}/reject (replyQuestion/rejectQuestion no longer send sessionID query parameter — ADR-023 contract compliance)
 
 lib/data/datasources/project_remote_datasource.dart
   - /project, /project/current
@@ -316,6 +316,7 @@ test/widget/                           # Widget tests (includes icon assertions 
 test/integration/                      # Integration tests; includes data-usage optimization and permission `remember` contract coverage in `opencode_server_integration_test.dart`
 test/presentation/                     # Presentation-focused tests (incl. window_size_class_test.dart)
 test/support/                          # Test helpers/fakes; `mock_opencode_server.dart` includes extra counters for usage optimization tracking; `pump_localized_app.dart` wraps widgets with all l10n delegates for locale-aware tests
+test/contract/                         # Contract tests; `chat_event_contract_test.dart` covers 43 SSE event dispatch contract tests
 tool/ci/check_analyze_budget.sh        # Analyzer issue budget gate (default: 186)
 tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 .github/workflows/ci.yml               # CI executes analyze + tests + coverage gate
