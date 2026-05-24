@@ -108,7 +108,10 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
                 height: 280,
                 child: Row(
                   children: [
-                    SizedBox(width: 180, child: _buildDiffFileList(context)),
+                    SizedBox(
+                      width: 200,
+                      child: _buildDiffFileTree(context),
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -133,6 +136,129 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
           ],
         );
       },
+    );
+  }
+
+  /// File-tree navigation for expanded mode (width >= 560px).
+  /// Splits paths into directory/file nodes, collapses single-child
+  /// directories, and falls back to flat list on malformed paths.
+  Widget _buildDiffFileTree(BuildContext context) {
+    try {
+      final root = _buildDiffTreeNode(widget.diffs);
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border.all(color: Theme.of(context).dividerColor),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: SingleChildScrollView(
+          child: _buildTreeNodeWidget(context, root, depth: 0),
+        ),
+      );
+    } catch (_) {
+      // Malformed paths — fall back to flat list
+      return _buildDiffFileList(context);
+    }
+  }
+
+  /// Recursively build a tree from diff file paths.
+  _DiffTreeNode _buildDiffTreeNode(List<SessionDiff> diffs) {
+    final root = _DiffTreeNode(name: '', isDirectory: true);
+    for (var i = 0; i < diffs.length; i += 1) {
+      final segments = diffs[i].file.split('/');
+      var node = root;
+      for (var s = 0; s < segments.length; s += 1) {
+        final segment = segments[s];
+        final isFile = s == segments.length - 1;
+        if (isFile) {
+          node.children.add(
+            _DiffTreeNode(name: segment, isDirectory: false, diffIndex: i),
+          );
+        } else {
+          var child = node.children.where((c) => c.name == segment).firstOrNull;
+          if (child == null) {
+            child = _DiffTreeNode(name: segment, isDirectory: true);
+            node.children.add(child);
+          }
+          node = child;
+        }
+      }
+    }
+    return _collapseSingleChildDirs(root);
+  }
+
+  /// Merge directories that have exactly one child directory and no file children.
+  _DiffTreeNode _collapseSingleChildDirs(_DiffTreeNode node) {
+    final collapsedChildren = <_DiffTreeNode>[];
+    for (final child in node.children) {
+      final processed = _collapseSingleChildDirs(child);
+      if (processed.isDirectory &&
+          processed.children.length == 1 &&
+          processed.children.first.isDirectory) {
+        // Merge: "lib/" + "presentation/" → "lib/presentation/"
+        final merged = processed.children.first;
+        collapsedChildren.add(
+          _DiffTreeNode(
+            name: '${processed.name}/${merged.name}',
+            isDirectory: true,
+            children: merged.children,
+          ),
+        );
+      } else {
+        collapsedChildren.add(processed);
+      }
+    }
+    return _DiffTreeNode(
+      name: node.name,
+      isDirectory: node.isDirectory,
+      diffIndex: node.diffIndex,
+      children: collapsedChildren,
+    );
+  }
+
+  Widget _buildTreeNodeWidget(
+    BuildContext context,
+    _DiffTreeNode node,
+    {required int depth},
+  ) {
+    if (!node.isDirectory) {
+      final selected = node.diffIndex == _selectedIndex;
+      return ListTile(
+        key: ValueKey<String>('session_diff_tree_file_${node.diffIndex}'),
+        dense: true,
+        contentPadding: EdgeInsets.only(left: 12.0 + depth * 16.0),
+        selected: selected,
+        leading: const Icon(Symbols.description, size: 18),
+        title: Text(
+          node.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        onTap: () {
+          if (node.diffIndex != null) {
+            setState(() => _selectedIndex = node.diffIndex!);
+          }
+        },
+      );
+    }
+
+    // Directory node — ExpansionTile with children
+    return ExpansionTile(
+      key: ValueKey<String>('session_diff_tree_dir_${node.name}_$depth'),
+      initiallyExpanded: depth == 0,
+      tilePadding: EdgeInsets.only(left: 4.0 + depth * 16.0),
+      childrenPadding: EdgeInsets.zero,
+      dense: true,
+      leading: const Icon(Symbols.folder, size: 18),
+      title: Text(
+        node.name.isEmpty ? '/' : '${node.name}/',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
+      children: [
+        for (final child in node.children)
+          _buildTreeNodeWidget(context, child, depth: depth + 1),
+      ],
     );
   }
 
@@ -372,4 +498,19 @@ class _DiffLineStyle {
 
   final Color textColor;
   final Color? backgroundColor;
+}
+
+/// Tree node for the file-tree diff viewer navigation.
+class _DiffTreeNode {
+  _DiffTreeNode({
+    required this.name,
+    required this.isDirectory,
+    this.diffIndex,
+    List<_DiffTreeNode>? children,
+  }) : children = children ?? [];
+
+  final String name;
+  final bool isDirectory;
+  final int? diffIndex;
+  final List<_DiffTreeNode> children;
 }
