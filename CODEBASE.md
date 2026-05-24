@@ -44,7 +44,7 @@ codewalk/
 │       │   ├── chat_input_widget.dart  # Chat input orchestrator/facade
 │       │   └── chat_input/             # ChatInput decomposed clusters (8 modules)
 │       ├── services/                   # Platform/runtime services (tray, notifications, STT, terminal, etc.)
-│       ├── utils/                      # Presentation helpers (incl. WindowSizeClass MD3 breakpoints)
+│       ├── utils/                      # Presentation helpers (incl. WindowSizeClass MD3 breakpoints, diff parser)
 │       └── theme/                      # Material You theme: AppTheme, AppShapes, BrandColor seeds, AppSemanticColors
 ├── test/                               # Unit, widget, integration, presentation, support tests
 ├── tool/ci/                            # Analyzer budget and coverage gate scripts
@@ -106,6 +106,7 @@ lib/presentation/theme/app_shapes.dart                # AppShapes class with cen
 lib/presentation/theme/app_theme.dart                 # Material You theme builder using AppShapes and color scheme
 lib/presentation/theme/app_animations.dart            # Animation duration tokens; includes userBubble (130 ms) and assistantBubble (180 ms)
 lib/presentation/utils/window_size_class.dart         # WindowSizeClass enum with MD3 breakpoints + BuildContext extension
+lib/presentation/utils/diff_parser.dart               # Diff parser: DiffHunk model, groupIntoHunks(), annotateLineNumbers(), resolveDiffHighlightLanguage(), kDefaultCollapseThreshold
 lib/presentation/services/desktop_tray_service_io.dart # Desktop tray lifecycle; selects tray icon per OS (macOS template PNG, Windows ICO, Linux PNG)
 lib/presentation/services/notification_service.dart    # Local notifications; Android uses `@drawable/ic_stat_codewalk` small icon and no longer drives foreground monitor state
 lib/presentation/services/android_foreground_monitor_service.dart # Android foreground service via MethodChannel; active only during temporary live monitoring for known background work
@@ -137,6 +138,7 @@ lib/presentation/pages/settings/sections/servers_settings_section.dart # Server 
 lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade; WindowListener for desktop lifecycle; guards startup (checkConnection/loadSessions) against no-active-server; holds tool-chain expanded state map; _isSessionSwitchInFlight guard, _sessionCollapseHistoryCache / _sessionCollapseWorkCache per-session collapse maps; top-reach history loading is coordinated with anchor-preserving restore; workspace controller uses fast project-scope switch path
 lib/presentation/widgets/chat_input_widget.dart   # Composer/input orchestration facade; speech controller resolves Native, Sherpa, Moonshine, Parakeet, and SenseVoice backends and routes model-required setup dialogs accordingly
 lib/presentation/widgets/chat_message_widget.dart # Message bubble with build-skip cache, cached MarkdownStyleSheet; compact (<600dp) collapsed-copy variants for reasoning/tool-chain/tool-content toggles; completed tool-chain groups preserve user expansion through ordinary parent rebuilds (no involuntary collapse-on-scroll); includes `SubtaskPart`/`task` navigation callbacks, inline latest-turn undo, historical `onInlineRevertToHere`, and stable rebuild gating keyed by callback identity
+lib/presentation/widgets/session_diff_viewer.dart     # Rich diff review surface: DiffViewMode enum (summary/unified/split), 3 view toggles, line number gutters, per-line syntax highlighting, lazy hunk collapse/expand, onFileTap jump action
 lib/presentation/widgets/session_todo_list_widget.dart # Session task panel with progress bar and keyboard-aware collapse; compact mobile collapsed summaries use count-first wording (`x/y in progress`, `x/y done`)
 lib/presentation/widgets/chat_session_list.dart    # Chat session list widget; uses responsive vertical tile padding (1 on desktop, 3 on mobile) for information density
 lib/presentation/widgets/message_entrance_animation.dart # Entrance animation wrapper; `role` parameter selects user (130 ms) or assistant (180 ms) motion profile from AppAnimations
@@ -324,7 +326,7 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 
 ## Internationalization (i18n)
 
-- ARB source files live in `lib/l10n/` (14 locales), with English as the template (`app_en.arb`, ~200 keys).
+- ARB source files live in `lib/l10n/` (14 locales), with English as the template (`app_en.arb`, ~200 keys). Recent additions: diff review surface keys (sessionDiffSummary, sessionDiffUnified, sessionDiffSplit, sessionDiffFilesChanged, sessionDiffLinesCollapsed, sessionDiffLinesAddedRemoved, sessionDiffContentNotCaptured).
 - Generated `AppLocalizations` classes in `lib/l10n/generated/` provide type-safe translation accessors.
 - UI code uses `context.l10n.keyName` via the `L10nContext` extension (`lib/core/i18n/l10n_context.dart`).
 - Context-free services use `L10nBridge.current?.key ?? 'English fallback'` (`lib/core/i18n/l10n_bridge.dart`).
