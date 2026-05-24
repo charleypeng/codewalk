@@ -68,6 +68,6 @@ android/key.properties
 scorecard.png
 .desloppify/
 
-# Stale execution plans
-final_plan.md
+# Stale execution plans (single-file; the decomposed tracker is tracked)
+# final_plan.md — replaced by feature_gap_tracker.md + final_plan/ directory
 .antigravitycli/
