@@ -11,8 +11,7 @@
 
 - Each feature has its own detailed plan file under `final_plan/`.
 - Mark progress by changing the status checkbox: `[ ]` → `[~]` (in progress) → `[x]` (done).
-- Update the commit hash when a feature is completed.
-- Phase overview files under `final_plan/phase*.md` summarize per-phase status.
+- Update the commit hash column when a feature is completed.
 - Cross-cutting requirements and verification matrix remain in this file for quick reference.
 
 ---
@@ -34,7 +33,7 @@
 
 ### Phase 1 — High-Impact, Low-Protocol-Risk UX Foundations
 
-> See [final_plan/phase1_ux_foundations.md](final_plan/phase1_ux_foundations.md)
+These features are mostly client-side and build directly on current CodeWalk surfaces.
 
 | # | Feature | Priority | Status | Commit | Plan |
 |---|---------|----------|--------|--------|------|
@@ -43,9 +42,17 @@
 | 3 | Timeline Full-Text Search | P1 | [ ] | — | [03_timeline_search.md](final_plan/03_timeline_search.md) |
 | 4 | Session Export as Markdown/JSON | P1 | [ ] | — | [04_session_export.md](final_plan/04_session_export.md) |
 
+**Phase completion**:
+
+- [ ] All 4 features implemented
+- [ ] All validations passing
+- [ ] `make check` clean
+
+---
+
 ### Phase 2 — Rich Chat Output and Mobile Accessibility
 
-> See [final_plan/phase2_rich_output.md](final_plan/phase2_rich_output.md)
+Client-side rendering or platform-service additions that improve comprehension and accessibility.
 
 | # | Feature | Priority | Status | Commit | Plan |
 |---|---------|----------|--------|--------|------|
@@ -54,9 +61,17 @@
 | 7 | LaTeX/Math Rendering | P2 | [ ] | — | [07_latex_rendering.md](final_plan/07_latex_rendering.md) |
 | 8 | Share Messages as Images | P2 | [ ] | — | [08_share_messages_as_images.md](final_plan/08_share_messages_as_images.md) |
 
+**Phase completion**:
+
+- [ ] All 4 features implemented
+- [ ] All validations passing
+- [ ] `make check` clean
+
+---
+
 ### Phase 3 — Organization and Local Productivity
 
-> See [final_plan/phase3_organization.md](final_plan/phase3_organization.md)
+Mostly client-local features that should preserve server contract isolation.
 
 | # | Feature | Priority | Status | Commit | Plan |
 |---|---------|----------|--------|--------|------|
@@ -64,9 +79,17 @@
 | 10 | Persistent Project Notes and User Todos | P2 | [ ] | — | [10_project_notes_todos.md](final_plan/10_project_notes_todos.md) |
 | 11 | Snippets with `#` Autocomplete | P2 | [ ] | — | [11_snippets_autocomplete.md](final_plan/11_snippets_autocomplete.md) |
 
+**Phase completion**:
+
+- [ ] All 3 features implemented
+- [ ] All validations passing
+- [ ] `make check` clean
+
+---
+
 ### Phase 4 — Workspace Control Layer
 
-> See [final_plan/phase4_workspace_control.md](final_plan/phase4_workspace_control.md)
+High-value but capability-gated features that must be verified against official OpenCode contracts before implementation.
 
 | # | Feature | Priority | Status | Commit | Plan | Gate |
 |---|---------|----------|--------|--------|------|------|
@@ -75,9 +98,18 @@
 | 14 | Plan/Build Mode | P3 | [ ] | — | [14_plan_build_mode.md](final_plan/14_plan_build_mode.md) | — |
 | 15 | Inline Comment Drafts on Diffs/Plans | P3 | [ ] | — | [15_inline_comment_drafts.md](final_plan/15_inline_comment_drafts.md) | Depends on 1 + 14 |
 
+**Phase completion**:
+
+- [ ] All 4 features implemented (or gated with verified fallback)
+- [ ] All validations passing
+- [ ] `make check` clean
+- [ ] ADR-023 compliance verified for all gated features
+
+---
+
 ### Phase 5 — Advanced and Experimental Features
 
-> See [final_plan/phase5_advanced.md](final_plan/phase5_advanced.md)
+These should be planned only after the foundation above is complete.
 
 | # | Feature | Priority | Status | Commit | Plan | Gate |
 |---|---------|----------|--------|--------|------|------|
@@ -85,6 +117,14 @@
 | 17 | Skills Catalog and Local Skill Management | P4 | [ ] | — | [17_skills_catalog.md](final_plan/17_skills_catalog.md) | Official skill/config API |
 | 18 | Custom JSON Themes | P4 | [ ] | — | [18_custom_json_themes.md](final_plan/18_custom_json_themes.md) | — |
 | 19 | Multi-Agent Runs with Isolated Worktrees | P5 | [ ] | — | [19_multi_agent_runs.md](final_plan/19_multi_agent_runs.md) | Worktree API stability |
+
+**Phase completion**:
+
+- [ ] All 4 features implemented (or gated with verified fallback)
+- [ ] All validations passing
+- [ ] `make check` clean
+
+---
 
 ### Deferred
 
