@@ -118,7 +118,7 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(find.byKey(const ValueKey<String>('session_diff_file_1')));
+    await tester.tap(find.byKey(const ValueKey<String>('session_diff_tree_file_1')));
     await tester.pumpAndSettle();
 
     expect(

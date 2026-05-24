@@ -217,9 +217,9 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
 
   Widget _buildTreeNodeWidget(
     BuildContext context,
-    _DiffTreeNode node,
-    {required int depth},
-  ) {
+    _DiffTreeNode node, {
+    required int depth,
+  }) {
     if (!node.isDirectory) {
       final selected = node.diffIndex == _selectedIndex;
       return ListTile(
@@ -242,9 +242,10 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
     }
 
     // Directory node — ExpansionTile with children
+    final hasOnlyFiles = node.children.every((c) => !c.isDirectory);
     return ExpansionTile(
       key: ValueKey<String>('session_diff_tree_dir_${node.name}_$depth'),
-      initiallyExpanded: depth == 0,
+      initiallyExpanded: depth == 0 || hasOnlyFiles,
       tilePadding: EdgeInsets.only(left: 4.0 + depth * 16.0),
       childrenPadding: EdgeInsets.zero,
       dense: true,

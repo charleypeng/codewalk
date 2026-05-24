@@ -1029,9 +1029,9 @@ class MessageErrorModel {
         json['data'] is Map<String, dynamic>
             ? json['data'] as Map<String, dynamic>
             : null;
-    final int? statusCode =
+    final statusCode =
         (json['statusCode'] as int?) ?? (dataMap?['statusCode'] as int?);
-    final bool isRetryable =
+    final isRetryable =
         (json['isRetryable'] as bool?) ??
         (dataMap?['isRetryable'] as bool?) ??
         false;
@@ -1079,22 +1079,5 @@ class MessageErrorModel {
       statusCode: error.statusCode,
       isRetryable: error.isRetryable,
     );
-  }
-}
-    return MessageErrorModel(name: name, message: message);
-  }
-  const MessageErrorModel({required this.name, required this.message});
-
-  final String name;
-  final String message;
-
-  Map<String, dynamic> toJson() => {'name': name, 'message': message};
-
-  MessageError toDomain() {
-    return MessageError(name: name, message: message);
-  }
-
-  static MessageErrorModel fromDomain(MessageError error) {
-    return MessageErrorModel(name: error.name, message: error.message);
   }
 }
