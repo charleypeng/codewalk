@@ -997,10 +997,13 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
     required String fallbackMessage,
   }) {
     return switch (statusCode) {
-      401 ||
-      403 => 'Authentication failed. Reconnect the provider and try again.',
+      401 || 403 =>
+        'Authentication failed. Reconnect the provider and try again.',
       409 => 'Session is busy processing another request.',
       429 => 'Rate limit exceeded. Wait a moment and try again.',
+      // V2: explicit 503 — server explicitly unavailable (retryable)
+      503 =>
+        'Service temporarily unavailable. The server may be starting up — please try again shortly.',
       _ when statusCode != null && statusCode >= 500 =>
         'Provider temporarily unavailable. Try again shortly.',
       _ => fallbackMessage,
