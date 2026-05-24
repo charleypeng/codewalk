@@ -581,13 +581,29 @@ class MessageTokens extends Equatable {
   List<Object?> get props => [input, output, reasoning, cacheRead, cacheWrite];
 }
 
-/// Technical comment translated to English.
+/// Structured error from the server (V2 aligned with OpenCode >=v1.15.7).
+///
+/// Optional [statusCode] and [isRetryable] carry structured metadata from
+/// upstream error types (ApiError, SessionBusyError, etc.). Existing call
+/// sites that construct `MessageError(name:, message:)` remain valid —
+/// both fields default to null/false.
 class MessageError extends Equatable {
-  const MessageError({required this.name, required this.message});
+  const MessageError({
+    required this.name,
+    required this.message,
+    this.statusCode,
+    this.isRetryable = false,
+  });
 
   final String name;
   final String message;
 
+  /// HTTP status code from the upstream error (e.g. 429 for ApiError rate-limit).
+  final int? statusCode;
+
+  /// Whether the client should automatically retry this error.
+  final bool isRetryable;
+
   @override
-  List<Object?> get props => [name, message];
+  List<Object?> get props => [name, message, statusCode, isRetryable];
 }
