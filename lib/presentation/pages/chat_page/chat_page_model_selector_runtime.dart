@@ -568,10 +568,13 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
     if (_containsAnyBrandToken(normalizedProvider, const ['mistral'])) {
       return SimpleIcons.mistralai;
     }
-    if (_containsAnyBrandToken(normalizedProvider, const ['xai'])) {
-      return SimpleIcons.spacex;
-    }
-    if (_containsAnyBrandToken(normalizedProvider, const ['github'])) {
+  if (_containsAnyBrandToken(normalizedProvider, const ['xai'])) {
+    return SimpleIcons.spacex;
+  }
+  if (_containsAnyBrandToken(normalizedProvider, const ['digitalocean', 'digitalocean_inference'])) {
+    return SimpleIcons.digitalocean;
+  }
+  if (_containsAnyBrandToken(normalizedProvider, const ['github'])) {
       return SimpleIcons.github;
     }
     if (_containsAnyBrandToken(normalizedProvider, const ['gitlab'])) {
