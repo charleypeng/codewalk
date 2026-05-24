@@ -1,16 +1,65 @@
 enum DiffLineType {
-  add, // + linha
-  remove, // - linha
+  add, // + line
+  remove, // - line
   hunk, // @@ -l1,c1 +l2,c2 @@
   metadata, // ---, +++, diff --git, index
-  context, // linhas sem modificação
+  context, // unchanged lines
 }
 
 class DiffLine {
-  const DiffLine(this.content, this.type);
+  const DiffLine(
+    this.content,
+    this.type, {
+    this.oldLineNo,
+    this.newLineNo,
+  });
+
   final String content;
   final DiffLineType type;
+
+  /// 1-based line number in the old (before) file, or null if not applicable.
+  final int? oldLineNo;
+
+  /// 1-based line number in the new (after) file, or null if not applicable.
+  final int? newLineNo;
 }
+
+/// A grouped hunk extracted from a flat [DiffLine] list, suitable for
+/// collapsed/expanded rendering and lazy build.
+class DiffHunk {
+  const DiffHunk({
+    required this.header,
+    required this.lines,
+    required this.oldStart,
+    required this.newStart,
+    required this.oldCount,
+    required this.newCount,
+  });
+
+  /// The @@ header line (type == DiffLineType.hunk).
+  final DiffLine header;
+
+  /// Content lines within this hunk (add, remove, context — no metadata/hunk).
+  final List<DiffLine> lines;
+
+  /// Old-file start line from the @@ header.
+  final int oldStart;
+
+  /// New-file start line from the @@ header.
+  final int newStart;
+
+  /// Old-file line count from the @@ header.
+  final int oldCount;
+
+  /// New-file line count from the @@ header.
+  final int newCount;
+
+  /// Number of content lines (excluding the header itself).
+  int get lineCount => lines.length;
+}
+
+/// Threshold: hunks with more content lines than this default to collapsed.
+const int kDefaultCollapseThreshold = 20;
 
 /// Parse unified diff text into typed lines
 List<DiffLine> parseDiffLines(String text) {
@@ -271,4 +320,191 @@ bool isDiffFormat(String text) {
   }
 
   return false;
+}
+
+// ---------------------------------------------------------------------------
+// Hunk grouping: split a flat DiffLine list into DiffHunk objects
+// ---------------------------------------------------------------------------
+
+/// Regex to extract old/new start and count from @@ headers like:
+/// `@@ -1,3 +1,4 @@` or `@@ -0,0 +1,5 @@`
+final _hunkHeaderRe = RegExp(r'@@ -(\d+),(\d+) \+(\d+),(\d+) @@');
+
+/// Group flat [DiffLine] list into [DiffHunk] objects.
+///
+/// Metadata lines (---, +++, diff --git, index) before the first hunk header
+/// are dropped — the viewer renders them separately. Each hunk contains its
+/// header line and the content lines until the next hunk or end-of-list.
+List<DiffHunk> groupIntoHunks(List<DiffLine> lines) {
+  final hunks = <DiffHunk>[];
+  DiffLine? currentHeader;
+  var currentOldStart = 0;
+  var currentNewStart = 0;
+  var currentOldCount = 0;
+  var currentNewCount = 0;
+  var currentLines = <DiffLine>[];
+
+  for (final line in lines) {
+    if (line.type == DiffLineType.hunk) {
+      // Flush previous hunk
+      if (currentHeader != null) {
+        hunks.add(DiffHunk(
+          header: currentHeader,
+          lines: List.of(currentLines),
+          oldStart: currentOldStart,
+          newStart: currentNewStart,
+          oldCount: currentOldCount,
+          newCount: currentNewCount,
+        ));
+      }
+      currentHeader = line;
+      currentLines = <DiffLine>[];
+      // Parse @@ header for start/count values
+      final match = _hunkHeaderRe.firstMatch(line.content);
+      if (match != null) {
+        currentOldStart = int.parse(match[1]!);
+        currentOldCount = int.parse(match[2]!);
+        currentNewStart = int.parse(match[3]!);
+        currentNewCount = int.parse(match[4]!);
+      }
+    } else if (line.type != DiffLineType.metadata && currentHeader != null) {
+      currentLines.add(line);
+    }
+  }
+
+  // Flush last hunk
+  if (currentHeader != null) {
+    hunks.add(DiffHunk(
+      header: currentHeader,
+      lines: List.of(currentLines),
+      oldStart: currentOldStart,
+      newStart: currentNewStart,
+      oldCount: currentOldCount,
+      newCount: currentNewCount,
+    ));
+  }
+
+  return hunks;
+}
+
+/// Annotate a flat [DiffLine] list with 1-based line numbers.
+///
+/// Walks the list tracking old/new line counters:
+/// - `context` lines increment both counters
+/// - `remove` lines increment only the old counter
+/// - `add` lines increment only the new counter
+/// - `hunk` and `metadata` lines get no line numbers
+List<DiffLine> annotateLineNumbers(List<DiffLine> lines) {
+  // Extract starting line numbers from the first @@ header
+  var oldLine = 0;
+  var newLine = 0;
+  var foundFirstHunk = false;
+
+  return lines.map((line) {
+    if (line.type == DiffLineType.hunk && !foundFirstHunk) {
+      final match = _hunkHeaderRe.firstMatch(line.content);
+      if (match != null) {
+        oldLine = int.parse(match[1]!);
+        newLine = int.parse(match[3]!);
+      }
+      foundFirstHunk = true;
+      return line;
+    }
+
+    if (line.type == DiffLineType.hunk) {
+      // Subsequent hunk headers — re-sync line numbers
+      final match = _hunkHeaderRe.firstMatch(line.content);
+      if (match != null) {
+        oldLine = int.parse(match[1]!);
+        newLine = int.parse(match[3]!);
+      }
+      return line;
+    }
+
+    if (line.type == DiffLineType.metadata) {
+      return line;
+    }
+
+    // Track line numbers for content lines
+    int? oldNo;
+    int? newNo;
+
+    switch (line.type) {
+      case DiffLineType.context:
+        oldNo = oldLine;
+        newNo = newLine;
+        oldLine++;
+        newLine++;
+      case DiffLineType.remove:
+        oldNo = oldLine;
+        oldLine++;
+      case DiffLineType.add:
+        newNo = newLine;
+        newLine++;
+      case DiffLineType.hunk:
+      case DiffLineType.metadata:
+        break;
+    }
+
+    return DiffLine(line.content, line.type,
+        oldLineNo: oldNo, newLineNo: newNo);
+  }).toList();
+}
+
+// ---------------------------------------------------------------------------
+// Language resolution for syntax highlighting (mirrors chat_page_file_viewer)
+// ---------------------------------------------------------------------------
+
+/// Resolve a highlight.js language identifier from a file path.
+///
+/// This is a standalone utility so that [SessionDiffViewer] can apply
+/// syntax-aware styling without importing chat_page.dart.
+String resolveDiffHighlightLanguage(String path) {
+  final normalizedPath = path.toLowerCase();
+  final lastSlash = normalizedPath.lastIndexOf('/');
+  final fileName =
+      lastSlash >= 0 ? normalizedPath.substring(lastSlash + 1) : normalizedPath;
+  final dotIndex = fileName.lastIndexOf('.');
+  final extension = dotIndex >= 0 ? fileName.substring(dotIndex + 1) : '';
+
+  switch (fileName) {
+    case 'dockerfile':
+      return 'dockerfile';
+    case 'makefile':
+      return 'makefile';
+    case '.bashrc':
+    case '.bash_profile':
+    case '.bash_aliases':
+    case '.zshrc':
+    case '.zprofile':
+    case '.zshenv':
+    case '.profile':
+      return 'bash';
+  }
+
+  return switch (extension) {
+    'dart' => 'dart',
+    'js' || 'mjs' || 'cjs' || 'jsx' => 'javascript',
+    'ts' || 'mts' || 'cts' || 'tsx' => 'typescript',
+    'json' => 'json',
+    'yaml' || 'yml' => 'yaml',
+    'md' || 'mdx' => 'markdown',
+    'sh' || 'ash' || 'bash' || 'zsh' => 'bash',
+    'py' => 'python',
+    'go' => 'go',
+    'rs' => 'rust',
+    'java' => 'java',
+    'kt' || 'kts' => 'kotlin',
+    'swift' => 'swift',
+    'php' => 'php',
+    'rb' => 'ruby',
+    'sql' => 'sql',
+    'html' || 'htm' || 'xml' || 'svg' => 'xml',
+    'css' => 'css',
+    'scss' => 'scss',
+    'less' => 'less',
+    'toml' || 'ini' || 'cfg' || 'conf' || 'properties' => 'ini',
+    'vue' => 'vue',
+    _ => 'plaintext',
+  };
 }
