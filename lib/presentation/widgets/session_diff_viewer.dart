@@ -749,27 +749,29 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
   List<_SplitPair> _buildSplitPairs(List<DiffLine> lines) {
     final pairs = <_SplitPair>[];
     final removes = <DiffLine>[];
+    var removeIdx = 0;
     for (final line in lines) {
       if (line.type == DiffLineType.remove) {
         removes.add(line);
       } else if (line.type == DiffLineType.add) {
-        if (removes.isNotEmpty) {
-          pairs.add(_SplitPair(oldLine: removes.removeAt(0), newLine: line));
+        if (removeIdx < removes.length) {
+          pairs.add(_SplitPair(oldLine: removes[removeIdx++], newLine: line));
         } else {
           pairs.add(_SplitPair(oldLine: null, newLine: line));
         }
       } else {
         // Flush remaining unpaired removes
-        for (final r in removes) {
-          pairs.add(_SplitPair(oldLine: r, newLine: null));
+        while (removeIdx < removes.length) {
+          pairs.add(_SplitPair(oldLine: removes[removeIdx++], newLine: null));
         }
         removes.clear();
+        removeIdx = 0;
         pairs.add(_SplitPair(oldLine: line, newLine: line));
       }
     }
     // Flush trailing removes
-    for (final r in removes) {
-      pairs.add(_SplitPair(oldLine: r, newLine: null));
+    while (removeIdx < removes.length) {
+      pairs.add(_SplitPair(oldLine: removes[removeIdx++], newLine: null));
     }
     return pairs;
   }
@@ -1099,18 +1101,16 @@ class _SessionDiffViewerState extends State<SessionDiffViewer> {
               ? TextSpan(text: value, style: theme[className])
               : TextSpan(text: value),
         );
-      } else if (children != null) {
-        final tmp = <TextSpan>[];
-        currentSpans.add(TextSpan(children: tmp, style: theme[className]));
-        stack.add(currentSpans);
-        currentSpans = tmp;
-        for (final child in children) {
-          traverse(child);
-          if (child == children.last) {
-            currentSpans = stack.isNotEmpty ? stack.removeLast() : spans;
-          }
-        }
+    } else if (children != null) {
+      final tmp = <TextSpan>[];
+      currentSpans.add(TextSpan(children: tmp, style: theme[className]));
+      stack.add(currentSpans);
+      currentSpans = tmp;
+      for (final child in children) {
+        traverse(child);
       }
+      currentSpans = stack.isNotEmpty ? stack.removeLast() : spans;
+    }
     }
 
     for (final node in nodes) {

@@ -406,6 +406,10 @@ List<DiffLine> annotateLineNumbers(List<DiffLine> lines) {
       if (match != null) {
         oldLine = int.parse(match[1]!);
         newLine = int.parse(match[3]!);
+      } else {
+        // Malformed hunk header — start from line 1 as fallback
+        oldLine = 1;
+        newLine = 1;
       }
       foundFirstHunk = true;
       return line;
@@ -418,6 +422,7 @@ List<DiffLine> annotateLineNumbers(List<DiffLine> lines) {
         oldLine = int.parse(match[1]!);
         newLine = int.parse(match[3]!);
       }
+      // If regex fails on subsequent hunk, keep current counters
       return line;
     }
 
