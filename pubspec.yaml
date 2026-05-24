@@ -101,6 +101,7 @@ dependencies:
   showcaseview: ^5.0.2
   xterm:
     path: third_party/xterm
+  highlight: ^0.7.0
 
 dev_dependencies:
   flutter_test:

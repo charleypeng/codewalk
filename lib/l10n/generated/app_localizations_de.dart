@@ -468,6 +468,40 @@ class AppLocalizationsDe extends AppLocalizations {
   String get sessionDiffReview => 'Review changes';
 
   @override
+  String get sessionDiffSummary => 'Summary';
+
+  @override
+  String get sessionDiffUnified => 'Unified';
+
+  @override
+  String get sessionDiffSplit => 'Split';
+
+  @override
+  String sessionDiffFilesChanged(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count files changed',
+      one: '1 file changed',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sessionDiffLinesCollapsed(int count) {
+    return '$count lines collapsed — tap to expand';
+  }
+
+  @override
+  String sessionDiffLinesAddedRemoved(int added, int removed) {
+    return '+$added lines added -$removed lines removed';
+  }
+
+  @override
+  String get sessionDiffContentNotCaptured =>
+      'File content not captured by the server';
+
+  @override
   String get sessionFailedRename => 'Failed to rename conversation';
 
   @override

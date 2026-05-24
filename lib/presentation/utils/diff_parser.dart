@@ -116,14 +116,14 @@ List<DiffLine> computeDiffLines(String before, String after, String filename) {
     return [
       DiffLine('--- $filename', DiffLineType.metadata),
       DiffLine('+++ $filename', DiffLineType.metadata),
-      DiffLine('@@', DiffLineType.hunk),
+      const DiffLine('@@', DiffLineType.hunk),
     ];
   }
 
   // New file — before is empty
   if (bLines.isEmpty) {
     return [
-      DiffLine('--- /dev/null', DiffLineType.metadata),
+      const DiffLine('--- /dev/null', DiffLineType.metadata),
       DiffLine('+++ $filename', DiffLineType.metadata),
       DiffLine('@@ -0,0 +1,${aLines.length} @@', DiffLineType.hunk),
       for (final line in aLines) DiffLine('+$line', DiffLineType.add),
@@ -134,7 +134,7 @@ List<DiffLine> computeDiffLines(String before, String after, String filename) {
   if (aLines.isEmpty) {
     return [
       DiffLine('--- $filename', DiffLineType.metadata),
-      DiffLine('+++ /dev/null', DiffLineType.metadata),
+      const DiffLine('+++ /dev/null', DiffLineType.metadata),
       DiffLine('@@ -1,${bLines.length} +0,0 @@', DiffLineType.hunk),
       for (final line in bLines) DiffLine('-$line', DiffLineType.remove),
     ];

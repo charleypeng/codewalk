@@ -596,10 +596,48 @@
   "@sessionDiffChangedFile": {
     "description": "CodeWalk UI string — sessionDiffChangedFile"
   },
-  "sessionDiffReview": "Review changes",
-  "@sessionDiffReview": {
-    "description": "CodeWalk UI string — sessionDiffReview"
-  },
+"sessionDiffReview": "Review changes",
+"@sessionDiffReview": {
+  "description": "CodeWalk UI string — sessionDiffReview"
+},
+"sessionDiffSummary": "Summary",
+"@sessionDiffSummary": {
+  "description": "CodeWalk UI string — sessionDiffSummary"
+},
+"sessionDiffUnified": "Unified",
+"@sessionDiffUnified": {
+  "description": "CodeWalk UI string — sessionDiffUnified"
+},
+"sessionDiffSplit": "Split",
+"@sessionDiffSplit": {
+  "description": "CodeWalk UI string — sessionDiffSplit"
+},
+"sessionDiffFilesChanged": "{count, plural, =1{1 file changed} other{{count} files changed}}",
+"@sessionDiffFilesChanged": {
+  "description": "CodeWalk UI string — sessionDiffFilesChanged",
+  "placeholders": {
+    "count": { "type": "int" }
+  }
+},
+"sessionDiffLinesCollapsed": "{count} lines collapsed — tap to expand",
+"@sessionDiffLinesCollapsed": {
+  "description": "CodeWalk UI string — sessionDiffLinesCollapsed",
+  "placeholders": {
+    "count": { "type": "int" }
+  }
+},
+"sessionDiffLinesAddedRemoved": "+{added} lines added -{removed} lines removed",
+"@sessionDiffLinesAddedRemoved": {
+  "description": "CodeWalk UI string — sessionDiffLinesAddedRemoved",
+  "placeholders": {
+    "added": { "type": "int" },
+    "removed": { "type": "int" }
+  }
+},
+"sessionDiffContentNotCaptured": "File content not captured by the server",
+"@sessionDiffContentNotCaptured": {
+  "description": "CodeWalk UI string — sessionDiffContentNotCaptured"
+},
   "sessionFailedRename": "Failed to rename conversation",
   "@sessionFailedRename": {
     "description": "CodeWalk UI string — sessionFailedRename"

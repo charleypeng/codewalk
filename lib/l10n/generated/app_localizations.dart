@@ -1004,6 +1004,48 @@ abstract class AppLocalizations {
   /// **'Review changes'**
   String get sessionDiffReview;
 
+  /// CodeWalk UI string — sessionDiffSummary
+  ///
+  /// In en, this message translates to:
+  /// **'Summary'**
+  String get sessionDiffSummary;
+
+  /// CodeWalk UI string — sessionDiffUnified
+  ///
+  /// In en, this message translates to:
+  /// **'Unified'**
+  String get sessionDiffUnified;
+
+  /// CodeWalk UI string — sessionDiffSplit
+  ///
+  /// In en, this message translates to:
+  /// **'Split'**
+  String get sessionDiffSplit;
+
+  /// CodeWalk UI string — sessionDiffFilesChanged
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 file changed} other{{count} files changed}}'**
+  String sessionDiffFilesChanged(int count);
+
+  /// CodeWalk UI string — sessionDiffLinesCollapsed
+  ///
+  /// In en, this message translates to:
+  /// **'{count} lines collapsed — tap to expand'**
+  String sessionDiffLinesCollapsed(int count);
+
+  /// CodeWalk UI string — sessionDiffLinesAddedRemoved
+  ///
+  /// In en, this message translates to:
+  /// **'+{added} lines added -{removed} lines removed'**
+  String sessionDiffLinesAddedRemoved(int added, int removed);
+
+  /// CodeWalk UI string — sessionDiffContentNotCaptured
+  ///
+  /// In en, this message translates to:
+  /// **'File content not captured by the server'**
+  String get sessionDiffContentNotCaptured;
+
   /// CodeWalk UI string — sessionFailedRename
   ///
   /// In en, this message translates to:
