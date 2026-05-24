@@ -106,6 +106,16 @@ ChatServerErrorDisplay formatServerErrorForDisplay({
     );
   }
 
+  // V2: explicit 503 — server explicitly unavailable (retryable startup state)
+  if (statusCode == 503 ||
+      combined.contains('service temporarily unavailable')) {
+    return const ChatServerErrorDisplay(
+      name: 'Service unavailable',
+      message:
+          'Service temporarily unavailable. The server may be starting up — please try again shortly.',
+    );
+  }
+
   if (isServerUnavailableFailure(
     rawMessage: rawMessage,
     code: code,
