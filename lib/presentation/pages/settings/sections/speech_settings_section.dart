@@ -178,6 +178,8 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
               const SizedBox(height: 12),
               _buildSherpaModelHintCard(),
             ],
+            const SizedBox(height: 12),
+            _buildReadAloudCard(settingsProvider),
             if (_supportsMoonshine &&
                 selectedEngine == SpeechToTextEngine.moonshine) ...[
               const SizedBox(height: 12),
@@ -1555,5 +1557,75 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
       return raw;
     }
     return kSenseVoiceModelDefault;
+  }
+
+  Widget _buildReadAloudCard(SettingsProvider settingsProvider) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.defaultPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              context.l10n.settingsReadAloudSectionTitle,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              context.l10n.settingsReadAloudSectionDescription,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              title: Text(context.l10n.settingsReadAloudEnabled),
+              subtitle:
+                  Text(context.l10n.settingsReadAloudEnabledDescription),
+              value: settingsProvider.readAloudEnabled,
+              onChanged: (value) =>
+                  unawaited(settingsProvider.setReadAloudEnabled(value)),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(context.l10n.settingsReadAloudSpeed),
+              subtitle:
+                  Text(context.l10n.settingsReadAloudSpeedDescription),
+              trailing: SizedBox(
+                width: 120,
+                child: Slider(
+                  value: settingsProvider.readAloudRate,
+                  min: 0.0,
+                  max: 1.0,
+                  divisions: 10,
+                  label: settingsProvider.readAloudRate.toStringAsFixed(1),
+                  onChanged: (value) =>
+                      unawaited(settingsProvider.setReadAloudRate(value)),
+                ),
+              ),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(context.l10n.settingsReadAloudPitch),
+              subtitle:
+                  Text(context.l10n.settingsReadAloudPitchDescription),
+              trailing: SizedBox(
+                width: 120,
+                child: Slider(
+                  value: settingsProvider.readAloudPitch,
+                  min: 0.5,
+                  max: 2.0,
+                  divisions: 6,
+                  label: settingsProvider.readAloudPitch.toStringAsFixed(1),
+                  onChanged: (value) =>
+                      unawaited(settingsProvider.setReadAloudPitch(value)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

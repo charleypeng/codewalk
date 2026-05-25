@@ -93,11 +93,6 @@ class ReadAloudService extends ChangeNotifier {
         notifyListeners();
       });
 
-      _tts.setProgressHandler((text, start, end, word) {
-        _lastSpokenLength = end;
-        notifyListeners();
-      });
-
       _tts.setCancelHandler(() {
         _state = ReadAloudState.idle;
         _activeMessageId = null;

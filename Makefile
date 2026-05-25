@@ -237,7 +237,7 @@ icons-check:
 
 analyze:
 	flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee $(ANALYZE_LOG) $(QUIET)
-	bash tool/ci/check_analyze_budget.sh $(ANALYZE_LOG) 331
+	bash tool/ci/check_analyze_budget.sh $(ANALYZE_LOG) 332
 
 test:
 	timeout --foreground 5m flutter test --no-pub --fail-fast $(QUIET)

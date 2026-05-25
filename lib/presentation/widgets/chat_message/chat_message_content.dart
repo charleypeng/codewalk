@@ -304,37 +304,31 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
     }
 
     final readAloudService = di.sl<ReadAloudService>();
-    final isActive = readAloudService.activeMessageId == message.id;
-    final isPlaying = isActive && readAloudService.isSpeaking;
-    final isPaused = isActive &&
-        readAloudService.state == ReadAloudState.paused;
 
     return ListenableBuilder(
       listenable: readAloudService,
       builder: (context, _) {
-        final icon = isPlaying
-            ? Symbols.pause
-            : isPaused
-                ? Symbols.play_arrow
-                : Symbols.volume_up;
+        // Evaluate state inside builder so icon/color/onPressed react to
+        // ReadAloudService notifications.
+        final isActive = readAloudService.activeMessageId == message.id;
+        final isPlaying = isActive && readAloudService.isSpeaking;
+        final icon = isPlaying ? Symbols.stop : Symbols.volume_up;
         final tooltip = isPlaying
             ? context.l10n.msgStopReadAloud
-            : isPaused
-                ? context.l10n.msgReadAloud
-                : context.l10n.msgReadAloud;
+            : context.l10n.msgReadAloud;
 
         return IconButton(
           icon: Icon(icon, size: 18),
           visualDensity: VisualDensity.compact,
           padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-          splashRadius: 16,
+          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+          splashRadius: 18,
           color: isActive
               ? Theme.of(context).colorScheme.primary
               : Theme.of(context).colorScheme.onSurfaceVariant,
           tooltip: tooltip,
           onPressed: () {
-            if (isPlaying || isPaused) {
+            if (isPlaying) {
               unawaited(readAloudService.stop());
               return;
             }
@@ -357,11 +351,24 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
     );
   }
 
+  // Strips basic Markdown syntax so TTS reads natural text, not raw
+  // formatting characters. Handles bold (**/__), italic (*/_), inline code
+  // (`), links [...](...), images ![..](..), headings (#), and blockquotes (>).
+  static final RegExp _ttsStrippingRegExp = RegExp(r'(\*\*|__)(.*?)\1|'
+      r'(\*|_)(.*?)\3|'
+      r'`([^`]*)`|'
+      r'!?\[([^\]]*)\]\([^)]*\)|'
+      r'^#{1,6}\s*|'
+      r'^>\s*',
+      multiLine: true);
+
   String _extractReadableText(AssistantMessage message) {
     final buffer = StringBuffer();
     for (final part in message.parts) {
       if (part is TextPart && part.text.trim().isNotEmpty) {
-        buffer.write(part.text);
+        // Strip markdown formatting before feeding to TTS.
+        final cleaned = part.text.replaceAll(_ttsStrippingRegExp, r'$2$4$5$6');
+        buffer.write(cleaned);
         buffer.write(' ');
       }
     }
