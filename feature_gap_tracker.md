@@ -44,9 +44,9 @@ These features are mostly client-side and build directly on current CodeWalk sur
 
 **Phase completion**:
 
-- [ ] All 4 features implemented
-- [ ] All validations passing
-- [ ] `make check` clean
+- [x] All 4 features implemented
+- [x] All validations passing
+- [x] `make check` clean
 
 ---
 
