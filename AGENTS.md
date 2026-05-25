@@ -71,14 +71,14 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | Project Snapshot | 3–11 |
 | Folder Structure | 12–60 |
 | Entry Points | 61–71 |
-| Core Modules | 72–157 |
-| Chat Architecture | 158–253 |
-| Data & Domain Layers | 254–265 |
-| Key API/DataSource locations | 266–285 |
-| Main Commands | 286–309 |
-| Testing/Quality Gates | 310–332 |
-| Internationalization (i18n) | 333–344 |
-| Notes | 345–514 |
+| Core Modules | 72–158 |
+| Chat Architecture | 160–255 |
+| Data & Domain Layers | 257–267 |
+| Key API/DataSource locations | 269–287 |
+| Main Commands | 289–311 |
+| Testing/Quality Gates | 313–334 |
+| Internationalization (i18n) | 336–347 |
+| Notes | 348–517 |
 
 ## ⚙️ Makefile Quick Reference (details in `Makefile`)
 
