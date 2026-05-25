@@ -847,6 +847,50 @@ void main() {
     expect(find.text('Copied to clipboard'), findsOneWidget);
   });
 
+  testWidgets('single tap on inline-code file path opens file path', (
+    WidgetTester tester,
+  ) async {
+    String? tappedPath;
+    int? tappedLine;
+    int? tappedColumn;
+
+    await tester.pumpWidget(
+      localizedMaterialApp(
+        theme: ThemeData(platform: TargetPlatform.windows),
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: AssistantMessage(
+              id: 'msg_inline_file_path_tap',
+              sessionId: 'ses_inline_file_path_tap',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_inline_file_path_tap',
+                  messageId: 'msg_inline_file_path_tap',
+                  sessionId: 'ses_inline_file_path_tap',
+                  text: 'Open `lib/presentation/pages/chat_page.dart:219`.',
+                ),
+              ],
+            ),
+            onFileTap: (path, line, col) {
+              tappedPath = path;
+              tappedLine = line;
+              tappedColumn = col;
+            },
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('lib/presentation/pages/chat_page.dart:219'));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(tappedPath, 'lib/presentation/pages/chat_page.dart');
+    expect(tappedLine, 219);
+    expect(tappedColumn, isNull);
+    expect(find.text('Copied to clipboard'), findsNothing);
+  });
+
   testWidgets('multi-line markdown code block uses themed container', (
     WidgetTester tester,
   ) async {

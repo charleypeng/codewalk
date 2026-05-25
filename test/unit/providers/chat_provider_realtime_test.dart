@@ -127,7 +127,7 @@ void main() {
         final serverUserEcho = UserMessage(
           id: 'msg_user_server',
           sessionId: 'ses_1',
-          time: DateTime.fromMillisecondsSinceEpoch(1100),
+          time: localUser.time.add(const Duration(seconds: 1)),
           parts: const <MessagePart>[
             TextPart(
               id: 'prt_user_server',
@@ -153,18 +153,18 @@ void main() {
         );
 
         await settleUntil(
-          () => provider.messages.whereType<UserMessage>().length == 2,
-          reason: 'Expected optimistic and echoed user messages to be visible.',
+          () =>
+              provider.messages.whereType<UserMessage>().length == 1 &&
+              provider.messages.whereType<UserMessage>().single.id ==
+                  'msg_user_server',
+          reason: 'Expected server echo to replace optimistic local message.',
         );
 
         final userMessagesAfterEcho = provider.messages
             .whereType<UserMessage>()
             .toList();
-        expect(userMessagesAfterEcho, hasLength(2));
-        expect(
-          userMessagesAfterEcho.map((message) => message.id),
-          containsAll(<String>[localUser.id, 'msg_user_server']),
-        );
+        expect(userMessagesAfterEcho, hasLength(1));
+        expect(userMessagesAfterEcho.single.id, 'msg_user_server');
 
         final assistantDraft = AssistantMessage(
           id: 'msg_assistant_contract',
@@ -274,8 +274,9 @@ void main() {
           includeStatus: false,
         );
         await settleUntil(
-          () => provider.messages.length == 3,
-          reason: 'Expected replay baseline to remain stable after refresh.',
+          () => provider.messages.length == 2,
+          reason:
+              'Expected replay baseline to stay deduplicated after refresh.',
         );
         await settleUntil(
           () {
@@ -287,16 +288,13 @@ void main() {
         );
 
         expect(provider.state, ChatState.loaded);
-        expect(provider.messages, hasLength(3));
+        expect(provider.messages, hasLength(2));
 
         final finalUserMessages = provider.messages
             .whereType<UserMessage>()
             .toList();
-        expect(finalUserMessages, hasLength(2));
-        expect(
-          finalUserMessages.map((message) => message.id),
-          containsAll(<String>[localUser.id, 'msg_user_server']),
-        );
+        expect(finalUserMessages, hasLength(1));
+        expect(finalUserMessages.single.id, 'msg_user_server');
 
         final finalAssistant = provider.messages.last as AssistantMessage;
         final textParts = finalAssistant.parts.whereType<TextPart>().toList();
@@ -1577,7 +1575,7 @@ void main() {
     );
 
     test(
-      'session.idle updates status but does not tear down an in-flight send stream',
+      'session.idle ends active composer state while send stream drains',
       () async {
         final sendController =
             StreamController<Either<Failure, ChatMessage>>.broadcast();
@@ -1604,8 +1602,8 @@ void main() {
 
         expect(chatRepository.getMessagesCallCount, equals(callsBeforeIdle));
         expect(provider.currentSessionStatus?.type, SessionStatusType.idle);
-        expect(provider.state, ChatState.sending);
-        expect(provider.isCurrentSessionActivelyResponding, isTrue);
+        expect(provider.state, ChatState.loaded);
+        expect(provider.isCurrentSessionActivelyResponding, isFalse);
 
         sendController.add(
           Right(

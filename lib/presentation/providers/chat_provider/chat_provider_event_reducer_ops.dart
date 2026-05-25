@@ -399,10 +399,14 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           if (isCurrentSession) {
             _clearSessionAttentionForSession(sessionId);
             _clearActiveSendDraft();
-            if (!hasActiveCurrentSendTurn) {
-              _activeMessageStreamSessionId = null;
-            }
-            if (!hasActiveCurrentSendTurn && _state == ChatState.sending) {
+            // OpenCode's session.idle is the terminal lifecycle signal for a
+            // turn. End the active-send UI immediately even if CodeWalk's
+            // fallback stream is still draining in the background; otherwise
+            // the composer status can keep showing stale progress after the
+            // final assistant response is already visible.
+            _activeMessageStreamSessionId = null;
+            _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
+            if (_state == ChatState.sending) {
               _setState(ChatState.loaded);
             } else {
               _notifyListeners();

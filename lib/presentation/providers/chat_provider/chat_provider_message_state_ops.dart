@@ -323,6 +323,7 @@ extension _ChatProviderMessageStateOps on ChatProvider {
         _scheduleScrollToBottom(reason: 'message-state-user-replaced');
         return;
       }
+      _removeDuplicateOptimisticLocalUserEcho(message);
     }
 
     final index = _messages.indexWhere((m) => m.id == message.id);
@@ -638,6 +639,53 @@ extension _ChatProviderMessageStateOps on ChatProvider {
     return bestLikelyMatchIndex;
   }
 
+  void _removeDuplicateOptimisticLocalUserEcho(UserMessage incoming) {
+    if (_isOptimisticLocalUserMessageId(incoming.id)) {
+      return;
+    }
+    final incomingSignature = _normalizedUserMessageSignature(incoming);
+    if (incomingSignature.isEmpty) {
+      return;
+    }
+
+    var bestIndex = -1;
+    Duration? bestDelta;
+    for (var index = 0; index < _messages.length; index += 1) {
+      final current = _messages[index];
+      if (current is! UserMessage) {
+        continue;
+      }
+      if (!_isOptimisticLocalUserMessageId(current.id)) {
+        continue;
+      }
+      if (current.sessionId != incoming.sessionId) {
+        continue;
+      }
+      if (_normalizedUserMessageSignature(current) != incomingSignature) {
+        continue;
+      }
+      final delta = incoming.time.difference(current.time).abs();
+      if (delta > const Duration(minutes: 10)) {
+        continue;
+      }
+      if (bestDelta == null || delta < bestDelta) {
+        bestDelta = delta;
+        bestIndex = index;
+      }
+    }
+
+    if (bestIndex == -1) {
+      return;
+    }
+    // Realtime fallback can sometimes deliver the canonical server user after
+    // the pending-local set has already been drained by another merge path.
+    // Remove only the nearest exact local_user_* echo so repeated intentional
+    // prompts remain distinct.
+    final removedId = _messages[bestIndex].id;
+    _messages.removeAt(bestIndex);
+    _pendingLocalUserMessageIds.remove(removedId);
+  }
+
   /// Matches a server [UserMessage] (with empty content signature) to a pending
   /// local user message using only time proximity and session ID. Only returns
   /// a match when exactly one pending candidate exists for the session to avoid
@@ -688,36 +736,36 @@ extension _ChatProviderMessageStateOps on ChatProvider {
       NetworkFailure(code: final code) => code,
       _ => null,
     };
-  if (statusCode == 409) {
-    _preserveBusyStatusOnNextStreamDoneSessionId = sessionId;
-    _sessionStatusById[sessionId] = SessionStatusInfo(
-      type: SessionStatusType.busy,
-      message: failure.message,
-    );
-    _clearSessionAttentionForSession(sessionId);
-    _errorMessage = null;
-    _enqueueUiNotice(
-      type: ChatUiNoticeType.serverError,
-      message: failure.message,
-    );
-    _setState(ChatState.loaded);
-    return;
-  }
-  // V2: 503 Service Unavailable — server starting up, retryable
-  if (statusCode == 503) {
-    _sessionStatusById[sessionId] = SessionStatusInfo(
-      type: SessionStatusType.retry,
-      message: failure.message,
-    );
-    _clearSessionAttentionForSession(sessionId);
-    _errorMessage = null;
-    _enqueueUiNotice(
-      type: ChatUiNoticeType.serverError,
-      message: failure.message,
-    );
-    _setState(ChatState.loaded);
-    return;
-  }
+    if (statusCode == 409) {
+      _preserveBusyStatusOnNextStreamDoneSessionId = sessionId;
+      _sessionStatusById[sessionId] = SessionStatusInfo(
+        type: SessionStatusType.busy,
+        message: failure.message,
+      );
+      _clearSessionAttentionForSession(sessionId);
+      _errorMessage = null;
+      _enqueueUiNotice(
+        type: ChatUiNoticeType.serverError,
+        message: failure.message,
+      );
+      _setState(ChatState.loaded);
+      return;
+    }
+    // V2: 503 Service Unavailable — server starting up, retryable
+    if (statusCode == 503) {
+      _sessionStatusById[sessionId] = SessionStatusInfo(
+        type: SessionStatusType.retry,
+        message: failure.message,
+      );
+      _clearSessionAttentionForSession(sessionId);
+      _errorMessage = null;
+      _enqueueUiNotice(
+        type: ChatUiNoticeType.serverError,
+        message: failure.message,
+      );
+      _setState(ChatState.loaded);
+      return;
+    }
     _presentServerErrorForCurrentSession(
       sessionId: sessionId,
       rawMessage: failure.message,

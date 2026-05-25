@@ -191,7 +191,7 @@ void main() {
       );
     });
 
-    test('duplicate echo suppression rejects stale local_user echoes', () {
+    test('duplicate echo suppression rejects very stale local_user echoes', () {
       final time = DateTime.fromMillisecondsSinceEpoch(4000);
       final localOptimistic = UserMessage(
         id: 'local_user_4000_1',
@@ -209,7 +209,7 @@ void main() {
       final staleServerEcho = UserMessage(
         id: 'msg_server_stale_echo',
         sessionId: 'ses_1',
-        time: time.add(const Duration(seconds: 46)),
+        time: time.add(const Duration(minutes: 11)),
         parts: const <MessagePart>[
           TextPart(
             id: 'prt_server_stale_echo',
@@ -620,30 +620,30 @@ void main() {
       );
     });
 
-  test('send failure in background preserves draft for retry', () async {
-    final sendStream = StreamController<Either<Failure, ChatMessage>>();
-    addTearDown(() async {
-      await sendStream.close();
+    test('send failure in background preserves draft for retry', () async {
+      final sendStream = StreamController<Either<Failure, ChatMessage>>();
+      addTearDown(() async {
+        await sendStream.close();
+      });
+      chatRepository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
+
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      provider.setAppInForeground(false);
+
+      await provider.sendMessage('do not resurrect this text');
+      sendStream.add(
+        const Left(NetworkFailure('stream dropped in background')),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+
+      // Step 4 invariant: drafts are unconditionally preserved across
+      // background transitions to prevent text loss.
+      final draft = provider.consumeRejectedDraft(sessionId: 'ses_1');
+      expect(draft, isNotNull);
+      expect(draft!.text, 'do not resurrect this text');
     });
-    chatRepository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
-
-    await provider.projectProvider.initializeProject();
-    await provider.loadSessions();
-    await provider.selectSession(provider.sessions.first);
-    provider.setAppInForeground(false);
-
-    await provider.sendMessage('do not resurrect this text');
-    sendStream.add(
-      const Left(NetworkFailure('stream dropped in background')),
-    );
-    await Future<void>.delayed(const Duration(milliseconds: 30));
-
-    // Step 4 invariant: drafts are unconditionally preserved across
-    // background transitions to prevent text loss.
-    final draft = provider.consumeRejectedDraft(sessionId: 'ses_1');
-    expect(draft, isNotNull);
-    expect(draft!.text, 'do not resurrect this text');
-  });
 
     test('send failure preserves attachment-only draft for retry', () async {
       final sendStream = StreamController<Either<Failure, ChatMessage>>();
@@ -675,31 +675,31 @@ void main() {
       expect(rejectedDraft?.shellMode, isFalse);
     });
 
-  test(
-  'send failure outside active chat route preserves draft for retry',
-  () async {
-    final sendStream = StreamController<Either<Failure, ChatMessage>>();
-    addTearDown(() async {
-      await sendStream.close();
-    });
-    chatRepository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
+    test(
+      'send failure outside active chat route preserves draft for retry',
+      () async {
+        final sendStream = StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          await sendStream.close();
+        });
+        chatRepository.sendMessageHandler = (_, _, _, _) => sendStream.stream;
 
-    await provider.projectProvider.initializeProject();
-    await provider.loadSessions();
-    await provider.selectSession(provider.sessions.first);
-    provider.setChatRouteActive(false);
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        provider.setChatRouteActive(false);
 
-    await provider.sendMessage('draft from inactive route');
-    sendStream.add(const Left(NetworkFailure('temporary failure')));
-    await Future<void>.delayed(const Duration(milliseconds: 30));
+        await provider.sendMessage('draft from inactive route');
+        sendStream.add(const Left(NetworkFailure('temporary failure')));
+        await Future<void>.delayed(const Duration(milliseconds: 30));
 
-    // Step 4 invariant: drafts are unconditionally preserved even when
-    // the chat route is inactive, to prevent text loss.
-    final draft = provider.consumeRejectedDraft(sessionId: 'ses_1');
-    expect(draft, isNotNull);
-    expect(draft!.text, 'draft from inactive route');
-  },
-  );
+        // Step 4 invariant: drafts are unconditionally preserved even when
+        // the chat route is inactive, to prevent text loss.
+        final draft = provider.consumeRejectedDraft(sessionId: 'ses_1');
+        expect(draft, isNotNull);
+        expect(draft!.text, 'draft from inactive route');
+      },
+    );
 
     test(
       'submitMessage lazily creates a new session from draft state',

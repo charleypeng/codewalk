@@ -139,11 +139,15 @@ extension _ChatProviderMessageMergeOps on ChatProvider {
         }
         final serverSignature = _normalizedUserMessageSignature(serverMessage);
         if (serverSignature.isNotEmpty && serverSignature == localSignature) {
+          // Exact content echoes can arrive after long model turns or under
+          // mobile/server clock skew. Keep this broader than the fuzzy-prefix
+          // fallback below, but still bounded so intentional repeated prompts do
+          // not reconcile against very old server messages.
           final earliestEchoTime = localMessage.time.subtract(
-            const Duration(seconds: 2),
+            const Duration(minutes: 10),
           );
           final latestEchoTime = localMessage.time.add(
-            const Duration(seconds: 45),
+            const Duration(minutes: 10),
           );
           final serverTime = serverMessage.time;
           return !serverTime.isBefore(earliestEchoTime) &&

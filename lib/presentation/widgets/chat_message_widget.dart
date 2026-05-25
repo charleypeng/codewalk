@@ -23,6 +23,7 @@ import '../../domain/entities/chat_message.dart';
 import '../services/file_part_action_service.dart' as file_part_action;
 import '../utils/chat_abort_message.dart';
 import '../utils/diff_parser.dart';
+import '../utils/file_path_detector.dart';
 import '../utils/file_path_markdown.dart';
 import '../utils/reasoning_status_parser.dart';
 import '../utils/tool_presentation.dart';
@@ -49,22 +50,22 @@ class TaskToolChildSummary {
 /// change during streaming — those props don't affect completed bubbles.
 class ChatMessageWidget extends StatefulWidget {
   const ChatMessageWidget({
-  super.key,
-  required this.message,
-  this.activeReasoningPartKey,
-  this.showThinkingBubbles = true,
-  this.showToolCallBubbles = true,
-  this.showInlineUndoAction = false,
-  this.isSessionActivelyResponding = false,
-  this.onInlineUndo,
-  this.onInlineRevertToHere,
-  this.onBackgroundLongPress,
-  this.onBackgroundLongPressEnd,
-  this.onSubtaskNavigate,
-  this.onTaskToolNavigate,
-  this.onFileTap,
-  this.taskToolChildSummariesByPartId =
-  const <String, TaskToolChildSummary>{},
+    super.key,
+    required this.message,
+    this.activeReasoningPartKey,
+    this.showThinkingBubbles = true,
+    this.showToolCallBubbles = true,
+    this.showInlineUndoAction = false,
+    this.isSessionActivelyResponding = false,
+    this.onInlineUndo,
+    this.onInlineRevertToHere,
+    this.onBackgroundLongPress,
+    this.onBackgroundLongPressEnd,
+    this.onSubtaskNavigate,
+    this.onTaskToolNavigate,
+    this.onFileTap,
+    this.taskToolChildSummariesByPartId =
+        const <String, TaskToolChildSummary>{},
   });
 
   final ChatMessage message;
@@ -79,6 +80,7 @@ class ChatMessageWidget extends StatefulWidget {
   final VoidCallback? onBackgroundLongPressEnd;
   final ValueChanged<SubtaskPart>? onSubtaskNavigate;
   final ValueChanged<ToolPart>? onTaskToolNavigate;
+
   /// Callback when a file path is tapped in assistant text.
   /// Receives (filePath, lineNumber?, columnNumber?).
   final void Function(String path, int? line, int? col)? onFileTap;
