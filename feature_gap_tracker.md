@@ -2,7 +2,7 @@
 
 **Status**: In progress
 **Generated**: 2026-05-24
-**Last updated**: 2026-05-24
+**Last updated**: 2026-05-25
 **Scope**: Verified planner suggestions against the current CodeWalk codebase and ordered all valid missing or partially implemented OpenChamber-inspired features.
 
 ---
@@ -20,12 +20,12 @@
 
 | Phase | Features | Done | In Progress | Remaining |
 |-------|----------|------|-------------|-----------|
-| 1 — UX Foundations | 4 | 0 | 0 | 4 |
+| 1 — UX Foundations | 4 | 1 | 0 | 3 |
 | 2 — Rich Output | 4 | 0 | 0 | 4 |
 | 3 — Organization | 3 | 0 | 0 | 3 |
 | 4 — Workspace Control | 4 | 0 | 0 | 4 |
 | 5 — Advanced | 4 | 0 | 0 | 4 |
-| **Total** | **19** | **0** | **0** | **19** |
+| **Total** | **19** | **1** | **0** | **18** |
 
 ---
 
@@ -37,7 +37,7 @@ These features are mostly client-side and build directly on current CodeWalk sur
 
 | # | Feature | Priority | Status | Commit | Plan |
 |---|---------|----------|--------|--------|------|
-| 1 | Rich Diff Review Surface | P0 | [ ] | — | [01_rich_diff_review.md](final_plan/01_rich_diff_review.md) |
+| 1 | Rich Diff Review Surface | P0 | [x] | fe145fa, 9dbca9d, 5267a91 | [01_rich_diff_review.md](final_plan/01_rich_diff_review.md) |
 | 2 | Clickable File Paths with Line Jumps | P0 | [ ] | — | [02_clickable_file_paths.md](final_plan/02_clickable_file_paths.md) |
 | 3 | Timeline Full-Text Search | P1 | [ ] | — | [03_timeline_search.md](final_plan/03_timeline_search.md) |
 | 4 | Session Export as Markdown/JSON | P1 | [ ] | — | [04_session_export.md](final_plan/04_session_export.md) |
@@ -161,7 +161,7 @@ Primary finding: CodeWalk is very strong as a mobile-first OpenCode chat client,
 
 | Feature Suggested by Planners | CodeWalk Status | Evidence | Plan Decision |
 | --- | --- | --- | --- |
-| Rich diff viewer with stacked/inline modes | Partial | `session_diff_viewer.dart` exists with file tree + patch preview, but no true stacked/inline mode toggle, lazy large-diff UX, syntax-aware diff rendering, or comments | Valid, highest priority |
+| Rich diff viewer with stacked/inline modes | Done | `session_diff_viewer.dart` rewritten with 3 view modes (summary/unified/split), line gutters, syntax highlighting, lazy hunk collapse, `onFileTap` jump | Completed in v1.77.0 |
 | Clickable file paths in chat messages | Missing | No `clickable path`, `file path link`, or message path-link implementation found | Valid |
 | Git sidebar and Git workflows | Missing | No Git provider/sidebar/staging/commit UI found; only VCS/worktree foundations exist | Valid, gated by API verification |
 | Inline file editing | Missing | File viewer is read-only; `BEHAVIOR.md` says file explorer is read-only | Valid, gated by write API verification |
@@ -227,4 +227,4 @@ Every implementation must preserve these constraints:
 
 ## Immediate Next Task
 
-Start with **Rich diff review surface**. It is already partially implemented, has the strongest planner agreement, is mostly client-side, and unlocks multiple later features: clickable path navigation, inline comments, Git status review, and safer file editing.
+Start with **Clickable file paths with line jumps** (#2). Rich diff review (#1) is complete. Feature #2 builds on the `onFileTap` jump action from #1 and is the next P0 item.
