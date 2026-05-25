@@ -108,30 +108,30 @@ class FilePathDetector {
   /// - Group 2 (line): optional :digits
   /// - Group 3 (column): optional :digits after line
   static final RegExp _filePathRe = RegExp(
-    r'(?<![/\w.:])' // negative lookbehind: not preceded by /, word char, dot, or colon
-    r'(' // group 1: path
-    r'(?:\.{1,2}/|~/)?' // optional relative/home prefix
-    r'(?:[\w.\-]+/)+' // one or more directory segments
-    r'[\w.\-]+' // filename stem
-    r'\.(?:$extensionPattern)' // known extension
-    r')' // end group 1
-    r'(?::(\d+))?' // group 2: optional :line
-    r'(?::(\d+))?' // group 3: optional :column
-    r'(?![/\w])', // negative lookahead: not followed by / or word char
+    '(?<![/\\w.:])' // negative lookbehind: not preceded by /, word char, dot, or colon
+    '(' // group 1: path
+    '(?:\\.{1,2}/|~/)?' // optional relative/home prefix
+    '(?:[\\w.\\-]+/)+' // one or more directory segments
+    '[\\w.\\-]+' // filename stem
+    '\\.(?:$extensionPattern)' // known extension
+    ')' // end group 1
+    '(?::(\\d+))?' // group 2: optional :line
+    '(?::(\\d+))?' // group 3: optional :column
+    '(?![/\\w])', // negative lookahead: not followed by / or word char
   );
 
   /// Regex for Windows absolute paths (C:\...).
   static final RegExp _windowsPathRe = RegExp(
-    r'(?<![/\w.:])'
-    r'('
-    r'[A-Za-z]:\\' // drive letter + colon + backslash
-    r'(?:[^\s<>:"|?*]+\\)*' // directory segments
-    r'[^\s<>:"|?*]+' // filename
-    r'\.(?:$extensionPattern)'
-    r')'
-    r'(?::(\d+))?'
-    r'(?::(\d+))?'
-    r'(?![/\w])',
+    '(?<![/\\w.:])'
+    '('
+    '[A-Za-z]:\\\\' // drive letter + colon + backslash
+    '(?:[^\\s<>:"|?*]+\\\\)*' // directory segments
+    '[^\\s<>:"|?*]+' // filename
+    '\\.(?:$extensionPattern)'
+    ')'
+    '(?::(\\d+))?'
+    '(?::(\\d+))?'
+    '(?![/\\w])',
   );
 
   /// URL scheme prefix to exclude.
