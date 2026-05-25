@@ -423,6 +423,14 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                                                     _CurrentSessionAction
                                                         .copyLink,
                                                   ),
+                                                buildActionItem(
+                                                  _CurrentSessionAction
+                                                      .exportMarkdown,
+                                                ),
+                                                buildActionItem(
+                                                  _CurrentSessionAction
+                                                      .exportJson,
+                                                ),
                                                 const PopupMenuDivider(),
                                                 buildActionItem(
                                                   _CurrentSessionAction

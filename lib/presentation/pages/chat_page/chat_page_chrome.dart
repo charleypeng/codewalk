@@ -9,6 +9,8 @@ extension _ChatPageChrome on _ChatPageState {
       _CurrentSessionAction.shareToggle =>
         isShared ? 'Unshare session' : 'Share session',
       _CurrentSessionAction.copyLink => 'Copy share link',
+      _CurrentSessionAction.exportMarkdown => 'Export Markdown',
+      _CurrentSessionAction.exportJson => 'Export debug JSON',
       _CurrentSessionAction.viewTasks => 'View tasks',
       _CurrentSessionAction.reviewChanges => 'Review changes',
       _CurrentSessionAction.undo => context.l10n.chatUndoLastTurn,
@@ -25,6 +27,8 @@ extension _ChatPageChrome on _ChatPageState {
       _CurrentSessionAction.shareToggle =>
         isShared ? Symbols.link_off : Symbols.link,
       _CurrentSessionAction.copyLink => Symbols.content_copy,
+      _CurrentSessionAction.exportMarkdown => Symbols.description,
+      _CurrentSessionAction.exportJson => Symbols.data_object,
       _CurrentSessionAction.viewTasks => Symbols.checklist,
       _CurrentSessionAction.reviewChanges => Symbols.preview,
       _CurrentSessionAction.undo => Symbols.undo_rounded,
@@ -75,6 +79,18 @@ extension _ChatPageChrome on _ChatPageState {
           hideCurrent: false,
         );
         return;
+      case _CurrentSessionAction.exportMarkdown:
+        await _exportCurrentSession(
+          chatProvider,
+          format: _SessionExportFormat.markdown,
+        );
+        return;
+      case _CurrentSessionAction.exportJson:
+        await _exportCurrentSession(
+          chatProvider,
+          format: _SessionExportFormat.json,
+        );
+        return;
       case _CurrentSessionAction.viewTasks:
         await _openCurrentSessionInsightsDialog(
           chatProvider,
@@ -102,6 +118,57 @@ extension _ChatPageChrome on _ChatPageState {
       case _CurrentSessionAction.compactContext:
         await _compactCurrentSession(chatProvider);
         return;
+    }
+  }
+
+  Future<void> _exportCurrentSession(
+    ChatProvider chatProvider, {
+    required _SessionExportFormat format,
+  }) async {
+    final session = chatProvider.currentSession;
+    if (session == null) {
+      return;
+    }
+
+    const exporter = SessionExportService();
+    final messages = chatProvider.messages;
+    final isMarkdown = format == _SessionExportFormat.markdown;
+    final extension = isMarkdown ? 'md' : 'json';
+    final content = isMarkdown
+        ? exporter.markdown(session, messages)
+        : exporter.json(session, messages);
+    final fileName = exporter.fileName(session, extension);
+
+    try {
+      final savedPath = await FilePicker.saveFile(
+        dialogTitle: isMarkdown
+            ? 'Export session as Markdown'
+            : 'Export session as debug JSON',
+        fileName: fileName,
+        type: FileType.custom,
+        allowedExtensions: [extension],
+        bytes: exporter.bytes(content),
+      );
+      if (!mounted) {
+        return;
+      }
+      if (savedPath == null && !kIsWeb) {
+        _showChatPageMessageSnackBar('Session export canceled');
+        return;
+      }
+      _showChatPageMessageSnackBar(
+        isMarkdown ? 'Markdown export saved' : 'Debug JSON export saved',
+      );
+    } catch (_) {
+      await Clipboard.setData(ClipboardData(text: content));
+      if (!mounted) {
+        return;
+      }
+      _showChatPageMessageSnackBar(
+        isMarkdown
+            ? 'Could not save file; Markdown copied to clipboard'
+            : 'Could not save file; debug JSON copied to clipboard',
+      );
     }
   }
 
@@ -557,8 +624,8 @@ extension _ChatPageChrome on _ChatPageState {
       actions: _timelineSearchActive
           ? _buildTimelineSearchActions()
           : isMobile
-              ? [_buildMobileAppBarActionsRow()]
-              : [
+          ? [_buildMobileAppBarActionsRow()]
+          : [
               if (!isMobile)
                 _buildTourTarget(
                   showcaseKey: _desktopSidebarMenuTourKey,

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderBox, ScrollDirection;
@@ -14,8 +15,8 @@ import 'package:simple_icons/simple_icons.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../../core/config/feature_flags.dart';
-import '../../core/i18n/l10n_context.dart';
 import '../../core/di/injection_container.dart' as di;
+import '../../core/i18n/l10n_context.dart';
 import '../../core/logging/app_logger.dart';
 import '../../core/network/dio_client.dart';
 import '../../core/utils/path_utils.dart';
@@ -30,7 +31,6 @@ import '../../domain/entities/experience_settings.dart';
 import '../../domain/entities/file_node.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/entities/provider.dart';
-import '../../domain/entities/server_profile.dart';
 import '../providers/app_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/project_provider.dart';
@@ -42,6 +42,7 @@ import '../services/android_foreground_monitor_service.dart';
 import '../services/codewalk_terminal_controller.dart';
 import '../services/notification_service.dart';
 import '../services/permission_auto_approve_runtime.dart';
+import '../services/session_export_service.dart';
 import '../theme/app_animations.dart';
 import '../theme/app_shapes.dart';
 import '../theme/opencode_highlight_theme.dart';
@@ -110,12 +111,16 @@ enum _HistoryToolbarAction { undo, redo }
 enum _CurrentSessionAction {
   shareToggle,
   copyLink,
+  exportMarkdown,
+  exportJson,
   viewTasks,
   reviewChanges,
   undo,
   redo,
   compactContext,
 }
+
+enum _SessionExportFormat { markdown, json }
 
 enum _PostOnboardingTourPhase { idle, intro, composer }
 
