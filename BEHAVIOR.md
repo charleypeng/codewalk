@@ -477,12 +477,20 @@
 - **Then** the `messageId` field is NOT forwarded in the `prompt_async` send payload — the server assigns its own canonical ID
 - **Then** if the server returns a fully completed assistant payload directly in the `prompt_async` HTTP response, the client accepts that payload immediately instead of waiting for the fallback polling path
 - **Then** duplicate detection for the server echo uses a content-signature match (normalized text), gated by the `local_user_` prefix check
-- **Then** server-echo replay may temporarily coexist with the optimistic bubble during an active turn, but reconciliation must never hide in-flight tool/work output or block the final assistant reveal
+- **Then** server-echo replay replaces the matching optimistic bubble when the canonical server user message is known, so the prompt does not appear twice
+- **Then** reconciliation must never hide in-flight tool/work output or block the final assistant reveal
 
 > **INVARIANT — do not violate**: The `local_user_*` prefix and the absence of `messageId` in the send payload are load-bearing contracts.
 > Changing the prefix to any server-format value (e.g. `msg_*`) or forwarding `messageId` in the payload causes the SSE event stream to fail reconciliation for all turns after the first — assistant responses are received and audio/notifications fire, but the UI update is silently discarded and the UI stays stuck on the previous state.
 > Active refresh/reconcile must preserve visible tool/work output for the current turn until the final assistant response is available.
 > This regression was introduced and reverted in commit `b0660a2`. See ADR-023 "Known Pitfalls" for the full incident analysis.
+
+### Assistant file paths open the file viewer
+
+- **Given** an assistant message contains a whole inline-code file path such as `lib/main.dart:42`
+- **When** the user taps that inline-code span
+- **Then** the app opens the file viewer for that path and scrolls to the referenced line instead of copying the text
+- **Then** ordinary inline code snippets and fenced code blocks remain copyable
 
 ### Tool call work groups collapse after completion
 
@@ -493,6 +501,7 @@
 - **Then** collapsed multi-tool chains surface an active progress summary (for example `1 running • 1 queued`) while the response is still in flight
 - **Then** the composer status slot surfaces the latest live tool, patch, or reasoning activity in a fixed position so the newest progress stays visible without shifting the main chat viewport
 - **Then** if that fixed progress slot mirrors the active in-flight reasoning block, the matching inline Thinking bubble is temporarily hidden until the assistant response settles, avoiding a misleading stuck-looking duplicate
+- **Then** when the official `session.idle` signal arrives for the current session, the composer status slot stops showing active progress even if fallback delivery streams are still draining internally
 - **Then** completed tool badges use an explicit success-green treatment so finished work stays visually distinct from queued, active, and error states
 - **Then** when a contiguous visible run contains multiple `task` tool bubbles, settled task bubbles render before still-active running or queued task bubbles without crossing the surrounding text/reasoning boundaries of that same assistant message
 - **Then** a running `task` tool bubble prefers the latest internal child-session tool label inline when task metadata or cached child-session messages expose it; otherwise it falls back to the latest extracted command, and finally to `Running task`
