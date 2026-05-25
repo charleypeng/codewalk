@@ -298,16 +298,18 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
     BuildContext context,
     AssistantMessage message,
   ) {
-    final settingsProvider = context.read<SettingsProvider>();
-    if (!settingsProvider.readAloudEnabled) {
-      return const SizedBox.shrink();
-    }
-
     final readAloudService = di.sl<ReadAloudService>();
 
     return ListenableBuilder(
       listenable: readAloudService,
       builder: (context, _) {
+        // Check settings inside builder so the button hides/reacts when the
+        // user toggles readAloudEnabled without a full ChatMessage rebuild.
+        final settingsProvider = context.read<SettingsProvider>();
+        if (!settingsProvider.readAloudEnabled) {
+          return const SizedBox.shrink();
+        }
+
         // Evaluate state inside builder so icon/color/onPressed react to
         // ReadAloudService notifications.
         final isActive = readAloudService.activeMessageId == message.id;
@@ -328,6 +330,11 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
               : Theme.of(context).colorScheme.onSurfaceVariant,
           tooltip: tooltip,
           onPressed: () {
+            // Guard: respect the current setting even if the button was
+            // rendered before the user toggled readAloudEnabled off.
+            if (!settingsProvider.readAloudEnabled) {
+              return;
+            }
             if (isPlaying) {
               unawaited(readAloudService.stop());
               return;
@@ -367,7 +374,12 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
     for (final part in message.parts) {
       if (part is TextPart && part.text.trim().isNotEmpty) {
         // Strip markdown formatting before feeding to TTS.
-        final cleaned = part.text.replaceAll(_ttsStrippingRegExp, r'$2$4$5$6');
+        // Dart replaceAll does not interpolate capture groups in the
+        // replacement string — use replaceAllMapped instead.
+        final cleaned = part.text.replaceAllMapped(
+          _ttsStrippingRegExp,
+          (m) => m.group(2) ?? m.group(4) ?? m.group(5) ?? m.group(6) ?? '',
+        );
         buffer.write(cleaned);
         buffer.write(' ');
       }
