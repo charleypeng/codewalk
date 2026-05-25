@@ -44,7 +44,7 @@ codewalk/
 │       │   ├── chat_input_widget.dart  # Chat input orchestrator/facade
 │       │   └── chat_input/             # ChatInput decomposed clusters (8 modules)
 │       ├── services/                   # Platform/runtime services (tray, notifications, STT, terminal, etc.)
-│       ├── utils/                      # Presentation helpers (incl. WindowSizeClass MD3 breakpoints, diff parser)
+│   ├── utils/ # Presentation helpers (incl. WindowSizeClass MD3 breakpoints, diff parser, file path detector, file path markdown)
 │       └── theme/                      # Material You theme: AppTheme, AppShapes, BrandColor seeds, AppSemanticColors
 ├── test/                               # Unit, widget, integration, presentation, support tests
 ├── tool/ci/                            # Analyzer budget and coverage gate scripts
@@ -106,7 +106,9 @@ lib/presentation/theme/app_shapes.dart                # AppShapes class with cen
 lib/presentation/theme/app_theme.dart                 # Material You theme builder using AppShapes and color scheme
 lib/presentation/theme/app_animations.dart            # Animation duration tokens; includes userBubble (130 ms) and assistantBubble (180 ms)
 lib/presentation/utils/window_size_class.dart         # WindowSizeClass enum with MD3 breakpoints + BuildContext extension
-lib/presentation/utils/diff_parser.dart               # Diff parser: DiffHunk model, groupIntoHunks(), annotateLineNumbers(), resolveDiffHighlightLanguage(), kDefaultCollapseThreshold
+lib/presentation/utils/diff_parser.dart # Diff parser: DiffHunk model, groupIntoHunks(), annotateLineNumbers(), resolveDiffHighlightLanguage(), kDefaultCollapseThreshold
+lib/presentation/utils/file_path_detector.dart # Regex-based file path detector: ~90 known extensions, :line:col suffix parsing, code-block exclusion, URL exclusion, Windows absolute paths
+lib/presentation/utils/file_path_markdown.dart # Custom flutter_markdown_plus InlineSyntax (FilePathSyntax) and MarkdownElementBuilder (FilePathBuilder) for clickable file path spans
 lib/presentation/services/desktop_tray_service_io.dart # Desktop tray lifecycle; selects tray icon per OS (macOS template PNG, Windows ICO, Linux PNG)
 lib/presentation/services/notification_service.dart    # Local notifications; Android uses `@drawable/ic_stat_codewalk` small icon and no longer drives foreground monitor state
 lib/presentation/services/android_foreground_monitor_service.dart # Android foreground service via MethodChannel; active only during temporary live monitoring for known background work
@@ -137,8 +139,8 @@ lib/presentation/pages/opencode_setup_debug_page.dart # OpenCode setup debug sur
 lib/presentation/pages/settings/sections/servers_settings_section.dart # Server profile CRUD; exports reusable ServerSetupQuickGuide widget; includes navigation to OpenCodeSetupDebugPage
 lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade; WindowListener for desktop lifecycle; guards startup (checkConnection/loadSessions) against no-active-server; holds tool-chain expanded state map; _isSessionSwitchInFlight guard, _sessionCollapseHistoryCache / _sessionCollapseWorkCache per-session collapse maps; top-reach history loading is coordinated with anchor-preserving restore; workspace controller uses fast project-scope switch path
 lib/presentation/widgets/chat_input_widget.dart   # Composer/input orchestration facade; speech controller resolves Native, Sherpa, Moonshine, Parakeet, and SenseVoice backends and routes model-required setup dialogs accordingly
-lib/presentation/widgets/chat_message_widget.dart # Message bubble with build-skip cache, cached MarkdownStyleSheet; compact (<600dp) collapsed-copy variants for reasoning/tool-chain/tool-content toggles; completed tool-chain groups preserve user expansion through ordinary parent rebuilds (no involuntary collapse-on-scroll); includes `SubtaskPart`/`task` navigation callbacks, inline latest-turn undo, historical `onInlineRevertToHere`, and stable rebuild gating keyed by callback identity
-lib/presentation/widgets/session_diff_viewer.dart     # Rich diff review surface: DiffViewMode enum (summary/unified/split), 3 view toggles, line number gutters, per-line syntax highlighting, lazy hunk collapse/expand, onFileTap jump action
+lib/presentation/widgets/chat_message_widget.dart # Message bubble with build-skip cache, cached MarkdownStyleSheet; compact (<600dp) collapsed-copy variants for reasoning/tool-chain/tool-content toggles; completed tool-chain groups preserve user expansion through ordinary parent rebuilds (no involuntary collapse-on-scroll); includes `SubtaskPart`/`task` navigation callbacks, inline latest-turn undo, historical `onInlineRevertToHere`, stable rebuild gating keyed by callback identity, and `onFileTap` for clickable file paths with line jumps
+lib/presentation/widgets/session_diff_viewer.dart # Rich diff review surface: DiffViewMode enum (summary/unified/split), 3 view toggles, line number gutters, per-line syntax highlighting, lazy hunk collapse/expand, onFileTap jump action (wired at all 3 call sites)
 lib/presentation/widgets/session_todo_list_widget.dart # Session task panel with progress bar and keyboard-aware collapse; compact mobile collapsed summaries use count-first wording (`x/y in progress`, `x/y done`)
 lib/presentation/widgets/chat_session_list.dart    # Chat session list widget; uses responsive vertical tile padding (1 on desktop, 3 on mobile) for information density
 lib/presentation/widgets/message_entrance_animation.dart # Entrance animation wrapper; `role` parameter selects user (130 ms) or assistant (180 ms) motion profile from AppAnimations
