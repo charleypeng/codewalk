@@ -22,7 +22,8 @@ codewalk/
 ├── lib/                                # Application source
 │   ├── main.dart                       # App bootstrap (DI, providers, shell)
 │   ├── core/                           # Config, constants, DI, errors, logging, network
-│   │   └── i18n/                        # Locale registry, context bridge, localization helpers
+│   │   ├── i18n/                        # Locale registry, context bridge, localization helpers
+│   │   └── utils/                       # Core utilities (path, timeline search)
 │   ├── data/                           # Data layer: datasources, search models, repositories, cache
 │   │   └── cache/                      # Hybrid file+memory cache for large chat payloads
 │   ├── domain/                         # Domain layer: entities, repository contracts, use cases
@@ -35,7 +36,7 @@ codewalk/
 │       │   ├── app_shell_page.dart
 │       │   ├── onboarding_wizard_page.dart # First-run onboarding wizard (Welcome → Server Setup → Ready)
 │       │   ├── chat_page.dart          # Chat orchestrator/facade
-│       │   └── chat_page/              # ChatPage decomposed clusters (18 modules)
+│   │   └── chat_page/              # ChatPage decomposed clusters (20 modules)
 │       ├── providers/                  # App/Chat/Project/Settings state orchestration
 │       │   ├── chat_provider.dart      # Chat provider orchestrator/facade
 │       │   └── chat_provider/          # ChatProvider decomposed clusters (16 modules)
@@ -75,6 +76,7 @@ lib/core/di/injection_container.dart              # Registers datasources, repos
 lib/core/i18n/app_locales.dart                     # Locale registry: 14 supported locales, resolution callback, native-name metadata, PT_BR normalization
 lib/core/i18n/l10n_context.dart                    # BuildContext extension: `context.l10n` shorthand for AppLocalizations access
 lib/core/i18n/l10n_bridge.dart                     # Static L10nBridge for context-free localization (tray, background services)
+lib/core/utils/timeline_search_service.dart         # Client-side full-text search over timeline messages: extracts TextPart.text and ReasoningPart.text, performs case-insensitive matching with occurrence counting, and returns results ordered by message age
 lib/core/network/dio_client.dart                  # HTTP client config, auth, base URL updates; exposes `dio` (regular) and `sseDio` (dedicated SSE instance with isolated connection pool)
 lib/core/network/dio_sse_adapter.dart              # Conditional export: routes to IO or stub adapter
 lib/core/network/dio_sse_adapter_io.dart           # IO platforms: configures IOHttpClientAdapter with separate HttpClient for SSE (2h idle, 4 max connections)
@@ -184,6 +186,7 @@ chat_page_composer_widgets.dart                   # Reserved-height composer pro
 chat_page_model_selector_runtime.dart        # New Chat action opens draft mode immediately via provider `beginNewChatDraft()`; child-thread selector labels are memoized and locked to sub-conversation metadata (model shown, variant shown only when explicit)
 chat_page_timeline_builder.dart              # Renders empty state with no-server CTA to wizard; passes `role` to MessageEntranceAnimation so each bubble uses the correct motion profile; composer stays enabled during draft-first New Chat (`currentSession != null || isDraftingNewChat`) and in sub-conversation sessions; sub-conversation model/agent selection remains session-context aware/locked; child-thread footer keeps `Return to main conversation` visible (stop behavior managed by composer); wires latest inline undo and historical server-confirmed user-message rewind while excluding `local_user_*` optimistic IDs
 chat_page_timeline_runtime.dart              # Tool-chain expanded state key resolution (sessionId::messageId::startPartId)
+chat_page_search.dart                   # Timeline full-text search: inline AppBar input with 300ms debounce, case-insensitive text/reasoning matching, message-level next/previous navigation, and transient TextSpan highlighting; uses dedicated _ScrollOwner.searchResult for scroll coordination
 ```
 
 ### Chat message widgets
