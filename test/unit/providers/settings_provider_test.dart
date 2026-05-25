@@ -1093,6 +1093,149 @@ void main() {
         expect(provider.hasAutomaticUpdateCheckTimer, isFalse);
       },
     );
+
+    test('persists read-aloud settings with defaults', () async {
+      final local = InMemoryAppLocalDataSource();
+      final provider = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+
+      await provider.initialize();
+
+      expect(provider.readAloudEnabled, isTrue);
+      expect(provider.readAloudRate, 0.5);
+      expect(provider.readAloudPitch, 1.0);
+      expect(provider.readAloudVoice, isNull);
+    });
+
+    test('persists read-aloud enabled change', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+      await first.setReadAloudEnabled(false);
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(second.readAloudEnabled, isFalse);
+    });
+
+    test('persists read-aloud rate change clamped to 0.0-1.0', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+      await first.setReadAloudRate(0.75);
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(second.readAloudRate, 0.75);
+
+      await second.setReadAloudRate(1.5);
+      expect(second.readAloudRate, 1.0);
+      await second.setReadAloudRate(-0.5);
+      expect(second.readAloudRate, 0.0);
+    });
+
+    test('persists read-aloud pitch change clamped to 0.5-2.0', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+      await first.setReadAloudPitch(1.5);
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(second.readAloudPitch, 1.5);
+
+      await second.setReadAloudPitch(3.0);
+      expect(second.readAloudPitch, 2.0);
+      await second.setReadAloudPitch(0.1);
+      expect(second.readAloudPitch, 0.5);
+    });
+
+    test('persists read-aloud voice change', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+      await first.setReadAloudVoice('en-us-x-tpf');
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(second.readAloudVoice, 'en-us-x-tpf');
+
+      await second.setReadAloudVoice(null);
+      expect(second.readAloudVoice, isNull);
+    });
+
+    test('read-aloud settings survive JSON roundtrip', () async {
+      final local = InMemoryAppLocalDataSource();
+      final first = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await first.initialize();
+      await first.setReadAloudEnabled(false);
+      await first.setReadAloudRate(0.9);
+      await first.setReadAloudPitch(1.2);
+      await first.setReadAloudVoice('pt-br-x-tpf');
+
+      final raw = local.experienceSettingsJson;
+      expect(raw, isNotNull);
+      final json = jsonDecode(raw!) as Map<String, dynamic>;
+      expect(json['readAloudEnabled'], isFalse);
+      expect(json['readAloudRate'], 0.9);
+      expect(json['readAloudPitch'], 1.2);
+      expect(json['readAloudVoice'], 'pt-br-x-tpf');
+
+      final second = SettingsProvider(
+        localDataSource: local,
+        dioClient: DioClient(),
+        soundService: _FakeSoundService(),
+      );
+      await second.initialize();
+
+      expect(second.readAloudEnabled, isFalse);
+      expect(second.readAloudRate, 0.9);
+      expect(second.readAloudPitch, 1.2);
+      expect(second.readAloudVoice, 'pt-br-x-tpf');
+    });
   });
 }
 
@@ -1172,6 +1315,7 @@ DioClient _buildDioClient(_MockDioAdapter adapter) {
   dioClient.dio.httpClientAdapter = adapter;
   return dioClient;
 }
+
 
 dynamic _decodeRequestData(dynamic data) {
   if (data is String) {
