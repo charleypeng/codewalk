@@ -196,24 +196,21 @@ extension _ChatPageMobileOverflow on _ChatPageState {
         MenuItemButton(
           key: ValueKey<String>('mobile_overflow_item_${def.id}'),
           leadingIcon: icon,
+          trailingIcon: GestureDetector(
+            onTap: () => _toggleMobileActionPin(def.id),
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Icon(
+                Symbols.push_pin,
+                size: 18,
+                color: isPinned
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
           onPressed: onTap,
           child: Text(def.tooltip),
-        ),
-      );
-      menuChildren.add(
-        MenuItemButton(
-          key: ValueKey<String>('mobile_overflow_pin_${def.id}'),
-          leadingIcon: Icon(
-            isPinned ? Symbols.push_pin : Symbols.push_pin,
-            size: 18,
-          ),
-          onPressed: () => _showMobileActionPinDialog(def, isPinned),
-          child: Text(
-            isPinned
-                ? context.l10n.chatAppBarUnpinAction
-                : context.l10n.chatAppBarPinAction,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
         ),
       );
       if (def != allItems.last) {
