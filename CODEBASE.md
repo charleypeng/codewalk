@@ -118,6 +118,7 @@ lib/presentation/services/android_background_alert_worker.dart # WorkManager-bas
 lib/presentation/services/android_background_alert_logic.dart # Pure logic for tail probe scheduling, alert planning, and snapshot state
 lib/presentation/services/android_battery_optimization_service.dart # Android battery optimization query/exemption request via MethodChannel
 lib/presentation/services/permission_auto_approve_runtime.dart # Background permission auto-approve context and session ID resolution for Android background continuity
+lib/presentation/services/session_export_service.dart # SessionExportService: serializes session history to Markdown and JSON for local export; omits local_user_* IDs from JSON per ADR-023
 lib/presentation/services/moonshine_model_manager_io.dart # Desktop Moonshine model download/extract/delete flow using sherpa-onnx release archives + Silero VAD asset
 lib/presentation/services/speech_input_service_moonshine_io.dart # Desktop Moonshine dictation backend; uses sherpa_onnx OfflineRecognizer + VoiceActivityDetector for on-device utterance recognition
 lib/presentation/services/speech_input_service_stt.dart # STT abstraction backend (speech_to_text package) for iOS, macOS, Web, and Windows
@@ -502,3 +503,12 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
   (runtime signal set by `DynamicColorBuilder` in `main.dart`) instead of a heuristic; contrast
   slider is disabled when dynamic color is active. Composer tips visibility is shared with the
   Chat Display popover toggle through `settingsProvider.showComposerTips`.
+
+### Session Export Service
+
+- **`SessionExportService`** (`lib/presentation/services/session_export_service.dart`): Serializes
+  a full session timeline to Markdown and JSON for local export. The Markdown export renders
+  messages with role headers, text content, tool calls, and reasoning blocks. The JSON export
+  omits `local_user_*` IDs from user messages to comply with ADR-023 (contract-first compatibility).
+  The service is scoped to the `presentation/services/` layer and consumed directly from provider-level
+  export triggers or UI actions.
