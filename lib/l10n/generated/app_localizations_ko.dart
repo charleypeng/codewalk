@@ -115,7 +115,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String chatSearchResultCount(int current, int total) {
-    return '$current of $total';
+    return 'Message $current of $total';
   }
 
   @override

@@ -32,17 +32,6 @@ void main() {
     );
   }
 
-  SubtaskPart subtaskPart(String id, String prompt, String description) {
-    return SubtaskPart(
-      id: id,
-      messageId: 'message_1',
-      sessionId: 'session_1',
-      prompt: prompt,
-      description: description,
-      agent: 'build',
-    );
-  }
-
   group('TimelineSearchService', () {
     test('returns empty result for blank query', () {
       final result = service.search(
@@ -72,13 +61,11 @@ void main() {
       expect(result.totalMatchCount, 3);
     });
 
-    test('searches reasoning and subtask visible text', () {
+    test('searches reasoning text', () {
       final result = service.search(
         messages: [
           userMessage('m1', [reasoningPart('r1', 'Planning deploy flow')]),
-          userMessage('m2', [
-            subtaskPart('s1', 'Deploy mobile build', 'Release checklist'),
-          ]),
+          userMessage('m2', [textPart('p2', 'Deploy mobile build')]),
         ],
         query: 'deploy',
       );

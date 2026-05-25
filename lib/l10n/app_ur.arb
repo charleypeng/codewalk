@@ -35,7 +35,7 @@
   "chatSearchConversations": "Search conversations",
   "chatSearchTimeline": "Search timeline",
   "chatSearchNoResults": "No results",
-  "chatSearchResultCount": "{current} of {total}",
+  "chatSearchResultCount": "Message {current} of {total}",
   "chatSearchPreviousResult": "Previous result",
   "chatSearchNextResult": "Next result",
   "chatSelectOrCreate": "Select or create a conversation to start chatting",

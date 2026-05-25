@@ -174,13 +174,25 @@ extension _ChatPageSearch on _ChatPageState {
   }
 
   Future<void> _scrollToTimelineSearchResult(String messageId) async {
-    final key = _timelineSearchMessageKeysByMessageId[messageId];
-    final targetContext = key?.currentContext;
-    if (targetContext == null) {
+    if (!_scrollController.hasClients) {
       return;
     }
+    final opId = ++_timelineSearchScrollOpId;
     _setScrollOwner(_ScrollOwner.searchResult);
     try {
+      var targetContext =
+          _timelineSearchMessageKeysByMessageId[messageId]?.currentContext;
+      if (targetContext == null) {
+        await _materializeTimelineSearchTarget(messageId, opId: opId);
+        if (!mounted || opId != _timelineSearchScrollOpId) {
+          return;
+        }
+        targetContext =
+            _timelineSearchMessageKeysByMessageId[messageId]?.currentContext;
+      }
+      if (targetContext == null) {
+        return;
+      }
       await Scrollable.ensureVisible(
         targetContext,
         duration: const Duration(milliseconds: 220),
@@ -189,9 +201,43 @@ extension _ChatPageSearch on _ChatPageState {
         alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
       );
     } finally {
-      if (mounted && _currentScrollOwner == _ScrollOwner.searchResult) {
+      if (mounted &&
+          opId == _timelineSearchScrollOpId &&
+          _currentScrollOwner == _ScrollOwner.searchResult) {
         _setScrollOwner(_ScrollOwner.none);
       }
     }
+  }
+
+  Future<void> _materializeTimelineSearchTarget(
+    String messageId, {
+    required int opId,
+  }) async {
+    final chatProvider = _chatProvider ?? context.read<ChatProvider>();
+    final messages = chatProvider.messages;
+    final messageIndex = messages.indexWhere(
+      (message) => message.id == messageId,
+    );
+    if (messageIndex == -1 ||
+        messages.length <= 1 ||
+        !_scrollController.hasClients) {
+      return;
+    }
+
+    // SliverList children are lazy, so an offscreen result has no context for
+    // ensureVisible. Approximate by chronological position first, then let
+    // ensureVisible align the now-mounted message precisely on the next frame.
+    final position = _scrollController.position;
+    final targetOffset =
+        position.maxScrollExtent * (messageIndex / (messages.length - 1));
+    await position.animateTo(
+      targetOffset.clamp(position.minScrollExtent, position.maxScrollExtent),
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+    );
+    if (!mounted || opId != _timelineSearchScrollOpId) {
+      return;
+    }
+    await WidgetsBinding.instance.endOfFrame;
   }
 }

@@ -335,7 +335,7 @@ abstract class AppLocalizations {
   /// CodeWalk UI string — chatSearchResultCount
   ///
   /// In en, this message translates to:
-  /// **'{current} of {total}'**
+  /// **'Message {current} of {total}'**
   String chatSearchResultCount(int current, int total);
 
   /// CodeWalk UI string — chatSearchPreviousResult

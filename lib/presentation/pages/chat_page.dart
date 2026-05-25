@@ -535,6 +535,7 @@ class _ChatPageState extends State<ChatPage>
   TimelineSearchResult _timelineSearchResult = TimelineSearchResult.empty;
   bool _timelineSearchActive = false;
   int _timelineSearchCurrentIndex = 0;
+  int _timelineSearchScrollOpId = 0;
   int _timelineSearchLastMessagesVersion = -1;
   String? _timelineSearchLastSessionId;
   DateTime? _lastResumeRefreshAt;

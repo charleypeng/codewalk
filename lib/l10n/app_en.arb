@@ -140,7 +140,7 @@
   "@chatSearchNoResults": {
     "description": "CodeWalk UI string — chatSearchNoResults"
   },
-  "chatSearchResultCount": "{current} of {total}",
+  "chatSearchResultCount": "Message {current} of {total}",
   "@chatSearchResultCount": {
     "description": "CodeWalk UI string — chatSearchResultCount",
     "placeholders": {

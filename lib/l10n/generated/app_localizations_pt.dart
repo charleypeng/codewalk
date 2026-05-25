@@ -116,7 +116,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String chatSearchResultCount(int current, int total) {
-    return '$current de $total';
+    return 'Mensagem $current de $total';
   }
 
   @override

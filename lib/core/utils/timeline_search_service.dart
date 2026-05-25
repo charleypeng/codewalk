@@ -57,9 +57,8 @@ class TimelineSearchResult {
 /// Extracts searchable text from [ChatMessage] parts and performs
 /// case-insensitive full-text search across a list of messages.
 ///
-/// Searchable content includes [TextPart.text] and [ReasoningPart.text].
-/// [ToolPart] tool names and [SubtaskPart] descriptions are also included
-/// since they contain user-visible text.
+/// Searchable content includes [TextPart.text] and [ReasoningPart.text],
+/// matching the message surfaces that support inline search highlighting.
 class TimelineSearchService {
   const TimelineSearchService();
 
@@ -72,13 +71,6 @@ class TimelineSearchService {
         buffer.writeln(part.text);
       } else if (part is ReasoningPart) {
         buffer.writeln(part.text);
-      } else if (part is ToolPart) {
-        buffer.writeln(part.tool);
-      } else if (part is SubtaskPart) {
-        buffer.writeln(part.prompt);
-        if (part.description.isNotEmpty) {
-          buffer.writeln(part.description);
-        }
       }
     }
     return buffer.toString().trimRight();
