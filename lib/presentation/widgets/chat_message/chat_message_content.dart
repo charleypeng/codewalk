@@ -124,11 +124,17 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
                                       ),
                                 ),
                                 const Spacer(),
-                                if (!isUser && message is AssistantMessage)
+                                if (!isUser && message is AssistantMessage) ...[
+                                  _buildReadAloudButton(
+                                    context,
+                                    message as AssistantMessage,
+                                  ),
+                                  const SizedBox(width: 8),
                                   _buildAssistantInfo(
                                     context,
                                     message as AssistantMessage,
                                   ),
+                                ],
                               ],
                             ),
                             SizedBox(
@@ -286,6 +292,80 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
       default:
         return true;
     }
+  }
+
+  Widget _buildReadAloudButton(
+    BuildContext context,
+    AssistantMessage message,
+  ) {
+    final settingsProvider = context.read<SettingsProvider>();
+    if (!settingsProvider.readAloudEnabled) {
+      return const SizedBox.shrink();
+    }
+
+    final readAloudService = di.sl<ReadAloudService>();
+    final isActive = readAloudService.activeMessageId == message.id;
+    final isPlaying = isActive && readAloudService.isSpeaking;
+    final isPaused = isActive &&
+        readAloudService.state == ReadAloudState.paused;
+
+    return ListenableBuilder(
+      listenable: readAloudService,
+      builder: (context, _) {
+        final icon = isPlaying
+            ? Symbols.pause
+            : isPaused
+                ? Symbols.play_arrow
+                : Symbols.volume_up;
+        final tooltip = isPlaying
+            ? context.l10n.msgStopReadAloud
+            : isPaused
+                ? context.l10n.msgReadAloud
+                : context.l10n.msgReadAloud;
+
+        return IconButton(
+          icon: Icon(icon, size: 18),
+          visualDensity: VisualDensity.compact,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+          splashRadius: 16,
+          color: isActive
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.onSurfaceVariant,
+          tooltip: tooltip,
+          onPressed: () {
+            if (isPlaying || isPaused) {
+              unawaited(readAloudService.stop());
+              return;
+            }
+            final text = _extractReadableText(message);
+            if (text.isEmpty) {
+              return;
+            }
+            unawaited(
+              readAloudService.speak(
+                messageId: message.id,
+                text: text,
+                rate: settingsProvider.readAloudRate,
+                pitch: settingsProvider.readAloudPitch,
+                voice: settingsProvider.readAloudVoice,
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String _extractReadableText(AssistantMessage message) {
+    final buffer = StringBuffer();
+    for (final part in message.parts) {
+      if (part is TextPart && part.text.trim().isNotEmpty) {
+        buffer.write(part.text);
+        buffer.write(' ');
+      }
+    }
+    return buffer.toString().trim();
   }
 
   Widget _buildAssistantInfo(BuildContext context, AssistantMessage message) {

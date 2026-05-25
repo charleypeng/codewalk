@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
 
 import '../theme/app_shapes.dart';
 import '../theme/app_animations.dart';
@@ -19,7 +20,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/i18n/l10n_context.dart';
 import '../../core/logging/app_logger.dart';
+import '../../core/di/injection_container.dart' as di;
 import '../../domain/entities/chat_message.dart';
+import '../../presentation/providers/settings_provider.dart';
+import '../../presentation/services/read_aloud_service.dart';
 import '../services/file_part_action_service.dart' as file_part_action;
 import '../utils/chat_abort_message.dart';
 import '../utils/diff_parser.dart';
