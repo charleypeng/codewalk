@@ -42,6 +42,7 @@ import '../services/android_foreground_monitor_service.dart';
 import '../services/codewalk_terminal_controller.dart';
 import '../services/notification_service.dart';
 import '../services/permission_auto_approve_runtime.dart';
+import '../services/read_aloud_service.dart';
 import '../services/session_export_service.dart';
 import '../theme/app_animations.dart';
 import '../theme/app_shapes.dart';
@@ -759,6 +760,10 @@ class _ChatPageState extends State<ChatPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Stop read-aloud when app goes to background.
+    if (state != AppLifecycleState.resumed) {
+      unawaited(di.sl<ReadAloudService>().stop());
+    }
     _isAppInForeground = state == AppLifecycleState.resumed;
     final provider = _chatProvider;
     if (provider != null) {

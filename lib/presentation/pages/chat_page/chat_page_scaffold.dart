@@ -1130,6 +1130,7 @@ extension _ChatPageScaffold on _ChatPageState {
   }
 
   Future<void> _handleSessionSwitch(ChatSession session) async {
+    unawaited(di.sl<ReadAloudService>().stop());
     await context.read<ChatProvider>().selectSession(session);
   }
 }

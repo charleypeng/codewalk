@@ -51,9 +51,11 @@ import '../../domain/usecases/unshare_chat_session.dart';
 import '../../domain/usecases/update_chat_session.dart';
 import '../../domain/usecases/watch_chat_events.dart';
 import '../../domain/usecases/watch_global_chat_events.dart';
+import '../../core/di/injection_container.dart' as di;
 import '../services/chat_title_generator.dart';
 import '../services/cellular_data_saver_service.dart';
 import '../services/event_feedback_dispatcher.dart';
+import '../services/read_aloud_service.dart';
 import '../utils/chat_abort_message.dart';
 import '../utils/chat_assistant_settlement.dart';
 import '../utils/chat_event_property_extractors.dart';
@@ -3766,6 +3768,8 @@ class ChatProvider extends ChangeNotifier {
     bool appendOptimisticMessage = true,
     String? sessionIdOverride,
   }) async {
+    // Stop any active read-aloud before sending a new message.
+    unawaited(di.sl<ReadAloudService>().stop());
     final trimmedText = text.trim();
     final effectiveAttachments = shellMode || commandMode
         ? const <FileInputPart>[]
