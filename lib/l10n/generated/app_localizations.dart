@@ -2761,6 +2761,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Text-to-speech is not available on this device.'**
   String get msgReadAloudNotAvailable;
+
+  /// CodeWalk UI string — mermaidDiagramLabel
+  ///
+  /// In en, this message translates to:
+  /// **'Mermaid Diagram'**
+  String get mermaidDiagramLabel;
+
+  /// CodeWalk UI string — mermaidCopySourceTooltip
+  ///
+  /// In en, this message translates to:
+  /// **'Copy source'**
+  String get mermaidCopySourceTooltip;
 }
 
 class _AppLocalizationsDelegate

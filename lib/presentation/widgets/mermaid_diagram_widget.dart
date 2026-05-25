@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_mermaid/flutter_mermaid.dart';
+import 'package:material_symbols_icons/symbols.dart';
+
+import '../../core/i18n/l10n_context.dart';
+import '../theme/app_shapes.dart';
 
 /// Renders Mermaid diagram source code as a visual diagram.
 ///
@@ -43,26 +47,25 @@ class _MermaidDiagramWidgetState extends State<MermaidDiagramWidget> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isCompact = MediaQuery.of(context).size.width < 600;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppShapes.borderMedium,
         side: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header row with diagram type badge and actions
           _buildHeader(context, colorScheme),
-          // Diagram or fallback content
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             child: _hasError
                 ? _buildFallbackCodeView(context, colorScheme)
-                : _buildDiagram(context, colorScheme),
+                : _buildDiagram(context, colorScheme, isCompact: isCompact),
           ),
         ],
       ),
@@ -70,18 +73,19 @@ class _MermaidDiagramWidgetState extends State<MermaidDiagramWidget> {
   }
 
   Widget _buildHeader(BuildContext context, ColorScheme colorScheme) {
+    final l10n = context.l10n;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 8, 4),
       child: Row(
         children: [
           Icon(
-            Icons.account_tree_outlined,
+            Symbols.account_tree,
             size: 18,
             color: colorScheme.primary,
           ),
           const SizedBox(width: 6),
           Text(
-            'Mermaid Diagram',
+            l10n.mermaidDiagramLabel,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   color: colorScheme.primary,
                   fontWeight: FontWeight.w600,
@@ -91,12 +95,12 @@ class _MermaidDiagramWidgetState extends State<MermaidDiagramWidget> {
           if (widget.onCopySource != null)
             IconButton(
               icon: Icon(
-                Icons.content_copy,
+                Symbols.content_copy,
                 size: 18,
                 color: colorScheme.onSurfaceVariant,
               ),
               onPressed: widget.onCopySource,
-              tooltip: 'Copy source',
+              tooltip: l10n.mermaidCopySourceTooltip,
               visualDensity: VisualDensity.compact,
             ),
         ],
@@ -104,16 +108,21 @@ class _MermaidDiagramWidgetState extends State<MermaidDiagramWidget> {
     );
   }
 
-  Widget _buildDiagram(BuildContext context, ColorScheme colorScheme) {
+  Widget _buildDiagram(
+    BuildContext context,
+    ColorScheme colorScheme, {
+    required bool isCompact,
+  }) {
     try {
+      final maxHeight = isCompact ? 300.0 : 500.0;
       return ClipRRect(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppShapes.borderSmall,
         child: Container(
           width: double.infinity,
-          constraints: const BoxConstraints(minHeight: 100, maxHeight: 400),
+          constraints: BoxConstraints(minHeight: 100, maxHeight: maxHeight),
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: AppShapes.borderSmall,
           ),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -133,17 +142,20 @@ class _MermaidDiagramWidgetState extends State<MermaidDiagramWidget> {
         ),
       );
     } catch (_) {
-      // If MermaidDiagram fails during build, switch to fallback.
-      // Use post-frame callback to avoid setState during build.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           setState(() => _hasError = true);
         }
       });
-      return const SizedBox(
+      return SizedBox(
         width: double.infinity,
         height: 100,
-        child: Center(child: CircularProgressIndicator()),
+        child: Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: colorScheme.primary,
+          ),
+        ),
       );
     }
   }
@@ -156,7 +168,7 @@ class _MermaidDiagramWidgetState extends State<MermaidDiagramWidget> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppShapes.borderSmall,
         border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.3)),
       ),
       child: SingleChildScrollView(

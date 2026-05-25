@@ -1488,4 +1488,10 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get msgReadAloudNotAvailable =>
       'Text-to-speech is not available on this device.';
+
+  @override
+  String get mermaidDiagramLabel => 'Mermaid Diagram';
+
+  @override
+  String get mermaidCopySourceTooltip => 'Copy source';
 }

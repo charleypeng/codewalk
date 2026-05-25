@@ -1820,5 +1820,13 @@
   "msgReadAloudNotAvailable": "Text-to-speech is not available on this device.",
   "@msgReadAloudNotAvailable": {
     "description": "CodeWalk UI string — msgReadAloudNotAvailable"
+  },
+  "mermaidDiagramLabel": "Mermaid Diagram",
+  "@mermaidDiagramLabel": {
+    "description": "CodeWalk UI string — mermaidDiagramLabel"
+  },
+  "mermaidCopySourceTooltip": "Copy source",
+  "@mermaidCopySourceTooltip": {
+    "description": "CodeWalk UI string — mermaidCopySourceTooltip"
   }
 }
