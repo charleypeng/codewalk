@@ -20,12 +20,12 @@
 
 | Phase | Features | Done | In Progress | Remaining |
 |-------|----------|------|-------------|-----------|
-| 1 — UX Foundations | 4 | 1 | 0 | 3 |
+| 1 — UX Foundations | 4 | 2 | 0 | 2 |
 | 2 — Rich Output | 4 | 0 | 0 | 4 |
 | 3 — Organization | 3 | 0 | 0 | 3 |
 | 4 — Workspace Control | 4 | 0 | 0 | 4 |
 | 5 — Advanced | 4 | 0 | 0 | 4 |
-| **Total** | **19** | **1** | **0** | **18** |
+| **Total** | **19** | **2** | **0** | **17** |
 
 ---
 
@@ -38,7 +38,7 @@ These features are mostly client-side and build directly on current CodeWalk sur
 | # | Feature | Priority | Status | Commit | Plan |
 |---|---------|----------|--------|--------|------|
 | 1 | Rich Diff Review Surface | P0 | [x] | fe145fa, 9dbca9d, 5267a91 | [01_rich_diff_review.md](final_plan/01_rich_diff_review.md) |
-| 2 | Clickable File Paths with Line Jumps | P0 | [ ] | — | [02_clickable_file_paths.md](final_plan/02_clickable_file_paths.md) |
+| 2 | Clickable File Paths with Line Jumps | P0 | [x] | 7741b58, 80e5d53, d1bf168, 54ba44d, cfe775f | [02_clickable_file_paths.md](final_plan/02_clickable_file_paths.md) |
 | 3 | Timeline Full-Text Search | P1 | [ ] | — | [03_timeline_search.md](final_plan/03_timeline_search.md) |
 | 4 | Session Export as Markdown/JSON | P1 | [ ] | — | [04_session_export.md](final_plan/04_session_export.md) |
 
@@ -162,7 +162,7 @@ Primary finding: CodeWalk is very strong as a mobile-first OpenCode chat client,
 | Feature Suggested by Planners | CodeWalk Status | Evidence | Plan Decision |
 | --- | --- | --- | --- |
 | Rich diff viewer with stacked/inline modes | Done | `session_diff_viewer.dart` rewritten with 3 view modes (summary/unified/split), line gutters, syntax highlighting, lazy hunk collapse, `onFileTap` jump | Completed in v1.77.0 |
-| Clickable file paths in chat messages | Missing | No `clickable path`, `file path link`, or message path-link implementation found | Valid |
+| Clickable file paths in chat messages | Done | `FilePathDetector` regex utility, `FilePathSyntax`/`FilePathBuilder` markdown extensions, `onFileTap` wired through `ChatMessageWidget` and all 3 `SessionDiffViewer` call sites, `scrollToLine` in file viewer, i18n snackbar feedback | Completed in v1.78.0 |
 | Git sidebar and Git workflows | Missing | No Git provider/sidebar/staging/commit UI found; only VCS/worktree foundations exist | Valid, gated by API verification |
 | Inline file editing | Missing | File viewer is read-only; `BEHAVIOR.md` says file explorer is read-only | Valid, gated by write API verification |
 | Plan/Build mode | Missing | No `PlanView`, plan mode, or dedicated plan surface found | Valid |
@@ -227,4 +227,4 @@ Every implementation must preserve these constraints:
 
 ## Immediate Next Task
 
-Start with **Clickable file paths with line jumps** (#2). Rich diff review (#1) is complete. Feature #2 builds on the `onFileTap` jump action from #1 and is the next P0 item.
+Start with **Timeline full-text search** (#3). Features #1 (Rich diff review) and #2 (Clickable file paths) are complete. Feature #3 is the next P1 item in Phase 1.
