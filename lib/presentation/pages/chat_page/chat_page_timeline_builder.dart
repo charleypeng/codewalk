@@ -35,11 +35,11 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           chatProvider.isCurrentSessionActivelyResponding,
       onInlineUndo: isLatestRevertible
           ? () => unawaited(
-              _triggerHistoryAction(
-                chatProvider,
-                action: _HistoryToolbarAction.undo,
-              ),
-            )
+                _triggerHistoryAction(
+                  chatProvider,
+                  action: _HistoryToolbarAction.undo,
+                ),
+              )
           : null,
       onInlineRevertToHere: isHistoricalUserMessage
           ? () => unawaited(chatProvider.revertToTurn(message.id))
@@ -50,13 +50,14 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       onSubtaskNavigate: isSubConversation
           ? null
           : (part) => unawaited(
-              _openSubConversationFromSubtaskPart(chatProvider, part),
-            ),
+                _openSubConversationFromSubtaskPart(chatProvider, part),
+              ),
       onTaskToolNavigate: isSubConversation
           ? null
           : (part) => unawaited(
-              _openSubConversationFromTaskToolPart(chatProvider, part),
-            ),
+                _openSubConversationFromTaskToolPart(chatProvider, part),
+              ),
+      onFileTap: _onFilePathTap,
       taskToolChildSummariesByPartId: taskToolChildSummariesByPartId,
     );
     if (wrapRevealAnchor && finalAssistantRevealMessageId == message.id) {

@@ -1,4 +1,3 @@
-import '../support/pump_localized_app.dart';
 import 'dart:async';
 
 import 'package:codewalk/domain/entities/chat_session.dart';
@@ -8,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
+
+import '../support/pump_localized_app.dart';
 
 void main() {
   ChatSession session({bool shared = false, DateTime? archivedAt}) {

@@ -274,10 +274,11 @@ extension _ChatPageChrome on _ChatPageState {
           style: Theme.of(context).textTheme.bodyMedium,
         )
       else
-        SessionDiffViewer(
-          diffs: chatProvider.currentSessionDiff,
-          compact: false,
-        ),
+      SessionDiffViewer(
+        diffs: chatProvider.currentSessionDiff,
+        compact: false,
+        onFileTap: (path, line) => unawaited(_onFilePathTap(path, line, null)),
+      ),
     ];
   }
 

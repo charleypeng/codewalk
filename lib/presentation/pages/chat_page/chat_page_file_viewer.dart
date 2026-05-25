@@ -299,6 +299,22 @@ extension _ChatPageFileViewer on _ChatPageState {
             style: textStyle,
           );
 
+    // Schedule scroll-to-line after the first frame renders the content.
+    final pendingLine = fileState.pendingScrollToLine;
+    if (pendingLine != null) {
+      fileState.pendingScrollToLine = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final targetOffset = ((pendingLine - 1) * lineHeight)
+            .clamp(0.0, _fileViewerScrollController.position.maxScrollExtent);
+        _fileViewerScrollController.animateTo(
+          targetOffset,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      });
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final availableCodeWidth = constraints.maxWidth.isFinite
@@ -310,6 +326,7 @@ extension _ChatPageFileViewer on _ChatPageState {
         // GestureDetector is INSIDE the scroll view so localPosition
         // maps directly to content coordinates (no scroll offset math).
         return SingleChildScrollView(
+          controller: _fileViewerScrollController,
           key: ValueKey<String>('file_viewer_scroll_$normalizedPath'),
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: GestureDetector(

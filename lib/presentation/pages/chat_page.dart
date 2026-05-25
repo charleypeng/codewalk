@@ -219,6 +219,9 @@ class _ChatPageState extends State<ChatPage>
   static const String _traceFinalPrefix = 'CW_TRACE_FINAL';
 
   final ScrollController _scrollController = ScrollController();
+  // Scroll controller for the file viewer's vertical content area.
+  // Used to scroll to a specific line when a file path is tapped in chat.
+  final ScrollController _fileViewerScrollController = ScrollController();
   final FocusNode _inputFocusNode = FocusNode(debugLabel: 'chat_input');
   final ChatInputController _chatInputController = ChatInputController();
   final CodewalkTerminalController _terminalController =
@@ -716,6 +719,7 @@ class _ChatPageState extends State<ChatPage>
     WidgetsBinding.instance.removeObserver(this);
 
     _scrollController.dispose();
+    _fileViewerScrollController.dispose();
     _inputFocusNode.dispose();
     _sessionSearchController.dispose();
     _terminalController.dispose();
@@ -2185,15 +2189,19 @@ class _FileExplorerContextState {
   String rootDirectory;
   DateTime? lastLoadedAt;
   final Map<String, List<FileNode>> directoryChildren =
-      <String, List<FileNode>>{};
+  <String, List<FileNode>>{};
   final Set<String> expandedDirectories = <String>{};
   final Set<String> loadingDirectories = <String>{};
   final Map<String, _FileTabViewState> tabsByPath =
-      <String, _FileTabViewState>{};
+  <String, _FileTabViewState>{};
   FileTabSelectionState tabSelection = const FileTabSelectionState();
   // Line selection state for "add to chat" feature (1-based line numbers).
   final Map<String, Set<int>> selectedLinesByPath = <String, Set<int>>{};
   final Map<String, int> lastSelectedLineByPath = <String, int>{};
+  /// Pending scroll-to-line request (1-based). Set when a file is opened
+  /// via a file path tap; consumed by the file viewer after initial render.
+  /// Cleared after scrolling to avoid re-scrolling on rebuilds.
+  int? pendingScrollToLine;
   bool rootLoadScheduled = false;
   String? treeError;
 
@@ -2205,6 +2213,7 @@ class _FileExplorerContextState {
     loadingDirectories.clear();
     selectedLinesByPath.clear();
     lastSelectedLineByPath.clear();
+    pendingScrollToLine = null;
     rootLoadScheduled = false;
     treeError = null;
   }

@@ -1093,10 +1093,11 @@ extension _ChatPageScaffold on _ChatPageState {
                     if (settingsProvider.showReviewChanges) ...[
                       if (chatProvider.currentSessionDiff.isNotEmpty) ...[
                         const SizedBox(height: 8),
-                        SessionDiffViewer(
-                          diffs: chatProvider.currentSessionDiff,
-                          compact: false,
-                        ),
+        SessionDiffViewer(
+          diffs: chatProvider.currentSessionDiff,
+          compact: false,
+          onFileTap: (path, line) => unawaited(_onFilePathTap(path, line, null)),
+        ),
                       ] else
                         Text(
                           'Diff files: 0',

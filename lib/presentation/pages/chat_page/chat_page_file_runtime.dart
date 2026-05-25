@@ -315,6 +315,40 @@ extension _ChatPageFileRuntime on _ChatPageState {
     );
   }
 
+  /// Handle a file path tap from chat messages.
+  /// Opens the file in the viewer and optionally scrolls to a specific line.
+  Future<void> _onFilePathTap(String path, int? line, int? col) async {
+    if (!mounted) return;
+    final projectProvider = context.read<ProjectProvider>();
+    final appProvider = context.read<AppProvider>();
+    final fileState = _resolveFileContextState(
+      projectProvider: projectProvider,
+      appProvider: appProvider,
+    );
+    // Resolve relative paths against the project root directory.
+    final rootDir = _resolveFileRootDirectory(
+      projectProvider: projectProvider,
+      appProvider: appProvider,
+    );
+    final resolvedPath = path.startsWith('/')
+        ? _normalizeFilePath(path)
+        : _normalizeFilePath('$rootDir/$path');
+
+    // Set pending scroll target so the viewer scrolls after content loads.
+    if (line != null && line > 0) {
+      fileState.pendingScrollToLine = line;
+    }
+
+    final isCompact = context.windowSizeClass.isCompact;
+    await _openFileAndFocusDialog(
+      fileState: fileState,
+      projectProvider: projectProvider,
+      path: resolvedPath,
+      dialogFullscreen: isCompact,
+      onUpdated: () => _setState(() {}),
+    );
+  }
+
   void _activateFileTab({
     required _FileExplorerContextState fileState,
     required String path,

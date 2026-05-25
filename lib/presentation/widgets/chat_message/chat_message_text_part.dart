@@ -23,30 +23,37 @@ extension _ChatMessageTextPartBuilder on _ChatMessageWidgetState {
         children: [
           if (usePlainText)
             Text(textForRender, style: Theme.of(context).textTheme.bodyMedium)
-          else ...[
-            MarkdownBody(
-              data: textForRender,
-              softLineBreak: true,
-              styleSheet: _resolveMarkdownStyleSheet(context),
-              builders: <String, MarkdownElementBuilder>{
-                'pre': _MarkdownCodeBlockTapBuilder(
-                  themeTokens: themeTokens,
-                  onTapCode: (code) => _copyTextToClipboard(context, code),
-                ),
-                'code': _MarkdownInlineCodeTapBuilder(
-                  themeTokens: themeTokens,
-                  onTapCode: (code) => _copyTextToClipboard(context, code),
-                ),
-              },
-              onTapLink: (text, href, title) {
-                final normalizedHref = href?.trim();
-                if (normalizedHref == null || normalizedHref.isEmpty) {
-                  return;
-                }
-                unawaited(_openMarkdownLink(context, normalizedHref));
-              },
+    else ...[
+      MarkdownBody(
+        data: textForRender,
+        softLineBreak: true,
+        styleSheet: _resolveMarkdownStyleSheet(context),
+        inlineSyntaxes: widget.onFileTap != null
+            ? [FilePathSyntax()]
+            : null,
+        builders: <String, MarkdownElementBuilder>{
+          'pre': _MarkdownCodeBlockTapBuilder(
+            themeTokens: themeTokens,
+            onTapCode: (code) => _copyTextToClipboard(context, code),
+          ),
+          'code': _MarkdownInlineCodeTapBuilder(
+            themeTokens: themeTokens,
+            onTapCode: (code) => _copyTextToClipboard(context, code),
+          ),
+          if (widget.onFileTap != null)
+            'filepath': FilePathBuilder(
+              onFileTap: widget.onFileTap!,
             ),
-          ],
+        },
+        onTapLink: (text, href, title) {
+          final normalizedHref = href?.trim();
+          if (normalizedHref == null || normalizedHref.isEmpty) {
+            return;
+          }
+          unawaited(_openMarkdownLink(context, normalizedHref));
+        },
+      ),
+    ],
           const SizedBox(height: 8),
         ],
       ),

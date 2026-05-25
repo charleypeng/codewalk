@@ -73,11 +73,12 @@ extension _ChatPageComposerWidgets on _ChatPageState {
         color: Theme.of(context).colorScheme.surfaceContainerLow,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          child: SessionDiffViewer(
-            diffs: chatProvider.currentSessionDiff,
-            compact: true,
-            initiallyExpanded: false,
-          ),
+        child: SessionDiffViewer(
+          diffs: chatProvider.currentSessionDiff,
+          compact: true,
+          initiallyExpanded: false,
+          onFileTap: (path, line) => unawaited(_onFilePathTap(path, line, null)),
+        ),
         ),
       ),
     );
