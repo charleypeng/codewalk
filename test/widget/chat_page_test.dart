@@ -2259,7 +2259,16 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(
-        find.byKey(const ValueKey<String>('appbar_quick_open_button')),
+        find.byKey(
+          const ValueKey<String>('mobile_appbar_overflow_button'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>('mobile_overflow_item_quickOpen'),
+        ),
       );
       await tester.pumpAndSettle();
 
@@ -2339,7 +2348,16 @@ void main() {
         );
 
         await tester.tap(
-          find.byKey(const ValueKey<String>('appbar_terminal_button')),
+          find.byKey(
+            const ValueKey<String>('mobile_appbar_overflow_button'),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.byKey(
+            const ValueKey<String>('mobile_overflow_item_terminal'),
+          ),
         );
         await tester.pumpAndSettle();
 
@@ -2882,12 +2900,27 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(
-        find.byKey(const ValueKey<String>('appbar_display_toggles_button')),
+        find.byKey(
+          const ValueKey<String>('mobile_appbar_overflow_button'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>('mobile_overflow_item_display'),
+        ),
       );
       await tester.pumpAndSettle();
 
       expect(
-        find.byKey(const ValueKey<String>('display_toggle_item_replay_tour')),
+        find.byKey(const ValueKey<String>('mobile_display_toggles_dialog')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(
+          const ValueKey<String>('display_toggle_item_replay_tour'),
+        ),
         findsOneWidget,
       );
       expect(find.text('Replay chat tour'), findsOneWidget);

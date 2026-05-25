@@ -160,6 +160,26 @@
   "@chatSearchNextResult": {
     "description": "CodeWalk UI string — chatSearchNextResult"
   },
+  "chatAppBarMoreActions": "More actions",
+  "@chatAppBarMoreActions": {
+    "description": "CodeWalk UI string — chatAppBarMoreActions"
+  },
+  "chatAppBarPinAction": "Pin to app bar",
+  "@chatAppBarPinAction": {
+    "description": "CodeWalk UI string — chatAppBarPinAction"
+  },
+  "chatAppBarUnpinAction": "Unpin from app bar",
+  "@chatAppBarUnpinAction": {
+    "description": "CodeWalk UI string — chatAppBarUnpinAction"
+  },
+  "chatAppBarPinDescription": "This action will stay visible outside the menu.",
+  "@chatAppBarPinDescription": {
+    "description": "CodeWalk UI string — chatAppBarPinDescription"
+  },
+  "chatAppBarUnpinDescription": "This action will move back into the menu.",
+  "@chatAppBarUnpinDescription": {
+    "description": "CodeWalk UI string — chatAppBarUnpinDescription"
+  },
   "chatSelectOrCreate": "Select or create a conversation to start chatting",
   "@chatSelectOrCreate": {
     "description": "CodeWalk UI string — chatSelectOrCreate"

@@ -128,6 +128,23 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatSearchNextResult => 'Siguiente resultado';
 
   @override
+  String get chatAppBarMoreActions => 'More actions';
+
+  @override
+  String get chatAppBarPinAction => 'Pin to app bar';
+
+  @override
+  String get chatAppBarUnpinAction => 'Unpin from app bar';
+
+  @override
+  String get chatAppBarPinDescription =>
+      'This action will stay visible outside the menu.';
+
+  @override
+  String get chatAppBarUnpinDescription =>
+      'This action will move back into the menu.';
+
+  @override
   String get chatSelectOrCreate =>
       'Seleccione o cree una conversación para comenzar a chatear';
 

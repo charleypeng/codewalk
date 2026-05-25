@@ -556,7 +556,9 @@ extension _ChatPageChrome on _ChatPageState {
             ),
       actions: _timelineSearchActive
           ? _buildTimelineSearchActions()
-          : [
+          : isMobile
+              ? [_buildMobileAppBarActionsRow()]
+              : [
               if (!isMobile)
                 _buildTourTarget(
                   showcaseKey: _desktopSidebarMenuTourKey,

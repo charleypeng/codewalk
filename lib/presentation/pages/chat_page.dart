@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart' hide Provider;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:simple_icons/simple_icons.dart';
 import 'package:window_manager/window_manager.dart';
@@ -92,6 +93,7 @@ part 'chat_page/chat_page_model_selector_runtime.dart';
 part 'chat_page/chat_page_timeline_runtime.dart';
 part 'chat_page/chat_page_terminal_runtime.dart';
 part 'chat_page/chat_page_search.dart';
+part 'chat_page/chat_page_mobile_overflow.dart';
 
 enum _DisplayToggleAction {
   thinkingBubbles,
@@ -538,6 +540,7 @@ class _ChatPageState extends State<ChatPage>
   int _timelineSearchScrollOpId = 0;
   int _timelineSearchLastMessagesVersion = -1;
   String? _timelineSearchLastSessionId;
+  Set<String> _pinnedMobileAppBarActionIds = <String>{};
   DateTime? _lastResumeRefreshAt;
   DateTime? _lastReturnToChatAt;
   String? _lastReturnToChatSignature;
@@ -633,6 +636,7 @@ class _ChatPageState extends State<ChatPage>
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadInitialData();
+      unawaited(_loadPinnedMobileActionsFromPrefs());
     });
   }
 

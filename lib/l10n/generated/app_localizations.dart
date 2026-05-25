@@ -350,6 +350,36 @@ abstract class AppLocalizations {
   /// **'Next result'**
   String get chatSearchNextResult;
 
+  /// CodeWalk UI string — chatAppBarMoreActions
+  ///
+  /// In en, this message translates to:
+  /// **'More actions'**
+  String get chatAppBarMoreActions;
+
+  /// CodeWalk UI string — chatAppBarPinAction
+  ///
+  /// In en, this message translates to:
+  /// **'Pin to app bar'**
+  String get chatAppBarPinAction;
+
+  /// CodeWalk UI string — chatAppBarUnpinAction
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin from app bar'**
+  String get chatAppBarUnpinAction;
+
+  /// CodeWalk UI string — chatAppBarPinDescription
+  ///
+  /// In en, this message translates to:
+  /// **'This action will stay visible outside the menu.'**
+  String get chatAppBarPinDescription;
+
+  /// CodeWalk UI string — chatAppBarUnpinDescription
+  ///
+  /// In en, this message translates to:
+  /// **'This action will move back into the menu.'**
+  String get chatAppBarUnpinDescription;
+
   /// CodeWalk UI string — chatSelectOrCreate
   ///
   /// In en, this message translates to:
