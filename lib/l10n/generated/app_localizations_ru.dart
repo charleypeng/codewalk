@@ -1383,4 +1383,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String workspaceRemoveFromHistory(String name) {
     return 'Remove $name from history';
   }
+
+  @override
+  String msgFilePathNotFound(String path) {
+    return 'File not found: $path';
+  }
 }

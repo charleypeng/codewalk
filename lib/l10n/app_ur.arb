@@ -415,5 +415,6 @@
   "workspaceFilterDirs": "Filter directories",
   "workspaceProjectDirectory": "Project directory",
   "workspaceProjectHint": "/repo/my-project",
-  "workspaceRemoveFromHistory": "Remove {name} from history"
+  "workspaceRemoveFromHistory": "Remove {name} from history",
+"msgFilePathNotFound": "File not found: {path}"
 }

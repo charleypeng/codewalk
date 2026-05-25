@@ -1400,4 +1400,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String workspaceRemoveFromHistory(String name) {
     return 'Remover $name do histórico';
   }
+
+  @override
+  String msgFilePathNotFound(String path) {
+    return 'Arquivo não encontrado: $path';
+  }
 }

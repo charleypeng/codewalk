@@ -317,6 +317,7 @@ extension _ChatPageFileRuntime on _ChatPageState {
 
   /// Handle a file path tap from chat messages.
   /// Opens the file in the viewer and optionally scrolls to a specific line.
+  /// Shows a snackbar if the file cannot be loaded.
   Future<void> _onFilePathTap(String path, int? line, int? col) async {
     if (!mounted) return;
     final projectProvider = context.read<ProjectProvider>();
@@ -347,6 +348,19 @@ extension _ChatPageFileRuntime on _ChatPageState {
       dialogFullscreen: isCompact,
       onUpdated: () => _setState(() {}),
     );
+
+    // Show feedback if the file failed to load.
+    if (!mounted) return;
+    final tabState = fileState.tabsByPath[_normalizeFilePath(resolvedPath)];
+    if (tabState != null && tabState.status == _FileTabLoadStatus.error) {
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      messenger?.showSnackBar(
+        SnackBar(
+          content: Text(context.l10n.msgFilePathNotFound(resolvedPath)),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   void _activateFileTab({

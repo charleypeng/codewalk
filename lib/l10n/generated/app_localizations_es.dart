@@ -1407,4 +1407,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String workspaceRemoveFromHistory(String name) {
     return 'Eliminar $name del historial';
   }
+
+  @override
+  String msgFilePathNotFound(String path) {
+    return 'Archivo no encontrado: $path';
+  }
 }

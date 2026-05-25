@@ -2617,6 +2617,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove {name} from history'**
   String workspaceRemoveFromHistory(String name);
+
+  /// CodeWalk UI string — shown when a tapped file path cannot be resolved in the project
+  ///
+  /// In en, this message translates to:
+  /// **'File not found: {path}'**
+  String msgFilePathNotFound(String path);
 }
 
 class _AppLocalizationsDelegate

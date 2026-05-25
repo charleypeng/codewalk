@@ -1707,11 +1707,18 @@
   "@workspaceProjectHint": {
     "description": "CodeWalk UI string — workspaceProjectHint"
   },
-  "workspaceRemoveFromHistory": "Remove {name} from history",
-  "@workspaceRemoveFromHistory": {
-    "description": "CodeWalk UI string — workspaceRemoveFromHistory"
+"workspaceRemoveFromHistory": "Remove {name} from history",
+"@workspaceRemoveFromHistory": {
+"description": "CodeWalk UI string — workspaceRemoveFromHistory"
 ,
-    "placeholders": {
-      "name": { "type": "String" }
-    }  }
+"placeholders": {
+"name": { "type": "String" }
+} },
+"msgFilePathNotFound": "File not found: {path}",
+"@msgFilePathNotFound": {
+"description": "CodeWalk UI string — shown when a tapped file path cannot be resolved in the project"
+,
+"placeholders": {
+"path": { "type": "String" }
+} }
 }
