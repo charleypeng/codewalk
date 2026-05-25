@@ -1768,5 +1768,57 @@
 ,
 "placeholders": {
 "path": { "type": "String" }
-} }
+} },
+  "settingsReadAloudSectionTitle": "Text to speech",
+  "@settingsReadAloudSectionTitle": {
+    "description": "CodeWalk UI string — settingsReadAloudSectionTitle"
+  },
+  "settingsReadAloudSectionDescription": "Read assistant responses aloud. Configure speed, pitch, and voice.",
+  "@settingsReadAloudSectionDescription": {
+    "description": "CodeWalk UI string — settingsReadAloudSectionDescription"
+  },
+  "settingsReadAloudEnabled": "Read aloud",
+  "@settingsReadAloudEnabled": {
+    "description": "CodeWalk UI string — settingsReadAloudEnabled"
+  },
+  "settingsReadAloudEnabledDescription": "Show a read-aloud button on assistant messages.",
+  "@settingsReadAloudEnabledDescription": {
+    "description": "CodeWalk UI string — settingsReadAloudEnabledDescription"
+  },
+  "settingsReadAloudSpeed": "Speed",
+  "@settingsReadAloudSpeed": {
+    "description": "CodeWalk UI string — settingsReadAloudSpeed"
+  },
+  "settingsReadAloudSpeedDescription": "Adjust the speaking rate.",
+  "@settingsReadAloudSpeedDescription": {
+    "description": "CodeWalk UI string — settingsReadAloudSpeedDescription"
+  },
+  "settingsReadAloudPitch": "Pitch",
+  "@settingsReadAloudPitch": {
+    "description": "CodeWalk UI string — settingsReadAloudPitch"
+  },
+  "settingsReadAloudPitchDescription": "Adjust the voice pitch.",
+  "@settingsReadAloudPitchDescription": {
+    "description": "CodeWalk UI string — settingsReadAloudPitchDescription"
+  },
+  "settingsReadAloudVoice": "Voice",
+  "@settingsReadAloudVoice": {
+    "description": "CodeWalk UI string — settingsReadAloudVoice"
+  },
+  "settingsReadAloudVoiceHint": "Select a voice for read-aloud.",
+  "@settingsReadAloudVoiceHint": {
+    "description": "CodeWalk UI string — settingsReadAloudVoiceHint"
+  },
+  "msgReadAloud": "Read aloud",
+  "@msgReadAloud": {
+    "description": "CodeWalk UI string — msgReadAloud"
+  },
+  "msgStopReadAloud": "Stop reading",
+  "@msgStopReadAloud": {
+    "description": "CodeWalk UI string — msgStopReadAloud"
+  },
+  "msgReadAloudNotAvailable": "Text-to-speech is not available on this device.",
+  "@msgReadAloudNotAvailable": {
+    "description": "CodeWalk UI string — msgReadAloudNotAvailable"
+  }
 }

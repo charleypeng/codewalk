@@ -601,6 +601,10 @@ class ExperienceSettings {
       senseVoiceModelId: kSenseVoiceModelDefault,
       pendingPostOnboardingChatTour: false,
       checkUpdatesOnOpen: true,
+      readAloudEnabled: true,
+      readAloudRate: 0.5,
+      readAloudPitch: 1.0,
+      readAloudVoice: null,
     );
   }
   const ExperienceSettings({
@@ -648,6 +652,10 @@ class ExperienceSettings {
     this.skipOnboardingWizard = false,
     this.pendingPostOnboardingChatTour = false,
     this.checkUpdatesOnOpen = true,
+    this.readAloudEnabled = true,
+    this.readAloudRate = 0.5,
+    this.readAloudPitch = 1.0,
+    this.readAloudVoice,
   });
 
   final Map<NotificationCategory, bool> notifications;
@@ -694,6 +702,10 @@ class ExperienceSettings {
   final bool skipOnboardingWizard;
   final bool pendingPostOnboardingChatTour;
   final bool checkUpdatesOnOpen;
+  final bool readAloudEnabled;
+  final double readAloudRate;
+  final double readAloudPitch;
+  final String? readAloudVoice;
 
   ExperienceSettings copyWith({
     Map<NotificationCategory, bool>? notifications,
@@ -740,6 +752,10 @@ class ExperienceSettings {
     bool? skipOnboardingWizard,
     bool? pendingPostOnboardingChatTour,
     bool? checkUpdatesOnOpen,
+    bool? readAloudEnabled,
+    double? readAloudRate,
+    double? readAloudPitch,
+    String? Function()? readAloudVoice,
   }) {
     return ExperienceSettings(
       notifications: notifications ?? this.notifications,
@@ -801,6 +817,12 @@ class ExperienceSettings {
       pendingPostOnboardingChatTour:
           pendingPostOnboardingChatTour ?? this.pendingPostOnboardingChatTour,
       checkUpdatesOnOpen: checkUpdatesOnOpen ?? this.checkUpdatesOnOpen,
+      readAloudEnabled: readAloudEnabled ?? this.readAloudEnabled,
+      readAloudRate: readAloudRate ?? this.readAloudRate,
+      readAloudPitch: readAloudPitch ?? this.readAloudPitch,
+      readAloudVoice: readAloudVoice != null
+          ? readAloudVoice()
+          : this.readAloudVoice,
     );
   }
 
@@ -887,6 +909,10 @@ class ExperienceSettings {
       'skipOnboardingWizard': skipOnboardingWizard,
       'pendingPostOnboardingChatTour': pendingPostOnboardingChatTour,
       'checkUpdatesOnOpen': checkUpdatesOnOpen,
+      'readAloudEnabled': readAloudEnabled,
+      'readAloudRate': readAloudRate,
+      'readAloudPitch': readAloudPitch,
+      if (readAloudVoice != null) 'readAloudVoice': readAloudVoice,
     };
   }
 
@@ -941,6 +967,10 @@ class ExperienceSettings {
     var moonshineModelId = defaults.moonshineModelId;
     var parakeetModelId = defaults.parakeetModelId;
     var senseVoiceModelId = defaults.senseVoiceModelId;
+    var readAloudEnabled = defaults.readAloudEnabled;
+    var readAloudRate = defaults.readAloudRate;
+    var readAloudPitch = defaults.readAloudPitch;
+    String? readAloudVoice = defaults.readAloudVoice;
 
     final notificationsJson = json['notifications'];
     if (notificationsJson is Map) {
@@ -1257,6 +1287,26 @@ class ExperienceSettings {
       checkUpdatesOnOpen = checkUpdatesOnOpenJson;
     }
 
+    final readAloudEnabledJson = json['readAloudEnabled'];
+    if (readAloudEnabledJson is bool) {
+      readAloudEnabled = readAloudEnabledJson;
+    }
+
+    final readAloudRateJson = json['readAloudRate'];
+    if (readAloudRateJson is num) {
+      readAloudRate = readAloudRateJson.toDouble().clamp(0.0, 1.0);
+    }
+
+    final readAloudPitchJson = json['readAloudPitch'];
+    if (readAloudPitchJson is num) {
+      readAloudPitch = readAloudPitchJson.toDouble().clamp(0.5, 2.0);
+    }
+
+    final readAloudVoiceJson = json['readAloudVoice'];
+    if (readAloudVoiceJson is String && readAloudVoiceJson.trim().isNotEmpty) {
+      readAloudVoice = readAloudVoiceJson.trim();
+    }
+
     return ExperienceSettings(
       notifications: notifications,
       sounds: sounds,
@@ -1302,6 +1352,10 @@ class ExperienceSettings {
       skipOnboardingWizard: skipOnboardingWizard,
       pendingPostOnboardingChatTour: pendingPostOnboardingChatTour,
       checkUpdatesOnOpen: checkUpdatesOnOpen,
+      readAloudEnabled: readAloudEnabled,
+      readAloudRate: readAloudRate,
+      readAloudPitch: readAloudPitch,
+      readAloudVoice: readAloudVoice,
     );
   }
 }

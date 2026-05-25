@@ -1422,4 +1422,46 @@ class AppLocalizationsDe extends AppLocalizations {
   String msgFilePathNotFound(String path) {
     return 'File not found: $path';
   }
+
+  @override
+  String get settingsReadAloudSectionTitle => 'Text to speech';
+
+  @override
+  String get settingsReadAloudSectionDescription =>
+      'Read assistant responses aloud. Configure speed, pitch, and voice.';
+
+  @override
+  String get settingsReadAloudEnabled => 'Read aloud';
+
+  @override
+  String get settingsReadAloudEnabledDescription =>
+      'Show a read-aloud button on assistant messages.';
+
+  @override
+  String get settingsReadAloudSpeed => 'Speed';
+
+  @override
+  String get settingsReadAloudSpeedDescription => 'Adjust the speaking rate.';
+
+  @override
+  String get settingsReadAloudPitch => 'Pitch';
+
+  @override
+  String get settingsReadAloudPitchDescription => 'Adjust the voice pitch.';
+
+  @override
+  String get settingsReadAloudVoice => 'Voice';
+
+  @override
+  String get settingsReadAloudVoiceHint => 'Select a voice for read-aloud.';
+
+  @override
+  String get msgReadAloud => 'Read aloud';
+
+  @override
+  String get msgStopReadAloud => 'Stop reading';
+
+  @override
+  String get msgReadAloudNotAvailable =>
+      'Text-to-speech is not available on this device.';
 }

@@ -2683,6 +2683,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'File not found: {path}'**
   String msgFilePathNotFound(String path);
+
+  /// CodeWalk UI string — settingsReadAloudSectionTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Text to speech'**
+  String get settingsReadAloudSectionTitle;
+
+  /// CodeWalk UI string — settingsReadAloudSectionDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Read assistant responses aloud. Configure speed, pitch, and voice.'**
+  String get settingsReadAloudSectionDescription;
+
+  /// CodeWalk UI string — settingsReadAloudEnabled
+  ///
+  /// In en, this message translates to:
+  /// **'Read aloud'**
+  String get settingsReadAloudEnabled;
+
+  /// CodeWalk UI string — settingsReadAloudEnabledDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Show a read-aloud button on assistant messages.'**
+  String get settingsReadAloudEnabledDescription;
+
+  /// CodeWalk UI string — settingsReadAloudSpeed
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get settingsReadAloudSpeed;
+
+  /// CodeWalk UI string — settingsReadAloudSpeedDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust the speaking rate.'**
+  String get settingsReadAloudSpeedDescription;
+
+  /// CodeWalk UI string — settingsReadAloudPitch
+  ///
+  /// In en, this message translates to:
+  /// **'Pitch'**
+  String get settingsReadAloudPitch;
+
+  /// CodeWalk UI string — settingsReadAloudPitchDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust the voice pitch.'**
+  String get settingsReadAloudPitchDescription;
+
+  /// CodeWalk UI string — settingsReadAloudVoice
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get settingsReadAloudVoice;
+
+  /// CodeWalk UI string — settingsReadAloudVoiceHint
+  ///
+  /// In en, this message translates to:
+  /// **'Select a voice for read-aloud.'**
+  String get settingsReadAloudVoiceHint;
+
+  /// CodeWalk UI string — msgReadAloud
+  ///
+  /// In en, this message translates to:
+  /// **'Read aloud'**
+  String get msgReadAloud;
+
+  /// CodeWalk UI string — msgStopReadAloud
+  ///
+  /// In en, this message translates to:
+  /// **'Stop reading'**
+  String get msgStopReadAloud;
+
+  /// CodeWalk UI string — msgReadAloudNotAvailable
+  ///
+  /// In en, this message translates to:
+  /// **'Text-to-speech is not available on this device.'**
+  String get msgReadAloudNotAvailable;
 }
 
 class _AppLocalizationsDelegate

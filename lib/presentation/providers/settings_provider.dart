@@ -186,6 +186,10 @@ class SettingsProvider extends ChangeNotifier {
   bool get skipOnboardingWizard => _settings.skipOnboardingWizard;
   bool get pendingPostOnboardingChatTour =>
       _settings.pendingPostOnboardingChatTour;
+  bool get readAloudEnabled => _settings.readAloudEnabled;
+  double get readAloudRate => _settings.readAloudRate;
+  double get readAloudPitch => _settings.readAloudPitch;
+  String? get readAloudVoice => _settings.readAloudVoice;
   bool get hasAnyServerBackedNotificationCategory =>
       _serverBackedNotifications.values.any((value) => value);
 
@@ -971,6 +975,46 @@ class SettingsProvider extends ChangeNotifier {
     }
     _settings = _settings.copyWith(checkUpdatesOnOpen: value);
     _configureAutomaticUpdateChecks();
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setReadAloudEnabled(bool value) async {
+    if (_settings.readAloudEnabled == value) {
+      return;
+    }
+    _settings = _settings.copyWith(readAloudEnabled: value);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setReadAloudRate(double value) async {
+    final clamped = value.clamp(0.0, 1.0);
+    if (_settings.readAloudRate == clamped) {
+      return;
+    }
+    _settings = _settings.copyWith(readAloudRate: clamped);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setReadAloudPitch(double value) async {
+    final clamped = value.clamp(0.5, 2.0);
+    if (_settings.readAloudPitch == clamped) {
+      return;
+    }
+    _settings = _settings.copyWith(readAloudPitch: clamped);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setReadAloudVoice(String? value) async {
+    final trimmed = value?.trim();
+    final effective = (trimmed != null && trimmed.isNotEmpty) ? trimmed : null;
+    if (_settings.readAloudVoice == effective) {
+      return;
+    }
+    _settings = _settings.copyWith(readAloudVoice: () => effective);
     notifyListeners();
     await _persist();
   }
