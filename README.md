@@ -15,6 +15,7 @@ A native (really fast!!) cross-platform client for [OpenCode](https://github.com
 
 - 🌐 Fully translated into 14 languages: English, Português (Brasil), Español, Deutsch, Français, Italiano, Русский, 中文, 日本語, 한국어, हिन्दी, বাংলা, العربية, اردو
 - 🎙 Speech-to-text on every platform, including Linux
+- 🔊 Text-to-speech read-aloud for assistant messages
 - 📊 Real-time quota monitoring for OpenCode Go, Codex, Gemini, and GitHub Copilot
 - 💬 Canned answers for faster replies
 - ↩️ Easier undo and redo
@@ -40,6 +41,7 @@ A native (really fast!!) cross-platform client for [OpenCode](https://github.com
 - Interactive server permission/question prompts with attention badges
 - Responsive Material 3 experience across Linux, Windows, macOS, Web, and Android
 - 14-language support with instant language switching, system-default detection, and RTL layout for Arabic and Urdu
+- Text-to-speech read-aloud for assistant responses with adjustable speed and pitch
 
 ## Install in One Command
 
