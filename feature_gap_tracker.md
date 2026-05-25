@@ -20,12 +20,12 @@
 
 | Phase | Features | Done | In Progress | Remaining |
 |-------|----------|------|-------------|-----------|
-| 1 — UX Foundations | 4 | 2 | 0 | 2 |
+| 1 — UX Foundations | 4 | 3 | 0 | 1 |
 | 2 — Rich Output | 4 | 0 | 0 | 4 |
 | 3 — Organization | 3 | 0 | 0 | 3 |
 | 4 — Workspace Control | 4 | 0 | 0 | 4 |
 | 5 — Advanced | 4 | 0 | 0 | 4 |
-| **Total** | **19** | **2** | **0** | **17** |
+| **Total** | **19** | **3** | **0** | **16** |
 
 ---
 
@@ -39,7 +39,7 @@ These features are mostly client-side and build directly on current CodeWalk sur
 |---|---------|----------|--------|--------|------|
 | 1 | Rich Diff Review Surface | P0 | [x] | fe145fa, 9dbca9d, 5267a91 | [01_rich_diff_review.md](final_plan/01_rich_diff_review.md) |
 | 2 | Clickable File Paths with Line Jumps | P0 | [x] | 7741b58, 80e5d53, d1bf168, 54ba44d, cfe775f | [02_clickable_file_paths.md](final_plan/02_clickable_file_paths.md) |
-| 3 | Timeline Full-Text Search | P1 | [ ] | — | [03_timeline_search.md](final_plan/03_timeline_search.md) |
+| 3 | Timeline Full-Text Search | P1 | [x] | plan ee9cdd2, implementation 502c3d8, reviewer fix b7d51ba | [03_timeline_search.md](final_plan/03_timeline_search.md) |
 | 4 | Session Export as Markdown/JSON | P1 | [ ] | — | [04_session_export.md](final_plan/04_session_export.md) |
 
 **Phase completion**:
@@ -173,7 +173,7 @@ Primary finding: CodeWalk is very strong as a mobile-first OpenCode chat client,
 | Session export as Markdown/JSON | Missing | No session export implementation found | Valid |
 | Session folders/subfolders | Missing | No session folder model/provider/UI found | Valid |
 | Persistent project notes/todos | Missing | No project note/todo model/provider/UI found; current task list is agent-controlled only | Valid |
-| Timeline full-text search | Missing | Only file/project search exists; no session message search surface found | Valid |
+| Timeline full-text search | Done | `ChatSearchBar`, `ChatSearchWidget`, search provider/scoped state, filter-as-you-type, fuzzy highlight in timeline, session-scoped scrolled search, all-origins popup for server results, keyboard-friendly navigation | Completed in v1.79.0 (ee9cdd2, 502c3d8, b7d51ba) |
 | Token/cost breakdown panel | Partial | ADR-029 provider quota exists; `StepFinishPart` displays tokens/cost inline, but no dedicated per-session breakdown/raw inspector | Valid |
 | Snippets with `#` autocomplete | Partial | Canned answers exist in composer extras, but no snippet catalog or `#` autocomplete trigger | Valid |
 | Shell mode via leading `!` | Partial | Composer shell mode exists; missing only simple normal-mode `!command` shortcut | Valid, low priority |
@@ -227,4 +227,4 @@ Every implementation must preserve these constraints:
 
 ## Immediate Next Task
 
-Start with **Timeline full-text search** (#3). Features #1 (Rich diff review) and #2 (Clickable file paths) are complete. Feature #3 is the next P1 item in Phase 1.
+Features #1 (Rich diff review), #2 (Clickable file paths), and #3 (Timeline full-text search) are complete. Next: **Session export as Markdown/JSON** (#4) — the last P1 item in Phase 1.
