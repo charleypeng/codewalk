@@ -29,6 +29,7 @@ import '../utils/chat_abort_message.dart';
 import '../utils/diff_parser.dart';
 import '../utils/file_path_detector.dart';
 import '../utils/file_path_markdown.dart';
+import '../utils/math_markdown.dart';
 import '../utils/reasoning_status_parser.dart';
 import '../utils/tool_presentation.dart';
 import 'mermaid_diagram_widget.dart';

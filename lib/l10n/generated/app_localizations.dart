@@ -2773,6 +2773,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Copy source'**
   String get mermaidCopySourceTooltip;
+
+  /// CodeWalk UI string — mathExpressionLabel
+  ///
+  /// In en, this message translates to:
+  /// **'Math'**
+  String get mathExpressionLabel;
 }
 
 class _AppLocalizationsDelegate

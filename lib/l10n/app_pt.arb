@@ -421,5 +421,9 @@
   "workspaceProjectDirectory": "Diretório do projeto",
   "workspaceProjectHint": "/repo/meu-projeto",
   "workspaceRemoveFromHistory": "Remover {name} do histórico",
-"msgFilePathNotFound": "Arquivo não encontrado: {path}"
+  "msgFilePathNotFound": "Arquivo não encontrado: {path}",
+  "mathExpressionLabel": "Matemática",
+  "@mathExpressionLabel": {
+    "description": "CodeWalk UI string — mathExpressionLabel"
+  }
 }

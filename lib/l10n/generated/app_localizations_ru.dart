@@ -1470,4 +1470,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get mermaidCopySourceTooltip => 'Copy source';
+
+  @override
+  String get mathExpressionLabel => 'Математика';
 }

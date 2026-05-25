@@ -31,14 +31,17 @@ extension _ChatMessageTextPartBuilder on _ChatMessageWidgetState {
           else if (usePlainText)
             Text(textForRender, style: Theme.of(context).textTheme.bodyMedium)
           else ...[
-            MarkdownBody(
-              data: textForRender,
-              softLineBreak: true,
-              styleSheet: _resolveMarkdownStyleSheet(context),
-              inlineSyntaxes: widget.onFileTap != null
-                  ? [FilePathSyntax()]
-                  : null,
-              builders: <String, MarkdownElementBuilder>{
+        MarkdownBody(
+          data: textForRender,
+          softLineBreak: true,
+          styleSheet: _resolveMarkdownStyleSheet(context),
+          inlineSyntaxes: [
+            if (widget.onFileTap != null) FilePathSyntax(),
+            InlineMathSyntax(),
+            SingleLineBlockMathSyntax(),
+          ],
+          blockSyntaxes: const [BlockMathSyntax()],
+          builders: <String, MarkdownElementBuilder>{
                 'pre': _MarkdownCodeBlockTapBuilder(
                   themeTokens: themeTokens,
                   onTapCode: (code) => _copyTextToClipboard(context, code),
@@ -52,8 +55,10 @@ extension _ChatMessageTextPartBuilder on _ChatMessageWidgetState {
                   onTapCode: (code) => _copyTextToClipboard(context, code),
                   onTapFilePath: widget.onFileTap,
                 ),
-                if (widget.onFileTap != null)
-                  'filepath': FilePathBuilder(onFileTap: widget.onFileTap!),
+            if (widget.onFileTap != null)
+              'filepath': FilePathBuilder(onFileTap: widget.onFileTap!),
+            'inlineMath': InlineMathBuilder(),
+            'blockMath': BlockMathBuilder(),
               },
               onTapLink: (text, href, title) {
                 final normalizedHref = href?.trim();

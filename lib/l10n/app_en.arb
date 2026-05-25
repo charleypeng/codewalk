@@ -1828,5 +1828,9 @@
   "mermaidCopySourceTooltip": "Copy source",
   "@mermaidCopySourceTooltip": {
     "description": "CodeWalk UI string — mermaidCopySourceTooltip"
+  },
+  "mathExpressionLabel": "Math",
+  "@mathExpressionLabel": {
+    "description": "CodeWalk UI string — mathExpressionLabel"
   }
 }

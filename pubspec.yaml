@@ -101,6 +101,8 @@ dependencies:
       ref: 381d0cbd7e75591c9e3c81058b86b7dda6a89e07
   showcaseview: ^5.0.2
   flutter_mermaid: ^0.1.0
+  flutter_math_fork: ^0.7.4
+  markdown: ^7.3.0
   xterm:
     path: third_party/xterm
   highlight: ^0.7.0
