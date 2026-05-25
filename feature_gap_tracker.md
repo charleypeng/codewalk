@@ -20,12 +20,12 @@
 
 | Phase | Features | Done | In Progress | Remaining |
 |-------|----------|------|-------------|-----------|
-| 1 — UX Foundations | 4 | 3 | 0 | 1 |
+| 1 — UX Foundations | 4 | 4 | 0 | 0 |
 | 2 — Rich Output | 4 | 0 | 0 | 4 |
 | 3 — Organization | 3 | 0 | 0 | 3 |
 | 4 — Workspace Control | 4 | 0 | 0 | 4 |
 | 5 — Advanced | 4 | 0 | 0 | 4 |
-| **Total** | **19** | **3** | **0** | **16** |
+| **Total** | **19** | **4** | **0** | **15** |
 
 ---
 
@@ -40,7 +40,7 @@ These features are mostly client-side and build directly on current CodeWalk sur
 | 1 | Rich Diff Review Surface | P0 | [x] | fe145fa, 9dbca9d, 5267a91 | [01_rich_diff_review.md](final_plan/01_rich_diff_review.md) |
 | 2 | Clickable File Paths with Line Jumps | P0 | [x] | 7741b58, 80e5d53, d1bf168, 54ba44d, cfe775f | [02_clickable_file_paths.md](final_plan/02_clickable_file_paths.md) |
 | 3 | Timeline Full-Text Search | P1 | [x] | plan ee9cdd2, implementation 502c3d8, reviewer fix b7d51ba | [03_timeline_search.md](final_plan/03_timeline_search.md) |
-| 4 | Session Export as Markdown/JSON | P1 | [ ] | — | [04_session_export.md](final_plan/04_session_export.md) |
+| 4 | Session Export as Markdown/JSON | P1 | [x] | plan a8b42ea, impl 200dfb4, fix 79d90dd, release v1.80.0 | [04_session_export.md](final_plan/04_session_export.md) |
 
 **Phase completion**:
 
@@ -170,7 +170,7 @@ Primary finding: CodeWalk is very strong as a mobile-first OpenCode chat client,
 | Mermaid rendering | Missing | No Mermaid implementation found | Valid |
 | LaTeX/math rendering | Missing | No LaTeX/math rendering implementation found | Valid |
 | Share messages as images | Missing | No `toImage`, message image share, or RepaintBoundary export flow found | Valid |
-| Session export as Markdown/JSON | Missing | No session export implementation found | Valid |
+| Session export as Markdown/JSON | Done | `SessionExportService` serializes to Markdown and JSON; export actions in session menu; file_picker save with Clipboard fallback; local_user_* IDs omitted (ADR-023); paginated message guard | Completed in v1.80.0 (a8b42ea, 200dfb4, 79d90dd) |
 | Session folders/subfolders | Missing | No session folder model/provider/UI found | Valid |
 | Persistent project notes/todos | Missing | No project note/todo model/provider/UI found; current task list is agent-controlled only | Valid |
 | Timeline full-text search | Done | `ChatSearchBar`, `ChatSearchWidget`, search provider/scoped state, filter-as-you-type, fuzzy highlight in timeline, session-scoped scrolled search, all-origins popup for server results, keyboard-friendly navigation | Completed in v1.79.0 (ee9cdd2, 502c3d8, b7d51ba) |
@@ -227,4 +227,4 @@ Every implementation must preserve these constraints:
 
 ## Immediate Next Task
 
-Features #1 (Rich diff review), #2 (Clickable file paths), and #3 (Timeline full-text search) are complete. Next: **Session export as Markdown/JSON** (#4) — the last P1 item in Phase 1.
+Features #1–#4 are complete. Phase 1 is done. Next: **TTS Read-Aloud Responses** (#5) — first P1 item in Phase 2.
