@@ -58,6 +58,7 @@ import '../../presentation/services/event_feedback_dispatcher.dart';
 import '../../presentation/services/moonshine_model_manager.dart';
 import '../../presentation/services/notification_service.dart';
 import '../../presentation/services/parakeet_model_manager.dart';
+import '../../presentation/services/read_aloud_service.dart';
 import '../../presentation/services/sensevoice_model_manager.dart';
 import '../../presentation/services/sherpa_model_manager.dart';
 import '../../presentation/services/sound_service.dart';
@@ -110,6 +111,7 @@ Future<void> init() async {
 
   sl.registerLazySingleton(NotificationService.new);
   sl.registerLazySingleton(SoundService.new);
+  sl.registerLazySingleton(ReadAloudService.new);
   sl.registerLazySingleton(
     () => CellularDataSaverService(sharedPreferences: sl()),
   );
