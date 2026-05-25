@@ -492,6 +492,29 @@
 - **Then** the app opens the file viewer for that path and scrolls to the referenced line instead of copying the text
 - **Then** ordinary inline code snippets and fenced code blocks remain copyable
 
+### Mermaid fenced blocks render as diagrams
+
+- **Given** an assistant message contains a fenced code block with language `mermaid`
+- **When** the message is rendered
+- **Then** the fenced block is displayed as a visual diagram inside a dedicated card with a `Mermaid Diagram` header
+- **Then** the diagram adapts its size to the screen width (compact/expanded)
+- **Then** a copy-source button is shown in the header so the user can copy the raw Mermaid text
+- **Then** non-mermaid fenced code blocks continue to render as syntax-highlighted code (no regression)
+
+### Mermaid diagram parse failures show a styled source fallback
+
+- **Given** a mermaid fenced block contains invalid or unsupported syntax
+- **When** the diagram renderer fails to parse the source
+- **Then** the raw Mermaid source is displayed in a styled monospace block instead of an error message
+- **Then** the copy-source button remains available
+
+### Mermaid diagrams avoid scroll lock
+
+- **Given** a mermaid diagram is rendered inside a chat message
+- **When** the user drags vertically over the diagram area
+- **Then** touch gestures pass through to the parent chat scroll, avoiding scroll lock
+- **Then** horizontal scrolling within the diagram remains available when the diagram is wider than the viewport
+
 ### Tool call work groups collapse after completion
 
 - **Given** the assistant executes tool calls during a response (file reads, commands, etc.)

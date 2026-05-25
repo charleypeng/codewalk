@@ -17,6 +17,7 @@ A native (really fast!!) cross-platform client for [OpenCode](https://github.com
 - 🎙 Speech-to-text on every platform, including Linux
 - 🔊 Text-to-speech read-aloud for assistant messages
 - 📊 Real-time quota monitoring for OpenCode Go, Codex, Gemini, and GitHub Copilot
+- 📈 Inline Mermaid diagram rendering from fenced markdown blocks
 - 💬 Canned answers for faster replies
 - ↩️ Easier undo and redo
 - 🧙 OpenCode setup wizard
@@ -42,6 +43,7 @@ A native (really fast!!) cross-platform client for [OpenCode](https://github.com
 - Responsive Material 3 experience across Linux, Windows, macOS, Web, and Android
 - 14-language support with instant language switching, system-default detection, and RTL layout for Arabic and Urdu
 - Text-to-speech read-aloud for assistant responses with adjustable speed and pitch
+- Mermaid diagram rendering from fenced code blocks with copy-source fallback
 
 ## Install in One Command
 
