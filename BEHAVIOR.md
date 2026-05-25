@@ -1262,6 +1262,47 @@ All shortcuts use `mod` (Cmd on macOS, Ctrl on other platforms) and are user-con
 
 ---
 
+## Text-to-Speech (TTS)
+
+### Read-aloud button in assistant messages
+
+- **Given** the user is viewing an assistant message
+- **When** the read-aloud setting is enabled (Settings > Speech)
+- **Then** a read-aloud button (volume_up icon) appears in the assistant message header
+- **Then** tapping the button reads the message text aloud using the platform TTS engine
+
+### Toggle playback off
+
+- **Given** read-aloud is actively playing
+- **When** the user taps the read-aloud button on the playing message
+- **Then** playback stops
+
+### Auto-stop behavior
+
+- **Given** read-aloud is actively playing
+- **When** the user sends a new message, switches sessions, or backgrounds the app
+- **Then** playback stops automatically
+
+### TTS settings
+
+- **Given** the user opens Settings > Speech
+- **When** the Text to speech section is visible
+- **Then** the user can enable/disable read-aloud, adjust speaking speed (0.0–1.0), and adjust voice pitch (0.5–2.0)
+
+### Read-aloud disabled
+
+- **Given** read-aloud is disabled in settings
+- **When** viewing assistant messages
+- **Then** read-aloud buttons are not shown
+
+### Markdown stripping
+
+- **Given** a message contains Markdown formatting
+- **When** the message is read aloud
+- **Then** bold, italic, inline code, links, images, headings, and blockquote markers are stripped so only natural text is spoken
+
+---
+
 ## Anti-behaviors
 
 > Things that must **never** happen, regardless of circumstances.

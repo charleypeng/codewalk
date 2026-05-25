@@ -118,6 +118,7 @@ lib/presentation/services/android_background_alert_worker.dart # WorkManager-bas
 lib/presentation/services/android_background_alert_logic.dart # Pure logic for tail probe scheduling, alert planning, and snapshot state
 lib/presentation/services/android_battery_optimization_service.dart # Android battery optimization query/exemption request via MethodChannel
 lib/presentation/services/permission_auto_approve_runtime.dart # Background permission auto-approve context and session ID resolution for Android background continuity
+lib/presentation/services/read_aloud_service.dart                # ReadAloudService: ChangeNotifier wrapping flutter_tts with idle/playing/paused state, speak/stop/pause methods, platform capability queries, error recovery, per-message tracking
 lib/presentation/services/session_export_service.dart # SessionExportService: serializes session history to Markdown and JSON for local export; omits local_user_* IDs from JSON per ADR-023
 lib/presentation/services/moonshine_model_manager_io.dart # Desktop Moonshine model download/extract/delete flow using sherpa-onnx release archives + Silero VAD asset
 lib/presentation/services/speech_input_service_moonshine_io.dart # Desktop Moonshine dictation backend; uses sherpa_onnx OfflineRecognizer + VoiceActivityDetector for on-device utterance recognition
@@ -194,7 +195,7 @@ chat_page_search.dart                   # Timeline full-text search: inline AppB
 
 ```text
 lib/presentation/widgets/chat_message/chat_message_tool_part.dart   # Renders long tool outputs in a bounded internal scroll viewport; large diffs use lazy rendering so tool growth does not destabilize the outer chat timeline; task bubbles are compact, navigate to child thread via full-bubble tap, hide the task-only details row, prefer latest child-tool progress labels with command fallback while running, and show `N tool calls` when completed if child-session totals are available
-lib/presentation/widgets/chat_message/chat_message_content.dart     # Message bubble layout, copy/hold layers, latest inline undo, and historical inline rewind button rendering
+lib/presentation/widgets/chat_message/chat_message_content.dart     # Message bubble layout, copy/hold layers, latest inline undo, historical inline rewind button, and read-aloud button in assistant message header (volume_up/stop icon, ListenableBuilder, markdown stripping)
 lib/presentation/widgets/chat_message/chat_message_part_dispatch.dart # Reorders contiguous visible `task` tool runs so unfinished task bubbles stay last within each run while non-task grouping remains unchanged
 lib/presentation/utils/tool_presentation.dart                      # Shared tool label/icon formatting reused by chat bubbles and the fixed composer live-progress surface
 ```
@@ -247,7 +248,7 @@ lib/presentation/services/codewalk_terminal_url.dart            # WebSocket URL 
 lib/presentation/widgets/codewalk_terminal_panel.dart           # Resizable terminal panel with reconnect/close/minimize/maximize controls, terminal-generation view rebinding, and fallback state (icon + "Try again" when not running)
 lib/presentation/pages/chat_page/chat_page_terminal_runtime.dart # ChatPage extension for terminal toggle flow, project-scoped shell start, close/minimize/maximize actions, persisted panel height/maximize handling, and fallback info sheet when terminal is unsupported
 lib/presentation/pages/chat_page/chat_page_timeline_builder.dart # Main chat workspace layout: renders terminal full-width below the constrained chat column and hides composer-adjacent controls on compact/mobile while terminal is visible
-lib/domain/entities/experience_settings.dart                    # Persisted terminal visibility, height, and maximize state inside shared experience settings
+lib/domain/entities/experience_settings.dart                    # Persisted terminal visibility, height, maximize state, and read-aloud settings (readAloudEnabled, readAloudRate, readAloudPitch, readAloudVoice) inside shared experience settings
 lib/presentation/providers/settings_provider.dart               # In-memory + persisted mutators for terminal visibility, height, and maximize state
 ```
 

@@ -21,11 +21,11 @@
 | Phase | Features | Done | In Progress | Remaining |
 |-------|----------|------|-------------|-----------|
 | 1 — UX Foundations | 4 | 4 | 0 | 0 |
-| 2 — Rich Output | 4 | 0 | 0 | 4 |
+| 2 — Rich Output | 4 | 1 | 0 | 3 |
 | 3 — Organization | 3 | 0 | 0 | 3 |
 | 4 — Workspace Control | 4 | 0 | 0 | 4 |
 | 5 — Advanced | 4 | 0 | 0 | 4 |
-| **Total** | **19** | **4** | **0** | **15** |
+| **Total** | **19** | **5** | **0** | **14** |
 
 ---
 
@@ -56,13 +56,14 @@ Client-side rendering or platform-service additions that improve comprehension a
 
 | # | Feature | Priority | Status | Commit | Plan |
 |---|---------|----------|--------|--------|------|
-| 5 | TTS Read-Aloud Responses | P1 | [ ] | — | [05_tts_read_aloud.md](final_plan/05_tts_read_aloud.md) |
+| 5 | TTS Read-Aloud Responses | P1 | [x] | plan 5a868d81, implementation bb06528..277b697, reviewer fixes 9581904 16805ed, release v1.81.0 (8e5643f) | [05_tts_read_aloud.md](final_plan/05_tts_read_aloud.md) |
 | 6 | Mermaid Diagram Rendering | P1 | [ ] | — | [06_mermaid_rendering.md](final_plan/06_mermaid_rendering.md) |
 | 7 | LaTeX/Math Rendering | P2 | [ ] | — | [07_latex_rendering.md](final_plan/07_latex_rendering.md) |
 | 8 | Share Messages as Images | P2 | [ ] | — | [08_share_messages_as_images.md](final_plan/08_share_messages_as_images.md) |
 
 **Phase completion**:
 
+- [x] Feature #5 implemented (Phase 2 — 1/4 done)
 - [ ] All 4 features implemented
 - [ ] All validations passing
 - [ ] `make check` clean
@@ -227,4 +228,4 @@ Every implementation must preserve these constraints:
 
 ## Immediate Next Task
 
-Features #1–#4 are complete. Phase 1 is done. Next: **TTS Read-Aloud Responses** (#5) — first P1 item in Phase 2.
+Features #1–#5 are complete. Phase 1 is done. Next: **Mermaid Diagram Rendering** (#6) — second P1 item in Phase 2.
