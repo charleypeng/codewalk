@@ -130,6 +130,10 @@ extension _ChatPageChrome on _ChatPageState {
       return;
     }
 
+    if (chatProvider.hasMoreOldMessages) {
+      await chatProvider.loadOlderMessages();
+    }
+
     const exporter = SessionExportService();
     final messages = chatProvider.messages;
     final isMarkdown = format == _SessionExportFormat.markdown;

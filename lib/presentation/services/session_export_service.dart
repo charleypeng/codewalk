@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/chat_session.dart';
+import '../../domain/entities/session.dart' show SessionRevert;
 
 /// Builds local transcript exports from the current in-memory session state.
 class SessionExportService {
@@ -252,6 +253,7 @@ class SessionExportService {
               'root': session.path!.root,
               'workspace': session.path!.workspace,
             },
+      'revert': _revertJson(session.revert),
     };
   }
 
@@ -441,6 +443,18 @@ class SessionExportService {
 
   Map<String, dynamic> _sourceTextJson(FilePartSourceText text) {
     return {'value': text.value, 'start': text.start, 'end': text.end};
+  }
+
+  Map<String, dynamic>? _revertJson(SessionRevert? revert) {
+    if (revert == null) {
+      return null;
+    }
+    return {
+      'messageId': revert.messageId,
+      'partId': revert.partId,
+      'snapshot': revert.snapshot,
+      'diff': revert.diff,
+    };
   }
 
   Map<String, dynamic>? _agentSourceJson(AgentSource? source) {
