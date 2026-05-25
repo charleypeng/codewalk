@@ -35,11 +35,11 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
           chatProvider.isCurrentSessionActivelyResponding,
       onInlineUndo: isLatestRevertible
           ? () => unawaited(
-                _triggerHistoryAction(
-                  chatProvider,
-                  action: _HistoryToolbarAction.undo,
-                ),
-              )
+              _triggerHistoryAction(
+                chatProvider,
+                action: _HistoryToolbarAction.undo,
+              ),
+            )
           : null,
       onInlineRevertToHere: isHistoricalUserMessage
           ? () => unawaited(chatProvider.revertToTurn(message.id))
@@ -50,15 +50,16 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       onSubtaskNavigate: isSubConversation
           ? null
           : (part) => unawaited(
-                _openSubConversationFromSubtaskPart(chatProvider, part),
-              ),
+              _openSubConversationFromSubtaskPart(chatProvider, part),
+            ),
       onTaskToolNavigate: isSubConversation
           ? null
           : (part) => unawaited(
-                _openSubConversationFromTaskToolPart(chatProvider, part),
-              ),
+              _openSubConversationFromTaskToolPart(chatProvider, part),
+            ),
       onFileTap: _onFilePathTap,
       taskToolChildSummariesByPartId: taskToolChildSummariesByPartId,
+      searchHighlightQuery: _timelineSearchHighlightQuery,
     );
     if (wrapRevealAnchor && finalAssistantRevealMessageId == message.id) {
       messageWidget = Column(
@@ -1465,6 +1466,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
         _resolveLatestRevealableAssistantMessageId(chatProvider.messages);
     final latestRevertibleMessageId = chatProvider.latestRevertibleMessageId;
     _pruneMessageRevealAnchorKeys(chatProvider.messages);
+    _pruneTimelineSearchMessageKeys(chatProvider.messages);
 
     // Determine which entries are new (for entrance animation.
     // Reset the baseline whenever the active session changes so that loading
@@ -1510,7 +1512,10 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                     );
                     child = KeyedSubtree(
                       key: ValueKey<String>(entry.key),
-                      child: messageWidget,
+                      child: SizedBox(
+                        key: _timelineSearchMessageKey(message.id),
+                        child: messageWidget,
+                      ),
                     );
                   } else if (entry is _TimelineCollapsedHistoryEntry) {
                     child = _buildCollapsedHistoryEntry(entry);

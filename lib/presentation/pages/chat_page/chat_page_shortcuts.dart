@@ -20,6 +20,15 @@ extension _ChatPageShortcuts on _ChatPageState {
       return false;
     }
 
+    final hardwareKeyboard = HardwareKeyboard.instance;
+    final isFindShortcut =
+        event.logicalKey == LogicalKeyboardKey.keyF &&
+        (hardwareKeyboard.isControlPressed || hardwareKeyboard.isMetaPressed);
+    if (isFindShortcut) {
+      _openTimelineSearch();
+      return true;
+    }
+
     final settingsProvider = context.read<SettingsProvider>();
     for (final action in _activeShortcutActions()) {
       final activator = ShortcutBindingCodec.parse(

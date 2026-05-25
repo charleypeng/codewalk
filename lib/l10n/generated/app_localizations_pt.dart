@@ -109,6 +109,23 @@ class AppLocalizationsPt extends AppLocalizations {
   String get chatSearchConversations => 'Buscar conversas';
 
   @override
+  String get chatSearchTimeline => 'Buscar na timeline';
+
+  @override
+  String get chatSearchNoResults => 'Nenhum resultado';
+
+  @override
+  String chatSearchResultCount(int current, int total) {
+    return '$current de $total';
+  }
+
+  @override
+  String get chatSearchPreviousResult => 'Resultado anterior';
+
+  @override
+  String get chatSearchNextResult => 'Próximo resultado';
+
+  @override
   String get chatSelectOrCreate =>
       'Selecione ou crie uma conversa para começar';
 

@@ -66,6 +66,7 @@ class ChatMessageWidget extends StatefulWidget {
     this.onFileTap,
     this.taskToolChildSummariesByPartId =
         const <String, TaskToolChildSummary>{},
+    this.searchHighlightQuery,
   });
 
   final ChatMessage message;
@@ -85,6 +86,7 @@ class ChatMessageWidget extends StatefulWidget {
   /// Receives (filePath, lineNumber?, columnNumber?).
   final void Function(String path, int? line, int? col)? onFileTap;
   final Map<String, TaskToolChildSummary> taskToolChildSummariesByPartId;
+  final String? searchHighlightQuery;
 
   @override
   State<ChatMessageWidget> createState() => _ChatMessageWidgetState();
@@ -106,6 +108,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   int _lastMessageHash = 0;
   String? _lastPartId;
   String? _lastReasoningKey;
+  String? _lastSearchHighlightQuery;
   bool _lastShowThinking = true;
   bool _lastShowToolCalls = true;
   bool _lastShowInlineUndoAction = false;
@@ -256,6 +259,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         partCount == _lastPartCount &&
         lastPartId == _lastPartId &&
         widget.activeReasoningPartKey == _lastReasoningKey &&
+        widget.searchHighlightQuery == _lastSearchHighlightQuery &&
         widget.showThinkingBubbles == _lastShowThinking &&
         widget.showToolCallBubbles == _lastShowToolCalls &&
         widget.showInlineUndoAction == _lastShowInlineUndoAction &&
@@ -279,6 +283,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     _lastPartCount = msg.parts.length;
     _lastPartId = msg.parts.isNotEmpty ? msg.parts.last.id : null;
     _lastReasoningKey = widget.activeReasoningPartKey;
+    _lastSearchHighlightQuery = widget.searchHighlightQuery;
     _lastShowThinking = widget.showThinkingBubbles;
     _lastShowToolCalls = widget.showToolCallBubbles;
     _lastShowInlineUndoAction = widget.showInlineUndoAction;
@@ -388,6 +393,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   // -- Accessors to shorten migration from StatelessWidget to StatefulWidget --
   ChatMessage get message => widget.message;
   String? get activeReasoningPartKey => widget.activeReasoningPartKey;
+  String? get searchHighlightQuery => widget.searchHighlightQuery;
   bool get showThinkingBubbles => widget.showThinkingBubbles;
   bool get showToolCallBubbles => widget.showToolCallBubbles;
   bool get showInlineUndoAction => widget.showInlineUndoAction;

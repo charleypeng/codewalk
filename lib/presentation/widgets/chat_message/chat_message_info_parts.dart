@@ -55,18 +55,25 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
             ],
           ),
           const SizedBox(height: 8),
-          _CollapsibleReasoningContent(
-            partKey: partKey,
-            text: part.text,
-            collapsedMaxLines:
-                _ChatMessageWidgetState._collapsedReasoningMaxLines,
-            expandedMaxLines:
-                _ChatMessageWidgetState._expandedReasoningMaxLines,
-            isLatestReasoningPart: isLatestReasoningPart,
-            textStyle: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
-          ),
+          _buildSearchHighlightedText(
+                context,
+                part.text,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
+              ) ??
+              _CollapsibleReasoningContent(
+                partKey: partKey,
+                text: part.text,
+                collapsedMaxLines:
+                    _ChatMessageWidgetState._collapsedReasoningMaxLines,
+                expandedMaxLines:
+                    _ChatMessageWidgetState._expandedReasoningMaxLines,
+                isLatestReasoningPart: isLatestReasoningPart,
+                textStyle: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic),
+              ),
         ],
       ),
     );

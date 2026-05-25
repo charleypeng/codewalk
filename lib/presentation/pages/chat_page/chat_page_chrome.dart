@@ -274,11 +274,12 @@ extension _ChatPageChrome on _ChatPageState {
           style: Theme.of(context).textTheme.bodyMedium,
         )
       else
-      SessionDiffViewer(
-        diffs: chatProvider.currentSessionDiff,
-        compact: false,
-        onFileTap: (path, line) => unawaited(_onFilePathTap(path, line, null)),
-      ),
+        SessionDiffViewer(
+          diffs: chatProvider.currentSessionDiff,
+          compact: false,
+          onFileTap: (path, line) =>
+              unawaited(_onFilePathTap(path, line, null)),
+        ),
     ];
   }
 
@@ -547,304 +548,394 @@ extension _ChatPageChrome on _ChatPageState {
             )
           : null,
       titleSpacing: isMobile ? 0 : 4,
-      title: _buildProjectSelectorTitle(
-        isMobile: isMobile,
-        isLargeDesktop: isLargeDesktop,
-      ),
-      actions: [
-        if (!isMobile)
-          _buildTourTarget(
-            showcaseKey: _desktopSidebarMenuTourKey,
-            targetKey: _desktopSidebarMenuTourTargetKey,
-            title: postOnboardingSidebarTourCopy(
-              isMobile: false,
-              showConversationPane: false,
-            ).title,
-            description: postOnboardingSidebarTourCopy(
-              isMobile: false,
-              showConversationPane: false,
-            ).description,
-            tooltipPosition: TooltipPosition.bottom,
-            child: PopupMenuButton<DesktopPane>(
-              key: const ValueKey<String>('desktop_sidebars_menu_button'),
-              tooltip: context.l10n.chatToggleSidebars,
-              onSelected: (pane) {
-                final next = !settingsProvider.isDesktopPaneVisible(pane);
-                unawaited(settingsProvider.setDesktopPaneVisible(pane, next));
-              },
-              itemBuilder: (context) {
-                return DesktopPane.values
-                    .map(
-                      (pane) => PopupMenuItem<DesktopPane>(
-                        key: ValueKey<String>(
-                          'desktop_sidebar_menu_item_${pane.name}',
-                        ),
-                        value: pane,
-                        child: Row(
-                          children: [
-                            Icon(
-                              settingsProvider.isDesktopPaneVisible(pane)
-                                  ? Symbols.check_box_rounded
-                                  : Symbols.check_box_outline_blank_rounded,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(_desktopPaneLabel(pane)),
-                          ],
-                        ),
-                      ),
-                    )
-                    .toList(growable: false);
-              },
-              icon: const Icon(Symbols.view_sidebar),
+      title: _timelineSearchActive
+          ? _buildTimelineSearchTitle()
+          : _buildProjectSelectorTitle(
+              isMobile: isMobile,
+              isLargeDesktop: isLargeDesktop,
             ),
-          ),
-        Consumer<ChatProvider>(
-          builder: (context, chatProvider, _) {
-            return IconButton(
-              key: const ValueKey<String>('appbar_undo_button'),
-              icon: const Icon(Symbols.undo_rounded),
-              tooltip: context.l10n.chatUndoLastTurn,
-              onPressed: chatProvider.canUndoCurrentSession
-                  ? () => unawaited(
+      actions: _timelineSearchActive
+          ? _buildTimelineSearchActions()
+          : [
+              if (!isMobile)
+                _buildTourTarget(
+                  showcaseKey: _desktopSidebarMenuTourKey,
+                  targetKey: _desktopSidebarMenuTourTargetKey,
+                  title: postOnboardingSidebarTourCopy(
+                    isMobile: false,
+                    showConversationPane: false,
+                  ).title,
+                  description: postOnboardingSidebarTourCopy(
+                    isMobile: false,
+                    showConversationPane: false,
+                  ).description,
+                  tooltipPosition: TooltipPosition.bottom,
+                  child: PopupMenuButton<DesktopPane>(
+                    key: const ValueKey<String>('desktop_sidebars_menu_button'),
+                    tooltip: context.l10n.chatToggleSidebars,
+                    onSelected: (pane) {
+                      final next = !settingsProvider.isDesktopPaneVisible(pane);
+                      unawaited(
+                        settingsProvider.setDesktopPaneVisible(pane, next),
+                      );
+                    },
+                    itemBuilder: (context) {
+                      return DesktopPane.values
+                          .map(
+                            (pane) => PopupMenuItem<DesktopPane>(
+                              key: ValueKey<String>(
+                                'desktop_sidebar_menu_item_${pane.name}',
+                              ),
+                              value: pane,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    settingsProvider.isDesktopPaneVisible(pane)
+                                        ? Symbols.check_box_rounded
+                                        : Symbols
+                                              .check_box_outline_blank_rounded,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(_desktopPaneLabel(pane)),
+                                ],
+                              ),
+                            ),
+                          )
+                          .toList(growable: false);
+                    },
+                    icon: const Icon(Symbols.view_sidebar),
+                  ),
+                ),
+              Consumer<ChatProvider>(
+                builder: (context, chatProvider, _) {
+                  return IconButton(
+                    key: const ValueKey<String>('appbar_undo_button'),
+                    icon: const Icon(Symbols.undo_rounded),
+                    tooltip: context.l10n.chatUndoLastTurn,
+                    onPressed: chatProvider.canUndoCurrentSession
+                        ? () => unawaited(
+                            _triggerHistoryAction(
+                              chatProvider,
+                              action: _HistoryToolbarAction.undo,
+                            ),
+                          )
+                        : null,
+                  );
+                },
+              ),
+              Consumer<ChatProvider>(
+                builder: (context, chatProvider, _) {
+                  if (!chatProvider.canRedoCurrentSession) {
+                    return const SizedBox.shrink();
+                  }
+                  return IconButton(
+                    key: const ValueKey<String>('appbar_redo_button'),
+                    icon: const Icon(Symbols.redo_rounded),
+                    tooltip: context.l10n.chatRedoLastTurn,
+                    onPressed: () => unawaited(
                       _triggerHistoryAction(
                         chatProvider,
-                        action: _HistoryToolbarAction.undo,
+                        action: _HistoryToolbarAction.redo,
                       ),
-                    )
-                  : null,
-            );
-          },
-        ),
-        Consumer<ChatProvider>(
-          builder: (context, chatProvider, _) {
-            if (!chatProvider.canRedoCurrentSession) {
-              return const SizedBox.shrink();
-            }
-            return IconButton(
-              key: const ValueKey<String>('appbar_redo_button'),
-              icon: const Icon(Symbols.redo_rounded),
-              tooltip: context.l10n.chatRedoLastTurn,
-              onPressed: () => unawaited(
-                _triggerHistoryAction(
-                  chatProvider,
-                  action: _HistoryToolbarAction.redo,
-                ),
-              ),
-            );
-          },
-        ),
-        PopupMenuButton<_DisplayToggleAction>(
-          key: const ValueKey<String>('appbar_display_toggles_button'),
-          tooltip: context.l10n.chatDisplayToggles,
-          onSelected: (action) {
-            switch (action) {
-              case _DisplayToggleAction.thinkingBubbles:
-                unawaited(
-                  settingsProvider.setShowThinkingBubbles(
-                    !settingsProvider.showThinkingBubbles,
-                  ),
-                );
-                break;
-              case _DisplayToggleAction.toolCallBubbles:
-                unawaited(
-                  settingsProvider.setShowToolCallBubbles(
-                    !settingsProvider.showToolCallBubbles,
-                  ),
-                );
-                break;
-              case _DisplayToggleAction.taskList:
-                unawaited(
-                  settingsProvider.setShowTaskList(
-                    !settingsProvider.showTaskList,
-                  ),
-                );
-                break;
-              case _DisplayToggleAction.reviewChanges:
-                unawaited(
-                  settingsProvider.setShowReviewChanges(
-                    !settingsProvider.showReviewChanges,
-                  ),
-                );
-                break;
-              case _DisplayToggleAction.recentSessions:
-                unawaited(
-                  settingsProvider.setShowRecentSessions(
-                    !settingsProvider.showRecentSessions,
-                  ),
-                );
-                break;
-              case _DisplayToggleAction.composerTips:
-                unawaited(
-                  settingsProvider.setShowComposerTips(
-                    !settingsProvider.showComposerTips,
-                  ),
-                );
-                break;
-              case _DisplayToggleAction.replayTour:
-                unawaited(_restartPostOnboardingTour());
-                break;
-            }
-          },
-          itemBuilder: (context) {
-            return [
-              PopupMenuItem<_DisplayToggleAction>(
-                enabled: false,
-                child: Text(
-                  'Display',
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-              ),
-              CheckedPopupMenuItem<_DisplayToggleAction>(
-                key: const ValueKey<String>('display_toggle_item_thinking'),
-                value: _DisplayToggleAction.thinkingBubbles,
-                checked: settingsProvider.showThinkingBubbles,
-                child: Text(
-                  _displayToggleLabel(_DisplayToggleAction.thinkingBubbles),
-                ),
-              ),
-              CheckedPopupMenuItem<_DisplayToggleAction>(
-                key: const ValueKey<String>('display_toggle_item_tool_calls'),
-                value: _DisplayToggleAction.toolCallBubbles,
-                checked: settingsProvider.showToolCallBubbles,
-                child: Text(
-                  _displayToggleLabel(_DisplayToggleAction.toolCallBubbles),
-                ),
-              ),
-              CheckedPopupMenuItem<_DisplayToggleAction>(
-                key: const ValueKey<String>('display_toggle_item_task_list'),
-                value: _DisplayToggleAction.taskList,
-                checked: settingsProvider.showTaskList,
-                child: Text(_displayToggleLabel(_DisplayToggleAction.taskList)),
-              ),
-              CheckedPopupMenuItem<_DisplayToggleAction>(
-                key: const ValueKey<String>(
-                  'display_toggle_item_review_changes',
-                ),
-                value: _DisplayToggleAction.reviewChanges,
-                checked: settingsProvider.showReviewChanges,
-                child: Text(
-                  _displayToggleLabel(_DisplayToggleAction.reviewChanges),
-                ),
-              ),
-              CheckedPopupMenuItem<_DisplayToggleAction>(
-                key: const ValueKey<String>(
-                  'display_toggle_item_recent_sessions',
-                ),
-                value: _DisplayToggleAction.recentSessions,
-                checked: settingsProvider.showRecentSessions,
-                child: Text(
-                  _displayToggleLabel(_DisplayToggleAction.recentSessions),
-                ),
-              ),
-              CheckedPopupMenuItem<_DisplayToggleAction>(
-                key: const ValueKey<String>(
-                  'display_toggle_item_composer_tips',
-                ),
-                value: _DisplayToggleAction.composerTips,
-                checked: settingsProvider.showComposerTips,
-                child: Text(
-                  _displayToggleLabel(_DisplayToggleAction.composerTips),
-                ),
-              ),
-              const PopupMenuDivider(),
-              PopupMenuItem<_DisplayToggleAction>(
-                key: const ValueKey<String>('display_toggle_item_replay_tour'),
-                value: _DisplayToggleAction.replayTour,
-                child: Text(
-                  _displayToggleLabel(_DisplayToggleAction.replayTour),
-                ),
-              ),
-            ];
-          },
-          icon: const Icon(Symbols.bottom_panel_close),
-        ),
-        IconButton(
-          key: const ValueKey<String>('appbar_terminal_button'),
-          icon: const Icon(Symbols.terminal_rounded),
-          tooltip: settingsProvider.terminalPanelVisible
-              ? 'Hide terminal'
-              : (_terminalController.supportsRemoteTerminal
-                    ? 'Open terminal'
-                    : 'Open terminal info'),
-          onPressed: () => unawaited(_toggleTerminalPanel()),
-        ),
-        if (refreshlessEnabled && !isMobile)
-          Consumer2<ChatProvider, AppProvider>(
-            builder: (context, chatProvider, appProvider, child) {
-              final label = _syncStatusLabel(
-                chatProvider: chatProvider,
-                appProvider: appProvider,
-              );
-              final color = _syncStatusColor(
-                context: context,
-                chatProvider: chatProvider,
-                appProvider: appProvider,
-              );
-              return Tooltip(
-                message: 'Sync: $label',
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: Container(
-                    key: const ValueKey<String>('chat_sync_status_chip'),
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(999),
                     ),
-                    child: Icon(Symbols.sync_rounded, size: 14, color: color),
+                  );
+                },
+              ),
+              IconButton(
+                key: const ValueKey<String>('appbar_timeline_search_button'),
+                icon: const Icon(Symbols.search),
+                tooltip: context.l10n.chatSearchTimeline,
+                onPressed: _openTimelineSearch,
+              ),
+              PopupMenuButton<_DisplayToggleAction>(
+                key: const ValueKey<String>('appbar_display_toggles_button'),
+                tooltip: context.l10n.chatDisplayToggles,
+                onSelected: (action) {
+                  switch (action) {
+                    case _DisplayToggleAction.thinkingBubbles:
+                      unawaited(
+                        settingsProvider.setShowThinkingBubbles(
+                          !settingsProvider.showThinkingBubbles,
+                        ),
+                      );
+                      break;
+                    case _DisplayToggleAction.toolCallBubbles:
+                      unawaited(
+                        settingsProvider.setShowToolCallBubbles(
+                          !settingsProvider.showToolCallBubbles,
+                        ),
+                      );
+                      break;
+                    case _DisplayToggleAction.taskList:
+                      unawaited(
+                        settingsProvider.setShowTaskList(
+                          !settingsProvider.showTaskList,
+                        ),
+                      );
+                      break;
+                    case _DisplayToggleAction.reviewChanges:
+                      unawaited(
+                        settingsProvider.setShowReviewChanges(
+                          !settingsProvider.showReviewChanges,
+                        ),
+                      );
+                      break;
+                    case _DisplayToggleAction.recentSessions:
+                      unawaited(
+                        settingsProvider.setShowRecentSessions(
+                          !settingsProvider.showRecentSessions,
+                        ),
+                      );
+                      break;
+                    case _DisplayToggleAction.composerTips:
+                      unawaited(
+                        settingsProvider.setShowComposerTips(
+                          !settingsProvider.showComposerTips,
+                        ),
+                      );
+                      break;
+                    case _DisplayToggleAction.replayTour:
+                      unawaited(_restartPostOnboardingTour());
+                      break;
+                  }
+                },
+                itemBuilder: (context) {
+                  return [
+                    PopupMenuItem<_DisplayToggleAction>(
+                      enabled: false,
+                      child: Text(
+                        'Display',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                    ),
+                    CheckedPopupMenuItem<_DisplayToggleAction>(
+                      key: const ValueKey<String>(
+                        'display_toggle_item_thinking',
+                      ),
+                      value: _DisplayToggleAction.thinkingBubbles,
+                      checked: settingsProvider.showThinkingBubbles,
+                      child: Text(
+                        _displayToggleLabel(
+                          _DisplayToggleAction.thinkingBubbles,
+                        ),
+                      ),
+                    ),
+                    CheckedPopupMenuItem<_DisplayToggleAction>(
+                      key: const ValueKey<String>(
+                        'display_toggle_item_tool_calls',
+                      ),
+                      value: _DisplayToggleAction.toolCallBubbles,
+                      checked: settingsProvider.showToolCallBubbles,
+                      child: Text(
+                        _displayToggleLabel(
+                          _DisplayToggleAction.toolCallBubbles,
+                        ),
+                      ),
+                    ),
+                    CheckedPopupMenuItem<_DisplayToggleAction>(
+                      key: const ValueKey<String>(
+                        'display_toggle_item_task_list',
+                      ),
+                      value: _DisplayToggleAction.taskList,
+                      checked: settingsProvider.showTaskList,
+                      child: Text(
+                        _displayToggleLabel(_DisplayToggleAction.taskList),
+                      ),
+                    ),
+                    CheckedPopupMenuItem<_DisplayToggleAction>(
+                      key: const ValueKey<String>(
+                        'display_toggle_item_review_changes',
+                      ),
+                      value: _DisplayToggleAction.reviewChanges,
+                      checked: settingsProvider.showReviewChanges,
+                      child: Text(
+                        _displayToggleLabel(_DisplayToggleAction.reviewChanges),
+                      ),
+                    ),
+                    CheckedPopupMenuItem<_DisplayToggleAction>(
+                      key: const ValueKey<String>(
+                        'display_toggle_item_recent_sessions',
+                      ),
+                      value: _DisplayToggleAction.recentSessions,
+                      checked: settingsProvider.showRecentSessions,
+                      child: Text(
+                        _displayToggleLabel(
+                          _DisplayToggleAction.recentSessions,
+                        ),
+                      ),
+                    ),
+                    CheckedPopupMenuItem<_DisplayToggleAction>(
+                      key: const ValueKey<String>(
+                        'display_toggle_item_composer_tips',
+                      ),
+                      value: _DisplayToggleAction.composerTips,
+                      checked: settingsProvider.showComposerTips,
+                      child: Text(
+                        _displayToggleLabel(_DisplayToggleAction.composerTips),
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                    PopupMenuItem<_DisplayToggleAction>(
+                      key: const ValueKey<String>(
+                        'display_toggle_item_replay_tour',
+                      ),
+                      value: _DisplayToggleAction.replayTour,
+                      child: Text(
+                        _displayToggleLabel(_DisplayToggleAction.replayTour),
+                      ),
+                    ),
+                  ];
+                },
+                icon: const Icon(Symbols.bottom_panel_close),
+              ),
+              IconButton(
+                key: const ValueKey<String>('appbar_terminal_button'),
+                icon: const Icon(Symbols.terminal_rounded),
+                tooltip: settingsProvider.terminalPanelVisible
+                    ? 'Hide terminal'
+                    : (_terminalController.supportsRemoteTerminal
+                          ? 'Open terminal'
+                          : 'Open terminal info'),
+                onPressed: () => unawaited(_toggleTerminalPanel()),
+              ),
+              if (refreshlessEnabled && !isMobile)
+                Consumer2<ChatProvider, AppProvider>(
+                  builder: (context, chatProvider, appProvider, child) {
+                    final label = _syncStatusLabel(
+                      chatProvider: chatProvider,
+                      appProvider: appProvider,
+                    );
+                    final color = _syncStatusColor(
+                      context: context,
+                      chatProvider: chatProvider,
+                      appProvider: appProvider,
+                    );
+                    return Tooltip(
+                      message: 'Sync: $label',
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: Container(
+                          key: const ValueKey<String>('chat_sync_status_chip'),
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Icon(
+                            Symbols.sync_rounded,
+                            size: 14,
+                            color: color,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              if (isMobile)
+                IconButton(
+                  key: const ValueKey<String>('appbar_quick_open_button'),
+                  icon: const Icon(Symbols.account_tree),
+                  tooltip: context.l10n.chatOpenFiles,
+                  onPressed: () => unawaited(_openMobileFilesDialog()),
+                ),
+              if (!isMobile)
+                _buildTourTarget(
+                  showcaseKey: _newChatTourKey,
+                  targetKey: _newChatTourTargetKey,
+                  title: context.l10n.chatNewChatTourTitle,
+                  description: context.l10n.chatNewChatTourDescription,
+                  tooltipPosition: TooltipPosition.bottom,
+                  includePrevious: true,
+                  onNext: () =>
+                      unawaited(_advancePostOnboardingTourToComposer()),
+                  child: IconButton(
+                    icon: const Icon(Symbols.add_comment),
+                    tooltip: context.l10n.chatNewChat,
+                    onPressed: _createNewSession,
                   ),
                 ),
-              );
-            },
-          ),
-        if (isMobile)
-          IconButton(
-            key: const ValueKey<String>('appbar_quick_open_button'),
-            icon: const Icon(Symbols.account_tree),
-            tooltip: context.l10n.chatOpenFiles,
-            onPressed: () => unawaited(_openMobileFilesDialog()),
-          ),
-        if (!isMobile)
-          _buildTourTarget(
-            showcaseKey: _newChatTourKey,
-            targetKey: _newChatTourTargetKey,
-            title: context.l10n.chatNewChatTourTitle,
-            description: context.l10n.chatNewChatTourDescription,
-            tooltipPosition: TooltipPosition.bottom,
-            includePrevious: true,
-            onNext: () => unawaited(_advancePostOnboardingTourToComposer()),
-            child: IconButton(
-              icon: const Icon(Symbols.add_comment),
-              tooltip: context.l10n.chatNewChat,
-              onPressed: _createNewSession,
-            ),
-          ),
-        if (!refreshlessEnabled)
-          IconButton(
-            icon: const Icon(Symbols.refresh),
-            tooltip: context.l10n.chatRefresh,
-            onPressed: _refreshData,
-          ),
-        if (isMobile)
-          _buildTourTarget(
-            showcaseKey: _newChatTourKey,
-            targetKey: _newChatTourTargetKey,
-            title: context.l10n.chatNewChatTourTitle,
-            description: context.l10n.chatNewChatTourDescription,
-            tooltipPosition: TooltipPosition.bottom,
-            includePrevious: true,
-            onNext: () => unawaited(_advancePostOnboardingTourToComposer()),
-            child: IconButton(
-              icon: const Icon(Symbols.add_comment),
-              tooltip: context.l10n.chatNewChat,
-              onPressed: _createNewSession,
-            ),
-          ),
-        const SizedBox(width: 2),
-      ],
+              if (!refreshlessEnabled)
+                IconButton(
+                  icon: const Icon(Symbols.refresh),
+                  tooltip: context.l10n.chatRefresh,
+                  onPressed: _refreshData,
+                ),
+              if (isMobile)
+                _buildTourTarget(
+                  showcaseKey: _newChatTourKey,
+                  targetKey: _newChatTourTargetKey,
+                  title: context.l10n.chatNewChatTourTitle,
+                  description: context.l10n.chatNewChatTourDescription,
+                  tooltipPosition: TooltipPosition.bottom,
+                  includePrevious: true,
+                  onNext: () =>
+                      unawaited(_advancePostOnboardingTourToComposer()),
+                  child: IconButton(
+                    icon: const Icon(Symbols.add_comment),
+                    tooltip: context.l10n.chatNewChat,
+                    onPressed: _createNewSession,
+                  ),
+                ),
+              const SizedBox(width: 2),
+            ],
     );
+  }
+
+  Widget _buildTimelineSearchTitle() {
+    return TextField(
+      key: const ValueKey<String>('timeline_search_field'),
+      controller: _timelineSearchController,
+      focusNode: _timelineSearchFocusNode,
+      autofocus: true,
+      textInputAction: TextInputAction.search,
+      decoration: InputDecoration(
+        border: InputBorder.none,
+        hintText: context.l10n.chatSearchTimeline,
+      ),
+      onChanged: _onTimelineSearchChanged,
+    );
+  }
+
+  List<Widget> _buildTimelineSearchActions() {
+    final hasResults = _timelineSearchResult.isNotEmpty;
+    final resultLabel = _timelineSearchResultLabel();
+    return [
+      if (resultLabel.isNotEmpty)
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              resultLabel,
+              key: const ValueKey<String>('timeline_search_result_count'),
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+          ),
+        ),
+      IconButton(
+        key: const ValueKey<String>('timeline_search_previous_button'),
+        icon: const Icon(Symbols.keyboard_arrow_up_rounded),
+        tooltip: context.l10n.chatSearchPreviousResult,
+        onPressed: hasResults
+            ? () => unawaited(_goToTimelineSearchResult(-1))
+            : null,
+      ),
+      IconButton(
+        key: const ValueKey<String>('timeline_search_next_button'),
+        icon: const Icon(Symbols.keyboard_arrow_down_rounded),
+        tooltip: context.l10n.chatSearchNextResult,
+        onPressed: hasResults
+            ? () => unawaited(_goToTimelineSearchResult(1))
+            : null,
+      ),
+      IconButton(
+        key: const ValueKey<String>('timeline_search_close_button'),
+        icon: const Icon(Symbols.close),
+        tooltip: context.l10n.chatClose,
+        onPressed: _closeTimelineSearch,
+      ),
+    ];
   }
 
   Future<void> _openMobileFilesDialog() async {

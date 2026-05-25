@@ -320,6 +320,36 @@ abstract class AppLocalizations {
   /// **'Search conversations'**
   String get chatSearchConversations;
 
+  /// CodeWalk UI string — chatSearchTimeline
+  ///
+  /// In en, this message translates to:
+  /// **'Search timeline'**
+  String get chatSearchTimeline;
+
+  /// CodeWalk UI string — chatSearchNoResults
+  ///
+  /// In en, this message translates to:
+  /// **'No results'**
+  String get chatSearchNoResults;
+
+  /// CodeWalk UI string — chatSearchResultCount
+  ///
+  /// In en, this message translates to:
+  /// **'{current} of {total}'**
+  String chatSearchResultCount(int current, int total);
+
+  /// CodeWalk UI string — chatSearchPreviousResult
+  ///
+  /// In en, this message translates to:
+  /// **'Previous result'**
+  String get chatSearchPreviousResult;
+
+  /// CodeWalk UI string — chatSearchNextResult
+  ///
+  /// In en, this message translates to:
+  /// **'Next result'**
+  String get chatSearchNextResult;
+
   /// CodeWalk UI string — chatSelectOrCreate
   ///
   /// In en, this message translates to:

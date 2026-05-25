@@ -132,6 +132,34 @@
   "@chatSearchConversations": {
     "description": "CodeWalk UI string — chatSearchConversations"
   },
+  "chatSearchTimeline": "Search timeline",
+  "@chatSearchTimeline": {
+    "description": "CodeWalk UI string — chatSearchTimeline"
+  },
+  "chatSearchNoResults": "No results",
+  "@chatSearchNoResults": {
+    "description": "CodeWalk UI string — chatSearchNoResults"
+  },
+  "chatSearchResultCount": "{current} of {total}",
+  "@chatSearchResultCount": {
+    "description": "CodeWalk UI string — chatSearchResultCount",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "chatSearchPreviousResult": "Previous result",
+  "@chatSearchPreviousResult": {
+    "description": "CodeWalk UI string — chatSearchPreviousResult"
+  },
+  "chatSearchNextResult": "Next result",
+  "@chatSearchNextResult": {
+    "description": "CodeWalk UI string — chatSearchNextResult"
+  },
   "chatSelectOrCreate": "Select or create a conversation to start chatting",
   "@chatSelectOrCreate": {
     "description": "CodeWalk UI string — chatSelectOrCreate"

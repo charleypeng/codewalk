@@ -15,13 +15,20 @@ extension _ChatMessageTextPartBuilder on _ChatMessageWidgetState {
     );
     final usePlainText = textForRender != part.text;
     final themeTokens = _resolveThemeTokens(context);
+    final searchHighlightedText = _buildSearchHighlightedText(
+      context,
+      textForRender,
+      style: Theme.of(context).textTheme.bodyMedium,
+    );
 
     return SizedBox(
       width: double.infinity,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (usePlainText)
+          if (searchHighlightedText != null)
+            searchHighlightedText
+          else if (usePlainText)
             Text(textForRender, style: Theme.of(context).textTheme.bodyMedium)
           else ...[
             MarkdownBody(
@@ -57,6 +64,64 @@ extension _ChatMessageTextPartBuilder on _ChatMessageWidgetState {
         ],
       ),
     );
+  }
+
+  Widget? _buildSearchHighlightedText(
+    BuildContext context,
+    String text, {
+    TextStyle? style,
+  }) {
+    final query = searchHighlightQuery?.trim();
+    if (query == null || query.isEmpty) {
+      return null;
+    }
+    return SelectableText.rich(
+      _buildSearchHighlightedTextSpan(
+        context,
+        text,
+        query: query,
+        style: style,
+      ),
+    );
+  }
+
+  TextSpan _buildSearchHighlightedTextSpan(
+    BuildContext context,
+    String text, {
+    required String query,
+    TextStyle? style,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final baseStyle = style ?? Theme.of(context).textTheme.bodyMedium;
+    final highlightStyle = baseStyle?.copyWith(
+      color: colorScheme.onTertiaryContainer,
+      backgroundColor: colorScheme.tertiaryContainer,
+      fontWeight: FontWeight.w700,
+    );
+    final lowerText = text.toLowerCase();
+    final lowerQuery = query.toLowerCase();
+    final spans = <TextSpan>[];
+    var start = 0;
+    while (true) {
+      final index = lowerText.indexOf(lowerQuery, start);
+      if (index == -1) {
+        if (start < text.length) {
+          spans.add(TextSpan(text: text.substring(start), style: baseStyle));
+        }
+        break;
+      }
+      if (index > start) {
+        spans.add(
+          TextSpan(text: text.substring(start, index), style: baseStyle),
+        );
+      }
+      final end = index + query.length;
+      spans.add(
+        TextSpan(text: text.substring(index, end), style: highlightStyle),
+      );
+      start = end;
+    }
+    return TextSpan(style: baseStyle, children: spans);
   }
 
   String _composeMessageCopyText(ChatMessage message) {

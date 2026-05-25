@@ -18,6 +18,7 @@ import '../../core/di/injection_container.dart' as di;
 import '../../core/logging/app_logger.dart';
 import '../../core/network/dio_client.dart';
 import '../../core/utils/path_utils.dart';
+import '../../core/utils/timeline_search_service.dart';
 import '../../data/datasources/terminal_remote_datasource.dart';
 import '../../domain/entities/agent.dart';
 import '../../domain/entities/chat_composer_draft.dart';
@@ -90,6 +91,7 @@ part 'chat_page/chat_page_composer_widgets.dart';
 part 'chat_page/chat_page_model_selector_runtime.dart';
 part 'chat_page/chat_page_timeline_runtime.dart';
 part 'chat_page/chat_page_terminal_runtime.dart';
+part 'chat_page/chat_page_search.dart';
 
 enum _DisplayToggleAction {
   thinkingBubbles,
@@ -123,6 +125,7 @@ enum _ScrollOwner {
   streaming,
   returnReveal,
   contentShrinkSnap,
+  searchResult,
 }
 
 enum _CachedViewportRestoreTarget { none, bottom, latestResponse }
@@ -219,6 +222,15 @@ class _ChatPageState extends State<ChatPage>
   static const String _traceFinalPrefix = 'CW_TRACE_FINAL';
 
   final ScrollController _scrollController = ScrollController();
+  final TimelineSearchService _timelineSearchService =
+      const TimelineSearchService();
+  final TextEditingController _timelineSearchController =
+      TextEditingController();
+  final FocusNode _timelineSearchFocusNode = FocusNode(
+    debugLabel: 'timeline_search',
+  );
+  final Map<String, GlobalKey> _timelineSearchMessageKeysByMessageId =
+      <String, GlobalKey>{};
   // Scroll controller for the file viewer's vertical content area.
   // Used to scroll to a specific line when a file path is tapped in chat.
   final ScrollController _fileViewerScrollController = ScrollController();
@@ -519,6 +531,12 @@ class _ChatPageState extends State<ChatPage>
   Timer? _composerStopHintTimer;
   Timer? _backgroundRealtimeHoldTimer;
   Timer? _tipRotationTimer;
+  Timer? _timelineSearchDebounceTimer;
+  TimelineSearchResult _timelineSearchResult = TimelineSearchResult.empty;
+  bool _timelineSearchActive = false;
+  int _timelineSearchCurrentIndex = 0;
+  int _timelineSearchLastMessagesVersion = -1;
+  String? _timelineSearchLastSessionId;
   DateTime? _lastResumeRefreshAt;
   DateTime? _lastReturnToChatAt;
   String? _lastReturnToChatSignature;
@@ -711,6 +729,9 @@ class _ChatPageState extends State<ChatPage>
     _composerStopHintTimer?.cancel();
     _backgroundRealtimeHoldTimer?.cancel();
     _tipRotationTimer?.cancel();
+    _timelineSearchDebounceTimer?.cancel();
+    _timelineSearchController.dispose();
+    _timelineSearchFocusNode.dispose();
     _scrollController.removeListener(_handleScrollChanged);
     HardwareKeyboard.instance.removeHandler(_handleGlobalShortcutKeyEvent);
     if (_isDesktopRuntime) {
@@ -2189,15 +2210,16 @@ class _FileExplorerContextState {
   String rootDirectory;
   DateTime? lastLoadedAt;
   final Map<String, List<FileNode>> directoryChildren =
-  <String, List<FileNode>>{};
+      <String, List<FileNode>>{};
   final Set<String> expandedDirectories = <String>{};
   final Set<String> loadingDirectories = <String>{};
   final Map<String, _FileTabViewState> tabsByPath =
-  <String, _FileTabViewState>{};
+      <String, _FileTabViewState>{};
   FileTabSelectionState tabSelection = const FileTabSelectionState();
   // Line selection state for "add to chat" feature (1-based line numbers).
   final Map<String, Set<int>> selectedLinesByPath = <String, Set<int>>{};
   final Map<String, int> lastSelectedLineByPath = <String, int>{};
+
   /// Pending scroll-to-line request (1-based). Set when a file is opened
   /// via a file path tap; consumed by the file viewer after initial render.
   /// Cleared after scrolling to avoid re-scrolling on rebuilds.

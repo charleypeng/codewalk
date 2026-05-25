@@ -41,6 +41,7 @@ extension _ChatPageLifecycle on _ChatPageState {
   }
 
   void _handleChatProviderChanged() {
+    _reconcileTimelineSearchForProviderChanged();
     _scheduleAutoApprovePermissionDrain(reason: 'chat-provider-changed');
     unawaited(
       _syncBackgroundPermissionAutoApproveContext(

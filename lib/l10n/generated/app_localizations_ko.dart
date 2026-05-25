@@ -108,6 +108,23 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatSearchConversations => 'Search conversations';
 
   @override
+  String get chatSearchTimeline => 'Search timeline';
+
+  @override
+  String get chatSearchNoResults => 'No results';
+
+  @override
+  String chatSearchResultCount(int current, int total) {
+    return '$current of $total';
+  }
+
+  @override
+  String get chatSearchPreviousResult => 'Previous result';
+
+  @override
+  String get chatSearchNextResult => 'Next result';
+
+  @override
   String get chatSelectOrCreate =>
       'Select or create a conversation to start chatting';
 

@@ -111,6 +111,23 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatSearchConversations => 'Buscar conversaciones';
 
   @override
+  String get chatSearchTimeline => 'Buscar en la cronología';
+
+  @override
+  String get chatSearchNoResults => 'Sin resultados';
+
+  @override
+  String chatSearchResultCount(int current, int total) {
+    return '$current de $total';
+  }
+
+  @override
+  String get chatSearchPreviousResult => 'Resultado anterior';
+
+  @override
+  String get chatSearchNextResult => 'Siguiente resultado';
+
+  @override
   String get chatSelectOrCreate =>
       'Seleccione o cree una conversación para comenzar a chatear';
 
