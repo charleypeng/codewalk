@@ -1,11 +1,9 @@
 ---
-feature: "Permission Auto-Approve + Density-Aware Chrome + Compact Sidebar Search + Rate Limit Token Fix + Pinned Sessions in Recent"
+feature: "Permission Auto-Approve + Density-Aware Chrome + Compact Sidebar Search"
 spec: |
   1. Auto-approve always sends "always" instead of "once" when toggle is enabled.
   2. Top menu and Composer bar respect the user's chosen density setting for margin and padding.
   3. Replace sidebar search field with a compact magnifying glass button next to context/new-chat buttons, saving vertical space.
-  4. Fix rate limit monitoring showing "token expired" false positive — improve error messages, add credential freshness tracking, differentiate UI states, and add clear refresh guidance.
-  5. Pinned sessions appear at the top of the Recent sessions sidebar section, matching pin-first ordering in the main conversations list.
 ---
 
 ## Task List
@@ -46,12 +44,3 @@ Description: Export chat sessions as Markdown or JSON files via the session acti
 Implemented `SessionExportService` with Markdown and JSON serialization, added export actions to both the session chrome menu and timeline builder menu, integrated `file_picker` save dialog with Clipboard fallback on dismiss, and added a paginated message guard that loads older messages before export to prevent truncation. JSON export omits `local_user_*` fields per ADR-023.
 
 Commits: a8b42ea, 200dfb4, 79d90dd
-
-### Feature 5: Pinned sessions appear at top of Recent sessions section
-
-Description: When a session is pinned and also appears in the Recent sessions sidebar section, it should be shown at the top of the recent list — matching the pin-first ordering already used in the main conversations list.
-
-- [ ] 5.01 Audit current Recent sessions section sorting logic and identify where pinned state is ignored
-- [ ] 5.02 Apply pin-first sort ordering to the Recent sessions section so pinned sessions appear at the top
-- [ ] 5.03 Verify pinned sessions keep pin indicator/badge visible in the Recent section
-- [ ] 5.04 Ensure unpinning a session from Recent section moves it back to normal sort position
