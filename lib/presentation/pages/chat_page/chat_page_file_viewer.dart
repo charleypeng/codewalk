@@ -303,16 +303,17 @@ extension _ChatPageFileViewer on _ChatPageState {
     final pendingLine = fileState.pendingScrollToLine;
     if (pendingLine != null) {
       fileState.pendingScrollToLine = null;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        final targetOffset = ((pendingLine - 1) * lineHeight)
-            .clamp(0.0, _fileViewerScrollController.position.maxScrollExtent);
-        _fileViewerScrollController.animateTo(
-          targetOffset,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (!_fileViewerScrollController.hasClients) return;
+      final targetOffset = ((pendingLine - 1) * lineHeight)
+          .clamp(0.0, _fileViewerScrollController.position.maxScrollExtent);
+      _fileViewerScrollController.animateTo(
+        targetOffset,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    });
     }
 
     return LayoutBuilder(

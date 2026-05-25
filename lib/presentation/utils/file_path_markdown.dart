@@ -21,11 +21,14 @@ class FilePathSyntax extends md.InlineSyntax {
           // separator (/) to avoid matching bare filenames like "main.dart"
           // which are too likely to be false positives in prose.
           //
+          // Negative lookbehind (?<![/\w.:]) prevents matching paths that are
+          // part of a URL (e.g. github.com/a/b.dart inside https://...).
+          //
           // Group 1: path (with at least one /)
           // Group 2: optional :line
           // Group 3: optional :column
-    r'(?:(?:\.{1,2}/|~/)?(?:[\w.\-]+/)+[\w.\-]+\.(?:'
-    '${FilePathDetector.extensionPattern}'
+          r'(?<![/\w.:])(?:(?:\.{1,2}/|~/)?(?:[\w.\-]+/)+[\w.\-]+\.(?:'
+          '${FilePathDetector.extensionPattern}'
           r'))(?::(\d+))?(?::(\d+))?',
         );
 
