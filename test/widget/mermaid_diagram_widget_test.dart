@@ -25,26 +25,28 @@ void main() {
       expect(find.byIcon(Symbols.content_copy), findsOneWidget);
     });
 
-    testWidgets('shows fallback when source is unparseable', (
+    testWidgets('shows fallback source when source is unparseable', (
       WidgetTester tester,
     ) async {
+      const invalidSource = '{{{ totally invalid mermaid source }}}';
       await tester.pumpWidget(
         localizedMaterialApp(
           home: Scaffold(
             body: MermaidDiagramWidget(
-              code: '{{{ totally invalid mermaid source }}}',
+              code: invalidSource,
               onCopySource: () {},
             ),
           ),
         ),
       );
 
-      // Error fallback sets _hasError after first frame via post-frame callback.
       await tester.pumpAndSettle();
 
-      // The fallback should still show the header and copy button.
+      // Header always visible.
       expect(find.text('Mermaid Diagram'), findsOneWidget);
       expect(find.byIcon(Symbols.content_copy), findsOneWidget);
+      // Fallback must show the raw source text.
+      expect(find.text(invalidSource), findsOneWidget);
     });
 
     testWidgets('renders empty source without crashing', (
