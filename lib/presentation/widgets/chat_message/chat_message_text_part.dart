@@ -42,6 +42,10 @@ extension _ChatMessageTextPartBuilder on _ChatMessageWidgetState {
                 'pre': _MarkdownCodeBlockTapBuilder(
                   themeTokens: themeTokens,
                   onTapCode: (code) => _copyTextToClipboard(context, code),
+                  onMermaidCode: (code) => MermaidDiagramWidget(
+                    code: code,
+                    onCopySource: () => _copyTextToClipboard(context, code),
+                  ),
                 ),
                 'code': _MarkdownInlineCodeTapBuilder(
                   themeTokens: themeTokens,
@@ -194,10 +198,15 @@ class _MarkdownCodeBlockTapBuilder extends MarkdownElementBuilder {
   _MarkdownCodeBlockTapBuilder({
     required this.themeTokens,
     required this.onTapCode,
+    this.onMermaidCode,
   });
 
   final OpenCodeThemeTokens themeTokens;
   final ValueChanged<String> onTapCode;
+
+  /// If set and the fenced block language is "mermaid", the builder
+  /// returns a MermaidDiagramWidget instead of a normal code block.
+  final Widget Function(String code)? onMermaidCode;
 
   @override
   bool isBlockElement() => true;
@@ -214,6 +223,12 @@ class _MarkdownCodeBlockTapBuilder extends MarkdownElementBuilder {
       return null;
     }
     final language = _markdownCodeLanguage(element);
+
+    // Route mermaid blocks to the diagram widget.
+    if (language == 'mermaid' && onMermaidCode != null) {
+      return onMermaidCode!(code);
+    }
+
     final inheritedStyle =
         preferredStyle ??
         parentStyle ??

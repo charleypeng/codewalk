@@ -31,6 +31,7 @@ import '../utils/file_path_detector.dart';
 import '../utils/file_path_markdown.dart';
 import '../utils/reasoning_status_parser.dart';
 import '../utils/tool_presentation.dart';
+import 'mermaid_diagram_widget.dart';
 
 part 'chat_message/chat_message_content.dart';
 part 'chat_message/chat_message_part_dispatch.dart';
