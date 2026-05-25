@@ -144,11 +144,14 @@ extension _ChatPageMobileOverflow on _ChatPageState {
     final visibleDefs = allDefs
         .where((def) => def.visible())
         .toList(growable: false);
+    final isCompact = context.windowSizeClass.isCompact;
+    final maxPinned = isCompact ? 2 : visibleDefs.length;
     final pinnedDefs = visibleDefs
         .where((def) => _pinnedMobileAppBarActionIds.contains(def.id))
+        .take(maxPinned)
         .toList(growable: false);
     final overflowDefs = visibleDefs
-        .where((def) => !_pinnedMobileAppBarActionIds.contains(def.id))
+        .where((def) => !pinnedDefs.contains(def))
         .toList(growable: false);
 
     final children = <Widget>[];
@@ -161,7 +164,6 @@ extension _ChatPageMobileOverflow on _ChatPageState {
           child: IconButton(
             key: ValueKey<String>('appbar_pinned_${def.id}_button'),
             icon: Icon(def.icon),
-            tooltip: def.tooltip,
             onPressed: onTap,
           ),
         ),
@@ -169,12 +171,7 @@ extension _ChatPageMobileOverflow on _ChatPageState {
     }
 
     if (overflowDefs.isNotEmpty) {
-      children.add(
-        _buildMobileOverflowMenu(
-          overflowDefs: overflowDefs,
-          pinnedDefs: pinnedDefs,
-        ),
-      );
+      children.add(_buildMobileOverflowMenu(overflowDefs: overflowDefs));
     }
 
     if (children.isEmpty) {
@@ -186,9 +183,8 @@ extension _ChatPageMobileOverflow on _ChatPageState {
 
   Widget _buildMobileOverflowMenu({
     required List<_MobileAppBarActionDef> overflowDefs,
-    required List<_MobileAppBarActionDef> pinnedDefs,
   }) {
-    final allItems = [...pinnedDefs, ...overflowDefs];
+    final allItems = overflowDefs;
     final menuChildren = <Widget>[];
     for (final def in allItems) {
       final onTap = def.onTap();
