@@ -1480,4 +1480,17 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get settingsAppearanceMathRenderingDescription =>
       'LaTeX-Mathematik-Ausdrücke als gesetzte Gleichungen in Chat-Nachrichten darstellen.';
+
+  @override
+  String get msgShareAsImage => 'Share as image';
+
+  @override
+  String get msgShareAsImageSubject => 'CodeWalk message';
+
+  @override
+  String get msgShareAsImageTooTall =>
+      'Message is too long to share as an image.';
+
+  @override
+  String get msgShareAsImageFailed => 'Could not share message as image.';
 }

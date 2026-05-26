@@ -67,6 +67,9 @@ dependencies:
   # Filesystem locations
   path_provider: ^2.1.5
 
+  # Native share sheet
+  share_plus: ^10.1.4
+
   # JSON serialization
   json_annotation: ^4.12.0
 

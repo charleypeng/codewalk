@@ -1840,5 +1840,21 @@
   "settingsAppearanceMathRenderingDescription": "Render LaTeX math expressions ($…$ and $$…$$) as typeset equations in chat messages.",
   "@settingsAppearanceMathRenderingDescription": {
     "description": "CodeWalk UI string — settingsAppearanceMathRenderingDescription"
+  },
+  "msgShareAsImage": "Share as image",
+  "@msgShareAsImage": {
+    "description": "CodeWalk UI string — Tooltip for the share-as-image action on a chat message bubble"
+  },
+  "msgShareAsImageSubject": "CodeWalk message",
+  "@msgShareAsImageSubject": {
+    "description": "CodeWalk UI string — Subject line when sharing a message image via the system share sheet"
+  },
+  "msgShareAsImageTooTall": "Message is too long to share as an image.",
+  "@msgShareAsImageTooTall": {
+    "description": "CodeWalk UI string — Shown when the message bubble exceeds the maximum capture height"
+  },
+  "msgShareAsImageFailed": "Could not share message as image.",
+  "@msgShareAsImageFailed": {
+    "description": "CodeWalk UI string — Shown when image capture or sharing fails unexpectedly"
   }
 }

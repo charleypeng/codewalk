@@ -2791,6 +2791,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Render LaTeX math expressions (\$…\$ and \$\$…\$\$) as typeset equations in chat messages.'**
   String get settingsAppearanceMathRenderingDescription;
+
+  /// CodeWalk UI string — Tooltip for the share-as-image action on a chat message bubble
+  ///
+  /// In en, this message translates to:
+  /// **'Share as image'**
+  String get msgShareAsImage;
+
+  /// CodeWalk UI string — Subject line when sharing a message image via the system share sheet
+  ///
+  /// In en, this message translates to:
+  /// **'CodeWalk message'**
+  String get msgShareAsImageSubject;
+
+  /// CodeWalk UI string — Shown when the message bubble exceeds the maximum capture height
+  ///
+  /// In en, this message translates to:
+  /// **'Message is too long to share as an image.'**
+  String get msgShareAsImageTooTall;
+
+  /// CodeWalk UI string — Shown when image capture or sharing fails unexpectedly
+  ///
+  /// In en, this message translates to:
+  /// **'Could not share message as image.'**
+  String get msgShareAsImageFailed;
 }
 
 class _AppLocalizationsDelegate
