@@ -1832,5 +1832,13 @@
   "mathExpressionLabel": "Math",
   "@mathExpressionLabel": {
     "description": "CodeWalk UI string — mathExpressionLabel"
+  },
+  "settingsAppearanceMathRendering": "Math rendering",
+  "@settingsAppearanceMathRendering": {
+    "description": "CodeWalk UI string — settingsAppearanceMathRendering"
+  },
+  "settingsAppearanceMathRenderingDescription": "Render LaTeX math expressions ($…$ and $$…$$) as typeset equations in chat messages.",
+  "@settingsAppearanceMathRenderingDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceMathRenderingDescription"
   }
 }

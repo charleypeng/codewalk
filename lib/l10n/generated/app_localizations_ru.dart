@@ -1473,4 +1473,11 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get mathExpressionLabel => 'Математика';
+
+  @override
+  String get settingsAppearanceMathRendering => 'Отображение математики';
+
+  @override
+  String get settingsAppearanceMathRenderingDescription =>
+      'Отображать математические выражения LaTeX как наборные уравнения в сообщениях чата.';
 }

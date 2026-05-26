@@ -1490,4 +1490,11 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get mathExpressionLabel => 'Matemática';
+
+  @override
+  String get settingsAppearanceMathRendering => 'Renderização de matemática';
+
+  @override
+  String get settingsAppearanceMathRenderingDescription =>
+      'Renderizar expressões matemáticas LaTeX como equações tipografadas nas mensagens de chat.';
 }

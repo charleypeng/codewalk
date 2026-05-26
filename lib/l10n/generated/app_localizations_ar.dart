@@ -1473,4 +1473,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get mathExpressionLabel => 'رياضيات';
+
+  @override
+  String get settingsAppearanceMathRendering => 'عرض الرياضيات';
+
+  @override
+  String get settingsAppearanceMathRenderingDescription =>
+      'عرض تعبيرات LaTeX الرياضية كمعادلات منسقة في رسائل الدردشة.';
 }

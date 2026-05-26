@@ -1473,4 +1473,11 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get mathExpressionLabel => 'গণিত';
+
+  @override
+  String get settingsAppearanceMathRendering => 'গণিত রেন্ডারিং';
+
+  @override
+  String get settingsAppearanceMathRenderingDescription =>
+      'চ্যাট বার্তায় LaTeX গণিত রাশিগুলিকে টাইপসেট সমীকরণ হিসেবে রেন্ডার করুন।';
 }

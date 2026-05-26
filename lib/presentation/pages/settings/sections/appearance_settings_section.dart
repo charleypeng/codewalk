@@ -456,10 +456,22 @@ class AppearanceSettingsSection extends StatelessWidget {
                     subtitle: Text(
                       context.l10n.settingsAppearanceComposerTipsDescription,
                     ),
-                    value: settingsProvider.showComposerTips,
-                    onChanged: (value) =>
-                        unawaited(settingsProvider.setShowComposerTips(value)),
-                  ),
+        value: settingsProvider.showComposerTips,
+        onChanged: (value) =>
+            unawaited(settingsProvider.setShowComposerTips(value)),
+      ),
+      const Divider(height: 1),
+      SwitchListTile.adaptive(
+        key: const ValueKey<String>('settings_toggle_math_rendering'),
+        title: Text(context.l10n.settingsAppearanceMathRendering),
+        subtitle: Text(
+          context.l10n.settingsAppearanceMathRenderingDescription,
+        ),
+        value: settingsProvider.showMathRendering,
+        onChanged: (value) => unawaited(
+          settingsProvider.setShowMathRendering(value),
+        ),
+      ),
                 ],
               ),
             ),

@@ -1473,4 +1473,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get mathExpressionLabel => '数学';
+
+  @override
+  String get settingsAppearanceMathRendering => '数学公式渲染';
+
+  @override
+  String get settingsAppearanceMathRenderingDescription =>
+      '在聊天消息中将 LaTeX 数学表达式渲染为排版公式。';
 }

@@ -425,5 +425,13 @@
   "mathExpressionLabel": "Matemáticas",
   "@mathExpressionLabel": {
     "description": "CodeWalk UI string — mathExpressionLabel"
+  },
+  "settingsAppearanceMathRendering": "Renderizado de matemáticas",
+  "@settingsAppearanceMathRendering": {
+    "description": "CodeWalk UI string — settingsAppearanceMathRendering"
+  },
+  "settingsAppearanceMathRenderingDescription": "Renderizar expresiones matemáticas LaTeX como ecuaciones tipografiadas en mensajes de chat.",
+  "@settingsAppearanceMathRenderingDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceMathRenderingDescription"
   }
 }

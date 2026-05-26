@@ -21,6 +21,8 @@ extension _ChatMessageTextPartBuilder on _ChatMessageWidgetState {
       style: Theme.of(context).textTheme.bodyMedium,
     );
 
+    final mathRenderingEnabled = context.watch<SettingsProvider>().showMathRendering;
+
     return SizedBox(
       width: double.infinity,
       child: Column(
@@ -31,17 +33,19 @@ extension _ChatMessageTextPartBuilder on _ChatMessageWidgetState {
           else if (usePlainText)
             Text(textForRender, style: Theme.of(context).textTheme.bodyMedium)
           else ...[
-        MarkdownBody(
-          data: textForRender,
-          softLineBreak: true,
-          styleSheet: _resolveMarkdownStyleSheet(context),
-          inlineSyntaxes: [
-            if (widget.onFileTap != null) FilePathSyntax(),
-            InlineMathSyntax(),
-            SingleLineBlockMathSyntax(),
-          ],
-          blockSyntaxes: const [BlockMathSyntax()],
-          builders: <String, MarkdownElementBuilder>{
+            MarkdownBody(
+              data: textForRender,
+              softLineBreak: true,
+              styleSheet: _resolveMarkdownStyleSheet(context),
+              inlineSyntaxes: [
+                if (widget.onFileTap != null) FilePathSyntax(),
+                if (mathRenderingEnabled) InlineMathSyntax(),
+                if (mathRenderingEnabled) SingleLineBlockMathSyntax(),
+              ],
+              blockSyntaxes: mathRenderingEnabled
+                  ? const [BlockMathSyntax()]
+                  : null,
+              builders: <String, MarkdownElementBuilder>{
                 'pre': _MarkdownCodeBlockTapBuilder(
                   themeTokens: themeTokens,
                   onTapCode: (code) => _copyTextToClipboard(context, code),
@@ -57,8 +61,8 @@ extension _ChatMessageTextPartBuilder on _ChatMessageWidgetState {
                 ),
             if (widget.onFileTap != null)
               'filepath': FilePathBuilder(onFileTap: widget.onFileTap!),
-            'inlineMath': InlineMathBuilder(),
-            'blockMath': BlockMathBuilder(),
+            if (mathRenderingEnabled) 'inlineMath': InlineMathBuilder(),
+            if (mathRenderingEnabled) 'blockMath': BlockMathBuilder(),
               },
               onTapLink: (text, href, title) {
                 final normalizedHref = href?.trim();

@@ -1473,4 +1473,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get mathExpressionLabel => 'Mathématiques';
+
+  @override
+  String get settingsAppearanceMathRendering => 'Rendu mathématique';
+
+  @override
+  String get settingsAppearanceMathRenderingDescription =>
+      'Afficher les expressions mathématiques LaTeX sous forme d\'équations composées dans les messages.';
 }

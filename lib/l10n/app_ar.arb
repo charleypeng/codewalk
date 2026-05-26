@@ -430,5 +430,13 @@
   "mathExpressionLabel": "رياضيات",
   "@mathExpressionLabel": {
     "description": "CodeWalk UI string — mathExpressionLabel"
+  },
+  "settingsAppearanceMathRendering": "عرض الرياضيات",
+  "@settingsAppearanceMathRendering": {
+    "description": "CodeWalk UI string — settingsAppearanceMathRendering"
+  },
+  "settingsAppearanceMathRenderingDescription": "عرض تعبيرات LaTeX الرياضية كمعادلات منسقة في رسائل الدردشة.",
+  "@settingsAppearanceMathRenderingDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceMathRenderingDescription"
   }
 }

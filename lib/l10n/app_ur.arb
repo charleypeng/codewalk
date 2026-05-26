@@ -430,5 +430,13 @@
   "mathExpressionLabel": "ریاضی",
   "@mathExpressionLabel": {
     "description": "CodeWalk UI string — mathExpressionLabel"
+  },
+  "settingsAppearanceMathRendering": "ریاضی رینڈرنگ",
+  "@settingsAppearanceMathRendering": {
+    "description": "CodeWalk UI string — settingsAppearanceMathRendering"
+  },
+  "settingsAppearanceMathRenderingDescription": "چیٹ پیغامات میں LaTeX ریاضی اظہار کو ٹائپ سیٹ مساوات کے طور پر رینڈر کریں۔",
+  "@settingsAppearanceMathRenderingDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceMathRenderingDescription"
   }
 }

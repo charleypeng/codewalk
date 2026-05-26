@@ -1473,4 +1473,11 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get mathExpressionLabel => 'गणित';
+
+  @override
+  String get settingsAppearanceMathRendering => 'गणित रेंडरिंग';
+
+  @override
+  String get settingsAppearanceMathRenderingDescription =>
+      'चैट संदेशों में LaTeX गणितीय अभिव्यक्तियों को टाइपसेट समीकरणों के रूप में प्रस्तुत करें।';
 }

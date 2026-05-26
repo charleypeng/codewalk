@@ -152,6 +152,7 @@ class SettingsProvider extends ChangeNotifier {
   bool get showRecentSessions => _settings.showRecentSessions;
   bool get taskListCollapsed => _settings.taskListCollapsed;
   bool get showComposerTips => _settings.showComposerTips;
+  bool get showMathRendering => _settings.showMathRendering;
   bool get terminalPanelVisible => _settings.terminalPanelVisible;
   double get terminalPanelHeight => _settings.terminalPanelHeight;
   bool get terminalPanelMaximized => _settings.terminalPanelMaximized;
@@ -851,6 +852,15 @@ class SettingsProvider extends ChangeNotifier {
       return;
     }
     _settings = _settings.copyWith(showComposerTips: enabled);
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> setShowMathRendering(bool enabled) async {
+    if (_settings.showMathRendering == enabled) {
+      return;
+    }
+    _settings = _settings.copyWith(showMathRendering: enabled);
     notifyListeners();
     await _persist();
   }

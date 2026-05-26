@@ -515,6 +515,38 @@
 - **Then** touch gestures pass through to the parent chat scroll, avoiding scroll lock
 - **Then** horizontal scrolling within the diagram remains available when the diagram is wider than the viewport
 
+### LaTeX math expressions render as typeset equations
+
+- **Given** an assistant message contains an inline math expression `$...$` with LaTeX command tokens (e.g. `\frac`, `\sum`, `\sqrt`)
+- **Then** the expression is rendered as a visual typeset equation using flutter_math_fork (pure Dart KaTeX port)
+- **Then** the inline math renders in text style (baseline-aligned, smaller) inside a subtle background chip
+- **Given** an assistant message contains a block math expression `$$...$$` on separate lines or on a single line
+- **Then** the expression is rendered as a centered display-style equation inside a card with a `Math` header, matching the Mermaid diagram card pattern
+- **Then** horizontal scrolling is available when the equation is wider than the viewport
+
+### LaTeX math rendering avoids false positives
+
+- **Given** an assistant message contains currency values like `$5` or `$100`
+- **Then** these are not matched as math expressions and render as plain text
+- **Given** an assistant message contains shell variables like `$PATH` or `$HOME`
+- **Then** these are not matched as math expressions and render as plain text
+- **Given** math expressions appear inside fenced code blocks or inline code
+- **Then** the markdown parser's code-block and inline-code rules take priority, so the delimiters render as literal text
+
+### LaTeX math parse failures show a styled source fallback
+
+- **Given** a LaTeX expression contains invalid or unsupported syntax
+- **Then** the raw expression source is displayed in a styled monospace block instead of an error message
+- **Then** for inline math, the fallback text is styled in a smaller monospace font with error coloring
+- **Then** for block math, the fallback shows the raw source in a code-view container matching the Mermaid fallback pattern
+
+### Math rendering toggle
+
+- **Given** the user disables `Math rendering` in `Settings > Appearance`
+- **Then** `$...$` and `$$...$$` delimiters render as literal text without math processing
+- **Given** the user re-enables `Math rendering`
+- **Then** math expressions in all messages are rendered as typeset equations on next rebuild
+
 ### Tool call work groups collapse after completion
 
 - **Given** the assistant executes tool calls during a response (file reads, commands, etc.)

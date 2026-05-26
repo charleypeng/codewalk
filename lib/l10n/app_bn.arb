@@ -430,5 +430,13 @@
   "mathExpressionLabel": "গণিত",
   "@mathExpressionLabel": {
     "description": "CodeWalk UI string — mathExpressionLabel"
+  },
+  "settingsAppearanceMathRendering": "গণিত রেন্ডারিং",
+  "@settingsAppearanceMathRendering": {
+    "description": "CodeWalk UI string — settingsAppearanceMathRendering"
+  },
+  "settingsAppearanceMathRenderingDescription": "চ্যাট বার্তায় LaTeX গণিত রাশিগুলিকে টাইপসেট সমীকরণ হিসেবে রেন্ডার করুন।",
+  "@settingsAppearanceMathRenderingDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceMathRenderingDescription"
   }
 }

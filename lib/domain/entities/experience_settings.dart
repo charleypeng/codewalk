@@ -580,6 +580,7 @@ class ExperienceSettings {
       showRecentSessions: true,
       taskListCollapsed: false,
       showComposerTips: true,
+  showMathRendering: true,
       composerAutoApprovePermissions: true,
       desktopCloseBehavior: DesktopCloseBehavior.tray,
       dataSaverEnabled: true,
@@ -630,6 +631,7 @@ class ExperienceSettings {
     required this.showRecentSessions,
     required this.taskListCollapsed,
     required this.showComposerTips,
+    required this.showMathRendering,
     required this.composerAutoApprovePermissions,
     required this.desktopCloseBehavior,
     required this.dataSaverEnabled,
@@ -680,6 +682,7 @@ class ExperienceSettings {
   final bool showRecentSessions;
   final bool taskListCollapsed;
   final bool showComposerTips;
+  final bool showMathRendering;
   final bool composerAutoApprovePermissions;
   final DesktopCloseBehavior desktopCloseBehavior;
   final bool dataSaverEnabled;
@@ -730,6 +733,7 @@ class ExperienceSettings {
     bool? showRecentSessions,
     bool? taskListCollapsed,
     bool? showComposerTips,
+    bool? showMathRendering,
     bool? composerAutoApprovePermissions,
     DesktopCloseBehavior? desktopCloseBehavior,
     bool? dataSaverEnabled,
@@ -785,6 +789,7 @@ class ExperienceSettings {
       showRecentSessions: showRecentSessions ?? this.showRecentSessions,
       taskListCollapsed: taskListCollapsed ?? this.taskListCollapsed,
       showComposerTips: showComposerTips ?? this.showComposerTips,
+    showMathRendering: showMathRendering ?? this.showMathRendering,
       composerAutoApprovePermissions:
           composerAutoApprovePermissions ?? this.composerAutoApprovePermissions,
       desktopCloseBehavior: desktopCloseBehavior ?? this.desktopCloseBehavior,
@@ -884,6 +889,7 @@ class ExperienceSettings {
       'showRecentSessions': showRecentSessions,
       'taskListCollapsed': taskListCollapsed,
       'showComposerTips': showComposerTips,
+      'showMathRendering': showMathRendering,
       'composerAutoApprovePermissions': composerAutoApprovePermissions,
       'desktopCloseBehavior': desktopCloseBehaviorKey(desktopCloseBehavior),
       'dataSaverEnabled': dataSaverEnabled,
@@ -951,6 +957,7 @@ class ExperienceSettings {
     var showRecentSessions = defaults.showRecentSessions;
     var taskListCollapsed = defaults.taskListCollapsed;
     var showComposerTips = defaults.showComposerTips;
+  var showMathRendering = defaults.showMathRendering;
     var composerAutoApprovePermissions =
         defaults.composerAutoApprovePermissions;
     var desktopCloseBehavior = defaults.desktopCloseBehavior;
@@ -1138,6 +1145,11 @@ class ExperienceSettings {
     final showComposerTipsJson = json['showComposerTips'];
     if (showComposerTipsJson is bool) {
       showComposerTips = showComposerTipsJson;
+    }
+
+    final showMathRenderingJson = json['showMathRendering'];
+    if (showMathRenderingJson is bool) {
+      showMathRendering = showMathRenderingJson;
     }
 
     final composerAutoApprovePermissionsJson =
@@ -1330,6 +1342,7 @@ class ExperienceSettings {
       showRecentSessions: showRecentSessions,
       taskListCollapsed: taskListCollapsed,
       showComposerTips: showComposerTips,
+      showMathRendering: showMathRendering,
       composerAutoApprovePermissions: composerAutoApprovePermissions,
       desktopCloseBehavior: desktopCloseBehavior,
       dataSaverEnabled: dataSaverEnabled,

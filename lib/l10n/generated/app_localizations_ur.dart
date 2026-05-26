@@ -1473,4 +1473,11 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get mathExpressionLabel => 'ریاضی';
+
+  @override
+  String get settingsAppearanceMathRendering => 'ریاضی رینڈرنگ';
+
+  @override
+  String get settingsAppearanceMathRenderingDescription =>
+      'چیٹ پیغامات میں LaTeX ریاضی اظہار کو ٹائپ سیٹ مساوات کے طور پر رینڈر کریں۔';
 }

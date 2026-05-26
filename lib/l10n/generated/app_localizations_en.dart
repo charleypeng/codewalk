@@ -1473,4 +1473,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mathExpressionLabel => 'Math';
+
+  @override
+  String get settingsAppearanceMathRendering => 'Math rendering';
+
+  @override
+  String get settingsAppearanceMathRenderingDescription =>
+      'Render LaTeX math expressions (\$…\$ and \$\$…\$\$) as typeset equations in chat messages.';
 }

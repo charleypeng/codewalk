@@ -1473,4 +1473,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get mathExpressionLabel => 'Mathematik';
+
+  @override
+  String get settingsAppearanceMathRendering => 'Mathematik-Rendering';
+
+  @override
+  String get settingsAppearanceMathRenderingDescription =>
+      'LaTeX-Mathematik-Ausdrücke als gesetzte Gleichungen in Chat-Nachrichten darstellen.';
 }

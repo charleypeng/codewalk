@@ -1473,4 +1473,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get mathExpressionLabel => '数式';
+
+  @override
+  String get settingsAppearanceMathRendering => '数式レンダリング';
+
+  @override
+  String get settingsAppearanceMathRenderingDescription =>
+      'チャットメッセージでLaTeX数式を組版済み方程式としてレンダリングします。';
 }

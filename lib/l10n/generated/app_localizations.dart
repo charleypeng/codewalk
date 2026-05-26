@@ -2779,6 +2779,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Math'**
   String get mathExpressionLabel;
+
+  /// CodeWalk UI string — settingsAppearanceMathRendering
+  ///
+  /// In en, this message translates to:
+  /// **'Math rendering'**
+  String get settingsAppearanceMathRendering;
+
+  /// CodeWalk UI string — settingsAppearanceMathRenderingDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Render LaTeX math expressions (\$…\$ and \$\$…\$\$) as typeset equations in chat messages.'**
+  String get settingsAppearanceMathRenderingDescription;
 }
 
 class _AppLocalizationsDelegate

@@ -1473,4 +1473,11 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get mathExpressionLabel => '수식';
+
+  @override
+  String get settingsAppearanceMathRendering => '수식 렌더링';
+
+  @override
+  String get settingsAppearanceMathRenderingDescription =>
+      '채팅 메시지에서 LaTeX 수학 표현식을 조판된 방정식으로 렌더링합니다.';
 }
