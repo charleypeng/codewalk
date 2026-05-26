@@ -2939,7 +2939,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.pump(const Duration(seconds: 3));
+      for (var i = 0; i < 24; i += 1) {
+        await tester.pump(const Duration(milliseconds: 150));
+        await tester.pump();
+      }
 
       expect(settingsProvider.pendingPostOnboardingChatTour, isTrue);
     });

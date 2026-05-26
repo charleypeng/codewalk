@@ -1575,6 +1575,9 @@ class _ChatPageState extends State<ChatPage>
       if (!_isPostOnboardingTourRunActive(runToken)) {
         return;
       }
+      // Delayed startup may fire while idle; request a frame so the
+      // post-frame callback is not left waiting for unrelated UI work.
+      WidgetsBinding.instance.scheduleFrame();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!_isPostOnboardingTourRunActive(runToken)) {
           return;
@@ -1687,6 +1690,9 @@ class _ChatPageState extends State<ChatPage>
       if (!_isPostOnboardingTourRunActive(runToken)) {
         return;
       }
+      // Delayed startup may fire while idle; request a frame so the
+      // post-frame callback is not left waiting for unrelated UI work.
+      WidgetsBinding.instance.scheduleFrame();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!_isPostOnboardingTourRunActive(runToken)) {
           return;

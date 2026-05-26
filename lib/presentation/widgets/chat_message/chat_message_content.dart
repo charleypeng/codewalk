@@ -331,7 +331,10 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
   Future<void> _onShareAsImage(BuildContext context) async {
     if (_hideShareImageButtonForCapture) return;
 
-    setState(() => _hideShareImageButtonForCapture = true);
+    setState(() {
+      _hideShareImageButtonForCapture = true;
+      _localUiStateVersion += 1;
+    });
 
     var result = MessageImageExportResult.failed;
     try {
@@ -344,7 +347,10 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
       );
     } finally {
       if (mounted) {
-        setState(() => _hideShareImageButtonForCapture = false);
+        setState(() {
+          _hideShareImageButtonForCapture = false;
+          _localUiStateVersion += 1;
+        });
       }
     }
 
