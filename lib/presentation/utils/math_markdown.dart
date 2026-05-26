@@ -4,31 +4,27 @@ import 'package:markdown/markdown.dart' as md;
 
 import '../widgets/math_expression_widget.dart';
 
-/// LaTeX command tokens that must appear inside `$...$` or `$$...$$`
-/// for the match to be treated as a math expression rather than currency
-/// or a shell variable. At least one such token is required.
-const _latexCommandPattern =
-    r'(?:\\[a-zA-Z]+|[{}\^_~]|\\[\\|!><=])';
-
 /// Inline math syntax: `$...$` (single-dollar, must contain LaTeX tokens).
 ///
-/// Rejects currency patterns like `$5`, `$100`, and shell variables like
-/// `$PATH` by requiring at least one LaTeX command token between the
-/// delimiters. The markdown parser processes fenced code blocks (```)
-/// as block elements before inline parsing, so math inside code blocks
-/// is naturally excluded. Inline code (backtick-enclosed) also takes
-/// priority over custom inline syntaxes.
+/// The regex requires at least one LaTeX command token (backslash commands,
+/// braces, caret, underscore, tilde) between the delimiters, so currency
+/// (`$5`) and shell variables (`$PATH`) never match and are left as plain
+/// text for the parser to handle normally. Fenced code blocks are
+/// block-parsed before inline syntaxes run, so math inside code blocks is
+/// naturally excluded. Inline code (backtick-enclosed) also takes priority
+/// over custom inline syntaxes.
 class InlineMathSyntax extends md.InlineSyntax {
   InlineMathSyntax() : super(_pattern);
 
-  // Group 1: expression between $ delimiters
+  // Group 1: expression between $ delimiters (must contain LaTeX tokens).
+  // The embedded (?:\\[a-zA-Z]+|[{}\^_~]|\\[\\|!><=]) ensures at least
+  // one LaTeX command token is present, rejecting currency and shell vars.
   static const _pattern =
-      r'(?<!\S)\$(?!\$)([^$\n]+?)(?<=\S)\$(?!\d)';
+      r'(?<!\S)\$(?!\$)([^$\n]*(?:\\[a-zA-Z]+|[{}\^_~]|\\[\\|!><=])[^$\n]*?)(?<=\S)\$(?!\d)';
 
   @override
   bool onMatch(md.InlineParser parser, Match match) {
     final expression = match[1]!;
-    if (!_looksLikeLatex(expression)) return false;
     final element = md.Element('inlineMath', <md.Node>[
       md.Text(expression),
     ]);
@@ -89,17 +85,20 @@ class BlockMathSyntax extends md.BlockSyntax {
 ///
 /// Handles the common pattern where both `$$` delimiters appear on the
 /// same line, which BlockMathSyntax cannot match because it expects
-/// `$$` on its own line.
+/// `$$` on its own line. The regex requires at least one LaTeX token
+/// between the delimiters to reject non-math dollar patterns.
 class SingleLineBlockMathSyntax extends md.InlineSyntax {
   SingleLineBlockMathSyntax() : super(_pattern);
 
-  // Group 1: expression between $$ delimiters
-  static const _pattern = r'\$\$(.+?)\$\$';
+  // Group 1: expression between $$ delimiters (must contain LaTeX tokens).
+  // The embedded (?:\\[a-zA-Z]+|[{}\^_~]|\\[\\|!><=]) ensures at least
+  // one LaTeX command token is present, rejecting non-math patterns.
+  static const _pattern =
+      r'\$\$(.*(?:\\[a-zA-Z]+|[{}\^_~]|\\[\\|!><=]).*?)\$\$';
 
   @override
   bool onMatch(md.InlineParser parser, Match match) {
     final expression = match[1]!;
-    if (!_looksLikeLatex(expression)) return false;
     final element = md.Element('blockMath', <md.Node>[
       md.Text(expression),
     ]);
@@ -164,9 +163,3 @@ class BlockMathBuilder extends MarkdownElementBuilder {
   }
 }
 
-/// Returns true if [text] contains at least one LaTeX command token,
-/// indicating it is likely a math expression rather than currency or
-/// a shell variable.
-bool _looksLikeLatex(String text) {
-  return RegExp(_latexCommandPattern).hasMatch(text);
-}
