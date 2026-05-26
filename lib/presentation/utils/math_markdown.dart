@@ -24,10 +24,8 @@ class InlineMathSyntax extends md.InlineSyntax {
 
   @override
   bool onMatch(md.InlineParser parser, Match match) {
-    final expression = match[1]!;
-    final element = md.Element('inlineMath', <md.Node>[
-      md.Text(expression),
-    ]);
+    final element = md.Element.empty('inlineMath');
+    element.attributes['expression'] = match[1]!;
     parser.addNode(element);
     return true;
   }
@@ -113,13 +111,16 @@ class SingleLineBlockMathSyntax extends md.InlineSyntax {
 /// text style (smaller, baseline-aligned).
 class InlineMathBuilder extends MarkdownElementBuilder {
   @override
+  bool isBlockElement() => true;
+
+  @override
   Widget? visitElementAfterWithContext(
     BuildContext context,
     md.Element element,
     TextStyle? preferredStyle,
     TextStyle? parentStyle,
   ) {
-    final expression = element.textContent;
+    final expression = element.attributes['expression'] ?? element.textContent;
     if (expression.trim().isEmpty) return null;
 
     final textStyle = parentStyle ?? preferredStyle ??
