@@ -35,6 +35,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-029: Host-Discovered Quota and Rate-Limit Monitoring for OpenChamber Parity
 - ADR-030: OpenChamber-Driven Realtime Hardening and Permission Continuity
 - ADR-031: Historical Inline Revert via OpenCode Session Revert Endpoint
+- ADR-032: LaTeX Math Rendering with flutter_math_fork and Custom Markdown Delimiters
 
 ---
 
@@ -1598,3 +1599,57 @@ This feature is fully compliant with ADR-023. The revert uses the official OpenC
 - `lib/presentation/pages/chat_page/chat_page_timeline_builder.dart` — historical server-confirmed user-message callback wiring
 - `lib/presentation/widgets/chat_message_widget.dart` — optional `onInlineRevertToHere` callback and rebuild cache invalidation
 - `lib/presentation/widgets/chat_message/chat_message_content.dart` — inline rewind action rendering
+
+---
+
+## ADR-032: LaTeX Math Rendering with flutter_math_fork and Custom Markdown Delimiters (2026-05-26)
+
+**Status**: Accepted
+
+**Related**: ADR-007 (Modular Settings Architecture), ADR-004 (Chat Architecture with Slim Orchestrators and Decomposed Clusters)
+
+### Context
+
+CodeWalk v1.83.0 introduced LaTeX math rendering so that mathematical expressions in chat messages render as properly typeset formulas instead of raw LaTeX source text. This is essential for users working with LLMs on math-heavy topics (physics, engineering, statistics, formal methods).
+
+Key challenges:
+- **Library selection**: Most Dart math rendering libraries are either unmaintained, platform-dependent (WebView-based), or have limited LaTeX coverage. A pure-Dart solution is preferred to avoid WebView overhead and ensure consistent behavior across desktop and mobile.
+- **Markdown delimiter integration**: Chat messages are parsed as Markdown. Math delimiters (`$...$` for inline, `$$...$$` for display) must be recognized before or alongside standard Markdown parsing without conflicting with existing syntax (code spans, emphasis, etc.).
+- **Graceful fallback**: When rendering fails (unsupported LaTeX command, malformed input), the user should see a styled fallback rather than a broken widget or crash.
+- **User toggle**: Math rendering is a visual preference. Some users prefer raw LaTeX for copy-paste or screen-reader compatibility. A toggle must exist in experience settings.
+- **Performance**: Math rendering is computationally heavier than plain text. It must not block the chat timeline scroll or cause jank on long sessions with many expressions.
+
+### Decision
+
+1. **`flutter_math_fork` as the rendering engine**: Use the `flutter_math_fork` package — a pure-Dart port of KaTeX — for all LaTeX math rendering. This avoids WebView dependencies, works identically on all Flutter platforms, and provides broad LaTeX coverage aligned with KaTeX's well-tested subset.
+
+2. **Custom Markdown delimiters**: Extend the Markdown parser to recognize `$...$` (inline math) and `$$...$$` (display/block math) as custom syntax elements. These delimiters are extracted before standard Markdown processing to prevent conflicts with code spans (`` ` ``) and emphasis (`*`/`_`). Inline math renders within the text flow; display math renders as a centered block.
+
+3. **`MathExpressionWidget` with styled fallback**: A dedicated `MathExpressionWidget` wraps the `flutter_math_fork` render call. On successful parse, it renders the typeset formula. On parse failure, it displays the raw LaTeX source in a monospaced, subtly styled container (e.g., with a light background tint) so the user can still read and copy the expression without UI breakage.
+
+4. **`showMathRendering` toggle in `ExperienceSettings`**: Add a boolean `showMathRendering` field to `ExperienceSettings` (ADR-007). When disabled, math delimiters are not parsed and `$...$` / `$$...$$` content renders as plain text. This gives users control over rendering overhead and raw-LaTeX visibility. The toggle persists via the existing `SettingsProvider` infrastructure.
+
+### Rationale
+
+- **`flutter_math_fork` over WebView-based solutions**: Pure-Dart rendering avoids the memory and latency overhead of embedding a WebView per math expression. It also works offline and on all Flutter targets (Android, iOS, macOS, Linux, Windows) without requiring an embedded browser engine.
+- **Pre-extraction of delimiters**: Parsing math delimiters before standard Markdown prevents ambiguity (e.g., `$a_b$` must not trigger emphasis parsing on the underscore). This is the same strategy used by GitHub and MathJax integrations.
+- **Styled fallback over silent failure**: Showing raw LaTeX in a styled container is better than a blank space, a red error box, or a crash. It preserves the information while signaling that rendering was not possible.
+- **Toggle as experience setting**: Math rendering is a display preference (like font size or theme), not a data-layer concern. `ExperienceSettings` (ADR-007) is the natural home for this toggle.
+
+### Consequences
+
+- ✅ Users see properly typeset LaTeX math in chat messages, improving readability for math-heavy conversations.
+- ✅ Pure-Dart rendering works on all Flutter platforms without WebView or network dependencies.
+- ✅ Styled fallback ensures malformed LaTeX degrades gracefully instead of breaking the UI.
+- ✅ `showMathRendering` toggle gives users control over rendering behavior and raw-LaTeX visibility.
+- ⚠ `flutter_math_fork` is a community-maintained fork; if it becomes unmaintained, a migration path to another KaTeX/MathJax port or a WebView fallback may be needed.
+- ⚠ Complex LaTeX expressions (e.g., TikZ, chemfig) outside KaTeX's subset will fall back to raw source. Users expecting full LaTeX coverage will see limitations.
+- ⚠ Math rendering adds CPU cost per expression; on very long sessions with hundreds of formulas, scroll performance may need monitoring and possible lazy-render optimization.
+- ❌ Does not support LaTeX rendering in code blocks or file previews — only in chat message Markdown content.
+
+### Key Files
+
+- `lib/presentation/widgets/math_expression_widget.dart` — `MathExpressionWidget` with `flutter_math_fork` rendering and styled fallback
+- `lib/presentation/widgets/chat_message/` — integration of math delimiter parsing into chat message Markdown pipeline
+- `lib/domain/settings/experience_settings.dart` — `showMathRendering` toggle field
+- `lib/presentation/providers/settings_provider.dart` — toggle persistence and access via `SettingsProvider`

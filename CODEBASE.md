@@ -8,6 +8,7 @@
 - Chat stack is decomposed into orchestrators plus focused cluster modules.
 - Material icon migration in UI is complete on `Symbols.*` (`material_symbols_icons`).
 - Theme system follows Material You (MD3): user-controlled theme mode, dynamic color toggle, AMOLED dark toggle, brand color seeds, contrast level, and responsive window size classes.
+- LaTeX math rendering (`$...$` and `$$...$$`) supported in chat messages via `flutter_math_fork` with custom markdown syntaxes and styled fallback on parse failure.
 
 ## Folder Structure
 
@@ -43,9 +44,10 @@ codewalk/
 │       ├── widgets/
 │       │   ├── chat_message_widget.dart # StatefulWidget with build-skip cache for messages
 │       │   ├── chat_input_widget.dart  # Chat input orchestrator/facade
-│       │   └── chat_input/             # ChatInput decomposed clusters (8 modules)
+│       │   ├── chat_input/             # ChatInput decomposed clusters (8 modules)
+│       │   └── math_expression_widget.dart # LaTeX math renderer with parse-failure styled fallback
 │       ├── services/                   # Platform/runtime services (tray, notifications, STT, terminal, etc.)
-│   ├── utils/ # Presentation helpers (incl. WindowSizeClass MD3 breakpoints, diff parser, file path detector, file path markdown)
+│   ├── utils/ # Presentation helpers (incl. WindowSizeClass MD3 breakpoints, diff parser, file path detector, file path markdown, math markdown)
 │       └── theme/                      # Material You theme: AppTheme, AppShapes, BrandColor seeds, AppSemanticColors
 ├── test/                               # Unit, widget, integration, presentation, support tests
 ├── tool/ci/                            # Analyzer budget and coverage gate scripts
@@ -111,6 +113,7 @@ lib/presentation/utils/window_size_class.dart         # WindowSizeClass enum wit
 lib/presentation/utils/diff_parser.dart # Diff parser: DiffHunk model, groupIntoHunks(), annotateLineNumbers(), resolveDiffHighlightLanguage(), kDefaultCollapseThreshold
 lib/presentation/utils/file_path_detector.dart # Regex-based file path detector: ~90 known extensions, :line:col suffix parsing, code-block exclusion, URL exclusion, Windows absolute paths
 lib/presentation/utils/file_path_markdown.dart # Custom flutter_markdown_plus InlineSyntax (FilePathSyntax) and MarkdownElementBuilder (FilePathBuilder) for clickable file path spans
+lib/presentation/utils/math_markdown.dart # Custom markdown syntaxes (InlineMathSyntax, BlockMathSyntax, SingleLineBlockMathSyntax) and builders (InlineMathBuilder, BlockMathBuilder) for `$...$` and `$$...$$` LaTeX math expressions
 lib/presentation/services/desktop_tray_service_io.dart # Desktop tray lifecycle; selects tray icon per OS (macOS template PNG, Windows ICO, Linux PNG)
 lib/presentation/services/notification_service.dart    # Local notifications; Android uses `@drawable/ic_stat_codewalk` small icon and no longer drives foreground monitor state
 lib/presentation/services/android_foreground_monitor_service.dart # Android foreground service via MethodChannel; active only during temporary live monitoring for known background work
@@ -145,6 +148,7 @@ lib/presentation/pages/chat_page.dart             # Chat UI orchestration facade
 lib/presentation/widgets/chat_input_widget.dart   # Composer/input orchestration facade; speech controller resolves Native, Sherpa, Moonshine, Parakeet, and SenseVoice backends and routes model-required setup dialogs accordingly
 lib/presentation/widgets/chat_message_widget.dart # Message bubble with build-skip cache, cached MarkdownStyleSheet; compact (<600dp) collapsed-copy variants for reasoning/tool-chain/tool-content toggles; completed tool-chain groups preserve user expansion through ordinary parent rebuilds (no involuntary collapse-on-scroll); includes `SubtaskPart`/`task` navigation callbacks, inline latest-turn undo, historical `onInlineRevertToHere`, stable rebuild gating keyed by callback identity, `onFileTap` for clickable file paths with line jumps, and `onMermaidCode` callback routing mermaid fenced blocks to MermaidDiagramWidget
 lib/presentation/widgets/mermaid_diagram_widget.dart # Renders ```mermaid fenced code blocks as visual diagrams via flutter_mermaid; copy-source button; styled source fallback on parse error via errorBuilder; horizontal scroll only (no vertical scroll); responsive layout
+lib/presentation/widgets/math_expression_widget.dart # Renders `$...$` and `$$...$$` LaTeX math via flutter_math_fork with styled raw-source fallback on parse failure; inline and block display modes
 lib/presentation/widgets/session_diff_viewer.dart # Rich diff review surface: DiffViewMode enum (summary/unified/split), 3 view toggles, line number gutters, per-line syntax highlighting, lazy hunk collapse/expand, onFileTap jump action (wired at all 3 call sites)
 lib/presentation/widgets/session_todo_list_widget.dart # Session task panel with progress bar and keyboard-aware collapse; compact mobile collapsed summaries use count-first wording (`x/y in progress`, `x/y done`)
 lib/presentation/widgets/chat_session_list.dart    # Chat session list widget; uses responsive vertical tile padding (1 on desktop, 3 on mobile) for information density
@@ -197,7 +201,7 @@ chat_page_search.dart                   # Timeline full-text search: inline AppB
 ```text
 lib/presentation/widgets/chat_message/chat_message_tool_part.dart   # Renders long tool outputs in a bounded internal scroll viewport; large diffs use lazy rendering so tool growth does not destabilize the outer chat timeline; task bubbles are compact, navigate to child thread via full-bubble tap, hide the task-only details row, prefer latest child-tool progress labels with command fallback while running, and show `N tool calls` when completed if child-session totals are available
 lib/presentation/widgets/chat_message/chat_message_content.dart     # Message bubble layout, copy/hold layers, latest inline undo, historical inline rewind button, and read-aloud button in assistant message header (volume_up/stop icon, ListenableBuilder, markdown stripping)
-lib/presentation/widgets/chat_message/chat_message_text_part.dart   # Markdown code block tap builder; detects `language=="mermaid"` and routes to MermaidDiagramWidget via onMermaidCode callback; renders standard code blocks with syntax highlighting and copy action
+lib/presentation/widgets/chat_message/chat_message_text_part.dart   # Markdown renderer with code block tap builder; detects `language=="mermaid"` and routes to MermaidDiagramWidget via onMermaidCode callback; renders standard code blocks with syntax highlighting and copy action; wires math syntaxes (InlineMathSyntax, BlockMathSyntax, SingleLineBlockMathSyntax) and builders (InlineMathBuilder, BlockMathBuilder) when showMathRendering is enabled
 lib/presentation/widgets/chat_message/chat_message_part_dispatch.dart # Reorders contiguous visible `task` tool runs so unfinished task bubbles stay last within each run while non-task grouping remains unchanged
 lib/presentation/utils/tool_presentation.dart                      # Shared tool label/icon formatting reused by chat bubbles and the fixed composer live-progress surface
 ```
@@ -506,6 +510,18 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
   (runtime signal set by `DynamicColorBuilder` in `main.dart`) instead of a heuristic; contrast
   slider is disabled when dynamic color is active. Composer tips visibility is shared with the
   Chat Display popover toggle through `settingsProvider.showComposerTips`.
+
+### LaTeX Math Rendering (v1.83.0)
+
+- **New dependency**: `flutter_math_fork ^0.7.4` — pure Dart port of KaTeX for client-side math rendering.
+- **Custom markdown syntaxes** (`lib/presentation/utils/math_markdown.dart`):
+  - `InlineMathSyntax` — matches `$...$` inline expressions (requires at least one LaTeX token to reject currency and shell variables).
+  - `BlockMathSyntax` — matches `$$...$$` block expressions on separate lines.
+  - `SingleLineBlockMathSyntax` — matches `$$...$$` on a single line.
+  - `InlineMathBuilder` / `BlockMathBuilder` — `MarkdownElementBuilder` implementations that render math via `MathExpressionWidget`.
+- **Math rendering widget** (`lib/presentation/widgets/math_expression_widget.dart`): Renders LaTeX via `flutter_math_fork`'s `Math.tex`; falls back to styled monospace source view on parse failure. Supports inline (`MathStyle.text`, baseline-aligned) and block (`MathStyle.display`, centered in a Card) modes.
+- **Setting**: `showMathRendering` (`ExperienceSettings`) with `setShowMathRendering()` on `SettingsProvider`; defaults to `true`. Toggle UI in Appearance settings (`settings_toggle_math_rendering`).
+- **Chat pipeline integration** (`chat_message_text_part.dart`): Conditionally wires math syntaxes and builders into the markdown rendering chain when `showMathRendering` is enabled.
 
 ### Session Export Service
 

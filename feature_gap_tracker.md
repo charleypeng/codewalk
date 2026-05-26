@@ -21,11 +21,11 @@
 | Phase | Features | Done | In Progress | Remaining |
 |-------|----------|------|-------------|-----------|
 | 1 — UX Foundations | 4 | 4 | 0 | 0 |
-| 2 — Rich Output | 4 | 2 | 0 | 2 |
+| 2 — Rich Output | 4 | 3 | 0 | 1 |
 | 3 — Organization | 3 | 0 | 0 | 3 |
 | 4 — Workspace Control | 4 | 0 | 0 | 4 |
 | 5 — Advanced | 4 | 0 | 0 | 4 |
-| **Total** | **19** | **6** | **0** | **13** |
+| **Total** | **19** | **7** | **0** | **12** |
 
 ---
 
@@ -58,12 +58,12 @@ Client-side rendering or platform-service additions that improve comprehension a
 |---|---------|----------|--------|--------|------|
 | 5 | TTS Read-Aloud Responses | P1 | [x] | plan 5a868d81, implementation bb06528..277b697, reviewer fixes 9581904 16805ed, release v1.81.0 (8e5643f) | [05_tts_read_aloud.md](final_plan/05_tts_read_aloud.md) |
 | 6 | Mermaid Diagram Rendering | P1 | [x] | plan 349649c, implementation e955581..8230a4b, tests 11dee9b, reviewer fix 07a80c2, release v1.82.0 (6ad07c7) | [06_mermaid_rendering.md](final_plan/06_mermaid_rendering.md) |
-| 7 | LaTeX/Math Rendering | P2 | [ ] | — | [07_latex_rendering.md](final_plan/07_latex_rendering.md) |
+| 7 | LaTeX/Math Rendering | P2 | [x] | plan fb7adf0, implementation 5a598d2..fdd276e, reviewer fix 25448b9, release v1.83.0 (a7c99b7) | [07_latex_rendering.md](final_plan/07_latex_rendering.md) |
 | 8 | Share Messages as Images | P2 | [ ] | — | [08_share_messages_as_images.md](final_plan/08_share_messages_as_images.md) |
 
 **Phase completion**:
 
-- [x] Feature #6 implemented (Phase 2 — 2/4 done)
+- [x] Feature #7 implemented (Phase 2 — 3/4 done)
 - [ ] All 4 features implemented
 - [ ] All validations passing
 - [ ] `make check` clean
@@ -169,7 +169,7 @@ Primary finding: CodeWalk is very strong as a mobile-first OpenCode chat client,
 | Plan/Build mode | Missing | No `PlanView`, plan mode, or dedicated plan surface found | Valid |
 | TTS read-aloud responses | Missing | No TTS implementation; only STT stack exists | Valid |
 | Mermaid rendering | Missing | No Mermaid implementation found | Valid |
-| LaTeX/math rendering | Missing | No LaTeX/math rendering implementation found | Valid |
+| LaTeX/math rendering | Done | `flutter_math_fork`, `InlineMathSyntax`/`BlockMathSyntax`/`SingleLineBlockMathSyntax` markdown extensions, `MathExpressionWidget` with styled fallback, `showMathRendering` toggle in ExperienceSettings | Completed in v1.83.0 (fb7adf0, 5a598d2, fdd276e, 25448b9, a7c99b7) |
 | Share messages as images | Missing | No `toImage`, message image share, or RepaintBoundary export flow found | Valid |
 | Session export as Markdown/JSON | Done | `SessionExportService` serializes to Markdown and JSON; export actions in session menu; file_picker save with Clipboard fallback; local_user_* IDs omitted (ADR-023); paginated message guard | Completed in v1.80.0 (a8b42ea, 200dfb4, 79d90dd) |
 | Session folders/subfolders | Missing | No session folder model/provider/UI found | Valid |
@@ -228,4 +228,4 @@ Every implementation must preserve these constraints:
 
 ## Immediate Next Task
 
-Features #1–#6 are complete. Phase 1 is done. Phase 2 is 2/4 done. Next: **LaTeX/Math Rendering** (#7) — first P2 item in Phase 2.
+Features #1–#7 are complete. Phase 1 is done. Phase 2 is 3/4 done. Next: **Share Messages as Images** (#8) — last P2 item in Phase 2.

@@ -60,7 +60,8 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | 028 | Unified scroll ownership via `_ScrollOwner` enum — eliminate scroll jumping across send/return/pagination triggers, user drag priority, force scroll bypass; additive guardrails cover passive provider scroll suppression, manual follow pause near bottom, response-settle shrink-snap suppression, duplicate return-to-chat scoping, queued cached restore targets for settled-vs-active session return, active-turn/global-fallback guards against passive background settle, a single reading-mode final reveal path for long answers, deferred tool-only merge until settlement to prevent active-turn structural shrink, and a narrow active-turn shrink heal while passive follow remains enabled | 1331–1411 |
 | 029 | Host-discovered quota and rate-limit monitoring for OpenChamber parity — server-host quota ownership, strategy-chain transport (REST/Shell), popup-only UI (compact-first), grouped providers with pace/progress, explicit parity opt-in; narrow `opencode-go` exception for dashboard credential opt-in (workspace ID + auth cookie, scoped by serverId, quota-probe only, removable via UI) | 1412–1491 |
 | 030 | OpenChamber-driven realtime hardening and permission continuity — atomic refresh consolidation, mutation guard during reconnect failures, authoritative pruning delay, and bounded reconnect helpers | 1492–1534 |
-| 031 | Historical inline revert through the official session revert endpoint — `revertToTurn`, duplicate-revert guard, `local_user_*` validation, composer draft restoration, distinct inline rewind action for server-confirmed user messages, and permission `remember: true` companion fix for `always` replies | 1536–1600 |
+| 031 | Historical inline revert through the official session revert endpoint — `revertToTurn`, duplicate-revert guard, `local_user_*` validation, composer draft restoration, distinct inline rewind action for server-confirmed user messages, and permission `remember: true` companion fix for `always` replies | 1537–1601 |
+| 032 | LaTeX math rendering with `flutter_math_fork` (pure-Dart KaTeX port), custom `$…$`/`$$…$$` Markdown delimiters, `MathExpressionWidget` with styled fallback, and `showMathRendering` toggle in `ExperienceSettings` — typeset math in chat without WebView | 1605–1655 |
 
 ## 🗺 CODEBASE Quick Reference (details in `CODEBASE.md`)
 
@@ -68,17 +69,17 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 
 | CODEBASE Topic | Lines |
 |----------------|-------|
-| Project Snapshot | 3–11 |
-| Folder Structure | 12–60 |
-| Entry Points | 61–71 |
-| Core Modules | 72–158 |
-| Chat Architecture | 160–255 |
-| Data & Domain Layers | 257–267 |
-| Key API/DataSource locations | 269–287 |
-| Main Commands | 289–311 |
-| Testing/Quality Gates | 313–334 |
-| Internationalization (i18n) | 336–347 |
-| Notes | 348–517 |
+| Project Snapshot | 3–12 |
+| Folder Structure | 13–61 |
+| Entry Points | 63–72 |
+| Core Modules | 74–162 |
+| Chat Architecture | 164–259 |
+| Data & Domain Layers | 261–271 |
+| Key API/DataSource locations | 273–291 |
+| Main Commands | 293–315 |
+| Testing/Quality Gates | 317–338 |
+| Internationalization (i18n) | 340–351 |
+| Notes | 352–533 |
 
 ## ⚙️ Makefile Quick Reference (details in `Makefile`)
 
