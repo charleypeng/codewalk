@@ -6,13 +6,13 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/i18n/l10n_context.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/i18n/l10n_context.dart';
 import '../../domain/entities/server_profile.dart';
 import '../providers/app_provider.dart';
-import '../theme/app_animations.dart';
 import '../providers/settings_provider.dart';
 import '../services/local_opencode_server_runtime_types.dart';
+import '../theme/app_animations.dart';
 import '../utils/app_page_route.dart';
 import '../widgets/modal_primary_action_shortcuts.dart';
 import 'opencode_setup_debug_page.dart';
@@ -69,6 +69,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _basicAuthEnabled = false;
+  bool _oauthEnabled = false;
   bool _aiGeneratedTitlesEnabled = true;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
@@ -94,6 +95,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       _usernameController.text = initialProfile.basicAuthUsername;
       _passwordController.text = initialProfile.basicAuthPassword;
       _basicAuthEnabled = initialProfile.basicAuthEnabled;
+      _oauthEnabled = initialProfile.oauthEnabled;
       _aiGeneratedTitlesEnabled = initialProfile.aiGeneratedTitlesEnabled;
       _step = 1;
       return;
@@ -332,6 +334,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         basicAuthEnabled: _basicAuthEnabled,
         basicAuthUsername: username,
         basicAuthPassword: password,
+        oauthEnabled: _oauthEnabled,
         aiGeneratedTitlesEnabled: _aiGeneratedTitlesEnabled,
       );
       if (!mounted) return;
@@ -379,6 +382,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       basicAuthEnabled: _basicAuthEnabled,
       basicAuthUsername: username,
       basicAuthPassword: password,
+      oauthEnabled: _oauthEnabled,
       aiGeneratedTitlesEnabled: _aiGeneratedTitlesEnabled,
       setAsActive: true,
     );
@@ -952,10 +956,25 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                     onChanged: (value) {
                       setState(() {
                         _basicAuthEnabled = value;
+                        if (value) _oauthEnabled = false;
                       });
                     },
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Use Basic Auth'),
+                  ),
+                  SwitchListTile(
+                    value: _oauthEnabled,
+                    onChanged: (value) {
+                      setState(() {
+                        _oauthEnabled = value;
+                        if (value) _basicAuthEnabled = false;
+                      });
+                    },
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Use OAuth (Cloudflare Access)'),
+                    subtitle: const Text(
+                      'Opens browser for authentication. Requires Managed OAuth on the server.',
+                    ),
                   ),
                   if (_basicAuthEnabled) ...[
                     TextFormField(

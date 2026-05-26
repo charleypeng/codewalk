@@ -4,7 +4,9 @@ import 'dart:math';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 
+import '../../core/auth/oauth_service.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/logging/app_logger.dart';
 import '../../core/network/dio_client.dart';
@@ -113,6 +115,12 @@ class AppProvider extends ChangeNotifier {
   bool _queuedHealthRefreshAll = false;
   final Set<String> _queuedHealthServerIds = <String>{};
 
+  // OAuth challenge tracking
+  final Map<String, Map<String, String>> _oauthChallengeHeaders =
+      <String, Map<String, String>>{};
+  final Map<String, String> _oauthChallengeBodies = <String, String>{};
+  final Set<String> _validOAuthUrls = <String>{};
+
   AppStatus get status => _status;
   AppInfo? get appInfo => _appInfo;
   String get errorMessage => _errorMessage;
@@ -139,6 +147,15 @@ class AppProvider extends ChangeNotifier {
   String? get activeServerId => _activeServerId;
   String? get defaultServerId => _defaultServerId;
   ServerProfile? get activeServer => _findById(_activeServerId);
+
+  bool hasOAuthChallenge(String serverUrl) =>
+      _oauthChallengeHeaders.containsKey(serverUrl);
+
+  Map<String, String>? getOAuthChallengeHeaders(String serverUrl) =>
+      _oauthChallengeHeaders[serverUrl];
+
+  bool isOAuthAuthenticated(String serverUrl) =>
+      _validOAuthUrls.contains(serverUrl);
 
   ServerHealthStatus healthFor(String serverId) {
     return _serverHealthById[serverId] ?? ServerHealthStatus.unknown;
@@ -330,7 +347,18 @@ class AppProvider extends ChangeNotifier {
       return;
     }
     _dioClient.updateBaseUrl(profile.url);
-    if (profile.basicAuthEnabled &&
+    if (profile.oauthEnabled) {
+      // OAuth mode: try to load cached token
+      _dioClient.clearAuth();
+      final cachedToken = _validOAuthUrls.contains(profile.url)
+          ? _dioClient.hasOAuthToken
+              ? _dioClient.hasOAuthToken
+              : false
+          : false;
+      if (!cachedToken) {
+        // Token not in memory; will be loaded on demand via handleOAuthChallenge
+      }
+    } else if (profile.basicAuthEnabled &&
         profile.basicAuthUsername.trim().isNotEmpty &&
         profile.basicAuthPassword.trim().isNotEmpty) {
       _dioClient.setBasicAuth(
@@ -348,12 +376,64 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> handleOAuthChallenge({
+    required String serverUrl,
+    Map<String, String>? challengeHeaders,
+    String? challengeBody,
+  }) async {
+    _oauthChallengeHeaders[serverUrl] = challengeHeaders ?? {};
+    if (challengeBody != null) {
+      _oauthChallengeBodies[serverUrl] = challengeBody;
+    }
+
+    final service = OAuthService(
+      serverUrl: serverUrl,
+      challengeHeaders: challengeHeaders,
+      challengeBody: challengeBody,
+    );
+
+    final result = await service.authenticate();
+    if (result.ok && result.token != null) {
+      _dioClient.setOAuthToken(result.token);
+      _validOAuthUrls.add(serverUrl);
+      _oauthChallengeHeaders.remove(serverUrl);
+      _oauthChallengeBodies.remove(serverUrl);
+
+      // Run health check to verify the token works
+      await checkConnection();
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
+      return true;
+    }
+
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
+    return false;
+  }
+
+  Future<void> clearOAuthCredential(String serverUrl) async {
+    final service = OAuthService(serverUrl: serverUrl);
+    await service.clearCredential();
+    _validOAuthUrls.remove(serverUrl);
+    _oauthChallengeHeaders.remove(serverUrl);
+    _oauthChallengeBodies.remove(serverUrl);
+    if (activeServer?.url == serverUrl) {
+      _dioClient.setOAuthToken(null);
+    }
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
+  }
+
   Future<bool> addServerProfile({
     required String url,
     String? label,
     bool basicAuthEnabled = false,
     String basicAuthUsername = '',
     String basicAuthPassword = '',
+    bool oauthEnabled = false,
     bool aiGeneratedTitlesEnabled = true,
     bool setAsActive = false,
   }) async {
@@ -377,6 +457,7 @@ class AppProvider extends ChangeNotifier {
       basicAuthEnabled: basicAuthEnabled,
       basicAuthUsername: basicAuthUsername.trim(),
       basicAuthPassword: basicAuthPassword.trim(),
+      oauthEnabled: oauthEnabled,
       aiGeneratedTitlesEnabled: aiGeneratedTitlesEnabled,
       createdAt: now,
       updatedAt: now,
@@ -402,6 +483,7 @@ class AppProvider extends ChangeNotifier {
     required bool basicAuthEnabled,
     required String basicAuthUsername,
     required String basicAuthPassword,
+    required bool oauthEnabled,
     required bool aiGeneratedTitlesEnabled,
   }) async {
     await initialize();
@@ -432,6 +514,7 @@ class AppProvider extends ChangeNotifier {
       basicAuthEnabled: basicAuthEnabled,
       basicAuthUsername: basicAuthUsername.trim(),
       basicAuthPassword: basicAuthPassword.trim(),
+      oauthEnabled: oauthEnabled,
       aiGeneratedTitlesEnabled: aiGeneratedTitlesEnabled,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
@@ -1211,6 +1294,7 @@ class AppProvider extends ChangeNotifier {
         basicAuthEnabled: current.basicAuthEnabled,
         basicAuthUsername: current.basicAuthUsername,
         basicAuthPassword: current.basicAuthPassword,
+        oauthEnabled: current.oauthEnabled,
         aiGeneratedTitlesEnabled: current.aiGeneratedTitlesEnabled,
       );
     }

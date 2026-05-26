@@ -3,10 +3,10 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
-import 'dio_sse_adapter.dart';
-
 import '../constants/api_constants.dart';
 import '../logging/app_logger.dart';
+
+import 'dio_sse_adapter.dart';
 
 /// Dio HTTP client configuration
 class DioClient {
@@ -44,6 +44,8 @@ class DioClient {
   late final Dio _dio;
   late final Dio _sseDio;
   String? _basicAuthHeader;
+  String? _oauthToken;
+  String _oauthHeaderName = 'CF-Access-Token';
 
   Dio get dio => _dio;
 
@@ -69,10 +71,31 @@ class DioClient {
   /// Clear Authorization header
   void clearAuth() {
     _basicAuthHeader = null;
+    _oauthToken = null;
     _dio.options.headers.remove(ApiConstants.authorization);
     _sseDio.options.headers.remove(ApiConstants.authorization);
+    _dio.options.headers.remove(_oauthHeaderName);
+    _sseDio.options.headers.remove(_oauthHeaderName);
     AppLogger.debug('[Dio] Authorization header cleared');
   }
+
+  void setOAuthToken(String? token, {String? headerName}) {
+    _oauthToken = token;
+    if (headerName != null) _oauthHeaderName = headerName;
+    if (token != null) {
+      _dio.options.headers[_oauthHeaderName] = token;
+      _sseDio.options.headers[_oauthHeaderName] = token;
+      AppLogger.debug('[Dio] OAuth token set ($_oauthHeaderName)');
+    } else {
+      _dio.options.headers.remove(_oauthHeaderName);
+      _sseDio.options.headers.remove(_oauthHeaderName);
+      _dio.options.headers.remove('Authorization');
+      _sseDio.options.headers.remove('Authorization');
+      AppLogger.debug('[Dio] OAuth token cleared');
+    }
+  }
+
+  bool get hasOAuthToken => _oauthToken != null && _oauthToken!.isNotEmpty;
 
   void _setupInterceptors() {
     // Request interceptor
@@ -83,6 +106,11 @@ class DioClient {
           if (_basicAuthHeader != null &&
               (options.headers[ApiConstants.authorization] == null)) {
             options.headers[ApiConstants.authorization] = _basicAuthHeader;
+          }
+
+          if (_oauthToken != null && _oauthToken!.isNotEmpty &&
+              (options.headers[_oauthHeaderName] == null)) {
+            options.headers[_oauthHeaderName] = _oauthToken;
           }
 
           if (!kReleaseMode) {
@@ -138,6 +166,12 @@ class DioClient {
               (options.headers[ApiConstants.authorization] == null)) {
             options.headers[ApiConstants.authorization] = _basicAuthHeader;
           }
+
+          if (_oauthToken != null && _oauthToken!.isNotEmpty &&
+              (options.headers[_oauthHeaderName] == null)) {
+            options.headers[_oauthHeaderName] = _oauthToken;
+          }
+
           if (!kReleaseMode) {
             final uri = options.uri.toString();
             AppLogger.debug('[SSE] --> ${options.method.toUpperCase()} $uri');

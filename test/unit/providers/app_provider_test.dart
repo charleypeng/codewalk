@@ -157,6 +157,7 @@ void main() {
         basicAuthEnabled: profile.basicAuthEnabled,
         basicAuthUsername: profile.basicAuthUsername,
         basicAuthPassword: profile.basicAuthPassword,
+        oauthEnabled: profile.oauthEnabled,
         aiGeneratedTitlesEnabled: false,
       );
 
