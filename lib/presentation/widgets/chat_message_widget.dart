@@ -142,6 +142,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   // GlobalKey for the RepaintBoundary that wraps the message bubble,
   // used by MessageImageExportService to capture the bubble as a PNG.
   final GlobalKey _shareImageKey = GlobalKey();
+  bool _hideShareImageButtonForCapture = false;
 
   String _nextStableIdentity(String prefix) {
     _stableIdentitySequence += 1;

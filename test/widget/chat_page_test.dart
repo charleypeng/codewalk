@@ -2259,16 +2259,12 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(
-        find.byKey(
-          const ValueKey<String>('mobile_appbar_overflow_button'),
-        ),
+        find.byKey(const ValueKey<String>('mobile_appbar_overflow_button')),
       );
       await tester.pumpAndSettle();
 
       await tester.tap(
-        find.byKey(
-          const ValueKey<String>('mobile_overflow_item_quickOpen'),
-        ),
+        find.byKey(const ValueKey<String>('mobile_overflow_item_quickOpen')),
       );
       await tester.pumpAndSettle();
 
@@ -2348,16 +2344,12 @@ void main() {
         );
 
         await tester.tap(
-          find.byKey(
-            const ValueKey<String>('mobile_appbar_overflow_button'),
-          ),
+          find.byKey(const ValueKey<String>('mobile_appbar_overflow_button')),
         );
         await tester.pumpAndSettle();
 
         await tester.tap(
-          find.byKey(
-            const ValueKey<String>('mobile_overflow_item_terminal'),
-          ),
+          find.byKey(const ValueKey<String>('mobile_overflow_item_terminal')),
         );
         await tester.pumpAndSettle();
 
@@ -2900,16 +2892,12 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(
-        find.byKey(
-          const ValueKey<String>('mobile_appbar_overflow_button'),
-        ),
+        find.byKey(const ValueKey<String>('mobile_appbar_overflow_button')),
       );
       await tester.pumpAndSettle();
 
       await tester.tap(
-        find.byKey(
-          const ValueKey<String>('mobile_overflow_item_display'),
-        ),
+        find.byKey(const ValueKey<String>('mobile_overflow_item_display')),
       );
       await tester.pumpAndSettle();
 
@@ -2918,9 +2906,7 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.byKey(
-          const ValueKey<String>('display_toggle_item_replay_tour'),
-        ),
+        find.byKey(const ValueKey<String>('display_toggle_item_replay_tour')),
         findsOneWidget,
       );
       expect(find.text('Replay chat tour'), findsOneWidget);
@@ -2988,8 +2974,7 @@ void main() {
           mediaQueryData: const MediaQueryData(size: Size(500, 900)),
         ),
       );
-      await tester.pump(const Duration(milliseconds: 350));
-      await tester.pump(const Duration(milliseconds: 500));
+      await _pumpPostOnboardingTourStart(tester);
 
       expect(find.text('Open sidebar'), findsOneWidget);
 
@@ -3030,8 +3015,7 @@ void main() {
           mediaQueryData: const MediaQueryData(size: Size(500, 900)),
         ),
       );
-      await tester.pump(const Duration(milliseconds: 350));
-      await tester.pump(const Duration(milliseconds: 500));
+      await _pumpPostOnboardingTourStart(tester);
 
       await tester.tap(find.text('Skip'));
       await tester.pump();
@@ -3070,8 +3054,7 @@ void main() {
           mediaQueryData: const MediaQueryData(size: Size(1000, 900)),
         ),
       );
-      await tester.pump(const Duration(milliseconds: 350));
-      await tester.pump(const Duration(milliseconds: 500));
+      await _pumpPostOnboardingTourStart(tester);
 
       expect(find.text('Open project'), findsOneWidget);
 
@@ -3080,8 +3063,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 250));
       await tester.tap(find.text('Next'));
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 350));
-      await tester.pump(const Duration(milliseconds: 500));
+      await _pumpPostOnboardingTourStart(tester);
 
       expect(find.text('Chat input'), findsOneWidget);
 
@@ -3119,7 +3101,12 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(
-        find.byKey(const ValueKey<String>('appbar_display_toggles_button')),
+        find.byKey(const ValueKey<String>('mobile_appbar_overflow_button')),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('mobile_overflow_item_display')),
       );
       await tester.pumpAndSettle();
 
@@ -3128,8 +3115,7 @@ void main() {
       );
       // startShowcase uses a 350ms delay via _postOnboardingTourStartDelay.
       // Pump to let the Future.delayed fire and _activeWidgetId get set.
-      await tester.pump(const Duration(milliseconds: 350));
-      await tester.pump(const Duration(milliseconds: 500));
+      await _pumpPostOnboardingTourStart(tester);
 
       // Access ShowCaseWidgetState directly to avoid ShowcaseService scope issues.
       final showcaseState = tester.state<ShowCaseWidgetState>(
@@ -3170,8 +3156,7 @@ void main() {
         ),
       );
       // Pump to let the post-frame callback fire and the showcase delay (350ms) elapse.
-      await tester.pump(const Duration(milliseconds: 350));
-      await tester.pump(const Duration(milliseconds: 500));
+      await _pumpPostOnboardingTourStart(tester);
 
       // Access ShowCaseWidgetState directly to avoid ShowcaseService scope issues.
       final showcaseState = tester.state<ShowCaseWidgetState>(
@@ -5163,18 +5148,13 @@ void main() {
     await tester.pumpWidget(_testApp(provider, appProvider));
     await tester.pumpAndSettle();
 
-    final newChatX = tester.getCenter(find.byTooltip('New Chat').first).dx;
-    final openFilesX = tester.getCenter(find.byTooltip('Open Files')).dx;
-    expect(newChatX, greaterThan(openFilesX));
-
-    final refreshFinder = find.byTooltip('Refresh');
-    if (refreshFinder.evaluate().isNotEmpty) {
-      final refreshX = tester.getCenter(refreshFinder.first).dx;
-      expect(newChatX, greaterThan(refreshX));
-    }
+    await tester.tap(
+      find.byKey(const ValueKey<String>('mobile_appbar_overflow_button')),
+    );
+    await tester.pumpAndSettle();
 
     await tester.tap(
-      find.byKey(const ValueKey<String>('appbar_quick_open_button')),
+      find.byKey(const ValueKey<String>('mobile_overflow_item_quickOpen')),
     );
     await tester.pumpAndSettle();
 
@@ -8086,7 +8066,14 @@ void main() {
     FocusManager.instance.primaryFocus?.unfocus();
     await tester.pump();
 
-    await tester.tap(find.byTooltip('New Chat').first);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('mobile_appbar_overflow_button')),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('mobile_overflow_item_newChat')),
+    );
     await tester.pumpAndSettle();
 
     final chatInputFieldFinder = find.descendant(
@@ -15495,6 +15482,18 @@ void main() {
 Future<void> _pumpUiFrames(WidgetTester tester) async {
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 250));
+}
+
+Future<void> _pumpPostOnboardingTourStart(WidgetTester tester) async {
+  // The tour is scheduled through an initial post-frame callback, an app-level
+  // startup delay, and ShowcaseView's own delayed overlay insertion.
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 350));
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 150));
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 350));
+  await tester.pump();
 }
 
 Widget _testApp(

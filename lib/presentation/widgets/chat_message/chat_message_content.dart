@@ -71,109 +71,117 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
             );
             final bubbleMaxWidth = isUser ? userMaxWidth : assistantMaxWidth;
 
-        final bubble = RepaintBoundary(
-          key: _shareImageKey,
-          child: ConstrainedBox(
-            key: ValueKey<String>('message_bubble_${message.id}'),
-            constraints: BoxConstraints(maxWidth: bubbleMaxWidth),
-            child: _BubbleTouchHoldLayer(
-                borderRadius: bubbleBorderRadius,
-                flashColor: colorScheme.primary.withValues(alpha: 0.16),
-                onLongPress: isUser ? onBackgroundLongPress : null,
-                onLongPressRelease: isUser ? onBackgroundLongPressEnd : null,
-                onDoubleTap: canCopyWholeMessage
-                    ? () => _copyTextToClipboard(
-                        context,
-                        _composeMessageCopyText(message),
-                      )
-                    : null,
-                child: Semantics(
-                  label: isUser ? 'Your message' : 'Assistant message',
-                  child: Container(
-                    padding: bubblePadding,
-                    decoration: BoxDecoration(
-                      color: isUser
-                          ? colorScheme.primaryContainer.withValues(alpha: 0.45)
-                          : colorScheme.surfaceContainerHigh,
-                      borderRadius: bubbleBorderRadius,
-                    ),
-                    child: Stack(
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                if (isUser) ...[
+            final bubble = RepaintBoundary(
+              key: _shareImageKey,
+              child: ConstrainedBox(
+                key: ValueKey<String>('message_bubble_${message.id}'),
+                constraints: BoxConstraints(maxWidth: bubbleMaxWidth),
+                child: _BubbleTouchHoldLayer(
+                  borderRadius: bubbleBorderRadius,
+                  flashColor: colorScheme.primary.withValues(alpha: 0.16),
+                  onLongPress: isUser ? onBackgroundLongPress : null,
+                  onLongPressRelease: isUser ? onBackgroundLongPressEnd : null,
+                  onDoubleTap: canCopyWholeMessage
+                      ? () => _copyTextToClipboard(
+                          context,
+                          _composeMessageCopyText(message),
+                        )
+                      : null,
+                  child: Semantics(
+                    label: isUser ? 'Your message' : 'Assistant message',
+                    child: Container(
+                      padding: bubblePadding,
+                      decoration: BoxDecoration(
+                        color: isUser
+                            ? colorScheme.primaryContainer.withValues(
+                                alpha: 0.45,
+                              )
+                            : colorScheme.surfaceContainerHigh,
+                        borderRadius: bubbleBorderRadius,
+                      ),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  if (isUser) ...[
+                                    Text(
+                                      'You',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelMedium
+                                          ?.copyWith(
+                                            color: colorScheme.primary,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                  ],
                                   Text(
-                                    'You',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelMedium
+                                    _formatTime(message.time),
+                                    style: Theme.of(context).textTheme.bodySmall
                                         ?.copyWith(
-                                          color: colorScheme.primary,
-                                          fontWeight: FontWeight.w700,
+                                          color: colorScheme.onSurfaceVariant,
+                                          fontSize: 11,
                                         ),
                                   ),
-                                  const SizedBox(width: 8),
+                                  const Spacer(),
+                                  if (!isUser &&
+                                      message is AssistantMessage) ...[
+                                    _buildReadAloudButton(
+                                      context,
+                                      message as AssistantMessage,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    _buildAssistantInfo(
+                                      context,
+                                      message as AssistantMessage,
+                                    ),
+                                  ],
                                 ],
-                                Text(
-                                  _formatTime(message.time),
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: colorScheme.onSurfaceVariant,
-                                        fontSize: 11,
-                                      ),
-                                ),
-                                const Spacer(),
-                if (!isUser && message is AssistantMessage) ...[
-                  _buildReadAloudButton(
-                    context,
-                    message as AssistantMessage,
-                  ),
-                  const SizedBox(width: 8),
-                  _buildAssistantInfo(
-                    context,
-                    message as AssistantMessage,
-                  ),
-                  const SizedBox(width: 4),
-                ],
-                _buildShareImageButton(context),
-                              ],
-                            ),
-                            SizedBox(
-                              key: ValueKey<String>(
-                                'message_header_spacing_${message.id}',
                               ),
-                              height: headerContentSpacing,
-                            ),
-                            if (isUser)
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: renderedParts,
-                              )
-                            else
-                              SelectionArea(
-                                child: Column(
+                              SizedBox(
+                                key: ValueKey<String>(
+                                  'message_header_spacing_${message.id}',
+                                ),
+                                height: headerContentSpacing,
+                              ),
+                              if (isUser)
+                                Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: renderedParts,
+                                )
+                              else
+                                SelectionArea(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: renderedParts,
+                                  ),
                                 ),
-                              ),
-                            if (message is AssistantMessage &&
-                                (message as AssistantMessage).error != null)
-                              _buildErrorInfo(
-                                context,
-                                (message as AssistantMessage).error!,
-                              ),
-                          ],
-                        ),
-          ],
-          ),
-          ),
-          ),
-          ),
-          ),
-        );
+                              if (message is AssistantMessage &&
+                                  (message as AssistantMessage).error != null)
+                                _buildErrorInfo(
+                                  context,
+                                  (message as AssistantMessage).error!,
+                                ),
+                            ],
+                          ),
+                          Positioned(
+                            top: -12,
+                            right: isUser ? -12 : 40,
+                            child: _buildShareImageButton(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
 
             if (!isUser) {
               return bubble;
@@ -300,12 +308,14 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
   }
 
   Widget _buildShareImageButton(BuildContext context) {
+    if (_hideShareImageButtonForCapture) {
+      return const SizedBox.shrink();
+    }
+
     return Tooltip(
       message: context.l10n.msgShareAsImage,
       child: IconButton(
-        key: ValueKey<String>(
-          'chat_message_share_image_button_${message.id}',
-        ),
+        key: ValueKey<String>('chat_message_share_image_button_${message.id}'),
         icon: const Icon(Symbols.share, size: 18),
         visualDensity: VisualDensity.compact,
         padding: EdgeInsets.zero,
@@ -319,10 +329,24 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
   }
 
   Future<void> _onShareAsImage(BuildContext context) async {
-    final result = await MessageImageExportService.captureAndShare(
-      boundaryKey: _shareImageKey,
-      subject: context.l10n.msgShareAsImageSubject,
-    );
+    if (_hideShareImageButtonForCapture) return;
+
+    setState(() => _hideShareImageButtonForCapture = true);
+
+    var result = MessageImageExportResult.failed;
+    try {
+      // Rebuild without the share action before capturing so exported images
+      // contain only message content, not the control used to create them.
+      await WidgetsBinding.instance.endOfFrame;
+      result = await MessageImageExportService.captureAndShare(
+        boundaryKey: _shareImageKey,
+        subject: context.l10n.msgShareAsImageSubject,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _hideShareImageButtonForCapture = false);
+      }
+    }
 
     if (!context.mounted) return;
 
@@ -350,10 +374,11 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
     }
   }
 
-  Widget _buildReadAloudButton(
-    BuildContext context,
-    AssistantMessage message,
-  ) {
+  Widget _buildReadAloudButton(BuildContext context, AssistantMessage message) {
+    if (!di.sl.isRegistered<ReadAloudService>()) {
+      return const SizedBox.shrink();
+    }
+
     final readAloudService = di.sl<ReadAloudService>();
 
     return ListenableBuilder(
@@ -417,13 +442,15 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
   // Strips basic Markdown syntax so TTS reads natural text, not raw
   // formatting characters. Handles bold (**/__), italic (*/_), inline code
   // (`), links [...](...), images ![..](..), headings (#), and blockquotes (>).
-  static final RegExp _ttsStrippingRegExp = RegExp(r'(\*\*|__)(.*?)\1|'
-      r'(\*|_)(.*?)\3|'
-      r'`([^`]*)`|'
-      r'!?\[([^\]]*)\]\([^)]*\)|'
-      r'^#{1,6}\s*|'
-      r'^>\s*',
-      multiLine: true);
+  static final RegExp _ttsStrippingRegExp = RegExp(
+    r'(\*\*|__)(.*?)\1|'
+    r'(\*|_)(.*?)\3|'
+    r'`([^`]*)`|'
+    r'!?\[([^\]]*)\]\([^)]*\)|'
+    r'^#{1,6}\s*|'
+    r'^>\s*',
+    multiLine: true,
+  );
 
   String _extractReadableText(AssistantMessage message) {
     final buffer = StringBuffer();

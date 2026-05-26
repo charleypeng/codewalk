@@ -44,8 +44,9 @@ class MessageImageExportService {
     required GlobalKey boundaryKey,
     String? subject,
   }) async {
-    final boundary = boundaryKey.currentContext?.findRenderObject()
-        as RenderRepaintBoundary?;
+    final boundary =
+        boundaryKey.currentContext?.findRenderObject()
+            as RenderRepaintBoundary?;
 
     if (boundary == null) {
       return MessageImageExportResult.notLaidOut;
@@ -65,26 +66,21 @@ class MessageImageExportService {
     }
 
     try {
-      final byteData = await image.toByteData(
-        format: ui.ImageByteFormat.png,
-      );
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) {
         return MessageImageExportResult.failed;
       }
 
       final buffer = byteData.buffer;
       final tempDir = await getTemporaryDirectory();
-      final file = File(
-        '${tempDir.path}/codewalk_message_share_${DateTime.now().millisecondsSinceEpoch}.png',
-      );
+      // Static filename overwrites previous export, preventing unbounded
+      // cache growth from timestamped files accumulating in the temp dir.
+      final file = File('${tempDir.path}/codewalk_message_share.png');
       await file.writeAsBytes(
         buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes),
       );
 
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        subject: subject,
-      );
+      await Share.shareXFiles([XFile(file.path)], subject: subject);
 
       return MessageImageExportResult.shared;
     } catch (e) {
