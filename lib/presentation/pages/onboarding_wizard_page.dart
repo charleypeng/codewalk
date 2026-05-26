@@ -911,9 +911,10 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
             const SizedBox(height: 16),
             Form(
               key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                   TextFormField(
                     controller: _urlController,
                     decoration: InputDecoration(
@@ -1071,6 +1072,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                 ],
               ),
             ),
+          ),
           ],
         ],
       ),
