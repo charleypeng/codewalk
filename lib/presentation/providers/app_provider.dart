@@ -199,6 +199,13 @@ class AppProvider extends ChangeNotifier {
         : compact;
   }
 
+  static bool get supportsCloudflareAccessOAuth {
+    if (kIsWeb) return false;
+    return defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.windows;
+  }
+
   Future<void> initialize() async {
     _initFuture ??= _initializeInternal();
     await _initFuture;
@@ -493,6 +500,10 @@ class AppProvider extends ChangeNotifier {
     }
 
     final now = DateTime.now().millisecondsSinceEpoch;
+    if (oauthEnabled && !supportsCloudflareAccessOAuth) {
+      _setError('Cloudflare Access OAuth is supported on desktop only');
+      return false;
+    }
     final profile = ServerProfile(
       id: _generateServerId(),
       url: normalized,
@@ -547,6 +558,11 @@ class AppProvider extends ChangeNotifier {
     );
     if (duplicate) {
       _setError('A server with this URL already exists');
+      return false;
+    }
+
+    if (oauthEnabled && !supportsCloudflareAccessOAuth) {
+      _setError('Cloudflare Access OAuth is supported on desktop only');
       return false;
     }
 

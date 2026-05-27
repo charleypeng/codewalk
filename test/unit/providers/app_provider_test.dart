@@ -5,6 +5,7 @@ import 'package:codewalk/domain/usecases/get_app_info.dart';
 import 'package:codewalk/presentation/providers/app_provider.dart';
 import 'package:codewalk/presentation/services/local_opencode_server_runtime_types.dart';
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fakes.dart';
@@ -120,6 +121,23 @@ void main() {
       expect(created, isTrue);
       expect(duplicate, isFalse);
       expect(provider.errorMessage, 'A server with this URL already exists');
+    });
+
+    test('addServerProfile blocks OAuth on mobile platforms', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+      await provider.initialize();
+      final created = await provider.addServerProfile(
+        url: 'https://code.example.com',
+        oauthEnabled: true,
+      );
+
+      expect(created, isFalse);
+      expect(
+        provider.errorMessage,
+        'Cloudflare Access OAuth is supported on desktop only',
+      );
     });
 
     test('setActiveServer blocks unhealthy profiles', () async {

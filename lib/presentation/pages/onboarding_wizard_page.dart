@@ -86,6 +86,8 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
     return isAndroid ? 'http://10.0.2.2:4096' : 'http://127.0.0.1:4096';
   }
 
+  bool get _oauthSupported => AppProvider.supportsCloudflareAccessOAuth;
+
   void _configureInitialFlow() {
     final initialProfile = widget.initialServerProfile;
     if (initialProfile != null) {
@@ -316,6 +318,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
     );
     final username = _usernameController.text.trim();
     final password = _passwordController.text.trim();
+    final oauthEnabled = _oauthEnabled && _oauthSupported;
 
     final trackedServerId = _editingServerId ?? _addedServerId;
     final hasTrackedServer =
@@ -334,7 +337,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         basicAuthEnabled: _basicAuthEnabled,
         basicAuthUsername: username,
         basicAuthPassword: password,
-        oauthEnabled: _oauthEnabled,
+        oauthEnabled: oauthEnabled,
         aiGeneratedTitlesEnabled: _aiGeneratedTitlesEnabled,
       );
       if (!mounted) return;
@@ -382,7 +385,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       basicAuthEnabled: _basicAuthEnabled,
       basicAuthUsername: username,
       basicAuthPassword: password,
-      oauthEnabled: _oauthEnabled,
+      oauthEnabled: oauthEnabled,
       aiGeneratedTitlesEnabled: _aiGeneratedTitlesEnabled,
       setAsActive: true,
     );
@@ -965,16 +968,20 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                   ),
                   SwitchListTile(
                     value: _oauthEnabled,
-                    onChanged: (value) {
-                      setState(() {
-                        _oauthEnabled = value;
-                        if (value) _basicAuthEnabled = false;
-                      });
-                    },
+                    onChanged: _oauthSupported
+                        ? (value) {
+                            setState(() {
+                              _oauthEnabled = value;
+                              if (value) _basicAuthEnabled = false;
+                            });
+                          }
+                        : null,
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Use OAuth (Cloudflare Access)'),
-                    subtitle: const Text(
-                      'Opens browser for authentication. Requires Managed OAuth on the server.',
+                    subtitle: Text(
+                      _oauthSupported
+                          ? 'Desktop only. Opens a browser for Cloudflare Access Managed OAuth.'
+                          : 'Cloudflare Access OAuth is desktop-only. Use Basic Auth on mobile or web.',
                     ),
                   ),
                   if (_basicAuthEnabled) ...[
