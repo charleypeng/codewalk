@@ -1,4 +1,5 @@
 class OAuthCredential {
+  final String profileId;
   final String accessToken;
   final String? refreshToken;
   final DateTime? expiresAt;
@@ -6,6 +7,7 @@ class OAuthCredential {
   final String? clientId;
 
   const OAuthCredential({
+    required this.profileId,
     required this.accessToken,
     this.refreshToken,
     this.expiresAt,
@@ -24,6 +26,7 @@ class OAuthCredential {
 
   factory OAuthCredential.fromJson(Map<String, dynamic> json) =>
       OAuthCredential(
+        profileId: json['profileId'] as String? ?? '',
         accessToken: json['accessToken'] as String,
         refreshToken: json['refreshToken'] as String?,
         expiresAt: json['expiresAt'] != null
@@ -34,6 +37,7 @@ class OAuthCredential {
       );
 
   Map<String, dynamic> toJson() => {
+    'profileId': profileId,
     'accessToken': accessToken,
     'refreshToken': refreshToken,
     'expiresAt': expiresAt?.millisecondsSinceEpoch,

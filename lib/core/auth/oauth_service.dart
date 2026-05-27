@@ -27,12 +27,14 @@ class OAuthFlowResult {
 }
 
 class OAuthService {
+  final String profileId;
   final String serverUrl;
   final Map<String, String>? challengeHeaders;
   final String? challengeBody;
   final OAuthTokenStorage _storage;
 
   OAuthService({
+    required this.profileId,
     required this.serverUrl,
     this.challengeHeaders,
     this.challengeBody,
@@ -46,7 +48,10 @@ class OAuthService {
   }
 
   Future<OAuthCredential?> getCachedCredential() async {
-    final credential = await _storage.loadCredential(serverUrl);
+    final credential = await _storage.loadCredential(
+      profileId: profileId,
+      serverUrl: serverUrl,
+    );
     if (credential != null && credential.isValid) return credential;
     return null;
   }
@@ -62,7 +67,10 @@ class OAuthService {
       }
 
       // Cached credential is missing or expired — try silent refresh first
-      final stored = await _storage.loadCredential(serverUrl);
+      final stored = await _storage.loadCredential(
+        profileId: profileId,
+        serverUrl: serverUrl,
+      );
       if (stored != null && stored.refreshToken != null) {
         _log('Cached credential expired, attempting silent refresh');
         final refreshResult = await refreshCredential(stored);
@@ -101,6 +109,7 @@ class OAuthService {
     _log('Token received');
 
     final credential = OAuthCredential(
+      profileId: profileId,
       accessToken: tokenData['access_token'] as String,
       refreshToken: tokenData['refresh_token'] as String?,
       expiresAt: tokenData.containsKey('expires_in')
@@ -113,12 +122,14 @@ class OAuthService {
     );
     try {
       await _storage.saveCredential(credential);
-      _log('Credential saved: accessToken(len=${credential.accessToken.length}), '
-          'refreshToken=${credential.refreshToken != null ? 'present' : 'absent'}, '
-          'expiresAt=${credential.expiresAt != null ? credential.expiresAt!.toIso8601String() : 'none'}, '
-          'serverUrl=${credential.serverUrl}');
+      _log('Credential saved securely');
     } catch (e) {
-      _log('Credential save failed (storage may be unavailable on this platform): $e');
+      _log('Credential save failed: secure storage unavailable');
+      return OAuthFlowResult(
+        log: [],
+        error: 'Secure credential storage is unavailable for OAuth.',
+        token: null,
+      );
     }
 
     return OAuthFlowResult(token: credential.accessToken);
@@ -168,6 +179,7 @@ class OAuthService {
       if (response.statusCode == 200) {
         final data = jsonDecode(body) as Map<String, dynamic>;
         final newCredential = OAuthCredential(
+          profileId: credential.profileId,
           accessToken: data['access_token'] as String,
           refreshToken:
               data['refresh_token'] as String? ?? credential.refreshToken,
@@ -179,12 +191,8 @@ class OAuthService {
           serverUrl: serverUrl,
           clientId: credential.clientId,
         );
-        try {
-          await _storage.saveCredential(newCredential);
-          _log('Token refreshed');
-        } catch (_) {
-          _log('Token refreshed (not persisted)');
-        }
+        await _storage.saveCredential(newCredential);
+        _log('Token refreshed and saved securely');
         return OAuthFlowResult(token: newCredential.accessToken);
       }
       _log('Refresh failed (${response.statusCode}), re-authenticating');
@@ -196,7 +204,7 @@ class OAuthService {
   }
 
   Future<void> clearCredential() async {
-    await _storage.deleteCredential(serverUrl);
+    await _storage.deleteCredential(profileId: profileId, serverUrl: serverUrl);
   }
 
   Future<Map<String, dynamic>?> _fetchOAuthMetadata() async {

@@ -329,6 +329,15 @@ class AppProvider extends ChangeNotifier {
     return null;
   }
 
+  ServerProfile? _findByUrl(String serverUrl) {
+    for (final profile in _serverProfiles) {
+      if (profile.url == serverUrl) {
+        return profile;
+      }
+    }
+    return null;
+  }
+
   Future<void> _persistServerProfiles() async {
     final encoded = jsonEncode(_serverProfiles.map((p) => p.toJson()).toList());
     await _localDataSource.saveServerProfilesJson(encoded);
@@ -381,12 +390,18 @@ class AppProvider extends ChangeNotifier {
     Map<String, String>? challengeHeaders,
     String? challengeBody,
   }) async {
+    final profile = _findByUrl(serverUrl);
+    if (profile == null || !profile.oauthEnabled) {
+      return false;
+    }
+
     _oauthChallengeHeaders[serverUrl] = challengeHeaders ?? {};
     if (challengeBody != null) {
       _oauthChallengeBodies[serverUrl] = challengeBody;
     }
 
     final service = OAuthService(
+      profileId: profile.id,
       serverUrl: serverUrl,
       challengeHeaders: challengeHeaders,
       challengeBody: challengeBody,
@@ -414,7 +429,11 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<void> clearOAuthCredential(String serverUrl) async {
-    final service = OAuthService(serverUrl: serverUrl);
+    final profile = _findByUrl(serverUrl);
+    if (profile == null) {
+      return;
+    }
+    final service = OAuthService(profileId: profile.id, serverUrl: serverUrl);
     await service.clearCredential();
     _validOAuthUrls.remove(serverUrl);
     _oauthChallengeHeaders.remove(serverUrl);

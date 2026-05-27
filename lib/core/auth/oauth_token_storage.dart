@@ -1,97 +1,135 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../../core/constants/app_constants.dart';
 import 'oauth_credential.dart';
 
+class OAuthTokenStorageException implements Exception {
+  const OAuthTokenStorageException(this.message, [this.cause]);
+
+  final String message;
+  final Object? cause;
+
+  @override
+  String toString() => cause == null
+      ? 'OAuthTokenStorageException: $message'
+      : 'OAuthTokenStorageException: $message ($cause)';
+}
+
+abstract class OAuthTokenStorageBackend {
+  Future<void> write({required String key, required String value});
+  Future<String?> read({required String key});
+  Future<void> delete({required String key});
+}
+
+class FlutterSecureOAuthTokenStorageBackend implements OAuthTokenStorageBackend {
+  const FlutterSecureOAuthTokenStorageBackend([this._secureStorage]);
+
+  final FlutterSecureStorage? _secureStorage;
+
+  FlutterSecureStorage get _storage =>
+      _secureStorage ?? const FlutterSecureStorage();
+
+  @override
+  Future<void> write({required String key, required String value}) {
+    return _storage.write(key: key, value: value);
+  }
+
+  @override
+  Future<String?> read({required String key}) {
+    return _storage.read(key: key);
+  }
+
+  @override
+  Future<void> delete({required String key}) {
+    return _storage.delete(key: key);
+  }
+}
+
 class OAuthTokenStorage {
-  OAuthTokenStorage({FlutterSecureStorage? secureStorage})
-    : _secureStorage = secureStorage ?? const FlutterSecureStorage();
+  OAuthTokenStorage({OAuthTokenStorageBackend? backend})
+    : _backend = backend ?? const FlutterSecureOAuthTokenStorageBackend();
 
-  final FlutterSecureStorage _secureStorage;
-  String? _tokenDirPath;
+  final OAuthTokenStorageBackend _backend;
 
-  String _key(String serverUrl) {
-    final normalized = Uri.encodeComponent(serverUrl.trim());
-    return '${AppConstants.secureStorageNamespace}::oauth::$normalized';
-  }
-
-  String _fileKey(String serverUrl) {
-    final bytes = utf8.encode(serverUrl.trim());
-    return base64Url.encode(bytes).replaceAll('=', '');
-  }
-
-  Future<Directory> _tokenDir() async {
-    if (_tokenDirPath != null) return Directory(_tokenDirPath!);
-    final supportDir = await getApplicationSupportDirectory();
-    final dir = Directory('${supportDir.path}/oauth_tokens');
-    if (!await dir.exists()) {
-      await dir.create(recursive: true);
-    }
-    _tokenDirPath = dir.path;
-    return dir;
-  }
-
-  Future<File> _tokenFile(String serverUrl) async {
-    final dir = await _tokenDir();
-    return File('${dir.path}/oauth_${_fileKey(serverUrl)}.json');
+  String _key({required String profileId, required String serverUrl}) {
+    final normalizedProfile = Uri.encodeComponent(profileId.trim());
+    final normalizedUrl = Uri.encodeComponent(serverUrl.trim());
+    return '${AppConstants.secureStorageNamespace}::oauth::'
+        '$normalizedProfile::$normalizedUrl';
   }
 
   Future<void> saveCredential(OAuthCredential credential) async {
     final data = jsonEncode(credential.toJson());
-
     try {
-      final key = _key(credential.serverUrl);
-      await _secureStorage.write(key: key, value: data);
-    } catch (_) {
-      // FlutterSecureStorage may fail on desktop debug builds.
+      await _backend.write(
+        key: _key(
+          profileId: credential.profileId,
+          serverUrl: credential.serverUrl,
+        ),
+        value: data,
+      );
+    } catch (error) {
+      throw OAuthTokenStorageException(
+        'Secure credential storage is unavailable.',
+        error,
+      );
     }
-
-    final file = await _tokenFile(credential.serverUrl);
-    await file.writeAsString(data, flush: true);
   }
 
-  Future<OAuthCredential?> loadCredential(String serverUrl) async {
+  Future<OAuthCredential?> loadCredential({
+    required String profileId,
+    required String serverUrl,
+  }) async {
     try {
-      final file = await _tokenFile(serverUrl);
-      if (await file.exists()) {
-        final raw = await file.readAsString();
-        final map = jsonDecode(raw) as Map<String, dynamic>;
-        return OAuthCredential.fromJson(map);
-      }
-    } catch (_) {
-      // File may be corrupt or unreadable.
-    }
-
-    try {
-      final key = _key(serverUrl);
-      final raw = await _secureStorage.read(key: key);
+      final raw = await _backend.read(
+        key: _key(profileId: profileId, serverUrl: serverUrl),
+      );
       if (raw != null && raw.isNotEmpty) {
         final map = jsonDecode(raw) as Map<String, dynamic>;
-        return OAuthCredential.fromJson(map);
+        final credential = OAuthCredential.fromJson(map);
+        if (credential.profileId != profileId ||
+            credential.serverUrl != serverUrl) {
+          return null;
+        }
+        return credential;
       }
-    } catch (_) {
+    } on FormatException {
       return null;
+    } catch (error) {
+      throw OAuthTokenStorageException(
+        'Secure credential storage is unavailable.',
+        error,
+      );
     }
     return null;
   }
 
-  Future<void> deleteCredential(String serverUrl) async {
+  Future<void> deleteCredential({
+    required String profileId,
+    required String serverUrl,
+  }) async {
     try {
-      await _secureStorage.delete(key: _key(serverUrl));
-    } catch (_) {}
-
-    final file = await _tokenFile(serverUrl);
-    if (await file.exists()) {
-      await file.delete();
+      await _backend.delete(
+        key: _key(profileId: profileId, serverUrl: serverUrl),
+      );
+    } catch (error) {
+      throw OAuthTokenStorageException(
+        'Secure credential storage is unavailable.',
+        error,
+      );
     }
   }
 
-  Future<bool> hasValidCredential(String serverUrl) async {
-    final credential = await loadCredential(serverUrl);
+  Future<bool> hasValidCredential({
+    required String profileId,
+    required String serverUrl,
+  }) async {
+    final credential = await loadCredential(
+      profileId: profileId,
+      serverUrl: serverUrl,
+    );
     return credential?.isValid ?? false;
   }
 }
