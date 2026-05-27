@@ -44,8 +44,8 @@ class DioClient {
   late final Dio _dio;
   late final Dio _sseDio;
   String? _basicAuthHeader;
-  String? _oauthToken;
-  String _oauthHeaderName = 'CF-Access-Token';
+  String? _oauthBearerToken;
+  Uri? _oauthOrigin;
 
   Dio get dio => _dio;
 
@@ -68,34 +68,43 @@ class DioClient {
     AppLogger.debug('[Dio] Basic auth header set');
   }
 
-  /// Clear Authorization header
-  void clearAuth() {
+  void clearBasicAuth() {
     _basicAuthHeader = null;
-    _oauthToken = null;
     _dio.options.headers.remove(ApiConstants.authorization);
     _sseDio.options.headers.remove(ApiConstants.authorization);
-    _dio.options.headers.remove(_oauthHeaderName);
-    _sseDio.options.headers.remove(_oauthHeaderName);
-    AppLogger.debug('[Dio] Authorization header cleared');
+    AppLogger.debug('[Dio] Basic auth header cleared');
   }
 
-  void setOAuthToken(String? token, {String? headerName}) {
-    _oauthToken = token;
-    if (headerName != null) _oauthHeaderName = headerName;
-    if (token != null) {
-      _dio.options.headers[_oauthHeaderName] = token;
-      _sseDio.options.headers[_oauthHeaderName] = token;
-      AppLogger.debug('[Dio] OAuth token set ($_oauthHeaderName)');
+  /// Clear every auth owner when the active profile changes.
+  void clearAuth() {
+    clearBasicAuth();
+    clearOAuthToken();
+    AppLogger.debug('[Dio] All auth headers cleared');
+  }
+
+  void setOAuthToken(String token, {required String origin}) {
+    _oauthBearerToken = token;
+    _oauthOrigin = Uri.tryParse(origin);
+    _dio.options.headers.remove(ApiConstants.authorization);
+    _sseDio.options.headers.remove(ApiConstants.authorization);
+    AppLogger.debug('[Dio] OAuth bearer token set');
+  }
+
+  void clearOAuthToken() {
+    _oauthBearerToken = null;
+    _oauthOrigin = null;
+    if (_basicAuthHeader == null) {
+      _dio.options.headers.remove(ApiConstants.authorization);
+      _sseDio.options.headers.remove(ApiConstants.authorization);
     } else {
-      _dio.options.headers.remove(_oauthHeaderName);
-      _sseDio.options.headers.remove(_oauthHeaderName);
-      _dio.options.headers.remove('Authorization');
-      _sseDio.options.headers.remove('Authorization');
-      AppLogger.debug('[Dio] OAuth token cleared');
+      _dio.options.headers[ApiConstants.authorization] = _basicAuthHeader!;
+      _sseDio.options.headers[ApiConstants.authorization] = _basicAuthHeader!;
     }
+    AppLogger.debug('[Dio] OAuth bearer token cleared');
   }
 
-  bool get hasOAuthToken => _oauthToken != null && _oauthToken!.isNotEmpty;
+  bool get hasOAuthToken =>
+      _oauthBearerToken != null && _oauthBearerToken!.isNotEmpty;
 
   void _setupInterceptors() {
     // Request interceptor
@@ -108,9 +117,9 @@ class DioClient {
             options.headers[ApiConstants.authorization] = _basicAuthHeader;
           }
 
-          if (_oauthToken != null && _oauthToken!.isNotEmpty &&
-              (options.headers[_oauthHeaderName] == null)) {
-            options.headers[_oauthHeaderName] = _oauthToken;
+          if (_shouldUseOAuthFor(options.uri)) {
+            options.headers[ApiConstants.authorization] =
+                'Bearer $_oauthBearerToken';
           }
 
           if (!kReleaseMode) {
@@ -167,9 +176,9 @@ class DioClient {
             options.headers[ApiConstants.authorization] = _basicAuthHeader;
           }
 
-          if (_oauthToken != null && _oauthToken!.isNotEmpty &&
-              (options.headers[_oauthHeaderName] == null)) {
-            options.headers[_oauthHeaderName] = _oauthToken;
+          if (_shouldUseOAuthFor(options.uri)) {
+            options.headers[ApiConstants.authorization] =
+                'Bearer $_oauthBearerToken';
           }
 
           if (!kReleaseMode) {
@@ -191,6 +200,15 @@ class DioClient {
         },
       ),
     );
+  }
+
+  bool _shouldUseOAuthFor(Uri uri) {
+    final token = _oauthBearerToken;
+    final origin = _oauthOrigin;
+    if (token == null || token.isEmpty || origin == null) return false;
+    return uri.scheme == origin.scheme &&
+        uri.host == origin.host &&
+        uri.port == origin.port;
   }
 
   void _handleError(DioException error) {

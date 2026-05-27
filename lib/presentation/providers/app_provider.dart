@@ -119,7 +119,9 @@ class AppProvider extends ChangeNotifier {
   final Map<String, Map<String, String>> _oauthChallengeHeaders =
       <String, Map<String, String>>{};
   final Map<String, String> _oauthChallengeBodies = <String, String>{};
-  final Set<String> _validOAuthUrls = <String>{};
+  final Set<String> _authenticatedOAuthProfileIds = <String>{};
+  final Map<String, Future<bool>> _oauthFlowByProfileId =
+      <String, Future<bool>>{};
 
   AppStatus get status => _status;
   AppInfo? get appInfo => _appInfo;
@@ -155,7 +157,7 @@ class AppProvider extends ChangeNotifier {
       _oauthChallengeHeaders[serverUrl];
 
   bool isOAuthAuthenticated(String serverUrl) =>
-      _validOAuthUrls.contains(serverUrl);
+      _authenticatedOAuthProfileIds.contains(_findByUrl(serverUrl)?.id);
 
   ServerHealthStatus healthFor(String serverId) {
     return _serverHealthById[serverId] ?? ServerHealthStatus.unknown;
@@ -206,7 +208,7 @@ class AppProvider extends ChangeNotifier {
     await _loadServerProfiles();
     await _ensureActiveSelection();
     await _loadLocalServerCommandConfig();
-    _applyActiveServerToClient();
+    await _applyActiveServerToClient();
     _bindLocalServerRuntimeEvents();
     _initialized = true;
     if (_serverProfiles.isNotEmpty) {
@@ -347,7 +349,7 @@ class AppProvider extends ChangeNotifier {
     await _localDataSource.saveDefaultServerId(_defaultServerId);
   }
 
-  void _applyActiveServerToClient() {
+  Future<void> _applyActiveServerToClient() async {
     final profile = activeServer;
     if (profile == null) {
       _dioClient.clearAuth();
@@ -356,16 +358,26 @@ class AppProvider extends ChangeNotifier {
       return;
     }
     _dioClient.updateBaseUrl(profile.url);
-    if (profile.oauthEnabled) {
-      // OAuth mode: try to load cached token
       _dioClient.clearAuth();
-      final cachedToken = _validOAuthUrls.contains(profile.url)
-          ? _dioClient.hasOAuthToken
-              ? _dioClient.hasOAuthToken
-              : false
-          : false;
-      if (!cachedToken) {
-        // Token not in memory; will be loaded on demand via handleOAuthChallenge
+    if (profile.oauthEnabled) {
+      try {
+        final service = OAuthService(
+          profileId: profile.id,
+          serverUrl: profile.url,
+        );
+        final cached = await service.getCachedCredential();
+        if (cached != null) {
+          _dioClient.setOAuthToken(cached.accessToken, origin: profile.url);
+          _authenticatedOAuthProfileIds.add(profile.id);
+        } else {
+          _authenticatedOAuthProfileIds.remove(profile.id);
+        }
+      } catch (e) {
+        _authenticatedOAuthProfileIds.remove(profile.id);
+        AppLogger.warn(
+          'Failed to load cached OAuth credential for active profile',
+          error: e,
+        );
       }
     } else if (profile.basicAuthEnabled &&
         profile.basicAuthUsername.trim().isNotEmpty &&
@@ -400,6 +412,10 @@ class AppProvider extends ChangeNotifier {
       _oauthChallengeBodies[serverUrl] = challengeBody;
     }
 
+    if (_oauthFlowByProfileId.containsKey(profile.id)) {
+      return _oauthFlowByProfileId[profile.id]!;
+    }
+
     final service = OAuthService(
       profileId: profile.id,
       serverUrl: serverUrl,
@@ -407,25 +423,33 @@ class AppProvider extends ChangeNotifier {
       challengeBody: challengeBody,
     );
 
-    final result = await service.authenticate();
-    if (result.ok && result.token != null) {
-      _dioClient.setOAuthToken(result.token);
-      _validOAuthUrls.add(serverUrl);
-      _oauthChallengeHeaders.remove(serverUrl);
-      _oauthChallengeBodies.remove(serverUrl);
+    final flow = () async {
+      final result = await service.authenticate();
+      if (result.ok && result.token != null) {
+        _dioClient.setOAuthToken(result.token!, origin: profile.url);
+        _authenticatedOAuthProfileIds.add(profile.id);
+        _oauthChallengeHeaders.remove(serverUrl);
+        _oauthChallengeBodies.remove(serverUrl);
 
-      // Run health check to verify the token works
-      await checkConnection();
+        // Verify the freshly persisted OAuth token against the active server.
+        await checkConnection();
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          notifyListeners();
+        });
+        return true;
+      }
+
       SchedulerBinding.instance.addPostFrameCallback((_) {
         notifyListeners();
       });
-      return true;
+      return false;
+    }();
+    _oauthFlowByProfileId[profile.id] = flow;
+    try {
+      return await flow;
+    } finally {
+      _oauthFlowByProfileId.remove(profile.id);
     }
-
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      notifyListeners();
-    });
-    return false;
   }
 
   Future<void> clearOAuthCredential(String serverUrl) async {
@@ -435,11 +459,11 @@ class AppProvider extends ChangeNotifier {
     }
     final service = OAuthService(profileId: profile.id, serverUrl: serverUrl);
     await service.clearCredential();
-    _validOAuthUrls.remove(serverUrl);
+    _authenticatedOAuthProfileIds.remove(profile.id);
     _oauthChallengeHeaders.remove(serverUrl);
     _oauthChallengeBodies.remove(serverUrl);
     if (activeServer?.url == serverUrl) {
-      _dioClient.setOAuthToken(null);
+      _dioClient.clearOAuthToken();
     }
     SchedulerBinding.instance.addPostFrameCallback((_) {
       notifyListeners();
@@ -487,7 +511,7 @@ class AppProvider extends ChangeNotifier {
       _activeServerId = profile.id;
     }
     await _persistServerProfiles();
-    _applyActiveServerToClient();
+    await _applyActiveServerToClient();
     _syncHealthPollingLifecycle();
     await refreshServerHealth(serverId: profile.id);
     _errorMessage = '';
@@ -541,9 +565,18 @@ class AppProvider extends ChangeNotifier {
     copied[index] = updated;
     _serverProfiles = copied;
 
+    if (previous.oauthEnabled &&
+        (previous.url != updated.url || !updated.oauthEnabled)) {
+      await OAuthService(
+        profileId: previous.id,
+        serverUrl: previous.url,
+      ).clearCredential();
+      _authenticatedOAuthProfileIds.remove(previous.id);
+    }
+
     await _persistServerProfiles();
     if (_activeServerId == updated.id) {
-      _applyActiveServerToClient();
+      await _applyActiveServerToClient();
       await checkConnection();
     }
     await refreshServerHealth(serverId: updated.id);
@@ -554,10 +587,18 @@ class AppProvider extends ChangeNotifier {
 
   Future<bool> removeServerProfile(String id) async {
     await initialize();
-    final exists = _serverProfiles.any((p) => p.id == id);
-    if (!exists) {
+    final removed = _findById(id);
+    if (removed == null) {
       _setError('Server profile not found');
       return false;
+    }
+
+    if (removed.oauthEnabled) {
+      await OAuthService(
+        profileId: removed.id,
+        serverUrl: removed.url,
+      ).clearCredential();
+      _authenticatedOAuthProfileIds.remove(removed.id);
     }
 
     _serverProfiles = _serverProfiles.where((p) => p.id != id).toList();
@@ -568,7 +609,7 @@ class AppProvider extends ChangeNotifier {
       _defaultServerId = null;
       _isConnected = false;
       _appInfo = null;
-      _applyActiveServerToClient();
+      await _applyActiveServerToClient();
       _syncHealthPollingLifecycle();
       await _persistServerProfiles();
       _errorMessage = '';
@@ -585,7 +626,7 @@ class AppProvider extends ChangeNotifier {
     if (_activeServerId == id) {
       _activeServerId =
           (_findById(_defaultServerId)?.id ?? _serverProfiles.first.id);
-      _applyActiveServerToClient();
+      await _applyActiveServerToClient();
       await checkConnection();
     }
 
@@ -632,7 +673,7 @@ class AppProvider extends ChangeNotifier {
 
     _activeServerId = id;
     await _localDataSource.saveActiveServerId(id);
-    _applyActiveServerToClient();
+    await _applyActiveServerToClient();
     _isConnected = false;
     _appInfo = null;
     _errorMessage = '';
