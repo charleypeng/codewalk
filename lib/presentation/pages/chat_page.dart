@@ -761,7 +761,8 @@ class _ChatPageState extends State<ChatPage>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Stop read-aloud when app goes to background.
-    if (state != AppLifecycleState.resumed) {
+    if (state != AppLifecycleState.resumed &&
+        di.sl.isRegistered<ReadAloudService>()) {
       unawaited(di.sl<ReadAloudService>().stop());
     }
     _isAppInForeground = state == AppLifecycleState.resumed;
@@ -1574,6 +1575,9 @@ class _ChatPageState extends State<ChatPage>
       if (!_isPostOnboardingTourRunActive(runToken)) {
         return;
       }
+      // Delayed startup may fire while idle; request a frame so the
+      // post-frame callback is not left waiting for unrelated UI work.
+      WidgetsBinding.instance.scheduleFrame();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!_isPostOnboardingTourRunActive(runToken)) {
           return;
@@ -1625,7 +1629,8 @@ class _ChatPageState extends State<ChatPage>
           showConversationPane: layout.showConversationPane,
         ),
       ),
-      (showcase: _newChatTourKey, target: _newChatTourTargetKey),
+      if (!layout.isMobile)
+        (showcase: _newChatTourKey, target: _newChatTourTargetKey),
     ];
     if (!_startShowcaseIfReady(targets)) {
       if (attempt >= _postOnboardingTourMaxAttempts) {
@@ -1636,6 +1641,9 @@ class _ChatPageState extends State<ChatPage>
         if (!mounted) {
           return;
         }
+        // The retry callback can fire while the tree is otherwise idle. Ensure
+        // a frame exists so the post-frame retry is not left waiting forever.
+        WidgetsBinding.instance.scheduleFrame();
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!_isPostOnboardingTourRunActive(runToken)) {
             return;
@@ -1682,6 +1690,9 @@ class _ChatPageState extends State<ChatPage>
       if (!_isPostOnboardingTourRunActive(runToken)) {
         return;
       }
+      // Delayed startup may fire while idle; request a frame so the
+      // post-frame callback is not left waiting for unrelated UI work.
+      WidgetsBinding.instance.scheduleFrame();
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!_isPostOnboardingTourRunActive(runToken)) {
           return;
@@ -1712,6 +1723,9 @@ class _ChatPageState extends State<ChatPage>
         if (!mounted) {
           return;
         }
+        // The retry callback can fire while the tree is otherwise idle. Ensure
+        // a frame exists so the post-frame retry is not left waiting forever.
+        WidgetsBinding.instance.scheduleFrame();
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!_isPostOnboardingTourRunActive(runToken)) {
             return;

@@ -1480,4 +1480,17 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get settingsAppearanceMathRenderingDescription =>
       'چیٹ پیغامات میں LaTeX ریاضی اظہار کو ٹائپ سیٹ مساوات کے طور پر رینڈر کریں۔';
+
+  @override
+  String get msgShareAsImage => 'Share as image';
+
+  @override
+  String get msgShareAsImageSubject => 'CodeWalk message';
+
+  @override
+  String get msgShareAsImageTooTall =>
+      'Message is too long to share as an image.';
+
+  @override
+  String get msgShareAsImageFailed => 'Could not share message as image.';
 }

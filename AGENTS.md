@@ -70,16 +70,16 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | CODEBASE Topic | Lines |
 |----------------|-------|
 | Project Snapshot | 3–12 |
-| Folder Structure | 13–61 |
-| Entry Points | 63–72 |
-| Core Modules | 74–162 |
-| Chat Architecture | 164–259 |
-| Data & Domain Layers | 261–271 |
-| Key API/DataSource locations | 273–291 |
-| Main Commands | 293–315 |
-| Testing/Quality Gates | 317–338 |
-| Internationalization (i18n) | 340–351 |
-| Notes | 352–533 |
+| Folder Structure | 13–62 |
+| Entry Points | 64–73 |
+| Core Modules | 75–163 |
+| Chat Architecture | 165–260 |
+| Data & Domain Layers | 262–272 |
+| Key API/DataSource locations | 274–292 |
+| Main Commands | 294–316 |
+| Testing/Quality Gates | 318–339 |
+| Internationalization (i18n) | 341–352 |
+| Notes | 353–534 |
 
 ## ⚙️ Makefile Quick Reference (details in `Makefile`)
 

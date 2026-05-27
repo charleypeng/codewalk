@@ -10,6 +10,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_tts
   record_windows
   screen_retriever_windows
+  share_plus
   speech_to_text_windows
   tray_manager
   url_launcher_windows

@@ -71,3 +71,6 @@ scorecard.png
 # Stale execution plans (single-file; the decomposed tracker is tracked)
 # final_plan.md — replaced by feature_gap_tracker.md + final_plan/ directory
 .antigravitycli/
+
+# ai-memory persistent storage (MCP)
+ai-memory*

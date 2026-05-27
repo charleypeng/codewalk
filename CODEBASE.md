@@ -123,6 +123,7 @@ lib/presentation/services/android_battery_optimization_service.dart # Android ba
 lib/presentation/services/permission_auto_approve_runtime.dart # Background permission auto-approve context and session ID resolution for Android background continuity
 lib/presentation/services/read_aloud_service.dart                # ReadAloudService: ChangeNotifier wrapping flutter_tts with idle/playing/paused state, speak/stop/pause methods, platform capability queries, error recovery, per-message tracking
 lib/presentation/services/session_export_service.dart # SessionExportService: serializes session history to Markdown and JSON for local export; omits local_user_* IDs from JSON per ADR-023
+lib/presentation/services/message_image_export_service.dart # MessageImageExportService: captures a RepaintBoundary widget as a PNG and invokes the platform share sheet; MessageImageExportResult enum (shared, tooTall, notLaidOut, failed); uses RenderRepaintBoundary.toImage() with _capturePixelRatio=2.5, capped at _maxCaptureHeight=4096 logical px
 lib/presentation/services/moonshine_model_manager_io.dart # Desktop Moonshine model download/extract/delete flow using sherpa-onnx release archives + Silero VAD asset
 lib/presentation/services/speech_input_service_moonshine_io.dart # Desktop Moonshine dictation backend; uses sherpa_onnx OfflineRecognizer + VoiceActivityDetector for on-device utterance recognition
 lib/presentation/services/speech_input_service_stt.dart # STT abstraction backend (speech_to_text package) for iOS, macOS, Web, and Windows
@@ -339,7 +340,7 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 
 ## Internationalization (i18n)
 
-- ARB source files live in `lib/l10n/` (14 locales), with English as the template (`app_en.arb`, ~200 keys). Recent additions: diff review surface keys (sessionDiffSummary, sessionDiffUnified, sessionDiffSplit, sessionDiffFilesChanged, sessionDiffLinesCollapsed, sessionDiffLinesAddedRemoved, sessionDiffContentNotCaptured).
+- ARB source files live in `lib/l10n/` (14 locales), with English as the template (`app_en.arb`, ~205 keys). Recent additions: share-as-image keys (msgShareAsImage, msgShareAsImageSubject, msgShareAsImageTooTall, msgShareAsImageFailed), diff review surface keys (sessionDiffSummary, sessionDiffUnified, sessionDiffSplit, sessionDiffFilesChanged, sessionDiffLinesCollapsed, sessionDiffLinesAddedRemoved, sessionDiffContentNotCaptured).
 - Generated `AppLocalizations` classes in `lib/l10n/generated/` provide type-safe translation accessors.
 - UI code uses `context.l10n.keyName` via the `L10nContext` extension (`lib/core/i18n/l10n_context.dart`).
 - Context-free services use `L10nBridge.current?.key ?? 'English fallback'` (`lib/core/i18n/l10n_bridge.dart`).

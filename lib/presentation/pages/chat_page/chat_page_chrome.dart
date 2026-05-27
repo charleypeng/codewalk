@@ -590,6 +590,8 @@ extension _ChatPageChrome on _ChatPageState {
                           title: sidebarTourCopy.title,
                           description: sidebarTourCopy.description,
                           tooltipPosition: TooltipPosition.bottom,
+                          onNext: () =>
+                              unawaited(_advancePostOnboardingTourToComposer()),
                           child: IconButton(
                             key: const ValueKey<String>('appbar_drawer_button'),
                             tooltip: MaterialLocalizations.of(

@@ -44,3 +44,11 @@ Description: Export chat sessions as Markdown or JSON files via the session acti
 Implemented `SessionExportService` with Markdown and JSON serialization, added export actions to both the session chrome menu and timeline builder menu, integrated `file_picker` save dialog with Clipboard fallback on dismiss, and added a paginated message guard that loads older messages before export to prevent truncation. JSON export omits `local_user_*` fields per ADR-023.
 
 Commits: a8b42ea, 200dfb4, 79d90dd
+
+### Feature 8: Share messages as images
+
+Description: Export individual chat messages as PNG images for easy sharing, with text selection support and theme-consistent rendering.
+
+Implemented `MessageImageExportService` for rendering message content to PNG with proper text styling, code block formatting, and theme-aware backgrounds. Added share action to the message context menu with platform-native share integration. Release v1.84.0.
+
+Commits: 37d51df, 3863f7b, 4d7de5a, dd900d8

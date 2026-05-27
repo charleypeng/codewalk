@@ -1480,4 +1480,17 @@ class AppLocalizationsKo extends AppLocalizations {
   @override
   String get settingsAppearanceMathRenderingDescription =>
       '채팅 메시지에서 LaTeX 수학 표현식을 조판된 방정식으로 렌더링합니다.';
+
+  @override
+  String get msgShareAsImage => 'Share as image';
+
+  @override
+  String get msgShareAsImageSubject => 'CodeWalk message';
+
+  @override
+  String get msgShareAsImageTooTall =>
+      'Message is too long to share as an image.';
+
+  @override
+  String get msgShareAsImageFailed => 'Could not share message as image.';
 }

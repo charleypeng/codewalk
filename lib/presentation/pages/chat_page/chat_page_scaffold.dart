@@ -1093,11 +1093,12 @@ extension _ChatPageScaffold on _ChatPageState {
                     if (settingsProvider.showReviewChanges) ...[
                       if (chatProvider.currentSessionDiff.isNotEmpty) ...[
                         const SizedBox(height: 8),
-        SessionDiffViewer(
-          diffs: chatProvider.currentSessionDiff,
-          compact: false,
-          onFileTap: (path, line) => unawaited(_onFilePathTap(path, line, null)),
-        ),
+                        SessionDiffViewer(
+                          diffs: chatProvider.currentSessionDiff,
+                          compact: false,
+                          onFileTap: (path, line) =>
+                              unawaited(_onFilePathTap(path, line, null)),
+                        ),
                       ] else
                         Text(
                           'Diff files: 0',
@@ -1130,7 +1131,9 @@ extension _ChatPageScaffold on _ChatPageState {
   }
 
   Future<void> _handleSessionSwitch(ChatSession session) async {
-    unawaited(di.sl<ReadAloudService>().stop());
+    if (di.sl.isRegistered<ReadAloudService>()) {
+      unawaited(di.sl<ReadAloudService>().stop());
+    }
     await context.read<ChatProvider>().selectSession(session);
   }
 }

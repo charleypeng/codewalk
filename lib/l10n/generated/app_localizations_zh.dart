@@ -1480,4 +1480,17 @@ class AppLocalizationsZh extends AppLocalizations {
   @override
   String get settingsAppearanceMathRenderingDescription =>
       '在聊天消息中将 LaTeX 数学表达式渲染为排版公式。';
+
+  @override
+  String get msgShareAsImage => 'Share as image';
+
+  @override
+  String get msgShareAsImageSubject => 'CodeWalk message';
+
+  @override
+  String get msgShareAsImageTooTall =>
+      'Message is too long to share as an image.';
+
+  @override
+  String get msgShareAsImageFailed => 'Could not share message as image.';
 }

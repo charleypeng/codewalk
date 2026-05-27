@@ -58,7 +58,7 @@ Client-side rendering or platform-service additions that improve comprehension a
 |---|---------|----------|--------|--------|------|
 | 5 | TTS Read-Aloud Responses | P1 | [x] | plan 5a868d81, implementation bb06528..277b697, reviewer fixes 9581904 16805ed, release v1.81.0 (8e5643f) | [05_tts_read_aloud.md](final_plan/05_tts_read_aloud.md) |
 | 6 | Mermaid Diagram Rendering | P1 | [x] | plan 349649c, implementation e955581..8230a4b, tests 11dee9b, reviewer fix 07a80c2, release v1.82.0 (6ad07c7) | [06_mermaid_rendering.md](final_plan/06_mermaid_rendering.md) |
-| 7 | LaTeX/Math Rendering | P2 | [x] | plan fb7adf0, implementation 5a598d2..fdd276e, reviewer fix 25448b9, release v1.83.0 (a7c99b7) | [07_latex_rendering.md](final_plan/07_latex_rendering.md) |
+| 7 | LaTeX/Math Rendering | P2 | [x] | plan fb7adf0, implementation 5a598d2..fdd276e, reviewer fix 25448b9, inline fix 02e6644, release v1.83.0 (a7c99b7), patch v1.83.1 (fa52d69) | [07_latex_rendering.md](final_plan/07_latex_rendering.md) |
 | 8 | Share Messages as Images | P2 | [ ] | — | [08_share_messages_as_images.md](final_plan/08_share_messages_as_images.md) |
 
 **Phase completion**:

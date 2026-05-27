@@ -1,30 +1,30 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:math' as math;
-import 'package:flutter_highlight/flutter_highlight.dart';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
-
-import '../theme/app_shapes.dart';
-import '../theme/app_animations.dart';
-import '../theme/app_semantic_colors.dart';
-import '../theme/opencode_highlight_theme.dart';
-import '../theme/opencode_theme_presets.dart';
-import 'message_entrance_animation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/di/injection_container.dart' as di;
 import '../../core/i18n/l10n_context.dart';
 import '../../core/logging/app_logger.dart';
-import '../../core/di/injection_container.dart' as di;
 import '../../domain/entities/chat_message.dart';
 import '../../presentation/providers/settings_provider.dart';
 import '../../presentation/services/read_aloud_service.dart';
 import '../services/file_part_action_service.dart' as file_part_action;
+import '../services/message_image_export_service.dart';
+import '../theme/app_animations.dart';
+import '../theme/app_semantic_colors.dart';
+import '../theme/app_shapes.dart';
+import '../theme/opencode_highlight_theme.dart';
+import '../theme/opencode_theme_presets.dart';
 import '../utils/chat_abort_message.dart';
 import '../utils/diff_parser.dart';
 import '../utils/file_path_detector.dart';
@@ -33,6 +33,7 @@ import '../utils/math_markdown.dart';
 import '../utils/reasoning_status_parser.dart';
 import '../utils/tool_presentation.dart';
 import 'mermaid_diagram_widget.dart';
+import 'message_entrance_animation.dart';
 
 part 'chat_message/chat_message_content.dart';
 part 'chat_message/chat_message_part_dispatch.dart';
@@ -137,6 +138,11 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   final Map<String, bool> _toolDetailsExpandedById = <String, bool>{};
   int _stableIdentitySequence = 0;
   int _localUiStateVersion = 0;
+
+  // GlobalKey for the RepaintBoundary that wraps the message bubble,
+  // used by MessageImageExportService to capture the bubble as a PNG.
+  final GlobalKey _shareImageKey = GlobalKey();
+  bool _hideShareImageButtonForCapture = false;
 
   String _nextStableIdentity(String prefix) {
     _stableIdentitySequence += 1;

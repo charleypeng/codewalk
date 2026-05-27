@@ -21,7 +21,8 @@ extension _ChatMessageTextPartBuilder on _ChatMessageWidgetState {
       style: Theme.of(context).textTheme.bodyMedium,
     );
 
-    final mathRenderingEnabled = context.watch<SettingsProvider>().showMathRendering;
+    final mathRenderingEnabled =
+        context.watch<SettingsProvider?>()?.showMathRendering ?? true;
 
     return SizedBox(
       width: double.infinity,
@@ -59,10 +60,10 @@ extension _ChatMessageTextPartBuilder on _ChatMessageWidgetState {
                   onTapCode: (code) => _copyTextToClipboard(context, code),
                   onTapFilePath: widget.onFileTap,
                 ),
-            if (widget.onFileTap != null)
-              'filepath': FilePathBuilder(onFileTap: widget.onFileTap!),
-            if (mathRenderingEnabled) 'inlineMath': InlineMathBuilder(),
-            if (mathRenderingEnabled) 'blockMath': BlockMathBuilder(),
+                if (widget.onFileTap != null)
+                  'filepath': FilePathBuilder(onFileTap: widget.onFileTap!),
+                if (mathRenderingEnabled) 'inlineMath': InlineMathBuilder(),
+                if (mathRenderingEnabled) 'blockMath': BlockMathBuilder(),
               },
               onTapLink: (text, href, title) {
                 final normalizedHref = href?.trim();
