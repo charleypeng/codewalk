@@ -417,15 +417,14 @@ class OAuthService {
       if (terminal) return;
       terminal = true;
       completer.complete(code);
-      unawaited(server.close(force: true));
     }
 
     try {
       _log('Callback server listening on loopback');
-      server.listen((req) {
+      server.listen((req) async {
         if (terminal) {
           req.response.statusCode = 409;
-          unawaited(req.response.close());
+          await req.response.close();
           return;
         }
         _log('Callback received on path ${req.uri.path}');
@@ -436,29 +435,26 @@ class OAuthService {
         );
         if (validation.decision == OAuthCallbackDecision.ignoreWrongPath) {
           req.response.statusCode = 404;
-          unawaited(req.response.close());
+          await req.response.close();
           return;
         }
 
         final accepted = validation.decision == OAuthCallbackDecision.acceptCode;
         if (accepted) {
           _log('Authorization code received (state matched)');
-          completeOnce(validation.code);
         } else if (req.uri.queryParameters['error'] != null) {
           _log('Auth error from provider');
-          completeOnce(null);
         } else if (req.uri.queryParameters['code'] != null) {
           _log('State mismatch; rejecting callback');
-          completeOnce(null);
         } else {
           _log('Callback missing both code and error parameters');
-          completeOnce(null);
         }
 
         req.response.statusCode = accepted ? 200 : 400;
         req.response.headers.contentType = ContentType.html;
         req.response.write(accepted ? _successPage() : _errorPage());
-        unawaited(req.response.close());
+        await req.response.close();
+        completeOnce(accepted ? validation.code : null);
       });
     } catch (e) {
       _log('Callback server failed: $e');
