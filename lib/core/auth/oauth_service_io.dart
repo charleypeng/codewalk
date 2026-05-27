@@ -11,6 +11,17 @@ import 'oauth_credential.dart';
 import 'oauth_service_result.dart';
 import 'oauth_token_storage.dart';
 
+enum OAuthCallbackDecision { ignoreWrongPath, acceptCode, rejectTerminal }
+
+class OAuthCallbackValidation {
+  const OAuthCallbackValidation(this.decision, [this.code]);
+
+  final OAuthCallbackDecision decision;
+  final String? code;
+
+  bool get isTerminal => decision != OAuthCallbackDecision.ignoreWrongPath;
+}
+
 class OAuthService {
   final String profileId;
   final String serverUrl;
@@ -30,6 +41,36 @@ class OAuthService {
     if (statusCode != 401 && statusCode != 403) return false;
     final auth = headers['www-authenticate'] ?? '';
     return auth.startsWith('Bearer ') || auth.startsWith('Cloudflare-Access');
+  }
+
+  static bool isCloudflareAccessHost(String host) {
+    final lower = host.toLowerCase();
+    return lower == 'cloudflareaccess.com' ||
+        lower.endsWith('.cloudflareaccess.com');
+  }
+
+  static OAuthCallbackValidation validateCallback({
+    required Uri uri,
+    required String expectedState,
+    required String expectedPath,
+  }) {
+    if (uri.path != expectedPath) {
+      return const OAuthCallbackValidation(
+        OAuthCallbackDecision.ignoreWrongPath,
+      );
+    }
+    final code = uri.queryParameters['code'];
+    final returnedState = uri.queryParameters['state'];
+    final errorParam = uri.queryParameters['error'];
+    if (errorParam != null) {
+      return const OAuthCallbackValidation(
+        OAuthCallbackDecision.rejectTerminal,
+      );
+    }
+    if (code != null && returnedState == expectedState) {
+      return OAuthCallbackValidation(OAuthCallbackDecision.acceptCode, code);
+    }
+    return const OAuthCallbackValidation(OAuthCallbackDecision.rejectTerminal);
   }
 
   Future<OAuthCredential?> getCachedCredential() async {
@@ -243,7 +284,7 @@ class OAuthService {
     final login = challengeHeaders?['cf-access-login'];
     if (login != null) {
       final loginUri = Uri.tryParse(login);
-      if (loginUri == null || !_isCloudflareAccessHost(loginUri.host)) {
+      if (loginUri == null || !isCloudflareAccessHost(loginUri.host)) {
         _log('Ignoring untrusted CF-Access-Login host');
         return null;
       }
@@ -373,23 +414,24 @@ class OAuthService {
       _log('Callback server listening on loopback');
       server.listen((req) {
         _log('Callback received on path ${req.uri.path}');
-        if (req.uri.path != callbackPath) {
+        final validation = validateCallback(
+          uri: req.uri,
+          expectedState: state,
+          expectedPath: callbackPath,
+        );
+        if (validation.decision == OAuthCallbackDecision.ignoreWrongPath) {
           req.response.statusCode = 404;
           unawaited(req.response.close());
           return;
         }
 
-        final code = req.uri.queryParameters['code'];
-        final returnedState = req.uri.queryParameters['state'];
-        final errorParam = req.uri.queryParameters['error'];
-
-        if (errorParam != null) {
+        if (validation.decision == OAuthCallbackDecision.acceptCode) {
+          _log('Authorization code received (state matched)');
+          completeOnce(validation.code);
+        } else if (req.uri.queryParameters['error'] != null) {
           _log('Auth error from provider');
           completeOnce(null);
-        } else if (code != null && returnedState == state) {
-          _log('Authorization code received (state matched)');
-          completeOnce(code);
-        } else if (code != null) {
+        } else if (req.uri.queryParameters['code'] != null) {
           _log('State mismatch; rejecting callback');
           completeOnce(null);
         } else {
@@ -502,7 +544,7 @@ class OAuthService {
       await response.drain<List<int>>();
       if (location != null) {
         final uri = Uri.tryParse(location);
-        if (uri != null && _isCloudflareAccessHost(uri.host)) {
+        if (uri != null && isCloudflareAccessHost(uri.host)) {
           return uri.host;
         }
       }
@@ -539,16 +581,10 @@ class OAuthService {
         if (domain.startsWith('http')) {
           domain = Uri.parse(domain).host;
         }
-        if (_isCloudflareAccessHost(domain)) return domain;
+        if (isCloudflareAccessHost(domain)) return domain;
       }
     }
     return null;
-  }
-
-  bool _isCloudflareAccessHost(String host) {
-    final lower = host.toLowerCase();
-    return lower == 'cloudflareaccess.com' ||
-        lower.endsWith('.cloudflareaccess.com');
   }
 
   bool _metadataEndpointsAreTrusted(Map<String, dynamic> metadata) {
@@ -566,7 +602,7 @@ class OAuthService {
     if (uri == null || uri.scheme != 'https' || uri.host.isEmpty) {
       return false;
     }
-    return _isCloudflareAccessHost(uri.host);
+    return isCloudflareAccessHost(uri.host);
   }
 
   String _generateVerifier() {
