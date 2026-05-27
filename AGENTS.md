@@ -61,7 +61,8 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | 029 | Host-discovered quota and rate-limit monitoring for OpenChamber parity — server-host quota ownership, strategy-chain transport (REST/Shell), popup-only UI (compact-first), grouped providers with pace/progress, explicit parity opt-in; narrow `opencode-go` exception for dashboard credential opt-in (workspace ID + auth cookie, scoped by serverId, quota-probe only, removable via UI) | 1412–1491 |
 | 030 | OpenChamber-driven realtime hardening and permission continuity — atomic refresh consolidation, mutation guard during reconnect failures, authoritative pruning delay, and bounded reconnect helpers | 1492–1534 |
 | 031 | Historical inline revert through the official session revert endpoint — `revertToTurn`, duplicate-revert guard, `local_user_*` validation, composer draft restoration, distinct inline rewind action for server-confirmed user messages, and permission `remember: true` companion fix for `always` replies | 1537–1601 |
-| 032 | LaTeX math rendering with `flutter_math_fork` (pure-Dart KaTeX port), custom `$…$`/`$$…$$` Markdown delimiters, `MathExpressionWidget` with styled fallback, and `showMathRendering` toggle in `ExperienceSettings` — typeset math in chat without WebView | 1605–1655 |
+| 032 | LaTeX math rendering with `flutter_math_fork` (pure-Dart KaTeX port), custom `$…$`/`$$…$$` Markdown delimiters, `MathExpressionWidget` with styled fallback, and `showMathRendering` toggle in `ExperienceSettings` — typeset math in chat without WebView | 1606–1656 |
+| 033 | Cloudflare Managed OAuth as optional desktop reverse-proxy auth (ADR-023 exception) — `ServerProfile.oauthEnabled`, `OAuthService` conditional export (io/stub), auth code + PKCE S256, DCR, `OAuthTokenStorage` in `flutter_secure_storage` scoped by profileId+serverUrl, Bearer token for matching origin only, OAuth/Basic Auth mutually exclusive per profile, desktop-only via `AppProvider.supportsCloudflareAccessOAuth`, `/oauth/callback` with state/duplicate rejection, health checks record OAuth challenges, rollback by disabling `oauthEnabled` + clearing credentials | 1660–1778 |
 
 ## 🗺 CODEBASE Quick Reference (details in `CODEBASE.md`)
 
@@ -69,17 +70,17 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 
 | CODEBASE Topic | Lines |
 |----------------|-------|
-| Project Snapshot | 3–12 |
+| Project Snapshot | 3–11 |
 | Folder Structure | 13–62 |
 | Entry Points | 64–73 |
-| Core Modules | 75–163 |
-| Chat Architecture | 165–260 |
-| Data & Domain Layers | 262–272 |
-| Key API/DataSource locations | 274–292 |
-| Main Commands | 294–316 |
-| Testing/Quality Gates | 318–339 |
-| Internationalization (i18n) | 341–352 |
-| Notes | 353–534 |
+| Core Modules | 75–170 |
+| Chat Architecture | 172–267 |
+| Data & Domain Layers | 269–279 |
+| Key API/DataSource locations | 281–299 |
+| Main Commands | 301–323 |
+| Testing/Quality Gates | 325–350 |
+| Internationalization (i18n) | 352–362 |
+| Notes | 364–546 |
 
 ## ⚙️ Makefile Quick Reference (details in `Makefile`)
 

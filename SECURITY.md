@@ -61,7 +61,8 @@ CodeWalk connects to OpenCode-compatible servers over HTTP/SSE. Users should:
 ### Local Storage
 
 - Server URLs and connection settings are stored in `SharedPreferences` (platform default)
-- No API keys or tokens are stored by the app itself (authentication is server-side)
+- Optional Cloudflare Access OAuth credentials are stored only in platform secure storage when that desktop-only server-profile mode is enabled
+- No Cloudflare OAuth credentials are written to plaintext files, logs, debug surfaces, or `SharedPreferences`
 - Session data and chat history remain on the server
 
 ## Contact
