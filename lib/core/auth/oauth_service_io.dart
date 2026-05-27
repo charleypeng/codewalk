@@ -355,42 +355,52 @@ class OAuthService {
     if (authEp == null || tokenEp == null) return null;
 
     final callbackServer = await HttpServer.bind('127.0.0.1', 0);
-    final redirectUri = _redirectUriFor(callbackServer.port);
-    final client = await _registerClient(meta, redirectUri);
+    try {
+      final redirectUri = _redirectUriFor(callbackServer.port);
+      final client = await _registerClient(meta, redirectUri);
 
-    final verifier = _generateVerifier();
-    final challenge = _generateChallenge(verifier);
-    final state = _generateVerifier();
+      final verifier = _generateVerifier();
+      final challenge = _generateChallenge(verifier);
+      final state = _generateVerifier();
 
-    final clientId = client?['client_id'] as String?;
+      final clientId = client?['client_id'] as String?;
 
-    final params = <String, String>{
-      'response_type': 'code',
-      'redirect_uri': redirectUri,
-      'code_challenge': challenge,
-      'code_challenge_method': 'S256',
-      'state': state,
-      'resource': _baseUrl,
-    };
-    if (clientId != null) params['client_id'] = clientId;
+      final params = <String, String>{
+        'response_type': 'code',
+        'redirect_uri': redirectUri,
+        'code_challenge': challenge,
+        'code_challenge_method': 'S256',
+        'state': state,
+        'resource': _baseUrl,
+      };
+      if (clientId != null) params['client_id'] = clientId;
 
-    final authUri = Uri.parse(authEp).replace(queryParameters: params);
-    _log('Opening browser: $authEp');
+      final authUri = Uri.parse(authEp).replace(queryParameters: params);
+      _log('Opening browser: $authEp');
 
-    final code = await _launchAndCapture(
-      authUri,
-      redirectUri,
-      state,
-      callbackServer,
-    );
-    if (code == null) return null;
-    _log('Authorization code received');
+      final code = await _launchAndCapture(
+        authUri,
+        redirectUri,
+        state,
+        callbackServer,
+      );
+      if (code == null) return null;
+      _log('Authorization code received');
 
-    final data = await _exchangeCode(tokenEp, code, verifier, redirectUri, clientId);
-    if (data != null) {
-      data['_client'] = client;
+      final data = await _exchangeCode(
+        tokenEp,
+        code,
+        verifier,
+        redirectUri,
+        clientId,
+      );
+      if (data != null) {
+        data['_client'] = client;
+      }
+      return data;
+    } finally {
+      await callbackServer.close(force: true);
     }
-    return data;
   }
 
   Future<String?> _launchAndCapture(
@@ -413,6 +423,11 @@ class OAuthService {
     try {
       _log('Callback server listening on loopback');
       server.listen((req) {
+        if (terminal) {
+          req.response.statusCode = 409;
+          unawaited(req.response.close());
+          return;
+        }
         _log('Callback received on path ${req.uri.path}');
         final validation = validateCallback(
           uri: req.uri,
@@ -425,7 +440,8 @@ class OAuthService {
           return;
         }
 
-        if (validation.decision == OAuthCallbackDecision.acceptCode) {
+        final accepted = validation.decision == OAuthCallbackDecision.acceptCode;
+        if (accepted) {
           _log('Authorization code received (state matched)');
           completeOnce(validation.code);
         } else if (req.uri.queryParameters['error'] != null) {
@@ -439,9 +455,9 @@ class OAuthService {
           completeOnce(null);
         }
 
-        req.response.statusCode = 200;
+        req.response.statusCode = accepted ? 200 : 400;
         req.response.headers.contentType = ContentType.html;
-        req.response.write(_successPage());
+        req.response.write(accepted ? _successPage() : _errorPage());
         unawaited(req.response.close());
       });
     } catch (e) {
@@ -539,6 +555,7 @@ class OAuthService {
       client = HttpClient();
       client.autoUncompress = false;
       final request = await client.getUrl(Uri.parse(_baseUrl));
+      request.followRedirects = false;
       final response = await request.close().timeout(const Duration(seconds: 10));
       final location = response.headers.value('location');
       await response.drain<List<int>>();
@@ -641,6 +658,19 @@ class OAuthService {
 <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
 <h2>Authentication successful</h2>
 <p>You can close this tab and return to the app.</p>
+</div></body></html>''';
+
+  String _errorPage() => '''<!DOCTYPE html>
+<html><head><title>Authentication Failed</title>
+<style>
+  body { font-family: system-ui, -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f5f5f5 }
+  .card { text-align: center; padding: 40px; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1) }
+  h2 { font-size: 18px; color: #991b1b; margin: 0 0 8px 0; font-weight: 600 }
+  p { font-size: 14px; color: #666; margin: 0 }
+</style></head>
+<body><div class="card">
+<h2>Authentication failed</h2>
+<p>Return to CodeWalk and try again.</p>
 </div></body></html>''';
 
   void _log(String msg) {

@@ -354,6 +354,20 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         return;
       }
 
+      if (oauthEnabled) {
+        final authenticated = await appProvider.handleOAuthChallenge(
+          serverUrl: adjustedUrl,
+        );
+        if (!mounted) return;
+        if (!authenticated) {
+          setState(() {
+            _testing = false;
+            _connectionError = 'Cloudflare Access authentication failed.';
+          });
+          return;
+        }
+      }
+
       final health = appProvider.healthFor(trackedServerId);
       final healthMessage = health == ServerHealthStatus.unhealthy
           ? 'Server health check failed. It may still be starting up.'
@@ -408,6 +422,21 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       if (_editingServerId == null && serverId != null) {
         _addedServerId = serverId;
       }
+
+      if (oauthEnabled) {
+        final authenticated = await appProvider.handleOAuthChallenge(
+          serverUrl: adjustedUrl,
+        );
+        if (!mounted) return;
+        if (!authenticated) {
+          setState(() {
+            _testing = false;
+            _connectionError = 'Cloudflare Access authentication failed.';
+          });
+          return;
+        }
+      }
+
       final health = serverId == null
           ? ServerHealthStatus.unhealthy
           : appProvider.healthFor(serverId);

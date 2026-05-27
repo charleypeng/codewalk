@@ -395,11 +395,10 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                 child: Text('Clear Default'),
               ),
             if (profile.oauthEnabled) ...[
-              if (appProvider.hasOAuthChallenge(profile.url))
-                const PopupMenuItem(
-                  value: _ServerAction.reauth,
-                  child: Text('Re-authenticate'),
-                ),
+              const PopupMenuItem(
+                value: _ServerAction.reauth,
+                child: Text('Re-authenticate'),
+              ),
               const PopupMenuItem(
                 value: _ServerAction.clearOAuth,
                 child: Text('Clear OAuth'),

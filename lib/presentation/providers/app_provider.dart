@@ -464,17 +464,31 @@ class AppProvider extends ChangeNotifier {
     if (profile == null) {
       return;
     }
-    final service = OAuthService(profileId: profile.id, serverUrl: serverUrl);
-    await service.clearCredential();
-    _authenticatedOAuthProfileIds.remove(profile.id);
-    _oauthChallengeHeaders.remove(serverUrl);
-    _oauthChallengeBodies.remove(serverUrl);
-    if (activeServer?.url == serverUrl) {
-      _dioClient.clearOAuthToken();
-    }
+    await _clearOAuthCredentialForProfile(profile);
     SchedulerBinding.instance.addPostFrameCallback((_) {
       notifyListeners();
     });
+  }
+
+  Future<void> _clearOAuthCredentialForProfile(ServerProfile profile) async {
+    try {
+      final service = OAuthService(
+        profileId: profile.id,
+        serverUrl: profile.url,
+      );
+      await service.clearCredential();
+    } catch (e) {
+      AppLogger.warn(
+        'Failed to clear persisted OAuth credential; clearing memory state only',
+        error: e,
+      );
+    }
+    _authenticatedOAuthProfileIds.remove(profile.id);
+    _oauthChallengeHeaders.remove(profile.url);
+    _oauthChallengeBodies.remove(profile.url);
+    if (activeServer?.id == profile.id) {
+      _dioClient.clearOAuthToken();
+    }
   }
 
   Future<bool> addServerProfile({
@@ -508,9 +522,9 @@ class AppProvider extends ChangeNotifier {
       id: _generateServerId(),
       url: normalized,
       label: label?.trim().isEmpty ?? true ? null : label!.trim(),
-      basicAuthEnabled: basicAuthEnabled,
-      basicAuthUsername: basicAuthUsername.trim(),
-      basicAuthPassword: basicAuthPassword.trim(),
+      basicAuthEnabled: oauthEnabled ? false : basicAuthEnabled,
+      basicAuthUsername: oauthEnabled ? '' : basicAuthUsername.trim(),
+      basicAuthPassword: oauthEnabled ? '' : basicAuthPassword.trim(),
       oauthEnabled: oauthEnabled,
       aiGeneratedTitlesEnabled: aiGeneratedTitlesEnabled,
       createdAt: now,
@@ -570,9 +584,9 @@ class AppProvider extends ChangeNotifier {
     final updated = previous.copyWith(
       url: normalized,
       label: label?.trim().isEmpty ?? true ? null : label!.trim(),
-      basicAuthEnabled: basicAuthEnabled,
-      basicAuthUsername: basicAuthUsername.trim(),
-      basicAuthPassword: basicAuthPassword.trim(),
+      basicAuthEnabled: oauthEnabled ? false : basicAuthEnabled,
+      basicAuthUsername: oauthEnabled ? '' : basicAuthUsername.trim(),
+      basicAuthPassword: oauthEnabled ? '' : basicAuthPassword.trim(),
       oauthEnabled: oauthEnabled,
       aiGeneratedTitlesEnabled: aiGeneratedTitlesEnabled,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
@@ -583,11 +597,7 @@ class AppProvider extends ChangeNotifier {
 
     if (previous.oauthEnabled &&
         (previous.url != updated.url || !updated.oauthEnabled)) {
-      await OAuthService(
-        profileId: previous.id,
-        serverUrl: previous.url,
-      ).clearCredential();
-      _authenticatedOAuthProfileIds.remove(previous.id);
+      await _clearOAuthCredentialForProfile(previous);
     }
 
     await _persistServerProfiles();
@@ -610,11 +620,7 @@ class AppProvider extends ChangeNotifier {
     }
 
     if (removed.oauthEnabled) {
-      await OAuthService(
-        profileId: removed.id,
-        serverUrl: removed.url,
-      ).clearCredential();
-      _authenticatedOAuthProfileIds.remove(removed.id);
+      await _clearOAuthCredentialForProfile(removed);
     }
 
     _serverProfiles = _serverProfiles.where((p) => p.id != id).toList();
@@ -1291,6 +1297,19 @@ class AppProvider extends ChangeNotifier {
         ),
       );
       dio.options.headers[ApiConstants.authorization] = 'Basic $auth';
+    } else if (profile.oauthEnabled) {
+      try {
+        final credential = await OAuthService(
+          profileId: profile.id,
+          serverUrl: profile.url,
+        ).getCachedCredential();
+        if (credential != null) {
+          dio.options.headers[ApiConstants.authorization] =
+              'Bearer ${credential.accessToken}';
+        }
+      } catch (e) {
+        AppLogger.warn('Failed to load OAuth credential for health check', error: e);
+      }
     }
 
     try {
@@ -1298,7 +1317,8 @@ class AppProvider extends ChangeNotifier {
       if (global.statusCode == 200) {
         return ServerHealthStatus.healthy;
       }
-    } catch (_) {
+    } on DioException catch (e) {
+      _recordOAuthChallengeFromHealth(profile, e);
       // Fallback below.
     }
 
@@ -1308,8 +1328,27 @@ class AppProvider extends ChangeNotifier {
         return ServerHealthStatus.healthy;
       }
       return ServerHealthStatus.unhealthy;
-    } catch (_) {
+    } on DioException catch (e) {
+      _recordOAuthChallengeFromHealth(profile, e);
       return ServerHealthStatus.unhealthy;
+    }
+  }
+
+  void _recordOAuthChallengeFromHealth(ServerProfile profile, DioException e) {
+    if (!profile.oauthEnabled || e.response == null) return;
+    final statusCode = e.response!.statusCode ?? 0;
+    final headers = <String, String>{};
+    for (final entry in e.response!.headers.map.entries) {
+      final value = entry.value.isEmpty ? null : entry.value.first;
+      if (value != null) {
+        headers[entry.key.toLowerCase()] = value;
+      }
+    }
+    if (!OAuthService.isOAuthChallenge(statusCode, headers)) return;
+    _oauthChallengeHeaders[profile.url] = headers;
+    final body = e.response!.data;
+    if (body is String) {
+      _oauthChallengeBodies[profile.url] = body;
     }
   }
 

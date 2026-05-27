@@ -140,6 +140,26 @@ void main() {
       );
     });
 
+    test('addServerProfile makes OAuth mutually exclusive with Basic Auth', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+      await provider.initialize();
+      final created = await provider.addServerProfile(
+        url: 'https://code.example.com',
+        basicAuthEnabled: true,
+        basicAuthUsername: 'opencode',
+        basicAuthPassword: 'password',
+        oauthEnabled: true,
+      );
+
+      expect(created, isTrue);
+      expect(provider.activeServer?.oauthEnabled, isTrue);
+      expect(provider.activeServer?.basicAuthEnabled, isFalse);
+      expect(provider.activeServer?.basicAuthUsername, isEmpty);
+      expect(provider.activeServer?.basicAuthPassword, isEmpty);
+    });
+
     test('setActiveServer blocks unhealthy profiles', () async {
       await provider.initialize();
       await provider.addServerProfile(url: 'http://127.0.0.1:5001');
