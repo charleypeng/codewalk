@@ -433,7 +433,9 @@ class AppProvider extends ChangeNotifier {
     final flow = () async {
       final result = await service.authenticate();
       if (result.ok && result.token != null) {
-        _dioClient.setOAuthToken(result.token!, origin: profile.url);
+        if (profile.id == _activeServerId) {
+          _dioClient.setOAuthToken(result.token!, origin: profile.url);
+        }
         _authenticatedOAuthProfileIds.add(profile.id);
         _oauthChallengeHeaders.remove(serverUrl);
         _oauthChallengeBodies.remove(serverUrl);

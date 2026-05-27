@@ -419,17 +419,6 @@ class OAuthService {
       completer.complete(code);
     }
 
-    Future<void> finishAfterResponse(String? code) async {
-      if (terminal) return;
-      terminal = true;
-      try {
-        await server.close(force: false);
-      } catch (_) {
-        // The response flush below is still responsible for completing the flow.
-      }
-      completer.complete(code);
-    }
-
     try {
       _log('Callback server listening on loopback');
       server.listen((req) async {
@@ -464,10 +453,14 @@ class OAuthService {
         req.response.statusCode = accepted ? 200 : 400;
         req.response.headers.contentType = ContentType.html;
         req.response.write(accepted ? _successPage() : _errorPage());
+        final completionCode = accepted ? validation.code : null;
+        terminal = true;
         try {
-          await req.response.close();
+          await req.response.close().timeout(const Duration(seconds: 2));
         } finally {
-          await finishAfterResponse(accepted ? validation.code : null);
+          if (!completer.isCompleted) {
+            completer.complete(completionCode);
+          }
         }
       });
     } catch (e) {
