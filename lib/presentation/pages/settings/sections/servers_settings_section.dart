@@ -21,7 +21,7 @@ class ServersSettingsSection extends StatefulWidget {
   State<ServersSettingsSection> createState() => _ServersSettingsSectionState();
 }
 
-enum _ServerAction { activate, setDefault, clearDefault, edit, delete, check }
+enum _ServerAction { activate, setDefault, clearDefault, edit, delete, check, reauth, clearOAuth }
 
 class _ServersSettingsSectionState extends State<ServersSettingsSection> {
   final _activeServerDropdownKey = GlobalKey<FormFieldState<String>>();
@@ -180,7 +180,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
               },
               decoration: InputDecoration(
                 labelText: context.l10n.settingsServersChooseActive,
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
             ),
             if (activeServer != null) ...[
@@ -363,6 +363,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
             ),
             if (isActive) const _MetaChip(label: 'Active'),
             if (isDefault) const _MetaChip(label: 'Default'),
+            if (profile.oauthEnabled) const _MetaChip(label: 'OAuth'),
           ],
         ),
         subtitle: Text(
@@ -393,6 +394,16 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                 value: _ServerAction.clearDefault,
                 child: Text('Clear Default'),
               ),
+            if (profile.oauthEnabled) ...[
+              const PopupMenuItem(
+                value: _ServerAction.reauth,
+                child: Text('Re-authenticate'),
+              ),
+              const PopupMenuItem(
+                value: _ServerAction.clearOAuth,
+                child: Text('Clear OAuth'),
+              ),
+            ],
             const PopupMenuItem(
               value: _ServerAction.check,
               child: Text('Check Health'),
@@ -487,6 +498,18 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
         break;
       case _ServerAction.check:
         await appProvider.refreshServerHealth(serverId: profile.id);
+        break;
+      case _ServerAction.reauth:
+        final ok = await appProvider.handleOAuthChallenge(
+          serverUrl: profile.url,
+          challengeHeaders: appProvider.getOAuthChallengeHeaders(profile.url),
+        );
+        if (!ok && mounted) {
+          _showMessage('OAuth authentication failed');
+        }
+        break;
+      case _ServerAction.clearOAuth:
+        await appProvider.clearOAuthCredential(profile.url);
         break;
     }
   }
@@ -628,7 +651,7 @@ class _ServerSetupQuickGuideState extends State<ServerSetupQuickGuide> {
     final isWindows =
         !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
     if (isWindows) {
-      return "\$env:OPENCODE_SERVER_PASSWORD=${_quotedPowerShellValue(password)}; $_baseCommand";
+      return '\$env:OPENCODE_SERVER_PASSWORD=${_quotedPowerShellValue(password)}; $_baseCommand';
     }
 
     return 'OPENCODE_SERVER_PASSWORD=${_quotedEnvValue(password)} $_baseCommand';

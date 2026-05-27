@@ -152,6 +152,22 @@
 - **Then** the composer input is blocked and the reason is displayed to the user
 - **Then** the user cannot send messages until the connection is restored
 
+### Cloudflare Access OAuth is desktop-only and profile-scoped
+
+- **Given** a desktop user configures a server profile protected by Cloudflare Access Managed OAuth
+- **When** the user enables Cloudflare Access OAuth for that profile
+- **Then** CodeWalk opens the system browser for OAuth authorization code + PKCE authentication
+- **Then** OAuth credentials are stored in platform secure storage scoped to that server profile and URL
+- **Then** Cloudflare OAuth and OpenCode Basic Auth are mutually exclusive profile modes in this release
+- **Then** Android, iOS, and web users do not get a broken OAuth flow and should use Basic Auth or another supported access path
+
+### Cloudflare Access OAuth challenge recovery
+
+- **Given** a desktop OAuth-enabled server profile receives a Cloudflare Access 401/403 challenge
+- **When** CodeWalk detects the challenge during health or connection checks
+- **Then** the profile records the challenge and the user can re-authenticate from server settings
+- **Then** successful re-authentication updates only the matching profile and does not leak tokens to other profiles or hosts
+
 ### Offline startup reloads initial data automatically after recovery
 
 - **Given** an active server is configured but the app starts while that server is unreachable

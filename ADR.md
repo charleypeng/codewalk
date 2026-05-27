@@ -36,6 +36,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-030: OpenChamber-Driven Realtime Hardening and Permission Continuity
 - ADR-031: Historical Inline Revert via OpenCode Session Revert Endpoint
 - ADR-032: LaTeX Math Rendering with flutter_math_fork and Custom Markdown Delimiters
+- ADR-033: Cloudflare Access OAuth as Optional Desktop Reverse-Proxy Auth (ADR-023 Exception)
 
 ---
 
@@ -1653,3 +1654,116 @@ Key challenges:
 - `lib/presentation/widgets/chat_message/` — integration of math delimiter parsing into chat message Markdown pipeline
 - `lib/domain/settings/experience_settings.dart` — `showMathRendering` toggle field
 - `lib/presentation/providers/settings_provider.dart` — toggle persistence and access via `SettingsProvider`
+
+---
+
+## ADR-033: Cloudflare Managed OAuth as Optional Desktop Reverse-Proxy Auth (ADR-023 Exception) (2026-05-27)
+
+**Status**: Accepted
+
+**Related**: ADR-023 (Official OpenCode Contract-First Compatibility Policy), ADR-001 (Multi-Server Orchestration and Secure Credential Storage), ADR-007 (Modular Settings Architecture)
+
+### Context
+
+Some CodeWalk desktop users deploy OpenCode behind a Cloudflare Access reverse proxy that requires Cloudflare Managed OAuth identity verification before any traffic reaches the OpenCode server. This is a deployment-specific authentication layer that is invisible to the OpenCode server itself — the server only sees the standard `Authorization: Basic <creds>` header after the reverse proxy has already validated the user's identity.
+
+Currently, CodeWalk only supports official OpenCode Basic Auth (username/password via `Authorization: Basic` header). Users behind Cloudflare Access receive HTTP 401/403 responses from the proxy before reaching the server, with no mechanism in the app to complete the OAuth dance. This blocks them from using CodeWalk entirely unless they pre-authenticate in a browser and somehow transfer session tokens — a fragile, unsupported workflow.
+
+Official OpenCode does not define a reverse-proxy authentication mechanism. The server is unaware of any upstream proxy auth; it only expects Basic Auth. Adding Cloudflare Managed OAuth support is therefore a client-side concern that does not modify any server API contract, but it does introduce a secondary auth layer that is not part of the official OpenCode specification — triggering ADR-023 review.
+
+### Decision
+
+1. **Optional Cloudflare Managed OAuth flow**: Add an opt-in Cloudflare Managed OAuth authentication capability for desktop platforms only. When enabled per server profile, CodeWalk performs the Cloudflare Managed OAuth authorization code flow with PKCE S256 in a system browser. The resulting access token is sent as `Authorization: Bearer <access_token>` on requests whose origin matches the OAuth-enabled profile only. When a `registration_endpoint` is available, Dynamic Client Registration (DCR) is performed to obtain client credentials automatically.
+
+2. **Profile-scoped configuration**: Each `ServerProfile` (ADR-001) gains an `oauthEnabled` (bool, default `false`) field. This single toggle controls whether the profile uses Cloudflare Managed OAuth or standard Basic Auth — the two modes are mutually exclusive within a profile. This preserves OpenCode Basic Auth for non-OAuth profiles without interference.
+
+3. **Conditional export architecture**: The `OAuthService` is implemented via Dart conditional exports: `oauth_service_io.dart` provides the real desktop implementation (system browser launch, local redirect server, token exchange), and `oauth_service_stub.dart` provides a no-op stub for mobile platforms. The conditional export pattern ensures compile-time platform resolution without runtime checks.
+
+4. **Desktop-only gating**: The Cloudflare Managed OAuth flow is gated behind `AppProvider.supportsCloudflareAccessOAuth`. On mobile platforms (Android/iOS), the feature is hidden from UI and the code path is the no-op stub. Rationale: reverse-proxy deployments are desktop/server environments; mobile users connect directly or via VPN. This prevents unnecessary complexity on mobile and avoids the browser-redirect UX challenges on small screens.
+
+5. **Secure credential storage via `OAuthTokenStorage`**: Access and refresh tokens are stored through `OAuthTokenStorage` backed by `flutter_secure_storage`, with keys scoped by `profileId + serverUrl`. No OAuth credentials are ever written to SharedPreferences, log output, or debug surfaces. `OAuthCredential` encapsulates the token pair and expiry.
+
+6. **Bearer token propagation**: Requests to the OAuth-enabled profile's origin include `Authorization: Bearer <access_token>` via the Dio interceptor. The interceptor matches the request origin against the OAuth profile's server URL — only matching requests receive the Bearer header. On profile switch or when `oauthEnabled` is false, the interceptor is removed. Cross-origin requests never include the OAuth token.
+
+7. **OAuth callback flow**: The callback path is `/oauth/callback`. The flow validates `state` parameter integrity, rejects duplicate callback invocations, and passes the authorization code + PKCE verifier to the token endpoint. On failure, the user sees a clear error and can retry or disable `oauthEnabled` for that profile.
+
+8. **Health checks and OAuth challenge detection**: Health check requests load cached OAuth tokens and record OAuth challenges (e.g., 401/403 from the proxy) to trigger re-authentication when needed.
+
+9. **Mutual exclusivity of auth modes**: OAuth and Basic Auth are mutually exclusive profile modes in this PR. An OAuth-enabled profile uses Bearer token auth exclusively; a non-OAuth profile uses standard Basic Auth. This prevents auth-header conflicts and keeps each profile's auth boundary clean.
+
+### ADR-023 Exception Declaration
+
+This ADR constitutes an explicit ADR-023 exception per section 3 ("Explicit Divergence") of ADR-023.
+
+**Deviation from official behavior**: Official OpenCode defines only Basic Auth for server authentication. Cloudflare Managed OAuth introduces a secondary, pre-Basic-Auth authentication layer that is not part of the official OpenCode API contract. The client sends a Bearer token for matching-origin requests that is consumed by an upstream reverse proxy, transparent to the OpenCode server.
+
+**Why this is acceptable**:
+- The OpenCode server contract is unchanged — CodeWalk still sends the standard `Authorization: Basic` header on non-OAuth profiles and follows all server API semantics.
+- The OAuth Bearer token is consumed by an upstream reverse proxy, transparent to the OpenCode server.
+- No new server endpoints, no modified request/response schemas, no altered lifecycle semantics.
+- The feature is opt-in and profile-scoped; servers without Cloudflare Managed OAuth are completely unaffected.
+- OAuth and Basic Auth are mutually exclusive per profile — no auth-header conflicts.
+
+### Rationale
+
+- **Reverse-proxy auth is a deployment reality**: Enterprise and self-hosted users commonly place services behind Cloudflare Access. CodeWalk must support this to be usable in those environments.
+- **Cloudflare Managed OAuth (authorization code + PKCE S256)**: This is the standard Cloudflare Access OAuth mechanism — not cookie-based auth. Authorization code flow with PKCE S256 provides the strongest security guarantees for native/desktop applications (no client secret in the app, code verifier prevents interception).
+- **DCR when available**: Dynamic Client Registration automates client credential provisioning when the Cloudflare IdP exposes a `registration_endpoint`, removing manual client ID entry.
+- **Conditional export pattern**: Using Dart's conditional export (`oauth_service_io.dart` / `oauth_service_stub.dart`) provides compile-time platform resolution — cleaner than runtime platform checks scattered across call sites.
+- **Desktop-only scoping via `AppProvider`**: `AppProvider.supportsCloudflareAccessOAuth` centralizes platform capability detection, consistent with the app's provider architecture.
+- **Profile-scoped mutual exclusivity**: Tying the feature to `oauthEnabled` on the server profile (ADR-001) and making OAuth/Basic Auth mutually exclusive prevents accidental activation and keeps the auth boundary clean per-server.
+- **Secure storage alignment**: `OAuthTokenStorage` following ADR-001's `flutter_secure_storage` pattern with `profileId + serverUrl` scoped keys prevents the same class of credential-exposure issues that ADR-001 solved for Basic Auth.
+
+### Consequences
+
+- ✅ Desktop users behind Cloudflare Access can authenticate and use CodeWalk normally.
+- ✅ No impact on servers without Cloudflare Managed OAuth — feature is fully opt-in and profile-scoped.
+- ✅ OpenCode server contract is fully preserved on non-OAuth profiles — Basic Auth is always sent.
+- ✅ Secure storage via `OAuthTokenStorage` prevents OAuth credential leakage via plaintext persistence.
+- ✅ Desktop-only gating via `AppProvider.supportsCloudflareAccessOAuth` avoids mobile UX complexity and unsupported deployment patterns.
+- ✅ Mutual exclusivity of OAuth/Basic Auth per profile prevents auth-header conflicts.
+- ✅ PKCE S256 protects against authorization code interception attacks.
+- ⚠ Adds a second auth layer to the connection flow for OAuth-enabled profiles, increasing time-to-first-message (browser redirect + code exchange).
+- ⚠ Requires maintaining a local HTTP redirect server (for the `/oauth/callback`) on desktop platforms; port conflicts are possible in rare cases.
+- ⚠ OAuth access token expiration requires re-authentication; health checks detect proxy challenges and re-trigger the flow gracefully.
+- ❌ Mobile platforms will not support Cloudflare Managed OAuth; users in proxied environments must use desktop or VPN on mobile.
+- ❌ Cloudflare Managed OAuth configuration is specific to Cloudflare — other reverse-proxy solutions (Authelia, Tailscale, etc.) are not covered by this ADR and would require separate exceptions if needed.
+
+### Risk Analysis
+
+- **Medium auth-layer risk**: If the OAuth access token expires mid-session, requests will fail with 401/403 from the proxy. Mitigation: health checks load cached OAuth tokens and record OAuth challenges; the app detects proxy 401/403 responses (distinct from OpenCode 401), re-triggers the OAuth flow with a user-visible prompt, and replays the failed request after re-auth.
+- **Low contract risk**: The OpenCode server API is unmodified. The Dio interceptor adds a Bearer token for matching-origin requests only, consumed upstream. Non-OAuth profiles are completely unaffected. If a future OpenCode version adds its own Bearer-based auth, the OAuth interceptor is scoped to the profile origin and will not conflict.
+- **Low data-risk**: OAuth tokens are stored in `flutter_secure_storage` with keys scoped by `profileId + serverUrl`. Clearing a server profile removes all associated OAuth credentials.
+- **Low port-conflict risk**: The local redirect server binds to a random available port; collision probability is low on desktop. If binding fails, the user receives an error with a retry option.
+
+### Rollback / Feature-Flag Plan
+
+- **Immediate user rollback**: Disable `oauthEnabled` in the server profile settings. The app immediately falls back to Basic Auth only for that profile. Clear stored OAuth credentials for the profile.
+- **Product rollback**: Remove `oauthEnabled` from `ServerProfile`, the Dio Bearer interceptor, and the OAuth flow code. `OAuthTokenStorage` keys are cleaned up on next profile load when `oauthEnabled` is absent.
+- **Feature flag**: `oauthEnabled` per-profile IS the feature flag. There is no global toggle — each server profile controls its own OAuth state independently.
+
+### Regression Tests
+
+- **Basic Auth non-regression**: Existing Basic Auth connection tests under `test/unit/network` must pass unchanged when `oauthEnabled` is `false` (default).
+- **Profile isolation**: Enabling OAuth on profile A must not affect profile B's connection or credential state.
+- **Interceptor scoping**: The Bearer token interceptor must only attach `Authorization: Bearer` to requests matching the OAuth profile's origin; cross-origin requests must not include the OAuth token.
+- **Secure storage boundary**: OAuth credentials must not appear in SharedPreferences, log output, or debug surfaces. Keys must be scoped by `profileId + serverUrl`.
+- **Mobile no-op**: On mobile platforms, `OAuthService` (stub) must be a no-op and `AppProvider.supportsCloudflareAccessOAuth` must return false; UI must not expose OAuth configuration.
+- **State/callback validation**: The `/oauth/callback` flow must validate the `state` parameter, reject duplicate callbacks, and handle PKCE verifier mismatches gracefully.
+- **Health check OAuth awareness**: Health checks must load cached OAuth tokens and record OAuth challenges for re-auth triggering.
+- **Profile deletion cleanup**: Deleting a server profile must remove all associated OAuth credentials from `OAuthTokenStorage`.
+- **Mutual exclusivity**: An OAuth-enabled profile must not send Basic Auth headers, and a non-OAuth profile must not send Bearer OAuth tokens.
+
+### Key Files
+
+- `lib/core/auth/oauth_service.dart` — `OAuthService` public API with conditional export
+- `lib/core/auth/oauth_service_io.dart` — desktop implementation: Cloudflare Managed OAuth authorization code + PKCE S256, DCR when `registration_endpoint` available, system browser launch, `/oauth/callback` handling with state/path/duplicate rejection, token exchange
+- `lib/core/auth/oauth_service_stub.dart` — no-op stub for mobile platforms
+- `lib/core/auth/oauth_service_result.dart` — `OAuthServiceResult` type for flow outcomes
+- `lib/core/auth/oauth_token_storage.dart` — `OAuthTokenStorage` backed by `flutter_secure_storage`, keys scoped by `profileId + serverUrl`
+- `lib/core/auth/oauth_credential.dart` — `OAuthCredential` encapsulating access/refresh tokens and expiry
+- `lib/core/network/dio_client.dart` — Bearer token interceptor management for matching OAuth profile origin, proxy-401/403 detection
+- `lib/core/providers/app_provider.dart` — `supportsCloudflareAccessOAuth` desktop-only gating
+- Onboarding and settings pages — `oauthEnabled` toggle and configuration UI
+- Tests under `test/unit/auth` — OAuth service, token storage, credential, PKCE, DCR, callback validation
+- Tests under `test/unit/network` — Bearer interceptor scoping, health check OAuth challenge detection, Basic Auth non-regression

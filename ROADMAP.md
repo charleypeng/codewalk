@@ -52,3 +52,9 @@ Description: Export individual chat messages as PNG images for easy sharing, wit
 Implemented `MessageImageExportService` for rendering message content to PNG with proper text styling, code block formatting, and theme-aware backgrounds. Added share action to the message context menu with platform-native share integration. Release v1.84.0.
 
 Commits: 37d51df, 3863f7b, 4d7de5a, dd900d8
+
+### Feature 9: Cloudflare Access OAuth Remediation (PR #37)
+
+Description: Added OAuth 2.0 + PKCE support for Cloudflare Access as an optional server-profile auth mode, enabling users who run OpenCode behind Cloudflare Access to authenticate securely. Implemented secure profile-scoped OAuth token storage in `flutter_secure_storage`, isolated OAuth and Basic Auth lifecycle ownership with mutual exclusivity, split the OAuth service into platform-aware implementations (desktop IO vs web-safe), gated Cloudflare OAuth to desktop platforms only (hidden on mobile), hardened the callback against state mismatch and race conditions, and added comprehensive i18n and tests. This is an intentional ADR-023 exception — Cloudflare Access is an external reverse-proxy access layer, not an OpenCode server API replacement.
+
+Commits: 0981549a, c6d07e37, 2e13dc26, 4cfa9786, 1f534c53, ac29f0aa, 5cc357c4, 0acca027, 3c298f49, 2125a074, c3f74ba7
