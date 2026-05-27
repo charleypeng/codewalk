@@ -424,7 +424,9 @@ class OAuthService {
       server.listen((req) async {
         if (terminal) {
           req.response.statusCode = 409;
-          await req.response.close();
+          try {
+            await req.response.close().timeout(const Duration(seconds: 2));
+          } catch (_) {}
           return;
         }
         _log('Callback received on path ${req.uri.path}');
@@ -435,7 +437,9 @@ class OAuthService {
         );
         if (validation.decision == OAuthCallbackDecision.ignoreWrongPath) {
           req.response.statusCode = 404;
-          await req.response.close();
+          try {
+            await req.response.close().timeout(const Duration(seconds: 2));
+          } catch (_) {}
           return;
         }
 
@@ -457,6 +461,8 @@ class OAuthService {
         terminal = true;
         try {
           await req.response.close().timeout(const Duration(seconds: 2));
+        } catch (_) {
+          _log('Callback response closed before page flush completed');
         } finally {
           if (!completer.isCompleted) {
             completer.complete(completionCode);
