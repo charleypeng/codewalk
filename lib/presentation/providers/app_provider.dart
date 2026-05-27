@@ -438,8 +438,10 @@ class AppProvider extends ChangeNotifier {
         _oauthChallengeHeaders.remove(serverUrl);
         _oauthChallengeBodies.remove(serverUrl);
 
-        // Verify the freshly persisted OAuth token against the active server.
-        await checkConnection();
+        if (profile.id == _activeServerId) {
+          // Verify the freshly persisted OAuth token against the active server.
+          await checkConnection();
+        }
         await refreshServerHealth(serverId: profile.id);
         SchedulerBinding.instance.addPostFrameCallback((_) {
           notifyListeners();
