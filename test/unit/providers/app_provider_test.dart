@@ -123,21 +123,42 @@ void main() {
       expect(provider.errorMessage, 'A server with this URL already exists');
     });
 
-    test('addServerProfile blocks OAuth on mobile platforms', () async {
+    test('addServerProfile allows OAuth on Android', () async {
+      final previous = debugDefaultTargetPlatformOverride;
       debugDefaultTargetPlatformOverride = TargetPlatform.android;
-      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      try {
+        await provider.initialize();
+        final created = await provider.addServerProfile(
+          url: 'https://code.example.com',
+          oauthEnabled: true,
+        );
 
-      await provider.initialize();
-      final created = await provider.addServerProfile(
-        url: 'https://code.example.com',
-        oauthEnabled: true,
-      );
+        expect(created, isTrue);
+        expect(provider.activeServer?.oauthEnabled, isTrue);
+        expect(provider.errorMessage, isEmpty);
+      } finally {
+        debugDefaultTargetPlatformOverride = previous;
+      }
+    });
 
-      expect(created, isFalse);
-      expect(
-        provider.errorMessage,
-        'Cloudflare Access OAuth is supported on desktop only',
-      );
+    test('addServerProfile blocks OAuth on unsupported platforms (web)', () async {
+      final previous = debugDefaultTargetPlatformOverride;
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      try {
+        await provider.initialize();
+        final created = await provider.addServerProfile(
+          url: 'https://code.example.com',
+          oauthEnabled: true,
+        );
+
+        expect(created, isFalse);
+        expect(
+          provider.errorMessage,
+          'Cloudflare Access OAuth is not supported on this platform',
+        );
+      } finally {
+        debugDefaultTargetPlatformOverride = previous;
+      }
     });
 
     test('addServerProfile makes OAuth mutually exclusive with Basic Auth', () async {

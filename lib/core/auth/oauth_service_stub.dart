@@ -29,14 +29,14 @@ class OAuthService {
 
   Future<OAuthFlowResult> authenticate({bool skipCache = false}) async {
     return OAuthFlowResult(
-      error: 'Cloudflare Access OAuth is supported on desktop only.',
+      error: 'Cloudflare Access OAuth is not supported on this platform.',
       token: null,
     );
   }
 
   Future<OAuthFlowResult> refreshCredential(OAuthCredential credential) async {
     return OAuthFlowResult(
-      error: 'Cloudflare Access OAuth is supported on desktop only.',
+      error: 'Cloudflare Access OAuth is not supported on this platform.',
       token: null,
     );
   }
