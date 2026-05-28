@@ -4,7 +4,9 @@ import 'dart:math';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 
+import '../../core/auth/oauth_service.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/logging/app_logger.dart';
 import '../../core/network/dio_client.dart';
@@ -113,6 +115,14 @@ class AppProvider extends ChangeNotifier {
   bool _queuedHealthRefreshAll = false;
   final Set<String> _queuedHealthServerIds = <String>{};
 
+  // OAuth challenge tracking
+  final Map<String, Map<String, String>> _oauthChallengeHeaders =
+      <String, Map<String, String>>{};
+  final Map<String, String> _oauthChallengeBodies = <String, String>{};
+  final Set<String> _authenticatedOAuthProfileIds = <String>{};
+  final Map<String, Future<bool>> _oauthFlowByProfileId =
+      <String, Future<bool>>{};
+
   AppStatus get status => _status;
   AppInfo? get appInfo => _appInfo;
   String get errorMessage => _errorMessage;
@@ -139,6 +149,15 @@ class AppProvider extends ChangeNotifier {
   String? get activeServerId => _activeServerId;
   String? get defaultServerId => _defaultServerId;
   ServerProfile? get activeServer => _findById(_activeServerId);
+
+  bool hasOAuthChallenge(String serverUrl) =>
+      _oauthChallengeHeaders.containsKey(serverUrl);
+
+  Map<String, String>? getOAuthChallengeHeaders(String serverUrl) =>
+      _oauthChallengeHeaders[serverUrl];
+
+  bool isOAuthAuthenticated(String serverUrl) =>
+      _authenticatedOAuthProfileIds.contains(_findByUrl(serverUrl)?.id);
 
   ServerHealthStatus healthFor(String serverId) {
     return _serverHealthById[serverId] ?? ServerHealthStatus.unknown;
@@ -180,6 +199,13 @@ class AppProvider extends ChangeNotifier {
         : compact;
   }
 
+  static bool get supportsCloudflareAccessOAuth {
+    if (kIsWeb) return false;
+    return defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.windows;
+  }
+
   Future<void> initialize() async {
     _initFuture ??= _initializeInternal();
     await _initFuture;
@@ -189,7 +215,7 @@ class AppProvider extends ChangeNotifier {
     await _loadServerProfiles();
     await _ensureActiveSelection();
     await _loadLocalServerCommandConfig();
-    _applyActiveServerToClient();
+    await _applyActiveServerToClient();
     _bindLocalServerRuntimeEvents();
     _initialized = true;
     if (_serverProfiles.isNotEmpty) {
@@ -312,6 +338,15 @@ class AppProvider extends ChangeNotifier {
     return null;
   }
 
+  ServerProfile? _findByUrl(String serverUrl) {
+    for (final profile in _serverProfiles) {
+      if (profile.url == serverUrl) {
+        return profile;
+      }
+    }
+    return null;
+  }
+
   Future<void> _persistServerProfiles() async {
     final encoded = jsonEncode(_serverProfiles.map((p) => p.toJson()).toList());
     await _localDataSource.saveServerProfilesJson(encoded);
@@ -321,7 +356,7 @@ class AppProvider extends ChangeNotifier {
     await _localDataSource.saveDefaultServerId(_defaultServerId);
   }
 
-  void _applyActiveServerToClient() {
+  Future<void> _applyActiveServerToClient() async {
     final profile = activeServer;
     if (profile == null) {
       _dioClient.clearAuth();
@@ -330,7 +365,28 @@ class AppProvider extends ChangeNotifier {
       return;
     }
     _dioClient.updateBaseUrl(profile.url);
-    if (profile.basicAuthEnabled &&
+      _dioClient.clearAuth();
+    if (profile.oauthEnabled) {
+      try {
+        final service = OAuthService(
+          profileId: profile.id,
+          serverUrl: profile.url,
+        );
+        final cached = await service.getCachedCredential();
+        if (cached != null) {
+          _dioClient.setOAuthToken(cached.accessToken, origin: profile.url);
+          _authenticatedOAuthProfileIds.add(profile.id);
+        } else {
+          _authenticatedOAuthProfileIds.remove(profile.id);
+        }
+      } catch (e) {
+        _authenticatedOAuthProfileIds.remove(profile.id);
+        AppLogger.warn(
+          'Failed to load cached OAuth credential for active profile',
+          error: e,
+        );
+      }
+    } else if (profile.basicAuthEnabled &&
         profile.basicAuthUsername.trim().isNotEmpty &&
         profile.basicAuthPassword.trim().isNotEmpty) {
       _dioClient.setBasicAuth(
@@ -348,12 +404,105 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> handleOAuthChallenge({
+    required String serverUrl,
+    Map<String, String>? challengeHeaders,
+    String? challengeBody,
+  }) async {
+    final profile = _findByUrl(serverUrl);
+    if (profile == null || !profile.oauthEnabled) {
+      return false;
+    }
+
+    _oauthChallengeHeaders[serverUrl] = challengeHeaders ?? {};
+    if (challengeBody != null) {
+      _oauthChallengeBodies[serverUrl] = challengeBody;
+    }
+
+    if (_oauthFlowByProfileId.containsKey(profile.id)) {
+      return _oauthFlowByProfileId[profile.id]!;
+    }
+
+    final service = OAuthService(
+      profileId: profile.id,
+      serverUrl: serverUrl,
+      challengeHeaders: challengeHeaders,
+      challengeBody: challengeBody,
+    );
+
+    final flow = () async {
+      final result = await service.authenticate();
+      if (result.ok && result.token != null) {
+        if (profile.id == _activeServerId) {
+          _dioClient.setOAuthToken(result.token!, origin: profile.url);
+        }
+        _authenticatedOAuthProfileIds.add(profile.id);
+        _oauthChallengeHeaders.remove(serverUrl);
+        _oauthChallengeBodies.remove(serverUrl);
+
+        if (profile.id == _activeServerId) {
+          // Verify the freshly persisted OAuth token against the active server.
+          await checkConnection();
+        }
+        await refreshServerHealth(serverId: profile.id);
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          notifyListeners();
+        });
+        return true;
+      }
+
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
+      return false;
+    }();
+    _oauthFlowByProfileId[profile.id] = flow;
+    try {
+      return await flow;
+    } finally {
+      _oauthFlowByProfileId.remove(profile.id);
+    }
+  }
+
+  Future<void> clearOAuthCredential(String serverUrl) async {
+    final profile = _findByUrl(serverUrl);
+    if (profile == null) {
+      return;
+    }
+    await _clearOAuthCredentialForProfile(profile);
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
+  }
+
+  Future<void> _clearOAuthCredentialForProfile(ServerProfile profile) async {
+    try {
+      final service = OAuthService(
+        profileId: profile.id,
+        serverUrl: profile.url,
+      );
+      await service.clearCredential();
+    } catch (e) {
+      AppLogger.warn(
+        'Failed to clear persisted OAuth credential; clearing memory state only',
+        error: e,
+      );
+    }
+    _authenticatedOAuthProfileIds.remove(profile.id);
+    _oauthChallengeHeaders.remove(profile.url);
+    _oauthChallengeBodies.remove(profile.url);
+    if (activeServer?.id == profile.id) {
+      _dioClient.clearOAuthToken();
+    }
+  }
+
   Future<bool> addServerProfile({
     required String url,
     String? label,
     bool basicAuthEnabled = false,
     String basicAuthUsername = '',
     String basicAuthPassword = '',
+    bool oauthEnabled = false,
     bool aiGeneratedTitlesEnabled = true,
     bool setAsActive = false,
   }) async {
@@ -370,13 +519,18 @@ class AppProvider extends ChangeNotifier {
     }
 
     final now = DateTime.now().millisecondsSinceEpoch;
+    if (oauthEnabled && !supportsCloudflareAccessOAuth) {
+      _setError('Cloudflare Access OAuth is supported on desktop only');
+      return false;
+    }
     final profile = ServerProfile(
       id: _generateServerId(),
       url: normalized,
       label: label?.trim().isEmpty ?? true ? null : label!.trim(),
-      basicAuthEnabled: basicAuthEnabled,
-      basicAuthUsername: basicAuthUsername.trim(),
-      basicAuthPassword: basicAuthPassword.trim(),
+      basicAuthEnabled: oauthEnabled ? false : basicAuthEnabled,
+      basicAuthUsername: oauthEnabled ? '' : basicAuthUsername.trim(),
+      basicAuthPassword: oauthEnabled ? '' : basicAuthPassword.trim(),
+      oauthEnabled: oauthEnabled,
       aiGeneratedTitlesEnabled: aiGeneratedTitlesEnabled,
       createdAt: now,
       updatedAt: now,
@@ -387,7 +541,7 @@ class AppProvider extends ChangeNotifier {
       _activeServerId = profile.id;
     }
     await _persistServerProfiles();
-    _applyActiveServerToClient();
+    await _applyActiveServerToClient();
     _syncHealthPollingLifecycle();
     await refreshServerHealth(serverId: profile.id);
     _errorMessage = '';
@@ -402,6 +556,7 @@ class AppProvider extends ChangeNotifier {
     required bool basicAuthEnabled,
     required String basicAuthUsername,
     required String basicAuthPassword,
+    required bool oauthEnabled,
     required bool aiGeneratedTitlesEnabled,
   }) async {
     await initialize();
@@ -425,13 +580,19 @@ class AppProvider extends ChangeNotifier {
       return false;
     }
 
+    if (oauthEnabled && !supportsCloudflareAccessOAuth) {
+      _setError('Cloudflare Access OAuth is supported on desktop only');
+      return false;
+    }
+
     final previous = _serverProfiles[index];
     final updated = previous.copyWith(
       url: normalized,
       label: label?.trim().isEmpty ?? true ? null : label!.trim(),
-      basicAuthEnabled: basicAuthEnabled,
-      basicAuthUsername: basicAuthUsername.trim(),
-      basicAuthPassword: basicAuthPassword.trim(),
+      basicAuthEnabled: oauthEnabled ? false : basicAuthEnabled,
+      basicAuthUsername: oauthEnabled ? '' : basicAuthUsername.trim(),
+      basicAuthPassword: oauthEnabled ? '' : basicAuthPassword.trim(),
+      oauthEnabled: oauthEnabled,
       aiGeneratedTitlesEnabled: aiGeneratedTitlesEnabled,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
@@ -439,9 +600,14 @@ class AppProvider extends ChangeNotifier {
     copied[index] = updated;
     _serverProfiles = copied;
 
+    if (previous.oauthEnabled &&
+        (previous.url != updated.url || !updated.oauthEnabled)) {
+      await _clearOAuthCredentialForProfile(previous);
+    }
+
     await _persistServerProfiles();
     if (_activeServerId == updated.id) {
-      _applyActiveServerToClient();
+      await _applyActiveServerToClient();
       await checkConnection();
     }
     await refreshServerHealth(serverId: updated.id);
@@ -452,10 +618,14 @@ class AppProvider extends ChangeNotifier {
 
   Future<bool> removeServerProfile(String id) async {
     await initialize();
-    final exists = _serverProfiles.any((p) => p.id == id);
-    if (!exists) {
+    final removed = _findById(id);
+    if (removed == null) {
       _setError('Server profile not found');
       return false;
+    }
+
+    if (removed.oauthEnabled) {
+      await _clearOAuthCredentialForProfile(removed);
     }
 
     _serverProfiles = _serverProfiles.where((p) => p.id != id).toList();
@@ -466,7 +636,7 @@ class AppProvider extends ChangeNotifier {
       _defaultServerId = null;
       _isConnected = false;
       _appInfo = null;
-      _applyActiveServerToClient();
+      await _applyActiveServerToClient();
       _syncHealthPollingLifecycle();
       await _persistServerProfiles();
       _errorMessage = '';
@@ -483,7 +653,7 @@ class AppProvider extends ChangeNotifier {
     if (_activeServerId == id) {
       _activeServerId =
           (_findById(_defaultServerId)?.id ?? _serverProfiles.first.id);
-      _applyActiveServerToClient();
+      await _applyActiveServerToClient();
       await checkConnection();
     }
 
@@ -530,7 +700,7 @@ class AppProvider extends ChangeNotifier {
 
     _activeServerId = id;
     await _localDataSource.saveActiveServerId(id);
-    _applyActiveServerToClient();
+    await _applyActiveServerToClient();
     _isConnected = false;
     _appInfo = null;
     _errorMessage = '';
@@ -1132,6 +1302,19 @@ class AppProvider extends ChangeNotifier {
         ),
       );
       dio.options.headers[ApiConstants.authorization] = 'Basic $auth';
+    } else if (profile.oauthEnabled) {
+      try {
+        final credential = await OAuthService(
+          profileId: profile.id,
+          serverUrl: profile.url,
+        ).getCachedCredential();
+        if (credential != null) {
+          dio.options.headers[ApiConstants.authorization] =
+              'Bearer ${credential.accessToken}';
+        }
+      } catch (e) {
+        AppLogger.warn('Failed to load OAuth credential for health check', error: e);
+      }
     }
 
     try {
@@ -1139,7 +1322,8 @@ class AppProvider extends ChangeNotifier {
       if (global.statusCode == 200) {
         return ServerHealthStatus.healthy;
       }
-    } catch (_) {
+    } on DioException catch (e) {
+      _recordOAuthChallengeFromHealth(profile, e);
       // Fallback below.
     }
 
@@ -1149,8 +1333,27 @@ class AppProvider extends ChangeNotifier {
         return ServerHealthStatus.healthy;
       }
       return ServerHealthStatus.unhealthy;
-    } catch (_) {
+    } on DioException catch (e) {
+      _recordOAuthChallengeFromHealth(profile, e);
       return ServerHealthStatus.unhealthy;
+    }
+  }
+
+  void _recordOAuthChallengeFromHealth(ServerProfile profile, DioException e) {
+    if (!profile.oauthEnabled || e.response == null) return;
+    final statusCode = e.response!.statusCode ?? 0;
+    final headers = <String, String>{};
+    for (final entry in e.response!.headers.map.entries) {
+      final value = entry.value.isEmpty ? null : entry.value.first;
+      if (value != null) {
+        headers[entry.key.toLowerCase()] = value;
+      }
+    }
+    if (!OAuthService.isOAuthChallenge(statusCode, headers)) return;
+    _oauthChallengeHeaders[profile.url] = headers;
+    final body = e.response!.data;
+    if (body is String) {
+      _oauthChallengeBodies[profile.url] = body;
     }
   }
 
@@ -1211,6 +1414,7 @@ class AppProvider extends ChangeNotifier {
         basicAuthEnabled: current.basicAuthEnabled,
         basicAuthUsername: current.basicAuthUsername,
         basicAuthPassword: current.basicAuthPassword,
+        oauthEnabled: current.oauthEnabled,
         aiGeneratedTitlesEnabled: current.aiGeneratedTitlesEnabled,
       );
     }

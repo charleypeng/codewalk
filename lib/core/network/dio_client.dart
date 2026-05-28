@@ -3,10 +3,10 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
-import 'dio_sse_adapter.dart';
-
 import '../constants/api_constants.dart';
 import '../logging/app_logger.dart';
+
+import 'dio_sse_adapter.dart';
 
 /// Dio HTTP client configuration
 class DioClient {
@@ -44,6 +44,8 @@ class DioClient {
   late final Dio _dio;
   late final Dio _sseDio;
   String? _basicAuthHeader;
+  String? _oauthBearerToken;
+  Uri? _oauthOrigin;
 
   Dio get dio => _dio;
 
@@ -66,13 +68,43 @@ class DioClient {
     AppLogger.debug('[Dio] Basic auth header set');
   }
 
-  /// Clear Authorization header
-  void clearAuth() {
+  void clearBasicAuth() {
     _basicAuthHeader = null;
     _dio.options.headers.remove(ApiConstants.authorization);
     _sseDio.options.headers.remove(ApiConstants.authorization);
-    AppLogger.debug('[Dio] Authorization header cleared');
+    AppLogger.debug('[Dio] Basic auth header cleared');
   }
+
+  /// Clear every auth owner when the active profile changes.
+  void clearAuth() {
+    clearBasicAuth();
+    clearOAuthToken();
+    AppLogger.debug('[Dio] All auth headers cleared');
+  }
+
+  void setOAuthToken(String token, {required String origin}) {
+    _oauthBearerToken = token;
+    _oauthOrigin = Uri.tryParse(origin);
+    _dio.options.headers.remove(ApiConstants.authorization);
+    _sseDio.options.headers.remove(ApiConstants.authorization);
+    AppLogger.debug('[Dio] OAuth bearer token set');
+  }
+
+  void clearOAuthToken() {
+    _oauthBearerToken = null;
+    _oauthOrigin = null;
+    if (_basicAuthHeader == null) {
+      _dio.options.headers.remove(ApiConstants.authorization);
+      _sseDio.options.headers.remove(ApiConstants.authorization);
+    } else {
+      _dio.options.headers[ApiConstants.authorization] = _basicAuthHeader!;
+      _sseDio.options.headers[ApiConstants.authorization] = _basicAuthHeader!;
+    }
+    AppLogger.debug('[Dio] OAuth bearer token cleared');
+  }
+
+  bool get hasOAuthToken =>
+      _oauthBearerToken != null && _oauthBearerToken!.isNotEmpty;
 
   void _setupInterceptors() {
     // Request interceptor
@@ -83,6 +115,11 @@ class DioClient {
           if (_basicAuthHeader != null &&
               (options.headers[ApiConstants.authorization] == null)) {
             options.headers[ApiConstants.authorization] = _basicAuthHeader;
+          }
+
+          if (_shouldUseOAuthFor(options.uri)) {
+            options.headers[ApiConstants.authorization] =
+                'Bearer $_oauthBearerToken';
           }
 
           if (!kReleaseMode) {
@@ -138,6 +175,12 @@ class DioClient {
               (options.headers[ApiConstants.authorization] == null)) {
             options.headers[ApiConstants.authorization] = _basicAuthHeader;
           }
+
+          if (_shouldUseOAuthFor(options.uri)) {
+            options.headers[ApiConstants.authorization] =
+                'Bearer $_oauthBearerToken';
+          }
+
           if (!kReleaseMode) {
             final uri = options.uri.toString();
             AppLogger.debug('[SSE] --> ${options.method.toUpperCase()} $uri');
@@ -157,6 +200,15 @@ class DioClient {
         },
       ),
     );
+  }
+
+  bool _shouldUseOAuthFor(Uri uri) {
+    final token = _oauthBearerToken;
+    final origin = _oauthOrigin;
+    if (token == null || token.isEmpty || origin == null) return false;
+    return uri.scheme == origin.scheme &&
+        uri.host == origin.host &&
+        uri.port == origin.port;
   }
 
   void _handleError(DioException error) {

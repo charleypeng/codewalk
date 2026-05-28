@@ -10,6 +10,7 @@ class ServerProfile extends Equatable {
       basicAuthEnabled: json['basicAuthEnabled'] as bool? ?? false,
       basicAuthUsername: json['basicAuthUsername'] as String? ?? '',
       basicAuthPassword: json['basicAuthPassword'] as String? ?? '',
+      oauthEnabled: json['oauthEnabled'] as bool? ?? false,
       aiGeneratedTitlesEnabled:
           json['aiGeneratedTitlesEnabled'] as bool? ?? true,
       createdAt: json['createdAt'] as int? ?? 0,
@@ -23,6 +24,7 @@ class ServerProfile extends Equatable {
     this.basicAuthEnabled = false,
     this.basicAuthUsername = '',
     this.basicAuthPassword = '',
+    this.oauthEnabled = false,
     this.aiGeneratedTitlesEnabled = true,
     required this.createdAt,
     required this.updatedAt,
@@ -34,6 +36,7 @@ class ServerProfile extends Equatable {
   final bool basicAuthEnabled;
   final String basicAuthUsername;
   final String basicAuthPassword;
+  final bool oauthEnabled;
   final bool aiGeneratedTitlesEnabled;
   final int createdAt;
   final int updatedAt;
@@ -54,6 +57,7 @@ class ServerProfile extends Equatable {
       'basicAuthEnabled': basicAuthEnabled,
       'basicAuthUsername': basicAuthUsername,
       'basicAuthPassword': basicAuthPassword,
+      'oauthEnabled': oauthEnabled,
       'aiGeneratedTitlesEnabled': aiGeneratedTitlesEnabled,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
@@ -67,6 +71,7 @@ class ServerProfile extends Equatable {
     bool? basicAuthEnabled,
     String? basicAuthUsername,
     String? basicAuthPassword,
+    bool? oauthEnabled,
     bool? aiGeneratedTitlesEnabled,
     int? createdAt,
     int? updatedAt,
@@ -78,6 +83,7 @@ class ServerProfile extends Equatable {
       basicAuthEnabled: basicAuthEnabled ?? this.basicAuthEnabled,
       basicAuthUsername: basicAuthUsername ?? this.basicAuthUsername,
       basicAuthPassword: basicAuthPassword ?? this.basicAuthPassword,
+      oauthEnabled: oauthEnabled ?? this.oauthEnabled,
       aiGeneratedTitlesEnabled:
           aiGeneratedTitlesEnabled ?? this.aiGeneratedTitlesEnabled,
       createdAt: createdAt ?? this.createdAt,
@@ -93,6 +99,7 @@ class ServerProfile extends Equatable {
     basicAuthEnabled,
     basicAuthUsername,
     basicAuthPassword,
+    oauthEnabled,
     aiGeneratedTitlesEnabled,
     createdAt,
     updatedAt,

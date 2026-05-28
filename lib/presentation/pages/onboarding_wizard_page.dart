@@ -6,13 +6,13 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/i18n/l10n_context.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/i18n/l10n_context.dart';
 import '../../domain/entities/server_profile.dart';
 import '../providers/app_provider.dart';
-import '../theme/app_animations.dart';
 import '../providers/settings_provider.dart';
 import '../services/local_opencode_server_runtime_types.dart';
+import '../theme/app_animations.dart';
 import '../utils/app_page_route.dart';
 import '../widgets/modal_primary_action_shortcuts.dart';
 import 'opencode_setup_debug_page.dart';
@@ -69,6 +69,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _basicAuthEnabled = false;
+  bool _oauthEnabled = false;
   bool _aiGeneratedTitlesEnabled = true;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
@@ -85,6 +86,8 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
     return isAndroid ? 'http://10.0.2.2:4096' : 'http://127.0.0.1:4096';
   }
 
+  bool get _oauthSupported => AppProvider.supportsCloudflareAccessOAuth;
+
   void _configureInitialFlow() {
     final initialProfile = widget.initialServerProfile;
     if (initialProfile != null) {
@@ -94,6 +97,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       _usernameController.text = initialProfile.basicAuthUsername;
       _passwordController.text = initialProfile.basicAuthPassword;
       _basicAuthEnabled = initialProfile.basicAuthEnabled;
+      _oauthEnabled = initialProfile.oauthEnabled;
       _aiGeneratedTitlesEnabled = initialProfile.aiGeneratedTitlesEnabled;
       _step = 1;
       return;
@@ -314,6 +318,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
     );
     final username = _usernameController.text.trim();
     final password = _passwordController.text.trim();
+    final oauthEnabled = _oauthEnabled && _oauthSupported;
 
     final trackedServerId = _editingServerId ?? _addedServerId;
     final hasTrackedServer =
@@ -332,6 +337,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         basicAuthEnabled: _basicAuthEnabled,
         basicAuthUsername: username,
         basicAuthPassword: password,
+        oauthEnabled: oauthEnabled,
         aiGeneratedTitlesEnabled: _aiGeneratedTitlesEnabled,
       );
       if (!mounted) return;
@@ -346,6 +352,20 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
           _connectionError = appProvider.errorMessage;
         });
         return;
+      }
+
+      if (oauthEnabled) {
+        final authenticated = await appProvider.handleOAuthChallenge(
+          serverUrl: adjustedUrl,
+        );
+        if (!mounted) return;
+        if (!authenticated) {
+          setState(() {
+            _testing = false;
+            _connectionError = 'Cloudflare Access authentication failed.';
+          });
+          return;
+        }
       }
 
       final health = appProvider.healthFor(trackedServerId);
@@ -379,6 +399,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       basicAuthEnabled: _basicAuthEnabled,
       basicAuthUsername: username,
       basicAuthPassword: password,
+      oauthEnabled: oauthEnabled,
       aiGeneratedTitlesEnabled: _aiGeneratedTitlesEnabled,
       setAsActive: true,
     );
@@ -401,6 +422,21 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       if (_editingServerId == null && serverId != null) {
         _addedServerId = serverId;
       }
+
+      if (oauthEnabled) {
+        final authenticated = await appProvider.handleOAuthChallenge(
+          serverUrl: adjustedUrl,
+        );
+        if (!mounted) return;
+        if (!authenticated) {
+          setState(() {
+            _testing = false;
+            _connectionError = 'Cloudflare Access authentication failed.';
+          });
+          return;
+        }
+      }
+
       final health = serverId == null
           ? ServerHealthStatus.unhealthy
           : appProvider.healthFor(serverId);
@@ -907,9 +943,10 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
             const SizedBox(height: 16),
             Form(
               key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                   TextFormField(
                     controller: _urlController,
                     decoration: InputDecoration(
@@ -952,10 +989,29 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                     onChanged: (value) {
                       setState(() {
                         _basicAuthEnabled = value;
+                        if (value) _oauthEnabled = false;
                       });
                     },
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Use Basic Auth'),
+                  ),
+                  SwitchListTile(
+                    value: _oauthEnabled,
+                    onChanged: _oauthSupported
+                        ? (value) {
+                            setState(() {
+                              _oauthEnabled = value;
+                              if (value) _basicAuthEnabled = false;
+                            });
+                          }
+                        : null,
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Use OAuth (Cloudflare Access)'),
+                    subtitle: Text(
+                      _oauthSupported
+                          ? 'Desktop only. Opens a browser for Cloudflare Access Managed OAuth.'
+                          : 'Cloudflare Access OAuth is desktop-only. Use Basic Auth on mobile or web.',
+                    ),
                   ),
                   if (_basicAuthEnabled) ...[
                     TextFormField(
@@ -1052,6 +1108,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                 ],
               ),
             ),
+          ),
           ],
         ],
       ),

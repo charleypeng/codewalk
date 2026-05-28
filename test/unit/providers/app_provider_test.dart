@@ -5,6 +5,7 @@ import 'package:codewalk/domain/usecases/get_app_info.dart';
 import 'package:codewalk/presentation/providers/app_provider.dart';
 import 'package:codewalk/presentation/services/local_opencode_server_runtime_types.dart';
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fakes.dart';
@@ -122,6 +123,43 @@ void main() {
       expect(provider.errorMessage, 'A server with this URL already exists');
     });
 
+    test('addServerProfile blocks OAuth on mobile platforms', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+      await provider.initialize();
+      final created = await provider.addServerProfile(
+        url: 'https://code.example.com',
+        oauthEnabled: true,
+      );
+
+      expect(created, isFalse);
+      expect(
+        provider.errorMessage,
+        'Cloudflare Access OAuth is supported on desktop only',
+      );
+    });
+
+    test('addServerProfile makes OAuth mutually exclusive with Basic Auth', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+      await provider.initialize();
+      final created = await provider.addServerProfile(
+        url: 'https://code.example.com',
+        basicAuthEnabled: true,
+        basicAuthUsername: 'opencode',
+        basicAuthPassword: 'password',
+        oauthEnabled: true,
+      );
+
+      expect(created, isTrue);
+      expect(provider.activeServer?.oauthEnabled, isTrue);
+      expect(provider.activeServer?.basicAuthEnabled, isFalse);
+      expect(provider.activeServer?.basicAuthUsername, isEmpty);
+      expect(provider.activeServer?.basicAuthPassword, isEmpty);
+    });
+
     test('setActiveServer blocks unhealthy profiles', () async {
       await provider.initialize();
       await provider.addServerProfile(url: 'http://127.0.0.1:5001');
@@ -157,6 +195,7 @@ void main() {
         basicAuthEnabled: profile.basicAuthEnabled,
         basicAuthUsername: profile.basicAuthUsername,
         basicAuthPassword: profile.basicAuthPassword,
+        oauthEnabled: profile.oauthEnabled,
         aiGeneratedTitlesEnabled: false,
       );
 

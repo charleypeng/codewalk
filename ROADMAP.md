@@ -1,12 +1,9 @@
 ---
-feature: "Permission Auto-Approve + Density-Aware Chrome + Compact Sidebar Search + Rate Limit Token Fix + Pinned Sessions in Recent + Notification Sync"
+feature: "Permission Auto-Approve + Density-Aware Chrome + Compact Sidebar Search"
 spec: |
   1. Auto-approve always sends "always" instead of "once" when toggle is enabled.
   2. Top menu and Composer bar respect the user's chosen density setting for margin and padding.
   3. Replace sidebar search field with a compact magnifying glass button next to context/new-chat buttons, saving vertical space.
-  4. Fix rate limit monitoring showing "token expired" false positive — improve error messages, add credential freshness tracking, differentiate UI states, and add clear refresh guidance.
-  5. Pinned sessions appear at the top of the Recent sessions sidebar section, matching pin-first ordering in the main conversations list.
-  6. Notifications auto-dismiss when the corresponding event is handled (permission answered, question replied, session opened) and stay synchronized with server state.
 ---
 
 ## Task List
@@ -56,6 +53,12 @@ Implemented `MessageImageExportService` for rendering message content to PNG wit
 
 Commits: 37d51df, 3863f7b, 4d7de5a, dd900d8
 
+### Feature 9: Cloudflare Access OAuth Remediation (PR #37)
+
+Description: Added OAuth 2.0 + PKCE support for Cloudflare Access as an optional server-profile auth mode, enabling users who run OpenCode behind Cloudflare Access to authenticate securely. Implemented secure profile-scoped OAuth token storage in `flutter_secure_storage`, isolated OAuth and Basic Auth lifecycle ownership with mutual exclusivity, split the OAuth service into platform-aware implementations (desktop IO vs web-safe), gated Cloudflare OAuth to desktop platforms only (hidden on mobile), hardened the callback against state mismatch and race conditions, and added comprehensive i18n and tests. This is an intentional ADR-023 exception — Cloudflare Access is an external reverse-proxy access layer, not an OpenCode server API replacement.
+
+Commits: 0981549a, c6d07e37, 2e13dc26, 4cfa9786, 1f534c53, ac29f0aa, 5cc357c4, 0acca027, 3c298f49, 2125a074, c3f74ba7
+
 ### Feature 6: Reactive notification dismissal on SSE events and session actions
 
 Description: Notifications should auto-dismiss reactively when the triggering event is resolved — not only on manual session switch. Current code only calls `clearNotificationsForSession()` on session switch (`chat_page_runtime_support.dart:470`); permission reply, question reply, and session idle SSE events do not trigger dismissal.
@@ -68,7 +71,7 @@ Description: Notifications should auto-dismiss reactively when the triggering ev
 
 ### Feature 7: Restore agent, model, and variant when opening existing session
 
-Description: When opening an existing session, restore the agent, model, and variant that were last used in that session. CodeWalk currently has `_sessionSelectionOverridesByKey` that saves per-session selection state, but only when the user explicitly changes it — sessions without an override fall back to global defaults instead of reading from authoritative server message metadata. OpenChamber solves this by (1) client-side per-session localStorage maps and (2) ACP `restoreSessionStateFromMessages()` which reads `model.providerID`, `model.modelID`, `model.variant`, and `agent` from the last user message in the server's message list.
+Description: When opening an existing session, restore the agent, model, and variant that were last used in that session. CodeWalk currently has `_sessionSelectionOverridesByKey` that saves per-session selection state, but only when the user explicitly changes it — sessions without an override fall back to global defaults instead of reading from authoritative server message metadata. OpenChamber solves this by (1) client-side per-session localStorage maps and (2) ACP `restoreSessionStateFromMessages()` which reads `model.providerID`, `model.modelID`, `model.variant`, and `agent` from the last user message in the server message list.
 
 - [ ] 7.01 Add fallback chain in `_applySessionSelectionOverride()`: when no override exists for the session, fall back to reading the last user message's metadata from the server message list to determine the session's model, agent, and variant
 - [ ] 7.02 Parse `AssistantMessage.providerId`, `AssistantMessage.modelId`, `AssistantMessage.variant`, and `ChatInput.mode` from the most recent user message to populate the selection state on session open

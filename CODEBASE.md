@@ -23,6 +23,7 @@ codewalk/
 ├── lib/                                # Application source
 │   ├── main.dart                       # App bootstrap (DI, providers, shell)
 │   ├── core/                           # Config, constants, DI, errors, logging, network
+│   │   ├── auth/                        # OAuth module: conditional OAuthService (IO/stub), OAuthCredential model, OAuthTokenStorage secure backend, OAuthFlowResult model
 │   │   ├── i18n/                        # Locale registry, context bridge, localization helpers
 │   │   └── utils/                       # Core utilities (path, timeline search)
 │   ├── data/                           # Data layer: datasources, search models, repositories, cache
@@ -79,10 +80,16 @@ lib/core/i18n/app_locales.dart                     # Locale registry: 14 support
 lib/core/i18n/l10n_context.dart                    # BuildContext extension: `context.l10n` shorthand for AppLocalizations access
 lib/core/i18n/l10n_bridge.dart                     # Static L10nBridge for context-free localization (tray, background services)
 lib/core/utils/timeline_search_service.dart         # Client-side full-text search over timeline messages: extracts TextPart.text and ReasoningPart.text, performs case-insensitive matching with occurrence counting, and returns results ordered by message age
-lib/core/network/dio_client.dart                  # HTTP client config, auth, base URL updates; exposes `dio` (regular) and `sseDio` (dedicated SSE instance with isolated connection pool)
+lib/core/network/dio_client.dart                  # HTTP client config, auth, base URL updates; exposes `dio` (regular) and `sseDio` (dedicated SSE instance with isolated connection pool); OAuth auth ownership via setOAuthToken/clearOAuthToken/clearAuth with Basic Auth coexistence and header restoration
 lib/core/network/dio_sse_adapter.dart              # Conditional export: routes to IO or stub adapter
 lib/core/network/dio_sse_adapter_io.dart           # IO platforms: configures IOHttpClientAdapter with separate HttpClient for SSE (2h idle, 4 max connections)
 lib/core/network/dio_sse_adapter_stub.dart         # Web platform: no-op (browser manages connections natively)
+lib/core/auth/oauth_service.dart                   # Conditional export barrel: re-exports oauth_service_result.dart, routes to IO or stub via `export if (dart.library.io)`
+lib/core/auth/oauth_service_io.dart                # OAuthService IO implementation: Cloudflare Access Managed OAuth with PKCE (S256), local HttpServer callback, credential caching/refresh, OAuth metadata discovery, trusted endpoint validation, callback URL validation
+lib/core/auth/oauth_service_stub.dart              # Non-IO platforms: OAuthService stub (isOAuthChallenge returns false, all other methods throw UnsupportedError)
+lib/core/auth/oauth_service_result.dart            # OAuthFlowResult model: ok/token/error/needsConsent/log fields for flow completion tracking
+lib/core/auth/oauth_token_storage.dart             # Secure OAuth credential persistence: OAuthTokenStorageBackend interface, FlutterSecureOAuthTokenStorageBackend (flutter_secure_storage), OAuthTokenStorage with save/load/delete/hasValidCredential, cross-profile key scoping, OAuthTokenStorageException
+lib/core/auth/oauth_credential.dart                # OAuthCredential model: accessToken, refreshToken, expiresAt, isExpired/isValid check (5-min buffer), JSON serialization (fromJson/toJson)
 lib/data/datasources/app_remote_datasource.dart   # App bootstrap/config/providers/agents API access; app discovery retries scoped `/provider`, `/agent`, and `/config` calls with `directory`-only and then unscoped fallbacks when workspace-scoped queries fail; `/agent` parsing tolerates multiple upstream payload shapes; scoped discovery/config calls forward both `directory` and `workspace` when a project directory is active
 lib/data/datasources/chat_remote_datasource.dart  # Chat/session/message/realtime API access; accepts optional `sseDio` for SSE stream isolation; sendMessage uses polling + provider-level SSE only (no per-send SSE) to prevent server-side abort on disconnect; provider `prompt_async` sends intentionally do not forward `messageId`; async completion fallback escalates to polling and uses stricter staleness guards when no-candidate/empty-baseline scenarios occur to prevent early finalization; bounds message-list tail fetches (`limit=120`); uses bounded per-session assistant-id cache (64-session cap + invalidation on unresolved completion); handles session-scoped permission replies with legacy fallback, sends `remember: true` for `always` replies, and preserves typed upstream error names/codes/details in surfaced failures; SSE backoff loop fix — streamAliveStart enforces 5-second threshold before resetting reconnect counter, ±20% jitter to prevent thundering-herd
 lib/data/datasources/project_remote_datasource.dart # Project/worktree/file API access; file-name search (`/find/file`), file-content search (`/find?pattern=`), and workspace symbol search (`/find/symbol`)
@@ -95,7 +102,7 @@ lib/data/repositories/*.dart                      # Domain repository implementa
 lib/data/datasources/quota_remote_datasource.dart # Strategy-chain quota discovery: tries OpenChamber REST (`GET /api/quota/providers`) then falls back to a hidden ephemeral shell probe (`CW_QUOTA_JSON:`) for vanilla OpenCode hosts
 lib/domain/usecases/*.dart                        # Application use cases consumed by providers
 lib/domain/entities/quota.dart                    # Quota domain entities: `QuotaSnapshot`, `UsageWindow`, `PaceInfo`, `QuotaEntry`, `QuotaProviderGroup`
-lib/presentation/providers/app_provider.dart      # Server profiles, health polling, local runtime state; guards health polling/connection when no active server profile is set; includes setup-debug state (SetupDebugEntry, SetupDebugSeverity) for OpenCode installation diagnostics with recordSetupDebugEvent(), exportSetupDebugReport(), clearSetupDebugData()
+lib/presentation/providers/app_provider.dart      # Server profiles, health polling, local runtime state, OAuth challenge lifecycle; guards health polling/connection when no active server profile is set; includes setup-debug state (SetupDebugEntry, SetupDebugSeverity) for OpenCode installation diagnostics with recordSetupDebugEvent(), exportSetupDebugReport(), clearSetupDebugData(); OAuth challenge tracking via hasOAuthChallenge/getOAuthChallengeHeaders, handleOAuthChallenge (creates OAuthService, runs PKCE flow, sets Dio token, verifies connection), clearOAuthCredential, isOAuthAuthenticated, and oauthEnabled cache-on-activate
 lib/presentation/providers/project_provider.dart  # Project/worktree context selection and persistence; exposes file-name, file-content, and workspace-symbol search for Quick Open and composer mentions
 lib/presentation/providers/settings_provider.dart # Experience settings, theme mode, dynamic color, AMOLED dark toggle, brand seed, contrast, composer tips visibility, sounds, update checks, and complete OpenCode shared settings coverage (default model, default agent, small model, autoupdate, share, username, snapshot); exposes `dynamicColorAvailable` (bool) and `updateDynamicColorAvailability()` for runtime platform signal; `setCheckUpdatesOnOpen()` now controls startup + hourly automatic checks via `_configureAutomaticUpdateChecks()` and `_performStartupUpdateCheck()`; `UpdateInstallState` enum (idle/downloading/installing/done/failed), `startInstall()`, and `restartDesktopApp()` manage APK/desktop install lifecycle
 lib/presentation/providers/quota_provider.dart # Host-discovered quota state: polls `QuotaRemoteDataSource`, TTL-based cache (60s) scoped per `serverId`, normalises raw data into `QuotaProviderGroup` list ordered by severity; `ensureLoaded()` for lazy UI-triggered fetch
@@ -319,6 +326,10 @@ flutter run -d chrome
 
 ```text
 test/unit/                             # Unit tests
+test/unit/auth/                        # OAuth auth unit tests
+test/unit/auth/oauth_service_io_test.dart # OAuth IO service tests: Cloudflare Managed OAuth flow, PKCE S256 challenge/verifier generation, local callback server lifecycle, credential caching/refresh, isOAuthChallenge detection, trusted endpoint validation, cross-profile isolation
+test/unit/auth/oauth_token_storage_test.dart # OAuth token storage tests: save/load/delete credential, hasValidCredential, OAuthTokenStorageException backend error handling, cross-profile key isolation
+test/unit/network/dio_client_auth_test.dart # Dio auth ownership tests: setOAuthToken/clearOAuthToken interaction with Basic Auth, clearAuth clears both, header restoration on OAuth clear preserves Basic Auth
 test/unit/providers/                   # ChatProvider split tests (7 files, 131 tests, parallelized with -j 12)
   chat_provider_init_test.dart         #   12 tests — initialization, config sync, model/agent selection
   chat_provider_sync_test.dart         #   17 tests — deferred sync, cycle, scope, overrides, variant sync
