@@ -1493,4 +1493,40 @@ class AppLocalizationsBn extends AppLocalizations {
 
   @override
   String get msgShareAsImageFailed => 'Could not share message as image.';
+
+  @override
+  String get useOAuthCloudflareAccess => 'Use OAuth (Cloudflare Access)';
+
+  @override
+  String get useOAuthCloudflareAccessSubtitle =>
+      'Opens a browser for Cloudflare Access Managed OAuth.';
+
+  @override
+  String get useOAuthCloudflareAccessUnsupported =>
+      'Cloudflare Access OAuth is not available on this platform. Use Basic Auth instead.';
+
+  @override
+  String get serverOAuthChip => 'OAuth';
+
+  @override
+  String get serverReauthenticate => 'Re-authenticate';
+
+  @override
+  String get serverClearOAuth => 'Clear OAuth';
+
+  @override
+  String get serverOAuthAuthFailed => 'OAuth authentication failed';
+
+  @override
+  String get serverOAuthNotSupported =>
+      'Cloudflare Access OAuth is not supported on this platform';
+
+  @override
+  String get onboardingUseBasicAuth => 'Use Basic Auth';
+
+  @override
+  String get onboardingUsernameRequired => 'Enter username';
+
+  @override
+  String get onboardingPasswordRequired => 'Enter password';
 }

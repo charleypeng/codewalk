@@ -2815,6 +2815,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not share message as image.'**
   String get msgShareAsImageFailed;
+
+  /// CodeWalk UI string — Label for the Cloudflare Access OAuth toggle in the onboarding/server setup wizard
+  ///
+  /// In en, this message translates to:
+  /// **'Use OAuth (Cloudflare Access)'**
+  String get useOAuthCloudflareAccess;
+
+  /// CodeWalk UI string — Subtitle explaining the OAuth toggle when supported on this platform
+  ///
+  /// In en, this message translates to:
+  /// **'Opens a browser for Cloudflare Access Managed OAuth.'**
+  String get useOAuthCloudflareAccessSubtitle;
+
+  /// CodeWalk UI string — Shown when OAuth is not supported on the current platform
+  ///
+  /// In en, this message translates to:
+  /// **'Cloudflare Access OAuth is not available on this platform. Use Basic Auth instead.'**
+  String get useOAuthCloudflareAccessUnsupported;
+
+  /// CodeWalk UI string — Chip label showing a server profile uses OAuth authentication
+  ///
+  /// In en, this message translates to:
+  /// **'OAuth'**
+  String get serverOAuthChip;
+
+  /// CodeWalk UI string — Menu action to re-authenticate an OAuth-enabled server profile
+  ///
+  /// In en, this message translates to:
+  /// **'Re-authenticate'**
+  String get serverReauthenticate;
+
+  /// CodeWalk UI string — Menu action to clear stored OAuth credentials for a server profile
+  ///
+  /// In en, this message translates to:
+  /// **'Clear OAuth'**
+  String get serverClearOAuth;
+
+  /// CodeWalk UI string — Error message shown when OAuth re-authentication fails
+  ///
+  /// In en, this message translates to:
+  /// **'OAuth authentication failed'**
+  String get serverOAuthAuthFailed;
+
+  /// CodeWalk UI string — Error when user tries to enable OAuth on an unsupported platform
+  ///
+  /// In en, this message translates to:
+  /// **'Cloudflare Access OAuth is not supported on this platform'**
+  String get serverOAuthNotSupported;
+
+  /// CodeWalk UI string — Switch tile label in onboarding wizard to enable Basic Auth
+  ///
+  /// In en, this message translates to:
+  /// **'Use Basic Auth'**
+  String get onboardingUseBasicAuth;
+
+  /// CodeWalk UI string — Validation error shown when Basic Auth username is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Enter username'**
+  String get onboardingUsernameRequired;
+
+  /// CodeWalk UI string — Validation error shown when Basic Auth password is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Enter password'**
+  String get onboardingPasswordRequired;
 }
 
 class _AppLocalizationsDelegate

@@ -1856,5 +1856,49 @@
   "msgShareAsImageFailed": "Could not share message as image.",
   "@msgShareAsImageFailed": {
     "description": "CodeWalk UI string — Shown when image capture or sharing fails unexpectedly"
+  },
+  "useOAuthCloudflareAccess": "Use OAuth (Cloudflare Access)",
+  "@useOAuthCloudflareAccess": {
+    "description": "CodeWalk UI string — Label for the Cloudflare Access OAuth toggle in the onboarding/server setup wizard"
+  },
+  "useOAuthCloudflareAccessSubtitle": "Opens a browser for Cloudflare Access Managed OAuth.",
+  "@useOAuthCloudflareAccessSubtitle": {
+    "description": "CodeWalk UI string — Subtitle explaining the OAuth toggle when supported on this platform"
+  },
+  "useOAuthCloudflareAccessUnsupported": "Cloudflare Access OAuth is not available on this platform. Use Basic Auth instead.",
+  "@useOAuthCloudflareAccessUnsupported": {
+    "description": "CodeWalk UI string — Shown when OAuth is not supported on the current platform"
+  },
+  "serverOAuthChip": "OAuth",
+  "@serverOAuthChip": {
+    "description": "CodeWalk UI string — Chip label showing a server profile uses OAuth authentication"
+  },
+  "serverReauthenticate": "Re-authenticate",
+  "@serverReauthenticate": {
+    "description": "CodeWalk UI string — Menu action to re-authenticate an OAuth-enabled server profile"
+  },
+  "serverClearOAuth": "Clear OAuth",
+  "@serverClearOAuth": {
+    "description": "CodeWalk UI string — Menu action to clear stored OAuth credentials for a server profile"
+  },
+  "serverOAuthAuthFailed": "OAuth authentication failed",
+  "@serverOAuthAuthFailed": {
+    "description": "CodeWalk UI string — Error message shown when OAuth re-authentication fails"
+  },
+  "serverOAuthNotSupported": "Cloudflare Access OAuth is not supported on this platform",
+  "@serverOAuthNotSupported": {
+    "description": "CodeWalk UI string — Error when user tries to enable OAuth on an unsupported platform"
+  },
+  "onboardingUseBasicAuth": "Use Basic Auth",
+  "@onboardingUseBasicAuth": {
+    "description": "CodeWalk UI string — Switch tile label in onboarding wizard to enable Basic Auth"
+  },
+  "onboardingUsernameRequired": "Enter username",
+  "@onboardingUsernameRequired": {
+    "description": "CodeWalk UI string — Validation error shown when Basic Auth username is empty"
+  },
+  "onboardingPasswordRequired": "Enter password",
+  "@onboardingPasswordRequired": {
+    "description": "CodeWalk UI string — Validation error shown when Basic Auth password is empty"
   }
 }

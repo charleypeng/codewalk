@@ -993,7 +993,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                       });
                     },
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Use Basic Auth'),
+                    title: Text(context.l10n.onboardingUseBasicAuth),
                   ),
                   SwitchListTile(
                     value: _oauthEnabled,
@@ -1006,11 +1006,11 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                           }
                         : null,
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Use OAuth (Cloudflare Access)'),
+                    title: Text(context.l10n.useOAuthCloudflareAccess),
                     subtitle: Text(
                       _oauthSupported
-                          ? 'Opens a browser for Cloudflare Access Managed OAuth.'
-                          : 'Cloudflare Access OAuth is not available on this platform. Use Basic Auth instead.',
+                          ? context.l10n.useOAuthCloudflareAccessSubtitle
+                          : context.l10n.useOAuthCloudflareAccessUnsupported,
                     ),
                   ),
                   if (_basicAuthEnabled) ...[
@@ -1022,7 +1022,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                       validator: (value) {
                         if (!_basicAuthEnabled) return null;
                         if ((value ?? '').trim().isEmpty) {
-                          return 'Enter username';
+                          return context.l10n.onboardingUsernameRequired;
                         }
                         return null;
                       },
@@ -1037,7 +1037,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                       validator: (value) {
                         if (!_basicAuthEnabled) return null;
                         if ((value ?? '').trim().isEmpty) {
-                          return 'Enter password';
+                          return context.l10n.onboardingPasswordRequired;
                         }
                         return null;
                       },

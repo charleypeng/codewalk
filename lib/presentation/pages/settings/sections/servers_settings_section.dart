@@ -363,7 +363,8 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
             ),
             if (isActive) const _MetaChip(label: 'Active'),
             if (isDefault) const _MetaChip(label: 'Default'),
-            if (profile.oauthEnabled) const _MetaChip(label: 'OAuth'),
+            if (profile.oauthEnabled)
+              _MetaChip(label: context.l10n.serverOAuthChip),
           ],
         ),
         subtitle: Text(
@@ -395,13 +396,13 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                 child: Text('Clear Default'),
               ),
             if (profile.oauthEnabled) ...[
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: _ServerAction.reauth,
-                child: Text('Re-authenticate'),
+                child: Text(context.l10n.serverReauthenticate),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: _ServerAction.clearOAuth,
-                child: Text('Clear OAuth'),
+                child: Text(context.l10n.serverClearOAuth),
               ),
             ],
             const PopupMenuItem(
@@ -505,7 +506,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
           challengeHeaders: appProvider.getOAuthChallengeHeaders(profile.url),
         );
         if (!ok && mounted) {
-          _showMessage('OAuth authentication failed');
+          _showMessage(context.l10n.serverOAuthAuthFailed);
         }
         break;
       case _ServerAction.clearOAuth:
