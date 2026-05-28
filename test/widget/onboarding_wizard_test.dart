@@ -371,127 +371,132 @@ void main() {
     testWidgets('shows OAuth toggle on supported platform', (
       WidgetTester tester,
     ) async {
+      final previous = debugDefaultTargetPlatformOverride;
       debugDefaultTargetPlatformOverride = TargetPlatform.android;
-      addTearDown(() => debugDefaultTargetPlatformOverride = null);
-
-      await tester.pumpWidget(
-        buildWizard(initialFlow: SetupWizardInitialFlow.connectServer),
-      );
-      await tester.pumpAndSettle();
-
-      // Navigate to the server URL form.
-      if (find.text('Continue to server URL').evaluate().isNotEmpty) {
-        await tester.tap(find.text('Continue to server URL'));
+      try {
+        await tester.pumpWidget(
+          buildWizard(initialFlow: SetupWizardInitialFlow.connectServer),
+        );
         await tester.pumpAndSettle();
-      }
 
-      expect(find.text('Use OAuth (Cloudflare Access)'), findsOneWidget);
-      expect(
-        find.text('Opens a browser for Cloudflare Access Managed OAuth.'),
-        findsOneWidget,
-      );
-      expect(find.text('Use Basic Auth'), findsOneWidget);
+        // Navigate to the server URL form.
+        if (find.text('Continue to server URL').evaluate().isNotEmpty) {
+          await tester.tap(find.text('Continue to server URL'));
+          await tester.pumpAndSettle();
+        }
+
+        expect(find.text('Use OAuth (Cloudflare Access)'), findsOneWidget);
+        expect(
+          find.text('Opens a browser for Cloudflare Access Managed OAuth.'),
+          findsOneWidget,
+        );
+        expect(find.text('Use Basic Auth'), findsOneWidget);
+      } finally {
+        debugDefaultTargetPlatformOverride = previous;
+      }
     });
 
     testWidgets('toggling OAuth disables Basic Auth and vice versa', (
       WidgetTester tester,
     ) async {
+      final previous = debugDefaultTargetPlatformOverride;
       debugDefaultTargetPlatformOverride = TargetPlatform.android;
-      addTearDown(() => debugDefaultTargetPlatformOverride = null);
-
-      await tester.pumpWidget(
-        buildWizard(initialFlow: SetupWizardInitialFlow.connectServer),
-      );
-      await tester.pumpAndSettle();
-
-      if (find.text('Continue to server URL').evaluate().isNotEmpty) {
-        await tester.tap(find.text('Continue to server URL'));
+      try {
+        await tester.pumpWidget(
+          buildWizard(initialFlow: SetupWizardInitialFlow.connectServer),
+        );
         await tester.pumpAndSettle();
+
+        if (find.text('Continue to server URL').evaluate().isNotEmpty) {
+          await tester.tap(find.text('Continue to server URL'));
+          await tester.pumpAndSettle();
+        }
+
+        final oauthSwitch = find.byType(Switch).at(1);
+        final basicSwitch = find.byType(Switch).at(0);
+
+        await tester.tap(oauthSwitch);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Username'), findsNothing);
+
+        await tester.tap(basicSwitch);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Username'), findsOneWidget);
+        expect(find.text('Password'), findsOneWidget);
+      } finally {
+        debugDefaultTargetPlatformOverride = previous;
       }
-
-      // Initially, neither toggle should be enabled.
-      final oauthSwitch = find.byType(Switch).at(1); // second switch is OAuth
-      final basicSwitch = find.byType(Switch).at(0); // first switch is Basic Auth
-
-      // Tap OAuth toggle.
-      await tester.tap(oauthSwitch);
-      await tester.pumpAndSettle();
-
-      // Basic Auth username/password fields should not be visible.
-      expect(find.text('Username'), findsNothing);
-
-      // Tap Basic Auth toggle.
-      await tester.tap(basicSwitch);
-      await tester.pumpAndSettle();
-
-      // Username/password fields should appear.
-      expect(find.text('Username'), findsOneWidget);
-      expect(find.text('Password'), findsOneWidget);
     });
 
     testWidgets('shows unsupported message when OAuth not available', (
       WidgetTester tester,
     ) async {
+      final previous = debugDefaultTargetPlatformOverride;
       debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-      addTearDown(() => debugDefaultTargetPlatformOverride = null);
-
-      await tester.pumpWidget(
-        buildWizard(initialFlow: SetupWizardInitialFlow.connectServer),
-      );
-      await tester.pumpAndSettle();
-
-      if (find.text('Continue to server URL').evaluate().isNotEmpty) {
-        await tester.tap(find.text('Continue to server URL'));
+      try {
+        await tester.pumpWidget(
+          buildWizard(initialFlow: SetupWizardInitialFlow.connectServer),
+        );
         await tester.pumpAndSettle();
-      }
 
-      expect(
-        find.text(
-          'Cloudflare Access OAuth is not available on this platform. '
-          'Use Basic Auth instead.',
-        ),
-        findsOneWidget,
-      );
+        if (find.text('Continue to server URL').evaluate().isNotEmpty) {
+          await tester.tap(find.text('Continue to server URL'));
+          await tester.pumpAndSettle();
+        }
+
+        expect(
+          find.text(
+            'Cloudflare Access OAuth is not available on this platform. '
+            'Use Basic Auth instead.',
+          ),
+          findsOneWidget,
+        );
+      } finally {
+        debugDefaultTargetPlatformOverride = previous;
+      }
     });
 
     testWidgets('OAuth subtitle updates based on platform support', (
       WidgetTester tester,
     ) async {
-      debugDefaultTargetPlatformOverride = TargetPlatform.android;
-      addTearDown(() => debugDefaultTargetPlatformOverride = null);
-
-      // Test on Android (supported).
-      await tester.pumpWidget(
-        buildWizard(initialFlow: SetupWizardInitialFlow.connectServer),
-      );
-      await tester.pumpAndSettle();
-
-      if (find.text('Continue to server URL').evaluate().isNotEmpty) {
-        await tester.tap(find.text('Continue to server URL'));
+      final previous = debugDefaultTargetPlatformOverride;
+      try {
+        debugDefaultTargetPlatformOverride = TargetPlatform.android;
+        await tester.pumpWidget(
+          buildWizard(initialFlow: SetupWizardInitialFlow.connectServer),
+        );
         await tester.pumpAndSettle();
-      }
 
-      expect(
-        find.text('Opens a browser for Cloudflare Access Managed OAuth.'),
-        findsOneWidget,
-      );
+        if (find.text('Continue to server URL').evaluate().isNotEmpty) {
+          await tester.tap(find.text('Continue to server URL'));
+          await tester.pumpAndSettle();
+        }
 
-      // Switch to Linux (also supported).
-      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
-      await tester.pumpWidget(
-        buildWizard(initialFlow: SetupWizardInitialFlow.connectServer),
-      );
-      await tester.pumpAndSettle();
+        expect(
+          find.text('Opens a browser for Cloudflare Access Managed OAuth.'),
+          findsOneWidget,
+        );
 
-      if (find.text('Continue to server URL').evaluate().isNotEmpty) {
-        await tester.tap(find.text('Continue to server URL'));
+        debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+        await tester.pumpWidget(
+          buildWizard(initialFlow: SetupWizardInitialFlow.connectServer),
+        );
         await tester.pumpAndSettle();
-      }
 
-      expect(
-        find.text('Opens a browser for Cloudflare Access Managed OAuth.'),
-        findsOneWidget,
-      );
+        if (find.text('Continue to server URL').evaluate().isNotEmpty) {
+          await tester.tap(find.text('Continue to server URL'));
+          await tester.pumpAndSettle();
+        }
+
+        expect(
+          find.text('Opens a browser for Cloudflare Access Managed OAuth.'),
+          findsOneWidget,
+        );
+      } finally {
+        debugDefaultTargetPlatformOverride = previous;
+      }
     });
   });
 
