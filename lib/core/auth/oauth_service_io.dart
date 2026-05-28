@@ -417,7 +417,8 @@ class OAuthService {
 
     final redirectUri = _redirectUriFor(null);
     final client = await _registerClient(meta, redirectUri);
-    final clientId = client?['client_id'] as String? ?? '';
+    final dcrClientId = client?['client_id'] as String?;
+    final clientId = dcrClientId ?? 'codewalk';
 
     final appAuth = FlutterAppAuth();
 
@@ -459,7 +460,7 @@ class OAuthService {
         authCode,
         codeVerifier,
         redirectUri,
-        clientId.isNotEmpty ? clientId : null,
+        dcrClientId,
       );
       if (data != null) {
         data['_client'] = client;

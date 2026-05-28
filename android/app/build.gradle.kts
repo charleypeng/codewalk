@@ -97,6 +97,10 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // Required by flutter_appauth for custom-scheme redirect support.
+        // Loopback-based OAuth (used by Cloudflare Access) does not use this
+        // scheme, but the manifest merger requires the placeholder to resolve.
+        manifestPlaceholders += mapOf("appAuthRedirectScheme" to "com.verseles.codewalk.oauth")
     }
 
     signingConfigs {
