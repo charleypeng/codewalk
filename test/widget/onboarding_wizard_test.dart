@@ -1,17 +1,17 @@
+import 'package:codewalk/core/i18n/app_locales.dart';
 import 'package:codewalk/core/network/dio_client.dart';
 import 'package:codewalk/domain/usecases/check_connection.dart';
 import 'package:codewalk/domain/usecases/get_app_info.dart';
+import 'package:codewalk/l10n/generated/app_localizations.dart';
 import 'package:codewalk/presentation/pages/onboarding_wizard_page.dart';
 import 'package:codewalk/presentation/providers/app_provider.dart';
 import 'package:codewalk/presentation/providers/settings_provider.dart';
 import 'package:codewalk/presentation/services/local_opencode_server_runtime_types.dart';
 import 'package:codewalk/presentation/services/sound_service.dart';
-import 'package:codewalk/core/i18n/app_locales.dart';
-import 'package:codewalk/l10n/generated/app_localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -457,8 +457,10 @@ void main() {
     testWidgets('OAuth subtitle updates based on platform support', (
       WidgetTester tester,
     ) async {
-      // Test on Android (supported).
       debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
+      // Test on Android (supported).
       await tester.pumpWidget(
         buildWizard(initialFlow: SetupWizardInitialFlow.connectServer),
       );
