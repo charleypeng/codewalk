@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/logging/app_logger.dart';
@@ -350,6 +351,10 @@ class OAuthService {
   Future<Map<String, dynamic>?> _runPkceFlow(
     Map<String, dynamic> meta,
   ) async {
+    if (Platform.isAndroid) {
+      return _runPkceFlowAndroid(meta);
+    }
+
     final authEp = meta['authorization_endpoint'] as String?;
     final tokenEp = meta['token_endpoint'] as String?;
     if (authEp == null || tokenEp == null) return null;
@@ -400,6 +405,65 @@ class OAuthService {
       return data;
     } finally {
       await callbackServer.close(force: true);
+    }
+  }
+
+  Future<Map<String, dynamic>?> _runPkceFlowAndroid(
+    Map<String, dynamic> meta,
+  ) async {
+    final authEp = meta['authorization_endpoint'] as String?;
+    final tokenEp = meta['token_endpoint'] as String?;
+    if (authEp == null || tokenEp == null) return null;
+
+    final redirectUri = _redirectUriFor(null);
+    final client = await _registerClient(meta, redirectUri);
+    final clientId = client?['client_id'] as String? ?? '';
+
+    final appAuth = FlutterAppAuth();
+
+    try {
+      _log('Opening Chrome Custom Tab: $authEp');
+      final AuthorizationResponse? result = await appAuth.authorize(
+        AuthorizationRequest(
+          clientId,
+          redirectUri,
+          serviceConfiguration: AuthorizationServiceConfiguration(
+            authorizationEndpoint: authEp,
+            tokenEndpoint: tokenEp,
+            registrationEndpoint: meta['registration_endpoint'] as String?,
+          ),
+          additionalParameters: {'resource': _baseUrl},
+          allowInsecureConnections: true,
+        ),
+      );
+
+      if (result == null) {
+        _log('User cancelled OAuth authorization');
+        return null;
+      }
+
+      _log('Authorization code received from Chrome Custom Tab');
+
+      final codeVerifier = result.codeVerifier;
+      if (codeVerifier == null) {
+        _log('flutter_appauth did not return a code verifier');
+        return null;
+      }
+
+      final data = await _exchangeCode(
+        tokenEp,
+        result.authorizationCode,
+        codeVerifier,
+        redirectUri,
+        clientId.isNotEmpty ? clientId : null,
+      );
+      if (data != null) {
+        data['_client'] = client;
+      }
+      return data;
+    } catch (e) {
+      _log('OAuth authorization failed on Android: $e');
+      return null;
     }
   }
 
