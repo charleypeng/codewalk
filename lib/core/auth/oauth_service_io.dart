@@ -430,7 +430,6 @@ class OAuthService {
           serviceConfiguration: AuthorizationServiceConfiguration(
             authorizationEndpoint: authEp,
             tokenEndpoint: tokenEp,
-            registrationEndpoint: meta['registration_endpoint'] as String?,
           ),
           additionalParameters: {'resource': _baseUrl},
           allowInsecureConnections: true,
@@ -444,6 +443,11 @@ class OAuthService {
 
       _log('Authorization code received from Chrome Custom Tab');
 
+      final authCode = result.authorizationCode;
+      if (authCode == null) {
+        _log('flutter_appauth did not return an authorization code');
+        return null;
+      }
       final codeVerifier = result.codeVerifier;
       if (codeVerifier == null) {
         _log('flutter_appauth did not return a code verifier');
@@ -452,7 +456,7 @@ class OAuthService {
 
       final data = await _exchangeCode(
         tokenEp,
-        result.authorizationCode,
+        authCode,
         codeVerifier,
         redirectUri,
         clientId.isNotEmpty ? clientId : null,
