@@ -201,7 +201,8 @@ class AppProvider extends ChangeNotifier {
 
   static bool get supportsCloudflareAccessOAuth {
     if (kIsWeb) return false;
-    return defaultTargetPlatform == TargetPlatform.linux ||
+    return defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.linux ||
         defaultTargetPlatform == TargetPlatform.macOS ||
         defaultTargetPlatform == TargetPlatform.windows;
   }
@@ -520,7 +521,7 @@ class AppProvider extends ChangeNotifier {
 
     final now = DateTime.now().millisecondsSinceEpoch;
     if (oauthEnabled && !supportsCloudflareAccessOAuth) {
-      _setError('Cloudflare Access OAuth is supported on desktop only');
+      _setError('Cloudflare Access OAuth is not supported on this platform');
       return false;
     }
     final profile = ServerProfile(
@@ -581,7 +582,7 @@ class AppProvider extends ChangeNotifier {
     }
 
     if (oauthEnabled && !supportsCloudflareAccessOAuth) {
-      _setError('Cloudflare Access OAuth is supported on desktop only');
+      _setError('Cloudflare Access OAuth is not supported on this platform');
       return false;
     }
 

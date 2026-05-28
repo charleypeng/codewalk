@@ -1009,8 +1009,8 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                     title: const Text('Use OAuth (Cloudflare Access)'),
                     subtitle: Text(
                       _oauthSupported
-                          ? 'Desktop only. Opens a browser for Cloudflare Access Managed OAuth.'
-                          : 'Cloudflare Access OAuth is desktop-only. Use Basic Auth on mobile or web.',
+                          ? 'Opens a browser for Cloudflare Access Managed OAuth.'
+                          : 'Cloudflare Access OAuth is not available on this platform. Use Basic Auth instead.',
                     ),
                   ),
                   if (_basicAuthEnabled) ...[
