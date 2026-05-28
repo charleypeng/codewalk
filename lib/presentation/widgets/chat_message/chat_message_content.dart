@@ -300,7 +300,7 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
 
   Widget _buildShareImageButton(BuildContext context) {
     if (_hideShareImageButtonForCapture) {
-      return const SizedBox.shrink();
+      return const SizedBox(width: 48, height: 48);
     }
 
     return Tooltip(
