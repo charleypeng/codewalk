@@ -1673,13 +1673,13 @@ Official OpenCode does not define a reverse-proxy authentication mechanism. The 
 
 ### Decision
 
-1. **Optional Cloudflare Managed OAuth flow**: Add an opt-in Cloudflare Managed OAuth authentication capability for desktop platforms only. When enabled per server profile, CodeWalk performs the Cloudflare Managed OAuth authorization code flow with PKCE S256 in a system browser. The resulting access token is sent as `Authorization: Bearer <access_token>` on requests whose origin matches the OAuth-enabled profile only. When a `registration_endpoint` is available, Dynamic Client Registration (DCR) is performed to obtain client credentials automatically.
+1. **Optional Cloudflare Managed OAuth flow**: Add an opt-in Cloudflare Managed OAuth authentication capability for desktop and Android platforms. On desktop, the flow uses a system browser + local HTTP redirect server; on Android, it uses `flutter_appauth` (Chrome Custom Tab + manifest-verified loopback redirect). When enabled per server profile, CodeWalk performs the Cloudflare Managed OAuth authorization code flow with PKCE S256. The resulting access token is sent as `Authorization: Bearer <access_token>` on requests whose origin matches the OAuth-enabled profile only. When a `registration_endpoint` is available, Dynamic Client Registration (DCR) is performed to obtain client credentials automatically.
 
 2. **Profile-scoped configuration**: Each `ServerProfile` (ADR-001) gains an `oauthEnabled` (bool, default `false`) field. This single toggle controls whether the profile uses Cloudflare Managed OAuth or standard Basic Auth — the two modes are mutually exclusive within a profile. This preserves OpenCode Basic Auth for non-OAuth profiles without interference.
 
 3. **Conditional export architecture**: The `OAuthService` is implemented via Dart conditional exports: `oauth_service_io.dart` provides the real desktop implementation (system browser launch, local redirect server, token exchange), and `oauth_service_stub.dart` provides a no-op stub for mobile platforms. The conditional export pattern ensures compile-time platform resolution without runtime checks.
 
-4. **Desktop-only gating**: The Cloudflare Managed OAuth flow is gated behind `AppProvider.supportsCloudflareAccessOAuth`. On mobile platforms (Android/iOS), the feature is hidden from UI and the code path is the no-op stub. Rationale: reverse-proxy deployments are desktop/server environments; mobile users connect directly or via VPN. This prevents unnecessary complexity on mobile and avoids the browser-redirect UX challenges on small screens.
+4. **Platform gating**: The Cloudflare Managed OAuth flow is gated behind `AppProvider.supportsCloudflareAccessOAuth`. On desktop (macOS/Windows/Linux) and Android, the flow is enabled — desktop uses a system browser + local HTTP redirect server, while Android uses `flutter_appauth` (Chrome Custom Tab). iOS remains unsupported (stub). Rationale: reverse-proxy deployments target desktop/server and Android environments; iOS Safari app-bound domain restrictions prevent the loopback redirect pattern.
 
 5. **Secure credential storage via `OAuthTokenStorage`**: Access and refresh tokens are stored through `OAuthTokenStorage` backed by `flutter_secure_storage`, with keys scoped by `profileId + serverUrl`. No OAuth credentials are ever written to SharedPreferences, log output, or debug surfaces. `OAuthCredential` encapsulates the token pair and expiry.
 
@@ -1710,7 +1710,7 @@ This ADR constitutes an explicit ADR-023 exception per section 3 ("Explicit Dive
 - **Cloudflare Managed OAuth (authorization code + PKCE S256)**: This is the standard Cloudflare Access OAuth mechanism — not cookie-based auth. Authorization code flow with PKCE S256 provides the strongest security guarantees for native/desktop applications (no client secret in the app, code verifier prevents interception).
 - **DCR when available**: Dynamic Client Registration automates client credential provisioning when the Cloudflare IdP exposes a `registration_endpoint`, removing manual client ID entry.
 - **Conditional export pattern**: Using Dart's conditional export (`oauth_service_io.dart` / `oauth_service_stub.dart`) provides compile-time platform resolution — cleaner than runtime platform checks scattered across call sites.
-- **Desktop-only scoping via `AppProvider`**: `AppProvider.supportsCloudflareAccessOAuth` centralizes platform capability detection, consistent with the app's provider architecture.
+- **Platform scoping via `AppProvider`**: `AppProvider.supportsCloudflareAccessOAuth` centralizes platform capability detection, consistent with the app's provider architecture. Desktop platforms (macOS/Windows/Linux) and Android are supported; iOS remains gated out.
 - **Profile-scoped mutual exclusivity**: Tying the feature to `oauthEnabled` on the server profile (ADR-001) and making OAuth/Basic Auth mutually exclusive prevents accidental activation and keeps the auth boundary clean per-server.
 - **Secure storage alignment**: `OAuthTokenStorage` following ADR-001's `flutter_secure_storage` pattern with `profileId + serverUrl` scoped keys prevents the same class of credential-exposure issues that ADR-001 solved for Basic Auth.
 
@@ -1720,13 +1720,13 @@ This ADR constitutes an explicit ADR-023 exception per section 3 ("Explicit Dive
 - ✅ No impact on servers without Cloudflare Managed OAuth — feature is fully opt-in and profile-scoped.
 - ✅ OpenCode server contract is fully preserved on non-OAuth profiles — Basic Auth is always sent.
 - ✅ Secure storage via `OAuthTokenStorage` prevents OAuth credential leakage via plaintext persistence.
-- ✅ Desktop-only gating via `AppProvider.supportsCloudflareAccessOAuth` avoids mobile UX complexity and unsupported deployment patterns.
+- ✅ Platform gating via `AppProvider.supportsCloudflareAccessOAuth` — desktop uses local HTTP redirect, Android uses `flutter_appauth` Chrome Custom Tab, iOS is stub/no-op.
 - ✅ Mutual exclusivity of OAuth/Basic Auth per profile prevents auth-header conflicts.
 - ✅ PKCE S256 protects against authorization code interception attacks.
 - ⚠ Adds a second auth layer to the connection flow for OAuth-enabled profiles, increasing time-to-first-message (browser redirect + code exchange).
 - ⚠ Requires maintaining a local HTTP redirect server (for the `/oauth/callback`) on desktop platforms; port conflicts are possible in rare cases.
 - ⚠ OAuth access token expiration requires re-authentication; health checks detect proxy challenges and re-trigger the flow gracefully.
-- ❌ Mobile platforms will not support Cloudflare Managed OAuth; users in proxied environments must use desktop or VPN on mobile.
+- ❌ iOS does not support Cloudflare Managed OAuth (Safari app-bound domain restrictions prevent loopback redirect); users on iOS must use VPN or switch platforms.
 - ❌ Cloudflare Managed OAuth configuration is specific to Cloudflare — other reverse-proxy solutions (Authelia, Tailscale, etc.) are not covered by this ADR and would require separate exceptions if needed.
 
 ### Risk Analysis
@@ -1748,7 +1748,7 @@ This ADR constitutes an explicit ADR-023 exception per section 3 ("Explicit Dive
 - **Profile isolation**: Enabling OAuth on profile A must not affect profile B's connection or credential state.
 - **Interceptor scoping**: The Bearer token interceptor must only attach `Authorization: Bearer` to requests matching the OAuth profile's origin; cross-origin requests must not include the OAuth token.
 - **Secure storage boundary**: OAuth credentials must not appear in SharedPreferences, log output, or debug surfaces. Keys must be scoped by `profileId + serverUrl`.
-- **Mobile no-op**: On mobile platforms, `OAuthService` (stub) must be a no-op and `AppProvider.supportsCloudflareAccessOAuth` must return false; UI must not expose OAuth configuration.
+- **iOS no-op**: On iOS, `OAuthService` (stub) must be a no-op and `AppProvider.supportsCloudflareAccessOAuth` must return false for iOS; UI must not expose OAuth configuration. Android must pass `supportsCloudflareAccessOAuth` as true and the IO implementation must handle `flutter_appauth` flows.
 - **State/callback validation**: The `/oauth/callback` flow must validate the `state` parameter, reject duplicate callbacks, and handle PKCE verifier mismatches gracefully.
 - **Health check OAuth awareness**: Health checks must load cached OAuth tokens and record OAuth challenges for re-auth triggering.
 - **Profile deletion cleanup**: Deleting a server profile must remove all associated OAuth credentials from `OAuthTokenStorage`.
@@ -1757,7 +1757,7 @@ This ADR constitutes an explicit ADR-023 exception per section 3 ("Explicit Dive
 ### Key Files
 
 - `lib/core/auth/oauth_service.dart` — `OAuthService` public API with conditional export
-- `lib/core/auth/oauth_service_io.dart` — desktop implementation: Cloudflare Managed OAuth authorization code + PKCE S256, DCR when `registration_endpoint` available, system browser launch, `/oauth/callback` handling with state/path/duplicate rejection, token exchange
+- `lib/core/auth/oauth_service_io.dart` — IO platforms (desktop + Android) implementation: desktop uses system browser + local HTTP redirect server; Android uses `flutter_appauth` Chrome Custom Tab with manifest-verified loopback; Cloudflare Managed OAuth authorization code + PKCE S256, DCR when `registration_endpoint` available, `/oauth/callback` handling with state/path/duplicate rejection, token exchange
 - `lib/core/auth/oauth_service_stub.dart` — no-op stub for mobile platforms
 - `lib/core/auth/oauth_service_result.dart` — `OAuthServiceResult` type for flow outcomes
 - `lib/core/auth/oauth_token_storage.dart` — `OAuthTokenStorage` backed by `flutter_secure_storage`, keys scoped by `profileId + serverUrl`
