@@ -99,82 +99,73 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
                             : colorScheme.surfaceContainerHigh,
                         borderRadius: bubbleBorderRadius,
                       ),
-                      child: Stack(
-                        clipBehavior: Clip.none,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          Row(
                             children: [
-                              Row(
-                                children: [
-                                  if (isUser) ...[
-                                    Text(
-                                      'You',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelMedium
-                                          ?.copyWith(
-                                            color: colorScheme.primary,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                  ],
-                                  Text(
-                                    _formatTime(message.time),
-                                    style: Theme.of(context).textTheme.bodySmall
-                                        ?.copyWith(
-                                          color: colorScheme.onSurfaceVariant,
-                                          fontSize: 11,
-                                        ),
-                                  ),
-                                  const Spacer(),
-                                  if (!isUser &&
-                                      message is AssistantMessage) ...[
-                                    _buildReadAloudButton(
-                                      context,
-                                      message as AssistantMessage,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    _buildAssistantInfo(
-                                      context,
-                                      message as AssistantMessage,
-                                    ),
-                                  ],
-                                ],
-                              ),
-                              SizedBox(
-                                key: ValueKey<String>(
-                                  'message_header_spacing_${message.id}',
+                              if (isUser) ...[
+                                Text(
+                                  'You',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelMedium
+                                      ?.copyWith(
+                                        color: colorScheme.primary,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                 ),
-                                height: headerContentSpacing,
+                                const SizedBox(width: 8),
+                              ],
+                              Text(
+                                _formatTime(message.time),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                      fontSize: 11,
+                                    ),
                               ),
-                              if (isUser)
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: renderedParts,
-                                )
-                              else
-                                SelectionArea(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: renderedParts,
-                                  ),
-                                ),
-                              if (message is AssistantMessage &&
-                                  (message as AssistantMessage).error != null)
-                                _buildErrorInfo(
+                              const Spacer(),
+                              _buildShareImageButton(context),
+                              if (!isUser &&
+                                  message is AssistantMessage) ...[
+                                _buildReadAloudButton(
                                   context,
-                                  (message as AssistantMessage).error!,
+                                  message as AssistantMessage,
                                 ),
+                                const SizedBox(width: 8),
+                                _buildAssistantInfo(
+                                  context,
+                                  message as AssistantMessage,
+                                ),
+                              ],
                             ],
                           ),
-                          Positioned(
-                            top: -12,
-                            right: isUser ? -12 : 40,
-                            child: _buildShareImageButton(context),
+                          SizedBox(
+                            key: ValueKey<String>(
+                              'message_header_spacing_${message.id}',
+                            ),
+                            height: headerContentSpacing,
                           ),
+                          if (isUser)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: renderedParts,
+                            )
+                          else
+                            SelectionArea(
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: renderedParts,
+                              ),
+                            ),
+                          if (message is AssistantMessage &&
+                              (message as AssistantMessage).error != null)
+                            _buildErrorInfo(
+                              context,
+                              (message as AssistantMessage).error!,
+                            ),
                         ],
                       ),
                     ),
