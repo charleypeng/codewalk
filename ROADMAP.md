@@ -8,14 +8,18 @@ spec: |
 
 ## Task List
 
-### Feature 1: Auto-approve always sends "always"
+### Feature 1: Auto-approve always sends "always" — ✅ Completed
 
 Description: When the "Permission auto-approve" toggle is on, send responses to the server automatically. Additionally, when asked for permissions, always send the "always" option (with remember: true) instead of "once".
 
-- [ ] 1.01 Update auto-approve logic to reply with "always" instead of "once" when the toggle is enabled
-- [ ] 1.02 Ensure remember: true is sent with every auto-approved permission response
-- [ ] 1.03 Update tests to reflect the new always-preferred behavior
-- [ ] 1.04 Verify auto-approve behavior in both foreground (composer toggle) and background (Android worker) paths
+Already implemented in code — `permission_auto_approve_runtime.dart` always returns "always" with `remember:true` in both foreground and background paths.
+
+Commits: pre-existing implementation.
+
+- [x] 1.01 Update auto-approve logic to reply with "always" instead of "once" when the toggle is enabled — Commits: pre-existing implementation
+- [x] 1.02 Ensure remember: true is sent with every auto-approved permission response — Commits: pre-existing implementation
+- [x] 1.03 Update tests to reflect the new always-preferred behavior — Commits: pre-existing implementation
+- [x] 1.04 Verify auto-approve behavior in both foreground (composer toggle) and background (Android worker) paths — Commits: pre-existing implementation
 
 ### Feature 2: Top menu and Composer bar respect chosen density
 
