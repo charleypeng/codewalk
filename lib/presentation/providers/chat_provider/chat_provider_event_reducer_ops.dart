@@ -404,9 +404,21 @@ extension _ChatProviderEventReducerOps on ChatProvider {
             // fallback stream is still draining in the background; otherwise
             // the composer status can keep showing stale progress after the
             // final assistant response is already visible.
-            _activeMessageStreamSessionId = null;
-            _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
-            if (_state == ChatState.sending) {
+    _activeMessageStreamSessionId = null;
+    _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
+    // Cancel pending debounced message fallback timers — session.idle is
+    // the terminal signal; no further remote resolution is needed. This
+    // prevents unnecessary HTTP GETs that the monotonic guard would
+    // discard.
+    for (final entry in _messageFallbackDebounceById.entries.toList()) {
+      final messageId = entry.key;
+      final msgIndex = _messages.indexWhere((m) => m.id == messageId);
+      if (msgIndex != -1 && _messages[msgIndex].sessionId == sessionId) {
+        entry.value.cancel();
+        _messageFallbackDebounceById.remove(messageId);
+      }
+    }
+    if (_state == ChatState.sending) {
               _setState(ChatState.loaded);
             } else {
               _notifyListeners();
