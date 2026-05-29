@@ -1507,6 +1507,7 @@ class FakeChatRepository implements ChatRepository {
   String? lastGetSessionsDirectory;
   int getSessionsCallCount = 0;
   int getMessagesCallCount = 0;
+  int getMessageCallCount = 0;
   int? lastGetMessagesLimit;
   final List<int?> getMessagesRequestedLimits = <int?>[];
   int getSessionChildrenCallCount = 0;
@@ -1665,6 +1666,7 @@ class FakeChatRepository implements ChatRepository {
     String messageId, {
     String? directory,
   }) async {
+    getMessageCallCount += 1;
     final found = messagesBySession[sessionId]
         ?.where((m) => m.id == messageId)
         .firstOrNull;

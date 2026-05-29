@@ -1818,24 +1818,24 @@ void main() {
         );
         await Future<void>.delayed(const Duration(milliseconds: 40));
 
-        final callsBeforeIdle = chatRepository.getMessagesCallCount;
+  final callsBeforeIdle = chatRepository.getMessageCallCount;
 
-        // Fire session.idle — should cancel pending debounced timers
-        chatRepository.emitEvent(
-          const ChatEvent(
-            type: 'session.idle',
-            properties: <String, dynamic>{'sessionID': 'ses_1'},
-          ),
-        );
-        await Future<void>.delayed(const Duration(milliseconds: 200));
+  // Fire session.idle — should cancel pending debounced timers
+  chatRepository.emitEvent(
+    const ChatEvent(
+      type: 'session.idle',
+      properties: <String, dynamic>{'sessionID': 'ses_1'},
+    ),
+  );
+  await Future<void>.delayed(const Duration(milliseconds: 200));
 
-        // Assert: the debounced fallback timer was cancelled and no
-        // extra HTTP GET was made (getMessagesCallCount unchanged)
-        expect(
-          chatRepository.getMessagesCallCount,
-          equals(callsBeforeIdle),
-          reason: 'debounced fallback should not fire after session.idle',
-        );
+  // Assert: the debounced fallback timer was cancelled and no
+  // extra HTTP GET was made (getMessageCallCount unchanged)
+  expect(
+    chatRepository.getMessageCallCount,
+    equals(callsBeforeIdle),
+    reason: 'debounced fallback should not fire after session.idle',
+  );
       },
     );
 
