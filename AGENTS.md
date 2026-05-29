@@ -140,6 +140,21 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 - **Use GitHub Actions CI for Android builds.** The CI workflow runs on `ubuntu-latest` (x86_64) and produces working APKs.
 - `make check` (analyze + test) works fine on ARM64 — only the Android APK build step is affected.
 
+## ⚠️ Known Pitfalls
+
+### `generate_arb.dart` is destructive to newer .arb keys
+
+- `dart tool/i18n/generate_arb.dart` overwrites all `.arb` files from `arb_strings.dart` **only** — any keys present in the `.arb` files but missing from `arb_strings.dart` are permanently lost.
+- **Never run `generate_arb.dart` globally** unless `arb_strings.dart` has been fully synchronized with every key that exists in the `.arb` files.
+- **Safe alternative**: edit `.arb` files directly (e.g. via `sed`), then run `flutter gen-l10n` to regenerate Dart localizations only.
+- If `generate_arb.dart` is accidentally run, recover with `git checkout -- lib/l10n/app_*.arb` and re-apply changes manually.
+
+### Flutter PATH in subagent shells
+
+- Subagent shells (tester, reviewer, etc.) do **not** source `.bashrc`/`.zshrc`, so `flutter` is not on the default `PATH`.
+- **Always prepend**: `export PATH="$HOME/flutter/bin:$PATH"` before any Flutter command in subagent contexts.
+- The Flutter SDK is at `~/flutter/bin/` — adjust if the home directory differs per machine.
+
 ## 📦 New Tag / Release
 
 - **Use `make release V=<type>`** for new versions:
