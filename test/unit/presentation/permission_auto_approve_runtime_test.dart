@@ -3,7 +3,7 @@ import 'package:codewalk/presentation/services/permission_auto_approve_runtime.d
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('uses always reply when remembered approval patterns exist', () {
+  test('always returns always reply unconditionally', () {
     expect(
       permissionAutoApproveReplyForAlwaysPatterns(const <String>[
         'git status*',
@@ -11,8 +11,8 @@ void main() {
       'always',
     );
     expect(
-      permissionAutoApproveReplyForAlwaysPatterns(const <String>['', '  ']),
-      'once',
+      permissionAutoApproveReplyForAlwaysPatterns(const <String>['', ' ']),
+      'always',
     );
   });
 

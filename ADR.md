@@ -1041,14 +1041,14 @@ Related: ADR-003, ADR-018, ADR-019, ADR-022.
 
 **Status**: Approved ADR-023 exception.
 
-**Summary**: CodeWalk exposes a composer-level toggle to the left of the agent selector that defaults to enabled, persists user opt-out, and auto-approves permission requests with `always` semantics when the request exposes it, otherwise falls back to `Allow Once`. Question prompts remain manual. The auto-approve behavior extends to the Android background worker continuity path, enabling pending permission resolution when the app resumes from background.
+**Summary**: CodeWalk exposes a composer-level toggle to the left of the agent selector that defaults to enabled, persists user opt-out, and auto-approves permission requests with `always` semantics unconditionally, sending `remember: true` to create durable session-scoped grants. Question prompts remain manual. The auto-approve behavior extends to the Android background worker continuity path, enabling pending permission resolution when the app resumes from background.
 
-**Deviation from official behavior**: Official OpenCode currently keeps runtime permission-mode controls outside the composer and does not inherit permissive behavior across subagents/subsessions. CodeWalk intentionally extends auto-approval to the visible thread, including mirrored descendant/subsession permission requests surfaced in the root session, and prefers `always` when available to reduce repeated prompts. The Android background worker continuity path further extends this to background-collected permission requests when the app is resumed.
+**Deviation from official behavior**: Official OpenCode currently keeps runtime permission-mode controls outside the composer and does not inherit permissive behavior across subagents/subsessions. CodeWalk intentionally extends auto-approval to the visible thread, including mirrored descendant/subsession permission requests surfaced in the root session, and always replies `always` to create durable session-scoped grants. The Android background worker continuity path further extends this to background-collected permission requests when the app is resumed.
 
 **Rationale**:
 - Reduce repeated approval friction during active coding sessions.
 - Keep the user in the root conversation while descendant permission prompts are mirrored there.
-- Prefer `always` for durable permission grants when the request supports it; fall back to `Allow Once` for single-shot grants.
+- Prefer `always` for durable permission grants unconditionally; every auto-approved permission creates a session-scoped grant via `remember: true`.
 - Question prompts intentionally remain manual to preserve user control over non-permission decisions.
 - Android background worker continuity: when the app returns from background, pending permissions collected during background status probes can be auto-approved without requiring the user to manually revisit each session, while still respecting the same `always`/`once` preference and cooldown logic.
 - Background auto-approve uses the same drain coordinator semantics as foreground, ensuring consistent behavior across both paths.
@@ -1065,11 +1065,11 @@ Related: ADR-003, ADR-018, ADR-019, ADR-022.
 - Product rollback: revert the composer toggle and drain coordinator commits; the background context key (`codewalk.android.background.permission_auto_approve.v1`) is removed from SharedPreferences on clear.
 - Safe fallback: existing inline permission cards remain available as the manual approval path in both foreground and background flows.
 
-**`remember: true` with `always` permission replies**: When CodeWalk auto-approves a permission request using the `always` response type, it sends `remember: true` in the permission reply body per the documented OpenCode permission reply contract. This ensures the server persists the grant so that future identical permission requests from the same session hierarchy are automatically approved server-side, reducing repeated auto-approve round-trips. When the request exposes only `once` semantics, `remember` is omitted (or `false`), keeping the single-shot grant behavior.
+**`remember: true` with `always` permission replies**: When CodeWalk auto-approves a permission request, it always sends `always` with `remember: true` in the permission reply body per the documented OpenCode permission reply contract. This ensures the server persists the grant so that future identical permission requests from the same session hierarchy are automatically approved server-side, reducing repeated auto-approve round-trips. `'always'` grants are session-scoped and do not survive OpenCode process restarts — this is the safety guarantee.
 
 **Regression coverage**:
 - Widget coverage verifies default-on behavior, persisted opt-out, mirrored subsession auto-approval, and non-regression for question prompts.
-- The drain coordinator uses `always` when available, otherwise `Allow Once`, and cools down requests that throw during auto-approval.
+- The drain coordinator always uses `always` with `remember: true`, and cools down requests that throw during auto-approval.
 - Background worker tests verify that auto-approve is scoped to primed session IDs, respects 404 as success (already resolved), and correctly clears context on lifecycle changes.
 
 **Code locations**:

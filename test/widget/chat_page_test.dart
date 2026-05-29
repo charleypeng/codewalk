@@ -6130,8 +6130,8 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(repository.lastPermissionRequestId, 'perm_auto_sub_1');
-      expect(repository.lastPermissionReply, 'once');
+expect(repository.lastPermissionRequestId, 'perm_auto_sub_1');
+    expect(repository.lastPermissionReply, 'always');
       expect(
         find.byKey(
           const ValueKey<String>(
@@ -6396,8 +6396,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(repository.lastPermissionRequestId, 'perm_manual_1');
-      expect(repository.lastPermissionReply, 'once');
+expect(repository.lastPermissionRequestId, 'perm_manual_1');
+    expect(repository.lastPermissionReply, 'always');
       expect(
         find.byKey(
           const ValueKey<String>(
@@ -6756,8 +6756,8 @@ void main() {
 
       await tester.pump(const Duration(milliseconds: 1200));
 
-      expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
-      expect(repository.lastPermissionReply, 'once');
+expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
+    expect(repository.lastPermissionReply, 'always');
       expect(distanceToBottom(), closeTo(distanceBeforeToggle, 1));
       expect(find.text('older pending user marker'), findsNothing);
       expect(repository.getMessagesCallCount, messageCallsBeforeToggle);

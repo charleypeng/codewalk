@@ -278,7 +278,7 @@
   "settingsBehaviorOpenCodeSnapshotsDescription": "Keep upstream git-backed snapshots enabled for undo/redo and recovery history.",
   "settingsBehaviorPermissionDeferred": "Advanced permission rule editing stays out of Settings for now and is deferred to later parity work.",
   "settingsBehaviorPermissionProvenance": "Permission handling provenance",
-  "settingsBehaviorPermissionProvenanceDescription": "Official OpenCode permission policy is configured in `opencode.json` with allow/ask/deny rules per tool. CodeWalk keeps the official permission-request cards and adds one approved ADR-023 exception: the composer auto-approve toggle replies with `Always` when the request supports remembered approval, otherwise `Allow Once`, and keeps the same thread-scoped continuity path active in the Android background worker.",
+  "settingsBehaviorPermissionProvenanceDescription": "Official OpenCode permission policy is configured in `opencode.json` with allow/ask/deny rules per tool. CodeWalk keeps the official permission-request cards and adds one approved ADR-023 exception: the composer auto-approve toggle replies with `Always` and `remember: true` unconditionally to create durable session-scoped grants, and keeps the same thread-scoped continuity path active in the Android background worker.",
   "settingsBehaviorRefreshDefaults": "Refresh defaults",
   "settingsBehaviorSaveUsername": "Save username",
   "settingsBehaviorSearchAutoupdate": "Search auto-update mode",

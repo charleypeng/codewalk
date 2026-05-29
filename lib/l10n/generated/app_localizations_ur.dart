@@ -931,7 +931,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get settingsBehaviorPermissionProvenanceDescription =>
-      'Official OpenCode permission policy is configured in `opencode.json` with allow/ask/deny rules per tool. CodeWalk keeps the official permission-request cards and adds one approved ADR-023 exception: the composer auto-approve toggle replies with `Always` when the request supports remembered approval, otherwise `Allow Once`, and keeps the same thread-scoped continuity path active in the Android background worker.';
+      'Official OpenCode permission policy is configured in `opencode.json` with allow/ask/deny rules per tool. CodeWalk keeps the official permission-request cards and adds one approved ADR-023 exception: the composer auto-approve toggle replies with `Always` and `remember: true` unconditionally to create durable session-scoped grants, and keeps the same thread-scoped continuity path active in the Android background worker.';
 
   @override
   String get settingsBehaviorRefreshDefaults => 'Refresh defaults';

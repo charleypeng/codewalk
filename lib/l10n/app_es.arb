@@ -273,7 +273,7 @@
   "settingsBehaviorOpenCodeSnapshotsDescription": "Mantener instantáneas git habilitadas para historial de deshacer/rehacer y recuperación.",
   "settingsBehaviorPermissionDeferred": "La edición avanzada de reglas de permisos queda fuera de Configuración por ahora.",
   "settingsBehaviorPermissionProvenance": "Procedencia del manejo de permisos",
-  "settingsBehaviorPermissionProvenanceDescription": "La política oficial de permisos de OpenCode se configura en `opencode.json`. CodeWalk mantiene las tarjetas oficiales y agrega una excepción ADR-023 aprobada.",
+  "settingsBehaviorPermissionProvenanceDescription": "La política oficial de permisos de OpenCode se configura en `opencode.json` con reglas allow/ask/deny por herramienta. CodeWalk mantiene las tarjetas oficiales de solicitud de permiso y agrega una excepción ADR-023 aprobada: el toggle de auto-aprobación del composer responde con `Always` y `remember: true` incondicionalmente para crear concesiones duraderas con alcance de sesión.",
   "settingsBehaviorRefreshDefaults": "Actualizar valores",
   "settingsBehaviorSaveUsername": "Guardar nombre de usuario",
   "settingsBehaviorSearchAutoupdate": "Buscar modo de actualización",

@@ -940,7 +940,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get settingsBehaviorPermissionProvenanceDescription =>
-      'A política oficial de permissão do OpenCode é configurada no `opencode.json` com regras allow/ask/deny por ferramenta. O CodeWalk mantém os cards oficiais de solicitação de permissão e adiciona uma exceção ADR-023 aprovada: o toggle de auto-aprovação do composer responde com `Always` quando a solicitação suporta aprovação lembrada, caso contrário `Allow Once`. O mesmo caminho de continuidade com escopo de thread permanece ativo no worker Android em segundo plano.';
+      'A política oficial de permissão do OpenCode é configurada no `opencode.json` com regras allow/ask/deny por ferramenta. O CodeWalk mantém os cards oficiais de solicitação de permissão e adiciona uma exceção ADR-023 aprovada: o toggle de auto-aprovação do composer responde com `Always` e `remember: true` incondicionalmente para criar concessões duráveis com escopo de sessão. O mesmo caminho de continuidade com escopo de thread permanece ativo no worker Android em segundo plano.';
 
   @override
   String get settingsBehaviorRefreshDefaults => 'Atualizar padrões';

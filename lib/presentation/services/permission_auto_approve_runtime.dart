@@ -1,14 +1,12 @@
 import '../../domain/entities/chat_realtime.dart';
 
+/// Auto-approve always replies 'always' to create durable session-scoped
+/// grants via remember:true. 'always' grants do not survive OpenCode
+/// restarts — this is the safety guarantee.
 String permissionAutoApproveReplyForAlwaysPatterns(
   Iterable<String> alwaysPatterns,
 ) {
-  for (final pattern in alwaysPatterns) {
-    if (pattern.trim().isNotEmpty) {
-      return 'always';
-    }
-  }
-  return 'once';
+  return 'always';
 }
 
 String permissionAutoApproveReplyForRequest(ChatPermissionRequest request) {

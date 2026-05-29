@@ -273,7 +273,7 @@
   "settingsBehaviorOpenCodeSnapshotsDescription": "Manter snapshots git habilitados para histórico de desfazer/refazer e recuperação.",
   "settingsBehaviorPermissionDeferred": "A edição avançada de regras de permissão fica fora das Configurações por enquanto e é adiada para trabalho futuro de paridade.",
   "settingsBehaviorPermissionProvenance": "Procedência do tratamento de permissões",
-  "settingsBehaviorPermissionProvenanceDescription": "A política oficial de permissão do OpenCode é configurada no `opencode.json` com regras allow/ask/deny por ferramenta. O CodeWalk mantém os cards oficiais de solicitação de permissão e adiciona uma exceção ADR-023 aprovada: o toggle de auto-aprovação do composer responde com `Always` quando a solicitação suporta aprovação lembrada, caso contrário `Allow Once`. O mesmo caminho de continuidade com escopo de thread permanece ativo no worker Android em segundo plano.",
+  "settingsBehaviorPermissionProvenanceDescription": "A política oficial de permissão do OpenCode é configurada no `opencode.json` com regras allow/ask/deny por ferramenta. O CodeWalk mantém os cards oficiais de solicitação de permissão e adiciona uma exceção ADR-023 aprovada: o toggle de auto-aprovação do composer responde com `Always` e `remember: true` incondicionalmente para criar concessões duráveis com escopo de sessão. O mesmo caminho de continuidade com escopo de thread permanece ativo no worker Android em segundo plano.",
   "settingsBehaviorRefreshDefaults": "Atualizar padrões",
   "settingsBehaviorSaveUsername": "Salvar nome de usuário",
   "settingsBehaviorSearchAutoupdate": "Buscar modo de atualização",

@@ -95,8 +95,8 @@ const englishTemplate = <String, String>{
   'settingsBehaviorShareModeCaveat':
       'Use the chat-level share action to publish one session now. This setting only changes OpenCode\'s default sharing policy.',
   'settingsBehaviorPermissionProvenance': 'Permission handling provenance',
-  'settingsBehaviorPermissionProvenanceDescription':
-      'Official OpenCode permission policy is configured in `opencode.json` with allow/ask/deny rules per tool. CodeWalk keeps the official permission-request cards and adds one approved ADR-023 exception: the composer auto-approve toggle replies with `Always` when the request supports remembered approval, otherwise `Allow Once`, and keeps the same thread-scoped continuity path active in the Android background worker.',
+'settingsBehaviorPermissionProvenanceDescription':
+'Official OpenCode permission policy is configured in `opencode.json` with allow/ask/deny rules per tool. CodeWalk keeps the official permission-request cards and adds one approved ADR-023 exception: the composer auto-approve toggle replies with `Always` and `remember: true` unconditionally to create durable session-scoped grants, and keeps the same thread-scoped continuity path active in the Android background worker.',
   'settingsBehaviorPermissionDeferred':
       'Advanced permission rule editing stays out of Settings for now and is deferred to later parity work.',
   'settingsBehaviorCellularDataSaver': 'Cellular data saver',
@@ -673,8 +673,8 @@ const translations = <String, Map<String, String>>{
     'settingsBehaviorShareModeCaveat':
         'Use a ação de compartilhar no chat para publicar uma sessão agora. Esta configuração apenas altera a política de compartilhamento padrão do OpenCode.',
     'settingsBehaviorPermissionProvenance': 'Procedência do tratamento de permissões',
-    'settingsBehaviorPermissionProvenanceDescription':
-        'A política oficial de permissão do OpenCode é configurada no `opencode.json` com regras allow/ask/deny por ferramenta. O CodeWalk mantém os cards oficiais de solicitação de permissão e adiciona uma exceção ADR-023 aprovada: o toggle de auto-aprovação do composer responde com `Always` quando a solicitação suporta aprovação lembrada, caso contrário `Allow Once`. O mesmo caminho de continuidade com escopo de thread permanece ativo no worker Android em segundo plano.',
+'settingsBehaviorPermissionProvenanceDescription':
+'A política oficial de permissão do OpenCode é configurada no `opencode.json` com regras allow/ask/deny por ferramenta. O CodeWalk mantém os cards oficiais de solicitação de permissão e adiciona uma exceção ADR-023 aprovada: o toggle de auto-aprovação do composer responde com `Always` e `remember: true` incondicionalmente para criar concessões duráveis com escopo de sessão. O mesmo caminho de continuidade com escopo de thread permanece ativo no worker Android em segundo plano.',
     'settingsBehaviorPermissionDeferred':
         'A edição avançada de regras de permissão fica fora das Configurações por enquanto e é adiada para trabalho futuro de paridade.',
     'settingsBehaviorCellularDataSaver': 'Economia de dados móveis',
@@ -1224,7 +1224,7 @@ const translations = <String, Map<String, String>>{
     'settingsBehaviorSearchShareMode': 'Buscar modo de compartir',
     'settingsBehaviorShareModeCaveat': 'Use la acción de compartir en el chat para publicar una sesión ahora. Esta configuración solo cambia la política de compartir predeterminada de OpenCode.',
     'settingsBehaviorPermissionProvenance': 'Procedencia del manejo de permisos',
-    'settingsBehaviorPermissionProvenanceDescription': 'La política oficial de permisos de OpenCode se configura en `opencode.json`. CodeWalk mantiene las tarjetas oficiales y agrega una excepción ADR-023 aprobada.',
+    'settingsBehaviorPermissionProvenanceDescription': 'La política oficial de permisos de OpenCode se configura en `opencode.json` con reglas allow/ask/deny por herramienta. CodeWalk mantiene las tarjetas oficiales de solicitud de permiso y agrega una excepción ADR-023 aprobada: el toggle de auto-aprobación del composer responde con `Always` y `remember: true` incondicionalmente para crear concesiones duraderas con alcance de sesión.',
     'settingsBehaviorPermissionDeferred': 'La edición avanzada de reglas de permisos queda fuera de Configuración por ahora.',
     'settingsBehaviorCellularDataSaver': 'Ahorro de datos móviles',
     'settingsBehaviorDataSaverDescription': 'Reduce el uso automático de datos móviles deteniendo descargas en segundo plano.',
