@@ -1037,6 +1037,25 @@ Related: ADR-003, ADR-018, ADR-019, ADR-022.
 
 **See also**: BEHAVIOR.md § "Optimistic user message ID uses local prefix — never server format".
 
+#### Pitfall P-002: Final assistant message flicker after session.idle (regression `f8d6c3c6c`, fixed 2026-05-29)
+
+**Summary**: After `session.idle` fires, the final assistant message appears complete, then reverts to an incomplete/"still receiving" appearance, then comes back — in a visible loop. The regression was introduced by commit `f8d6c3c6c` which unconditionally nulled `_activeMessageStreamSessionId` on `session.idle` and immediately marked incomplete assistant messages as completed, without guarding against late incomplete events from the still-draining send stream.
+
+**Status**: Fixed by monotonic completion guard in `_updateOrAddMessage` and debounced timer cleanup on `session.idle`.
+
+**Symptom**: The final assistant message flickers between complete and incomplete appearance in a loop after `session.idle`. The user sees the response finish, then briefly revert to "still receiving", then complete again, repeatedly.
+
+**Root cause**: `_updateOrAddMessage` performed a blind `_messages[index] = message` replacement. When `session.idle` stamped `completedTime` on the assistant message, late incomplete events from the draining send stream or stale fallback fetches could overwrite the completed message with an incomplete version, causing the visible flicker loop.
+
+**Invariant — do not violate**: Once an `AssistantMessage` has `completedTime != null` (marked completed by `session.idle` or authoritative `message.updated`), no incomplete version of the same message may overwrite it. The guard lifts when the incoming message is also completed, allowing server-authoritative updates.
+
+**Code locations**:
+- `lib/presentation/providers/chat_provider/chat_provider_message_state_ops.dart` → `_updateOrAddMessage()` monotonic completion guard
+- `lib/presentation/providers/chat_provider/chat_provider_event_reducer_ops.dart` → `session.idle` handler debounced timer cleanup
+- `test/unit/providers/chat_provider_realtime_test.dart` → regression tests
+
+**See also**: BEHAVIOR.md § "Post-completion reading remains stable", ADR-028 (scroll ownership).
+
 ### Exception EXC-001: Composer Permission Auto-Approve Toggle
 
 **Status**: Approved ADR-023 exception.
