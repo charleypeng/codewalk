@@ -326,10 +326,29 @@ extension _ChatProviderMessageStateOps on ChatProvider {
       _removeDuplicateOptimisticLocalUserEcho(message);
     }
 
-    final index = _messages.indexWhere((m) => m.id == message.id);
-    if (index != -1) {
-      // Update existing message
-      _messages[index] = message;
+  final index = _messages.indexWhere((m) => m.id == message.id);
+  if (index != -1) {
+    // Monotonic completion guard (ADR-023): once an AssistantMessage has
+    // been marked completed (by session.idle →
+    // _markIncompleteAssistantMessagesAsCompleted, or by authoritative
+    // message.updated with time.completed), never allow a late incomplete
+    // event from the draining send stream or a stale fallback fetch to
+    // regress it. The guard lifts when the incoming message is also
+    // completed — allowing server-authoritative completedTime to replace
+    // the locally-synthesized one.
+    final existing = _messages[index];
+    if (existing is AssistantMessage &&
+        existing.isCompleted &&
+        message is AssistantMessage &&
+        !message.isCompleted) {
+      AppLogger.debug(
+        'Skipping incomplete overwrite of completed assistant message: '
+        '${message.id} (existing completedTime=${existing.completedTime})',
+      );
+      return;
+    }
+    // Update existing message
+    _messages[index] = message;
       _messagesVersion++;
       if (message is UserMessage) {
         _pendingLocalUserMessageIds.remove(message.id);
