@@ -1050,7 +1050,7 @@ Related: ADR-003, ADR-018, ADR-019, ADR-022.
 - Keep the user in the root conversation while descendant permission prompts are mirrored there.
 - Prefer `always` for durable permission grants unconditionally; every auto-approved permission creates a session-scoped grant via `remember: true`.
 - Question prompts intentionally remain manual to preserve user control over non-permission decisions.
-- Android background worker continuity: when the app returns from background, pending permissions collected during background status probes can be auto-approved without requiring the user to manually revisit each session, while still respecting the same `always`/`once` preference and cooldown logic.
+- Android background worker continuity: when the app returns from background, pending permissions collected during background status probes can be auto-approved without requiring the user to manually revisit each session, always using `always` with `remember: true` and the same cooldown logic.
 - Background auto-approve uses the same drain coordinator semantics as foreground, ensuring consistent behavior across both paths.
 
 **Risk analysis**:
