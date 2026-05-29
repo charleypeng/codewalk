@@ -744,6 +744,903 @@ void main() {
     });
 
     test(
+      'generates title after each user/assistant turn until 3+3 messages',
+      () async {
+        localDataSource.serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'srv_test',
+            'url': 'http://127.0.0.1:4096',
+            'createdAt': 1,
+            'updatedAt': 1,
+            'aiGeneratedTitlesEnabled': true,
+          },
+        ]);
+        final titleGenerator = _FakeChatTitleGenerator();
+        final providerWithAutoTitle = ChatProvider(
+          sendChatMessage: SendChatMessage(chatRepository),
+          abortChatSession: AbortChatSession(chatRepository),
+          getChatSessions: GetChatSessions(chatRepository),
+          createChatSession: CreateChatSession(chatRepository),
+          getChatMessages: GetChatMessages(chatRepository),
+          getChatMessage: GetChatMessage(chatRepository),
+          getAgents: GetAgents(appRepository),
+          getProviders: GetProviders(appRepository),
+          deleteChatSession: DeleteChatSession(chatRepository),
+          updateChatSession: UpdateChatSession(chatRepository),
+          shareChatSession: ShareChatSession(chatRepository),
+          unshareChatSession: UnshareChatSession(chatRepository),
+          forkChatSession: ForkChatSession(chatRepository),
+          getSessionStatus: GetSessionStatus(chatRepository),
+          getSessionChildren: GetSessionChildren(chatRepository),
+          getSessionTodo: GetSessionTodo(chatRepository),
+          getSessionDiff: GetSessionDiff(chatRepository),
+          watchChatEvents: WatchChatEvents(chatRepository),
+          watchGlobalChatEvents: WatchGlobalChatEvents(chatRepository),
+          listPendingPermissions: ListPendingPermissions(chatRepository),
+          replyPermission: ReplyPermission(chatRepository),
+          listPendingQuestions: ListPendingQuestions(chatRepository),
+          replyQuestion: ReplyQuestion(chatRepository),
+          rejectQuestion: RejectQuestion(chatRepository),
+          projectProvider: ProjectProvider(
+            projectRepository: FakeProjectRepository(),
+            localDataSource: localDataSource,
+          ),
+          localDataSource: localDataSource,
+          titleGenerator: titleGenerator,
+        );
+
+        var responseCounter = 0;
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
+          responseCounter += 1;
+          yield Right(
+            AssistantMessage(
+              id: 'msg_assistant_$responseCounter',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(2000 + responseCounter),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(
+                2100 + responseCounter,
+              ),
+              parts: <MessagePart>[
+                TextPart(
+                  id: 'prt_assistant_$responseCounter',
+                  messageId: 'msg_assistant_$responseCounter',
+                  sessionId: 'ses_1',
+                  text: 'assistant reply $responseCounter',
+                ),
+              ],
+            ),
+          );
+        };
+
+        await providerWithAutoTitle.projectProvider.initializeProject();
+        await providerWithAutoTitle.loadSessions();
+        await providerWithAutoTitle.selectSession(
+          providerWithAutoTitle.sessions.first,
+        );
+
+        await providerWithAutoTitle.sendMessage('user 1');
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+        await providerWithAutoTitle.sendMessage('user 2');
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+        await providerWithAutoTitle.sendMessage('user 3');
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        expect(titleGenerator.callCount, 6);
+        final lastBatch = titleGenerator.payloads.last;
+        expect(lastBatch.length, 6);
+        expect(lastBatch.where((item) => item.role == 'user').length, 3);
+        expect(lastBatch.where((item) => item.role == 'assistant').length, 3);
+
+        await providerWithAutoTitle.sendMessage('user 4');
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+        expect(titleGenerator.callCount, 6);
+      },
+    );
+
+    test(
+      'does not apply stale auto-title result after switching sessions',
+      () async {
+        localDataSource.serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'srv_test',
+            'url': 'http://127.0.0.1:4096',
+            'createdAt': 1,
+            'updatedAt': 1,
+            'aiGeneratedTitlesEnabled': true,
+          },
+        ]);
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_2',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1100),
+            title: 'Session 2',
+          ),
+        );
+
+        final completer = Completer<String?>();
+        final titleGenerator = _BlockingChatTitleGenerator(completer);
+        final providerWithAutoTitle = ChatProvider(
+          sendChatMessage: SendChatMessage(chatRepository),
+          abortChatSession: AbortChatSession(chatRepository),
+          getChatSessions: GetChatSessions(chatRepository),
+          createChatSession: CreateChatSession(chatRepository),
+          getChatMessages: GetChatMessages(chatRepository),
+          getChatMessage: GetChatMessage(chatRepository),
+          getAgents: GetAgents(appRepository),
+          getProviders: GetProviders(appRepository),
+          deleteChatSession: DeleteChatSession(chatRepository),
+          updateChatSession: UpdateChatSession(chatRepository),
+          shareChatSession: ShareChatSession(chatRepository),
+          unshareChatSession: UnshareChatSession(chatRepository),
+          forkChatSession: ForkChatSession(chatRepository),
+          getSessionStatus: GetSessionStatus(chatRepository),
+          getSessionChildren: GetSessionChildren(chatRepository),
+          getSessionTodo: GetSessionTodo(chatRepository),
+          getSessionDiff: GetSessionDiff(chatRepository),
+          watchChatEvents: WatchChatEvents(chatRepository),
+          watchGlobalChatEvents: WatchGlobalChatEvents(chatRepository),
+          listPendingPermissions: ListPendingPermissions(chatRepository),
+          replyPermission: ReplyPermission(chatRepository),
+          listPendingQuestions: ListPendingQuestions(chatRepository),
+          replyQuestion: ReplyQuestion(chatRepository),
+          rejectQuestion: RejectQuestion(chatRepository),
+          projectProvider: ProjectProvider(
+            projectRepository: FakeProjectRepository(),
+            localDataSource: localDataSource,
+          ),
+          localDataSource: localDataSource,
+          titleGenerator: titleGenerator,
+        );
+
+        final updatedSessionIds = <String>[];
+        chatRepository.updateSessionHandler = (_, sessionId, input, _) async {
+          updatedSessionIds.add(sessionId);
+          final index = chatRepository.sessions.indexWhere(
+            (item) => item.id == sessionId,
+          );
+          final updated = chatRepository.sessions[index].copyWith(
+            title: input.title,
+          );
+          chatRepository.sessions[index] = updated;
+          return Right(updated);
+        };
+
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
+          yield Right(
+            AssistantMessage(
+              id: 'msg_assistant_stale',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(2000),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(2100),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'prt_assistant_stale',
+                  messageId: 'msg_assistant_stale',
+                  sessionId: 'ses_1',
+                  text: 'reply',
+                ),
+              ],
+            ),
+          );
+        };
+
+        await providerWithAutoTitle.projectProvider.initializeProject();
+        await providerWithAutoTitle.loadSessions();
+        await providerWithAutoTitle.selectSession(
+          providerWithAutoTitle.sessions
+              .where((item) => item.id == 'ses_1')
+              .first,
+        );
+
+        await providerWithAutoTitle.sendMessage('hello');
+        await providerWithAutoTitle.selectSession(
+          providerWithAutoTitle.sessions
+              .where((item) => item.id == 'ses_2')
+              .first,
+        );
+
+        completer.complete('Stale title');
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(titleGenerator.callCount, 1);
+        expect(updatedSessionIds, isEmpty);
+        expect(
+          chatRepository.sessions
+              .where((item) => item.id == 'ses_1')
+              .first
+              .title,
+          'Session 1',
+        );
+      },
+    );
+
+    test(
+      'does not regenerate title on reopen when transcript is already 3+3',
+      () async {
+        localDataSource.serverProfilesJson = jsonEncode(<Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'srv_test',
+            'url': 'http://127.0.0.1:4096',
+            'createdAt': 1,
+            'updatedAt': 1,
+            'aiGeneratedTitlesEnabled': true,
+          },
+        ]);
+
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          UserMessage(
+            id: 'msg_user_1',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1000),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_user_1',
+                messageId: 'msg_user_1',
+                sessionId: 'ses_1',
+                text: 'user 1',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_assistant_1',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1100),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1150),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_assistant_1',
+                messageId: 'msg_assistant_1',
+                sessionId: 'ses_1',
+                text: 'assistant 1',
+              ),
+            ],
+          ),
+          UserMessage(
+            id: 'msg_user_2',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1200),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_user_2',
+                messageId: 'msg_user_2',
+                sessionId: 'ses_1',
+                text: 'user 2',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_assistant_2',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1300),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1350),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_assistant_2',
+                messageId: 'msg_assistant_2',
+                sessionId: 'ses_1',
+                text: 'assistant 2',
+              ),
+            ],
+          ),
+          UserMessage(
+            id: 'msg_user_3',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1400),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_user_3',
+                messageId: 'msg_user_3',
+                sessionId: 'ses_1',
+                text: 'user 3',
+              ),
+            ],
+          ),
+          AssistantMessage(
+            id: 'msg_assistant_3',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1500),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1550),
+            parts: const <MessagePart>[
+              TextPart(
+                id: 'prt_assistant_3',
+                messageId: 'msg_assistant_3',
+                sessionId: 'ses_1',
+                text: 'assistant 3',
+              ),
+            ],
+          ),
+        ];
+
+        final titleGenerator = _FakeChatTitleGenerator();
+        final providerWithAutoTitle = ChatProvider(
+          sendChatMessage: SendChatMessage(chatRepository),
+          abortChatSession: AbortChatSession(chatRepository),
+          getChatSessions: GetChatSessions(chatRepository),
+          createChatSession: CreateChatSession(chatRepository),
+          getChatMessages: GetChatMessages(chatRepository),
+          getChatMessage: GetChatMessage(chatRepository),
+          getAgents: GetAgents(appRepository),
+          getProviders: GetProviders(appRepository),
+          deleteChatSession: DeleteChatSession(chatRepository),
+          updateChatSession: UpdateChatSession(chatRepository),
+          shareChatSession: ShareChatSession(chatRepository),
+          unshareChatSession: UnshareChatSession(chatRepository),
+          forkChatSession: ForkChatSession(chatRepository),
+          getSessionStatus: GetSessionStatus(chatRepository),
+          getSessionChildren: GetSessionChildren(chatRepository),
+          getSessionTodo: GetSessionTodo(chatRepository),
+          getSessionDiff: GetSessionDiff(chatRepository),
+          watchChatEvents: WatchChatEvents(chatRepository),
+          watchGlobalChatEvents: WatchGlobalChatEvents(chatRepository),
+          listPendingPermissions: ListPendingPermissions(chatRepository),
+          replyPermission: ReplyPermission(chatRepository),
+          listPendingQuestions: ListPendingQuestions(chatRepository),
+          replyQuestion: ReplyQuestion(chatRepository),
+          rejectQuestion: RejectQuestion(chatRepository),
+          projectProvider: ProjectProvider(
+            projectRepository: FakeProjectRepository(),
+            localDataSource: localDataSource,
+          ),
+          localDataSource: localDataSource,
+          titleGenerator: titleGenerator,
+        );
+
+        await providerWithAutoTitle.projectProvider.initializeProject();
+        await providerWithAutoTitle.loadSessions();
+        await providerWithAutoTitle.selectSession(
+          providerWithAutoTitle.sessions.first,
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(titleGenerator.callCount, 0);
+      },
+    );
+
+    test(
+      'session.error with aborted message after stop does not replace chat with global error',
+      () async {
+        final streamController =
+            StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          await streamController.close();
+        });
+        chatRepository.sendMessageHandler = (_, _, _, _) =>
+            streamController.stream;
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('stop me');
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        final stopped = await provider.abortActiveResponse();
+        expect(stopped, isTrue);
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.error',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_1',
+              'error': <String, dynamic>{
+                'message': 'The operation was aborted.',
+              },
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(provider.state, ChatState.loaded);
+        expect(provider.errorMessage, isNull);
+      },
+    );
+
+    test(
+      'session.error with retry marker after stop does not replace chat with global error',
+      () async {
+        final streamController =
+            StreamController<Either<Failure, ChatMessage>>();
+        addTearDown(() async {
+          await streamController.close();
+        });
+        chatRepository.sendMessageHandler = (_, _, _, _) =>
+            streamController.stream;
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+
+        await provider.sendMessage('stop me');
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        final stopped = await provider.abortActiveResponse();
+        expect(stopped, isTrue);
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.error',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_1',
+              'error': <String, dynamic>{'message': 'retry'},
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(provider.state, ChatState.loaded);
+        expect(provider.errorMessage, isNull);
+      },
+    );
+
+    test('session.error remote abort appends inline message', () async {
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+
+      chatRepository.emitEvent(
+        const ChatEvent(
+          type: 'session.error',
+          properties: <String, dynamic>{
+            'sessionID': 'ses_1',
+            'error': <String, dynamic>{
+              'message': 'The operation was aborted by user',
+            },
+          },
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+
+      expect(provider.state, ChatState.loaded);
+      expect(provider.errorMessage, isNull);
+      expect(provider.consumePendingUiNotice(), isNull);
+
+      final inlineAbort = provider.messages.last as AssistantMessage;
+      expect(inlineAbort.error, isNotNull);
+      expect(inlineAbort.error!.name, 'MessageAborted');
+      expect(inlineAbort.error!.message, 'What you want to do different?');
+    });
+
+    test('session.error string payload is handled as abort error', () async {
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+
+      chatRepository.emitEvent(
+        const ChatEvent(
+          type: 'session.error',
+          properties: <String, dynamic>{
+            'sessionID': 'ses_1',
+            'error': 'Request was aborted',
+          },
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+
+      expect(provider.state, ChatState.loaded);
+      expect(provider.errorMessage, isNull);
+    });
+
+    test('server.heartbeat is ignored without UI churn', () async {
+      await provider.projectProvider.initializeProject();
+      await provider.loadSessions();
+      await provider.selectSession(provider.sessions.first);
+      await provider.initializeProviders();
+
+      final initialState = provider.state;
+      final initialMessagesLength = provider.messages.length;
+      final initialSessionStatus = provider.currentSessionStatus;
+
+      chatRepository.emitEvent(
+        const ChatEvent(
+          type: 'server.heartbeat',
+          properties: <String, dynamic>{'timestamp': 1739079900000},
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+
+      expect(provider.state, initialState);
+      expect(provider.messages, hasLength(initialMessagesLength));
+      expect(provider.currentSessionStatus, initialSessionStatus);
+      expect(provider.consumePendingUiNotice(), isNull);
+    });
+
+    test(
+      'session.error from non-current session only settles background status',
+      () async {
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_2',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1500),
+            title: 'Session 2',
+          ),
+        );
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.where((item) => item.id == 'ses_1').first,
+        );
+        await provider.initializeProviders();
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.error',
+            properties: <String, dynamic>{
+              'sessionID': 'ses_2',
+              'error': <String, dynamic>{'message': 'background failure'},
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(provider.currentSession?.id, 'ses_1');
+        expect(provider.errorMessage, isNull);
+        expect(
+          provider.sessionStatusById['ses_2']?.type,
+          SessionStatusType.idle,
+        );
+        final attention = provider.sessionAttentionFor('ses_2');
+        expect(attention.hasError, isTrue);
+        expect(provider.hasOutOfFocusAttention, isTrue);
+        expect(provider.outOfFocusAttentionCount, 1);
+        expect(provider.outOfFocusAttentionKind, SessionAttentionKind.error);
+      },
+    );
+
+    test(
+      'session.idle from non-current session updates only that status',
+      () async {
+        chatRepository.sessions.add(
+          ChatSession(
+            id: 'ses_2',
+            workspaceId: 'default',
+            time: DateTime.fromMillisecondsSinceEpoch(1500),
+            title: 'Session 2',
+          ),
+        );
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.where((item) => item.id == 'ses_1').first,
+        );
+        await provider.initializeProviders();
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.idle',
+            properties: <String, dynamic>{'sessionID': 'ses_2'},
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(provider.currentSession?.id, 'ses_1');
+        expect(
+          provider.sessionStatusById['ses_2']?.type,
+          SessionStatusType.idle,
+        );
+      },
+    );
+
+    test(
+      'session.idle no longer triggers fallback refresh for current session completion',
+      () async {
+        chatRepository.messagesBySession['ses_1'] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_tool_placeholder',
+            sessionId: 'ses_1',
+            time: DateTime.fromMillisecondsSinceEpoch(1100),
+            parts: <MessagePart>[
+              ToolPart(
+                id: 'part_tool_placeholder',
+                messageId: 'msg_tool_placeholder',
+                sessionId: 'ses_1',
+                callId: 'call_tool_placeholder',
+                tool: 'bash',
+                state: ToolStateRunning(
+                  input: const <String, dynamic>{
+                    'description': 'Running command',
+                    'command': 'ls',
+                  },
+                  time: DateTime.fromMillisecondsSinceEpoch(1100),
+                ),
+              ),
+            ],
+          ),
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(
+          provider.sessions.where((item) => item.id == 'ses_1').first,
+        );
+        await provider.initializeProviders();
+
+        final callsBeforeIdle = chatRepository.getMessagesCallCount;
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.idle',
+            properties: <String, dynamic>{'sessionID': 'ses_1'},
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+
+        final latestAssistant = provider.messages
+            .whereType<AssistantMessage>()
+            .last;
+        expect(latestAssistant.isCompleted, isTrue);
+        expect(chatRepository.getMessagesCallCount, equals(callsBeforeIdle));
+      },
+    );
+
+    test(
+      'message.part.updated does not schedule scroll callback during busy passive updates',
+      () async {
+        const sessionId = 'ses_1';
+        chatRepository.messagesBySession[sessionId] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_busy_tool_surface',
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(1100),
+            completedTime: DateTime.fromMillisecondsSinceEpoch(1110),
+            parts: <MessagePart>[
+              ToolPart(
+                id: 'part_busy_tool_surface',
+                messageId: 'msg_busy_tool_surface',
+                sessionId: sessionId,
+                callId: 'call_busy_tool_surface',
+                tool: 'bash',
+                state: ToolStateCompleted(
+                  input: const <String, dynamic>{'command': 'pwd'},
+                  output: '/tmp',
+                  time: ToolTime(
+                    start: DateTime.fromMillisecondsSinceEpoch(1100),
+                    end: DateTime.fromMillisecondsSinceEpoch(1105),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.initializeProviders();
+
+        var scrollToBottomRequests = 0;
+        provider.setScrollToBottomCallback(({required reason}) {
+          scrollToBottomRequests += 1;
+        });
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.status',
+            properties: <String, dynamic>{
+              'sessionID': sessionId,
+              'status': <String, dynamic>{'type': 'busy'},
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        final part = MessagePartModel.fromDomain(
+          const ReasoningPart(
+            id: 'part_busy_reasoning',
+            messageId: 'msg_busy_tool_surface',
+            sessionId: sessionId,
+            text: 'Inspecting tool progress',
+          ),
+        );
+        chatRepository.emitEvent(
+          ChatEvent(
+            type: 'message.part.updated',
+            properties: <String, dynamic>{'part': part.toJson()},
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(scrollToBottomRequests, 0);
+      },
+    );
+
+    test(
+      'message.part.updated still emits passive signal during active turn when status is stale idle',
+      () async {
+        const sessionId = 'ses_1';
+        chatRepository.messagesBySession[sessionId] = <ChatMessage>[
+          AssistantMessage(
+            id: 'msg_idle_tool_surface',
+            sessionId: sessionId,
+            time: DateTime.fromMillisecondsSinceEpoch(1100),
+            parts: <MessagePart>[
+              ToolPart(
+                id: 'part_idle_tool_surface',
+                messageId: 'msg_idle_tool_surface',
+                sessionId: sessionId,
+                callId: 'call_idle_tool_surface',
+                tool: 'bash',
+                state: ToolStateRunning(
+                  input: const <String, dynamic>{'command': 'pwd'},
+                  time: DateTime.fromMillisecondsSinceEpoch(1100),
+                ),
+              ),
+            ],
+          ),
+        ];
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.initializeProviders();
+
+        var scrollToBottomRequests = 0;
+        provider.setScrollToBottomCallback(({required reason}) {
+          scrollToBottomRequests += 1;
+        });
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.status',
+            properties: <String, dynamic>{
+              'sessionID': sessionId,
+              'status': <String, dynamic>{'type': 'idle'},
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        final part = MessagePartModel.fromDomain(
+          const ReasoningPart(
+            id: 'part_idle_reasoning',
+            messageId: 'msg_idle_tool_surface',
+            sessionId: sessionId,
+            text: 'Still progressing despite stale idle status',
+          ),
+        );
+        chatRepository.emitEvent(
+          ChatEvent(
+            type: 'message.part.updated',
+            properties: <String, dynamic>{'part': part.toJson()},
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 40));
+
+        expect(scrollToBottomRequests, 1);
+      },
+    );
+
+    test(
+      'session.idle does not bypass lifecycle cleanup rules during abort suppression',
+      () async {
+        provider = buildProvider(
+          abortSuppressionWindow: const Duration(seconds: 1),
+        );
+
+        chatRepository.sendMessageHandler = (_, _, _, _) async* {
+          yield Right(
+            AssistantMessage(
+              id: 'msg_abort_window_tool_only',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(2100),
+              parts: <MessagePart>[
+                ToolPart(
+                  id: 'part_abort_window_tool_only',
+                  messageId: 'msg_abort_window_tool_only',
+                  sessionId: 'ses_1',
+                  callId: 'call_abort_window_tool_only',
+                  tool: 'bash',
+                  state: ToolStateRunning(
+                    input: const <String, dynamic>{
+                      'description': 'Running command',
+                      'command': 'pwd',
+                    },
+                    time: DateTime.fromMillisecondsSinceEpoch(2100),
+                  ),
+                ),
+              ],
+            ),
+          );
+        };
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.initializeProviders();
+
+        await provider.sendMessage('trigger abort-suppression reconcile');
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        final callsBeforeIdle = chatRepository.getMessagesCallCount;
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.idle',
+            properties: <String, dynamic>{'sessionID': 'ses_1'},
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+
+        expect(chatRepository.getMessagesCallCount, equals(callsBeforeIdle));
+        final latestAssistant = provider.messages
+            .whereType<AssistantMessage>()
+            .last;
+        expect(latestAssistant.isCompleted, isTrue);
+      },
+    );
+
+    test(
+      'session.idle ends active composer state while send stream drains',
+      () async {
+        final sendController =
+            StreamController<Either<Failure, ChatMessage>>.broadcast();
+        chatRepository.sendMessageHandler = (_, _, _, _) =>
+            sendController.stream;
+
+        await provider.projectProvider.initializeProject();
+        await provider.loadSessions();
+        await provider.selectSession(provider.sessions.first);
+        await provider.initializeProviders();
+
+        await provider.sendMessage('trigger sending-state reconcile');
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        final callsBeforeIdle = chatRepository.getMessagesCallCount;
+
+        chatRepository.emitEvent(
+          const ChatEvent(
+            type: 'session.idle',
+            properties: <String, dynamic>{'sessionID': 'ses_1'},
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+
+        expect(chatRepository.getMessagesCallCount, equals(callsBeforeIdle));
+        expect(provider.currentSessionStatus?.type, SessionStatusType.idle);
+        expect(provider.state, ChatState.loaded);
+        expect(provider.isCurrentSessionActivelyResponding, isFalse);
+
+        sendController.add(
+          Right(
+            AssistantMessage(
+              id: 'msg_idle_reconcile_final',
+              sessionId: 'ses_1',
+              time: DateTime.fromMillisecondsSinceEpoch(3100),
+              completedTime: DateTime.fromMillisecondsSinceEpoch(3200),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_idle_reconcile_final',
+                  messageId: 'msg_idle_reconcile_final',
+                  sessionId: 'ses_1',
+                  text: 'final response resolved on stream',
+                ),
+              ],
+            ),
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+
+        await sendController.close();
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+
+        expect(chatRepository.getMessagesCallCount, equals(callsBeforeIdle));
+        expect(provider.state, ChatState.loaded);
+        final latestAssistant = provider.messages
+            .whereType<AssistantMessage>()
+            .last;
+        expect(
+          (latestAssistant.parts.single as TextPart).text,
+          'final response resolved on stream',
+        );
+      },
+    );
+
+    test(
       'monotonic completion guard: completed assistant message survives late incomplete stream event after session.idle',
       () async {
         final sendController =
