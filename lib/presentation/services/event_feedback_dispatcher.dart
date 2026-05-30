@@ -22,6 +22,16 @@ class EventFeedbackDispatcher {
   final SoundService _soundService;
   final Map<String, DateTime> _lastDispatchByCategory = <String, DateTime>{};
 
+  /// Dismiss all active notifications for [sessionId].
+  ///
+  /// Called reactively when a triggering event is resolved (e.g. the last
+  /// pending permission/question for a session is replied, or the user opens
+  /// a session that just completed). This prevents stale notifications from
+  /// lingering after the user has already handled the underlying request.
+  Future<void> dismissForSession(String sessionId) async {
+    await _notificationService.clearNotificationsForSession(sessionId);
+  }
+
   Future<void> handle(
     ChatEvent event, {
     String? sessionTitleHint,

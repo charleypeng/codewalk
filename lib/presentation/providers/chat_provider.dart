@@ -55,6 +55,7 @@ import '../../core/di/injection_container.dart' as di;
 import '../services/chat_title_generator.dart';
 import '../services/cellular_data_saver_service.dart';
 import '../services/event_feedback_dispatcher.dart';
+import '../services/android_background_alert_worker.dart';
 import '../services/read_aloud_service.dart';
 import '../utils/chat_abort_message.dart';
 import '../utils/chat_assistant_settlement.dart';

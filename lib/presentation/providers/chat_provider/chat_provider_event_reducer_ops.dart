@@ -396,9 +396,15 @@ extension _ChatProviderEventReducerOps on ChatProvider {
             _markIncompleteAssistantMessagesAsCompleted(sessionId: sessionId);
           }
           _sessionErrorAttentionIds.remove(sessionId);
-          if (isCurrentSession) {
-            _clearSessionAttentionForSession(sessionId);
-            _clearActiveSendDraft();
+        if (isCurrentSession) {
+        _clearSessionAttentionForSession(sessionId);
+        // Reactive dismiss: the user is already viewing this session, so
+        // any lingering notification (completion, error, permission) is
+        // stale and should be removed immediately.
+        unawaited(
+          eventFeedbackDispatcher?.dismissForSession(sessionId),
+        );
+        _clearActiveSendDraft();
             // OpenCode's session.idle is the terminal lifecycle signal for a
             // turn. End the active-send UI immediately even if CodeWalk's
             // fallback stream is still draining in the background; otherwise
@@ -716,6 +722,26 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           _pendingPermissionsBySession[sessionId] = filtered;
         }
         _threadPermissionsVersion++;
+        // Reactive dismiss: when no pending permissions AND no pending
+        // questions remain for this session, clear its notifications so
+        // stale permission/question alerts do not linger.
+        final hasRemainingPermissions =
+            _pendingPermissionsBySession[sessionId]?.isNotEmpty ?? false;
+        final hasRemainingQuestions =
+            _pendingQuestionsBySession[sessionId]?.isNotEmpty ?? false;
+        if (!hasRemainingPermissions && !hasRemainingQuestions) {
+          unawaited(
+            eventFeedbackDispatcher?.dismissForSession(sessionId),
+          );
+        }
+        // Sync background alert snapshot so the background worker does not
+        // re-notify about this already-handled permission request.
+        unawaited(
+          AndroidBackgroundAlertWorker.removeNotifiedRequestIds(
+            serverId: _activeServerId,
+            permissionRequestIds: [requestId],
+          ),
+        );
         _notifyListeners();
         break;
       case 'question.asked':
@@ -759,6 +785,26 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           _pendingQuestionsBySession[sessionId] = filtered;
         }
         _threadPermissionsVersion++;
+        // Reactive dismiss: when no pending permissions AND no pending
+        // questions remain for this session, clear its notifications so
+        // stale permission/question alerts do not linger.
+        final hasRemainingPermissions =
+            _pendingPermissionsBySession[sessionId]?.isNotEmpty ?? false;
+        final hasRemainingQuestions =
+            _pendingQuestionsBySession[sessionId]?.isNotEmpty ?? false;
+        if (!hasRemainingPermissions && !hasRemainingQuestions) {
+          unawaited(
+            eventFeedbackDispatcher?.dismissForSession(sessionId),
+          );
+        }
+        // Sync background alert snapshot so the background worker does not
+        // re-notify about this already-handled question request.
+        unawaited(
+          AndroidBackgroundAlertWorker.removeNotifiedRequestIds(
+            serverId: _activeServerId,
+            questionRequestIds: [requestId],
+          ),
+        );
         _notifyListeners();
         break;
       default:

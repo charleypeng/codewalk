@@ -48,6 +48,62 @@ class AndroidBackgroundAlertWorker {
     await syncRegistrationFromPersistedSettings();
   }
 
+  /// Remove replied request IDs from the persisted background alert snapshot
+  /// so the background worker does not re-notify about already-handled items.
+  ///
+  /// This is called from the foreground event reducer when a permission or
+  /// question is replied. [serverId] identifies the server profile whose
+  /// snapshot should be updated. [permissionRequestIds] and
+  /// [questionRequestIds] are the IDs to remove; either may be empty.
+  static Future<void> removeNotifiedRequestIds({
+    required String serverId,
+    List<String> permissionRequestIds = const [],
+    List<String> questionRequestIds = const [],
+  }) async {
+    if (!_isAndroidRuntime()) {
+      return;
+    }
+    if (permissionRequestIds.isEmpty && questionRequestIds.isEmpty) {
+      return;
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final snapshotKey = _backgroundAlertSnapshotStorageKey(serverId);
+    final existing = prefs.getString(snapshotKey);
+    if (existing == null || existing.trim().isEmpty) {
+      return;
+    }
+    try {
+      final decoded = jsonDecode(existing);
+      if (decoded is! Map<String, dynamic>) {
+        return;
+      }
+      final snapshot = BackgroundAlertSnapshot.fromJson(decoded);
+      final removePerm = permissionRequestIds.toSet();
+      final removeQues = questionRequestIds.toSet();
+      final updatedPerm = snapshot.notifiedPermissionRequestIds
+          .where((id) => !removePerm.contains(id))
+          .toList(growable: false);
+      final updatedQues = snapshot.notifiedQuestionRequestIds
+          .where((id) => !removeQues.contains(id))
+          .toList(growable: false);
+      final updated = BackgroundAlertSnapshot(
+        sessionStatusById: snapshot.sessionStatusById,
+        sessionUpdatedAtById: snapshot.sessionUpdatedAtById,
+        sessionTitleById: snapshot.sessionTitleById,
+        notifiedPermissionRequestIds: updatedPerm,
+        notifiedQuestionRequestIds: updatedQues,
+        lastPolledAtEpochMs: snapshot.lastPolledAtEpochMs,
+      );
+      await prefs.setString(snapshotKey, jsonEncode(updated.toJson()));
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'removeNotifiedRequestIds failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
   static Future<void> syncRegistrationFromPersistedSettings() async {
     if (!_isAndroidRuntime()) {
       return;

@@ -20,6 +20,7 @@ class _FakeNotificationService extends NotificationService {
   bool? lastPlaySound;
   SoundOption? lastSoundOption;
   String? lastSoundSource;
+  String? clearedSessionId;
 
   @override
   Future<bool> notify({
@@ -41,6 +42,11 @@ class _FakeNotificationService extends NotificationService {
     lastSoundOption = soundOption;
     lastSoundSource = soundSource;
     return true;
+  }
+
+  @override
+  Future<void> clearNotificationsForSession(String sessionId) async {
+    clearedSessionId = sessionId;
   }
 }
 
@@ -265,5 +271,24 @@ void main() {
       isAppInForeground: true,
     );
     expect(soundService.calls, 1);
+  });
+
+  test('dismissForSession clears notifications for the given session', () async {
+    final settingsProvider = SettingsProvider(
+      localDataSource: InMemoryAppLocalDataSource(),
+      dioClient: DioClient(),
+      soundService: _FakeSoundService(),
+    );
+    await settingsProvider.initialize();
+    final notificationService = _FakeNotificationService();
+    final dispatcher = EventFeedbackDispatcher(
+      settingsProvider: settingsProvider,
+      notificationService: notificationService,
+      soundService: _FakeSoundService(),
+    );
+
+    await dispatcher.dismissForSession('ses_clear');
+
+    expect(notificationService.clearedSessionId, 'ses_clear');
   });
 }
