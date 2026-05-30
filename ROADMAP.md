@@ -21,15 +21,19 @@ Commits: pre-existing implementation.
 - [x] 1.03 Update tests to reflect the new always-preferred behavior — Commits: pre-existing implementation
 - [x] 1.04 Verify auto-approve behavior in both foreground (composer toggle) and background (Android worker) paths — Commits: pre-existing implementation
 
-### Feature 2: Top menu and Composer bar respect chosen density
+### Feature 2: Top menu and Composer bar respect chosen density — ✅ Completed
 
 Description: Make the top menu bar and Composer bar respect the user's chosen density setting, especially regarding margin and padding.
 
-- [ ] 2.01 Audit top menu bar (AppBar) for hardcoded margins/padding that ignore density setting
-- [ ] 2.02 Audit Composer bar for hardcoded margins/padding that ignore density setting
-- [ ] 2.03 Update top menu bar layout to apply density-aware margin and padding
-- [ ] 2.04 Update Composer bar layout to apply density-aware margin and padding
-- [ ] 2.05 Verify both bars render correctly across all density levels (compact, comfortable, spacious)
+Implemented `AppDensitySpacing` static helper class with semantic spacing methods. Replaced hardcoded spacings in chrome and composer. Zero regression at `AppDensity.normal`.
+
+Commits: 7426c8a1, f29eb542
+
+- [x] 2.01 Audit top menu bar (AppBar) for hardcoded margins/padding that ignore density setting — Commit hash: 7426c8a1
+- [x] 2.02 Audit Composer bar for hardcoded margins/padding that ignore density setting — Commit hash: 7426c8a1
+- [x] 2.03 Update top menu bar layout to apply density-aware margin and padding — Related commits: 7426c8a1 f29eb542
+- [x] 2.04 Update Composer bar layout to apply density-aware margin and padding — Related commits: 7426c8a1 f29eb542
+- [x] 2.05 Verify both bars render correctly across all density levels (compact, comfortable, spacious) — Related commits: 7426c8a1 f29eb542
 
 ### Feature 3: Search conversations as a magnifying glass button
 

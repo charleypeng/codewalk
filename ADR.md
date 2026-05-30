@@ -37,6 +37,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-031: Historical Inline Revert via OpenCode Session Revert Endpoint
 - ADR-032: LaTeX Math Rendering with flutter_math_fork and Custom Markdown Delimiters
 - ADR-033: Cloudflare Access OAuth as Optional Desktop Reverse-Proxy Auth (ADR-023 Exception)
+- ADR-034: Density-Aware Spacing Tokens via `AppDensitySpacing` Static Helper
 
 ---
 
@@ -1786,3 +1787,60 @@ This ADR constitutes an explicit ADR-023 exception per section 3 ("Explicit Dive
 - Onboarding and settings pages — `oauthEnabled` toggle and configuration UI
 - Tests under `test/unit/auth` — OAuth service, token storage, credential, PKCE, DCR, callback validation
 - Tests under `test/unit/network` — Bearer interceptor scoping, health check OAuth challenge detection, Basic Auth non-regression
+
+---
+
+## ADR-034: Density-Aware Spacing Tokens via `AppDensitySpacing` Static Helper (2026-05-30)
+
+**Status**: Accepted
+
+**Related**: ADR-014 (Centralized MD3 Design Tokens for Shapes and Brand Colors), ADR-007 (Modular Settings Architecture)
+
+### Context
+
+Spacing values (horizontal/vertical padding, gaps, content insets) for chrome and composer surfaces were hardcoded as magic `EdgeInsets`/`SizedBox` constants scattered across `chat_page_chrome.dart` and `chat_input_widget.dart`. These values did not respond to the user's `AppDensity` preference (`extraDense`/`dense`/`normal`/`spacious`/`extraSpacious`), meaning compact users saw the same spacing as default users and spacious users got no extra breathing room.
+
+ADR-014 centralized **shape** tokens (`AppShapes`) and **brand color** tokens (`BrandColor`) as static constants, but these are density-agnostic — `AppShapes.extraSmall` is always `BorderRadius.circular(4)` regardless of user preference. Spacing is a fundamentally different token category because it must vary per density tier, making static constants insufficient.
+
+### Decision
+
+1. **`AppDensitySpacing` static helper class**: Introduce a private-constructor static class in `app_theme.dart` (alongside `AppTheme`) that provides density-parameterized spacing methods. Every method accepts `AppDensity density` and returns a `double` or `EdgeInsets` via Dart 3 switch expressions over the 5-tier `AppDensity` enum.
+
+2. **Token categories**:
+   - **Horizontal padding**: `horizontalPadding(density)` — composer rows, chrome edges
+   - **Vertical padding**: `chipRowVerticalPadding(density)`, `inputRowVerticalPadding(density)` — composer chip/input rows
+   - **Gaps**: `itemGap(density)`, `smallGap(density)`, `mediumGap(density)` — element spacing
+   - **Content padding**: `textFieldContentPadding(density)`, `listTileContentPadding(density)` — inner widget insets
+   - **Chrome-specific**: `appBarTitleSpacing(density)`, `syncChipRightPadding(density)`, `searchResultLabelPadding(density)`, `sectionHeaderPadding(density)`, `headerChipPadding(density)`, `overlayCardPadding(density)`
+   - **Composer-specific**: `blockReasonInnerPadding(density)`
+   - **Convenience builders**: `composerChipRowPadding(density)`, `composerPopoverRowPadding(density)`, `composerInputRowPadding(density)` — composed from primitive tokens
+
+3. **Replace hardcoded constants**: All `EdgeInsets.fromLTRB(...)` and `SizedBox(width: ...)` magic numbers in chrome and composer surfaces must reference `AppDensitySpacing.*` methods instead.
+
+4. **No `AppShapes`/`BrandColor` extension**: `AppDensitySpacing` is a separate class, not an extension of `AppShapes` or `BrandColor`, because shape and color tokens are density-agnostic constants while spacing tokens are density-parameterized functions.
+
+### Rationale
+
+- **Density-aware spacing is a user preference**: The `AppDensity` enum in `ExperienceSettings` (ADR-007) expresses the user's visual density preference. Spacing tokens must respond to it — static constants cannot.
+- **Eliminates magic numbers**: ~25 hardcoded `EdgeInsets`/`SizedBox` literals across chrome and composer surfaces are replaced with named, density-aware references, making the spacing contract explicit and auditable.
+- **Atomic scale adjustments**: Changing a spacing tier value (e.g., normal horizontal padding from 12 to 14) propagates automatically to all surfaces using that token.
+- **Separate from ADR-014 shapes/colors**: Shapes (border radii) and brand colors are fixed design constants. Spacing is a density-responsive design variable. Combining them would create a class with conflicting semantics (some static, some parameterized).
+- **Static helper over instance**: A private-constructor static class follows the same pattern as `AppShapes` and keeps the API simple — call sites pass `appDensity` from their build context or provider, with no DI or instantiation overhead.
+
+### Consequences
+
+- ✅ All chrome and composer spacing responds to the user's `AppDensity` preference — compact layouts are tighter, spacious layouts breathe more.
+- ✅ Magic `EdgeInsets`/`SizedBox` constants eliminated from chrome and composer surfaces.
+- ✅ Named spacing tokens make the design contract explicit and auditable.
+- ✅ Atomic scale adjustments propagate to all consumers automatically.
+- ✅ Follows the same centralized-token philosophy as ADR-014 for a new token category.
+- ⚠ Every new density-sensitive surface must use `AppDensitySpacing` methods instead of inline constants; enforcement is by convention, not compiler-checked.
+- ⚠ Adding new spacing tokens requires updating `AppDensitySpacing` with all 5 tiers and verifying downstream usage.
+- ❌ Static helper cannot be hot-replaced by theme extensions or DI; density must always be passed as a parameter.
+
+### Key Files
+
+- `lib/presentation/theme/app_theme.dart` — `AppDensitySpacing` class definition
+- `lib/presentation/pages/chat_page/chat_page_chrome.dart` — chrome surface spacing consumers
+- `lib/presentation/widgets/chat_input_widget.dart` — composer surface spacing consumers
+- `lib/domain/entities/experience_settings.dart` — `AppDensity` enum definition
