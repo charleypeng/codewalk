@@ -103,8 +103,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor:
-            colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
         border: OutlineInputBorder(
           borderRadius: AppShapes.borderLarge,
           borderSide: BorderSide(color: colorScheme.outlineVariant),
@@ -163,23 +162,20 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          shape:
-              RoundedRectangleBorder(borderRadius: AppShapes.borderLarge),
+          shape: RoundedRectangleBorder(borderRadius: AppShapes.borderLarge),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           elevation: 0,
-          shape:
-              RoundedRectangleBorder(borderRadius: AppShapes.borderLarge),
+          shape: RoundedRectangleBorder(borderRadius: AppShapes.borderLarge),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          shape:
-              RoundedRectangleBorder(borderRadius: AppShapes.borderLarge),
+          shape: RoundedRectangleBorder(borderRadius: AppShapes.borderLarge),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         ),
       ),
@@ -305,17 +301,14 @@ class AppDensitySpacing {
       AppDensity.dense => const EdgeInsets.fromLTRB(14, 6, 7, 6),
       AppDensity.normal => const EdgeInsets.fromLTRB(16, 7, 8, 7),
       AppDensity.spacious => const EdgeInsets.fromLTRB(18, 9, 10, 9),
-      AppDensity.extraSpacious =>
-        const EdgeInsets.fromLTRB(20, 11, 12, 11),
+      AppDensity.extraSpacious => const EdgeInsets.fromLTRB(20, 11, 12, 11),
     };
   }
 
   /// ListTile contentPadding for selector tiles in chrome dialogs.
   /// normal=8, dense/extraDense=4, spacious=12, extraSpacious=16
   static EdgeInsets listTileContentPadding(AppDensity density) {
-    return EdgeInsets.symmetric(
-      horizontal: listTileHorizontalPadding(density),
-    );
+    return EdgeInsets.symmetric(horizontal: listTileHorizontalPadding(density));
   }
 
   static double listTileHorizontalPadding(AppDensity density) {
@@ -380,8 +373,7 @@ class AppDensitySpacing {
       AppDensity.dense => const EdgeInsets.fromLTRB(6, 5, 6, 5),
       AppDensity.normal => const EdgeInsets.fromLTRB(8, 6, 8, 6),
       AppDensity.spacious => const EdgeInsets.fromLTRB(12, 8, 12, 8),
-      AppDensity.extraSpacious =>
-        const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      AppDensity.extraSpacious => const EdgeInsets.fromLTRB(16, 10, 16, 10),
     };
   }
 
@@ -390,25 +382,25 @@ class AppDensitySpacing {
   static EdgeInsets headerChipPadding(AppDensity density) {
     return switch (density) {
       AppDensity.extraDense => const EdgeInsets.symmetric(
-          horizontal: 4,
-          vertical: 4,
-        ),
+        horizontal: 4,
+        vertical: 4,
+      ),
       AppDensity.dense => const EdgeInsets.symmetric(
-          horizontal: 6,
-          vertical: 5,
-        ),
+        horizontal: 6,
+        vertical: 5,
+      ),
       AppDensity.normal => const EdgeInsets.symmetric(
-          horizontal: 8,
-          vertical: 6,
-        ),
+        horizontal: 8,
+        vertical: 6,
+      ),
       AppDensity.spacious => const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 8,
-        ),
+        horizontal: 12,
+        vertical: 8,
+      ),
       AppDensity.extraSpacious => const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 10,
-        ),
+        horizontal: 16,
+        vertical: 10,
+      ),
     };
   }
 
@@ -417,25 +409,25 @@ class AppDensitySpacing {
   static EdgeInsets overlayCardPadding(AppDensity density) {
     return switch (density) {
       AppDensity.extraDense => const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 10,
-        ),
+        horizontal: 12,
+        vertical: 10,
+      ),
       AppDensity.dense => const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 12,
-        ),
+        horizontal: 14,
+        vertical: 12,
+      ),
       AppDensity.normal => const EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 14,
-        ),
+        horizontal: 18,
+        vertical: 14,
+      ),
       AppDensity.spacious => const EdgeInsets.symmetric(
-          horizontal: 22,
-          vertical: 18,
-        ),
+        horizontal: 22,
+        vertical: 18,
+      ),
       AppDensity.extraSpacious => const EdgeInsets.symmetric(
-          horizontal: 26,
-          vertical: 22,
-        ),
+        horizontal: 26,
+        vertical: 22,
+      ),
     };
   }
 
@@ -446,25 +438,25 @@ class AppDensitySpacing {
   static EdgeInsets blockReasonInnerPadding(AppDensity density) {
     return switch (density) {
       AppDensity.extraDense => const EdgeInsets.symmetric(
-          horizontal: 8,
-          vertical: 6,
-        ),
+        horizontal: 8,
+        vertical: 6,
+      ),
       AppDensity.dense => const EdgeInsets.symmetric(
-          horizontal: 10,
-          vertical: 8,
-        ),
+        horizontal: 10,
+        vertical: 8,
+      ),
       AppDensity.normal => const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 10,
-        ),
+        horizontal: 12,
+        vertical: 10,
+      ),
       AppDensity.spacious => const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 12,
-        ),
+        horizontal: 16,
+        vertical: 12,
+      ),
       AppDensity.extraSpacious => const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 14,
-        ),
+        horizontal: 20,
+        vertical: 14,
+      ),
     };
   }
 

@@ -1017,9 +1017,11 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (_mode == ChatComposerMode.shell)
-        Padding(
-          key: const ValueKey<String>('composer_shell_mode_row'),
-          padding: AppDensitySpacing.composerChipRowPadding(widget.appDensity),
+              Padding(
+                key: const ValueKey<String>('composer_shell_mode_row'),
+                padding: AppDensitySpacing.composerChipRowPadding(
+                  widget.appDensity,
+                ),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Chip(
@@ -1039,9 +1041,11 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                 ),
               ),
             if (mentionTokens.isNotEmpty)
-        Padding(
-          key: const ValueKey<String>('composer_mention_tokens_row'),
-          padding: AppDensitySpacing.composerChipRowPadding(widget.appDensity),
+              Padding(
+                key: const ValueKey<String>('composer_mention_tokens_row'),
+                padding: AppDensitySpacing.composerChipRowPadding(
+                  widget.appDensity,
+                ),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Wrap(
@@ -1083,9 +1087,11 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                 ),
               ),
             if (showAttachments)
-        Padding(
-          key: const ValueKey<String>('composer_attachments_row'),
-          padding: AppDensitySpacing.composerChipRowPadding(widget.appDensity),
+              Padding(
+                key: const ValueKey<String>('composer_attachments_row'),
+                padding: AppDensitySpacing.composerChipRowPadding(
+                  widget.appDensity,
+                ),
                 child: Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -1112,9 +1118,11 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                 ),
               ),
             if (widget.contextItems.isNotEmpty)
-        Padding(
-          key: const ValueKey<String>('composer_context_items_row'),
-          padding: AppDensitySpacing.composerChipRowPadding(widget.appDensity),
+              Padding(
+                key: const ValueKey<String>('composer_context_items_row'),
+                padding: AppDensitySpacing.composerChipRowPadding(
+                  widget.appDensity,
+                ),
                 child: Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -1137,9 +1145,11 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                 ),
               ),
             if (hasBlockReason)
-        Padding(
-          key: const ValueKey<String>('composer_block_reason_row'),
-          padding: AppDensitySpacing.composerChipRowPadding(widget.appDensity),
+              Padding(
+                key: const ValueKey<String>('composer_block_reason_row'),
+                padding: AppDensitySpacing.composerChipRowPadding(
+                  widget.appDensity,
+                ),
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     color: colorScheme.errorContainer.withValues(
@@ -1147,8 +1157,10 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                     ),
                     borderRadius: AppShapes.borderLarge,
                   ),
-          child: Padding(
-            padding: AppDensitySpacing.blockReasonInnerPadding(widget.appDensity),
+                  child: Padding(
+                    padding: AppDensitySpacing.blockReasonInnerPadding(
+                      widget.appDensity,
+                    ),
                     child: Row(
                       children: [
                         Icon(
@@ -1156,37 +1168,43 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                           size: 18,
                           color: colorScheme.onErrorContainer,
                         ),
-            SizedBox(width: AppDensitySpacing.itemGap(widget.appDensity)),
-            Expanded(
-              child: Text(
-                blockReason,
-                key: const ValueKey<String>(
-                  'composer_block_reason_text',
-                ),
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(
-                  color: colorScheme.onErrorContainer,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+                        SizedBox(
+                          width: AppDensitySpacing.itemGap(widget.appDensity),
+                        ),
+                        Expanded(
+                          child: Text(
+                            blockReason,
+                            key: const ValueKey<String>(
+                              'composer_block_reason_text',
+                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: colorScheme.onErrorContainer,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
               ),
             if (showPopover)
-        Padding(
-          key: const ValueKey<String>('composer_popover_row'),
-          padding: AppDensitySpacing.composerPopoverRowPadding(widget.appDensity),
+              Padding(
+                key: const ValueKey<String>('composer_popover_row'),
+                padding: AppDensitySpacing.composerPopoverRowPadding(
+                  widget.appDensity,
+                ),
                 child: _buildComposerPopover(
                   colorScheme: colorScheme,
                   maxHeight: _popoverMaxHeight(context),
                 ),
               ),
-        Padding(
-          key: const ValueKey<String>('composer_input_row'),
-          padding: AppDensitySpacing.composerInputRowPadding(widget.appDensity),
+            Padding(
+              key: const ValueKey<String>('composer_input_row'),
+              padding: AppDensitySpacing.composerInputRowPadding(
+                widget.appDensity,
+              ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -1197,9 +1215,11 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                       onPressed: widget.enabled ? _showAttachmentOptions : null,
                       tooltip: context.l10n.composerAddAttachment,
                       style: attachButtonStyle,
-          icon: const Icon(Symbols.attach_file_rounded),
-          ),
-          SizedBox(width: AppDensitySpacing.itemGap(widget.appDensity)),
+                      icon: const Icon(Symbols.attach_file_rounded),
+                    ),
+                    SizedBox(
+                      width: AppDensitySpacing.itemGap(widget.appDensity),
+                    ),
                   ],
                   Expanded(
                     child: ConstrainedBox(
@@ -1299,8 +1319,10 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                                         border: InputBorder.none,
                                         enabledBorder: InputBorder.none,
                                         focusedBorder: InputBorder.none,
-                  contentPadding:
-                      AppDensitySpacing.textFieldContentPadding(widget.appDensity),
+                                        contentPadding:
+                                            AppDensitySpacing.textFieldContentPadding(
+                                              widget.appDensity,
+                                            ),
                                       ),
                                     ),
                                   ),
