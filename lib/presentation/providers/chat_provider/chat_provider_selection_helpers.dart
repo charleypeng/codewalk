@@ -685,6 +685,96 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
     return changed;
   }
 
+  /// Scan cached messages backwards for the last AssistantMessage with valid
+  /// providerId/modelId/mode metadata and apply that selection. Returns true
+  /// if any selection field changed. This is a best-effort fallback — if no
+  /// messages are cached or no metadata is found, returns false silently.
+  bool _restoreSelectionFromMessages(String sessionId) {
+    // Use the LRU session cache — not _messages directly, because during
+    // selectSession() the _messages list may still hold the previous
+    // session's data even though _currentSession has already switched.
+    final cached = _cachedSessionMessages(sessionId);
+    if (cached == null || cached.isEmpty) {
+      return false;
+    }
+
+    // Walk backwards to find the last non-neutral assistant message with
+    // model/agent metadata — matching the same semantics as
+    // _adoptSelectionFromAssistantMessage.
+    AssistantMessage? lastMetadataMessage;
+    for (var i = cached.length - 1; i >= 0; i--) {
+      final message = cached[i];
+      if (message is! AssistantMessage) {
+        continue;
+      }
+      if (_isSelectionNeutralAssistantMessage(message)) {
+        continue;
+      }
+      final pid = message.providerId?.trim();
+      final mid = message.modelId?.trim();
+      if (pid == null || pid.isEmpty || mid == null || mid.isEmpty) {
+        continue;
+      }
+      lastMetadataMessage = message;
+      break;
+    }
+    if (lastMetadataMessage == null) {
+      return false;
+    }
+
+    final providerId = lastMetadataMessage.providerId!.trim();
+    final modelId = lastMetadataMessage.modelId!.trim();
+
+    // Validate that the provider and model still exist in the catalog.
+    final provider = _providers.where((p) => p.id == providerId).firstOrNull;
+    if (provider == null || !provider.models.containsKey(modelId)) {
+      return false;
+    }
+
+    var changed = false;
+
+    if (_selectedProviderId != providerId) {
+      _selectedProviderId = providerId;
+      changed = true;
+    }
+    if (_selectedModelId != modelId) {
+      _selectedModelId = modelId;
+      changed = true;
+    }
+
+    // Resolve variant from the persisted per-model map (variant is not
+    // returned by the server in assistant messages).
+    final resolvedVariant = _resolveStoredVariantForSelection();
+    if (_selectedVariantId != resolvedVariant) {
+      _selectedVariantId = resolvedVariant;
+      changed = true;
+    }
+
+    // Resolve agent from the message mode field.
+    final mode = lastMetadataMessage.mode?.trim();
+    if (mode != null && mode.isNotEmpty && mode.toLowerCase() != 'shell') {
+      final resolved = _resolvePreferredAgentName(_agents, mode);
+      if (resolved != null && _selectedAgentName != resolved) {
+        _selectedAgentName = resolved;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      AppLogger.info(
+        'Restored selection from messages session=$sessionId '
+        'agent=${_selectedAgentName ?? "-"} '
+        'provider=$_selectedProviderId model=$_selectedModelId',
+      );
+      // Persist as an explicit override so subsequent opens are fast
+      // (cache-first, no message scan needed).
+      _storeCurrentSessionSelectionOverride();
+      unawaited(_persistSelection(syncRemote: false));
+    }
+
+    return changed;
+  }
+
   void _storeCurrentSessionSelectionOverride() {
     final sessionId = _currentSession?.id;
     final providerId = _selectedProviderId;

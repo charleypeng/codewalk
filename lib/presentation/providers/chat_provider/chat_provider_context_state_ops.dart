@@ -86,11 +86,13 @@ extension _ChatProviderContextStateOps on ChatProvider {
     if (sessionId == null || sessionId.trim().isEmpty) {
       return false;
     }
-    final override =
-        _sessionSelectionOverridesByKey[_sessionSelectionKey(sessionId)];
-    if (override == null) {
-      return false;
-    }
+  final override =
+      _sessionSelectionOverridesByKey[_sessionSelectionKey(sessionId)];
+  if (override == null) {
+    // No explicit override — fall back to scanning cached messages for the
+    // last AssistantMessage with model/agent metadata (Feature 7).
+    return _restoreSelectionFromMessages(sessionId);
+  }
 
     final provider = _providers
         .where((p) => p.id == override.providerId)

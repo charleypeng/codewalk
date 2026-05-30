@@ -3265,14 +3265,21 @@ class ChatProvider extends ChangeNotifier {
         );
         if (restoredCachedMessages != null &&
             restoredCachedMessages.isNotEmpty) {
-          _pendingCurrentSessionHydrationId = null;
-          _messages = List<ChatMessage>.from(restoredCachedMessages);
-          _cacheSessionMessages(targetSession.id, _messages);
-          _hasMoreOldMessages =
-              restoredCachedMessages.length >= _defaultOlderMessagesChunkSize;
-          _messagesVersion++;
-          _setState(ChatState.loaded);
-          unawaited(loadMessages(targetSession.id, preserveVisibleState: true));
+      _pendingCurrentSessionHydrationId = null;
+        _messages = List<ChatMessage>.from(restoredCachedMessages);
+        _cacheSessionMessages(targetSession.id, _messages);
+        _hasMoreOldMessages =
+            restoredCachedMessages.length >= _defaultOlderMessagesChunkSize;
+        _messagesVersion++;
+        _setState(ChatState.loaded);
+        // Re-apply selection priority now that messages are available — the
+        // initial call above may not have found cached messages for the
+        // message-derived fallback (Feature 7).
+        final lateSelectionChanged = _applySelectionPriorityForCurrentSession();
+        if (lateSelectionChanged) {
+          notifyListeners();
+        }
+        unawaited(loadMessages(targetSession.id, preserveVisibleState: true));
         } else {
           await loadMessages(targetSession.id);
         }
@@ -3506,6 +3513,13 @@ class ChatProvider extends ChangeNotifier {
         _cacheSessionMessages(session.id, _messages);
         _messagesVersion++;
         _setState(ChatState.loaded);
+      }
+      // Re-apply selection priority now that messages are available — the
+      // initial call at the top of selectSession() may not have found cached
+      // messages for the message-derived fallback (Feature 7).
+      final selectionChanged = _applySelectionPriorityForCurrentSession();
+      if (selectionChanged) {
+        _notifyListeners();
       }
     } else {
       _pendingCurrentSessionHydrationId = session.id;
