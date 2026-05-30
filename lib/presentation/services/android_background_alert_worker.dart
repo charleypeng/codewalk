@@ -66,13 +66,13 @@ class AndroidBackgroundAlertWorker {
     if (permissionRequestIds.isEmpty && questionRequestIds.isEmpty) {
       return;
     }
-    final prefs = await SharedPreferences.getInstance();
-    final snapshotKey = _backgroundAlertSnapshotStorageKey(serverId);
-    final existing = prefs.getString(snapshotKey);
-    if (existing == null || existing.trim().isEmpty) {
-      return;
-    }
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final snapshotKey = _backgroundAlertSnapshotStorageKey(serverId);
+      final existing = prefs.getString(snapshotKey);
+      if (existing == null || existing.trim().isEmpty) {
+        return;
+      }
       final decoded = jsonDecode(existing);
       if (decoded is! Map<String, dynamic>) {
         return;
