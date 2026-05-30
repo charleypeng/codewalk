@@ -768,7 +768,7 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
       );
       // Persist as an explicit override so subsequent opens are fast
       // (cache-first, no message scan needed).
-      _storeCurrentSessionSelectionOverride();
+        _storeCurrentSessionSelectionOverride(isExplicit: true);
       unawaited(_persistSelection(syncRemote: false));
     }
 

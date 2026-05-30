@@ -3277,7 +3277,7 @@ class ChatProvider extends ChangeNotifier {
         // message-derived fallback (Feature 7).
         final lateSelectionChanged = _applySelectionPriorityForCurrentSession();
         if (lateSelectionChanged) {
-          notifyListeners();
+          _notifyListeners();
         }
         unawaited(loadMessages(targetSession.id, preserveVisibleState: true));
         } else {
