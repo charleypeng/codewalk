@@ -159,6 +159,10 @@ extension _ChatPageScaffold on _ChatPageState {
                                               collapseSessionSearch(
                                                 clearQuery: false,
                                               );
+                                            } else {
+                                              // Dismiss keyboard but keep field
+                                              // visible (query is still active).
+                                              _sessionSearchFocusNode.unfocus();
                                             }
                                           },
                                           onSubmitted: (value) {
@@ -166,6 +170,10 @@ extension _ChatPageScaffold on _ChatPageState {
                                               collapseSessionSearch(
                                                 clearQuery: false,
                                               );
+                                            } else {
+                                              // Dismiss keyboard but keep field
+                                              // visible (query is still active).
+                                              _sessionSearchFocusNode.unfocus();
                                             }
                                           },
                                           decoration: InputDecoration(
@@ -219,6 +227,8 @@ extension _ChatPageScaffold on _ChatPageState {
                               onPressed: expandSessionSearch,
                               tooltip: context.l10n.chatSearchConversations,
                             ),
+                          if (isSessionSearchExpanded)
+                            const SizedBox(width: 40, height: 40),
                           _buildTourTarget(
                             showcaseKey: _projectContextTourKey,
                             targetKey: _projectContextTourTargetKey,
