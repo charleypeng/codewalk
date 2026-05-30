@@ -46,6 +46,7 @@ import '../services/read_aloud_service.dart';
 import '../services/session_export_service.dart';
 import '../theme/app_animations.dart';
 import '../theme/app_shapes.dart';
+import '../theme/app_theme.dart';
 import '../theme/opencode_highlight_theme.dart';
 import '../theme/opencode_theme_presets.dart';
 import '../utils/app_page_route.dart';

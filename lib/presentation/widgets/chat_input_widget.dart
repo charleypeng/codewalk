@@ -20,12 +20,13 @@ import '../../domain/entities/chat_session.dart';
 import '../../domain/entities/experience_settings.dart';
 import '../providers/settings_provider.dart';
 import '../services/speech_input_service.dart';
-import '../theme/app_shapes.dart';
 import '../services/speech_input_service_moonshine.dart';
 import '../services/speech_input_service_parakeet.dart';
 import '../services/speech_input_service_sensevoice.dart';
 import '../services/speech_input_service_sherpa.dart';
 import '../services/speech_input_service_stt.dart';
+import '../theme/app_shapes.dart';
+import '../theme/app_theme.dart';
 import 'chat_tour_showcase.dart';
 import 'moonshine_model_download_dialog.dart';
 import 'parakeet_model_download_dialog.dart';
@@ -269,6 +270,7 @@ class ChatInputWidget extends StatefulWidget {
     this.sendButtonShowcaseKey,
     this.sendButtonShowcaseTargetKey,
     this.onTourSkip,
+    this.appDensity = AppDensity.normal,
   });
 
   final FutureOr<void> Function(ChatInputSubmission submission) onSendMessage;
@@ -303,6 +305,7 @@ class ChatInputWidget extends StatefulWidget {
   final GlobalKey? sendButtonShowcaseKey;
   final GlobalKey? sendButtonShowcaseTargetKey;
   final VoidCallback? onTourSkip;
+  final AppDensity appDensity;
 
   @override
   State<ChatInputWidget> createState() => _ChatInputWidgetState();
@@ -1014,9 +1017,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (_mode == ChatComposerMode.shell)
-              Padding(
-                key: const ValueKey<String>('composer_shell_mode_row'),
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+        Padding(
+          key: const ValueKey<String>('composer_shell_mode_row'),
+          padding: AppDensitySpacing.composerChipRowPadding(widget.appDensity),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Chip(
@@ -1036,9 +1039,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                 ),
               ),
             if (mentionTokens.isNotEmpty)
-              Padding(
-                key: const ValueKey<String>('composer_mention_tokens_row'),
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+        Padding(
+          key: const ValueKey<String>('composer_mention_tokens_row'),
+          padding: AppDensitySpacing.composerChipRowPadding(widget.appDensity),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Wrap(
@@ -1080,9 +1083,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                 ),
               ),
             if (showAttachments)
-              Padding(
-                key: const ValueKey<String>('composer_attachments_row'),
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+        Padding(
+          key: const ValueKey<String>('composer_attachments_row'),
+          padding: AppDensitySpacing.composerChipRowPadding(widget.appDensity),
                 child: Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -1109,9 +1112,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                 ),
               ),
             if (widget.contextItems.isNotEmpty)
-              Padding(
-                key: const ValueKey<String>('composer_context_items_row'),
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+        Padding(
+          key: const ValueKey<String>('composer_context_items_row'),
+          padding: AppDensitySpacing.composerChipRowPadding(widget.appDensity),
                 child: Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -1134,9 +1137,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                 ),
               ),
             if (hasBlockReason)
-              Padding(
-                key: const ValueKey<String>('composer_block_reason_row'),
-                padding: const EdgeInsets.fromLTRB(12, 4, 12, 0),
+        Padding(
+          key: const ValueKey<String>('composer_block_reason_row'),
+          padding: AppDensitySpacing.composerChipRowPadding(widget.appDensity),
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     color: colorScheme.errorContainer.withValues(
@@ -1144,11 +1147,8 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                     ),
                     borderRadius: AppShapes.borderLarge,
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
+          child: Padding(
+            padding: AppDensitySpacing.blockReasonInnerPadding(widget.appDensity),
                     child: Row(
                       children: [
                         Icon(
@@ -1156,37 +1156,37 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                           size: 18,
                           color: colorScheme.onErrorContainer,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            blockReason,
-                            key: const ValueKey<String>(
-                              'composer_block_reason_text',
-                            ),
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: colorScheme.onErrorContainer,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                          ),
-                        ),
+            SizedBox(width: AppDensitySpacing.itemGap(widget.appDensity)),
+            Expanded(
+              child: Text(
+                blockReason,
+                key: const ValueKey<String>(
+                  'composer_block_reason_text',
+                ),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(
+                  color: colorScheme.onErrorContainer,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
                       ],
                     ),
                   ),
                 ),
               ),
             if (showPopover)
-              Padding(
-                key: const ValueKey<String>('composer_popover_row'),
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+        Padding(
+          key: const ValueKey<String>('composer_popover_row'),
+          padding: AppDensitySpacing.composerPopoverRowPadding(widget.appDensity),
                 child: _buildComposerPopover(
                   colorScheme: colorScheme,
                   maxHeight: _popoverMaxHeight(context),
                 ),
               ),
-            Padding(
-              key: const ValueKey<String>('composer_input_row'),
-              padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+        Padding(
+          key: const ValueKey<String>('composer_input_row'),
+          padding: AppDensitySpacing.composerInputRowPadding(widget.appDensity),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -1197,9 +1197,9 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                       onPressed: widget.enabled ? _showAttachmentOptions : null,
                       tooltip: context.l10n.composerAddAttachment,
                       style: attachButtonStyle,
-                      icon: const Icon(Symbols.attach_file_rounded),
-                    ),
-                    const SizedBox(width: 8),
+          icon: const Icon(Symbols.attach_file_rounded),
+          ),
+          SizedBox(width: AppDensitySpacing.itemGap(widget.appDensity)),
                   ],
                   Expanded(
                     child: ConstrainedBox(
@@ -1299,13 +1299,8 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                                         border: InputBorder.none,
                                         enabledBorder: InputBorder.none,
                                         focusedBorder: InputBorder.none,
-                                        contentPadding:
-                                            const EdgeInsets.fromLTRB(
-                                              16,
-                                              7,
-                                              8,
-                                              7,
-                                            ),
+                  contentPadding:
+                      AppDensitySpacing.textFieldContentPadding(widget.appDensity),
                                       ),
                                     ),
                                   ),
@@ -1367,7 +1362,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: AppDensitySpacing.itemGap(widget.appDensity)),
                   Listener(
                     onPointerDown: (_) =>
                         _handleSendButtonPressStart(canSend: canSend),

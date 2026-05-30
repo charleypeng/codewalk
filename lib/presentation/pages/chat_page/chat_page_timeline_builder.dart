@@ -753,6 +753,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                               sendButtonShowcaseTargetKey:
                                   _sendButtonTourTargetKey,
                               onTourSkip: _handlePostOnboardingTourSkip,
+        appDensity: settingsProvider.appDensity,
                               onRemoveContextItem: (index) {
                                 if (index >= 0 &&
                                     index < _fileContextItems.length) {

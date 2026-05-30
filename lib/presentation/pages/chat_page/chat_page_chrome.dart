@@ -392,7 +392,7 @@ extension _ChatPageChrome on _ChatPageState {
         child: Center(
           child: Card(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              padding: AppDensitySpacing.overlayCardPadding(_settingsProvider?.appDensity ?? AppDensity.normal),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -401,7 +401,7 @@ extension _ChatPageChrome on _ChatPageState {
                     height: 18,
                     child: CircularProgressIndicator(strokeWidth: 2.2),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: AppDensitySpacing.mediumGap(_settingsProvider?.appDensity ?? AppDensity.normal)),
                   Text(
                     'Loading project context...',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -620,7 +620,7 @@ extension _ChatPageChrome on _ChatPageState {
               },
             )
           : null,
-      titleSpacing: isMobile ? 0 : 4,
+      titleSpacing: isMobile ? 0 : AppDensitySpacing.appBarTitleSpacing(settingsProvider.appDensity),
       title: _timelineSearchActive
           ? _buildTimelineSearchTitle()
           : _buildProjectSelectorTitle(
@@ -664,14 +664,14 @@ extension _ChatPageChrome on _ChatPageState {
                               value: pane,
                               child: Row(
                                 children: [
-                                  Icon(
-                                    settingsProvider.isDesktopPaneVisible(pane)
-                                        ? Symbols.check_box_rounded
-                                        : Symbols
-                                              .check_box_outline_blank_rounded,
-                                    size: 18,
-                                  ),
-                                  const SizedBox(width: 8),
+                            Icon(
+                              settingsProvider.isDesktopPaneVisible(pane)
+                                  ? Symbols.check_box_rounded
+                                  : Symbols
+                                      .check_box_outline_blank_rounded,
+                              size: 18,
+                            ),
+        SizedBox(width: AppDensitySpacing.mediumGap(settingsProvider.appDensity)),
                                   Text(_desktopPaneLabel(pane)),
                                 ],
                               ),
@@ -889,7 +889,7 @@ extension _ChatPageChrome on _ChatPageState {
                     return Tooltip(
                       message: 'Sync: $label',
                       child: Padding(
-                        padding: const EdgeInsets.only(right: 6),
+                        padding: EdgeInsets.only(right: AppDensitySpacing.syncChipRightPadding(settingsProvider.appDensity)),
                         child: Container(
                           key: const ValueKey<String>('chat_sync_status_chip'),
                           width: 28,
@@ -953,7 +953,7 @@ extension _ChatPageChrome on _ChatPageState {
                     onPressed: _createNewSession,
                   ),
                 ),
-              const SizedBox(width: 2),
+              SizedBox(width: AppDensitySpacing.smallGap(settingsProvider.appDensity)),
             ],
     );
   }
@@ -980,7 +980,7 @@ extension _ChatPageChrome on _ChatPageState {
       if (resultLabel.isNotEmpty)
         Center(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            padding: AppDensitySpacing.searchResultLabelPadding(_settingsProvider?.appDensity ?? AppDensity.normal),
             child: Text(
               resultLabel,
               key: const ValueKey<String>('timeline_search_result_count'),
@@ -1408,8 +1408,9 @@ extension _ChatPageChrome on _ChatPageState {
   }
 
   Widget _buildSelectorSectionHeader(BuildContext context, String title) {
+    final density = _settingsProvider?.appDensity ?? AppDensity.normal;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+      padding: AppDensitySpacing.sectionHeaderPadding(density),
       child: Text(
         title,
         style: Theme.of(
@@ -1430,9 +1431,9 @@ extension _ChatPageChrome on _ChatPageState {
     final path = _directoryLabel(project.path);
     final displayName = _projectDisplayLabel(project);
 
-    return ListTile(
-      dense: _useDenseListTiles(dialogContext),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+  return ListTile(
+    dense: _useDenseListTiles(dialogContext),
+    contentPadding: AppDensitySpacing.listTileContentPadding(_settingsProvider?.appDensity ?? AppDensity.normal),
       leading: Icon(
         selected ? Symbols.radio_button_checked : Symbols.folder_open,
         size: 20,
@@ -1602,8 +1603,9 @@ extension _ChatPageChrome on _ChatPageState {
     required IconData icon,
     required String label,
   }) {
+    final density = _settingsProvider?.appDensity ?? AppDensity.normal;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      padding: AppDensitySpacing.headerChipPadding(density),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -1612,7 +1614,7 @@ extension _ChatPageChrome on _ChatPageState {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 14),
-          const SizedBox(width: 4),
+          SizedBox(width: AppDensitySpacing.smallGap(density) + 2),
           Text(label, style: Theme.of(context).textTheme.labelSmall),
         ],
       ),
