@@ -28,8 +28,19 @@ class EventFeedbackDispatcher {
   /// pending permission/question for a session is replied, or the user opens
   /// a session that just completed). This prevents stale notifications from
   /// lingering after the user has already handled the underlying request.
+  /// Errors are swallowed intentionally: this is a fire-and-forget cleanup
+  /// called via `unawaited()` from the event reducer, so a notification-layer
+  /// failure must not crash the app or leave an unhandled async error.
   Future<void> dismissForSession(String sessionId) async {
-    await _notificationService.clearNotificationsForSession(sessionId);
+    try {
+      await _notificationService.clearNotificationsForSession(sessionId);
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'dismissForSession failed',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   Future<void> handle(
