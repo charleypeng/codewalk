@@ -74,7 +74,7 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | Project Snapshot | 3–11 |
 | Folder Structure | 13–62 |
 | Entry Points | 64–73 |
-| Core Modules | 75–170 |
+| Core Modules | 75–171 |
 | Chat Architecture | 172–267 |
 | Data & Domain Layers | 269–279 |
 | Key API/DataSource locations | 281–299 |

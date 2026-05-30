@@ -65,15 +65,13 @@ Description: Added OAuth 2.0 + PKCE support for Cloudflare Access as an optional
 
 Commits: 0981549a, c6d07e37, 2e13dc26, 4cfa9786, 1f534c53, ac29f0aa, 5cc357c4, 0acca027, 3c298f49, 2125a074, c3f74ba7
 
-### Feature 6: Reactive notification dismissal on SSE events and session actions
+### Feature 6: Reactive notification dismissal on SSE events and session actions — ✅ Completed
 
 Description: Notifications should auto-dismiss reactively when the triggering event is resolved — not only on manual session switch. Current code only calls `clearNotificationsForSession()` on session switch (`chat_page_runtime_support.dart:470`); permission reply, question reply, and session idle SSE events do not trigger dismissal.
 
-- [ ] 6.01 Dismiss notification when `permission.replied` or `question.replied` SSE event arrives — wire `_applyChatEvent()` in `chat_provider_event_reducer_ops.dart` to call `clearNotificationsForSession()` for the session that owns the replied permission/question
-- [ ] 6.02 Dismiss completion notification when user opens the session — `session.idle` creates a notification but does not auto-dismiss it on session open; add explicit dismiss path when the user navigates to the completed session
-- [ ] 6.03 Sync background alert dismissal with foreground actions — when the user responds to a permission or opens a session in the foreground, also clear the corresponding notification IDs tracked by `BackgroundAlertSnapshot` (notifiedPermissionRequestIds, notifiedQuestionRequestIds) so background polling does not re-notify about already-handled items
-- [ ] 6.04 Reactive dismiss for cross-device/cross-session events — when a `permission.replied` or `question.replied` event arrives for a non-active session (different session), dismiss the notification for that session so stale permission notifications do not linger
-- [ ] 6.05 Verify end-to-end: trigger each notification type (permission, question, completion, error) and confirm auto-dismiss works through all paths: foreground SSE, background alert worker, and notification tap open
+Implemented `dismissForSession` on `EventFeedbackDispatcher` for reactive notification dismissal on `permission.replied`, `question.replied`, and `session.idle` SSE events. Added `AndroidBackgroundAlertWorker.removeNotifiedRequestIds` to sync background alert state with foreground actions, preventing re-notification of already-handled items. Cross-session and cross-device dismiss paths ensure stale notifications don't linger.
+
+Commits: 7d4514cb, e523d873
 
 ### Feature 7: Restore agent, model, and variant when opening existing session
 

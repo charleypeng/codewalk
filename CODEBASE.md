@@ -122,9 +122,10 @@ lib/presentation/utils/file_path_detector.dart # Regex-based file path detector:
 lib/presentation/utils/file_path_markdown.dart # Custom flutter_markdown_plus InlineSyntax (FilePathSyntax) and MarkdownElementBuilder (FilePathBuilder) for clickable file path spans
 lib/presentation/utils/math_markdown.dart # Custom markdown syntaxes (InlineMathSyntax, BlockMathSyntax, SingleLineBlockMathSyntax) and builders (InlineMathBuilder, BlockMathBuilder) for `$...$` and `$$...$$` LaTeX math expressions
 lib/presentation/services/desktop_tray_service_io.dart # Desktop tray lifecycle; selects tray icon per OS (macOS template PNG, Windows ICO, Linux PNG)
-lib/presentation/services/notification_service.dart    # Local notifications; Android uses `@drawable/ic_stat_codewalk` small icon and no longer drives foreground monitor state
+lib/presentation/services/notification_service.dart    # Local notifications; Android uses `@drawable/ic_stat_codewalk` small icon and no longer drives foreground monitor state; exposes `clearNotificationsForSession()` for per-session notification dismissal
+lib/presentation/services/event_feedback_dispatcher.dart  # Routes chat events to notification + sound feedback; includes `dismissForSession()` for reactive foreground notification cleanup when permissions/questions are resolved or sessions become idle
 lib/presentation/services/android_foreground_monitor_service.dart # Android foreground service via MethodChannel; active only during temporary live monitoring for known background work
-lib/presentation/services/android_background_alert_worker.dart # WorkManager-based background polling; 3m active probes, 5m tail probe, and low-data title-cached notification fetches
+lib/presentation/services/android_background_alert_worker.dart # WorkManager-based background polling; 3m active probes, 5m tail probe, and low-data title-cached notification fetches; includes `removeNotifiedRequestIds()` static method to clear replied permission/question IDs from the persisted background snapshot
 lib/presentation/services/android_background_alert_logic.dart # Pure logic for tail probe scheduling, alert planning, and snapshot state
 lib/presentation/services/android_battery_optimization_service.dart # Android battery optimization query/exemption request via MethodChannel
 lib/presentation/services/permission_auto_approve_runtime.dart # Background permission auto-approve context and session ID resolution for Android background continuity
@@ -221,7 +222,7 @@ chat_provider_core.dart
 chat_provider_session_ops.dart           # Implements undo/redo turn logic, guarded historical `revertToTurn`, revert boundary advancement, and composer draft restoration
 chat_provider_realtime_ops.dart           # Realtime event handling; defers stale `session.idle` reconciliation until the active send stream settles so server-driven lifecycle stays authoritative across follow-up sends
 chat_provider_realtime_aux_ops.dart                # Post-reconnect recovery with _postReconnectRecoveryInFlight guard; degraded mode preservation across background/foreground transitions
-chat_provider_event_reducer_ops.dart             # Reconcile one-shot guard via _messageStreamGeneration; dedup key composition
+chat_provider_event_reducer_ops.dart             # Reconcile one-shot guard via _messageStreamGeneration; dedup key composition; reactive notification dismissal — calls `dismissForSession()` on `permission.replied`, `question.replied`, `question.rejected`, and `session.idle` (current session) + `removeNotifiedRequestIds()` to sync background alert snapshot
 chat_provider_message_merge_ops.dart
 chat_provider_message_state_ops.dart             # Message state mutations; auto-title scheduling guard skips subsessions
 chat_provider_draft_part.dart                    # Loads/persists per-session composer drafts and manages rejected-draft envelopes; unconditional draft preservation across background transitions (removed foreground guards from _stashRejectedDraftForRetry)
