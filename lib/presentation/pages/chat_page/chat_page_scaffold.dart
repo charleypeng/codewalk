@@ -68,6 +68,33 @@ extension _ChatPageScaffold on _ChatPageState {
             ),
           );
         }
+        final hasSessionSearchQuery = chatProvider.sessionSearchQuery
+            .trim()
+            .isNotEmpty;
+        final isSessionSearchExpanded =
+            _isSessionSearchExpanded || hasSessionSearchQuery;
+
+        void expandSessionSearch() {
+          if (!_isSessionSearchExpanded) {
+            _setState(() => _isSessionSearchExpanded = true);
+          }
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _sessionSearchFocusNode.requestFocus();
+            }
+          });
+        }
+
+        void collapseSessionSearch({required bool clearQuery}) {
+          if (clearQuery && _sessionSearchController.text.isNotEmpty) {
+            _sessionSearchController.clear();
+            chatProvider.setSessionSearchQuery('');
+          }
+          _sessionSearchFocusNode.unfocus();
+          if (_isSessionSearchExpanded) {
+            _setState(() => _isSessionSearchExpanded = false);
+          }
+        }
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -88,11 +115,110 @@ extension _ChatPageScaffold on _ChatPageState {
                       Row(
                         children: [
                           Expanded(
-                            child: Text(
-                              context.l10n.chatConversations,
-                              style: Theme.of(context).textTheme.titleMedium,
+                            child: AnimatedSwitcher(
+                              duration: AppAnimations.standard,
+                              switchInCurve: AppAnimations.emphasizedCurve,
+                              switchOutCurve: AppAnimations.accelerateCurve,
+                              child: isSessionSearchExpanded
+                                  ? SizedBox(
+                                      key: const ValueKey<String>(
+                                        'session_search_field',
+                                      ),
+                                      height: 40,
+                                      child: Focus(
+                                        onKeyEvent: (node, event) {
+                                          if (event is KeyDownEvent &&
+                                              event.logicalKey ==
+                                                  LogicalKeyboardKey.escape) {
+                                            collapseSessionSearch(
+                                              clearQuery: true,
+                                            );
+                                            return KeyEventResult.handled;
+                                          }
+                                          return KeyEventResult.ignored;
+                                        },
+                                        child: TextField(
+                                          controller: _sessionSearchController,
+                                          focusNode: _sessionSearchFocusNode,
+                                          onTap: expandSessionSearch,
+                                          onChanged: (query) {
+                                            if (!_isSessionSearchExpanded) {
+                                              _setState(
+                                                () => _isSessionSearchExpanded =
+                                                    true,
+                                              );
+                                            }
+                                            chatProvider.setSessionSearchQuery(
+                                              query,
+                                            );
+                                          },
+                                          onTapOutside: (event) {
+                                            if (_sessionSearchController.text
+                                                .trim()
+                                                .isEmpty) {
+                                              collapseSessionSearch(
+                                                clearQuery: false,
+                                              );
+                                            }
+                                          },
+                                          onSubmitted: (value) {
+                                            if (value.trim().isEmpty) {
+                                              collapseSessionSearch(
+                                                clearQuery: false,
+                                              );
+                                            }
+                                          },
+                                          decoration: InputDecoration(
+                                            hintText: context
+                                                .l10n
+                                                .chatSearchConversations,
+                                            prefixIcon: const Icon(
+                                              Symbols.search,
+                                            ),
+                                            suffixIcon: IconButton(
+                                              icon: const Icon(Symbols.close),
+                                              onPressed: () =>
+                                                  collapseSessionSearch(
+                                                    clearQuery: true,
+                                                  ),
+                                              tooltip:
+                                                  context.l10n.onboardingClear,
+                                            ),
+                                            isDense: true,
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                  vertical: 10,
+                                                ),
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : Align(
+                                      key: const ValueKey<String>(
+                                        'session_search_title',
+                                      ),
+                                      alignment:
+                                          AlignmentDirectional.centerStart,
+                                      child: Text(
+                                        context.l10n.chatConversations,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleMedium,
+                                      ),
+                                    ),
                             ),
                           ),
+                          if (!isSessionSearchExpanded)
+                            IconButton(
+                              icon: const Icon(Symbols.search),
+                              onPressed: expandSessionSearch,
+                              tooltip: context.l10n.chatSearchConversations,
+                            ),
                           _buildTourTarget(
                             showcaseKey: _projectContextTourKey,
                             targetKey: _projectContextTourTargetKey,
@@ -205,19 +331,6 @@ extension _ChatPageScaffold on _ChatPageState {
                             ),
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _sessionSearchController,
-                        onChanged: chatProvider.setSessionSearchQuery,
-                        decoration: InputDecoration(
-                          hintText: context.l10n.chatSearchConversations,
-                          prefixIcon: const Icon(Symbols.search),
-                          isDense: true,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
                       ),
                     ],
                   ),

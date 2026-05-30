@@ -289,6 +289,8 @@ class _ChatPageState extends State<ChatPage>
       GlobalKey<ShowCaseWidgetState>();
   final TextEditingController _sessionSearchController =
       TextEditingController();
+  final FocusNode _sessionSearchFocusNode = FocusNode();
+  bool _isSessionSearchExpanded = false;
   NotificationService? _notificationService;
   StreamSubscription<NotificationTapPayload>? _notificationTapSubscription;
   NotificationTapPayload? _pendingNotificationTap;
@@ -755,6 +757,7 @@ class _ChatPageState extends State<ChatPage>
     _fileViewerScrollController.dispose();
     _inputFocusNode.dispose();
     _sessionSearchController.dispose();
+    _sessionSearchFocusNode.dispose();
     _terminalController.dispose();
     super.dispose();
   }
