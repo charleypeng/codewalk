@@ -35,15 +35,13 @@ Commits: 7426c8a1, f29eb542
 - [x] 2.04 Update Composer bar layout to apply density-aware margin and padding — Related commits: 7426c8a1 f29eb542
 - [x] 2.05 Verify both bars render correctly across all density levels (compact, comfortable, spacious) — Related commits: 7426c8a1 f29eb542
 
-### Feature 3: Search conversations as a magnifying glass button
+### Feature 3: Search conversations as a magnifying glass button — ✅ Completed
 
 Description: Replace the search conversations input field with a compact magnifying glass icon button placed next to the conversation context buttons and the new conversation button, saving vertical space in the sidebar sessions menu.
 
-- [ ] 3.01 Audit current sidebar search field layout and identify vertical space usage
-- [ ] 3.02 Design compact search icon button placement next to context and new-chat buttons
-- [ ] 3.03 Implement search icon button that expands into search input on tap
-- [ ] 3.04 Ensure search functionality (filter, results) remains intact after UI change
-- [ ] 3.05 Verify layout on compact (mobile) and expanded (desktop/tablet) sidebars
+Replaced the persistent search TextField with a compact IconButton in the sidebar header row — expands inline via AnimatedSwitcher, saves ~48dp vertical space.
+
+Commits: c4e48a4c, f08b6408
 
 ### Feature 4: Session Export as Markdown/JSON
 

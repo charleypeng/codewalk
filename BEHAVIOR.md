@@ -279,6 +279,34 @@
 - **When** the session row subtitle is shown
 - **Then** the sidebar suppresses that pseudo-summary instead of rendering `additions: ...` / `deletions: ...`
 
+### Sidebar session search is a compact expandable button
+
+- **Given** the Conversations sidebar is rendered
+- **When** the sidebar loads
+- **Then** session search is collapsed by default and rendered as a magnifying-glass `IconButton` in the header row next to the project-context and new-chat buttons
+- **Then** the old persistent `TextField` below the filter/sort chips is removed, saving vertical space
+
+- **Given** the user taps the search icon button
+- **When** the button is pressed
+- **Then** the "Conversations" title cross-fades into an inline `TextField` with `hintText` "Search conversations" and a prefix search icon
+- **Then** the `TextField` auto-focuses so the user can start typing immediately
+- **Then** a clear (✕) button appears as a suffix when text is present and clears the query + collapses the field back to the title
+- **Then** pressing the `Escape` key clears the query and collapses the field
+
+- **Given** the user types a search query
+- **When** the query text changes
+- **Then** the session list filters immediately by title and summary (case-insensitive), reusing the existing `ChatProvider.setSessionSearchQuery` path
+- **Then** the filter/sort chips remain visible and functional alongside the active search
+
+- **Given** an active search query is present
+- **When** the user taps outside the field or presses Enter/Submit
+- **Then** the keyboard is dismissed but the search field and its active query remain visible, keeping the filter active
+- **Then** the field only collapses back to the title when the query is explicitly cleared (via ✕ or `Escape`)
+
+- **Given** a search query was persisted from a previous session
+- **When** the sidebar rebuilds (e.g. project switch or app restart)
+- **Then** the search field is restored in its expanded state with the active query visible and the session list already filtered
+
 ### Recent unread root sessions are highlighted temporarily
 
 - **Given** a root session is out of focus and receives a completed assistant reply
