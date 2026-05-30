@@ -227,8 +227,8 @@ chat_provider_message_merge_ops.dart
 chat_provider_message_state_ops.dart             # Message state mutations; auto-title scheduling guard skips subsessions
 chat_provider_draft_part.dart                    # Loads/persists per-session composer drafts and manages rejected-draft envelopes; unconditional draft preservation across background transitions (removed foreground guards from _stashRejectedDraftForRetry)
 chat_provider_selection_sync_ops.dart
-chat_provider_selection_helpers.dart
-chat_provider_context_state_ops.dart
+chat_provider_selection_helpers.dart       # Selection helpers including `_restoreSelectionFromMessages()` — scans cached messages for the last non-summary AssistantMessage and restores its providerId/modelId/mode as the current selection; `_storeCurrentSessionSelectionOverride()` with `isExplicit` flag preservation
+chat_provider_context_state_ops.dart        # Context-scoped override application; `_applySessionSelectionOverride()` delegates to message-derived fallback (`_restoreSelectionFromMessages()`) when no override exists, when override is stale, or when override is non-explicit (Feature 7)
 chat_provider_preference_ops.dart                # Persists favorites/recent usage plus per-agent provider/model/variant memory
 chat_provider_shortcut_cycle_ops.dart
 chat_provider_auto_title_ops.dart               # Auto-title execution (main/root sessions only); runtime guard in `_runAutoTitlePass` skips subsessions
@@ -331,7 +331,7 @@ test/unit/auth/                        # OAuth auth unit tests
 test/unit/auth/oauth_service_io_test.dart # OAuth IO service tests: Cloudflare Managed OAuth flow, PKCE S256 challenge/verifier generation, local callback server lifecycle, credential caching/refresh, isOAuthChallenge detection, trusted endpoint validation, cross-profile isolation
 test/unit/auth/oauth_token_storage_test.dart # OAuth token storage tests: save/load/delete credential, hasValidCredential, OAuthTokenStorageException backend error handling, cross-profile key isolation
 test/unit/network/dio_client_auth_test.dart # Dio auth ownership tests: setOAuthToken/clearOAuthToken interaction with Basic Auth, clearAuth clears both, header restoration on OAuth clear preserves Basic Auth
-test/unit/providers/                   # ChatProvider split tests (7 files, 131 tests, parallelized with -j 12)
+test/unit/providers/                   # ChatProvider split tests (8 files, parallelized with -j 12)
   chat_provider_init_test.dart         #   12 tests — initialization, config sync, model/agent selection
   chat_provider_sync_test.dart         #   17 tests — deferred sync, cycle, scope, overrides, variant sync
   chat_provider_messaging_test.dart    #   15 tests — sessions, sendMessage, draft restore; delta-like SWR fallback coverage
@@ -339,6 +339,7 @@ test/unit/providers/                   # ChatProvider split tests (7 files, 131 
   chat_provider_session_ops_test.dart  #   27 tests — rename/share/fork/delete, insights, undo/redo/revertToTurn parity (regression coverage), idle
   chat_provider_project_test.dart      #   13 tests — permissions, questions, project scope, favorites; project-switch SWR behavior + draft isolation + dirty-context cache retention
   chat_provider_concurrency_test.dart  #   26 tests — render gate, multi-session, abort suppression
+  chat_provider_selection_fallback_test.dart # Message-derived selection fallback tests (Feature 7): override isExplicit semantics, _restoreSelectionFromMessages() recovery paths, stale override → message fallback, non-explicit override → message fallback precedence
   chat_provider_test_support.dart      #   Shared utilities (RecordingDioClient, buildChatProvider, testModel); FakeChatRepository.getSessionsDelay
 test/widget/                           # Widget tests (includes icon assertions with Symbols.* and explicit compact/mobile collapsed-copy coverage for chat message and session todo surfaces, historical rewind action coverage, plus desktop/mobile spacing coverage for ChatSessionList; includes toolbar undo/redo and slash-command parity coverage)
 test/integration/                      # Integration tests; includes data-usage optimization and permission `remember` contract coverage in `opencode_server_integration_test.dart`

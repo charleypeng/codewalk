@@ -38,6 +38,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-032: LaTeX Math Rendering with flutter_math_fork and Custom Markdown Delimiters
 - ADR-033: Cloudflare Access OAuth as Optional Desktop Reverse-Proxy Auth (ADR-023 Exception)
 - ADR-034: Density-Aware Spacing Tokens via `AppDensitySpacing` Static Helper
+- ADR-035: Message-Derived Selection Fallback with Explicit-Override Precedence
 
 ---
 
@@ -1844,3 +1845,56 @@ ADR-014 centralized **shape** tokens (`AppShapes`) and **brand color** tokens (`
 - `lib/presentation/pages/chat_page/chat_page_chrome.dart` — chrome surface spacing consumers
 - `lib/presentation/widgets/chat_input_widget.dart` — composer surface spacing consumers
 - `lib/domain/entities/experience_settings.dart` — `AppDensity` enum definition
+
+---
+
+## ADR-035: Message-Derived Selection Fallback with Explicit-Override Precedence (2026-05-30)
+
+**Status**: Accepted
+
+Related: See Feature 7 in ROADMAP.md
+
+### Context
+
+When a user reopens an existing session, CodeWalk must restore the agent, model, and variant that were last active in that session. The existing `_sessionSelectionOverridesByKey` map only stores overrides created by explicit user actions — sessions without an explicit override fall back to global defaults, which may not reflect what was actually used. OpenChamber solves this with `restoreSessionStateFromMessages()` which reads `providerID`, `modelID`, and `agent` from the last assistant message metadata. Without a similar mechanism, reopening a session shows incorrect provider/model/agent until the server sends the first assistant message, creating a confusing UX mismatch.
+
+### Decision
+
+Implement a three-tier selection restoration hierarchy with explicit-override precedence:
+
+1. **Explicit override** (highest priority): user-initiated selection changes stored in `_sessionSelectionOverridesByKey` with `isExplicit: true`. Never overridden by the fallback.
+2. **Message-derived fallback** (middle priority): `_restoreSelectionFromMessages()` scans the LRU session message cache backwards for the last `AssistantMessage` with valid `providerId`/`modelId`/`mode` metadata. Activated when:
+   - No override exists for the session.
+   - The existing override is stale (provider/model no longer in catalog, agent unresolvable).
+   - The existing override was set non-explicitly (e.g. from config sync or session-switch continuity).
+3. **Global defaults** (lowest priority): when both override and message scan fail, the current global selection remains unchanged.
+
+Key design decisions:
+- **LRU cache-first scanning**: `_restoreSelectionFromMessages` reads from `_cachedSessionMessages(sessionId)` (the SWR LRU cache, ADR-020), not from `_messages` directly, because during `selectSession()` the `_messages` list may still hold the previous session's data while `_currentSession` has already switched.
+- **Neutral-message filtering**: `_isSelectionNeutralAssistantMessage` excludes summary and compaction assistant messages from the scan, since these are internal bookkeeping artifacts that do not represent real user-facing model/agent selections.
+- **Override promotion**: when the message fallback successfully restores a selection, it persists the result as an explicit override (`_storeCurrentSessionSelectionOverride(isExplicit: true)`), so subsequent opens are cache-first without needing to rescan messages.
+- **Non-explicit override demotion**: when `_applySessionSelectionOverride` encounters an `isExplicit: false` override (from config sync or continuity), it runs the message fallback which may supersede the non-explicit value.
+
+### Rationale
+
+- Without message-derived fallback, session reopen always shows global defaults instead of the last-used provider/model — a UX regression vs OpenChamber parity.
+- The `isExplicit` flag prevents the fallback from undoing deliberate user choices while still recovering accurate state for non-explicit overrides.
+- LRU cache-first scanning avoids a race condition where `_messages` still holds the previous session's data during the `selectSession()` transition.
+- Override promotion makes the fallback a one-time cost: after the first successful scan, subsequent opens read the persisted override directly.
+- Neutral-message filtering prevents summary/compaction artifacts from polluting the selection — these messages carry the model metadata of the compaction agent, not the user's chosen model.
+
+### Consequences
+
+- ✅ Reopened sessions show the correct agent/model/provider without waiting for the first server assistant message.
+- ✅ OpenChamber parity for `restoreSessionStateFromMessages()`.
+- ✅ Explicit user selections are never overridden by the fallback mechanism.
+- ✅ Override promotion makes the message scan a one-time cost per session.
+- ⚠ The LRU cache may be empty on first visit (cold start) — the fallback silently returns `false` and global defaults apply until the first assistant message arrives.
+- ⚠ Variant is not available in server assistant message metadata — the fallback resolves variant from the persisted per-model map (`_resolveStoredVariantForSelection`) which may not match the server's actual variant if it was changed externally.
+- ❌ The fallback scans backwards through all cached messages — for very long sessions with no metadata-bearing messages, this is O(n) with no early exit beyond the first match.
+
+### Key Files
+
+- `lib/presentation/providers/chat_provider/chat_provider_context_state_ops.dart` — `_applySessionSelectionOverride` with explicit-override precedence and fallback dispatch
+- `lib/presentation/providers/chat_provider/chat_provider_selection_helpers.dart` — `_restoreSelectionFromMessages` (LRU cache-first backward scan), `_storeCurrentSessionSelectionOverride` (override promotion), `_isSelectionNeutralAssistantMessage`
+- `lib/presentation/providers/chat_provider/chat_provider_message_state_ops.dart` — `_adoptSelectionFromAssistantMessage` (realtime adoption from streaming messages), `_isSelectionNeutralAssistantMessage` definition

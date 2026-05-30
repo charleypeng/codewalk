@@ -63,7 +63,8 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | 031 | Historical inline revert through the official session revert endpoint — `revertToTurn`, duplicate-revert guard, `local_user_*` validation, composer draft restoration, distinct inline rewind action for server-confirmed user messages, and permission `remember: true` companion fix for `always` replies | 1560–1624 |
 | 032 | LaTeX math rendering with `flutter_math_fork` (pure-Dart KaTeX port), custom `$…$`/`$$…$$` Markdown delimiters, `MathExpressionWidget` with styled fallback, and `showMathRendering` toggle in `ExperienceSettings` — typeset math in chat without WebView | 1629–1679 |
 | 033 | Cloudflare Managed OAuth as optional desktop + Android reverse-proxy auth (ADR-023 exception) — `ServerProfile.oauthEnabled`, `OAuthService` conditional export (io/stub), auth code + PKCE S256, DCR, `OAuthTokenStorage` in `flutter_secure_storage` scoped by profileId+serverUrl, Bearer token for matching origin only, OAuth/Basic Auth mutually exclusive per profile, desktop (local HTTP redirect) and Android (flutter_appauth) via `AppProvider.supportsCloudflareAccessOAuth`, `/oauth/callback` with state/duplicate rejection, health checks record OAuth challenges, rollback by disabling `oauthEnabled` + clearing credentials | 1683–1792 |
-| 034 | Density-aware spacing tokens via `AppDensitySpacing` static helper — 5-tier `AppDensity` switch expressions for horizontal/vertical padding, gaps, content insets, chrome/composer convenience builders, replacing ~25 hardcoded EdgeInsets/SizedBox magic numbers | 1793–1846 |
+| 034 | Density-aware spacing tokens via `AppDensitySpacing` static helper — 5-tier `AppDensity` switch expressions for horizontal/vertical padding, gaps, content insets, chrome/composer convenience builders, replacing ~25 hardcoded EdgeInsets/SizedBox magic numbers | 1794–1849 |
+| 035 | Message-derived selection fallback with explicit-override precedence — 3-tier restoration (explicit override → message scan → global defaults), LRU cache-first backward scan, neutral-message filtering, isExplicit flag, override promotion on fallback success; OpenChamber parity for `restoreSessionStateFromMessages()` | 1851–1900 |
 
 ## 🗺 CODEBASE Quick Reference (details in `CODEBASE.md`)
 
@@ -75,13 +76,13 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | Folder Structure | 13–62 |
 | Entry Points | 64–73 |
 | Core Modules | 75–171 |
-| Chat Architecture | 172–267 |
-| Data & Domain Layers | 269–279 |
-| Key API/DataSource locations | 281–299 |
-| Main Commands | 301–323 |
-| Testing/Quality Gates | 325–350 |
-| Internationalization (i18n) | 352–362 |
-| Notes | 364–546 |
+| Chat Architecture | 172–238 |
+| Data & Domain Layers | 240–250 |
+| Key API/DataSource locations | 252–270 |
+| Main Commands | 272–294 |
+| Testing/Quality Gates | 326–352 |
+| Internationalization (i18n) | 354–364 |
+| Notes | 366–548 |
 
 ## ⚙️ Makefile Quick Reference (details in `Makefile`)
 

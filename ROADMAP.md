@@ -73,12 +73,10 @@ Implemented `dismissForSession` on `EventFeedbackDispatcher` for reactive notifi
 
 Commits: 7d4514cb, e523d873
 
-### Feature 7: Restore agent, model, and variant when opening existing session
+### Feature 7: Restore agent, model, and variant when opening existing session — ✅ Completed
 
 Description: When opening an existing session, restore the agent, model, and variant that were last used in that session. CodeWalk currently has `_sessionSelectionOverridesByKey` that saves per-session selection state, but only when the user explicitly changes it — sessions without an override fall back to global defaults instead of reading from authoritative server message metadata. OpenChamber solves this by (1) client-side per-session localStorage maps and (2) ACP `restoreSessionStateFromMessages()` which reads `model.providerID`, `model.modelID`, `model.variant`, and `agent` from the last user message in the server message list.
 
-- [ ] 7.01 Add fallback chain in `_applySessionSelectionOverride()`: when no override exists for the session, fall back to reading the last user message's metadata from the server message list to determine the session's model, agent, and variant
-- [ ] 7.02 Parse `AssistantMessage.providerId`, `AssistantMessage.modelId`, `AssistantMessage.variant`, and `ChatInput.mode` from the most recent user message to populate the selection state on session open
-- [ ] 7.03 Ensure variant is restored from message metadata — currently variant is only remembered per-model-key (`_selectedVariantByModel`) and per-session-override, but not from message history when no override exists
-- [ ] 7.04 Persist the restored selection as an explicit override (`_storeCurrentSessionSelectionOverride()`) so subsequent opens are fast (cache-first, no message parse needed)
-- [ ] 7.05 Add OpenChamber-style localStorage persistence as a secondary resilience layer: store per-session agent/model/variant maps that survive context resets and provide an additional fallback before message-level lookup
+Fallback restores provider/model/agent from last AssistantMessage metadata when no explicit override exists; uses LRU cache, isExplicit flag, and late re-apply hooks.
+
+Commits: 28724598, 1d47349c, c97cf419
