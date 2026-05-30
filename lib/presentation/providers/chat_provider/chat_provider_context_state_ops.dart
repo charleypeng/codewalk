@@ -86,20 +86,22 @@ extension _ChatProviderContextStateOps on ChatProvider {
     if (sessionId == null || sessionId.trim().isEmpty) {
       return false;
     }
-  final override =
-      _sessionSelectionOverridesByKey[_sessionSelectionKey(sessionId)];
-  if (override == null) {
-    // No explicit override — fall back to scanning cached messages for the
-    // last AssistantMessage with model/agent metadata (Feature 7).
-    return _restoreSelectionFromMessages(sessionId);
-  }
+    final override =
+        _sessionSelectionOverridesByKey[_sessionSelectionKey(sessionId)];
+
+    if (override == null) {
+      // No explicit override — fall back to scanning cached messages for the
+      // last AssistantMessage with model/agent metadata (Feature 7).
+      return _restoreSelectionFromMessages(sessionId);
+    }
 
     final provider = _providers
         .where((p) => p.id == override.providerId)
         .firstOrNull;
     if (provider == null || !provider.models.containsKey(override.modelId)) {
       _removeSessionSelectionOverride(sessionId);
-      return false;
+      // Override is stale — try the message fallback as a recovery path.
+      return _restoreSelectionFromMessages(sessionId);
     }
 
     final resolvedAgent = _resolvePreferredAgentName(
@@ -108,7 +110,7 @@ extension _ChatProviderContextStateOps on ChatProvider {
     );
     if (resolvedAgent == null) {
       _removeSessionSelectionOverride(sessionId);
-      return false;
+      return _restoreSelectionFromMessages(sessionId);
     }
 
     final model = provider.models[override.modelId];
@@ -141,6 +143,20 @@ extension _ChatProviderContextStateOps on ChatProvider {
       _selectedVariantByModel.remove(modelKey);
     } else {
       _selectedVariantByModel[modelKey] = nextVariantId;
+    }
+
+    // When the override was not set by an explicit user action (e.g. it was
+    // derived from session-switch continuity or config sync), the
+    // message-derived fallback may produce a more accurate selection based
+    // on the actual last-used metadata for this session. The fallback takes
+    // precedence over non-explicit overrides but not over explicit ones
+    // (Feature 7).
+    if (!override.isExplicit) {
+      final messageFallbackChanged =
+          _restoreSelectionFromMessages(sessionId);
+      if (messageFallbackChanged) {
+        return true;
+      }
     }
 
     return changed;

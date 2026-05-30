@@ -2816,7 +2816,7 @@ class ChatProvider extends ChangeNotifier {
     _rememberCurrentSelectionForAgent(agentName: _selectedAgentName);
     _recordModelSelectionRecency(previousModelKey: previousModelKey);
     _recordVariantSelectionRecencyForCurrentModel();
-    _storeCurrentSessionSelectionOverride();
+    _storeCurrentSessionSelectionOverride(isExplicit: true);
     _notifyListeners();
     _scheduleSelectionPersistence();
   }
@@ -2836,7 +2836,7 @@ class ChatProvider extends ChangeNotifier {
     _rememberCurrentSelectionForAgent(agentName: _selectedAgentName);
     _recordModelSelectionRecency(previousModelKey: previousModelKey);
     _recordVariantSelectionRecencyForCurrentModel();
-    _storeCurrentSessionSelectionOverride();
+    _storeCurrentSessionSelectionOverride(isExplicit: true);
     _notifyListeners();
     _scheduleSelectionPersistence();
   }
@@ -2892,7 +2892,7 @@ class ChatProvider extends ChangeNotifier {
     _selectedAgentName = next;
     _restoreSelectionForAgent(next);
     _recordAgentSelectionRecency(previousAgentName: previousAgentName);
-    _storeCurrentSessionSelectionOverride();
+    _storeCurrentSessionSelectionOverride(isExplicit: true);
     _notifyListeners();
     _scheduleSelectionPersistence();
   }
@@ -2923,7 +2923,7 @@ class ChatProvider extends ChangeNotifier {
     );
     _rememberCurrentSelectionForAgent(agentName: _selectedAgentName);
 
-    _storeCurrentSessionSelectionOverride();
+    _storeCurrentSessionSelectionOverride(isExplicit: true);
     _notifyListeners();
     _scheduleSelectionPersistence();
   }
@@ -3655,15 +3655,26 @@ class ChatProvider extends ChangeNotifier {
           return;
         }
 
-        _messages = List<ChatMessage>.from(mergedMessages);
-        _cacheSessionMessages(sessionId, _messages);
-        if (messagesChanged) {
-          _messagesVersion++;
-        }
-        _hasMoreOldMessages = nextHasMoreOldMessages;
-        _prunePendingLocalUserMessageIdsToVisibleUsers();
-        _scheduleAutoTitleRefresh(sessionId);
-        if (_state != ChatState.loaded ||
+    _messages = List<ChatMessage>.from(mergedMessages);
+    _cacheSessionMessages(sessionId, _messages);
+    if (messagesChanged) {
+      _messagesVersion++;
+    }
+    _hasMoreOldMessages = nextHasMoreOldMessages;
+    _prunePendingLocalUserMessageIdsToVisibleUsers();
+    _scheduleAutoTitleRefresh(sessionId);
+    // Re-apply selection priority now that messages are available — the
+    // initial call in selectSession() may not have found cached messages
+    // for the message-derived fallback (Feature 7). This also covers the
+    // case where loadMessages() is called directly (e.g. from
+    // loadLastSession()).
+    if (_currentSession?.id == sessionId) {
+      final lateSelectionChanged = _applySelectionPriorityForCurrentSession();
+      if (lateSelectionChanged) {
+        _notifyListeners();
+      }
+    }
+    if (_state != ChatState.loaded ||
             messagesChanged ||
             hasMoreOldMessagesChanged) {
           _setState(ChatState.loaded);

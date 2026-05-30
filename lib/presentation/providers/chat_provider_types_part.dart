@@ -254,6 +254,7 @@ class _SessionSelectionOverride {
     required this.agentName,
     required this.variantId,
     required this.updatedAtEpochMs,
+    this.isExplicit = false,
   });
 
   final String providerId;
@@ -261,6 +262,12 @@ class _SessionSelectionOverride {
   final String agentName;
   final String? variantId;
   final int updatedAtEpochMs;
+
+  // Whether this override was set by an explicit user action (manual
+  // provider/model/agent change) as opposed to session-switch continuity
+  // or config-sync defaults. Message-derived fallback (Feature 7) can
+  // override a non-explicit override but not an explicit one.
+  final bool isExplicit;
 }
 
 enum _ShortcutCycleDomain { model, agent, variant }

@@ -775,7 +775,7 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
     return changed;
   }
 
-  void _storeCurrentSessionSelectionOverride() {
+  void _storeCurrentSessionSelectionOverride({bool isExplicit = false}) {
     final sessionId = _currentSession?.id;
     final providerId = _selectedProviderId;
     final modelId = _selectedModelId;
@@ -788,14 +788,19 @@ extension _ChatProviderSelectionHelpers on ChatProvider {
       return;
     }
 
-    _sessionSelectionOverridesByKey[_sessionSelectionKey(
-      sessionId,
-    )] = _SessionSelectionOverride(
+    // Preserve explicit flag if the existing override was already explicit —
+    // a non-explicit store should never downgrade an explicit override.
+    final key = _sessionSelectionKey(sessionId);
+    final existing = _sessionSelectionOverridesByKey[key];
+    final effectiveExplicit = isExplicit || (existing?.isExplicit ?? false);
+
+    _sessionSelectionOverridesByKey[key] = _SessionSelectionOverride(
       providerId: providerId,
       modelId: modelId,
       agentName: agentName,
       variantId: _selectedVariantId,
       updatedAtEpochMs: DateTime.now().millisecondsSinceEpoch,
+      isExplicit: effectiveExplicit,
     );
   }
 
