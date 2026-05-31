@@ -34,10 +34,17 @@ class TailscaleHttpAdapter implements HttpClientAdapter {
     final bodyDone = Completer<void>();
     final subscription = requestStream?.listen(
       request.sink.add,
-      onError: request.sink.addError,
+      onError: (Object error, StackTrace stackTrace) {
+        request.sink.addError(error, stackTrace);
+        if (!bodyDone.isCompleted) {
+          bodyDone.completeError(error, stackTrace);
+        }
+      },
       onDone: () {
         unawaited(request.sink.close());
-        bodyDone.complete();
+        if (!bodyDone.isCompleted) {
+          bodyDone.complete();
+        }
       },
       cancelOnError: true,
     );
@@ -51,6 +58,15 @@ class TailscaleHttpAdapter implements HttpClientAdapter {
         cancelFuture.then((_) async {
           await subscription?.cancel();
           await request.sink.close();
+          if (!bodyDone.isCompleted) {
+            bodyDone.completeError(
+              DioException(
+                requestOptions: options,
+                type: DioExceptionType.cancel,
+                error: 'Tailscale request cancelled',
+              ),
+            );
+          }
         }),
       );
     }

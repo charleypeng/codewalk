@@ -376,6 +376,7 @@ class AppProvider extends ChangeNotifier {
     if (profile == null) {
       _dioClient.clearAuth();
       _dioClient.removeTailscaleAdapter();
+      await _tailscaleService.down();
       _serverHost = ApiConstants.defaultHost;
       _serverPort = ApiConstants.defaultPort;
       return;
@@ -425,6 +426,7 @@ class AppProvider extends ChangeNotifier {
   Future<void> _applyTailscaleTransport(ServerProfile profile) async {
     if (!profile.tailscaleEnabled || !supportsTailscale) {
       _dioClient.removeTailscaleAdapter();
+      await _tailscaleService.down();
       return;
     }
 
@@ -442,6 +444,7 @@ class AppProvider extends ChangeNotifier {
       return;
     }
     _dioClient.removeTailscaleAdapter();
+    await _tailscaleService.down();
   }
 
   Future<bool> handleOAuthChallenge({
