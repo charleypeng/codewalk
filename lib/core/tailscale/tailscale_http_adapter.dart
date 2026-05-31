@@ -15,6 +15,12 @@ class TailscaleHttpAdapter implements HttpClientAdapter {
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
+    DioException cancelled() => DioException(
+      requestOptions: options,
+      type: DioExceptionType.cancel,
+      error: 'Tailscale request cancelled',
+    );
+
     final request = http.StreamedRequest(options.method, options.uri);
     request.followRedirects = options.followRedirects;
     request.maxRedirects = options.maxRedirects;
@@ -32,6 +38,13 @@ class TailscaleHttpAdapter implements HttpClientAdapter {
     }
 
     final bodyDone = Completer<void>();
+    var sinkClosed = false;
+    Future<void> closeSink() {
+      if (sinkClosed) return Future<void>.value();
+      sinkClosed = true;
+      return request.sink.close();
+    }
+
     final subscription = requestStream?.listen(
       request.sink.add,
       onError: (Object error, StackTrace stackTrace) {
@@ -41,7 +54,7 @@ class TailscaleHttpAdapter implements HttpClientAdapter {
         }
       },
       onDone: () {
-        unawaited(request.sink.close());
+        unawaited(closeSink());
         if (!bodyDone.isCompleted) {
           bodyDone.complete();
         }
@@ -49,7 +62,7 @@ class TailscaleHttpAdapter implements HttpClientAdapter {
       cancelOnError: true,
     );
     if (requestStream == null) {
-      await request.sink.close();
+      await closeSink();
       bodyDone.complete();
     }
 
@@ -57,22 +70,21 @@ class TailscaleHttpAdapter implements HttpClientAdapter {
       unawaited(
         cancelFuture.then((_) async {
           await subscription?.cancel();
-          await request.sink.close();
+          await closeSink();
           if (!bodyDone.isCompleted) {
-            bodyDone.completeError(
-              DioException(
-                requestOptions: options,
-                type: DioExceptionType.cancel,
-                error: 'Tailscale request cancelled',
-              ),
-            );
+            bodyDone.completeError(cancelled());
           }
         }),
       );
     }
 
     await bodyDone.future;
-    final response = await _client.send(request);
+    final response = await (cancelFuture == null
+        ? _client.send(request)
+        : Future.any<http.StreamedResponse>(<Future<http.StreamedResponse>>[
+            _client.send(request),
+            cancelFuture.then<http.StreamedResponse>((_) => throw cancelled()),
+          ]));
     final headers = response.headers.map(
       (key, value) => MapEntry(key, <String>[value]),
     );

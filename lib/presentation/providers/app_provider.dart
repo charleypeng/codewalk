@@ -444,7 +444,13 @@ class AppProvider extends ChangeNotifier {
       return;
     }
     _dioClient.removeTailscaleAdapter();
-    await _tailscaleService.down();
+    final shouldStopNode =
+        state.nodeState == TailscaleNodeState.error ||
+        state.nodeState == TailscaleNodeState.unsupported ||
+        state.nodeState == TailscaleNodeState.disconnected;
+    if (shouldStopNode) {
+      await _tailscaleService.down();
+    }
   }
 
   Future<bool> handleOAuthChallenge({
