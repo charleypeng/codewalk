@@ -1472,7 +1472,7 @@ CodeWalk requires visibility into model quotas and rate-limits to prevent silent
 
 - `lib/data/datasources/quota_remote_datasource.dart` — Strategy-chain implementation (OpenChamber REST → shell fallback)
 - `lib/domain/entities/quota.dart` — Domain entities: `QuotaSnapshot`, `UsageWindow`, `PaceInfo`, `QuotaEntry`, `QuotaProviderGroup`
-- `lib/presentation/providers/quota_provider.dart` — Polling, TTL cache, server-scoped state, and provider grouping
+- `lib/presentation/providers/quota_provider.dart` — Polling, TTL cache, server-scoped state, provider grouping, and Codex `providerId` guard that prevents single-window label collapse for Codex entries by preserving per-window granularity in grouped display
 - `lib/presentation/utils/quota_pace_utils.dart` — Pure Dart pace calculation, window label inference, and formatting
 - `lib/presentation/widgets/quota/quota_popup_section.dart` — Root quota widget embedded in the Context usage popup
 - `lib/presentation/widgets/quota/quota_provider_group_row.dart` — Grouped provider expand/collapse row
@@ -1917,6 +1917,14 @@ Embed a `package:tailscale` userspace Tailscale node directly in the app process
 3. **Custom Dio `HttpClientAdapter`**: a dedicated adapter routes HTTP requests through the userspace Tailscale node when the feature is enabled. The adapter preserves SSE streaming (chunked transfer) and respects Dio `CancelToken` for request cancellation — critical for the chat SSE stream (ADR-018).
 4. **Inactive Tailscale health returns unknown**: when `tailscaleEnabled` is `false`, the Tailscale health check does not report "unhealthy" — it returns an "unknown" status so the health dashboard does not show a false-negative for profiles that intentionally skip Tailscale.
 5. **Unsupported platforms**: Web and Windows are excluded (no userspace networking support). On these platforms, `tailscaleEnabled` is ignored and standard HTTP is used unconditionally.
+6. **Interactive auth UX**: `AppProvider` exposes reactive Tailscale auth state so the UI can respond to login and machine-authorization requirements without surprising the user:
+   - `tailscaleNeedsLogin` — the node has no identity; user must authenticate.
+   - `tailscaleNeedsMachineAuth` — the node is registered but the tailnet admin has not yet approved it.
+   - `tailscaleAuthUrl` — the URL to present to the user for login/approval.
+   - `tailscaleMessage` — human-readable status text from the Tailscale node.
+   - `authenticateTailscale()` is the single entry point for manual auth: if the node is not running, it starts the transport first (`_applyTailscaleTransport`) then launches the auth URL; if already running, it launches the auth URL directly.
+   - `_applyTailscaleTransport` no longer auto-launches auth URLs — the previous auto-launch caused double browser tabs when both the transport setup and the auth listener fired. Auth URL launch is now exclusively in `authenticateTailscale()` or the auth panel.
+   - The onboarding wizard (`onboarding_wizard_page.dart`) and server settings (`servers_settings_section.dart`) include Tailscale auth panels that show per-state UI (needs-login prompt, machine-auth wait, connected confirmation).
 
 ### Rationale
 
@@ -1938,6 +1946,7 @@ Embed a `package:tailscale` userspace Tailscale node directly in the app process
 - ⚠ Vendored package requires manual updates when upstream `package:tailscale` changes.
 - ❌ No Web or Windows support — userspace networking is unavailable on these platforms; Windows uses the stub only.
 - ❌ Cannot coexist with a system-level `tailscaled` on the same machine (port/auth conflicts) — the user must choose one or the other.
+- ⚠️ Re-authentication requires explicit user action via the auth panel (onboarding or settings); the app no longer auto-redirects to the browser, so a disconnected Tailscale node will stay disconnected until the user initiates auth.
 
 ### Key Files
 
@@ -1946,4 +1955,6 @@ Embed a `package:tailscale` userspace Tailscale node directly in the app process
 - `lib/data/network/tailscale_http_adapter.dart` — custom `HttpClientAdapter` with SSE streaming and cancellation support
 - `lib/data/services/server_health_service.dart` — Tailscale health integration (unknown status when inactive)
 - `third_party/tailscale/` — vendored `package:tailscale` with patched `hook/build.dart` (no-op on Windows)
+- `lib/presentation/pages/onboarding/onboarding_wizard_page.dart` — Tailscale auth panel in onboarding flow
+- `lib/presentation/pages/settings/servers_settings_section.dart` — Tailscale auth panel in server settings
 - Ref: e8ff8a78
