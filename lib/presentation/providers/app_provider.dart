@@ -121,7 +121,9 @@ class AppProvider extends ChangeNotifier {
   bool _queuedHealthRefreshAll = false;
   final Set<String> _queuedHealthServerIds = <String>{};
   StreamSubscription<TailscaleState>? _tailscaleStateSubscription;
+  StreamSubscription<List<TailscalePeer>>? _tailscalePeerSubscription;
   TailscaleState _tailscaleState = const TailscaleState.disconnected();
+  List<TailscalePeer> _tailscalePeers = const [];
 
   // OAuth challenge tracking
   final Map<String, Map<String, String>> _oauthChallengeHeaders =
@@ -164,6 +166,14 @@ class AppProvider extends ChangeNotifier {
   bool get tailscaleNeedsAuth => _tailscaleState.requiresUserLogin;
   bool get tailscaleNeedsMachineAuth =>
       _tailscaleState.nodeState == TailscaleNodeState.needsMachineAuth;
+
+  /// Current tailnet peers (online-first, alphabetical within each group).
+  List<TailscalePeer> get tailscalePeers =>
+      List<TailscalePeer>.unmodifiable(_tailscalePeers);
+
+  /// Whether Tailscale is connected and peers are available.
+  bool get tailscaleHasPeers =>
+      _tailscaleState.isConnected && _tailscalePeers.isNotEmpty;
 
   bool hasOAuthChallenge(String serverUrl) =>
       _oauthChallengeHeaders.containsKey(serverUrl);
@@ -472,6 +482,14 @@ class AppProvider extends ChangeNotifier {
         );
       }
     });
+    _tailscalePeerSubscription ??= _tailscaleService.peerChanges.listen((
+      peers,
+    ) {
+      if (_tailscalePeers != peers) {
+        _tailscalePeers = peers;
+        notifyListeners();
+      }
+    });
   }
 
   void _setTailscaleState(TailscaleState state) {
@@ -483,6 +501,9 @@ class AppProvider extends ChangeNotifier {
   Future<void> _stopTailscaleTransport() async {
     await _tailscaleStateSubscription?.cancel();
     _tailscaleStateSubscription = null;
+    await _tailscalePeerSubscription?.cancel();
+    _tailscalePeerSubscription = null;
+    _tailscalePeers = const [];
     await _tailscaleService.down();
     _setTailscaleState(const TailscaleState.disconnected());
   }
@@ -1631,6 +1652,7 @@ class AppProvider extends ChangeNotifier {
     _localServerStderrSubscription?.cancel();
     _localServerExitSubscription?.cancel();
     _tailscaleStateSubscription?.cancel();
+    _tailscalePeerSubscription?.cancel();
     unawaited(_localServerRuntime.dispose());
     unawaited(_tailscaleService.down());
     super.dispose();
