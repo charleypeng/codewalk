@@ -20,6 +20,7 @@ class TailscaleService {
   StreamSubscription<ts.NodeState>? _nodeStateSubscription;
   String? _activeProfileId;
   TailscaleState _state = const TailscaleState.disconnected();
+  ts.NodeState? _lastStreamedNodeState;
 
   TailscaleState get state => _state;
 
@@ -97,17 +98,20 @@ class TailscaleService {
 
   void _listenToNodeState() {
     _nodeStateSubscription ??= _client.onStateChange.listen((state) {
+      _lastStreamedNodeState = state;
       if (state == ts.NodeState.needsLogin) {
-        unawaited(_publishStatusSnapshot());
+        unawaited(_publishStatusSnapshotIfStill(state));
         return;
       }
       _publish(_stateFromNodeState(state));
     });
   }
 
-  Future<void> _publishStatusSnapshot() async {
+  Future<void> _publishStatusSnapshotIfStill(ts.NodeState expected) async {
     try {
-      _publish(_stateFromStatus(await _client.status()));
+      final status = await _client.status();
+      if (_lastStreamedNodeState != expected) return;
+      _publish(_stateFromStatus(status));
     } catch (error, stackTrace) {
       AppLogger.warn(
         '[Tailscale] Failed to read node status',
@@ -145,8 +149,9 @@ class TailscaleService {
         nodeState: TailscaleNodeState.needsLogin,
         authUrl: status.authUrl,
       ),
-      ts.NodeState.needsMachineAuth => const TailscaleState(
+      ts.NodeState.needsMachineAuth => TailscaleState(
         nodeState: TailscaleNodeState.needsMachineAuth,
+        authUrl: status.authUrl,
         message: 'This Tailscale node is waiting for admin approval.',
       ),
       ts.NodeState.starting => const TailscaleState(

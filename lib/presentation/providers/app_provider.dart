@@ -445,9 +445,6 @@ class AppProvider extends ChangeNotifier {
       profileLabel: profile.displayName,
     );
     _setTailscaleState(state);
-    if (state.requiresUserLogin && state.authUrl != null) {
-      await _launchTailscaleAuthUrl(state.authUrl!);
-    }
     if (state.isConnected) {
       _dioClient.applyTailscaleAdapter(
         TailscaleHttpAdapter(_tailscaleService.httpClient),
