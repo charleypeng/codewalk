@@ -1326,10 +1326,9 @@ packages:
   tailscale:
     dependency: "direct main"
     description:
-      name: tailscale
-      sha256: "3a4835ae42b62a97ddb920f2304c5b8cf06f20a345468840c86bcb9905d0278e"
-      url: "https://pub.dev"
-    source: hosted
+      path: "third_party/tailscale"
+      relative: true
+    source: path
     version: "0.3.1"
   term_glyph:
     dependency: transitive

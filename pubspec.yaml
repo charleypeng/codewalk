@@ -111,7 +111,8 @@ dependencies:
     path: third_party/xterm
   highlight: ^0.7.0
   flutter_appauth: ^12.0.1
-  tailscale: ^0.3.1
+  tailscale:
+    path: third_party/tailscale
 
 dev_dependencies:
   flutter_test:
