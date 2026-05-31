@@ -21,6 +21,12 @@ A native (really fast!!) cross-platform client for [OpenCode](https://github.com
 - 💬 Canned answers for faster replies
 - ↩️ Easier undo and redo
 - 🧙 OpenCode setup wizard
+- 🔢 LaTeX math rendering — typeset inline and block equations via pure-Dart KaTeX port
+- 📤 Share messages as images — export any chat message as a themed PNG with native share
+- 🔐 Cloudflare Access OAuth — PKCE-based auth for servers behind Cloudflare Access
+- 📋 Session export as Markdown/JSON — full conversation export with paginated loading
+- 🖥 Server-hosted PTY terminal — embedded terminal running on the OpenCode host
+- ↩️ Inline revert to any prior turn — undo with draft restoration via official revert endpoint
 
 ## Highlights
 
@@ -44,6 +50,12 @@ A native (really fast!!) cross-platform client for [OpenCode](https://github.com
 - 14-language support with instant language switching, system-default detection, and RTL layout for Arabic and Urdu
 - Text-to-speech read-aloud for assistant responses with adjustable speed and pitch
 - Mermaid diagram rendering from fenced code blocks with copy-source fallback
+- Density-aware UI with 5 spacing tiers (compact → spacious) across chrome and composer
+- Smart session state restore — re-selects last agent/model/variant from message metadata
+- Reactive notification dismissal — auto-clears on SSE events, no stale alerts
+- Rich diff review surface with syntax highlighting, line gutters, and lazy hunk loading
+- Cloudflare Access OAuth with PKCE for secure enterprise reverse-proxy auth
+- Server-hosted PTY terminal streamed to client for in-app command-line access
 
 ## Install in One Command
 
