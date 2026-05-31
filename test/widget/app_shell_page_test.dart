@@ -263,6 +263,7 @@ void main() {
       await tester.tap(find.text('Connect to a running server'));
       await tester.pumpAndSettle();
 
+      await tester.ensureVisible(find.text('Test connection'));
       await tester.tap(find.text('Test connection'));
       await tester.runAsync(() async {
         await Future<void>.delayed(const Duration(milliseconds: 220));

@@ -103,10 +103,10 @@ class TailscaleService {
 
   Future<Directory> _stateDirForProfile(String profileId) async {
     final root = await getApplicationSupportDirectory();
-    final safeProfileId = profileId.replaceAll(RegExp(r'[^a-zA-Z0-9_.-]'), '_');
+    final safeProfileId = profileId.replaceAll(RegExp('[^a-zA-Z0-9_.-]'), '_');
     final dir = Directory('${root.path}/tailscale_profiles/$safeProfileId');
-    if (!await dir.exists()) {
-      await dir.create(recursive: true);
+    if (!dir.existsSync()) {
+      dir.createSync(recursive: true);
     }
     return dir;
   }
@@ -114,9 +114,9 @@ class TailscaleService {
   String _hostnameForProfile(String profileLabel) {
     final normalized = profileLabel
         .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9-]+'), '-')
-        .replaceAll(RegExp(r'-+'), '-')
-        .replaceAll(RegExp(r'^-|-$'), '');
+        .replaceAll(RegExp('[^a-z0-9-]+'), '-')
+        .replaceAll(RegExp('-+'), '-')
+        .replaceAll(RegExp('^-|-\$'), '');
     return normalized.isEmpty ? 'codewalk' : 'codewalk-$normalized';
   }
 
