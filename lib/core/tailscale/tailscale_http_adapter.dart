@@ -39,6 +39,7 @@ class TailscaleHttpAdapter implements HttpClientAdapter {
 
     final bodyDone = Completer<void>();
     var sinkClosed = false;
+    var isCancelled = false;
     Future<void> closeSink() {
       if (sinkClosed) return Future<void>.value();
       sinkClosed = true;
@@ -69,6 +70,7 @@ class TailscaleHttpAdapter implements HttpClientAdapter {
     if (cancelFuture != null) {
       unawaited(
         cancelFuture.then((_) async {
+          isCancelled = true;
           await subscription?.cancel();
           await closeSink();
           if (!bodyDone.isCompleted) {
@@ -79,10 +81,16 @@ class TailscaleHttpAdapter implements HttpClientAdapter {
     }
 
     await bodyDone.future;
+    final sendFuture = _client.send(request).then((response) {
+      if (isCancelled) {
+        unawaited(response.stream.listen((_) {}).cancel());
+      }
+      return response;
+    });
     final response = await (cancelFuture == null
-        ? _client.send(request)
+        ? sendFuture
         : Future.any<http.StreamedResponse>(<Future<http.StreamedResponse>>[
-            _client.send(request),
+            sendFuture,
             cancelFuture.then<http.StreamedResponse>((_) => throw cancelled()),
           ]));
     final headers = response.headers.map(
