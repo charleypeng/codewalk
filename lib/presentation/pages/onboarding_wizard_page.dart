@@ -1266,6 +1266,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         }
 
         return DropdownMenu<TailscalePeer>(
+          expandedInsets: EdgeInsets.zero,
           label: Text(context.l10n.tailscaleSelectPeer),
           leadingIcon: const Icon(Symbols.dns_rounded, size: 20),
           dropdownMenuEntries: peers.map((peer) {

@@ -53,10 +53,12 @@ class TailscalePeer extends Equatable {
   }
 
   /// A URL suitable for the server URL field, using the first IPv4 address
-  /// with the default OpenCode port.
+  /// with the default OpenCode port. IPv6 addresses are bracketed.
   String get defaultUrl {
     final ip = ipv4 ?? (tailscaleIPs.isNotEmpty ? tailscaleIPs.first : '');
-    return 'http://$ip:3000';
+    // IPv6 addresses in URLs must be enclosed in brackets.
+    final formattedIp = ip.contains(':') ? '[$ip]' : ip;
+    return 'http://$formattedIp:3000';
   }
 
   @override

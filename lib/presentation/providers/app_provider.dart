@@ -485,7 +485,7 @@ class AppProvider extends ChangeNotifier {
     _tailscalePeerSubscription ??= _tailscaleService.peerChanges.listen((
       peers,
     ) {
-      if (_tailscalePeers != peers) {
+      if (!listEquals(_tailscalePeers, peers)) {
         _tailscalePeers = peers;
         notifyListeners();
       }
