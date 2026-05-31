@@ -657,9 +657,14 @@ class AppProvider extends ChangeNotifier {
     if (_activeServerId == null || setAsActive) {
       _activeServerId = profile.id;
     }
-    await _persistServerProfiles();
-    await _applyActiveServerToClient();
-    _syncHealthPollingLifecycle();
+        await _persistServerProfiles();
+        await _applyActiveServerToClient();
+        // Auto-trigger Tailscale auth when adding a new Tailscale-enabled
+        // server — the user clicking "Save" is explicit consent to authenticate.
+        if (tailscaleEnabled && _tailscaleState.requiresUserLogin) {
+          unawaited(authenticateTailscale());
+        }
+        _syncHealthPollingLifecycle();
     await refreshServerHealth(serverId: profile.id);
     _errorMessage = '';
     notifyListeners();
@@ -728,11 +733,17 @@ class AppProvider extends ChangeNotifier {
       await _clearOAuthCredentialForProfile(previous);
     }
 
-    await _persistServerProfiles();
-    if (_activeServerId == updated.id) {
-      await _applyActiveServerToClient();
-      await checkConnection();
-    }
+        await _persistServerProfiles();
+        if (_activeServerId == updated.id) {
+          await _applyActiveServerToClient();
+          // Auto-trigger Tailscale auth when enabling Tailscale on an active
+          // server — the user saving settings is explicit consent.
+          if (tailscaleEnabled && !previous.tailscaleEnabled &&
+              _tailscaleState.requiresUserLogin) {
+            unawaited(authenticateTailscale());
+          }
+          await checkConnection();
+        }
     await refreshServerHealth(serverId: updated.id);
     _errorMessage = '';
     notifyListeners();
