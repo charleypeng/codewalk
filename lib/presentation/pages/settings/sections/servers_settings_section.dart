@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/i18n/l10n_context.dart';
+import '../../../../core/tailscale/tailscale_service.dart';
 import '../../../../domain/entities/server_profile.dart';
 import '../../../providers/app_provider.dart';
 import '../../../utils/app_page_route.dart';
@@ -198,9 +200,128 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                 activeServer.url,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
+              if (activeServer.tailscaleEnabled) ...[
+                const SizedBox(height: 10),
+                _buildTailscaleStatusCard(appProvider),
+              ],
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTailscaleStatusCard(AppProvider appProvider) {
+    final state = appProvider.tailscaleState;
+    final authUrl = state.authUrl?.toString();
+    final colorScheme = Theme.of(context).colorScheme;
+    final (icon, title, color) = switch (state.nodeState) {
+      TailscaleNodeState.connected => (
+        Symbols.check_circle_rounded,
+        'Tailscale connected',
+        Colors.green,
+      ),
+      TailscaleNodeState.connecting => (
+        Symbols.sync_rounded,
+        'Tailscale connecting',
+        colorScheme.primary,
+      ),
+      TailscaleNodeState.needsLogin => (
+        Symbols.login_rounded,
+        'Tailscale authentication required',
+        colorScheme.tertiary,
+      ),
+      TailscaleNodeState.needsMachineAuth => (
+        Symbols.admin_panel_settings_rounded,
+        'Tailscale admin approval required',
+        colorScheme.tertiary,
+      ),
+      TailscaleNodeState.error => (
+        Symbols.error_rounded,
+        'Tailscale connection failed',
+        colorScheme.error,
+      ),
+      TailscaleNodeState.unsupported => (
+        Symbols.block_rounded,
+        'Tailscale unsupported',
+        colorScheme.error,
+      ),
+      TailscaleNodeState.disconnected => (
+        Symbols.link_off_rounded,
+        'Tailscale disconnected',
+        colorScheme.onSurfaceVariant,
+      ),
+    };
+    final message =
+        state.message ??
+        (state.requiresUserLogin
+            ? 'Open the Tailscale login URL to add this device to your tailnet.'
+            : state.nodeState == TailscaleNodeState.connected
+            ? 'OpenCode traffic for this active profile is routed through Tailscale.'
+            : 'Tailscale will connect when this active profile is used.');
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(message, style: Theme.of(context).textTheme.bodySmall),
+          if (authUrl != null) ...[
+            const SizedBox(height: 8),
+            SelectableText(
+              authUrl,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+            ),
+          ],
+          if (state.requiresUserLogin || authUrl != null) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  onPressed: () async {
+                    final ok = await appProvider.authenticateTailscale();
+                    if (!ok) {
+                      _showMessage('Could not open Tailscale login URL.');
+                    }
+                  },
+                  icon: const Icon(Symbols.open_in_browser_rounded),
+                  label: const Text('Authenticate'),
+                ),
+                if (authUrl != null)
+                  OutlinedButton.icon(
+                    onPressed: () => _copyToClipboard(authUrl),
+                    icon: const Icon(Symbols.content_copy_rounded),
+                    label: const Text('Copy login URL'),
+                  ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -574,6 +695,11 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _copyToClipboard(String text) {
+    Clipboard.setData(ClipboardData(text: text));
+    _showMessage('Copied to clipboard');
   }
 }
 

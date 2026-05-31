@@ -24,6 +24,24 @@ class _QuotaProviderGroupRowState extends State<QuotaProviderGroupRow> {
   @override
   Widget build(BuildContext context) {
     if (!widget.group.canExpand) {
+      if (widget.group.providerId == 'codex') {
+        return Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                widget.group.providerName,
+                style: Theme.of(
+                  context,
+                ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              QuotaEntryRow(entry: widget.group.entries.first, dense: true),
+            ],
+          ),
+        );
+      }
       return QuotaEntryRow(entry: widget.group.entries.first);
     }
 

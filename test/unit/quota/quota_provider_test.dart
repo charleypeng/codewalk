@@ -177,6 +177,53 @@ void main() {
     },
   );
 
+  testWidgets('QuotaPopupSection keeps Codex label with single 5-hour window', (
+    tester,
+  ) async {
+    final provider = QuotaProvider(
+      remoteDataSource: _FakeQuotaRemoteDataSource(const [
+        QuotaProviderResult(
+          providerId: 'codex',
+          providerName: 'Codex',
+          ok: true,
+          configured: true,
+          usage: QuotaProviderUsage(
+            windows: {
+              '5h': UsageWindow(
+                usedPercent: 40,
+                remainingPercent: 60,
+                windowSeconds: 5 * 3600,
+                resetAfterSeconds: 1800,
+                resetAt: 1,
+                resetAtFormatted: null,
+                resetAfterFormatted: null,
+                valueLabel: null,
+              ),
+            },
+            models: {},
+          ),
+          error: null,
+          fetchedAt: 1,
+        ),
+      ]),
+    );
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<QuotaProvider>.value(
+        value: provider,
+        child: _buildApp(
+        home: const Scaffold(body: QuotaPopupSection(serverId: 'srv_test')),
+      ),
+    ),
+  );
+  await tester.pump();
+  await tester.pumpAndSettle();
+
+  expect(find.text('Rate limits'), findsOneWidget);
+  expect(find.text('Codex'), findsOneWidget);
+  expect(find.text('5-Hour'), findsOneWidget);
+  });
+
   test('QuotaProvider hides zero-credit only groups', () async {
     final provider = QuotaProvider(
       remoteDataSource: _FakeQuotaRemoteDataSource(const [

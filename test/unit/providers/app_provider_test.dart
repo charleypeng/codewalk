@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:codewalk/core/errors/failures.dart';
 import 'package:codewalk/core/network/dio_client.dart';
+import 'package:codewalk/core/tailscale/tailscale_service.dart';
 import 'package:codewalk/domain/usecases/check_connection.dart';
 import 'package:codewalk/domain/usecases/get_app_info.dart';
 import 'package:codewalk/presentation/providers/app_provider.dart';
@@ -7,8 +10,40 @@ import 'package:codewalk/presentation/services/local_opencode_server_runtime_typ
 import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 
 import '../../support/fakes.dart';
+
+class _FakeTailscaleService extends TailscaleService {
+  _FakeTailscaleService(this.nextState);
+
+  final TailscaleState nextState;
+  final StreamController<TailscaleState> controller =
+      StreamController<TailscaleState>.broadcast();
+  var downCalled = false;
+
+  @override
+  TailscaleState get state => nextState;
+
+  @override
+  Stream<TailscaleState> get stateChanges => controller.stream;
+
+  @override
+  http.Client get httpClient => throw UnimplementedError();
+
+  @override
+  Future<TailscaleState> upForProfile({
+    required String profileId,
+    required String profileLabel,
+  }) async {
+    return nextState;
+  }
+
+  @override
+  Future<void> down() async {
+    downCalled = true;
+  }
+}
 
 void main() {
   group('AppProvider', () {
@@ -256,6 +291,39 @@ void main() {
         ServerHealthStatus.unknown,
       );
     });
+
+    test(
+      'exposes Tailscale machine-auth state for the active profile',
+      () async {
+        final tailscale = _FakeTailscaleService(
+          const TailscaleState(
+            nodeState: TailscaleNodeState.needsMachineAuth,
+            message: 'Waiting for admin approval.',
+          ),
+        );
+        addTearDown(tailscale.controller.close);
+        provider = AppProvider(
+          getAppInfo: GetAppInfo(repository),
+          checkConnection: CheckConnection(repository),
+          localDataSource: localDataSource,
+          dioClient: DioClient(),
+          tailscaleService: tailscale,
+          localServerRuntime: localServerRuntime,
+          enableHealthPolling: false,
+        );
+
+        await provider.initialize();
+        final created = await provider.addServerProfile(
+          url: 'http://codewalk.tailnet.ts.net:4096',
+          tailscaleEnabled: true,
+          setAsActive: true,
+        );
+
+        expect(created, isTrue);
+        expect(provider.tailscaleNeedsMachineAuth, isTrue);
+        expect(provider.tailscaleMessage, 'Waiting for admin approval.');
+      },
+    );
 
     test(
       'startLocalServer creates and activates managed local profile',

@@ -211,7 +211,10 @@ class QuotaProvider extends ChangeNotifier {
     }
 
     usage.windows.forEach((windowLabel, window) {
-      final label = usage.windows.length == 1 && usage.models.isEmpty
+      final label =
+          usage.windows.length == 1 &&
+              usage.models.isEmpty &&
+              result.providerId != 'codex'
           ? result.providerName
           : formatWindowLabel(windowLabel);
       final entry = _buildEntry(

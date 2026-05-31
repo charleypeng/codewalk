@@ -97,8 +97,24 @@ class TailscaleService {
 
   void _listenToNodeState() {
     _nodeStateSubscription ??= _client.onStateChange.listen((state) {
+      if (state == ts.NodeState.needsLogin) {
+        unawaited(_publishStatusSnapshot());
+        return;
+      }
       _publish(_stateFromNodeState(state));
     });
+  }
+
+  Future<void> _publishStatusSnapshot() async {
+    try {
+      _publish(_stateFromStatus(await _client.status()));
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        '[Tailscale] Failed to read node status',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   Future<Directory> _stateDirForProfile(String profileId) async {

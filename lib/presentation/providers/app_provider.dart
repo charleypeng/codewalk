@@ -120,6 +120,8 @@ class AppProvider extends ChangeNotifier {
   bool _healthCheckInFlight = false;
   bool _queuedHealthRefreshAll = false;
   final Set<String> _queuedHealthServerIds = <String>{};
+  StreamSubscription<TailscaleState>? _tailscaleStateSubscription;
+  TailscaleState _tailscaleState = const TailscaleState.disconnected();
 
   // OAuth challenge tracking
   final Map<String, Map<String, String>> _oauthChallengeHeaders =
@@ -155,6 +157,13 @@ class AppProvider extends ChangeNotifier {
   String? get activeServerId => _activeServerId;
   String? get defaultServerId => _defaultServerId;
   ServerProfile? get activeServer => _findById(_activeServerId);
+  TailscaleState get tailscaleState => _tailscaleState;
+  TailscaleNodeState get tailscaleNodeState => _tailscaleState.nodeState;
+  Uri? get tailscaleAuthUrl => _tailscaleState.authUrl;
+  String? get tailscaleMessage => _tailscaleState.message;
+  bool get tailscaleNeedsAuth => _tailscaleState.requiresUserLogin;
+  bool get tailscaleNeedsMachineAuth =>
+      _tailscaleState.nodeState == TailscaleNodeState.needsMachineAuth;
 
   bool hasOAuthChallenge(String serverUrl) =>
       _oauthChallengeHeaders.containsKey(serverUrl);
@@ -376,7 +385,7 @@ class AppProvider extends ChangeNotifier {
     if (profile == null) {
       _dioClient.clearAuth();
       _dioClient.removeTailscaleAdapter();
-      await _tailscaleService.down();
+      await _stopTailscaleTransport();
       _serverHost = ApiConstants.defaultHost;
       _serverPort = ApiConstants.defaultPort;
       return;
@@ -426,18 +435,20 @@ class AppProvider extends ChangeNotifier {
   Future<void> _applyTailscaleTransport(ServerProfile profile) async {
     if (!profile.tailscaleEnabled || !supportsTailscale) {
       _dioClient.removeTailscaleAdapter();
-      await _tailscaleService.down();
+      await _stopTailscaleTransport();
       return;
     }
 
+    _listenToTailscaleState();
     final state = await _tailscaleService.upForProfile(
       profileId: profile.id,
       profileLabel: profile.displayName,
     );
+    _setTailscaleState(state);
     if (state.requiresUserLogin && state.authUrl != null) {
-      await launchUrl(state.authUrl!, mode: LaunchMode.externalApplication);
+      await _launchTailscaleAuthUrl(state.authUrl!);
     }
-    if (state.isConnected || state.requiresUserLogin) {
+    if (state.isConnected) {
       _dioClient.applyTailscaleAdapter(
         TailscaleHttpAdapter(_tailscaleService.httpClient),
       );
@@ -449,7 +460,61 @@ class AppProvider extends ChangeNotifier {
         state.nodeState == TailscaleNodeState.unsupported ||
         state.nodeState == TailscaleNodeState.disconnected;
     if (shouldStopNode) {
-      await _tailscaleService.down();
+      await _stopTailscaleTransport();
+    }
+  }
+
+  void _listenToTailscaleState() {
+    _tailscaleStateSubscription ??= _tailscaleService.stateChanges.listen((
+      state,
+    ) {
+      _setTailscaleState(state);
+      if (state.isConnected) {
+        _dioClient.applyTailscaleAdapter(
+          TailscaleHttpAdapter(_tailscaleService.httpClient),
+        );
+      }
+    });
+  }
+
+  void _setTailscaleState(TailscaleState state) {
+    if (_tailscaleState == state) return;
+    _tailscaleState = state;
+    notifyListeners();
+  }
+
+  Future<void> _stopTailscaleTransport() async {
+    await _tailscaleStateSubscription?.cancel();
+    _tailscaleStateSubscription = null;
+    await _tailscaleService.down();
+    _setTailscaleState(const TailscaleState.disconnected());
+  }
+
+  Future<bool> authenticateTailscale() async {
+    final authUrl = _tailscaleState.authUrl;
+    if (authUrl != null) {
+      return _launchTailscaleAuthUrl(authUrl);
+    }
+    final profile = activeServer;
+    if (profile == null || !profile.tailscaleEnabled) {
+      return false;
+    }
+    await _applyTailscaleTransport(profile);
+    final refreshedUrl = _tailscaleState.authUrl;
+    if (refreshedUrl == null) return false;
+    return _launchTailscaleAuthUrl(refreshedUrl);
+  }
+
+  Future<bool> _launchTailscaleAuthUrl(Uri authUrl) async {
+    try {
+      return launchUrl(authUrl, mode: LaunchMode.externalApplication);
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        'Failed to launch Tailscale authentication URL',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return false;
     }
   }
 
@@ -1557,6 +1622,7 @@ class AppProvider extends ChangeNotifier {
     _localServerStdoutSubscription?.cancel();
     _localServerStderrSubscription?.cancel();
     _localServerExitSubscription?.cancel();
+    _tailscaleStateSubscription?.cancel();
     unawaited(_localServerRuntime.dispose());
     unawaited(_tailscaleService.down());
     super.dispose();

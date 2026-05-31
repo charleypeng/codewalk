@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/i18n/l10n_context.dart';
+import '../../core/tailscale/tailscale_service.dart';
 import '../../domain/entities/server_profile.dart';
 import '../providers/app_provider.dart';
 import '../providers/settings_provider.dart';
@@ -1037,6 +1038,10 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                             : context.l10n.useTailscaleUnsupported,
                       ),
                     ),
+                    if (_tailscaleEnabled) ...[
+                      const SizedBox(height: 8),
+                      _buildTailscaleAuthPanel(),
+                    ],
                     if (_basicAuthEnabled) ...[
                       TextFormField(
                         controller: _usernameController,
@@ -1136,6 +1141,94 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildTailscaleAuthPanel() {
+    return Consumer<AppProvider>(
+      builder: (context, appProvider, _) {
+        final state = appProvider.tailscaleState;
+        final authUrl = state.authUrl?.toString();
+        final colorScheme = Theme.of(context).colorScheme;
+        final title = switch (state.nodeState) {
+          TailscaleNodeState.needsLogin => 'Tailscale login required',
+          TailscaleNodeState.needsMachineAuth =>
+            'Tailscale admin approval required',
+          TailscaleNodeState.connected => 'Tailscale connected',
+          TailscaleNodeState.connecting => 'Tailscale connecting',
+          TailscaleNodeState.error => 'Tailscale connection failed',
+          TailscaleNodeState.unsupported => 'Tailscale unsupported',
+          TailscaleNodeState.disconnected =>
+            'Tailscale will authenticate after saving',
+        };
+        final message =
+            state.message ??
+            (state.requiresUserLogin
+                ? 'Open the login URL to add this device to your tailnet. If the browser did not open, copy the URL below.'
+                : 'After you save and test this server, CodeWalk will open Tailscale login if this device is not authenticated yet.');
+
+        return Card(
+          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 6),
+                Text(message, style: Theme.of(context).textTheme.bodySmall),
+                if (authUrl != null) ...[
+                  const SizedBox(height: 8),
+                  SelectableText(
+                    authUrl,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(fontFamily: 'monospace'),
+                  ),
+                ],
+                if (state.requiresUserLogin || authUrl != null) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      FilledButton.icon(
+                        onPressed: () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          final ok = await appProvider.authenticateTailscale();
+                          if (!mounted) return;
+                          if (!ok) {
+                            messenger.showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Could not open Tailscale login URL.',
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(Symbols.open_in_browser_rounded),
+                        label: const Text('Authenticate'),
+                      ),
+                      if (authUrl != null)
+                        OutlinedButton.icon(
+                          onPressed: () => _copyToClipboard(authUrl),
+                          icon: const Icon(Symbols.content_copy_rounded),
+                          label: const Text('Copy login URL'),
+                        ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1533,7 +1626,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         key: const ValueKey('step_ready_success'),
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Symbols.check_circle_rounded, size: 72, color: Colors.green),
+          const Icon(Symbols.check_circle_rounded, size: 72, color: Colors.green),
           const SizedBox(height: 24),
           Text(
             successTitle,
