@@ -80,3 +80,9 @@ Description: When opening an existing session, restore the agent, model, and var
 Fallback restores provider/model/agent from last AssistantMessage metadata when no explicit override exists; uses LRU cache, isExplicit flag, and late re-apply hooks.
 
 Commits: 28724598, 1d47349c, c97cf419
+
+### Feature 10: Userspace Tailscale Transport — ✅ Completed
+
+Description: Embed a userspace Tailscale node (via `package:tailscale`) as a profile-scoped transport layer, eliminating the need for a system-wide VPN. Added `tailscaleEnabled` to `ServerProfile` with conditional `TailscaleService` (io/stub), `TailscaleHttpClientAdapter` wrapping `package:http.Client` for Dio, and UI toggles with platform gating (Android/iOS/macOS/Linux). Inactive Tailscale profiles bypass raw network health checks (returning `unknown`) to respect the one-node-per-process constraint. Coexists with Basic Auth and OAuth as purely transport-layer.
+
+Commits: ab5f0069, 51052ea1, be3bcd95, ab0b84ac, 4bec3ae9

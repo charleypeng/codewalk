@@ -169,6 +169,15 @@
 - **Then** the profile records the challenge and the user can re-authenticate from server settings
 - **Then** successful re-authentication updates only the matching profile and does not leak tokens to other profiles or hosts
 
+### Tailscale transport is profile-scoped
+
+- **Given** a user configures a server profile on Android, iOS, Linux, or macOS
+- **When** the user enables Tailscale for that profile
+- **Then** CodeWalk routes OpenCode API and SSE traffic through the embedded userspace Tailscale node instead of requiring a system VPN
+- **Then** Basic Auth or Cloudflare Access OAuth can still own authentication because Tailscale only owns transport
+- **Then** inactive Tailscale profiles report unknown health instead of starting additional Tailscale nodes
+- **Then** Windows and web users do not get a broken Tailscale toggle
+
 ### Offline startup reloads initial data automatically after recovery
 
 - **Given** an active server is configured but the app starts while that server is unreachable

@@ -25,6 +25,7 @@ codewalk/
 │   ├── core/                           # Config, constants, DI, errors, logging, network
 │   │   ├── auth/                        # OAuth module: conditional OAuthService (IO/stub), OAuthCredential model, OAuthTokenStorage secure backend, OAuthFlowResult model
 │   │   ├── i18n/                        # Locale registry, context bridge, localization helpers
+│   │   ├── tailscale/                    # Tailscale transport: service (IO/stub), node state, Dio adapter
 │   │   └── utils/                       # Core utilities (path, timeline search)
 │   ├── data/                           # Data layer: datasources, search models, repositories, cache
 │   │   └── cache/                      # Hybrid file+memory cache for large chat payloads
@@ -75,15 +76,20 @@ lib/presentation/pages/chat_page.dart         # Main chat/session/file UI entry;
 ## Core Modules
 
 ```text
-lib/core/di/injection_container.dart              # Registers datasources, repositories, usecases, providers
+lib/core/di/injection_container.dart              # Registers datasources, repositories, usecases, providers, TailscaleService; wires tailscaleService into AppProvider factory; _loadLocalConfig applies tailscaleEnabled on active profile
 lib/core/i18n/app_locales.dart                     # Locale registry: 14 supported locales, resolution callback, native-name metadata, PT_BR normalization
 lib/core/i18n/l10n_context.dart                    # BuildContext extension: `context.l10n` shorthand for AppLocalizations access
 lib/core/i18n/l10n_bridge.dart                     # Static L10nBridge for context-free localization (tray, background services)
 lib/core/utils/timeline_search_service.dart         # Client-side full-text search over timeline messages: extracts TextPart.text and ReasoningPart.text, performs case-insensitive matching with occurrence counting, and returns results ordered by message age
-lib/core/network/dio_client.dart                  # HTTP client config, auth, base URL updates; exposes `dio` (regular) and `sseDio` (dedicated SSE instance with isolated connection pool); OAuth auth ownership via setOAuthToken/clearOAuthToken/clearAuth with Basic Auth coexistence and header restoration
+lib/core/network/dio_client.dart                  # HTTP client config, auth, base URL updates, Tailscale adapter swap; exposes `dio` (regular) and `sseDio` (dedicated SSE instance with isolated connection pool); Tailscale transport via applyTailscaleAdapter/removeTailscaleAdapter; createHealthCheckDio propagates active adapter to ephemeral Dio instances; OAuth auth ownership via setOAuthToken/clearOAuthToken/clearAuth with Basic Auth coexistence and header restoration
 lib/core/network/dio_sse_adapter.dart              # Conditional export: routes to IO or stub adapter
 lib/core/network/dio_sse_adapter_io.dart           # IO platforms: configures IOHttpClientAdapter with separate HttpClient for SSE (2h idle, 4 max connections)
 lib/core/network/dio_sse_adapter_stub.dart         # Web platform: no-op (browser manages connections natively)
+lib/core/tailscale/tailscale_service.dart          # Conditional export barrel: routes to IO or stub TailscaleService via `export if (dart.library.io)`; re-exports TailscaleState
+lib/core/tailscale/tailscale_service_io.dart       # IO implementation: per-profile Tailscale node lifecycle (up/down/state), state change broadcast via StreamController, wraps `tailscale` Dart package; isolates per-profile state dir, builds hostname from profile label
+lib/core/tailscale/tailscale_service_stub.dart     # Non-IO platforms: TailscaleService stub (state=unsupported, hasClient=false, httpClient/down throw UnsupportedError)
+lib/core/tailscale/tailscale_state.dart            # TailscaleNodeState enum (disconnected/connecting/connected/needsLogin/needsMachineAuth/error/unsupported) + TailscaleState Equatable model with authUrl, message, isConnected, requiresUserLogin
+lib/core/tailscale/tailscale_http_adapter.dart     # Dio HttpClientAdapter bridging Tailscale's http.Client to Dio; implements fetch() delegating to http.StreamedRequest; handles cancelFuture, body streaming, redirect policy; used by applyTailscaleAdapter to swap default transport
 lib/core/auth/oauth_service.dart                   # Conditional export barrel: re-exports oauth_service_result.dart, routes to IO or stub via `export if (dart.library.io)`
 lib/core/auth/oauth_service_io.dart                # OAuthService IO implementation (desktop + Android): Cloudflare Access Managed OAuth with PKCE (S256); desktop uses local HttpServer callback, Android uses flutter_appauth Chrome Custom Tab; credential caching/refresh, OAuth metadata discovery, trusted endpoint validation, callback URL validation
 lib/core/auth/oauth_service_stub.dart              # Non-IO platforms: OAuthService stub (isOAuthChallenge returns false, all other methods throw "not supported on this platform")
@@ -102,7 +108,7 @@ lib/data/repositories/*.dart                      # Domain repository implementa
 lib/data/datasources/quota_remote_datasource.dart # Strategy-chain quota discovery: tries OpenChamber REST (`GET /api/quota/providers`) then falls back to a hidden ephemeral shell probe (`CW_QUOTA_JSON:`) for vanilla OpenCode hosts
 lib/domain/usecases/*.dart                        # Application use cases consumed by providers
 lib/domain/entities/quota.dart                    # Quota domain entities: `QuotaSnapshot`, `UsageWindow`, `PaceInfo`, `QuotaEntry`, `QuotaProviderGroup`
-lib/presentation/providers/app_provider.dart      # Server profiles, health polling, local runtime state, OAuth challenge lifecycle; guards health polling/connection when no active server profile is set; includes setup-debug state (SetupDebugEntry, SetupDebugSeverity) for OpenCode installation diagnostics with recordSetupDebugEvent(), exportSetupDebugReport(), clearSetupDebugData(); OAuth challenge tracking via hasOAuthChallenge/getOAuthChallengeHeaders, handleOAuthChallenge (creates OAuthService, runs PKCE flow, sets Dio token, verifies connection), clearOAuthCredential, isOAuthAuthenticated, and oauthEnabled cache-on-activate; supportsCloudflareAccessOAuth includes desktop (macOS/Windows/Linux) and Android, gates iOS out
+lib/presentation/providers/app_provider.dart      # Server profiles, health polling, local runtime state, OAuth challenge lifecycle, Tailscale transport orchestration; supportsTailscale (Android/iOS/Linux/macOS), _applyTailscaleTransport() drives per-profile Tailscale node lifecycle (upForProfile/auth URL launch/down), swaps Dio adapter via TailscaleHttpAdapter, propagates active adapter to health-check Dio via createHealthCheckDio; tailscaleEnabled in addServerProfile/updateServerProfile CRUD; guards health polling/connection when no active server profile is set; includes setup-debug state (SetupDebugEntry, SetupDebugSeverity) for OpenCode installation diagnostics with recordSetupDebugEvent(), exportSetupDebugReport(), clearSetupDebugData(); OAuth challenge tracking via hasOAuthChallenge/getOAuthChallengeHeaders, handleOAuthChallenge (creates OAuthService, runs PKCE flow, sets Dio token, verifies connection), clearOAuthCredential, isOAuthAuthenticated, and oauthEnabled cache-on-activate; supportsCloudflareAccessOAuth includes desktop (macOS/Windows/Linux) and Android, gates iOS out
 lib/presentation/providers/project_provider.dart  # Project/worktree context selection and persistence; exposes file-name, file-content, and workspace-symbol search for Quick Open and composer mentions
 lib/presentation/providers/settings_provider.dart # Experience settings, theme mode, dynamic color, AMOLED dark toggle, brand seed, contrast, composer tips visibility, sounds, update checks, and complete OpenCode shared settings coverage (default model, default agent, small model, autoupdate, share, username, snapshot); exposes `dynamicColorAvailable` (bool) and `updateDynamicColorAvailability()` for runtime platform signal; `setCheckUpdatesOnOpen()` now controls startup + hourly automatic checks via `_configureAutomaticUpdateChecks()` and `_performStartupUpdateCheck()`; `UpdateInstallState` enum (idle/downloading/installing/done/failed), `startInstall()`, and `restartDesktopApp()` manage APK/desktop install lifecycle
 lib/presentation/providers/quota_provider.dart # Host-discovered quota state: polls `QuotaRemoteDataSource`, TTL-based cache (60s) scoped per `serverId`, normalises raw data into `QuotaProviderGroup` list ordered by severity; `ensureLoaded()` for lazy UI-triggered fetch
@@ -270,7 +276,7 @@ lib/presentation/providers/settings_provider.dart               # In-memory + pe
 ## Data & Domain Layers
 
 ```text
-lib/domain/entities/       # Core business entities (chat, provider, project, worktree, settings, and `chat_composer_draft.dart` for persisted session drafts)
+lib/domain/entities/       # Core business entities (chat, provider, project, worktree, settings, server_profile.dart with tailscaleEnabled/oauthEnabled flags, and `chat_composer_draft.dart` for persisted session drafts)
 lib/domain/repositories/   # Repository contracts
 lib/domain/usecases/       # Use case boundaries used by providers
 lib/data/models/           # API/storage models and JSON adapters
@@ -348,7 +354,7 @@ test/support/                          # Test helpers/fakes; `mock_opencode_serv
 test/contract/                         # Contract tests; `chat_event_contract_test.dart` covers 43 SSE event dispatch contract tests
 tool/ci/check_analyze_budget.sh        # Analyzer issue budget gate (default: 186)
 tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
-.github/workflows/ci.yml               # CI executes analyze + tests + coverage gate
+.github/workflows/ci.yml               # CI executes analyze + tests + coverage gate; includes Go setup (actions/setup-go@v5) in quality, test_shards, and coverage jobs for Tailscale dep
 ```
 
 ## Internationalization (i18n)

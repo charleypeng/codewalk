@@ -39,6 +39,7 @@ This document contains only active architectural decisions that represent the cu
 - ADR-033: Cloudflare Access OAuth as Optional Desktop Reverse-Proxy Auth (ADR-023 Exception)
 - ADR-034: Density-Aware Spacing Tokens via `AppDensitySpacing` Static Helper
 - ADR-035: Message-Derived Selection Fallback with Explicit-Override Precedence
+- ADR-036: Userspace Tailscale Transport with Profile-Scoped Activation
 
 ---
 
@@ -1898,3 +1899,47 @@ Key design decisions:
 - `lib/presentation/providers/chat_provider/chat_provider_context_state_ops.dart` — `_applySessionSelectionOverride` with explicit-override precedence and fallback dispatch
 - `lib/presentation/providers/chat_provider/chat_provider_selection_helpers.dart` — `_restoreSelectionFromMessages` (LRU cache-first backward scan), `_storeCurrentSessionSelectionOverride` (override promotion), `_isSelectionNeutralAssistantMessage`
 - `lib/presentation/providers/chat_provider/chat_provider_message_state_ops.dart` — `_adoptSelectionFromAssistantMessage` (realtime adoption from streaming messages), `_isSelectionNeutralAssistantMessage` definition
+
+## ADR-036: Userspace Tailscale Transport with Profile-Scoped Activation (2026-05-31)
+
+**Status**: Accepted
+
+### Context
+
+Users operating behind restrictive firewalls or in zero-trust networks often cannot reach their OpenCode server directly. Tailscale provides secure overlay networking, but the standard approach requires a system-level Tailscale daemon (`tailscaled`) with root privileges — unsuitable for desktop GUI apps and impossible on Android without root. The app needs a built-in, per-profile transport option that works without system-level installation, integrates cleanly with the existing Dio HTTP stack (including SSE streaming and request cancellation), and does not interfere with regular HTTP connections for non-Tailscale profiles.
+
+### Decision
+
+Embed a `package:tailscale` userspace Tailscale node directly in the app process:
+
+1. **One node per process**: a singleton `TailscaleNode` is initialized on first use and shared across the app lifecycle. Only one active Tailscale identity runs at a time.
+2. **Profile-scoped activation**: `ServerProfile.tailscaleEnabled` (boolean, per-profile) controls whether the Tailscale transport is active for that profile. Only the currently active profile's Tailscale setting takes effect — switching profiles reconfigures the transport.
+3. **Custom Dio `HttpClientAdapter`**: a dedicated adapter routes HTTP requests through the userspace Tailscale node when the feature is enabled. The adapter preserves SSE streaming (chunked transfer) and respects Dio `CancelToken` for request cancellation — critical for the chat SSE stream (ADR-018).
+4. **Inactive Tailscale health returns unknown**: when `tailscaleEnabled` is `false`, the Tailscale health check does not report "unhealthy" — it returns an "unknown" status so the health dashboard does not show a false-negative for profiles that intentionally skip Tailscale.
+5. **Unsupported platforms**: Web and Windows are excluded (no userspace networking support). On these platforms, `tailscaleEnabled` is ignored and standard HTTP is used unconditionally.
+
+### Rationale
+
+- Userspace networking avoids the need for root/system-level `tailscaled` — essential for Android and sandboxed desktop environments.
+- One node per process keeps memory and auth-state footprint minimal; multiple simultaneous Tailscale identities would require complex routing and credential isolation for no proven use case.
+- Profile-scoped activation mirrors the existing pattern (ADR-001, ADR-033) and prevents cross-server credential leakage.
+- A custom `HttpClientAdapter` integrates at Dio's transport layer without touching higher-level SSE/streaming logic — minimal blast radius.
+- Returning "unknown" health for inactive Tailscale avoids misleading the user into thinking Tailscale is broken when it is simply not enabled for that profile.
+
+### Consequences
+
+- ✅ Secure overlay connectivity without system-level Tailscale installation.
+- ✅ Per-profile opt-in matches existing credential-isolation patterns (ADR-001, ADR-033).
+- ✅ SSE streaming and cancellation semantics preserved through the custom adapter.
+- ✅ No false health alerts for profiles that do not use Tailscale.
+- ⚠ Only one Tailscale identity is active at a time — switching profiles requires re-authentication if the new profile targets a different tailnet.
+- ⚠ `package:tailscale` adds a native dependency; builds on supported platforms (Android, Linux, macOS) must include the tailscale Go library.
+- ❌ No Web or Windows support — userspace networking is unavailable on these platforms.
+- ❌ Cannot coexist with a system-level `tailscaled` on the same machine (port/auth conflicts) — the user must choose one or the other.
+
+### Key Files
+
+- `lib/data/services/tailscale_service.dart` — `TailscaleNode` singleton, lifecycle, and health check
+- `lib/data/models/server_profile.dart` — `tailscaleEnabled` field on `ServerProfile`
+- `lib/data/network/tailscale_http_adapter.dart` — custom `HttpClientAdapter` with SSE streaming and cancellation support
+- `lib/data/services/server_health_service.dart` — Tailscale health integration (unknown status when inactive)
