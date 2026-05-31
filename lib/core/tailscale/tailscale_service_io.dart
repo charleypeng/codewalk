@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:tailscale/tailscale.dart' as ts;
 
 import '../logging/app_logger.dart';
+import 'tailscale_peer.dart';
 import 'tailscale_state.dart';
 
 class TailscaleService {
@@ -16,15 +17,25 @@ class TailscaleService {
   final ts.TailscaleClient _client;
   final StreamController<TailscaleState> _stateController =
       StreamController<TailscaleState>.broadcast();
+  final StreamController<List<TailscalePeer>> _peerController =
+      StreamController<List<TailscalePeer>>.broadcast();
 
   StreamSubscription<ts.NodeState>? _nodeStateSubscription;
+  StreamSubscription<List<ts.TailscaleNode>>? _peerSubscription;
   String? _activeProfileId;
   TailscaleState _state = const TailscaleState.disconnected();
+  List<TailscalePeer> _peers = const [];
   ts.NodeState? _lastStreamedNodeState;
 
   TailscaleState get state => _state;
 
+  /// Current snapshot of discovered tailnet peers (online-first order).
+  List<TailscalePeer> get peers => List.unmodifiable(_peers);
+
   Stream<TailscaleState> get stateChanges => _stateController.stream;
+
+  /// Emits the full peer list whenever the tailnet membership changes.
+  Stream<List<TailscalePeer>> get peerChanges => _peerController.stream;
 
   bool get hasClient => _state.isConnected;
 
@@ -83,6 +94,8 @@ class TailscaleService {
   Future<void> down() async {
     await _nodeStateSubscription?.cancel();
     _nodeStateSubscription = null;
+    await _peerSubscription?.cancel();
+    _peerSubscription = null;
     try {
       await _client.down();
     } catch (error, stackTrace) {
@@ -93,7 +106,30 @@ class TailscaleService {
       );
     }
     _activeProfileId = null;
+    _peers = const [];
+    _peerController.add(const []);
     _publish(const TailscaleState.disconnected());
+  }
+
+  /// Pulls a one-shot snapshot of current tailnet peers.
+  ///
+  /// Returns an empty list if the node is not connected.
+  Future<List<TailscalePeer>> nodes() async {
+    if (!_state.isConnected) return const [];
+    try {
+      final rawNodes = await _client.nodes();
+      final mapped = _mapNodes(rawNodes);
+      _peers = mapped;
+      _peerController.add(mapped);
+      return mapped;
+    } catch (error, stackTrace) {
+      AppLogger.warn(
+        '[Tailscale] Failed to fetch peers',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return const [];
+    }
   }
 
   void _listenToNodeState() {
@@ -104,7 +140,43 @@ class TailscaleService {
         return;
       }
       _publish(_stateFromNodeState(state));
+      // Once connected, start listening for peer changes and fetch initial list.
+      if (state == ts.NodeState.running) {
+        _listenToPeerChanges();
+        unawaited(nodes());
+      }
     });
+  }
+
+  /// Subscribes to the upstream peer-change stream (once per [upForProfile]).
+  void _listenToPeerChanges() {
+    _peerSubscription ??= _client.onNodeChanges.listen((rawNodes) {
+      final mapped = _mapNodes(rawNodes);
+      _peers = mapped;
+      _peerController.add(mapped);
+    });
+  }
+
+  /// Maps upstream [ts.TailscaleNode] list to domain [TailscalePeer] list,
+  /// sorted online-first then by host name.
+  static List<TailscalePeer> _mapNodes(List<ts.TailscaleNode> raw) {
+    final mapped = raw
+        .where((n) => n.hostName.isNotEmpty)
+        .map((n) => TailscalePeer(
+              stableId: n.stableNodeId,
+              hostName: n.hostName,
+              dnsName: n.dnsName,
+              tailscaleIPs: List<String>.unmodifiable(n.tailscaleIPs),
+              online: n.online,
+              os: n.os,
+            ))
+        .toList()
+      ..sort((a, b) {
+        // Online peers first, then alphabetical by hostName.
+        if (a.online != b.online) return a.online ? -1 : 1;
+        return a.hostName.toLowerCase().compareTo(b.hostName.toLowerCase());
+      });
+    return List<TailscalePeer>.unmodifiable(mapped);
   }
 
   Future<void> _publishStatusSnapshotIfStill(ts.NodeState expected) async {
