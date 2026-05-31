@@ -69,6 +69,7 @@ import '../../presentation/services/speech_input_service_sherpa.dart';
 import '../../presentation/services/speech_input_service_stt.dart';
 import '../../presentation/services/update_check_service.dart';
 import '../network/dio_client.dart';
+import '../tailscale/tailscale_service.dart';
 
 final sl = GetIt.instance;
 
@@ -112,6 +113,7 @@ Future<void> init() async {
   sl.registerLazySingleton(NotificationService.new);
   sl.registerLazySingleton(SoundService.new);
   sl.registerLazySingleton(ReadAloudService.new);
+  sl.registerLazySingleton(TailscaleService.new);
   sl.registerLazySingleton(
     () => CellularDataSaverService(sharedPreferences: sl()),
   );
@@ -200,6 +202,7 @@ Future<void> init() async {
       checkConnection: sl(),
       localDataSource: sl(),
       dioClient: sl(),
+      tailscaleService: sl(),
       cellularDataSaverService: sl(),
     ),
   );

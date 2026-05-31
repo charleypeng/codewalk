@@ -21,7 +21,16 @@ class ServersSettingsSection extends StatefulWidget {
   State<ServersSettingsSection> createState() => _ServersSettingsSectionState();
 }
 
-enum _ServerAction { activate, setDefault, clearDefault, edit, delete, check, reauth, clearOAuth }
+enum _ServerAction {
+  activate,
+  setDefault,
+  clearDefault,
+  edit,
+  delete,
+  check,
+  reauth,
+  clearOAuth,
+}
 
 class _ServersSettingsSectionState extends State<ServersSettingsSection> {
   final _activeServerDropdownKey = GlobalKey<FormFieldState<String>>();
@@ -365,6 +374,8 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
             if (isDefault) const _MetaChip(label: 'Default'),
             if (profile.oauthEnabled)
               _MetaChip(label: context.l10n.serverOAuthChip),
+            if (profile.tailscaleEnabled)
+              _MetaChip(label: context.l10n.serverTailscaleChip),
           ],
         ),
         subtitle: Text(

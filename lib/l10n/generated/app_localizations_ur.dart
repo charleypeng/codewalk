@@ -1509,6 +1509,20 @@ class AppLocalizationsUr extends AppLocalizations {
   String get serverOAuthChip => 'OAuth';
 
   @override
+  String get useTailscale => 'Use Tailscale';
+
+  @override
+  String get useTailscaleSubtitle =>
+      'Routes traffic through the Tailscale network without a system VPN.';
+
+  @override
+  String get useTailscaleUnsupported =>
+      'Tailscale is not supported on this platform.';
+
+  @override
+  String get serverTailscaleChip => 'Tailscale';
+
+  @override
   String get serverReauthenticate => 'Re-authenticate';
 
   @override

@@ -10,7 +10,6 @@ import 'dio_sse_adapter.dart';
 
 /// Dio HTTP client configuration
 class DioClient {
-
   DioClient({String? baseUrl}) {
     final base = baseUrl ?? ApiConstants.defaultBaseUrl;
 
@@ -46,6 +45,7 @@ class DioClient {
   String? _basicAuthHeader;
   String? _oauthBearerToken;
   Uri? _oauthOrigin;
+  HttpClientAdapter? _tailscaleAdapter;
 
   Dio get dio => _dio;
 
@@ -56,6 +56,39 @@ class DioClient {
     _dio.options.baseUrl = baseUrl;
     _sseDio.options.baseUrl = baseUrl;
     AppLogger.debug('[Dio] Base URL updated: $baseUrl');
+  }
+
+  void applyTailscaleAdapter(HttpClientAdapter adapter) {
+    _tailscaleAdapter = adapter;
+    _dio.httpClientAdapter = adapter;
+    _sseDio.httpClientAdapter = adapter;
+    AppLogger.debug('[Dio] Tailscale transport enabled');
+  }
+
+  void removeTailscaleAdapter() {
+    if (_tailscaleAdapter == null) return;
+    _tailscaleAdapter = null;
+    _dio.httpClientAdapter.close(force: true);
+    _dio.httpClientAdapter = Dio().httpClientAdapter;
+    configureSseAdapter(_sseDio);
+    AppLogger.debug('[Dio] Tailscale transport disabled');
+  }
+
+  Dio createHealthCheckDio() {
+    final healthDio = Dio(
+      BaseOptions(
+        baseUrl: _dio.options.baseUrl,
+        connectTimeout: ApiConstants.connectTimeout,
+        receiveTimeout: ApiConstants.receiveTimeout,
+        sendTimeout: ApiConstants.sendTimeout,
+        headers: Map<String, dynamic>.from(_dio.options.headers),
+      ),
+    );
+    final tailscaleAdapter = _tailscaleAdapter;
+    if (tailscaleAdapter != null) {
+      healthDio.httpClientAdapter = tailscaleAdapter;
+    }
+    return healthDio;
   }
 
   /// Set Basic Authorization header using username and password

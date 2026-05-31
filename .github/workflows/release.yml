@@ -39,6 +39,11 @@ jobs:
           architecture: ${{ matrix.flutter_arch }}
           cache: true
 
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
@@ -85,6 +90,11 @@ jobs:
           architecture: ${{ matrix.flutter_arch }}
           cache: false
 
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -126,6 +136,11 @@ jobs:
           architecture: ${{ matrix.flutter_arch }}
           cache: true
 
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
       - name: Install dependencies
         run: flutter pub get
 
@@ -162,6 +177,11 @@ jobs:
           channel: stable
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
 
       - name: Setup Android signing
         env:

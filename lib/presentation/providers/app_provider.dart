@@ -5,11 +5,14 @@ import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/auth/oauth_service.dart';
 import '../../core/constants/api_constants.dart';
 import '../../core/logging/app_logger.dart';
 import '../../core/network/dio_client.dart';
+import '../../core/tailscale/tailscale_http_adapter.dart';
+import '../../core/tailscale/tailscale_service.dart';
 import '../../data/datasources/app_local_datasource.dart';
 import '../../domain/entities/app_info.dart';
 import '../../domain/entities/server_profile.dart';
@@ -47,6 +50,7 @@ class AppProvider extends ChangeNotifier {
     required CheckConnection checkConnection,
     required AppLocalDataSource localDataSource,
     required DioClient dioClient,
+    TailscaleService? tailscaleService,
     CellularDataSaverService? cellularDataSaverService,
     LocalOpencodeServerRuntime? localServerRuntime,
     Future<ServerHealthStatus> Function(String url)? localServerHealthProbe,
@@ -56,6 +60,7 @@ class AppProvider extends ChangeNotifier {
        _checkConnection = checkConnection,
        _localDataSource = localDataSource,
        _dioClient = dioClient,
+       _tailscaleService = tailscaleService ?? TailscaleService(),
        _cellularDataSaverService =
            cellularDataSaverService ?? CellularDataSaverService.disabled(),
        _localServerRuntime =
@@ -70,6 +75,7 @@ class AppProvider extends ChangeNotifier {
   final CheckConnection _checkConnection;
   final AppLocalDataSource _localDataSource;
   final DioClient _dioClient;
+  final TailscaleService _tailscaleService;
   final CellularDataSaverService _cellularDataSaverService;
   final LocalOpencodeServerRuntime _localServerRuntime;
   final Future<ServerHealthStatus> Function(String url)?
@@ -205,6 +211,14 @@ class AppProvider extends ChangeNotifier {
         defaultTargetPlatform == TargetPlatform.linux ||
         defaultTargetPlatform == TargetPlatform.macOS ||
         defaultTargetPlatform == TargetPlatform.windows;
+  }
+
+  static bool get supportsTailscale {
+    if (kIsWeb) return false;
+    return defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS;
   }
 
   Future<void> initialize() async {
@@ -361,12 +375,13 @@ class AppProvider extends ChangeNotifier {
     final profile = activeServer;
     if (profile == null) {
       _dioClient.clearAuth();
+      _dioClient.removeTailscaleAdapter();
       _serverHost = ApiConstants.defaultHost;
       _serverPort = ApiConstants.defaultPort;
       return;
     }
     _dioClient.updateBaseUrl(profile.url);
-      _dioClient.clearAuth();
+    _dioClient.clearAuth();
     if (profile.oauthEnabled) {
       try {
         final service = OAuthService(
@@ -398,11 +413,35 @@ class AppProvider extends ChangeNotifier {
       _dioClient.clearAuth();
     }
 
+    await _applyTailscaleTransport(profile);
+
     final uri = Uri.tryParse(profile.url);
     if (uri != null) {
       _serverHost = uri.host;
       _serverPort = uri.hasPort ? uri.port : ApiConstants.defaultPort;
     }
+  }
+
+  Future<void> _applyTailscaleTransport(ServerProfile profile) async {
+    if (!profile.tailscaleEnabled || !supportsTailscale) {
+      _dioClient.removeTailscaleAdapter();
+      return;
+    }
+
+    final state = await _tailscaleService.upForProfile(
+      profileId: profile.id,
+      profileLabel: profile.displayName,
+    );
+    if (state.requiresUserLogin && state.authUrl != null) {
+      await launchUrl(state.authUrl!, mode: LaunchMode.externalApplication);
+    }
+    if (state.isConnected || state.requiresUserLogin) {
+      _dioClient.applyTailscaleAdapter(
+        TailscaleHttpAdapter(_tailscaleService.httpClient),
+      );
+      return;
+    }
+    _dioClient.removeTailscaleAdapter();
   }
 
   Future<bool> handleOAuthChallenge({
@@ -504,6 +543,7 @@ class AppProvider extends ChangeNotifier {
     String basicAuthUsername = '',
     String basicAuthPassword = '',
     bool oauthEnabled = false,
+    bool tailscaleEnabled = false,
     bool aiGeneratedTitlesEnabled = true,
     bool setAsActive = false,
   }) async {
@@ -524,6 +564,10 @@ class AppProvider extends ChangeNotifier {
       _setError('Cloudflare Access OAuth is not supported on this platform');
       return false;
     }
+    if (tailscaleEnabled && !supportsTailscale) {
+      _setError('Tailscale is not supported on this platform');
+      return false;
+    }
     final profile = ServerProfile(
       id: _generateServerId(),
       url: normalized,
@@ -532,6 +576,7 @@ class AppProvider extends ChangeNotifier {
       basicAuthUsername: oauthEnabled ? '' : basicAuthUsername.trim(),
       basicAuthPassword: oauthEnabled ? '' : basicAuthPassword.trim(),
       oauthEnabled: oauthEnabled,
+      tailscaleEnabled: tailscaleEnabled,
       aiGeneratedTitlesEnabled: aiGeneratedTitlesEnabled,
       createdAt: now,
       updatedAt: now,
@@ -558,6 +603,7 @@ class AppProvider extends ChangeNotifier {
     required String basicAuthUsername,
     required String basicAuthPassword,
     required bool oauthEnabled,
+    required bool tailscaleEnabled,
     required bool aiGeneratedTitlesEnabled,
   }) async {
     await initialize();
@@ -585,6 +631,10 @@ class AppProvider extends ChangeNotifier {
       _setError('Cloudflare Access OAuth is not supported on this platform');
       return false;
     }
+    if (tailscaleEnabled && !supportsTailscale) {
+      _setError('Tailscale is not supported on this platform');
+      return false;
+    }
 
     final previous = _serverProfiles[index];
     final updated = previous.copyWith(
@@ -594,6 +644,7 @@ class AppProvider extends ChangeNotifier {
       basicAuthUsername: oauthEnabled ? '' : basicAuthUsername.trim(),
       basicAuthPassword: oauthEnabled ? '' : basicAuthPassword.trim(),
       oauthEnabled: oauthEnabled,
+      tailscaleEnabled: tailscaleEnabled,
       aiGeneratedTitlesEnabled: aiGeneratedTitlesEnabled,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
@@ -1285,14 +1336,25 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<ServerHealthStatus> _checkServerHealth(ServerProfile profile) async {
-    final dio = Dio(
-      BaseOptions(
-        baseUrl: profile.url,
-        connectTimeout: _serverHealthRequestTimeout,
-        receiveTimeout: _serverHealthRequestTimeout,
-        sendTimeout: _serverHealthRequestTimeout,
-      ),
-    );
+    final isActiveProfile = profile.id == _activeServerId;
+    if (profile.tailscaleEnabled && (!isActiveProfile || !supportsTailscale)) {
+      return ServerHealthStatus.unknown;
+    }
+
+    final dio = profile.tailscaleEnabled
+        ? _dioClient.createHealthCheckDio()
+        : Dio(
+            BaseOptions(
+              baseUrl: profile.url,
+              connectTimeout: _serverHealthRequestTimeout,
+              receiveTimeout: _serverHealthRequestTimeout,
+              sendTimeout: _serverHealthRequestTimeout,
+            ),
+          );
+    dio.options.baseUrl = profile.url;
+    dio.options.connectTimeout = _serverHealthRequestTimeout;
+    dio.options.receiveTimeout = _serverHealthRequestTimeout;
+    dio.options.sendTimeout = _serverHealthRequestTimeout;
 
     if (profile.basicAuthEnabled &&
         profile.basicAuthUsername.trim().isNotEmpty &&
@@ -1314,7 +1376,10 @@ class AppProvider extends ChangeNotifier {
               'Bearer ${credential.accessToken}';
         }
       } catch (e) {
-        AppLogger.warn('Failed to load OAuth credential for health check', error: e);
+        AppLogger.warn(
+          'Failed to load OAuth credential for health check',
+          error: e,
+        );
       }
     }
 
@@ -1416,6 +1481,7 @@ class AppProvider extends ChangeNotifier {
         basicAuthUsername: current.basicAuthUsername,
         basicAuthPassword: current.basicAuthPassword,
         oauthEnabled: current.oauthEnabled,
+        tailscaleEnabled: current.tailscaleEnabled,
         aiGeneratedTitlesEnabled: current.aiGeneratedTitlesEnabled,
       );
     }
@@ -1483,6 +1549,7 @@ class AppProvider extends ChangeNotifier {
     _localServerStderrSubscription?.cancel();
     _localServerExitSubscription?.cancel();
     unawaited(_localServerRuntime.dispose());
+    unawaited(_tailscaleService.down());
     super.dispose();
   }
 

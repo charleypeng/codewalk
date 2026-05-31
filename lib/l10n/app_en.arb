@@ -1873,6 +1873,22 @@
   "@serverOAuthChip": {
     "description": "CodeWalk UI string — Chip label showing a server profile uses OAuth authentication"
   },
+  "useTailscale": "Use Tailscale",
+  "@useTailscale": {
+    "description": "CodeWalk UI string — Label for the Tailscale transport toggle in the onboarding/server setup wizard"
+  },
+  "useTailscaleSubtitle": "Routes traffic through the Tailscale network without a system VPN.",
+  "@useTailscaleSubtitle": {
+    "description": "CodeWalk UI string — Subtitle explaining the Tailscale toggle when supported on this platform"
+  },
+  "useTailscaleUnsupported": "Tailscale is not supported on this platform.",
+  "@useTailscaleUnsupported": {
+    "description": "CodeWalk UI string — Shown when Tailscale transport is not supported on the current platform"
+  },
+  "serverTailscaleChip": "Tailscale",
+  "@serverTailscaleChip": {
+    "description": "CodeWalk UI string — Chip label showing a server profile routes traffic through Tailscale"
+  },
   "serverReauthenticate": "Re-authenticate",
   "@serverReauthenticate": {
     "description": "CodeWalk UI string — Menu action to re-authenticate an OAuth-enabled server profile"

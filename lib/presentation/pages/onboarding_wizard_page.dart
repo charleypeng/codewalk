@@ -70,6 +70,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
   final TextEditingController _passwordController = TextEditingController();
   bool _basicAuthEnabled = false;
   bool _oauthEnabled = false;
+  bool _tailscaleEnabled = false;
   bool _aiGeneratedTitlesEnabled = true;
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
@@ -88,6 +89,8 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
 
   bool get _oauthSupported => AppProvider.supportsCloudflareAccessOAuth;
 
+  bool get _tailscaleSupported => AppProvider.supportsTailscale;
+
   void _configureInitialFlow() {
     final initialProfile = widget.initialServerProfile;
     if (initialProfile != null) {
@@ -98,6 +101,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       _passwordController.text = initialProfile.basicAuthPassword;
       _basicAuthEnabled = initialProfile.basicAuthEnabled;
       _oauthEnabled = initialProfile.oauthEnabled;
+      _tailscaleEnabled = initialProfile.tailscaleEnabled;
       _aiGeneratedTitlesEnabled = initialProfile.aiGeneratedTitlesEnabled;
       _step = 1;
       return;
@@ -319,6 +323,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
     final username = _usernameController.text.trim();
     final password = _passwordController.text.trim();
     final oauthEnabled = _oauthEnabled && _oauthSupported;
+    final tailscaleEnabled = _tailscaleEnabled && _tailscaleSupported;
 
     final trackedServerId = _editingServerId ?? _addedServerId;
     final hasTrackedServer =
@@ -338,6 +343,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         basicAuthUsername: username,
         basicAuthPassword: password,
         oauthEnabled: oauthEnabled,
+        tailscaleEnabled: tailscaleEnabled,
         aiGeneratedTitlesEnabled: _aiGeneratedTitlesEnabled,
       );
       if (!mounted) return;
@@ -400,6 +406,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       basicAuthUsername: username,
       basicAuthPassword: password,
       oauthEnabled: oauthEnabled,
+      tailscaleEnabled: tailscaleEnabled,
       aiGeneratedTitlesEnabled: _aiGeneratedTitlesEnabled,
       setAsActive: true,
     );
@@ -947,168 +954,185 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                  TextFormField(
-                    controller: _urlController,
-                    decoration: InputDecoration(
-                      labelText: context.l10n.onboardingServerUrl,
-                      hintText: _suggestedServerUrl,
-                      suffixIcon: _urlController.text.trim().isEmpty
-                          ? null
-                          : IconButton(
-                              tooltip: context.l10n.onboardingClear,
-                              icon: const Icon(Symbols.clear),
-                              onPressed: () {
-                                _urlController.clear();
-                                setState(() {});
-                              },
-                            ),
-                    ),
-                    onChanged: (_) => setState(() {}),
-                    validator: (value) {
-                      final raw = value?.trim() ?? '';
-                      if (raw.isEmpty) return 'Enter a server URL';
-                      try {
-                        AppProvider.normalizeServerUrl(raw);
-                        return null;
-                      } catch (_) {
-                        return 'Invalid URL';
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _labelController,
-                    decoration: InputDecoration(
-                      labelText: context.l10n.onboardingLabel,
-                      hintText: context.l10n.onboardingLabelHint,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SwitchListTile(
-                    value: _basicAuthEnabled,
-                    onChanged: (value) {
-                      setState(() {
-                        _basicAuthEnabled = value;
-                        if (value) _oauthEnabled = false;
-                      });
-                    },
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(context.l10n.onboardingUseBasicAuth),
-                  ),
-                  SwitchListTile(
-                    value: _oauthEnabled,
-                    onChanged: _oauthSupported
-                        ? (value) {
-                            setState(() {
-                              _oauthEnabled = value;
-                              if (value) _basicAuthEnabled = false;
-                            });
-                          }
-                        : null,
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(context.l10n.useOAuthCloudflareAccess),
-                    subtitle: Text(
-                      _oauthSupported
-                          ? context.l10n.useOAuthCloudflareAccessSubtitle
-                          : context.l10n.useOAuthCloudflareAccessUnsupported,
-                    ),
-                  ),
-                  if (_basicAuthEnabled) ...[
                     TextFormField(
-                      controller: _usernameController,
+                      controller: _urlController,
                       decoration: InputDecoration(
-                        labelText: context.l10n.onboardingUsername,
-                      ),
-                      validator: (value) {
-                        if (!_basicAuthEnabled) return null;
-                        if ((value ?? '').trim().isEmpty) {
-                          return context.l10n.onboardingUsernameRequired;
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _passwordController,
-                      decoration: InputDecoration(
-                        labelText: context.l10n.onboardingPassword,
-                      ),
-                      obscureText: true,
-                      validator: (value) {
-                        if (!_basicAuthEnabled) return null;
-                        if ((value ?? '').trim().isEmpty) {
-                          return context.l10n.onboardingPasswordRequired;
-                        }
-                        return null;
-                      },
-                    ),
-                  ],
-                  const SizedBox(height: 8),
-                  SwitchListTile(
-                    value: _aiGeneratedTitlesEnabled,
-                    onChanged: (value) {
-                      setState(() {
-                        _aiGeneratedTitlesEnabled = value;
-                      });
-                    },
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('AI generated titles'),
-                    subtitle: const Text(
-                      "Uses your server's title agent to name conversations",
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (_connectionError != null) ...[
-                    Card(
-                      color: Theme.of(context).colorScheme.errorContainer,
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Symbols.error_outline,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onErrorContainer,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _connectionError!,
-                                style: TextStyle(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onErrorContainer,
-                                ),
+                        labelText: context.l10n.onboardingServerUrl,
+                        hintText: _suggestedServerUrl,
+                        suffixIcon: _urlController.text.trim().isEmpty
+                            ? null
+                            : IconButton(
+                                tooltip: context.l10n.onboardingClear,
+                                icon: const Icon(Symbols.clear),
+                                onPressed: () {
+                                  _urlController.clear();
+                                  setState(() {});
+                                },
                               ),
-                            ),
-                          ],
-                        ),
                       ),
+                      onChanged: (_) => setState(() {}),
+                      validator: (value) {
+                        final raw = value?.trim() ?? '';
+                        if (raw.isEmpty) return 'Enter a server URL';
+                        try {
+                          AppProvider.normalizeServerUrl(raw);
+                          return null;
+                        } catch (_) {
+                          return 'Invalid URL';
+                        }
+                      },
                     ),
                     const SizedBox(height: 12),
-                  ],
-                  FilledButton.icon(
-                    onPressed: _testing ? null : _testConnection,
-                    icon: _testing
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Symbols.link_rounded),
-                    label: Text(
-                      _testing
-                          ? 'Testing...'
-                          : hasTrackedServer
-                          ? 'Save and test'
-                          : 'Test connection',
+                    TextFormField(
+                      controller: _labelController,
+                      decoration: InputDecoration(
+                        labelText: context.l10n.onboardingLabel,
+                        hintText: context.l10n.onboardingLabelHint,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    SwitchListTile(
+                      value: _basicAuthEnabled,
+                      onChanged: (value) {
+                        setState(() {
+                          _basicAuthEnabled = value;
+                          if (value) _oauthEnabled = false;
+                        });
+                      },
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(context.l10n.onboardingUseBasicAuth),
+                    ),
+                    SwitchListTile(
+                      value: _oauthEnabled,
+                      onChanged: _oauthSupported
+                          ? (value) {
+                              setState(() {
+                                _oauthEnabled = value;
+                                if (value) _basicAuthEnabled = false;
+                              });
+                            }
+                          : null,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(context.l10n.useOAuthCloudflareAccess),
+                      subtitle: Text(
+                        _oauthSupported
+                            ? context.l10n.useOAuthCloudflareAccessSubtitle
+                            : context.l10n.useOAuthCloudflareAccessUnsupported,
+                      ),
+                    ),
+                    SwitchListTile(
+                      value: _tailscaleEnabled,
+                      onChanged: _tailscaleSupported
+                          ? (value) {
+                              setState(() {
+                                _tailscaleEnabled = value;
+                              });
+                            }
+                          : null,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(context.l10n.useTailscale),
+                      subtitle: Text(
+                        _tailscaleSupported
+                            ? context.l10n.useTailscaleSubtitle
+                            : context.l10n.useTailscaleUnsupported,
+                      ),
+                    ),
+                    if (_basicAuthEnabled) ...[
+                      TextFormField(
+                        controller: _usernameController,
+                        decoration: InputDecoration(
+                          labelText: context.l10n.onboardingUsername,
+                        ),
+                        validator: (value) {
+                          if (!_basicAuthEnabled) return null;
+                          if ((value ?? '').trim().isEmpty) {
+                            return context.l10n.onboardingUsernameRequired;
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _passwordController,
+                        decoration: InputDecoration(
+                          labelText: context.l10n.onboardingPassword,
+                        ),
+                        obscureText: true,
+                        validator: (value) {
+                          if (!_basicAuthEnabled) return null;
+                          if ((value ?? '').trim().isEmpty) {
+                            return context.l10n.onboardingPasswordRequired;
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    SwitchListTile(
+                      value: _aiGeneratedTitlesEnabled,
+                      onChanged: (value) {
+                        setState(() {
+                          _aiGeneratedTitlesEnabled = value;
+                        });
+                      },
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('AI generated titles'),
+                      subtitle: const Text(
+                        "Uses your server's title agent to name conversations",
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (_connectionError != null) ...[
+                      Card(
+                        color: Theme.of(context).colorScheme.errorContainer,
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Symbols.error_outline,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onErrorContainer,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _connectionError!,
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onErrorContainer,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    FilledButton.icon(
+                      onPressed: _testing ? null : _testConnection,
+                      icon: _testing
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Symbols.link_rounded),
+                      label: Text(
+                        _testing
+                            ? 'Testing...'
+                            : hasTrackedServer
+                            ? 'Save and test'
+                            : 'Test connection',
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
           ],
         ],
       ),

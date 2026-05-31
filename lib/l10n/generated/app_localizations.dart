@@ -2840,6 +2840,30 @@ abstract class AppLocalizations {
   /// **'OAuth'**
   String get serverOAuthChip;
 
+  /// CodeWalk UI string — Label for the Tailscale transport toggle in the onboarding/server setup wizard
+  ///
+  /// In en, this message translates to:
+  /// **'Use Tailscale'**
+  String get useTailscale;
+
+  /// CodeWalk UI string — Subtitle explaining the Tailscale toggle when supported on this platform
+  ///
+  /// In en, this message translates to:
+  /// **'Routes traffic through the Tailscale network without a system VPN.'**
+  String get useTailscaleSubtitle;
+
+  /// CodeWalk UI string — Shown when Tailscale transport is not supported on the current platform
+  ///
+  /// In en, this message translates to:
+  /// **'Tailscale is not supported on this platform.'**
+  String get useTailscaleUnsupported;
+
+  /// CodeWalk UI string — Chip label showing a server profile routes traffic through Tailscale
+  ///
+  /// In en, this message translates to:
+  /// **'Tailscale'**
+  String get serverTailscaleChip;
+
   /// CodeWalk UI string — Menu action to re-authenticate an OAuth-enabled server profile
   ///
   /// In en, this message translates to:

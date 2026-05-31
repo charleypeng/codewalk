@@ -141,45 +141,51 @@ void main() {
       }
     });
 
-    test('addServerProfile blocks OAuth on unsupported platforms (web)', () async {
-      final previous = debugDefaultTargetPlatformOverride;
-      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-      try {
+    test(
+      'addServerProfile blocks OAuth on unsupported platforms (web)',
+      () async {
+        final previous = debugDefaultTargetPlatformOverride;
+        debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+        try {
+          await provider.initialize();
+          final created = await provider.addServerProfile(
+            url: 'https://code.example.com',
+            oauthEnabled: true,
+          );
+
+          expect(created, isFalse);
+          expect(
+            provider.errorMessage,
+            'Cloudflare Access OAuth is not supported on this platform',
+          );
+        } finally {
+          debugDefaultTargetPlatformOverride = previous;
+        }
+      },
+    );
+
+    test(
+      'addServerProfile makes OAuth mutually exclusive with Basic Auth',
+      () async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+        addTearDown(() => debugDefaultTargetPlatformOverride = null);
+
         await provider.initialize();
         final created = await provider.addServerProfile(
           url: 'https://code.example.com',
+          basicAuthEnabled: true,
+          basicAuthUsername: 'opencode',
+          basicAuthPassword: 'password',
           oauthEnabled: true,
         );
 
-        expect(created, isFalse);
-        expect(
-          provider.errorMessage,
-          'Cloudflare Access OAuth is not supported on this platform',
-        );
-      } finally {
-        debugDefaultTargetPlatformOverride = previous;
-      }
-    });
-
-    test('addServerProfile makes OAuth mutually exclusive with Basic Auth', () async {
-      debugDefaultTargetPlatformOverride = TargetPlatform.linux;
-      addTearDown(() => debugDefaultTargetPlatformOverride = null);
-
-      await provider.initialize();
-      final created = await provider.addServerProfile(
-        url: 'https://code.example.com',
-        basicAuthEnabled: true,
-        basicAuthUsername: 'opencode',
-        basicAuthPassword: 'password',
-        oauthEnabled: true,
-      );
-
-      expect(created, isTrue);
-      expect(provider.activeServer?.oauthEnabled, isTrue);
-      expect(provider.activeServer?.basicAuthEnabled, isFalse);
-      expect(provider.activeServer?.basicAuthUsername, isEmpty);
-      expect(provider.activeServer?.basicAuthPassword, isEmpty);
-    });
+        expect(created, isTrue);
+        expect(provider.activeServer?.oauthEnabled, isTrue);
+        expect(provider.activeServer?.basicAuthEnabled, isFalse);
+        expect(provider.activeServer?.basicAuthUsername, isEmpty);
+        expect(provider.activeServer?.basicAuthPassword, isEmpty);
+      },
+    );
 
     test('setActiveServer blocks unhealthy profiles', () async {
       await provider.initialize();
@@ -217,6 +223,7 @@ void main() {
         basicAuthUsername: profile.basicAuthUsername,
         basicAuthPassword: profile.basicAuthPassword,
         oauthEnabled: profile.oauthEnabled,
+        tailscaleEnabled: profile.tailscaleEnabled,
         aiGeneratedTitlesEnabled: false,
       );
 
@@ -225,6 +232,29 @@ void main() {
           .where((item) => item.id == profile.id)
           .first;
       expect(refreshed.aiGeneratedTitlesEnabled, isFalse);
+    });
+
+    test('inactive Tailscale profile health remains unknown', () async {
+      await provider.initialize();
+      final activeCreated = await provider.addServerProfile(
+        url: 'http://127.0.0.1:5011',
+        setAsActive: true,
+      );
+      final tailscaleCreated = await provider.addServerProfile(
+        url: 'http://codewalk.tailnet.ts.net:4096',
+        tailscaleEnabled: true,
+      );
+
+      expect(activeCreated, isTrue);
+      expect(tailscaleCreated, isTrue);
+      final tailscaleProfile = provider.serverProfiles
+          .where((item) => item.tailscaleEnabled)
+          .first;
+      expect(tailscaleProfile.id, isNot(provider.activeServerId));
+      expect(
+        provider.healthFor(tailscaleProfile.id),
+        ServerHealthStatus.unknown,
+      );
     });
 
     test(

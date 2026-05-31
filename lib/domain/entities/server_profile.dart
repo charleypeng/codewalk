@@ -1,7 +1,6 @@
 import 'package:equatable/equatable.dart';
 
 class ServerProfile extends Equatable {
-
   factory ServerProfile.fromJson(Map<String, dynamic> json) {
     return ServerProfile(
       id: json['id'] as String? ?? '',
@@ -11,6 +10,7 @@ class ServerProfile extends Equatable {
       basicAuthUsername: json['basicAuthUsername'] as String? ?? '',
       basicAuthPassword: json['basicAuthPassword'] as String? ?? '',
       oauthEnabled: json['oauthEnabled'] as bool? ?? false,
+      tailscaleEnabled: json['tailscaleEnabled'] as bool? ?? false,
       aiGeneratedTitlesEnabled:
           json['aiGeneratedTitlesEnabled'] as bool? ?? true,
       createdAt: json['createdAt'] as int? ?? 0,
@@ -25,6 +25,7 @@ class ServerProfile extends Equatable {
     this.basicAuthUsername = '',
     this.basicAuthPassword = '',
     this.oauthEnabled = false,
+    this.tailscaleEnabled = false,
     this.aiGeneratedTitlesEnabled = true,
     required this.createdAt,
     required this.updatedAt,
@@ -37,6 +38,7 @@ class ServerProfile extends Equatable {
   final String basicAuthUsername;
   final String basicAuthPassword;
   final bool oauthEnabled;
+  final bool tailscaleEnabled;
   final bool aiGeneratedTitlesEnabled;
   final int createdAt;
   final int updatedAt;
@@ -58,6 +60,7 @@ class ServerProfile extends Equatable {
       'basicAuthUsername': basicAuthUsername,
       'basicAuthPassword': basicAuthPassword,
       'oauthEnabled': oauthEnabled,
+      'tailscaleEnabled': tailscaleEnabled,
       'aiGeneratedTitlesEnabled': aiGeneratedTitlesEnabled,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
@@ -72,6 +75,7 @@ class ServerProfile extends Equatable {
     String? basicAuthUsername,
     String? basicAuthPassword,
     bool? oauthEnabled,
+    bool? tailscaleEnabled,
     bool? aiGeneratedTitlesEnabled,
     int? createdAt,
     int? updatedAt,
@@ -84,6 +88,7 @@ class ServerProfile extends Equatable {
       basicAuthUsername: basicAuthUsername ?? this.basicAuthUsername,
       basicAuthPassword: basicAuthPassword ?? this.basicAuthPassword,
       oauthEnabled: oauthEnabled ?? this.oauthEnabled,
+      tailscaleEnabled: tailscaleEnabled ?? this.tailscaleEnabled,
       aiGeneratedTitlesEnabled:
           aiGeneratedTitlesEnabled ?? this.aiGeneratedTitlesEnabled,
       createdAt: createdAt ?? this.createdAt,
@@ -100,6 +105,7 @@ class ServerProfile extends Equatable {
     basicAuthUsername,
     basicAuthPassword,
     oauthEnabled,
+    tailscaleEnabled,
     aiGeneratedTitlesEnabled,
     createdAt,
     updatedAt,
