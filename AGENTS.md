@@ -65,7 +65,7 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | 033 | Cloudflare Managed OAuth as optional desktop + Android reverse-proxy auth (ADR-023 exception) — `ServerProfile.oauthEnabled`, `OAuthService` conditional export (io/stub), auth code + PKCE S256, DCR, `OAuthTokenStorage` in `flutter_secure_storage` scoped by profileId+serverUrl, Bearer token for matching origin only, OAuth/Basic Auth mutually exclusive per profile, desktop (local HTTP redirect) and Android (flutter_appauth) via `AppProvider.supportsCloudflareAccessOAuth`, `/oauth/callback` with state/duplicate rejection, health checks record OAuth challenges, rollback by disabling `oauthEnabled` + clearing credentials | 1683–1792 |
 | 034 | Density-aware spacing tokens via `AppDensitySpacing` static helper — 5-tier `AppDensity` switch expressions for horizontal/vertical padding, gaps, content insets, chrome/composer convenience builders, replacing ~25 hardcoded EdgeInsets/SizedBox magic numbers | 1794–1849 |
 | 035 | Message-derived selection fallback with explicit-override precedence — 3-tier restoration (explicit override → message scan → global defaults), LRU cache-first backward scan, neutral-message filtering, isExplicit flag, override promotion on fallback success; OpenChamber parity for `restoreSessionStateFromMessages()` | 1852–1901 |
-| 036 | Userspace Tailscale transport with `package:tailscale` embedded node, `ServerProfile.tailscaleEnabled`, one node per process, active-profile-only transport, inactive health returns unknown, custom Dio HttpClientAdapter preserving SSE + cancellation, no Web/Windows | 1903–1945 |
+| 036 | Userspace Tailscale transport with vendored `package:tailscale` (`third_party/tailscale`), `hook/build.dart` no-op on Windows (stub-only), `ServerProfile.tailscaleEnabled`, one node per process, active-profile-only transport, inactive health returns unknown, custom Dio HttpClientAdapter preserving SSE + cancellation, no Web/Windows | 1903–1949 |
 
 ## 🗺 CODEBASE Quick Reference (details in `CODEBASE.md`)
 
@@ -74,16 +74,16 @@ This rule is **supreme** for any app behavior change and overrides conflicting l
 | CODEBASE Topic | Lines |
 |----------------|-------|
 | Project Snapshot | 3–11 |
-| Folder Structure | 13–63 |
-| Entry Points | 65–74 |
-| Core Modules | 76–177 |
-| Chat Architecture | 178–275 |
-| Data & Domain Layers | 276–286 |
-| Key API/DataSource locations | 288–306 |
-| Main Commands | 308–330 |
-| Testing/Quality Gates | 332–358 |
-| Internationalization (i18n) | 360–370 |
-| Notes | 372–554 |
+| Folder Structure | 13–66 |
+| Entry Points | 68–77 |
+| Core Modules | 79–180 |
+| Chat Architecture | 181–278 |
+| Data & Domain Layers | 279–289 |
+| Key API/DataSource locations | 291–309 |
+| Main Commands | 311–333 |
+| Testing/Quality Gates | 335–361 |
+| Internationalization (i18n) | 363–373 |
+| Notes | 375–558 |
 
 ## ⚙️ Makefile Quick Reference (details in `Makefile`)
 

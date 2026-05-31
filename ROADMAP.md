@@ -85,4 +85,6 @@ Commits: 28724598, 1d47349c, c97cf419
 
 Description: Embed a userspace Tailscale node (via `package:tailscale`) as a profile-scoped transport layer, eliminating the need for a system-wide VPN. Added `tailscaleEnabled` to `ServerProfile` with conditional `TailscaleService` (io/stub), `TailscaleHttpClientAdapter` wrapping `package:http.Client` for Dio, and UI toggles with platform gating (Android/iOS/macOS/Linux). Inactive Tailscale profiles bypass raw network health checks (returning `unknown`) to respect the one-node-per-process constraint. Coexists with Basic Auth and OAuth as purely transport-layer.
 
-Commits: ab5f0069, 51052ea1, be3bcd95, ab0b84ac, 4bec3ae9
+Commits: ab5f0069, 51052ea1, be3bcd95, ab0b84ac, 4bec3ae9, e8ff8a78
+
+Follow-up: vendored `package:tailscale` with Windows native-assets hook no-op to unblock release artifacts. The `tailscale` native-assets hook was incompatible with Windows builds on ARM64 Linux CI runners; vendored the package and replaced the hook with a no-op, enabling release artifacts to build for all platforms.

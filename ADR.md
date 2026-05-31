@@ -1932,9 +1932,11 @@ Embed a `package:tailscale` userspace Tailscale node directly in the app process
 - ✅ Per-profile opt-in matches existing credential-isolation patterns (ADR-001, ADR-033).
 - ✅ SSE streaming and cancellation semantics preserved through the custom adapter.
 - ✅ No false health alerts for profiles that do not use Tailscale.
+- ✅ Vendored `package:tailscale` under `third_party/tailscale` isolates the dependency from pub ecosystem churn and gives full control over native-asset build hooks.
+- ✅ Windows release builds succeed — `hook/build.dart` no-ops on Windows (where the Tailscale stub is used) so native-assets hooks cannot break the Windows toolchain.
 - ⚠ Only one Tailscale identity is active at a time — switching profiles requires re-authentication if the new profile targets a different tailnet.
-- ⚠ `package:tailscale` adds a native dependency; builds on supported platforms (Android, Linux, macOS) must include the tailscale Go library.
-- ❌ No Web or Windows support — userspace networking is unavailable on these platforms.
+- ⚠ Vendored package requires manual updates when upstream `package:tailscale` changes.
+- ❌ No Web or Windows support — userspace networking is unavailable on these platforms; Windows uses the stub only.
 - ❌ Cannot coexist with a system-level `tailscaled` on the same machine (port/auth conflicts) — the user must choose one or the other.
 
 ### Key Files
@@ -1943,3 +1945,5 @@ Embed a `package:tailscale` userspace Tailscale node directly in the app process
 - `lib/data/models/server_profile.dart` — `tailscaleEnabled` field on `ServerProfile`
 - `lib/data/network/tailscale_http_adapter.dart` — custom `HttpClientAdapter` with SSE streaming and cancellation support
 - `lib/data/services/server_health_service.dart` — Tailscale health integration (unknown status when inactive)
+- `third_party/tailscale/` — vendored `package:tailscale` with patched `hook/build.dart` (no-op on Windows)
+- Ref: e8ff8a78

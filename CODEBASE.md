@@ -59,6 +59,9 @@ codewalk/
 ├── android/ linux/ macos/ web/ windows/ # Platform runners/build configs
 ├── android/app/src/main/res/drawable-*/ # Android notification small icons (`ic_stat_codewalk.png`)
 ├── linux/runner/resources/             # Linux launcher icon + desktop entry icon metadata
+├── third_party/                         # Vendored Dart packages (path dependencies)
+│   ├── tailscale/                        # Userspace Tailscale networking; Go native build hook via `hook/build.dart`
+│   └── xterm/                            # xterm.js terminal emulator Dart port
 └── Makefile                            # Main development and validation commands
 ```
 
@@ -379,6 +382,7 @@ tool/ci/check_coverage.sh              # Coverage threshold gate (default: 35%)
 - Android build targets Java 17 (`sourceCompatibility`, `targetCompatibility`, `jvmTarget`).
 - featM icon migration is largely complete in `lib/presentation/**` and `test/widget/**`; one notifications settings widget still uses `Icons.*` while the rest has moved to `Symbols.*` (`material_symbols_icons`).
 - Cloudflare Access OAuth now supported on Android via `flutter_appauth` (Chrome Custom Tab + manifest-verified loopback redirect) in addition to desktop (local HTTP redirect server).`
+- `package:tailscale` (`third_party/tailscale/`, path dependency in `pubspec.yaml`) provides embedded userspace Tailscale networking via a Go native build hook (`hook/build.dart`). The hook skips Windows native asset registration to keep the package importable while runtime Tailscale support remains stubbed on Windows — preserving Windows release builds. Supports Android, iOS, Linux, macOS; excluded from Web/Windows platform declarations.
 
 ### Direct Follow-up Send Flow
 
