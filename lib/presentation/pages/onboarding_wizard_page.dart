@@ -954,8 +954,12 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    TextFormField(
+              children: [
+                if (_tailscaleEnabled) ...[
+                  _buildTailscalePeerDropdown(),
+                  const SizedBox(height: 12),
+                ],
+                TextFormField(
                       controller: _urlController,
                       decoration: InputDecoration(
                         labelText: context.l10n.onboardingServerUrl,
@@ -1227,6 +1231,67 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
               ],
             ),
           ),
+        );
+      },
+    );
+  }
+
+  /// Dropdown listing tailnet peers when Tailscale is connected.
+  ///
+  /// Selecting a peer auto-fills the URL field with the peer's first IPv4
+  /// address on the default OpenCode port. The URL field remains editable
+  /// so the user can adjust the port or switch to DNS name.
+  Widget _buildTailscalePeerDropdown() {
+    return Consumer<AppProvider>(
+      builder: (context, appProvider, _) {
+        final peers = appProvider.tailscalePeers;
+        final isConnected = appProvider.tailscaleState.isConnected;
+        if (!isConnected || peers.isEmpty) {
+          // Show placeholder when connected but no peers found.
+          if (isConnected && _tailscaleEnabled) {
+            return InputDecorator(
+              decoration: InputDecoration(
+                labelText: context.l10n.tailscaleSelectPeer,
+                suffixIcon: const Icon(Symbols.search_off_rounded),
+              ),
+              child: Text(
+                context.l10n.tailscaleNoPeers,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+            );
+          }
+          return const SizedBox.shrink();
+        }
+
+        return DropdownMenu<TailscalePeer>(
+          label: Text(context.l10n.tailscaleSelectPeer),
+          leadingIcon: const Icon(Symbols.dns_rounded, size: 20),
+          dropdownMenuEntries: peers.map((peer) {
+            final label = peer.online
+                ? peer.displayLabel
+                : '${peer.displayLabel} (${context.l10n.tailscalePeerOffline})';
+            return DropdownMenuEntry<TailscalePeer>(
+              value: peer,
+              label: label,
+              leadingIcon: Icon(
+                peer.online
+                    ? Symbols.cloud_done_rounded
+                    : Symbols.cloud_off_rounded,
+                size: 18,
+                color: peer.online
+                    ? Colors.green
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            );
+          }).toList(),
+          onSelected: (peer) {
+            if (peer != null) {
+              _urlController.text = peer.defaultUrl;
+              setState(() {});
+            }
+          },
         );
       },
     );

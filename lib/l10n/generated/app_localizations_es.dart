@@ -1567,4 +1567,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get onboardingPasswordRequired => 'Enter password';
+
+  @override
+  String get tailscaleSelectPeer => 'Select a Tailscale peer';
+
+  @override
+  String get tailscaleNoPeers => 'No peers found';
+
+  @override
+  String get tailscalePeerOffline => 'offline';
 }

@@ -1913,8 +1913,20 @@
   "@onboardingUsernameRequired": {
     "description": "CodeWalk UI string — Validation error shown when Basic Auth username is empty"
   },
-  "onboardingPasswordRequired": "Enter password",
-  "@onboardingPasswordRequired": {
-    "description": "CodeWalk UI string — Validation error shown when Basic Auth password is empty"
-  }
+"onboardingPasswordRequired": "Enter password",
+"@onboardingPasswordRequired": {
+  "description": "CodeWalk UI string — Validation error shown when Basic Auth password is empty"
+},
+"tailscaleSelectPeer": "Select a Tailscale peer",
+"@tailscaleSelectPeer": {
+  "description": "CodeWalk UI string — Dropdown hint label for selecting a tailnet peer as server URL source"
+},
+"tailscaleNoPeers": "No peers found",
+"@tailscaleNoPeers": {
+  "description": "CodeWalk UI string — Shown in peer dropdown when Tailscale is connected but no peers are visible"
+},
+"tailscalePeerOffline": "offline",
+"@tailscalePeerOffline": {
+  "description": "CodeWalk UI string — Badge shown next to a Tailscale peer that is currently offline"
+}
 }

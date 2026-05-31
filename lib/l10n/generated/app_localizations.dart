@@ -2905,6 +2905,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter password'**
   String get onboardingPasswordRequired;
+
+  /// CodeWalk UI string — Dropdown hint label for selecting a tailnet peer as server URL source
+  ///
+  /// In en, this message translates to:
+  /// **'Select a Tailscale peer'**
+  String get tailscaleSelectPeer;
+
+  /// CodeWalk UI string — Shown in peer dropdown when Tailscale is connected but no peers are visible
+  ///
+  /// In en, this message translates to:
+  /// **'No peers found'**
+  String get tailscaleNoPeers;
+
+  /// CodeWalk UI string — Badge shown next to a Tailscale peer that is currently offline
+  ///
+  /// In en, this message translates to:
+  /// **'offline'**
+  String get tailscalePeerOffline;
 }
 
 class _AppLocalizationsDelegate
