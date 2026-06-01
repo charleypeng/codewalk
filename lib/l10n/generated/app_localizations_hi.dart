@@ -12,75 +12,70 @@ class AppLocalizationsHi extends AppLocalizations {
   String get aboutGitHub => 'GitHub';
 
   @override
-  String get appShellDownloadingUpdate => 'Downloading update…';
+  String get appShellDownloadingUpdate => 'अपडेट डाउनलोड हो रहा है';
 
   @override
-  String get appShellInstall => 'Install';
+  String get appShellInstall => 'इंस्टॉल करें';
 
   @override
-  String get appShellInstallFailed => 'Install failed';
+  String get appShellInstallFailed => 'इंस्टॉलेशन विफल';
 
   @override
-  String get appShellInstallingUpdate => 'Installing update...';
+  String get appShellInstallingUpdate => 'अपडेट इंस्टॉल हो रहा है...';
 
   @override
-  String get appShellRestart => 'Restart';
+  String get appShellRestart => 'पुनः आरंभ करें';
 
   @override
   String appShellUpdateAvailableResult(String latestVersion) {
-    return 'Update available: v$latestVersion';
+    return 'अपडेट उपलब्ध: v$latestVersion';
   }
 
   @override
-  String get behaviorAdvancedPermissionRule =>
-      'Advanced permission rule editing stays out of Settings for now and is deferred to later parity work.';
+  String get behaviorAdvancedPermissionRule => 'उन्नत अनुमति नियम';
 
   @override
-  String get behaviorAutomatic => 'Automatic';
+  String get behaviorAutomatic => 'स्वचालित';
 
   @override
-  String get behaviorAutomaticFallback => 'Automatic fallback';
+  String get behaviorAutomaticFallback => 'स्वचालित फॉलबैक';
 
   @override
-  String get behaviorCellularDataSaver => 'Cellular data saver';
+  String get behaviorCellularDataSaver => 'मोबाइल डेटा सेवर';
 
   @override
-  String get behaviorChatLevelShare =>
-      'Use the chat-level share action to publish one session now. This setting only changes OpenCode’s default sharing policy.';
+  String get behaviorChatLevelShare => 'चैट-स्तर साझाकरण';
 
   @override
-  String get behaviorCodeWalkReleaseChecks =>
-      'Use About for CodeWalk release checks. This setting only mirrors the official OpenCode `autoupdate` config.';
+  String get behaviorCodeWalkReleaseChecks => 'CodeWalk रिलीज़ जाँच';
 
   @override
   String get behaviorControlsOfficialGlobal =>
-      'Controls the official global `share` config, not the share button for an individual chat.';
+      'OpenCode आधिकारिक वैश्विक सेटिंग्स नियंत्रित करता है';
 
   @override
   String get behaviorControlsUpstreamOpenCode =>
-      'Controls upstream OpenCode runtime updates, not CodeWalk app update checks.';
+      'अपस्ट्रीम OpenCode सेटिंग्स नियंत्रित करता है';
 
   @override
-  String get behaviorCustomDisplayName =>
-      'Custom display name shown in conversations instead of the system username.';
+  String get behaviorCustomDisplayName => 'कस्टम प्रदर्शन नाम';
 
   @override
   String behaviorCutsAutomaticMobile(int inSeconds) {
-    return 'Cuts automatic mobile-data usage by stopping background downloads and throttling automatic foreground refreshes to one burst every $inSeconds seconds.';
+    return 'बैकग्राउंड डाउनलोड रोककर और अग्रभूमि स्वचालित रीफ्रेश को हर $inSeconds सेकंड में एक बर्स्ट तक सीमित करके स्वचालित मोबाइल डेटा उपयोग कम करता है।';
   }
 
   @override
-  String get behaviorDisabled => 'Disabled';
+  String get behaviorDisabled => 'अक्षम';
 
   @override
-  String get behaviorLightweightTasksLike =>
-      'Used for lightweight tasks like title generation.';
+  String get behaviorLightweightTasksLike => 'हल्के कार्य जैसे';
 
   @override
-  String get behaviorManual => 'Manual';
+  String get behaviorManual => 'मैनुअल';
 
   @override
-  String get behaviorNotify => 'Notify only';
+  String get behaviorNotify => 'सूचित करें';
 
   @override
   String get behaviorOfficialOpenCodePermission =>
@@ -161,7 +156,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String chatChildrenChatProviderCurrentSessionChildren(String length) {
-    return 'Children: $length';
+    return 'बच्चे: $length';
   }
 
   @override
@@ -196,7 +191,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get chatDisplayToggles => 'Display toggles';
 
   @override
-  String get chatDoubleESCStop => 'Double ESC to stop';
+  String get chatDoubleESCStop => 'रुकने के लिए दो बार ESC';
 
   @override
   String get chatFilterActive => 'Active';
@@ -224,7 +219,7 @@ class AppLocalizationsHi extends AppLocalizations {
     String messageCount,
     String compactionLabel,
   ) {
-    return '$messageCount messages hidden before $compactionLabel compaction';
+    return '$compactionLabel संपीडन से पहले $messageCount संदेश छिपाए गए';
   }
 
   @override
@@ -266,12 +261,12 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String chatMessageModelMessageModelId(String modelId) {
-    return 'Model: $modelId';
+    return 'मॉडल: $modelId';
   }
 
   @override
   String chatMessageProviderMessageProviderId(String providerId) {
-    return 'Provider: $providerId';
+    return 'प्रदाता: $providerId';
   }
 
   @override
@@ -296,37 +291,37 @@ class AppLocalizationsHi extends AppLocalizations {
   String get chatOpenFiles => 'Open Files';
 
   @override
-  String get chatOpenProject => 'Open project';
+  String get chatOpenProject => 'प्रोजेक्ट खोलें';
 
   @override
   String get chatOpenProjectFolder => 'Open project folder...';
 
   @override
-  String get chatOpenSidebar => 'Open sidebar';
+  String get chatOpenSidebar => 'साइडबार खोलें';
 
   @override
-  String get chatPageStatusContextUsage => 'Context usage';
+  String get chatPageStatusContextUsage => 'संदर्भ उपयोग';
 
   @override
-  String get chatPageStatusCost => 'Cost';
+  String get chatPageStatusCost => 'लागत';
 
   @override
-  String get chatPageStatusLimit => 'Limit';
+  String get chatPageStatusLimit => 'सीमा';
 
   @override
-  String get chatPageStatusManageServers => 'Manage Servers';
+  String get chatPageStatusManageServers => 'सर्वर प्रबंधित करें';
 
   @override
-  String get chatPageStatusSaver => 'Saver';
+  String get chatPageStatusSaver => 'सेवर';
 
   @override
-  String get chatPageStatusSwitchServer => 'Switch Server';
+  String get chatPageStatusSwitchServer => 'सर्वर बदलें';
 
   @override
-  String get chatPageStatusTokens => 'Tokens';
+  String get chatPageStatusTokens => 'टोकन';
 
   @override
-  String get chatPageStatusUsage => 'Usage';
+  String get chatPageStatusUsage => 'उपयोग';
 
   @override
   String chatPageStatusUsagePercent(int usagePercent) {
@@ -337,42 +332,41 @@ class AppLocalizationsHi extends AppLocalizations {
   String get chatProjectContext => 'Project Context';
 
   @override
-  String get chatProjectContext2 => 'Project context';
+  String get chatProjectContext2 => 'प्रोजेक्ट संदर्भ';
 
   @override
-  String get chatRealtimeGlobalEvent => 'global event';
+  String get chatRealtimeGlobalEvent => 'वैश्विक घटना';
 
   @override
   String chatRealtimeGlobalEventReason(String reason) {
-    return 'global event ($reason)';
+    return 'वैश्विक घटना ($reason)';
   }
 
   @override
-  String get chatRealtimeGlobalEventStale => 'global event (stale generation)';
+  String get chatRealtimeGlobalEventStale => 'वैश्विक घटना (पुरानी पीढ़ी)';
 
   @override
   String chatRealtimeMessageStreamReason(String reason) {
-    return 'message stream ($reason)';
+    return 'संदेश प्रवाह ($reason)';
   }
 
   @override
-  String get chatRealtimeRealtimeEvent => 'realtime event';
+  String get chatRealtimeRealtimeEvent => 'रीयलटाइम घटना';
 
   @override
   String chatRealtimeRealtimeEventReason(String reason) {
-    return 'realtime event ($reason)';
+    return 'रीयलटाइम घटना ($reason)';
   }
 
   @override
-  String get chatRealtimeRealtimeEventStale =>
-      'realtime event (stale generation)';
+  String get chatRealtimeRealtimeEventStale => 'रीयलटाइम घटना (पुरानी पीढ़ी)';
 
   @override
   String get chatRealtimeReconnectingServerTry =>
-      'Reconnecting to the server. Try again in a moment.';
+      'सर्वर से पुनः कनेक्ट हो रहा है। कुछ क्षण में पुनः प्रयास करें।';
 
   @override
-  String get chatReasoning => 'Reasoning...';
+  String get chatReasoning => 'तर्क कर रहा है...';
 
   @override
   String get chatRecentSessions => 'Recent sessions';
@@ -397,7 +391,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String chatRemoveDisplayNameHistory(String displayName) {
-    return 'Remove $displayName from history';
+    return 'इतिहास से $displayName हटाएँ';
   }
 
   @override
@@ -410,7 +404,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get chatRetryRefresh => 'Retry refresh';
 
   @override
-  String get chatRetryingModelRequest => 'Retrying model request...';
+  String get chatRetryingModelRequest => 'मॉडल अनुरोध पुनः प्रयास हो रहा है...';
 
   @override
   String get chatReturnToMainConversation => 'Return to main conversation';
@@ -453,12 +447,12 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String chatSessionChatSessionSession(String title) {
-    return 'Chat session: $title';
+    return 'चैट सत्र: $title';
   }
 
   @override
   String chatSessionConversationNextAction(String nextAction) {
-    return 'Conversation $nextAction';
+    return 'वार्तालाप $nextAction';
   }
 
   @override
@@ -480,7 +474,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get chatSettings => 'Settings';
 
   @override
-  String get chatSidebarAccess => 'Sidebar access';
+  String get chatSidebarAccess => 'साइडबार एक्सेस';
 
   @override
   String get chatSortMostRecent => 'Most Recent';
@@ -499,7 +493,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String chatSyncLabel(String label) {
-    return 'Sync: $label';
+    return 'सिंक: $label';
   }
 
   @override
@@ -664,17 +658,17 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String fileActionAttachmentSavedOutputFile(String path) {
-    return 'Attachment saved to $path and opened.';
+    return 'अटैचमेंट $path में सहेजा गया और खोला गया।';
   }
 
   @override
   String fileActionAttachmentSavedOutputFile2(String path) {
-    return 'Attachment saved to $path.';
+    return 'अटैचमेंट $path में सहेजा गया।';
   }
 
   @override
   String fileActionAttachmentSavedSavedPath(String savedPath) {
-    return 'Attachment saved to $savedPath.';
+    return 'अटैचमेंट $savedPath में सहेजा गया।';
   }
 
   @override
@@ -714,7 +708,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String filesOpenFilesFileState(String length) {
-    return 'Open files ($length)';
+    return 'खुली फ़ाइलें ($length)';
   }
 
   @override
@@ -752,7 +746,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String logsShowingOrderedLength(int length, int length2) {
-    return 'Showing $length of $length2 entries';
+    return '$length2 में से $length प्रविष्टियाँ दिखाई गईं';
   }
 
   @override
@@ -868,7 +862,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String msgInfoSubtaskPartAgent(String agent) {
-    return 'Subtask ($agent)';
+    return 'उपकार्य ($agent)';
   }
 
   @override
@@ -943,7 +937,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String notifSelectedSoundLabel(String soundLabel) {
-    return 'Selected: $soundLabel';
+    return 'चयनित: $soundLabel';
   }
 
   @override
@@ -959,7 +953,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String onboardingAppProviderLocalSetupLogsLength(int length, int length2) {
-    return '$length setup log lines and $length2 setup events are available in the separate setup debug screen.';
+    return '$length सेटअप लॉग पंक्तियाँ और $length2 सेटअप घटनाएँ अलग सेटअप डीबग स्क्रीन में उपलब्ध हैं।';
   }
 
   @override
@@ -1035,7 +1029,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String onboardingLatestOutputAppProvider(String localServerLastOutput) {
-    return 'Latest output: $localServerLastOutput';
+    return 'नवीनतम आउटपुट: $localServerLastOutput';
   }
 
   @override
@@ -1219,7 +1213,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String serversCommandAppProviderLocalServerCommandPath(
     String localServerCommandPath,
   ) {
-    return 'Command: $localServerCommandPath';
+    return 'कमांड: $localServerCommandPath';
   }
 
   @override
@@ -1249,7 +1243,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String serversRemoveProfileDisplayName(String displayName) {
-    return 'Remove \"$displayName\"?';
+    return '\"$displayName\" हटाएँ?';
   }
 
   @override
@@ -2238,7 +2232,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String shortcutsConflictConflict(String conflict) {
-    return 'Conflict with $conflict';
+    return '$conflict के साथ विरोध';
   }
 
   @override
@@ -2253,7 +2247,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String shortcutsSetShortcutWidget(String label) {
-    return 'Set shortcut: $label';
+    return 'शॉर्टकट सेट करें: $label';
   }
 
   @override

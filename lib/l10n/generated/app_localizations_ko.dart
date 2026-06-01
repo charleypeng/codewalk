@@ -12,75 +12,68 @@ class AppLocalizationsKo extends AppLocalizations {
   String get aboutGitHub => 'GitHub';
 
   @override
-  String get appShellDownloadingUpdate => 'Downloading update…';
+  String get appShellDownloadingUpdate => '업데이트 다운로드 중';
 
   @override
-  String get appShellInstall => 'Install';
+  String get appShellInstall => '설치';
 
   @override
-  String get appShellInstallFailed => 'Install failed';
+  String get appShellInstallFailed => '설치 실패';
 
   @override
-  String get appShellInstallingUpdate => 'Installing update...';
+  String get appShellInstallingUpdate => '업데이트 설치 중...';
 
   @override
-  String get appShellRestart => 'Restart';
+  String get appShellRestart => '재시작';
 
   @override
   String appShellUpdateAvailableResult(String latestVersion) {
-    return 'Update available: v$latestVersion';
+    return '업데이트 가능: v$latestVersion';
   }
 
   @override
-  String get behaviorAdvancedPermissionRule =>
-      'Advanced permission rule editing stays out of Settings for now and is deferred to later parity work.';
+  String get behaviorAdvancedPermissionRule => '고급 권한 규칙';
 
   @override
-  String get behaviorAutomatic => 'Automatic';
+  String get behaviorAutomatic => '자동';
 
   @override
-  String get behaviorAutomaticFallback => 'Automatic fallback';
+  String get behaviorAutomaticFallback => '자동 대체';
 
   @override
-  String get behaviorCellularDataSaver => 'Cellular data saver';
+  String get behaviorCellularDataSaver => '모바일 데이터 절약';
 
   @override
-  String get behaviorChatLevelShare =>
-      'Use the chat-level share action to publish one session now. This setting only changes OpenCode’s default sharing policy.';
+  String get behaviorChatLevelShare => '채팅 수준 공유';
 
   @override
-  String get behaviorCodeWalkReleaseChecks =>
-      'Use About for CodeWalk release checks. This setting only mirrors the official OpenCode `autoupdate` config.';
+  String get behaviorCodeWalkReleaseChecks => 'CodeWalk 릴리스 확인';
 
   @override
-  String get behaviorControlsOfficialGlobal =>
-      'Controls the official global `share` config, not the share button for an individual chat.';
+  String get behaviorControlsOfficialGlobal => 'OpenCode 공식 전역 설정 제어';
 
   @override
-  String get behaviorControlsUpstreamOpenCode =>
-      'Controls upstream OpenCode runtime updates, not CodeWalk app update checks.';
+  String get behaviorControlsUpstreamOpenCode => '업스트림 OpenCode 설정 제어';
 
   @override
-  String get behaviorCustomDisplayName =>
-      'Custom display name shown in conversations instead of the system username.';
+  String get behaviorCustomDisplayName => '사용자 지정 표시 이름';
 
   @override
   String behaviorCutsAutomaticMobile(int inSeconds) {
-    return 'Cuts automatic mobile-data usage by stopping background downloads and throttling automatic foreground refreshes to one burst every $inSeconds seconds.';
+    return '백그라운드 다운로드를 중지하고 포그라운드 자동 새로고침을 $inSeconds초마다 한 번으로 제한하여 자동 모바일 데이터 사용량을 줄입니다.';
   }
 
   @override
-  String get behaviorDisabled => 'Disabled';
+  String get behaviorDisabled => '비활성화됨';
 
   @override
-  String get behaviorLightweightTasksLike =>
-      'Used for lightweight tasks like title generation.';
+  String get behaviorLightweightTasksLike => '다음과 같은 가벼운 작업';
 
   @override
-  String get behaviorManual => 'Manual';
+  String get behaviorManual => '수동';
 
   @override
-  String get behaviorNotify => 'Notify only';
+  String get behaviorNotify => '알림';
 
   @override
   String get behaviorOfficialOpenCodePermission =>
@@ -161,7 +154,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String chatChildrenChatProviderCurrentSessionChildren(String length) {
-    return 'Children: $length';
+    return '하위: $length';
   }
 
   @override
@@ -196,7 +189,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatDisplayToggles => 'Display toggles';
 
   @override
-  String get chatDoubleESCStop => 'Double ESC to stop';
+  String get chatDoubleESCStop => 'ESC 두 번 눌러서 중지';
 
   @override
   String get chatFilterActive => 'Active';
@@ -224,7 +217,7 @@ class AppLocalizationsKo extends AppLocalizations {
     String messageCount,
     String compactionLabel,
   ) {
-    return '$messageCount messages hidden before $compactionLabel compaction';
+    return '$compactionLabel 압축 전 $messageCount개 메시지 숨김';
   }
 
   @override
@@ -266,12 +259,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String chatMessageModelMessageModelId(String modelId) {
-    return 'Model: $modelId';
+    return '모델: $modelId';
   }
 
   @override
   String chatMessageProviderMessageProviderId(String providerId) {
-    return 'Provider: $providerId';
+    return '제공자: $providerId';
   }
 
   @override
@@ -296,37 +289,37 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatOpenFiles => 'Open Files';
 
   @override
-  String get chatOpenProject => 'Open project';
+  String get chatOpenProject => '프로젝트 열기';
 
   @override
   String get chatOpenProjectFolder => 'Open project folder...';
 
   @override
-  String get chatOpenSidebar => 'Open sidebar';
+  String get chatOpenSidebar => '사이드바 열기';
 
   @override
-  String get chatPageStatusContextUsage => 'Context usage';
+  String get chatPageStatusContextUsage => '컨텍스트 사용량';
 
   @override
-  String get chatPageStatusCost => 'Cost';
+  String get chatPageStatusCost => '비용';
 
   @override
-  String get chatPageStatusLimit => 'Limit';
+  String get chatPageStatusLimit => '제한';
 
   @override
-  String get chatPageStatusManageServers => 'Manage Servers';
+  String get chatPageStatusManageServers => '서버 관리';
 
   @override
-  String get chatPageStatusSaver => 'Saver';
+  String get chatPageStatusSaver => '절약';
 
   @override
-  String get chatPageStatusSwitchServer => 'Switch Server';
+  String get chatPageStatusSwitchServer => '서버 전환';
 
   @override
-  String get chatPageStatusTokens => 'Tokens';
+  String get chatPageStatusTokens => '토큰';
 
   @override
-  String get chatPageStatusUsage => 'Usage';
+  String get chatPageStatusUsage => '사용량';
 
   @override
   String chatPageStatusUsagePercent(int usagePercent) {
@@ -337,42 +330,40 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatProjectContext => 'Project Context';
 
   @override
-  String get chatProjectContext2 => 'Project context';
+  String get chatProjectContext2 => '프로젝트 컨텍스트';
 
   @override
-  String get chatRealtimeGlobalEvent => 'global event';
+  String get chatRealtimeGlobalEvent => '글로벌 이벤트';
 
   @override
   String chatRealtimeGlobalEventReason(String reason) {
-    return 'global event ($reason)';
+    return '글로벌 이벤트 ($reason)';
   }
 
   @override
-  String get chatRealtimeGlobalEventStale => 'global event (stale generation)';
+  String get chatRealtimeGlobalEventStale => '글로벌 이벤트 (오래된 세대)';
 
   @override
   String chatRealtimeMessageStreamReason(String reason) {
-    return 'message stream ($reason)';
+    return '메시지 스트림 ($reason)';
   }
 
   @override
-  String get chatRealtimeRealtimeEvent => 'realtime event';
+  String get chatRealtimeRealtimeEvent => '실시간 이벤트';
 
   @override
   String chatRealtimeRealtimeEventReason(String reason) {
-    return 'realtime event ($reason)';
+    return '실시간 이벤트 ($reason)';
   }
 
   @override
-  String get chatRealtimeRealtimeEventStale =>
-      'realtime event (stale generation)';
+  String get chatRealtimeRealtimeEventStale => '실시간 이벤트 (오래된 세대)';
 
   @override
-  String get chatRealtimeReconnectingServerTry =>
-      'Reconnecting to the server. Try again in a moment.';
+  String get chatRealtimeReconnectingServerTry => '서버에 재연결 중. 잠시 후 다시 시도하세요.';
 
   @override
-  String get chatReasoning => 'Reasoning...';
+  String get chatReasoning => '추론 중...';
 
   @override
   String get chatRecentSessions => 'Recent sessions';
@@ -397,7 +388,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String chatRemoveDisplayNameHistory(String displayName) {
-    return 'Remove $displayName from history';
+    return '기록에서 $displayName 제거';
   }
 
   @override
@@ -410,7 +401,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatRetryRefresh => 'Retry refresh';
 
   @override
-  String get chatRetryingModelRequest => 'Retrying model request...';
+  String get chatRetryingModelRequest => '모델 요청 재시도 중...';
 
   @override
   String get chatReturnToMainConversation => 'Return to main conversation';
@@ -453,12 +444,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String chatSessionChatSessionSession(String title) {
-    return 'Chat session: $title';
+    return '채팅 세션: $title';
   }
 
   @override
   String chatSessionConversationNextAction(String nextAction) {
-    return 'Conversation $nextAction';
+    return '대화 $nextAction';
   }
 
   @override
@@ -480,7 +471,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatSettings => 'Settings';
 
   @override
-  String get chatSidebarAccess => 'Sidebar access';
+  String get chatSidebarAccess => '사이드바 액세스';
 
   @override
   String get chatSortMostRecent => 'Most Recent';
@@ -499,7 +490,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String chatSyncLabel(String label) {
-    return 'Sync: $label';
+    return '동기화: $label';
   }
 
   @override
@@ -664,17 +655,17 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String fileActionAttachmentSavedOutputFile(String path) {
-    return 'Attachment saved to $path and opened.';
+    return '첨부파일이 $path에 저장되고 열렸습니다.';
   }
 
   @override
   String fileActionAttachmentSavedOutputFile2(String path) {
-    return 'Attachment saved to $path.';
+    return '첨부파일이 $path에 저장되었습니다.';
   }
 
   @override
   String fileActionAttachmentSavedSavedPath(String savedPath) {
-    return 'Attachment saved to $savedPath.';
+    return '첨부파일이 $savedPath에 저장되었습니다.';
   }
 
   @override
@@ -714,7 +705,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String filesOpenFilesFileState(String length) {
-    return 'Open files ($length)';
+    return '열린 파일 ($length)';
   }
 
   @override
@@ -752,7 +743,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String logsShowingOrderedLength(int length, int length2) {
-    return 'Showing $length of $length2 entries';
+    return '항목 $length2개 중 $length개 표시';
   }
 
   @override
@@ -868,7 +859,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String msgInfoSubtaskPartAgent(String agent) {
-    return 'Subtask ($agent)';
+    return '하위 작업 ($agent)';
   }
 
   @override
@@ -943,7 +934,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String notifSelectedSoundLabel(String soundLabel) {
-    return 'Selected: $soundLabel';
+    return '선택됨: $soundLabel';
   }
 
   @override
@@ -959,7 +950,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String onboardingAppProviderLocalSetupLogsLength(int length, int length2) {
-    return '$length setup log lines and $length2 setup events are available in the separate setup debug screen.';
+    return '$length개의 설정 로그 줄과 $length2개의 설정 이벤트가 별도의 설정 디버그 화면에서 사용 가능합니다.';
   }
 
   @override
@@ -1035,7 +1026,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String onboardingLatestOutputAppProvider(String localServerLastOutput) {
-    return 'Latest output: $localServerLastOutput';
+    return '최신 출력: $localServerLastOutput';
   }
 
   @override
@@ -1219,7 +1210,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String serversCommandAppProviderLocalServerCommandPath(
     String localServerCommandPath,
   ) {
-    return 'Command: $localServerCommandPath';
+    return '명령: $localServerCommandPath';
   }
 
   @override
@@ -1249,7 +1240,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String serversRemoveProfileDisplayName(String displayName) {
-    return 'Remove \"$displayName\"?';
+    return '\"$displayName\"을(를) 제거하시겠습니까?';
   }
 
   @override
@@ -2238,7 +2229,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String shortcutsConflictConflict(String conflict) {
-    return 'Conflict with $conflict';
+    return '$conflict과(와) 충돌';
   }
 
   @override
@@ -2253,7 +2244,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String shortcutsSetShortcutWidget(String label) {
-    return 'Set shortcut: $label';
+    return '단축키 설정: $label';
   }
 
   @override

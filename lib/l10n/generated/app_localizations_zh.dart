@@ -12,75 +12,68 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aboutGitHub => 'GitHub';
 
   @override
-  String get appShellDownloadingUpdate => 'Downloading update…';
+  String get appShellDownloadingUpdate => '正在下载更新';
 
   @override
-  String get appShellInstall => 'Install';
+  String get appShellInstall => '安装';
 
   @override
-  String get appShellInstallFailed => 'Install failed';
+  String get appShellInstallFailed => '安装失败';
 
   @override
-  String get appShellInstallingUpdate => 'Installing update...';
+  String get appShellInstallingUpdate => '正在安装更新...';
 
   @override
-  String get appShellRestart => 'Restart';
+  String get appShellRestart => '重启';
 
   @override
   String appShellUpdateAvailableResult(String latestVersion) {
-    return 'Update available: v$latestVersion';
+    return '有可用更新: v$latestVersion';
   }
 
   @override
-  String get behaviorAdvancedPermissionRule =>
-      'Advanced permission rule editing stays out of Settings for now and is deferred to later parity work.';
+  String get behaviorAdvancedPermissionRule => '高级权限规则';
 
   @override
-  String get behaviorAutomatic => 'Automatic';
+  String get behaviorAutomatic => '自动';
 
   @override
-  String get behaviorAutomaticFallback => 'Automatic fallback';
+  String get behaviorAutomaticFallback => '自动回退';
 
   @override
-  String get behaviorCellularDataSaver => 'Cellular data saver';
+  String get behaviorCellularDataSaver => '移动数据节省';
 
   @override
-  String get behaviorChatLevelShare =>
-      'Use the chat-level share action to publish one session now. This setting only changes OpenCode’s default sharing policy.';
+  String get behaviorChatLevelShare => '聊天级别共享';
 
   @override
-  String get behaviorCodeWalkReleaseChecks =>
-      'Use About for CodeWalk release checks. This setting only mirrors the official OpenCode `autoupdate` config.';
+  String get behaviorCodeWalkReleaseChecks => 'CodeWalk版本检查';
 
   @override
-  String get behaviorControlsOfficialGlobal =>
-      'Controls the official global `share` config, not the share button for an individual chat.';
+  String get behaviorControlsOfficialGlobal => '控制OpenCode官方全局设置';
 
   @override
-  String get behaviorControlsUpstreamOpenCode =>
-      'Controls upstream OpenCode runtime updates, not CodeWalk app update checks.';
+  String get behaviorControlsUpstreamOpenCode => '控制上游OpenCode设置';
 
   @override
-  String get behaviorCustomDisplayName =>
-      'Custom display name shown in conversations instead of the system username.';
+  String get behaviorCustomDisplayName => '自定义显示名称';
 
   @override
   String behaviorCutsAutomaticMobile(int inSeconds) {
-    return 'Cuts automatic mobile-data usage by stopping background downloads and throttling automatic foreground refreshes to one burst every $inSeconds seconds.';
+    return '通过停止后台下载并将前台自动刷新限制为每$inSeconds秒一次突发，减少自动移动数据使用。';
   }
 
   @override
-  String get behaviorDisabled => 'Disabled';
+  String get behaviorDisabled => '已禁用';
 
   @override
-  String get behaviorLightweightTasksLike =>
-      'Used for lightweight tasks like title generation.';
+  String get behaviorLightweightTasksLike => '轻量级任务如';
 
   @override
-  String get behaviorManual => 'Manual';
+  String get behaviorManual => '手动';
 
   @override
-  String get behaviorNotify => 'Notify only';
+  String get behaviorNotify => '通知';
 
   @override
   String get behaviorOfficialOpenCodePermission =>
@@ -161,7 +154,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String chatChildrenChatProviderCurrentSessionChildren(String length) {
-    return 'Children: $length';
+    return '子项: $length';
   }
 
   @override
@@ -196,7 +189,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatDisplayToggles => 'Display toggles';
 
   @override
-  String get chatDoubleESCStop => 'Double ESC to stop';
+  String get chatDoubleESCStop => '双击ESC停止';
 
   @override
   String get chatFilterActive => 'Active';
@@ -224,7 +217,7 @@ class AppLocalizationsZh extends AppLocalizations {
     String messageCount,
     String compactionLabel,
   ) {
-    return '$messageCount messages hidden before $compactionLabel compaction';
+    return '$compactionLabel压缩前隐藏了$messageCount条消息';
   }
 
   @override
@@ -266,12 +259,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String chatMessageModelMessageModelId(String modelId) {
-    return 'Model: $modelId';
+    return '模型: $modelId';
   }
 
   @override
   String chatMessageProviderMessageProviderId(String providerId) {
-    return 'Provider: $providerId';
+    return '提供者: $providerId';
   }
 
   @override
@@ -296,37 +289,37 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatOpenFiles => 'Open Files';
 
   @override
-  String get chatOpenProject => 'Open project';
+  String get chatOpenProject => '打开项目';
 
   @override
   String get chatOpenProjectFolder => 'Open project folder...';
 
   @override
-  String get chatOpenSidebar => 'Open sidebar';
+  String get chatOpenSidebar => '打开侧边栏';
 
   @override
-  String get chatPageStatusContextUsage => 'Context usage';
+  String get chatPageStatusContextUsage => '上下文使用';
 
   @override
-  String get chatPageStatusCost => 'Cost';
+  String get chatPageStatusCost => '费用';
 
   @override
-  String get chatPageStatusLimit => 'Limit';
+  String get chatPageStatusLimit => '限额';
 
   @override
-  String get chatPageStatusManageServers => 'Manage Servers';
+  String get chatPageStatusManageServers => '管理服务器';
 
   @override
-  String get chatPageStatusSaver => 'Saver';
+  String get chatPageStatusSaver => '节省';
 
   @override
-  String get chatPageStatusSwitchServer => 'Switch Server';
+  String get chatPageStatusSwitchServer => '切换服务器';
 
   @override
-  String get chatPageStatusTokens => 'Tokens';
+  String get chatPageStatusTokens => '令牌';
 
   @override
-  String get chatPageStatusUsage => 'Usage';
+  String get chatPageStatusUsage => '使用';
 
   @override
   String chatPageStatusUsagePercent(int usagePercent) {
@@ -337,42 +330,40 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatProjectContext => 'Project Context';
 
   @override
-  String get chatProjectContext2 => 'Project context';
+  String get chatProjectContext2 => '项目上下文';
 
   @override
-  String get chatRealtimeGlobalEvent => 'global event';
+  String get chatRealtimeGlobalEvent => '全局事件';
 
   @override
   String chatRealtimeGlobalEventReason(String reason) {
-    return 'global event ($reason)';
+    return '全局事件 ($reason)';
   }
 
   @override
-  String get chatRealtimeGlobalEventStale => 'global event (stale generation)';
+  String get chatRealtimeGlobalEventStale => '全局事件 (过时代)';
 
   @override
   String chatRealtimeMessageStreamReason(String reason) {
-    return 'message stream ($reason)';
+    return '消息流 ($reason)';
   }
 
   @override
-  String get chatRealtimeRealtimeEvent => 'realtime event';
+  String get chatRealtimeRealtimeEvent => '实时事件';
 
   @override
   String chatRealtimeRealtimeEventReason(String reason) {
-    return 'realtime event ($reason)';
+    return '实时事件 ($reason)';
   }
 
   @override
-  String get chatRealtimeRealtimeEventStale =>
-      'realtime event (stale generation)';
+  String get chatRealtimeRealtimeEventStale => '实时事件 (过时代)';
 
   @override
-  String get chatRealtimeReconnectingServerTry =>
-      'Reconnecting to the server. Try again in a moment.';
+  String get chatRealtimeReconnectingServerTry => '正在重新连接服务器。请稍后重试。';
 
   @override
-  String get chatReasoning => 'Reasoning...';
+  String get chatReasoning => '推理中...';
 
   @override
   String get chatRecentSessions => 'Recent sessions';
@@ -397,7 +388,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String chatRemoveDisplayNameHistory(String displayName) {
-    return 'Remove $displayName from history';
+    return '从历史记录中移除$displayName';
   }
 
   @override
@@ -410,7 +401,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatRetryRefresh => 'Retry refresh';
 
   @override
-  String get chatRetryingModelRequest => 'Retrying model request...';
+  String get chatRetryingModelRequest => '正在重试模型请求...';
 
   @override
   String get chatReturnToMainConversation => 'Return to main conversation';
@@ -453,12 +444,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String chatSessionChatSessionSession(String title) {
-    return 'Chat session: $title';
+    return '聊天会话: $title';
   }
 
   @override
   String chatSessionConversationNextAction(String nextAction) {
-    return 'Conversation $nextAction';
+    return '对话 $nextAction';
   }
 
   @override
@@ -480,7 +471,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatSettings => 'Settings';
 
   @override
-  String get chatSidebarAccess => 'Sidebar access';
+  String get chatSidebarAccess => '侧边栏访问';
 
   @override
   String get chatSortMostRecent => 'Most Recent';
@@ -499,7 +490,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String chatSyncLabel(String label) {
-    return 'Sync: $label';
+    return '同步: $label';
   }
 
   @override
@@ -664,17 +655,17 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String fileActionAttachmentSavedOutputFile(String path) {
-    return 'Attachment saved to $path and opened.';
+    return '附件已保存到$path并打开。';
   }
 
   @override
   String fileActionAttachmentSavedOutputFile2(String path) {
-    return 'Attachment saved to $path.';
+    return '附件已保存到$path。';
   }
 
   @override
   String fileActionAttachmentSavedSavedPath(String savedPath) {
-    return 'Attachment saved to $savedPath.';
+    return '附件已保存到$savedPath。';
   }
 
   @override
@@ -714,7 +705,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String filesOpenFilesFileState(String length) {
-    return 'Open files ($length)';
+    return '打开的文件 ($length)';
   }
 
   @override
@@ -752,7 +743,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String logsShowingOrderedLength(int length, int length2) {
-    return 'Showing $length of $length2 entries';
+    return '显示$length2条中的$length条';
   }
 
   @override
@@ -868,7 +859,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String msgInfoSubtaskPartAgent(String agent) {
-    return 'Subtask ($agent)';
+    return '子任务 ($agent)';
   }
 
   @override
@@ -943,7 +934,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String notifSelectedSoundLabel(String soundLabel) {
-    return 'Selected: $soundLabel';
+    return '已选择: $soundLabel';
   }
 
   @override
@@ -959,7 +950,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String onboardingAppProviderLocalSetupLogsLength(int length, int length2) {
-    return '$length setup log lines and $length2 setup events are available in the separate setup debug screen.';
+    return '$length行设置日志和$length2个设置事件可在单独的设置调试屏幕中查看。';
   }
 
   @override
@@ -1035,7 +1026,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String onboardingLatestOutputAppProvider(String localServerLastOutput) {
-    return 'Latest output: $localServerLastOutput';
+    return '最新输出: $localServerLastOutput';
   }
 
   @override
@@ -1219,7 +1210,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String serversCommandAppProviderLocalServerCommandPath(
     String localServerCommandPath,
   ) {
-    return 'Command: $localServerCommandPath';
+    return '命令: $localServerCommandPath';
   }
 
   @override
@@ -1249,7 +1240,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String serversRemoveProfileDisplayName(String displayName) {
-    return 'Remove \"$displayName\"?';
+    return '删除\"$displayName\"？';
   }
 
   @override
@@ -2238,7 +2229,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String shortcutsConflictConflict(String conflict) {
-    return 'Conflict with $conflict';
+    return '与$conflict冲突';
   }
 
   @override
@@ -2253,7 +2244,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String shortcutsSetShortcutWidget(String label) {
-    return 'Set shortcut: $label';
+    return '设置快捷键: $label';
   }
 
   @override

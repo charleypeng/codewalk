@@ -12,75 +12,71 @@ class AppLocalizationsFr extends AppLocalizations {
   String get aboutGitHub => 'GitHub';
 
   @override
-  String get appShellDownloadingUpdate => 'Downloading update…';
+  String get appShellDownloadingUpdate => 'Téléchargement de la mise à jour';
 
   @override
-  String get appShellInstall => 'Install';
+  String get appShellInstall => 'Installer';
 
   @override
-  String get appShellInstallFailed => 'Install failed';
+  String get appShellInstallFailed => 'Échec de l\'installation';
 
   @override
-  String get appShellInstallingUpdate => 'Installing update...';
+  String get appShellInstallingUpdate => 'Installation de la mise à jour...';
 
   @override
-  String get appShellRestart => 'Restart';
+  String get appShellRestart => 'Redémarrer';
 
   @override
   String appShellUpdateAvailableResult(String latestVersion) {
-    return 'Update available: v$latestVersion';
+    return 'Mise à jour disponible : v$latestVersion';
   }
 
   @override
-  String get behaviorAdvancedPermissionRule =>
-      'Advanced permission rule editing stays out of Settings for now and is deferred to later parity work.';
+  String get behaviorAdvancedPermissionRule => 'Règle d\'autorisation avancée';
 
   @override
-  String get behaviorAutomatic => 'Automatic';
+  String get behaviorAutomatic => 'Automatique';
 
   @override
-  String get behaviorAutomaticFallback => 'Automatic fallback';
+  String get behaviorAutomaticFallback => 'Repli automatique';
 
   @override
-  String get behaviorCellularDataSaver => 'Cellular data saver';
+  String get behaviorCellularDataSaver => 'Économiseur de données mobiles';
 
   @override
-  String get behaviorChatLevelShare =>
-      'Use the chat-level share action to publish one session now. This setting only changes OpenCode’s default sharing policy.';
+  String get behaviorChatLevelShare => 'Partage au niveau du chat';
 
   @override
   String get behaviorCodeWalkReleaseChecks =>
-      'Use About for CodeWalk release checks. This setting only mirrors the official OpenCode `autoupdate` config.';
+      'Vérifications de version CodeWalk';
 
   @override
   String get behaviorControlsOfficialGlobal =>
-      'Controls the official global `share` config, not the share button for an individual chat.';
+      'Contrôle les paramètres globaux officiels d\'OpenCode';
 
   @override
   String get behaviorControlsUpstreamOpenCode =>
-      'Controls upstream OpenCode runtime updates, not CodeWalk app update checks.';
+      'Contrôle les paramètres OpenCode en amont';
 
   @override
-  String get behaviorCustomDisplayName =>
-      'Custom display name shown in conversations instead of the system username.';
+  String get behaviorCustomDisplayName => 'Nom d\'affichage personnalisé';
 
   @override
   String behaviorCutsAutomaticMobile(int inSeconds) {
-    return 'Cuts automatic mobile-data usage by stopping background downloads and throttling automatic foreground refreshes to one burst every $inSeconds seconds.';
+    return 'Réduit l\'utilisation automatique des données mobiles en arrêtant les téléchargements en arrière-plan et en limitant les actualisations automatiques au premier plan à une rafale toutes les $inSeconds secondes.';
   }
 
   @override
-  String get behaviorDisabled => 'Disabled';
+  String get behaviorDisabled => 'Désactivé';
 
   @override
-  String get behaviorLightweightTasksLike =>
-      'Used for lightweight tasks like title generation.';
+  String get behaviorLightweightTasksLike => 'Tâches légères comme';
 
   @override
-  String get behaviorManual => 'Manual';
+  String get behaviorManual => 'Manuel';
 
   @override
-  String get behaviorNotify => 'Notify only';
+  String get behaviorNotify => 'Notifier';
 
   @override
   String get behaviorOfficialOpenCodePermission =>
@@ -161,7 +157,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String chatChildrenChatProviderCurrentSessionChildren(String length) {
-    return 'Children: $length';
+    return 'Enfants : $length';
   }
 
   @override
@@ -196,7 +192,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chatDisplayToggles => 'Display toggles';
 
   @override
-  String get chatDoubleESCStop => 'Double ESC to stop';
+  String get chatDoubleESCStop => 'Double Échap pour arrêter';
 
   @override
   String get chatFilterActive => 'Active';
@@ -224,7 +220,7 @@ class AppLocalizationsFr extends AppLocalizations {
     String messageCount,
     String compactionLabel,
   ) {
-    return '$messageCount messages hidden before $compactionLabel compaction';
+    return '$messageCount messages masqués avant la compression $compactionLabel';
   }
 
   @override
@@ -266,12 +262,12 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String chatMessageModelMessageModelId(String modelId) {
-    return 'Model: $modelId';
+    return 'Modèle : $modelId';
   }
 
   @override
   String chatMessageProviderMessageProviderId(String providerId) {
-    return 'Provider: $providerId';
+    return 'Fournisseur : $providerId';
   }
 
   @override
@@ -296,37 +292,37 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chatOpenFiles => 'Open Files';
 
   @override
-  String get chatOpenProject => 'Open project';
+  String get chatOpenProject => 'Ouvrir le projet';
 
   @override
   String get chatOpenProjectFolder => 'Open project folder...';
 
   @override
-  String get chatOpenSidebar => 'Open sidebar';
+  String get chatOpenSidebar => 'Ouvrir la barre latérale';
 
   @override
-  String get chatPageStatusContextUsage => 'Context usage';
+  String get chatPageStatusContextUsage => 'Utilisation du contexte';
 
   @override
-  String get chatPageStatusCost => 'Cost';
+  String get chatPageStatusCost => 'Coût';
 
   @override
-  String get chatPageStatusLimit => 'Limit';
+  String get chatPageStatusLimit => 'Limite';
 
   @override
-  String get chatPageStatusManageServers => 'Manage Servers';
+  String get chatPageStatusManageServers => 'Gérer les serveurs';
 
   @override
-  String get chatPageStatusSaver => 'Saver';
+  String get chatPageStatusSaver => 'Économiseur';
 
   @override
-  String get chatPageStatusSwitchServer => 'Switch Server';
+  String get chatPageStatusSwitchServer => 'Changer de serveur';
 
   @override
-  String get chatPageStatusTokens => 'Tokens';
+  String get chatPageStatusTokens => 'Jetons';
 
   @override
-  String get chatPageStatusUsage => 'Usage';
+  String get chatPageStatusUsage => 'Utilisation';
 
   @override
   String chatPageStatusUsagePercent(int usagePercent) {
@@ -337,42 +333,43 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chatProjectContext => 'Project Context';
 
   @override
-  String get chatProjectContext2 => 'Project context';
+  String get chatProjectContext2 => 'Contexte du projet';
 
   @override
-  String get chatRealtimeGlobalEvent => 'global event';
+  String get chatRealtimeGlobalEvent => 'événement global';
 
   @override
   String chatRealtimeGlobalEventReason(String reason) {
-    return 'global event ($reason)';
+    return 'événement global ($reason)';
   }
 
   @override
-  String get chatRealtimeGlobalEventStale => 'global event (stale generation)';
+  String get chatRealtimeGlobalEventStale =>
+      'événement global (génération périmée)';
 
   @override
   String chatRealtimeMessageStreamReason(String reason) {
-    return 'message stream ($reason)';
+    return 'flux de messages ($reason)';
   }
 
   @override
-  String get chatRealtimeRealtimeEvent => 'realtime event';
+  String get chatRealtimeRealtimeEvent => 'événement en temps réel';
 
   @override
   String chatRealtimeRealtimeEventReason(String reason) {
-    return 'realtime event ($reason)';
+    return 'événement en temps réel ($reason)';
   }
 
   @override
   String get chatRealtimeRealtimeEventStale =>
-      'realtime event (stale generation)';
+      'événement en temps réel (génération périmée)';
 
   @override
   String get chatRealtimeReconnectingServerTry =>
-      'Reconnecting to the server. Try again in a moment.';
+      'Reconnexion au serveur. Veuillez réessayer dans un instant.';
 
   @override
-  String get chatReasoning => 'Reasoning...';
+  String get chatReasoning => 'Raisonnement...';
 
   @override
   String get chatRecentSessions => 'Recent sessions';
@@ -397,7 +394,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String chatRemoveDisplayNameHistory(String displayName) {
-    return 'Remove $displayName from history';
+    return 'Supprimer $displayName de l\'historique';
   }
 
   @override
@@ -410,7 +407,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chatRetryRefresh => 'Retry refresh';
 
   @override
-  String get chatRetryingModelRequest => 'Retrying model request...';
+  String get chatRetryingModelRequest =>
+      'Nouvelle tentative de requête de modèle...';
 
   @override
   String get chatReturnToMainConversation => 'Return to main conversation';
@@ -453,7 +451,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String chatSessionChatSessionSession(String title) {
-    return 'Chat session: $title';
+    return 'Session de chat : $title';
   }
 
   @override
@@ -480,7 +478,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chatSettings => 'Settings';
 
   @override
-  String get chatSidebarAccess => 'Sidebar access';
+  String get chatSidebarAccess => 'Accès à la barre latérale';
 
   @override
   String get chatSortMostRecent => 'Most Recent';
@@ -499,7 +497,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String chatSyncLabel(String label) {
-    return 'Sync: $label';
+    return 'Synchronisation : $label';
   }
 
   @override
@@ -664,17 +662,17 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String fileActionAttachmentSavedOutputFile(String path) {
-    return 'Attachment saved to $path and opened.';
+    return 'Pièce jointe enregistrée dans $path et ouverte.';
   }
 
   @override
   String fileActionAttachmentSavedOutputFile2(String path) {
-    return 'Attachment saved to $path.';
+    return 'Pièce jointe enregistrée dans $path.';
   }
 
   @override
   String fileActionAttachmentSavedSavedPath(String savedPath) {
-    return 'Attachment saved to $savedPath.';
+    return 'Pièce jointe enregistrée dans $savedPath.';
   }
 
   @override
@@ -714,7 +712,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String filesOpenFilesFileState(String length) {
-    return 'Open files ($length)';
+    return 'Fichiers ouverts ($length)';
   }
 
   @override
@@ -752,7 +750,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String logsShowingOrderedLength(int length, int length2) {
-    return 'Showing $length of $length2 entries';
+    return 'Affichage de $length sur $length2 entrées';
   }
 
   @override
@@ -868,7 +866,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String msgInfoSubtaskPartAgent(String agent) {
-    return 'Subtask ($agent)';
+    return 'Sous-tâche ($agent)';
   }
 
   @override
@@ -943,7 +941,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String notifSelectedSoundLabel(String soundLabel) {
-    return 'Selected: $soundLabel';
+    return 'Sélectionné : $soundLabel';
   }
 
   @override
@@ -959,7 +957,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String onboardingAppProviderLocalSetupLogsLength(int length, int length2) {
-    return '$length setup log lines and $length2 setup events are available in the separate setup debug screen.';
+    return '$length lignes de journal de configuration et $length2 événements de configuration sont disponibles dans l\'écran de débogage de configuration séparé.';
   }
 
   @override
@@ -1035,7 +1033,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String onboardingLatestOutputAppProvider(String localServerLastOutput) {
-    return 'Latest output: $localServerLastOutput';
+    return 'Dernière sortie : $localServerLastOutput';
   }
 
   @override
@@ -1219,7 +1217,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String serversCommandAppProviderLocalServerCommandPath(
     String localServerCommandPath,
   ) {
-    return 'Command: $localServerCommandPath';
+    return 'Commande : $localServerCommandPath';
   }
 
   @override
@@ -1249,7 +1247,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String serversRemoveProfileDisplayName(String displayName) {
-    return 'Remove \"$displayName\"?';
+    return 'Supprimer \"$displayName\" ?';
   }
 
   @override
@@ -2238,7 +2236,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String shortcutsConflictConflict(String conflict) {
-    return 'Conflict with $conflict';
+    return 'Conflit avec $conflict';
   }
 
   @override
@@ -2253,7 +2251,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String shortcutsSetShortcutWidget(String label) {
-    return 'Set shortcut: $label';
+    return 'Définir le raccourci : $label';
   }
 
   @override
