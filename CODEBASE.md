@@ -174,7 +174,7 @@ lib/presentation/widgets/message_entrance_animation.dart # Entrance animation wr
 lib/presentation/widgets/chat_tour_showcase.dart   # Shared showcase wrapper for the first-use chat tour; provides MD3-compliant tooltip styling with consistent surface, shape, and action hierarchy using `showcaseview` package
 lib/presentation/widgets/modal_primary_action_shortcuts.dart # Reusable keyboard shortcut wrapper for modal dialogs; maps Enter/NumpadEnter to a configurable primary action; used by model download dialogs, onboarding wizard, workspace controller, and session list
 lib/presentation/widgets/quota/quota_popup_section.dart      # Root quota section embedded at the bottom of the Context usage popup; silent no-op when no data is available
-lib/presentation/widgets/quota/quota_provider_group_row.dart # Expandable provider-group row showing critical entry bar + Pace chip; Codex-specific rendering branch (`providerId == 'codex'`) renders provider name header + single entry row instead of default non-expandable entry
+lib/presentation/widgets/quota/quota_provider_group_row.dart # Expandable provider-group row showing critical entry bar + Pace chip; Codex-specific rendering branch (`providerId == 'codex'`) renders provider name header + iterates all entries (defensive iteration) and defaults to expanded state via initState/didUpdateWidget
 lib/presentation/widgets/quota/quota_entry_row.dart          # Individual quota entry: label, severity-colored progress bar, remaining/limit figures
 lib/presentation/widgets/quota/pace_label.dart               # Pace % chip: desktop tooltip, mobile snackbar explanation
 ```

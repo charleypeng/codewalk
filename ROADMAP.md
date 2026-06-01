@@ -88,3 +88,11 @@ Description: Embed a userspace Tailscale node (via `package:tailscale`) as a pro
 Commits: ab5f0069, 51052ea1, be3bcd95, ab0b84ac, 4bec3ae9, e8ff8a78
 
 Follow-up: vendored `package:tailscale` with Windows native-assets hook no-op to unblock release artifacts. The `tailscale` native-assets hook was incompatible with Windows builds on ARM64 Linux CI runners; vendored the package and replaced the hook with a no-op, enabling release artifacts to build for all platforms.
+
+### Feature 11: Codex Rate Limits panel shows both windows immediately — ✅ Completed
+
+Description: The "Rate limits" popup now shows Codex's Weekly Limit immediately without requiring a chevron expand/collapse interaction. Codex provider groups start expanded so both 5-Hour and Weekly Limit quotas are visible at once. Other providers (Claude, Google, etc.) keep the collapsed default for density.
+
+Implemented: Modified `quota_provider_group_row.dart` to check whether the provider is Codex — Codex groups start expanded, all others remain collapsed. Extended the existing collapse tests to cover Codex expanded-by-default behavior.
+
+Commits: 474a6b51, 098cb14c, 66a931f6
