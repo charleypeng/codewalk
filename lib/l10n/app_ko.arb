@@ -1,29 +1,22 @@
 {
-  "aboutGitHub": "GitHub",
   "@aboutGitHub": {
     "description": "CodeWalk UI string — aboutGitHub"
   },
-  "appShellDownloadingUpdate": "업데이트 다운로드 중",
   "@appShellDownloadingUpdate": {
     "description": "CodeWalk UI string — appShellDownloadingUpdate"
   },
-  "appShellInstall": "설치",
   "@appShellInstall": {
     "description": "CodeWalk UI string — appShellInstall"
   },
-  "appShellInstallFailed": "설치 실패",
   "@appShellInstallFailed": {
     "description": "CodeWalk UI string — appShellInstallFailed"
   },
-  "appShellInstallingUpdate": "업데이트 설치 중...",
   "@appShellInstallingUpdate": {
     "description": "CodeWalk UI string — appShellInstallingUpdate"
   },
-  "appShellRestart": "재시작",
   "@appShellRestart": {
     "description": "CodeWalk UI string — appShellRestart"
   },
-  "appShellUpdateAvailableResult": "업데이트 가능: v{latestVersion}",
   "@appShellUpdateAvailableResult": {
     "description": "CodeWalk UI string — appShellUpdateAvailableResult",
     "placeholders": {
@@ -32,43 +25,33 @@
       }
     }
   },
-  "behaviorAdvancedPermissionRule": "고급 권한 규칙",
   "@behaviorAdvancedPermissionRule": {
     "description": "CodeWalk UI string — behaviorAdvancedPermissionRule"
   },
-  "behaviorAutomatic": "자동",
   "@behaviorAutomatic": {
     "description": "CodeWalk UI string — behaviorAutomatic"
   },
-  "behaviorAutomaticFallback": "자동 대체",
   "@behaviorAutomaticFallback": {
     "description": "CodeWalk UI string — behaviorAutomaticFallback"
   },
-  "behaviorCellularDataSaver": "모바일 데이터 절약",
   "@behaviorCellularDataSaver": {
     "description": "CodeWalk UI string — behaviorCellularDataSaver"
   },
-  "behaviorChatLevelShare": "채팅 수준 공유",
   "@behaviorChatLevelShare": {
     "description": "CodeWalk UI string — behaviorChatLevelShare"
   },
-  "behaviorCodeWalkReleaseChecks": "CodeWalk 릴리스 확인",
   "@behaviorCodeWalkReleaseChecks": {
     "description": "CodeWalk UI string — behaviorCodeWalkReleaseChecks"
   },
-  "behaviorControlsOfficialGlobal": "OpenCode 공식 전역 설정 제어",
   "@behaviorControlsOfficialGlobal": {
     "description": "CodeWalk UI string — behaviorControlsOfficialGlobal"
   },
-  "behaviorControlsUpstreamOpenCode": "업스트림 OpenCode 설정 제어",
   "@behaviorControlsUpstreamOpenCode": {
     "description": "CodeWalk UI string — behaviorControlsUpstreamOpenCode"
   },
-  "behaviorCustomDisplayName": "사용자 지정 표시 이름",
   "@behaviorCustomDisplayName": {
     "description": "CodeWalk UI string — behaviorCustomDisplayName"
   },
-  "behaviorCutsAutomaticMobile": "백그라운드 다운로드를 중지하고 포그라운드 자동 새로고침을 {inSeconds}초마다 한 번으로 제한하여 자동 모바일 데이터 사용량을 줄입니다.",
   "@behaviorCutsAutomaticMobile": {
     "description": "CodeWalk UI string — behaviorCutsAutomaticMobile",
     "placeholders": {
@@ -77,90 +60,63 @@
       }
     }
   },
-  "behaviorDisabled": "비활성화됨",
   "@behaviorDisabled": {
     "description": "CodeWalk UI string — behaviorDisabled"
   },
-  "behaviorLightweightTasksLike": "다음과 같은 가벼운 작업",
   "@behaviorLightweightTasksLike": {
     "description": "CodeWalk UI string — behaviorLightweightTasksLike"
   },
-  "behaviorManual": "수동",
   "@behaviorManual": {
     "description": "CodeWalk UI string — behaviorManual"
   },
-  "behaviorNotify": "알림",
   "@behaviorNotify": {
     "description": "CodeWalk UI string — behaviorNotify"
   },
-  "behaviorOfficialOpenCodePermission": "Official OpenCode permission policy is configured in `opencode.json` with allow/ask/deny rules per tool. CodeWalk keeps the official permission-request cards and adds one approved ADR-023 exception: the composer auto-approve toggle replies with `Always` and `remember: true` unconditionally to create durable session-scoped grants, and keeps the same thread-scoped continuity path active in the Android background worker.",
   "@behaviorOfficialOpenCodePermission": {
     "description": "CodeWalk UI string — behaviorOfficialOpenCodePermission"
   },
-  "behaviorOpenCodeBackedDefaults": "OpenCode-backed defaults",
   "@behaviorOpenCodeBackedDefaults": {
     "description": "CodeWalk UI string — behaviorOpenCodeBackedDefaults"
   },
-  "behaviorPermissionHandlingProvenance": "Permission handling provenance",
   "@behaviorPermissionHandlingProvenance": {
     "description": "CodeWalk UI string — behaviorPermissionHandlingProvenance"
   },
-  "behaviorPermissionsVariantReasoning": "Permissions and variant/reasoning parity stay separate until their UI can preserve advanced config safely.",
   "@behaviorPermissionsVariantReasoning": {
     "description": "CodeWalk UI string — behaviorPermissionsVariantReasoning"
   },
-  "behaviorPrimaryAgentAgent": "Primary agent used when no agent is explicitly chosen.",
   "@behaviorPrimaryAgentAgent": {
     "description": "CodeWalk UI string — behaviorPrimaryAgentAgent"
   },
-  "behaviorRefreshDefaults": "Refresh defaults",
   "@behaviorRefreshDefaults": {
     "description": "CodeWalk UI string — behaviorRefreshDefaults"
   },
-  "behaviorSharedAcrossOpenCode": "Shared across OpenCode clients through config.",
   "@behaviorSharedAcrossOpenCode": {
     "description": "CodeWalk UI string — behaviorSharedAcrossOpenCode"
   },
-  "behaviorTheseValuesWrite": "These values write to `/config` on the active server and match official OpenCode shared config.",
   "@behaviorTheseValuesWrite": {
     "description": "CodeWalk UI string — behaviorTheseValuesWrite"
   },
-  "cannedAttachFiles": "Attach files",
   "@cannedAttachFiles": {
     "description": "CodeWalk UI string — cannedAttachFiles"
   },
-  "cannedNoSuggestions": "No suggestions",
-  "cannedOffMeansReplace": "Off means replace current composer text",
   "@cannedOffMeansReplace": {
     "description": "CodeWalk UI string — cannedOffMeansReplace"
   },
-  "cannedQuickReply": "New quick reply",
   "@cannedQuickReply": {
     "description": "CodeWalk UI string — cannedQuickReply"
   },
-  "cannedSendImmediatelyInserting": "Send immediately after inserting this quick reply",
   "@cannedSendImmediatelyInserting": {
     "description": "CodeWalk UI string — cannedSendImmediatelyInserting"
   },
-  "chatActiveServerUnhealthy": "Active server is unhealthy. Sends will try once and fail fast until recovery.",
   "@chatActiveServerUnhealthy": {
     "description": "CodeWalk UI string — chatActiveServerUnhealthy"
   },
-  "chatAddServerToStart": "Add a server to start chatting.",
-  "chatAppBarMoreActions": "More actions",
-  "chatAppBarPinAction": "Pin to app bar",
-  "chatAppBarPinDescription": "This action will stay visible outside the menu.",
-  "chatAppBarUnpinAction": "Unpin from app bar",
-  "chatAppBarUnpinDescription": "This action will move back into the menu.",
-  "chatCachedConversationsYet": "No cached conversations yet",
   "@chatCachedConversationsYet": {
     "description": "CodeWalk UI string — chatCachedConversationsYet"
   },
-  "chatChangedFilesAvailable": "No changed files are available for this session.",
   "@chatChangedFilesAvailable": {
     "description": "CodeWalk UI string — chatChangedFilesAvailable"
   },
-  "chatChildrenChatProviderCurrentSessionChildren": "하위: {length}",
   "@chatChildrenChatProviderCurrentSessionChildren": {
     "description": "CodeWalk UI string — chatChildrenChatProviderCurrentSessionChildren",
     "placeholders": {
@@ -169,46 +125,27 @@
       }
     }
   },
-  "chatChooseDirectory": "Choose Directory",
   "@chatChooseDirectory": {
     "description": "CodeWalk UI string — chatChooseDirectory"
   },
-  "chatChooseFolderOpen": "Choose a folder to open as project context.",
   "@chatChooseFolderOpen": {
     "description": "CodeWalk UI string — chatChooseFolderOpen"
   },
-  "chatClose": "Close",
-  "chatCompactContext": "Compact Context",
-  "chatConversations": "Conversations",
-  "chatConversationsPane": "Conversations",
-  "chatCurrent": "Use current",
   "@chatCurrent": {
     "description": "CodeWalk UI string — chatCurrent"
   },
-  "chatDiffFiles": "Diff files: 0",
   "@chatDiffFiles": {
     "description": "CodeWalk UI string — chatDiffFiles"
   },
-  "chatDisplay": "Display",
   "@chatDisplay": {
     "description": "CodeWalk UI string — chatDisplay"
   },
-  "chatDisplayToggles": "Display toggles",
-  "chatDoubleESCStop": "ESC 두 번 눌러서 중지",
   "@chatDoubleESCStop": {
     "description": "CodeWalk UI string — chatDoubleESCStop"
   },
-  "chatFilterActive": "Active",
-  "chatFilterAll": "All",
-  "chatFilterArchived": "Archived",
-  "chatFilterDirectories": "Filter directories",
   "@chatFilterDirectories": {
     "description": "CodeWalk UI string — chatFilterDirectories"
   },
-  "chatFilterSessions": "Filter sessions",
-  "chatGoToFirst": "Go to first message",
-  "chatGoToLatest": "Go to latest message",
-  "chatGroupMessageCountMessages": "{compactionLabel} 압축 전 {messageCount}개 메시지 숨김",
   "@chatGroupMessageCountMessages": {
     "description": "CodeWalk UI string — chatGroupMessageCountMessages",
     "placeholders": {
@@ -220,40 +157,27 @@
       }
     }
   },
-  "chatHelloAssistant": "Hello! I am your AI assistant",
-  "chatHelp": "How can I help you?",
   "@chatHelp": {
     "description": "CodeWalk UI string — chatHelp"
   },
-  "chatHideConversationsSidebar": "Hide Conversations sidebar",
-  "chatHideUtilitySidebar": "Hide Utility sidebar",
-  "chatHistoryCollapsed": "Previous history is collapsed",
   "@chatHistoryCollapsed": {
     "description": "CodeWalk UI string — chatHistoryCollapsed"
   },
-  "chatKeepWorking": "Keep working",
-  "chatLatestToolActivity": "Latest tool activity stays inside this bounded panel to keep the chat viewport stable.",
   "@chatLatestToolActivity": {
     "description": "CodeWalk UI string — chatLatestToolActivity"
   },
-  "chatLoadMore": "Load more",
-  "chatLoadingProjectContext": "Loading project context...",
   "@chatLoadingProjectContext": {
     "description": "CodeWalk UI string — chatLoadingProjectContext"
   },
-  "chatMessageHide": "Hide",
   "@chatMessageHide": {
     "description": "CodeWalk UI string — chatMessageHide"
   },
-  "chatMessageMessagePartUnavailable": "Message part unavailable",
   "@chatMessageMessagePartUnavailable": {
     "description": "CodeWalk UI string — chatMessageMessagePartUnavailable"
   },
-  "chatMessageMetadataAvailable": "No metadata available",
   "@chatMessageMetadataAvailable": {
     "description": "CodeWalk UI string — chatMessageMetadataAvailable"
   },
-  "chatMessageModelMessageModelId": "모델: {modelId}",
   "@chatMessageModelMessageModelId": {
     "description": "CodeWalk UI string — chatMessageModelMessageModelId",
     "placeholders": {
@@ -262,7 +186,6 @@
       }
     }
   },
-  "chatMessageProviderMessageProviderId": "제공자: {providerId}",
   "@chatMessageProviderMessageProviderId": {
     "description": "CodeWalk UI string — chatMessageProviderMessageProviderId",
     "placeholders": {
@@ -271,64 +194,45 @@
       }
     }
   },
-  "chatMessageRewindEdit": "Rewind and edit from here",
   "@chatMessageRewindEdit": {
     "description": "CodeWalk UI string — chatMessageRewindEdit"
   },
-  "chatMessageYou": "You",
   "@chatMessageYou": {
     "description": "CodeWalk UI string — chatMessageYou"
   },
-  "chatNewChat": "New Chat",
-  "chatNewChatTourDescription": "Start a new conversation here.",
-  "chatNewChatTourTitle": "New chat",
-  "chatNoServerYet": "No server configured yet",
-  "chatOpenFiles": "Open Files",
-  "chatOpenProject": "프로젝트 열기",
   "@chatOpenProject": {
     "description": "CodeWalk UI string — chatOpenProject"
   },
-  "chatOpenProjectFolder": "Open project folder...",
   "@chatOpenProjectFolder": {
     "description": "CodeWalk UI string — chatOpenProjectFolder"
   },
-  "chatOpenSidebar": "사이드바 열기",
   "@chatOpenSidebar": {
     "description": "CodeWalk UI string — chatOpenSidebar"
   },
-  "chatPageStatusContextUsage": "컨텍스트 사용량",
   "@chatPageStatusContextUsage": {
     "description": "CodeWalk UI string — chatPageStatusContextUsage"
   },
-  "chatPageStatusCost": "비용",
   "@chatPageStatusCost": {
     "description": "CodeWalk UI string — chatPageStatusCost"
   },
-  "chatPageStatusLimit": "제한",
   "@chatPageStatusLimit": {
     "description": "CodeWalk UI string — chatPageStatusLimit"
   },
-  "chatPageStatusManageServers": "서버 관리",
   "@chatPageStatusManageServers": {
     "description": "CodeWalk UI string — chatPageStatusManageServers"
   },
-  "chatPageStatusSaver": "절약",
   "@chatPageStatusSaver": {
     "description": "CodeWalk UI string — chatPageStatusSaver"
   },
-  "chatPageStatusSwitchServer": "서버 전환",
   "@chatPageStatusSwitchServer": {
     "description": "CodeWalk UI string — chatPageStatusSwitchServer"
   },
-  "chatPageStatusTokens": "토큰",
   "@chatPageStatusTokens": {
     "description": "CodeWalk UI string — chatPageStatusTokens"
   },
-  "chatPageStatusUsage": "사용량",
   "@chatPageStatusUsage": {
     "description": "CodeWalk UI string — chatPageStatusUsage"
   },
-  "chatPageStatusUsagePercent": "{usagePercent}",
   "@chatPageStatusUsagePercent": {
     "description": "CodeWalk UI string — chatPageStatusUsagePercent",
     "placeholders": {
@@ -337,16 +241,12 @@
       }
     }
   },
-  "chatProjectContext": "Project Context",
-  "chatProjectContext2": "프로젝트 컨텍스트",
   "@chatProjectContext2": {
     "description": "CodeWalk UI string — chatProjectContext2"
   },
-  "chatRealtimeGlobalEvent": "글로벌 이벤트",
   "@chatRealtimeGlobalEvent": {
     "description": "CodeWalk UI string — chatRealtimeGlobalEvent"
   },
-  "chatRealtimeGlobalEventReason": "글로벌 이벤트 ({reason})",
   "@chatRealtimeGlobalEventReason": {
     "description": "CodeWalk UI string — chatRealtimeGlobalEventReason",
     "placeholders": {
@@ -355,11 +255,9 @@
       }
     }
   },
-  "chatRealtimeGlobalEventStale": "글로벌 이벤트 (오래된 세대)",
   "@chatRealtimeGlobalEventStale": {
     "description": "CodeWalk UI string — chatRealtimeGlobalEventStale"
   },
-  "chatRealtimeMessageStreamReason": "메시지 스트림 ({reason})",
   "@chatRealtimeMessageStreamReason": {
     "description": "CodeWalk UI string — chatRealtimeMessageStreamReason",
     "placeholders": {
@@ -368,11 +266,9 @@
       }
     }
   },
-  "chatRealtimeRealtimeEvent": "실시간 이벤트",
   "@chatRealtimeRealtimeEvent": {
     "description": "CodeWalk UI string — chatRealtimeRealtimeEvent"
   },
-  "chatRealtimeRealtimeEventReason": "실시간 이벤트 ({reason})",
   "@chatRealtimeRealtimeEventReason": {
     "description": "CodeWalk UI string — chatRealtimeRealtimeEventReason",
     "placeholders": {
@@ -381,32 +277,21 @@
       }
     }
   },
-  "chatRealtimeRealtimeEventStale": "실시간 이벤트 (오래된 세대)",
   "@chatRealtimeRealtimeEventStale": {
     "description": "CodeWalk UI string — chatRealtimeRealtimeEventStale"
   },
-  "chatRealtimeReconnectingServerTry": "서버에 재연결 중. 잠시 후 다시 시도하세요.",
   "@chatRealtimeReconnectingServerTry": {
     "description": "CodeWalk UI string — chatRealtimeReconnectingServerTry"
   },
-  "chatReasoning": "추론 중...",
   "@chatReasoning": {
     "description": "CodeWalk UI string — chatReasoning"
   },
-  "chatRecentSessions": "Recent sessions",
-  "chatRecentSessionsToggle": "Recent sessions",
-  "chatRedoLastTurn": "Redo last undone turn",
-  "chatRefresh": "Refresh",
-  "chatRefreshConversation": "Could not refresh this conversation",
   "@chatRefreshConversation": {
     "description": "CodeWalk UI string — chatRefreshConversation"
   },
-  "chatRefreshProjects": "Refresh projects",
   "@chatRefreshProjects": {
     "description": "CodeWalk UI string — chatRefreshProjects"
   },
-  "chatRefreshSessionDetails": "Refresh session details",
-  "chatRemoveDisplayNameHistory": "기록에서 {displayName} 제거",
   "@chatRemoveDisplayNameHistory": {
     "description": "CodeWalk UI string — chatRemoveDisplayNameHistory",
     "placeholders": {
@@ -415,38 +300,21 @@
       }
     }
   },
-  "chatRetry": "Retry",
-  "chatRetry2": "Retry",
   "@chatRetry2": {
     "description": "CodeWalk UI string — chatRetry2"
   },
-  "chatRetryRefresh": "Retry refresh",
-  "chatRetryingModelRequest": "모델 요청 재시도 중...",
   "@chatRetryingModelRequest": {
     "description": "CodeWalk UI string — chatRetryingModelRequest"
   },
-  "chatReturnToMainConversation": "Return to main conversation",
-  "chatReviewChanges": "Review changes",
   "@chatReviewChanges": {
     "description": "CodeWalk UI string — chatReviewChanges"
   },
-  "chatSearchConversations": "Search conversations",
-  "chatSearchNextResult": "Next result",
-  "chatSearchNoResults": "No results",
-  "chatSearchPreviousResult": "Previous result",
-  "chatSearchResultCount": "Message {current} of {total}",
-  "chatSearchTimeline": "Search timeline",
-  "chatSelectDirectory": "Select directory",
   "@chatSelectDirectory": {
     "description": "CodeWalk UI string — chatSelectDirectory"
   },
-  "chatSelectOrCreate": "Select or create a conversation to start chatting",
-  "chatSelectProjectBelow": "Select a project below.",
   "@chatSelectProjectBelow": {
     "description": "CodeWalk UI string — chatSelectProjectBelow"
   },
-  "chatSessionActions": "Session actions",
-  "chatSessionChatSessionSession": "채팅 세션: {title}",
   "@chatSessionChatSessionSession": {
     "description": "CodeWalk UI string — chatSessionChatSessionSession",
     "placeholders": {
@@ -455,7 +323,6 @@
       }
     }
   },
-  "chatSessionConversationNextAction": "대화 {nextAction}",
   "@chatSessionConversationNextAction": {
     "description": "CodeWalk UI string — chatSessionConversationNextAction",
     "placeholders": {
@@ -464,15 +331,12 @@
       }
     }
   },
-  "chatSessionConversations": "No conversations",
   "@chatSessionConversations": {
     "description": "CodeWalk UI string — chatSessionConversations"
   },
-  "chatSessionCreateConversationStart": "Create a new conversation to start chatting",
   "@chatSessionCreateConversationStart": {
     "description": "CodeWalk UI string — chatSessionCreateConversationStart"
   },
-  "chatSessionsLength": "{length}",
   "@chatSessionsLength": {
     "description": "CodeWalk UI string — chatSessionsLength",
     "placeholders": {
@@ -481,21 +345,12 @@
       }
     }
   },
-  "chatSetUpServer": "Set up server",
-  "chatSettings": "Settings",
   "@chatSettings": {
     "description": "CodeWalk UI string — chatSettings"
   },
-  "chatSidebarAccess": "사이드바 액세스",
   "@chatSidebarAccess": {
     "description": "CodeWalk UI string — chatSidebarAccess"
   },
-  "chatSortMostRecent": "Most Recent",
-  "chatSortOldest": "Oldest",
-  "chatSortRecent": "Recent",
-  "chatSortSessions": "Sort sessions",
-  "chatSortTitle": "Title",
-  "chatSyncLabel": "동기화: {label}",
   "@chatSyncLabel": {
     "description": "CodeWalk UI string — chatSyncLabel",
     "placeholders": {
@@ -504,15 +359,1048 @@
       }
     }
   },
-  "chatTasks": "Tasks",
   "@chatTasks": {
     "description": "CodeWalk UI string — chatTasks"
   },
-  "chatTasksAvailableSession": "No tasks are available for this session.",
   "@chatTasksAvailableSession": {
     "description": "CodeWalk UI string — chatTasksAvailableSession"
   },
+  "@errorFormatAuthenticationFailedReconnect": {
+    "description": "CodeWalk UI string — errorFormatAuthenticationFailedReconnect"
+  },
+  "@errorFormatProviderTemporarilyUnavailable": {
+    "description": "CodeWalk UI string — errorFormatProviderTemporarilyUnavailable"
+  },
+  "@errorFormatQuotaExceededCheck": {
+    "description": "CodeWalk UI string — errorFormatQuotaExceededCheck"
+  },
+  "@errorFormatRateLimitExceeded": {
+    "description": "CodeWalk UI string — errorFormatRateLimitExceeded"
+  },
+  "@errorFormatServerErrorPlease": {
+    "description": "CodeWalk UI string — errorFormatServerErrorPlease"
+  },
+  "@errorFormatServiceTemporarilyUnavailable": {
+    "description": "CodeWalk UI string — errorFormatServiceTemporarilyUnavailable"
+  },
+  "@errorFormatUnableReachServer": {
+    "description": "CodeWalk UI string — errorFormatUnableReachServer"
+  },
+  "@fileActionAttachmentDataDecoded": {
+    "description": "CodeWalk UI string — fileActionAttachmentDataDecoded"
+  },
+  "@fileActionAttachmentPathEmpty": {
+    "description": "CodeWalk UI string — fileActionAttachmentPathEmpty"
+  },
+  "@fileActionAttachmentPayloadEmpty": {
+    "description": "CodeWalk UI string — fileActionAttachmentPayloadEmpty"
+  },
+  "@fileActionAttachmentProvideValid": {
+    "description": "CodeWalk UI string — fileActionAttachmentProvideValid"
+  },
+  "@fileActionAttachmentSavedDevice": {
+    "description": "CodeWalk UI string — fileActionAttachmentSavedDevice"
+  },
+  "@fileActionAttachmentSavedOutputFile": {
+    "description": "CodeWalk UI string — fileActionAttachmentSavedOutputFile",
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "@fileActionAttachmentSavedOutputFile2": {
+    "description": "CodeWalk UI string — fileActionAttachmentSavedOutputFile2",
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "@fileActionAttachmentSavedSavedPath": {
+    "description": "CodeWalk UI string — fileActionAttachmentSavedSavedPath",
+    "placeholders": {
+      "savedPath": {
+        "type": "String"
+      }
+    }
+  },
+  "@fileActionLocalAttachmentFound": {
+    "description": "CodeWalk UI string — fileActionLocalAttachmentFound"
+  },
+  "@fileActionSaveCanceled": {
+    "description": "CodeWalk UI string — fileActionSaveCanceled"
+  },
+  "@fileActionUnableOpenLocal": {
+    "description": "CodeWalk UI string — fileActionUnableOpenLocal"
+  },
+  "@filesAddChat": {
+    "description": "CodeWalk UI string — filesAddChat"
+  },
+  "@filesBinaryFilePreview": {
+    "description": "CodeWalk UI string — filesBinaryFilePreview"
+  },
+  "@filesClear": {
+    "description": "CodeWalk UI string — filesClear"
+  },
+  "@filesContents": {
+    "description": "CodeWalk UI string — filesContents"
+  },
+  "@filesFileEmpty": {
+    "description": "CodeWalk UI string — filesFileEmpty"
+  },
+  "@filesFilesFound": {
+    "description": "CodeWalk UI string — filesFilesFound"
+  },
+  "@filesNames": {
+    "description": "CodeWalk UI string — filesNames"
+  },
+  "@filesOpenFilesFileState": {
+    "description": "CodeWalk UI string — filesOpenFilesFileState",
+    "placeholders": {
+      "length": {
+        "type": "String"
+      }
+    }
+  },
+  "@filesQuickOpenFile": {
+    "description": "CodeWalk UI string — filesQuickOpenFile"
+  },
+  "@logsAppLogs": {
+    "description": "CodeWalk UI string — logsAppLogs"
+  },
+  "@logsLevel": {
+    "description": "CodeWalk UI string — logsLevel"
+  },
+  "@logsShowingOrderedLength": {
+    "description": "CodeWalk UI string — logsShowingOrderedLength",
+    "placeholders": {
+      "length": {
+        "type": "int"
+      },
+      "length2": {
+        "type": "int"
+      }
+    }
+  },
+  "@logsTimeRange": {
+    "description": "CodeWalk UI string — logsTimeRange"
+  },
+  "@mathExpressionLabel": {
+    "description": "CodeWalk UI string — mathExpressionLabel"
+  },
+  "@mermaidCopySourceTooltip": {
+    "description": "CodeWalk UI string — mermaidCopySourceTooltip"
+  },
+  "@mermaidDiagramLabel": {
+    "description": "CodeWalk UI string — mermaidDiagramLabel"
+  },
+  "@modelChooseAgent": {
+    "description": "CodeWalk UI string — modelChooseAgent"
+  },
+  "@modelFavorites": {
+    "description": "CodeWalk UI string — modelFavorites"
+  },
+  "@modelModelsFound": {
+    "description": "CodeWalk UI string — modelModelsFound"
+  },
+  "@msgInfoPartDescriptionModel": {
+    "description": "CodeWalk UI string — msgInfoPartDescriptionModel",
+    "placeholders": {
+      "description": {
+        "type": "String"
+      },
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "@msgInfoSubtaskPartAgent": {
+    "description": "CodeWalk UI string — msgInfoSubtaskPartAgent",
+    "placeholders": {
+      "agent": {
+        "type": "String"
+      }
+    }
+  },
+  "@msgReadAloud": {
+    "description": "CodeWalk UI string — msgReadAloud"
+  },
+  "@msgReadAloudNotAvailable": {
+    "description": "CodeWalk UI string — msgReadAloudNotAvailable"
+  },
+  "@msgShareAsImage": {
+    "description": "CodeWalk UI string — Tooltip for the share-as-image action on a chat message bubble"
+  },
+  "@msgShareAsImageFailed": {
+    "description": "CodeWalk UI string — Shown when image capture or sharing fails unexpectedly"
+  },
+  "@msgShareAsImageSubject": {
+    "description": "CodeWalk UI string — Subject line when sharing a message image via the system share sheet"
+  },
+  "@msgShareAsImageTooTall": {
+    "description": "CodeWalk UI string — Shown when the message bubble exceeds the maximum capture height"
+  },
+  "@msgStopReadAloud": {
+    "description": "CodeWalk UI string — msgStopReadAloud"
+  },
+  "@notifAndroidBatteryOptimization": {
+    "description": "CodeWalk UI string — notifAndroidBatteryOptimization"
+  },
+  "@notifNotificationsArriveReopening": {
+    "description": "CodeWalk UI string — notifNotificationsArriveReopening"
+  },
+  "@notifResponseRunningKeep": {
+    "description": "CodeWalk UI string — notifResponseRunningKeep"
+  },
+  "@notifSelectedSoundLabel": {
+    "description": "CodeWalk UI string — notifSelectedSoundLabel",
+    "placeholders": {
+      "soundLabel": {
+        "type": "String"
+      }
+    }
+  },
+  "@onboardingAIGeneratedTitles": {
+    "description": "CodeWalk UI string — onboardingAIGeneratedTitles"
+  },
+  "@onboardingAddServerLater": {
+    "description": "CodeWalk UI string — onboardingAddServerLater"
+  },
+  "@onboardingAlmostInstallOpenCode": {
+    "description": "CodeWalk UI string — onboardingAlmostInstallOpenCode"
+  },
+  "@onboardingAppProviderLocalSetupLogsLength": {
+    "description": "CodeWalk UI string — onboardingAppProviderLocalSetupLogsLength",
+    "placeholders": {
+      "length": {
+        "type": "int"
+      },
+      "length2": {
+        "type": "int"
+      }
+    }
+  },
+  "@onboardingAuthenticate": {
+    "description": "CodeWalk UI string — onboardingAuthenticate"
+  },
+  "@onboardingChooseAnotherPath": {
+    "description": "CodeWalk UI string — onboardingChooseAnotherPath"
+  },
+  "@onboardingCodeWalkAppOpenCode": {
+    "description": "CodeWalk UI string — onboardingCodeWalkAppOpenCode"
+  },
+  "@onboardingConnectRunningServer": {
+    "description": "CodeWalk UI string — onboardingConnectRunningServer"
+  },
+  "@onboardingConnectionIssue": {
+    "description": "CodeWalk UI string — onboardingConnectionIssue"
+  },
+  "@onboardingConnectionTips": {
+    "description": "CodeWalk UI string — onboardingConnectionTips"
+  },
+  "@onboardingContinueServerURL": {
+    "description": "CodeWalk UI string — onboardingContinueServerURL"
+  },
+  "@onboardingCopyLoginURL": {
+    "description": "CodeWalk UI string — onboardingCopyLoginURL"
+  },
+  "@onboardingDefaultURLEmulator": {
+    "description": "CodeWalk UI string — onboardingDefaultURLEmulator"
+  },
+  "@onboardingDetailedSetupEvents": {
+    "description": "CodeWalk UI string — onboardingDetailedSetupEvents"
+  },
+  "@onboardingDonShowAgain": {
+    "description": "CodeWalk UI string — onboardingDonShowAgain"
+  },
+  "@onboardingExisting": {
+    "description": "CodeWalk UI string — onboardingExisting"
+  },
+  "@onboardingExplainInstallOpenCode": {
+    "description": "CodeWalk UI string — onboardingExplainInstallOpenCode"
+  },
+  "@onboardingGoodOptionDesktop": {
+    "description": "CodeWalk UI string — onboardingGoodOptionDesktop"
+  },
+  "@onboardingInstallBinary": {
+    "description": "CodeWalk UI string — onboardingInstallBinary"
+  },
+  "@onboardingInstallBun": {
+    "description": "CodeWalk UI string — onboardingInstallBun"
+  },
+  "@onboardingInstallBunOpenCode": {
+    "description": "CodeWalk UI string — onboardingInstallBunOpenCode"
+  },
+  "@onboardingInstallNpm": {
+    "description": "CodeWalk UI string — onboardingInstallNpm"
+  },
+  "@onboardingInstallRunOpenCode": {
+    "description": "CodeWalk UI string — onboardingInstallRunOpenCode"
+  },
+  "@onboardingLatestOutputAppProvider": {
+    "description": "CodeWalk UI string — onboardingLatestOutputAppProvider",
+    "placeholders": {
+      "localServerLastOutput": {
+        "type": "String"
+      }
+    }
+  },
+  "@onboardingLetCodeWalkSet": {
+    "description": "CodeWalk UI string — onboardingLetCodeWalkSet"
+  },
+  "@onboardingManagedLocalServer": {
+    "description": "CodeWalk UI string — onboardingManagedLocalServer"
+  },
+  "@onboardingManagedLocalServer2": {
+    "description": "CodeWalk UI string — onboardingManagedLocalServer2"
+  },
+  "@onboardingOpenCode": {
+    "description": "CodeWalk UI string — onboardingOpenCode"
+  },
+  "@onboardingOpenCodeRunningDevice": {
+    "description": "CodeWalk UI string — onboardingOpenCodeRunningDevice"
+  },
+  "@onboardingOpenCodeRunsLocally": {
+    "description": "CodeWalk UI string — onboardingOpenCodeRunsLocally"
+  },
+  "@onboardingOpenTailscaleLogin": {
+    "description": "CodeWalk UI string — onboardingOpenTailscaleLogin"
+  },
+  "@onboardingPasswordRequired": {
+    "description": "CodeWalk UI string — Validation error shown when Basic Auth password is empty"
+  },
+  "@onboardingRecommendedOrderTry": {
+    "description": "CodeWalk UI string — onboardingRecommendedOrderTry"
+  },
+  "@onboardingRefreshChecks": {
+    "description": "CodeWalk UI string — onboardingRefreshChecks"
+  },
+  "@onboardingShowSetupSteps": {
+    "description": "CodeWalk UI string — onboardingShowSetupSteps"
+  },
+  "@onboardingShowSetupSteps2": {
+    "description": "CodeWalk UI string — onboardingShowSetupSteps2"
+  },
+  "@onboardingSkip": {
+    "description": "CodeWalk UI string — onboardingSkip"
+  },
+  "@onboardingSkipSetup": {
+    "description": "CodeWalk UI string — onboardingSkipSetup"
+  },
+  "@onboardingStart": {
+    "description": "CodeWalk UI string — onboardingStart"
+  },
+  "@onboardingStop": {
+    "description": "CodeWalk UI string — onboardingStop"
+  },
+  "@onboardingUseBasicAuth": {
+    "description": "CodeWalk UI string — Switch tile label in onboarding wizard to enable Basic Auth"
+  },
+  "@onboardingUsernameRequired": {
+    "description": "CodeWalk UI string — Validation error shown when Basic Auth username is empty"
+  },
+  "@onboardingUsesServerTitle": {
+    "description": "CodeWalk UI string — onboardingUsesServerTitle"
+  },
+  "@onboardingViewSetupDebug": {
+    "description": "CodeWalk UI string — onboardingViewSetupDebug"
+  },
+  "@onboardingWindowsTipInstalling": {
+    "description": "CodeWalk UI string — onboardingWindowsTipInstalling"
+  },
+  "@questionAnswerSelected": {
+    "description": "CodeWalk UI string — questionAnswerSelected"
+  },
+  "@questionCommaSeparatedValues": {
+    "description": "CodeWalk UI string — questionCommaSeparatedValues"
+  },
+  "@questionQuestionGroupMarked": {
+    "description": "CodeWalk UI string — questionQuestionGroupMarked"
+  },
+  "@questionQuestionRequest": {
+    "description": "CodeWalk UI string — questionQuestionRequest"
+  },
+  "@questionQuestionsProvidedSubmit": {
+    "description": "CodeWalk UI string — questionQuestionsProvidedSubmit"
+  },
+  "@questionReviewAnswersSubmitting": {
+    "description": "CodeWalk UI string — questionReviewAnswersSubmitting"
+  },
+  "@serverClearOAuth": {
+    "description": "CodeWalk UI string — Menu action to clear stored OAuth credentials for a server profile"
+  },
+  "@serverOAuthAuthFailed": {
+    "description": "CodeWalk UI string — Error message shown when OAuth re-authentication fails"
+  },
+  "@serverOAuthChip": {
+    "description": "CodeWalk UI string — Chip label showing a server profile uses OAuth authentication"
+  },
+  "@serverOAuthNotSupported": {
+    "description": "CodeWalk UI string — Error when user tries to enable OAuth on an unsupported platform"
+  },
+  "@serverReauthenticate": {
+    "description": "CodeWalk UI string — Menu action to re-authenticate an OAuth-enabled server profile"
+  },
+  "@serverTailscaleChip": {
+    "description": "CodeWalk UI string — Chip label showing a server profile routes traffic through Tailscale"
+  },
+  "@serversActive": {
+    "description": "CodeWalk UI string — serversActive"
+  },
+  "@serversActiveServer": {
+    "description": "CodeWalk UI string — serversActiveServer"
+  },
+  "@serversAddLeastOpenCode": {
+    "description": "CodeWalk UI string — serversAddLeastOpenCode"
+  },
+  "@serversAddServer": {
+    "description": "CodeWalk UI string — serversAddServer"
+  },
+  "@serversCancel": {
+    "description": "CodeWalk UI string — serversCancel"
+  },
+  "@serversCheckHealth": {
+    "description": "CodeWalk UI string — serversCheckHealth"
+  },
+  "@serversClearDefault": {
+    "description": "CodeWalk UI string — serversClearDefault"
+  },
+  "@serversCommandAppProviderLocalServerCommandPath": {
+    "description": "CodeWalk UI string — serversCommandAppProviderLocalServerCommandPath",
+    "placeholders": {
+      "localServerCommandPath": {
+        "type": "String"
+      }
+    }
+  },
+  "@serversCopy": {
+    "description": "CodeWalk UI string — serversCopy"
+  },
+  "@serversDefault": {
+    "description": "CodeWalk UI string — serversDefault"
+  },
+  "@serversDelete": {
+    "description": "CodeWalk UI string — serversDelete"
+  },
+  "@serversDeleteServer": {
+    "description": "CodeWalk UI string — serversDeleteServer"
+  },
+  "@serversEdit": {
+    "description": "CodeWalk UI string — serversEdit"
+  },
+  "@serversLocalOpenCodeServer": {
+    "description": "CodeWalk UI string — serversLocalOpenCodeServer"
+  },
+  "@serversManagedModeAvailable": {
+    "description": "CodeWalk UI string — serversManagedModeAvailable"
+  },
+  "@serversRefreshHealth": {
+    "description": "CodeWalk UI string — serversRefreshHealth"
+  },
+  "@serversRemoveProfileDisplayName": {
+    "description": "CodeWalk UI string — serversRemoveProfileDisplayName",
+    "placeholders": {
+      "displayName": {
+        "type": "String"
+      }
+    }
+  },
+  "@serversServersConfigured": {
+    "description": "CodeWalk UI string — serversServersConfigured"
+  },
+  "@serversSetActive": {
+    "description": "CodeWalk UI string — serversSetActive"
+  },
+  "@serversSetDefault": {
+    "description": "CodeWalk UI string — serversSetDefault"
+  },
+  "@serversSetupDebug": {
+    "description": "CodeWalk UI string — serversSetupDebug"
+  },
+  "@serversSetupWizard": {
+    "description": "CodeWalk UI string — serversSetupWizard"
+  },
+  "@settingsAppearanceMathRendering": {
+    "description": "CodeWalk UI string — settingsAppearanceMathRendering"
+  },
+  "@settingsAppearanceMathRenderingDescription": {
+    "description": "CodeWalk UI string — settingsAppearanceMathRenderingDescription"
+  },
+  "@settingsReadAloudEnabled": {
+    "description": "CodeWalk UI string — settingsReadAloudEnabled"
+  },
+  "@settingsReadAloudEnabledDescription": {
+    "description": "CodeWalk UI string — settingsReadAloudEnabledDescription"
+  },
+  "@settingsReadAloudPitch": {
+    "description": "CodeWalk UI string — settingsReadAloudPitch"
+  },
+  "@settingsReadAloudPitchDescription": {
+    "description": "CodeWalk UI string — settingsReadAloudPitchDescription"
+  },
+  "@settingsReadAloudSectionDescription": {
+    "description": "CodeWalk UI string — settingsReadAloudSectionDescription"
+  },
+  "@settingsReadAloudSectionTitle": {
+    "description": "CodeWalk UI string — settingsReadAloudSectionTitle"
+  },
+  "@settingsReadAloudSpeed": {
+    "description": "CodeWalk UI string — settingsReadAloudSpeed"
+  },
+  "@settingsReadAloudSpeedDescription": {
+    "description": "CodeWalk UI string — settingsReadAloudSpeedDescription"
+  },
+  "@settingsReadAloudVoice": {
+    "description": "CodeWalk UI string — settingsReadAloudVoice"
+  },
+  "@settingsReadAloudVoiceHint": {
+    "description": "CodeWalk UI string — settingsReadAloudVoiceHint"
+  },
+  "@setupDebugBun2": {
+    "description": "CodeWalk UI string — setupDebugBun2"
+  },
+  "@setupDebugCapturedSetupDetails": {
+    "description": "CodeWalk UI string — setupDebugCapturedSetupDetails"
+  },
+  "@setupDebugCapturedSetupLogs": {
+    "description": "CodeWalk UI string — setupDebugCapturedSetupLogs"
+  },
+  "@setupDebugClearSetupDebug": {
+    "description": "CodeWalk UI string — setupDebugClearSetupDebug"
+  },
+  "@setupDebugCodeWalkCaptureEnough": {
+    "description": "CodeWalk UI string — setupDebugCodeWalkCaptureEnough"
+  },
+  "@setupDebugCommandPath2": {
+    "description": "CodeWalk UI string — setupDebugCommandPath2"
+  },
+  "@setupDebugCopySetupDebug": {
+    "description": "CodeWalk UI string — setupDebugCopySetupDebug"
+  },
+  "@setupDebugCurrentStatus": {
+    "description": "CodeWalk UI string — setupDebugCurrentStatus"
+  },
+  "@setupDebugDiagnosticsLoading": {
+    "description": "CodeWalk UI string — setupDebugDiagnosticsLoading"
+  },
+  "@setupDebugEnvironmentDiagnostics": {
+    "description": "CodeWalk UI string — setupDebugEnvironmentDiagnostics"
+  },
+  "@setupDebugFocusedOpenCodeSetup": {
+    "description": "CodeWalk UI string — setupDebugFocusedOpenCodeSetup"
+  },
+  "@setupDebugInstallDirectory": {
+    "description": "CodeWalk UI string — setupDebugInstallDirectory"
+  },
+  "@setupDebugLatestLocalServer": {
+    "description": "CodeWalk UI string — setupDebugLatestLocalServer"
+  },
+  "@setupDebugManualTroubleshooting": {
+    "description": "CodeWalk UI string — setupDebugManualTroubleshooting"
+  },
+  "@setupDebugNetwork2": {
+    "description": "CodeWalk UI string — setupDebugNetwork2"
+  },
+  "@setupDebugNode": {
+    "description": "CodeWalk UI string — setupDebugNode"
+  },
+  "@setupDebugNpm2": {
+    "description": "CodeWalk UI string — setupDebugNpm2"
+  },
+  "@setupDebugOpenCode2": {
+    "description": "CodeWalk UI string — setupDebugOpenCode2"
+  },
+  "@setupDebugOpenCodeSetupDebug": {
+    "description": "CodeWalk UI string — setupDebugOpenCodeSetupDebug"
+  },
+  "@setupDebugPlatform2": {
+    "description": "CodeWalk UI string — setupDebugPlatform2"
+  },
+  "@setupDebugRunDiagnosticsTry": {
+    "description": "CodeWalk UI string — setupDebugRunDiagnosticsTry"
+  },
+  "@setupDebugScreenCoversOpenCode": {
+    "description": "CodeWalk UI string — setupDebugScreenCoversOpenCode"
+  },
+  "@setupDebugTimeEntrySource": {
+    "description": "CodeWalk UI string — setupDebugTimeEntrySource",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "@setupDebugTimeline2": {
+    "description": "CodeWalk UI string — setupDebugTimeline2"
+  },
+  "@setupDebugWSL": {
+    "description": "CodeWalk UI string — setupDebugWSL"
+  },
+  "@shortcutsApply": {
+    "description": "CodeWalk UI string — shortcutsApply"
+  },
+  "@shortcutsConflictConflict": {
+    "description": "CodeWalk UI string — shortcutsConflictConflict",
+    "placeholders": {
+      "conflict": {
+        "type": "String"
+      }
+    }
+  },
+  "@shortcutsKeyboardShortcuts": {
+    "description": "CodeWalk UI string — shortcutsKeyboardShortcuts"
+  },
+  "@shortcutsReset": {
+    "description": "CodeWalk UI string — shortcutsReset"
+  },
+  "@shortcutsSearchEditBindings": {
+    "description": "CodeWalk UI string — shortcutsSearchEditBindings"
+  },
+  "@shortcutsSetShortcutWidget": {
+    "description": "CodeWalk UI string — shortcutsSetShortcutWidget",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "@shortcutsTheseBindingsStored": {
+    "description": "CodeWalk UI string — shortcutsTheseBindingsStored"
+  },
+  "@speechAutoStopSilence": {
+    "description": "CodeWalk UI string — speechAutoStopSilence"
+  },
+  "@speechChooseRecognitionEngine": {
+    "description": "CodeWalk UI string — speechChooseRecognitionEngine"
+  },
+  "@speechDownload": {
+    "description": "CodeWalk UI string — speechDownload"
+  },
+  "@speechEngine": {
+    "description": "CodeWalk UI string — speechEngine"
+  },
+  "@speechInstalledLanguages": {
+    "description": "CodeWalk UI string — speechInstalledLanguages"
+  },
+  "@speechListeningStopsAutomatically": {
+    "description": "CodeWalk UI string — speechListeningStopsAutomatically"
+  },
+  "@speechMoonshine": {
+    "description": "CodeWalk UI string — speechMoonshine"
+  },
+  "@speechMoonshineModelsDesktop": {
+    "description": "CodeWalk UI string — speechMoonshineModelsDesktop"
+  },
+  "@speechMoonshineStaysDownloadable": {
+    "description": "CodeWalk UI string — speechMoonshineStaysDownloadable"
+  },
+  "@speechNative": {
+    "description": "CodeWalk UI string — speechNative"
+  },
+  "@speechNativeSTTDisabled": {
+    "description": "CodeWalk UI string — speechNativeSTTDisabled"
+  },
+  "@speechNativeSTTWorks": {
+    "description": "CodeWalk UI string — speechNativeSTTWorks"
+  },
+  "@speechNativeStartsFaster": {
+    "description": "CodeWalk UI string — speechNativeStartsFaster"
+  },
+  "@speechParakeet": {
+    "description": "CodeWalk UI string — speechParakeet"
+  },
+  "@speechParakeetModelsDesktop": {
+    "description": "CodeWalk UI string — speechParakeetModelsDesktop"
+  },
+  "@speechParakeetStaysDownloadable": {
+    "description": "CodeWalk UI string — speechParakeetStaysDownloadable"
+  },
+  "@speechPickLanguagePacks": {
+    "description": "CodeWalk UI string — speechPickLanguagePacks"
+  },
+  "@speechRemove": {
+    "description": "CodeWalk UI string — speechRemove"
+  },
+  "@speechSelectSherpaAbove": {
+    "description": "CodeWalk UI string — speechSelectSherpaAbove"
+  },
+  "@speechSenseVoice": {
+    "description": "CodeWalk UI string — speechSenseVoice"
+  },
+  "@speechSenseVoiceModelsDesktop": {
+    "description": "CodeWalk UI string — speechSenseVoiceModelsDesktop"
+  },
+  "@speechSenseVoiceStaysDownloadable": {
+    "description": "CodeWalk UI string — speechSenseVoiceStaysDownloadable"
+  },
+  "@speechSherpa": {
+    "description": "CodeWalk UI string — speechSherpa"
+  },
+  "@speechSherpaExperimentalFail": {
+    "description": "CodeWalk UI string — speechSherpaExperimentalFail"
+  },
+  "@speechSherpaModelsLinux": {
+    "description": "CodeWalk UI string — speechSherpaModelsLinux"
+  },
+  "@speechSpeechText": {
+    "description": "CodeWalk UI string — speechSpeechText"
+  },
+  "@tailscaleNoPeers": {
+    "description": "CodeWalk UI string — Shown in peer dropdown when Tailscale is connected but no peers are visible"
+  },
+  "@tailscalePeerOffline": {
+    "description": "CodeWalk UI string — Badge shown next to a Tailscale peer that is currently offline"
+  },
+  "@tailscaleSelectPeer": {
+    "description": "CodeWalk UI string — Dropdown hint label for selecting a tailnet peer as server URL source"
+  },
+  "@terminalTerminal": {
+    "description": "CodeWalk UI string — terminalTerminal"
+  },
+  "@toolPresentationAwaitingInput": {
+    "description": "CodeWalk UI string — toolPresentationAwaitingInput"
+  },
+  "@toolPresentationEditing": {
+    "description": "CodeWalk UI string — toolPresentationEditing"
+  },
+  "@toolPresentationEditingFiles": {
+    "description": "CodeWalk UI string — toolPresentationEditingFiles"
+  },
+  "@toolPresentationFinding": {
+    "description": "CodeWalk UI string — toolPresentationFinding"
+  },
+  "@toolPresentationFindingFiles": {
+    "description": "CodeWalk UI string — toolPresentationFindingFiles"
+  },
+  "@toolPresentationReading": {
+    "description": "CodeWalk UI string — toolPresentationReading"
+  },
+  "@toolPresentationReadingFile": {
+    "description": "CodeWalk UI string — toolPresentationReadingFile"
+  },
+  "@toolPresentationRunning": {
+    "description": "CodeWalk UI string — toolPresentationRunning"
+  },
+  "@toolPresentationRunningCommand": {
+    "description": "CodeWalk UI string — toolPresentationRunningCommand"
+  },
+  "@toolPresentationSearching": {
+    "description": "CodeWalk UI string — toolPresentationSearching"
+  },
+  "@toolPresentationSearchingCode": {
+    "description": "CodeWalk UI string — toolPresentationSearchingCode"
+  },
+  "@toolPresentationSearchingWeb": {
+    "description": "CodeWalk UI string — toolPresentationSearchingWeb"
+  },
+  "@toolPresentationUpdatingTaskList": {
+    "description": "CodeWalk UI string — toolPresentationUpdatingTaskList"
+  },
+  "@toolPresentationUpdatingTasks": {
+    "description": "CodeWalk UI string — toolPresentationUpdatingTasks"
+  },
+  "@toolPresentationWaitingInput": {
+    "description": "CodeWalk UI string — toolPresentationWaitingInput"
+  },
+  "@toolPresentationWriting": {
+    "description": "CodeWalk UI string — toolPresentationWriting"
+  },
+  "@toolPresentationWritingFile": {
+    "description": "CodeWalk UI string — toolPresentationWritingFile"
+  },
+  "@useOAuthCloudflareAccess": {
+    "description": "CodeWalk UI string — Label for the Cloudflare Access OAuth toggle in the onboarding/server setup wizard"
+  },
+  "@useOAuthCloudflareAccessSubtitle": {
+    "description": "CodeWalk UI string — Subtitle explaining the OAuth toggle when supported on this platform"
+  },
+  "@useOAuthCloudflareAccessUnsupported": {
+    "description": "CodeWalk UI string — Shown when OAuth is not supported on the current platform"
+  },
+  "@useTailscale": {
+    "description": "CodeWalk UI string — Label for the Tailscale transport toggle in the onboarding/server setup wizard"
+  },
+  "@useTailscaleSubtitle": {
+    "description": "CodeWalk UI string — Subtitle explaining the Tailscale toggle when supported on this platform"
+  },
+  "@useTailscaleUnsupported": {
+    "description": "CodeWalk UI string — Shown when Tailscale transport is not supported on the current platform"
+  },
+  "@workspaceChooseFolderOpen": {
+    "description": "CodeWalk UI string — workspaceChooseFolderOpen"
+  },
+  "@workspaceOpenFolder": {
+    "description": "CodeWalk UI string — workspaceOpenFolder"
+  },
+  "@workspaceOpenProjectFolder": {
+    "description": "CodeWalk UI string — workspaceOpenProjectFolder"
+  },
+  "@workspaceSuggestions": {
+    "description": "CodeWalk UI string — workspaceSuggestions"
+  },
+  "aboutGitHub": "GitHub",
+  "appProviderCannotActivateUnhealthy": "상태가 좋지 않은 서버를 활성화할 수 없습니다.",
+  "appProviderDesktopOnly": "관리형 로컬 서버는 데스크톱에서만 사용할 수 있습니다.",
+  "appProviderDetectingCommand": "OpenCode 명령 감지 중...",
+  "appProviderErrorCannotActivateUnhealthy": "상태가 좋지 않은 서버를 활성화할 수 없습니다.",
+  "appProviderErrorCloudflareOAuthNotSupported": "이 플랫폼에서는 Cloudflare Access OAuth를 지원하지 않습니다.",
+  "appProviderErrorInstallationFailed": "OpenCode 설치에 실패했습니다.",
+  "appProviderErrorInvalidServerUrl": "유효하지 않은 서버 URL",
+  "appProviderErrorLocalServerHealthCheckFailed": "로컬 서버가 시작되었지만 상태 확인을 통과하지 못했습니다.",
+  "appProviderErrorManagedDesktopOnly": "관리형 로컬 서버는 데스크톱에서만 사용할 수 있습니다.",
+  "appProviderErrorServerAlreadyExists": "이 URL을 사용하는 서버가 이미 존재합니다.",
+  "appProviderErrorServerProfileNotFound": "서버 프로필을 찾을 수 없습니다.",
+  "appProviderErrorServerUrlRequired": "서버 URL이 필요합니다.",
+  "appProviderErrorTailscaleNotSupported": "이 플랫폼에서는 Tailscale을 지원하지 않습니다.",
+  "appProviderExitedWithCode": "로컬 서버가 코드 {code}번으로 종료되었습니다.",
+  "appProviderFailedToStart": "로컬 OpenCode 서버를 시작하지 못했습니다.",
+  "appProviderInstallBinary": "바이너리 설치",
+  "appProviderInstallBunOpenCode": "Bun + OpenCode 설치",
+  "appProviderInstallSucceeded": "설치에 성공했습니다.",
+  "appProviderInstallSucceededWithPath": "설치에 성공했습니다. OpenCode 명령은 {path}에서 사용할 수 있습니다.",
+  "appProviderInstallViaBun": "Bun을 통해 설치",
+  "appProviderInstallViaNpm": "npm을 통해 설치",
+  "appProviderInstallationFailed": "OpenCode 설치에 실패했습니다.",
+  "appProviderInstalledSuccessfully": "OpenCode 요구 사항이 성공적으로 설치되었습니다.",
+  "appProviderInstallingRequirements": "OpenCode 요구 사항 설치 중...",
+  "appProviderInvalidServerUrl": "유효하지 않은 서버 URL",
+  "appProviderLabelLocalOpenCodeManaged": "로컬 OpenCode (관리형)",
+  "appProviderLabelPrimaryServer": "기본 서버",
+  "appProviderLocalManaged": "로컬 OpenCode (관리형)",
+  "appProviderLocalServerStopped": "로컬 서버가 중지되었습니다.",
+  "appProviderNotDetectedInstall": "OpenCode 명령이 감지되지 않았습니다. 마법사에서 설치를 실행하십시오.",
+  "appProviderNotDetectedRefresh": "OpenCode 명령이 감지되지 않았습니다. 방금 설치한 경우 체크를 새로 고치거나 {appName}을(를) 다시 열어 PATH를 다시 로드하십시오.",
+  "appProviderOAuthNotSupported": "이 플랫폼에서는 Cloudflare Access OAuth를 지원하지 않습니다.",
+  "appProviderOpenCodeDetected": "OpenCode 감지됨",
+  "appProviderOpenCodeNotDetected": "OpenCode 감지되지 않음",
+  "appProviderPrimaryServer": "기본 서버",
+  "appProviderProfileNotFound": "서버 프로필을 찾을 수 없습니다.",
+  "appProviderRunDiagnostics": "로컬 OpenCode 요구 사항을 확인하려면 진단을 실행하십시오.",
+  "appProviderRunningAt": "{url}에서 실행 중",
+  "appProviderSetupDetectingOpenCode": "OpenCode 명령 감지 중...",
+  "appProviderSetupInstallationSucceeded": "설치에 성공했습니다.",
+  "appProviderSetupInstallationSucceededWithPath": "설치에 성공했습니다. OpenCode 명령은 {path}에서 사용할 수 있습니다.",
+  "appProviderSetupInstallingRequirements": "OpenCode 요구 사항 설치 중...",
+  "appProviderSetupOpenCodeDetected": "OpenCode 감지됨",
+  "appProviderSetupOpenCodeNotDetected": "OpenCode 감지되지 않음",
+  "appProviderSetupOpenCodeNotDetectedInstall": "OpenCode 명령이 감지되지 않았습니다. 마법사에서 설치를 실행하십시오.",
+  "appProviderSetupOpenCodeNotDetectedRefresh": "OpenCode 명령이 감지되지 않았습니다. 방금 설치한 경우 체크를 새로 고치거나 CodeWalk를 다시 열어 PATH를 다시 로드하십시오.",
+  "appProviderSetupRequirementsInstalled": "OpenCode 요구 사항이 성공적으로 설치되었습니다.",
+  "appProviderSetupUsingOpenCodeAt": "{path}에 있는 OpenCode 명령 사용 중",
+  "appProviderStartingLocalServer": "로컬 서버 시작 중...",
+  "appProviderStatusLocalServerExitedWithCode": "로컬 서버가 코드 {code}번으로 종료되었습니다.",
+  "appProviderStatusLocalServerStopped": "로컬 서버가 중지되었습니다.",
+  "appProviderStatusRunningAt": "{url}에서 실행 중",
+  "appProviderStatusStartingLocalServer": "로컬 서버 시작 중...",
+  "appProviderStatusStoppingLocalServer": "로컬 서버 중지 중...",
+  "appProviderStoppingLocalServer": "로컬 서버 중지 중...",
+  "appProviderTailscaleNotSupported": "이 플랫폼에서는 Tailscale을 지원하지 않습니다.",
+  "appProviderUsingCommandAt": "{path}에 있는 OpenCode 명령 사용 중",
+  "appShellDownloadingUpdate": "업데이트 다운로드 중",
+  "appShellInstall": "설치",
+  "appShellInstallFailed": "설치 실패",
+  "appShellInstallingUpdate": "업데이트 설치 중...",
+  "appShellRestart": "재시작",
+  "appShellUpdateAvailableResult": "업데이트 가능: v{latestVersion}",
+  "attachmentCouldNotDecode": "첨부 파일 데이터를 디코딩할 수 없습니다.",
+  "attachmentCouldNotDownload": "첨부 파일을 다운로드할 수 없습니다.",
+  "attachmentCouldNotSave": "이 기기에 첨부 파일을 저장할 수 없습니다.",
+  "attachmentDownloadStarted": "첨부 파일 다운로드가 시작되었습니다.",
+  "attachmentLocalNotFound": "이 기기에서 로컬 첨부 파일을 찾을 수 없습니다.",
+  "attachmentNoValidLocation": "첨부 파일에 유효한 위치가 제공되지 않았습니다.",
+  "attachmentNotAvailableOnPlatform": "이 플랫폼에서는 첨부 파일 작업을 사용할 수 없습니다.",
+  "attachmentPathEmpty": "첨부 파일 경로가 비어 있습니다.",
+  "attachmentPayloadEmpty": "첨부 파일 페이로드가 비어 있습니다.",
+  "attachmentSaveCanceled": "저장이 취소되었습니다.",
+  "attachmentSavedAndOpened": "첨부 파일을 {path}에 저장하고 열었습니다.",
+  "attachmentSavedPath": "첨부 파일을 {path}에 저장했습니다.",
+  "attachmentSavedTo": "첨부 파일을 {path}에 저장했습니다.",
+  "attachmentUnableToOpenLink": "첨부 파일 링크를 열 수 없습니다.",
+  "attachmentUnableToOpenLocal": "로컬 첨부 파일을 열 수 없습니다.",
+  "behaviorAdvancedPermissionRule": "고급 권한 규칙",
+  "behaviorAutomatic": "자동",
+  "behaviorAutomaticFallback": "자동 대체",
+  "behaviorCellularDataSaver": "모바일 데이터 절약",
+  "behaviorChatLevelShare": "채팅 수준 공유",
+  "behaviorCodeWalkReleaseChecks": "CodeWalk 릴리스 확인",
+  "behaviorControlsOfficialGlobal": "OpenCode 공식 전역 설정 제어",
+  "behaviorControlsUpstreamOpenCode": "업스트림 OpenCode 설정 제어",
+  "behaviorCustomDisplayName": "사용자 지정 표시 이름",
+  "behaviorCutsAutomaticMobile": "백그라운드 다운로드를 중지하고 포그라운드 자동 새로고침을 {inSeconds}초마다 한 번으로 제한하여 자동 모바일 데이터 사용량을 줄입니다.",
+  "behaviorDisabled": "비활성화됨",
+  "behaviorLightweightTasksLike": "다음과 같은 가벼운 작업",
+  "behaviorManual": "수동",
+  "behaviorNotify": "알림",
+  "behaviorOfficialOpenCodePermission": "Official OpenCode permission policy is configured in `opencode.json` with allow/ask/deny rules per tool. CodeWalk keeps the official permission-request cards and adds one approved ADR-023 exception: the composer auto-approve toggle replies with `Always` and `remember: true` unconditionally to create durable session-scoped grants, and keeps the same thread-scoped continuity path active in the Android background worker.",
+  "behaviorOpenCodeBackedDefaults": "OpenCode-backed defaults",
+  "behaviorPermissionHandlingProvenance": "Permission handling provenance",
+  "behaviorPermissionsVariantReasoning": "Permissions and variant/reasoning parity stay separate until their UI can preserve advanced config safely.",
+  "behaviorPrimaryAgentAgent": "Primary agent used when no agent is explicitly chosen.",
+  "behaviorRefreshDefaults": "Refresh defaults",
+  "behaviorSharedAcrossOpenCode": "Shared across OpenCode clients through config.",
+  "behaviorTheseValuesWrite": "These values write to `/config` on the active server and match official OpenCode shared config.",
+  "cannedAttachFiles": "Attach files",
+  "cannedNewQuickReply": "새 빠른 답장",
+  "cannedNoSuggestions": "No suggestions",
+  "cannedOffMeansReplace": "Off means replace current composer text",
+  "cannedQuickReply": "New quick reply",
+  "cannedSendImmediatelyInserting": "Send immediately after inserting this quick reply",
+  "chatActiveServerUnhealthy": "Active server is unhealthy. Sends will try once and fail fast until recovery.",
+  "chatAddServerToStart": "Add a server to start chatting.",
+  "chatAppBarMoreActions": "More actions",
+  "chatAppBarPinAction": "Pin to app bar",
+  "chatAppBarPinDescription": "This action will stay visible outside the menu.",
+  "chatAppBarUnpinAction": "Unpin from app bar",
+  "chatAppBarUnpinDescription": "This action will move back into the menu.",
+  "chatBadgeConversationError": "\"{title}\"에 오류가 있습니다.",
+  "chatBadgeConversationNeedsInput": "\"{title}\"에 입력이 필요합니다.",
+  "chatBadgeConversationNewReply": "\"{title}\"에 새 답장이 있습니다.",
+  "chatBadgeDataSaverActive": "데이터 절약 모드가 활성화되었습니다.",
+  "chatBadgeServerNeedsAttention": "서버 연결에 주의가 필요합니다.",
+  "chatBadgeSyncing": "대화 동기화 중...",
+  "chatCachedConversationsYet": "No cached conversations yet",
+  "chatChangedFilesAvailable": "No changed files are available for this session.",
+  "chatChildrenChatProviderCurrentSessionChildren": "하위: {length}",
+  "chatChooseDirectory": "Choose Directory",
+  "chatChooseFolderOpen": "Choose a folder to open as project context.",
+  "chatClose": "Close",
+  "chatCloseProject": "{project} 닫기",
+  "chatCollapseGroup": "그룹 접기",
+  "chatCompactContext": "Compact Context",
+  "chatConversations": "Conversations",
+  "chatConversationsPane": "Conversations",
+  "chatCostLabel": "비용: ${cost}",
+  "chatCurrent": "Use current",
+  "chatDescriptionChildren": "하위 항목: {count}",
+  "chatDescriptionCloseApp": "플랫폼 종료 동작을 사용하여 앱 닫기",
+  "chatDescriptionCycleModels": "최근 모델 순환",
+  "chatDescriptionCycleVariant": "모델 변형 순환",
+  "chatDescriptionDiffFilesZero": "Diff 파일: 0",
+  "chatDescriptionFocusInput": "메시지 입력 창 포커스",
+  "chatDescriptionFocusOrCloseDrawer": "입력 창 포커스 (또는 열려 있을 때 드로어 닫기)",
+  "chatDescriptionForceExit": "앱 강제 종료",
+  "chatDescriptionNewConversation": "새 대화",
+  "chatDescriptionNextAgent": "다음 에이전트",
+  "chatDescriptionOpenProjects": "이 버튼을 사용하여 프로젝트와 대화를 엽니다.",
+  "chatDescriptionOpenSettings": "설정 열기",
+  "chatDescriptionPreviousAgent": "이전 에이전트",
+  "chatDescriptionProjectCommand": "프로젝트 명령",
+  "chatDescriptionQuickOpen": "파일 빠른 열기",
+  "chatDescriptionRefreshData": "채팅 데이터 새로 고침",
+  "chatDescriptionStopResponse": "활성 응답 중지 (응답 중)",
+  "chatDescriptionSwitchProject": "이 버튼을 사용하여 프로젝트 폴더와 컨텍스트를 전환합니다.",
+  "chatDescriptionVoiceInput": "음성 입력 시작 또는 중지",
+  "chatDiffFiles": "Diff files: 0",
+  "chatDisplay": "Display",
+  "chatDisplayToggles": "Display toggles",
+  "chatDoubleESCStop": "ESC 두 번 눌러서 중지",
+  "chatExpandGroup": "그룹 펼치기",
+  "chatExportCanceled": "세션 내보내기 취소됨",
+  "chatFileExplorerContents": "내용",
+  "chatFileExplorerNames": "이름",
+  "chatFilterActive": "Active",
+  "chatFilterAll": "All",
+  "chatFilterArchived": "Archived",
+  "chatFilterDirectories": "Filter directories",
+  "chatFilterSessions": "Filter sessions",
+  "chatForkFailed": "대화 포크 실패",
+  "chatForked": "대화 포크됨",
+  "chatGoToFirst": "Go to first message",
+  "chatGoToLatest": "Go to latest message",
+  "chatGroupMessageCountMessages": "{compactionLabel} 압축 전 {messageCount}개 메시지 숨김",
+  "chatHelloAssistant": "Hello! I am your AI assistant",
+  "chatHelp": "How can I help you?",
+  "chatHideConversationsSidebar": "Hide Conversations sidebar",
+  "chatHideUtilitySidebar": "Hide Utility sidebar",
+  "chatHistoryCollapsed": "Previous history is collapsed",
+  "chatKeepWorking": "Keep working",
+  "chatLargeContentSkipped": "안정성을 위해 크거나 잘못된 형식의 콘텐츠를 건너뛰었습니다.",
+  "chatLatestToolActivity": "Latest tool activity stays inside this bounded panel to keep the chat viewport stable.",
+  "chatLoadMore": "Load more",
+  "chatLoadingProjectContext": "Loading project context...",
+  "chatMessageHide": "Hide",
+  "chatMessageMessagePartUnavailable": "Message part unavailable",
+  "chatMessageMetadataAvailable": "No metadata available",
+  "chatMessageModelMessageModelId": "모델: {modelId}",
+  "chatMessageProviderMessageProviderId": "제공자: {providerId}",
+  "chatMessageRewindEdit": "Rewind and edit from here",
+  "chatMessageYou": "You",
+  "chatNewChat": "New Chat",
+  "chatNewChatTourDescription": "Start a new conversation here.",
+  "chatNewChatTourTitle": "New chat",
+  "chatNoConversationsInProject": "이 프로젝트에 대화가 없습니다.",
+  "chatNoServerYet": "No server configured yet",
+  "chatOpenFiles": "Open Files",
+  "chatOpenProject": "프로젝트 열기",
+  "chatOpenProjectFolder": "Open project folder...",
+  "chatOpenProjectToLoad": "대화를 로드하려면 프로젝트를 여십시오.",
+  "chatOpenSidebar": "사이드바 열기",
+  "chatPageStatusContextUsage": "컨텍스트 사용량",
+  "chatPageStatusCost": "비용",
+  "chatPageStatusLimit": "제한",
+  "chatPageStatusManageServers": "서버 관리",
+  "chatPageStatusSaver": "절약",
+  "chatPageStatusSwitchServer": "서버 전환",
+  "chatPageStatusTokens": "토큰",
+  "chatPageStatusUsage": "사용량",
+  "chatPageStatusUsagePercent": "{usagePercent}",
+  "chatProjectContext": "Project Context",
+  "chatProjectContext2": "프로젝트 컨텍스트",
+  "chatRealtimeGlobalEvent": "글로벌 이벤트",
+  "chatRealtimeGlobalEventReason": "글로벌 이벤트 ({reason})",
+  "chatRealtimeGlobalEventStale": "글로벌 이벤트 (오래된 세대)",
+  "chatRealtimeMessageStreamReason": "메시지 스트림 ({reason})",
+  "chatRealtimeRealtimeEvent": "실시간 이벤트",
+  "chatRealtimeRealtimeEventReason": "실시간 이벤트 ({reason})",
+  "chatRealtimeRealtimeEventStale": "실시간 이벤트 (오래된 세대)",
+  "chatRealtimeReconnectingServerTry": "서버에 재연결 중. 잠시 후 다시 시도하세요.",
+  "chatReasoning": "추론 중...",
+  "chatRecentSessions": "Recent sessions",
+  "chatRecentSessionsToggle": "Recent sessions",
+  "chatRedoLastTurn": "Redo last undone turn",
+  "chatRefresh": "Refresh",
+  "chatRefreshConversation": "Could not refresh this conversation",
+  "chatRefreshProjects": "Refresh projects",
+  "chatRefreshSessionDetails": "Refresh session details",
+  "chatRemoveDisplayNameHistory": "기록에서 {displayName} 제거",
+  "chatRetry": "Retry",
+  "chatRetry2": "Retry",
+  "chatRetryRefresh": "Retry refresh",
+  "chatRetryingModelRequest": "모델 요청 재시도 중...",
+  "chatReturnToMainConversation": "Return to main conversation",
+  "chatReviewChanges": "Review changes",
+  "chatSearchConversations": "Search conversations",
+  "chatSearchNextResult": "Next result",
+  "chatSearchNoResults": "No results",
+  "chatSearchPreviousResult": "Previous result",
+  "chatSearchResultCount": "Message {current} of {total}",
+  "chatSearchTimeline": "Search timeline",
+  "chatSelectDirectory": "Select directory",
+  "chatSelectOrCreate": "Select or create a conversation to start chatting",
+  "chatSelectProjectBelow": "Select a project below.",
+  "chatSessionActions": "Session actions",
+  "chatSessionChatSessionSession": "채팅 세션: {title}",
+  "chatSessionConversationNextAction": "대화 {nextAction}",
+  "chatSessionConversations": "No conversations",
+  "chatSessionCreateConversationStart": "Create a new conversation to start chatting",
+  "chatSessionsLength": "{length}",
+  "chatSetUpServer": "Set up server",
+  "chatSettings": "Settings",
+  "chatSidebarAccess": "사이드바 액세스",
+  "chatSortMostRecent": "Most Recent",
+  "chatSortOldest": "Oldest",
+  "chatSortRecent": "Recent",
+  "chatSortSessions": "Sort sessions",
+  "chatSortTitle": "Title",
+  "chatSyncLabel": "동기화: {label}",
+  "chatTasks": "Tasks",
+  "chatTasksAvailableSession": "No tasks are available for this session.",
   "chatToggleSidebars": "Toggle sidebars",
+  "chatTokensLabel": "토큰: {total}",
   "chatUndoLastTurn": "Undo last turn",
   "chatUseCurrent": "Use current",
   "commonCancel": "Cancel",
@@ -548,193 +1436,72 @@
   "dialogSenseVoiceModel": "SenseVoice model",
   "dialogSenseVoiceSetup": "SenseVoice Setup",
   "dialogVoiceInputSetup": "Voice Input Setup",
+  "errorAuthRequired": "인증 필요",
+  "errorAuthRequiredDesc": "인증에 실패했습니다. 공급자를 다시 연결하고 다시 시도하십시오.",
+  "errorConnectionFailed": "연결 실패",
+  "errorConnectionFailedDesc": "서버에 연결할 수 없습니다. 연결 및 서버 상태를 확인하십시오.",
   "errorFormatAuthenticationFailedReconnect": "Authentication failed. Reconnect the provider and try again.",
-  "@errorFormatAuthenticationFailedReconnect": {
-    "description": "CodeWalk UI string — errorFormatAuthenticationFailedReconnect"
-  },
   "errorFormatProviderTemporarilyUnavailable": "Provider temporarily unavailable. Try again shortly.",
-  "@errorFormatProviderTemporarilyUnavailable": {
-    "description": "CodeWalk UI string — errorFormatProviderTemporarilyUnavailable"
-  },
   "errorFormatQuotaExceededCheck": "Quota exceeded. Check your provider plan or billing.",
-  "@errorFormatQuotaExceededCheck": {
-    "description": "CodeWalk UI string — errorFormatQuotaExceededCheck"
-  },
   "errorFormatRateLimitExceeded": "Rate limit exceeded. Wait a moment and try again.",
-  "@errorFormatRateLimitExceeded": {
-    "description": "CodeWalk UI string — errorFormatRateLimitExceeded"
-  },
   "errorFormatServerErrorPlease": "Server error. Please try again.",
-  "@errorFormatServerErrorPlease": {
-    "description": "CodeWalk UI string — errorFormatServerErrorPlease"
-  },
   "errorFormatServiceTemporarilyUnavailable": "Service temporarily unavailable. The server may be starting up — please try again shortly.",
-  "@errorFormatServiceTemporarilyUnavailable": {
-    "description": "CodeWalk UI string — errorFormatServiceTemporarilyUnavailable"
-  },
   "errorFormatUnableReachServer": "Unable to reach the server. Check connection and server status.",
-  "@errorFormatUnableReachServer": {
-    "description": "CodeWalk UI string — errorFormatUnableReachServer"
-  },
+  "errorProviderUnavailable": "공급자 사용 불가",
+  "errorProviderUnavailableDesc": "공급자를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도하십시오.",
+  "errorQuotaExceeded": "할당량 초과",
+  "errorQuotaExceededDesc": "할당량이 초과되었습니다. 공급자 요금제 또는 결제 정보를 확인하십시오.",
+  "errorRateLimitExceeded": "요청 제한 초과",
+  "errorRateLimitExceededDesc": "요청 제한이 초과되었습니다. 잠시 기다린 후 다시 시도하십시오.",
+  "errorServerError": "서버 오류",
+  "errorServerErrorDesc": "서버 오류가 발생했습니다. 다시 시도해 주세요.",
+  "errorServiceUnavailable": "서비스 사용 불가",
+  "errorServiceUnavailableDesc": "서비스를 일시적으로 사용할 수 없습니다. 서버가 시작 중일 수 있습니다. 잠시 후 다시 시도하십시오.",
   "fileActionAttachmentDataDecoded": "Attachment data could not be decoded.",
-  "@fileActionAttachmentDataDecoded": {
-    "description": "CodeWalk UI string — fileActionAttachmentDataDecoded"
-  },
   "fileActionAttachmentPathEmpty": "Attachment path is empty.",
-  "@fileActionAttachmentPathEmpty": {
-    "description": "CodeWalk UI string — fileActionAttachmentPathEmpty"
-  },
   "fileActionAttachmentPayloadEmpty": "Attachment payload is empty.",
-  "@fileActionAttachmentPayloadEmpty": {
-    "description": "CodeWalk UI string — fileActionAttachmentPayloadEmpty"
-  },
   "fileActionAttachmentProvideValid": "Attachment does not provide a valid location.",
-  "@fileActionAttachmentProvideValid": {
-    "description": "CodeWalk UI string — fileActionAttachmentProvideValid"
-  },
   "fileActionAttachmentSavedDevice": "Attachment could not be saved on this device.",
-  "@fileActionAttachmentSavedDevice": {
-    "description": "CodeWalk UI string — fileActionAttachmentSavedDevice"
-  },
   "fileActionAttachmentSavedOutputFile": "첨부파일이 {path}에 저장되고 열렸습니다.",
-  "@fileActionAttachmentSavedOutputFile": {
-    "description": "CodeWalk UI string — fileActionAttachmentSavedOutputFile",
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
   "fileActionAttachmentSavedOutputFile2": "첨부파일이 {path}에 저장되었습니다.",
-  "@fileActionAttachmentSavedOutputFile2": {
-    "description": "CodeWalk UI string — fileActionAttachmentSavedOutputFile2",
-    "placeholders": {
-      "path": {
-        "type": "String"
-      }
-    }
-  },
   "fileActionAttachmentSavedSavedPath": "첨부파일이 {savedPath}에 저장되었습니다.",
-  "@fileActionAttachmentSavedSavedPath": {
-    "description": "CodeWalk UI string — fileActionAttachmentSavedSavedPath",
-    "placeholders": {
-      "savedPath": {
-        "type": "String"
-      }
-    }
-  },
   "fileActionLocalAttachmentFound": "Local attachment was not found on this device.",
-  "@fileActionLocalAttachmentFound": {
-    "description": "CodeWalk UI string — fileActionLocalAttachmentFound"
-  },
   "fileActionSaveCanceled": "Save canceled.",
-  "@fileActionSaveCanceled": {
-    "description": "CodeWalk UI string — fileActionSaveCanceled"
-  },
   "fileActionUnableOpenLocal": "Unable to open the local attachment.",
-  "@fileActionUnableOpenLocal": {
-    "description": "CodeWalk UI string — fileActionUnableOpenLocal"
-  },
   "filesAddChat": "Add to chat",
-  "@filesAddChat": {
-    "description": "CodeWalk UI string — filesAddChat"
-  },
   "filesBinaryFilePreview": "Binary file preview is not available.",
-  "@filesBinaryFilePreview": {
-    "description": "CodeWalk UI string — filesBinaryFilePreview"
-  },
   "filesClear": "Clear",
-  "@filesClear": {
-    "description": "CodeWalk UI string — filesClear"
-  },
   "filesContents": "Contents",
-  "@filesContents": {
-    "description": "CodeWalk UI string — filesContents"
-  },
   "filesFileEmpty": "File is empty.",
-  "@filesFileEmpty": {
-    "description": "CodeWalk UI string — filesFileEmpty"
-  },
   "filesFilesFound": "No files found",
-  "@filesFilesFound": {
-    "description": "CodeWalk UI string — filesFilesFound"
-  },
   "filesHideSidebar": "Hide Files sidebar",
   "filesNames": "Names",
-  "@filesNames": {
-    "description": "CodeWalk UI string — filesNames"
-  },
   "filesOpenFilesFileState": "열린 파일 ({length})",
-  "@filesOpenFilesFileState": {
-    "description": "CodeWalk UI string — filesOpenFilesFileState",
-    "placeholders": {
-      "length": {
-        "type": "String"
-      }
-    }
-  },
   "filesQuickOpen": "Quick Open",
   "filesQuickOpenFile": "Quick Open File",
-  "@filesQuickOpenFile": {
-    "description": "CodeWalk UI string — filesQuickOpenFile"
-  },
   "filesRefresh": "Refresh files",
   "filesSearchHint": "Search files by name or path",
   "filesTitle": "Files",
   "logsAppLogs": "App Logs",
-  "@logsAppLogs": {
-    "description": "CodeWalk UI string — logsAppLogs"
-  },
   "logsClear": "Clear logs",
   "logsCloseSearch": "Close search",
   "logsCopyFiltered": "Copy filtered logs",
   "logsLevel": "Level",
-  "@logsLevel": {
-    "description": "CodeWalk UI string — logsLevel"
-  },
   "logsSearch": "Search logs",
   "logsShowingOrderedLength": "항목 {length2}개 중 {length}개 표시",
-  "@logsShowingOrderedLength": {
-    "description": "CodeWalk UI string — logsShowingOrderedLength",
-    "placeholders": {
-      "length": {
-        "type": "int"
-      },
-      "length2": {
-        "type": "int"
-      }
-    }
-  },
   "logsTimeRange": "Time range",
-  "@logsTimeRange": {
-    "description": "CodeWalk UI string — logsTimeRange"
-  },
   "mathExpressionLabel": "수식",
-  "@mathExpressionLabel": {
-    "description": "CodeWalk UI string — mathExpressionLabel"
-  },
   "mermaidCopySourceTooltip": "Copy source",
-  "@mermaidCopySourceTooltip": {
-    "description": "CodeWalk UI string — mermaidCopySourceTooltip"
-  },
   "mermaidDiagramLabel": "Mermaid Diagram",
-  "@mermaidDiagramLabel": {
-    "description": "CodeWalk UI string — mermaidDiagramLabel"
-  },
   "modelAuto": "Auto",
   "modelChooseAgent": "Choose agent",
-  "@modelChooseAgent": {
-    "description": "CodeWalk UI string — modelChooseAgent"
-  },
   "modelFavorites": "Favorites",
-  "@modelFavorites": {
-    "description": "CodeWalk UI string — modelFavorites"
-  },
+  "modelLabelBaseEnglish": "기본 (영어)",
+  "modelLabelParakeet": "Parakeet V3 (25개 유럽 언어)",
+  "modelLabelSenseVoice": "SenseVoice (zh/en/ja/ko/yue)",
+  "modelLabelTinyEnglish": "Tiny (영어)",
   "modelLoadingModels": "Loading models",
   "modelModelsFound": "No models found",
-  "@modelModelsFound": {
-    "description": "CodeWalk UI string — modelModelsFound"
-  },
   "modelRetryModels": "Retry models",
   "modelSearchHint": "Search model or provider",
   "msgBatterySettingsFailed": "Could not open Android battery optimization settings.",
@@ -754,288 +1521,144 @@
   "msgInfoModel": "Model: {modelId}",
   "msgInfoNoMetadata": "No metadata available",
   "msgInfoPartDescriptionModel": "{description}{model}",
-  "@msgInfoPartDescriptionModel": {
-    "description": "CodeWalk UI string — msgInfoPartDescriptionModel",
-    "placeholders": {
-      "description": {
-        "type": "String"
-      },
-      "model": {
-        "type": "String"
-      }
-    }
-  },
   "msgInfoPatch": "Patch",
   "msgInfoProvider": "Provider: {providerId}",
   "msgInfoRetry": "Retry",
   "msgInfoSnapshot": "Snapshot",
   "msgInfoSubtaskPartAgent": "하위 작업 ({agent})",
-  "@msgInfoSubtaskPartAgent": {
-    "description": "CodeWalk UI string — msgInfoSubtaskPartAgent",
-    "placeholders": {
-      "agent": {
-        "type": "String"
-      }
-    }
-  },
   "msgInfoTokens": "Tokens: {total}",
   "msgInfoUndoThisTurn": "Undo this turn",
   "msgInfoView": "View",
   "msgNoSystemSoundsFound": "No system sound was found on this device.",
   "msgNoValidFilesSelected": "No valid files were selected",
   "msgReadAloud": "Read aloud",
-  "@msgReadAloud": {
-    "description": "CodeWalk UI string — msgReadAloud"
-  },
   "msgReadAloudNotAvailable": "Text-to-speech is not available on this device.",
-  "@msgReadAloudNotAvailable": {
-    "description": "CodeWalk UI string — msgReadAloudNotAvailable"
-  },
   "msgSetupDebugCopied": "OpenCode setup debug copied to clipboard",
   "msgShareAsImage": "Share as image",
-  "@msgShareAsImage": {
-    "description": "CodeWalk UI string — Tooltip for the share-as-image action on a chat message bubble"
-  },
   "msgShareAsImageFailed": "Could not share message as image.",
-  "@msgShareAsImageFailed": {
-    "description": "CodeWalk UI string — Shown when image capture or sharing fails unexpectedly"
-  },
   "msgShareAsImageSubject": "CodeWalk message",
-  "@msgShareAsImageSubject": {
-    "description": "CodeWalk UI string — Subject line when sharing a message image via the system share sheet"
-  },
   "msgShareAsImageTooTall": "Message is too long to share as an image.",
-  "@msgShareAsImageTooTall": {
-    "description": "CodeWalk UI string — Shown when the message bubble exceeds the maximum capture height"
-  },
   "msgStopReadAloud": "Stop reading",
-  "@msgStopReadAloud": {
-    "description": "CodeWalk UI string — msgStopReadAloud"
-  },
   "msgSystemSoundPickerUnavailable": "System sound picker is not available on this platform.",
   "msgUpdatedButRefreshFailed": "Updated the server setting, but could not refresh chat providers.",
   "msgVoiceInputUnavailable": "Voice input is unavailable on this device",
   "notifAndroidBatteryOptimization": "Android battery optimization",
-  "@notifAndroidBatteryOptimization": {
-    "description": "CodeWalk UI string — notifAndroidBatteryOptimization"
-  },
   "notifConversationUpdates": "Conversation updates",
   "notifNotificationsArriveReopening": "If notifications only arrive when reopening the app, allow CodeWalk to run without optimization on this device.",
-  "@notifNotificationsArriveReopening": {
-    "description": "CodeWalk UI string — notifNotificationsArriveReopening"
-  },
   "notifResponseRunningKeep": "When a response is running, keep realtime active briefly after you leave the app.",
-  "@notifResponseRunningKeep": {
-    "description": "CodeWalk UI string — notifResponseRunningKeep"
-  },
   "notifSelectedSoundLabel": "선택됨: {soundLabel}",
-  "@notifSelectedSoundLabel": {
-    "description": "CodeWalk UI string — notifSelectedSoundLabel",
-    "placeholders": {
-      "soundLabel": {
-        "type": "String"
-      }
-    }
-  },
+  "notificationAgentFinished": "에이전트가 현재 응답을 마쳤습니다.",
+  "notificationConversationUpdates": "대화 업데이트",
+  "notificationOpenToClear": "관련 알림을 지우려면 이 대화를 여십시오.",
+  "notificationSession": "세션",
+  "notificationSoundLoadFailed": "Android 시스템 사운드를 로드하지 못했습니다.",
   "onboardingAIGeneratedTitles": "AI generated titles",
-  "@onboardingAIGeneratedTitles": {
-    "description": "CodeWalk UI string — onboardingAIGeneratedTitles"
-  },
   "onboardingAddServerLater": "You can add a server later in Settings > Servers.",
-  "@onboardingAddServerLater": {
-    "description": "CodeWalk UI string — onboardingAddServerLater"
-  },
+  "onboardingAddedButHealthCheckFailed": "서버가 추가되었지만 상태 확인에 실패했습니다. 아직 시작 중일 수 있습니다.",
   "onboardingAlmostInstallOpenCode": "You are almost there. Install OpenCode first, then connect CodeWalk to the server URL.",
-  "@onboardingAlmostInstallOpenCode": {
-    "description": "CodeWalk UI string — onboardingAlmostInstallOpenCode"
-  },
   "onboardingAppProviderLocalSetupLogsLength": "{length}개의 설정 로그 줄과 {length2}개의 설정 이벤트가 별도의 설정 디버그 화면에서 사용 가능합니다.",
-  "@onboardingAppProviderLocalSetupLogsLength": {
-    "description": "CodeWalk UI string — onboardingAppProviderLocalSetupLogsLength",
-    "placeholders": {
-      "length": {
-        "type": "int"
-      },
-      "length2": {
-        "type": "int"
-      }
-    }
-  },
   "onboardingAuthenticate": "Authenticate",
-  "@onboardingAuthenticate": {
-    "description": "CodeWalk UI string — onboardingAuthenticate"
-  },
+  "onboardingAvailable": "사용 가능",
+  "onboardingAvailableOnlyDesktop": "데스크톱(Linux/macOS/Windows)에서만 사용할 수 있습니다.",
+  "onboardingBasicAuthTip": "OpenCode 서버가 비밀번호로 보호되는 경우에만 기본 인증을 활성화하십시오.",
   "onboardingChooseAnotherPath": "Choose another path",
-  "@onboardingChooseAnotherPath": {
-    "description": "CodeWalk UI string — onboardingChooseAnotherPath"
-  },
+  "onboardingChooseHowToSetup": "서버 설정 방법 선택",
   "onboardingClear": "Clear",
+  "onboardingCloudflareAuthFailed": "Cloudflare Access 인증에 실패했습니다.",
   "onboardingCodeWalkAppOpenCode": "CodeWalk is the app. OpenCode is the engine it connects to.",
-  "@onboardingCodeWalkAppOpenCode": {
-    "description": "CodeWalk UI string — onboardingCodeWalkAppOpenCode"
-  },
   "onboardingConnectRunningServer": "Connect to a running server",
-  "@onboardingConnectRunningServer": {
-    "description": "CodeWalk UI string — onboardingConnectRunningServer"
-  },
   "onboardingConnectionIssue": "Connection issue",
-  "@onboardingConnectionIssue": {
-    "description": "CodeWalk UI string — onboardingConnectionIssue"
-  },
+  "onboardingConnectionSaved": "서버 연결이 성공적으로 저장되었습니다.",
   "onboardingConnectionTips": "Connection tips",
-  "@onboardingConnectionTips": {
-    "description": "CodeWalk UI string — onboardingConnectionTips"
-  },
+  "onboardingConnectionUpdated": "서버 연결이 성공적으로 업데이트되었습니다.",
+  "onboardingContinue": "계속",
   "onboardingContinueServerURL": "Continue to server URL",
-  "@onboardingContinueServerURL": {
-    "description": "CodeWalk UI string — onboardingContinueServerURL"
-  },
   "onboardingCopyLoginURL": "Copy login URL",
-  "@onboardingCopyLoginURL": {
-    "description": "CodeWalk UI string — onboardingCopyLoginURL"
-  },
+  "onboardingCouldNotVerify": "서버 연결을 확인할 수 없습니다.",
   "onboardingDefaultURLEmulator": "Default URL, emulator loopback, auth, and debug help.",
-  "@onboardingDefaultURLEmulator": {
-    "description": "CodeWalk UI string — onboardingDefaultURLEmulator"
-  },
+  "onboardingDesktopOnlyDiagnose": "데스크톱 전용: {appName}은(는) 사용자를 대신하여 OpenCode를 진단, 설치 및 실행할 수 있습니다.",
   "onboardingDetailedSetupEvents": "Detailed setup events were captured for troubleshooting.",
-  "@onboardingDetailedSetupEvents": {
-    "description": "CodeWalk UI string — onboardingDetailedSetupEvents"
-  },
   "onboardingDonShowAgain": "Don''t show again",
-  "@onboardingDonShowAgain": {
-    "description": "CodeWalk UI string — onboardingDonShowAgain"
-  },
+  "onboardingDone": "완료",
+  "onboardingEditServer": "서버 편집",
+  "onboardingEditServerConnection": "서버 연결 편집",
+  "onboardingEmulatorRemap": "Android 에뮬레이터에서 localhost 및 127.0.0.1은 자동으로 10.0.2.2로 리맵됩니다.",
+  "onboardingEnterServerUrl": "서버 URL 입력",
   "onboardingExisting": "Use Existing",
-  "@onboardingExisting": {
-    "description": "CodeWalk UI string — onboardingExisting"
-  },
   "onboardingExplainInstallOpenCode": "Explain how to install OpenCode, start the server, and then connect from CodeWalk.",
-  "@onboardingExplainInstallOpenCode": {
-    "description": "CodeWalk UI string — onboardingExplainInstallOpenCode"
-  },
+  "onboardingFailed": "실패",
   "onboardingGoodOptionDesktop": "Good first option on desktop",
-  "@onboardingGoodOptionDesktop": {
-    "description": "CodeWalk UI string — onboardingGoodOptionDesktop"
-  },
+  "onboardingHealthCheckFailedMayBeStarting": "서버 상태 확인에 실패했습니다. 아직 시작 중일 수 있습니다.",
   "onboardingInstallBinary": "Install Binary",
-  "@onboardingInstallBinary": {
-    "description": "CodeWalk UI string — onboardingInstallBinary"
-  },
   "onboardingInstallBun": "Install via Bun",
-  "@onboardingInstallBun": {
-    "description": "CodeWalk UI string — onboardingInstallBun"
-  },
   "onboardingInstallBunOpenCode": "Install Bun + OpenCode",
-  "@onboardingInstallBunOpenCode": {
-    "description": "CodeWalk UI string — onboardingInstallBunOpenCode"
-  },
   "onboardingInstallNpm": "Install via npm",
-  "@onboardingInstallNpm": {
-    "description": "CodeWalk UI string — onboardingInstallNpm"
-  },
   "onboardingInstallRunOpenCode": "Install and run OpenCode directly from CodeWalk on desktop.",
-  "@onboardingInstallRunOpenCode": {
-    "description": "CodeWalk UI string — onboardingInstallRunOpenCode"
-  },
+  "onboardingInvalidUrl": "유효하지 않은 URL",
   "onboardingLabel": "Label (optional)",
   "onboardingLabelHint": "My server",
   "onboardingLatestOutputAppProvider": "최신 출력: {localServerLastOutput}",
-  "@onboardingLatestOutputAppProvider": {
-    "description": "CodeWalk UI string — onboardingLatestOutputAppProvider",
-    "placeholders": {
-      "localServerLastOutput": {
-        "type": "String"
-      }
-    }
-  },
   "onboardingLetCodeWalkSet": "Let CodeWalk set it up locally",
-  "@onboardingLetCodeWalkSet": {
-    "description": "CodeWalk UI string — onboardingLetCodeWalkSet"
-  },
+  "onboardingLocalServerSetup": "로컬 서버 설정",
   "onboardingManagedLocalServer": "Managed local server",
-  "@onboardingManagedLocalServer": {
-    "description": "CodeWalk UI string — onboardingManagedLocalServer"
-  },
   "onboardingManagedLocalServer2": "Managed local server mode is available only on desktop builds (Linux/macOS/Windows).",
-  "@onboardingManagedLocalServer2": {
-    "description": "CodeWalk UI string — onboardingManagedLocalServer2"
-  },
+  "onboardingNeedsOpenCodeServer": "{appName}을(를) 사용하여 코드를 작성하려면 OpenCode 서버가 필요합니다.",
+  "onboardingNotAvailable": "사용 불가",
+  "onboardingNotWritable": "쓰기 불가",
   "onboardingOpenCode": "What is OpenCode?",
-  "@onboardingOpenCode": {
-    "description": "CodeWalk UI string — onboardingOpenCode"
-  },
   "onboardingOpenCodeRunningDevice": "I already have OpenCode running on this device or somewhere on my network.",
-  "@onboardingOpenCodeRunningDevice": {
-    "description": "CodeWalk UI string — onboardingOpenCodeRunningDevice"
-  },
   "onboardingOpenCodeRunsLocally": "OpenCode runs locally or on a server and powers the AI coding features inside CodeWalk. If OpenCode is already running, connect to it. If not, pick one of the guided setup paths below.",
-  "@onboardingOpenCodeRunsLocally": {
-    "description": "CodeWalk UI string — onboardingOpenCodeRunsLocally"
-  },
   "onboardingOpenTailscaleLogin": "Could not open Tailscale login URL.",
-  "@onboardingOpenTailscaleLogin": {
-    "description": "CodeWalk UI string — onboardingOpenTailscaleLogin"
-  },
   "onboardingPassword": "Password",
   "onboardingPasswordRequired": "Enter password",
-  "@onboardingPasswordRequired": {
-    "description": "CodeWalk UI string — Validation error shown when Basic Auth password is empty"
-  },
+  "onboardingPickSetupPath": "현재 OpenCode 설정과 일치하는 설정 경로를 선택하십시오.",
+  "onboardingReachable": "연결 가능",
+  "onboardingReady": "준비됨",
   "onboardingRecommendedOrderTry": "Recommended order: try Install Bun + OpenCode if you want CodeWalk to bootstrap everything for you. Use Existing if OpenCode is already installed.",
-  "@onboardingRecommendedOrderTry": {
-    "description": "CodeWalk UI string — onboardingRecommendedOrderTry"
-  },
   "onboardingRefreshChecks": "Refresh Checks",
-  "@onboardingRefreshChecks": {
-    "description": "CodeWalk UI string — onboardingRefreshChecks"
-  },
+  "onboardingRunDiagnosticsToVerify": "로컬 OpenCode 요구 사항을 확인하려면 진단을 실행하십시오.",
+  "onboardingSaveAndTest": "저장 및 테스트",
+  "onboardingServerConnectedReady": "서버가 연결되어 사용할 준비가 되었습니다.",
+  "onboardingServerConnection": "서버 연결",
+  "onboardingServerSettingsSaved": "서버 설정이 저장되었으며 상태 확인이 새로 고침되었습니다.",
+  "onboardingServerSetup": "서버 설정",
+  "onboardingServerUpdated": "서버가 업데이트되었습니다.",
   "onboardingServerUrl": "Server URL",
+  "onboardingSetup": "설정",
+  "onboardingSetupWizard": "설정 마법사",
   "onboardingShowSetupSteps": "Show me the setup steps",
-  "@onboardingShowSetupSteps": {
-    "description": "CodeWalk UI string — onboardingShowSetupSteps"
-  },
   "onboardingShowSetupSteps2": "Show setup steps",
-  "@onboardingShowSetupSteps2": {
-    "description": "CodeWalk UI string — onboardingShowSetupSteps2"
-  },
   "onboardingSkip": "Skip for now",
-  "@onboardingSkip": {
-    "description": "CodeWalk UI string — onboardingSkip"
-  },
   "onboardingSkipSetup": "Skip setup?",
-  "@onboardingSkipSetup": {
-    "description": "CodeWalk UI string — onboardingSkipSetup"
-  },
   "onboardingStart": "Start",
-  "@onboardingStart": {
-    "description": "CodeWalk UI string — onboardingStart"
-  },
+  "onboardingStartUsing": "{appName} 시작하기",
+  "onboardingStarting": "시작 중",
   "onboardingStop": "Stop",
-  "@onboardingStop": {
-    "description": "CodeWalk UI string — onboardingStop"
-  },
+  "onboardingStopped": "중지됨",
+  "onboardingStopping": "중지 중",
+  "onboardingSuggestedUrl": "제안된 로컬 OpenCode 서버 URL: {url}",
+  "onboardingTailscaleAdminApproval": "Tailscale 관리자 승인 필요",
+  "onboardingTailscaleAuthAfterSave": "저장 후 Tailscale 인증이 진행됩니다.",
+  "onboardingTailscaleAuthAfterSaveTest": "이 서버를 저장하고 테스트한 후, 이 기기가 아직 인증되지 않은 경우 {appName}에서 Tailscale 로그인 페이지를 엽니다.",
+  "onboardingTailscaleConnected": "Tailscale 연결됨",
+  "onboardingTailscaleConnecting": "Tailscale 연결 중",
+  "onboardingTailscaleConnectionFailed": "Tailscale 연결 실패",
+  "onboardingTailscaleLoginRequired": "Tailscale 로그인 필요",
+  "onboardingTailscaleOpenLoginUrl": "로그인 URL을 열어 이 기기를 tailnet에 추가하십시오. 브라우저가 열리지 않으면 아래 URL을 복사하십시오.",
+  "onboardingTailscaleUnsupported": "Tailscale 지원되지 않음",
+  "onboardingTestConnection": "연결 테스트",
+  "onboardingTesting": "테스트 중...",
+  "onboardingUnreachable": "연결 불가능",
   "onboardingUseBasicAuth": "Use Basic Auth",
-  "@onboardingUseBasicAuth": {
-    "description": "CodeWalk UI string — Switch tile label in onboarding wizard to enable Basic Auth"
-  },
   "onboardingUsername": "Username",
   "onboardingUsernameRequired": "Enter username",
-  "@onboardingUsernameRequired": {
-    "description": "CodeWalk UI string — Validation error shown when Basic Auth username is empty"
-  },
   "onboardingUsesServerTitle": "Uses your server''s title agent to name conversations",
-  "@onboardingUsesServerTitle": {
-    "description": "CodeWalk UI string — onboardingUsesServerTitle"
-  },
+  "onboardingUsingDetectedCommand": "감지된 OpenCode 명령을 사용합니다.",
   "onboardingViewSetupDebug": "View setup debug",
-  "@onboardingViewSetupDebug": {
-    "description": "CodeWalk UI string — onboardingViewSetupDebug"
-  },
+  "onboardingWelcomeTo": "{appName}에 오신 것을 환영합니다",
   "onboardingWindowsTipInstalling": "Windows tip: after installing, click Refresh Checks. If detection still fails, reopen CodeWalk to reload PATH changes.",
-  "@onboardingWindowsTipInstalling": {
-    "description": "CodeWalk UI string — onboardingWindowsTipInstalling"
-  },
+  "onboardingWritable": "쓰기 가능",
+  "onboardingYoureAllSet": "모든 준비가 완료되었습니다!",
   "permissionAllowOnce": "Allow Once",
   "permissionAlways": "Always",
   "permissionBack": "Back",
@@ -1043,29 +1666,11 @@
   "permissionReject": "Reject",
   "permissionReopen": "Reopen",
   "questionAnswerSelected": "No answer selected.",
-  "@questionAnswerSelected": {
-    "description": "CodeWalk UI string — questionAnswerSelected"
-  },
   "questionCommaSeparatedValues": "Comma-separated values",
-  "@questionCommaSeparatedValues": {
-    "description": "CodeWalk UI string — questionCommaSeparatedValues"
-  },
   "questionQuestionGroupMarked": "Question group marked as rejected. You can keep chatting and reopen this group anytime before confirming.",
-  "@questionQuestionGroupMarked": {
-    "description": "CodeWalk UI string — questionQuestionGroupMarked"
-  },
   "questionQuestionRequest": "Question request",
-  "@questionQuestionRequest": {
-    "description": "CodeWalk UI string — questionQuestionRequest"
-  },
   "questionQuestionsProvidedSubmit": "No questions provided. You can submit an empty response.",
-  "@questionQuestionsProvidedSubmit": {
-    "description": "CodeWalk UI string — questionQuestionsProvidedSubmit"
-  },
   "questionReviewAnswersSubmitting": "Review your answers before submitting.",
-  "@questionReviewAnswersSubmitting": {
-    "description": "CodeWalk UI string — questionReviewAnswersSubmitting"
-  },
   "quotaAuthCookie": "Auth cookie",
   "quotaForget": "Forget",
   "quotaOpenCodeGoUsage": "OpenCode Go usage",
@@ -1073,127 +1678,33 @@
   "quotaSaving": "Saving...",
   "quotaWorkspaceId": "Workspace ID",
   "serverClearOAuth": "Clear OAuth",
-  "@serverClearOAuth": {
-    "description": "CodeWalk UI string — Menu action to clear stored OAuth credentials for a server profile"
-  },
   "serverOAuthAuthFailed": "OAuth authentication failed",
-  "@serverOAuthAuthFailed": {
-    "description": "CodeWalk UI string — Error message shown when OAuth re-authentication fails"
-  },
   "serverOAuthChip": "OAuth",
-  "@serverOAuthChip": {
-    "description": "CodeWalk UI string — Chip label showing a server profile uses OAuth authentication"
-  },
   "serverOAuthNotSupported": "Cloudflare Access OAuth is not supported on this platform",
-  "@serverOAuthNotSupported": {
-    "description": "CodeWalk UI string — Error when user tries to enable OAuth on an unsupported platform"
-  },
   "serverReauthenticate": "Re-authenticate",
-  "@serverReauthenticate": {
-    "description": "CodeWalk UI string — Menu action to re-authenticate an OAuth-enabled server profile"
-  },
   "serverTailscaleChip": "Tailscale",
-  "@serverTailscaleChip": {
-    "description": "CodeWalk UI string — Chip label showing a server profile routes traffic through Tailscale"
-  },
   "serversActive": "Active",
-  "@serversActive": {
-    "description": "CodeWalk UI string — serversActive"
-  },
   "serversActiveServer": "Active Server",
-  "@serversActiveServer": {
-    "description": "CodeWalk UI string — serversActiveServer"
-  },
   "serversAddLeastOpenCode": "Add at least one OpenCode server to start using the app.",
-  "@serversAddLeastOpenCode": {
-    "description": "CodeWalk UI string — serversAddLeastOpenCode"
-  },
   "serversAddServer": "Add Server",
-  "@serversAddServer": {
-    "description": "CodeWalk UI string — serversAddServer"
-  },
   "serversCancel": "Cancel",
-  "@serversCancel": {
-    "description": "CodeWalk UI string — serversCancel"
-  },
   "serversCheckHealth": "Check Health",
-  "@serversCheckHealth": {
-    "description": "CodeWalk UI string — serversCheckHealth"
-  },
   "serversClearDefault": "Clear Default",
-  "@serversClearDefault": {
-    "description": "CodeWalk UI string — serversClearDefault"
-  },
   "serversCommandAppProviderLocalServerCommandPath": "명령: {localServerCommandPath}",
-  "@serversCommandAppProviderLocalServerCommandPath": {
-    "description": "CodeWalk UI string — serversCommandAppProviderLocalServerCommandPath",
-    "placeholders": {
-      "localServerCommandPath": {
-        "type": "String"
-      }
-    }
-  },
   "serversCopy": "Copy",
-  "@serversCopy": {
-    "description": "CodeWalk UI string — serversCopy"
-  },
   "serversDefault": "Default",
-  "@serversDefault": {
-    "description": "CodeWalk UI string — serversDefault"
-  },
   "serversDelete": "Delete",
-  "@serversDelete": {
-    "description": "CodeWalk UI string — serversDelete"
-  },
   "serversDeleteServer": "Delete server",
-  "@serversDeleteServer": {
-    "description": "CodeWalk UI string — serversDeleteServer"
-  },
   "serversEdit": "Edit",
-  "@serversEdit": {
-    "description": "CodeWalk UI string — serversEdit"
-  },
   "serversLocalOpenCodeServer": "Local OpenCode Server",
-  "@serversLocalOpenCodeServer": {
-    "description": "CodeWalk UI string — serversLocalOpenCodeServer"
-  },
   "serversManagedModeAvailable": "This managed mode is available only on desktop builds (Linux/macOS/Windows).",
-  "@serversManagedModeAvailable": {
-    "description": "CodeWalk UI string — serversManagedModeAvailable"
-  },
   "serversRefreshHealth": "Refresh Health",
-  "@serversRefreshHealth": {
-    "description": "CodeWalk UI string — serversRefreshHealth"
-  },
   "serversRemoveProfileDisplayName": "\"{displayName}\"을(를) 제거하시겠습니까?",
-  "@serversRemoveProfileDisplayName": {
-    "description": "CodeWalk UI string — serversRemoveProfileDisplayName",
-    "placeholders": {
-      "displayName": {
-        "type": "String"
-      }
-    }
-  },
   "serversServersConfigured": "No servers configured",
-  "@serversServersConfigured": {
-    "description": "CodeWalk UI string — serversServersConfigured"
-  },
   "serversSetActive": "Set Active",
-  "@serversSetActive": {
-    "description": "CodeWalk UI string — serversSetActive"
-  },
   "serversSetDefault": "Set Default",
-  "@serversSetDefault": {
-    "description": "CodeWalk UI string — serversSetDefault"
-  },
   "serversSetupDebug": "Setup Debug",
-  "@serversSetupDebug": {
-    "description": "CodeWalk UI string — serversSetupDebug"
-  },
   "serversSetupWizard": "Setup Wizard",
-  "@serversSetupWizard": {
-    "description": "CodeWalk UI string — serversSetupWizard"
-  },
   "sessionActionArchived": "archived",
   "sessionActionDeleted": "deleted",
   "sessionActionForked": "forked",
@@ -1211,6 +1722,12 @@
   "sessionDiffSplit": "Split",
   "sessionDiffSummary": "Summary",
   "sessionDiffUnified": "Unified",
+  "sessionExportAssistant": "어시스턴트",
+  "sessionExportError": "오류:",
+  "sessionExportInput": "입력:",
+  "sessionExportOutput": "출력:",
+  "sessionExportUntitled": "제목 없는 세션",
+  "sessionExportUser": "사용자",
   "sessionFailedRename": "Failed to rename conversation",
   "sessionFailedUpdateArchive": "Failed to update archive state",
   "sessionFailedUpdateSharing": "Failed to update sharing state",
@@ -1275,13 +1792,7 @@
   "settingsAppearanceDescription": "Density and timeline bubble visibility",
   "settingsAppearanceLight": "Light",
   "settingsAppearanceMathRendering": "수식 렌더링",
-  "@settingsAppearanceMathRendering": {
-    "description": "CodeWalk UI string — settingsAppearanceMathRendering"
-  },
   "settingsAppearanceMathRenderingDescription": "채팅 메시지에서 LaTeX 수학 표현식을 조판된 방정식으로 렌더링합니다.",
-  "@settingsAppearanceMathRenderingDescription": {
-    "description": "CodeWalk UI string — settingsAppearanceMathRenderingDescription"
-  },
   "settingsAppearanceNoPresets": "No preset palettes found",
   "settingsAppearanceOpenCodePresets": "OpenCode Presets",
   "settingsAppearancePresetHelper": "Mirrors the official OpenCode Web built-in theme list.",
@@ -1414,45 +1925,15 @@
   "settingsNotificationsTitle": "Notifications",
   "settingsNotificationsWhenClosing": "When closing the window",
   "settingsReadAloudEnabled": "Read aloud",
-  "@settingsReadAloudEnabled": {
-    "description": "CodeWalk UI string — settingsReadAloudEnabled"
-  },
   "settingsReadAloudEnabledDescription": "Show a read-aloud button on assistant messages.",
-  "@settingsReadAloudEnabledDescription": {
-    "description": "CodeWalk UI string — settingsReadAloudEnabledDescription"
-  },
   "settingsReadAloudPitch": "Pitch",
-  "@settingsReadAloudPitch": {
-    "description": "CodeWalk UI string — settingsReadAloudPitch"
-  },
   "settingsReadAloudPitchDescription": "Adjust the voice pitch.",
-  "@settingsReadAloudPitchDescription": {
-    "description": "CodeWalk UI string — settingsReadAloudPitchDescription"
-  },
   "settingsReadAloudSectionDescription": "Read assistant responses aloud. Configure speed, pitch, and voice.",
-  "@settingsReadAloudSectionDescription": {
-    "description": "CodeWalk UI string — settingsReadAloudSectionDescription"
-  },
   "settingsReadAloudSectionTitle": "Text to speech",
-  "@settingsReadAloudSectionTitle": {
-    "description": "CodeWalk UI string — settingsReadAloudSectionTitle"
-  },
   "settingsReadAloudSpeed": "Speed",
-  "@settingsReadAloudSpeed": {
-    "description": "CodeWalk UI string — settingsReadAloudSpeed"
-  },
   "settingsReadAloudSpeedDescription": "Adjust the speaking rate.",
-  "@settingsReadAloudSpeedDescription": {
-    "description": "CodeWalk UI string — settingsReadAloudSpeedDescription"
-  },
   "settingsReadAloudVoice": "Voice",
-  "@settingsReadAloudVoice": {
-    "description": "CodeWalk UI string — settingsReadAloudVoice"
-  },
   "settingsReadAloudVoiceHint": "Select a voice for read-aloud.",
-  "@settingsReadAloudVoiceHint": {
-    "description": "CodeWalk UI string — settingsReadAloudVoiceHint"
-  },
   "settingsServersActive": "Active",
   "settingsServersChooseActive": "Choose active server",
   "settingsServersDefault": "Default",
@@ -1465,6 +1946,7 @@
   "settingsShortcutsReset": "Reset shortcut",
   "settingsShortcutsSearch": "Search shortcuts",
   "settingsShortcutsTitle": "Shortcuts",
+  "settingsSoundPickerNotAvailable": "시스템 사운드 선택기는 이 플랫폼에서 사용할 수 없습니다.",
   "settingsSpeechDescription": "Engine, silence timeout, and model options",
   "settingsSpeechRefreshStatus": "Refresh status",
   "settingsSpeechSilenceTimeout": "Silence timeout: {value}s",
@@ -1472,292 +1954,138 @@
   "settingsTitle": "Settings",
   "setupDebugBun": "Bun",
   "setupDebugBun2": "Bun",
-  "@setupDebugBun2": {
-    "description": "CodeWalk UI string — setupDebugBun2"
-  },
   "setupDebugCapturedSetupDetails": "No captured setup details yet",
-  "@setupDebugCapturedSetupDetails": {
-    "description": "CodeWalk UI string — setupDebugCapturedSetupDetails"
-  },
   "setupDebugCapturedSetupLogs": "Captured setup logs",
-  "@setupDebugCapturedSetupLogs": {
-    "description": "CodeWalk UI string — setupDebugCapturedSetupLogs"
-  },
   "setupDebugClear": "Clear setup debug",
   "setupDebugClearSetupDebug": "Clear setup debug",
-  "@setupDebugClearSetupDebug": {
-    "description": "CodeWalk UI string — setupDebugClearSetupDebug"
-  },
   "setupDebugCodeWalkCaptureEnough": "If CodeWalk did not capture enough context, check the official OpenCode logs and health endpoints directly:",
-  "@setupDebugCodeWalkCaptureEnough": {
-    "description": "CodeWalk UI string — setupDebugCodeWalkCaptureEnough"
-  },
   "setupDebugCommandPath": "Command path",
   "setupDebugCommandPath2": "Command path",
-  "@setupDebugCommandPath2": {
-    "description": "CodeWalk UI string — setupDebugCommandPath2"
-  },
   "setupDebugCopy": "Copy setup debug",
   "setupDebugCopySetupDebug": "Copy setup debug",
-  "@setupDebugCopySetupDebug": {
-    "description": "CodeWalk UI string — setupDebugCopySetupDebug"
-  },
   "setupDebugCurrentStatus": "Current status",
-  "@setupDebugCurrentStatus": {
-    "description": "CodeWalk UI string — setupDebugCurrentStatus"
-  },
   "setupDebugDiagnosticsLoading": "Diagnostics are still loading.",
-  "@setupDebugDiagnosticsLoading": {
-    "description": "CodeWalk UI string — setupDebugDiagnosticsLoading"
-  },
   "setupDebugEnvironment": "Environment diagnostics",
   "setupDebugEnvironmentDiagnostics": "Environment diagnostics",
-  "@setupDebugEnvironmentDiagnostics": {
-    "description": "CodeWalk UI string — setupDebugEnvironmentDiagnostics"
-  },
   "setupDebugFocusedOpenCodeSetup": "Focused on OpenCode setup",
-  "@setupDebugFocusedOpenCodeSetup": {
-    "description": "CodeWalk UI string — setupDebugFocusedOpenCodeSetup"
-  },
   "setupDebugInstallDir": "Install directory",
   "setupDebugInstallDirectory": "Install directory",
-  "@setupDebugInstallDirectory": {
-    "description": "CodeWalk UI string — setupDebugInstallDirectory"
-  },
   "setupDebugLatestLocalServer": "Latest local server output",
-  "@setupDebugLatestLocalServer": {
-    "description": "CodeWalk UI string — setupDebugLatestLocalServer"
-  },
   "setupDebugLogs": "Captured setup logs",
   "setupDebugManual": "Manual troubleshooting",
   "setupDebugManualTroubleshooting": "Manual troubleshooting",
-  "@setupDebugManualTroubleshooting": {
-    "description": "CodeWalk UI string — setupDebugManualTroubleshooting"
-  },
   "setupDebugNetwork": "Network",
   "setupDebugNetwork2": "Network",
-  "@setupDebugNetwork2": {
-    "description": "CodeWalk UI string — setupDebugNetwork2"
-  },
   "setupDebugNoDetails": "No captured setup details yet",
   "setupDebugNode": "Node.js",
-  "@setupDebugNode": {
-    "description": "CodeWalk UI string — setupDebugNode"
-  },
   "setupDebugNodeJs": "Node.js",
   "setupDebugNpm": "npm",
   "setupDebugNpm2": "npm",
-  "@setupDebugNpm2": {
-    "description": "CodeWalk UI string — setupDebugNpm2"
-  },
   "setupDebugOpenCode": "OpenCode",
   "setupDebugOpenCode2": "OpenCode",
-  "@setupDebugOpenCode2": {
-    "description": "CodeWalk UI string — setupDebugOpenCode2"
-  },
   "setupDebugOpenCodeSetupDebug": "OpenCode Setup Debug",
-  "@setupDebugOpenCodeSetupDebug": {
-    "description": "CodeWalk UI string — setupDebugOpenCodeSetupDebug"
-  },
   "setupDebugPlatform": "Platform",
   "setupDebugPlatform2": "Platform",
-  "@setupDebugPlatform2": {
-    "description": "CodeWalk UI string — setupDebugPlatform2"
-  },
   "setupDebugRunDiagnosticsTry": "Run diagnostics, try an installation method, or attempt a setup flow to capture OpenCode-specific troubleshooting details here.",
-  "@setupDebugRunDiagnosticsTry": {
-    "description": "CodeWalk UI string — setupDebugRunDiagnosticsTry"
-  },
   "setupDebugScreenCoversOpenCode": "This screen only covers OpenCode installation, diagnostics, and local setup troubleshooting. Use App Logs for general CodeWalk runtime issues.",
-  "@setupDebugScreenCoversOpenCode": {
-    "description": "CodeWalk UI string — setupDebugScreenCoversOpenCode"
-  },
   "setupDebugServerOutput": "Latest local server output",
   "setupDebugStatus": "Current status",
   "setupDebugTimeEntrySource": "{time} - {source}",
-  "@setupDebugTimeEntrySource": {
-    "description": "CodeWalk UI string — setupDebugTimeEntrySource",
-    "placeholders": {
-      "time": {
-        "type": "String"
-      },
-      "source": {
-        "type": "String"
-      }
-    }
-  },
   "setupDebugTimeline": "Timeline",
   "setupDebugTimeline2": "Timeline",
-  "@setupDebugTimeline2": {
-    "description": "CodeWalk UI string — setupDebugTimeline2"
-  },
   "setupDebugTitle": "Focused on OpenCode setup",
   "setupDebugWSL": "WSL",
-  "@setupDebugWSL": {
-    "description": "CodeWalk UI string — setupDebugWSL"
-  },
   "setupDebugWsl": "WSL",
+  "shortcutCloseApp": "애플리케이션 닫기",
+  "shortcutCloseAppDesc": "플랫폼 종료 동작을 사용하여 앱 닫기",
+  "shortcutFocusCloseDrawer": "포커스/드로어 닫기",
+  "shortcutFocusCloseDrawerDesc": "기본적으로 입력 창에 포커스, 또는 열려 있을 때 드로어 닫기",
+  "shortcutFocusInput": "입력 창 포커스",
+  "shortcutFocusInputDesc": "텍스트 입력 창으로 포커스 이동",
+  "shortcutGroupApplication": "애플리케이션",
+  "shortcutGroupGeneral": "일반",
+  "shortcutGroupModelAndAgent": "모델 및 에이전트",
+  "shortcutGroupNavigation": "내비게이션",
+  "shortcutGroupPrompt": "프롬프트",
+  "shortcutGroupSession": "세션",
+  "shortcutNewConversation": "새 대화",
+  "shortcutNewConversationDesc": "새 채팅 세션 생성",
+  "shortcutNextAgent": "다음 에이전트",
+  "shortcutNextAgentDesc": "다음 사용 가능한 에이전트로 전환",
+  "shortcutNextRecentModel": "다음 최근 모델",
+  "shortcutNextRecentModelDesc": "최근에 사용한 모델 간 전환",
+  "shortcutNextVariant": "다음 변형",
+  "shortcutNextVariantDesc": "사용 가능한 모델 변형 간 전환",
+  "shortcutOpenSettings": "설정 열기",
+  "shortcutOpenSettingsDesc": "설정 페이지 열기",
+  "shortcutPreviousAgent": "이전 에이전트",
+  "shortcutPreviousAgentDesc": "이전 사용 가능한 에이전트로 전환",
+  "shortcutQuickOpenFiles": "파일 빠른 열기",
+  "shortcutQuickOpenFilesDesc": "파일 빠른 검색 열기",
+  "shortcutQuitApp": "애플리케이션 종료",
+  "shortcutQuitAppDesc": "앱 강제 종료",
+  "shortcutRefreshData": "데이터 새로 고침",
+  "shortcutRefreshDataDesc": "현재 채팅 데이터 새로 고침",
+  "shortcutStopResponse": "응답 중지",
+  "shortcutStopResponseDesc": "활성 응답 중지 (응답 중)",
+  "shortcutToggleVoiceInput": "음성 입력 전환",
+  "shortcutToggleVoiceInputDesc": "에디터에서 음성 받아쓰기 시작 또는 중지",
   "shortcutsApply": "Apply",
-  "@shortcutsApply": {
-    "description": "CodeWalk UI string — shortcutsApply"
-  },
   "shortcutsConflictConflict": "{conflict}과(와) 충돌",
-  "@shortcutsConflictConflict": {
-    "description": "CodeWalk UI string — shortcutsConflictConflict",
-    "placeholders": {
-      "conflict": {
-        "type": "String"
-      }
-    }
-  },
   "shortcutsKeyboardShortcuts": "Keyboard shortcuts",
-  "@shortcutsKeyboardShortcuts": {
-    "description": "CodeWalk UI string — shortcutsKeyboardShortcuts"
-  },
   "shortcutsReset": "Reset all",
-  "@shortcutsReset": {
-    "description": "CodeWalk UI string — shortcutsReset"
-  },
   "shortcutsSearchEditBindings": "Search, edit bindings, and resolve conflicts before saving.",
-  "@shortcutsSearchEditBindings": {
-    "description": "CodeWalk UI string — shortcutsSearchEditBindings"
-  },
   "shortcutsSetShortcutWidget": "단축키 설정: {label}",
-  "@shortcutsSetShortcutWidget": {
-    "description": "CodeWalk UI string — shortcutsSetShortcutWidget",
-    "placeholders": {
-      "label": {
-        "type": "String"
-      }
-    }
-  },
   "shortcutsTheseBindingsStored": "These bindings are stored in CodeWalk for the current app runtime and do not edit OpenCode `tui.json` keybinds.",
-  "@shortcutsTheseBindingsStored": {
-    "description": "CodeWalk UI string — shortcutsTheseBindingsStored"
-  },
   "speechAutoStopSilence": "Auto-stop silence timeout",
-  "@speechAutoStopSilence": {
-    "description": "CodeWalk UI string — speechAutoStopSilence"
-  },
   "speechChooseRecognitionEngine": "Choose the recognition engine, silence timeout, and model options.",
-  "@speechChooseRecognitionEngine": {
-    "description": "CodeWalk UI string — speechChooseRecognitionEngine"
-  },
+  "speechDesktopOnly": "{service}은(는) 데스크톱에서만 사용할 수 있습니다.",
   "speechDownload": "Download",
-  "@speechDownload": {
-    "description": "CodeWalk UI string — speechDownload"
-  },
   "speechEngine": "Engine",
-  "@speechEngine": {
-    "description": "CodeWalk UI string — speechEngine"
-  },
   "speechInstalledLanguages": "Installed languages",
-  "@speechInstalledLanguages": {
-    "description": "CodeWalk UI string — speechInstalledLanguages"
-  },
   "speechListeningStopsAutomatically": "Listening stops automatically after this many seconds of silence.",
-  "@speechListeningStopsAutomatically": {
-    "description": "CodeWalk UI string — speechListeningStopsAutomatically"
-  },
+  "speechMicPermissionDisabled": "마이크 권한이 비활성화되어 있습니다.",
+  "speechModelFilesIncomplete": "{service} 모델 파일이 불완전합니다.",
   "speechMoonshine": "Moonshine",
-  "@speechMoonshine": {
-    "description": "CodeWalk UI string — speechMoonshine"
-  },
   "speechMoonshineModelsDesktop": "Moonshine models (desktop)",
-  "@speechMoonshineModelsDesktop": {
-    "description": "CodeWalk UI string — speechMoonshineModelsDesktop"
-  },
   "speechMoonshineStaysDownloadable": "Moonshine stays downloadable and out of the app bundle. Pick one model for this desktop device and remove it later if you want the space back.",
-  "@speechMoonshineStaysDownloadable": {
-    "description": "CodeWalk UI string — speechMoonshineStaysDownloadable"
-  },
   "speechNative": "Native",
-  "@speechNative": {
-    "description": "CodeWalk UI string — speechNative"
-  },
   "speechNativeSTTDisabled": "Native STT is disabled on Linux in this app. Parakeet is the default engine for new installs.",
-  "@speechNativeSTTDisabled": {
-    "description": "CodeWalk UI string — speechNativeSTTDisabled"
-  },
   "speechNativeSTTWorks": "Native STT works on Windows when OS speech services are enabled. If native initialization fails, CodeWalk automatically falls back to Sherpa. Check Windows microphone privacy, Online speech recognition, and installed speech language packs.",
-  "@speechNativeSTTWorks": {
-    "description": "CodeWalk UI string — speechNativeSTTWorks"
-  },
   "speechNativeStartsFaster": "Native starts faster. Sherpa runs fully on-device with heavier setup and deeper model control.",
-  "@speechNativeStartsFaster": {
-    "description": "CodeWalk UI string — speechNativeStartsFaster"
-  },
   "speechParakeet": "Parakeet",
-  "@speechParakeet": {
-    "description": "CodeWalk UI string — speechParakeet"
-  },
   "speechParakeetModelsDesktop": "Parakeet models (desktop)",
-  "@speechParakeetModelsDesktop": {
-    "description": "CodeWalk UI string — speechParakeetModelsDesktop"
-  },
   "speechParakeetStaysDownloadable": "Parakeet stays downloadable and out of the app bundle. It currently exposes one multilingual model optimized for 25 European languages.",
-  "@speechParakeetStaysDownloadable": {
-    "description": "CodeWalk UI string — speechParakeetStaysDownloadable"
-  },
   "speechPickLanguagePacks": "Pick language packs and download/remove models for on-device recognition.",
-  "@speechPickLanguagePacks": {
-    "description": "CodeWalk UI string — speechPickLanguagePacks"
-  },
   "speechRemove": "Remove",
-  "@speechRemove": {
-    "description": "CodeWalk UI string — speechRemove"
-  },
+  "speechRuntimeFailed": "{service} 런타임을 초기화하지 못했습니다.",
   "speechSelectSherpaAbove": "Select Sherpa above to manage language packs and download models.",
-  "@speechSelectSherpaAbove": {
-    "description": "CodeWalk UI string — speechSelectSherpaAbove"
-  },
   "speechSenseVoice": "SenseVoice",
-  "@speechSenseVoice": {
-    "description": "CodeWalk UI string — speechSenseVoice"
-  },
   "speechSenseVoiceModelsDesktop": "SenseVoice models (desktop)",
-  "@speechSenseVoiceModelsDesktop": {
-    "description": "CodeWalk UI string — speechSenseVoiceModelsDesktop"
-  },
   "speechSenseVoiceStaysDownloadable": "SenseVoice stays downloadable and out of the app bundle. It is the strongest desktop option here for Chinese, Cantonese, Japanese, Korean, and English.",
-  "@speechSenseVoiceStaysDownloadable": {
-    "description": "CodeWalk UI string — speechSenseVoiceStaysDownloadable"
-  },
   "speechSherpa": "Sherpa",
-  "@speechSherpa": {
-    "description": "CodeWalk UI string — speechSherpa"
-  },
   "speechSherpaExperimentalFail": "Sherpa is experimental and can fail on some devices. Prefer Native if you want the most stable behavior.",
-  "@speechSherpaExperimentalFail": {
-    "description": "CodeWalk UI string — speechSherpaExperimentalFail"
-  },
   "speechSherpaModelsLinux": "Sherpa models (Linux)",
-  "@speechSherpaModelsLinux": {
-    "description": "CodeWalk UI string — speechSherpaModelsLinux"
-  },
   "speechSpeechText": "Speech to text",
-  "@speechSpeechText": {
-    "description": "CodeWalk UI string — speechSpeechText"
-  },
+  "speechUnavailableOnPlatform": "{service} 음성을 이 플랫폼에서 사용할 수 없습니다.",
   "tailscaleNoPeers": "No peers found",
-  "@tailscaleNoPeers": {
-    "description": "CodeWalk UI string — Shown in peer dropdown when Tailscale is connected but no peers are visible"
-  },
+  "tailscaleNotSupportedOnPlatform": "이 플랫폼에서는 Tailscale을 지원하지 않습니다.",
+  "tailscaleNotSupportedOnWindows": "Windows에서는 Tailscale을 지원하지 않습니다.",
   "tailscalePeerOffline": "offline",
-  "@tailscalePeerOffline": {
-    "description": "CodeWalk UI string — Badge shown next to a Tailscale peer that is currently offline"
-  },
   "tailscaleSelectPeer": "Select a Tailscale peer",
-  "@tailscaleSelectPeer": {
-    "description": "CodeWalk UI string — Dropdown hint label for selecting a tailnet peer as server URL source"
-  },
+  "tailscaleWaitingAdminApproval": "이 Tailscale 노드는 관리자 승인을 기다리고 있습니다.",
   "terminalClose": "Close terminal",
+  "terminalConnectingTo": "{serverName} 터미널에 연결 중...",
+  "terminalConnectionFailed": "터미널 연결 실패: {error}",
+  "terminalDisconnected": "터미널 연결이 끊어졌습니다.",
   "terminalMinimize": "Minimize terminal",
+  "terminalNotAvailableYet": "이 런타임에서는 임베디드 터미널을 아직 사용할 수 없습니다.",
+  "terminalOpenProjectFirst": "서버 터미널을 시작하기 전에 프로젝트 폴더를 여십시오.",
+  "terminalOpenToConnect": "터미널을 열어 서버 프로젝트 터미널에 연결하십시오.",
   "terminalReconnect": "Reconnect terminal",
+  "terminalSelectServer": "터미널을 열기 전에 활성 서버를 선택하십시오.",
+  "terminalSessionClosed": "터미널 세션이 종료되었습니다.",
   "terminalTerminal": "Terminal",
-  "@terminalTerminal": {
-    "description": "CodeWalk UI string — terminalTerminal"
-  },
   "terminalTryAgain": "Try again",
   "toolAwaitingInput": "Awaiting input",
   "toolEditing": "Editing",
@@ -1765,73 +2093,24 @@
   "toolFinding": "Finding",
   "toolFindingFiles": "Finding files",
   "toolPresentationAwaitingInput": "Awaiting input",
-  "@toolPresentationAwaitingInput": {
-    "description": "CodeWalk UI string — toolPresentationAwaitingInput"
-  },
   "toolPresentationEditing": "Editing",
-  "@toolPresentationEditing": {
-    "description": "CodeWalk UI string — toolPresentationEditing"
-  },
   "toolPresentationEditingFiles": "Editing files",
-  "@toolPresentationEditingFiles": {
-    "description": "CodeWalk UI string — toolPresentationEditingFiles"
-  },
   "toolPresentationFinding": "Finding",
-  "@toolPresentationFinding": {
-    "description": "CodeWalk UI string — toolPresentationFinding"
-  },
   "toolPresentationFindingFiles": "Finding files",
-  "@toolPresentationFindingFiles": {
-    "description": "CodeWalk UI string — toolPresentationFindingFiles"
-  },
   "toolPresentationReading": "Reading",
-  "@toolPresentationReading": {
-    "description": "CodeWalk UI string — toolPresentationReading"
-  },
   "toolPresentationReadingFile": "Reading file",
-  "@toolPresentationReadingFile": {
-    "description": "CodeWalk UI string — toolPresentationReadingFile"
-  },
   "toolPresentationRunning": "Running",
-  "@toolPresentationRunning": {
-    "description": "CodeWalk UI string — toolPresentationRunning"
-  },
   "toolPresentationRunningCommand": "Running command",
-  "@toolPresentationRunningCommand": {
-    "description": "CodeWalk UI string — toolPresentationRunningCommand"
-  },
+  "toolPresentationRunningTool": "{toolName} 실행 중",
   "toolPresentationSearching": "Searching",
-  "@toolPresentationSearching": {
-    "description": "CodeWalk UI string — toolPresentationSearching"
-  },
   "toolPresentationSearchingCode": "Searching code",
-  "@toolPresentationSearchingCode": {
-    "description": "CodeWalk UI string — toolPresentationSearchingCode"
-  },
   "toolPresentationSearchingWeb": "Searching the web",
-  "@toolPresentationSearchingWeb": {
-    "description": "CodeWalk UI string — toolPresentationSearchingWeb"
-  },
+  "toolPresentationTool": "도구",
   "toolPresentationUpdatingTaskList": "Updating task list",
-  "@toolPresentationUpdatingTaskList": {
-    "description": "CodeWalk UI string — toolPresentationUpdatingTaskList"
-  },
   "toolPresentationUpdatingTasks": "Updating tasks",
-  "@toolPresentationUpdatingTasks": {
-    "description": "CodeWalk UI string — toolPresentationUpdatingTasks"
-  },
   "toolPresentationWaitingInput": "Waiting for your input",
-  "@toolPresentationWaitingInput": {
-    "description": "CodeWalk UI string — toolPresentationWaitingInput"
-  },
   "toolPresentationWriting": "Writing",
-  "@toolPresentationWriting": {
-    "description": "CodeWalk UI string — toolPresentationWriting"
-  },
   "toolPresentationWritingFile": "Writing file",
-  "@toolPresentationWritingFile": {
-    "description": "CodeWalk UI string — toolPresentationWritingFile"
-  },
   "toolReading": "Reading",
   "toolReadingFile": "Reading file",
   "toolRunning": "Running",
@@ -1850,49 +2129,19 @@
   "trayQuit": "Quit",
   "trayShow": "Show",
   "useOAuthCloudflareAccess": "Use OAuth (Cloudflare Access)",
-  "@useOAuthCloudflareAccess": {
-    "description": "CodeWalk UI string — Label for the Cloudflare Access OAuth toggle in the onboarding/server setup wizard"
-  },
   "useOAuthCloudflareAccessSubtitle": "Opens a browser for Cloudflare Access Managed OAuth.",
-  "@useOAuthCloudflareAccessSubtitle": {
-    "description": "CodeWalk UI string — Subtitle explaining the OAuth toggle when supported on this platform"
-  },
   "useOAuthCloudflareAccessUnsupported": "Cloudflare Access OAuth is not available on this platform. Use Basic Auth instead.",
-  "@useOAuthCloudflareAccessUnsupported": {
-    "description": "CodeWalk UI string — Shown when OAuth is not supported on the current platform"
-  },
   "useTailscale": "Use Tailscale",
-  "@useTailscale": {
-    "description": "CodeWalk UI string — Label for the Tailscale transport toggle in the onboarding/server setup wizard"
-  },
   "useTailscaleSubtitle": "Routes traffic through the Tailscale network without a system VPN.",
-  "@useTailscaleSubtitle": {
-    "description": "CodeWalk UI string — Subtitle explaining the Tailscale toggle when supported on this platform"
-  },
   "useTailscaleUnsupported": "Tailscale is not supported on this platform.",
-  "@useTailscaleUnsupported": {
-    "description": "CodeWalk UI string — Shown when Tailscale transport is not supported on the current platform"
-  },
   "workspaceBrowseDirs": "Browse directories",
   "workspaceChooseFolderOpen": "Choose any folder to open as project context.",
-  "@workspaceChooseFolderOpen": {
-    "description": "CodeWalk UI string — workspaceChooseFolderOpen"
-  },
   "workspaceCloseProject": "Close {project}",
   "workspaceFilterDirs": "Filter directories",
   "workspaceOpenFolder": "Open folder",
-  "@workspaceOpenFolder": {
-    "description": "CodeWalk UI string — workspaceOpenFolder"
-  },
   "workspaceOpenProjectFolder": "Open project folder",
-  "@workspaceOpenProjectFolder": {
-    "description": "CodeWalk UI string — workspaceOpenProjectFolder"
-  },
   "workspaceProjectDirectory": "Project directory",
   "workspaceProjectHint": "/repo/my-project",
   "workspaceRemoveFromHistory": "Remove {name} from history",
-  "workspaceSuggestions": "Suggestions",
-  "@workspaceSuggestions": {
-    "description": "CodeWalk UI string — workspaceSuggestions"
-  }
+  "workspaceSuggestions": "Suggestions"
 }

@@ -1072,7 +1072,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get onboardingRunDiagnosticsToVerify =>
-      'Run diagnostics to verify local OpenCode requirements.';
+      'स्थानीय OpenCode आवश्यकताओं को सत्यापित करने के लिए निदान चलाएँ।';
 
   @override
   String get onboardingServerUrl => 'Server URL';
@@ -2546,888 +2546,892 @@ class AppLocalizationsHi extends AppLocalizations {
   String get workspaceSuggestions => 'Suggestions';
 
   @override
-  String get onboardingSetup => 'Setup';
+  String get onboardingSetup => 'सेटअप';
 
   @override
-  String get onboardingSetupWizard => 'Setup wizard';
+  String get onboardingSetupWizard => 'सेटअप विज़ार्ड';
 
   @override
-  String get onboardingServerSetup => 'Server setup';
+  String get onboardingServerSetup => 'सर्वर सेटअप';
 
   @override
-  String get onboardingEditServer => 'Edit server';
+  String get onboardingEditServer => 'सर्वर संपादित करें';
 
   @override
-  String get onboardingLocalServerSetup => 'Local server setup';
+  String get onboardingLocalServerSetup => 'स्थानीय सर्वर सेटअप';
 
   @override
-  String get onboardingReady => 'Ready';
+  String get onboardingReady => 'तैयार';
 
   @override
   String onboardingWelcomeTo(String appName) {
-    return 'Welcome to $appName';
+    return '$appName में आपका स्वागत है';
   }
 
   @override
   String onboardingNeedsOpenCodeServer(String appName) {
-    return '$appName needs an OpenCode server before it can help with your code.';
+    return '$appName को आपके कोड में मदद करने से पहले एक OpenCode सर्वर की आवश्यकता है।';
   }
 
   @override
-  String get onboardingChooseHowToSetup => 'Choose how to set up your server';
+  String get onboardingChooseHowToSetup =>
+      'चुनें कि अपना सर्वर कैसे सेटअप करें';
 
   @override
   String get onboardingPickSetupPath =>
-      'Pick the setup path that matches your current OpenCode setup.';
+      'वह सेटअप पथ चुनें जो आपके वर्तमान OpenCode सेटअप से मेल खाता हो।';
 
   @override
   String onboardingDesktopOnlyDiagnose(String appName) {
-    return 'Desktop only: $appName can diagnose, install, and run OpenCode for you.';
+    return 'केवल डेस्कटॉप: $appName आपके लिए OpenCode का निदान, स्थापना और संचालन कर सकता है।';
   }
 
   @override
   String get onboardingAvailableOnlyDesktop =>
-      'Available only on desktop (Linux/macOS/Windows).';
+      'केवल डेस्कटॉप (Linux/macOS/Windows) पर उपलब्ध है।';
 
   @override
-  String get onboardingServerConnection => 'Server connection';
+  String get onboardingServerConnection => 'सर्वर कनेक्शन';
 
   @override
-  String get onboardingEditServerConnection => 'Edit server connection';
+  String get onboardingEditServerConnection => 'सर्वर कनेक्शन संपादित करें';
 
   @override
   String onboardingSuggestedUrl(String url) {
-    return 'Suggested local OpenCode server URL: $url';
+    return 'सुझाया गया स्थानीय OpenCode सर्वर URL: $url';
   }
 
   @override
   String get onboardingEmulatorRemap =>
-      'On Android emulator, localhost and 127.0.0.1 are remapped to 10.0.2.2 automatically.';
+      'Android एमुलेटर पर, localhost और 127.0.0.1 स्वचालित रूप से 10.0.2.2 पर रीमैप हो जाते हैं।';
 
   @override
   String get onboardingBasicAuthTip =>
-      'Enable Basic Auth only if your OpenCode server is password-protected.';
+      'बेसिक ऑथ को केवल तभी सक्षम करें जब आपका OpenCode सर्वर पासवर्ड से सुरक्षित हो।';
 
   @override
-  String get onboardingEnterServerUrl => 'Enter a server URL';
+  String get onboardingEnterServerUrl => 'सर्वर URL दर्ज करें';
 
   @override
-  String get onboardingInvalidUrl => 'Invalid URL';
+  String get onboardingInvalidUrl => 'अमान्य URL';
 
   @override
-  String get onboardingTesting => 'Testing...';
+  String get onboardingTesting => 'परीक्षण जारी है...';
 
   @override
-  String get onboardingSaveAndTest => 'Save and test';
+  String get onboardingSaveAndTest => 'सहेजें और परीक्षण करें';
 
   @override
-  String get onboardingTestConnection => 'Test connection';
+  String get onboardingTestConnection => 'कनेक्शन का परीक्षण करें';
 
   @override
-  String get onboardingTailscaleLoginRequired => 'Tailscale login required';
+  String get onboardingTailscaleLoginRequired => 'Tailscale लॉगिन आवश्यक';
 
   @override
   String get onboardingTailscaleAdminApproval =>
-      'Tailscale admin approval required';
+      'Tailscale व्यवस्थापक अनुमोदन आवश्यक';
 
   @override
-  String get onboardingTailscaleConnected => 'Tailscale connected';
+  String get onboardingTailscaleConnected => 'Tailscale कनेक्टेड';
 
   @override
-  String get onboardingTailscaleConnecting => 'Tailscale connecting';
+  String get onboardingTailscaleConnecting => 'Tailscale कनेक्ट हो रहा है';
 
   @override
   String get onboardingTailscaleConnectionFailed =>
-      'Tailscale connection failed';
+      'Tailscale कनेक्शन विफल रहा';
 
   @override
-  String get onboardingTailscaleUnsupported => 'Tailscale unsupported';
+  String get onboardingTailscaleUnsupported => 'Tailscale समर्थित नहीं है';
 
   @override
   String get onboardingTailscaleAuthAfterSave =>
-      'Tailscale will authenticate after saving';
+      'सहेजने के बाद Tailscale प्रमाणित होगा';
 
   @override
   String get onboardingTailscaleOpenLoginUrl =>
-      'Open the login URL to add this device to your tailnet. If the browser did not open, copy the URL below.';
+      'इस डिवाइस को अपने tailnet में जोड़ने के लिए लॉगिन URL खोलें। यदि ब्राउज़र नहीं खुला, तो नीचे दिए गए URL को कॉपी करें।';
 
   @override
   String onboardingTailscaleAuthAfterSaveTest(String appName) {
-    return 'After you save and test this server, $appName will open Tailscale login if this device is not authenticated yet.';
+    return 'इस सर्वर को सहेजने और परीक्षण करने के बाद, $appName Tailscale लॉगिन खोलेगा यदि यह डिवाइस अभी तक प्रमाणित नहीं है।';
   }
 
   @override
-  String get onboardingStarting => 'Starting';
+  String get onboardingStarting => 'शुरू हो रहा है';
 
   @override
-  String get onboardingStopping => 'Stopping';
+  String get onboardingStopping => 'रुक रहा है';
 
   @override
-  String get onboardingFailed => 'Failed';
+  String get onboardingFailed => 'विफल';
 
   @override
-  String get onboardingStopped => 'Stopped';
+  String get onboardingStopped => 'रुका हुआ';
 
   @override
   String get onboardingUsingDetectedCommand =>
-      'Using detected OpenCode command.';
+      'पता लगाए गए OpenCode कमांड का उपयोग कर रहा है।';
 
   @override
-  String get onboardingContinue => 'Continue';
+  String get onboardingContinue => 'जारी रखें';
 
   @override
-  String get onboardingDone => 'Done';
+  String get onboardingDone => 'हो गया';
 
   @override
-  String get onboardingYoureAllSet => 'You\'re all set!';
+  String get onboardingYoureAllSet => 'आप पूरी तरह तैयार हैं!';
 
   @override
-  String get onboardingServerUpdated => 'Server updated';
+  String get onboardingServerUpdated => 'सर्वर अपडेट किया गया';
 
   @override
   String get onboardingServerConnectedReady =>
-      'Your server is connected and ready to use.';
+      'आपका सर्वर कनेक्ट है और उपयोग के लिए तैयार है।';
 
   @override
   String get onboardingServerSettingsSaved =>
-      'Your server settings were saved and health checks were refreshed.';
+      'आपकी सर्वर सेटिंग्स सहेजी गईं और स्वास्थ्य जांच रिफ्रेश की गई।';
 
   @override
   String onboardingStartUsing(String appName) {
-    return 'Start using $appName';
+    return '$appName का उपयोग शुरू करें';
   }
 
   @override
   String get onboardingCouldNotVerify =>
-      'Could not verify the server connection.';
+      'सर्वर कनेक्शन को सत्यापित नहीं किया जा सका।';
 
   @override
   String get onboardingCloudflareAuthFailed =>
-      'Cloudflare Access authentication failed.';
+      'Cloudflare Access प्रमाणीकरण विफल रहा।';
 
   @override
   String get onboardingHealthCheckFailedMayBeStarting =>
-      'Server health check failed. It may still be starting up.';
+      'सर्वर स्वास्थ्य जांच विफल रही। यह अभी भी शुरू हो रहा हो सकता है।';
 
   @override
   String get onboardingConnectionUpdated =>
-      'Server connection updated successfully.';
+      'सर्वर कनेक्शन सफलतापूर्वक अपडेट किया गया।';
 
   @override
   String get onboardingAddedButHealthCheckFailed =>
-      'Server added but health check failed. It may still be starting up.';
+      'सर्वर जोड़ा गया लेकिन स्वास्थ्य जांच विफल रही। यह अभी भी शुरू हो रहा हो सकता है।';
 
   @override
   String get onboardingConnectionSaved =>
-      'Server connection saved successfully.';
+      'सर्वर कनेक्शन सफलतापूर्वक सहेजा गया।';
 
   @override
-  String get onboardingAvailable => 'available';
+  String get onboardingAvailable => 'उपलब्ध';
 
   @override
-  String get onboardingNotAvailable => 'not available';
+  String get onboardingNotAvailable => 'उपलब्ध नहीं';
 
   @override
-  String get onboardingReachable => 'reachable';
+  String get onboardingReachable => 'पहुंच योग्य';
 
   @override
-  String get onboardingUnreachable => 'unreachable';
+  String get onboardingUnreachable => 'पहुंच से बाहर';
 
   @override
-  String get onboardingWritable => 'writable';
+  String get onboardingWritable => 'लिखने योग्य';
 
   @override
-  String get onboardingNotWritable => 'not writable';
+  String get onboardingNotWritable => 'लिखने योग्य नहीं';
 
   @override
   String toolPresentationRunningTool(String toolName) {
-    return 'Running $toolName';
+    return '$toolName चल रहा है';
   }
 
   @override
-  String get toolPresentationTool => 'Tool';
+  String get toolPresentationTool => 'उपकरण';
 
   @override
-  String get shortcutGroupSession => 'Session';
+  String get shortcutGroupSession => 'सत्र';
 
   @override
-  String get shortcutGroupGeneral => 'General';
+  String get shortcutGroupGeneral => 'सामान्य';
 
   @override
-  String get shortcutGroupPrompt => 'Prompt';
+  String get shortcutGroupPrompt => 'प्रॉम्प्ट';
 
   @override
-  String get shortcutGroupNavigation => 'Navigation';
+  String get shortcutGroupNavigation => 'नेविगेशन';
 
   @override
-  String get shortcutGroupModelAndAgent => 'Model and agent';
+  String get shortcutGroupModelAndAgent => 'मॉडल और एजेंट';
 
   @override
-  String get shortcutGroupApplication => 'Application';
+  String get shortcutGroupApplication => 'एप्लिकेशन';
 
   @override
-  String get shortcutNewConversation => 'New conversation';
+  String get shortcutNewConversation => 'नई बातचीत';
 
   @override
-  String get shortcutNewConversationDesc => 'Create a new chat session';
+  String get shortcutNewConversationDesc => 'एक नया चैट सत्र बनाएं';
 
   @override
-  String get shortcutRefreshData => 'Refresh data';
+  String get shortcutRefreshData => 'डेटा रिफ्रेश करें';
 
   @override
-  String get shortcutRefreshDataDesc => 'Refresh current chat data';
+  String get shortcutRefreshDataDesc => 'वर्तमान चैट डेटा रिफ्रेश करें';
 
   @override
-  String get shortcutFocusInput => 'Focus input';
+  String get shortcutFocusInput => 'इनपुट पर ध्यान केंद्रित करें';
 
   @override
-  String get shortcutFocusInputDesc => 'Move focus to the prompt input';
+  String get shortcutFocusInputDesc => 'ध्यान टेक्स्ट इनपुट पर ले जाएं';
 
   @override
-  String get shortcutToggleVoiceInput => 'Toggle voice input';
+  String get shortcutToggleVoiceInput => 'आवाज इनपुट टॉगल करें';
 
   @override
   String get shortcutToggleVoiceInputDesc =>
-      'Start or stop speech-to-text in the composer';
+      'संपादक में आवाज श्रुतलेख शुरू या बंद करें';
 
   @override
-  String get shortcutQuickOpenFiles => 'Quick open files';
+  String get shortcutQuickOpenFiles => 'फाइलें जल्दी खोलें';
 
   @override
-  String get shortcutQuickOpenFilesDesc => 'Open file quick search';
+  String get shortcutQuickOpenFilesDesc => 'फाइल त्वरित खोज खोलें';
 
   @override
-  String get shortcutOpenSettings => 'Open settings';
+  String get shortcutOpenSettings => 'सेटिंग्स खोलें';
 
   @override
-  String get shortcutOpenSettingsDesc => 'Open settings page';
+  String get shortcutOpenSettingsDesc => 'सेटिंग्स पेज खोलें';
 
   @override
-  String get shortcutNextRecentModel => 'Next recent model';
+  String get shortcutNextRecentModel => 'अगला हालिया मॉडल';
 
   @override
   String get shortcutNextRecentModelDesc =>
-      'Cycle through recently used models';
+      'हाल ही में उपयोग किए गए मॉडल के बीच चक्र करें';
 
   @override
-  String get shortcutNextVariant => 'Next variant';
+  String get shortcutNextVariant => 'अगला संस्करण';
 
   @override
   String get shortcutNextVariantDesc =>
-      'Cycle through available model variants';
+      'उपलब्ध मॉडल संस्करणों के बीच चक्र करें';
 
   @override
-  String get shortcutFocusCloseDrawer => 'Focus/close drawer';
+  String get shortcutFocusCloseDrawer => 'दराज पर ध्यान केंद्रित करें/बंद करें';
 
   @override
   String get shortcutFocusCloseDrawerDesc =>
-      'Focus composer by default, or close drawer when open';
+      'डिफ़ॉल्ट रूप से इनपुट पर ध्यान केंद्रित करें, या खुला होने पर दराज बंद करें';
 
   @override
-  String get shortcutNextAgent => 'Next agent';
+  String get shortcutNextAgent => 'अगला एजेंट';
 
   @override
-  String get shortcutNextAgentDesc => 'Cycle to next available agent';
+  String get shortcutNextAgentDesc => 'अगले उपलब्ध एजेंट पर जाएं';
 
   @override
-  String get shortcutPreviousAgent => 'Previous agent';
+  String get shortcutPreviousAgent => 'पिछला एजेंट';
 
   @override
-  String get shortcutPreviousAgentDesc => 'Cycle to previous available agent';
+  String get shortcutPreviousAgentDesc => 'पिछले उपलब्ध एजेंट पर जाएं';
 
   @override
-  String get shortcutCloseApp => 'Close application';
+  String get shortcutCloseApp => 'एप्लिकेशन बंद करें';
 
   @override
-  String get shortcutCloseAppDesc => 'Close app using platform close behavior';
+  String get shortcutCloseAppDesc =>
+      'प्लेटफ़ॉर्म बंद करने के व्यवहार का उपयोग करके ऐप बंद करें';
 
   @override
-  String get shortcutQuitApp => 'Quit application';
+  String get shortcutQuitApp => 'एप्लिकेशन से बाहर निकलें';
 
   @override
-  String get shortcutQuitAppDesc => 'Force-exit the app';
+  String get shortcutQuitAppDesc => 'ऐप को जबरन बंद करें';
 
   @override
-  String get shortcutStopResponse => 'Stop active response';
+  String get shortcutStopResponse => 'प्रतिक्रिया रोकें';
 
   @override
   String get shortcutStopResponseDesc =>
-      'Stop active response (while responding)';
+      'सक्रिय प्रतिक्रिया रोकें (प्रतिक्रिया देते समय)';
 
   @override
-  String get errorConnectionFailed => 'Connection failed';
+  String get errorConnectionFailed => 'कनेक्शन विफल रहा';
 
   @override
   String get errorConnectionFailedDesc =>
-      'Unable to reach the server. Check connection and server status.';
+      'सर्वर तक पहुँचने में असमर्थ। कनेक्शन और सर्वर स्थिति की जाँच करें।';
 
   @override
-  String get errorQuotaExceeded => 'Quota exceeded';
+  String get errorQuotaExceeded => 'कोटा समाप्त हो गया';
 
   @override
   String get errorQuotaExceededDesc =>
-      'Quota exceeded. Check your provider plan or billing.';
+      'कोटा समाप्त हो गया। अपने प्रदाता प्लान या बिलिंग की जाँच करें।';
 
   @override
-  String get errorRateLimitExceeded => 'Rate limit exceeded';
+  String get errorRateLimitExceeded => 'दर सीमा समाप्त हो गई';
 
   @override
   String get errorRateLimitExceededDesc =>
-      'Rate limit exceeded. Wait a moment and try again.';
+      'दर सीमा समाप्त हो गई। एक क्षण प्रतीक्षा करें और पुनः प्रयास करें।';
 
   @override
-  String get errorAuthRequired => 'Authentication required';
+  String get errorAuthRequired => 'प्रमाणीकरण आवश्यक है';
 
   @override
   String get errorAuthRequiredDesc =>
-      'Authentication failed. Reconnect the provider and try again.';
+      'प्रमाणीकरण विफल रहा। प्रदाता को फिर से कनेक्ट करें और पुनः प्रयास करें।';
 
   @override
-  String get errorServiceUnavailable => 'Service unavailable';
+  String get errorServiceUnavailable => 'सेवा अनुपलब्ध है';
 
   @override
   String get errorServiceUnavailableDesc =>
-      'Service temporarily unavailable. The server may be starting up — please try again shortly.';
+      'सेवा अस्थायी रूप से अनुपलब्ध है। सर्वर शुरू हो रहा हो सकता है — कृपया थोड़ी देर में पुनः प्रयास करें।';
 
   @override
-  String get errorProviderUnavailable => 'Provider unavailable';
+  String get errorProviderUnavailable => 'प्रदाता अनुपलब्ध है';
 
   @override
   String get errorProviderUnavailableDesc =>
-      'Provider temporarily unavailable. Try again shortly.';
+      'प्रदाता अस्थायी रूप से अनुपलब्ध है। थोड़ी देर में पुनः प्रयास करें।';
 
   @override
-  String get errorServerError => 'Server error';
+  String get errorServerError => 'सर्वर त्रुटि';
 
   @override
-  String get errorServerErrorDesc => 'Server error. Please try again.';
+  String get errorServerErrorDesc => 'सर्वर त्रुटि। कृपया पुनः प्रयास करें।';
 
   @override
   String get attachmentNotAvailableOnPlatform =>
-      'Attachment actions are not available on this platform.';
+      'इस प्लेटफॉर्म पर अनुलग्नक क्रियाएं उपलब्ध नहीं हैं।';
 
   @override
-  String get attachmentUnableToOpenLink =>
-      'Unable to open the attachment link.';
+  String get attachmentUnableToOpenLink => 'अनुलग्नक लिंक खोलने में असमर्थ।';
 
   @override
   String get attachmentNoValidLocation =>
-      'Attachment does not provide a valid location.';
+      'अनुलग्नक एक मान्य स्थान प्रदान नहीं करता है।';
 
   @override
-  String get attachmentDownloadStarted => 'Attachment download started.';
+  String get attachmentDownloadStarted => 'अनुलग्नक डाउनलोड शुरू हुआ।';
 
   @override
-  String get attachmentCouldNotDownload =>
-      'Attachment could not be downloaded.';
+  String get attachmentCouldNotDownload => 'अनुलग्नक डाउनलोड नहीं किया जा सका।';
 
   @override
   String get attachmentCouldNotDecode =>
-      'Attachment data could not be decoded.';
+      'अनुलग्नक डेटा को डिकोड नहीं किया जा सका।';
 
   @override
-  String get attachmentPayloadEmpty => 'Attachment payload is empty.';
+  String get attachmentPayloadEmpty => 'अनुलग्नक पेलोड खाली है।';
 
   @override
   String attachmentSavedAndOpened(String path) {
-    return 'Attachment saved to $path and opened.';
+    return 'अनुलग्नक $path में सहेजा गया और खोला गया।';
   }
 
   @override
   String attachmentSavedTo(String path) {
-    return 'Attachment saved to $path.';
+    return 'अनुलग्नक $path में सहेजा गया।';
   }
 
   @override
   String get attachmentCouldNotSave =>
-      'Attachment could not be saved on this device.';
+      'इस डिवाइस पर अनुलग्नक सहेजा नहीं जा सका।';
 
   @override
-  String get attachmentSaveCanceled => 'Save canceled.';
+  String get attachmentSaveCanceled => 'सहेजना रद्द कर दिया गया।';
 
   @override
   String attachmentSavedPath(String path) {
-    return 'Attachment saved to $path.';
+    return 'अनुलग्नक $path में सहेजा गया।';
   }
 
   @override
-  String get attachmentPathEmpty => 'Attachment path is empty.';
+  String get attachmentPathEmpty => 'अनुलग्नक पथ खाली है।';
 
   @override
   String get attachmentLocalNotFound =>
-      'Local attachment was not found on this device.';
+      'इस डिवाइस पर स्थानीय अनुलग्नक नहीं मिला।';
 
   @override
   String get attachmentUnableToOpenLocal =>
-      'Unable to open the local attachment.';
+      'स्थानीय अनुलग्नक खोलने में असमर्थ।';
 
   @override
   String speechDesktopOnly(String service) {
-    return '$service is available on desktop only.';
+    return '$service केवल डेस्कटॉप पर उपलब्ध है।';
   }
 
   @override
   String speechRuntimeFailed(String service) {
-    return '$service runtime failed to initialize.';
+    return '$service रनटाइम शुरू होने में विफल रहा।';
   }
 
   @override
   String speechModelFilesIncomplete(String service) {
-    return '$service model files are incomplete.';
+    return '$service मॉडल फ़ाइलें अपूर्ण हैं।';
   }
 
   @override
-  String get speechMicPermissionDisabled =>
-      'Microphone permission is disabled.';
+  String get speechMicPermissionDisabled => 'माइक्रोफ़ोन अनुमति अक्षम है।';
 
   @override
   String speechUnavailableOnPlatform(String service) {
-    return '$service speech is unavailable on this platform.';
+    return 'इस प्लेटफॉर्म पर $service स्पीच उपलब्ध नहीं है।';
   }
 
   @override
   String get terminalOpenToConnect =>
-      'Open Terminal to connect to the server project terminal.';
+      'सर्वर प्रोजेक्ट टर्मिनल से जुड़ने के लिए टर्मिनल खोलें।';
 
   @override
   String get terminalNotAvailableYet =>
-      'Embedded terminal is not available on this runtime yet.';
+      'इस रनटाइम पर एम्बेडेड टर्मिनल अभी उपलब्ध नहीं है।';
 
   @override
   String get terminalSelectServer =>
-      'Select an active server before opening Terminal.';
+      'टर्मिनल खोलने से पहले एक सक्रिय सर्वर चुनें।';
 
   @override
   String get terminalOpenProjectFirst =>
-      'Open a project folder before starting the server terminal.';
+      'सर्वर टर्मिनल शुरू करने से पहले एक प्रोजेक्ट फ़ोल्डर खोलें।';
 
   @override
   String terminalConnectingTo(String serverName) {
-    return 'Connecting to $serverName terminal...';
+    return '$serverName टर्मिनल से जुड़ रहा है...';
   }
 
   @override
   String terminalConnectionFailed(String error) {
-    return 'Terminal connection failed: $error';
+    return 'टर्मिनल कनेक्शन विफल रहा: $error';
   }
 
   @override
-  String get terminalDisconnected => 'Terminal disconnected.';
+  String get terminalDisconnected => 'टर्मिनल डिस्कनेक्ट हो गया।';
 
   @override
-  String get terminalSessionClosed => 'Terminal session closed.';
+  String get terminalSessionClosed => 'टर्मिनल सत्र बंद हो गया।';
 
   @override
-  String get notificationConversationUpdates => 'Conversation updates';
+  String get notificationConversationUpdates => 'बातचीत अपडेट';
 
   @override
   String get notificationOpenToClear =>
-      'Open this conversation to clear related notifications.';
+      'संबंधित सूचनाओं को हटाने के लिए इस बातचीत को खोलें।';
 
   @override
   String get notificationAgentFinished =>
-      'Agent finished the current response.';
+      'एजेंट ने वर्तमान प्रतिक्रिया समाप्त कर दी है।';
 
   @override
-  String get notificationSession => 'Session';
+  String get notificationSession => 'सत्र';
 
   @override
   String get chatBadgeServerNeedsAttention =>
-      'Server connection needs attention.';
+      'सर्वर कनेक्शन पर ध्यान देने की आवश्यकता है।';
 
   @override
   String chatBadgeConversationError(String title) {
-    return '\"$title\" has an error.';
+    return '\"$title\" में एक त्रुटि है।';
   }
 
   @override
   String chatBadgeConversationNeedsInput(String title) {
-    return '\"$title\" needs your input.';
+    return '\"$title\" को आपके इनपुट की आवश्यकता है।';
   }
 
   @override
   String chatBadgeConversationNewReply(String title) {
-    return '\"$title\" has a new reply.';
+    return '\"$title\" में एक नई प्रतिक्रिया है।';
   }
 
   @override
-  String get chatBadgeSyncing => 'Syncing conversations...';
+  String get chatBadgeSyncing => 'बातचीत सिंक हो रही है...';
 
   @override
-  String get chatBadgeDataSaverActive => 'Cellular data saver is active.';
+  String get chatBadgeDataSaverActive => 'सेलुलर डेटा सेवर सक्रिय है।';
 
   @override
-  String get chatCollapseGroup => 'Collapse group';
+  String get chatCollapseGroup => 'समूह छोटा करें';
 
   @override
-  String get chatExpandGroup => 'Expand group';
+  String get chatExpandGroup => 'समूह विस्तार करें';
 
   @override
-  String get chatForkFailed => 'Failed to fork conversation';
+  String get chatForkFailed => 'बातचीत को फोर्क करने में विफल';
 
   @override
-  String get chatForked => 'Conversation forked';
+  String get chatForked => 'बातचीत फोर्क की गई';
 
   @override
   String get chatNoConversationsInProject =>
-      'No conversations in this project.';
+      'इस प्रोजेक्ट में कोई बातचीत नहीं है।';
 
   @override
-  String get chatOpenProjectToLoad => 'Open project to load conversations.';
+  String get chatOpenProjectToLoad => 'बातचीत लोड करने के लिए प्रोजेक्ट खोलें।';
 
   @override
-  String get chatExportCanceled => 'Session export canceled';
+  String get chatExportCanceled => 'सत्र निर्यात रद्द कर दिया गया';
 
   @override
   String get chatLargeContentSkipped =>
-      'Large or malformed content was skipped for stability.';
+      'स्थिरता के लिए बड़ी या खराब सामग्री को छोड़ दिया गया।';
 
   @override
   String chatTokensLabel(int total) {
-    return 'Tokens: $total';
+    return 'टोकन: $total';
   }
 
   @override
   String chatCostLabel(String cost) {
-    return 'Cost: \$$cost';
+    return 'लागत: \$$cost';
   }
 
   @override
-  String get chatFileExplorerNames => 'Names';
+  String get chatFileExplorerNames => 'नाम';
 
   @override
-  String get chatFileExplorerContents => 'Contents';
+  String get chatFileExplorerContents => 'सामग्री';
 
   @override
   String chatCloseProject(String project) {
-    return 'Close $project';
+    return '$project बंद करें';
   }
 
   @override
-  String get sessionExportUser => 'User';
+  String get sessionExportUser => 'उपयोगकर्ता';
 
   @override
-  String get sessionExportAssistant => 'Assistant';
+  String get sessionExportAssistant => 'सहायक';
 
   @override
-  String get sessionExportInput => 'Input:';
+  String get sessionExportInput => 'इनपुट:';
 
   @override
-  String get sessionExportOutput => 'Output:';
+  String get sessionExportOutput => 'आउटपुट:';
 
   @override
-  String get sessionExportError => 'Error:';
+  String get sessionExportError => 'त्रुटि:';
 
   @override
-  String get sessionExportUntitled => 'Untitled session';
+  String get sessionExportUntitled => 'बिना शीर्षक वाला सत्र';
 
   @override
-  String get modelLabelTinyEnglish => 'Tiny (English)';
+  String get modelLabelTinyEnglish => 'Tiny (अंग्रेजी)';
 
   @override
-  String get modelLabelBaseEnglish => 'Base (English)';
+  String get modelLabelBaseEnglish => 'बेस (अंग्रेजी)';
 
   @override
   String get modelLabelSenseVoice => 'SenseVoice (zh/en/ja/ko/yue)';
 
   @override
-  String get modelLabelParakeet => 'Parakeet V3 (25 European languages)';
+  String get modelLabelParakeet => 'Parakeet V3 (25 यूरोपीय भाषाएं)';
 
   @override
-  String get cannedNewQuickReply => 'New quick reply';
+  String get cannedNewQuickReply => 'नई त्वरित प्रतिक्रिया';
 
   @override
   String get settingsSoundPickerNotAvailable =>
-      'System sound picker is not available on this platform.';
+      'सिस्टम ध्वनि चयनकर्ता इस प्लेटफॉर्म पर उपलब्ध नहीं है।';
 
   @override
-  String get appProviderPrimaryServer => 'Primary server';
+  String get appProviderPrimaryServer => 'प्राथमिक सर्वर';
 
   @override
-  String get appProviderLocalManaged => 'Local OpenCode (Managed)';
+  String get appProviderLocalManaged => 'स्थानीय OpenCode (प्रबंधित)';
 
   @override
-  String get appProviderLocalServerStopped => 'Local server is stopped.';
+  String get appProviderLocalServerStopped => 'स्थानीय सर्वर रुका हुआ है।';
 
   @override
   String get appProviderRunDiagnostics =>
-      'Run diagnostics to verify local OpenCode requirements.';
+      'स्थानीय OpenCode आवश्यकताओं को सत्यापित करने के लिए निदान चलाएँ।';
 
   @override
-  String get appProviderInvalidServerUrl => 'Invalid server URL';
+  String get appProviderInvalidServerUrl => 'अमान्य सर्वर URL';
 
   @override
   String get appProviderOAuthNotSupported =>
-      'Cloudflare Access OAuth is not supported on this platform';
+      'Cloudflare Access OAuth इस प्लेटफॉर्म पर समर्थित नहीं है';
 
   @override
   String get appProviderTailscaleNotSupported =>
-      'Tailscale is not supported on this platform';
+      'Tailscale इस प्लेटफॉर्म पर समर्थित नहीं है';
 
   @override
-  String get appProviderProfileNotFound => 'Server profile not found';
+  String get appProviderProfileNotFound => 'सर्वर प्रोफाइल नहीं मिला';
 
   @override
   String get appProviderCannotActivateUnhealthy =>
-      'Cannot activate an unhealthy server';
+      'एक अस्वस्थ सर्वर को सक्रिय नहीं किया जा सकता';
 
   @override
-  String get appProviderOpenCodeDetected => 'OpenCode detected';
+  String get appProviderOpenCodeDetected => 'OpenCode का पता चला';
 
   @override
-  String get appProviderOpenCodeNotDetected => 'OpenCode not detected';
+  String get appProviderOpenCodeNotDetected => 'OpenCode का पता नहीं चला';
 
   @override
-  String get appProviderDetectingCommand => 'Detecting OpenCode command...';
+  String get appProviderDetectingCommand =>
+      'OpenCode कमांड का पता लगाया जा रहा है...';
 
   @override
   String appProviderNotDetectedRefresh(String appName) {
-    return 'OpenCode command was not detected. If you installed it moments ago, refresh checks or reopen $appName to reload PATH.';
+    return 'OpenCode कमांड का पता नहीं चला। यदि आपने इसे अभी स्थापित किया है, तो जांच रिफ्रेश करें या PATH को फिर से लोड करने के लिए $appName को फिर से खोलें।';
   }
 
   @override
   String get appProviderNotDetectedInstall =>
-      'OpenCode command was not detected. Run installation from the wizard.';
+      'OpenCode कमांड का पता नहीं चला। विज़ार्ड से स्थापना चलाएँ।';
 
   @override
   String appProviderUsingCommandAt(String path) {
-    return 'Using OpenCode command at $path';
+    return '$path पर OpenCode कमांड का उपयोग करना';
   }
 
   @override
   String get appProviderDesktopOnly =>
-      'Managed local server is available only on desktop.';
+      'प्रबंधित स्थानीय सर्वर केवल डेस्कटॉप पर उपलब्ध है।';
 
   @override
   String get appProviderInstallingRequirements =>
-      'Installing OpenCode requirements...';
+      'OpenCode आवश्यकताएँ स्थापित की जा रही हैं...';
 
   @override
-  String get appProviderInstallationFailed => 'OpenCode installation failed.';
+  String get appProviderInstallationFailed => 'OpenCode स्थापना विफल रही।';
 
   @override
   String get appProviderInstalledSuccessfully =>
-      'OpenCode requirements installed successfully.';
+      'OpenCode आवश्यकताएँ सफलतापूर्वक स्थापित की गईं।';
 
   @override
   String appProviderInstallSucceededWithPath(String path) {
-    return 'Installation succeeded. OpenCode command available at $path.';
+    return 'स्थापना सफल रही। OpenCode कमांड $path पर उपलब्ध है।';
   }
 
   @override
-  String get appProviderInstallSucceeded => 'Installation succeeded.';
+  String get appProviderInstallSucceeded => 'स्थापना सफल रही।';
 
   @override
-  String get appProviderStartingLocalServer => 'Starting local server...';
+  String get appProviderStartingLocalServer =>
+      'स्थानीय सर्वर शुरू हो रहा है...';
 
   @override
   String get appProviderFailedToStart =>
-      'Failed to start local OpenCode server.';
+      'स्थानीय OpenCode सर्वर शुरू करने में विफल।';
 
   @override
   String appProviderRunningAt(String url) {
-    return 'Running at $url';
+    return '$url पर चल रहा है';
   }
 
   @override
-  String get appProviderStoppingLocalServer => 'Stopping local server...';
+  String get appProviderStoppingLocalServer => 'स्थानीय सर्वर रुक रहा है...';
 
   @override
   String appProviderExitedWithCode(int code) {
-    return 'Local server exited with code $code.';
+    return 'स्थानीय सर्वर कोड $code के साथ बाहर निकल गया।';
   }
 
   @override
-  String get appProviderInstallBinary => 'Install Binary';
+  String get appProviderInstallBinary => 'बाइनरी स्थापित करें';
 
   @override
-  String get appProviderInstallViaNpm => 'Install via npm';
+  String get appProviderInstallViaNpm => 'npm के माध्यम से स्थापित करें';
 
   @override
-  String get appProviderInstallViaBun => 'Install via Bun';
+  String get appProviderInstallViaBun => 'Bun के माध्यम से स्थापित करें';
 
   @override
-  String get appProviderInstallBunOpenCode => 'Install Bun + OpenCode';
+  String get appProviderInstallBunOpenCode => 'Bun + OpenCode स्थापित करें';
 
   @override
   String get tailscaleNotSupportedOnPlatform =>
-      'Tailscale is not supported on this platform.';
+      'इस प्लेटफॉर्म पर Tailscale समर्थित नहीं है।';
 
   @override
   String get tailscaleNotSupportedOnWindows =>
-      'Tailscale is not supported on Windows.';
+      'Windows पर Tailscale समर्थित नहीं है।';
 
   @override
   String get tailscaleWaitingAdminApproval =>
-      'This Tailscale node is waiting for admin approval.';
+      'यह Tailscale नोड एडमिन की मंजूरी का इंतज़ार कर रहा है।';
 
   @override
   String get notificationSoundLoadFailed =>
-      'Failed to load Android system sounds';
+      'Android सिस्टम ध्वनियाँ लोड करने में विफल';
 
   @override
-  String get chatDescriptionNewConversation => 'New conversation';
+  String get chatDescriptionNewConversation => 'नई बातचीत';
 
   @override
-  String get chatDescriptionRefreshData => 'Refresh chat data';
+  String get chatDescriptionRefreshData => 'चैट डेटा रिफ्रेश करें';
 
   @override
-  String get chatDescriptionFocusInput => 'Focus message input';
+  String get chatDescriptionFocusInput => 'संदेश इनपुट पर ध्यान केंद्रित करें';
 
   @override
-  String get chatDescriptionVoiceInput => 'Start or stop voice input';
+  String get chatDescriptionVoiceInput => 'आवाज इनपुट शुरू या बंद करें';
 
   @override
-  String get chatDescriptionQuickOpen => 'Quick open files';
+  String get chatDescriptionQuickOpen => 'फाइलें जल्दी खोलें';
 
   @override
-  String get chatDescriptionOpenSettings => 'Open settings';
+  String get chatDescriptionOpenSettings => 'सेटिंग्स खोलें';
 
   @override
-  String get chatDescriptionCycleModels => 'Cycle recent models';
+  String get chatDescriptionCycleModels => 'हाल के मॉडल बदलें';
 
   @override
-  String get chatDescriptionCycleVariant => 'Cycle model variant';
+  String get chatDescriptionCycleVariant => 'मॉडल संस्करण बदलें';
 
   @override
   String get chatDescriptionFocusOrCloseDrawer =>
-      'Focus input (or close drawer when open)';
+      'इनपुट पर ध्यान केंद्रित करें (या खुला होने पर दराज बंद करें)';
 
   @override
-  String get chatDescriptionNextAgent => 'Next agent';
+  String get chatDescriptionNextAgent => 'अगला एजेंट';
 
   @override
-  String get chatDescriptionPreviousAgent => 'Previous agent';
+  String get chatDescriptionPreviousAgent => 'पिछला एजेंट';
 
   @override
   String get chatDescriptionCloseApp =>
-      'Close app using platform close behavior';
+      'प्लेटफ़ॉर्म बंद करने के व्यवहार का उपयोग करके ऐप बंद करें';
 
   @override
-  String get chatDescriptionForceExit => 'Force-exit the app';
+  String get chatDescriptionForceExit => 'ऐप को जबरन बंद करें';
 
   @override
   String get chatDescriptionStopResponse =>
-      'Stop active response (while responding)';
+      'सक्रिय प्रतिक्रिया रोकें (प्रतिक्रिया देते समय)';
 
   @override
-  String get chatDescriptionProjectCommand => 'Project command';
+  String get chatDescriptionProjectCommand => 'प्रोजेक्ट कमांड';
 
   @override
   String get chatDescriptionOpenProjects =>
-      'Use this button to open your projects and conversations.';
+      'अपने प्रोजेक्ट और बातचीत खोलने के लिए इस बटन का उपयोग करें।';
 
   @override
   String get chatDescriptionSwitchProject =>
-      'Use this button to switch project folders and context.';
+      'प्रोजेक्ट फोल्डर और संदर्भ बदलने के लिए इस बटन का उपयोग करें।';
 
   @override
   String chatDescriptionChildren(int count) {
-    return 'Children: $count';
+    return 'बच्चे: $count';
   }
 
   @override
-  String get chatDescriptionDiffFilesZero => 'Diff files: 0';
+  String get chatDescriptionDiffFilesZero => 'डिफ फाइलें: 0';
 
   @override
-  String get appProviderErrorInvalidServerUrl => 'Invalid server URL';
+  String get appProviderErrorInvalidServerUrl => 'अमान्य सर्वर URL';
 
   @override
-  String get appProviderErrorServerUrlRequired => 'Server URL is required';
+  String get appProviderErrorServerUrlRequired => 'सर्वर URL आवश्यक है';
 
   @override
   String get appProviderErrorServerAlreadyExists =>
-      'A server with this URL already exists';
+      'इस URL वाला सर्वर पहले से मौजूद है';
 
   @override
   String get appProviderErrorCloudflareOAuthNotSupported =>
-      'Cloudflare Access OAuth is not supported on this platform';
+      'Cloudflare Access OAuth इस प्लेटफॉर्म पर समर्थित नहीं है';
 
   @override
   String get appProviderErrorTailscaleNotSupported =>
-      'Tailscale is not supported on this platform';
+      'Tailscale इस प्लेटफॉर्म पर समर्थित नहीं है';
 
   @override
   String get appProviderErrorServerProfileNotFound =>
-      'Server profile not found';
+      'सर्वर प्रोफाइल नहीं मिला';
 
   @override
   String get appProviderErrorCannotActivateUnhealthy =>
-      'Cannot activate an unhealthy server';
+      'एक अस्वस्थ सर्वर को सक्रिय नहीं किया जा सकता';
 
   @override
   String get appProviderErrorManagedDesktopOnly =>
-      'Managed local server is available only on desktop.';
+      'प्रबंधित स्थानीय सर्वर केवल डेस्कटॉप पर उपलब्ध है।';
 
   @override
   String get appProviderErrorLocalServerHealthCheckFailed =>
-      'Local server started but health check did not pass.';
+      'स्थानीय सर्वर शुरू हुआ लेकिन स्वास्थ्य जांच पास नहीं हुई।';
 
   @override
-  String get appProviderErrorInstallationFailed =>
-      'OpenCode installation failed.';
+  String get appProviderErrorInstallationFailed => 'OpenCode स्थापना विफल रही।';
 
   @override
-  String get appProviderStatusLocalServerStopped => 'Local server is stopped.';
+  String get appProviderStatusLocalServerStopped =>
+      'स्थानीय सर्वर रुका हुआ है।';
 
   @override
-  String get appProviderStatusStartingLocalServer => 'Starting local server...';
+  String get appProviderStatusStartingLocalServer =>
+      'स्थानीय सर्वर शुरू हो रहा है...';
 
   @override
   String appProviderStatusRunningAt(String url) {
-    return 'Running at $url';
+    return '$url पर चल रहा है';
   }
 
   @override
-  String get appProviderStatusStoppingLocalServer => 'Stopping local server...';
+  String get appProviderStatusStoppingLocalServer =>
+      'स्थानीय सर्वर रुक रहा है...';
 
   @override
   String appProviderStatusLocalServerExitedWithCode(int code) {
-    return 'Local server exited with code $code.';
+    return 'स्थानीय सर्वर कोड $code के साथ बाहर निकल गया।';
   }
 
   @override
   String get appProviderSetupDetectingOpenCode =>
-      'Detecting OpenCode command...';
+      'OpenCode कमांड का पता लगाया जा रहा है...';
 
   @override
-  String get appProviderSetupOpenCodeDetected => 'OpenCode detected';
+  String get appProviderSetupOpenCodeDetected => 'OpenCode का पता चला';
 
   @override
-  String get appProviderSetupOpenCodeNotDetected => 'OpenCode not detected';
+  String get appProviderSetupOpenCodeNotDetected => 'OpenCode का पता नहीं चला';
 
   @override
   String appProviderSetupUsingOpenCodeAt(String path) {
-    return 'Using OpenCode command at $path';
+    return '$path पर OpenCode कमांड का उपयोग करना';
   }
 
   @override
   String get appProviderSetupInstallingRequirements =>
-      'Installing OpenCode requirements...';
+      'OpenCode आवश्यकताएँ स्थापित की जा रही हैं...';
 
   @override
   String get appProviderSetupRequirementsInstalled =>
-      'OpenCode requirements installed successfully.';
+      'OpenCode आवश्यकताएँ सफलतापूर्वक स्थापित की गईं।';
 
   @override
   String appProviderSetupInstallationSucceededWithPath(String path) {
-    return 'Installation succeeded. OpenCode command available at $path.';
+    return 'स्थापना सफल रही। OpenCode कमांड $path पर उपलब्ध है।';
   }
 
   @override
-  String get appProviderSetupInstallationSucceeded => 'Installation succeeded.';
+  String get appProviderSetupInstallationSucceeded => 'स्थापना सफल रही।';
 
   @override
   String get appProviderSetupOpenCodeNotDetectedRefresh =>
-      'OpenCode command was not detected. If you installed it moments ago, refresh checks or reopen CodeWalk to reload PATH.';
+      'OpenCode कमांड का पता नहीं चला। यदि आपने इसे अभी स्थापित किया है, तो जांच रिफ्रेश करें या PATH को फिर से लोड करने के लिए CodeWalk को फिर से खोलें।';
 
   @override
   String get appProviderSetupOpenCodeNotDetectedInstall =>
-      'OpenCode command was not detected. Run installation from the wizard.';
+      'OpenCode कमांड का पता नहीं चला। विज़ार्ड से स्थापना चलाएँ।';
 
   @override
-  String get appProviderLabelPrimaryServer => 'Primary server';
+  String get appProviderLabelPrimaryServer => 'प्राथमिक सर्वर';
 
   @override
-  String get appProviderLabelLocalOpenCodeManaged => 'Local OpenCode (Managed)';
+  String get appProviderLabelLocalOpenCodeManaged =>
+      'स्थानीय OpenCode (प्रबंधित)';
 }

@@ -1069,7 +1069,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get onboardingRunDiagnosticsToVerify =>
-      'Run diagnostics to verify local OpenCode requirements.';
+      '로컬 OpenCode 요구 사항을 확인하려면 진단을 실행하십시오.';
 
   @override
   String get onboardingServerUrl => 'Server URL';
@@ -2543,888 +2543,841 @@ class AppLocalizationsKo extends AppLocalizations {
   String get workspaceSuggestions => 'Suggestions';
 
   @override
-  String get onboardingSetup => 'Setup';
+  String get onboardingSetup => '설정';
 
   @override
-  String get onboardingSetupWizard => 'Setup wizard';
+  String get onboardingSetupWizard => '설정 마법사';
 
   @override
-  String get onboardingServerSetup => 'Server setup';
+  String get onboardingServerSetup => '서버 설정';
 
   @override
-  String get onboardingEditServer => 'Edit server';
+  String get onboardingEditServer => '서버 편집';
 
   @override
-  String get onboardingLocalServerSetup => 'Local server setup';
+  String get onboardingLocalServerSetup => '로컬 서버 설정';
 
   @override
-  String get onboardingReady => 'Ready';
+  String get onboardingReady => '준비됨';
 
   @override
   String onboardingWelcomeTo(String appName) {
-    return 'Welcome to $appName';
+    return '$appName에 오신 것을 환영합니다';
   }
 
   @override
   String onboardingNeedsOpenCodeServer(String appName) {
-    return '$appName needs an OpenCode server before it can help with your code.';
+    return '$appName을(를) 사용하여 코드를 작성하려면 OpenCode 서버가 필요합니다.';
   }
 
   @override
-  String get onboardingChooseHowToSetup => 'Choose how to set up your server';
+  String get onboardingChooseHowToSetup => '서버 설정 방법 선택';
 
   @override
-  String get onboardingPickSetupPath =>
-      'Pick the setup path that matches your current OpenCode setup.';
+  String get onboardingPickSetupPath => '현재 OpenCode 설정과 일치하는 설정 경로를 선택하십시오.';
 
   @override
   String onboardingDesktopOnlyDiagnose(String appName) {
-    return 'Desktop only: $appName can diagnose, install, and run OpenCode for you.';
+    return '데스크톱 전용: $appName은(는) 사용자를 대신하여 OpenCode를 진단, 설치 및 실행할 수 있습니다.';
   }
 
   @override
   String get onboardingAvailableOnlyDesktop =>
-      'Available only on desktop (Linux/macOS/Windows).';
+      '데스크톱(Linux/macOS/Windows)에서만 사용할 수 있습니다.';
 
   @override
-  String get onboardingServerConnection => 'Server connection';
+  String get onboardingServerConnection => '서버 연결';
 
   @override
-  String get onboardingEditServerConnection => 'Edit server connection';
+  String get onboardingEditServerConnection => '서버 연결 편집';
 
   @override
   String onboardingSuggestedUrl(String url) {
-    return 'Suggested local OpenCode server URL: $url';
+    return '제안된 로컬 OpenCode 서버 URL: $url';
   }
 
   @override
   String get onboardingEmulatorRemap =>
-      'On Android emulator, localhost and 127.0.0.1 are remapped to 10.0.2.2 automatically.';
+      'Android 에뮬레이터에서 localhost 및 127.0.0.1은 자동으로 10.0.2.2로 리맵됩니다.';
 
   @override
   String get onboardingBasicAuthTip =>
-      'Enable Basic Auth only if your OpenCode server is password-protected.';
+      'OpenCode 서버가 비밀번호로 보호되는 경우에만 기본 인증을 활성화하십시오.';
 
   @override
-  String get onboardingEnterServerUrl => 'Enter a server URL';
+  String get onboardingEnterServerUrl => '서버 URL 입력';
 
   @override
-  String get onboardingInvalidUrl => 'Invalid URL';
+  String get onboardingInvalidUrl => '유효하지 않은 URL';
 
   @override
-  String get onboardingTesting => 'Testing...';
+  String get onboardingTesting => '테스트 중...';
 
   @override
-  String get onboardingSaveAndTest => 'Save and test';
+  String get onboardingSaveAndTest => '저장 및 테스트';
 
   @override
-  String get onboardingTestConnection => 'Test connection';
+  String get onboardingTestConnection => '연결 테스트';
 
   @override
-  String get onboardingTailscaleLoginRequired => 'Tailscale login required';
+  String get onboardingTailscaleLoginRequired => 'Tailscale 로그인 필요';
 
   @override
-  String get onboardingTailscaleAdminApproval =>
-      'Tailscale admin approval required';
+  String get onboardingTailscaleAdminApproval => 'Tailscale 관리자 승인 필요';
 
   @override
-  String get onboardingTailscaleConnected => 'Tailscale connected';
+  String get onboardingTailscaleConnected => 'Tailscale 연결됨';
 
   @override
-  String get onboardingTailscaleConnecting => 'Tailscale connecting';
+  String get onboardingTailscaleConnecting => 'Tailscale 연결 중';
 
   @override
-  String get onboardingTailscaleConnectionFailed =>
-      'Tailscale connection failed';
+  String get onboardingTailscaleConnectionFailed => 'Tailscale 연결 실패';
 
   @override
-  String get onboardingTailscaleUnsupported => 'Tailscale unsupported';
+  String get onboardingTailscaleUnsupported => 'Tailscale 지원되지 않음';
 
   @override
-  String get onboardingTailscaleAuthAfterSave =>
-      'Tailscale will authenticate after saving';
+  String get onboardingTailscaleAuthAfterSave => '저장 후 Tailscale 인증이 진행됩니다.';
 
   @override
   String get onboardingTailscaleOpenLoginUrl =>
-      'Open the login URL to add this device to your tailnet. If the browser did not open, copy the URL below.';
+      '로그인 URL을 열어 이 기기를 tailnet에 추가하십시오. 브라우저가 열리지 않으면 아래 URL을 복사하십시오.';
 
   @override
   String onboardingTailscaleAuthAfterSaveTest(String appName) {
-    return 'After you save and test this server, $appName will open Tailscale login if this device is not authenticated yet.';
+    return '이 서버를 저장하고 테스트한 후, 이 기기가 아직 인증되지 않은 경우 $appName에서 Tailscale 로그인 페이지를 엽니다.';
   }
 
   @override
-  String get onboardingStarting => 'Starting';
+  String get onboardingStarting => '시작 중';
 
   @override
-  String get onboardingStopping => 'Stopping';
+  String get onboardingStopping => '중지 중';
 
   @override
-  String get onboardingFailed => 'Failed';
+  String get onboardingFailed => '실패';
 
   @override
-  String get onboardingStopped => 'Stopped';
+  String get onboardingStopped => '중지됨';
 
   @override
-  String get onboardingUsingDetectedCommand =>
-      'Using detected OpenCode command.';
+  String get onboardingUsingDetectedCommand => '감지된 OpenCode 명령을 사용합니다.';
 
   @override
-  String get onboardingContinue => 'Continue';
+  String get onboardingContinue => '계속';
 
   @override
-  String get onboardingDone => 'Done';
+  String get onboardingDone => '완료';
 
   @override
-  String get onboardingYoureAllSet => 'You\'re all set!';
+  String get onboardingYoureAllSet => '모든 준비가 완료되었습니다!';
 
   @override
-  String get onboardingServerUpdated => 'Server updated';
+  String get onboardingServerUpdated => '서버가 업데이트되었습니다.';
 
   @override
-  String get onboardingServerConnectedReady =>
-      'Your server is connected and ready to use.';
+  String get onboardingServerConnectedReady => '서버가 연결되어 사용할 준비가 되었습니다.';
 
   @override
   String get onboardingServerSettingsSaved =>
-      'Your server settings were saved and health checks were refreshed.';
+      '서버 설정이 저장되었으며 상태 확인이 새로 고침되었습니다.';
 
   @override
   String onboardingStartUsing(String appName) {
-    return 'Start using $appName';
+    return '$appName 시작하기';
   }
 
   @override
-  String get onboardingCouldNotVerify =>
-      'Could not verify the server connection.';
+  String get onboardingCouldNotVerify => '서버 연결을 확인할 수 없습니다.';
 
   @override
-  String get onboardingCloudflareAuthFailed =>
-      'Cloudflare Access authentication failed.';
+  String get onboardingCloudflareAuthFailed => 'Cloudflare Access 인증에 실패했습니다.';
 
   @override
   String get onboardingHealthCheckFailedMayBeStarting =>
-      'Server health check failed. It may still be starting up.';
+      '서버 상태 확인에 실패했습니다. 아직 시작 중일 수 있습니다.';
 
   @override
-  String get onboardingConnectionUpdated =>
-      'Server connection updated successfully.';
+  String get onboardingConnectionUpdated => '서버 연결이 성공적으로 업데이트되었습니다.';
 
   @override
   String get onboardingAddedButHealthCheckFailed =>
-      'Server added but health check failed. It may still be starting up.';
+      '서버가 추가되었지만 상태 확인에 실패했습니다. 아직 시작 중일 수 있습니다.';
 
   @override
-  String get onboardingConnectionSaved =>
-      'Server connection saved successfully.';
+  String get onboardingConnectionSaved => '서버 연결이 성공적으로 저장되었습니다.';
 
   @override
-  String get onboardingAvailable => 'available';
+  String get onboardingAvailable => '사용 가능';
 
   @override
-  String get onboardingNotAvailable => 'not available';
+  String get onboardingNotAvailable => '사용 불가';
 
   @override
-  String get onboardingReachable => 'reachable';
+  String get onboardingReachable => '연결 가능';
 
   @override
-  String get onboardingUnreachable => 'unreachable';
+  String get onboardingUnreachable => '연결 불가능';
 
   @override
-  String get onboardingWritable => 'writable';
+  String get onboardingWritable => '쓰기 가능';
 
   @override
-  String get onboardingNotWritable => 'not writable';
+  String get onboardingNotWritable => '쓰기 불가';
 
   @override
   String toolPresentationRunningTool(String toolName) {
-    return 'Running $toolName';
+    return '$toolName 실행 중';
   }
 
   @override
-  String get toolPresentationTool => 'Tool';
+  String get toolPresentationTool => '도구';
 
   @override
-  String get shortcutGroupSession => 'Session';
+  String get shortcutGroupSession => '세션';
 
   @override
-  String get shortcutGroupGeneral => 'General';
+  String get shortcutGroupGeneral => '일반';
 
   @override
-  String get shortcutGroupPrompt => 'Prompt';
+  String get shortcutGroupPrompt => '프롬프트';
 
   @override
-  String get shortcutGroupNavigation => 'Navigation';
+  String get shortcutGroupNavigation => '내비게이션';
 
   @override
-  String get shortcutGroupModelAndAgent => 'Model and agent';
+  String get shortcutGroupModelAndAgent => '모델 및 에이전트';
 
   @override
-  String get shortcutGroupApplication => 'Application';
+  String get shortcutGroupApplication => '애플리케이션';
 
   @override
-  String get shortcutNewConversation => 'New conversation';
+  String get shortcutNewConversation => '새 대화';
 
   @override
-  String get shortcutNewConversationDesc => 'Create a new chat session';
+  String get shortcutNewConversationDesc => '새 채팅 세션 생성';
 
   @override
-  String get shortcutRefreshData => 'Refresh data';
+  String get shortcutRefreshData => '데이터 새로 고침';
 
   @override
-  String get shortcutRefreshDataDesc => 'Refresh current chat data';
+  String get shortcutRefreshDataDesc => '현재 채팅 데이터 새로 고침';
 
   @override
-  String get shortcutFocusInput => 'Focus input';
+  String get shortcutFocusInput => '입력 창 포커스';
 
   @override
-  String get shortcutFocusInputDesc => 'Move focus to the prompt input';
+  String get shortcutFocusInputDesc => '텍스트 입력 창으로 포커스 이동';
 
   @override
-  String get shortcutToggleVoiceInput => 'Toggle voice input';
+  String get shortcutToggleVoiceInput => '음성 입력 전환';
 
   @override
-  String get shortcutToggleVoiceInputDesc =>
-      'Start or stop speech-to-text in the composer';
+  String get shortcutToggleVoiceInputDesc => '에디터에서 음성 받아쓰기 시작 또는 중지';
 
   @override
-  String get shortcutQuickOpenFiles => 'Quick open files';
+  String get shortcutQuickOpenFiles => '파일 빠른 열기';
 
   @override
-  String get shortcutQuickOpenFilesDesc => 'Open file quick search';
+  String get shortcutQuickOpenFilesDesc => '파일 빠른 검색 열기';
 
   @override
-  String get shortcutOpenSettings => 'Open settings';
+  String get shortcutOpenSettings => '설정 열기';
 
   @override
-  String get shortcutOpenSettingsDesc => 'Open settings page';
+  String get shortcutOpenSettingsDesc => '설정 페이지 열기';
 
   @override
-  String get shortcutNextRecentModel => 'Next recent model';
+  String get shortcutNextRecentModel => '다음 최근 모델';
 
   @override
-  String get shortcutNextRecentModelDesc =>
-      'Cycle through recently used models';
+  String get shortcutNextRecentModelDesc => '최근에 사용한 모델 간 전환';
 
   @override
-  String get shortcutNextVariant => 'Next variant';
+  String get shortcutNextVariant => '다음 변형';
 
   @override
-  String get shortcutNextVariantDesc =>
-      'Cycle through available model variants';
+  String get shortcutNextVariantDesc => '사용 가능한 모델 변형 간 전환';
 
   @override
-  String get shortcutFocusCloseDrawer => 'Focus/close drawer';
+  String get shortcutFocusCloseDrawer => '포커스/드로어 닫기';
 
   @override
   String get shortcutFocusCloseDrawerDesc =>
-      'Focus composer by default, or close drawer when open';
+      '기본적으로 입력 창에 포커스, 또는 열려 있을 때 드로어 닫기';
 
   @override
-  String get shortcutNextAgent => 'Next agent';
+  String get shortcutNextAgent => '다음 에이전트';
 
   @override
-  String get shortcutNextAgentDesc => 'Cycle to next available agent';
+  String get shortcutNextAgentDesc => '다음 사용 가능한 에이전트로 전환';
 
   @override
-  String get shortcutPreviousAgent => 'Previous agent';
+  String get shortcutPreviousAgent => '이전 에이전트';
 
   @override
-  String get shortcutPreviousAgentDesc => 'Cycle to previous available agent';
+  String get shortcutPreviousAgentDesc => '이전 사용 가능한 에이전트로 전환';
 
   @override
-  String get shortcutCloseApp => 'Close application';
+  String get shortcutCloseApp => '애플리케이션 닫기';
 
   @override
-  String get shortcutCloseAppDesc => 'Close app using platform close behavior';
+  String get shortcutCloseAppDesc => '플랫폼 종료 동작을 사용하여 앱 닫기';
 
   @override
-  String get shortcutQuitApp => 'Quit application';
+  String get shortcutQuitApp => '애플리케이션 종료';
 
   @override
-  String get shortcutQuitAppDesc => 'Force-exit the app';
+  String get shortcutQuitAppDesc => '앱 강제 종료';
 
   @override
-  String get shortcutStopResponse => 'Stop active response';
+  String get shortcutStopResponse => '응답 중지';
 
   @override
-  String get shortcutStopResponseDesc =>
-      'Stop active response (while responding)';
+  String get shortcutStopResponseDesc => '활성 응답 중지 (응답 중)';
 
   @override
-  String get errorConnectionFailed => 'Connection failed';
+  String get errorConnectionFailed => '연결 실패';
 
   @override
-  String get errorConnectionFailedDesc =>
-      'Unable to reach the server. Check connection and server status.';
+  String get errorConnectionFailedDesc => '서버에 연결할 수 없습니다. 연결 및 서버 상태를 확인하십시오.';
 
   @override
-  String get errorQuotaExceeded => 'Quota exceeded';
+  String get errorQuotaExceeded => '할당량 초과';
 
   @override
   String get errorQuotaExceededDesc =>
-      'Quota exceeded. Check your provider plan or billing.';
+      '할당량이 초과되었습니다. 공급자 요금제 또는 결제 정보를 확인하십시오.';
 
   @override
-  String get errorRateLimitExceeded => 'Rate limit exceeded';
+  String get errorRateLimitExceeded => '요청 제한 초과';
 
   @override
   String get errorRateLimitExceededDesc =>
-      'Rate limit exceeded. Wait a moment and try again.';
+      '요청 제한이 초과되었습니다. 잠시 기다린 후 다시 시도하십시오.';
 
   @override
-  String get errorAuthRequired => 'Authentication required';
+  String get errorAuthRequired => '인증 필요';
 
   @override
-  String get errorAuthRequiredDesc =>
-      'Authentication failed. Reconnect the provider and try again.';
+  String get errorAuthRequiredDesc => '인증에 실패했습니다. 공급자를 다시 연결하고 다시 시도하십시오.';
 
   @override
-  String get errorServiceUnavailable => 'Service unavailable';
+  String get errorServiceUnavailable => '서비스 사용 불가';
 
   @override
   String get errorServiceUnavailableDesc =>
-      'Service temporarily unavailable. The server may be starting up — please try again shortly.';
+      '서비스를 일시적으로 사용할 수 없습니다. 서버가 시작 중일 수 있습니다. 잠시 후 다시 시도하십시오.';
 
   @override
-  String get errorProviderUnavailable => 'Provider unavailable';
+  String get errorProviderUnavailable => '공급자 사용 불가';
 
   @override
   String get errorProviderUnavailableDesc =>
-      'Provider temporarily unavailable. Try again shortly.';
+      '공급자를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도하십시오.';
 
   @override
-  String get errorServerError => 'Server error';
+  String get errorServerError => '서버 오류';
 
   @override
-  String get errorServerErrorDesc => 'Server error. Please try again.';
+  String get errorServerErrorDesc => '서버 오류가 발생했습니다. 다시 시도해 주세요.';
 
   @override
   String get attachmentNotAvailableOnPlatform =>
-      'Attachment actions are not available on this platform.';
+      '이 플랫폼에서는 첨부 파일 작업을 사용할 수 없습니다.';
 
   @override
-  String get attachmentUnableToOpenLink =>
-      'Unable to open the attachment link.';
+  String get attachmentUnableToOpenLink => '첨부 파일 링크를 열 수 없습니다.';
 
   @override
-  String get attachmentNoValidLocation =>
-      'Attachment does not provide a valid location.';
+  String get attachmentNoValidLocation => '첨부 파일에 유효한 위치가 제공되지 않았습니다.';
 
   @override
-  String get attachmentDownloadStarted => 'Attachment download started.';
+  String get attachmentDownloadStarted => '첨부 파일 다운로드가 시작되었습니다.';
 
   @override
-  String get attachmentCouldNotDownload =>
-      'Attachment could not be downloaded.';
+  String get attachmentCouldNotDownload => '첨부 파일을 다운로드할 수 없습니다.';
 
   @override
-  String get attachmentCouldNotDecode =>
-      'Attachment data could not be decoded.';
+  String get attachmentCouldNotDecode => '첨부 파일 데이터를 디코딩할 수 없습니다.';
 
   @override
-  String get attachmentPayloadEmpty => 'Attachment payload is empty.';
+  String get attachmentPayloadEmpty => '첨부 파일 페이로드가 비어 있습니다.';
 
   @override
   String attachmentSavedAndOpened(String path) {
-    return 'Attachment saved to $path and opened.';
+    return '첨부 파일을 $path에 저장하고 열었습니다.';
   }
 
   @override
   String attachmentSavedTo(String path) {
-    return 'Attachment saved to $path.';
+    return '첨부 파일을 $path에 저장했습니다.';
   }
 
   @override
-  String get attachmentCouldNotSave =>
-      'Attachment could not be saved on this device.';
+  String get attachmentCouldNotSave => '이 기기에 첨부 파일을 저장할 수 없습니다.';
 
   @override
-  String get attachmentSaveCanceled => 'Save canceled.';
+  String get attachmentSaveCanceled => '저장이 취소되었습니다.';
 
   @override
   String attachmentSavedPath(String path) {
-    return 'Attachment saved to $path.';
+    return '첨부 파일을 $path에 저장했습니다.';
   }
 
   @override
-  String get attachmentPathEmpty => 'Attachment path is empty.';
+  String get attachmentPathEmpty => '첨부 파일 경로가 비어 있습니다.';
 
   @override
-  String get attachmentLocalNotFound =>
-      'Local attachment was not found on this device.';
+  String get attachmentLocalNotFound => '이 기기에서 로컬 첨부 파일을 찾을 수 없습니다.';
 
   @override
-  String get attachmentUnableToOpenLocal =>
-      'Unable to open the local attachment.';
+  String get attachmentUnableToOpenLocal => '로컬 첨부 파일을 열 수 없습니다.';
 
   @override
   String speechDesktopOnly(String service) {
-    return '$service is available on desktop only.';
+    return '$service은(는) 데스크톱에서만 사용할 수 있습니다.';
   }
 
   @override
   String speechRuntimeFailed(String service) {
-    return '$service runtime failed to initialize.';
+    return '$service 런타임을 초기화하지 못했습니다.';
   }
 
   @override
   String speechModelFilesIncomplete(String service) {
-    return '$service model files are incomplete.';
+    return '$service 모델 파일이 불완전합니다.';
   }
 
   @override
-  String get speechMicPermissionDisabled =>
-      'Microphone permission is disabled.';
+  String get speechMicPermissionDisabled => '마이크 권한이 비활성화되어 있습니다.';
 
   @override
   String speechUnavailableOnPlatform(String service) {
-    return '$service speech is unavailable on this platform.';
+    return '$service 음성을 이 플랫폼에서 사용할 수 없습니다.';
   }
 
   @override
-  String get terminalOpenToConnect =>
-      'Open Terminal to connect to the server project terminal.';
+  String get terminalOpenToConnect => '터미널을 열어 서버 프로젝트 터미널에 연결하십시오.';
 
   @override
-  String get terminalNotAvailableYet =>
-      'Embedded terminal is not available on this runtime yet.';
+  String get terminalNotAvailableYet => '이 런타임에서는 임베디드 터미널을 아직 사용할 수 없습니다.';
 
   @override
-  String get terminalSelectServer =>
-      'Select an active server before opening Terminal.';
+  String get terminalSelectServer => '터미널을 열기 전에 활성 서버를 선택하십시오.';
 
   @override
-  String get terminalOpenProjectFirst =>
-      'Open a project folder before starting the server terminal.';
+  String get terminalOpenProjectFirst => '서버 터미널을 시작하기 전에 프로젝트 폴더를 여십시오.';
 
   @override
   String terminalConnectingTo(String serverName) {
-    return 'Connecting to $serverName terminal...';
+    return '$serverName 터미널에 연결 중...';
   }
 
   @override
   String terminalConnectionFailed(String error) {
-    return 'Terminal connection failed: $error';
+    return '터미널 연결 실패: $error';
   }
 
   @override
-  String get terminalDisconnected => 'Terminal disconnected.';
+  String get terminalDisconnected => '터미널 연결이 끊어졌습니다.';
 
   @override
-  String get terminalSessionClosed => 'Terminal session closed.';
+  String get terminalSessionClosed => '터미널 세션이 종료되었습니다.';
 
   @override
-  String get notificationConversationUpdates => 'Conversation updates';
+  String get notificationConversationUpdates => '대화 업데이트';
 
   @override
-  String get notificationOpenToClear =>
-      'Open this conversation to clear related notifications.';
+  String get notificationOpenToClear => '관련 알림을 지우려면 이 대화를 여십시오.';
 
   @override
-  String get notificationAgentFinished =>
-      'Agent finished the current response.';
+  String get notificationAgentFinished => '에이전트가 현재 응답을 마쳤습니다.';
 
   @override
-  String get notificationSession => 'Session';
+  String get notificationSession => '세션';
 
   @override
-  String get chatBadgeServerNeedsAttention =>
-      'Server connection needs attention.';
+  String get chatBadgeServerNeedsAttention => '서버 연결에 주의가 필요합니다.';
 
   @override
   String chatBadgeConversationError(String title) {
-    return '\"$title\" has an error.';
+    return '\"$title\"에 오류가 있습니다.';
   }
 
   @override
   String chatBadgeConversationNeedsInput(String title) {
-    return '\"$title\" needs your input.';
+    return '\"$title\"에 입력이 필요합니다.';
   }
 
   @override
   String chatBadgeConversationNewReply(String title) {
-    return '\"$title\" has a new reply.';
+    return '\"$title\"에 새 답장이 있습니다.';
   }
 
   @override
-  String get chatBadgeSyncing => 'Syncing conversations...';
+  String get chatBadgeSyncing => '대화 동기화 중...';
 
   @override
-  String get chatBadgeDataSaverActive => 'Cellular data saver is active.';
+  String get chatBadgeDataSaverActive => '데이터 절약 모드가 활성화되었습니다.';
 
   @override
-  String get chatCollapseGroup => 'Collapse group';
+  String get chatCollapseGroup => '그룹 접기';
 
   @override
-  String get chatExpandGroup => 'Expand group';
+  String get chatExpandGroup => '그룹 펼치기';
 
   @override
-  String get chatForkFailed => 'Failed to fork conversation';
+  String get chatForkFailed => '대화 포크 실패';
 
   @override
-  String get chatForked => 'Conversation forked';
+  String get chatForked => '대화 포크됨';
 
   @override
-  String get chatNoConversationsInProject =>
-      'No conversations in this project.';
+  String get chatNoConversationsInProject => '이 프로젝트에 대화가 없습니다.';
 
   @override
-  String get chatOpenProjectToLoad => 'Open project to load conversations.';
+  String get chatOpenProjectToLoad => '대화를 로드하려면 프로젝트를 여십시오.';
 
   @override
-  String get chatExportCanceled => 'Session export canceled';
+  String get chatExportCanceled => '세션 내보내기 취소됨';
 
   @override
-  String get chatLargeContentSkipped =>
-      'Large or malformed content was skipped for stability.';
+  String get chatLargeContentSkipped => '안정성을 위해 크거나 잘못된 형식의 콘텐츠를 건너뛰었습니다.';
 
   @override
   String chatTokensLabel(int total) {
-    return 'Tokens: $total';
+    return '토큰: $total';
   }
 
   @override
   String chatCostLabel(String cost) {
-    return 'Cost: \$$cost';
+    return '비용: \$$cost';
   }
 
   @override
-  String get chatFileExplorerNames => 'Names';
+  String get chatFileExplorerNames => '이름';
 
   @override
-  String get chatFileExplorerContents => 'Contents';
+  String get chatFileExplorerContents => '내용';
 
   @override
   String chatCloseProject(String project) {
-    return 'Close $project';
+    return '$project 닫기';
   }
 
   @override
-  String get sessionExportUser => 'User';
+  String get sessionExportUser => '사용자';
 
   @override
-  String get sessionExportAssistant => 'Assistant';
+  String get sessionExportAssistant => '어시스턴트';
 
   @override
-  String get sessionExportInput => 'Input:';
+  String get sessionExportInput => '입력:';
 
   @override
-  String get sessionExportOutput => 'Output:';
+  String get sessionExportOutput => '출력:';
 
   @override
-  String get sessionExportError => 'Error:';
+  String get sessionExportError => '오류:';
 
   @override
-  String get sessionExportUntitled => 'Untitled session';
+  String get sessionExportUntitled => '제목 없는 세션';
 
   @override
-  String get modelLabelTinyEnglish => 'Tiny (English)';
+  String get modelLabelTinyEnglish => 'Tiny (영어)';
 
   @override
-  String get modelLabelBaseEnglish => 'Base (English)';
+  String get modelLabelBaseEnglish => '기본 (영어)';
 
   @override
   String get modelLabelSenseVoice => 'SenseVoice (zh/en/ja/ko/yue)';
 
   @override
-  String get modelLabelParakeet => 'Parakeet V3 (25 European languages)';
+  String get modelLabelParakeet => 'Parakeet V3 (25개 유럽 언어)';
 
   @override
-  String get cannedNewQuickReply => 'New quick reply';
+  String get cannedNewQuickReply => '새 빠른 답장';
 
   @override
   String get settingsSoundPickerNotAvailable =>
-      'System sound picker is not available on this platform.';
+      '시스템 사운드 선택기는 이 플랫폼에서 사용할 수 없습니다.';
 
   @override
-  String get appProviderPrimaryServer => 'Primary server';
+  String get appProviderPrimaryServer => '기본 서버';
 
   @override
-  String get appProviderLocalManaged => 'Local OpenCode (Managed)';
+  String get appProviderLocalManaged => '로컬 OpenCode (관리형)';
 
   @override
-  String get appProviderLocalServerStopped => 'Local server is stopped.';
+  String get appProviderLocalServerStopped => '로컬 서버가 중지되었습니다.';
 
   @override
   String get appProviderRunDiagnostics =>
-      'Run diagnostics to verify local OpenCode requirements.';
+      '로컬 OpenCode 요구 사항을 확인하려면 진단을 실행하십시오.';
 
   @override
-  String get appProviderInvalidServerUrl => 'Invalid server URL';
+  String get appProviderInvalidServerUrl => '유효하지 않은 서버 URL';
 
   @override
   String get appProviderOAuthNotSupported =>
-      'Cloudflare Access OAuth is not supported on this platform';
+      '이 플랫폼에서는 Cloudflare Access OAuth를 지원하지 않습니다.';
 
   @override
   String get appProviderTailscaleNotSupported =>
-      'Tailscale is not supported on this platform';
+      '이 플랫폼에서는 Tailscale을 지원하지 않습니다.';
 
   @override
-  String get appProviderProfileNotFound => 'Server profile not found';
+  String get appProviderProfileNotFound => '서버 프로필을 찾을 수 없습니다.';
 
   @override
-  String get appProviderCannotActivateUnhealthy =>
-      'Cannot activate an unhealthy server';
+  String get appProviderCannotActivateUnhealthy => '상태가 좋지 않은 서버를 활성화할 수 없습니다.';
 
   @override
-  String get appProviderOpenCodeDetected => 'OpenCode detected';
+  String get appProviderOpenCodeDetected => 'OpenCode 감지됨';
 
   @override
-  String get appProviderOpenCodeNotDetected => 'OpenCode not detected';
+  String get appProviderOpenCodeNotDetected => 'OpenCode 감지되지 않음';
 
   @override
-  String get appProviderDetectingCommand => 'Detecting OpenCode command...';
+  String get appProviderDetectingCommand => 'OpenCode 명령 감지 중...';
 
   @override
   String appProviderNotDetectedRefresh(String appName) {
-    return 'OpenCode command was not detected. If you installed it moments ago, refresh checks or reopen $appName to reload PATH.';
+    return 'OpenCode 명령이 감지되지 않았습니다. 방금 설치한 경우 체크를 새로 고치거나 $appName을(를) 다시 열어 PATH를 다시 로드하십시오.';
   }
 
   @override
   String get appProviderNotDetectedInstall =>
-      'OpenCode command was not detected. Run installation from the wizard.';
+      'OpenCode 명령이 감지되지 않았습니다. 마법사에서 설치를 실행하십시오.';
 
   @override
   String appProviderUsingCommandAt(String path) {
-    return 'Using OpenCode command at $path';
+    return '$path에 있는 OpenCode 명령 사용 중';
   }
 
   @override
-  String get appProviderDesktopOnly =>
-      'Managed local server is available only on desktop.';
+  String get appProviderDesktopOnly => '관리형 로컬 서버는 데스크톱에서만 사용할 수 있습니다.';
 
   @override
-  String get appProviderInstallingRequirements =>
-      'Installing OpenCode requirements...';
+  String get appProviderInstallingRequirements => 'OpenCode 요구 사항 설치 중...';
 
   @override
-  String get appProviderInstallationFailed => 'OpenCode installation failed.';
+  String get appProviderInstallationFailed => 'OpenCode 설치에 실패했습니다.';
 
   @override
   String get appProviderInstalledSuccessfully =>
-      'OpenCode requirements installed successfully.';
+      'OpenCode 요구 사항이 성공적으로 설치되었습니다.';
 
   @override
   String appProviderInstallSucceededWithPath(String path) {
-    return 'Installation succeeded. OpenCode command available at $path.';
+    return '설치에 성공했습니다. OpenCode 명령은 $path에서 사용할 수 있습니다.';
   }
 
   @override
-  String get appProviderInstallSucceeded => 'Installation succeeded.';
+  String get appProviderInstallSucceeded => '설치에 성공했습니다.';
 
   @override
-  String get appProviderStartingLocalServer => 'Starting local server...';
+  String get appProviderStartingLocalServer => '로컬 서버 시작 중...';
 
   @override
-  String get appProviderFailedToStart =>
-      'Failed to start local OpenCode server.';
+  String get appProviderFailedToStart => '로컬 OpenCode 서버를 시작하지 못했습니다.';
 
   @override
   String appProviderRunningAt(String url) {
-    return 'Running at $url';
+    return '$url에서 실행 중';
   }
 
   @override
-  String get appProviderStoppingLocalServer => 'Stopping local server...';
+  String get appProviderStoppingLocalServer => '로컬 서버 중지 중...';
 
   @override
   String appProviderExitedWithCode(int code) {
-    return 'Local server exited with code $code.';
+    return '로컬 서버가 코드 $code번으로 종료되었습니다.';
   }
 
   @override
-  String get appProviderInstallBinary => 'Install Binary';
+  String get appProviderInstallBinary => '바이너리 설치';
 
   @override
-  String get appProviderInstallViaNpm => 'Install via npm';
+  String get appProviderInstallViaNpm => 'npm을 통해 설치';
 
   @override
-  String get appProviderInstallViaBun => 'Install via Bun';
+  String get appProviderInstallViaBun => 'Bun을 통해 설치';
 
   @override
-  String get appProviderInstallBunOpenCode => 'Install Bun + OpenCode';
+  String get appProviderInstallBunOpenCode => 'Bun + OpenCode 설치';
 
   @override
   String get tailscaleNotSupportedOnPlatform =>
-      'Tailscale is not supported on this platform.';
+      '이 플랫폼에서는 Tailscale을 지원하지 않습니다.';
 
   @override
   String get tailscaleNotSupportedOnWindows =>
-      'Tailscale is not supported on Windows.';
+      'Windows에서는 Tailscale을 지원하지 않습니다.';
 
   @override
   String get tailscaleWaitingAdminApproval =>
-      'This Tailscale node is waiting for admin approval.';
+      '이 Tailscale 노드는 관리자 승인을 기다리고 있습니다.';
 
   @override
-  String get notificationSoundLoadFailed =>
-      'Failed to load Android system sounds';
+  String get notificationSoundLoadFailed => 'Android 시스템 사운드를 로드하지 못했습니다.';
 
   @override
-  String get chatDescriptionNewConversation => 'New conversation';
+  String get chatDescriptionNewConversation => '새 대화';
 
   @override
-  String get chatDescriptionRefreshData => 'Refresh chat data';
+  String get chatDescriptionRefreshData => '채팅 데이터 새로 고침';
 
   @override
-  String get chatDescriptionFocusInput => 'Focus message input';
+  String get chatDescriptionFocusInput => '메시지 입력 창 포커스';
 
   @override
-  String get chatDescriptionVoiceInput => 'Start or stop voice input';
+  String get chatDescriptionVoiceInput => '음성 입력 시작 또는 중지';
 
   @override
-  String get chatDescriptionQuickOpen => 'Quick open files';
+  String get chatDescriptionQuickOpen => '파일 빠른 열기';
 
   @override
-  String get chatDescriptionOpenSettings => 'Open settings';
+  String get chatDescriptionOpenSettings => '설정 열기';
 
   @override
-  String get chatDescriptionCycleModels => 'Cycle recent models';
+  String get chatDescriptionCycleModels => '최근 모델 순환';
 
   @override
-  String get chatDescriptionCycleVariant => 'Cycle model variant';
+  String get chatDescriptionCycleVariant => '모델 변형 순환';
 
   @override
   String get chatDescriptionFocusOrCloseDrawer =>
-      'Focus input (or close drawer when open)';
+      '입력 창 포커스 (또는 열려 있을 때 드로어 닫기)';
 
   @override
-  String get chatDescriptionNextAgent => 'Next agent';
+  String get chatDescriptionNextAgent => '다음 에이전트';
 
   @override
-  String get chatDescriptionPreviousAgent => 'Previous agent';
+  String get chatDescriptionPreviousAgent => '이전 에이전트';
 
   @override
-  String get chatDescriptionCloseApp =>
-      'Close app using platform close behavior';
+  String get chatDescriptionCloseApp => '플랫폼 종료 동작을 사용하여 앱 닫기';
 
   @override
-  String get chatDescriptionForceExit => 'Force-exit the app';
+  String get chatDescriptionForceExit => '앱 강제 종료';
 
   @override
-  String get chatDescriptionStopResponse =>
-      'Stop active response (while responding)';
+  String get chatDescriptionStopResponse => '활성 응답 중지 (응답 중)';
 
   @override
-  String get chatDescriptionProjectCommand => 'Project command';
+  String get chatDescriptionProjectCommand => '프로젝트 명령';
 
   @override
-  String get chatDescriptionOpenProjects =>
-      'Use this button to open your projects and conversations.';
+  String get chatDescriptionOpenProjects => '이 버튼을 사용하여 프로젝트와 대화를 엽니다.';
 
   @override
-  String get chatDescriptionSwitchProject =>
-      'Use this button to switch project folders and context.';
+  String get chatDescriptionSwitchProject => '이 버튼을 사용하여 프로젝트 폴더와 컨텍스트를 전환합니다.';
 
   @override
   String chatDescriptionChildren(int count) {
-    return 'Children: $count';
+    return '하위 항목: $count';
   }
 
   @override
-  String get chatDescriptionDiffFilesZero => 'Diff files: 0';
+  String get chatDescriptionDiffFilesZero => 'Diff 파일: 0';
 
   @override
-  String get appProviderErrorInvalidServerUrl => 'Invalid server URL';
+  String get appProviderErrorInvalidServerUrl => '유효하지 않은 서버 URL';
 
   @override
-  String get appProviderErrorServerUrlRequired => 'Server URL is required';
+  String get appProviderErrorServerUrlRequired => '서버 URL이 필요합니다.';
 
   @override
-  String get appProviderErrorServerAlreadyExists =>
-      'A server with this URL already exists';
+  String get appProviderErrorServerAlreadyExists => '이 URL을 사용하는 서버가 이미 존재합니다.';
 
   @override
   String get appProviderErrorCloudflareOAuthNotSupported =>
-      'Cloudflare Access OAuth is not supported on this platform';
+      '이 플랫폼에서는 Cloudflare Access OAuth를 지원하지 않습니다.';
 
   @override
   String get appProviderErrorTailscaleNotSupported =>
-      'Tailscale is not supported on this platform';
+      '이 플랫폼에서는 Tailscale을 지원하지 않습니다.';
 
   @override
-  String get appProviderErrorServerProfileNotFound =>
-      'Server profile not found';
+  String get appProviderErrorServerProfileNotFound => '서버 프로필을 찾을 수 없습니다.';
 
   @override
   String get appProviderErrorCannotActivateUnhealthy =>
-      'Cannot activate an unhealthy server';
+      '상태가 좋지 않은 서버를 활성화할 수 없습니다.';
 
   @override
   String get appProviderErrorManagedDesktopOnly =>
-      'Managed local server is available only on desktop.';
+      '관리형 로컬 서버는 데스크톱에서만 사용할 수 있습니다.';
 
   @override
   String get appProviderErrorLocalServerHealthCheckFailed =>
-      'Local server started but health check did not pass.';
+      '로컬 서버가 시작되었지만 상태 확인을 통과하지 못했습니다.';
 
   @override
-  String get appProviderErrorInstallationFailed =>
-      'OpenCode installation failed.';
+  String get appProviderErrorInstallationFailed => 'OpenCode 설치에 실패했습니다.';
 
   @override
-  String get appProviderStatusLocalServerStopped => 'Local server is stopped.';
+  String get appProviderStatusLocalServerStopped => '로컬 서버가 중지되었습니다.';
 
   @override
-  String get appProviderStatusStartingLocalServer => 'Starting local server...';
+  String get appProviderStatusStartingLocalServer => '로컬 서버 시작 중...';
 
   @override
   String appProviderStatusRunningAt(String url) {
-    return 'Running at $url';
+    return '$url에서 실행 중';
   }
 
   @override
-  String get appProviderStatusStoppingLocalServer => 'Stopping local server...';
+  String get appProviderStatusStoppingLocalServer => '로컬 서버 중지 중...';
 
   @override
   String appProviderStatusLocalServerExitedWithCode(int code) {
-    return 'Local server exited with code $code.';
+    return '로컬 서버가 코드 $code번으로 종료되었습니다.';
   }
 
   @override
-  String get appProviderSetupDetectingOpenCode =>
-      'Detecting OpenCode command...';
+  String get appProviderSetupDetectingOpenCode => 'OpenCode 명령 감지 중...';
 
   @override
-  String get appProviderSetupOpenCodeDetected => 'OpenCode detected';
+  String get appProviderSetupOpenCodeDetected => 'OpenCode 감지됨';
 
   @override
-  String get appProviderSetupOpenCodeNotDetected => 'OpenCode not detected';
+  String get appProviderSetupOpenCodeNotDetected => 'OpenCode 감지되지 않음';
 
   @override
   String appProviderSetupUsingOpenCodeAt(String path) {
-    return 'Using OpenCode command at $path';
+    return '$path에 있는 OpenCode 명령 사용 중';
   }
 
   @override
-  String get appProviderSetupInstallingRequirements =>
-      'Installing OpenCode requirements...';
+  String get appProviderSetupInstallingRequirements => 'OpenCode 요구 사항 설치 중...';
 
   @override
   String get appProviderSetupRequirementsInstalled =>
-      'OpenCode requirements installed successfully.';
+      'OpenCode 요구 사항이 성공적으로 설치되었습니다.';
 
   @override
   String appProviderSetupInstallationSucceededWithPath(String path) {
-    return 'Installation succeeded. OpenCode command available at $path.';
+    return '설치에 성공했습니다. OpenCode 명령은 $path에서 사용할 수 있습니다.';
   }
 
   @override
-  String get appProviderSetupInstallationSucceeded => 'Installation succeeded.';
+  String get appProviderSetupInstallationSucceeded => '설치에 성공했습니다.';
 
   @override
   String get appProviderSetupOpenCodeNotDetectedRefresh =>
-      'OpenCode command was not detected. If you installed it moments ago, refresh checks or reopen CodeWalk to reload PATH.';
+      'OpenCode 명령이 감지되지 않았습니다. 방금 설치한 경우 체크를 새로 고치거나 CodeWalk를 다시 열어 PATH를 다시 로드하십시오.';
 
   @override
   String get appProviderSetupOpenCodeNotDetectedInstall =>
-      'OpenCode command was not detected. Run installation from the wizard.';
+      'OpenCode 명령이 감지되지 않았습니다. 마법사에서 설치를 실행하십시오.';
 
   @override
-  String get appProviderLabelPrimaryServer => 'Primary server';
+  String get appProviderLabelPrimaryServer => '기본 서버';
 
   @override
-  String get appProviderLabelLocalOpenCodeManaged => 'Local OpenCode (Managed)';
+  String get appProviderLabelLocalOpenCodeManaged => '로컬 OpenCode (관리형)';
 }

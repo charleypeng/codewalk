@@ -1068,8 +1068,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboardingRefreshChecks => 'Refresh Checks';
 
   @override
-  String get onboardingRunDiagnosticsToVerify =>
-      'Run diagnostics to verify local OpenCode requirements.';
+  String get onboardingRunDiagnosticsToVerify => '运行诊断以验证本地 OpenCode 要求。';
 
   @override
   String get onboardingServerUrl => 'Server URL';
@@ -2543,888 +2542,816 @@ class AppLocalizationsZh extends AppLocalizations {
   String get workspaceSuggestions => 'Suggestions';
 
   @override
-  String get onboardingSetup => 'Setup';
+  String get onboardingSetup => '设置';
 
   @override
-  String get onboardingSetupWizard => 'Setup wizard';
+  String get onboardingSetupWizard => '设置向导';
 
   @override
-  String get onboardingServerSetup => 'Server setup';
+  String get onboardingServerSetup => '服务器设置';
 
   @override
-  String get onboardingEditServer => 'Edit server';
+  String get onboardingEditServer => '编辑服务器';
 
   @override
-  String get onboardingLocalServerSetup => 'Local server setup';
+  String get onboardingLocalServerSetup => '本地服务器设置';
 
   @override
-  String get onboardingReady => 'Ready';
+  String get onboardingReady => '就绪';
 
   @override
   String onboardingWelcomeTo(String appName) {
-    return 'Welcome to $appName';
+    return '欢迎使用 $appName';
   }
 
   @override
   String onboardingNeedsOpenCodeServer(String appName) {
-    return '$appName needs an OpenCode server before it can help with your code.';
+    return '$appName 需要一个 OpenCode 服务器才能为您提供代码帮助。';
   }
 
   @override
-  String get onboardingChooseHowToSetup => 'Choose how to set up your server';
+  String get onboardingChooseHowToSetup => '选择如何设置您的服务器';
 
   @override
-  String get onboardingPickSetupPath =>
-      'Pick the setup path that matches your current OpenCode setup.';
+  String get onboardingPickSetupPath => '选择与您当前的 OpenCode 设置匹配的设置路径。';
 
   @override
   String onboardingDesktopOnlyDiagnose(String appName) {
-    return 'Desktop only: $appName can diagnose, install, and run OpenCode for you.';
+    return '仅限桌面：$appName 可以为您诊断、安装和运行 OpenCode。';
   }
 
   @override
-  String get onboardingAvailableOnlyDesktop =>
-      'Available only on desktop (Linux/macOS/Windows).';
+  String get onboardingAvailableOnlyDesktop => '仅在桌面端（Linux/macOS/Windows）可用。';
 
   @override
-  String get onboardingServerConnection => 'Server connection';
+  String get onboardingServerConnection => '服务器连接';
 
   @override
-  String get onboardingEditServerConnection => 'Edit server connection';
+  String get onboardingEditServerConnection => '编辑服务器连接';
 
   @override
   String onboardingSuggestedUrl(String url) {
-    return 'Suggested local OpenCode server URL: $url';
+    return '建议的本地 OpenCode 服务器 URL：$url';
   }
 
   @override
   String get onboardingEmulatorRemap =>
-      'On Android emulator, localhost and 127.0.0.1 are remapped to 10.0.2.2 automatically.';
+      '在 Android 模拟器上，localhost 和 127.0.0.1 会自动映射到 10.0.2.2。';
 
   @override
-  String get onboardingBasicAuthTip =>
-      'Enable Basic Auth only if your OpenCode server is password-protected.';
+  String get onboardingBasicAuthTip => '仅当您的 OpenCode 服务器受密码保护时才启用基本身份验证。';
 
   @override
-  String get onboardingEnterServerUrl => 'Enter a server URL';
+  String get onboardingEnterServerUrl => '输入服务器 URL';
 
   @override
-  String get onboardingInvalidUrl => 'Invalid URL';
+  String get onboardingInvalidUrl => '无效的 URL';
 
   @override
-  String get onboardingTesting => 'Testing...';
+  String get onboardingTesting => '正在测试...';
 
   @override
-  String get onboardingSaveAndTest => 'Save and test';
+  String get onboardingSaveAndTest => '保存并测试';
 
   @override
-  String get onboardingTestConnection => 'Test connection';
+  String get onboardingTestConnection => '测试连接';
 
   @override
-  String get onboardingTailscaleLoginRequired => 'Tailscale login required';
+  String get onboardingTailscaleLoginRequired => '需要登录 Tailscale';
 
   @override
-  String get onboardingTailscaleAdminApproval =>
-      'Tailscale admin approval required';
+  String get onboardingTailscaleAdminApproval => '需要 Tailscale 管理员批准';
 
   @override
-  String get onboardingTailscaleConnected => 'Tailscale connected';
+  String get onboardingTailscaleConnected => 'Tailscale 已连接';
 
   @override
-  String get onboardingTailscaleConnecting => 'Tailscale connecting';
+  String get onboardingTailscaleConnecting => 'Tailscale 正在连接';
 
   @override
-  String get onboardingTailscaleConnectionFailed =>
-      'Tailscale connection failed';
+  String get onboardingTailscaleConnectionFailed => 'Tailscale 连接失败';
 
   @override
-  String get onboardingTailscaleUnsupported => 'Tailscale unsupported';
+  String get onboardingTailscaleUnsupported => '不支持 Tailscale';
 
   @override
-  String get onboardingTailscaleAuthAfterSave =>
-      'Tailscale will authenticate after saving';
+  String get onboardingTailscaleAuthAfterSave => '保存后将进行 Tailscale 身份验证';
 
   @override
   String get onboardingTailscaleOpenLoginUrl =>
-      'Open the login URL to add this device to your tailnet. If the browser did not open, copy the URL below.';
+      '打开登录 URL 将此设备添加到您的 tailnet。如果浏览器未打开，请复制下面的 URL。';
 
   @override
   String onboardingTailscaleAuthAfterSaveTest(String appName) {
-    return 'After you save and test this server, $appName will open Tailscale login if this device is not authenticated yet.';
+    return '在您保存并测试此服务器后，如果此设备尚未通过身份验证，$appName 将打开 Tailscale 登录页面。';
   }
 
   @override
-  String get onboardingStarting => 'Starting';
+  String get onboardingStarting => '正在启动';
 
   @override
-  String get onboardingStopping => 'Stopping';
+  String get onboardingStopping => '正在停止';
 
   @override
-  String get onboardingFailed => 'Failed';
+  String get onboardingFailed => '失败';
 
   @override
-  String get onboardingStopped => 'Stopped';
+  String get onboardingStopped => '已停止';
 
   @override
-  String get onboardingUsingDetectedCommand =>
-      'Using detected OpenCode command.';
+  String get onboardingUsingDetectedCommand => '使用检测到的 OpenCode 命令。';
 
   @override
-  String get onboardingContinue => 'Continue';
+  String get onboardingContinue => '继续';
 
   @override
-  String get onboardingDone => 'Done';
+  String get onboardingDone => '完成';
 
   @override
-  String get onboardingYoureAllSet => 'You\'re all set!';
+  String get onboardingYoureAllSet => '一切就绪！';
 
   @override
-  String get onboardingServerUpdated => 'Server updated';
+  String get onboardingServerUpdated => '服务器已更新';
 
   @override
-  String get onboardingServerConnectedReady =>
-      'Your server is connected and ready to use.';
+  String get onboardingServerConnectedReady => '您的服务器已连接并可以使用。';
 
   @override
-  String get onboardingServerSettingsSaved =>
-      'Your server settings were saved and health checks were refreshed.';
+  String get onboardingServerSettingsSaved => '您的服务器设置已保存，健康检查已刷新。';
 
   @override
   String onboardingStartUsing(String appName) {
-    return 'Start using $appName';
+    return '开始使用 $appName';
   }
 
   @override
-  String get onboardingCouldNotVerify =>
-      'Could not verify the server connection.';
+  String get onboardingCouldNotVerify => '无法验证服务器连接。';
 
   @override
-  String get onboardingCloudflareAuthFailed =>
-      'Cloudflare Access authentication failed.';
+  String get onboardingCloudflareAuthFailed => 'Cloudflare Access 身份验证失败。';
 
   @override
-  String get onboardingHealthCheckFailedMayBeStarting =>
-      'Server health check failed. It may still be starting up.';
+  String get onboardingHealthCheckFailedMayBeStarting => '服务器健康检查失败。它可能仍在启动中。';
 
   @override
-  String get onboardingConnectionUpdated =>
-      'Server connection updated successfully.';
+  String get onboardingConnectionUpdated => '服务器连接更新成功。';
 
   @override
-  String get onboardingAddedButHealthCheckFailed =>
-      'Server added but health check failed. It may still be starting up.';
+  String get onboardingAddedButHealthCheckFailed => '已添加服务器，但健康检查失败。它可能仍在启动中。';
 
   @override
-  String get onboardingConnectionSaved =>
-      'Server connection saved successfully.';
+  String get onboardingConnectionSaved => '服务器连接保存成功。';
 
   @override
-  String get onboardingAvailable => 'available';
+  String get onboardingAvailable => '可用';
 
   @override
-  String get onboardingNotAvailable => 'not available';
+  String get onboardingNotAvailable => '不可用';
 
   @override
-  String get onboardingReachable => 'reachable';
+  String get onboardingReachable => '可达';
 
   @override
-  String get onboardingUnreachable => 'unreachable';
+  String get onboardingUnreachable => '不可达';
 
   @override
-  String get onboardingWritable => 'writable';
+  String get onboardingWritable => '可写';
 
   @override
-  String get onboardingNotWritable => 'not writable';
+  String get onboardingNotWritable => '不可写';
 
   @override
   String toolPresentationRunningTool(String toolName) {
-    return 'Running $toolName';
+    return '正在运行 $toolName';
   }
 
   @override
-  String get toolPresentationTool => 'Tool';
+  String get toolPresentationTool => '工具';
 
   @override
-  String get shortcutGroupSession => 'Session';
+  String get shortcutGroupSession => '会话';
 
   @override
-  String get shortcutGroupGeneral => 'General';
+  String get shortcutGroupGeneral => '通用';
 
   @override
-  String get shortcutGroupPrompt => 'Prompt';
+  String get shortcutGroupPrompt => '提示词';
 
   @override
-  String get shortcutGroupNavigation => 'Navigation';
+  String get shortcutGroupNavigation => '导航';
 
   @override
-  String get shortcutGroupModelAndAgent => 'Model and agent';
+  String get shortcutGroupModelAndAgent => '模型与代理';
 
   @override
-  String get shortcutGroupApplication => 'Application';
+  String get shortcutGroupApplication => '应用';
 
   @override
-  String get shortcutNewConversation => 'New conversation';
+  String get shortcutNewConversation => '新会话';
 
   @override
-  String get shortcutNewConversationDesc => 'Create a new chat session';
+  String get shortcutNewConversationDesc => '创建一个新的聊天会话';
 
   @override
-  String get shortcutRefreshData => 'Refresh data';
+  String get shortcutRefreshData => '刷新数据';
 
   @override
-  String get shortcutRefreshDataDesc => 'Refresh current chat data';
+  String get shortcutRefreshDataDesc => '刷新当前聊天数据';
 
   @override
-  String get shortcutFocusInput => 'Focus input';
+  String get shortcutFocusInput => '聚焦输入框';
 
   @override
-  String get shortcutFocusInputDesc => 'Move focus to the prompt input';
+  String get shortcutFocusInputDesc => '将焦点移动到文本输入框';
 
   @override
-  String get shortcutToggleVoiceInput => 'Toggle voice input';
+  String get shortcutToggleVoiceInput => '切换语音输入';
 
   @override
-  String get shortcutToggleVoiceInputDesc =>
-      'Start or stop speech-to-text in the composer';
+  String get shortcutToggleVoiceInputDesc => '在编辑器中开始或停止语音听写';
 
   @override
-  String get shortcutQuickOpenFiles => 'Quick open files';
+  String get shortcutQuickOpenFiles => '快速打开文件';
 
   @override
-  String get shortcutQuickOpenFilesDesc => 'Open file quick search';
+  String get shortcutQuickOpenFilesDesc => '打开文件快速搜索';
 
   @override
-  String get shortcutOpenSettings => 'Open settings';
+  String get shortcutOpenSettings => '打开设置';
 
   @override
-  String get shortcutOpenSettingsDesc => 'Open settings page';
+  String get shortcutOpenSettingsDesc => '打开设置页面';
 
   @override
-  String get shortcutNextRecentModel => 'Next recent model';
+  String get shortcutNextRecentModel => '下一个近期模型';
 
   @override
-  String get shortcutNextRecentModelDesc =>
-      'Cycle through recently used models';
+  String get shortcutNextRecentModelDesc => '在最近使用的模型之间切换';
 
   @override
-  String get shortcutNextVariant => 'Next variant';
+  String get shortcutNextVariant => '下一个变体';
 
   @override
-  String get shortcutNextVariantDesc =>
-      'Cycle through available model variants';
+  String get shortcutNextVariantDesc => '在可用的模型变体之间切换';
 
   @override
-  String get shortcutFocusCloseDrawer => 'Focus/close drawer';
+  String get shortcutFocusCloseDrawer => '聚焦/关闭侧边栏';
 
   @override
-  String get shortcutFocusCloseDrawerDesc =>
-      'Focus composer by default, or close drawer when open';
+  String get shortcutFocusCloseDrawerDesc => '默认聚焦输入框，或在打开时关闭侧边栏';
 
   @override
-  String get shortcutNextAgent => 'Next agent';
+  String get shortcutNextAgent => '下一个代理';
 
   @override
-  String get shortcutNextAgentDesc => 'Cycle to next available agent';
+  String get shortcutNextAgentDesc => '切换到下一个可用代理';
 
   @override
-  String get shortcutPreviousAgent => 'Previous agent';
+  String get shortcutPreviousAgent => '上一个代理';
 
   @override
-  String get shortcutPreviousAgentDesc => 'Cycle to previous available agent';
+  String get shortcutPreviousAgentDesc => '切换到上一个可用代理';
 
   @override
-  String get shortcutCloseApp => 'Close application';
+  String get shortcutCloseApp => '关闭应用';
 
   @override
-  String get shortcutCloseAppDesc => 'Close app using platform close behavior';
+  String get shortcutCloseAppDesc => '使用平台关闭行为关闭应用';
 
   @override
-  String get shortcutQuitApp => 'Quit application';
+  String get shortcutQuitApp => '退出应用';
 
   @override
-  String get shortcutQuitAppDesc => 'Force-exit the app';
+  String get shortcutQuitAppDesc => '强制退出应用';
 
   @override
-  String get shortcutStopResponse => 'Stop active response';
+  String get shortcutStopResponse => '停止响应';
 
   @override
-  String get shortcutStopResponseDesc =>
-      'Stop active response (while responding)';
+  String get shortcutStopResponseDesc => '停止当前响应（响应时）';
 
   @override
-  String get errorConnectionFailed => 'Connection failed';
+  String get errorConnectionFailed => '连接失败';
 
   @override
-  String get errorConnectionFailedDesc =>
-      'Unable to reach the server. Check connection and server status.';
+  String get errorConnectionFailedDesc => '无法连接到服务器。请检查网络连接和服务器状态。';
 
   @override
-  String get errorQuotaExceeded => 'Quota exceeded';
+  String get errorQuotaExceeded => '配额已超限';
 
   @override
-  String get errorQuotaExceededDesc =>
-      'Quota exceeded. Check your provider plan or billing.';
+  String get errorQuotaExceededDesc => '配额已超限。请检查您的提供商计划或账单。';
 
   @override
-  String get errorRateLimitExceeded => 'Rate limit exceeded';
+  String get errorRateLimitExceeded => '速率限制已超限';
 
   @override
-  String get errorRateLimitExceededDesc =>
-      'Rate limit exceeded. Wait a moment and try again.';
+  String get errorRateLimitExceededDesc => '速率限制已超限。请稍等片刻后重试。';
 
   @override
-  String get errorAuthRequired => 'Authentication required';
+  String get errorAuthRequired => '需要身份验证';
 
   @override
-  String get errorAuthRequiredDesc =>
-      'Authentication failed. Reconnect the provider and try again.';
+  String get errorAuthRequiredDesc => '身份验证失败。请重新连接提供商并重试。';
 
   @override
-  String get errorServiceUnavailable => 'Service unavailable';
+  String get errorServiceUnavailable => '服务不可用';
 
   @override
-  String get errorServiceUnavailableDesc =>
-      'Service temporarily unavailable. The server may be starting up — please try again shortly.';
+  String get errorServiceUnavailableDesc => '服务暂时不可用。服务器可能正在启动，请稍后再试。';
 
   @override
-  String get errorProviderUnavailable => 'Provider unavailable';
+  String get errorProviderUnavailable => '提供商不可用';
 
   @override
-  String get errorProviderUnavailableDesc =>
-      'Provider temporarily unavailable. Try again shortly.';
+  String get errorProviderUnavailableDesc => '提供商暂时不可用。请稍后再试。';
 
   @override
-  String get errorServerError => 'Server error';
+  String get errorServerError => '服务器错误';
 
   @override
-  String get errorServerErrorDesc => 'Server error. Please try again.';
+  String get errorServerErrorDesc => '服务器错误。请重试。';
 
   @override
-  String get attachmentNotAvailableOnPlatform =>
-      'Attachment actions are not available on this platform.';
+  String get attachmentNotAvailableOnPlatform => '附件操作在此平台上不可用。';
 
   @override
-  String get attachmentUnableToOpenLink =>
-      'Unable to open the attachment link.';
+  String get attachmentUnableToOpenLink => '无法打开附件链接。';
 
   @override
-  String get attachmentNoValidLocation =>
-      'Attachment does not provide a valid location.';
+  String get attachmentNoValidLocation => '附件未提供有效位置。';
 
   @override
-  String get attachmentDownloadStarted => 'Attachment download started.';
+  String get attachmentDownloadStarted => '附件下载已开始。';
 
   @override
-  String get attachmentCouldNotDownload =>
-      'Attachment could not be downloaded.';
+  String get attachmentCouldNotDownload => '无法下载附件。';
 
   @override
-  String get attachmentCouldNotDecode =>
-      'Attachment data could not be decoded.';
+  String get attachmentCouldNotDecode => '无法解码附件数据。';
 
   @override
-  String get attachmentPayloadEmpty => 'Attachment payload is empty.';
+  String get attachmentPayloadEmpty => '附件有效负载为空。';
 
   @override
   String attachmentSavedAndOpened(String path) {
-    return 'Attachment saved to $path and opened.';
+    return '附件已保存至 $path 并打开。';
   }
 
   @override
   String attachmentSavedTo(String path) {
-    return 'Attachment saved to $path.';
+    return '附件已保存至 $path。';
   }
 
   @override
-  String get attachmentCouldNotSave =>
-      'Attachment could not be saved on this device.';
+  String get attachmentCouldNotSave => '无法在此设备上保存附件。';
 
   @override
-  String get attachmentSaveCanceled => 'Save canceled.';
+  String get attachmentSaveCanceled => '保存已取消。';
 
   @override
   String attachmentSavedPath(String path) {
-    return 'Attachment saved to $path.';
+    return '附件已保存至 $path。';
   }
 
   @override
-  String get attachmentPathEmpty => 'Attachment path is empty.';
+  String get attachmentPathEmpty => '附件路径为空。';
 
   @override
-  String get attachmentLocalNotFound =>
-      'Local attachment was not found on this device.';
+  String get attachmentLocalNotFound => '在此设备上找不到本地附件。';
 
   @override
-  String get attachmentUnableToOpenLocal =>
-      'Unable to open the local attachment.';
+  String get attachmentUnableToOpenLocal => '无法打开本地附件。';
 
   @override
   String speechDesktopOnly(String service) {
-    return '$service is available on desktop only.';
+    return '$service 仅在桌面端可用。';
   }
 
   @override
   String speechRuntimeFailed(String service) {
-    return '$service runtime failed to initialize.';
+    return '$service 运行时初始化失败。';
   }
 
   @override
   String speechModelFilesIncomplete(String service) {
-    return '$service model files are incomplete.';
+    return '$service 模型文件不完整。';
   }
 
   @override
-  String get speechMicPermissionDisabled =>
-      'Microphone permission is disabled.';
+  String get speechMicPermissionDisabled => '麦克风权限已禁用。';
 
   @override
   String speechUnavailableOnPlatform(String service) {
-    return '$service speech is unavailable on this platform.';
+    return '$service 语音在此平台上不可用。';
   }
 
   @override
-  String get terminalOpenToConnect =>
-      'Open Terminal to connect to the server project terminal.';
+  String get terminalOpenToConnect => '打开终端以连接到服务器项目终端。';
 
   @override
-  String get terminalNotAvailableYet =>
-      'Embedded terminal is not available on this runtime yet.';
+  String get terminalNotAvailableYet => '嵌入式终端在此运行时中尚不可用。';
 
   @override
-  String get terminalSelectServer =>
-      'Select an active server before opening Terminal.';
+  String get terminalSelectServer => '在打开终端之前，请选择一个活动服务器。';
 
   @override
-  String get terminalOpenProjectFirst =>
-      'Open a project folder before starting the server terminal.';
+  String get terminalOpenProjectFirst => '在启动服务器终端之前，请先打开项目文件夹。';
 
   @override
   String terminalConnectingTo(String serverName) {
-    return 'Connecting to $serverName terminal...';
+    return '正在连接到 $serverName 终端...';
   }
 
   @override
   String terminalConnectionFailed(String error) {
-    return 'Terminal connection failed: $error';
+    return '终端连接失败：$error';
   }
 
   @override
-  String get terminalDisconnected => 'Terminal disconnected.';
+  String get terminalDisconnected => '终端已断开连接。';
 
   @override
-  String get terminalSessionClosed => 'Terminal session closed.';
+  String get terminalSessionClosed => '终端会话已关闭。';
 
   @override
-  String get notificationConversationUpdates => 'Conversation updates';
+  String get notificationConversationUpdates => '会话更新';
 
   @override
-  String get notificationOpenToClear =>
-      'Open this conversation to clear related notifications.';
+  String get notificationOpenToClear => '打开此会话以清除相关通知。';
 
   @override
-  String get notificationAgentFinished =>
-      'Agent finished the current response.';
+  String get notificationAgentFinished => '代理已完成当前响应。';
 
   @override
-  String get notificationSession => 'Session';
+  String get notificationSession => '会话';
 
   @override
-  String get chatBadgeServerNeedsAttention =>
-      'Server connection needs attention.';
+  String get chatBadgeServerNeedsAttention => '服务器连接需要注意。';
 
   @override
   String chatBadgeConversationError(String title) {
-    return '\"$title\" has an error.';
+    return '“$title”出现错误。';
   }
 
   @override
   String chatBadgeConversationNeedsInput(String title) {
-    return '\"$title\" needs your input.';
+    return '“$title”需要您的输入。';
   }
 
   @override
   String chatBadgeConversationNewReply(String title) {
-    return '\"$title\" has a new reply.';
+    return '“$title”有新回复。';
   }
 
   @override
-  String get chatBadgeSyncing => 'Syncing conversations...';
+  String get chatBadgeSyncing => '正在同步会话...';
 
   @override
-  String get chatBadgeDataSaverActive => 'Cellular data saver is active.';
+  String get chatBadgeDataSaverActive => '移动数据节省模式已开启。';
 
   @override
-  String get chatCollapseGroup => 'Collapse group';
+  String get chatCollapseGroup => '折叠分组';
 
   @override
-  String get chatExpandGroup => 'Expand group';
+  String get chatExpandGroup => '展开分组';
 
   @override
-  String get chatForkFailed => 'Failed to fork conversation';
+  String get chatForkFailed => '派生会话失败';
 
   @override
-  String get chatForked => 'Conversation forked';
+  String get chatForked => '已派生会话';
 
   @override
-  String get chatNoConversationsInProject =>
-      'No conversations in this project.';
+  String get chatNoConversationsInProject => '此项目中没有会话。';
 
   @override
-  String get chatOpenProjectToLoad => 'Open project to load conversations.';
+  String get chatOpenProjectToLoad => '打开项目以加载会话。';
 
   @override
-  String get chatExportCanceled => 'Session export canceled';
+  String get chatExportCanceled => '会话导出已取消';
 
   @override
-  String get chatLargeContentSkipped =>
-      'Large or malformed content was skipped for stability.';
+  String get chatLargeContentSkipped => '为了稳定性，已跳过超大或格式错误的内容。';
 
   @override
   String chatTokensLabel(int total) {
-    return 'Tokens: $total';
+    return 'Token：$total';
   }
 
   @override
   String chatCostLabel(String cost) {
-    return 'Cost: \$$cost';
+    return '费用：\$$cost';
   }
 
   @override
-  String get chatFileExplorerNames => 'Names';
+  String get chatFileExplorerNames => '名称';
 
   @override
-  String get chatFileExplorerContents => 'Contents';
+  String get chatFileExplorerContents => '内容';
 
   @override
   String chatCloseProject(String project) {
-    return 'Close $project';
+    return '关闭 $project';
   }
 
   @override
-  String get sessionExportUser => 'User';
+  String get sessionExportUser => '用户';
 
   @override
-  String get sessionExportAssistant => 'Assistant';
+  String get sessionExportAssistant => '助手';
 
   @override
-  String get sessionExportInput => 'Input:';
+  String get sessionExportInput => '输入：';
 
   @override
-  String get sessionExportOutput => 'Output:';
+  String get sessionExportOutput => '输出：';
 
   @override
-  String get sessionExportError => 'Error:';
+  String get sessionExportError => '错误：';
 
   @override
-  String get sessionExportUntitled => 'Untitled session';
+  String get sessionExportUntitled => '无标题会话';
 
   @override
-  String get modelLabelTinyEnglish => 'Tiny (English)';
+  String get modelLabelTinyEnglish => 'Tiny (英语)';
 
   @override
-  String get modelLabelBaseEnglish => 'Base (English)';
+  String get modelLabelBaseEnglish => '基础 (英语)';
 
   @override
   String get modelLabelSenseVoice => 'SenseVoice (zh/en/ja/ko/yue)';
 
   @override
-  String get modelLabelParakeet => 'Parakeet V3 (25 European languages)';
+  String get modelLabelParakeet => 'Parakeet V3 (25 种欧洲语言)';
 
   @override
-  String get cannedNewQuickReply => 'New quick reply';
+  String get cannedNewQuickReply => '新快速回复';
 
   @override
-  String get settingsSoundPickerNotAvailable =>
-      'System sound picker is not available on this platform.';
+  String get settingsSoundPickerNotAvailable => '系统声音选择器在此平台上不可用。';
 
   @override
-  String get appProviderPrimaryServer => 'Primary server';
+  String get appProviderPrimaryServer => '主服务器';
 
   @override
-  String get appProviderLocalManaged => 'Local OpenCode (Managed)';
+  String get appProviderLocalManaged => '本地 OpenCode (托管)';
 
   @override
-  String get appProviderLocalServerStopped => 'Local server is stopped.';
+  String get appProviderLocalServerStopped => '本地服务器已停止。';
 
   @override
-  String get appProviderRunDiagnostics =>
-      'Run diagnostics to verify local OpenCode requirements.';
+  String get appProviderRunDiagnostics => '运行诊断以验证本地 OpenCode 要求。';
 
   @override
-  String get appProviderInvalidServerUrl => 'Invalid server URL';
+  String get appProviderInvalidServerUrl => '无效的服务器 URL';
 
   @override
-  String get appProviderOAuthNotSupported =>
-      'Cloudflare Access OAuth is not supported on this platform';
+  String get appProviderOAuthNotSupported => '此平台不支持 Cloudflare Access OAuth';
 
   @override
-  String get appProviderTailscaleNotSupported =>
-      'Tailscale is not supported on this platform';
+  String get appProviderTailscaleNotSupported => '此平台不支持 Tailscale';
 
   @override
-  String get appProviderProfileNotFound => 'Server profile not found';
+  String get appProviderProfileNotFound => '找不到服务器配置文件';
 
   @override
-  String get appProviderCannotActivateUnhealthy =>
-      'Cannot activate an unhealthy server';
+  String get appProviderCannotActivateUnhealthy => '无法激活不健康的服务器';
 
   @override
-  String get appProviderOpenCodeDetected => 'OpenCode detected';
+  String get appProviderOpenCodeDetected => '已检测到 OpenCode';
 
   @override
-  String get appProviderOpenCodeNotDetected => 'OpenCode not detected';
+  String get appProviderOpenCodeNotDetected => '未检测到 OpenCode';
 
   @override
-  String get appProviderDetectingCommand => 'Detecting OpenCode command...';
+  String get appProviderDetectingCommand => '正在检测 OpenCode 命令...';
 
   @override
   String appProviderNotDetectedRefresh(String appName) {
-    return 'OpenCode command was not detected. If you installed it moments ago, refresh checks or reopen $appName to reload PATH.';
+    return '未检测到 OpenCode 命令。如果您刚刚安装，请刷新检查或重新打开 $appName 以重新加载 PATH。';
   }
 
   @override
-  String get appProviderNotDetectedInstall =>
-      'OpenCode command was not detected. Run installation from the wizard.';
+  String get appProviderNotDetectedInstall => '未检测到 OpenCode 命令。请从向导运行安装。';
 
   @override
   String appProviderUsingCommandAt(String path) {
-    return 'Using OpenCode command at $path';
+    return '正在使用位于 $path 的 OpenCode 命令';
   }
 
   @override
-  String get appProviderDesktopOnly =>
-      'Managed local server is available only on desktop.';
+  String get appProviderDesktopOnly => '托管本地服务器仅在桌面端可用。';
 
   @override
-  String get appProviderInstallingRequirements =>
-      'Installing OpenCode requirements...';
+  String get appProviderInstallingRequirements => '正在安装 OpenCode 要求...';
 
   @override
-  String get appProviderInstallationFailed => 'OpenCode installation failed.';
+  String get appProviderInstallationFailed => 'OpenCode 安装失败。';
 
   @override
-  String get appProviderInstalledSuccessfully =>
-      'OpenCode requirements installed successfully.';
+  String get appProviderInstalledSuccessfully => 'OpenCode 要求已成功安装。';
 
   @override
   String appProviderInstallSucceededWithPath(String path) {
-    return 'Installation succeeded. OpenCode command available at $path.';
+    return '安装成功。OpenCode 命令位于 $path。';
   }
 
   @override
-  String get appProviderInstallSucceeded => 'Installation succeeded.';
+  String get appProviderInstallSucceeded => '安装成功。';
 
   @override
-  String get appProviderStartingLocalServer => 'Starting local server...';
+  String get appProviderStartingLocalServer => '正在启动本地服务器...';
 
   @override
-  String get appProviderFailedToStart =>
-      'Failed to start local OpenCode server.';
+  String get appProviderFailedToStart => '启动本地 OpenCode 服务器失败。';
 
   @override
   String appProviderRunningAt(String url) {
-    return 'Running at $url';
+    return '运行于 $url';
   }
 
   @override
-  String get appProviderStoppingLocalServer => 'Stopping local server...';
+  String get appProviderStoppingLocalServer => '正在停止本地服务器...';
 
   @override
   String appProviderExitedWithCode(int code) {
-    return 'Local server exited with code $code.';
+    return '本地服务器已退出，退出代码为 $code。';
   }
 
   @override
-  String get appProviderInstallBinary => 'Install Binary';
+  String get appProviderInstallBinary => '安装二进制文件';
 
   @override
-  String get appProviderInstallViaNpm => 'Install via npm';
+  String get appProviderInstallViaNpm => '通过 npm 安装';
 
   @override
-  String get appProviderInstallViaBun => 'Install via Bun';
+  String get appProviderInstallViaBun => '通过 Bun 安装';
 
   @override
-  String get appProviderInstallBunOpenCode => 'Install Bun + OpenCode';
+  String get appProviderInstallBunOpenCode => '安装 Bun + OpenCode';
 
   @override
-  String get tailscaleNotSupportedOnPlatform =>
-      'Tailscale is not supported on this platform.';
+  String get tailscaleNotSupportedOnPlatform => '此平台不支持 Tailscale。';
 
   @override
-  String get tailscaleNotSupportedOnWindows =>
-      'Tailscale is not supported on Windows.';
+  String get tailscaleNotSupportedOnWindows => 'Windows 不支持 Tailscale。';
 
   @override
-  String get tailscaleWaitingAdminApproval =>
-      'This Tailscale node is waiting for admin approval.';
+  String get tailscaleWaitingAdminApproval => '此 Tailscale 节点正在等待管理员批准。';
 
   @override
-  String get notificationSoundLoadFailed =>
-      'Failed to load Android system sounds';
+  String get notificationSoundLoadFailed => '无法加载 Android 系统声音';
 
   @override
-  String get chatDescriptionNewConversation => 'New conversation';
+  String get chatDescriptionNewConversation => '新会话';
 
   @override
-  String get chatDescriptionRefreshData => 'Refresh chat data';
+  String get chatDescriptionRefreshData => '刷新聊天数据';
 
   @override
-  String get chatDescriptionFocusInput => 'Focus message input';
+  String get chatDescriptionFocusInput => '聚焦消息输入框';
 
   @override
-  String get chatDescriptionVoiceInput => 'Start or stop voice input';
+  String get chatDescriptionVoiceInput => '开始或停止语音输入';
 
   @override
-  String get chatDescriptionQuickOpen => 'Quick open files';
+  String get chatDescriptionQuickOpen => '快速打开文件';
 
   @override
-  String get chatDescriptionOpenSettings => 'Open settings';
+  String get chatDescriptionOpenSettings => '打开设置';
 
   @override
-  String get chatDescriptionCycleModels => 'Cycle recent models';
+  String get chatDescriptionCycleModels => '循环切换近期模型';
 
   @override
-  String get chatDescriptionCycleVariant => 'Cycle model variant';
+  String get chatDescriptionCycleVariant => '循环切换模型变体';
 
   @override
-  String get chatDescriptionFocusOrCloseDrawer =>
-      'Focus input (or close drawer when open)';
+  String get chatDescriptionFocusOrCloseDrawer => '聚焦输入框（或在打开时关闭侧边栏）';
 
   @override
-  String get chatDescriptionNextAgent => 'Next agent';
+  String get chatDescriptionNextAgent => '下一个代理';
 
   @override
-  String get chatDescriptionPreviousAgent => 'Previous agent';
+  String get chatDescriptionPreviousAgent => '上一个代理';
 
   @override
-  String get chatDescriptionCloseApp =>
-      'Close app using platform close behavior';
+  String get chatDescriptionCloseApp => '使用平台关闭行为关闭应用';
 
   @override
-  String get chatDescriptionForceExit => 'Force-exit the app';
+  String get chatDescriptionForceExit => '强制退出应用';
 
   @override
-  String get chatDescriptionStopResponse =>
-      'Stop active response (while responding)';
+  String get chatDescriptionStopResponse => '停止当前响应（响应时）';
 
   @override
-  String get chatDescriptionProjectCommand => 'Project command';
+  String get chatDescriptionProjectCommand => '项目命令';
 
   @override
-  String get chatDescriptionOpenProjects =>
-      'Use this button to open your projects and conversations.';
+  String get chatDescriptionOpenProjects => '使用此按钮打开您的项目和会话。';
 
   @override
-  String get chatDescriptionSwitchProject =>
-      'Use this button to switch project folders and context.';
+  String get chatDescriptionSwitchProject => '使用此按钮切换项目文件夹和上下文。';
 
   @override
   String chatDescriptionChildren(int count) {
-    return 'Children: $count';
+    return '子项：$count';
   }
 
   @override
-  String get chatDescriptionDiffFilesZero => 'Diff files: 0';
+  String get chatDescriptionDiffFilesZero => '差异文件：0';
 
   @override
-  String get appProviderErrorInvalidServerUrl => 'Invalid server URL';
+  String get appProviderErrorInvalidServerUrl => '无效的服务器 URL';
 
   @override
-  String get appProviderErrorServerUrlRequired => 'Server URL is required';
+  String get appProviderErrorServerUrlRequired => '服务器 URL 是必填项';
 
   @override
-  String get appProviderErrorServerAlreadyExists =>
-      'A server with this URL already exists';
+  String get appProviderErrorServerAlreadyExists => '使用此 URL 的服务器已存在';
 
   @override
   String get appProviderErrorCloudflareOAuthNotSupported =>
-      'Cloudflare Access OAuth is not supported on this platform';
+      '此平台不支持 Cloudflare Access OAuth';
 
   @override
-  String get appProviderErrorTailscaleNotSupported =>
-      'Tailscale is not supported on this platform';
+  String get appProviderErrorTailscaleNotSupported => '此平台不支持 Tailscale';
 
   @override
-  String get appProviderErrorServerProfileNotFound =>
-      'Server profile not found';
+  String get appProviderErrorServerProfileNotFound => '找不到服务器配置文件';
 
   @override
-  String get appProviderErrorCannotActivateUnhealthy =>
-      'Cannot activate an unhealthy server';
+  String get appProviderErrorCannotActivateUnhealthy => '无法激活不健康的服务器';
 
   @override
-  String get appProviderErrorManagedDesktopOnly =>
-      'Managed local server is available only on desktop.';
+  String get appProviderErrorManagedDesktopOnly => '托管本地服务器仅在桌面端可用。';
 
   @override
   String get appProviderErrorLocalServerHealthCheckFailed =>
-      'Local server started but health check did not pass.';
+      '本地服务器已启动，但健康检查未通过。';
 
   @override
-  String get appProviderErrorInstallationFailed =>
-      'OpenCode installation failed.';
+  String get appProviderErrorInstallationFailed => 'OpenCode 安装失败。';
 
   @override
-  String get appProviderStatusLocalServerStopped => 'Local server is stopped.';
+  String get appProviderStatusLocalServerStopped => '本地服务器已停止。';
 
   @override
-  String get appProviderStatusStartingLocalServer => 'Starting local server...';
+  String get appProviderStatusStartingLocalServer => '正在启动本地服务器...';
 
   @override
   String appProviderStatusRunningAt(String url) {
-    return 'Running at $url';
+    return '运行于 $url';
   }
 
   @override
-  String get appProviderStatusStoppingLocalServer => 'Stopping local server...';
+  String get appProviderStatusStoppingLocalServer => '正在停止本地服务器...';
 
   @override
   String appProviderStatusLocalServerExitedWithCode(int code) {
-    return 'Local server exited with code $code.';
+    return '本地服务器已退出，退出代码为 $code。';
   }
 
   @override
-  String get appProviderSetupDetectingOpenCode =>
-      'Detecting OpenCode command...';
+  String get appProviderSetupDetectingOpenCode => '正在检测 OpenCode 命令...';
 
   @override
-  String get appProviderSetupOpenCodeDetected => 'OpenCode detected';
+  String get appProviderSetupOpenCodeDetected => '已检测到 OpenCode';
 
   @override
-  String get appProviderSetupOpenCodeNotDetected => 'OpenCode not detected';
+  String get appProviderSetupOpenCodeNotDetected => '未检测到 OpenCode';
 
   @override
   String appProviderSetupUsingOpenCodeAt(String path) {
-    return 'Using OpenCode command at $path';
+    return '正在使用位于 $path 的 OpenCode 命令';
   }
 
   @override
-  String get appProviderSetupInstallingRequirements =>
-      'Installing OpenCode requirements...';
+  String get appProviderSetupInstallingRequirements => '正在安装 OpenCode 要求...';
 
   @override
-  String get appProviderSetupRequirementsInstalled =>
-      'OpenCode requirements installed successfully.';
+  String get appProviderSetupRequirementsInstalled => 'OpenCode 要求已成功安装。';
 
   @override
   String appProviderSetupInstallationSucceededWithPath(String path) {
-    return 'Installation succeeded. OpenCode command available at $path.';
+    return '安装成功。OpenCode 命令位于 $path。';
   }
 
   @override
-  String get appProviderSetupInstallationSucceeded => 'Installation succeeded.';
+  String get appProviderSetupInstallationSucceeded => '安装成功。';
 
   @override
   String get appProviderSetupOpenCodeNotDetectedRefresh =>
-      'OpenCode command was not detected. If you installed it moments ago, refresh checks or reopen CodeWalk to reload PATH.';
+      '未检测到 OpenCode 命令。如果您刚刚安装，请刷新检查或重新打开 CodeWalk 以重新加载 PATH。';
 
   @override
   String get appProviderSetupOpenCodeNotDetectedInstall =>
-      'OpenCode command was not detected. Run installation from the wizard.';
+      '未检测到 OpenCode 命令。请从向导运行安装。';
 
   @override
-  String get appProviderLabelPrimaryServer => 'Primary server';
+  String get appProviderLabelPrimaryServer => '主服务器';
 
   @override
-  String get appProviderLabelLocalOpenCodeManaged => 'Local OpenCode (Managed)';
+  String get appProviderLabelLocalOpenCodeManaged => '本地 OpenCode (托管)';
 }

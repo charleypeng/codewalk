@@ -1076,7 +1076,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get onboardingRunDiagnosticsToVerify =>
-      'Run diagnostics to verify local OpenCode requirements.';
+      'Exécutez les diagnostics pour vérifier les prérequis locaux dOpenCode.';
 
   @override
   String get onboardingServerUrl => 'Server URL';
@@ -2550,888 +2550,907 @@ class AppLocalizationsFr extends AppLocalizations {
   String get workspaceSuggestions => 'Suggestions';
 
   @override
-  String get onboardingSetup => 'Setup';
+  String get onboardingSetup => 'Configuration';
 
   @override
-  String get onboardingSetupWizard => 'Setup wizard';
+  String get onboardingSetupWizard => 'Assistant de configuration';
 
   @override
-  String get onboardingServerSetup => 'Server setup';
+  String get onboardingServerSetup => 'Configuration du serveur';
 
   @override
-  String get onboardingEditServer => 'Edit server';
+  String get onboardingEditServer => 'Modifier le serveur';
 
   @override
-  String get onboardingLocalServerSetup => 'Local server setup';
+  String get onboardingLocalServerSetup => 'Configuration du serveur local';
 
   @override
-  String get onboardingReady => 'Ready';
+  String get onboardingReady => 'Prêt';
 
   @override
   String onboardingWelcomeTo(String appName) {
-    return 'Welcome to $appName';
+    return 'Bienvenue sur $appName';
   }
 
   @override
   String onboardingNeedsOpenCodeServer(String appName) {
-    return '$appName needs an OpenCode server before it can help with your code.';
+    return '$appName a besoin dun serveur OpenCode avant de pouvoir vous aider avec votre code.';
   }
 
   @override
-  String get onboardingChooseHowToSetup => 'Choose how to set up your server';
+  String get onboardingChooseHowToSetup =>
+      'Choisissez comment configurer votre serveur';
 
   @override
   String get onboardingPickSetupPath =>
-      'Pick the setup path that matches your current OpenCode setup.';
+      'Choisissez le chemin de configuration qui correspond à votre installation actuelle dOpenCode.';
 
   @override
   String onboardingDesktopOnlyDiagnose(String appName) {
-    return 'Desktop only: $appName can diagnose, install, and run OpenCode for you.';
+    return 'Ordinateur uniquement : $appName peut diagnostiquer, installer et exécuter OpenCode pour vous.';
   }
 
   @override
   String get onboardingAvailableOnlyDesktop =>
-      'Available only on desktop (Linux/macOS/Windows).';
+      'Disponible uniquement sur ordinateur (Linux/macOS/Windows).';
 
   @override
-  String get onboardingServerConnection => 'Server connection';
+  String get onboardingServerConnection => 'Connexion au serveur';
 
   @override
-  String get onboardingEditServerConnection => 'Edit server connection';
+  String get onboardingEditServerConnection =>
+      'Modifier la connexion au serveur';
 
   @override
   String onboardingSuggestedUrl(String url) {
-    return 'Suggested local OpenCode server URL: $url';
+    return 'URL suggérée pour le serveur OpenCode local : $url';
   }
 
   @override
   String get onboardingEmulatorRemap =>
-      'On Android emulator, localhost and 127.0.0.1 are remapped to 10.0.2.2 automatically.';
+      'Sur lémulateur Android, localhost et 127.0.0.1 sont automatiquement redirigés vers 10.0.2.2.';
 
   @override
   String get onboardingBasicAuthTip =>
-      'Enable Basic Auth only if your OpenCode server is password-protected.';
+      'Activez lauthentification de base uniquement si votre serveur OpenCode est protégé par un mot de passe.';
 
   @override
-  String get onboardingEnterServerUrl => 'Enter a server URL';
+  String get onboardingEnterServerUrl => 'Entrez lURL du serveur';
 
   @override
-  String get onboardingInvalidUrl => 'Invalid URL';
+  String get onboardingInvalidUrl => 'URL invalide';
 
   @override
-  String get onboardingTesting => 'Testing...';
+  String get onboardingTesting => 'Test en cours...';
 
   @override
-  String get onboardingSaveAndTest => 'Save and test';
+  String get onboardingSaveAndTest => 'Enregistrer et tester';
 
   @override
-  String get onboardingTestConnection => 'Test connection';
+  String get onboardingTestConnection => 'Tester la connexion';
 
   @override
-  String get onboardingTailscaleLoginRequired => 'Tailscale login required';
+  String get onboardingTailscaleLoginRequired => 'Connexion Tailscale requise';
 
   @override
   String get onboardingTailscaleAdminApproval =>
-      'Tailscale admin approval required';
+      'Approbation de ladministrateur Tailscale requise';
 
   @override
-  String get onboardingTailscaleConnected => 'Tailscale connected';
+  String get onboardingTailscaleConnected => 'Tailscale connecté';
 
   @override
-  String get onboardingTailscaleConnecting => 'Tailscale connecting';
+  String get onboardingTailscaleConnecting => 'Connexion Tailscale en cours';
 
   @override
   String get onboardingTailscaleConnectionFailed =>
-      'Tailscale connection failed';
+      'Échec de la connexion Tailscale';
 
   @override
-  String get onboardingTailscaleUnsupported => 'Tailscale unsupported';
+  String get onboardingTailscaleUnsupported => 'Tailscale non supporté';
 
   @override
   String get onboardingTailscaleAuthAfterSave =>
-      'Tailscale will authenticate after saving';
+      'Tailscale sauthentifiera après lenregistrement';
 
   @override
   String get onboardingTailscaleOpenLoginUrl =>
-      'Open the login URL to add this device to your tailnet. If the browser did not open, copy the URL below.';
+      'Ouvrez lURL de connexion pour ajouter cet appareil à votre tailnet. Si le navigateur ne sest pas ouvert, copiez lURL ci-dessous.';
 
   @override
   String onboardingTailscaleAuthAfterSaveTest(String appName) {
-    return 'After you save and test this server, $appName will open Tailscale login if this device is not authenticated yet.';
+    return 'Après avoir enregistré et testé ce serveur, $appName ouvrira la page de connexion Tailscale si cet appareil nest pas encore authentifié.';
   }
 
   @override
-  String get onboardingStarting => 'Starting';
+  String get onboardingStarting => 'Démarrage';
 
   @override
-  String get onboardingStopping => 'Stopping';
+  String get onboardingStopping => 'Arrêt';
 
   @override
-  String get onboardingFailed => 'Failed';
+  String get onboardingFailed => 'Échec';
 
   @override
-  String get onboardingStopped => 'Stopped';
+  String get onboardingStopped => 'Arrêté';
 
   @override
   String get onboardingUsingDetectedCommand =>
-      'Using detected OpenCode command.';
+      'Utilisation de la commande OpenCode détectée.';
 
   @override
-  String get onboardingContinue => 'Continue';
+  String get onboardingContinue => 'Continuer';
 
   @override
-  String get onboardingDone => 'Done';
+  String get onboardingDone => 'Terminé';
 
   @override
-  String get onboardingYoureAllSet => 'You\'re all set!';
+  String get onboardingYoureAllSet => 'Tout est prêt !';
 
   @override
-  String get onboardingServerUpdated => 'Server updated';
+  String get onboardingServerUpdated => 'Serveur mis à jour';
 
   @override
   String get onboardingServerConnectedReady =>
-      'Your server is connected and ready to use.';
+      'Votre serveur est connecté et prêt à lemploi.';
 
   @override
   String get onboardingServerSettingsSaved =>
-      'Your server settings were saved and health checks were refreshed.';
+      'Vos paramètres de serveur ont été enregistrés et les tests de santé ont été actualisés.';
 
   @override
   String onboardingStartUsing(String appName) {
-    return 'Start using $appName';
+    return 'Commencer à utiliser $appName';
   }
 
   @override
   String get onboardingCouldNotVerify =>
-      'Could not verify the server connection.';
+      'Impossible de vérifier la connexion au serveur.';
 
   @override
   String get onboardingCloudflareAuthFailed =>
-      'Cloudflare Access authentication failed.';
+      'Lauthentification Cloudflare Access a échoué.';
 
   @override
   String get onboardingHealthCheckFailedMayBeStarting =>
-      'Server health check failed. It may still be starting up.';
+      'Le test de santé du serveur a échoué. Il est peut-être encore en train de démarrer.';
 
   @override
   String get onboardingConnectionUpdated =>
-      'Server connection updated successfully.';
+      'Connexion au serveur mise à jour avec succès.';
 
   @override
   String get onboardingAddedButHealthCheckFailed =>
-      'Server added but health check failed. It may still be starting up.';
+      'Serveur ajouté mais le test de santé a échoué. Il est peut-être encore en train de démarrer.';
 
   @override
   String get onboardingConnectionSaved =>
-      'Server connection saved successfully.';
+      'Connexion au serveur enregistrée avec succès.';
 
   @override
-  String get onboardingAvailable => 'available';
+  String get onboardingAvailable => 'disponible';
 
   @override
-  String get onboardingNotAvailable => 'not available';
+  String get onboardingNotAvailable => 'non disponible';
 
   @override
-  String get onboardingReachable => 'reachable';
+  String get onboardingReachable => 'accessible';
 
   @override
-  String get onboardingUnreachable => 'unreachable';
+  String get onboardingUnreachable => 'inaccessible';
 
   @override
-  String get onboardingWritable => 'writable';
+  String get onboardingWritable => 'accessible en écriture';
 
   @override
-  String get onboardingNotWritable => 'not writable';
+  String get onboardingNotWritable => 'non accessible en écriture';
 
   @override
   String toolPresentationRunningTool(String toolName) {
-    return 'Running $toolName';
+    return 'Exécution de $toolName';
   }
 
   @override
-  String get toolPresentationTool => 'Tool';
+  String get toolPresentationTool => 'Outil';
 
   @override
   String get shortcutGroupSession => 'Session';
 
   @override
-  String get shortcutGroupGeneral => 'General';
+  String get shortcutGroupGeneral => 'Général';
 
   @override
-  String get shortcutGroupPrompt => 'Prompt';
+  String get shortcutGroupPrompt => 'Invite';
 
   @override
   String get shortcutGroupNavigation => 'Navigation';
 
   @override
-  String get shortcutGroupModelAndAgent => 'Model and agent';
+  String get shortcutGroupModelAndAgent => 'Modèle et agent';
 
   @override
   String get shortcutGroupApplication => 'Application';
 
   @override
-  String get shortcutNewConversation => 'New conversation';
+  String get shortcutNewConversation => 'Nouvelle conversation';
 
   @override
-  String get shortcutNewConversationDesc => 'Create a new chat session';
+  String get shortcutNewConversationDesc =>
+      'Créer une nouvelle session de chat';
 
   @override
-  String get shortcutRefreshData => 'Refresh data';
+  String get shortcutRefreshData => 'Actualiser les données';
 
   @override
-  String get shortcutRefreshDataDesc => 'Refresh current chat data';
+  String get shortcutRefreshDataDesc => 'Actualiser les données du chat actuel';
 
   @override
-  String get shortcutFocusInput => 'Focus input';
+  String get shortcutFocusInput => 'Focus sur lentrée';
 
   @override
-  String get shortcutFocusInputDesc => 'Move focus to the prompt input';
+  String get shortcutFocusInputDesc =>
+      'Déplacer le focus vers lentrée de texte';
 
   @override
-  String get shortcutToggleVoiceInput => 'Toggle voice input';
+  String get shortcutToggleVoiceInput => 'Basculer la saisie vocale';
 
   @override
   String get shortcutToggleVoiceInputDesc =>
-      'Start or stop speech-to-text in the composer';
+      'Démarrer ou arrêter la saisie vocale dans léditeur';
 
   @override
-  String get shortcutQuickOpenFiles => 'Quick open files';
+  String get shortcutQuickOpenFiles => 'Ouverture rapide de fichiers';
 
   @override
-  String get shortcutQuickOpenFilesDesc => 'Open file quick search';
+  String get shortcutQuickOpenFilesDesc =>
+      'Ouvrir la recherche rapide de fichiers';
 
   @override
-  String get shortcutOpenSettings => 'Open settings';
+  String get shortcutOpenSettings => 'Ouvrir les paramètres';
 
   @override
-  String get shortcutOpenSettingsDesc => 'Open settings page';
+  String get shortcutOpenSettingsDesc => 'Ouvrir la page des paramètres';
 
   @override
-  String get shortcutNextRecentModel => 'Next recent model';
+  String get shortcutNextRecentModel => 'Modèle récent suivant';
 
   @override
   String get shortcutNextRecentModelDesc =>
-      'Cycle through recently used models';
+      'Passer dun modèle récemment utilisé à lautre';
 
   @override
-  String get shortcutNextVariant => 'Next variant';
+  String get shortcutNextVariant => 'Variante suivante';
 
   @override
   String get shortcutNextVariantDesc =>
-      'Cycle through available model variants';
+      'Passer dune variante de modèle disponible à lautre';
 
   @override
-  String get shortcutFocusCloseDrawer => 'Focus/close drawer';
+  String get shortcutFocusCloseDrawer => 'Focus/fermer le tiroir';
 
   @override
   String get shortcutFocusCloseDrawerDesc =>
-      'Focus composer by default, or close drawer when open';
+      'Focus sur lentrée par défaut, ou fermer le tiroir sil est ouvert';
 
   @override
-  String get shortcutNextAgent => 'Next agent';
+  String get shortcutNextAgent => 'Agent suivant';
 
   @override
-  String get shortcutNextAgentDesc => 'Cycle to next available agent';
+  String get shortcutNextAgentDesc => 'Passer à lagent disponible suivant';
 
   @override
-  String get shortcutPreviousAgent => 'Previous agent';
+  String get shortcutPreviousAgent => 'Agent précédent';
 
   @override
-  String get shortcutPreviousAgentDesc => 'Cycle to previous available agent';
+  String get shortcutPreviousAgentDesc =>
+      'Passer à lagent disponible précédent';
 
   @override
-  String get shortcutCloseApp => 'Close application';
+  String get shortcutCloseApp => 'Fermer lapplication';
 
   @override
-  String get shortcutCloseAppDesc => 'Close app using platform close behavior';
+  String get shortcutCloseAppDesc =>
+      'Fermer lapplication en utilisant le comportement de fermeture de la plateforme';
 
   @override
-  String get shortcutQuitApp => 'Quit application';
+  String get shortcutQuitApp => 'Quitter lapplication';
 
   @override
-  String get shortcutQuitAppDesc => 'Force-exit the app';
+  String get shortcutQuitAppDesc => 'Forcer la sortie de lapplication';
 
   @override
-  String get shortcutStopResponse => 'Stop active response';
+  String get shortcutStopResponse => 'Arrêter la réponse';
 
   @override
   String get shortcutStopResponseDesc =>
-      'Stop active response (while responding)';
+      'Arrêter la réponse active (pendant la réponse)';
 
   @override
-  String get errorConnectionFailed => 'Connection failed';
+  String get errorConnectionFailed => 'Échec de la connexion';
 
   @override
   String get errorConnectionFailedDesc =>
-      'Unable to reach the server. Check connection and server status.';
+      'Impossible de joindre le serveur. Vérifiez la connexion et létat du serveur.';
 
   @override
-  String get errorQuotaExceeded => 'Quota exceeded';
+  String get errorQuotaExceeded => 'Quota dépassé';
 
   @override
   String get errorQuotaExceededDesc =>
-      'Quota exceeded. Check your provider plan or billing.';
+      'Quota dépassé. Vérifiez votre plan de fournisseur ou votre facturation.';
 
   @override
-  String get errorRateLimitExceeded => 'Rate limit exceeded';
+  String get errorRateLimitExceeded => 'Limite de débit dépassée';
 
   @override
   String get errorRateLimitExceededDesc =>
-      'Rate limit exceeded. Wait a moment and try again.';
+      'Limite de débit dépassée. Attendez un moment et réessayez.';
 
   @override
-  String get errorAuthRequired => 'Authentication required';
+  String get errorAuthRequired => 'Authentification requise';
 
   @override
   String get errorAuthRequiredDesc =>
-      'Authentication failed. Reconnect the provider and try again.';
+      'Lauthentification a échoué. Reconnectez le fournisseur et réessayez.';
 
   @override
-  String get errorServiceUnavailable => 'Service unavailable';
+  String get errorServiceUnavailable => 'Service indisponible';
 
   @override
   String get errorServiceUnavailableDesc =>
-      'Service temporarily unavailable. The server may be starting up — please try again shortly.';
+      'Service temporairement indisponible. Le serveur est peut-être en train de démarrer — veuillez réessayer bientôt.';
 
   @override
-  String get errorProviderUnavailable => 'Provider unavailable';
+  String get errorProviderUnavailable => 'Fournisseur indisponible';
 
   @override
   String get errorProviderUnavailableDesc =>
-      'Provider temporarily unavailable. Try again shortly.';
+      'Fournisseur temporairement indisponible. Réessayez bientôt.';
 
   @override
-  String get errorServerError => 'Server error';
+  String get errorServerError => 'Erreur du serveur';
 
   @override
-  String get errorServerErrorDesc => 'Server error. Please try again.';
+  String get errorServerErrorDesc => 'Erreur du serveur. Veuillez réessayer.';
 
   @override
   String get attachmentNotAvailableOnPlatform =>
-      'Attachment actions are not available on this platform.';
+      'Les actions sur les pièces jointes ne sont pas disponibles sur cette plateforme.';
 
   @override
   String get attachmentUnableToOpenLink =>
-      'Unable to open the attachment link.';
+      'Impossible douvrir le lien de la pièce jointe.';
 
   @override
   String get attachmentNoValidLocation =>
-      'Attachment does not provide a valid location.';
+      'La pièce jointe ne fournit pas demplacement valide.';
 
   @override
-  String get attachmentDownloadStarted => 'Attachment download started.';
+  String get attachmentDownloadStarted =>
+      'Téléchargement de la pièce jointe commencé.';
 
   @override
   String get attachmentCouldNotDownload =>
-      'Attachment could not be downloaded.';
+      'La pièce jointe na pas pu être téléchargée.';
 
   @override
   String get attachmentCouldNotDecode =>
-      'Attachment data could not be decoded.';
+      'Les données de la pièce jointe nont pas pu être décodées.';
 
   @override
-  String get attachmentPayloadEmpty => 'Attachment payload is empty.';
+  String get attachmentPayloadEmpty =>
+      'La charge utile de la pièce jointe est vide.';
 
   @override
   String attachmentSavedAndOpened(String path) {
-    return 'Attachment saved to $path and opened.';
+    return 'Pièce jointe enregistrée dans $path et ouverte.';
   }
 
   @override
   String attachmentSavedTo(String path) {
-    return 'Attachment saved to $path.';
+    return 'Pièce jointe enregistrée dans $path.';
   }
 
   @override
   String get attachmentCouldNotSave =>
-      'Attachment could not be saved on this device.';
+      'La pièce jointe na pas pu être enregistrée sur cet appareil.';
 
   @override
-  String get attachmentSaveCanceled => 'Save canceled.';
+  String get attachmentSaveCanceled => 'Enregistrement annulé.';
 
   @override
   String attachmentSavedPath(String path) {
-    return 'Attachment saved to $path.';
+    return 'Pièce jointe enregistrée dans $path.';
   }
 
   @override
-  String get attachmentPathEmpty => 'Attachment path is empty.';
+  String get attachmentPathEmpty => 'Le chemin de la pièce jointe est vide.';
 
   @override
   String get attachmentLocalNotFound =>
-      'Local attachment was not found on this device.';
+      'La pièce jointe locale na pas été trouvée sur cet appareil.';
 
   @override
   String get attachmentUnableToOpenLocal =>
-      'Unable to open the local attachment.';
+      'Impossible douvrir la pièce jointe locale.';
 
   @override
   String speechDesktopOnly(String service) {
-    return '$service is available on desktop only.';
+    return '$service est disponible sur ordinateur uniquement.';
   }
 
   @override
   String speechRuntimeFailed(String service) {
-    return '$service runtime failed to initialize.';
+    return 'Le runtime $service na pas pu sinitialiser.';
   }
 
   @override
   String speechModelFilesIncomplete(String service) {
-    return '$service model files are incomplete.';
+    return 'Les fichiers du modèle $service sont incomplets.';
   }
 
   @override
   String get speechMicPermissionDisabled =>
-      'Microphone permission is disabled.';
+      'Lautorisation du microphone est désactivée.';
 
   @override
   String speechUnavailableOnPlatform(String service) {
-    return '$service speech is unavailable on this platform.';
+    return 'La parole $service nest pas disponible sur cette plateforme.';
   }
 
   @override
   String get terminalOpenToConnect =>
-      'Open Terminal to connect to the server project terminal.';
+      'Ouvrez le Terminal pour vous connecter au terminal du projet du serveur.';
 
   @override
   String get terminalNotAvailableYet =>
-      'Embedded terminal is not available on this runtime yet.';
+      'Le terminal intégré nest pas encore disponible sur ce runtime.';
 
   @override
   String get terminalSelectServer =>
-      'Select an active server before opening Terminal.';
+      'Sélectionnez un serveur actif avant douvrir le Terminal.';
 
   @override
   String get terminalOpenProjectFirst =>
-      'Open a project folder before starting the server terminal.';
+      'Ouvrez un dossier de projet avant de démarrer le terminal du serveur.';
 
   @override
   String terminalConnectingTo(String serverName) {
-    return 'Connecting to $serverName terminal...';
+    return 'Connexion au terminal de $serverName...';
   }
 
   @override
   String terminalConnectionFailed(String error) {
-    return 'Terminal connection failed: $error';
+    return 'Échec de la connexion au terminal : $error';
   }
 
   @override
-  String get terminalDisconnected => 'Terminal disconnected.';
+  String get terminalDisconnected => 'Terminal déconnecté.';
 
   @override
-  String get terminalSessionClosed => 'Terminal session closed.';
+  String get terminalSessionClosed => 'Session de terminal fermée.';
 
   @override
-  String get notificationConversationUpdates => 'Conversation updates';
+  String get notificationConversationUpdates =>
+      'Mises à jour de la conversation';
 
   @override
   String get notificationOpenToClear =>
-      'Open this conversation to clear related notifications.';
+      'Ouvrez cette conversation pour effacer les notifications associées.';
 
   @override
   String get notificationAgentFinished =>
-      'Agent finished the current response.';
+      'Lagent a terminé la réponse actuelle.';
 
   @override
   String get notificationSession => 'Session';
 
   @override
   String get chatBadgeServerNeedsAttention =>
-      'Server connection needs attention.';
+      'La connexion au serveur nécessite une attention particulière.';
 
   @override
   String chatBadgeConversationError(String title) {
-    return '\"$title\" has an error.';
+    return '\"$title\" a une erreur.';
   }
 
   @override
   String chatBadgeConversationNeedsInput(String title) {
-    return '\"$title\" needs your input.';
+    return '\"$title\" nécessite votre intervention.';
   }
 
   @override
   String chatBadgeConversationNewReply(String title) {
-    return '\"$title\" has a new reply.';
+    return '\"$title\" a une nouvelle réponse.';
   }
 
   @override
-  String get chatBadgeSyncing => 'Syncing conversations...';
+  String get chatBadgeSyncing => 'Synchronisation des conversations...';
 
   @override
-  String get chatBadgeDataSaverActive => 'Cellular data saver is active.';
+  String get chatBadgeDataSaverActive =>
+      'Léconomiseur de données mobiles est activé.';
 
   @override
-  String get chatCollapseGroup => 'Collapse group';
+  String get chatCollapseGroup => 'Réduire le groupe';
 
   @override
-  String get chatExpandGroup => 'Expand group';
+  String get chatExpandGroup => 'Développer le groupe';
 
   @override
-  String get chatForkFailed => 'Failed to fork conversation';
+  String get chatForkFailed => 'Échec de la bifurcation de la conversation';
 
   @override
-  String get chatForked => 'Conversation forked';
+  String get chatForked => 'Conversation bifurquée';
 
   @override
   String get chatNoConversationsInProject =>
-      'No conversations in this project.';
+      'Aucune conversation dans ce projet.';
 
   @override
-  String get chatOpenProjectToLoad => 'Open project to load conversations.';
+  String get chatOpenProjectToLoad =>
+      'Ouvrez un projet pour charger les conversations.';
 
   @override
-  String get chatExportCanceled => 'Session export canceled';
+  String get chatExportCanceled => 'Exportation de la session annulée';
 
   @override
   String get chatLargeContentSkipped =>
-      'Large or malformed content was skipped for stability.';
+      'Le contenu volumineux ou malformé a été ignoré pour des raisons de stabilité.';
 
   @override
   String chatTokensLabel(int total) {
-    return 'Tokens: $total';
+    return 'Tokens : $total';
   }
 
   @override
   String chatCostLabel(String cost) {
-    return 'Cost: \$$cost';
+    return 'Coût : \$$cost';
   }
 
   @override
-  String get chatFileExplorerNames => 'Names';
+  String get chatFileExplorerNames => 'Noms';
 
   @override
-  String get chatFileExplorerContents => 'Contents';
+  String get chatFileExplorerContents => 'Contenu';
 
   @override
   String chatCloseProject(String project) {
-    return 'Close $project';
+    return 'Fermer $project';
   }
 
   @override
-  String get sessionExportUser => 'User';
+  String get sessionExportUser => 'Utilisateur';
 
   @override
   String get sessionExportAssistant => 'Assistant';
 
   @override
-  String get sessionExportInput => 'Input:';
+  String get sessionExportInput => 'Entrée :';
 
   @override
-  String get sessionExportOutput => 'Output:';
+  String get sessionExportOutput => 'Sortie :';
 
   @override
-  String get sessionExportError => 'Error:';
+  String get sessionExportError => 'Erreur :';
 
   @override
-  String get sessionExportUntitled => 'Untitled session';
+  String get sessionExportUntitled => 'Session sans titre';
 
   @override
-  String get modelLabelTinyEnglish => 'Tiny (English)';
+  String get modelLabelTinyEnglish => 'Tiny (Anglais)';
 
   @override
-  String get modelLabelBaseEnglish => 'Base (English)';
+  String get modelLabelBaseEnglish => 'Base (Anglais)';
 
   @override
   String get modelLabelSenseVoice => 'SenseVoice (zh/en/ja/ko/yue)';
 
   @override
-  String get modelLabelParakeet => 'Parakeet V3 (25 European languages)';
+  String get modelLabelParakeet => 'Parakeet V3 (25 langues européennes)';
 
   @override
-  String get cannedNewQuickReply => 'New quick reply';
+  String get cannedNewQuickReply => 'Nouvelle réponse rapide';
 
   @override
   String get settingsSoundPickerNotAvailable =>
-      'System sound picker is not available on this platform.';
+      'Le sélecteur de sons système nest pas disponible sur cette plateforme.';
 
   @override
-  String get appProviderPrimaryServer => 'Primary server';
+  String get appProviderPrimaryServer => 'Serveur principal';
 
   @override
-  String get appProviderLocalManaged => 'Local OpenCode (Managed)';
+  String get appProviderLocalManaged => 'OpenCode local (géré)';
 
   @override
-  String get appProviderLocalServerStopped => 'Local server is stopped.';
+  String get appProviderLocalServerStopped => 'Le serveur local est arrêté.';
 
   @override
   String get appProviderRunDiagnostics =>
-      'Run diagnostics to verify local OpenCode requirements.';
+      'Exécutez les diagnostics pour vérifier les prérequis locaux dOpenCode.';
 
   @override
-  String get appProviderInvalidServerUrl => 'Invalid server URL';
+  String get appProviderInvalidServerUrl => 'URL du serveur invalide';
 
   @override
   String get appProviderOAuthNotSupported =>
-      'Cloudflare Access OAuth is not supported on this platform';
+      'Cloudflare Access OAuth nest pas supporté sur cette plateforme';
 
   @override
   String get appProviderTailscaleNotSupported =>
-      'Tailscale is not supported on this platform';
+      'Tailscale nest pas supporté sur cette plateforme';
 
   @override
-  String get appProviderProfileNotFound => 'Server profile not found';
+  String get appProviderProfileNotFound => 'Profil de serveur introuvable';
 
   @override
   String get appProviderCannotActivateUnhealthy =>
-      'Cannot activate an unhealthy server';
+      'Impossible dactiver un serveur en mauvaise santé';
 
   @override
-  String get appProviderOpenCodeDetected => 'OpenCode detected';
+  String get appProviderOpenCodeDetected => 'OpenCode détecté';
 
   @override
-  String get appProviderOpenCodeNotDetected => 'OpenCode not detected';
+  String get appProviderOpenCodeNotDetected => 'OpenCode non détecté';
 
   @override
-  String get appProviderDetectingCommand => 'Detecting OpenCode command...';
+  String get appProviderDetectingCommand =>
+      'Détection de la commande OpenCode...';
 
   @override
   String appProviderNotDetectedRefresh(String appName) {
-    return 'OpenCode command was not detected. If you installed it moments ago, refresh checks or reopen $appName to reload PATH.';
+    return 'La commande OpenCode na pas été détectée. Si vous lavez installée il y a un instant, actualisez les tests ou redémarrez $appName pour recharger le PATH.';
   }
 
   @override
   String get appProviderNotDetectedInstall =>
-      'OpenCode command was not detected. Run installation from the wizard.';
+      'La commande OpenCode na pas été détectée. Lancez linstallation depuis lassistant.';
 
   @override
   String appProviderUsingCommandAt(String path) {
-    return 'Using OpenCode command at $path';
+    return 'Utilisation de la commande OpenCode à $path';
   }
 
   @override
   String get appProviderDesktopOnly =>
-      'Managed local server is available only on desktop.';
+      'Le serveur local géré nest disponible que sur ordinateur.';
 
   @override
   String get appProviderInstallingRequirements =>
-      'Installing OpenCode requirements...';
+      'Installation des prérequis OpenCode...';
 
   @override
-  String get appProviderInstallationFailed => 'OpenCode installation failed.';
+  String get appProviderInstallationFailed =>
+      'Linstallation dOpenCode a échoué.';
 
   @override
   String get appProviderInstalledSuccessfully =>
-      'OpenCode requirements installed successfully.';
+      'Prérequis OpenCode installés avec succès.';
 
   @override
   String appProviderInstallSucceededWithPath(String path) {
-    return 'Installation succeeded. OpenCode command available at $path.';
+    return 'Installation réussie. Commande OpenCode disponible à $path.';
   }
 
   @override
-  String get appProviderInstallSucceeded => 'Installation succeeded.';
+  String get appProviderInstallSucceeded => 'Installation réussie.';
 
   @override
-  String get appProviderStartingLocalServer => 'Starting local server...';
+  String get appProviderStartingLocalServer => 'Démarrage du serveur local...';
 
   @override
   String get appProviderFailedToStart =>
-      'Failed to start local OpenCode server.';
+      'Échec du démarrage du serveur OpenCode local.';
 
   @override
   String appProviderRunningAt(String url) {
-    return 'Running at $url';
+    return 'Lancé sur $url';
   }
 
   @override
-  String get appProviderStoppingLocalServer => 'Stopping local server...';
+  String get appProviderStoppingLocalServer => 'Arrêt du serveur local...';
 
   @override
   String appProviderExitedWithCode(int code) {
-    return 'Local server exited with code $code.';
+    return 'Le serveur local sest arrêté avec le code $code.';
   }
 
   @override
-  String get appProviderInstallBinary => 'Install Binary';
+  String get appProviderInstallBinary => 'Installer le binaire';
 
   @override
-  String get appProviderInstallViaNpm => 'Install via npm';
+  String get appProviderInstallViaNpm => 'Installer via npm';
 
   @override
-  String get appProviderInstallViaBun => 'Install via Bun';
+  String get appProviderInstallViaBun => 'Installer via Bun';
 
   @override
-  String get appProviderInstallBunOpenCode => 'Install Bun + OpenCode';
+  String get appProviderInstallBunOpenCode => 'Installer Bun + OpenCode';
 
   @override
   String get tailscaleNotSupportedOnPlatform =>
-      'Tailscale is not supported on this platform.';
+      'Tailscale nest pas supporté sur cette plateforme.';
 
   @override
   String get tailscaleNotSupportedOnWindows =>
-      'Tailscale is not supported on Windows.';
+      'Tailscale nest pas supporté sur Windows.';
 
   @override
   String get tailscaleWaitingAdminApproval =>
-      'This Tailscale node is waiting for admin approval.';
+      'Ce nœud Tailscale est en attente de lapprobation de ladministrateur.';
 
   @override
   String get notificationSoundLoadFailed =>
-      'Failed to load Android system sounds';
+      'Échec du chargement des sons système Android';
 
   @override
-  String get chatDescriptionNewConversation => 'New conversation';
+  String get chatDescriptionNewConversation => 'Nouvelle conversation';
 
   @override
-  String get chatDescriptionRefreshData => 'Refresh chat data';
+  String get chatDescriptionRefreshData => 'Actualiser les données du chat';
 
   @override
-  String get chatDescriptionFocusInput => 'Focus message input';
+  String get chatDescriptionFocusInput => 'Focus sur lentrée du message';
 
   @override
-  String get chatDescriptionVoiceInput => 'Start or stop voice input';
+  String get chatDescriptionVoiceInput =>
+      'Démarrer ou arrêter la saisie vocale';
 
   @override
-  String get chatDescriptionQuickOpen => 'Quick open files';
+  String get chatDescriptionQuickOpen => 'Ouverture rapide de fichiers';
 
   @override
-  String get chatDescriptionOpenSettings => 'Open settings';
+  String get chatDescriptionOpenSettings => 'Ouvrir les paramètres';
 
   @override
-  String get chatDescriptionCycleModels => 'Cycle recent models';
+  String get chatDescriptionCycleModels => 'Faire défiler les modèles récents';
 
   @override
-  String get chatDescriptionCycleVariant => 'Cycle model variant';
+  String get chatDescriptionCycleVariant =>
+      'Faire défiler les variantes de modèle';
 
   @override
   String get chatDescriptionFocusOrCloseDrawer =>
-      'Focus input (or close drawer when open)';
+      'Focus sur lentrée (ou fermer le tiroir sil est ouvert)';
 
   @override
-  String get chatDescriptionNextAgent => 'Next agent';
+  String get chatDescriptionNextAgent => 'Agent suivant';
 
   @override
-  String get chatDescriptionPreviousAgent => 'Previous agent';
+  String get chatDescriptionPreviousAgent => 'Agent précédent';
 
   @override
   String get chatDescriptionCloseApp =>
-      'Close app using platform close behavior';
+      'Fermer lapplication en utilisant le comportement de fermeture de la plateforme';
 
   @override
-  String get chatDescriptionForceExit => 'Force-exit the app';
+  String get chatDescriptionForceExit => 'Forcer la sortie de lapplication';
 
   @override
   String get chatDescriptionStopResponse =>
-      'Stop active response (while responding)';
+      'Arrêter la réponse active (pendant la réponse)';
 
   @override
-  String get chatDescriptionProjectCommand => 'Project command';
+  String get chatDescriptionProjectCommand => 'Commande de projet';
 
   @override
   String get chatDescriptionOpenProjects =>
-      'Use this button to open your projects and conversations.';
+      'Utilisez ce bouton pour ouvrir vos projets et conversations.';
 
   @override
   String get chatDescriptionSwitchProject =>
-      'Use this button to switch project folders and context.';
+      'Utilisez ce bouton pour changer de dossier de projet et de contexte.';
 
   @override
   String chatDescriptionChildren(int count) {
-    return 'Children: $count';
+    return 'Enfants : $count';
   }
 
   @override
-  String get chatDescriptionDiffFilesZero => 'Diff files: 0';
+  String get chatDescriptionDiffFilesZero => 'Fichiers diff : 0';
 
   @override
-  String get appProviderErrorInvalidServerUrl => 'Invalid server URL';
+  String get appProviderErrorInvalidServerUrl => 'URL du serveur invalide';
 
   @override
-  String get appProviderErrorServerUrlRequired => 'Server URL is required';
+  String get appProviderErrorServerUrlRequired => 'LURL du serveur est requise';
 
   @override
   String get appProviderErrorServerAlreadyExists =>
-      'A server with this URL already exists';
+      'Un serveur avec cette URL existe déjà';
 
   @override
   String get appProviderErrorCloudflareOAuthNotSupported =>
-      'Cloudflare Access OAuth is not supported on this platform';
+      'Cloudflare Access OAuth nest pas supporté sur cette plateforme';
 
   @override
   String get appProviderErrorTailscaleNotSupported =>
-      'Tailscale is not supported on this platform';
+      'Tailscale nest pas supporté sur cette plateforme';
 
   @override
   String get appProviderErrorServerProfileNotFound =>
-      'Server profile not found';
+      'Profil de serveur introuvable';
 
   @override
   String get appProviderErrorCannotActivateUnhealthy =>
-      'Cannot activate an unhealthy server';
+      'Impossible dactiver un serveur en mauvaise santé';
 
   @override
   String get appProviderErrorManagedDesktopOnly =>
-      'Managed local server is available only on desktop.';
+      'Le serveur local géré nest disponible que sur ordinateur.';
 
   @override
   String get appProviderErrorLocalServerHealthCheckFailed =>
-      'Local server started but health check did not pass.';
+      'Le serveur local a démarré mais le test de santé na pas été concluant.';
 
   @override
   String get appProviderErrorInstallationFailed =>
-      'OpenCode installation failed.';
+      'Linstallation dOpenCode a échoué.';
 
   @override
-  String get appProviderStatusLocalServerStopped => 'Local server is stopped.';
+  String get appProviderStatusLocalServerStopped =>
+      'Le serveur local est arrêté.';
 
   @override
-  String get appProviderStatusStartingLocalServer => 'Starting local server...';
+  String get appProviderStatusStartingLocalServer =>
+      'Démarrage du serveur local...';
 
   @override
   String appProviderStatusRunningAt(String url) {
-    return 'Running at $url';
+    return 'Lancé sur $url';
   }
 
   @override
-  String get appProviderStatusStoppingLocalServer => 'Stopping local server...';
+  String get appProviderStatusStoppingLocalServer =>
+      'Arrêt du serveur local...';
 
   @override
   String appProviderStatusLocalServerExitedWithCode(int code) {
-    return 'Local server exited with code $code.';
+    return 'Le serveur local sest arrêté avec le code $code.';
   }
 
   @override
   String get appProviderSetupDetectingOpenCode =>
-      'Detecting OpenCode command...';
+      'Détection de la commande OpenCode...';
 
   @override
-  String get appProviderSetupOpenCodeDetected => 'OpenCode detected';
+  String get appProviderSetupOpenCodeDetected => 'OpenCode détecté';
 
   @override
-  String get appProviderSetupOpenCodeNotDetected => 'OpenCode not detected';
+  String get appProviderSetupOpenCodeNotDetected => 'OpenCode non détecté';
 
   @override
   String appProviderSetupUsingOpenCodeAt(String path) {
-    return 'Using OpenCode command at $path';
+    return 'Utilisation de la commande OpenCode à $path';
   }
 
   @override
   String get appProviderSetupInstallingRequirements =>
-      'Installing OpenCode requirements...';
+      'Installation des prérequis OpenCode...';
 
   @override
   String get appProviderSetupRequirementsInstalled =>
-      'OpenCode requirements installed successfully.';
+      'Prérequis OpenCode installés avec succès.';
 
   @override
   String appProviderSetupInstallationSucceededWithPath(String path) {
-    return 'Installation succeeded. OpenCode command available at $path.';
+    return 'Installation réussie. Commande OpenCode disponible à $path.';
   }
 
   @override
-  String get appProviderSetupInstallationSucceeded => 'Installation succeeded.';
+  String get appProviderSetupInstallationSucceeded => 'Installation réussie.';
 
   @override
   String get appProviderSetupOpenCodeNotDetectedRefresh =>
-      'OpenCode command was not detected. If you installed it moments ago, refresh checks or reopen CodeWalk to reload PATH.';
+      'La commande OpenCode na pas été détectée. Si vous lavez installée il y a un instant, actualisez les tests ou redémarrez CodeWalk pour recharger le PATH.';
 
   @override
   String get appProviderSetupOpenCodeNotDetectedInstall =>
-      'OpenCode command was not detected. Run installation from the wizard.';
+      'La commande OpenCode na pas été détectée. Lancez linstallation depuis lassistant.';
 
   @override
-  String get appProviderLabelPrimaryServer => 'Primary server';
+  String get appProviderLabelPrimaryServer => 'Serveur principal';
 
   @override
-  String get appProviderLabelLocalOpenCodeManaged => 'Local OpenCode (Managed)';
+  String get appProviderLabelLocalOpenCodeManaged => 'OpenCode local (géré)';
 }
