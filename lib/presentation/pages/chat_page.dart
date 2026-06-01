@@ -74,7 +74,7 @@ import '../widgets/session_title_inline_editor.dart';
 import '../widgets/session_todo_list_widget.dart';
 import 'onboarding_wizard_page.dart';
 import 'settings_page.dart';
-import '../../../core/i18n/l10n_context.dart';
+
 
 part 'chat_page_types_part.dart';
 part 'chat_page/chat_page_lifecycle.dart';

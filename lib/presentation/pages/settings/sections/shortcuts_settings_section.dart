@@ -10,7 +10,7 @@ import '../../../../domain/entities/experience_settings.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../utils/shortcut_binding_codec.dart';
 import '../../../widgets/settings_provenance_chip.dart';
-import '../../../../../core/i18n/l10n_context.dart';
+
 
 class ShortcutsSettingsSection extends StatefulWidget {
   const ShortcutsSettingsSection({super.key});

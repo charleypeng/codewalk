@@ -12,7 +12,7 @@ import '../../../providers/locale_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../widgets/searchable_dropdown_form_field.dart';
 import '../../../widgets/settings_provenance_chip.dart';
-import '../../../../../core/i18n/l10n_context.dart';
+
 
 class BehaviorSettingsSection extends StatefulWidget {
   const BehaviorSettingsSection({super.key});

@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import '../../core/i18n/l10n_context.dart';
 import '../providers/app_provider.dart';
 import '../services/local_opencode_server_runtime_types.dart';
-import '../../../core/i18n/l10n_context.dart';
+
 
 class OpenCodeSetupDebugPage extends StatelessWidget {
   const OpenCodeSetupDebugPage({super.key});

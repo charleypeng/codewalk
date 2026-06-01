@@ -9,7 +9,7 @@ import '../../core/i18n/l10n_context.dart';
 import '../providers/chat_provider.dart';
 import 'modal_primary_action_shortcuts.dart';
 import '../utils/session_title_formatter.dart';
-import '../../../core/i18n/l10n_context.dart';
+
 
 /// Chat session list widget
 class ChatSessionList extends StatefulWidget {

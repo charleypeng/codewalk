@@ -12,7 +12,7 @@ import '../services/desktop_tray_service_types.dart';
 import '../services/update_check_service.dart';
 import 'chat_page.dart';
 import 'onboarding_wizard_page.dart';
-import '../../../core/i18n/l10n_context.dart';
+import '../../core/i18n/l10n_context.dart';
 
 class AppShellPage extends StatefulWidget {
   const AppShellPage({super.key});

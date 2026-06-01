@@ -15,7 +15,7 @@ import '../../../utils/app_page_route.dart';
 import '../../../widgets/searchable_dropdown_form_field.dart';
 import '../../onboarding_wizard_page.dart';
 import '../../opencode_setup_debug_page.dart';
-import '../../../../../core/i18n/l10n_context.dart';
+
 
 class ServersSettingsSection extends StatefulWidget {
   const ServersSettingsSection({super.key});

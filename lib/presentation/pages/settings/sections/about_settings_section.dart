@@ -13,7 +13,7 @@ import '../../../providers/app_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../services/update_check_service.dart';
 import '../../app_shell_page.dart';
-import '../../../../../core/i18n/l10n_context.dart';
+
 
 class AboutSettingsSection extends StatefulWidget {
   const AboutSettingsSection({super.key});
