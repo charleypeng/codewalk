@@ -121,18 +121,20 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     required String serverId,
     required String scopeId,
   }) async {
-    _recentModelKeys = <String>[];
-    _favoriteModelKeys = <String>[];
-    _pinnedSessionIds = <String>{};
-    _modelUsageCounts = <String, int>{};
-    _selectedVariantByModel = <String, String>{};
-    _agentSelectionMemoryByAgent = <String, _AgentSelectionMemory>{};
-
+    // Load every preference field into a local variable first, then swap
+    // the instance fields atomically at the end. The previous clear-then-load
+    // pattern opened an empty window for _favoriteModelKeys,
+    // _pinnedSessionIds, _modelUsageCounts, and _selectedVariantByModel
+    // between the clear and the awaited reload — during that window a
+    // concurrent _persistSelection (e.g. from the Feature 7 late re-apply
+    // hook in loadMessages) could capture the empty values via
+    // _SelectionPersistenceSnapshot and overwrite the stored favorites and
+    // pinned sessions.
     final recentJson = await localDataSource.getRecentModelsJson(
       serverId: serverId,
       scopeId: scopeId,
     );
-    _recentModelKeys = _decodeStoredModelKeys(
+    final loadedRecentModelKeys = _decodeStoredModelKeys(
       recentJson,
       maxItems: ChatProvider._maxRecentModels,
     );
@@ -140,8 +142,8 @@ extension _ChatProviderPreferenceOps on ChatProvider {
     final favoritesJson = await localDataSource.getFavoriteModelsJson(
       serverId: serverId,
     );
-    _favoriteModelKeys = _decodeStoredModelKeys(favoritesJson);
-    if (_favoriteModelKeys.isEmpty) {
+    var loadedFavoriteModelKeys = _decodeStoredModelKeys(favoritesJson);
+    if (loadedFavoriteModelKeys.isEmpty) {
       final legacyFavorites = await localDataSource
           .getLegacyFavoriteModelsJsonForServer(serverId);
       if (legacyFavorites.isNotEmpty) {
@@ -149,10 +151,10 @@ extension _ChatProviderPreferenceOps on ChatProvider {
         for (final legacyRaw in legacyFavorites) {
           mergedFavorites.addAll(_decodeStoredModelKeys(legacyRaw));
         }
-        _favoriteModelKeys = mergedFavorites.toList(growable: false);
-        if (_favoriteModelKeys.isNotEmpty) {
+        loadedFavoriteModelKeys = mergedFavorites.toList(growable: false);
+        if (loadedFavoriteModelKeys.isNotEmpty) {
           await localDataSource.saveFavoriteModelsJson(
-            json.encode(_favoriteModelKeys),
+            json.encode(loadedFavoriteModelKeys),
             serverId: serverId,
           );
           await localDataSource.deleteLegacyFavoriteModelsJsonForServer(
@@ -166,11 +168,12 @@ extension _ChatProviderPreferenceOps on ChatProvider {
       serverId: serverId,
       scopeId: scopeId,
     );
+    var loadedPinnedSessionIds = <String>{};
     if (pinnedJson != null && pinnedJson.trim().isNotEmpty) {
       try {
         final decoded = json.decode(pinnedJson);
         if (decoded is List<dynamic>) {
-          _pinnedSessionIds = decoded
+          loadedPinnedSessionIds = decoded
               .whereType<String>()
               .where((value) => value.trim().isNotEmpty)
               .toSet();
@@ -181,7 +184,6 @@ extension _ChatProviderPreferenceOps on ChatProvider {
           error: error,
           stackTrace: stackTrace,
         );
-        _pinnedSessionIds = <String>{};
       }
     }
 
@@ -189,20 +191,21 @@ extension _ChatProviderPreferenceOps on ChatProvider {
       serverId: serverId,
       scopeId: scopeId,
     );
+    var loadedModelUsageCounts = <String, int>{};
     if (usageJson != null && usageJson.trim().isNotEmpty) {
       try {
         final decoded = json.decode(usageJson);
         if (decoded is Map<String, dynamic>) {
-          _modelUsageCounts = decoded.map(
+          loadedModelUsageCounts = decoded.map(
             (key, value) => MapEntry(
               key,
               value is num ? value.toInt() : int.tryParse('$value') ?? 0,
             ),
           );
-          _modelUsageCounts.removeWhere((_, value) => value <= 0);
+          loadedModelUsageCounts.removeWhere((_, value) => value <= 0);
         }
       } catch (_) {
-        _modelUsageCounts = <String, int>{};
+        // Keep the default empty map; corruption is non-fatal.
       }
     }
 
@@ -210,27 +213,36 @@ extension _ChatProviderPreferenceOps on ChatProvider {
       serverId: serverId,
       scopeId: scopeId,
     );
+    var loadedSelectedVariantByModel = <String, String>{};
     if (variantsJson != null && variantsJson.trim().isNotEmpty) {
       try {
         final decoded = json.decode(variantsJson);
         if (decoded is Map<String, dynamic>) {
-          _selectedVariantByModel = decoded.map(
+          loadedSelectedVariantByModel = decoded.map(
             (key, value) => MapEntry(key, '$value'),
           );
-          _selectedVariantByModel.removeWhere(
+          loadedSelectedVariantByModel.removeWhere(
             (_, value) => value.trim().isEmpty,
           );
         }
       } catch (_) {
-        _selectedVariantByModel = <String, String>{};
+        // Keep the default empty map; corruption is non-fatal.
       }
     }
 
     final agentSelectionMemoryJson = await localDataSource
         .getAgentSelectionMemoryJson(serverId: serverId, scopeId: scopeId);
-    _agentSelectionMemoryByAgent = _decodeAgentSelectionMemory(
+    final loadedAgentSelectionMemoryByAgent = _decodeAgentSelectionMemory(
       agentSelectionMemoryJson,
     );
+
+    // Atomic swap — no field is cleared until its replacement is ready.
+    _recentModelKeys = loadedRecentModelKeys;
+    _favoriteModelKeys = loadedFavoriteModelKeys;
+    _pinnedSessionIds = loadedPinnedSessionIds;
+    _modelUsageCounts = loadedModelUsageCounts;
+    _selectedVariantByModel = loadedSelectedVariantByModel;
+    _agentSelectionMemoryByAgent = loadedAgentSelectionMemoryByAgent;
   }
 
   Future<void> _persistModelPreferenceState({
