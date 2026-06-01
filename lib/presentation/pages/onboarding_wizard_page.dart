@@ -370,16 +370,16 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         if (!authenticated) {
           setState(() {
             _testing = false;
-            _connectionError = 'Cloudflare Access authentication failed.';
+            _connectionError = context.l10n.onboardingCloudflareAuthFailed;
           });
           return;
         }
       }
 
       final health = appProvider.healthFor(trackedServerId);
-      final healthMessage = health == ServerHealthStatus.unhealthy
-          ? 'Server health check failed. It may still be starting up.'
-          : 'Server connection updated successfully.';
+    final healthMessage = health == ServerHealthStatus.unhealthy
+        ? context.l10n.onboardingHealthCheckFailedMayBeStarting
+        : context.l10n.onboardingConnectionUpdated;
       appProvider.recordSetupDebugEvent(
         source: 'Manual connection',
         message: healthMessage,
@@ -390,9 +390,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       setState(() {
         _testing = false;
         _connectionSuccess = health != ServerHealthStatus.unhealthy;
-        _connectionError = health == ServerHealthStatus.unhealthy
-            ? 'Server health check failed. It may still be starting up.'
-            : null;
+    _connectionError = health == ServerHealthStatus.unhealthy
+        ? context.l10n.onboardingHealthCheckFailedMayBeStarting
+        : null;
         _step = 2;
       });
       return;
@@ -440,7 +440,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         if (!authenticated) {
           setState(() {
             _testing = false;
-            _connectionError = 'Cloudflare Access authentication failed.';
+            _connectionError = context.l10n.onboardingCloudflareAuthFailed;
           });
           return;
         }
@@ -449,9 +449,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       final health = serverId == null
           ? ServerHealthStatus.unhealthy
           : appProvider.healthFor(serverId);
-      final healthMessage = health == ServerHealthStatus.unhealthy
-          ? 'Server added but health check failed. It may still be starting up.'
-          : 'Server connection saved successfully.';
+  final healthMessage = health == ServerHealthStatus.unhealthy
+        ? context.l10n.onboardingAddedButHealthCheckFailed
+        : context.l10n.onboardingConnectionSaved;
       appProvider.recordSetupDebugEvent(
         source: 'Manual connection',
         message: healthMessage,
@@ -462,9 +462,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       setState(() {
         _testing = false;
         _connectionSuccess = health != ServerHealthStatus.unhealthy;
-        _connectionError = health == ServerHealthStatus.unhealthy
-            ? 'Server added but health check failed. It may still be starting up.'
-            : null;
+    _connectionError = health == ServerHealthStatus.unhealthy
+        ? context.l10n.onboardingAddedButHealthCheckFailed
+        : null;
         _step = 2;
       });
     } else {
@@ -571,11 +571,11 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
 
   String _titleForCurrentStep() {
     return switch (_step) {
-      0 => widget.showSkipAction ? 'Setup' : 'Setup wizard',
-      1 => _editingServerId == null ? 'Server setup' : 'Edit server',
-      2 => _connectionSuccess ? 'Ready' : context.l10n.onboardingConnectionIssue,
-      3 => 'Local server setup',
-      _ => 'Setup',
+      0 => widget.showSkipAction ? context.l10n.onboardingSetup : context.l10n.onboardingSetupWizard,
+      1 => _editingServerId == null ? context.l10n.onboardingServerSetup : context.l10n.onboardingEditServer,
+      2 => _connectionSuccess ? context.l10n.onboardingReady : context.l10n.onboardingConnectionIssue,
+      3 => context.l10n.onboardingLocalServerSetup,
+      _ => context.l10n.onboardingSetup,
     };
   }
 
@@ -598,11 +598,11 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
     );
 
     final title = widget.showSkipAction
-        ? 'Welcome to ${AppConstants.appName}'
-        : 'Choose how to set up your server';
+        ? context.l10n.onboardingWelcomeTo(AppConstants.appName)
+        : context.l10n.onboardingChooseHowToSetup;
     final subtitle = widget.showSkipAction
-        ? 'CodeWalk needs an OpenCode server before it can help with your code.'
-        : 'Pick the setup path that matches your current OpenCode setup.';
+        ? context.l10n.onboardingNeedsOpenCodeServer(AppConstants.appName)
+        : context.l10n.onboardingPickSetupPath;
 
     return SingleChildScrollView(
       key: const ValueKey('step_welcome'),
@@ -781,10 +781,10 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                                   ?.copyWith(color: colorScheme.onSurface),
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              supportsLocalManaged
-                                  ? 'Desktop only: CodeWalk can diagnose, install, and run OpenCode for you.'
-                                  : 'Available only on desktop (Linux/macOS/Windows).',
+                Text(
+                    supportsLocalManaged
+                        ? context.l10n.onboardingDesktopOnlyDiagnose(AppConstants.appName)
+                        : context.l10n.onboardingAvailableOnlyDesktop,
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
                                     color: colorScheme.onSurfaceVariant,
@@ -884,9 +884,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
 
           if (!_showQuickGuide) ...[
             Text(
-              _editingServerId == null
-                  ? 'Server connection'
-                  : 'Edit server connection',
+                _editingServerId == null
+                    ? context.l10n.onboardingServerConnection
+                    : context.l10n.onboardingEditServerConnection,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
@@ -904,22 +904,19 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                   context.l10n.onboardingDefaultURLEmulator,
                 ),
                 children: [
-                  _buildSetupHintRow(
-                    icon: Symbols.link,
-                    text:
-                        'Suggested local OpenCode server URL: $_suggestedServerUrl',
-                  ),
-                  const SizedBox(height: 8),
-                  _buildSetupHintRow(
-                    icon: Symbols.phone_android,
-                    text:
-                        'On Android emulator, localhost and 127.0.0.1 are remapped to 10.0.2.2 automatically.',
-                  ),
-                  const SizedBox(height: 8),
-                  _buildSetupHintRow(
-                    icon: Symbols.lock,
-                    text:
-                        'Enable Basic Auth only if your OpenCode server is password-protected.',
+            _buildSetupHintRow(
+                icon: Symbols.link,
+                text: context.l10n.onboardingSuggestedUrl(_suggestedServerUrl),
+              ),
+              const SizedBox(height: 8),
+              _buildSetupHintRow(
+                icon: Symbols.phone_android,
+                text: context.l10n.onboardingEmulatorRemap,
+              ),
+              const SizedBox(height: 8),
+              _buildSetupHintRow(
+                icon: Symbols.lock,
+                text: context.l10n.onboardingBasicAuthTip,
                   ),
                 ],
               ),
@@ -979,12 +976,12 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                       onChanged: (_) => setState(() {}),
                       validator: (value) {
                         final raw = value?.trim() ?? '';
-                        if (raw.isEmpty) return 'Enter a server URL';
-                        try {
-                          AppProvider.normalizeServerUrl(raw);
-                          return null;
-                        } catch (_) {
-                          return 'Invalid URL';
+          if (raw.isEmpty) return context.l10n.onboardingEnterServerUrl;
+          try {
+            AppProvider.normalizeServerUrl(raw);
+            return null;
+          } catch (_) {
+            return context.l10n.onboardingInvalidUrl;
                         }
                       },
                     ),
@@ -1131,12 +1128,12 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Symbols.link_rounded),
-                      label: Text(
-                        _testing
-                            ? 'Testing...'
-                            : hasTrackedServer
-                            ? 'Save and test'
-                            : 'Test connection',
+        label: Text(
+          _testing
+              ? context.l10n.onboardingTesting
+              : hasTrackedServer
+                  ? context.l10n.onboardingSaveAndTest
+                  : context.l10n.onboardingTestConnection,
                       ),
                     ),
                   ],
@@ -1155,22 +1152,22 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         final state = appProvider.tailscaleState;
         final authUrl = state.authUrl?.toString();
         final colorScheme = Theme.of(context).colorScheme;
-        final title = switch (state.nodeState) {
-          TailscaleNodeState.needsLogin => 'Tailscale login required',
-          TailscaleNodeState.needsMachineAuth =>
-            'Tailscale admin approval required',
-          TailscaleNodeState.connected => 'Tailscale connected',
-          TailscaleNodeState.connecting => 'Tailscale connecting',
-          TailscaleNodeState.error => 'Tailscale connection failed',
-          TailscaleNodeState.unsupported => 'Tailscale unsupported',
-          TailscaleNodeState.disconnected =>
-            'Tailscale will authenticate after saving',
-        };
-        final message =
-            state.message ??
-            (state.requiresUserLogin
-                ? 'Open the login URL to add this device to your tailnet. If the browser did not open, copy the URL below.'
-                : 'After you save and test this server, CodeWalk will open Tailscale login if this device is not authenticated yet.');
+    final title = switch (state.nodeState) {
+      TailscaleNodeState.needsLogin => context.l10n.onboardingTailscaleLoginRequired,
+      TailscaleNodeState.needsMachineAuth =>
+        context.l10n.onboardingTailscaleAdminApproval,
+      TailscaleNodeState.connected => context.l10n.onboardingTailscaleConnected,
+      TailscaleNodeState.connecting => context.l10n.onboardingTailscaleConnecting,
+      TailscaleNodeState.error => context.l10n.onboardingTailscaleConnectionFailed,
+      TailscaleNodeState.unsupported => context.l10n.onboardingTailscaleUnsupported,
+      TailscaleNodeState.disconnected =>
+        context.l10n.onboardingTailscaleAuthAfterSave,
+    };
+    final message =
+        state.message ??
+        (state.requiresUserLogin
+            ? context.l10n.onboardingTailscaleOpenLoginUrl
+            : context.l10n.onboardingTailscaleAuthAfterSaveTest(AppConstants.appName));
 
         return Card(
           color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
@@ -1311,13 +1308,13 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
             status == LocalServerRuntimeStatus.stopping;
         final isRunning = status == LocalServerRuntimeStatus.running;
 
-        final (statusColor, statusLabel) = switch (status) {
-          LocalServerRuntimeStatus.running => (Colors.green, context.l10n.toolPresentationRunning),
-          LocalServerRuntimeStatus.starting => (Colors.orange, 'Starting'),
-          LocalServerRuntimeStatus.stopping => (Colors.orange, 'Stopping'),
-          LocalServerRuntimeStatus.failed => (Colors.red, 'Failed'),
-          LocalServerRuntimeStatus.stopped => (Colors.grey, 'Stopped'),
-        };
+    final (statusColor, statusLabel) = switch (status) {
+      LocalServerRuntimeStatus.running => (Colors.green, context.l10n.toolPresentationRunning),
+      LocalServerRuntimeStatus.starting => (Colors.orange, context.l10n.onboardingStarting),
+      LocalServerRuntimeStatus.stopping => (Colors.orange, context.l10n.onboardingStopping),
+      LocalServerRuntimeStatus.failed => (Colors.red, context.l10n.onboardingFailed),
+      LocalServerRuntimeStatus.stopped => (Colors.grey, context.l10n.onboardingStopped),
+    };
 
         return SingleChildScrollView(
           key: const ValueKey('step_local_setup'),
@@ -1408,15 +1405,15 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                   _buildToolStatusRow(context.l10n.setupDebugNpm2, report.npm),
                   _buildToolStatusRow(context.l10n.setupDebugBun2, report.bun),
                   _buildToolStatusRow(context.l10n.setupDebugWSL, report.wsl),
-                  _buildDiagnosticRow(
-                    context.l10n.setupDebugNetwork2,
-                    report.hasNetworkAccess ? 'reachable' : 'unreachable',
-                  ),
-                  _buildDiagnosticRow(
-                    context.l10n.setupDebugInstallDirectory,
-                    report.installDirectoryWritable
-                        ? 'writable'
-                        : 'not writable',
+        _buildDiagnosticRow(
+                  context.l10n.setupDebugNetwork2,
+                  report.hasNetworkAccess ? context.l10n.onboardingReachable : context.l10n.onboardingUnreachable,
+                ),
+                _buildDiagnosticRow(
+                  context.l10n.setupDebugInstallDirectory,
+                  report.installDirectoryWritable
+                      ? context.l10n.onboardingWritable
+                      : context.l10n.onboardingNotWritable,
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -1462,7 +1459,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                                 _showMessage(appProvider.errorMessage);
                                 return;
                               }
-                              _showMessage('Using detected OpenCode command.');
+                              _showMessage(context.l10n.onboardingUsingDetectedCommand);
                             },
                       icon: const Icon(Symbols.check_circle_outline),
                       label: Text(context.l10n.onboardingExisting),
@@ -1611,7 +1608,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
               FilledButton.icon(
                 onPressed: () => unawaited(_complete()),
                 icon: const Icon(Symbols.check_circle_rounded),
-                label: Text(widget.showSkipAction ? 'Continue' : 'Done'),
+                label: Text(widget.showSkipAction ? context.l10n.onboardingContinue : context.l10n.onboardingDone),
               ),
             ],
           ),
@@ -1649,9 +1646,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
       details.add(status.note.trim());
     }
 
-    final value = details.isEmpty
-        ? (status.available ? 'available' : 'not available')
-        : details.join('  |  ');
+  final value = details.isEmpty
+      ? (status.available ? context.l10n.onboardingAvailable : context.l10n.onboardingNotAvailable)
+      : details.join(' | ');
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
@@ -1679,14 +1676,14 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
   Widget _buildReadyStep() {
     final colorScheme = Theme.of(context).colorScheme;
     final successTitle = _editingServerId == null
-        ? "You're all set!"
-        : 'Server updated';
+        ? context.l10n.onboardingYoureAllSet
+        : context.l10n.onboardingServerUpdated;
     final successDescription = _editingServerId == null
-        ? 'Your server is connected and ready to use.'
-        : 'Your server settings were saved and health checks were refreshed.';
+        ? context.l10n.onboardingServerConnectedReady
+        : context.l10n.onboardingServerSettingsSaved;
     final actionLabel = widget.showSkipAction
-        ? 'Start using ${AppConstants.appName}'
-        : 'Done';
+        ? context.l10n.onboardingStartUsing(AppConstants.appName)
+        : context.l10n.onboardingDone;
 
     if (_connectionSuccess) {
       return Column(
@@ -1744,7 +1741,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         ),
         const SizedBox(height: 8),
         Text(
-          _connectionError ?? 'Could not verify the server connection.',
+          _connectionError ?? context.l10n.onboardingCouldNotVerify,
           style: Theme.of(
             context,
           ).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),

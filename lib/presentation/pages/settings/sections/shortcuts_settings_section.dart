@@ -9,6 +9,7 @@ import '../../../../core/i18n/l10n_context.dart';
 import '../../../../domain/entities/experience_settings.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../utils/shortcut_binding_codec.dart';
+import '../../../utils/shortcut_l10n.dart';
 import '../../../widgets/settings_provenance_chip.dart';
 
 
@@ -41,14 +42,15 @@ class _ShortcutsSettingsSectionState extends State<ShortcutsSettingsSection> {
         );
         final visible = visibleDefinitions
             .where((definition) {
-              if (query.isEmpty) {
-                return true;
-              }
-              final raw =
-                  '${definition.group} ${definition.label} ${definition.description} ${settingsProvider.bindingFor(definition.action)}'
-                      .toLowerCase();
-              return raw.contains(query);
-            })
+          if (query.isEmpty) {
+            return true;
+          }
+          final l10n = context.l10n;
+          final raw =
+              '${definition.localizedGroup(l10n)} ${definition.localizedLabel(l10n)} ${definition.localizedDescription(l10n)} ${settingsProvider.bindingFor(definition.action)}'
+                  .toLowerCase();
+          return raw.contains(query);
+        })
             .toList(growable: false);
 
         return ListView(
@@ -162,18 +164,19 @@ class _ShortcutTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
-        title: Text(definition.label),
+        title: Text(definition.localizedLabel(l10n)),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(definition.description),
+            Text(definition.localizedDescription(l10n)),
             const SizedBox(height: 2),
             Text(
-              '${definition.group} • ${ShortcutBindingCodec.formatForDisplay(binding)}',
+              '${definition.localizedGroup(l10n)} • ${ShortcutBindingCodec.formatForDisplay(binding)}',
             ),
             if (conflict != null)
               Text(
@@ -232,7 +235,7 @@ class _ShortcutCaptureDialogState extends State<_ShortcutCaptureDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(context.l10n.shortcutsSetShortcutWidget(widget.definition.label)),
+      title: Text(context.l10n.shortcutsSetShortcutWidget(widget.definition.localizedLabel(context.l10n))),
       content: SizedBox(
         width: 360,
         child: Focus(

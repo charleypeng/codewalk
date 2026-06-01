@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/auth/oauth_service.dart';
 import '../../core/constants/api_constants.dart';
+import '../../core/i18n/l10n_bridge.dart';
 import '../../core/logging/app_logger.dart';
 import '../../core/network/dio_client.dart';
 import '../../core/tailscale/tailscale_http_adapter.dart';
@@ -69,6 +70,7 @@ class AppProvider extends ChangeNotifier {
        _serverHealthRequestTimeout = serverHealthRequestTimeout,
        _enableHealthPolling = enableHealthPolling {
     _cellularDataSaverService.addListener(_handleCellularDataSaverChanged);
+    _initL10nDefaults();
   }
 
   final GetAppInfo _getAppInfo;
@@ -99,13 +101,12 @@ class AppProvider extends ChangeNotifier {
   StreamSubscription<int>? _localServerExitSubscription;
   LocalServerRuntimeStatus _localServerStatus =
       LocalServerRuntimeStatus.stopped;
-  String _localServerStatusMessage = 'Local server is stopped.';
+  String _localServerStatusMessage = '';
   String _localServerLastOutput = '';
   String _localServerCommandPath = '';
   LocalOpencodeEnvironmentReport? _localEnvironmentReport;
   bool _localSetupInProgress = false;
-  String _localSetupMessage =
-      'Run diagnostics to verify local OpenCode requirements.';
+  String _localSetupMessage = '';
   List<String> _localSetupLogs = <String>[];
   List<SetupDebugEntry> _setupDebugEntries = <SetupDebugEntry>[];
   final String _localServerHost = ApiConstants.defaultHost;
@@ -201,7 +202,7 @@ class AppProvider extends ChangeNotifier {
   }) {
     var normalized = rawUrl.trim();
     if (normalized.isEmpty) {
-      throw const FormatException('Server URL is required');
+      throw FormatException(L10nBridge.current?.appProviderErrorServerUrlRequired ?? 'Server URL is required');
     }
 
     if (!normalized.contains('://')) {
@@ -210,7 +211,7 @@ class AppProvider extends ChangeNotifier {
 
     final uri = Uri.tryParse(normalized);
     if (uri == null || uri.host.isEmpty) {
-      throw const FormatException('Invalid server URL');
+      throw FormatException(L10nBridge.current?.appProviderErrorInvalidServerUrl ?? 'Invalid server URL');
     }
 
     final scheme = uri.scheme.isEmpty ? 'http' : uri.scheme.toLowerCase();
@@ -322,7 +323,7 @@ class AppProvider extends ChangeNotifier {
     final profile = ServerProfile(
       id: _generateServerId(),
       url: normalizeServerUrl('$host:$port', fallbackPort: port),
-      label: 'Primary server',
+      label: L10nBridge.current?.appProviderLabelPrimaryServer ?? 'Primary server',
       basicAuthEnabled: oldBasicEnabled ?? false,
       basicAuthUsername: oldBasicUser ?? '',
       basicAuthPassword: oldBasicPassword ?? '',
@@ -642,22 +643,22 @@ class AppProvider extends ChangeNotifier {
     await initialize();
     final normalized = _safeNormalize(url);
     if (normalized == null) {
-      _setError('Invalid server URL');
+      _setError(L10nBridge.current?.appProviderErrorInvalidServerUrl ?? 'Invalid server URL');
       return false;
     }
 
     if (_serverProfiles.any((p) => p.url == normalized)) {
-      _setError('A server with this URL already exists');
+      _setError(L10nBridge.current?.appProviderErrorServerAlreadyExists ?? 'A server with this URL already exists');
       return false;
     }
 
     final now = DateTime.now().millisecondsSinceEpoch;
     if (oauthEnabled && !supportsCloudflareAccessOAuth) {
-      _setError('Cloudflare Access OAuth is not supported on this platform');
+      _setError(L10nBridge.current?.appProviderErrorCloudflareOAuthNotSupported ?? 'Cloudflare Access OAuth is not supported on this platform');
       return false;
     }
     if (tailscaleEnabled && !supportsTailscale) {
-      _setError('Tailscale is not supported on this platform');
+      _setError(L10nBridge.current?.appProviderErrorTailscaleNotSupported ?? 'Tailscale is not supported on this platform');
       return false;
     }
     final profile = ServerProfile(
@@ -706,13 +707,13 @@ class AppProvider extends ChangeNotifier {
     await initialize();
     final index = _serverProfiles.indexWhere((p) => p.id == id);
     if (index == -1) {
-      _setError('Server profile not found');
+      _setError(L10nBridge.current?.appProviderErrorServerProfileNotFound ?? 'Server profile not found');
       return false;
     }
 
     final normalized = _safeNormalize(url);
     if (normalized == null) {
-      _setError('Invalid server URL');
+      _setError(L10nBridge.current?.appProviderErrorInvalidServerUrl ?? 'Invalid server URL');
       return false;
     }
 
@@ -720,16 +721,16 @@ class AppProvider extends ChangeNotifier {
       (p) => p.id != id && p.url == normalized,
     );
     if (duplicate) {
-      _setError('A server with this URL already exists');
+      _setError(L10nBridge.current?.appProviderErrorServerAlreadyExists ?? 'A server with this URL already exists');
       return false;
     }
 
     if (oauthEnabled && !supportsCloudflareAccessOAuth) {
-      _setError('Cloudflare Access OAuth is not supported on this platform');
+      _setError(L10nBridge.current?.appProviderErrorCloudflareOAuthNotSupported ?? 'Cloudflare Access OAuth is not supported on this platform');
       return false;
     }
     if (tailscaleEnabled && !supportsTailscale) {
-      _setError('Tailscale is not supported on this platform');
+      _setError(L10nBridge.current?.appProviderErrorTailscaleNotSupported ?? 'Tailscale is not supported on this platform');
       return false;
     }
 
@@ -775,7 +776,7 @@ class AppProvider extends ChangeNotifier {
     await initialize();
     final removed = _findById(id);
     if (removed == null) {
-      _setError('Server profile not found');
+      _setError(L10nBridge.current?.appProviderErrorServerProfileNotFound ?? 'Server profile not found');
       return false;
     }
 
@@ -821,7 +822,7 @@ class AppProvider extends ChangeNotifier {
   Future<bool> setDefaultServer(String id) async {
     await initialize();
     if (_findById(id) == null) {
-      _setError('Server profile not found');
+      _setError(L10nBridge.current?.appProviderErrorServerProfileNotFound ?? 'Server profile not found');
       return false;
     }
     _defaultServerId = id;
@@ -843,13 +844,13 @@ class AppProvider extends ChangeNotifier {
     await initialize();
     final profile = _findById(id);
     if (profile == null) {
-      _setError('Server profile not found');
+      _setError(L10nBridge.current?.appProviderErrorServerProfileNotFound ?? 'Server profile not found');
       return false;
     }
 
     final health = healthFor(id);
     if (blockUnhealthy && health == ServerHealthStatus.unhealthy) {
-      _setError('Cannot activate an unhealthy server');
+      _setError(L10nBridge.current?.appProviderErrorCannotActivateUnhealthy ?? 'Cannot activate an unhealthy server');
       return false;
     }
 
@@ -890,8 +891,8 @@ class AppProvider extends ChangeNotifier {
       _localSetupMessage = report.recommendation;
     }
     final availability = report.opencode.available
-        ? 'OpenCode detected'
-        : 'OpenCode not detected';
+        ? (L10nBridge.current?.appProviderSetupOpenCodeDetected ?? 'OpenCode detected')
+        : (L10nBridge.current?.appProviderSetupOpenCodeNotDetected ?? 'OpenCode not detected');
     _recordSetupDebugEvent(
       source: 'Diagnostics',
       message: '$availability on ${report.platform}. ${report.recommendation}',
@@ -907,7 +908,7 @@ class AppProvider extends ChangeNotifier {
     await initialize();
     _localSetupInProgress = true;
     _localSetupLogs = <String>[];
-    _localSetupMessage = 'Detecting OpenCode command...';
+    _localSetupMessage = L10nBridge.current?.appProviderSetupDetectingOpenCode ?? 'Detecting OpenCode command...';
     _errorMessage = '';
     _recordSetupDebugEvent(
       source: 'Use Existing',
@@ -927,9 +928,9 @@ class AppProvider extends ChangeNotifier {
     if (!report.opencode.available || report.opencode.path.trim().isEmpty) {
       final isWindows =
           !kIsWeb && defaultTargetPlatform == TargetPlatform.windows;
-      final message = isWindows
-          ? 'OpenCode command was not detected. If you installed it moments ago, refresh checks or reopen CodeWalk to reload PATH.'
-          : 'OpenCode command was not detected. Run installation from the wizard.';
+    final message = isWindows
+        ? (L10nBridge.current?.appProviderSetupOpenCodeNotDetectedRefresh ?? 'OpenCode command was not detected. If you installed it moments ago, refresh checks or reopen CodeWalk to reload PATH.')
+        : (L10nBridge.current?.appProviderSetupOpenCodeNotDetectedInstall ?? 'OpenCode command was not detected. Run installation from the wizard.');
       _localSetupInProgress = false;
       _localSetupMessage = message;
       _recordSetupDebugEvent(
@@ -944,7 +945,7 @@ class AppProvider extends ChangeNotifier {
 
     await _setLocalServerCommandPath(report.opencode.path.trim());
     _localSetupInProgress = false;
-    _localSetupMessage = 'Using OpenCode command at ${report.opencode.path}';
+    _localSetupMessage = L10nBridge.current?.appProviderSetupUsingOpenCodeAt(report.opencode.path) ?? 'Using OpenCode command at ${report.opencode.path}';
     _errorMessage = '';
     _recordSetupDebugEvent(
       source: 'Use Existing',
@@ -960,13 +961,13 @@ class AppProvider extends ChangeNotifier {
   ) async {
     await initialize();
     if (!_localServerRuntime.isSupported) {
-      _setError('Managed local server is available only on desktop.');
+      _setError(L10nBridge.current?.appProviderErrorManagedDesktopOnly ?? 'Managed local server is available only on desktop.');
       return false;
     }
 
     _localSetupInProgress = true;
     _localSetupLogs = <String>[];
-    _localSetupMessage = 'Installing OpenCode requirements...';
+    _localSetupMessage = L10nBridge.current?.appProviderSetupInstallingRequirements ?? 'Installing OpenCode requirements...';
     _errorMessage = '';
     final methodLabel = _installMethodLabel(method);
     _recordSetupDebugEvent(
@@ -981,9 +982,9 @@ class AppProvider extends ChangeNotifier {
       onLog: _appendLocalSetupLog,
     );
     if (!result.ok) {
-      final message = result.errorMessage?.trim().isNotEmpty == true
-          ? result.errorMessage!.trim()
-          : 'OpenCode installation failed.';
+    final message = result.errorMessage?.trim().isNotEmpty == true
+        ? result.errorMessage!.trim()
+        : (L10nBridge.current?.appProviderErrorInstallationFailed ?? 'OpenCode installation failed.');
       _localSetupInProgress = false;
       _localSetupMessage = message;
       _recordSetupDebugEvent(
@@ -1002,13 +1003,13 @@ class AppProvider extends ChangeNotifier {
 
     await runLocalServerDiagnostics(notify: false);
     _localSetupInProgress = false;
-    _localSetupMessage = 'OpenCode requirements installed successfully.';
+    _localSetupMessage = L10nBridge.current?.appProviderSetupRequirementsInstalled ?? 'OpenCode requirements installed successfully.';
     _errorMessage = '';
     _recordSetupDebugEvent(
       source: methodLabel,
       message: result.commandPath?.trim().isNotEmpty == true
-          ? 'Installation succeeded. OpenCode command available at ${result.commandPath!.trim()}.'
-          : 'Installation succeeded.',
+          ? (L10nBridge.current?.appProviderSetupInstallationSucceededWithPath(result.commandPath!.trim()) ?? 'Installation succeeded. OpenCode command available at ${result.commandPath!.trim()}.')
+          : (L10nBridge.current?.appProviderSetupInstallationSucceeded ?? 'Installation succeeded.'),
       notify: false,
     );
     notifyListeners();
@@ -1133,7 +1134,7 @@ class AppProvider extends ChangeNotifier {
   Future<bool> startLocalServer() async {
     await initialize();
     if (!_localServerRuntime.isSupported) {
-      _setError('Managed local server is available only on desktop.');
+      _setError(L10nBridge.current?.appProviderErrorManagedDesktopOnly ?? 'Managed local server is available only on desktop.');
       return false;
     }
     if (_localServerStatus == LocalServerRuntimeStatus.running ||
@@ -1143,7 +1144,7 @@ class AppProvider extends ChangeNotifier {
 
     _localServerStoppingByRequest = false;
     _localServerStatus = LocalServerRuntimeStatus.starting;
-    _localServerStatusMessage = 'Starting local server...';
+    _localServerStatusMessage = L10nBridge.current?.appProviderStatusStartingLocalServer ?? 'Starting local server...';
     _localServerLastOutput = '';
     _errorMessage = '';
     _recordSetupDebugEvent(
@@ -1183,8 +1184,8 @@ class AppProvider extends ChangeNotifier {
 
     final healthy = await _waitForLocalServerHealth();
     if (!healthy) {
-      const message = 'Local server started but health check did not pass.';
-      _localServerStatus = LocalServerRuntimeStatus.failed;
+    final message = L10nBridge.current?.appProviderErrorLocalServerHealthCheckFailed ?? 'Local server started but health check did not pass.';
+    _localServerStatus = LocalServerRuntimeStatus.failed;
       _localServerStatusMessage = message;
       await _localServerRuntime.stop();
       _recordSetupDebugEvent(
@@ -1200,7 +1201,7 @@ class AppProvider extends ChangeNotifier {
     await _ensureLocalServerProfileActive();
 
     _localServerStatus = LocalServerRuntimeStatus.running;
-    _localServerStatusMessage = 'Running at $localServerUrl';
+    _localServerStatusMessage = L10nBridge.current?.appProviderStatusRunningAt(localServerUrl) ?? 'Running at $localServerUrl';
     _errorMessage = '';
     _recordSetupDebugEvent(
       source: 'Local Server',
@@ -1220,7 +1221,7 @@ class AppProvider extends ChangeNotifier {
 
     _localServerStoppingByRequest = true;
     _localServerStatus = LocalServerRuntimeStatus.stopping;
-    _localServerStatusMessage = 'Stopping local server...';
+    _localServerStatusMessage = L10nBridge.current?.appProviderStatusStoppingLocalServer ?? 'Stopping local server...';
     _errorMessage = '';
     _recordSetupDebugEvent(
       source: 'Local Server',
@@ -1232,7 +1233,7 @@ class AppProvider extends ChangeNotifier {
     await _localServerRuntime.stop();
     if (_localServerStatus == LocalServerRuntimeStatus.stopping) {
       _localServerStatus = LocalServerRuntimeStatus.stopped;
-      _localServerStatusMessage = 'Local server is stopped.';
+      _localServerStatusMessage = L10nBridge.current?.appProviderStatusLocalServerStopped ?? 'Local server is stopped.';
       _localServerStoppingByRequest = false;
       _recordSetupDebugEvent(
         source: 'Local Server',
@@ -1275,7 +1276,7 @@ class AppProvider extends ChangeNotifier {
     if (_localServerStoppingByRequest) {
       _localServerStoppingByRequest = false;
       _localServerStatus = LocalServerRuntimeStatus.stopped;
-      _localServerStatusMessage = 'Local server is stopped.';
+      _localServerStatusMessage = L10nBridge.current?.appProviderStatusLocalServerStopped ?? 'Local server is stopped.';
       _recordSetupDebugEvent(
         source: 'Local Server',
         message: 'Managed OpenCode server exited after a requested stop.',
@@ -1290,7 +1291,7 @@ class AppProvider extends ChangeNotifier {
     }
 
     _localServerStatus = LocalServerRuntimeStatus.failed;
-    _localServerStatusMessage = 'Local server exited with code $code.';
+    _localServerStatusMessage = L10nBridge.current?.appProviderStatusLocalServerExitedWithCode(code) ?? 'Local server exited with code $code.';
     _recordSetupDebugEvent(
       source: 'Local Server',
       message: _localServerStatusMessage,
@@ -1351,7 +1352,7 @@ class AppProvider extends ChangeNotifier {
     if (existing == null) {
       await addServerProfile(
         url: normalizedUrl,
-        label: 'Local OpenCode (Managed)',
+        label: L10nBridge.current?.appProviderLabelLocalOpenCodeManaged ?? 'Local OpenCode (Managed)',
         setAsActive: true,
       );
       return;
@@ -1591,7 +1592,7 @@ class AppProvider extends ChangeNotifier {
 
     final created = await addServerProfile(
       url: '$host:$port',
-      label: 'Primary server',
+      label: L10nBridge.current?.appProviderLabelPrimaryServer ?? 'Primary server',
       setAsActive: true,
     );
     if (created) {
@@ -1696,6 +1697,14 @@ class AppProvider extends ChangeNotifier {
     _syncHealthPollingLifecycle();
   }
 
+  void _initL10nDefaults() {
+    final l10n = L10nBridge.current;
+    _localServerStatusMessage =
+        l10n?.appProviderStatusLocalServerStopped ?? 'Local server is stopped.';
+    _localSetupMessage = l10n?.onboardingRunDiagnosticsToVerify ??
+        'Run diagnostics to verify local OpenCode requirements.';
+  }
+
   void _setStatus(AppStatus status) {
     _status = status;
   }
@@ -1738,12 +1747,16 @@ class AppProvider extends ChangeNotifier {
   }
 
   String _installMethodLabel(LocalOpencodeInstallMethod method) {
+    final l10n = L10nBridge.current;
     return switch (method) {
-      LocalOpencodeInstallMethod.downloadBinary => 'Install Binary',
-      LocalOpencodeInstallMethod.npmGlobal => 'Install via npm',
-      LocalOpencodeInstallMethod.bunGlobal => 'Install via Bun',
+      LocalOpencodeInstallMethod.downloadBinary =>
+        l10n?.appProviderInstallBinary ?? 'Install Binary',
+      LocalOpencodeInstallMethod.npmGlobal =>
+        l10n?.appProviderInstallViaNpm ?? 'Install via npm',
+      LocalOpencodeInstallMethod.bunGlobal =>
+        l10n?.appProviderInstallViaBun ?? 'Install via Bun',
       LocalOpencodeInstallMethod.bunBootstrapThenInstall =>
-        'Install Bun + OpenCode',
+        l10n?.appProviderInstallBunOpenCode ?? 'Install Bun + OpenCode',
     };
   }
 

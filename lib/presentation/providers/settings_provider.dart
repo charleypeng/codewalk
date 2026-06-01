@@ -8,6 +8,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../../core/i18n/l10n_bridge.dart';
 import '../../core/logging/app_logger.dart';
 import '../../core/network/dio_client.dart';
 import '../../data/datasources/app_local_datasource.dart';
@@ -18,6 +19,7 @@ import '../services/android_background_alert_logic.dart';
 import '../services/android_background_alert_worker.dart';
 import '../services/android_foreground_monitor_service.dart';
 import '../services/cellular_data_saver_service.dart';
+import '../utils/shortcut_l10n.dart';
 import '../services/sound_service.dart';
 import '../services/update_check_service.dart';
 import '../utils/shortcut_binding_codec.dart';
@@ -1308,10 +1310,16 @@ class SettingsProvider extends ChangeNotifier {
         continue;
       }
       if (ShortcutBindingCodec.normalize(entry.value) == normalized) {
-        final label = kShortcutDefinitions
-            .where((item) => item.action == entry.key)
-            .first
-            .label;
+        final l10n = L10nBridge.current;
+        final label = l10n != null
+            ? kShortcutDefinitions
+                .where((item) => item.action == entry.key)
+                .first
+                .localizedLabel(l10n)
+            : kShortcutDefinitions
+                .where((item) => item.action == entry.key)
+                .first
+                .label;
         return label;
       }
     }

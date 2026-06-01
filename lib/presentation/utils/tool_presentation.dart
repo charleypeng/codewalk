@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../core/i18n/l10n_bridge.dart';
 import '../../domain/entities/chat_message.dart';
 
 class ToolPresentationData {
@@ -150,16 +151,17 @@ String toolResolveTypeLabel(ToolPart part) {
 }
 
 String compactComposerToolLabel(String label, String rawToolName) {
-  const compactLabelBySource = <String, String>{
-    'running command': 'Running',
-    'reading file': 'Reading',
-    'writing file': 'Writing',
-    'editing files': 'Editing',
-    'finding files': 'Finding',
-    'searching code': 'Searching',
-    'searching the web': 'Searching',
-    'waiting for your input': 'Awaiting input',
-    'updating task list': 'Updating tasks',
+  final l10n = L10nBridge.current;
+  final compactLabelBySource = <String, String?>{
+    'running command': l10n?.toolPresentationRunningCommand,
+    'reading file': l10n?.toolPresentationReadingFile,
+    'writing file': l10n?.toolPresentationWritingFile,
+    'editing files': l10n?.toolPresentationEditingFiles,
+    'finding files': l10n?.toolPresentationFindingFiles,
+    'searching code': l10n?.toolPresentationSearchingCode,
+    'searching the web': l10n?.toolPresentationSearchingWeb,
+    'waiting for your input': l10n?.toolPresentationWaitingInput,
+    'updating task list': l10n?.toolPresentationUpdatingTaskList,
   };
 
   final compactLabel = compactLabelBySource[label.toLowerCase()];
@@ -175,24 +177,25 @@ String compactComposerToolLabel(String label, String rawToolName) {
 }
 
 ToolPresentationData toolPresentationForComposer(String rawToolName) {
+  final l10n = L10nBridge.current;
   final presentation = toolPresentation(rawToolName);
   switch (normalizeToolName(rawToolName)) {
     case 'bash':
     case 'shell':
       return ToolPresentationData(
-        title: 'Running',
+        title: l10n?.toolPresentationRunning ?? 'Running',
         subtitle: presentation.subtitle,
         icon: presentation.icon,
       );
     case 'read':
       return ToolPresentationData(
-        title: 'Reading',
+        title: l10n?.toolPresentationReading ?? 'Reading',
         subtitle: presentation.subtitle,
         icon: presentation.icon,
       );
     case 'write':
       return ToolPresentationData(
-        title: 'Writing',
+        title: l10n?.toolPresentationWriting ?? 'Writing',
         subtitle: presentation.subtitle,
         icon: presentation.icon,
       );
@@ -200,14 +203,14 @@ ToolPresentationData toolPresentationForComposer(String rawToolName) {
     case 'apply_patch':
     case 'patch':
       return ToolPresentationData(
-        title: 'Editing',
+        title: l10n?.toolPresentationEditing ?? 'Editing',
         subtitle: presentation.subtitle,
         icon: presentation.icon,
       );
     case 'glob':
     case 'find':
       return ToolPresentationData(
-        title: 'Finding',
+        title: l10n?.toolPresentationFinding ?? 'Finding',
         subtitle: presentation.subtitle,
         icon: presentation.icon,
       );
@@ -220,20 +223,20 @@ ToolPresentationData toolPresentationForComposer(String rawToolName) {
     case 'brave_image_search':
     case 'brave_local_search':
       return ToolPresentationData(
-        title: 'Searching',
+        title: l10n?.toolPresentationSearching ?? 'Searching',
         subtitle: presentation.subtitle,
         icon: presentation.icon,
       );
     case 'question':
       return ToolPresentationData(
-        title: 'Awaiting input',
+        title: l10n?.toolPresentationAwaitingInput ?? 'Awaiting input',
         subtitle: presentation.subtitle,
         icon: presentation.icon,
       );
     case 'todowrite':
     case 'todoread':
       return ToolPresentationData(
-        title: 'Updating tasks',
+        title: l10n?.toolPresentationUpdatingTasks ?? 'Updating tasks',
         subtitle: presentation.subtitle,
         icon: presentation.icon,
       );
@@ -243,24 +246,25 @@ ToolPresentationData toolPresentationForComposer(String rawToolName) {
 }
 
 ToolPresentationData toolPresentation(String rawToolName) {
+  final l10n = L10nBridge.current;
   final normalized = normalizeToolName(rawToolName);
   switch (normalized) {
     case 'bash':
     case 'shell':
       return ToolPresentationData(
-        title: 'Running command',
+        title: l10n?.toolPresentationRunningCommand ?? 'Running command',
         subtitle: rawToolName,
         icon: Symbols.terminal_rounded,
       );
     case 'read':
       return ToolPresentationData(
-        title: 'Reading file',
+        title: l10n?.toolPresentationReadingFile ?? 'Reading file',
         subtitle: rawToolName,
         icon: Symbols.description,
       );
     case 'write':
       return ToolPresentationData(
-        title: 'Writing file',
+        title: l10n?.toolPresentationWritingFile ?? 'Writing file',
         subtitle: rawToolName,
         icon: Symbols.edit_note_rounded,
       );
@@ -268,20 +272,20 @@ ToolPresentationData toolPresentation(String rawToolName) {
     case 'apply_patch':
     case 'patch':
       return ToolPresentationData(
-        title: 'Editing files',
+        title: l10n?.toolPresentationEditingFiles ?? 'Editing files',
         subtitle: rawToolName,
         icon: Symbols.auto_fix_high_rounded,
       );
     case 'glob':
     case 'find':
       return ToolPresentationData(
-        title: 'Finding files',
+        title: l10n?.toolPresentationFindingFiles ?? 'Finding files',
         subtitle: rawToolName,
         icon: Symbols.folder_open,
       );
     case 'grep':
       return ToolPresentationData(
-        title: 'Searching code',
+        title: l10n?.toolPresentationSearchingCode ?? 'Searching code',
         subtitle: rawToolName,
         icon: Symbols.search_rounded,
       );
@@ -293,26 +297,26 @@ ToolPresentationData toolPresentation(String rawToolName) {
     case 'brave_image_search':
     case 'brave_local_search':
       return ToolPresentationData(
-        title: 'Searching the web',
+        title: l10n?.toolPresentationSearchingWeb ?? 'Searching the web',
         subtitle: rawToolName,
         icon: Symbols.travel_explore_rounded,
       );
     case 'question':
       return ToolPresentationData(
-        title: 'Waiting for your input',
+        title: l10n?.toolPresentationWaitingInput ?? 'Waiting for your input',
         subtitle: rawToolName,
         icon: Symbols.help_outline_rounded,
       );
     case 'todowrite':
     case 'todoread':
       return ToolPresentationData(
-        title: 'Updating task list',
+        title: l10n?.toolPresentationUpdatingTaskList ?? 'Updating task list',
         subtitle: rawToolName,
         icon: Symbols.checklist_rounded,
       );
     default:
       return ToolPresentationData(
-        title: 'Running ${humanizeToolName(normalized)}',
+        title: l10n?.toolPresentationRunningTool(humanizeToolName(normalized)) ?? 'Running ${humanizeToolName(normalized)}',
         subtitle: rawToolName,
         icon: Symbols.extension,
       );

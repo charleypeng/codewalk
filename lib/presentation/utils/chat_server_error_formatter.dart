@@ -1,3 +1,5 @@
+import '../../core/i18n/l10n_bridge.dart';
+
 class ChatServerErrorDisplay {
   const ChatServerErrorDisplay({required this.name, required this.message});
 
@@ -48,6 +50,7 @@ ChatServerErrorDisplay formatServerErrorForDisplay({
   String? code,
   int? statusCode,
 }) {
+  final l10n = L10nBridge.current;
   final normalizedMessage = _sanitizeMessage(rawMessage);
   final normalizedCode = code?.trim().toLowerCase() ?? '';
   final combined = '$normalizedCode $normalizedMessage'.toLowerCase();
@@ -57,10 +60,9 @@ ChatServerErrorDisplay formatServerErrorForDisplay({
     code: code,
     statusCode: statusCode,
   )) {
-    return const ChatServerErrorDisplay(
-      name: 'Connection failed',
-      message:
-          'Unable to reach the server. Check connection and server status.',
+    return ChatServerErrorDisplay(
+      name: l10n?.errorConnectionFailed ?? 'Connection failed',
+      message: l10n?.errorConnectionFailedDesc ?? 'Unable to reach the server. Check connection and server status.',
     );
   }
 
@@ -71,9 +73,9 @@ ChatServerErrorDisplay formatServerErrorForDisplay({
       combined.contains('billing') ||
       combined.contains('credit');
   if (hasQuotaSignal) {
-    return const ChatServerErrorDisplay(
-      name: 'Quota exceeded',
-      message: 'Quota exceeded. Check your provider plan or billing.',
+    return ChatServerErrorDisplay(
+      name: l10n?.errorQuotaExceeded ?? 'Quota exceeded',
+      message: l10n?.errorQuotaExceededDesc ?? 'Quota exceeded. Check your provider plan or billing.',
     );
   }
 
@@ -85,9 +87,9 @@ ChatServerErrorDisplay formatServerErrorForDisplay({
       combined.contains('status code 429') ||
       combined.contains('429');
   if (hasRateLimitSignal) {
-    return const ChatServerErrorDisplay(
-      name: 'Rate limit exceeded',
-      message: 'Rate limit exceeded. Wait a moment and try again.',
+    return ChatServerErrorDisplay(
+      name: l10n?.errorRateLimitExceeded ?? 'Rate limit exceeded',
+      message: l10n?.errorRateLimitExceededDesc ?? 'Rate limit exceeded. Wait a moment and try again.',
     );
   }
 
@@ -100,19 +102,17 @@ ChatServerErrorDisplay formatServerErrorForDisplay({
       combined.contains('invalid api key') ||
       combined.contains('token refresh failed');
   if (hasAuthSignal) {
-    return const ChatServerErrorDisplay(
-      name: 'Authentication required',
-      message: 'Authentication failed. Reconnect the provider and try again.',
+    return ChatServerErrorDisplay(
+      name: l10n?.errorAuthRequired ?? 'Authentication required',
+      message: l10n?.errorAuthRequiredDesc ?? 'Authentication failed. Reconnect the provider and try again.',
     );
   }
 
-  // V2: explicit 503 — server explicitly unavailable (retryable startup state)
   if (statusCode == 503 ||
       combined.contains('service temporarily unavailable')) {
-    return const ChatServerErrorDisplay(
-      name: 'Service unavailable',
-      message:
-          'Service temporarily unavailable. The server may be starting up — please try again shortly.',
+    return ChatServerErrorDisplay(
+      name: l10n?.errorServiceUnavailable ?? 'Service unavailable',
+      message: l10n?.errorServiceUnavailableDesc ?? 'Service temporarily unavailable. The server may be starting up — please try again shortly.',
     );
   }
 
@@ -121,22 +121,22 @@ ChatServerErrorDisplay formatServerErrorForDisplay({
     code: code,
     statusCode: statusCode,
   )) {
-    return const ChatServerErrorDisplay(
-      name: 'Provider unavailable',
-      message: 'Provider temporarily unavailable. Try again shortly.',
+    return ChatServerErrorDisplay(
+      name: l10n?.errorProviderUnavailable ?? 'Provider unavailable',
+      message: l10n?.errorProviderUnavailableDesc ?? 'Provider temporarily unavailable. Try again shortly.',
     );
   }
 
   if (normalizedMessage.isNotEmpty) {
     return ChatServerErrorDisplay(
-      name: 'Server error',
+      name: l10n?.errorServerError ?? 'Server error',
       message: normalizedMessage,
     );
   }
 
-  return const ChatServerErrorDisplay(
-    name: 'Server error',
-    message: 'Server error. Please try again.',
+  return ChatServerErrorDisplay(
+    name: l10n?.errorServerError ?? 'Server error',
+    message: l10n?.errorServerErrorDesc ?? 'Server error. Please try again.',
   );
 }
 
