@@ -153,15 +153,15 @@ String toolResolveTypeLabel(ToolPart part) {
 String compactComposerToolLabel(String label, String rawToolName) {
   final l10n = L10nBridge.current;
   final compactLabelBySource = <String, String?>{
-    'running command': l10n?.toolPresentationRunningCommand,
-    'reading file': l10n?.toolPresentationReadingFile,
-    'writing file': l10n?.toolPresentationWritingFile,
-    'editing files': l10n?.toolPresentationEditingFiles,
-    'finding files': l10n?.toolPresentationFindingFiles,
-    'searching code': l10n?.toolPresentationSearchingCode,
+    'running command': l10n?.toolPresentationRunning,
+    'reading file': l10n?.toolPresentationReading,
+    'writing file': l10n?.toolPresentationWriting,
+    'editing files': l10n?.toolPresentationEditing,
+    'finding files': l10n?.toolPresentationFinding,
+    'searching code': l10n?.toolPresentationSearching,
     'searching the web': l10n?.toolPresentationSearchingWeb,
-    'waiting for your input': l10n?.toolPresentationWaitingInput,
-    'updating task list': l10n?.toolPresentationUpdatingTaskList,
+    'waiting for your input': l10n?.toolPresentationAwaitingInput,
+    'updating task list': l10n?.toolPresentationUpdatingTasks,
   };
 
   final compactLabel = compactLabelBySource[label.toLowerCase()];

@@ -2607,14 +2607,14 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get onboardingEmulatorRemap =>
-      'Sullemulatore Android, localhost e 127.0.0.1 vengono rimappati automaticamente su 10.0.2.2.';
+      'Sull\'emulatore Android, localhost e 127.0.0.1 vengono rimappati automaticamente su 10.0.2.2.';
 
   @override
   String get onboardingBasicAuthTip =>
       'Abilita lautenticazione di base solo se il tuo server OpenCode è protetto da password.';
 
   @override
-  String get onboardingEnterServerUrl => 'Inserisci lURL del server';
+  String get onboardingEnterServerUrl => 'Inserisci l\'URL del server';
 
   @override
   String get onboardingInvalidUrl => 'URL non valido';
@@ -2654,7 +2654,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get onboardingTailscaleOpenLoginUrl =>
-      'Apri lURL di login per aggiungere questo dispositivo alla tua tailnet. Se il browser non si è aperto, copia lURL qui sotto.';
+      'Apri l\'URL di login per aggiungere questo dispositivo alla tua tailnet. Se il browser non si è aperto, copia l\'URL qui sotto.';
 
   @override
   String onboardingTailscaleAuthAfterSaveTest(String appName) {
@@ -2691,7 +2691,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get onboardingServerConnectedReady =>
-      'Il tuo server è connesso e pronto alluso.';
+      'Il tuo server è connesso e pronto all\'uso.';
 
   @override
   String get onboardingServerSettingsSaved =>
@@ -2786,7 +2786,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get shortcutFocusInput => 'Focus sullinput';
 
   @override
-  String get shortcutFocusInputDesc => 'Sposta il focus sullinput di testo';
+  String get shortcutFocusInputDesc => 'Sposta il focus sull\'input di testo';
 
   @override
   String get shortcutToggleVoiceInput => 'Attiva/disattiva input vocale';
@@ -2826,7 +2826,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get shortcutFocusCloseDrawerDesc =>
-      'Focus sullinput per impostazione predefinita, o chiudi il pannello se aperto';
+      'Focus sull\'input per impostazione predefinita, o chiudi il pannello se aperto';
 
   @override
   String get shortcutNextAgent => 'Prossimo agente';
@@ -2839,20 +2839,20 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get shortcutPreviousAgentDesc =>
-      'Cicla allagente precedente disponibile';
+      'Cicla all\'agente precedente disponibile';
 
   @override
   String get shortcutCloseApp => 'Chiudi applicazione';
 
   @override
   String get shortcutCloseAppDesc =>
-      'Chiudi lapp usando il comportamento di chiusura della piattaforma';
+      'Chiudi l\'app usando il comportamento di chiusura della piattaforma';
 
   @override
   String get shortcutQuitApp => 'Esci dallapplicazione';
 
   @override
-  String get shortcutQuitAppDesc => 'Forza luscita dallapp';
+  String get shortcutQuitAppDesc => 'Forza l\'uscita dall\'app';
 
   @override
   String get shortcutStopResponse => 'Ferma risposta';
@@ -2915,24 +2915,24 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get attachmentUnableToOpenLink =>
-      'Impossibile aprire il link dellallegato.';
+      'Impossibile aprire il link dell\'allegato.';
 
   @override
   String get attachmentNoValidLocation =>
-      'Lallegato non fornisce una posizione valida.';
+      'L\'allegato non fornisce una posizione valida.';
 
   @override
   String get attachmentDownloadStarted => 'Download dellallegato iniziato.';
 
   @override
-  String get attachmentCouldNotDownload => 'Impossibile scaricare lallegato.';
+  String get attachmentCouldNotDownload => 'Impossibile scaricare l\'allegato.';
 
   @override
   String get attachmentCouldNotDecode =>
-      'Impossibile decodificare i dati dellallegato.';
+      'Impossibile decodificare i dati dell\'allegato.';
 
   @override
-  String get attachmentPayloadEmpty => 'Il payload dellallegato è vuoto.';
+  String get attachmentPayloadEmpty => 'Il payload dell\'allegato è vuoto.';
 
   @override
   String attachmentSavedAndOpened(String path) {
@@ -2946,7 +2946,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get attachmentCouldNotSave =>
-      'Impossibile salvare lallegato su questo dispositivo.';
+      'Impossibile salvare l\'allegato su questo dispositivo.';
 
   @override
   String get attachmentSaveCanceled => 'Salvataggio annullato.';
@@ -2957,7 +2957,7 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
-  String get attachmentPathEmpty => 'Il percorso dellallegato è vuoto.';
+  String get attachmentPathEmpty => 'Il percorso dell\'allegato è vuoto.';
 
   @override
   String get attachmentLocalNotFound =>
@@ -2965,7 +2965,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get attachmentUnableToOpenLocal =>
-      'Impossibile aprire lallegato locale.';
+      'Impossibile aprire l\'allegato locale.';
 
   @override
   String speechDesktopOnly(String service) {
@@ -2984,7 +2984,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get speechMicPermissionDisabled =>
-      'Lautorizzazione del microfono è disabilitata.';
+      'L\'autorizzazione del microfono è disabilitata.';
 
   @override
   String speechUnavailableOnPlatform(String service) {
@@ -3033,7 +3033,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get notificationAgentFinished =>
-      'Lagente ha terminato la risposta corrente.';
+      'L\'agente ha terminato la risposta corrente.';
 
   @override
   String get notificationSession => 'Sessione';
@@ -3196,7 +3196,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get appProviderNotDetectedInstall =>
-      'Comando OpenCode non rilevato. Esegui linstallazione dal wizard.';
+      'Comando OpenCode non rilevato. Esegui l\'installazione dal wizard.';
 
   @override
   String appProviderUsingCommandAt(String path) {
@@ -3269,7 +3269,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get tailscaleWaitingAdminApproval =>
-      'Questo nodo Tailscale è in attesa dellapprovazione dellamministratore.';
+      'Questo nodo Tailscale è in attesa dell\'approvazione dell\'amministratore.';
 
   @override
   String get notificationSoundLoadFailed =>
@@ -3282,7 +3282,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get chatDescriptionRefreshData => 'Aggiorna dati chat';
 
   @override
-  String get chatDescriptionFocusInput => 'Focus sullinput del messaggio';
+  String get chatDescriptionFocusInput => 'Focus sull\'input del messaggio';
 
   @override
   String get chatDescriptionVoiceInput => 'Avvia o ferma input vocale';
@@ -3301,7 +3301,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get chatDescriptionFocusOrCloseDrawer =>
-      'Focus sullinput (o chiudi il pannello se aperto)';
+      'Focus sull\'input (o chiudi il pannello se aperto)';
 
   @override
   String get chatDescriptionNextAgent => 'Prossimo agente';
@@ -3311,10 +3311,10 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get chatDescriptionCloseApp =>
-      'Chiudi lapp usando il comportamento di chiusura della piattaforma';
+      'Chiudi l\'app usando il comportamento di chiusura della piattaforma';
 
   @override
-  String get chatDescriptionForceExit => 'Forza luscita dallapp';
+  String get chatDescriptionForceExit => 'Forza l\'uscita dall\'app';
 
   @override
   String get chatDescriptionStopResponse =>
@@ -3343,7 +3343,8 @@ class AppLocalizationsIt extends AppLocalizations {
   String get appProviderErrorInvalidServerUrl => 'URL del server non valido';
 
   @override
-  String get appProviderErrorServerUrlRequired => 'LURL del server è richiesto';
+  String get appProviderErrorServerUrlRequired =>
+      'L\'URL del server è richiesto';
 
   @override
   String get appProviderErrorServerAlreadyExists =>
@@ -3435,7 +3436,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get appProviderSetupOpenCodeNotDetectedInstall =>
-      'Comando OpenCode non rilevato. Esegui linstallazione dal wizard.';
+      'Comando OpenCode non rilevato. Esegui l\'installazione dal wizard.';
 
   @override
   String get appProviderLabelPrimaryServer => 'Server primario';

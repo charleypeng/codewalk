@@ -1076,7 +1076,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get onboardingRunDiagnosticsToVerify =>
-      'Exécutez les diagnostics pour vérifier les prérequis locaux dOpenCode.';
+      'Exécutez les diagnostics pour vérifier les prérequis locaux d\'OpenCode.';
 
   @override
   String get onboardingServerUrl => 'Server URL';
@@ -2574,7 +2574,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String onboardingNeedsOpenCodeServer(String appName) {
-    return '$appName a besoin dun serveur OpenCode avant de pouvoir vous aider avec votre code.';
+    return '$appName a besoin d\'un serveur OpenCode avant de pouvoir vous aider avec votre code.';
   }
 
   @override
@@ -2583,7 +2583,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get onboardingPickSetupPath =>
-      'Choisissez le chemin de configuration qui correspond à votre installation actuelle dOpenCode.';
+      'Choisissez le chemin de configuration qui correspond à votre installation actuelle d\'OpenCode.';
 
   @override
   String onboardingDesktopOnlyDiagnose(String appName) {
@@ -2608,14 +2608,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get onboardingEmulatorRemap =>
-      'Sur lémulateur Android, localhost et 127.0.0.1 sont automatiquement redirigés vers 10.0.2.2.';
+      'Sur l\'émulateur Android, localhost et 127.0.0.1 sont automatiquement redirigés vers 10.0.2.2.';
 
   @override
   String get onboardingBasicAuthTip =>
       'Activez lauthentification de base uniquement si votre serveur OpenCode est protégé par un mot de passe.';
 
   @override
-  String get onboardingEnterServerUrl => 'Entrez lURL du serveur';
+  String get onboardingEnterServerUrl => 'Entrez l\'URL du serveur';
 
   @override
   String get onboardingInvalidUrl => 'URL invalide';
@@ -2634,7 +2634,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get onboardingTailscaleAdminApproval =>
-      'Approbation de ladministrateur Tailscale requise';
+      'Approbation de l\'administrateur Tailscale requise';
 
   @override
   String get onboardingTailscaleConnected => 'Tailscale connecté';
@@ -2651,11 +2651,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get onboardingTailscaleAuthAfterSave =>
-      'Tailscale sauthentifiera après lenregistrement';
+      'Tailscale s\'authentifiera après l\'enregistrement';
 
   @override
   String get onboardingTailscaleOpenLoginUrl =>
-      'Ouvrez lURL de connexion pour ajouter cet appareil à votre tailnet. Si le navigateur ne sest pas ouvert, copiez lURL ci-dessous.';
+      'Ouvrez l\'URL de connexion pour ajouter cet appareil à votre tailnet. Si le navigateur ne s\'est pas ouvert, copiez l\'URL ci-dessous.';
 
   @override
   String onboardingTailscaleAuthAfterSaveTest(String appName) {
@@ -2692,7 +2692,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get onboardingServerConnectedReady =>
-      'Votre serveur est connecté et prêt à lemploi.';
+      'Votre serveur est connecté et prêt à l\'emploi.';
 
   @override
   String get onboardingServerSettingsSaved =>
@@ -2709,7 +2709,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get onboardingCloudflareAuthFailed =>
-      'Lauthentification Cloudflare Access a échoué.';
+      'L\'authentification Cloudflare Access a échoué.';
 
   @override
   String get onboardingHealthCheckFailedMayBeStarting =>
@@ -2789,7 +2789,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get shortcutFocusInputDesc =>
-      'Déplacer le focus vers lentrée de texte';
+      'Déplacer le focus vers l\'entrée de texte';
 
   @override
   String get shortcutToggleVoiceInput => 'Basculer la saisie vocale';
@@ -2816,47 +2816,47 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get shortcutNextRecentModelDesc =>
-      'Passer dun modèle récemment utilisé à lautre';
+      'Passer d\'un modèle récemment utilisé à l\'autre';
 
   @override
   String get shortcutNextVariant => 'Variante suivante';
 
   @override
   String get shortcutNextVariantDesc =>
-      'Passer dune variante de modèle disponible à lautre';
+      'Passer d\'une variante de modèle disponible à l\'autre';
 
   @override
   String get shortcutFocusCloseDrawer => 'Focus/fermer le tiroir';
 
   @override
   String get shortcutFocusCloseDrawerDesc =>
-      'Focus sur lentrée par défaut, ou fermer le tiroir sil est ouvert';
+      'Focus sur l\'entrée par défaut, ou fermer le tiroir s\'il est ouvert';
 
   @override
   String get shortcutNextAgent => 'Agent suivant';
 
   @override
-  String get shortcutNextAgentDesc => 'Passer à lagent disponible suivant';
+  String get shortcutNextAgentDesc => 'Passer à l\'agent disponible suivant';
 
   @override
   String get shortcutPreviousAgent => 'Agent précédent';
 
   @override
   String get shortcutPreviousAgentDesc =>
-      'Passer à lagent disponible précédent';
+      'Passer à l\'agent disponible précédent';
 
   @override
   String get shortcutCloseApp => 'Fermer lapplication';
 
   @override
   String get shortcutCloseAppDesc =>
-      'Fermer lapplication en utilisant le comportement de fermeture de la plateforme';
+      'Fermer l\'application en utilisant le comportement de fermeture de la plateforme';
 
   @override
   String get shortcutQuitApp => 'Quitter lapplication';
 
   @override
-  String get shortcutQuitAppDesc => 'Forcer la sortie de lapplication';
+  String get shortcutQuitAppDesc => 'Forcer la sortie de l\'application';
 
   @override
   String get shortcutStopResponse => 'Arrêter la réponse';
@@ -2870,7 +2870,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get errorConnectionFailedDesc =>
-      'Impossible de joindre le serveur. Vérifiez la connexion et létat du serveur.';
+      'Impossible de joindre le serveur. Vérifiez la connexion et l\'état du serveur.';
 
   @override
   String get errorQuotaExceeded => 'Quota dépassé';
@@ -2891,7 +2891,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get errorAuthRequiredDesc =>
-      'Lauthentification a échoué. Reconnectez le fournisseur et réessayez.';
+      'L\'authentification a échoué. Reconnectez le fournisseur et réessayez.';
 
   @override
   String get errorServiceUnavailable => 'Service indisponible';
@@ -2919,11 +2919,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get attachmentUnableToOpenLink =>
-      'Impossible douvrir le lien de la pièce jointe.';
+      'Impossible d\'ouvrir le lien de la pièce jointe.';
 
   @override
   String get attachmentNoValidLocation =>
-      'La pièce jointe ne fournit pas demplacement valide.';
+      'La pièce jointe ne fournit pas d\'emplacement valide.';
 
   @override
   String get attachmentDownloadStarted =>
@@ -2931,11 +2931,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get attachmentCouldNotDownload =>
-      'La pièce jointe na pas pu être téléchargée.';
+      'La pièce jointe n\'a pas pu être téléchargée.';
 
   @override
   String get attachmentCouldNotDecode =>
-      'Les données de la pièce jointe nont pas pu être décodées.';
+      'Les données de la pièce jointe n\'ont pas pu être décodées.';
 
   @override
   String get attachmentPayloadEmpty =>
@@ -2953,7 +2953,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get attachmentCouldNotSave =>
-      'La pièce jointe na pas pu être enregistrée sur cet appareil.';
+      'La pièce jointe n\'a pas pu être enregistrée sur cet appareil.';
 
   @override
   String get attachmentSaveCanceled => 'Enregistrement annulé.';
@@ -2968,11 +2968,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get attachmentLocalNotFound =>
-      'La pièce jointe locale na pas été trouvée sur cet appareil.';
+      'La pièce jointe locale n\'a pas été trouvée sur cet appareil.';
 
   @override
   String get attachmentUnableToOpenLocal =>
-      'Impossible douvrir la pièce jointe locale.';
+      'Impossible d\'ouvrir la pièce jointe locale.';
 
   @override
   String speechDesktopOnly(String service) {
@@ -2981,7 +2981,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String speechRuntimeFailed(String service) {
-    return 'Le runtime $service na pas pu sinitialiser.';
+    return 'Le runtime $service n\'a pas pu s\'initialiser.';
   }
 
   @override
@@ -2991,11 +2991,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get speechMicPermissionDisabled =>
-      'Lautorisation du microphone est désactivée.';
+      'L\'autorisation du microphone est désactivée.';
 
   @override
   String speechUnavailableOnPlatform(String service) {
-    return 'La parole $service nest pas disponible sur cette plateforme.';
+    return 'La parole $service n\'est pas disponible sur cette plateforme.';
   }
 
   @override
@@ -3004,11 +3004,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get terminalNotAvailableYet =>
-      'Le terminal intégré nest pas encore disponible sur ce runtime.';
+      'Le terminal intégré n\'est pas encore disponible sur ce runtime.';
 
   @override
   String get terminalSelectServer =>
-      'Sélectionnez un serveur actif avant douvrir le Terminal.';
+      'Sélectionnez un serveur actif avant d\'ouvrir le Terminal.';
 
   @override
   String get terminalOpenProjectFirst =>
@@ -3040,7 +3040,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get notificationAgentFinished =>
-      'Lagent a terminé la réponse actuelle.';
+      'L\'agent a terminé la réponse actuelle.';
 
   @override
   String get notificationSession => 'Session';
@@ -3154,7 +3154,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get settingsSoundPickerNotAvailable =>
-      'Le sélecteur de sons système nest pas disponible sur cette plateforme.';
+      'Le sélecteur de sons système n\'est pas disponible sur cette plateforme.';
 
   @override
   String get appProviderPrimaryServer => 'Serveur principal';
@@ -3174,18 +3174,18 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get appProviderOAuthNotSupported =>
-      'Cloudflare Access OAuth nest pas supporté sur cette plateforme';
+      'Cloudflare Access OAuth n\'est pas supporté sur cette plateforme';
 
   @override
   String get appProviderTailscaleNotSupported =>
-      'Tailscale nest pas supporté sur cette plateforme';
+      'Tailscale n\'est pas supporté sur cette plateforme';
 
   @override
   String get appProviderProfileNotFound => 'Profil de serveur introuvable';
 
   @override
   String get appProviderCannotActivateUnhealthy =>
-      'Impossible dactiver un serveur en mauvaise santé';
+      'Impossible d\'activer un serveur en mauvaise santé';
 
   @override
   String get appProviderOpenCodeDetected => 'OpenCode détecté';
@@ -3199,12 +3199,12 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String appProviderNotDetectedRefresh(String appName) {
-    return 'La commande OpenCode na pas été détectée. Si vous lavez installée il y a un instant, actualisez les tests ou redémarrez $appName pour recharger le PATH.';
+    return 'La commande OpenCode n\'a pas été détectée. Si vous l\'avez installée il y a un instant, actualisez les tests ou redémarrez $appName pour recharger le PATH.';
   }
 
   @override
   String get appProviderNotDetectedInstall =>
-      'La commande OpenCode na pas été détectée. Lancez linstallation depuis lassistant.';
+      'La commande OpenCode n\'a pas été détectée. Lancez l\'installation depuis l\'assistant.';
 
   @override
   String appProviderUsingCommandAt(String path) {
@@ -3213,7 +3213,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get appProviderDesktopOnly =>
-      'Le serveur local géré nest disponible que sur ordinateur.';
+      'Le serveur local géré n\'est disponible que sur ordinateur.';
 
   @override
   String get appProviderInstallingRequirements =>
@@ -3221,7 +3221,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get appProviderInstallationFailed =>
-      'Linstallation dOpenCode a échoué.';
+      'L\'installation d\'OpenCode a échoué.';
 
   @override
   String get appProviderInstalledSuccessfully =>
@@ -3252,7 +3252,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String appProviderExitedWithCode(int code) {
-    return 'Le serveur local sest arrêté avec le code $code.';
+    return 'Le serveur local s\'est arrêté avec le code $code.';
   }
 
   @override
@@ -3269,15 +3269,15 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tailscaleNotSupportedOnPlatform =>
-      'Tailscale nest pas supporté sur cette plateforme.';
+      'Tailscale n\'est pas supporté sur cette plateforme.';
 
   @override
   String get tailscaleNotSupportedOnWindows =>
-      'Tailscale nest pas supporté sur Windows.';
+      'Tailscale n\'est pas supporté sur Windows.';
 
   @override
   String get tailscaleWaitingAdminApproval =>
-      'Ce nœud Tailscale est en attente de lapprobation de ladministrateur.';
+      'Ce nœud Tailscale est en attente de l\'approbation de l\'administrateur.';
 
   @override
   String get notificationSoundLoadFailed =>
@@ -3290,7 +3290,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chatDescriptionRefreshData => 'Actualiser les données du chat';
 
   @override
-  String get chatDescriptionFocusInput => 'Focus sur lentrée du message';
+  String get chatDescriptionFocusInput => 'Focus sur l\'entrée du message';
 
   @override
   String get chatDescriptionVoiceInput =>
@@ -3311,7 +3311,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get chatDescriptionFocusOrCloseDrawer =>
-      'Focus sur lentrée (ou fermer le tiroir sil est ouvert)';
+      'Focus sur l\'entrée (ou fermer le tiroir s\'il est ouvert)';
 
   @override
   String get chatDescriptionNextAgent => 'Agent suivant';
@@ -3321,10 +3321,10 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get chatDescriptionCloseApp =>
-      'Fermer lapplication en utilisant le comportement de fermeture de la plateforme';
+      'Fermer l\'application en utilisant le comportement de fermeture de la plateforme';
 
   @override
-  String get chatDescriptionForceExit => 'Forcer la sortie de lapplication';
+  String get chatDescriptionForceExit => 'Forcer la sortie de l\'application';
 
   @override
   String get chatDescriptionStopResponse =>
@@ -3353,7 +3353,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get appProviderErrorInvalidServerUrl => 'URL du serveur invalide';
 
   @override
-  String get appProviderErrorServerUrlRequired => 'LURL du serveur est requise';
+  String get appProviderErrorServerUrlRequired =>
+      'L\'URL du serveur est requise';
 
   @override
   String get appProviderErrorServerAlreadyExists =>
@@ -3361,11 +3362,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get appProviderErrorCloudflareOAuthNotSupported =>
-      'Cloudflare Access OAuth nest pas supporté sur cette plateforme';
+      'Cloudflare Access OAuth n\'est pas supporté sur cette plateforme';
 
   @override
   String get appProviderErrorTailscaleNotSupported =>
-      'Tailscale nest pas supporté sur cette plateforme';
+      'Tailscale n\'est pas supporté sur cette plateforme';
 
   @override
   String get appProviderErrorServerProfileNotFound =>
@@ -3373,19 +3374,19 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get appProviderErrorCannotActivateUnhealthy =>
-      'Impossible dactiver un serveur en mauvaise santé';
+      'Impossible d\'activer un serveur en mauvaise santé';
 
   @override
   String get appProviderErrorManagedDesktopOnly =>
-      'Le serveur local géré nest disponible que sur ordinateur.';
+      'Le serveur local géré n\'est disponible que sur ordinateur.';
 
   @override
   String get appProviderErrorLocalServerHealthCheckFailed =>
-      'Le serveur local a démarré mais le test de santé na pas été concluant.';
+      'Le serveur local a démarré mais le test de santé n\'a pas été concluant.';
 
   @override
   String get appProviderErrorInstallationFailed =>
-      'Linstallation dOpenCode a échoué.';
+      'L\'installation d\'OpenCode a échoué.';
 
   @override
   String get appProviderStatusLocalServerStopped =>
@@ -3442,11 +3443,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get appProviderSetupOpenCodeNotDetectedRefresh =>
-      'La commande OpenCode na pas été détectée. Si vous lavez installée il y a un instant, actualisez les tests ou redémarrez CodeWalk pour recharger le PATH.';
+      'La commande OpenCode n\'a pas été détectée. Si vous l\'avez installée il y a un instant, actualisez les tests ou redémarrez CodeWalk pour recharger le PATH.';
 
   @override
   String get appProviderSetupOpenCodeNotDetectedInstall =>
-      'La commande OpenCode na pas été détectée. Lancez linstallation depuis lassistant.';
+      'La commande OpenCode n\'a pas été détectée. Lancez l\'installation depuis l\'assistant.';
 
   @override
   String get appProviderLabelPrimaryServer => 'Serveur principal';
