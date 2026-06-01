@@ -106,8 +106,6 @@ class _SelectionPersistenceSnapshot {
     required this.selectedModelId,
     required this.selectedAgentName,
     required this.recentModelsJson,
-    required this.favoriteModelsJson,
-    required this.pinnedSessionsJson,
     required this.modelUsageCountsJson,
     required this.selectedVariantMapJson,
     required this.agentSelectionMemoryJson,
@@ -121,8 +119,6 @@ class _SelectionPersistenceSnapshot {
   final String? selectedModelId;
   final String? selectedAgentName;
   final String recentModelsJson;
-  final String favoriteModelsJson;
-  final String pinnedSessionsJson;
   final String modelUsageCountsJson;
   final String selectedVariantMapJson;
   final String agentSelectionMemoryJson;
@@ -137,8 +133,6 @@ class _SelectionPersistenceSnapshot {
       selectedModelId: selectedModelId,
       selectedAgentName: selectedAgentName,
       recentModelsJson: recentModelsJson,
-      favoriteModelsJson: favoriteModelsJson,
-      pinnedSessionsJson: pinnedSessionsJson,
       modelUsageCountsJson: modelUsageCountsJson,
       selectedVariantMapJson: selectedVariantMapJson,
       agentSelectionMemoryJson: agentSelectionMemoryJson,
@@ -2618,10 +2612,6 @@ class ChatProvider extends ChangeNotifier {
       selectedModelId: _selectedModelId,
       selectedAgentName: _selectedAgentName,
       recentModelsJson: json.encode(_recentModelKeys),
-      favoriteModelsJson: json.encode(_favoriteModelKeys),
-      pinnedSessionsJson: json.encode(
-        _pinnedSessionIds.toList(growable: false),
-      ),
       modelUsageCountsJson: json.encode(_modelUsageCounts),
       selectedVariantMapJson: json.encode(_selectedVariantByModel),
       agentSelectionMemoryJson: json.encode(_encodeAgentSelectionMemory()),
@@ -2655,15 +2645,6 @@ class ChatProvider extends ChangeNotifier {
     );
     await localDataSource.saveRecentModelsJson(
       snapshot.recentModelsJson,
-      serverId: snapshot.serverId,
-      scopeId: snapshot.scopeId,
-    );
-    await localDataSource.saveFavoriteModelsJson(
-      snapshot.favoriteModelsJson,
-      serverId: snapshot.serverId,
-    );
-    await localDataSource.savePinnedSessionsJson(
-      snapshot.pinnedSessionsJson,
       serverId: snapshot.serverId,
       scopeId: snapshot.scopeId,
     );
