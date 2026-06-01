@@ -18,7 +18,7 @@ class _QuotaProviderGroupRowState extends State<QuotaProviderGroupRow> {
   @override
   void initState() {
     super.initState();
-    _expanded = false;
+    _expanded = widget.group.providerId == 'codex';
   }
 
   @override
@@ -37,7 +37,8 @@ class _QuotaProviderGroupRowState extends State<QuotaProviderGroupRow> {
                   context,
                 ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
               ),
-              QuotaEntryRow(entry: widget.group.entries.first, dense: true),
+              for (final entry in widget.group.entries)
+                QuotaEntryRow(entry: entry, dense: true),
             ],
           ),
         );
