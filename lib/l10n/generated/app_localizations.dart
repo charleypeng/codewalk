@@ -122,17 +122,281 @@ abstract class AppLocalizations {
     Locale('zh'),
   ];
 
+  /// CodeWalk UI string — aboutGitHub
+  ///
+  /// In en, this message translates to:
+  /// **'GitHub'**
+  String get aboutGitHub;
+
+  /// CodeWalk UI string — appShellDownloadingUpdate
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading update…'**
+  String get appShellDownloadingUpdate;
+
+  /// CodeWalk UI string — appShellInstall
+  ///
+  /// In en, this message translates to:
+  /// **'Install'**
+  String get appShellInstall;
+
+  /// CodeWalk UI string — appShellInstallFailed
+  ///
+  /// In en, this message translates to:
+  /// **'Install failed'**
+  String get appShellInstallFailed;
+
+  /// CodeWalk UI string — appShellInstallingUpdate
+  ///
+  /// In en, this message translates to:
+  /// **'Installing update...'**
+  String get appShellInstallingUpdate;
+
+  /// CodeWalk UI string — appShellRestart
+  ///
+  /// In en, this message translates to:
+  /// **'Restart'**
+  String get appShellRestart;
+
+  /// CodeWalk UI string — appShellUpdateAvailableResult
+  ///
+  /// In en, this message translates to:
+  /// **'Update available: v{latestVersion}'**
+  String appShellUpdateAvailableResult(String latestVersion);
+
+  /// CodeWalk UI string — behaviorAdvancedPermissionRule
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced permission rule editing stays out of Settings for now and is deferred to later parity work.'**
+  String get behaviorAdvancedPermissionRule;
+
+  /// CodeWalk UI string — behaviorAutomatic
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic'**
+  String get behaviorAutomatic;
+
+  /// CodeWalk UI string — behaviorAutomaticFallback
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic fallback'**
+  String get behaviorAutomaticFallback;
+
+  /// CodeWalk UI string — behaviorCellularDataSaver
+  ///
+  /// In en, this message translates to:
+  /// **'Cellular data saver'**
+  String get behaviorCellularDataSaver;
+
+  /// CodeWalk UI string — behaviorChatLevelShare
+  ///
+  /// In en, this message translates to:
+  /// **'Use the chat-level share action to publish one session now. This setting only changes OpenCode’s default sharing policy.'**
+  String get behaviorChatLevelShare;
+
+  /// CodeWalk UI string — behaviorCodeWalkReleaseChecks
+  ///
+  /// In en, this message translates to:
+  /// **'Use About for CodeWalk release checks. This setting only mirrors the official OpenCode `autoupdate` config.'**
+  String get behaviorCodeWalkReleaseChecks;
+
+  /// CodeWalk UI string — behaviorControlsOfficialGlobal
+  ///
+  /// In en, this message translates to:
+  /// **'Controls the official global `share` config, not the share button for an individual chat.'**
+  String get behaviorControlsOfficialGlobal;
+
+  /// CodeWalk UI string — behaviorControlsUpstreamOpenCode
+  ///
+  /// In en, this message translates to:
+  /// **'Controls upstream OpenCode runtime updates, not CodeWalk app update checks.'**
+  String get behaviorControlsUpstreamOpenCode;
+
+  /// CodeWalk UI string — behaviorCustomDisplayName
+  ///
+  /// In en, this message translates to:
+  /// **'Custom display name shown in conversations instead of the system username.'**
+  String get behaviorCustomDisplayName;
+
+  /// CodeWalk UI string — behaviorCutsAutomaticMobile
+  ///
+  /// In en, this message translates to:
+  /// **'Cuts automatic mobile-data usage by stopping background downloads and throttling automatic foreground refreshes to one burst every {inSeconds} seconds.'**
+  String behaviorCutsAutomaticMobile(String inSeconds);
+
+  /// CodeWalk UI string — behaviorDisabled
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get behaviorDisabled;
+
+  /// CodeWalk UI string — behaviorLightweightTasksLike
+  ///
+  /// In en, this message translates to:
+  /// **'Used for lightweight tasks like title generation.'**
+  String get behaviorLightweightTasksLike;
+
+  /// CodeWalk UI string — behaviorManual
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get behaviorManual;
+
+  /// CodeWalk UI string — behaviorNotify
+  ///
+  /// In en, this message translates to:
+  /// **'Notify only'**
+  String get behaviorNotify;
+
+  /// CodeWalk UI string — behaviorOfficialOpenCodePermission
+  ///
+  /// In en, this message translates to:
+  /// **'Official OpenCode permission policy is configured in `opencode.json` with allow/ask/deny rules per tool. CodeWalk keeps the official permission-request cards and adds one approved ADR-023 exception: the composer auto-approve toggle replies with `Always` and `remember: true` unconditionally to create durable session-scoped grants, and keeps the same thread-scoped continuity path active in the Android background worker.'**
+  String get behaviorOfficialOpenCodePermission;
+
+  /// CodeWalk UI string — behaviorOpenCodeBackedDefaults
+  ///
+  /// In en, this message translates to:
+  /// **'OpenCode-backed defaults'**
+  String get behaviorOpenCodeBackedDefaults;
+
+  /// CodeWalk UI string — behaviorPermissionHandlingProvenance
+  ///
+  /// In en, this message translates to:
+  /// **'Permission handling provenance'**
+  String get behaviorPermissionHandlingProvenance;
+
+  /// CodeWalk UI string — behaviorPermissionsVariantReasoning
+  ///
+  /// In en, this message translates to:
+  /// **'Permissions and variant/reasoning parity stay separate until their UI can preserve advanced config safely.'**
+  String get behaviorPermissionsVariantReasoning;
+
+  /// CodeWalk UI string — behaviorPrimaryAgentAgent
+  ///
+  /// In en, this message translates to:
+  /// **'Primary agent used when no agent is explicitly chosen.'**
+  String get behaviorPrimaryAgentAgent;
+
+  /// CodeWalk UI string — behaviorRefreshDefaults
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh defaults'**
+  String get behaviorRefreshDefaults;
+
+  /// CodeWalk UI string — behaviorSharedAcrossOpenCode
+  ///
+  /// In en, this message translates to:
+  /// **'Shared across OpenCode clients through config.'**
+  String get behaviorSharedAcrossOpenCode;
+
+  /// CodeWalk UI string — behaviorTheseValuesWrite
+  ///
+  /// In en, this message translates to:
+  /// **'These values write to `/config` on the active server and match official OpenCode shared config.'**
+  String get behaviorTheseValuesWrite;
+
+  /// CodeWalk UI string — cannedAttachFiles
+  ///
+  /// In en, this message translates to:
+  /// **'Attach files'**
+  String get cannedAttachFiles;
+
   /// CodeWalk UI string — cannedNoSuggestions
   ///
   /// In en, this message translates to:
   /// **'No suggestions'**
   String get cannedNoSuggestions;
 
+  /// CodeWalk UI string — cannedOffMeansReplace
+  ///
+  /// In en, this message translates to:
+  /// **'Off means replace current composer text'**
+  String get cannedOffMeansReplace;
+
+  /// CodeWalk UI string — cannedQuickReply
+  ///
+  /// In en, this message translates to:
+  /// **'New quick reply'**
+  String get cannedQuickReply;
+
+  /// CodeWalk UI string — cannedSendImmediatelyInserting
+  ///
+  /// In en, this message translates to:
+  /// **'Send immediately after inserting this quick reply'**
+  String get cannedSendImmediatelyInserting;
+
+  /// CodeWalk UI string — chatActiveServerUnhealthy
+  ///
+  /// In en, this message translates to:
+  /// **'Active server is unhealthy. Sends will try once and fail fast until recovery.'**
+  String get chatActiveServerUnhealthy;
+
   /// CodeWalk UI string — chatAddServerToStart
   ///
   /// In en, this message translates to:
   /// **'Add a server to start chatting.'**
   String get chatAddServerToStart;
+
+  /// CodeWalk UI string — chatAppBarMoreActions
+  ///
+  /// In en, this message translates to:
+  /// **'More actions'**
+  String get chatAppBarMoreActions;
+
+  /// CodeWalk UI string — chatAppBarPinAction
+  ///
+  /// In en, this message translates to:
+  /// **'Pin to app bar'**
+  String get chatAppBarPinAction;
+
+  /// CodeWalk UI string — chatAppBarPinDescription
+  ///
+  /// In en, this message translates to:
+  /// **'This action will stay visible outside the menu.'**
+  String get chatAppBarPinDescription;
+
+  /// CodeWalk UI string — chatAppBarUnpinAction
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin from app bar'**
+  String get chatAppBarUnpinAction;
+
+  /// CodeWalk UI string — chatAppBarUnpinDescription
+  ///
+  /// In en, this message translates to:
+  /// **'This action will move back into the menu.'**
+  String get chatAppBarUnpinDescription;
+
+  /// CodeWalk UI string — chatCachedConversationsYet
+  ///
+  /// In en, this message translates to:
+  /// **'No cached conversations yet'**
+  String get chatCachedConversationsYet;
+
+  /// CodeWalk UI string — chatChangedFilesAvailable
+  ///
+  /// In en, this message translates to:
+  /// **'No changed files are available for this session.'**
+  String get chatChangedFilesAvailable;
+
+  /// CodeWalk UI string — chatChildrenChatProviderCurrentSessionChildren
+  ///
+  /// In en, this message translates to:
+  /// **'Children: {length}'**
+  String chatChildrenChatProviderCurrentSessionChildren(String length);
+
+  /// CodeWalk UI string — chatChooseDirectory
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Directory'**
+  String get chatChooseDirectory;
+
+  /// CodeWalk UI string — chatChooseFolderOpen
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a folder to open as project context.'**
+  String get chatChooseFolderOpen;
 
   /// CodeWalk UI string — chatClose
   ///
@@ -158,11 +422,35 @@ abstract class AppLocalizations {
   /// **'Conversations'**
   String get chatConversationsPane;
 
+  /// CodeWalk UI string — chatCurrent
+  ///
+  /// In en, this message translates to:
+  /// **'Use current'**
+  String get chatCurrent;
+
+  /// CodeWalk UI string — chatDiffFiles
+  ///
+  /// In en, this message translates to:
+  /// **'Diff files: 0'**
+  String get chatDiffFiles;
+
+  /// CodeWalk UI string — chatDisplay
+  ///
+  /// In en, this message translates to:
+  /// **'Display'**
+  String get chatDisplay;
+
   /// CodeWalk UI string — chatDisplayToggles
   ///
   /// In en, this message translates to:
   /// **'Display toggles'**
   String get chatDisplayToggles;
+
+  /// CodeWalk UI string — chatDoubleESCStop
+  ///
+  /// In en, this message translates to:
+  /// **'Double ESC to stop'**
+  String get chatDoubleESCStop;
 
   /// CodeWalk UI string — chatFilterActive
   ///
@@ -182,6 +470,12 @@ abstract class AppLocalizations {
   /// **'Archived'**
   String get chatFilterArchived;
 
+  /// CodeWalk UI string — chatFilterDirectories
+  ///
+  /// In en, this message translates to:
+  /// **'Filter directories'**
+  String get chatFilterDirectories;
+
   /// CodeWalk UI string — chatFilterSessions
   ///
   /// In en, this message translates to:
@@ -200,11 +494,26 @@ abstract class AppLocalizations {
   /// **'Go to latest message'**
   String get chatGoToLatest;
 
+  /// CodeWalk UI string — chatGroupMessageCountMessages
+  ///
+  /// In en, this message translates to:
+  /// **'{messageCount} messages hidden before {compactionLabel} compaction'**
+  String chatGroupMessageCountMessages(
+    String messageCount,
+    String compactionLabel,
+  );
+
   /// CodeWalk UI string — chatHelloAssistant
   ///
   /// In en, this message translates to:
   /// **'Hello! I am your AI assistant'**
   String get chatHelloAssistant;
+
+  /// CodeWalk UI string — chatHelp
+  ///
+  /// In en, this message translates to:
+  /// **'How can I help you?'**
+  String get chatHelp;
 
   /// CodeWalk UI string — chatHideConversationsSidebar
   ///
@@ -218,17 +527,77 @@ abstract class AppLocalizations {
   /// **'Hide Utility sidebar'**
   String get chatHideUtilitySidebar;
 
+  /// CodeWalk UI string — chatHistoryCollapsed
+  ///
+  /// In en, this message translates to:
+  /// **'Previous history is collapsed'**
+  String get chatHistoryCollapsed;
+
   /// CodeWalk UI string — chatKeepWorking
   ///
   /// In en, this message translates to:
   /// **'Keep working'**
   String get chatKeepWorking;
 
+  /// CodeWalk UI string — chatLatestToolActivity
+  ///
+  /// In en, this message translates to:
+  /// **'Latest tool activity stays inside this bounded panel to keep the chat viewport stable.'**
+  String get chatLatestToolActivity;
+
   /// CodeWalk UI string — chatLoadMore
   ///
   /// In en, this message translates to:
   /// **'Load more'**
   String get chatLoadMore;
+
+  /// CodeWalk UI string — chatLoadingProjectContext
+  ///
+  /// In en, this message translates to:
+  /// **'Loading project context...'**
+  String get chatLoadingProjectContext;
+
+  /// CodeWalk UI string — chatMessageHide
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get chatMessageHide;
+
+  /// CodeWalk UI string — chatMessageMessagePartUnavailable
+  ///
+  /// In en, this message translates to:
+  /// **'Message part unavailable'**
+  String get chatMessageMessagePartUnavailable;
+
+  /// CodeWalk UI string — chatMessageMetadataAvailable
+  ///
+  /// In en, this message translates to:
+  /// **'No metadata available'**
+  String get chatMessageMetadataAvailable;
+
+  /// CodeWalk UI string — chatMessageModelMessageModelId
+  ///
+  /// In en, this message translates to:
+  /// **'Model: {modelId}'**
+  String chatMessageModelMessageModelId(String modelId);
+
+  /// CodeWalk UI string — chatMessageProviderMessageProviderId
+  ///
+  /// In en, this message translates to:
+  /// **'Provider: {providerId}'**
+  String chatMessageProviderMessageProviderId(String providerId);
+
+  /// CodeWalk UI string — chatMessageRewindEdit
+  ///
+  /// In en, this message translates to:
+  /// **'Rewind and edit from here'**
+  String get chatMessageRewindEdit;
+
+  /// CodeWalk UI string — chatMessageYou
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get chatMessageYou;
 
   /// CodeWalk UI string — chatNewChat
   ///
@@ -260,11 +629,143 @@ abstract class AppLocalizations {
   /// **'Open Files'**
   String get chatOpenFiles;
 
+  /// CodeWalk UI string — chatOpenProject
+  ///
+  /// In en, this message translates to:
+  /// **'Open project'**
+  String get chatOpenProject;
+
+  /// CodeWalk UI string — chatOpenProjectFolder
+  ///
+  /// In en, this message translates to:
+  /// **'Open project folder...'**
+  String get chatOpenProjectFolder;
+
+  /// CodeWalk UI string — chatOpenSidebar
+  ///
+  /// In en, this message translates to:
+  /// **'Open sidebar'**
+  String get chatOpenSidebar;
+
+  /// CodeWalk UI string — chatPageStatusContextUsage
+  ///
+  /// In en, this message translates to:
+  /// **'Context usage'**
+  String get chatPageStatusContextUsage;
+
+  /// CodeWalk UI string — chatPageStatusCost
+  ///
+  /// In en, this message translates to:
+  /// **'Cost'**
+  String get chatPageStatusCost;
+
+  /// CodeWalk UI string — chatPageStatusLimit
+  ///
+  /// In en, this message translates to:
+  /// **'Limit'**
+  String get chatPageStatusLimit;
+
+  /// CodeWalk UI string — chatPageStatusManageServers
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Servers'**
+  String get chatPageStatusManageServers;
+
+  /// CodeWalk UI string — chatPageStatusSaver
+  ///
+  /// In en, this message translates to:
+  /// **'Saver'**
+  String get chatPageStatusSaver;
+
+  /// CodeWalk UI string — chatPageStatusSwitchServer
+  ///
+  /// In en, this message translates to:
+  /// **'Switch Server'**
+  String get chatPageStatusSwitchServer;
+
+  /// CodeWalk UI string — chatPageStatusTokens
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens'**
+  String get chatPageStatusTokens;
+
+  /// CodeWalk UI string — chatPageStatusUsage
+  ///
+  /// In en, this message translates to:
+  /// **'Usage'**
+  String get chatPageStatusUsage;
+
+  /// CodeWalk UI string — chatPageStatusUsagePercent
+  ///
+  /// In en, this message translates to:
+  /// **'{usagePercent}'**
+  String chatPageStatusUsagePercent(String usagePercent);
+
   /// CodeWalk UI string — chatProjectContext
   ///
   /// In en, this message translates to:
   /// **'Project Context'**
   String get chatProjectContext;
+
+  /// CodeWalk UI string — chatProjectContext2
+  ///
+  /// In en, this message translates to:
+  /// **'Project context'**
+  String get chatProjectContext2;
+
+  /// CodeWalk UI string — chatRealtimeGlobalEvent
+  ///
+  /// In en, this message translates to:
+  /// **'global event'**
+  String get chatRealtimeGlobalEvent;
+
+  /// CodeWalk UI string — chatRealtimeGlobalEventReason
+  ///
+  /// In en, this message translates to:
+  /// **'global event ({reason})'**
+  String chatRealtimeGlobalEventReason(String reason);
+
+  /// CodeWalk UI string — chatRealtimeGlobalEventStale
+  ///
+  /// In en, this message translates to:
+  /// **'global event (stale generation)'**
+  String get chatRealtimeGlobalEventStale;
+
+  /// CodeWalk UI string — chatRealtimeMessageStreamReason
+  ///
+  /// In en, this message translates to:
+  /// **'message stream ({reason})'**
+  String chatRealtimeMessageStreamReason(String reason);
+
+  /// CodeWalk UI string — chatRealtimeRealtimeEvent
+  ///
+  /// In en, this message translates to:
+  /// **'realtime event'**
+  String get chatRealtimeRealtimeEvent;
+
+  /// CodeWalk UI string — chatRealtimeRealtimeEventReason
+  ///
+  /// In en, this message translates to:
+  /// **'realtime event ({reason})'**
+  String chatRealtimeRealtimeEventReason(String reason);
+
+  /// CodeWalk UI string — chatRealtimeRealtimeEventStale
+  ///
+  /// In en, this message translates to:
+  /// **'realtime event (stale generation)'**
+  String get chatRealtimeRealtimeEventStale;
+
+  /// CodeWalk UI string — chatRealtimeReconnectingServerTry
+  ///
+  /// In en, this message translates to:
+  /// **'Reconnecting to the server. Try again in a moment.'**
+  String get chatRealtimeReconnectingServerTry;
+
+  /// CodeWalk UI string — chatReasoning
+  ///
+  /// In en, this message translates to:
+  /// **'Reasoning...'**
+  String get chatReasoning;
 
   /// CodeWalk UI string — chatRecentSessions
   ///
@@ -290,11 +791,29 @@ abstract class AppLocalizations {
   /// **'Refresh'**
   String get chatRefresh;
 
+  /// CodeWalk UI string — chatRefreshConversation
+  ///
+  /// In en, this message translates to:
+  /// **'Could not refresh this conversation'**
+  String get chatRefreshConversation;
+
+  /// CodeWalk UI string — chatRefreshProjects
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh projects'**
+  String get chatRefreshProjects;
+
   /// CodeWalk UI string — chatRefreshSessionDetails
   ///
   /// In en, this message translates to:
   /// **'Refresh session details'**
   String get chatRefreshSessionDetails;
+
+  /// CodeWalk UI string — chatRemoveDisplayNameHistory
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {displayName} from history'**
+  String chatRemoveDisplayNameHistory(String displayName);
 
   /// CodeWalk UI string — chatRetry
   ///
@@ -302,11 +821,23 @@ abstract class AppLocalizations {
   /// **'Retry'**
   String get chatRetry;
 
+  /// CodeWalk UI string — chatRetry2
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get chatRetry2;
+
   /// CodeWalk UI string — chatRetryRefresh
   ///
   /// In en, this message translates to:
   /// **'Retry refresh'**
   String get chatRetryRefresh;
+
+  /// CodeWalk UI string — chatRetryingModelRequest
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying model request...'**
+  String get chatRetryingModelRequest;
 
   /// CodeWalk UI string — chatReturnToMainConversation
   ///
@@ -314,35 +845,17 @@ abstract class AppLocalizations {
   /// **'Return to main conversation'**
   String get chatReturnToMainConversation;
 
+  /// CodeWalk UI string — chatReviewChanges
+  ///
+  /// In en, this message translates to:
+  /// **'Review changes'**
+  String get chatReviewChanges;
+
   /// CodeWalk UI string — chatSearchConversations
   ///
   /// In en, this message translates to:
   /// **'Search conversations'**
   String get chatSearchConversations;
-
-  /// CodeWalk UI string — chatSearchTimeline
-  ///
-  /// In en, this message translates to:
-  /// **'Search timeline'**
-  String get chatSearchTimeline;
-
-  /// CodeWalk UI string — chatSearchNoResults
-  ///
-  /// In en, this message translates to:
-  /// **'No results'**
-  String get chatSearchNoResults;
-
-  /// CodeWalk UI string — chatSearchResultCount
-  ///
-  /// In en, this message translates to:
-  /// **'Message {current} of {total}'**
-  String chatSearchResultCount(int current, int total);
-
-  /// CodeWalk UI string — chatSearchPreviousResult
-  ///
-  /// In en, this message translates to:
-  /// **'Previous result'**
-  String get chatSearchPreviousResult;
 
   /// CodeWalk UI string — chatSearchNextResult
   ///
@@ -350,35 +863,35 @@ abstract class AppLocalizations {
   /// **'Next result'**
   String get chatSearchNextResult;
 
-  /// CodeWalk UI string — chatAppBarMoreActions
+  /// CodeWalk UI string — chatSearchNoResults
   ///
   /// In en, this message translates to:
-  /// **'More actions'**
-  String get chatAppBarMoreActions;
+  /// **'No results'**
+  String get chatSearchNoResults;
 
-  /// CodeWalk UI string — chatAppBarPinAction
+  /// CodeWalk UI string — chatSearchPreviousResult
   ///
   /// In en, this message translates to:
-  /// **'Pin to app bar'**
-  String get chatAppBarPinAction;
+  /// **'Previous result'**
+  String get chatSearchPreviousResult;
 
-  /// CodeWalk UI string — chatAppBarUnpinAction
+  /// CodeWalk UI string — chatSearchResultCount
   ///
   /// In en, this message translates to:
-  /// **'Unpin from app bar'**
-  String get chatAppBarUnpinAction;
+  /// **'Message {current} of {total}'**
+  String chatSearchResultCount(int current, int total);
 
-  /// CodeWalk UI string — chatAppBarPinDescription
+  /// CodeWalk UI string — chatSearchTimeline
   ///
   /// In en, this message translates to:
-  /// **'This action will stay visible outside the menu.'**
-  String get chatAppBarPinDescription;
+  /// **'Search timeline'**
+  String get chatSearchTimeline;
 
-  /// CodeWalk UI string — chatAppBarUnpinDescription
+  /// CodeWalk UI string — chatSelectDirectory
   ///
   /// In en, this message translates to:
-  /// **'This action will move back into the menu.'**
-  String get chatAppBarUnpinDescription;
+  /// **'Select directory'**
+  String get chatSelectDirectory;
 
   /// CodeWalk UI string — chatSelectOrCreate
   ///
@@ -386,17 +899,65 @@ abstract class AppLocalizations {
   /// **'Select or create a conversation to start chatting'**
   String get chatSelectOrCreate;
 
+  /// CodeWalk UI string — chatSelectProjectBelow
+  ///
+  /// In en, this message translates to:
+  /// **'Select a project below.'**
+  String get chatSelectProjectBelow;
+
   /// CodeWalk UI string — chatSessionActions
   ///
   /// In en, this message translates to:
   /// **'Session actions'**
   String get chatSessionActions;
 
+  /// CodeWalk UI string — chatSessionChatSessionSession
+  ///
+  /// In en, this message translates to:
+  /// **'Chat session: {title}'**
+  String chatSessionChatSessionSession(String title);
+
+  /// CodeWalk UI string — chatSessionConversationNextAction
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation {nextAction}'**
+  String chatSessionConversationNextAction(String nextAction);
+
+  /// CodeWalk UI string — chatSessionConversations
+  ///
+  /// In en, this message translates to:
+  /// **'No conversations'**
+  String get chatSessionConversations;
+
+  /// CodeWalk UI string — chatSessionCreateConversationStart
+  ///
+  /// In en, this message translates to:
+  /// **'Create a new conversation to start chatting'**
+  String get chatSessionCreateConversationStart;
+
+  /// CodeWalk UI string — chatSessionsLength
+  ///
+  /// In en, this message translates to:
+  /// **'{length}'**
+  String chatSessionsLength(String length);
+
   /// CodeWalk UI string — chatSetUpServer
   ///
   /// In en, this message translates to:
   /// **'Set up server'**
   String get chatSetUpServer;
+
+  /// CodeWalk UI string — chatSettings
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get chatSettings;
+
+  /// CodeWalk UI string — chatSidebarAccess
+  ///
+  /// In en, this message translates to:
+  /// **'Sidebar access'**
+  String get chatSidebarAccess;
 
   /// CodeWalk UI string — chatSortMostRecent
   ///
@@ -427,6 +988,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Title'**
   String get chatSortTitle;
+
+  /// CodeWalk UI string — chatSyncLabel
+  ///
+  /// In en, this message translates to:
+  /// **'Sync: {label}'**
+  String chatSyncLabel(String label);
+
+  /// CodeWalk UI string — chatTasks
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks'**
+  String get chatTasks;
+
+  /// CodeWalk UI string — chatTasksAvailableSession
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks are available for this session.'**
+  String get chatTasksAvailableSession;
 
   /// CodeWalk UI string — chatToggleSidebars
   ///
@@ -644,17 +1223,179 @@ abstract class AppLocalizations {
   /// **'Voice Input Setup'**
   String get dialogVoiceInputSetup;
 
+  /// CodeWalk UI string — errorFormatAuthenticationFailedReconnect
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication failed. Reconnect the provider and try again.'**
+  String get errorFormatAuthenticationFailedReconnect;
+
+  /// CodeWalk UI string — errorFormatProviderTemporarilyUnavailable
+  ///
+  /// In en, this message translates to:
+  /// **'Provider temporarily unavailable. Try again shortly.'**
+  String get errorFormatProviderTemporarilyUnavailable;
+
+  /// CodeWalk UI string — errorFormatQuotaExceededCheck
+  ///
+  /// In en, this message translates to:
+  /// **'Quota exceeded. Check your provider plan or billing.'**
+  String get errorFormatQuotaExceededCheck;
+
+  /// CodeWalk UI string — errorFormatRateLimitExceeded
+  ///
+  /// In en, this message translates to:
+  /// **'Rate limit exceeded. Wait a moment and try again.'**
+  String get errorFormatRateLimitExceeded;
+
+  /// CodeWalk UI string — errorFormatServerErrorPlease
+  ///
+  /// In en, this message translates to:
+  /// **'Server error. Please try again.'**
+  String get errorFormatServerErrorPlease;
+
+  /// CodeWalk UI string — errorFormatServiceTemporarilyUnavailable
+  ///
+  /// In en, this message translates to:
+  /// **'Service temporarily unavailable. The server may be starting up — please try again shortly.'**
+  String get errorFormatServiceTemporarilyUnavailable;
+
+  /// CodeWalk UI string — errorFormatUnableReachServer
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to reach the server. Check connection and server status.'**
+  String get errorFormatUnableReachServer;
+
+  /// CodeWalk UI string — fileActionAttachmentDataDecoded
+  ///
+  /// In en, this message translates to:
+  /// **'Attachment data could not be decoded.'**
+  String get fileActionAttachmentDataDecoded;
+
+  /// CodeWalk UI string — fileActionAttachmentPathEmpty
+  ///
+  /// In en, this message translates to:
+  /// **'Attachment path is empty.'**
+  String get fileActionAttachmentPathEmpty;
+
+  /// CodeWalk UI string — fileActionAttachmentPayloadEmpty
+  ///
+  /// In en, this message translates to:
+  /// **'Attachment payload is empty.'**
+  String get fileActionAttachmentPayloadEmpty;
+
+  /// CodeWalk UI string — fileActionAttachmentProvideValid
+  ///
+  /// In en, this message translates to:
+  /// **'Attachment does not provide a valid location.'**
+  String get fileActionAttachmentProvideValid;
+
+  /// CodeWalk UI string — fileActionAttachmentSavedDevice
+  ///
+  /// In en, this message translates to:
+  /// **'Attachment could not be saved on this device.'**
+  String get fileActionAttachmentSavedDevice;
+
+  /// CodeWalk UI string — fileActionAttachmentSavedOutputFile
+  ///
+  /// In en, this message translates to:
+  /// **'Attachment saved to {path} and opened.'**
+  String fileActionAttachmentSavedOutputFile(String path);
+
+  /// CodeWalk UI string — fileActionAttachmentSavedOutputFile2
+  ///
+  /// In en, this message translates to:
+  /// **'Attachment saved to {path}.'**
+  String fileActionAttachmentSavedOutputFile2(String path);
+
+  /// CodeWalk UI string — fileActionAttachmentSavedSavedPath
+  ///
+  /// In en, this message translates to:
+  /// **'Attachment saved to {savedPath}.'**
+  String fileActionAttachmentSavedSavedPath(String savedPath);
+
+  /// CodeWalk UI string — fileActionLocalAttachmentFound
+  ///
+  /// In en, this message translates to:
+  /// **'Local attachment was not found on this device.'**
+  String get fileActionLocalAttachmentFound;
+
+  /// CodeWalk UI string — fileActionSaveCanceled
+  ///
+  /// In en, this message translates to:
+  /// **'Save canceled.'**
+  String get fileActionSaveCanceled;
+
+  /// CodeWalk UI string — fileActionUnableOpenLocal
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to open the local attachment.'**
+  String get fileActionUnableOpenLocal;
+
+  /// CodeWalk UI string — filesAddChat
+  ///
+  /// In en, this message translates to:
+  /// **'Add to chat'**
+  String get filesAddChat;
+
+  /// CodeWalk UI string — filesBinaryFilePreview
+  ///
+  /// In en, this message translates to:
+  /// **'Binary file preview is not available.'**
+  String get filesBinaryFilePreview;
+
+  /// CodeWalk UI string — filesClear
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get filesClear;
+
+  /// CodeWalk UI string — filesContents
+  ///
+  /// In en, this message translates to:
+  /// **'Contents'**
+  String get filesContents;
+
+  /// CodeWalk UI string — filesFileEmpty
+  ///
+  /// In en, this message translates to:
+  /// **'File is empty.'**
+  String get filesFileEmpty;
+
+  /// CodeWalk UI string — filesFilesFound
+  ///
+  /// In en, this message translates to:
+  /// **'No files found'**
+  String get filesFilesFound;
+
   /// CodeWalk UI string — filesHideSidebar
   ///
   /// In en, this message translates to:
   /// **'Hide Files sidebar'**
   String get filesHideSidebar;
 
+  /// CodeWalk UI string — filesNames
+  ///
+  /// In en, this message translates to:
+  /// **'Names'**
+  String get filesNames;
+
+  /// CodeWalk UI string — filesOpenFilesFileState
+  ///
+  /// In en, this message translates to:
+  /// **'Open files ({length})'**
+  String filesOpenFilesFileState(String length);
+
   /// CodeWalk UI string — filesQuickOpen
   ///
   /// In en, this message translates to:
   /// **'Quick Open'**
   String get filesQuickOpen;
+
+  /// CodeWalk UI string — filesQuickOpenFile
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Open File'**
+  String get filesQuickOpenFile;
 
   /// CodeWalk UI string — filesRefresh
   ///
@@ -674,6 +1415,12 @@ abstract class AppLocalizations {
   /// **'Files'**
   String get filesTitle;
 
+  /// CodeWalk UI string — logsAppLogs
+  ///
+  /// In en, this message translates to:
+  /// **'App Logs'**
+  String get logsAppLogs;
+
   /// CodeWalk UI string — logsClear
   ///
   /// In en, this message translates to:
@@ -692,11 +1439,47 @@ abstract class AppLocalizations {
   /// **'Copy filtered logs'**
   String get logsCopyFiltered;
 
+  /// CodeWalk UI string — logsLevel
+  ///
+  /// In en, this message translates to:
+  /// **'Level'**
+  String get logsLevel;
+
   /// CodeWalk UI string — logsSearch
   ///
   /// In en, this message translates to:
   /// **'Search logs'**
   String get logsSearch;
+
+  /// CodeWalk UI string — logsShowingOrderedLength
+  ///
+  /// In en, this message translates to:
+  /// **'Showing {length} of {length2} entries'**
+  String logsShowingOrderedLength(String length, String length2);
+
+  /// CodeWalk UI string — logsTimeRange
+  ///
+  /// In en, this message translates to:
+  /// **'Time range'**
+  String get logsTimeRange;
+
+  /// CodeWalk UI string — mathExpressionLabel
+  ///
+  /// In en, this message translates to:
+  /// **'Math'**
+  String get mathExpressionLabel;
+
+  /// CodeWalk UI string — mermaidCopySourceTooltip
+  ///
+  /// In en, this message translates to:
+  /// **'Copy source'**
+  String get mermaidCopySourceTooltip;
+
+  /// CodeWalk UI string — mermaidDiagramLabel
+  ///
+  /// In en, this message translates to:
+  /// **'Mermaid Diagram'**
+  String get mermaidDiagramLabel;
 
   /// CodeWalk UI string — modelAuto
   ///
@@ -704,11 +1487,29 @@ abstract class AppLocalizations {
   /// **'Auto'**
   String get modelAuto;
 
+  /// CodeWalk UI string — modelChooseAgent
+  ///
+  /// In en, this message translates to:
+  /// **'Choose agent'**
+  String get modelChooseAgent;
+
+  /// CodeWalk UI string — modelFavorites
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get modelFavorites;
+
   /// CodeWalk UI string — modelLoadingModels
   ///
   /// In en, this message translates to:
   /// **'Loading models'**
   String get modelLoadingModels;
+
+  /// CodeWalk UI string — modelModelsFound
+  ///
+  /// In en, this message translates to:
+  /// **'No models found'**
+  String get modelModelsFound;
 
   /// CodeWalk UI string — modelRetryModels
   ///
@@ -770,6 +1571,12 @@ abstract class AppLocalizations {
   /// **'Failed to start voice input'**
   String get msgFailedToStartVoiceInput;
 
+  /// CodeWalk UI string — shown when a tapped file path cannot be resolved in the project
+  ///
+  /// In en, this message translates to:
+  /// **'File not found: {path}'**
+  String msgFilePathNotFound(String path);
+
   /// CodeWalk UI string — msgFilteredLogsCopied
   ///
   /// In en, this message translates to:
@@ -812,6 +1619,12 @@ abstract class AppLocalizations {
   /// **'No metadata available'**
   String get msgInfoNoMetadata;
 
+  /// CodeWalk UI string — msgInfoPartDescriptionModel
+  ///
+  /// In en, this message translates to:
+  /// **'{description}{model}'**
+  String msgInfoPartDescriptionModel(String description, String model);
+
   /// CodeWalk UI string — msgInfoPatch
   ///
   /// In en, this message translates to:
@@ -835,6 +1648,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Snapshot'**
   String get msgInfoSnapshot;
+
+  /// CodeWalk UI string — msgInfoSubtaskPartAgent
+  ///
+  /// In en, this message translates to:
+  /// **'Subtask ({agent})'**
+  String msgInfoSubtaskPartAgent(String agent);
 
   /// CodeWalk UI string — msgInfoTokens
   ///
@@ -866,11 +1685,53 @@ abstract class AppLocalizations {
   /// **'No valid files were selected'**
   String get msgNoValidFilesSelected;
 
+  /// CodeWalk UI string — msgReadAloud
+  ///
+  /// In en, this message translates to:
+  /// **'Read aloud'**
+  String get msgReadAloud;
+
+  /// CodeWalk UI string — msgReadAloudNotAvailable
+  ///
+  /// In en, this message translates to:
+  /// **'Text-to-speech is not available on this device.'**
+  String get msgReadAloudNotAvailable;
+
   /// CodeWalk UI string — msgSetupDebugCopied
   ///
   /// In en, this message translates to:
   /// **'OpenCode setup debug copied to clipboard'**
   String get msgSetupDebugCopied;
+
+  /// CodeWalk UI string — Tooltip for the share-as-image action on a chat message bubble
+  ///
+  /// In en, this message translates to:
+  /// **'Share as image'**
+  String get msgShareAsImage;
+
+  /// CodeWalk UI string — Shown when image capture or sharing fails unexpectedly
+  ///
+  /// In en, this message translates to:
+  /// **'Could not share message as image.'**
+  String get msgShareAsImageFailed;
+
+  /// CodeWalk UI string — Subject line when sharing a message image via the system share sheet
+  ///
+  /// In en, this message translates to:
+  /// **'CodeWalk message'**
+  String get msgShareAsImageSubject;
+
+  /// CodeWalk UI string — Shown when the message bubble exceeds the maximum capture height
+  ///
+  /// In en, this message translates to:
+  /// **'Message is too long to share as an image.'**
+  String get msgShareAsImageTooTall;
+
+  /// CodeWalk UI string — msgStopReadAloud
+  ///
+  /// In en, this message translates to:
+  /// **'Stop reading'**
+  String get msgStopReadAloud;
 
   /// CodeWalk UI string — msgSystemSoundPickerUnavailable
   ///
@@ -890,17 +1751,182 @@ abstract class AppLocalizations {
   /// **'Voice input is unavailable on this device'**
   String get msgVoiceInputUnavailable;
 
+  /// CodeWalk UI string — notifAndroidBatteryOptimization
+  ///
+  /// In en, this message translates to:
+  /// **'Android battery optimization'**
+  String get notifAndroidBatteryOptimization;
+
   /// CodeWalk UI string — notifConversationUpdates
   ///
   /// In en, this message translates to:
   /// **'Conversation updates'**
   String get notifConversationUpdates;
 
+  /// CodeWalk UI string — notifNotificationsArriveReopening
+  ///
+  /// In en, this message translates to:
+  /// **'If notifications only arrive when reopening the app, allow CodeWalk to run without optimization on this device.'**
+  String get notifNotificationsArriveReopening;
+
+  /// CodeWalk UI string — notifResponseRunningKeep
+  ///
+  /// In en, this message translates to:
+  /// **'When a response is running, keep realtime active briefly after you leave the app.'**
+  String get notifResponseRunningKeep;
+
+  /// CodeWalk UI string — notifSelectedSoundLabel
+  ///
+  /// In en, this message translates to:
+  /// **'Selected: {soundLabel}'**
+  String notifSelectedSoundLabel(String soundLabel);
+
+  /// CodeWalk UI string — onboardingAIGeneratedTitles
+  ///
+  /// In en, this message translates to:
+  /// **'AI generated titles'**
+  String get onboardingAIGeneratedTitles;
+
+  /// CodeWalk UI string — onboardingAddServerLater
+  ///
+  /// In en, this message translates to:
+  /// **'You can add a server later in Settings > Servers.'**
+  String get onboardingAddServerLater;
+
+  /// CodeWalk UI string — onboardingAlmostInstallOpenCode
+  ///
+  /// In en, this message translates to:
+  /// **'You are almost there. Install OpenCode first, then connect CodeWalk to the server URL.'**
+  String get onboardingAlmostInstallOpenCode;
+
+  /// CodeWalk UI string — onboardingAppProviderLocalSetupLogsLength
+  ///
+  /// In en, this message translates to:
+  /// **'{length} setup log lines and {length2} setup events are available in the separate setup debug screen.'**
+  String onboardingAppProviderLocalSetupLogsLength(
+    String length,
+    String length2,
+  );
+
+  /// CodeWalk UI string — onboardingAuthenticate
+  ///
+  /// In en, this message translates to:
+  /// **'Authenticate'**
+  String get onboardingAuthenticate;
+
+  /// CodeWalk UI string — onboardingChooseAnotherPath
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another path'**
+  String get onboardingChooseAnotherPath;
+
   /// CodeWalk UI string — onboardingClear
   ///
   /// In en, this message translates to:
   /// **'Clear'**
   String get onboardingClear;
+
+  /// CodeWalk UI string — onboardingCodeWalkAppOpenCode
+  ///
+  /// In en, this message translates to:
+  /// **'CodeWalk is the app. OpenCode is the engine it connects to.'**
+  String get onboardingCodeWalkAppOpenCode;
+
+  /// CodeWalk UI string — onboardingConnectRunningServer
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to a running server'**
+  String get onboardingConnectRunningServer;
+
+  /// CodeWalk UI string — onboardingConnectionIssue
+  ///
+  /// In en, this message translates to:
+  /// **'Connection issue'**
+  String get onboardingConnectionIssue;
+
+  /// CodeWalk UI string — onboardingConnectionTips
+  ///
+  /// In en, this message translates to:
+  /// **'Connection tips'**
+  String get onboardingConnectionTips;
+
+  /// CodeWalk UI string — onboardingContinueServerURL
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to server URL'**
+  String get onboardingContinueServerURL;
+
+  /// CodeWalk UI string — onboardingCopyLoginURL
+  ///
+  /// In en, this message translates to:
+  /// **'Copy login URL'**
+  String get onboardingCopyLoginURL;
+
+  /// CodeWalk UI string — onboardingDefaultURLEmulator
+  ///
+  /// In en, this message translates to:
+  /// **'Default URL, emulator loopback, auth, and debug help.'**
+  String get onboardingDefaultURLEmulator;
+
+  /// CodeWalk UI string — onboardingDetailedSetupEvents
+  ///
+  /// In en, this message translates to:
+  /// **'Detailed setup events were captured for troubleshooting.'**
+  String get onboardingDetailedSetupEvents;
+
+  /// CodeWalk UI string — onboardingDonShowAgain
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'\'t show again'**
+  String get onboardingDonShowAgain;
+
+  /// CodeWalk UI string — onboardingExisting
+  ///
+  /// In en, this message translates to:
+  /// **'Use Existing'**
+  String get onboardingExisting;
+
+  /// CodeWalk UI string — onboardingExplainInstallOpenCode
+  ///
+  /// In en, this message translates to:
+  /// **'Explain how to install OpenCode, start the server, and then connect from CodeWalk.'**
+  String get onboardingExplainInstallOpenCode;
+
+  /// CodeWalk UI string — onboardingGoodOptionDesktop
+  ///
+  /// In en, this message translates to:
+  /// **'Good first option on desktop'**
+  String get onboardingGoodOptionDesktop;
+
+  /// CodeWalk UI string — onboardingInstallBinary
+  ///
+  /// In en, this message translates to:
+  /// **'Install Binary'**
+  String get onboardingInstallBinary;
+
+  /// CodeWalk UI string — onboardingInstallBun
+  ///
+  /// In en, this message translates to:
+  /// **'Install via Bun'**
+  String get onboardingInstallBun;
+
+  /// CodeWalk UI string — onboardingInstallBunOpenCode
+  ///
+  /// In en, this message translates to:
+  /// **'Install Bun + OpenCode'**
+  String get onboardingInstallBunOpenCode;
+
+  /// CodeWalk UI string — onboardingInstallNpm
+  ///
+  /// In en, this message translates to:
+  /// **'Install via npm'**
+  String get onboardingInstallNpm;
+
+  /// CodeWalk UI string — onboardingInstallRunOpenCode
+  ///
+  /// In en, this message translates to:
+  /// **'Install and run OpenCode directly from CodeWalk on desktop.'**
+  String get onboardingInstallRunOpenCode;
 
   /// CodeWalk UI string — onboardingLabel
   ///
@@ -914,11 +1940,77 @@ abstract class AppLocalizations {
   /// **'My server'**
   String get onboardingLabelHint;
 
+  /// CodeWalk UI string — onboardingLatestOutputAppProvider
+  ///
+  /// In en, this message translates to:
+  /// **'Latest output: {localServerLastOutput}'**
+  String onboardingLatestOutputAppProvider(String localServerLastOutput);
+
+  /// CodeWalk UI string — onboardingLetCodeWalkSet
+  ///
+  /// In en, this message translates to:
+  /// **'Let CodeWalk set it up locally'**
+  String get onboardingLetCodeWalkSet;
+
+  /// CodeWalk UI string — onboardingManagedLocalServer
+  ///
+  /// In en, this message translates to:
+  /// **'Managed local server'**
+  String get onboardingManagedLocalServer;
+
+  /// CodeWalk UI string — onboardingManagedLocalServer2
+  ///
+  /// In en, this message translates to:
+  /// **'Managed local server mode is available only on desktop builds (Linux/macOS/Windows).'**
+  String get onboardingManagedLocalServer2;
+
+  /// CodeWalk UI string — onboardingOpenCode
+  ///
+  /// In en, this message translates to:
+  /// **'What is OpenCode?'**
+  String get onboardingOpenCode;
+
+  /// CodeWalk UI string — onboardingOpenCodeRunningDevice
+  ///
+  /// In en, this message translates to:
+  /// **'I already have OpenCode running on this device or somewhere on my network.'**
+  String get onboardingOpenCodeRunningDevice;
+
+  /// CodeWalk UI string — onboardingOpenCodeRunsLocally
+  ///
+  /// In en, this message translates to:
+  /// **'OpenCode runs locally or on a server and powers the AI coding features inside CodeWalk. If OpenCode is already running, connect to it. If not, pick one of the guided setup paths below.'**
+  String get onboardingOpenCodeRunsLocally;
+
+  /// CodeWalk UI string — onboardingOpenTailscaleLogin
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open Tailscale login URL.'**
+  String get onboardingOpenTailscaleLogin;
+
   /// CodeWalk UI string — onboardingPassword
   ///
   /// In en, this message translates to:
   /// **'Password'**
   String get onboardingPassword;
+
+  /// CodeWalk UI string — Validation error shown when Basic Auth password is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Enter password'**
+  String get onboardingPasswordRequired;
+
+  /// CodeWalk UI string — onboardingRecommendedOrderTry
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended order: try Install Bun + OpenCode if you want CodeWalk to bootstrap everything for you. Use Existing if OpenCode is already installed.'**
+  String get onboardingRecommendedOrderTry;
+
+  /// CodeWalk UI string — onboardingRefreshChecks
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh Checks'**
+  String get onboardingRefreshChecks;
 
   /// CodeWalk UI string — onboardingServerUrl
   ///
@@ -926,11 +2018,77 @@ abstract class AppLocalizations {
   /// **'Server URL'**
   String get onboardingServerUrl;
 
+  /// CodeWalk UI string — onboardingShowSetupSteps
+  ///
+  /// In en, this message translates to:
+  /// **'Show me the setup steps'**
+  String get onboardingShowSetupSteps;
+
+  /// CodeWalk UI string — onboardingShowSetupSteps2
+  ///
+  /// In en, this message translates to:
+  /// **'Show setup steps'**
+  String get onboardingShowSetupSteps2;
+
+  /// CodeWalk UI string — onboardingSkip
+  ///
+  /// In en, this message translates to:
+  /// **'Skip for now'**
+  String get onboardingSkip;
+
+  /// CodeWalk UI string — onboardingSkipSetup
+  ///
+  /// In en, this message translates to:
+  /// **'Skip setup?'**
+  String get onboardingSkipSetup;
+
+  /// CodeWalk UI string — onboardingStart
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get onboardingStart;
+
+  /// CodeWalk UI string — onboardingStop
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get onboardingStop;
+
+  /// CodeWalk UI string — Switch tile label in onboarding wizard to enable Basic Auth
+  ///
+  /// In en, this message translates to:
+  /// **'Use Basic Auth'**
+  String get onboardingUseBasicAuth;
+
   /// CodeWalk UI string — onboardingUsername
   ///
   /// In en, this message translates to:
   /// **'Username'**
   String get onboardingUsername;
+
+  /// CodeWalk UI string — Validation error shown when Basic Auth username is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Enter username'**
+  String get onboardingUsernameRequired;
+
+  /// CodeWalk UI string — onboardingUsesServerTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Uses your server\'\'s title agent to name conversations'**
+  String get onboardingUsesServerTitle;
+
+  /// CodeWalk UI string — onboardingViewSetupDebug
+  ///
+  /// In en, this message translates to:
+  /// **'View setup debug'**
+  String get onboardingViewSetupDebug;
+
+  /// CodeWalk UI string — onboardingWindowsTipInstalling
+  ///
+  /// In en, this message translates to:
+  /// **'Windows tip: after installing, click Refresh Checks. If detection still fails, reopen CodeWalk to reload PATH changes.'**
+  String get onboardingWindowsTipInstalling;
 
   /// CodeWalk UI string — permissionAllowOnce
   ///
@@ -968,6 +2126,42 @@ abstract class AppLocalizations {
   /// **'Reopen'**
   String get permissionReopen;
 
+  /// CodeWalk UI string — questionAnswerSelected
+  ///
+  /// In en, this message translates to:
+  /// **'No answer selected.'**
+  String get questionAnswerSelected;
+
+  /// CodeWalk UI string — questionCommaSeparatedValues
+  ///
+  /// In en, this message translates to:
+  /// **'Comma-separated values'**
+  String get questionCommaSeparatedValues;
+
+  /// CodeWalk UI string — questionQuestionGroupMarked
+  ///
+  /// In en, this message translates to:
+  /// **'Question group marked as rejected. You can keep chatting and reopen this group anytime before confirming.'**
+  String get questionQuestionGroupMarked;
+
+  /// CodeWalk UI string — questionQuestionRequest
+  ///
+  /// In en, this message translates to:
+  /// **'Question request'**
+  String get questionQuestionRequest;
+
+  /// CodeWalk UI string — questionQuestionsProvidedSubmit
+  ///
+  /// In en, this message translates to:
+  /// **'No questions provided. You can submit an empty response.'**
+  String get questionQuestionsProvidedSubmit;
+
+  /// CodeWalk UI string — questionReviewAnswersSubmitting
+  ///
+  /// In en, this message translates to:
+  /// **'Review your answers before submitting.'**
+  String get questionReviewAnswersSubmitting;
+
   /// CodeWalk UI string — quotaAuthCookie
   ///
   /// In en, this message translates to:
@@ -1003,6 +2197,176 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Workspace ID'**
   String get quotaWorkspaceId;
+
+  /// CodeWalk UI string — Menu action to clear stored OAuth credentials for a server profile
+  ///
+  /// In en, this message translates to:
+  /// **'Clear OAuth'**
+  String get serverClearOAuth;
+
+  /// CodeWalk UI string — Error message shown when OAuth re-authentication fails
+  ///
+  /// In en, this message translates to:
+  /// **'OAuth authentication failed'**
+  String get serverOAuthAuthFailed;
+
+  /// CodeWalk UI string — Chip label showing a server profile uses OAuth authentication
+  ///
+  /// In en, this message translates to:
+  /// **'OAuth'**
+  String get serverOAuthChip;
+
+  /// CodeWalk UI string — Error when user tries to enable OAuth on an unsupported platform
+  ///
+  /// In en, this message translates to:
+  /// **'Cloudflare Access OAuth is not supported on this platform'**
+  String get serverOAuthNotSupported;
+
+  /// CodeWalk UI string — Menu action to re-authenticate an OAuth-enabled server profile
+  ///
+  /// In en, this message translates to:
+  /// **'Re-authenticate'**
+  String get serverReauthenticate;
+
+  /// CodeWalk UI string — Chip label showing a server profile routes traffic through Tailscale
+  ///
+  /// In en, this message translates to:
+  /// **'Tailscale'**
+  String get serverTailscaleChip;
+
+  /// CodeWalk UI string — serversActive
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get serversActive;
+
+  /// CodeWalk UI string — serversActiveServer
+  ///
+  /// In en, this message translates to:
+  /// **'Active Server'**
+  String get serversActiveServer;
+
+  /// CodeWalk UI string — serversAddLeastOpenCode
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one OpenCode server to start using the app.'**
+  String get serversAddLeastOpenCode;
+
+  /// CodeWalk UI string — serversAddServer
+  ///
+  /// In en, this message translates to:
+  /// **'Add Server'**
+  String get serversAddServer;
+
+  /// CodeWalk UI string — serversCancel
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get serversCancel;
+
+  /// CodeWalk UI string — serversCheckHealth
+  ///
+  /// In en, this message translates to:
+  /// **'Check Health'**
+  String get serversCheckHealth;
+
+  /// CodeWalk UI string — serversClearDefault
+  ///
+  /// In en, this message translates to:
+  /// **'Clear Default'**
+  String get serversClearDefault;
+
+  /// CodeWalk UI string — serversCommandAppProviderLocalServerCommandPath
+  ///
+  /// In en, this message translates to:
+  /// **'Command: {localServerCommandPath}'**
+  String serversCommandAppProviderLocalServerCommandPath(
+    String localServerCommandPath,
+  );
+
+  /// CodeWalk UI string — serversCopy
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get serversCopy;
+
+  /// CodeWalk UI string — serversDefault
+  ///
+  /// In en, this message translates to:
+  /// **'Default'**
+  String get serversDefault;
+
+  /// CodeWalk UI string — serversDelete
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get serversDelete;
+
+  /// CodeWalk UI string — serversDeleteServer
+  ///
+  /// In en, this message translates to:
+  /// **'Delete server'**
+  String get serversDeleteServer;
+
+  /// CodeWalk UI string — serversEdit
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get serversEdit;
+
+  /// CodeWalk UI string — serversLocalOpenCodeServer
+  ///
+  /// In en, this message translates to:
+  /// **'Local OpenCode Server'**
+  String get serversLocalOpenCodeServer;
+
+  /// CodeWalk UI string — serversManagedModeAvailable
+  ///
+  /// In en, this message translates to:
+  /// **'This managed mode is available only on desktop builds (Linux/macOS/Windows).'**
+  String get serversManagedModeAvailable;
+
+  /// CodeWalk UI string — serversRefreshHealth
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh Health'**
+  String get serversRefreshHealth;
+
+  /// CodeWalk UI string — serversRemoveProfileDisplayName
+  ///
+  /// In en, this message translates to:
+  /// **'Remove \"{displayName}\"?'**
+  String serversRemoveProfileDisplayName(String displayName);
+
+  /// CodeWalk UI string — serversServersConfigured
+  ///
+  /// In en, this message translates to:
+  /// **'No servers configured'**
+  String get serversServersConfigured;
+
+  /// CodeWalk UI string — serversSetActive
+  ///
+  /// In en, this message translates to:
+  /// **'Set Active'**
+  String get serversSetActive;
+
+  /// CodeWalk UI string — serversSetDefault
+  ///
+  /// In en, this message translates to:
+  /// **'Set Default'**
+  String get serversSetDefault;
+
+  /// CodeWalk UI string — serversSetupDebug
+  ///
+  /// In en, this message translates to:
+  /// **'Setup Debug'**
+  String get serversSetupDebug;
+
+  /// CodeWalk UI string — serversSetupWizard
+  ///
+  /// In en, this message translates to:
+  /// **'Setup Wizard'**
+  String get serversSetupWizard;
 
   /// CodeWalk UI string — sessionActionArchived
   ///
@@ -1058,11 +2422,41 @@ abstract class AppLocalizations {
   /// **'Changed file'**
   String get sessionDiffChangedFile;
 
+  /// CodeWalk UI string — sessionDiffContentNotCaptured
+  ///
+  /// In en, this message translates to:
+  /// **'File content not captured by the server'**
+  String get sessionDiffContentNotCaptured;
+
+  /// CodeWalk UI string — sessionDiffFilesChanged
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 file changed} other{{count} files changed}}'**
+  String sessionDiffFilesChanged(int count);
+
+  /// CodeWalk UI string — sessionDiffLinesAddedRemoved
+  ///
+  /// In en, this message translates to:
+  /// **'+{added} lines added -{removed} lines removed'**
+  String sessionDiffLinesAddedRemoved(int added, int removed);
+
+  /// CodeWalk UI string — sessionDiffLinesCollapsed
+  ///
+  /// In en, this message translates to:
+  /// **'{count} lines collapsed — tap to expand'**
+  String sessionDiffLinesCollapsed(int count);
+
   /// CodeWalk UI string — sessionDiffReview
   ///
   /// In en, this message translates to:
   /// **'Review changes'**
   String get sessionDiffReview;
+
+  /// CodeWalk UI string — sessionDiffSplit
+  ///
+  /// In en, this message translates to:
+  /// **'Split'**
+  String get sessionDiffSplit;
 
   /// CodeWalk UI string — sessionDiffSummary
   ///
@@ -1075,36 +2469,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unified'**
   String get sessionDiffUnified;
-
-  /// CodeWalk UI string — sessionDiffSplit
-  ///
-  /// In en, this message translates to:
-  /// **'Split'**
-  String get sessionDiffSplit;
-
-  /// CodeWalk UI string — sessionDiffFilesChanged
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, =1{1 file changed} other{{count} files changed}}'**
-  String sessionDiffFilesChanged(int count);
-
-  /// CodeWalk UI string — sessionDiffLinesCollapsed
-  ///
-  /// In en, this message translates to:
-  /// **'{count} lines collapsed — tap to expand'**
-  String sessionDiffLinesCollapsed(int count);
-
-  /// CodeWalk UI string — sessionDiffLinesAddedRemoved
-  ///
-  /// In en, this message translates to:
-  /// **'+{added} lines added -{removed} lines removed'**
-  String sessionDiffLinesAddedRemoved(int added, int removed);
-
-  /// CodeWalk UI string — sessionDiffContentNotCaptured
-  ///
-  /// In en, this message translates to:
-  /// **'File content not captured by the server'**
-  String get sessionDiffContentNotCaptured;
 
   /// CodeWalk UI string — sessionFailedRename
   ///
@@ -1483,6 +2847,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Light'**
   String get settingsAppearanceLight;
+
+  /// CodeWalk UI string — settingsAppearanceMathRendering
+  ///
+  /// In en, this message translates to:
+  /// **'Math rendering'**
+  String get settingsAppearanceMathRendering;
+
+  /// CodeWalk UI string — settingsAppearanceMathRenderingDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Render LaTeX math expressions (\$…\$ and \$\$…\$\$) as typeset equations in chat messages.'**
+  String get settingsAppearanceMathRenderingDescription;
 
   /// CodeWalk UI string — settingsAppearanceNoPresets
   ///
@@ -2270,6 +3646,66 @@ abstract class AppLocalizations {
   /// **'When closing the window'**
   String get settingsNotificationsWhenClosing;
 
+  /// CodeWalk UI string — settingsReadAloudEnabled
+  ///
+  /// In en, this message translates to:
+  /// **'Read aloud'**
+  String get settingsReadAloudEnabled;
+
+  /// CodeWalk UI string — settingsReadAloudEnabledDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Show a read-aloud button on assistant messages.'**
+  String get settingsReadAloudEnabledDescription;
+
+  /// CodeWalk UI string — settingsReadAloudPitch
+  ///
+  /// In en, this message translates to:
+  /// **'Pitch'**
+  String get settingsReadAloudPitch;
+
+  /// CodeWalk UI string — settingsReadAloudPitchDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust the voice pitch.'**
+  String get settingsReadAloudPitchDescription;
+
+  /// CodeWalk UI string — settingsReadAloudSectionDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Read assistant responses aloud. Configure speed, pitch, and voice.'**
+  String get settingsReadAloudSectionDescription;
+
+  /// CodeWalk UI string — settingsReadAloudSectionTitle
+  ///
+  /// In en, this message translates to:
+  /// **'Text to speech'**
+  String get settingsReadAloudSectionTitle;
+
+  /// CodeWalk UI string — settingsReadAloudSpeed
+  ///
+  /// In en, this message translates to:
+  /// **'Speed'**
+  String get settingsReadAloudSpeed;
+
+  /// CodeWalk UI string — settingsReadAloudSpeedDescription
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust the speaking rate.'**
+  String get settingsReadAloudSpeedDescription;
+
+  /// CodeWalk UI string — settingsReadAloudVoice
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get settingsReadAloudVoice;
+
+  /// CodeWalk UI string — settingsReadAloudVoiceHint
+  ///
+  /// In en, this message translates to:
+  /// **'Select a voice for read-aloud.'**
+  String get settingsReadAloudVoiceHint;
+
   /// CodeWalk UI string — settingsServersActive
   ///
   /// In en, this message translates to:
@@ -2378,11 +3814,41 @@ abstract class AppLocalizations {
   /// **'Bun'**
   String get setupDebugBun;
 
+  /// CodeWalk UI string — setupDebugBun2
+  ///
+  /// In en, this message translates to:
+  /// **'Bun'**
+  String get setupDebugBun2;
+
+  /// CodeWalk UI string — setupDebugCapturedSetupDetails
+  ///
+  /// In en, this message translates to:
+  /// **'No captured setup details yet'**
+  String get setupDebugCapturedSetupDetails;
+
+  /// CodeWalk UI string — setupDebugCapturedSetupLogs
+  ///
+  /// In en, this message translates to:
+  /// **'Captured setup logs'**
+  String get setupDebugCapturedSetupLogs;
+
   /// CodeWalk UI string — setupDebugClear
   ///
   /// In en, this message translates to:
   /// **'Clear setup debug'**
   String get setupDebugClear;
+
+  /// CodeWalk UI string — setupDebugClearSetupDebug
+  ///
+  /// In en, this message translates to:
+  /// **'Clear setup debug'**
+  String get setupDebugClearSetupDebug;
+
+  /// CodeWalk UI string — setupDebugCodeWalkCaptureEnough
+  ///
+  /// In en, this message translates to:
+  /// **'If CodeWalk did not capture enough context, check the official OpenCode logs and health endpoints directly:'**
+  String get setupDebugCodeWalkCaptureEnough;
 
   /// CodeWalk UI string — setupDebugCommandPath
   ///
@@ -2390,11 +3856,35 @@ abstract class AppLocalizations {
   /// **'Command path'**
   String get setupDebugCommandPath;
 
+  /// CodeWalk UI string — setupDebugCommandPath2
+  ///
+  /// In en, this message translates to:
+  /// **'Command path'**
+  String get setupDebugCommandPath2;
+
   /// CodeWalk UI string — setupDebugCopy
   ///
   /// In en, this message translates to:
   /// **'Copy setup debug'**
   String get setupDebugCopy;
+
+  /// CodeWalk UI string — setupDebugCopySetupDebug
+  ///
+  /// In en, this message translates to:
+  /// **'Copy setup debug'**
+  String get setupDebugCopySetupDebug;
+
+  /// CodeWalk UI string — setupDebugCurrentStatus
+  ///
+  /// In en, this message translates to:
+  /// **'Current status'**
+  String get setupDebugCurrentStatus;
+
+  /// CodeWalk UI string — setupDebugDiagnosticsLoading
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostics are still loading.'**
+  String get setupDebugDiagnosticsLoading;
 
   /// CodeWalk UI string — setupDebugEnvironment
   ///
@@ -2402,11 +3892,35 @@ abstract class AppLocalizations {
   /// **'Environment diagnostics'**
   String get setupDebugEnvironment;
 
+  /// CodeWalk UI string — setupDebugEnvironmentDiagnostics
+  ///
+  /// In en, this message translates to:
+  /// **'Environment diagnostics'**
+  String get setupDebugEnvironmentDiagnostics;
+
+  /// CodeWalk UI string — setupDebugFocusedOpenCodeSetup
+  ///
+  /// In en, this message translates to:
+  /// **'Focused on OpenCode setup'**
+  String get setupDebugFocusedOpenCodeSetup;
+
   /// CodeWalk UI string — setupDebugInstallDir
   ///
   /// In en, this message translates to:
   /// **'Install directory'**
   String get setupDebugInstallDir;
+
+  /// CodeWalk UI string — setupDebugInstallDirectory
+  ///
+  /// In en, this message translates to:
+  /// **'Install directory'**
+  String get setupDebugInstallDirectory;
+
+  /// CodeWalk UI string — setupDebugLatestLocalServer
+  ///
+  /// In en, this message translates to:
+  /// **'Latest local server output'**
+  String get setupDebugLatestLocalServer;
 
   /// CodeWalk UI string — setupDebugLogs
   ///
@@ -2420,17 +3934,35 @@ abstract class AppLocalizations {
   /// **'Manual troubleshooting'**
   String get setupDebugManual;
 
+  /// CodeWalk UI string — setupDebugManualTroubleshooting
+  ///
+  /// In en, this message translates to:
+  /// **'Manual troubleshooting'**
+  String get setupDebugManualTroubleshooting;
+
   /// CodeWalk UI string — setupDebugNetwork
   ///
   /// In en, this message translates to:
   /// **'Network'**
   String get setupDebugNetwork;
 
+  /// CodeWalk UI string — setupDebugNetwork2
+  ///
+  /// In en, this message translates to:
+  /// **'Network'**
+  String get setupDebugNetwork2;
+
   /// CodeWalk UI string — setupDebugNoDetails
   ///
   /// In en, this message translates to:
   /// **'No captured setup details yet'**
   String get setupDebugNoDetails;
+
+  /// CodeWalk UI string — setupDebugNode
+  ///
+  /// In en, this message translates to:
+  /// **'Node.js'**
+  String get setupDebugNode;
 
   /// CodeWalk UI string — setupDebugNodeJs
   ///
@@ -2444,17 +3976,53 @@ abstract class AppLocalizations {
   /// **'npm'**
   String get setupDebugNpm;
 
+  /// CodeWalk UI string — setupDebugNpm2
+  ///
+  /// In en, this message translates to:
+  /// **'npm'**
+  String get setupDebugNpm2;
+
   /// CodeWalk UI string — setupDebugOpenCode
   ///
   /// In en, this message translates to:
   /// **'OpenCode'**
   String get setupDebugOpenCode;
 
+  /// CodeWalk UI string — setupDebugOpenCode2
+  ///
+  /// In en, this message translates to:
+  /// **'OpenCode'**
+  String get setupDebugOpenCode2;
+
+  /// CodeWalk UI string — setupDebugOpenCodeSetupDebug
+  ///
+  /// In en, this message translates to:
+  /// **'OpenCode Setup Debug'**
+  String get setupDebugOpenCodeSetupDebug;
+
   /// CodeWalk UI string — setupDebugPlatform
   ///
   /// In en, this message translates to:
   /// **'Platform'**
   String get setupDebugPlatform;
+
+  /// CodeWalk UI string — setupDebugPlatform2
+  ///
+  /// In en, this message translates to:
+  /// **'Platform'**
+  String get setupDebugPlatform2;
+
+  /// CodeWalk UI string — setupDebugRunDiagnosticsTry
+  ///
+  /// In en, this message translates to:
+  /// **'Run diagnostics, try an installation method, or attempt a setup flow to capture OpenCode-specific troubleshooting details here.'**
+  String get setupDebugRunDiagnosticsTry;
+
+  /// CodeWalk UI string — setupDebugScreenCoversOpenCode
+  ///
+  /// In en, this message translates to:
+  /// **'This screen only covers OpenCode installation, diagnostics, and local setup troubleshooting. Use App Logs for general CodeWalk runtime issues.'**
+  String get setupDebugScreenCoversOpenCode;
 
   /// CodeWalk UI string — setupDebugServerOutput
   ///
@@ -2468,11 +4036,23 @@ abstract class AppLocalizations {
   /// **'Current status'**
   String get setupDebugStatus;
 
+  /// CodeWalk UI string — setupDebugTimeEntrySource
+  ///
+  /// In en, this message translates to:
+  /// **'{time} - {source}'**
+  String setupDebugTimeEntrySource(String time, String source);
+
   /// CodeWalk UI string — setupDebugTimeline
   ///
   /// In en, this message translates to:
   /// **'Timeline'**
   String get setupDebugTimeline;
+
+  /// CodeWalk UI string — setupDebugTimeline2
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline'**
+  String get setupDebugTimeline2;
 
   /// CodeWalk UI string — setupDebugTitle
   ///
@@ -2480,11 +4060,233 @@ abstract class AppLocalizations {
   /// **'Focused on OpenCode setup'**
   String get setupDebugTitle;
 
+  /// CodeWalk UI string — setupDebugWSL
+  ///
+  /// In en, this message translates to:
+  /// **'WSL'**
+  String get setupDebugWSL;
+
   /// CodeWalk UI string — setupDebugWsl
   ///
   /// In en, this message translates to:
   /// **'WSL'**
   String get setupDebugWsl;
+
+  /// CodeWalk UI string — shortcutsApply
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get shortcutsApply;
+
+  /// CodeWalk UI string — shortcutsConflictConflict
+  ///
+  /// In en, this message translates to:
+  /// **'Conflict with {conflict}'**
+  String shortcutsConflictConflict(String conflict);
+
+  /// CodeWalk UI string — shortcutsKeyboardShortcuts
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard shortcuts'**
+  String get shortcutsKeyboardShortcuts;
+
+  /// CodeWalk UI string — shortcutsReset
+  ///
+  /// In en, this message translates to:
+  /// **'Reset all'**
+  String get shortcutsReset;
+
+  /// CodeWalk UI string — shortcutsSearchEditBindings
+  ///
+  /// In en, this message translates to:
+  /// **'Search, edit bindings, and resolve conflicts before saving.'**
+  String get shortcutsSearchEditBindings;
+
+  /// CodeWalk UI string — shortcutsSetShortcutWidget
+  ///
+  /// In en, this message translates to:
+  /// **'Set shortcut: {label}'**
+  String shortcutsSetShortcutWidget(String label);
+
+  /// CodeWalk UI string — shortcutsTheseBindingsStored
+  ///
+  /// In en, this message translates to:
+  /// **'These bindings are stored in CodeWalk for the current app runtime and do not edit OpenCode `tui.json` keybinds.'**
+  String get shortcutsTheseBindingsStored;
+
+  /// CodeWalk UI string — speechAutoStopSilence
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-stop silence timeout'**
+  String get speechAutoStopSilence;
+
+  /// CodeWalk UI string — speechChooseRecognitionEngine
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the recognition engine, silence timeout, and model options.'**
+  String get speechChooseRecognitionEngine;
+
+  /// CodeWalk UI string — speechDownload
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get speechDownload;
+
+  /// CodeWalk UI string — speechEngine
+  ///
+  /// In en, this message translates to:
+  /// **'Engine'**
+  String get speechEngine;
+
+  /// CodeWalk UI string — speechInstalledLanguages
+  ///
+  /// In en, this message translates to:
+  /// **'Installed languages'**
+  String get speechInstalledLanguages;
+
+  /// CodeWalk UI string — speechListeningStopsAutomatically
+  ///
+  /// In en, this message translates to:
+  /// **'Listening stops automatically after this many seconds of silence.'**
+  String get speechListeningStopsAutomatically;
+
+  /// CodeWalk UI string — speechMoonshine
+  ///
+  /// In en, this message translates to:
+  /// **'Moonshine'**
+  String get speechMoonshine;
+
+  /// CodeWalk UI string — speechMoonshineModelsDesktop
+  ///
+  /// In en, this message translates to:
+  /// **'Moonshine models (desktop)'**
+  String get speechMoonshineModelsDesktop;
+
+  /// CodeWalk UI string — speechMoonshineStaysDownloadable
+  ///
+  /// In en, this message translates to:
+  /// **'Moonshine stays downloadable and out of the app bundle. Pick one model for this desktop device and remove it later if you want the space back.'**
+  String get speechMoonshineStaysDownloadable;
+
+  /// CodeWalk UI string — speechNative
+  ///
+  /// In en, this message translates to:
+  /// **'Native'**
+  String get speechNative;
+
+  /// CodeWalk UI string — speechNativeSTTDisabled
+  ///
+  /// In en, this message translates to:
+  /// **'Native STT is disabled on Linux in this app. Parakeet is the default engine for new installs.'**
+  String get speechNativeSTTDisabled;
+
+  /// CodeWalk UI string — speechNativeSTTWorks
+  ///
+  /// In en, this message translates to:
+  /// **'Native STT works on Windows when OS speech services are enabled. If native initialization fails, CodeWalk automatically falls back to Sherpa. Check Windows microphone privacy, Online speech recognition, and installed speech language packs.'**
+  String get speechNativeSTTWorks;
+
+  /// CodeWalk UI string — speechNativeStartsFaster
+  ///
+  /// In en, this message translates to:
+  /// **'Native starts faster. Sherpa runs fully on-device with heavier setup and deeper model control.'**
+  String get speechNativeStartsFaster;
+
+  /// CodeWalk UI string — speechParakeet
+  ///
+  /// In en, this message translates to:
+  /// **'Parakeet'**
+  String get speechParakeet;
+
+  /// CodeWalk UI string — speechParakeetModelsDesktop
+  ///
+  /// In en, this message translates to:
+  /// **'Parakeet models (desktop)'**
+  String get speechParakeetModelsDesktop;
+
+  /// CodeWalk UI string — speechParakeetStaysDownloadable
+  ///
+  /// In en, this message translates to:
+  /// **'Parakeet stays downloadable and out of the app bundle. It currently exposes one multilingual model optimized for 25 European languages.'**
+  String get speechParakeetStaysDownloadable;
+
+  /// CodeWalk UI string — speechPickLanguagePacks
+  ///
+  /// In en, this message translates to:
+  /// **'Pick language packs and download/remove models for on-device recognition.'**
+  String get speechPickLanguagePacks;
+
+  /// CodeWalk UI string — speechRemove
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get speechRemove;
+
+  /// CodeWalk UI string — speechSelectSherpaAbove
+  ///
+  /// In en, this message translates to:
+  /// **'Select Sherpa above to manage language packs and download models.'**
+  String get speechSelectSherpaAbove;
+
+  /// CodeWalk UI string — speechSenseVoice
+  ///
+  /// In en, this message translates to:
+  /// **'SenseVoice'**
+  String get speechSenseVoice;
+
+  /// CodeWalk UI string — speechSenseVoiceModelsDesktop
+  ///
+  /// In en, this message translates to:
+  /// **'SenseVoice models (desktop)'**
+  String get speechSenseVoiceModelsDesktop;
+
+  /// CodeWalk UI string — speechSenseVoiceStaysDownloadable
+  ///
+  /// In en, this message translates to:
+  /// **'SenseVoice stays downloadable and out of the app bundle. It is the strongest desktop option here for Chinese, Cantonese, Japanese, Korean, and English.'**
+  String get speechSenseVoiceStaysDownloadable;
+
+  /// CodeWalk UI string — speechSherpa
+  ///
+  /// In en, this message translates to:
+  /// **'Sherpa'**
+  String get speechSherpa;
+
+  /// CodeWalk UI string — speechSherpaExperimentalFail
+  ///
+  /// In en, this message translates to:
+  /// **'Sherpa is experimental and can fail on some devices. Prefer Native if you want the most stable behavior.'**
+  String get speechSherpaExperimentalFail;
+
+  /// CodeWalk UI string — speechSherpaModelsLinux
+  ///
+  /// In en, this message translates to:
+  /// **'Sherpa models (Linux)'**
+  String get speechSherpaModelsLinux;
+
+  /// CodeWalk UI string — speechSpeechText
+  ///
+  /// In en, this message translates to:
+  /// **'Speech to text'**
+  String get speechSpeechText;
+
+  /// CodeWalk UI string — Shown in peer dropdown when Tailscale is connected but no peers are visible
+  ///
+  /// In en, this message translates to:
+  /// **'No peers found'**
+  String get tailscaleNoPeers;
+
+  /// CodeWalk UI string — Badge shown next to a Tailscale peer that is currently offline
+  ///
+  /// In en, this message translates to:
+  /// **'offline'**
+  String get tailscalePeerOffline;
+
+  /// CodeWalk UI string — Dropdown hint label for selecting a tailnet peer as server URL source
+  ///
+  /// In en, this message translates to:
+  /// **'Select a Tailscale peer'**
+  String get tailscaleSelectPeer;
 
   /// CodeWalk UI string — terminalClose
   ///
@@ -2503,6 +4305,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reconnect terminal'**
   String get terminalReconnect;
+
+  /// CodeWalk UI string — terminalTerminal
+  ///
+  /// In en, this message translates to:
+  /// **'Terminal'**
+  String get terminalTerminal;
 
   /// CodeWalk UI string — terminalTryAgain
   ///
@@ -2539,6 +4347,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Finding files'**
   String get toolFindingFiles;
+
+  /// CodeWalk UI string — toolPresentationAwaitingInput
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting input'**
+  String get toolPresentationAwaitingInput;
+
+  /// CodeWalk UI string — toolPresentationEditing
+  ///
+  /// In en, this message translates to:
+  /// **'Editing'**
+  String get toolPresentationEditing;
+
+  /// CodeWalk UI string — toolPresentationEditingFiles
+  ///
+  /// In en, this message translates to:
+  /// **'Editing files'**
+  String get toolPresentationEditingFiles;
+
+  /// CodeWalk UI string — toolPresentationFinding
+  ///
+  /// In en, this message translates to:
+  /// **'Finding'**
+  String get toolPresentationFinding;
+
+  /// CodeWalk UI string — toolPresentationFindingFiles
+  ///
+  /// In en, this message translates to:
+  /// **'Finding files'**
+  String get toolPresentationFindingFiles;
+
+  /// CodeWalk UI string — toolPresentationReading
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get toolPresentationReading;
+
+  /// CodeWalk UI string — toolPresentationReadingFile
+  ///
+  /// In en, this message translates to:
+  /// **'Reading file'**
+  String get toolPresentationReadingFile;
+
+  /// CodeWalk UI string — toolPresentationRunning
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get toolPresentationRunning;
+
+  /// CodeWalk UI string — toolPresentationRunningCommand
+  ///
+  /// In en, this message translates to:
+  /// **'Running command'**
+  String get toolPresentationRunningCommand;
+
+  /// CodeWalk UI string — toolPresentationSearching
+  ///
+  /// In en, this message translates to:
+  /// **'Searching'**
+  String get toolPresentationSearching;
+
+  /// CodeWalk UI string — toolPresentationSearchingCode
+  ///
+  /// In en, this message translates to:
+  /// **'Searching code'**
+  String get toolPresentationSearchingCode;
+
+  /// CodeWalk UI string — toolPresentationSearchingWeb
+  ///
+  /// In en, this message translates to:
+  /// **'Searching the web'**
+  String get toolPresentationSearchingWeb;
+
+  /// CodeWalk UI string — toolPresentationUpdatingTaskList
+  ///
+  /// In en, this message translates to:
+  /// **'Updating task list'**
+  String get toolPresentationUpdatingTaskList;
+
+  /// CodeWalk UI string — toolPresentationUpdatingTasks
+  ///
+  /// In en, this message translates to:
+  /// **'Updating tasks'**
+  String get toolPresentationUpdatingTasks;
+
+  /// CodeWalk UI string — toolPresentationWaitingInput
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for your input'**
+  String get toolPresentationWaitingInput;
+
+  /// CodeWalk UI string — toolPresentationWriting
+  ///
+  /// In en, this message translates to:
+  /// **'Writing'**
+  String get toolPresentationWriting;
+
+  /// CodeWalk UI string — toolPresentationWritingFile
+  ///
+  /// In en, this message translates to:
+  /// **'Writing file'**
+  String get toolPresentationWritingFile;
 
   /// CodeWalk UI string — toolReading
   ///
@@ -2642,180 +4552,6 @@ abstract class AppLocalizations {
   /// **'Show'**
   String get trayShow;
 
-  /// CodeWalk UI string — workspaceBrowseDirs
-  ///
-  /// In en, this message translates to:
-  /// **'Browse directories'**
-  String get workspaceBrowseDirs;
-
-  /// CodeWalk UI string — workspaceCloseProject
-  ///
-  /// In en, this message translates to:
-  /// **'Close {project}'**
-  String workspaceCloseProject(String project);
-
-  /// CodeWalk UI string — workspaceFilterDirs
-  ///
-  /// In en, this message translates to:
-  /// **'Filter directories'**
-  String get workspaceFilterDirs;
-
-  /// CodeWalk UI string — workspaceProjectDirectory
-  ///
-  /// In en, this message translates to:
-  /// **'Project directory'**
-  String get workspaceProjectDirectory;
-
-  /// CodeWalk UI string — workspaceProjectHint
-  ///
-  /// In en, this message translates to:
-  /// **'/repo/my-project'**
-  String get workspaceProjectHint;
-
-  /// CodeWalk UI string — workspaceRemoveFromHistory
-  ///
-  /// In en, this message translates to:
-  /// **'Remove {name} from history'**
-  String workspaceRemoveFromHistory(String name);
-
-  /// CodeWalk UI string — shown when a tapped file path cannot be resolved in the project
-  ///
-  /// In en, this message translates to:
-  /// **'File not found: {path}'**
-  String msgFilePathNotFound(String path);
-
-  /// CodeWalk UI string — settingsReadAloudSectionTitle
-  ///
-  /// In en, this message translates to:
-  /// **'Text to speech'**
-  String get settingsReadAloudSectionTitle;
-
-  /// CodeWalk UI string — settingsReadAloudSectionDescription
-  ///
-  /// In en, this message translates to:
-  /// **'Read assistant responses aloud. Configure speed, pitch, and voice.'**
-  String get settingsReadAloudSectionDescription;
-
-  /// CodeWalk UI string — settingsReadAloudEnabled
-  ///
-  /// In en, this message translates to:
-  /// **'Read aloud'**
-  String get settingsReadAloudEnabled;
-
-  /// CodeWalk UI string — settingsReadAloudEnabledDescription
-  ///
-  /// In en, this message translates to:
-  /// **'Show a read-aloud button on assistant messages.'**
-  String get settingsReadAloudEnabledDescription;
-
-  /// CodeWalk UI string — settingsReadAloudSpeed
-  ///
-  /// In en, this message translates to:
-  /// **'Speed'**
-  String get settingsReadAloudSpeed;
-
-  /// CodeWalk UI string — settingsReadAloudSpeedDescription
-  ///
-  /// In en, this message translates to:
-  /// **'Adjust the speaking rate.'**
-  String get settingsReadAloudSpeedDescription;
-
-  /// CodeWalk UI string — settingsReadAloudPitch
-  ///
-  /// In en, this message translates to:
-  /// **'Pitch'**
-  String get settingsReadAloudPitch;
-
-  /// CodeWalk UI string — settingsReadAloudPitchDescription
-  ///
-  /// In en, this message translates to:
-  /// **'Adjust the voice pitch.'**
-  String get settingsReadAloudPitchDescription;
-
-  /// CodeWalk UI string — settingsReadAloudVoice
-  ///
-  /// In en, this message translates to:
-  /// **'Voice'**
-  String get settingsReadAloudVoice;
-
-  /// CodeWalk UI string — settingsReadAloudVoiceHint
-  ///
-  /// In en, this message translates to:
-  /// **'Select a voice for read-aloud.'**
-  String get settingsReadAloudVoiceHint;
-
-  /// CodeWalk UI string — msgReadAloud
-  ///
-  /// In en, this message translates to:
-  /// **'Read aloud'**
-  String get msgReadAloud;
-
-  /// CodeWalk UI string — msgStopReadAloud
-  ///
-  /// In en, this message translates to:
-  /// **'Stop reading'**
-  String get msgStopReadAloud;
-
-  /// CodeWalk UI string — msgReadAloudNotAvailable
-  ///
-  /// In en, this message translates to:
-  /// **'Text-to-speech is not available on this device.'**
-  String get msgReadAloudNotAvailable;
-
-  /// CodeWalk UI string — mermaidDiagramLabel
-  ///
-  /// In en, this message translates to:
-  /// **'Mermaid Diagram'**
-  String get mermaidDiagramLabel;
-
-  /// CodeWalk UI string — mermaidCopySourceTooltip
-  ///
-  /// In en, this message translates to:
-  /// **'Copy source'**
-  String get mermaidCopySourceTooltip;
-
-  /// CodeWalk UI string — mathExpressionLabel
-  ///
-  /// In en, this message translates to:
-  /// **'Math'**
-  String get mathExpressionLabel;
-
-  /// CodeWalk UI string — settingsAppearanceMathRendering
-  ///
-  /// In en, this message translates to:
-  /// **'Math rendering'**
-  String get settingsAppearanceMathRendering;
-
-  /// CodeWalk UI string — settingsAppearanceMathRenderingDescription
-  ///
-  /// In en, this message translates to:
-  /// **'Render LaTeX math expressions (\$…\$ and \$\$…\$\$) as typeset equations in chat messages.'**
-  String get settingsAppearanceMathRenderingDescription;
-
-  /// CodeWalk UI string — Tooltip for the share-as-image action on a chat message bubble
-  ///
-  /// In en, this message translates to:
-  /// **'Share as image'**
-  String get msgShareAsImage;
-
-  /// CodeWalk UI string — Subject line when sharing a message image via the system share sheet
-  ///
-  /// In en, this message translates to:
-  /// **'CodeWalk message'**
-  String get msgShareAsImageSubject;
-
-  /// CodeWalk UI string — Shown when the message bubble exceeds the maximum capture height
-  ///
-  /// In en, this message translates to:
-  /// **'Message is too long to share as an image.'**
-  String get msgShareAsImageTooTall;
-
-  /// CodeWalk UI string — Shown when image capture or sharing fails unexpectedly
-  ///
-  /// In en, this message translates to:
-  /// **'Could not share message as image.'**
-  String get msgShareAsImageFailed;
-
   /// CodeWalk UI string — Label for the Cloudflare Access OAuth toggle in the onboarding/server setup wizard
   ///
   /// In en, this message translates to:
@@ -2833,12 +4569,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cloudflare Access OAuth is not available on this platform. Use Basic Auth instead.'**
   String get useOAuthCloudflareAccessUnsupported;
-
-  /// CodeWalk UI string — Chip label showing a server profile uses OAuth authentication
-  ///
-  /// In en, this message translates to:
-  /// **'OAuth'**
-  String get serverOAuthChip;
 
   /// CodeWalk UI string — Label for the Tailscale transport toggle in the onboarding/server setup wizard
   ///
@@ -2858,71 +4588,65 @@ abstract class AppLocalizations {
   /// **'Tailscale is not supported on this platform.'**
   String get useTailscaleUnsupported;
 
-  /// CodeWalk UI string — Chip label showing a server profile routes traffic through Tailscale
+  /// CodeWalk UI string — workspaceBrowseDirs
   ///
   /// In en, this message translates to:
-  /// **'Tailscale'**
-  String get serverTailscaleChip;
+  /// **'Browse directories'**
+  String get workspaceBrowseDirs;
 
-  /// CodeWalk UI string — Menu action to re-authenticate an OAuth-enabled server profile
+  /// CodeWalk UI string — workspaceChooseFolderOpen
   ///
   /// In en, this message translates to:
-  /// **'Re-authenticate'**
-  String get serverReauthenticate;
+  /// **'Choose any folder to open as project context.'**
+  String get workspaceChooseFolderOpen;
 
-  /// CodeWalk UI string — Menu action to clear stored OAuth credentials for a server profile
+  /// CodeWalk UI string — workspaceCloseProject
   ///
   /// In en, this message translates to:
-  /// **'Clear OAuth'**
-  String get serverClearOAuth;
+  /// **'Close {project}'**
+  String workspaceCloseProject(String project);
 
-  /// CodeWalk UI string — Error message shown when OAuth re-authentication fails
+  /// CodeWalk UI string — workspaceFilterDirs
   ///
   /// In en, this message translates to:
-  /// **'OAuth authentication failed'**
-  String get serverOAuthAuthFailed;
+  /// **'Filter directories'**
+  String get workspaceFilterDirs;
 
-  /// CodeWalk UI string — Error when user tries to enable OAuth on an unsupported platform
+  /// CodeWalk UI string — workspaceOpenFolder
   ///
   /// In en, this message translates to:
-  /// **'Cloudflare Access OAuth is not supported on this platform'**
-  String get serverOAuthNotSupported;
+  /// **'Open folder'**
+  String get workspaceOpenFolder;
 
-  /// CodeWalk UI string — Switch tile label in onboarding wizard to enable Basic Auth
+  /// CodeWalk UI string — workspaceOpenProjectFolder
   ///
   /// In en, this message translates to:
-  /// **'Use Basic Auth'**
-  String get onboardingUseBasicAuth;
+  /// **'Open project folder'**
+  String get workspaceOpenProjectFolder;
 
-  /// CodeWalk UI string — Validation error shown when Basic Auth username is empty
+  /// CodeWalk UI string — workspaceProjectDirectory
   ///
   /// In en, this message translates to:
-  /// **'Enter username'**
-  String get onboardingUsernameRequired;
+  /// **'Project directory'**
+  String get workspaceProjectDirectory;
 
-  /// CodeWalk UI string — Validation error shown when Basic Auth password is empty
+  /// CodeWalk UI string — workspaceProjectHint
   ///
   /// In en, this message translates to:
-  /// **'Enter password'**
-  String get onboardingPasswordRequired;
+  /// **'/repo/my-project'**
+  String get workspaceProjectHint;
 
-  /// CodeWalk UI string — Dropdown hint label for selecting a tailnet peer as server URL source
+  /// CodeWalk UI string — workspaceRemoveFromHistory
   ///
   /// In en, this message translates to:
-  /// **'Select a Tailscale peer'**
-  String get tailscaleSelectPeer;
+  /// **'Remove {name} from history'**
+  String workspaceRemoveFromHistory(String name);
 
-  /// CodeWalk UI string — Shown in peer dropdown when Tailscale is connected but no peers are visible
+  /// CodeWalk UI string — workspaceSuggestions
   ///
   /// In en, this message translates to:
-  /// **'No peers found'**
-  String get tailscaleNoPeers;
-
-  /// CodeWalk UI string — Badge shown next to a Tailscale peer that is currently offline
-  ///
-  /// In en, this message translates to:
-  /// **'offline'**
-  String get tailscalePeerOffline;
+  /// **'Suggestions'**
+  String get workspaceSuggestions;
 }
 
 class _AppLocalizationsDelegate
