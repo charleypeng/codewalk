@@ -12,6 +12,7 @@ import '../services/desktop_tray_service_types.dart';
 import '../services/update_check_service.dart';
 import 'chat_page.dart';
 import 'onboarding_wizard_page.dart';
+import '../../../core/i18n/l10n_context.dart';
 
 class AppShellPage extends StatefulWidget {
   const AppShellPage({super.key});
@@ -189,10 +190,10 @@ class _AppShellPageState extends State<AppShellPage> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Update available: v${result.latestVersion}'),
+        content: Text(context.l10n.appShellUpdateAvailableResult(result.latestVersion)),
         duration: const Duration(seconds: 6),
         action: SnackBarAction(
-          label: 'Install',
+          label: context.l10n.appShellInstall,
           onPressed: () => unawaited(settingsProvider.startInstall()),
         ),
       ),
@@ -202,17 +203,17 @@ class _AppShellPageState extends State<AppShellPage> {
   void _showInstallingSnackBar(BuildContext context) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        duration: Duration(days: 1),
+      SnackBar(
+        duration: const Duration(days: 1),
         content: Row(
           children: [
-            SizedBox(
+            const SizedBox(
               width: 16,
               height: 16,
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
-            SizedBox(width: 12),
-            Text('Installing update...'),
+            const SizedBox(width: 12),
+            Text(context.l10n.appShellInstallingUpdate),
           ],
         ),
       ),
@@ -234,7 +235,7 @@ class _AppShellPageState extends State<AppShellPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Downloading update…'),
+              Text(context.l10n.appShellDownloadingUpdate),
               const SizedBox(height: 4),
               LinearProgressIndicator(
                 value: settingsProvider.installProgress > 0
@@ -266,7 +267,7 @@ class _AppShellPageState extends State<AppShellPage> {
         duration: const Duration(seconds: 10),
         action: isDesktop
             ? SnackBarAction(
-                label: 'Restart',
+                label: context.l10n.appShellRestart,
                 onPressed: () =>
                     unawaited(settingsProvider.restartDesktopApp()),
               )
@@ -284,10 +285,10 @@ class _AppShellPageState extends State<AppShellPage> {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Install failed'),
+        content: Text(context.l10n.appShellInstallFailed),
         duration: const Duration(seconds: 8),
         action: SnackBarAction(
-          label: 'Retry',
+          label: context.l10n.chatRetry2,
           onPressed: () {
             // Guards are cleared by the idle→downloading state transition in the builder.
             unawaited(settingsProvider.startInstall());

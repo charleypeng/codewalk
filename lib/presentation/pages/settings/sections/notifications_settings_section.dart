@@ -14,6 +14,7 @@ import '../../../services/notification_sound_source_service.dart';
 import '../../../services/notification_sound_source_service_types.dart';
 import '../../../widgets/searchable_dropdown_form_field.dart';
 import '../../../widgets/settings_provenance_chip.dart';
+import '../../../../../core/i18n/l10n_context.dart';
 
 class NotificationsSettingsSection extends StatefulWidget {
   const NotificationsSettingsSection({super.key});
@@ -314,8 +315,8 @@ class _NotificationsSettingsSectionState
               SwitchListTile.adaptive(
                 contentPadding: EdgeInsets.zero,
                 title: Text(context.l10n.settingsNotificationsKeepLive),
-                subtitle: const Text(
-                  'When a response is running, keep realtime active briefly after you leave the app.',
+                subtitle: Text(
+                  context.l10n.notifResponseRunningKeep,
                 ),
                 value: settingsProvider.keepMobileRealtimeForShortPeriod,
                 onChanged: (value) =>
@@ -357,12 +358,12 @@ class _NotificationsSettingsSectionState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Android battery optimization',
+          context.l10n.notifAndroidBatteryOptimization,
           style: Theme.of(context).textTheme.titleSmall,
         ),
         const SizedBox(height: 6),
         Text(
-          'If notifications only arrive when reopening the app, allow CodeWalk to run without optimization on this device.',
+          context.l10n.notifNotificationsArriveReopening,
           style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: 8),
@@ -573,7 +574,7 @@ class _NotificationsSettingsSectionState
               if (soundLabel != null && soundLabel.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Text(
-                  'Selected: $soundLabel',
+                  context.l10n.notifSelectedSoundLabel(soundLabel),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

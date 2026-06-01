@@ -90,17 +90,17 @@ class AppearanceSettingsSection extends StatelessWidget {
                           ButtonSegment<ThemeModeOption>(
                             value: ThemeModeOption.system,
                             label: Text(context.l10n.settingsAppearanceSystem),
-                            icon: Icon(Symbols.brightness_auto),
+                            icon: const Icon(Symbols.brightness_auto),
                           ),
                           ButtonSegment<ThemeModeOption>(
                             value: ThemeModeOption.light,
                             label: Text(context.l10n.settingsAppearanceLight),
-                            icon: Icon(Symbols.light_mode),
+                            icon: const Icon(Symbols.light_mode),
                           ),
                           ButtonSegment<ThemeModeOption>(
                             value: ThemeModeOption.dark,
                             label: Text(context.l10n.settingsAppearanceDark),
-                            icon: Icon(Symbols.dark_mode),
+                            icon: const Icon(Symbols.dark_mode),
                           ),
                         ],
                         selected: <ThemeModeOption>{settingsProvider.themeMode},
@@ -120,12 +120,12 @@ class AppearanceSettingsSection extends StatelessWidget {
                           ButtonSegment<_AppearanceThemeFamily>(
                             value: _AppearanceThemeFamily.classic,
                             label: Text(context.l10n.settingsAppearanceCodeWalkClassic),
-                            icon: Icon(Symbols.palette),
+                            icon: const Icon(Symbols.palette),
                           ),
                           ButtonSegment<_AppearanceThemeFamily>(
                             value: _AppearanceThemeFamily.presets,
                             label: Text(context.l10n.settingsAppearanceOpenCodePresets),
-                            icon: Icon(Symbols.format_paint),
+                            icon: const Icon(Symbols.format_paint),
                           ),
                         ],
                         selected: <_AppearanceThemeFamily>{selectedThemeFamily},
@@ -150,7 +150,7 @@ class AppearanceSettingsSection extends StatelessWidget {
                         value: selectedPreset,
                         decoration: InputDecoration(
                           labelText: context.l10n.settingsAppearancePresetPalette,
-                          border: OutlineInputBorder(),
+                          border: const OutlineInputBorder(),
                           helperText:
                               context.l10n.settingsAppearancePresetHelper,
                         ),

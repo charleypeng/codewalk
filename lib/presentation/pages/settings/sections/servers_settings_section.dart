@@ -15,6 +15,7 @@ import '../../../utils/app_page_route.dart';
 import '../../../widgets/searchable_dropdown_form_field.dart';
 import '../../onboarding_wizard_page.dart';
 import '../../opencode_setup_debug_page.dart';
+import '../../../../../core/i18n/l10n_context.dart';
 
 class ServersSettingsSection extends StatefulWidget {
   const ServersSettingsSection({super.key});
@@ -78,20 +79,20 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                   OutlinedButton.icon(
                     onPressed: _openSetupWizard,
                     icon: const Icon(Symbols.auto_fix_high_rounded),
-                    label: const Text('Setup Wizard'),
+                    label: Text(context.l10n.serversSetupWizard),
                   ),
                   OutlinedButton.icon(
                     onPressed: () =>
                         context.read<AppProvider>().refreshServerHealth(),
                     icon: const Icon(Symbols.health_and_safety),
-                    label: const Text('Refresh Health'),
+                    label: Text(context.l10n.serversRefreshHealth),
                   ),
                   FilledButton.icon(
                     onPressed: () => _openSetupWizard(
                       initialFlow: SetupWizardInitialFlow.connectServer,
                     ),
                     icon: const Icon(Symbols.add),
-                    label: const Text('Add Server'),
+                    label: Text(context.l10n.serversAddServer),
                   ),
                 ],
               ),
@@ -133,7 +134,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Active Server',
+              context.l10n.serversActiveServer,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 10),
@@ -306,17 +307,17 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                   onPressed: () async {
                     final ok = await appProvider.authenticateTailscale();
                     if (!ok) {
-                      _showMessage('Could not open Tailscale login URL.');
+                      _showMessage(context.l10n.onboardingOpenTailscaleLogin);
                     }
                   },
                   icon: const Icon(Symbols.open_in_browser_rounded),
-                  label: const Text('Authenticate'),
+                  label: Text(context.l10n.onboardingAuthenticate),
                 ),
                 if (authUrl != null)
                   OutlinedButton.icon(
                     onPressed: () => _copyToClipboard(authUrl),
                     icon: const Icon(Symbols.content_copy_rounded),
-                    label: const Text('Copy login URL'),
+                    label: Text(context.l10n.onboardingCopyLoginURL),
                   ),
               ],
             ),
@@ -345,7 +346,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
     final setupBusy = appProvider.localSetupInProgress;
 
     final (statusColor, statusLabel) = switch (status) {
-      LocalServerRuntimeStatus.running => (Colors.green, 'Running'),
+      LocalServerRuntimeStatus.running => (Colors.green, context.l10n.toolPresentationRunning),
       LocalServerRuntimeStatus.starting => (Colors.orange, 'Starting'),
       LocalServerRuntimeStatus.stopping => (Colors.orange, 'Stopping'),
       LocalServerRuntimeStatus.failed => (Colors.red, 'Failed'),
@@ -359,7 +360,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Local OpenCode Server',
+              context.l10n.serversLocalOpenCodeServer,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 6),
@@ -395,7 +396,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
             if (appProvider.localServerCommandPath.trim().isNotEmpty) ...[
               const SizedBox(height: 6),
               Text(
-                'Command: ${appProvider.localServerCommandPath}',
+                context.l10n.serversCommandAppProviderLocalServerCommandPath(appProvider.localServerCommandPath),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall,
@@ -404,7 +405,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
             if (appProvider.localServerLastOutput.trim().isNotEmpty) ...[
               const SizedBox(height: 6),
               Text(
-                'Latest output: ${appProvider.localServerLastOutput}',
+                context.l10n.onboardingLatestOutputAppProvider(appProvider.localServerLastOutput),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall,
@@ -413,7 +414,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
             const SizedBox(height: 10),
             if (!supported)
               Text(
-                'This managed mode is available only on desktop builds (Linux/macOS/Windows).',
+                context.l10n.serversManagedModeAvailable,
                 style: Theme.of(context).textTheme.bodySmall,
               )
             else
@@ -426,14 +427,14 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                         ? null
                         : () => _startLocalServer(appProvider),
                     icon: const Icon(Symbols.play_arrow_rounded),
-                    label: const Text('Start'),
+                    label: Text(context.l10n.onboardingStart),
                   ),
                   OutlinedButton.icon(
                     onPressed: (isBusy || !isRunning)
                         ? null
                         : () => _stopLocalServer(appProvider),
                     icon: const Icon(Symbols.stop_rounded),
-                    label: const Text('Stop'),
+                    label: Text(context.l10n.onboardingStop),
                   ),
                   OutlinedButton.icon(
                     onPressed: setupBusy
@@ -443,7 +444,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                                 SetupWizardInitialFlow.managedLocalServer,
                           ),
                     icon: const Icon(Symbols.auto_fix_high_rounded),
-                    label: const Text('Setup Wizard'),
+                    label: Text(context.l10n.serversSetupWizard),
                   ),
                   OutlinedButton.icon(
                     key: const ValueKey(
@@ -451,7 +452,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                     ),
                     onPressed: _openSetupDebugPage,
                     icon: const Icon(Symbols.bug_report_rounded),
-                    label: const Text('Setup Debug'),
+                    label: Text(context.l10n.serversSetupDebug),
                   ),
                 ],
               ),
@@ -491,8 +492,8 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (isActive) const _MetaChip(label: 'Active'),
-            if (isDefault) const _MetaChip(label: 'Default'),
+            if (isActive) _MetaChip(label: context.l10n.serversActive),
+            if (isDefault) _MetaChip(label: context.l10n.serversDefault),
             if (profile.oauthEnabled)
               _MetaChip(label: context.l10n.serverOAuthChip),
             if (profile.tailscaleEnabled)
@@ -513,19 +514,19 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
           ),
           itemBuilder: (_) => [
             if (!isActive)
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: _ServerAction.activate,
-                child: Text('Set Active'),
+                child: Text(context.l10n.serversSetActive),
               ),
             if (!isDefault)
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: _ServerAction.setDefault,
-                child: Text('Set Default'),
+                child: Text(context.l10n.serversSetDefault),
               ),
             if (isDefault)
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: _ServerAction.clearDefault,
-                child: Text('Clear Default'),
+                child: Text(context.l10n.serversClearDefault),
               ),
             if (profile.oauthEnabled) ...[
               PopupMenuItem(
@@ -537,14 +538,14 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                 child: Text(context.l10n.serverClearOAuth),
               ),
             ],
-            const PopupMenuItem(
+            PopupMenuItem(
               value: _ServerAction.check,
-              child: Text('Check Health'),
+              child: Text(context.l10n.serversCheckHealth),
             ),
-            const PopupMenuItem(value: _ServerAction.edit, child: Text('Edit')),
-            const PopupMenuItem(
+            PopupMenuItem(value: _ServerAction.edit, child: Text(context.l10n.serversEdit)),
+            PopupMenuItem(
               value: _ServerAction.delete,
-              child: Text('Delete'),
+              child: Text(context.l10n.serversDelete),
             ),
           ],
         ),
@@ -582,12 +583,12 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
           const Icon(Symbols.dns, size: 48),
           const SizedBox(height: 12),
           Text(
-            'No servers configured',
+            context.l10n.serversServersConfigured,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Add at least one OpenCode server to start using the app.',
+          Text(
+            context.l10n.serversAddLeastOpenCode,
             textAlign: TextAlign.center,
           ),
         ],
@@ -667,16 +668,16 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
       context: context,
       builder: (_) {
         return AlertDialog(
-          title: const Text('Delete server'),
-          content: Text('Remove "${profile.displayName}"?'),
+          title: Text(context.l10n.serversDeleteServer),
+          content: Text(context.l10n.serversRemoveProfileDisplayName(profile.displayName)),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              child: Text(context.l10n.serversCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Delete'),
+              child: Text(context.l10n.serversDelete),
             ),
           ],
         );
@@ -866,7 +867,7 @@ class _ServerSetupQuickGuideState extends State<ServerSetupQuickGuide> {
               TextButton.icon(
                 onPressed: () => widget.onCopy(command),
                 icon: const Icon(Symbols.content_copy_rounded, size: 14),
-                label: const Text('Copy'),
+                label: Text(context.l10n.serversCopy),
                 style: TextButton.styleFrom(
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,

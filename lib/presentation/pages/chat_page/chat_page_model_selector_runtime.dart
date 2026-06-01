@@ -106,7 +106,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
             ),
           if (!isSubConversation)
             Tooltip(
-              message: 'Choose agent',
+              message: context.l10n.modelChooseAgent,
               child: Builder(
                 key: _agentSelectorChipKey,
                 builder: (chipContext) => ActionChip(
@@ -1082,7 +1082,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                         child: !hasVisibleEntries
                             ? Center(
                                 child: Text(
-                                  'No models found',
+                                  context.l10n.modelModelsFound,
                                   style: Theme.of(context).textTheme.bodyMedium,
                                 ),
                               )
@@ -1101,7 +1101,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                                         4,
                                       ),
                                       child: Text(
-                                        'Favorites',
+                                        context.l10n.modelFavorites,
                                         style: Theme.of(context)
                                             .textTheme
                                             .labelMedium

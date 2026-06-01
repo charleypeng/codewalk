@@ -141,7 +141,7 @@ extension _ChatPageStatusPresenter on _ChatPageState {
             valueColor: AlwaysStoppedAnimation<Color>(color),
           ),
           Text(
-            '$usagePercent',
+            context.l10n.chatPageStatusUsagePercent(usagePercent),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               fontSize: usagePercent >= 100 ? 8.5 : 9.5,
               fontWeight: FontWeight.w700,
@@ -172,32 +172,32 @@ extension _ChatPageStatusPresenter on _ChatPageState {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'Context usage',
+            context.l10n.chatPageStatusContextUsage,
             style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 10),
           _buildContextUsageRow(
             context,
-            label: 'Usage',
+            label: context.l10n.chatPageStatusUsage,
             value: '${usage.usagePercent}%',
           ),
           const SizedBox(height: 6),
           _buildContextUsageRow(
             context,
-            label: 'Tokens',
+            label: context.l10n.chatPageStatusTokens,
             value: _formatIntWithGroup(usage.totalTokens),
           ),
           const SizedBox(height: 6),
           _buildContextUsageRow(
             context,
-            label: 'Cost',
+            label: context.l10n.chatPageStatusCost,
             value: _formatUsd(usage.totalCost),
           ),
           if (usage.modelLimit != null) ...[
             const SizedBox(height: 6),
             _buildContextUsageRow(
               context,
-              label: 'Limit',
+              label: context.l10n.chatPageStatusLimit,
               value: _formatIntWithGroup(usage.modelLimit!),
             ),
           ],
@@ -329,7 +329,7 @@ extension _ChatPageStatusPresenter on _ChatPageState {
 
         return PopupMenuButton<String>(
           key: const ValueKey<String>('sidebar_server_switch_button'),
-          tooltip: 'Switch Server',
+          tooltip: context.l10n.chatPageStatusSwitchServer,
           onSelected: (value) async {
             if (value == '__manage__') {
               await _openSettingsPage(
@@ -383,9 +383,9 @@ extension _ChatPageStatusPresenter on _ChatPageState {
             }
             items.add(const PopupMenuDivider());
             items.add(
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: '__manage__',
-                child: Text('Manage Servers'),
+                child: Text(context.l10n.chatPageStatusManageServers),
               ),
             );
             return items;
@@ -454,7 +454,7 @@ extension _ChatPageStatusPresenter on _ChatPageState {
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
-                            'Saver',
+                            context.l10n.chatPageStatusSaver,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.labelSmall

@@ -420,7 +420,7 @@ class OAuthService {
     final dcrClientId = client?['client_id'] as String?;
     final clientId = dcrClientId ?? 'codewalk';
 
-    final appAuth = FlutterAppAuth();
+    const appAuth = FlutterAppAuth();
 
     try {
       _log('Opening Chrome Custom Tab: $authEp');

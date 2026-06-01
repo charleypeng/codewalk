@@ -233,10 +233,12 @@ extension _ChatPageScaffold on _ChatPageState {
                             showcaseKey: _projectContextTourKey,
                             targetKey: _projectContextTourTargetKey,
                             title: postOnboardingSidebarTourCopy(
+                              context: context,
                               isMobile: false,
                               showConversationPane: true,
                             ).title,
                             description: postOnboardingSidebarTourCopy(
+                              context: context,
                               isMobile: false,
                               showConversationPane: true,
                             ).description,
@@ -871,7 +873,7 @@ extension _ChatPageScaffold on _ChatPageState {
           if (expanded) ...[
             if (selected)
               Padding(
-                padding: EdgeInsets.fromLTRB(4, 0, 4, 8),
+                padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
                 child: Column(
                   children: [
                     ChatSessionList(

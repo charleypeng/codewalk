@@ -17,7 +17,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
         return Align(
           alignment: Alignment.centerLeft,
           child: Tooltip(
-            message: 'Choose Directory',
+            message: context.l10n.chatChooseDirectory,
             child: InkWell(
               onTap: () => unawaited(_openProjectSelectorDialog()),
               borderRadius: BorderRadius.circular(10),
@@ -136,7 +136,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
               children: [
                 Expanded(
                   child: Text(
-                    'Project context',
+                    context.l10n.chatProjectContext2,
                     style: Theme.of(dialogContext).textTheme.titleLarge,
                   ),
                 ),
@@ -160,7 +160,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Select a project below.',
+                  context.l10n.chatSelectProjectBelow,
                   style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -181,7 +181,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                           _openCreateWorkspaceFromSelector(dialogContext),
                         ),
                   icon: const Icon(Symbols.add_box),
-                  label: const Text('Open project folder...'),
+                  label: Text(context.l10n.chatOpenProjectFolder),
                 ),
                 if (!FeatureFlags.refreshlessRealtime)
                   FilledButton.tonalIcon(
@@ -189,7 +189,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                         ? null
                         : () => unawaited(projectProvider.loadProjects()),
                     icon: const Icon(Symbols.refresh_rounded),
-                    label: const Text('Refresh projects'),
+                    label: Text(context.l10n.chatRefreshProjects),
                   ),
               ],
             ),
@@ -252,7 +252,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                           ),
                           trailing: IconButton(
                             icon: const Icon(Symbols.delete_outline_rounded),
-                            tooltip: 'Remove $displayName from history',
+                            tooltip: context.l10n.chatRemoveDisplayNameHistory(displayName),
                             onPressed: selectorActionInFlight
                                 ? null
                                 : () => unawaited(

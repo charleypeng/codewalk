@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../domain/entities/chat_realtime.dart';
+import '../../../core/i18n/l10n_context.dart';
 
 class _QuestionPrimaryIntent extends Intent {
   const _QuestionPrimaryIntent();
@@ -347,7 +348,7 @@ class _QuestionRequestCardState extends State<QuestionRequestCard> {
             decoration: InputDecoration(
               isDense: true,
               labelText: 'Custom answer',
-              hintText: 'Comma-separated values',
+              hintText: context.l10n.questionCommaSeparatedValues,
             ),
           ),
         ],
@@ -364,7 +365,7 @@ class _QuestionRequestCardState extends State<QuestionRequestCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'No questions provided. You can submit an empty response.',
+            context.l10n.questionQuestionsProvidedSubmit,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
@@ -378,7 +379,7 @@ class _QuestionRequestCardState extends State<QuestionRequestCard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Review your answers before submitting.',
+          context.l10n.questionReviewAnswersSubmitting,
           style: Theme.of(
             context,
           ).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
@@ -426,7 +427,7 @@ class _QuestionRequestCardState extends State<QuestionRequestCard> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Question group marked as rejected. You can keep chatting and reopen this group anytime before confirming.',
+                  context.l10n.questionQuestionGroupMarked,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: colorScheme.onErrorContainer,
                   ),
@@ -535,7 +536,7 @@ class _QuestionRequestCardState extends State<QuestionRequestCard> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Question request',
+                    context.l10n.questionQuestionRequest,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -806,7 +807,7 @@ class _QuestionAnswerSummaryTile extends StatelessWidget {
           const SizedBox(height: 8),
           if (answers.isEmpty)
             Text(
-              'No answer selected.',
+              context.l10n.questionAnswerSelected,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),

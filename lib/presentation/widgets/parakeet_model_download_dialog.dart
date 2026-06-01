@@ -171,9 +171,9 @@ class _ParakeetModelDownloadDialogState
         DropdownButtonFormField<String>(
           value: _selectedId,
           isExpanded: true,
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             labelText: 'Parakeet model',
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
           ),
           items: _models
               .map(

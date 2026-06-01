@@ -105,7 +105,9 @@ extension _ChatPageComposerWidgets on _ChatPageState {
   void _showComposerStopHint() {
     _composerStopHintTimer?.cancel();
     _setState(() {
-      _priorityComposerStatus = const _ComposerStatusPresentation.stopHint();
+      _priorityComposerStatus = _ComposerStatusPresentation.stopHint(
+        label: context.l10n.chatDoubleESCStop,
+      );
     });
     _composerStopHintTimer = Timer(
       _ChatPageState._composerStopHintDuration,
@@ -179,7 +181,7 @@ extension _ChatPageComposerWidgets on _ChatPageState {
         if (!mounted) {
           return;
         }
-        final tips = _ComposerStatusPresentation._receivingTips;
+        const tips = _ComposerStatusPresentation._receivingTips;
         _currentTipIndex = (_currentTipIndex + 1) % tips.length;
         _setState(() {
           _visibleComposerStatus = _ComposerStatusPresentation.tip(

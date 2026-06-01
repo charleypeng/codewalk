@@ -47,7 +47,7 @@ class TimelineSearchResult {
   /// Whether there are matches.
   bool get isNotEmpty => matches.isNotEmpty;
 
-  static final TimelineSearchResult empty = const TimelineSearchResult(
+  static const TimelineSearchResult empty = TimelineSearchResult(
     query: '',
     matches: [],
     totalMatchCount: 0,

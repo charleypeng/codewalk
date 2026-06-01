@@ -174,9 +174,9 @@ class _SherpaModelDownloadDialogState extends State<SherpaModelDownloadDialog> {
         DropdownButtonFormField<String>(
           value: _selectedCode,
           isExpanded: true,
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             labelText: 'Language',
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
           ),
           items: _models
               .map((m) => DropdownMenuItem(value: m.code, child: Text(m.label)))

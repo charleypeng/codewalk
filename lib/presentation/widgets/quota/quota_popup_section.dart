@@ -291,7 +291,7 @@ class _OpenCodeGoDashboardDialogState
               decoration: InputDecoration(
                 labelText: context.l10n.quotaWorkspaceId,
                 hintText: context.l10n.quotaWorkspaceId,
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
               textInputAction: TextInputAction.next,
             ),
@@ -302,7 +302,7 @@ class _OpenCodeGoDashboardDialogState
               decoration: InputDecoration(
                 labelText: context.l10n.quotaAuthCookie,
                 hintText: context.l10n.quotaAuthCookie,
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
               ),
               obscureText: true,
             ),

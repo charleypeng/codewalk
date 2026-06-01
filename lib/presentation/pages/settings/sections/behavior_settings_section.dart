@@ -12,6 +12,7 @@ import '../../../providers/locale_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../widgets/searchable_dropdown_form_field.dart';
 import '../../../widgets/settings_provenance_chip.dart';
+import '../../../../../core/i18n/l10n_context.dart';
 
 class BehaviorSettingsSection extends StatefulWidget {
   const BehaviorSettingsSection({super.key});
@@ -218,19 +219,19 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'OpenCode-backed defaults',
+                        context.l10n.behaviorOpenCodeBackedDefaults,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'These values write to `/config` on the active server and match official OpenCode shared config.',
+                        context.l10n.behaviorTheseValuesWrite,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Refresh defaults',
+                  tooltip: context.l10n.behaviorRefreshDefaults,
                   onPressed: settingsProvider.openCodeDefaultsLoading
                       ? null
                       : () => unawaited(
@@ -260,14 +261,14 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                   settingsProvider.openCodeDefaultModelKey,
                   modelOptions.map((option) => option.key),
                 ),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Default model',
-                  border: OutlineInputBorder(),
-                  helperText: 'Shared across OpenCode clients through config.',
+                  border: const OutlineInputBorder(),
+                  helperText: context.l10n.behaviorSharedAcrossOpenCode,
                 ),
                 isExpanded: true,
                 searchHintText: 'Search default model',
-                emptyText: 'No models found',
+                emptyText: context.l10n.modelModelsFound,
                 searchTermsBuilder: (value) =>
                     _modelSearchTerms(modelOptions, value),
                 items: modelOptions
@@ -300,11 +301,11 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                   settingsProvider.openCodeDefaultAgentName,
                   agentOptions,
                 ),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Default agent',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                   helperText:
-                      'Primary agent used when no agent is explicitly chosen.',
+                      context.l10n.behaviorPrimaryAgentAgent,
                 ),
                 isExpanded: true,
                 searchHintText: 'Search default agent',
@@ -335,11 +336,11 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                 controller: _usernameController,
                 focusNode: _usernameFocusNode,
                 textInputAction: TextInputAction.done,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Conversation username',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                   helperText:
-                      'Custom display name shown in conversations instead of the system username.',
+                      context.l10n.behaviorCustomDisplayName,
                 ),
                 onFieldSubmitted: (_) => unawaited(_applyUsername(context)),
               ),
@@ -390,16 +391,16 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                   smallModelKey,
                   modelOptions.map((option) => option.key),
                 ),
-                hint: const Text('Automatic fallback'),
-                decoration: const InputDecoration(
+                hint: Text(context.l10n.behaviorAutomaticFallback),
+                decoration: InputDecoration(
                   labelText: 'Small model',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                   helperText:
-                      'Used for lightweight tasks like title generation.',
+                      context.l10n.behaviorLightweightTasksLike,
                 ),
                 isExpanded: true,
                 searchHintText: 'Search small model',
-                emptyText: 'No models found',
+                emptyText: context.l10n.modelModelsFound,
                 searchTermsBuilder: (value) =>
                     _modelSearchTerms(modelOptions, value),
                 items: modelOptions
@@ -436,28 +437,28 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
               SearchableDropdownFormField<OpenCodeAutoupdateMode>(
                 key: const ValueKey<String>('settings_opencode_autoupdate'),
                 value: autoupdateMode,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'OpenCode auto-update',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                   helperText:
-                      'Controls upstream OpenCode runtime updates, not CodeWalk app update checks.',
+                      context.l10n.behaviorControlsUpstreamOpenCode,
                 ),
                 searchHintText: 'Search auto-update mode',
                 searchTermsBuilder: (value) => <String>[
                   _autoupdateModeLabel(value),
                 ],
-                items: const <DropdownMenuItem<OpenCodeAutoupdateMode>>[
+                items: <DropdownMenuItem<OpenCodeAutoupdateMode>>[
                   DropdownMenuItem<OpenCodeAutoupdateMode>(
                     value: OpenCodeAutoupdateMode.automatic,
-                    child: Text('Automatic'),
+                    child: Text(context.l10n.behaviorAutomatic),
                   ),
                   DropdownMenuItem<OpenCodeAutoupdateMode>(
                     value: OpenCodeAutoupdateMode.notify,
-                    child: Text('Notify only'),
+                    child: Text(context.l10n.behaviorNotify),
                   ),
                   DropdownMenuItem<OpenCodeAutoupdateMode>(
                     value: OpenCodeAutoupdateMode.disabled,
-                    child: Text('Disabled'),
+                    child: Text(context.l10n.behaviorDisabled),
                   ),
                 ],
                 onChanged: settingsProvider.openCodeDefaultsLoading
@@ -471,33 +472,33 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Use About for CodeWalk release checks. This setting only mirrors the official OpenCode `autoupdate` config.',
+                context.l10n.behaviorCodeWalkReleaseChecks,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
               SearchableDropdownFormField<OpenCodeShareMode>(
                 key: const ValueKey<String>('settings_opencode_share_mode'),
                 value: shareMode,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'OpenCode sharing default',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                   helperText:
-                      'Controls the official global `share` config, not the share button for an individual chat.',
+                      context.l10n.behaviorControlsOfficialGlobal,
                 ),
                 searchHintText: 'Search sharing mode',
                 searchTermsBuilder: (value) => <String>[_shareModeLabel(value)],
-                items: const <DropdownMenuItem<OpenCodeShareMode>>[
+                items: <DropdownMenuItem<OpenCodeShareMode>>[
                   DropdownMenuItem<OpenCodeShareMode>(
                     value: OpenCodeShareMode.manual,
-                    child: Text('Manual'),
+                    child: Text(context.l10n.behaviorManual),
                   ),
                   DropdownMenuItem<OpenCodeShareMode>(
                     value: OpenCodeShareMode.automatic,
-                    child: Text('Automatic'),
+                    child: Text(context.l10n.behaviorAutomatic),
                   ),
                   DropdownMenuItem<OpenCodeShareMode>(
                     value: OpenCodeShareMode.disabled,
-                    child: Text('Disabled'),
+                    child: Text(context.l10n.behaviorDisabled),
                   ),
                 ],
                 onChanged: settingsProvider.openCodeDefaultsLoading
@@ -511,12 +512,12 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Use the chat-level share action to publish one session now. This setting only changes OpenCode’s default sharing policy.',
+                context.l10n.behaviorChatLevelShare,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
               Text(
-                'Permissions and variant/reasoning parity stay separate until their UI can preserve advanced config safely.',
+                context.l10n.behaviorPermissionsVariantReasoning,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -543,12 +544,12 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Cellular data saver',
+              context.l10n.behaviorCellularDataSaver,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 6),
             Text(
-              'Cuts automatic mobile-data usage by stopping background downloads and throttling automatic foreground refreshes to one burst every ${settingsProvider.cellularDataSaverInterval.inSeconds} seconds.',
+              context.l10n.behaviorCutsAutomaticMobile(settingsProvider.cellularDataSaverInterval.inSeconds),
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
@@ -596,17 +597,17 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
             ),
             const SizedBox(height: 10),
             Text(
-              'Permission handling provenance',
+              context.l10n.behaviorPermissionHandlingProvenance,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 6),
             Text(
-              'Official OpenCode permission policy is configured in `opencode.json` with allow/ask/deny rules per tool. CodeWalk keeps the official permission-request cards and adds one approved ADR-023 exception: the composer auto-approve toggle replies with `Always` and `remember: true` unconditionally to create durable session-scoped grants, and keeps the same thread-scoped continuity path active in the Android background worker.',
+              context.l10n.behaviorOfficialOpenCodePermission,
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 10),
             Text(
-              'Advanced permission rule editing stays out of Settings for now and is deferred to later parity work.',
+              context.l10n.behaviorAdvancedPermissionRule,
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
@@ -644,17 +645,17 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
 
   String _autoupdateModeLabel(OpenCodeAutoupdateMode mode) {
     return switch (mode) {
-      OpenCodeAutoupdateMode.automatic => 'Automatic',
-      OpenCodeAutoupdateMode.notify => 'Notify only',
-      OpenCodeAutoupdateMode.disabled => 'Disabled',
+      OpenCodeAutoupdateMode.automatic => context.l10n.behaviorAutomatic,
+      OpenCodeAutoupdateMode.notify => context.l10n.behaviorNotify,
+      OpenCodeAutoupdateMode.disabled => context.l10n.behaviorDisabled,
     };
   }
 
   String _shareModeLabel(OpenCodeShareMode mode) {
     return switch (mode) {
-      OpenCodeShareMode.manual => 'Manual',
-      OpenCodeShareMode.automatic => 'Automatic',
-      OpenCodeShareMode.disabled => 'Disabled',
+      OpenCodeShareMode.manual => context.l10n.behaviorManual,
+      OpenCodeShareMode.automatic => context.l10n.behaviorAutomatic,
+      OpenCodeShareMode.disabled => context.l10n.behaviorDisabled,
     };
   }
 

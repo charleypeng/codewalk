@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../core/i18n/l10n_context.dart';
 import '../providers/app_provider.dart';
 import '../services/local_opencode_server_runtime_types.dart';
+import '../../../core/i18n/l10n_context.dart';
 
 class OpenCodeSetupDebugPage extends StatelessWidget {
   const OpenCodeSetupDebugPage({super.key});
@@ -39,16 +40,16 @@ class OpenCodeSetupDebugPage extends StatelessWidget {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('OpenCode Setup Debug'),
+            title: Text(context.l10n.setupDebugOpenCodeSetupDebug),
             actions: [
               IconButton(
                 icon: const Icon(Symbols.copy_all),
-                tooltip: 'Copy setup debug',
+                tooltip: context.l10n.setupDebugCopySetupDebug,
                 onPressed: hasDebugContent ? () => _copyReport(context) : null,
               ),
               IconButton(
                 icon: const Icon(Symbols.delete_outline),
-                tooltip: 'Clear setup debug',
+                tooltip: context.l10n.setupDebugClearSetupDebug,
                 onPressed: hasDebugContent
                     ? appProvider.clearSetupDebugData
                     : null,
@@ -65,16 +66,16 @@ class OpenCodeSetupDebugPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const _SetupDebugCard(
-                        title: 'Focused on OpenCode setup',
+                      _SetupDebugCard(
+                        title: context.l10n.setupDebugFocusedOpenCodeSetup,
                         icon: Symbols.terminal_rounded,
                         child: Text(
-                          'This screen only covers OpenCode installation, diagnostics, and local setup troubleshooting. Use App Logs for general CodeWalk runtime issues.',
+                          context.l10n.setupDebugScreenCoversOpenCode,
                         ),
                       ),
                       const SizedBox(height: 12),
                       _SetupDebugCard(
-                        title: 'Current status',
+                        title: context.l10n.setupDebugCurrentStatus,
                         icon: Symbols.info_rounded,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,7 +99,7 @@ class OpenCodeSetupDebugPage extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       _SetupDebugCard(
-                        title: 'Environment diagnostics',
+                        title: context.l10n.setupDebugEnvironmentDiagnostics,
                         icon: Symbols.health_and_safety_rounded,
                         child: _EnvironmentDetails(
                           report: appProvider.localEnvironmentReport,
@@ -108,7 +109,7 @@ class OpenCodeSetupDebugPage extends StatelessWidget {
                       if (entries.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         _SetupDebugCard(
-                          title: 'Timeline',
+                          title: context.l10n.setupDebugTimeline2,
                           icon: Symbols.history_rounded,
                           child: Column(
                             children: [
@@ -126,7 +127,7 @@ class OpenCodeSetupDebugPage extends StatelessWidget {
                           .isNotEmpty) ...[
                         const SizedBox(height: 12),
                         _SetupDebugCard(
-                          title: 'Latest local server output',
+                          title: context.l10n.setupDebugLatestLocalServer,
                           icon: Symbols.speaker_notes_rounded,
                           child: _MonospaceBlock(
                             text: appProvider.localServerLastOutput,
@@ -136,38 +137,38 @@ class OpenCodeSetupDebugPage extends StatelessWidget {
                       if (setupLogs.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         _SetupDebugCard(
-                          title: 'Captured setup logs',
+                          title: context.l10n.setupDebugCapturedSetupLogs,
                           icon: Symbols.article_rounded,
                           child: _MonospaceBlock(text: setupLogs.join('\n')),
                         ),
                       ],
                       if (!hasDebugContent) ...[
                         const SizedBox(height: 12),
-                        const _SetupDebugCard(
-                          title: 'No captured setup details yet',
+                        _SetupDebugCard(
+                          title: context.l10n.setupDebugCapturedSetupDetails,
                           icon: Symbols.inbox_rounded,
                           child: Text(
-                            'Run diagnostics, try an installation method, or attempt a setup flow to capture OpenCode-specific troubleshooting details here.',
+                            context.l10n.setupDebugRunDiagnosticsTry,
                           ),
                         ),
                       ],
                       const SizedBox(height: 12),
-                      const _SetupDebugCard(
-                        title: 'Manual troubleshooting',
+                      _SetupDebugCard(
+                        title: context.l10n.setupDebugManualTroubleshooting,
                         icon: Symbols.build_circle_rounded,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'If CodeWalk did not capture enough context, check the official OpenCode logs and health endpoints directly:',
+                              context.l10n.setupDebugCodeWalkCaptureEnough,
                             ),
-                            SizedBox(height: 8),
-                            Text('• Linux logs: ~/.local/share/opencode/log/'),
-                            Text(
+                            const SizedBox(height: 8),
+                            const Text('• Linux logs: ~/.local/share/opencode/log/'),
+                            const Text(
                               '• Run OpenCode with: opencode --log-level DEBUG',
                             ),
-                            Text('• Server health: GET /global/health'),
-                            Text('• Server docs: GET /doc'),
+                            const Text('• Server health: GET /global/health'),
+                            const Text('• Server docs: GET /doc'),
                           ],
                         ),
                       ),
@@ -233,26 +234,26 @@ class _EnvironmentDetails extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (report == null) {
-      return const Text('Diagnostics are still loading.');
+      return Text(context.l10n.setupDebugDiagnosticsLoading);
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _InfoRow(label: 'Platform', value: report!.platform),
+        _InfoRow(label: context.l10n.setupDebugPlatform2, value: report!.platform),
         if (commandPath.trim().isNotEmpty)
-          _InfoRow(label: 'Command path', value: commandPath.trim()),
-        _ToolStatusRow(label: 'OpenCode', status: report!.opencode),
-        _ToolStatusRow(label: 'Node.js', status: report!.node),
-        _ToolStatusRow(label: 'npm', status: report!.npm),
-        _ToolStatusRow(label: 'Bun', status: report!.bun),
-        _ToolStatusRow(label: 'WSL', status: report!.wsl),
+          _InfoRow(label: context.l10n.setupDebugCommandPath2, value: commandPath.trim()),
+        _ToolStatusRow(label: context.l10n.setupDebugOpenCode2, status: report!.opencode),
+        _ToolStatusRow(label: context.l10n.setupDebugNode, status: report!.node),
+        _ToolStatusRow(label: context.l10n.setupDebugNpm2, status: report!.npm),
+        _ToolStatusRow(label: context.l10n.setupDebugBun2, status: report!.bun),
+        _ToolStatusRow(label: context.l10n.setupDebugWSL, status: report!.wsl),
         _InfoRow(
-          label: 'Network',
+          label: context.l10n.setupDebugNetwork2,
           value: report!.hasNetworkAccess ? 'reachable' : 'unreachable',
         ),
         _InfoRow(
-          label: 'Install directory',
+          label: context.l10n.setupDebugInstallDirectory,
           value: report!.installDirectoryWritable ? 'writable' : 'not writable',
         ),
         const SizedBox(height: 8),
@@ -337,7 +338,7 @@ class _SetupDebugEntryTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '$time - ${entry.source}',
+                context.l10n.setupDebugTimeEntrySource(time, entry.source),
                 style: Theme.of(context).textTheme.labelMedium,
               ),
               const SizedBox(height: 4),

@@ -1029,7 +1029,7 @@ extension _ChatProviderEventReducerOps on ChatProvider {
           return false;
         }
         final previousStatusType = snapshot.sessionStatusById[sessionId]?.type;
-        final nextIdleStatus = const SessionStatusInfo(
+        const nextIdleStatus = SessionStatusInfo(
           type: SessionStatusType.idle,
         );
         nextSessionStatusById = Map<String, SessionStatusInfo>.from(

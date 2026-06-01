@@ -74,6 +74,7 @@ import '../widgets/session_title_inline_editor.dart';
 import '../widgets/session_todo_list_widget.dart';
 import 'onboarding_wizard_page.dart';
 import 'settings_page.dart';
+import '../../../core/i18n/l10n_context.dart';
 
 part 'chat_page_types_part.dart';
 part 'chat_page/chat_page_lifecycle.dart';
@@ -141,23 +142,24 @@ enum _CachedViewportRestoreTarget { none, bottom, latestResponse }
 
 @visibleForTesting
 ({String title, String description}) postOnboardingSidebarTourCopy({
+  required BuildContext context,
   required bool isMobile,
   required bool showConversationPane,
 }) {
   if (isMobile) {
     return (
-      title: 'Open sidebar',
+      title: context.l10n.chatOpenSidebar,
       description: 'Use this button to open your projects and conversations.',
     );
   }
   if (showConversationPane) {
     return (
-      title: 'Open project',
+      title: context.l10n.chatOpenProject,
       description: 'Use this button to switch project folders and context.',
     );
   }
   return (
-    title: 'Sidebar access',
+    title: context.l10n.chatSidebarAccess,
     description:
         'Use this menu to show the conversations sidebar and project tools.',
   );
@@ -1241,8 +1243,8 @@ class _ChatPageState extends State<ChatPage>
 
   void _showServerUnhealthyNotice() {
     _showChatPageSnackBar(
-      content: const Text(
-        'Active server is unhealthy. Sends will try once and fail fast until recovery.',
+      content: Text(
+        context.l10n.chatActiveServerUnhealthy,
       ),
     );
   }
@@ -2419,17 +2421,17 @@ class _ComposerStatusPresentation {
   const _ComposerStatusPresentation.dynamicReasoning(String label)
     : this._(type: _ComposerStatusType.dynamicReasoning, label: label);
 
-  const _ComposerStatusPresentation.receiving()
-    : this._(type: _ComposerStatusType.receiving, label: 'Reasoning...');
+  _ComposerStatusPresentation.receiving({
+    required String label,
+  }) : this._(type: _ComposerStatusType.receiving, label: label);
 
-  const _ComposerStatusPresentation.retrying()
-    : this._(
-        type: _ComposerStatusType.retrying,
-        label: 'Retrying model request...',
-      );
+  _ComposerStatusPresentation.retrying({
+    required String label,
+  }) : this._(type: _ComposerStatusType.retrying, label: label);
 
-  const _ComposerStatusPresentation.stopHint()
-    : this._(type: _ComposerStatusType.stopHint, label: 'Double ESC to stop');
+  _ComposerStatusPresentation.stopHint({
+    required String label,
+  }) : this._(type: _ComposerStatusType.stopHint, label: label);
 
   const _ComposerStatusPresentation.tip(String label)
     : this._(type: _ComposerStatusType.tip, label: label);
@@ -2746,7 +2748,7 @@ class _DirectoryPickerSheetState extends State<_DirectoryPickerSheet> {
               children: [
                 Expanded(
                   child: Text(
-                    'Select directory',
+                    context.l10n.chatSelectDirectory,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
@@ -2755,7 +2757,7 @@ class _DirectoryPickerSheetState extends State<_DirectoryPickerSheet> {
                   onPressed: _loading
                       ? null
                       : () => Navigator.of(context).pop(_currentDirectory),
-                  child: const Text('Use current'),
+                  child: Text(context.l10n.chatCurrent),
                 ),
               ],
             ),
@@ -2795,7 +2797,7 @@ class _DirectoryPickerSheetState extends State<_DirectoryPickerSheet> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Choose a folder to open as project context.',
+                      context.l10n.chatChooseFolderOpen,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -2813,7 +2815,7 @@ class _DirectoryPickerSheetState extends State<_DirectoryPickerSheet> {
               decoration: InputDecoration(
                 isDense: true,
                 prefixIcon: const Icon(Symbols.search),
-                hintText: 'Filter directories',
+                hintText: context.l10n.chatFilterDirectories,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -2835,7 +2837,7 @@ class _DirectoryPickerSheetState extends State<_DirectoryPickerSheet> {
                           const SizedBox(height: 8),
                           FilledButton.tonal(
                             onPressed: () => _loadDirectory(_currentDirectory),
-                            child: const Text('Retry'),
+                            child: Text(context.l10n.chatRetry2),
                           ),
                         ],
                       ),

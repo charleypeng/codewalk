@@ -156,18 +156,18 @@ extension _ChatPageFileViewer on _ChatPageState {
                                     ),
                                   );
                                 },
-                                child: const Text('Retry'),
+                                child: Text(context.l10n.chatRetry2),
                               ),
                             ],
                           ),
                         ),
                       );
                     case _FileTabLoadStatus.binary:
-                      return const Center(
-                        child: Text('Binary file preview is not available.'),
+                      return Center(
+                        child: Text(context.l10n.filesBinaryFilePreview),
                       );
                     case _FileTabLoadStatus.empty:
-                      return const Center(child: Text('File is empty.'));
+                      return Center(child: Text(context.l10n.filesFileEmpty));
                     case _FileTabLoadStatus.ready:
                       return _buildFileViewerContent(
                         path: activePath,
@@ -224,7 +224,7 @@ extension _ChatPageFileViewer on _ChatPageState {
               onContextAdded?.call();
             },
             icon: const Icon(Symbols.chat_bubble_outline, size: 16),
-            label: const Text('Add to chat'),
+            label: Text(context.l10n.filesAddChat),
             style: TextButton.styleFrom(
               visualDensity: VisualDensity.compact,
               padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -243,7 +243,7 @@ extension _ChatPageFileViewer on _ChatPageState {
               visualDensity: VisualDensity.compact,
               padding: const EdgeInsets.symmetric(horizontal: 8),
             ),
-            child: const Text('Clear'),
+            child: Text(context.l10n.filesClear),
           ),
         ],
       ),

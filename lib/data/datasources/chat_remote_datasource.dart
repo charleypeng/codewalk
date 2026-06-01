@@ -2061,7 +2061,7 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           e is ValidationException) {
         rethrow;
       }
-      throw ServerException('Failed to send message');
+      throw const ServerException('Failed to send message');
     } finally {
       AppLogger.info('Chat send flow finalized for session=$sessionId');
       AppLogger.info(

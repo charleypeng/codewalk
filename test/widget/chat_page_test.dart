@@ -15455,8 +15455,12 @@ expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
     },
   );
 
-  test('uses compact sidebar tour copy on small layouts', () {
+  testWidgets('uses compact sidebar tour copy on small layouts', (tester) async {
+    await tester.pumpWidget(localizedMaterialApp(home: const SizedBox.shrink()));
+    await tester.pumpAndSettle();
+    final context = tester.element(find.byType(SizedBox));
     final copy = postOnboardingSidebarTourCopy(
+      context: context,
       isMobile: true,
       showConversationPane: false,
     );
@@ -15468,8 +15472,12 @@ expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
     );
   });
 
-  test('uses project-context tour copy on desktop layouts with sidebar', () {
+  testWidgets('uses project-context tour copy on desktop layouts with sidebar', (tester) async {
+    await tester.pumpWidget(localizedMaterialApp(home: const SizedBox.shrink()));
+    await tester.pumpAndSettle();
+    final context = tester.element(find.byType(SizedBox));
     final copy = postOnboardingSidebarTourCopy(
+      context: context,
       isMobile: false,
       showConversationPane: true,
     );

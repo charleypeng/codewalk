@@ -9,6 +9,7 @@ import '../../core/i18n/l10n_context.dart';
 import '../providers/chat_provider.dart';
 import 'modal_primary_action_shortcuts.dart';
 import '../utils/session_title_formatter.dart';
+import '../../../core/i18n/l10n_context.dart';
 
 /// Chat session list widget
 class ChatSessionList extends StatefulWidget {
@@ -105,14 +106,14 @@ class _ChatSessionListState extends State<ChatSessionList> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No conversations',
+              context.l10n.chatSessionConversations,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Create a new conversation to start chatting',
+              context.l10n.chatSessionCreateConversationStart,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -422,7 +423,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
       key: ValueKey<String>('chat_session_tile_${session.id}'),
       padding: EdgeInsets.symmetric(vertical: widget.verticalTilePadding),
       child: Semantics(
-        label: 'Chat session: ${session.title}',
+        label: context.l10n.chatSessionChatSessionSession(session.title ?? ''),
         selected: isSelected,
         child: Material(
           color: tileColor,
@@ -574,8 +575,8 @@ class _ChatSessionListState extends State<ChatSessionList> {
                       value: 'rename',
                       child: Row(
                         children: [
-                          Icon(Symbols.edit),
-                          SizedBox(width: 8),
+                          const Icon(Symbols.edit),
+                          const SizedBox(width: 8),
                           Text(context.l10n.sessionRename),
                         ],
                       ),
@@ -598,8 +599,8 @@ class _ChatSessionListState extends State<ChatSessionList> {
                         value: 'copy-link',
                         child: Row(
                           children: [
-                            Icon(Symbols.content_copy),
-                            SizedBox(width: 8),
+                            const Icon(Symbols.content_copy),
+                            const SizedBox(width: 8),
                             Text(context.l10n.sessionCopyLink),
                           ],
                         ),
@@ -622,8 +623,8 @@ class _ChatSessionListState extends State<ChatSessionList> {
                       value: 'fork',
                       child: Row(
                         children: [
-                          Icon(Symbols.call_split),
-                          SizedBox(width: 8),
+                          const Icon(Symbols.call_split),
+                          const SizedBox(width: 8),
                           Text(context.l10n.sessionFork),
                         ],
                       ),
@@ -632,11 +633,11 @@ class _ChatSessionListState extends State<ChatSessionList> {
                       value: 'delete',
                       child: Row(
                         children: [
-                          Icon(Symbols.delete, color: Colors.red),
-                          SizedBox(width: 8),
+                          const Icon(Symbols.delete, color: Colors.red),
+                          const SizedBox(width: 8),
                           Text(
                             context.l10n.sessionDelete,
-                            style: TextStyle(color: Colors.red),
+                            style: const TextStyle(color: Colors.red),
                           ),
                         ],
                       ),
@@ -798,7 +799,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
             autofocus: true,
             decoration: InputDecoration(
               hintText: context.l10n.sessionRenameHint,
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
             ),
           ),
           actions: [
@@ -838,7 +839,7 @@ class _ChatSessionListState extends State<ChatSessionList> {
     final nextAction = session.shared ? 'unshared' : 'shared';
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text('Conversation $nextAction')));
+    ).showSnackBar(SnackBar(content: Text(context.l10n.chatSessionConversationNextAction(nextAction))));
   }
 
   Future<void> _copyShareLink(BuildContext context, ChatSession session) async {

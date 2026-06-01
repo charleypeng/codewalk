@@ -172,9 +172,9 @@ class _MoonshineModelDownloadDialogState
         DropdownButtonFormField<String>(
           value: _selectedId,
           isExpanded: true,
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             labelText: 'Model size',
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
           ),
           items: _models
               .map(

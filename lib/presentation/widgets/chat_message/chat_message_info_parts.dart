@@ -122,8 +122,8 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
       return _buildInfoContainer(
         context,
         icon: Symbols.task,
-        title: 'Subtask (${part.agent})',
-        subtitle: '${part.description}$model',
+        title: context.l10n.msgInfoSubtaskPartAgent(part.agent),
+        subtitle: context.l10n.msgInfoPartDescriptionModel(part.description, model),
       );
     }
 
@@ -145,14 +145,14 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Subtask (${part.agent})',
+                  context.l10n.msgInfoSubtaskPartAgent(part.agent),
                   style: Theme.of(
                     context,
                   ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${part.description}$model',
+                  context.l10n.msgInfoPartDescriptionModel(part.description, model),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],

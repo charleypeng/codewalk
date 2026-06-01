@@ -65,7 +65,7 @@ class AppLocalizationsPt extends AppLocalizations {
       'Custom display name shown in conversations instead of the system username.';
 
   @override
-  String behaviorCutsAutomaticMobile(String inSeconds) {
+  String behaviorCutsAutomaticMobile(int inSeconds) {
     return 'Cuts automatic mobile-data usage by stopping background downloads and throttling automatic foreground refreshes to one burst every $inSeconds seconds.';
   }
 
@@ -330,7 +330,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get chatPageStatusUsage => 'Usage';
 
   @override
-  String chatPageStatusUsagePercent(String usagePercent) {
+  String chatPageStatusUsagePercent(int usagePercent) {
     return '$usagePercent';
   }
 
@@ -752,7 +752,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get logsSearch => 'Buscar logs';
 
   @override
-  String logsShowingOrderedLength(String length, String length2) {
+  String logsShowingOrderedLength(int length, int length2) {
     return 'Showing $length of $length2 entries';
   }
 
@@ -960,10 +960,7 @@ class AppLocalizationsPt extends AppLocalizations {
       'You are almost there. Install OpenCode first, then connect CodeWalk to the server URL.';
 
   @override
-  String onboardingAppProviderLocalSetupLogsLength(
-    String length,
-    String length2,
-  ) {
+  String onboardingAppProviderLocalSetupLogsLength(int length, int length2) {
     return '$length setup log lines and $length2 setup events are available in the separate setup debug screen.';
   }
 

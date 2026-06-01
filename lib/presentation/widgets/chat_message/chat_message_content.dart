@@ -106,7 +106,7 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
                             children: [
                               if (isUser) ...[
                                 Text(
-                                  'You',
+                                  context.l10n.chatMessageYou,
                                   style: Theme.of(context)
                                       .textTheme
                                       .labelMedium
@@ -215,7 +215,7 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Tooltip(
-                    message: 'Rewind and edit from here',
+                    message: context.l10n.chatMessageRewindEdit,
                     child: IconButton(
                       key: ValueKey<String>(
                         'chat_message_revert_button_${message.id}',
@@ -228,7 +228,7 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
                         minHeight: 48,
                       ),
                       splashRadius: 18,
-                      tooltip: 'Rewind and edit from here',
+                      tooltip: context.l10n.chatMessageRewindEdit,
                       onPressed: onInlineRevertToHere,
                     ),
                   ),
@@ -483,12 +483,12 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
           if (message.modelId != null)
             PopupMenuItem(
               enabled: false,
-              child: Text('Model: ${message.modelId}'),
+                  child: Text(context.l10n.chatMessageModelMessageModelId(message.modelId!)),
             ),
           if (message.providerId != null)
             PopupMenuItem(
               enabled: false,
-              child: Text('Provider: ${message.providerId}'),
+                  child: Text(context.l10n.chatMessageProviderMessageProviderId(message.providerId!)),
             ),
           if (message.tokens != null)
             PopupMenuItem(
@@ -526,9 +526,9 @@ extension _ChatMessageContentBuilder on _ChatMessageWidgetState {
 
         if (items.isEmpty) {
           items.add(
-            const PopupMenuItem(
+            PopupMenuItem(
               enabled: false,
-              child: Text('No metadata available'),
+              child: Text(context.l10n.chatMessageMetadataAvailable),
             ),
           );
         }

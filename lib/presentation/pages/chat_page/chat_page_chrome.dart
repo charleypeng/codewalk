@@ -12,7 +12,7 @@ extension _ChatPageChrome on _ChatPageState {
       _CurrentSessionAction.exportMarkdown => 'Export Markdown',
       _CurrentSessionAction.exportJson => 'Export debug JSON',
       _CurrentSessionAction.viewTasks => 'View tasks',
-      _CurrentSessionAction.reviewChanges => 'Review changes',
+      _CurrentSessionAction.reviewChanges => context.l10n.chatReviewChanges,
       _CurrentSessionAction.undo => context.l10n.chatUndoLastTurn,
       _CurrentSessionAction.redo => context.l10n.chatRedoLastTurn,
       _CurrentSessionAction.compactContext => 'Compact context',
@@ -306,7 +306,7 @@ extension _ChatPageChrome on _ChatPageState {
   List<Widget> _buildCurrentSessionTodoSection(ChatProvider chatProvider) {
     return <Widget>[
       Text(
-        'Tasks',
+        context.l10n.chatTasks,
         key: const ValueKey<String>('current_session_tasks_heading'),
         style: Theme.of(
           context,
@@ -315,7 +315,7 @@ extension _ChatPageChrome on _ChatPageState {
       const SizedBox(height: 8),
       if (chatProvider.currentSessionTodo.isEmpty)
         Text(
-          'No tasks are available for this session.',
+          context.l10n.chatTasksAvailableSession,
           style: Theme.of(context).textTheme.bodyMedium,
         )
       else
@@ -332,7 +332,7 @@ extension _ChatPageChrome on _ChatPageState {
   List<Widget> _buildCurrentSessionReviewSection(ChatProvider chatProvider) {
     return <Widget>[
       Text(
-        'Review changes',
+        context.l10n.chatReviewChanges,
         key: const ValueKey<String>('current_session_review_heading'),
         style: Theme.of(
           context,
@@ -341,7 +341,7 @@ extension _ChatPageChrome on _ChatPageState {
       const SizedBox(height: 8),
       if (chatProvider.currentSessionDiff.isEmpty)
         Text(
-          'No changed files are available for this session.',
+          context.l10n.chatChangedFilesAvailable,
           style: Theme.of(context).textTheme.bodyMedium,
         )
       else
@@ -375,7 +375,7 @@ extension _ChatPageChrome on _ChatPageState {
       _DisplayToggleAction.thinkingBubbles => 'Thinking bubbles',
       _DisplayToggleAction.toolCallBubbles => 'Tool call bubbles',
       _DisplayToggleAction.taskList => 'Task list',
-      _DisplayToggleAction.reviewChanges => 'Review changes',
+      _DisplayToggleAction.reviewChanges => context.l10n.chatReviewChanges,
       _DisplayToggleAction.recentSessions => context.l10n.chatRecentSessions,
       _DisplayToggleAction.composerTips => 'Composer tips',
       _DisplayToggleAction.replayTour =>
@@ -409,7 +409,7 @@ extension _ChatPageChrome on _ChatPageState {
                     ),
                   ),
                   Text(
-                    'Loading project context...',
+                    context.l10n.chatLoadingProjectContext,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -587,6 +587,7 @@ extension _ChatPageChrome on _ChatPageState {
                           ),
                         );
                         final sidebarTourCopy = postOnboardingSidebarTourCopy(
+                          context: context,
                           isMobile: true,
                           showConversationPane: false,
                         );
@@ -645,10 +646,12 @@ extension _ChatPageChrome on _ChatPageState {
                   showcaseKey: _desktopSidebarMenuTourKey,
                   targetKey: _desktopSidebarMenuTourTargetKey,
                   title: postOnboardingSidebarTourCopy(
+                    context: context,
                     isMobile: false,
                     showConversationPane: false,
                   ).title,
                   description: postOnboardingSidebarTourCopy(
+                    context: context,
                     isMobile: false,
                     showConversationPane: false,
                   ).description,
@@ -792,7 +795,7 @@ extension _ChatPageChrome on _ChatPageState {
                     PopupMenuItem<_DisplayToggleAction>(
                       enabled: false,
                       child: Text(
-                        'Display',
+                        context.l10n.chatDisplay,
                         style: Theme.of(context).textTheme.labelLarge,
                       ),
                     ),
@@ -899,7 +902,7 @@ extension _ChatPageChrome on _ChatPageState {
                       appProvider: appProvider,
                     );
                     return Tooltip(
-                      message: 'Sync: $label',
+                      message: context.l10n.chatSyncLabel(label),
                       child: Padding(
                         padding: EdgeInsets.only(
                           right: AppDensitySpacing.syncChipRightPadding(

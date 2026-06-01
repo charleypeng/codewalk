@@ -306,7 +306,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
                       controller: textController,
                       minLines: 2,
                       maxLines: 6,
-                      decoration: InputDecoration(labelText: 'Text'),
+                      decoration: const InputDecoration(labelText: 'Text'),
                     ),
                     const SizedBox(height: 12),
                     SwitchListTile(
@@ -461,7 +461,7 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
             ),
             if (items.isEmpty)
               Padding(
-                padding: EdgeInsets.fromLTRB(16, 12, 16, 16),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                 child: Text(context.l10n.composerCannedNoReplies),
               )
             else

@@ -222,7 +222,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Cuts automatic mobile-data usage by stopping background downloads and throttling automatic foreground refreshes to one burst every {inSeconds} seconds.'**
-  String behaviorCutsAutomaticMobile(String inSeconds);
+  String behaviorCutsAutomaticMobile(int inSeconds);
 
   /// CodeWalk UI string — behaviorDisabled
   ///
@@ -699,7 +699,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'{usagePercent}'**
-  String chatPageStatusUsagePercent(String usagePercent);
+  String chatPageStatusUsagePercent(int usagePercent);
 
   /// CodeWalk UI string — chatProjectContext
   ///
@@ -1455,7 +1455,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Showing {length} of {length2} entries'**
-  String logsShowingOrderedLength(String length, String length2);
+  String logsShowingOrderedLength(int length, int length2);
 
   /// CodeWalk UI string — logsTimeRange
   ///
@@ -1803,10 +1803,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'{length} setup log lines and {length2} setup events are available in the separate setup debug screen.'**
-  String onboardingAppProviderLocalSetupLogsLength(
-    String length,
-    String length2,
-  );
+  String onboardingAppProviderLocalSetupLogsLength(int length, int length2);
 
   /// CodeWalk UI string — onboardingAuthenticate
   ///

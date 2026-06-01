@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../core/i18n/l10n_context.dart';
 import '../../core/logging/app_logger.dart';
+import '../../../core/i18n/l10n_context.dart';
 
 enum _LogTimeRange {
   oneMinute(Duration(minutes: 1), '1m'),
@@ -72,7 +73,7 @@ class _LogsPageState extends State<LogsPage> {
                 ),
                 onChanged: (_) => setState(() {}),
               )
-            : const Text('App Logs'),
+            : Text(context.l10n.logsAppLogs),
         actions: [
           if (_searchEnabled)
             IconButton(
@@ -176,7 +177,7 @@ class _LogsPageState extends State<LogsPage> {
                   ),
                 ),
                 child: Text(
-                  'Showing ${ordered.length} of ${entries.length} entries',
+                  context.l10n.logsShowingOrderedLength(ordered.length, entries.length),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
@@ -208,7 +209,7 @@ class _LogsToolbar extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Time range', style: Theme.of(context).textTheme.labelLarge),
+          Text(context.l10n.logsTimeRange, style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 6),
           Wrap(
             spacing: 8,
@@ -224,7 +225,7 @@ class _LogsToolbar extends StatelessWidget {
                 .toList(growable: false),
           ),
           const SizedBox(height: 12),
-          Text('Level', style: Theme.of(context).textTheme.labelLarge),
+          Text(context.l10n.logsLevel, style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: 6),
           Wrap(
             spacing: 8,

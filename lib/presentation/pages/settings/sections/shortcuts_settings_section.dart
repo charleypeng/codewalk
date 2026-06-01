@@ -10,6 +10,7 @@ import '../../../../domain/entities/experience_settings.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../utils/shortcut_binding_codec.dart';
 import '../../../widgets/settings_provenance_chip.dart';
+import '../../../../../core/i18n/l10n_context.dart';
 
 class ShortcutsSettingsSection extends StatefulWidget {
   const ShortcutsSettingsSection({super.key});
@@ -54,12 +55,12 @@ class _ShortcutsSettingsSectionState extends State<ShortcutsSettingsSection> {
           padding: const EdgeInsets.all(AppConstants.defaultPadding),
           children: [
             Text(
-              'Keyboard shortcuts',
+              context.l10n.shortcutsKeyboardShortcuts,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
-              'Search, edit bindings, and resolve conflicts before saving.',
+              context.l10n.shortcutsSearchEditBindings,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
@@ -68,7 +69,7 @@ class _ShortcutsSettingsSectionState extends State<ShortcutsSettingsSection> {
             ),
             const SizedBox(height: 8),
             Text(
-              'These bindings are stored in CodeWalk for the current app runtime and do not edit OpenCode `tui.json` keybinds.',
+              context.l10n.shortcutsTheseBindingsStored,
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
@@ -95,7 +96,7 @@ class _ShortcutsSettingsSectionState extends State<ShortcutsSettingsSection> {
               child: TextButton.icon(
                 onPressed: () => settingsProvider.resetAllShortcuts(),
                 icon: const Icon(Symbols.restart_alt),
-                label: const Text('Reset all'),
+                label: Text(context.l10n.shortcutsReset),
               ),
             ),
             const SizedBox(height: 4),
@@ -176,7 +177,7 @@ class _ShortcutTile extends StatelessWidget {
             ),
             if (conflict != null)
               Text(
-                'Conflict with $conflict',
+                  context.l10n.shortcutsConflictConflict(conflict!),
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
           ],
@@ -231,7 +232,7 @@ class _ShortcutCaptureDialogState extends State<_ShortcutCaptureDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Set shortcut: ${widget.definition.label}'),
+      title: Text(context.l10n.shortcutsSetShortcutWidget(widget.definition.label)),
       content: SizedBox(
         width: 360,
         child: Focus(
@@ -265,13 +266,13 @@ class _ShortcutCaptureDialogState extends State<_ShortcutCaptureDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.serversCancel),
         ),
         FilledButton(
           onPressed: _captured == null
               ? null
               : () => Navigator.of(context).pop(_captured),
-          child: const Text('Apply'),
+          child: Text(context.l10n.shortcutsApply),
         ),
       ],
     );

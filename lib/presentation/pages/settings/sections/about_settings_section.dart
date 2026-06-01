@@ -13,6 +13,7 @@ import '../../../providers/app_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../services/update_check_service.dart';
 import '../../app_shell_page.dart';
+import '../../../../../core/i18n/l10n_context.dart';
 
 class AboutSettingsSection extends StatefulWidget {
   const AboutSettingsSection({super.key});
@@ -356,7 +357,7 @@ class _AboutSettingsSectionState extends State<AboutSettingsSection> {
   Widget _buildGitHubTile(BuildContext context) {
     return ListTile(
       leading: const Icon(Symbols.code),
-      title: const Text('GitHub'),
+      title: Text(context.l10n.aboutGitHub),
       subtitle: const Text('verseles/codewalk'),
       trailing: const Icon(Symbols.open_in_new, size: 16),
       onTap: () => _openUrl('https://github.com/verseles/codewalk'),

@@ -135,9 +135,13 @@ extension _ChatPageComposerStatus on _ChatPageState {
             ? _ComposerStatusPresentation.tip(
                 _ComposerStatusPresentation._receivingTips[_currentTipIndex],
               )
-            : const _ComposerStatusPresentation.receiving(),
+            : _ComposerStatusPresentation.receiving(
+                label: context.l10n.chatReasoning,
+              ),
       _AssistantProgressStage.retrying =>
-        const _ComposerStatusPresentation.retrying(),
+        _ComposerStatusPresentation.retrying(
+          label: context.l10n.chatRetryingModelRequest,
+        ),
     };
   }
 }

@@ -186,10 +186,10 @@ class AppTheme {
           ),
         ),
       ),
-      bottomSheetTheme: BottomSheetThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppShapes.extraLarge),
+      bottomSheetTheme: const BottomSheetThemeData(
+        shape: const RoundedRectangleBorder(
+          borderRadius: const BorderRadius.vertical(
+            top: const Radius.circular(AppShapes.extraLarge),
           ),
         ),
         showDragHandle: true,

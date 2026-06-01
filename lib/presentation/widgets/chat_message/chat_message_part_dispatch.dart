@@ -129,7 +129,7 @@ extension _ChatMessagePartDispatch on _ChatMessageWidgetState {
       return _buildInfoContainer(
         context,
         icon: Symbols.warning_amber_rounded,
-        title: 'Message part unavailable',
+        title: context.l10n.chatMessageMessagePartUnavailable,
         subtitle: 'Large or malformed content was skipped for stability.',
       );
     }
@@ -533,7 +533,7 @@ class _CollapsibleToolChain extends StatelessWidget {
                       color: colorScheme.onSurfaceVariant,
                     ),
                     label: Text(
-                      'Hide',
+                      context.l10n.chatMessageHide,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
@@ -610,7 +610,7 @@ class _CollapsibleToolChain extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  _expanded ? 'Hide' : (compactLayout ? 'Show' : 'Details'),
+                  _expanded ? context.l10n.chatMessageHide : (compactLayout ? 'Show' : 'Details'),
                 ),
               ),
             ],

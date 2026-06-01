@@ -17,6 +17,7 @@ import '../../../services/parakeet_model_manager.dart';
 import '../../../services/sensevoice_model_manager.dart';
 import '../../../services/sherpa_model_manager.dart';
 import '../../../widgets/searchable_dropdown_form_field.dart';
+import '../../../../../core/i18n/l10n_context.dart';
 
 class _SherpaModelEntry {
   const _SherpaModelEntry({
@@ -155,12 +156,12 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
           padding: const EdgeInsets.all(AppConstants.defaultPadding),
           children: [
             Text(
-              'Speech to text',
+              context.l10n.speechSpeechText,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
-              'Choose the recognition engine, silence timeout, and model options.',
+              context.l10n.speechChooseRecognitionEngine,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 16),
@@ -225,10 +226,10 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Engine', style: Theme.of(context).textTheme.titleMedium),
+            Text(context.l10n.speechEngine, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),
             Text(
-              'Native starts faster. Sherpa runs fully on-device with heavier setup and deeper model control.',
+              context.l10n.speechNativeStartsFaster,
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 10),
@@ -242,7 +243,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                       unawaited(settingsProvider.setSpeechToTextEngine(value));
                     }
                   : null,
-              title: const Text('Native'),
+              title: Text(context.l10n.speechNative),
               subtitle: Text(
                 nativeEnabled
                     ? 'Simpler and faster startup.'
@@ -263,7 +264,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Native STT is disabled on Linux in this app. Parakeet is the default engine for new installs.',
+                        context.l10n.speechNativeSTTDisabled,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
@@ -284,7 +285,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Native STT works on Windows when OS speech services are enabled. If native initialization fails, CodeWalk automatically falls back to Sherpa. Check Windows microphone privacy, Online speech recognition, and installed speech language packs.',
+                        context.l10n.speechNativeSTTWorks,
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
@@ -302,7 +303,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                       unawaited(settingsProvider.setSpeechToTextEngine(value));
                     }
                   : null,
-              title: const Text('Sherpa'),
+              title: Text(context.l10n.speechSherpa),
               subtitle: Text(
                 sherpaEnabled
                     ? 'Heavier, experimental, and bug-prone. Often more precise with downloaded models.'
@@ -322,7 +323,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Sherpa is experimental and can fail on some devices. Prefer Native if you want the most stable behavior.',
+                      context.l10n.speechSherpaExperimentalFail,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
@@ -340,7 +341,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                       unawaited(settingsProvider.setSpeechToTextEngine(value));
                     }
                   : null,
-              title: const Text('Moonshine'),
+              title: Text(context.l10n.speechMoonshine),
               subtitle: Text(
                 moonshineEnabled
                     ? 'Desktop-only experimental path using sherpa_onnx offline recognition and downloadable models.'
@@ -358,7 +359,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                       unawaited(settingsProvider.setSpeechToTextEngine(value));
                     }
                   : null,
-              title: const Text('Parakeet'),
+              title: Text(context.l10n.speechParakeet),
               subtitle: Text(
                 parakeetEnabled
                     ? 'Desktop-only offline NeMo transducer path with one multilingual downloadable model.'
@@ -376,7 +377,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                       unawaited(settingsProvider.setSpeechToTextEngine(value));
                     }
                   : null,
-              title: const Text('SenseVoice'),
+              title: Text(context.l10n.speechSenseVoice),
               subtitle: Text(
                 senseVoiceEnabled
                     ? 'Desktop-only offline path tuned for Chinese, Cantonese, Japanese, Korean, and English.'
@@ -400,7 +401,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Select Sherpa above to manage language packs and download models.',
+                context.l10n.speechSelectSherpaAbove,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -421,12 +422,12 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Auto-stop silence timeout',
+              context.l10n.speechAutoStopSilence,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 4),
             Text(
-              'Listening stops automatically after this many seconds of silence.',
+              context.l10n.speechListeningStopsAutomatically,
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 8),
@@ -481,12 +482,12 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Moonshine models (desktop)',
+              context.l10n.speechMoonshineModelsDesktop,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 4),
             Text(
-              'Moonshine stays downloadable and out of the app bundle. Pick one model for this desktop device and remove it later if you want the space back.',
+              context.l10n.speechMoonshineStaysDownloadable,
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
@@ -550,7 +551,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                         ? null
                         : () => unawaited(_downloadMoonshineModel(selectedId)),
                     icon: const Icon(Symbols.download_rounded),
-                    label: const Text('Download'),
+                    label: Text(context.l10n.speechDownload),
                   ),
                   const SizedBox(width: 8),
                   OutlinedButton.icon(
@@ -558,7 +559,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                         ? null
                         : () => unawaited(_deleteMoonshineModel(selectedId)),
                     icon: const Icon(Symbols.delete_outline),
-                    label: const Text('Remove'),
+                    label: Text(context.l10n.speechRemove),
                   ),
                   const SizedBox(width: 8),
                   IconButton(
@@ -612,12 +613,12 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Parakeet models (desktop)',
+              context.l10n.speechParakeetModelsDesktop,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 4),
             Text(
-              'Parakeet stays downloadable and out of the app bundle. It currently exposes one multilingual model optimized for 25 European languages.',
+              context.l10n.speechParakeetStaysDownloadable,
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
@@ -681,7 +682,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                         ? null
                         : () => unawaited(_downloadParakeetModel(selectedId)),
                     icon: const Icon(Symbols.download_rounded),
-                    label: const Text('Download'),
+                    label: Text(context.l10n.speechDownload),
                   ),
                   const SizedBox(width: 8),
                   OutlinedButton.icon(
@@ -689,7 +690,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                         ? null
                         : () => unawaited(_deleteParakeetModel(selectedId)),
                     icon: const Icon(Symbols.delete_outline),
-                    label: const Text('Remove'),
+                    label: Text(context.l10n.speechRemove),
                   ),
                   const SizedBox(width: 8),
                   IconButton(
@@ -743,12 +744,12 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'SenseVoice models (desktop)',
+              context.l10n.speechSenseVoiceModelsDesktop,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 4),
             Text(
-              'SenseVoice stays downloadable and out of the app bundle. It is the strongest desktop option here for Chinese, Cantonese, Japanese, Korean, and English.',
+              context.l10n.speechSenseVoiceStaysDownloadable,
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
@@ -812,7 +813,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                         ? null
                         : () => unawaited(_downloadSenseVoiceModel(selectedId)),
                     icon: const Icon(Symbols.download_rounded),
-                    label: const Text('Download'),
+                    label: Text(context.l10n.speechDownload),
                   ),
                   const SizedBox(width: 8),
                   OutlinedButton.icon(
@@ -820,7 +821,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                         ? null
                         : () => unawaited(_deleteSenseVoiceModel(selectedId)),
                     icon: const Icon(Symbols.delete_outline),
-                    label: const Text('Remove'),
+                    label: Text(context.l10n.speechRemove),
                   ),
                   const SizedBox(width: 8),
                   IconButton(
@@ -879,12 +880,12 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Sherpa models (Linux)',
+              context.l10n.speechSherpaModelsLinux,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 4),
             Text(
-              'Pick language packs and download/remove models for on-device recognition.',
+              context.l10n.speechPickLanguagePacks,
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
@@ -972,7 +973,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                         ? null
                         : () => unawaited(_downloadModel(effectiveCode)),
                     icon: const Icon(Symbols.download_rounded),
-                    label: const Text('Download'),
+                    label: Text(context.l10n.speechDownload),
                   ),
                   const SizedBox(width: 8),
                   OutlinedButton.icon(
@@ -980,7 +981,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
                         ? null
                         : () => unawaited(_deleteModel(effectiveCode)),
                     icon: const Icon(Symbols.delete_outline),
-                    label: const Text('Remove'),
+                    label: Text(context.l10n.speechRemove),
                   ),
                   const SizedBox(width: 8),
                   IconButton(
@@ -1008,7 +1009,7 @@ class _SpeechSettingsSectionState extends State<SpeechSettingsSection> {
               if (installedLabels.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Text(
-                  'Installed languages',
+                  context.l10n.speechInstalledLanguages,
                   style: Theme.of(context).textTheme.labelLarge,
                 ),
                 const SizedBox(height: 6),

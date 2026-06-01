@@ -18,6 +18,7 @@ import '../utils/app_page_route.dart';
 import '../widgets/modal_primary_action_shortcuts.dart';
 import 'opencode_setup_debug_page.dart';
 import 'settings/sections/servers_settings_section.dart';
+import '../../../core/i18n/l10n_context.dart';
 
 enum SetupWizardInitialFlow {
   choose,
@@ -185,13 +186,13 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
               autofocus: true,
               onPrimaryAction: submitSkip,
               child: AlertDialog(
-                title: const Text('Skip setup?'),
+                title: Text(context.l10n.onboardingSkipSetup),
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'You can add a server later in Settings > Servers.',
+                    Text(
+                      context.l10n.onboardingAddServerLater,
                     ),
                     const SizedBox(height: 12),
                     CheckboxListTile(
@@ -203,7 +204,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                       },
                       contentPadding: EdgeInsets.zero,
                       controlAffinity: ListTileControlAffinity.leading,
-                      title: const Text("Don't show again"),
+                      title: Text(context.l10n.onboardingDonShowAgain),
                     ),
                   ],
                 ),
@@ -572,7 +573,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
     return switch (_step) {
       0 => widget.showSkipAction ? 'Setup' : 'Setup wizard',
       1 => _editingServerId == null ? 'Server setup' : 'Edit server',
-      2 => _connectionSuccess ? 'Ready' : 'Connection issue',
+      2 => _connectionSuccess ? 'Ready' : context.l10n.onboardingConnectionIssue,
       3 => 'Local server setup',
       _ => 'Setup',
     };
@@ -633,13 +634,13 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
               ),
               childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               leading: Icon(Symbols.info_rounded, color: colorScheme.primary),
-              title: const Text('What is OpenCode?'),
-              subtitle: const Text(
-                'CodeWalk is the app. OpenCode is the engine it connects to.',
+              title: Text(context.l10n.onboardingOpenCode),
+              subtitle: Text(
+                context.l10n.onboardingCodeWalkAppOpenCode,
               ),
               children: [
                 Text(
-                  'OpenCode runs locally or on a server and powers the AI coding features inside CodeWalk. If OpenCode is already running, connect to it. If not, pick one of the guided setup paths below.',
+                  context.l10n.onboardingOpenCodeRunsLocally,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],
@@ -667,7 +668,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Connect to a running server',
+                              context.l10n.onboardingConnectRunningServer,
                               style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(
                                     color: colorScheme.onPrimaryContainer,
@@ -675,7 +676,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'I already have OpenCode running on this device or somewhere on my network.',
+                              context.l10n.onboardingOpenCodeRunningDevice,
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
                                     color: colorScheme.onPrimaryContainer,
@@ -720,13 +721,13 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Show me the setup steps',
+                              context.l10n.onboardingShowSetupSteps,
                               style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(color: colorScheme.onSurface),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Explain how to install OpenCode, start the server, and then connect from CodeWalk.',
+                              context.l10n.onboardingExplainInstallOpenCode,
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
                                     color: colorScheme.onSurfaceVariant,
@@ -775,7 +776,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Let CodeWalk set it up locally',
+                              context.l10n.onboardingLetCodeWalkSet,
                               style: Theme.of(context).textTheme.titleMedium
                                   ?.copyWith(color: colorScheme.onSurface),
                             ),
@@ -801,7 +802,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: Text(
-                                  'Good first option on desktop',
+                                  context.l10n.onboardingGoodOptionDesktop,
                                   style: Theme.of(context).textTheme.labelSmall,
                                 ),
                               ),
@@ -844,13 +845,13 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                 });
               },
               icon: const Icon(Symbols.chevron_left_rounded),
-              label: const Text('Choose another path'),
+              label: Text(context.l10n.onboardingChooseAnotherPath),
             ),
           ),
           const SizedBox(height: 4),
           if (_showQuickGuide) ...[
             Text(
-              'You are almost there. Install OpenCode first, then connect CodeWalk to the server URL.',
+              context.l10n.onboardingAlmostInstallOpenCode,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
@@ -866,7 +867,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                       _showQuickGuide = false;
                     });
                   },
-                  child: const Text('Continue to server URL'),
+                  child: Text(context.l10n.onboardingContinueServerURL),
                 ),
                 TextButton.icon(
                   key: const ValueKey(
@@ -874,7 +875,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                   ),
                   onPressed: _openSetupDebugPage,
                   icon: const Icon(Symbols.bug_report_rounded),
-                  label: const Text('View setup debug'),
+                  label: Text(context.l10n.onboardingViewSetupDebug),
                 ),
               ],
             ),
@@ -898,9 +899,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                 ),
                 childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 leading: const Icon(Symbols.info_rounded),
-                title: const Text('Connection tips'),
-                subtitle: const Text(
-                  'Default URL, emulator loopback, auth, and debug help.',
+                title: Text(context.l10n.onboardingConnectionTips),
+                subtitle: Text(
+                  context.l10n.onboardingDefaultURLEmulator,
                 ),
                 children: [
                   _buildSetupHintRow(
@@ -934,7 +935,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                   ),
                   onPressed: _openSetupDebugPage,
                   icon: const Icon(Symbols.bug_report_rounded),
-                  label: const Text('View setup debug'),
+                  label: Text(context.l10n.onboardingViewSetupDebug),
                 ),
                 TextButton.icon(
                   key: const ValueKey('show_setup_steps_button_server_form'),
@@ -944,7 +945,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                     });
                   },
                   icon: const Icon(Symbols.menu_book_rounded),
-                  label: const Text('Show setup steps'),
+                  label: Text(context.l10n.onboardingShowSetupSteps2),
                 ),
               ],
             ),
@@ -1085,9 +1086,9 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                         });
                       },
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('AI generated titles'),
-                      subtitle: const Text(
-                        "Uses your server's title agent to name conversations",
+                      title: Text(context.l10n.onboardingAIGeneratedTitles),
+                      subtitle: Text(
+                        context.l10n.onboardingUsesServerTitle,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -1208,22 +1209,22 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                           if (!mounted) return;
                           if (!ok) {
                             messenger.showSnackBar(
-                              const SnackBar(
+                              SnackBar(
                                 content: Text(
-                                  'Could not open Tailscale login URL.',
+                                  context.l10n.onboardingOpenTailscaleLogin,
                                 ),
                               ),
                             );
                           }
                         },
                         icon: const Icon(Symbols.open_in_browser_rounded),
-                        label: const Text('Authenticate'),
+                        label: Text(context.l10n.onboardingAuthenticate),
                       ),
                       if (authUrl != null)
                         OutlinedButton.icon(
                           onPressed: () => _copyToClipboard(authUrl),
                           icon: const Icon(Symbols.content_copy_rounded),
-                          label: const Text('Copy login URL'),
+                          label: Text(context.l10n.onboardingCopyLoginURL),
                         ),
                     ],
                   ),
@@ -1311,7 +1312,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         final isRunning = status == LocalServerRuntimeStatus.running;
 
         final (statusColor, statusLabel) = switch (status) {
-          LocalServerRuntimeStatus.running => (Colors.green, 'Running'),
+          LocalServerRuntimeStatus.running => (Colors.green, context.l10n.toolPresentationRunning),
           LocalServerRuntimeStatus.starting => (Colors.orange, 'Starting'),
           LocalServerRuntimeStatus.stopping => (Colors.orange, 'Stopping'),
           LocalServerRuntimeStatus.failed => (Colors.red, 'Failed'),
@@ -1332,16 +1333,16 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                     });
                   },
                   icon: const Icon(Symbols.chevron_left_rounded),
-                  label: const Text('Choose another path'),
+                  label: Text(context.l10n.onboardingChooseAnotherPath),
                 ),
               ),
               Text(
-                'Managed local server',
+                context.l10n.onboardingManagedLocalServer,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 6),
               Text(
-                'Install and run OpenCode directly from CodeWalk on desktop.',
+                context.l10n.onboardingInstallRunOpenCode,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
@@ -1377,7 +1378,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
               if (appProvider.localServerLastOutput.trim().isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Text(
-                  'Latest output: ${appProvider.localServerLastOutput}',
+                  context.l10n.onboardingLatestOutputAppProvider(appProvider.localServerLastOutput),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall,
@@ -1387,10 +1388,10 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
               if (!supported)
                 Card(
                   color: Theme.of(context).colorScheme.surfaceContainer,
-                  child: const Padding(
-                    padding: EdgeInsets.all(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
                     child: Text(
-                      'Managed local server mode is available only on desktop builds (Linux/macOS/Windows).',
+                      context.l10n.onboardingManagedLocalServer2,
                     ),
                   ),
                 )
@@ -1401,18 +1402,18 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                     child: Center(child: CircularProgressIndicator()),
                   )
                 else ...[
-                  _buildDiagnosticRow('Platform', report.platform),
-                  _buildToolStatusRow('OpenCode', report.opencode),
-                  _buildToolStatusRow('Node.js', report.node),
-                  _buildToolStatusRow('npm', report.npm),
-                  _buildToolStatusRow('Bun', report.bun),
-                  _buildToolStatusRow('WSL', report.wsl),
+                  _buildDiagnosticRow(context.l10n.setupDebugPlatform2, report.platform),
+                  _buildToolStatusRow(context.l10n.setupDebugOpenCode2, report.opencode),
+                  _buildToolStatusRow(context.l10n.setupDebugNode, report.node),
+                  _buildToolStatusRow(context.l10n.setupDebugNpm2, report.npm),
+                  _buildToolStatusRow(context.l10n.setupDebugBun2, report.bun),
+                  _buildToolStatusRow(context.l10n.setupDebugWSL, report.wsl),
                   _buildDiagnosticRow(
-                    'Network',
+                    context.l10n.setupDebugNetwork2,
                     report.hasNetworkAccess ? 'reachable' : 'unreachable',
                   ),
                   _buildDiagnosticRow(
-                    'Install directory',
+                    context.l10n.setupDebugInstallDirectory,
                     report.installDirectoryWritable
                         ? 'writable'
                         : 'not writable',
@@ -1426,7 +1427,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                       defaultTargetPlatform == TargetPlatform.windows) ...[
                     const SizedBox(height: 6),
                     Text(
-                      'Windows tip: after installing, click Refresh Checks. If detection still fails, reopen CodeWalk to reload PATH changes.',
+                      context.l10n.onboardingWindowsTipInstalling,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -1435,7 +1436,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                 ],
                 const SizedBox(height: 12),
                 Text(
-                  'Recommended order: try Install Bun + OpenCode if you want CodeWalk to bootstrap everything for you. Use Existing if OpenCode is already installed.',
+                  context.l10n.onboardingRecommendedOrderTry,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 12),
@@ -1448,7 +1449,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                           ? null
                           : () => _runLocalDiagnostics(),
                       icon: const Icon(Symbols.refresh_rounded),
-                      label: const Text('Refresh Checks'),
+                      label: Text(context.l10n.onboardingRefreshChecks),
                     ),
                     OutlinedButton.icon(
                       onPressed:
@@ -1464,7 +1465,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                               _showMessage('Using detected OpenCode command.');
                             },
                       icon: const Icon(Symbols.check_circle_outline),
-                      label: const Text('Use Existing'),
+                      label: Text(context.l10n.onboardingExisting),
                     ),
                     FilledButton.icon(
                       onPressed: setupBusy
@@ -1480,7 +1481,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                               }
                             },
                       icon: const Icon(Symbols.rocket_launch),
-                      label: const Text('Install Bun + OpenCode'),
+                      label: Text(context.l10n.onboardingInstallBunOpenCode),
                     ),
                     OutlinedButton.icon(
                       onPressed: setupBusy
@@ -1495,7 +1496,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                               }
                             },
                       icon: const Icon(Symbols.bolt),
-                      label: const Text('Install via Bun'),
+                      label: Text(context.l10n.onboardingInstallBun),
                     ),
                     OutlinedButton.icon(
                       onPressed: setupBusy
@@ -1510,7 +1511,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                               }
                             },
                       icon: const Icon(Symbols.inventory_2),
-                      label: const Text('Install via npm'),
+                      label: Text(context.l10n.onboardingInstallNpm),
                     ),
                     OutlinedButton.icon(
                       onPressed: setupBusy
@@ -1525,7 +1526,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                               }
                             },
                       icon: const Icon(Symbols.download_for_offline),
-                      label: const Text('Install Binary'),
+                      label: Text(context.l10n.onboardingInstallBinary),
                     ),
                   ],
                 ),
@@ -1544,7 +1545,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                               }
                             },
                       icon: const Icon(Symbols.play_arrow_rounded),
-                      label: const Text('Start'),
+                      label: Text(context.l10n.onboardingStart),
                     ),
                     OutlinedButton.icon(
                       onPressed: (isBusy || !isRunning)
@@ -1556,7 +1557,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                               }
                             },
                       icon: const Icon(Symbols.stop_rounded),
-                      label: const Text('Stop'),
+                      label: Text(context.l10n.onboardingStop),
                     ),
                   ],
                 ),
@@ -1567,7 +1568,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                     key: const ValueKey('open_code_setup_debug_button_local'),
                     onPressed: _openSetupDebugPage,
                     icon: const Icon(Symbols.bug_report_rounded),
-                    label: const Text('View setup debug'),
+                    label: Text(context.l10n.onboardingViewSetupDebug),
                   ),
                 ),
               ],
@@ -1593,12 +1594,12 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Detailed setup events were captured for troubleshooting.',
+                          context.l10n.onboardingDetailedSetupEvents,
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          '${appProvider.localSetupLogs.length} setup log lines and ${appProvider.setupDebugEntries.length} setup events are available in the separate setup debug screen.',
+                          context.l10n.onboardingAppProviderLocalSetupLogsLength(appProvider.localSetupLogs.length, appProvider.setupDebugEntries.length),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
@@ -1723,7 +1724,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
               });
             },
             icon: const Icon(Symbols.swap_horiz_rounded),
-            label: const Text('Choose another path'),
+            label: Text(context.l10n.onboardingChooseAnotherPath),
           ),
         ],
       );
@@ -1737,7 +1738,7 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
         Icon(Symbols.warning_amber_rounded, size: 72, color: colorScheme.error),
         const SizedBox(height: 24),
         Text(
-          'Connection issue',
+          context.l10n.onboardingConnectionIssue,
           style: Theme.of(context).textTheme.headlineSmall,
           textAlign: TextAlign.center,
         ),
@@ -1771,19 +1772,19 @@ class _OnboardingWizardPageState extends State<OnboardingWizardPage> {
             });
           },
           icon: const Icon(Symbols.swap_horiz_rounded),
-          label: const Text('Choose another path'),
+          label: Text(context.l10n.onboardingChooseAnotherPath),
         ),
         const SizedBox(height: 12),
         TextButton.icon(
           key: const ValueKey('open_code_setup_debug_button_failed'),
           onPressed: _openSetupDebugPage,
           icon: const Icon(Symbols.bug_report_rounded),
-          label: const Text('View setup debug'),
+          label: Text(context.l10n.onboardingViewSetupDebug),
         ),
         const SizedBox(height: 12),
         OutlinedButton(
           onPressed: () => unawaited(_complete()),
-          child: const Text('Skip for now'),
+          child: Text(context.l10n.onboardingSkip),
         ),
       ],
     );

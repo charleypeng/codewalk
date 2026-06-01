@@ -171,9 +171,9 @@ class _SenseVoiceModelDownloadDialogState
         DropdownButtonFormField<String>(
           value: _selectedId,
           isExpanded: true,
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             labelText: 'SenseVoice model',
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
           ),
           items: _models
               .map(

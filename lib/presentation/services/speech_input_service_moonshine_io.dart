@@ -164,8 +164,8 @@ class MoonshineSpeechInputService implements SpeechInputService {
     _isListening = true;
     onStatus('listening');
 
-    final timeout = pauseFor ?? const Duration(seconds: 5);
-    final maxUtteranceDuration = const Duration(seconds: 15);
+  final timeout = pauseFor ?? const Duration(seconds: 5);
+  const maxUtteranceDuration = Duration(seconds: 15);
     final buffer = MoonshineAudioBuffer();
     Timer? silenceTimer;
     Timer? maxDurationTimer;

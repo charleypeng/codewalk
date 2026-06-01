@@ -74,7 +74,7 @@
     "description": "CodeWalk UI string — behaviorCutsAutomaticMobile",
     "placeholders": {
       "inSeconds": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
@@ -418,7 +418,7 @@
     "description": "CodeWalk UI string — chatPageStatusUsagePercent",
     "placeholders": {
       "usagePercent": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
@@ -995,10 +995,10 @@
     "description": "CodeWalk UI string — logsShowingOrderedLength",
     "placeholders": {
       "length": {
-        "type": "String"
+        "type": "int"
       },
       "length2": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
@@ -1278,10 +1278,10 @@
     "description": "CodeWalk UI string — onboardingAppProviderLocalSetupLogsLength",
     "placeholders": {
       "length": {
-        "type": "String"
+        "type": "int"
       },
       "length2": {
-        "type": "String"
+        "type": "int"
       }
     }
   },
