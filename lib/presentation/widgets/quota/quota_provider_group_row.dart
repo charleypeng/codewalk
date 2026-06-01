@@ -22,6 +22,14 @@ class _QuotaProviderGroupRowState extends State<QuotaProviderGroupRow> {
   }
 
   @override
+  void didUpdateWidget(covariant QuotaProviderGroupRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.group.providerId != widget.group.providerId) {
+      _expanded = widget.group.providerId == 'codex';
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (!widget.group.canExpand) {
       if (widget.group.providerId == 'codex') {
