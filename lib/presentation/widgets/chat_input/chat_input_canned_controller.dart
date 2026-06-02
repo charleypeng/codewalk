@@ -289,7 +289,9 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
           builder: (context, setDialogState) {
             return AlertDialog(
               title: Text(
-                initial == null ? 'Add canned answer' : 'Edit canned answer',
+                initial == null
+                    ? context.l10n.cannedAddTitle
+                    : context.l10n.cannedEditTitle,
               ),
               content: SingleChildScrollView(
                 child: Column(
@@ -306,14 +308,14 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
                       controller: textController,
                       minLines: 2,
                       maxLines: 6,
-                      decoration: const InputDecoration(labelText: 'Text'),
+                      decoration: InputDecoration(
+                        labelText: context.l10n.cannedTextLabel,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     SwitchListTile(
                       title: Text(context.l10n.composerCannedAppendAtCursor),
-                      subtitle: const Text(
-                        'Off means replace current composer text',
-                      ),
+                      subtitle: Text(context.l10n.cannedAppendAtCursorSubtitle),
                       value: insertMode == CannedAnswerInsertMode.append,
                       onChanged: (enabled) {
                         setDialogState(() {
@@ -325,9 +327,8 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
                     ),
                     SwitchListTile(
                       title: Text(context.l10n.composerCannedSendAutomatically),
-                      subtitle: const Text(
-                        'Send immediately after inserting this quick reply',
-                      ),
+                      subtitle:
+                          Text(context.l10n.cannedSendAutomaticallySubtitle),
                       value: sendAutomatically,
                       onChanged: (enabled) {
                         setDialogState(() {
@@ -339,8 +340,8 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
                       title: Text(context.l10n.composerCannedScopeGlobal),
                       subtitle: Text(
                         isProjectScopeAvailable
-                            ? 'Disable for project-only item'
-                            : 'Project-only unavailable in current context',
+                            ? context.l10n.cannedScopeGlobalSubtitle
+                            : context.l10n.cannedScopeGlobalUnavailableSubtitle,
                       ),
                       value: scopeMode == CannedAnswerScopeMode.global,
                       onChanged: isProjectScopeAvailable
@@ -441,13 +442,13 @@ extension _ChatInputCannedController on _ChatInputWidgetState {
                 children: [
                   _buildExtrasActionChip(
                     icon: Symbols.edit_note_rounded,
-                    label: 'New quick reply',
+                    label: context.l10n.cannedNewQuickReply,
                     onPressed: () =>
                         unawaited(_openQuickReplyCreatorFromExtras()),
                   ),
                   _buildExtrasActionChip(
                     icon: Symbols.attach_file_rounded,
-                    label: 'Attach files',
+                    label: context.l10n.composerAttachFiles,
                     onPressed: _canOpenAttachmentOptions
                         ? _openAttachmentOptionsFromExtras
                         : null,

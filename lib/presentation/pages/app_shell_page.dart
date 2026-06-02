@@ -261,8 +261,8 @@ class _AppShellPageState extends State<AppShellPage> {
       SnackBar(
         content: Text(
           isDesktop
-              ? 'Update installed. Restart is required to apply the new version.'
-              : 'Update installed. Restart the app to apply.',
+              ? context.l10n.appShellUpdateInstalledRestartRequired
+              : context.l10n.appShellUpdateInstalledRestartApp,
         ),
         duration: const Duration(seconds: 10),
         action: isDesktop

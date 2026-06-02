@@ -271,6 +271,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     final attachmentsEnabled = supportsImages || supportsPdf;
     final appProvider = context.watch<AppProvider>();
     final composerBlockReason = _resolveComposerBlockReason(
+      context: context,
       chatProvider: chatProvider,
       appProvider: appProvider,
     );
@@ -801,7 +802,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
   Future<void> _returnToMainConversation(ChatProvider chatProvider) async {
     final mainConversation = _resolveMainConversation(chatProvider);
     if (mainConversation == null) {
-      _showSubConversationNotice('Main conversation is not available yet.');
+      _showSubConversationNotice(context.l10n.chatMainConversationUnavailable);
       return;
     }
     if (chatProvider.currentSession?.id == mainConversation.id) {
@@ -879,7 +880,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
             stackTrace: stackTrace,
           );
           _showSubConversationNotice(
-            'Failed to refresh sub-conversations. Please try again.',
+            context.l10n.chatFailedToRefreshSubConversations,
           );
           return;
         }
@@ -888,7 +889,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     }
 
     if (target == null) {
-      _showSubConversationNotice('No sub-conversation found for this task.');
+      _showSubConversationNotice(context.l10n.chatNoSubConversationFound);
       return;
     }
     if (chatProvider.currentSession?.id == target.id) {
@@ -1224,8 +1225,10 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     }
 
     if (chatProvider.state == ChatState.error &&
-        chatProvider.currentSession == null) {
-      final rawErrorMessage = chatProvider.errorMessage ?? 'An error occurred';
+        chatProvider.currentSession != null &&
+        chatProvider.messages.isEmpty) {
+      final rawErrorMessage =
+          chatProvider.errorMessage ?? context.l10n.errorAnErrorOccurred;
       if (!_shouldInlineOfflineComposerBlock(
         chatProvider: chatProvider,
         appProvider: appProvider,
@@ -1261,9 +1264,10 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
     }
 
     if (chatProvider.state == ChatState.error &&
-        chatProvider.currentSession != null &&
-        chatProvider.messages.isEmpty) {
-      final rawErrorMessage = chatProvider.errorMessage ?? 'An error occurred';
+        chatProvider.messages.isEmpty &&
+        chatProvider.currentSession == null) {
+      final rawErrorMessage =
+          chatProvider.errorMessage ?? context.l10n.errorAnErrorOccurred;
       if (!_shouldInlineOfflineComposerBlock(
         chatProvider: chatProvider,
         appProvider: appProvider,
@@ -1285,7 +1289,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Could not refresh this conversation',
+                      context.l10n.chatCouldNotRefreshSession,
                       style: Theme.of(context).textTheme.titleMedium,
                       textAlign: TextAlign.center,
                     ),
@@ -1442,7 +1446,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
               ),
               const SizedBox(height: 8),
               Text(
-                'How can I help you?',
+                context.l10n.chatWelcomeSubmessage,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -1593,6 +1597,7 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
   }
 
   String? _resolveComposerBlockReason({
+    required BuildContext context,
     required ChatProvider chatProvider,
     required AppProvider appProvider,
   }) {
@@ -1604,19 +1609,18 @@ extension _ChatPageTimelineBuilder on _ChatPageState {
       return null;
     }
 
-    final hasChatError = chatProvider.state == ChatState.error;
     if (_hasConfirmedOfflineComposerBlock(
       chatProvider: chatProvider,
       appProvider: appProvider,
     )) {
-      return 'Waiting for network connection...';
+      return context.l10n.chatWaitingForNetworkConnection;
     }
 
     if (_hasConfirmedUnhealthyServerBlock(
       chatProvider: chatProvider,
       appProvider: appProvider,
     )) {
-      return 'Active server is unhealthy';
+      return context.l10n.chatActiveServerUnhealthyLabel;
     }
 
     return null;

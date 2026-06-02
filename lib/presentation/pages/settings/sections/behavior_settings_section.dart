@@ -262,12 +262,12 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                   modelOptions.map((option) => option.key),
                 ),
                 decoration: InputDecoration(
-                  labelText: 'Default model',
+                  labelText: context.l10n.settingsDefaultModel,
                   border: const OutlineInputBorder(),
                   helperText: context.l10n.behaviorSharedAcrossOpenCode,
                 ),
                 isExpanded: true,
-                searchHintText: 'Search default model',
+                searchHintText: context.l10n.settingsSearchDefaultModel,
                 emptyText: context.l10n.modelModelsFound,
                 searchTermsBuilder: (value) =>
                     _modelSearchTerms(modelOptions, value),
@@ -302,14 +302,14 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                   agentOptions,
                 ),
                 decoration: InputDecoration(
-                  labelText: 'Default agent',
+                  labelText: context.l10n.settingsDefaultAgent,
                   border: const OutlineInputBorder(),
                   helperText:
                       context.l10n.behaviorPrimaryAgentAgent,
                 ),
                 isExpanded: true,
-                searchHintText: 'Search default agent',
-                emptyText: 'No agents found',
+                searchHintText: context.l10n.settingsSearchDefaultAgent,
+                emptyText: context.l10n.settingsNoAgentsFound,
                 searchTermsBuilder: (value) => <String>[value],
                 items: agentOptions
                     .map(
@@ -337,7 +337,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                 focusNode: _usernameFocusNode,
                 textInputAction: TextInputAction.done,
                 decoration: InputDecoration(
-                  labelText: 'Conversation username',
+                  labelText: context.l10n.settingsConversationUsername,
                   border: const OutlineInputBorder(),
                   helperText:
                       context.l10n.behaviorCustomDisplayName,
@@ -361,8 +361,8 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
               const SizedBox(height: 8),
               Text(
                 username == null
-                    ? 'OpenCode uses the system username because `username` is unset.'
-                    : 'Resetting `username` back to the system default still requires editing config outside the app because `/config` patch updates cannot remove keys.',
+                    ? context.l10n.settingsUsernameUnsetExplanation
+                    : context.l10n.settingsUsernameResetExplanation,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
@@ -393,13 +393,13 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                 ),
                 hint: Text(context.l10n.behaviorAutomaticFallback),
                 decoration: InputDecoration(
-                  labelText: 'Small model',
+                  labelText: context.l10n.settingsSmallModel,
                   border: const OutlineInputBorder(),
                   helperText:
                       context.l10n.behaviorLightweightTasksLike,
                 ),
                 isExpanded: true,
-                searchHintText: 'Search small model',
+                searchHintText: context.l10n.settingsSearchSmallModel,
                 emptyText: context.l10n.modelModelsFound,
                 searchTermsBuilder: (value) =>
                     _modelSearchTerms(modelOptions, value),
@@ -429,8 +429,8 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
               const SizedBox(height: 8),
               Text(
                 smallModelKey == null
-                    ? 'OpenCode automatic fallback is active because `small_model` is unset.'
-                    : 'Resetting `small_model` back to automatic fallback still requires editing config outside the app because `/config` patch updates cannot remove keys.',
+                    ? context.l10n.settingsSmallModelUnsetExplanation
+                    : context.l10n.settingsSmallModelResetExplanation,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
@@ -438,12 +438,12 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                 key: const ValueKey<String>('settings_opencode_autoupdate'),
                 value: autoupdateMode,
                 decoration: InputDecoration(
-                  labelText: 'OpenCode auto-update',
+                  labelText: context.l10n.settingsOpenCodeAutoUpdate,
                   border: const OutlineInputBorder(),
                   helperText:
                       context.l10n.behaviorControlsUpstreamOpenCode,
                 ),
-                searchHintText: 'Search auto-update mode',
+                searchHintText: context.l10n.settingsSearchAutoUpdateMode,
                 searchTermsBuilder: (value) => <String>[
                   _autoupdateModeLabel(value),
                 ],
@@ -480,12 +480,12 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
                 key: const ValueKey<String>('settings_opencode_share_mode'),
                 value: shareMode,
                 decoration: InputDecoration(
-                  labelText: 'OpenCode sharing default',
+                  labelText: context.l10n.settingsOpenCodeSharingDefault,
                   border: const OutlineInputBorder(),
                   helperText:
                       context.l10n.behaviorControlsOfficialGlobal,
                 ),
-                searchHintText: 'Search sharing mode',
+                searchHintText: context.l10n.settingsSearchSharingMode,
                 searchTermsBuilder: (value) => <String>[_shareModeLabel(value)],
                 items: <DropdownMenuItem<OpenCodeShareMode>>[
                   DropdownMenuItem<OpenCodeShareMode>(
@@ -561,10 +561,10 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
               title: Text(context.l10n.settingsBehaviorEnableDataSaver),
               subtitle: Text(
                 saverActive
-                    ? 'Active now on mobile data.'
+                    ? context.l10n.behaviorDataSaverActive
                     : (isCellularActive
-                          ? 'Waiting for the next mobile-data sync window.'
-                          : 'Only applies when the connection is cellular/mobile.'),
+                          ? context.l10n.behaviorDataSaverWaiting
+                          : context.l10n.behaviorDataSaverCellularOnly),
               ),
               value: settingsProvider.dataSaverEnabled,
               onChanged: (value) =>
@@ -771,8 +771,8 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
       _showFailureSnackBar(
         context,
         settingsProvider.openCodeUsername == null
-            ? 'Enter a username to save a custom OpenCode conversation name.'
-            : 'Clearing the OpenCode conversation username still requires editing config outside the app.',
+            ? context.l10n.settingsUsernameEnterHint
+            : context.l10n.settingsUsernameClearHint,
       );
       return;
     }
@@ -825,7 +825,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
       _deferredConfigMutationGenerationByKey[mutationKey] = generation;
       _showFailureSnackBar(
         context,
-        'CodeWalk will apply this OpenCode setting after the current response finishes.',
+        context.l10n.settingsConfigUpdateDeferred,
       );
       final becameSafe = await _waitForConfigMutationsToBeSafe(chatProvider);
       if (!becameSafe) {
@@ -888,7 +888,7 @@ class _BehaviorSettingsSectionState extends State<BehaviorSettingsSection> {
       }
       _showFailureSnackBar(
         context,
-        'Updated the server setting, but could not refresh chat providers.',
+        context.l10n.settingsConfigRefreshFailed,
       );
     }
   }

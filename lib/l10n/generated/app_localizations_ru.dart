@@ -251,7 +251,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chatLoadingProjectContext => 'Loading project context...';
 
   @override
-  String get chatMessageHide => 'Hide';
+  String get chatMessageHide => 'Скрыть';
 
   @override
   String get chatMessageMessagePartUnavailable => 'Message part unavailable';
@@ -406,7 +406,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get chatRetryRefresh => 'Retry refresh';
 
   @override
-  String get chatRetryingModelRequest => 'Повторная попытка запроса модели...';
+  String get chatRetryingModelRequest => 'Retrying model request...';
 
   @override
   String get chatReturnToMainConversation => 'Return to main conversation';
@@ -1283,7 +1283,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get sessionCancelRename => 'Cancel rename';
 
   @override
-  String get sessionCopyLink => 'Copy Link';
+  String get sessionCopyLink => 'Копировать ссылку';
 
   @override
   String get sessionDelete => 'Delete';
@@ -3443,4 +3443,760 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get appProviderLabelLocalOpenCodeManaged =>
       'Локальный OpenCode (управляемый)';
+
+  @override
+  String get chatChooseModel => 'Выбрать модель';
+
+  @override
+  String get chatStartVoiceInput => 'Начать голосовой ввод';
+
+  @override
+  String get chatStopVoiceInput => 'Остановить голосовой ввод';
+
+  @override
+  String get chatStartingVoiceInput => 'Запуск голосового ввода';
+
+  @override
+  String get chatComposerPlaceholder => 'Введите ваш запрос...';
+
+  @override
+  String get chatPermissionAutoApproveOn =>
+      'Автоматическое одобрение разрешений включено';
+
+  @override
+  String get chatPermissionAutoApproveOff =>
+      'Автоматическое одобрение разрешений выключено';
+
+  @override
+  String get chatModelLockedSubConversation =>
+      'Модель заблокирована в подразговоре';
+
+  @override
+  String get chatComposerHintShell => 'Команда оболочки (Esc для выхода)';
+
+  @override
+  String get utilityTitle => 'Утилита';
+
+  @override
+  String get statusOffline => 'Офлайн';
+
+  @override
+  String get statusOnline => 'Онлайн';
+
+  @override
+  String get statusConnected => 'Подключено';
+
+  @override
+  String get statusReconnecting => 'Переподключение';
+
+  @override
+  String get statusSyncDelayed => 'Синхронизация задержана';
+
+  @override
+  String get statusDelayed => 'Задержано';
+
+  @override
+  String get chatActiveServerUnhealthyLabel => 'Активный сервер нездоров';
+
+  @override
+  String get chatWaitingForNetworkConnection =>
+      'Ожидание сетевого подключения...';
+
+  @override
+  String get serverHealthHealthy => 'Здоров';
+
+  @override
+  String get serverHealthUnhealthy => 'Нездоров';
+
+  @override
+  String get serverHealthUnknown => 'Неизвестно';
+
+  @override
+  String get sessionUnshare => 'Отменить публикацию';
+
+  @override
+  String get sessionShare => 'Поделиться сессией';
+
+  @override
+  String get sessionExportMarkdown => 'Экспорт Markdown';
+
+  @override
+  String get sessionExportDebugJson => 'Экспорт JSON отладки';
+
+  @override
+  String get sessionViewTasks => 'Посмотреть задачи';
+
+  @override
+  String get sessionCompactContext => 'Сжать контекст';
+
+  @override
+  String get sessionUnshared => 'Разговор закрыт для общего доступа';
+
+  @override
+  String get sessionShared => 'Разговор опубликован';
+
+  @override
+  String get sessionShareLinkUnavailable => 'Ссылка недоступна для этой сессии';
+
+  @override
+  String get sessionExportMarkdownTitle => 'Экспорт сессии как Markdown';
+
+  @override
+  String get sessionExportDebugJsonTitle => 'Экспорт сессии как JSON отладки';
+
+  @override
+  String get sessionExportCanceled => 'Экспорт отменен';
+
+  @override
+  String get sessionExportMarkdownSaved => 'Экспорт Markdown сохранен';
+
+  @override
+  String get sessionExportDebugJsonSaved => 'Экспорт JSON отладки сохранен';
+
+  @override
+  String get sessionExportMarkdownErrorClipboard =>
+      'Не удалось сохранить файл; Markdown скопирован в буфер обмена';
+
+  @override
+  String get sessionExportDebugJsonErrorClipboard =>
+      'Не удалось сохранить файл; JSON отладки скопирован в буфер обмена';
+
+  @override
+  String get terminalHide => 'Скрыть терминал';
+
+  @override
+  String get terminalOpen => 'Открыть терминал';
+
+  @override
+  String get terminalOpenInfo => 'Открыть информацию о терминале';
+
+  @override
+  String get chatNoSessionSelected => 'Выберите или создайте разговор';
+
+  @override
+  String get chatWelcomeMessage => 'Здравствуйте! Я ваш ИИ-ассистент.';
+
+  @override
+  String get chatWelcomeSubmessage => 'Чем я могу вам помочь сегодня?';
+
+  @override
+  String get cannedAppendAtCursor => 'Добавить к курсору';
+
+  @override
+  String get cannedReplace => 'Заменить';
+
+  @override
+  String get chatMessageAttachedFile => 'Прикрепленный файл';
+
+  @override
+  String get chatMessageThinking => 'Думает';
+
+  @override
+  String get chatMessageShow => 'Показать';
+
+  @override
+  String get chatMessageMore => 'Больше';
+
+  @override
+  String get chatMessageLess => 'Меньше';
+
+  @override
+  String get chatMessageDetails => 'Подробности';
+
+  @override
+  String get chatMessageToolInput => 'Ввод';
+
+  @override
+  String get chatMessageToolCommand => 'Команда';
+
+  @override
+  String chatMessageToolRunningCount(int count) {
+    return '$count выполняется';
+  }
+
+  @override
+  String chatMessageToolQueuedCount(int count) {
+    return '$count в очереди';
+  }
+
+  @override
+  String get chatMessageToolOutputTruncated =>
+      'Предпросмотр вывода обрезан для стабильности.';
+
+  @override
+  String get chatMessageToolCommandTruncated =>
+      'Предпросмотр команды обрезан для стабильности.';
+
+  @override
+  String get chatMessageToolInputTruncated =>
+      'Предпросмотр ввода обрезан для стабильности.';
+
+  @override
+  String get chatMessageToolDiffOmitted =>
+      'Предпросмотр diff пропущен: нагрузка слишком велика.';
+
+  @override
+  String get terminalTitle => 'Терминал';
+
+  @override
+  String get chatCouldNotRefreshSession => 'Не удалось обновить этот разговор';
+
+  @override
+  String get chatMainConversationUnavailable =>
+      'Основной разговор пока недоступен.';
+
+  @override
+  String get chatFailedToRefreshSubConversations =>
+      'Не удалось обновить подразговоры. Попробуйте снова.';
+
+  @override
+  String get chatNoSubConversationFound =>
+      'Подразговор для этой задачи не найден.';
+
+  @override
+  String get errorAnErrorOccurred => 'Произошла ошибка';
+
+  @override
+  String get serverConnectionAttention =>
+      'Требуется внимание к подключению сервера.';
+
+  @override
+  String sessionHasError(String title) {
+    return 'В \"$title\" есть ошибка.';
+  }
+
+  @override
+  String sessionNeedsInput(String title) {
+    return '\"$title\" требует вашего ввода.';
+  }
+
+  @override
+  String sessionHasNewReply(String title) {
+    return '\"$title\" имеет новый ответ.';
+  }
+
+  @override
+  String get sessionSyncing => 'Синхронизация разговоров...';
+
+  @override
+  String get behaviorCellularDataSaverActive =>
+      'Экономия мобильных данных активна.';
+
+  @override
+  String get sessionNoCachedConversations => 'Кешированных разговоров пока нет';
+
+  @override
+  String get sessionForkFailed => 'Не удалось разветвить разговор';
+
+  @override
+  String get sessionForked => 'Разговор разветвлен';
+
+  @override
+  String get sessionNoConversationsInProject =>
+      'В этом проекте нет разговоров.';
+
+  @override
+  String get sessionOpenProjectToLoad =>
+      'Откройте проект для загрузки разговоров.';
+
+  @override
+  String sessionChildrenCount(int count) {
+    return 'Подразговоры: $count';
+  }
+
+  @override
+  String sessionDiffFilesCount(int count) {
+    return 'Diff файлы: $count';
+  }
+
+  @override
+  String get compactionAutomatic => 'автоматически';
+
+  @override
+  String get compactionManual => 'вручную';
+
+  @override
+  String get chatMessageShowLessCompact => 'Меньше';
+
+  @override
+  String get chatMessageShowLess => 'Показать меньше';
+
+  @override
+  String get chatMessageShowMoreCompact => 'Больше';
+
+  @override
+  String get chatMessageShowMore => 'Показать больше';
+
+  @override
+  String get chatChooseAgent => 'Выбрать агента';
+
+  @override
+  String get chatEffortLockedSubConversation =>
+      'Уровень усилий заблокирован в подразговоре';
+
+  @override
+  String get chatChooseEffort => 'Выбрать уровень усилий';
+
+  @override
+  String get chatServerSelectedModel => 'Модель, выбранная сервером';
+
+  @override
+  String get chatFailedToRefreshProviders =>
+      'Не удалось обновить провайдеров и модели';
+
+  @override
+  String get cannedAddTitle => 'Добавить быстрый ответ';
+
+  @override
+  String get cannedEditTitle => 'Редактировать быстрый ответ';
+
+  @override
+  String get cannedTextLabel => 'Текст';
+
+  @override
+  String get cannedAppendAtCursorSubtitle => 'Выкл = заменить текущий текст';
+
+  @override
+  String get cannedSendAutomaticallySubtitle => 'Отправить сразу после вставки';
+
+  @override
+  String get cannedScopeGlobalSubtitle =>
+      'Отключить для элемента только проекта';
+
+  @override
+  String get cannedScopeGlobalUnavailableSubtitle =>
+      'Только проект недоступен в этом контексте';
+
+  @override
+  String get commonFile => 'Файл';
+
+  @override
+  String get serversSearchActiveHint => 'Поиск активного сервера';
+
+  @override
+  String get serversNoServersFound => 'Серверы не найдены';
+
+  @override
+  String get serversUnhealthyActivateError =>
+      'Этот сервер неисправен. Перед активацией проверьте работоспособность или измените настройки.';
+
+  @override
+  String get serversTailscaleConnected => 'Tailscale подключён';
+
+  @override
+  String get serversTailscaleConnecting => 'Tailscale подключается';
+
+  @override
+  String get serversTailscaleAuthRequired =>
+      'Требуется аутентификация Tailscale';
+
+  @override
+  String get serversTailscaleAdminApprovalRequired =>
+      'Требуется одобрение администратора Tailscale';
+
+  @override
+  String get serversTailscaleConnectionFailed =>
+      'Не удалось подключиться к Tailscale';
+
+  @override
+  String get serversTailscaleUnsupported => 'Tailscale не поддерживается';
+
+  @override
+  String get serversTailscaleDisconnected => 'Tailscale отключён';
+
+  @override
+  String get serversTailscaleLoginExplanation =>
+      'Откройте URL-адрес входа в Tailscale, чтобы добавить это устройство в вашу tailnet-сеть.';
+
+  @override
+  String get serversTailscaleTrafficExplanation =>
+      'Трафик OpenCode для этого активного профиля направляется через Tailscale.';
+
+  @override
+  String get serversTailscaleConnectExplanation =>
+      'Tailscale подключится при использовании этого активного профиля.';
+
+  @override
+  String get statusStarting => 'Запуск';
+
+  @override
+  String get statusStopping => 'Остановка';
+
+  @override
+  String get statusFailed => 'Сбой';
+
+  @override
+  String get statusStopped => 'Остановлен';
+
+  @override
+  String get serversDesktopModeExplanation =>
+      'Настольный режим может запускать и управлять `opencode serve` прямо из CodeWalk.';
+
+  @override
+  String get serversCannotActivateUnhealthy =>
+      'Невозможно активировать неисправный сервер';
+
+  @override
+  String get commonCopiedToClipboard => 'Скопировано в буфер обмена';
+
+  @override
+  String get chatUndoNothing => 'В этой сессии нечего отменять';
+
+  @override
+  String get chatRedoNothing => 'В этой сессии нечего повторять';
+
+  @override
+  String get chatStatusPatching => 'Применение патчей';
+
+  @override
+  String get chatStatusPatchingOneFile => 'Обновление 1 файла';
+
+  @override
+  String chatStatusPatchingMultipleFiles(int count) {
+    return 'Обновление $count файлов';
+  }
+
+  @override
+  String get chatStatusThinking => 'Думает...';
+
+  @override
+  String get chatStatusSubsession => 'Подсессия';
+
+  @override
+  String get chatStatusBusy => 'Статус: Занят';
+
+  @override
+  String get chatStatusRetry => 'Статус: Повтор';
+
+  @override
+  String chatStatusRetryCount(int count) {
+    return 'Статус: Повтор #$count';
+  }
+
+  @override
+  String get appShellUpdateInstalledRestartRequired =>
+      'Обновление установлено. Требуется перезагрузка для применения новой версии.';
+
+  @override
+  String get appShellUpdateInstalledRestartApp =>
+      'Обновление установлено. Перезапустите приложение для применения.';
+
+  @override
+  String get chatTourProjectsConversations =>
+      'Используйте эту кнопку, чтобы открыть свои проекты и беседы.';
+
+  @override
+  String get chatTourSwitchFolders =>
+      'Используйте эту кнопку для переключения папок проектов и контекста.';
+
+  @override
+  String get chatTourSidebarProjectTools =>
+      'Используйте это меню, чтобы показать боковую панель бесед и инструменты проекта.';
+
+  @override
+  String get chatActionNext => 'Далее';
+
+  @override
+  String get chatShortcutsNewConversation => 'Новая беседа';
+
+  @override
+  String get chatShortcutsRefreshChat => 'Обновить данные чата';
+
+  @override
+  String get chatShortcutsFocusInput => 'Фокус на вводе сообщения';
+
+  @override
+  String get chatShortcutsStartStopVoice =>
+      'Запустить или остановить голосовой ввод';
+
+  @override
+  String get chatShortcutsQuickOpen => 'Быстро открыть файлы';
+
+  @override
+  String get chatShortcutsOpenSettings => 'Открыть настройки';
+
+  @override
+  String get chatShortcutsCycleModels =>
+      'Циклическое переключение последних моделей';
+
+  @override
+  String get chatShortcutsCycleVariant =>
+      'Циклическое переключение вариантов модели';
+
+  @override
+  String get chatShortcutsFocusInputCloseDrawer =>
+      'Фокус на вводе (или закрыть панель, если открыта)';
+
+  @override
+  String get chatShortcutsNextAgent => 'Следующий агент';
+
+  @override
+  String get chatShortcutsPreviousAgent => 'Предыдущий агент';
+
+  @override
+  String get chatShortcutsCloseApp =>
+      'Закрыть приложение, используя поведение платформы';
+
+  @override
+  String get chatShortcutsForceExit => 'Принудительный выход из приложения';
+
+  @override
+  String get chatShortcutsStopResponse =>
+      'Остановить активный ответ (во время ответа)';
+
+  @override
+  String get chatTipMentionFiles =>
+      'Совет: Используйте @ для упоминания файлов в вашем запросе';
+
+  @override
+  String get chatTipRenameConversation =>
+      'Совет: Нажмите на заголовок, чтобы переименовать беседу';
+
+  @override
+  String get chatTipShellCommands =>
+      'Совет: Используйте ! в начале для запуска команд оболочки';
+
+  @override
+  String get chatTipSlashCommands =>
+      'Совет: Используйте / для доступа к слеш-командам';
+
+  @override
+  String get chatTipLongPressSend =>
+      'Совет: Долгое нажатие на «Отправить», чтобы вставить новую строку';
+
+  @override
+  String get chatTipContextKnob =>
+      'Совет: Нажмите на кнопку контекста, чтобы увидеть детали использования';
+
+  @override
+  String get chatTipBeSpecific =>
+      'Совет: Будьте конкретны — короткие запросы получают более быстрые ответы';
+
+  @override
+  String get chatTipStepByStep =>
+      'Совет: Просите пошаговое руководство при отладке сложных проблем';
+
+  @override
+  String get chatTipProvideContext =>
+      'Совет: Предоставьте контекст — вставьте сообщения об ошибках и логи';
+
+  @override
+  String get chatTipBreakTasks =>
+      'Совет: Разбивайте большие задачи на более мелкие запросы';
+
+  @override
+  String get chatFailedToLoadDirectories => 'Не удалось загрузить каталоги';
+
+  @override
+  String get logsFilterAll => 'Все';
+
+  @override
+  String get logsNoLogsYet => 'Логи еще не собраны.';
+
+  @override
+  String get logsNoMatchingLogs =>
+      'Нет логов, соответствующих текущим фильтрам.';
+
+  @override
+  String get settingsDefaultModel => 'Модель по умолчанию';
+
+  @override
+  String get settingsSearchDefaultModel => 'Поиск модели по умолчанию';
+
+  @override
+  String get settingsDefaultAgent => 'Агент по умолчанию';
+
+  @override
+  String get settingsSearchDefaultAgent => 'Поиск агента по умолчанию';
+
+  @override
+  String get settingsNoAgentsFound => 'Агенты не найдены';
+
+  @override
+  String get settingsConversationUsername => 'Имя пользователя беседы';
+
+  @override
+  String get settingsUsernameUnsetExplanation =>
+      'OpenCode использует системное имя пользователя, так как `username` не задано.';
+
+  @override
+  String get settingsUsernameResetExplanation =>
+      'Сброс `username` обратно к системному значению по умолчанию по-прежнему требует редактирования конфигурации вне приложения, так как патч-обновления `/config` не могут удалять ключи.';
+
+  @override
+  String get chatHelpMessage =>
+      'Используйте @ для упоминаний, ! для оболочки, / для команд';
+
+  @override
+  String terminalEmbeddedUnavailable(String serverName) {
+    return 'Встроенный терминал еще не доступен в этой среде выполнения. Продолжайте использовать режим оболочки композитора для разовых команд или откройте терминал из поддерживаемой среды выполнения приложения CodeWalk для $serverName.';
+  }
+
+  @override
+  String get chatFailedToLoadFile => 'Не удалось загрузить файл';
+
+  @override
+  String get chatMentionFileSubtitle => 'файл';
+
+  @override
+  String get chatMentionSymbolSubtitle => 'символ';
+
+  @override
+  String get chatMentionAgentSubtitle => 'агент';
+
+  @override
+  String get chatCommandSourceGeneric => 'команда';
+
+  @override
+  String get chatCommandSourceProject => 'проект';
+
+  @override
+  String get chatCommandDescriptionProject => 'Команда проекта';
+
+  @override
+  String get settingsSmallModel => 'Малая модель';
+
+  @override
+  String get settingsSearchSmallModel => 'Поиск малой модели';
+
+  @override
+  String get settingsSmallModelUnsetExplanation =>
+      'Автоматический переход OpenCode активен, так как `small_model` не задано.';
+
+  @override
+  String get settingsSmallModelResetExplanation =>
+      'Сброс `small_model` обратно к автоматическому переходу по-прежнему требует редактирования конфигурации вне приложения, так как патч-обновления `/config` не могут удалять ключи.';
+
+  @override
+  String get settingsOpenCodeAutoUpdate => 'Автообновление OpenCode';
+
+  @override
+  String get settingsSearchAutoUpdateMode => 'Поиск режима автообновления';
+
+  @override
+  String get settingsOpenCodeSharingDefault =>
+      'Общий доступ OpenCode по умолчанию';
+
+  @override
+  String get settingsSearchSharingMode => 'Поиск режима общего доступа';
+
+  @override
+  String get chatHistoryHideEarlier => 'Hide earlier messages';
+
+  @override
+  String get chatHistoryShowEarlier => 'Show earlier messages';
+
+  @override
+  String chatHistoryMessagesHidden(int count, String label) {
+    return '$count messages hidden before $label compaction';
+  }
+
+  @override
+  String get chatWorkHide => 'Hide';
+
+  @override
+  String get chatWorkExpand => 'Expand';
+
+  @override
+  String get chatWorkShow => 'Show';
+
+  @override
+  String get chatWorkMessageOne => '1 work message';
+
+  @override
+  String chatWorkMessagesMultiple(int count) {
+    return '$count work messages';
+  }
+
+  @override
+  String get chatWorkBoundedPanelExplanation =>
+      'Latest tool activity stays inside this bounded panel to keep the chat viewport stable.';
+
+  @override
+  String get chatConversation => 'Conversation';
+
+  @override
+  String get chatPageStatusContextCompacted => 'Context compacted';
+
+  @override
+  String get chatPageStatusFailedToCompactContext =>
+      'Failed to compact context';
+
+  @override
+  String get chatPageStatusCompactingContextNow => 'Compacting context now...';
+
+  @override
+  String get chatPageStatusAutomaticCompactionExplanation =>
+      'Automatic compaction happens as context usage grows.';
+
+  @override
+  String get chatPageStatusCompacting => 'Compacting...';
+
+  @override
+  String get chatPageStatusCompactNow => 'Compact now';
+
+  @override
+  String get chatPageStatusServer => 'Server';
+
+  @override
+  String get chatMessageSaveFile => 'Save file';
+
+  @override
+  String get chatMessageOpenFile => 'Open file';
+
+  @override
+  String get chatMessageThinkingProcess => 'Thinking Process';
+
+  @override
+  String get chatMessageToolCall => '1 tool call';
+
+  @override
+  String chatMessageToolCalls(int count) {
+    return '$count tool calls';
+  }
+
+  @override
+  String get chatMessageRunningTask => 'Running task';
+
+  @override
+  String get chatMessageToolStatusQueued => 'Queued';
+
+  @override
+  String get chatMessageToolStatusInProgress => 'In progress';
+
+  @override
+  String get chatMessageToolStatusNeedsAttention => 'Needs attention';
+
+  @override
+  String get terminalRestoreSize => 'Restore size';
+
+  @override
+  String get terminalMaximize => 'Maximize';
+
+  @override
+  String get behaviorDataSaverActive => 'Active now on mobile data.';
+
+  @override
+  String get behaviorDataSaverWaiting =>
+      'Waiting for the next mobile-data sync window.';
+
+  @override
+  String get behaviorDataSaverCellularOnly =>
+      'Only applies when the connection is cellular/mobile.';
+
+  @override
+  String get settingsUsernameEnterHint =>
+      'Enter a username to save a custom OpenCode conversation name.';
+
+  @override
+  String get settingsUsernameClearHint =>
+      'Clearing the OpenCode conversation username still requires editing config outside the app.';
+
+  @override
+  String get settingsConfigUpdateDeferred =>
+      'CodeWalk will apply this OpenCode setting after the current response finishes.';
+
+  @override
+  String get settingsConfigRefreshFailed =>
+      'Updated the server setting, but could not refresh chat providers.';
 }

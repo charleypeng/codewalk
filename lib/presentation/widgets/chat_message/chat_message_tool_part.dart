@@ -176,7 +176,9 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
     if (part.state.status == ToolStatus.completed) {
       final toolCallCount = taskChildSummary?.toolCallCount;
       if (toolCallCount != null) {
-        return toolCallCount == 1 ? '1 tool call' : '$toolCallCount tool calls';
+        return toolCallCount == 1
+            ? context.l10n.chatMessageToolCall
+            : context.l10n.chatMessageToolCalls(toolCallCount);
       }
       return null;
     }
@@ -195,7 +197,9 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
       return fallbackCommand;
     }
 
-    return part.state.status == ToolStatus.running ? 'Running task' : null;
+    return part.state.status == ToolStatus.running
+        ? context.l10n.chatMessageRunningTask
+        : null;
   }
 
   Widget _buildTaskToolStatusIcon(BuildContext context, ToolStatus status) {
@@ -226,22 +230,22 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
     switch (status) {
       case ToolStatus.pending:
         color = colorScheme.secondary;
-        label = 'Queued';
+        label = context.l10n.chatMessageToolStatusQueued;
         icon = Symbols.schedule;
         break;
       case ToolStatus.running:
         color = colorScheme.primary;
-        label = 'In progress';
+        label = context.l10n.chatMessageToolStatusInProgress;
         icon = Symbols.play_arrow;
         break;
       case ToolStatus.completed:
         color = _resolveCompletedToolStatusColor(context);
-        label = 'Done';
+        label = context.l10n.onboardingDone;
         icon = Symbols.check_circle_outline_rounded;
         break;
       case ToolStatus.error:
         color = colorScheme.error;
-        label = 'Needs attention';
+        label = context.l10n.chatMessageToolStatusNeedsAttention;
         icon = Symbols.warning_amber_rounded;
         break;
     }
@@ -378,7 +382,7 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
     final textForRender = _truncatePreview(
       text,
       maxChars: _ChatMessageWidgetState._maxToolOutputPreviewChars,
-      reason: 'Large tool output preview truncated for app stability.',
+      reason: context.l10n.chatMessageToolOutputTruncated,
     );
     return _CollapsibleToolContent(
       text: textForRender,
@@ -414,8 +418,8 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
         ? colorScheme.onErrorContainer.withValues(alpha: 0.08)
         : colorScheme.surface;
     final prefix = toolName.trim().toLowerCase() == 'bash'
-        ? 'Command'
-        : 'Input';
+        ? context.l10n.chatMessageToolCommand
+        : context.l10n.chatMessageToolInput;
 
     final shouldColorizeInput =
         prefix == 'Input' && _isDiffLikeToolInput(toolName, command);
@@ -561,7 +565,7 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
       return _truncatePreview(
         command,
         maxChars: _ChatMessageWidgetState._maxToolCommandPreviewChars,
-        reason: 'Command preview truncated for stability.',
+        reason: context.l10n.chatMessageToolCommandTruncated,
       );
     }
 
@@ -584,7 +588,7 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
     return _truncatePreview(
       fallback,
       maxChars: _ChatMessageWidgetState._maxToolCommandPreviewChars,
-      reason: 'Input preview truncated for stability.',
+      reason: context.l10n.chatMessageToolInputTruncated,
     );
   }
 
@@ -658,7 +662,7 @@ extension _ChatMessageToolPartBuilder on _ChatMessageWidgetState {
 
     if (before.length + after.length >
         _ChatMessageWidgetState._maxSyntheticDiffChars) {
-      return 'Diff preview omitted: edit payload is too large to render safely on mobile.';
+      return context.l10n.chatMessageToolDiffOmitted;
     }
 
     final path =
@@ -713,7 +717,11 @@ class _ToolPartDetailsToggle extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             ),
             child: Text(
-              expanded ? 'Hide' : (compactLayout ? 'Show' : 'Details'),
+              expanded
+                  ? context.l10n.chatMessageHide
+                  : (compactLayout
+                        ? context.l10n.chatMessageShow
+                        : context.l10n.chatMessageDetails),
               style: Theme.of(context).textTheme.labelSmall,
             ),
           ),

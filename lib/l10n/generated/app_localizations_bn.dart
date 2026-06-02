@@ -251,7 +251,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get chatLoadingProjectContext => 'Loading project context...';
 
   @override
-  String get chatMessageHide => 'Hide';
+  String get chatMessageHide => 'লুকান';
 
   @override
   String get chatMessageMessagePartUnavailable => 'Message part unavailable';
@@ -405,7 +405,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get chatRetryRefresh => 'Retry refresh';
 
   @override
-  String get chatRetryingModelRequest => 'মডেল অনুরোধ পুনরায় চেষ্টা হচ্ছে...';
+  String get chatRetryingModelRequest => 'Retrying model request...';
 
   @override
   String get chatReturnToMainConversation => 'Return to main conversation';
@@ -1282,7 +1282,7 @@ class AppLocalizationsBn extends AppLocalizations {
   String get sessionCancelRename => 'Cancel rename';
 
   @override
-  String get sessionCopyLink => 'Copy Link';
+  String get sessionCopyLink => 'শেয়ার লিংক কপি করুন';
 
   @override
   String get sessionDelete => 'Delete';
@@ -3434,4 +3434,759 @@ class AppLocalizationsBn extends AppLocalizations {
   @override
   String get appProviderLabelLocalOpenCodeManaged =>
       'স্থানীয় OpenCode (পরিচালিত)';
+
+  @override
+  String get chatChooseModel => 'মডেল নির্বাচন করুন';
+
+  @override
+  String get chatStartVoiceInput => 'ভয়েস ইনপুট শুরু করুন';
+
+  @override
+  String get chatStopVoiceInput => 'ভয়েস ইনপুট বন্ধ করুন';
+
+  @override
+  String get chatStartingVoiceInput => 'ভয়েস ইনপুট শুরু হচ্ছে';
+
+  @override
+  String get chatComposerPlaceholder => 'আপনার প্রয়োজন টাইপ করুন...';
+
+  @override
+  String get chatPermissionAutoApproveOn =>
+      'অনুমতি স্বয়ংক্রিয়-অনুমোদন চালু আছে';
+
+  @override
+  String get chatPermissionAutoApproveOff =>
+      'অনুমতি স্বয়ংক্রিয়-অনুমোদন বন্ধ আছে';
+
+  @override
+  String get chatModelLockedSubConversation => 'উপ-কথোপকথনে মডেল লক করা আছে';
+
+  @override
+  String get chatComposerHintShell => 'শেল কমান্ড (Esc প্রস্থান)';
+
+  @override
+  String get utilityTitle => 'ইউটিলিটি';
+
+  @override
+  String get statusOffline => 'অফলাইন';
+
+  @override
+  String get statusOnline => 'অনলাইন';
+
+  @override
+  String get statusConnected => 'সংযুক্ত';
+
+  @override
+  String get statusReconnecting => 'পুনরায় সংযোগ হচ্ছে';
+
+  @override
+  String get statusSyncDelayed => 'সিঙ্ক বিলম্বিত';
+
+  @override
+  String get statusDelayed => 'বিলম্বিত';
+
+  @override
+  String get chatActiveServerUnhealthyLabel => 'সক্রিয় সার্ভার অস্বাস্থ্যকর';
+
+  @override
+  String get chatWaitingForNetworkConnection =>
+      'নেটওয়ার্ক সংযোগের জন্য অপেক্ষা করছে...';
+
+  @override
+  String get serverHealthHealthy => 'স্বাস্থ্যকর';
+
+  @override
+  String get serverHealthUnhealthy => 'অস্বাস্থ্যকর';
+
+  @override
+  String get serverHealthUnknown => 'অজানা';
+
+  @override
+  String get sessionUnshare => 'সেশন শেয়ারিং বাতিল করুন';
+
+  @override
+  String get sessionShare => 'সেশন শেয়ার করুন';
+
+  @override
+  String get sessionExportMarkdown => 'Markdown এক্সপোর্ট';
+
+  @override
+  String get sessionExportDebugJson => 'ডিবাগ JSON এক্সপোর্ট';
+
+  @override
+  String get sessionViewTasks => 'টাস্ক দেখুন';
+
+  @override
+  String get sessionCompactContext => 'প্রসঙ্গ কম্প্যাক্ট করুন';
+
+  @override
+  String get sessionUnshared => 'কথোপকথনের শেয়ারিং বাতিল করা হয়েছে';
+
+  @override
+  String get sessionShared => 'কথোপকথন শেয়ার করা হয়েছে';
+
+  @override
+  String get sessionShareLinkUnavailable =>
+      'এই সেশনের জন্য শেয়ার লিংক উপলব্ধ নয়';
+
+  @override
+  String get sessionExportMarkdownTitle =>
+      'সেশন Markdown হিসাবে এক্সপোর্ট করুন';
+
+  @override
+  String get sessionExportDebugJsonTitle =>
+      'সেশন ডিবাগ JSON হিসাবে এক্সপোর্ট করুন';
+
+  @override
+  String get sessionExportCanceled => 'সেশন এক্সপোর্ট বাতিল করা হয়েছে';
+
+  @override
+  String get sessionExportMarkdownSaved => 'Markdown এক্সপোর্ট সংরক্ষিত হয়েছে';
+
+  @override
+  String get sessionExportDebugJsonSaved =>
+      'ডিবাগ JSON এক্সপোর্ট সংরক্ষিত হয়েছে';
+
+  @override
+  String get sessionExportMarkdownErrorClipboard =>
+      'ফাইল সংরক্ষণ করা যায়নি; Markdown ক্লিপবোর্ডে কপি করা হয়েছে';
+
+  @override
+  String get sessionExportDebugJsonErrorClipboard =>
+      'ফাইল সংরক্ষণ করা যায়নি; ডিবাগ JSON ক্লিপবোর্ডে কপি করা হয়েছে';
+
+  @override
+  String get terminalHide => 'টার্মিনাল লুকান';
+
+  @override
+  String get terminalOpen => 'টার্মিনাল খুলুন';
+
+  @override
+  String get terminalOpenInfo => 'টার্মিনাল তথ্য খুলুন';
+
+  @override
+  String get chatNoSessionSelected =>
+      'চ্যাট শুরু করতে একটি কথোপকথন নির্বাচন বা তৈরি করুন';
+
+  @override
+  String get chatWelcomeMessage => 'হ্যালো! আমি আপনার AI সহায়ক।';
+
+  @override
+  String get chatWelcomeSubmessage => 'আজ আমি কিভাবে আপনাকে সাহায্য করতে পারি?';
+
+  @override
+  String get cannedAppendAtCursor => 'কার্সারে যুক্ত করুন';
+
+  @override
+  String get cannedReplace => 'প্রতিস্থাপন করুন';
+
+  @override
+  String get chatMessageAttachedFile => 'সংযুক্ত ফাইল';
+
+  @override
+  String get chatMessageThinking => 'চিন্তা করছে';
+
+  @override
+  String get chatMessageShow => 'দেখান';
+
+  @override
+  String get chatMessageMore => 'আরও';
+
+  @override
+  String get chatMessageLess => 'কম';
+
+  @override
+  String get chatMessageDetails => 'বিবরণ';
+
+  @override
+  String get chatMessageToolInput => 'ইনপুট';
+
+  @override
+  String get chatMessageToolCommand => 'কমান্ড';
+
+  @override
+  String chatMessageToolRunningCount(int count) {
+    return '$count চলছে';
+  }
+
+  @override
+  String chatMessageToolQueuedCount(int count) {
+    return '$count সারিবদ্ধ';
+  }
+
+  @override
+  String get chatMessageToolOutputTruncated =>
+      'বড় টুল আউটপুট প্রিভিউ অ্যাপ স্থিতিশীলতার জন্য ছাঁটা হয়েছে।';
+
+  @override
+  String get chatMessageToolCommandTruncated =>
+      'স্থিতিশীলতার জন্য কমান্ড প্রিভিউ ছাঁটা হয়েছে।';
+
+  @override
+  String get chatMessageToolInputTruncated =>
+      'স্থিতিশীলতার জন্য ইনপুট প্রিভিউ ছাঁটা হয়েছে।';
+
+  @override
+  String get chatMessageToolDiffOmitted =>
+      'ডিফ প্রিভিউ বাদ দেওয়া হয়েছে: এডিট পেলোড মোবাইলে নিরাপদে রেন্ডার করতে খুব বড়।';
+
+  @override
+  String get terminalTitle => 'টার্মিনাল';
+
+  @override
+  String get chatCouldNotRefreshSession => 'এই কথোপকথন রিফ্রেশ করা যায়নি';
+
+  @override
+  String get chatMainConversationUnavailable => 'মূল কথোপকথন এখনও উপলব্ধ নয়।';
+
+  @override
+  String get chatFailedToRefreshSubConversations =>
+      'উপ-কথোপকথন রিফ্রেশ করতে ব্যর্থ। আবার চেষ্টা করুন।';
+
+  @override
+  String get chatNoSubConversationFound =>
+      'এই টাস্কের জন্য কোনো উপ-কথোপকথন পাওয়া যায়নি।';
+
+  @override
+  String get errorAnErrorOccurred => 'একটি ত্রুটি ঘটেছে';
+
+  @override
+  String get serverConnectionAttention => 'সার্ভার সংযোগে মনোযোগ প্রয়োজন।';
+
+  @override
+  String sessionHasError(String title) {
+    return '\"$title\"-এ একটি ত্রুটি আছে।';
+  }
+
+  @override
+  String sessionNeedsInput(String title) {
+    return '\"$title\" আপনার ইনপুট প্রয়োজন।';
+  }
+
+  @override
+  String sessionHasNewReply(String title) {
+    return '\"$title\"-এ একটি নতুন উত্তর আছে।';
+  }
+
+  @override
+  String get sessionSyncing => 'কথোপকথন সিঙ্ক হচ্ছে...';
+
+  @override
+  String get behaviorCellularDataSaverActive =>
+      'সেলুলার ডেটা সেভার সক্রিয় আছে।';
+
+  @override
+  String get sessionNoCachedConversations => 'এখনও কোনো ক্যাশ করা কথোপকথন নেই';
+
+  @override
+  String get sessionForkFailed => 'কথোপকথন ফর্ক করতে ব্যর্থ';
+
+  @override
+  String get sessionForked => 'কথোপকথন ফর্ক করা হয়েছে';
+
+  @override
+  String get sessionNoConversationsInProject =>
+      'এই প্রজেক্টে কোনো কথোপকথন নেই।';
+
+  @override
+  String get sessionOpenProjectToLoad => 'কথোপকথন লোড করতে প্রজেক্ট খুলুন।';
+
+  @override
+  String sessionChildrenCount(int count) {
+    return 'উপ-কথোপকথন: $count';
+  }
+
+  @override
+  String sessionDiffFilesCount(int count) {
+    return 'ডিফ ফাইল: $count';
+  }
+
+  @override
+  String get compactionAutomatic => 'স্বয়ংক্রিয়';
+
+  @override
+  String get compactionManual => 'ম্যানুয়াল';
+
+  @override
+  String get chatMessageShowLessCompact => 'কম';
+
+  @override
+  String get chatMessageShowLess => 'কম দেখান';
+
+  @override
+  String get chatMessageShowMoreCompact => 'আরও';
+
+  @override
+  String get chatMessageShowMore => 'আরও দেখান';
+
+  @override
+  String get chatChooseAgent => 'এজেন্ট নির্বাচন করুন';
+
+  @override
+  String get chatEffortLockedSubConversation =>
+      'উপ-কথোপকথনে প্রচেষ্টা লক করা আছে';
+
+  @override
+  String get chatChooseEffort => 'প্রচেষ্টা নির্বাচন করুন';
+
+  @override
+  String get chatServerSelectedModel => 'সার্ভার-নির্বাচিত মডেল';
+
+  @override
+  String get chatFailedToRefreshProviders =>
+      'প্রদানকারী এবং মডেল রিফ্রেশ করতে ব্যর্থ';
+
+  @override
+  String get cannedAddTitle => 'ক্যানড উত্তর যোগ করুন';
+
+  @override
+  String get cannedEditTitle => 'ক্যানড উত্তর সম্পাদনা করুন';
+
+  @override
+  String get cannedTextLabel => 'টেক্সট';
+
+  @override
+  String get cannedAppendAtCursorSubtitle =>
+      'বন্ধ = বর্তমান কম্পোজার টেক্সট প্রতিস্থাপন করুন';
+
+  @override
+  String get cannedSendAutomaticallySubtitle =>
+      'এই দ্রুত উত্তর সন্নিবেশ করার সাথে সাথেই পাঠান';
+
+  @override
+  String get cannedScopeGlobalSubtitle =>
+      'শুধুমাত্র প্রজেক্ট আইটেমের জন্য নিষ্ক্রিয় করুন';
+
+  @override
+  String get cannedScopeGlobalUnavailableSubtitle =>
+      'বর্তমান প্রসঙ্গে শুধুমাত্র প্রজেক্ট উপলব্ধ নয়';
+
+  @override
+  String get commonFile => 'ফাইল';
+
+  @override
+  String get serversSearchActiveHint => 'সক্রিয় সার্ভার অনুসন্ধান করুন';
+
+  @override
+  String get serversNoServersFound => 'কোনো সার্ভার পাওয়া যায়নি';
+
+  @override
+  String get serversUnhealthyActivateError =>
+      'এই সার্ভারটি অস্বাস্থ্যকর। সক্রিয় করার আগে স্বাস্থ্য পরীক্ষা করুন বা সেটিংস সম্পাদনা করুন।';
+
+  @override
+  String get serversTailscaleConnected => 'Tailscale সংযুক্ত';
+
+  @override
+  String get serversTailscaleConnecting => 'Tailscale সংযোগ হচ্ছে';
+
+  @override
+  String get serversTailscaleAuthRequired => 'Tailscale প্রমাণীকরণ প্রয়োজন';
+
+  @override
+  String get serversTailscaleAdminApprovalRequired =>
+      'Tailscale প্রশাসকের অনুমোদন প্রয়োজন';
+
+  @override
+  String get serversTailscaleConnectionFailed =>
+      'Tailscale সংযোগ ব্যর্থ হয়েছে';
+
+  @override
+  String get serversTailscaleUnsupported => 'Tailscale সমর্থিত নয়';
+
+  @override
+  String get serversTailscaleDisconnected => 'Tailscale সংযোগ বিচ্ছিন্ন';
+
+  @override
+  String get serversTailscaleLoginExplanation =>
+      'আপনার tailnet-এ এই ডিভাইসটি যোগ করতে Tailscale লগইন URL খুলুন।';
+
+  @override
+  String get serversTailscaleTrafficExplanation =>
+      'এই সক্রিয় প্রোফাইলের জন্য OpenCode ট্রাফিক Tailscale-এর মাধ্যমে রুট করা হয়।';
+
+  @override
+  String get serversTailscaleConnectExplanation =>
+      'এই সক্রিয় প্রোফাইল ব্যবহার করলে Tailscale সংযুক্ত হবে।';
+
+  @override
+  String get statusStarting => 'শুরু হচ্ছে';
+
+  @override
+  String get statusStopping => 'বন্ধ হচ্ছে';
+
+  @override
+  String get statusFailed => 'ব্যর্থ';
+
+  @override
+  String get statusStopped => 'বন্ধ';
+
+  @override
+  String get serversDesktopModeExplanation =>
+      'ডেস্কটপ মোড CodeWalk থেকে সরাসরি `opencode serve` চালু এবং পরিচালনা করতে পারে।';
+
+  @override
+  String get serversCannotActivateUnhealthy =>
+      'একটি অস্বাস্থ্যকর সার্ভার সক্রিয় করা যাবে না';
+
+  @override
+  String get commonCopiedToClipboard => 'ক্লিপবোর্ডে কপি করা হয়েছে';
+
+  @override
+  String get chatUndoNothing => 'এই সেশনে পূর্বাবস্থায় ফিরিয়ে আনার কিছু নেই';
+
+  @override
+  String get chatRedoNothing => 'এই সেশনে পুনরায় করার কিছু নেই';
+
+  @override
+  String get chatStatusPatching => 'প্যাচ করা হচ্ছে';
+
+  @override
+  String get chatStatusPatchingOneFile => '১টি ফাইল প্যাচ করা হচ্ছে';
+
+  @override
+  String chatStatusPatchingMultipleFiles(int count) {
+    return '$countটি ফাইল প্যাচ করা হচ্ছে';
+  }
+
+  @override
+  String get chatStatusThinking => 'চিন্তা করছে...';
+
+  @override
+  String get chatStatusSubsession => 'উপ-সেশন';
+
+  @override
+  String get chatStatusBusy => 'অবস্থা: ব্যস্ত';
+
+  @override
+  String get chatStatusRetry => 'অবস্থা: পুনরায় চেষ্টা';
+
+  @override
+  String chatStatusRetryCount(int count) {
+    return 'অবস্থা: পুনরায় চেষ্টা #$count';
+  }
+
+  @override
+  String get appShellUpdateInstalledRestartRequired =>
+      'আপডেট ইনস্টল করা হয়েছে। নতুন সংস্করণ প্রয়োগ করতে পুনরায় শুরু করা প্রয়োজন।';
+
+  @override
+  String get appShellUpdateInstalledRestartApp =>
+      'আপডেট ইনস্টল করা হয়েছে। প্রয়োগ করতে অ্যাপটি পুনরায় শুরু করুন।';
+
+  @override
+  String get chatTourProjectsConversations =>
+      'আপনার প্রজেক্ট এবং কথোপকথন খুলতে এই বোতামটি ব্যবহার করুন।';
+
+  @override
+  String get chatTourSwitchFolders =>
+      'প্রজেক্ট ফোল্ডার এবং প্রসঙ্গ পরিবর্তন করতে এই বোতামটি ব্যবহার করুন।';
+
+  @override
+  String get chatTourSidebarProjectTools =>
+      'কথোপকথন সাইডবার এবং প্রজেক্ট টুল দেখাতে এই মেনুটি ব্যবহার করুন।';
+
+  @override
+  String get chatActionNext => 'পরবর্তী';
+
+  @override
+  String get chatShortcutsNewConversation => 'নতুন কথোপকথন';
+
+  @override
+  String get chatShortcutsRefreshChat => 'চ্যাট ডেটা রিফ্রেশ করুন';
+
+  @override
+  String get chatShortcutsFocusInput => 'বার্তা ইনপুটে ফোকাস করুন';
+
+  @override
+  String get chatShortcutsStartStopVoice => 'ভয়েস ইনপুট শুরু বা বন্ধ করুন';
+
+  @override
+  String get chatShortcutsQuickOpen => 'ফাইল দ্রুত খুলুন';
+
+  @override
+  String get chatShortcutsOpenSettings => 'সেটিংস খুলুন';
+
+  @override
+  String get chatShortcutsCycleModels => 'সাম্প্রতিক মডেলগুলি পরিবর্তন করুন';
+
+  @override
+  String get chatShortcutsCycleVariant => 'মডেল ভেরিয়েন্ট পরিবর্তন করুন';
+
+  @override
+  String get chatShortcutsFocusInputCloseDrawer =>
+      'ইনপুটে ফোকাস করুন (অথবা খোলা থাকলে ড্রয়ার বন্ধ করুন)';
+
+  @override
+  String get chatShortcutsNextAgent => 'পরবর্তী এজেন্ট';
+
+  @override
+  String get chatShortcutsPreviousAgent => 'পূর্ববর্তী এজেন্ট';
+
+  @override
+  String get chatShortcutsCloseApp =>
+      'প্ল্যাটফর্ম আচরণ ব্যবহার করে অ্যাপ বন্ধ করুন';
+
+  @override
+  String get chatShortcutsForceExit => 'অ্যাপ থেকে জোরপূর্বক প্রস্থান করুন';
+
+  @override
+  String get chatShortcutsStopResponse =>
+      'সক্রিয় প্রতিক্রিয়া বন্ধ করুন (প্রতিক্রিয়া দেওয়ার সময়)';
+
+  @override
+  String get chatTipMentionFiles =>
+      'পরামর্শ: আপনার প্রম্পটে ফাইলের উল্লেখ করতে @ ব্যবহার করুন';
+
+  @override
+  String get chatTipRenameConversation =>
+      'পরামর্শ: কথোপকথনের নাম পরিবর্তন করতে শিরোনামে ট্যাপ করুন';
+
+  @override
+  String get chatTipShellCommands =>
+      'পরামর্শ: শেল কমান্ড চালাতে শুরুতে ! ব্যবহার করুন';
+
+  @override
+  String get chatTipSlashCommands =>
+      'পরামর্শ: স্ল্যাশ কমান্ড অ্যাক্সেস করতে / ব্যবহার করুন';
+
+  @override
+  String get chatTipLongPressSend =>
+      'পরামর্শ: নতুন লাইন সন্নিবেশ করতে সেন্ড বোতামটি দীর্ঘক্ষণ টিপুন';
+
+  @override
+  String get chatTipContextKnob =>
+      'পরামর্শ: ব্যবহারের বিবরণ দেখতে প্রসঙ্গ নবটিতে ট্যাপ করুন';
+
+  @override
+  String get chatTipBeSpecific =>
+      'পরামর্শ: সুনির্দিষ্ট হোন — ছোট প্রম্পট দ্রুত উত্তর পায়';
+
+  @override
+  String get chatTipStepByStep =>
+      'পরামর্শ: জটিল সমস্যা ডিবাগ করার সময় ধাপে ধাপে জিজ্ঞাসা করুন';
+
+  @override
+  String get chatTipProvideContext =>
+      'পরামর্শ: প্রসঙ্গ প্রদান করুন — ত্রুটি বার্তা এবং লগ পেস্ট করুন';
+
+  @override
+  String get chatTipBreakTasks =>
+      'পরামর্শ: বড় কাজগুলিকে ছোট প্রম্পটে ভাগ করুন';
+
+  @override
+  String get chatFailedToLoadDirectories => 'ডিরেক্টরি লোড করতে ব্যর্থ';
+
+  @override
+  String get logsFilterAll => 'সব';
+
+  @override
+  String get logsNoLogsYet => 'এখনও কোনো লগ ক্যাপচার করা হয়নি।';
+
+  @override
+  String get logsNoMatchingLogs =>
+      'বর্তমান ফিল্টারগুলির সাথে কোনো লগ মিলছে না।';
+
+  @override
+  String get settingsDefaultModel => 'ডিফল্ট মডেল';
+
+  @override
+  String get settingsSearchDefaultModel => 'ডিফল্ট মডেল অনুসন্ধান করুন';
+
+  @override
+  String get settingsDefaultAgent => 'ডিফল্ট এজেন্ট';
+
+  @override
+  String get settingsSearchDefaultAgent => 'ডিফল্ট এজেন্ট অনুসন্ধান করুন';
+
+  @override
+  String get settingsNoAgentsFound => 'কোনো এজেন্ট পাওয়া যায়নি';
+
+  @override
+  String get settingsConversationUsername => 'কথোপকথন ব্যবহারকারীর নাম';
+
+  @override
+  String get settingsUsernameUnsetExplanation =>
+      'OpenCode সিস্টেম ব্যবহারকারীর নাম ব্যবহার করে কারণ `username` সেট করা নেই।';
+
+  @override
+  String get settingsUsernameResetExplanation =>
+      '`/config` প্যাচ আপডেটগুলি কীগুলি সরাতে পারে না, তাই `username` ডিফল্টে রিসেট করতে অ্যাপের বাইরে কনফিগারেশন সম্পাদনা করতে হবে।';
+
+  @override
+  String get chatHelpMessage =>
+      'উল্লেখের জন্য @, শেলের জন্য !, কমান্ডের জন্য / ব্যবহার করুন';
+
+  @override
+  String terminalEmbeddedUnavailable(String serverName) {
+    return 'এমবেডেড টার্মিনাল এখনও এই রানটাইমে উপলব্ধ নয়। এককালীন কমান্ডের জন্য কম্পোজার শেল মোড ব্যবহার চালিয়ে যান বা $serverName-এর জন্য সমর্থित CodeWalk অ্যাপ রানটাইম থেকে টার্মিনাল খুলুন।';
+  }
+
+  @override
+  String get chatFailedToLoadFile => 'ফাইল লোড করতে ব্যর্থ';
+
+  @override
+  String get chatMentionFileSubtitle => 'ফাইল';
+
+  @override
+  String get chatMentionSymbolSubtitle => 'প্রতীক';
+
+  @override
+  String get chatMentionAgentSubtitle => 'এজেন্ট';
+
+  @override
+  String get chatCommandSourceGeneric => 'কমান্ড';
+
+  @override
+  String get chatCommandSourceProject => 'প্রজেক্ট';
+
+  @override
+  String get chatCommandDescriptionProject => 'প্রজেক্ট কমান্ড';
+
+  @override
+  String get settingsSmallModel => 'ছোট মডেল';
+
+  @override
+  String get settingsSearchSmallModel => 'ছোট মডেল অনুসন্ধান করুন';
+
+  @override
+  String get settingsSmallModelUnsetExplanation =>
+      'OpenCode স্বয়ংক্রিয় ফলব্যাক সক্রিয় কারণ `small_model` সেট করা নেই।';
+
+  @override
+  String get settingsSmallModelResetExplanation =>
+      '`/config` প্যাচ আপডেটগুলি কীগুলি সরাতে পারে না, তাই `small_model` স্বয়ংক্রিয় ফলব্যাকে রিসেট করতে অ্যাপের বাইরে কনফিگرেশন সম্পাদনা করতে হবে।';
+
+  @override
+  String get settingsOpenCodeAutoUpdate => 'OpenCode স্বয়ংক্রিয় আপডেট';
+
+  @override
+  String get settingsSearchAutoUpdateMode =>
+      'স্বয়ংক্রিয় আপডেট মোড অনুসন্ধান করুন';
+
+  @override
+  String get settingsOpenCodeSharingDefault => 'OpenCode শেয়ারিং ডিফল্ট';
+
+  @override
+  String get settingsSearchSharingMode => 'শেয়ারিং মোড অনুসন্ধান করুন';
+
+  @override
+  String get chatHistoryHideEarlier => 'Hide earlier messages';
+
+  @override
+  String get chatHistoryShowEarlier => 'Show earlier messages';
+
+  @override
+  String chatHistoryMessagesHidden(int count, String label) {
+    return '$count messages hidden before $label compaction';
+  }
+
+  @override
+  String get chatWorkHide => 'Hide';
+
+  @override
+  String get chatWorkExpand => 'Expand';
+
+  @override
+  String get chatWorkShow => 'Show';
+
+  @override
+  String get chatWorkMessageOne => '1 work message';
+
+  @override
+  String chatWorkMessagesMultiple(int count) {
+    return '$count work messages';
+  }
+
+  @override
+  String get chatWorkBoundedPanelExplanation =>
+      'Latest tool activity stays inside this bounded panel to keep the chat viewport stable.';
+
+  @override
+  String get chatConversation => 'Conversation';
+
+  @override
+  String get chatPageStatusContextCompacted => 'Context compacted';
+
+  @override
+  String get chatPageStatusFailedToCompactContext =>
+      'Failed to compact context';
+
+  @override
+  String get chatPageStatusCompactingContextNow => 'Compacting context now...';
+
+  @override
+  String get chatPageStatusAutomaticCompactionExplanation =>
+      'Automatic compaction happens as context usage grows.';
+
+  @override
+  String get chatPageStatusCompacting => 'Compacting...';
+
+  @override
+  String get chatPageStatusCompactNow => 'Compact now';
+
+  @override
+  String get chatPageStatusServer => 'Server';
+
+  @override
+  String get chatMessageSaveFile => 'Save file';
+
+  @override
+  String get chatMessageOpenFile => 'Open file';
+
+  @override
+  String get chatMessageThinkingProcess => 'Thinking Process';
+
+  @override
+  String get chatMessageToolCall => '1 tool call';
+
+  @override
+  String chatMessageToolCalls(int count) {
+    return '$count tool calls';
+  }
+
+  @override
+  String get chatMessageRunningTask => 'Running task';
+
+  @override
+  String get chatMessageToolStatusQueued => 'Queued';
+
+  @override
+  String get chatMessageToolStatusInProgress => 'In progress';
+
+  @override
+  String get chatMessageToolStatusNeedsAttention => 'Needs attention';
+
+  @override
+  String get terminalRestoreSize => 'Restore size';
+
+  @override
+  String get terminalMaximize => 'Maximize';
+
+  @override
+  String get behaviorDataSaverActive => 'Active now on mobile data.';
+
+  @override
+  String get behaviorDataSaverWaiting =>
+      'Waiting for the next mobile-data sync window.';
+
+  @override
+  String get behaviorDataSaverCellularOnly =>
+      'Only applies when the connection is cellular/mobile.';
+
+  @override
+  String get settingsUsernameEnterHint =>
+      'Enter a username to save a custom OpenCode conversation name.';
+
+  @override
+  String get settingsUsernameClearHint =>
+      'Clearing the OpenCode conversation username still requires editing config outside the app.';
+
+  @override
+  String get settingsConfigUpdateDeferred =>
+      'CodeWalk will apply this OpenCode setting after the current response finishes.';
+
+  @override
+  String get settingsConfigRefreshFailed =>
+      'Updated the server setting, but could not refresh chat providers.';
 }

@@ -237,7 +237,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatHideUtilitySidebar => 'Ocultar barra de Utilidades';
 
   @override
-  String get chatHistoryCollapsed => 'Previous history is collapsed';
+  String get chatHistoryCollapsed => 'El historial anterior está colapsado';
 
   @override
   String get chatKeepWorking => 'Seguir trabajando';
@@ -253,7 +253,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatLoadingProjectContext => 'Loading project context...';
 
   @override
-  String get chatMessageHide => 'Hide';
+  String get chatMessageHide => 'Ocultar';
 
   @override
   String get chatMessageMessagePartUnavailable => 'Message part unavailable';
@@ -409,7 +409,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get chatRetryRefresh => 'Reintentar actualización';
 
   @override
-  String get chatRetryingModelRequest => 'Reintentando solicitud del modelo...';
+  String get chatRetryingModelRequest => 'Reintentando solicitud de modelo...';
 
   @override
   String get chatReturnToMainConversation =>
@@ -1289,7 +1289,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sessionCancelRename => 'Cancelar renombrado';
 
   @override
-  String get sessionCopyLink => 'Copiar Enlace';
+  String get sessionCopyLink => 'Copiar enlace';
 
   @override
   String get sessionDelete => 'Eliminar';
@@ -3473,4 +3473,765 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get appProviderLabelLocalOpenCodeManaged =>
       'OpenCode Local (Gestionado)';
+
+  @override
+  String get chatChooseModel => 'Elegir modelo';
+
+  @override
+  String get chatStartVoiceInput => 'Iniciar entrada de voz';
+
+  @override
+  String get chatStopVoiceInput => 'Detener entrada de voz';
+
+  @override
+  String get chatStartingVoiceInput => 'Iniciando entrada de voz';
+
+  @override
+  String get chatComposerPlaceholder => 'Escribe tus necesidades...';
+
+  @override
+  String get chatPermissionAutoApproveOn =>
+      'Aprobación automática de permisos activada';
+
+  @override
+  String get chatPermissionAutoApproveOff =>
+      'Aprobación automática de permisos desactivada';
+
+  @override
+  String get chatModelLockedSubConversation =>
+      'Modelo bloqueado en subconversación';
+
+  @override
+  String get chatComposerHintShell => 'Comando de shell (Esc para salir)';
+
+  @override
+  String get utilityTitle => 'Utilidad';
+
+  @override
+  String get statusOffline => 'Desconectado';
+
+  @override
+  String get statusOnline => 'Conectado';
+
+  @override
+  String get statusConnected => 'Conectado';
+
+  @override
+  String get statusReconnecting => 'Reconectando';
+
+  @override
+  String get statusSyncDelayed => 'Sincronización retrasada';
+
+  @override
+  String get statusDelayed => 'Retrasado';
+
+  @override
+  String get chatActiveServerUnhealthyLabel =>
+      'El servidor activo no está saludable';
+
+  @override
+  String get chatWaitingForNetworkConnection => 'Esperando conexión de red...';
+
+  @override
+  String get serverHealthHealthy => 'Saludable';
+
+  @override
+  String get serverHealthUnhealthy => 'No saludable';
+
+  @override
+  String get serverHealthUnknown => 'Desconocido';
+
+  @override
+  String get sessionUnshare => 'Dejar de compartir sesión';
+
+  @override
+  String get sessionShare => 'Compartir sesión';
+
+  @override
+  String get sessionExportMarkdown => 'Exportar Markdown';
+
+  @override
+  String get sessionExportDebugJson => 'Exportar JSON de depuración';
+
+  @override
+  String get sessionViewTasks => 'Ver tareas';
+
+  @override
+  String get sessionCompactContext => 'Compactar contexto';
+
+  @override
+  String get sessionUnshared => 'Conversación dejada de compartir';
+
+  @override
+  String get sessionShared => 'Conversación compartida';
+
+  @override
+  String get sessionShareLinkUnavailable =>
+      'Enlace no disponible para esta sesión';
+
+  @override
+  String get sessionExportMarkdownTitle => 'Exportar sesión como Markdown';
+
+  @override
+  String get sessionExportDebugJsonTitle =>
+      'Exportar sesión como JSON de depuración';
+
+  @override
+  String get sessionExportCanceled => 'Exportación cancelada';
+
+  @override
+  String get sessionExportMarkdownSaved => 'Exportación Markdown guardada';
+
+  @override
+  String get sessionExportDebugJsonSaved =>
+      'Exportación JSON de depuración guardada';
+
+  @override
+  String get sessionExportMarkdownErrorClipboard =>
+      'No se pudo guardar; Markdown copiado al portapapeles';
+
+  @override
+  String get sessionExportDebugJsonErrorClipboard =>
+      'No se pudo guardar; JSON de depuración copiado al portapapeles';
+
+  @override
+  String get terminalHide => 'Ocultar terminal';
+
+  @override
+  String get terminalOpen => 'Abrir terminal';
+
+  @override
+  String get terminalOpenInfo => 'Abrir información del terminal';
+
+  @override
+  String get chatNoSessionSelected => 'Selecciona o crea una conversación';
+
+  @override
+  String get chatWelcomeMessage => '¡Hola! Soy tu asistente de IA.';
+
+  @override
+  String get chatWelcomeSubmessage => '¿Cómo puedo ayudarte hoy?';
+
+  @override
+  String get cannedAppendAtCursor => 'Añadir al cursor';
+
+  @override
+  String get cannedReplace => 'Reemplazar';
+
+  @override
+  String get chatMessageAttachedFile => 'Archivo adjunto';
+
+  @override
+  String get chatMessageThinking => 'Pensando';
+
+  @override
+  String get chatMessageShow => 'Mostrar';
+
+  @override
+  String get chatMessageMore => 'Más';
+
+  @override
+  String get chatMessageLess => 'Menos';
+
+  @override
+  String get chatMessageDetails => 'Detalles';
+
+  @override
+  String get chatMessageToolInput => 'Entrada';
+
+  @override
+  String get chatMessageToolCommand => 'Comando';
+
+  @override
+  String chatMessageToolRunningCount(int count) {
+    return '$count ejecutándose';
+  }
+
+  @override
+  String chatMessageToolQueuedCount(int count) {
+    return '$count en cola';
+  }
+
+  @override
+  String get chatMessageToolOutputTruncated =>
+      'Vista previa truncada por estabilidad.';
+
+  @override
+  String get chatMessageToolCommandTruncated =>
+      'Vista previa del comando truncada.';
+
+  @override
+  String get chatMessageToolInputTruncated =>
+      'Vista previa de entrada truncada.';
+
+  @override
+  String get chatMessageToolDiffOmitted =>
+      'Vista previa de diff omitida por ser demasiado grande.';
+
+  @override
+  String get terminalTitle => 'Terminal';
+
+  @override
+  String get chatCouldNotRefreshSession =>
+      'No se pudo actualizar la conversación';
+
+  @override
+  String get chatMainConversationUnavailable =>
+      'La conversación principal no está disponible.';
+
+  @override
+  String get chatFailedToRefreshSubConversations =>
+      'Error al actualizar subconversaciones. Intenta de nuevo.';
+
+  @override
+  String get chatNoSubConversationFound => 'No se encontró subconversación.';
+
+  @override
+  String get errorAnErrorOccurred => 'Ocurrió un error';
+
+  @override
+  String get serverConnectionAttention =>
+      'La conexión al servidor necesita atención.';
+
+  @override
+  String sessionHasError(String title) {
+    return '\"$title\" tiene un error.';
+  }
+
+  @override
+  String sessionNeedsInput(String title) {
+    return '\"$title\" necesita tu entrada.';
+  }
+
+  @override
+  String sessionHasNewReply(String title) {
+    return '\"$title\" tiene una nueva respuesta.';
+  }
+
+  @override
+  String get sessionSyncing => 'Sincronizando conversaciones...';
+
+  @override
+  String get behaviorCellularDataSaverActive =>
+      'El ahorro de datos está activo.';
+
+  @override
+  String get sessionNoCachedConversations => 'No hay conversaciones en caché';
+
+  @override
+  String get sessionForkFailed => 'Error al bifurcar conversación';
+
+  @override
+  String get sessionForked => 'Conversación bifurcada';
+
+  @override
+  String get sessionNoConversationsInProject =>
+      'No hay conversaciones en este proyecto.';
+
+  @override
+  String get sessionOpenProjectToLoad =>
+      'Abre el proyecto para cargar conversaciones.';
+
+  @override
+  String sessionChildrenCount(int count) {
+    return 'Subconversaciones: $count';
+  }
+
+  @override
+  String sessionDiffFilesCount(int count) {
+    return 'Archivos diff: $count';
+  }
+
+  @override
+  String get compactionAutomatic => 'automático';
+
+  @override
+  String get compactionManual => 'manual';
+
+  @override
+  String get chatMessageShowLessCompact => 'Menos';
+
+  @override
+  String get chatMessageShowLess => 'Mostrar menos';
+
+  @override
+  String get chatMessageShowMoreCompact => 'Más';
+
+  @override
+  String get chatMessageShowMore => 'Mostrar más';
+
+  @override
+  String get chatChooseAgent => 'Seleccionar agente';
+
+  @override
+  String get chatEffortLockedSubConversation =>
+      'Esfuerzo bloqueado en subconversación';
+
+  @override
+  String get chatChooseEffort => 'Elegir esfuerzo';
+
+  @override
+  String get chatServerSelectedModel => 'Modelo seleccionado por el servidor';
+
+  @override
+  String get chatFailedToRefreshProviders =>
+      'Error al actualizar proveedores y modelos';
+
+  @override
+  String get cannedAddTitle => 'Agregar respuesta rápida';
+
+  @override
+  String get cannedEditTitle => 'Editar respuesta rápida';
+
+  @override
+  String get cannedTextLabel => 'Texto';
+
+  @override
+  String get cannedAppendAtCursorSubtitle =>
+      'Desactivado = reemplazar texto actual';
+
+  @override
+  String get cannedSendAutomaticallySubtitle =>
+      'Enviar inmediatamente después de insertar';
+
+  @override
+  String get cannedScopeGlobalSubtitle =>
+      'Desactivar para elemento solo del proyecto';
+
+  @override
+  String get cannedScopeGlobalUnavailableSubtitle =>
+      'Solo proyecto no disponible en este contexto';
+
+  @override
+  String get commonFile => 'Archivo';
+
+  @override
+  String get serversSearchActiveHint => 'Buscar servidor activo';
+
+  @override
+  String get serversNoServersFound => 'No se encontraron servidores';
+
+  @override
+  String get serversUnhealthyActivateError =>
+      'Este servidor no está saludable. Use verificar salud o editar configuración antes de activar.';
+
+  @override
+  String get serversTailscaleConnected => 'Tailscale conectado';
+
+  @override
+  String get serversTailscaleConnecting => 'Tailscale conectando';
+
+  @override
+  String get serversTailscaleAuthRequired =>
+      'Autenticación de Tailscale requerida';
+
+  @override
+  String get serversTailscaleAdminApprovalRequired =>
+      'Aprobación del administrador de Tailscale requerida';
+
+  @override
+  String get serversTailscaleConnectionFailed => 'Conexión Tailscale fallida';
+
+  @override
+  String get serversTailscaleUnsupported => 'Tailscale no compatible';
+
+  @override
+  String get serversTailscaleDisconnected => 'Tailscale desconectado';
+
+  @override
+  String get serversTailscaleLoginExplanation =>
+      'Abra la URL de inicio de sesión de Tailscale para agregar este dispositivo a su tailnet.';
+
+  @override
+  String get serversTailscaleTrafficExplanation =>
+      'El tráfico de OpenCode para este perfil activo se enruta a través de Tailscale.';
+
+  @override
+  String get serversTailscaleConnectExplanation =>
+      'Tailscale se conectará cuando se use este perfil activo.';
+
+  @override
+  String get statusStarting => 'Iniciando';
+
+  @override
+  String get statusStopping => 'Deteniendo';
+
+  @override
+  String get statusFailed => 'Falló';
+
+  @override
+  String get statusStopped => 'Detenido';
+
+  @override
+  String get serversDesktopModeExplanation =>
+      'El modo escritorio puede iniciar y gestionar `opencode serve` directamente desde CodeWalk.';
+
+  @override
+  String get serversCannotActivateUnhealthy =>
+      'No se puede activar un servidor no saludable';
+
+  @override
+  String get commonCopiedToClipboard => 'Copiado al portapapeles';
+
+  @override
+  String get chatUndoNothing => 'Nada que deshacer en esta sesión';
+
+  @override
+  String get chatRedoNothing => 'Nada que rehacer en esta sesión';
+
+  @override
+  String get chatStatusPatching => 'Parcheando';
+
+  @override
+  String get chatStatusPatchingOneFile => 'Parcheando 1 archivo';
+
+  @override
+  String chatStatusPatchingMultipleFiles(int count) {
+    return 'Parcheando $count archivos';
+  }
+
+  @override
+  String get chatStatusThinking => 'Pensando...';
+
+  @override
+  String get chatStatusSubsession => 'Subsesión';
+
+  @override
+  String get chatStatusBusy => 'Estado: Ocupado';
+
+  @override
+  String get chatStatusRetry => 'Estado: Reintentar';
+
+  @override
+  String chatStatusRetryCount(int count) {
+    return 'Estado: Reintento #$count';
+  }
+
+  @override
+  String get appShellUpdateInstalledRestartRequired =>
+      'Actualización instalada. Se requiere reiniciar para aplicar la nueva versión.';
+
+  @override
+  String get appShellUpdateInstalledRestartApp =>
+      'Actualización instalada. Reinicia la aplicación para aplicar.';
+
+  @override
+  String get chatTourProjectsConversations =>
+      'Usa este botón para abrir tus proyectos y conversaciones.';
+
+  @override
+  String get chatTourSwitchFolders =>
+      'Usa este botón para cambiar carpetas de proyecto y contexto.';
+
+  @override
+  String get chatTourSidebarProjectTools =>
+      'Usa este menú para mostrar la barra lateral de conversaciones y herramientas de proyecto.';
+
+  @override
+  String get chatActionNext => 'Siguiente';
+
+  @override
+  String get chatShortcutsNewConversation => 'Nueva conversación';
+
+  @override
+  String get chatShortcutsRefreshChat => 'Actualizar datos de chat';
+
+  @override
+  String get chatShortcutsFocusInput => 'Enfocar entrada de mensaje';
+
+  @override
+  String get chatShortcutsStartStopVoice => 'Iniciar o detener entrada de voz';
+
+  @override
+  String get chatShortcutsQuickOpen => 'Abrir archivos rápidamente';
+
+  @override
+  String get chatShortcutsOpenSettings => 'Abrir ajustes';
+
+  @override
+  String get chatShortcutsCycleModels => 'Ciclar modelos recientes';
+
+  @override
+  String get chatShortcutsCycleVariant => 'Ciclar variante de modelo';
+
+  @override
+  String get chatShortcutsFocusInputCloseDrawer =>
+      'Enfocar entrada (o cerrar cajón si está abierto)';
+
+  @override
+  String get chatShortcutsNextAgent => 'Siguiente agente';
+
+  @override
+  String get chatShortcutsPreviousAgent => 'Agente anterior';
+
+  @override
+  String get chatShortcutsCloseApp =>
+      'Cerrar aplicación usando comportamiento de plataforma';
+
+  @override
+  String get chatShortcutsForceExit => 'Forzar salida de la aplicación';
+
+  @override
+  String get chatShortcutsStopResponse =>
+      'Detener respuesta activa (mientras responde)';
+
+  @override
+  String get chatTipMentionFiles =>
+      'Consejo: Usa @ para mencionar archivos en tu mensaje';
+
+  @override
+  String get chatTipRenameConversation =>
+      'Consejo: Toca el título para renombrar una conversación';
+
+  @override
+  String get chatTipShellCommands =>
+      'Consejo: Usa ! al principio para ejecutar comandos de shell';
+
+  @override
+  String get chatTipSlashCommands =>
+      'Consejo: Usa / para acceder a comandos de barra';
+
+  @override
+  String get chatTipLongPressSend =>
+      'Consejo: Mantén presionado Enviar para insertar una nueva línea';
+
+  @override
+  String get chatTipContextKnob =>
+      'Consejo: Toca el botón de contexto para ver detalles de uso';
+
+  @override
+  String get chatTipBeSpecific =>
+      'Consejo: Sé específico — los mensajes cortos reciben respuestas más rápidas';
+
+  @override
+  String get chatTipStepByStep =>
+      'Consejo: Pide paso a paso al depurar problemas complejos';
+
+  @override
+  String get chatTipProvideContext =>
+      'Consejo: Proporciona contexto — pega mensajes de error y registros';
+
+  @override
+  String get chatTipBreakTasks =>
+      'Consejo: Divide tareas grandes en mensajes más pequeños';
+
+  @override
+  String get chatFailedToLoadDirectories => 'Error al cargar directorios';
+
+  @override
+  String get logsFilterAll => 'Todos';
+
+  @override
+  String get logsNoLogsYet => 'No hay registros capturados aún.';
+
+  @override
+  String get logsNoMatchingLogs =>
+      'Ningún registro coincide con los filtros actuales.';
+
+  @override
+  String get settingsDefaultModel => 'Modelo predeterminado';
+
+  @override
+  String get settingsSearchDefaultModel => 'Buscar modelo predeterminado';
+
+  @override
+  String get settingsDefaultAgent => 'Agente predeterminado';
+
+  @override
+  String get settingsSearchDefaultAgent => 'Buscar agente predeterminado';
+
+  @override
+  String get settingsNoAgentsFound => 'No se encontraron agentes';
+
+  @override
+  String get settingsConversationUsername =>
+      'Nombre de usuario de conversación';
+
+  @override
+  String get settingsUsernameUnsetExplanation =>
+      'OpenCode usa el nombre de usuario del sistema porque `username` no está definido.';
+
+  @override
+  String get settingsUsernameResetExplanation =>
+      'Restablecer `username` al valor predeterminado del sistema aún requiere editar la configuración fuera de la aplicación porque las actualizaciones de parche `/config` no pueden eliminar claves.';
+
+  @override
+  String get chatHelpMessage =>
+      'Usa @ para menciones, ! para shell, / para comandos';
+
+  @override
+  String terminalEmbeddedUnavailable(String serverName) {
+    return 'El terminal integrado no está disponible en este entorno todavía. Sigue usando el modo shell del compositor para comandos únicos o abre el terminal desde un entorno de aplicación CodeWalk compatible para $serverName.';
+  }
+
+  @override
+  String get chatFailedToLoadFile => 'Error al cargar el archivo';
+
+  @override
+  String get chatMentionFileSubtitle => 'archivo';
+
+  @override
+  String get chatMentionSymbolSubtitle => 'símbolo';
+
+  @override
+  String get chatMentionAgentSubtitle => 'agente';
+
+  @override
+  String get chatCommandSourceGeneric => 'comando';
+
+  @override
+  String get chatCommandSourceProject => 'proyecto';
+
+  @override
+  String get chatCommandDescriptionProject => 'Comando del proyecto';
+
+  @override
+  String get settingsSmallModel => 'Modelo pequeño';
+
+  @override
+  String get settingsSearchSmallModel => 'Buscar modelo pequeño';
+
+  @override
+  String get settingsSmallModelUnsetExplanation =>
+      'El fallback automático de OpenCode está activo porque `small_model` no está definido.';
+
+  @override
+  String get settingsSmallModelResetExplanation =>
+      'Restablecer `small_model` al fallback automático aún requiere editar la configuración fuera de la aplicación porque las actualizaciones de parche `/config` no pueden eliminar claves.';
+
+  @override
+  String get settingsOpenCodeAutoUpdate =>
+      'Actualización automática de OpenCode';
+
+  @override
+  String get settingsSearchAutoUpdateMode =>
+      'Buscar modo de actualización automática';
+
+  @override
+  String get settingsOpenCodeSharingDefault =>
+      'Predeterminado de intercambio de OpenCode';
+
+  @override
+  String get settingsSearchSharingMode => 'Buscar modo de intercambio';
+
+  @override
+  String get chatHistoryHideEarlier => 'Ocultar mensajes anteriores';
+
+  @override
+  String get chatHistoryShowEarlier => 'Mostrar mensajes anteriores';
+
+  @override
+  String chatHistoryMessagesHidden(int count, String label) {
+    return '$count mensajes ocultos antes de la compactación $label';
+  }
+
+  @override
+  String get chatWorkHide => 'Ocultar';
+
+  @override
+  String get chatWorkExpand => 'Expandir';
+
+  @override
+  String get chatWorkShow => 'Mostrar';
+
+  @override
+  String get chatWorkMessageOne => '1 mensaje de trabajo';
+
+  @override
+  String chatWorkMessagesMultiple(int count) {
+    return '$count mensajes de trabajo';
+  }
+
+  @override
+  String get chatWorkBoundedPanelExplanation =>
+      'La actividad más reciente de la herramienta permanece dentro de este panel limitado para mantener estable la vista del chat.';
+
+  @override
+  String get chatConversation => 'Conversación';
+
+  @override
+  String get chatPageStatusContextCompacted => 'Contexto compactado';
+
+  @override
+  String get chatPageStatusFailedToCompactContext =>
+      'Error al compactar contexto';
+
+  @override
+  String get chatPageStatusCompactingContextNow =>
+      'Compactando contexto ahora...';
+
+  @override
+  String get chatPageStatusAutomaticCompactionExplanation =>
+      'La compactación automática ocurre a medida que crece el uso del contexto.';
+
+  @override
+  String get chatPageStatusCompacting => 'Compactando...';
+
+  @override
+  String get chatPageStatusCompactNow => 'Compactar ahora';
+
+  @override
+  String get chatPageStatusServer => 'Servidor';
+
+  @override
+  String get chatMessageSaveFile => 'Guardar archivo';
+
+  @override
+  String get chatMessageOpenFile => 'Abrir archivo';
+
+  @override
+  String get chatMessageThinkingProcess => 'Proceso de pensamiento';
+
+  @override
+  String get chatMessageToolCall => '1 llamada a herramienta';
+
+  @override
+  String chatMessageToolCalls(int count) {
+    return '$count llamadas a herramientas';
+  }
+
+  @override
+  String get chatMessageRunningTask => 'Ejecutando tarea';
+
+  @override
+  String get chatMessageToolStatusQueued => 'En cola';
+
+  @override
+  String get chatMessageToolStatusInProgress => 'En progreso';
+
+  @override
+  String get chatMessageToolStatusNeedsAttention => 'Necesita atención';
+
+  @override
+  String get terminalRestoreSize => 'Restaurar tamaño';
+
+  @override
+  String get terminalMaximize => 'Maximizar';
+
+  @override
+  String get behaviorDataSaverActive => 'Activo ahora con datos móviles.';
+
+  @override
+  String get behaviorDataSaverWaiting =>
+      'Esperando la próxima ventana de sincronización de datos móviles.';
+
+  @override
+  String get behaviorDataSaverCellularOnly =>
+      'Solo se aplica cuando la conexión es celular/móvil.';
+
+  @override
+  String get settingsUsernameEnterHint =>
+      'Ingresa un nombre de usuario para guardar un nombre de conversación personalizado de OpenCode.';
+
+  @override
+  String get settingsUsernameClearHint =>
+      'Borrar el nombre de usuario de la conversación de OpenCode todavía requiere editar la configuración fuera de la aplicación.';
+
+  @override
+  String get settingsConfigUpdateDeferred =>
+      'CodeWalk aplicará este ajuste de OpenCode después de que finalice la respuesta actual.';
+
+  @override
+  String get settingsConfigRefreshFailed =>
+      'Se actualizó el ajuste del servidor, pero no se pudieron actualizar los proveedores de chat.';
 }

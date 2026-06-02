@@ -10,12 +10,12 @@ extension _ChatPageComposerStatus on _ChatPageState {
 
   String _resolvePatchProgressLabel(PatchPart part) {
     if (part.files.isEmpty) {
-      return 'Patching';
+      return context.l10n.chatStatusPatching;
     }
     if (part.files.length == 1) {
-      return 'Patching 1 file';
+      return context.l10n.chatStatusPatchingOneFile;
     }
-    return 'Patching ${part.files.length} files';
+    return context.l10n.chatStatusPatchingMultipleFiles(part.files.length);
   }
 
   _ComposerStatusPresentation? _resolveLatestLiveProgress(
@@ -57,7 +57,8 @@ extension _ChatPageComposerStatus on _ChatPageState {
           if (trimmed.isEmpty) {
             continue;
           }
-          final label = parseReasoningStatusLabel(part.text) ?? 'Thinking...';
+          final label = parseReasoningStatusLabel(part.text) ??
+              context.l10n.chatStatusThinking;
           return _ComposerStatusPresentation.dynamicReasoning(label);
         }
       }
@@ -133,7 +134,7 @@ extension _ChatPageComposerStatus on _ChatPageState {
       _AssistantProgressStage.receiving || _AssistantProgressStage.thinking =>
         context.read<SettingsProvider>().showComposerTips
             ? _ComposerStatusPresentation.tip(
-                _ComposerStatusPresentation._receivingTips[_currentTipIndex],
+                _receivingTips[_currentTipIndex % _receivingTips.length],
               )
             : _ComposerStatusPresentation.receiving(
                 label: context.l10n.chatReasoning,

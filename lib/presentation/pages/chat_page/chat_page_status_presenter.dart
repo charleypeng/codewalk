@@ -8,8 +8,9 @@ extension _ChatPageStatusPresenter on _ChatPageState {
     }
     _showChatPageMessageSnackBar(
       success
-          ? 'Context compacted'
-          : (chatProvider.errorMessage ?? 'Failed to compact context'),
+          ? context.l10n.chatPageStatusContextCompacted
+          : (chatProvider.errorMessage ??
+                context.l10n.chatPageStatusFailedToCompactContext),
     );
   }
 
@@ -204,8 +205,8 @@ extension _ChatPageStatusPresenter on _ChatPageState {
           const SizedBox(height: 10),
           Text(
             isCompacting
-                ? 'Compacting context now...'
-                : 'Automatic compaction happens as context usage grows.',
+                ? context.l10n.chatPageStatusCompactingContextNow
+                : context.l10n.chatPageStatusAutomaticCompactionExplanation,
             style: textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -238,7 +239,9 @@ extension _ChatPageStatusPresenter on _ChatPageState {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    isCompacting ? 'Compacting...' : 'Compact now',
+                    isCompacting
+                        ? context.l10n.chatPageStatusCompacting
+                        : context.l10n.chatPageStatusCompactNow,
                     style: textTheme.labelLarge?.copyWith(
                       color: canCompact
                           ? Theme.of(context).colorScheme.onSurface
@@ -256,18 +259,19 @@ extension _ChatPageStatusPresenter on _ChatPageState {
   }
 
   String _syncStatusLabel({
+    required BuildContext context,
     required ChatProvider chatProvider,
     required AppProvider appProvider,
   }) {
     if (!appProvider.isConnected ||
         chatProvider.syncState == ChatSyncState.reconnecting) {
-      return 'Reconnecting';
+      return context.l10n.statusReconnecting;
     }
     if (chatProvider.syncState == ChatSyncState.delayed ||
         chatProvider.isInDegradedMode) {
-      return 'Sync delayed';
+      return context.l10n.statusSyncDelayed;
     }
-    return 'Connected';
+    return context.l10n.statusConnected;
   }
 
   bool _hasDelayedServerStatus({
@@ -292,6 +296,7 @@ extension _ChatPageStatusPresenter on _ChatPageState {
   }
 
   String _serverStatusLabel({
+    required BuildContext context,
     required ChatProvider chatProvider,
     required AppProvider appProvider,
   }) {
@@ -301,15 +306,15 @@ extension _ChatPageStatusPresenter on _ChatPageState {
           chatProvider: chatProvider,
           appProvider: appProvider,
         )) {
-      return 'Offline';
+      return context.l10n.statusOffline;
     }
     if (_hasDelayedServerStatus(
       chatProvider: chatProvider,
       appProvider: appProvider,
     )) {
-      return 'Delayed';
+      return context.l10n.statusDelayed;
     }
-    return 'Online';
+    return context.l10n.statusOnline;
   }
 
   Widget _buildServerStatusControl({required bool closeOnSelect}) {
@@ -322,6 +327,7 @@ extension _ChatPageStatusPresenter on _ChatPageState {
           appProvider: appProvider,
         );
         final statusLabel = _serverStatusLabel(
+          context: context,
           chatProvider: chatProvider,
           appProvider: appProvider,
         );
@@ -419,7 +425,7 @@ extension _ChatPageStatusPresenter on _ChatPageState {
                     children: [
                       Flexible(
                         child: Text(
-                          active?.displayName ?? 'Server',
+                          active?.displayName ?? context.l10n.chatPageStatusServer,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.labelMedium,

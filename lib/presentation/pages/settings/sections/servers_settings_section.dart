@@ -141,8 +141,8 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
             SearchableDropdownFormField<String>(
               key: _activeServerDropdownKey,
               initialValue: dropdownValue,
-              searchHintText: 'Search active server',
-              emptyText: 'No servers found',
+              searchHintText: context.l10n.serversSearchActiveHint,
+              emptyText: context.l10n.serversNoServersFound,
               searchTermsBuilder: (value) =>
                   _serverSearchTerms(appProvider, value),
               items: appProvider.serverProfiles
@@ -176,7 +176,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
                     dropdownValue,
                   );
                   _showMessage(
-                    'This server is unhealthy. Use check health or edit settings before activating.',
+                    context.l10n.serversUnhealthyActivateError,
                   );
                   return;
                 }
@@ -219,47 +219,47 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
     final (icon, title, color) = switch (state.nodeState) {
       TailscaleNodeState.connected => (
         Symbols.check_circle_rounded,
-        'Tailscale connected',
+        context.l10n.serversTailscaleConnected,
         Colors.green,
       ),
       TailscaleNodeState.connecting => (
         Symbols.sync_rounded,
-        'Tailscale connecting',
+        context.l10n.serversTailscaleConnecting,
         colorScheme.primary,
       ),
       TailscaleNodeState.needsLogin => (
         Symbols.login_rounded,
-        'Tailscale authentication required',
+        context.l10n.serversTailscaleAuthRequired,
         colorScheme.tertiary,
       ),
       TailscaleNodeState.needsMachineAuth => (
         Symbols.admin_panel_settings_rounded,
-        'Tailscale admin approval required',
+        context.l10n.serversTailscaleAdminApprovalRequired,
         colorScheme.tertiary,
       ),
       TailscaleNodeState.error => (
         Symbols.error_rounded,
-        'Tailscale connection failed',
+        context.l10n.serversTailscaleConnectionFailed,
         colorScheme.error,
       ),
       TailscaleNodeState.unsupported => (
         Symbols.block_rounded,
-        'Tailscale unsupported',
+        context.l10n.serversTailscaleUnsupported,
         colorScheme.error,
       ),
       TailscaleNodeState.disconnected => (
         Symbols.link_off_rounded,
-        'Tailscale disconnected',
+        context.l10n.serversTailscaleDisconnected,
         colorScheme.onSurfaceVariant,
       ),
     };
     final message =
         state.message ??
         (state.requiresUserLogin
-            ? 'Open the Tailscale login URL to add this device to your tailnet.'
+            ? context.l10n.serversTailscaleLoginExplanation
             : state.nodeState == TailscaleNodeState.connected
-            ? 'OpenCode traffic for this active profile is routed through Tailscale.'
-            : 'Tailscale will connect when this active profile is used.');
+            ? context.l10n.serversTailscaleTrafficExplanation
+            : context.l10n.serversTailscaleConnectExplanation);
 
     return Container(
       width: double.infinity,
@@ -346,11 +346,23 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
     final setupBusy = appProvider.localSetupInProgress;
 
     final (statusColor, statusLabel) = switch (status) {
-      LocalServerRuntimeStatus.running => (Colors.green, context.l10n.toolPresentationRunning),
-      LocalServerRuntimeStatus.starting => (Colors.orange, 'Starting'),
-      LocalServerRuntimeStatus.stopping => (Colors.orange, 'Stopping'),
-      LocalServerRuntimeStatus.failed => (Colors.red, 'Failed'),
-      LocalServerRuntimeStatus.stopped => (Colors.grey, 'Stopped'),
+      LocalServerRuntimeStatus.running => (
+        Colors.green,
+        context.l10n.toolPresentationRunning,
+      ),
+      LocalServerRuntimeStatus.starting => (
+        Colors.orange,
+        context.l10n.statusStarting,
+      ),
+      LocalServerRuntimeStatus.stopping => (
+        Colors.orange,
+        context.l10n.statusStopping,
+      ),
+      LocalServerRuntimeStatus.failed => (Colors.red, context.l10n.statusFailed),
+      LocalServerRuntimeStatus.stopped => (
+        Colors.grey,
+        context.l10n.statusStopped,
+      ),
     };
 
     return Card(
@@ -365,7 +377,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
             ),
             const SizedBox(height: 6),
             Text(
-              'Desktop mode can launch and manage `opencode serve` directly from CodeWalk.',
+              context.l10n.serversDesktopModeExplanation,
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 8),
@@ -604,7 +616,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
     switch (action) {
       case _ServerAction.activate:
         if (appProvider.healthFor(profile.id) == ServerHealthStatus.unhealthy) {
-          _showMessage('Cannot activate an unhealthy server');
+          _showMessage(context.l10n.serversCannotActivateUnhealthy);
           return;
         }
         final ok = await appProvider.setActiveServer(profile.id);
@@ -700,7 +712,7 @@ class _ServersSettingsSectionState extends State<ServersSettingsSection> {
 
   void _copyToClipboard(String text) {
     Clipboard.setData(ClipboardData(text: text));
-    _showMessage('Copied to clipboard');
+    _showMessage(context.l10n.commonCopiedToClipboard);
   }
 }
 
@@ -712,9 +724,9 @@ class _HealthDot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, tooltip) = switch (status) {
-      ServerHealthStatus.healthy => (Colors.green, 'Healthy'),
-      ServerHealthStatus.unhealthy => (Colors.red, 'Unhealthy'),
-      ServerHealthStatus.unknown => (Colors.grey, 'Unknown'),
+      ServerHealthStatus.healthy => (Colors.green, context.l10n.serverHealthHealthy),
+      ServerHealthStatus.unhealthy => (Colors.red, context.l10n.serverHealthUnhealthy),
+      ServerHealthStatus.unknown => (Colors.grey, context.l10n.serverHealthUnknown),
     };
 
     return Tooltip(

@@ -181,7 +181,7 @@ extension _ChatPageComposerWidgets on _ChatPageState {
         if (!mounted) {
           return;
         }
-        const tips = _ComposerStatusPresentation._receivingTips;
+        final tips = _receivingTips;
         _currentTipIndex = (_currentTipIndex + 1) % tips.length;
         _setState(() {
           _visibleComposerStatus = _ComposerStatusPresentation.tip(

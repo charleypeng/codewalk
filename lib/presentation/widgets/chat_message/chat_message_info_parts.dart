@@ -46,7 +46,9 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
               ),
               const SizedBox(width: 8),
               Text(
-                compactLayout ? 'Thinking' : 'Thinking Process',
+                compactLayout
+                    ? context.l10n.chatMessageThinking
+                    : context.l10n.chatMessageThinkingProcess,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w500,
                   color: Theme.of(context).colorScheme.primary,
@@ -189,7 +191,9 @@ extension _ChatMessageInfoPartsBuilder on _ChatMessageWidgetState {
       context,
       icon: Symbols.compress,
       title: context.l10n.msgInfoCompaction,
-      subtitle: part.auto ? 'automatic' : 'manual',
+      subtitle: part.auto
+          ? context.l10n.compactionAutomatic
+          : context.l10n.compactionManual,
     );
   }
 
@@ -385,8 +389,12 @@ class _CollapsibleReasoningContentState
             ),
             child: Text(
               _expanded
-                  ? (compactLayout ? 'Less' : 'Show less')
-                  : (compactLayout ? 'More' : 'Show more'),
+                  ? (compactLayout
+                      ? context.l10n.chatMessageShowLessCompact
+                      : context.l10n.chatMessageShowLess)
+                  : (compactLayout
+                      ? context.l10n.chatMessageShowMoreCompact
+                      : context.l10n.chatMessageShowMore),
             ),
           ),
         ),

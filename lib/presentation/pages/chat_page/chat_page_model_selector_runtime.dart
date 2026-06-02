@@ -17,7 +17,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
     final selectedModelLabel =
         lockedSubConversationSelection?.modelLabel ??
         selectedModel?.name ??
-        'Select model';
+        context.l10n.chatChooseModel;
     final selectedVariantLabel = isSubConversation
         ? lockedSubConversationSelection?.variantLabel
         : chatProvider.selectedVariantLabel;
@@ -41,8 +41,8 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
           if (!isSubConversation)
             Tooltip(
               message: autoApproveEnabled
-                  ? 'Permission auto-approve is on'
-                  : 'Permission auto-approve is off',
+                  ? context.l10n.chatPermissionAutoApproveOn
+                  : context.l10n.chatPermissionAutoApproveOff,
               child: Badge.count(
                 isLabelVisible:
                     chatProvider.currentThreadPermissionRequests.isNotEmpty,
@@ -116,7 +116,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
                   backgroundColor: selectedAgentColor?.withValues(alpha: 0.16),
                   label: Text(
                     selectedAgent == null
-                        ? 'Select agent'
+                        ? context.l10n.chatChooseAgent
                         : _formatAgentLabel(selectedAgent),
                     style: selectedAgentColor == null
                         ? null
@@ -135,8 +135,8 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
             ),
           Tooltip(
             message: isSubConversation
-                ? 'Model locked in sub-conversation'
-                : 'Choose model',
+                ? context.l10n.chatModelLockedSubConversation
+                : context.l10n.chatChooseModel,
             child: ActionChip(
               key: isSubConversation
                   ? const ValueKey<String>('model_selector_button_readonly')
@@ -167,7 +167,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
             Tooltip(
               message:
                   chatProvider.providersRefreshErrorMessage ??
-                  'Failed to refresh providers and models',
+                  context.l10n.chatFailedToRefreshProviders,
               child: ActionChip(
                 key: const ValueKey<String>('model_selector_retry_button'),
                 avatar: const Icon(Symbols.refresh_rounded, size: 16),
@@ -183,8 +183,8 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
               : variants.isNotEmpty)
             Tooltip(
               message: isSubConversation
-                  ? 'Effort locked in sub-conversation'
-                  : 'Choose effort',
+                  ? context.l10n.chatEffortLockedSubConversation
+                  : context.l10n.chatChooseEffort,
               child: Builder(
                 builder: (chipContext) => ActionChip(
                   key: isSubConversation
@@ -239,7 +239,7 @@ extension _ChatPageModelSelectorRuntime on _ChatPageState {
     final modelLabel =
         model?.name ??
         (modelHint == null
-            ? 'Server-selected model'
+            ? context.l10n.chatServerSelectedModel
             : '${modelHint.providerId}/${modelHint.modelId}');
 
     final variantHint = _resolveSubConversationVariantHint(chatProvider);

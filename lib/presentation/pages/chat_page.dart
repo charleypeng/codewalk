@@ -149,19 +149,18 @@ enum _CachedViewportRestoreTarget { none, bottom, latestResponse }
   if (isMobile) {
     return (
       title: context.l10n.chatOpenSidebar,
-      description: 'Use this button to open your projects and conversations.',
+      description: context.l10n.chatTourProjectsConversations,
     );
   }
   if (showConversationPane) {
     return (
       title: context.l10n.chatOpenProject,
-      description: 'Use this button to switch project folders and context.',
+      description: context.l10n.chatTourSwitchFolders,
     );
   }
   return (
     title: context.l10n.chatSidebarAccess,
-    description:
-        'Use this menu to show the conversations sidebar and project tools.',
+    description: context.l10n.chatTourSidebarProjectTools,
   );
 }
 
@@ -231,6 +230,19 @@ class _ChatPageState extends State<ChatPage>
   static const double _returnLatestRevealAlignment = 0.0;
   static const int _maxReturnLatestRevealAttempts = 8;
   static const String _traceFinalPrefix = 'CW_TRACE_FINAL';
+
+  List<String> get _receivingTips => [
+        context.l10n.chatTipMentionFiles,
+        context.l10n.chatTipRenameConversation,
+        context.l10n.chatTipShellCommands,
+        context.l10n.chatTipSlashCommands,
+        context.l10n.chatTipLongPressSend,
+        context.l10n.chatTipContextKnob,
+        context.l10n.chatTipBeSpecific,
+        context.l10n.chatTipStepByStep,
+        context.l10n.chatTipProvideContext,
+        context.l10n.chatTipBreakTasks,
+      ];
 
   final ScrollController _scrollController = ScrollController();
   final TimelineSearchService _timelineSearchService =
@@ -636,9 +648,7 @@ class _ChatPageState extends State<ChatPage>
   @override
   void initState() {
     super.initState();
-    _currentTipIndex = Random().nextInt(
-      _ComposerStatusPresentation._receivingTips.length,
-    );
+    _currentTipIndex = Random().nextInt(10);
     WidgetsBinding.instance.addObserver(this);
     HardwareKeyboard.instance.addHandler(_handleGlobalShortcutKeyEvent);
     _scrollController.addListener(_handleScrollChanged);
@@ -1514,7 +1524,7 @@ class _ChatPageState extends State<ChatPage>
     required String description,
     required TooltipPosition tooltipPosition,
     bool includePrevious = false,
-    String primaryActionLabel = 'Next',
+    String? primaryActionLabel,
     VoidCallback? onNext,
   }) {
     return ChatTourShowcase(
@@ -1524,7 +1534,7 @@ class _ChatPageState extends State<ChatPage>
       description: description,
       tooltipPosition: tooltipPosition,
       includePrevious: includePrevious,
-      primaryActionLabel: primaryActionLabel,
+      primaryActionLabel: primaryActionLabel ?? context.l10n.chatActionNext,
       onPrimaryAction: onNext,
       onSkipAction: _handlePostOnboardingTourSkip,
       targetBorderRadius: AppShapes.borderLarge,
@@ -2136,55 +2146,55 @@ class _ChatPageState extends State<ChatPage>
         switch (action) {
           ShortcutAction.newChat => (
             action: action,
-            description: 'New conversation',
+            description: context.l10n.chatShortcutsNewConversation,
           ),
           ShortcutAction.refresh => (
             action: action,
-            description: 'Refresh chat data',
+            description: context.l10n.chatShortcutsRefreshChat,
           ),
           ShortcutAction.focusInput => (
             action: action,
-            description: 'Focus message input',
+            description: context.l10n.chatShortcutsFocusInput,
           ),
           ShortcutAction.toggleVoiceInput => (
             action: action,
-            description: 'Start or stop voice input',
+            description: context.l10n.chatShortcutsStartStopVoice,
           ),
           ShortcutAction.quickOpen => (
             action: action,
-            description: 'Quick open files',
+            description: context.l10n.chatShortcutsQuickOpen,
           ),
           ShortcutAction.openSettings => (
             action: action,
-            description: 'Open settings',
+            description: context.l10n.chatShortcutsOpenSettings,
           ),
           ShortcutAction.cycleRecentModels => (
             action: action,
-            description: 'Cycle recent models',
+            description: context.l10n.chatShortcutsCycleModels,
           ),
           ShortcutAction.cycleVariant => (
             action: action,
-            description: 'Cycle model variant',
+            description: context.l10n.chatShortcutsCycleVariant,
           ),
           ShortcutAction.escape => (
             action: action,
-            description: 'Focus input (or close drawer when open)',
+            description: context.l10n.chatShortcutsFocusInputCloseDrawer,
           ),
           ShortcutAction.cycleAgentForward => (
             action: action,
-            description: 'Next agent',
+            description: context.l10n.chatShortcutsNextAgent,
           ),
           ShortcutAction.cycleAgentBackward => (
             action: action,
-            description: 'Previous agent',
+            description: context.l10n.chatShortcutsPreviousAgent,
           ),
           ShortcutAction.closeApp => (
             action: action,
-            description: 'Close app using platform close behavior',
+            description: context.l10n.chatShortcutsCloseApp,
           ),
           ShortcutAction.quitApp => (
             action: action,
-            description: 'Force-exit the app',
+            description: context.l10n.chatShortcutsForceExit,
           ),
         },
     ];
@@ -2204,8 +2214,8 @@ class _ChatPageState extends State<ChatPage>
       settingsProvider.bindingFor(ShortcutAction.escape),
     );
     hints.add((
-      shortcut: '$escapeShortcut, $escapeShortcut',
-      description: 'Stop active response (while responding)',
+          shortcut: '$escapeShortcut, $escapeShortcut',
+      description: context.l10n.chatShortcutsStopResponse,
     ));
     return hints;
   }
@@ -2433,21 +2443,8 @@ class _ComposerStatusPresentation {
     required String label,
   }) : this._(type: _ComposerStatusType.stopHint, label: label);
 
-  const _ComposerStatusPresentation.tip(String label)
+  _ComposerStatusPresentation.tip(String label)
     : this._(type: _ComposerStatusType.tip, label: label);
-
-  static const List<String> _receivingTips = [
-    'Tip: Use @ to mention files in your prompt',
-    'Tip: Tap the title to rename a conversation',
-    'Tip: Use ! at the start to run shell commands',
-    'Tip: Use / to access slash commands',
-    'Tip: Long-press Send to insert a newline',
-    'Tip: Tap the context knob to see usage details',
-    'Tip: Be specific — shorter prompts get faster answers',
-    'Tip: Ask for step-by-step when debugging complex issues',
-    'Tip: Provide context — paste error messages and logs',
-    'Tip: Break large tasks into smaller prompts',
-  ];
 
   final _ComposerStatusType type;
   final String label;
@@ -2675,7 +2672,7 @@ class _DirectoryPickerSheetState extends State<_DirectoryPickerSheet> {
     if (listed == null) {
       setState(() {
         _loading = false;
-        _error = provider.error ?? 'Failed to load directories';
+        _error = provider.error ?? context.l10n.chatFailedToLoadDirectories;
       });
       return;
     }

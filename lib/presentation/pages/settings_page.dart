@@ -251,7 +251,9 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Scaffold(
           appBar: AppBar(
             title: Text(
-              _showMobileDetail ? (section?.title ?? 'Settings') : 'Settings',
+              _showMobileDetail
+                  ? (section?.title ?? context.l10n.settingsTitle)
+                  : context.l10n.settingsTitle,
             ),
             leading: _showMobileDetail
                 ? IconButton(
@@ -296,7 +298,7 @@ class _SettingsPageState extends State<SettingsPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(context.l10n.settingsTitle)),
       body: Row(
         children: [
           SizedBox(width: 320, child: _buildSectionList(isSplit: true)),

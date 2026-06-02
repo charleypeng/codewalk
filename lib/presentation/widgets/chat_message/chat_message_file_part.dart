@@ -33,7 +33,7 @@ extension _ChatMessageFilePartBuilder on _ChatMessageWidgetState {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      part.filename ?? 'File',
+                      part.filename ?? context.l10n.commonFile,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w500,
                       ),
@@ -65,7 +65,9 @@ extension _ChatMessageFilePartBuilder on _ChatMessageWidgetState {
                       ? Symbols.download_rounded
                       : Symbols.open_in_new_rounded,
                 ),
-                tooltip: isInlineDataAttachment ? 'Save File' : 'Open File',
+                tooltip: isInlineDataAttachment
+                    ? context.l10n.chatMessageSaveFile
+                    : context.l10n.chatMessageOpenFile,
               ),
             ],
           ),

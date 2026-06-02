@@ -138,7 +138,8 @@ extension _ChatPageFileViewer on _ChatPageState {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                active.errorMessage ?? 'Failed to load file',
+                                active.errorMessage ??
+                                    context.l10n.chatFailedToLoadFile,
                                 textAlign: TextAlign.center,
                               ),
                               const SizedBox(height: 8),

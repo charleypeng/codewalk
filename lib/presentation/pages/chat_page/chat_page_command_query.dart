@@ -46,7 +46,7 @@ extension _ChatPageCommandQuery on _ChatPageState {
         ChatComposerMentionSuggestion(
           value: path.trim(),
           type: ChatComposerSuggestionType.file,
-          subtitle: 'file',
+          subtitle: context.l10n.chatMentionFileSubtitle,
         ),
       );
     }
@@ -60,7 +60,9 @@ extension _ChatPageCommandQuery on _ChatPageState {
         ChatComposerMentionSuggestion(
           value: name,
           type: ChatComposerSuggestionType.symbol,
-          subtitle: symbol.path.isEmpty ? symbol.kind ?? 'symbol' : symbol.path,
+          subtitle: symbol.path.isEmpty
+              ? symbol.kind ?? context.l10n.chatMentionSymbolSubtitle
+              : symbol.path,
         ),
       );
     }
@@ -79,7 +81,9 @@ extension _ChatPageCommandQuery on _ChatPageState {
         ChatComposerMentionSuggestion(
           value: name,
           type: ChatComposerSuggestionType.agent,
-          subtitle: agent.mode.isEmpty ? 'agent' : agent.mode,
+          subtitle: agent.mode.isEmpty
+              ? context.l10n.chatMentionAgentSubtitle
+              : agent.mode,
         ),
       );
     }
@@ -111,7 +115,8 @@ extension _ChatPageCommandQuery on _ChatPageState {
         commands.add(
           ChatComposerSlashCommandSuggestion(
             name: name.trim(),
-            source: raw['source'] as String? ?? 'command',
+            source: raw['source'] as String? ??
+                context.l10n.chatCommandSourceGeneric,
             description: raw['description'] as String?,
           ),
         );
@@ -202,8 +207,8 @@ extension _ChatPageCommandQuery on _ChatPageState {
         suggestions.add(
           ChatComposerSlashCommandSuggestion(
             name: commandName,
-            source: 'project',
-            description: 'Project command',
+            source: context.l10n.chatCommandSourceProject,
+            description: context.l10n.chatCommandDescriptionProject,
           ),
         );
       }
@@ -288,7 +293,7 @@ extension _ChatPageCommandQuery on _ChatPageState {
           return true;
         }
         _showChatPageMessageSnackBar(
-          'Use @ for mentions, ! for shell, / for commands',
+          context.l10n.chatHelpMessage,
           hideCurrent: false,
         );
         return true;
@@ -376,8 +381,8 @@ extension _ChatPageCommandQuery on _ChatPageState {
     final message = providerMessage != null && providerMessage.isNotEmpty
         ? providerMessage
         : switch (action) {
-            _HistoryToolbarAction.undo => 'Nothing to undo in this session',
-            _HistoryToolbarAction.redo => 'Nothing to redo in this session',
+            _HistoryToolbarAction.undo => context.l10n.chatUndoNothing,
+            _HistoryToolbarAction.redo => context.l10n.chatRedoNothing,
           };
     _showChatPageMessageSnackBar(message, hideCurrent: false);
   }

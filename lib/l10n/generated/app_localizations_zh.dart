@@ -249,7 +249,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatLoadingProjectContext => 'Loading project context...';
 
   @override
-  String get chatMessageHide => 'Hide';
+  String get chatMessageHide => '隐藏';
 
   @override
   String get chatMessageMessagePartUnavailable => 'Message part unavailable';
@@ -401,7 +401,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chatRetryRefresh => 'Retry refresh';
 
   @override
-  String get chatRetryingModelRequest => '正在重试模型请求...';
+  String get chatRetryingModelRequest => 'Retrying model request...';
 
   @override
   String get chatReturnToMainConversation => 'Return to main conversation';
@@ -1277,7 +1277,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sessionCancelRename => 'Cancel rename';
 
   @override
-  String get sessionCopyLink => 'Copy Link';
+  String get sessionCopyLink => '复制共享链接';
 
   @override
   String get sessionDelete => 'Delete';
@@ -3354,4 +3354,709 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get appProviderLabelLocalOpenCodeManaged => '本地 OpenCode (托管)';
+
+  @override
+  String get chatChooseModel => '选择模型';
+
+  @override
+  String get chatStartVoiceInput => '开始语音输入';
+
+  @override
+  String get chatStopVoiceInput => '停止语音输入';
+
+  @override
+  String get chatStartingVoiceInput => '正在启动语音输入';
+
+  @override
+  String get chatComposerPlaceholder => '输入您的需求...';
+
+  @override
+  String get chatPermissionAutoApproveOn => '权限自动批准已开启';
+
+  @override
+  String get chatPermissionAutoApproveOff => '权限自动批准已关闭';
+
+  @override
+  String get chatModelLockedSubConversation => '模型在子对话中已锁定';
+
+  @override
+  String get chatComposerHintShell => 'Shell命令（按Esc退出）';
+
+  @override
+  String get utilityTitle => '实用工具';
+
+  @override
+  String get statusOffline => '离线';
+
+  @override
+  String get statusOnline => '在线';
+
+  @override
+  String get statusConnected => '已连接';
+
+  @override
+  String get statusReconnecting => '重新连接';
+
+  @override
+  String get statusSyncDelayed => '同步延迟';
+
+  @override
+  String get statusDelayed => '延迟';
+
+  @override
+  String get chatActiveServerUnhealthyLabel => '当前服务器状态异常';
+
+  @override
+  String get chatWaitingForNetworkConnection => '等待网络连接...';
+
+  @override
+  String get serverHealthHealthy => '正常';
+
+  @override
+  String get serverHealthUnhealthy => '异常';
+
+  @override
+  String get serverHealthUnknown => '未知';
+
+  @override
+  String get sessionUnshare => '取消共享会话';
+
+  @override
+  String get sessionShare => '共享会话';
+
+  @override
+  String get sessionExportMarkdown => '导出Markdown';
+
+  @override
+  String get sessionExportDebugJson => '导出调试JSON';
+
+  @override
+  String get sessionViewTasks => '查看任务';
+
+  @override
+  String get sessionCompactContext => '压缩上下文';
+
+  @override
+  String get sessionUnshared => '对话已取消共享';
+
+  @override
+  String get sessionShared => '对话已共享';
+
+  @override
+  String get sessionShareLinkUnavailable => '此会话的共享链接不可用';
+
+  @override
+  String get sessionExportMarkdownTitle => '将会话导出为Markdown';
+
+  @override
+  String get sessionExportDebugJsonTitle => '将会话导出为调试JSON';
+
+  @override
+  String get sessionExportCanceled => '会话导出已取消';
+
+  @override
+  String get sessionExportMarkdownSaved => 'Markdown导出已保存';
+
+  @override
+  String get sessionExportDebugJsonSaved => '调试JSON导出已保存';
+
+  @override
+  String get sessionExportMarkdownErrorClipboard => '无法保存文件；Markdown已复制到剪贴板';
+
+  @override
+  String get sessionExportDebugJsonErrorClipboard => '无法保存文件；调试JSON已复制到剪贴板';
+
+  @override
+  String get terminalHide => '隐藏终端';
+
+  @override
+  String get terminalOpen => '打开终端';
+
+  @override
+  String get terminalOpenInfo => '打开终端信息';
+
+  @override
+  String get chatNoSessionSelected => '选择或创建一个对话开始聊天';
+
+  @override
+  String get chatWelcomeMessage => '您好！我是您的AI助手。';
+
+  @override
+  String get chatWelcomeSubmessage => '今天我能为您做些什么？';
+
+  @override
+  String get cannedAppendAtCursor => '在光标处追加';
+
+  @override
+  String get cannedReplace => '替换';
+
+  @override
+  String get chatMessageAttachedFile => '已附加文件';
+
+  @override
+  String get chatMessageThinking => '思考中';
+
+  @override
+  String get chatMessageShow => '显示';
+
+  @override
+  String get chatMessageMore => '更多';
+
+  @override
+  String get chatMessageLess => '收起';
+
+  @override
+  String get chatMessageDetails => '详情';
+
+  @override
+  String get chatMessageToolInput => '输入';
+
+  @override
+  String get chatMessageToolCommand => '命令';
+
+  @override
+  String chatMessageToolRunningCount(int count) {
+    return '$count 运行中';
+  }
+
+  @override
+  String chatMessageToolQueuedCount(int count) {
+    return '$count 排队中';
+  }
+
+  @override
+  String get chatMessageToolOutputTruncated => '大型工具输出预览已截断以保持应用稳定性。';
+
+  @override
+  String get chatMessageToolCommandTruncated => '命令预览已截断以保持稳定性。';
+
+  @override
+  String get chatMessageToolInputTruncated => '输入预览已截断以保持稳定性。';
+
+  @override
+  String get chatMessageToolDiffOmitted => '差异预览已省略：编辑负载过大，无法在移动端安全渲染。';
+
+  @override
+  String get terminalTitle => '终端';
+
+  @override
+  String get chatCouldNotRefreshSession => '无法刷新此对话';
+
+  @override
+  String get chatMainConversationUnavailable => '主对话尚不可用。';
+
+  @override
+  String get chatFailedToRefreshSubConversations => '刷新子对话失败，请重试。';
+
+  @override
+  String get chatNoSubConversationFound => '未找到此任务的子对话。';
+
+  @override
+  String get errorAnErrorOccurred => '发生了一个错误';
+
+  @override
+  String get serverConnectionAttention => '服务器连接需要注意。';
+
+  @override
+  String sessionHasError(String title) {
+    return '“$title”有错误。';
+  }
+
+  @override
+  String sessionNeedsInput(String title) {
+    return '“$title”需要您的输入。';
+  }
+
+  @override
+  String sessionHasNewReply(String title) {
+    return '“$title”有新的回复。';
+  }
+
+  @override
+  String get sessionSyncing => '正在同步对话...';
+
+  @override
+  String get behaviorCellularDataSaverActive => '蜂窝数据节省模式已开启。';
+
+  @override
+  String get sessionNoCachedConversations => '暂无缓存的对话';
+
+  @override
+  String get sessionForkFailed => '复制对话失败';
+
+  @override
+  String get sessionForked => '对话已复制';
+
+  @override
+  String get sessionNoConversationsInProject => '此项目中没有对话。';
+
+  @override
+  String get sessionOpenProjectToLoad => '打开项目以加载对话。';
+
+  @override
+  String sessionChildrenCount(int count) {
+    return '子对话：$count';
+  }
+
+  @override
+  String sessionDiffFilesCount(int count) {
+    return '差异文件：$count';
+  }
+
+  @override
+  String get compactionAutomatic => '自动';
+
+  @override
+  String get compactionManual => '手动';
+
+  @override
+  String get chatMessageShowLessCompact => '收起';
+
+  @override
+  String get chatMessageShowLess => '显示较少';
+
+  @override
+  String get chatMessageShowMoreCompact => '更多';
+
+  @override
+  String get chatMessageShowMore => '显示更多';
+
+  @override
+  String get chatChooseAgent => '选择代理';
+
+  @override
+  String get chatEffortLockedSubConversation => '子对话中已锁定努力程度';
+
+  @override
+  String get chatChooseEffort => '选择努力程度';
+
+  @override
+  String get chatServerSelectedModel => '服务器选择的模型';
+
+  @override
+  String get chatFailedToRefreshProviders => '刷新提供程序和模型失败';
+
+  @override
+  String get cannedAddTitle => '添加快捷回复';
+
+  @override
+  String get cannedEditTitle => '编辑快捷回复';
+
+  @override
+  String get cannedTextLabel => '文本';
+
+  @override
+  String get cannedAppendAtCursorSubtitle => '关闭 = 替换当前编辑器文本';
+
+  @override
+  String get cannedSendAutomaticallySubtitle => '插入此快速回复后立即发送';
+
+  @override
+  String get cannedScopeGlobalSubtitle => '禁用为仅项目项';
+
+  @override
+  String get cannedScopeGlobalUnavailableSubtitle => '当前上下文中仅项目不可用';
+
+  @override
+  String get commonFile => '文件';
+
+  @override
+  String get serversSearchActiveHint => '搜索活动服务器';
+
+  @override
+  String get serversNoServersFound => '未找到服务器';
+
+  @override
+  String get serversUnhealthyActivateError => '此服务器不健康。请在激活前检查运行状况或编辑设置。';
+
+  @override
+  String get serversTailscaleConnected => 'Tailscale 已连接';
+
+  @override
+  String get serversTailscaleConnecting => 'Tailscale 正在连接';
+
+  @override
+  String get serversTailscaleAuthRequired => '需要 Tailscale 身份验证';
+
+  @override
+  String get serversTailscaleAdminApprovalRequired => '需要 Tailscale 管理员批准';
+
+  @override
+  String get serversTailscaleConnectionFailed => 'Tailscale 连接失败';
+
+  @override
+  String get serversTailscaleUnsupported => '不支持 Tailscale';
+
+  @override
+  String get serversTailscaleDisconnected => 'Tailscale 已断开';
+
+  @override
+  String get serversTailscaleLoginExplanation =>
+      '打开 Tailscale 登录 URL 将此设备添加到您的 tailnet。';
+
+  @override
+  String get serversTailscaleTrafficExplanation =>
+      '此活动配置文件的 OpenCode 流量通过 Tailscale 路由。';
+
+  @override
+  String get serversTailscaleConnectExplanation => '使用此活动配置文件时，Tailscale 将连接。';
+
+  @override
+  String get statusStarting => '正在启动';
+
+  @override
+  String get statusStopping => '正在停止';
+
+  @override
+  String get statusFailed => '失败';
+
+  @override
+  String get statusStopped => '已停止';
+
+  @override
+  String get serversDesktopModeExplanation =>
+      '桌面模式可以直接从 CodeWalk 启动和管理 `opencode serve`。';
+
+  @override
+  String get serversCannotActivateUnhealthy => '无法激活不健康的服务器';
+
+  @override
+  String get commonCopiedToClipboard => '已复制到剪贴板';
+
+  @override
+  String get chatUndoNothing => '此会话中没有可撤销的操作';
+
+  @override
+  String get chatRedoNothing => '此会话中没有可重做的操作';
+
+  @override
+  String get chatStatusPatching => '正在打补丁';
+
+  @override
+  String get chatStatusPatchingOneFile => '正在为 1 个文件打补丁';
+
+  @override
+  String chatStatusPatchingMultipleFiles(int count) {
+    return '正在为 $count 个文件打补丁';
+  }
+
+  @override
+  String get chatStatusThinking => '正在思考...';
+
+  @override
+  String get chatStatusSubsession => '子会话';
+
+  @override
+  String get chatStatusBusy => '状态：忙碌';
+
+  @override
+  String get chatStatusRetry => '状态：重试';
+
+  @override
+  String chatStatusRetryCount(int count) {
+    return '状态：重试 #$count';
+  }
+
+  @override
+  String get appShellUpdateInstalledRestartRequired => '更新已安装。需要重启以应用新版本。';
+
+  @override
+  String get appShellUpdateInstalledRestartApp => '更新已安装。请重启应用以生效。';
+
+  @override
+  String get chatTourProjectsConversations => '使用此按钮打开您的项目和对话。';
+
+  @override
+  String get chatTourSwitchFolders => '使用此按钮切换项目文件夹和上下文。';
+
+  @override
+  String get chatTourSidebarProjectTools => '使用此菜单显示对话侧边栏和项目工具。';
+
+  @override
+  String get chatActionNext => '下一步';
+
+  @override
+  String get chatShortcutsNewConversation => '新对话';
+
+  @override
+  String get chatShortcutsRefreshChat => '刷新聊天数据';
+
+  @override
+  String get chatShortcutsFocusInput => '聚焦消息输入';
+
+  @override
+  String get chatShortcutsStartStopVoice => '开始或停止语音输入';
+
+  @override
+  String get chatShortcutsQuickOpen => '快速打开文件';
+
+  @override
+  String get chatShortcutsOpenSettings => '打开设置';
+
+  @override
+  String get chatShortcutsCycleModels => '轮换最近使用的模型';
+
+  @override
+  String get chatShortcutsCycleVariant => '轮换模型变体';
+
+  @override
+  String get chatShortcutsFocusInputCloseDrawer => '聚焦输入（或在打开时关闭抽屉）';
+
+  @override
+  String get chatShortcutsNextAgent => '下一个智能体';
+
+  @override
+  String get chatShortcutsPreviousAgent => '上一个智能体';
+
+  @override
+  String get chatShortcutsCloseApp => '使用平台关闭行为关闭应用';
+
+  @override
+  String get chatShortcutsForceExit => '强制退出应用';
+
+  @override
+  String get chatShortcutsStopResponse => '停止当前响应（正在响应时）';
+
+  @override
+  String get chatTipMentionFiles => '提示：在提示词中使用 @ 来提及文件';
+
+  @override
+  String get chatTipRenameConversation => '提示：点击标题重命名对话';
+
+  @override
+  String get chatTipShellCommands => '提示：在开头使用 ! 来运行 shell 命令';
+
+  @override
+  String get chatTipSlashCommands => '提示：使用 / 访问斜杠命令';
+
+  @override
+  String get chatTipLongPressSend => '提示：长按发送键插入新行';
+
+  @override
+  String get chatTipContextKnob => '提示：点击上下文旋钮查看使用详情';
+
+  @override
+  String get chatTipBeSpecific => '提示：请具体一些 — 简短的提示词能获得更快的回答';
+
+  @override
+  String get chatTipStepByStep => '提示：在调试复杂问题时要求逐步进行';
+
+  @override
+  String get chatTipProvideContext => '提示：提供上下文 — 粘贴错误消息和日志';
+
+  @override
+  String get chatTipBreakTasks => '提示：将大任务分解为更小的提示词';
+
+  @override
+  String get chatFailedToLoadDirectories => '加载目录失败';
+
+  @override
+  String get logsFilterAll => '全部';
+
+  @override
+  String get logsNoLogsYet => '尚未捕获日志。';
+
+  @override
+  String get logsNoMatchingLogs => '没有符合当前过滤条件的日志。';
+
+  @override
+  String get settingsDefaultModel => '默认模型';
+
+  @override
+  String get settingsSearchDefaultModel => '搜索默认模型';
+
+  @override
+  String get settingsDefaultAgent => '默认智能体';
+
+  @override
+  String get settingsSearchDefaultAgent => '搜索默认智能体';
+
+  @override
+  String get settingsNoAgentsFound => '未找到智能体';
+
+  @override
+  String get settingsConversationUsername => '对话用户名';
+
+  @override
+  String get settingsUsernameUnsetExplanation =>
+      'OpenCode 使用系统用户名，因为 `username` 未设置。';
+
+  @override
+  String get settingsUsernameResetExplanation =>
+      '将 `username` 重置回系统默认值仍需在应用外编辑配置，因为 `/config` 补丁更新无法删除键。';
+
+  @override
+  String get chatHelpMessage => '使用 @ 提及，! 运行 shell，/ 运行命令';
+
+  @override
+  String terminalEmbeddedUnavailable(String serverName) {
+    return '此运行时尚不支持嵌入式终端。请继续使用撰写器的 shell 模式执行一次性命令，或从支持的 CodeWalk 应用运行时打开 $serverName 的终端。';
+  }
+
+  @override
+  String get chatFailedToLoadFile => '加载文件失败';
+
+  @override
+  String get chatMentionFileSubtitle => '文件';
+
+  @override
+  String get chatMentionSymbolSubtitle => '符号';
+
+  @override
+  String get chatMentionAgentSubtitle => '智能体';
+
+  @override
+  String get chatCommandSourceGeneric => '命令';
+
+  @override
+  String get chatCommandSourceProject => '项目';
+
+  @override
+  String get chatCommandDescriptionProject => '项目命令';
+
+  @override
+  String get settingsSmallModel => '小模型';
+
+  @override
+  String get settingsSearchSmallModel => '搜索小模型';
+
+  @override
+  String get settingsSmallModelUnsetExplanation =>
+      '由于未设置 `small_model`，OpenCode 自动回退已激活。';
+
+  @override
+  String get settingsSmallModelResetExplanation =>
+      '将 `small_model` 重置回自动回退仍需在应用外编辑配置，因为 `/config` 补丁更新无法删除键。';
+
+  @override
+  String get settingsOpenCodeAutoUpdate => 'OpenCode 自动更新';
+
+  @override
+  String get settingsSearchAutoUpdateMode => '搜索自动更新模式';
+
+  @override
+  String get settingsOpenCodeSharingDefault => 'OpenCode 默认共享';
+
+  @override
+  String get settingsSearchSharingMode => '搜索共享模式';
+
+  @override
+  String get chatHistoryHideEarlier => 'Hide earlier messages';
+
+  @override
+  String get chatHistoryShowEarlier => 'Show earlier messages';
+
+  @override
+  String chatHistoryMessagesHidden(int count, String label) {
+    return '$count messages hidden before $label compaction';
+  }
+
+  @override
+  String get chatWorkHide => 'Hide';
+
+  @override
+  String get chatWorkExpand => 'Expand';
+
+  @override
+  String get chatWorkShow => 'Show';
+
+  @override
+  String get chatWorkMessageOne => '1 work message';
+
+  @override
+  String chatWorkMessagesMultiple(int count) {
+    return '$count work messages';
+  }
+
+  @override
+  String get chatWorkBoundedPanelExplanation =>
+      'Latest tool activity stays inside this bounded panel to keep the chat viewport stable.';
+
+  @override
+  String get chatConversation => 'Conversation';
+
+  @override
+  String get chatPageStatusContextCompacted => 'Context compacted';
+
+  @override
+  String get chatPageStatusFailedToCompactContext =>
+      'Failed to compact context';
+
+  @override
+  String get chatPageStatusCompactingContextNow => 'Compacting context now...';
+
+  @override
+  String get chatPageStatusAutomaticCompactionExplanation =>
+      'Automatic compaction happens as context usage grows.';
+
+  @override
+  String get chatPageStatusCompacting => 'Compacting...';
+
+  @override
+  String get chatPageStatusCompactNow => 'Compact now';
+
+  @override
+  String get chatPageStatusServer => 'Server';
+
+  @override
+  String get chatMessageSaveFile => 'Save file';
+
+  @override
+  String get chatMessageOpenFile => 'Open file';
+
+  @override
+  String get chatMessageThinkingProcess => 'Thinking Process';
+
+  @override
+  String get chatMessageToolCall => '1 tool call';
+
+  @override
+  String chatMessageToolCalls(int count) {
+    return '$count tool calls';
+  }
+
+  @override
+  String get chatMessageRunningTask => 'Running task';
+
+  @override
+  String get chatMessageToolStatusQueued => 'Queued';
+
+  @override
+  String get chatMessageToolStatusInProgress => 'In progress';
+
+  @override
+  String get chatMessageToolStatusNeedsAttention => 'Needs attention';
+
+  @override
+  String get terminalRestoreSize => 'Restore size';
+
+  @override
+  String get terminalMaximize => 'Maximize';
+
+  @override
+  String get behaviorDataSaverActive => 'Active now on mobile data.';
+
+  @override
+  String get behaviorDataSaverWaiting =>
+      'Waiting for the next mobile-data sync window.';
+
+  @override
+  String get behaviorDataSaverCellularOnly =>
+      'Only applies when the connection is cellular/mobile.';
+
+  @override
+  String get settingsUsernameEnterHint =>
+      'Enter a username to save a custom OpenCode conversation name.';
+
+  @override
+  String get settingsUsernameClearHint =>
+      'Clearing the OpenCode conversation username still requires editing config outside the app.';
+
+  @override
+  String get settingsConfigUpdateDeferred =>
+      'CodeWalk will apply this OpenCode setting after the current response finishes.';
+
+  @override
+  String get settingsConfigRefreshFailed =>
+      'Updated the server setting, but could not refresh chat providers.';
 }

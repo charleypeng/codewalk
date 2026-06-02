@@ -109,8 +109,8 @@ class _CodewalkTerminalPanelState extends State<CodewalkTerminalPanel> {
                         'terminal_panel_maximize_button',
                       ),
                       tooltip: widget.isMaximized
-                          ? 'Restore terminal size'
-                          : 'Maximize terminal',
+                          ? context.l10n.terminalRestoreSize
+                          : context.l10n.terminalMaximize,
                       onPressed: widget.onToggleMaximize,
                       icon: Icon(
                         widget.isMaximized

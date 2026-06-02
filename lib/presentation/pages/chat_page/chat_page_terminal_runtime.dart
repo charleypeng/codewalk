@@ -61,10 +61,18 @@ extension _ChatPageTerminalRuntime on _ChatPageState {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Terminal', style: Theme.of(context).textTheme.titleLarge),
+                Text(
+                  context.l10n.terminalTitle,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
                 const SizedBox(height: 12),
                 Text(
-                  'Embedded terminal is not available on this runtime yet. Keep using composer shell mode for one-shot commands or open the terminal from a supported CodeWalk app runtime for ${activeServer?.displayName ?? 'the active server'}.',
+                  context.l10n.terminalEmbeddedUnavailable(
+                    activeServer?.displayName ??
+                        context.l10n.chatPageStatusServer,
+                  ),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],
             ),

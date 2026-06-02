@@ -28,7 +28,7 @@ extension _ChatPageScaffold on _ChatPageState {
                   ),
                   const SizedBox(width: 8),
                   Tooltip(
-                    message: 'Settings',
+                    message: context.l10n.chatSettings,
                     child: SizedBox(
                       width: 40,
                       height: 40,
@@ -446,15 +446,21 @@ extension _ChatPageScaffold on _ChatPageState {
   String _hamburgerReasonMessage(_HamburgerBadgeReasonState badgeReason) {
     return switch (badgeReason.kind) {
       _HamburgerBadgeReasonKind.serverAlert =>
-        'Server connection needs attention.',
-      _HamburgerBadgeReasonKind.sessionError =>
-        '"${badgeReason.sessionTitle ?? 'Conversation'}" has an error.',
-      _HamburgerBadgeReasonKind.sessionPendingInteraction =>
-        '"${badgeReason.sessionTitle ?? 'Conversation'}" needs your input.',
-      _HamburgerBadgeReasonKind.sessionUnreadCompletion =>
-        '"${badgeReason.sessionTitle ?? 'Conversation'}" has a new reply.',
-      _HamburgerBadgeReasonKind.syncLoading => 'Syncing conversations...',
-      _HamburgerBadgeReasonKind.dataSaver => 'Cellular data saver is active.',
+        context.l10n.serverConnectionAttention,
+      _HamburgerBadgeReasonKind.sessionError => context.l10n.sessionHasError(
+        badgeReason.sessionTitle ?? context.l10n.chatConversation,
+      ),
+      _HamburgerBadgeReasonKind.sessionPendingInteraction => context.l10n
+          .sessionNeedsInput(
+            badgeReason.sessionTitle ?? context.l10n.chatConversation,
+          ),
+      _HamburgerBadgeReasonKind.sessionUnreadCompletion => context.l10n
+          .sessionHasNewReply(
+            badgeReason.sessionTitle ?? context.l10n.chatConversation,
+          ),
+      _HamburgerBadgeReasonKind.syncLoading => context.l10n.sessionSyncing,
+      _HamburgerBadgeReasonKind.dataSaver =>
+        context.l10n.behaviorCellularDataSaverActive,
       _HamburgerBadgeReasonKind.none => '',
     };
   }
@@ -825,7 +831,7 @@ extension _ChatPageScaffold on _ChatPageState {
               children: [
                 if (!selected && !hasSnapshot)
                   Tooltip(
-                    message: 'No cached conversations yet',
+                    message: context.l10n.sessionNoCachedConversations,
                     child: Icon(
                       Symbols.cloud_off,
                       size: 16,
@@ -855,7 +861,9 @@ extension _ChatPageScaffold on _ChatPageState {
                   icon: Icon(
                     expanded ? Symbols.expand_less : Symbols.expand_more,
                   ),
-                  tooltip: expanded ? 'Collapse group' : 'Expand group',
+                  tooltip: expanded
+                      ? context.l10n.chatCollapseGroup
+                      : context.l10n.chatExpandGroup,
                   visualDensity: VisualDensity.compact,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints.tightFor(
@@ -925,13 +933,13 @@ extension _ChatPageScaffold on _ChatPageState {
                         }
                         if (created == null) {
                           _showChatPageMessageSnackBar(
-                            'Failed to fork conversation',
+                            context.l10n.sessionForkFailed,
                             hideCurrent: false,
                           );
                           return;
                         }
                         _showChatPageMessageSnackBar(
-                          'Conversation forked',
+                          context.l10n.sessionForked,
                           hideCurrent: false,
                         );
                         _closeDrawerIfNeeded(closeOnSelect: closeOnSelect);
@@ -1003,8 +1011,8 @@ extension _ChatPageScaffold on _ChatPageState {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     hasSnapshot
-                        ? 'No conversations in this project.'
-                        : 'Open project to load conversations.',
+                        ? context.l10n.sessionNoConversationsInProject
+                        : context.l10n.sessionOpenProjectToLoad,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -1202,7 +1210,9 @@ extension _ChatPageScaffold on _ChatPageState {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Children: ${chatProvider.currentSessionChildren.length}',
+                      context.l10n.sessionChildrenCount(
+                        chatProvider.currentSessionChildren.length,
+                      ),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     SessionTodoListWidget(
@@ -1226,7 +1236,7 @@ extension _ChatPageScaffold on _ChatPageState {
                         ),
                       ] else
                         Text(
-                          'Diff files: 0',
+                          context.l10n.sessionDiffFilesCount(0),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                     ],

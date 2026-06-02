@@ -7,15 +7,15 @@ extension _ChatPageChrome on _ChatPageState {
   }) {
     return switch (action) {
       _CurrentSessionAction.shareToggle =>
-        isShared ? 'Unshare session' : 'Share session',
-      _CurrentSessionAction.copyLink => 'Copy share link',
-      _CurrentSessionAction.exportMarkdown => 'Export Markdown',
-      _CurrentSessionAction.exportJson => 'Export debug JSON',
-      _CurrentSessionAction.viewTasks => 'View tasks',
+        isShared ? context.l10n.sessionUnshare : context.l10n.sessionShare,
+      _CurrentSessionAction.copyLink => context.l10n.sessionCopyLink,
+      _CurrentSessionAction.exportMarkdown => context.l10n.sessionExportMarkdown,
+      _CurrentSessionAction.exportJson => context.l10n.sessionExportDebugJson,
+      _CurrentSessionAction.viewTasks => context.l10n.sessionViewTasks,
       _CurrentSessionAction.reviewChanges => context.l10n.chatReviewChanges,
       _CurrentSessionAction.undo => context.l10n.chatUndoLastTurn,
       _CurrentSessionAction.redo => context.l10n.chatRedoLastTurn,
-      _CurrentSessionAction.compactContext => 'Compact context',
+      _CurrentSessionAction.compactContext => context.l10n.sessionCompactContext,
     };
   }
 
@@ -55,7 +55,9 @@ extension _ChatPageChrome on _ChatPageState {
         }
         _showChatPageMessageSnackBar(
           ok
-              ? (wasShared ? 'Conversation unshared' : 'Conversation shared')
+              ? (wasShared
+                    ? context.l10n.sessionUnshared
+                    : context.l10n.sessionShared)
               : (chatProvider.errorMessage ??
                     context.l10n.sessionFailedUpdateSharing),
           hideCurrent: false,
@@ -65,7 +67,7 @@ extension _ChatPageChrome on _ChatPageState {
         final link = chatProvider.currentSession?.shareUrl?.trim();
         if (link == null || link.isEmpty) {
           _showChatPageMessageSnackBar(
-            'Share link unavailable for this session',
+            context.l10n.sessionShareLinkUnavailable,
             hideCurrent: false,
           );
           return;
@@ -146,8 +148,8 @@ extension _ChatPageChrome on _ChatPageState {
     try {
       final savedPath = await FilePicker.saveFile(
         dialogTitle: isMarkdown
-            ? 'Export session as Markdown'
-            : 'Export session as debug JSON',
+            ? context.l10n.sessionExportMarkdownTitle
+            : context.l10n.sessionExportDebugJsonTitle,
         fileName: fileName,
         type: FileType.custom,
         allowedExtensions: [extension],
@@ -157,11 +159,13 @@ extension _ChatPageChrome on _ChatPageState {
         return;
       }
       if (savedPath == null && !kIsWeb) {
-        _showChatPageMessageSnackBar('Session export canceled');
+        _showChatPageMessageSnackBar(context.l10n.sessionExportCanceled);
         return;
       }
       _showChatPageMessageSnackBar(
-        isMarkdown ? 'Markdown export saved' : 'Debug JSON export saved',
+        isMarkdown
+            ? context.l10n.sessionExportMarkdownSaved
+            : context.l10n.sessionExportDebugJsonSaved,
       );
     } catch (_) {
       await Clipboard.setData(ClipboardData(text: content));
@@ -170,8 +174,8 @@ extension _ChatPageChrome on _ChatPageState {
       }
       _showChatPageMessageSnackBar(
         isMarkdown
-            ? 'Could not save file; Markdown copied to clipboard'
-            : 'Could not save file; debug JSON copied to clipboard',
+            ? context.l10n.sessionExportMarkdownErrorClipboard
+            : context.l10n.sessionExportDebugJsonErrorClipboard,
       );
     }
   }
@@ -366,18 +370,21 @@ extension _ChatPageChrome on _ChatPageState {
     return switch (pane) {
       DesktopPane.conversations => context.l10n.chatConversations,
       DesktopPane.files => context.l10n.filesTitle,
-      DesktopPane.utility => 'Utility',
+      DesktopPane.utility => context.l10n.utilityTitle,
     };
   }
 
   String _displayToggleLabel(_DisplayToggleAction action) {
     return switch (action) {
-      _DisplayToggleAction.thinkingBubbles => 'Thinking bubbles',
-      _DisplayToggleAction.toolCallBubbles => 'Tool call bubbles',
-      _DisplayToggleAction.taskList => 'Task list',
+      _DisplayToggleAction.thinkingBubbles =>
+        context.l10n.settingsAppearanceThinkingBubbles,
+      _DisplayToggleAction.toolCallBubbles =>
+        context.l10n.settingsAppearanceToolCallBubbles,
+      _DisplayToggleAction.taskList => context.l10n.settingsAppearanceTaskList,
       _DisplayToggleAction.reviewChanges => context.l10n.chatReviewChanges,
       _DisplayToggleAction.recentSessions => context.l10n.chatRecentSessions,
-      _DisplayToggleAction.composerTips => 'Composer tips',
+      _DisplayToggleAction.composerTips =>
+        context.l10n.settingsAppearanceComposerTips,
       _DisplayToggleAction.replayTour =>
         context.l10n.settingsAboutReplayChatTour,
     };
@@ -883,16 +890,17 @@ extension _ChatPageChrome on _ChatPageState {
                 key: const ValueKey<String>('appbar_terminal_button'),
                 icon: const Icon(Symbols.terminal_rounded),
                 tooltip: settingsProvider.terminalPanelVisible
-                    ? 'Hide terminal'
+                    ? context.l10n.terminalHide
                     : (_terminalController.supportsRemoteTerminal
-                          ? 'Open terminal'
-                          : 'Open terminal info'),
+                          ? context.l10n.terminalOpen
+                          : context.l10n.terminalOpenInfo),
                 onPressed: () => unawaited(_toggleTerminalPanel()),
               ),
               if (refreshlessEnabled && !isMobile)
                 Consumer2<ChatProvider, AppProvider>(
                   builder: (context, chatProvider, appProvider, child) {
                     final label = _syncStatusLabel(
+                      context: context,
                       chatProvider: chatProvider,
                       appProvider: appProvider,
                     );

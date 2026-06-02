@@ -13,12 +13,12 @@ enum _LogTimeRange {
   fiveMinutes(Duration(minutes: 5), '5m'),
   fifteenMinutes(Duration(minutes: 15), '15m'),
   oneHour(Duration(hours: 1), '1h'),
-  all(null, 'All');
+  all(null, null);
 
   const _LogTimeRange(this.duration, this.label);
 
   final Duration? duration;
-  final String label;
+  final String? label;
 }
 
 class LogsPage extends StatefulWidget {
@@ -150,8 +150,8 @@ class _LogsPageState extends State<LogsPage> {
                     ? Center(
                         child: Text(
                           entries.isEmpty
-                              ? 'No logs captured yet.'
-                              : 'No logs match the current filters.',
+                              ? context.l10n.logsNoLogsYet
+                              : context.l10n.logsNoMatchingLogs,
                         ),
                       )
                     : ListView.separated(
@@ -217,7 +217,7 @@ class _LogsToolbar extends StatelessWidget {
             children: _LogTimeRange.values
                 .map(
                   (range) => ChoiceChip(
-                    label: Text(range.label),
+                    label: Text(range.label ?? context.l10n.logsFilterAll),
                     selected: selectedRange == range,
                     onSelected: (_) => onRangeChanged(range),
                   ),

@@ -97,7 +97,7 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
     required String sourceSessionId,
   }) {
     final normalizedSessionId = sourceSessionId.trim();
-    final currentSessionId = chatProvider.currentSession?.id?.trim();
+    final currentSessionId = chatProvider.currentSession?.id.trim();
     if (normalizedSessionId.isEmpty ||
         normalizedSessionId == currentSessionId) {
       return null;
@@ -108,23 +108,20 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
         return _sessionDisplayTitle(session);
       }
     }
-    return 'Subsession';
+    return context.l10n.chatStatusSubsession;
   }
 
   String _sessionStatusLabel(SessionStatusInfo status) {
     switch (status.type) {
       case SessionStatusType.busy:
-        return 'Status: Busy';
+        return context.l10n.chatStatusBusy;
       case SessionStatusType.retry:
         final attempt = status.attempt ?? 0;
-        final base = attempt > 0 ? 'Status: Retry #$attempt' : 'Status: Retry';
-        final detail = status.message?.trim();
-        if (detail == null || detail.isEmpty) {
-          return base;
-        }
-        return '$base - $detail';
+        return attempt > 0
+            ? context.l10n.chatStatusRetryCount(attempt)
+            : context.l10n.chatStatusRetry;
       case SessionStatusType.idle:
-        return 'Status: Idle';
+        return context.l10n.statusOnline;
     }
   }
 
@@ -186,8 +183,8 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
     final colorScheme = Theme.of(context).colorScheme;
     final group = entry.group;
     final actionLabel = entry.expanded
-        ? 'Hide earlier messages'
-        : 'Show earlier messages';
+        ? context.l10n.chatHistoryHideEarlier
+        : context.l10n.chatHistoryShowEarlier;
     final actionIcon = entry.expanded
         ? Symbols.unfold_less_rounded
         : Symbols.unfold_more_rounded;
@@ -225,7 +222,7 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Previous history is collapsed',
+                        context.l10n.chatHistoryCollapsed,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: colorScheme.onSurface,
@@ -248,7 +245,10 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${group.messageCount} messages hidden before ${group.compactionLabel} compaction',
+                  context.l10n.chatHistoryMessagesHidden(
+                    group.messageCount,
+                    group.compactionLabel,
+                  ),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -268,11 +268,13 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
     final colorScheme = Theme.of(context).colorScheme;
     final group = entry.group;
     final actionLabel = entry.expanded
-        ? 'Hide'
-        : (entry.showBoundedPreview ? 'Expand' : 'Show');
+        ? context.l10n.chatWorkHide
+        : (entry.showBoundedPreview
+              ? context.l10n.chatWorkExpand
+              : context.l10n.chatWorkShow);
     final titleLabel = group.messageCount == 1
-        ? '1 work message'
-        : '${group.messageCount} work messages';
+        ? context.l10n.chatWorkMessageOne
+        : context.l10n.chatWorkMessagesMultiple(group.messageCount);
     final previewMessages = entry.previewMessages;
     final showPreview =
         entry.showBoundedPreview &&
@@ -343,7 +345,7 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
                 if (showPreview) ...[
                   const SizedBox(height: 10),
                   Text(
-                    'Latest tool activity stays inside this bounded panel to keep the chat viewport stable.',
+                    context.l10n.chatWorkBoundedPanelExplanation,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -462,7 +464,7 @@ extension _ChatPageTimelineRuntime on _ChatPageState {
           ),
           const SizedBox(width: 8),
           Text(
-            'Retrying model request...',
+            context.l10n.chatRetryingModelRequest,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
