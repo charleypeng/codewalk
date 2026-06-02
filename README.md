@@ -1,5 +1,7 @@
 # CodeWalk
 
+> ⚠️ **Visual glitches known**: The conversation screen has some visual glitches we're working to fix. If you notice layout issues, flickering, or rendering artifacts, they are being actively addressed.
+
 <p align="center"><img src="demo-desktop.gif" alt="CodeWalk desktop demo" /></p>
 <p align="center">https://github.com/user-attachments/assets/032f64e2-e8ee-4024-b49a-ca95a774653f</p>
 
