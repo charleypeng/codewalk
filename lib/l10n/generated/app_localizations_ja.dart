@@ -12,343 +12,319 @@ class AppLocalizationsJa extends AppLocalizations {
   String get aboutGitHub => 'GitHub';
 
   @override
-  String get appProviderCannotActivateUnhealthy =>
-      'Cannot activate an unhealthy server';
+  String get appProviderCannotActivateUnhealthy => '異常なサーバーを有効化できません';
 
   @override
-  String get appProviderDesktopOnly =>
-      'Managed local server is available only on desktop.';
+  String get appProviderDesktopOnly => '管理対象ローカルサーバーはデスクトップでのみ利用可能です。';
 
   @override
-  String get appProviderDetectingCommand => 'Detecting OpenCode command...';
+  String get appProviderDetectingCommand => 'OpenCode コマンドを検出中...';
 
   @override
-  String get appProviderErrorCannotActivateUnhealthy =>
-      'Cannot activate an unhealthy server';
+  String get appProviderErrorCannotActivateUnhealthy => '異常なサーバーを有効化できません';
 
   @override
   String get appProviderErrorCloudflareOAuthNotSupported =>
-      'Cloudflare Access OAuth is not supported on this platform';
+      'Cloudflare Access OAuth はこのプラットフォームではサポートされていません';
 
   @override
-  String get appProviderErrorInstallationFailed =>
-      'OpenCode installation failed.';
+  String get appProviderErrorInstallationFailed => 'OpenCode のインストールに失敗しました。';
 
   @override
-  String get appProviderErrorInvalidServerUrl => 'Invalid server URL';
+  String get appProviderErrorInvalidServerUrl => '無効なサーバー URL';
 
   @override
   String get appProviderErrorLocalServerHealthCheckFailed =>
-      'Local server started but health check did not pass.';
+      'ローカルサーバーは起動しましたが、ヘルスチェックに合格しませんでした。';
 
   @override
   String get appProviderErrorManagedDesktopOnly =>
-      'Managed local server is available only on desktop.';
+      '管理対象ローカルサーバーはデスクトップでのみ利用可能です。';
 
   @override
-  String get appProviderErrorServerAlreadyExists =>
-      'A server with this URL already exists';
+  String get appProviderErrorServerAlreadyExists => 'この URL のサーバーは既に存在します';
 
   @override
-  String get appProviderErrorServerProfileNotFound =>
-      'Server profile not found';
+  String get appProviderErrorServerProfileNotFound => 'サーバープロファイルが見つかりません';
 
   @override
-  String get appProviderErrorServerUrlRequired => 'Server URL is required';
+  String get appProviderErrorServerUrlRequired => 'サーバー URL は必須です';
 
   @override
   String get appProviderErrorTailscaleNotSupported =>
-      'Tailscale is not supported on this platform';
+      'Tailscale はこのプラットフォームではサポートされていません';
 
   @override
   String appProviderExitedWithCode(int code) {
-    return 'Local server exited with code $code.';
+    return 'ローカルサーバーがコード $code で終了しました。';
   }
 
   @override
-  String get appProviderFailedToStart =>
-      'Failed to start local OpenCode server.';
+  String get appProviderFailedToStart => 'ローカル OpenCode サーバーの起動に失敗しました。';
 
   @override
-  String get appProviderInstallBinary => 'Install Binary';
+  String get appProviderInstallBinary => 'バイナリをインストール';
 
   @override
-  String get appProviderInstallBunOpenCode => 'Install Bun + OpenCode';
+  String get appProviderInstallBunOpenCode => 'Bun + OpenCode をインストール';
 
   @override
-  String get appProviderInstallSucceeded => 'Installation succeeded.';
+  String get appProviderInstallSucceeded => 'インストールが成功しました。';
 
   @override
   String appProviderInstallSucceededWithPath(String path) {
-    return 'Installation succeeded. OpenCode command available at $path.';
+    return 'インストールが成功しました。OpenCode コマンドは $path で利用可能です。';
   }
 
   @override
-  String get appProviderInstallViaBun => 'Install via Bun';
+  String get appProviderInstallViaBun => 'Bun 経由でインストール';
 
   @override
-  String get appProviderInstallViaNpm => 'Install via npm';
+  String get appProviderInstallViaNpm => 'npm 経由でインストール';
 
   @override
-  String get appProviderInstallationFailed => 'OpenCode installation failed.';
+  String get appProviderInstallationFailed => 'OpenCode のインストールに失敗しました。';
 
   @override
-  String get appProviderInstalledSuccessfully =>
-      'OpenCode requirements installed successfully.';
+  String get appProviderInstalledSuccessfully => 'OpenCode の要件が正常にインストールされました。';
 
   @override
-  String get appProviderInstallingRequirements =>
-      'Installing OpenCode requirements...';
+  String get appProviderInstallingRequirements => 'OpenCode の要件をインストール中...';
 
   @override
-  String get appProviderInvalidServerUrl => 'Invalid server URL';
+  String get appProviderInvalidServerUrl => '無効なサーバー URL';
 
   @override
-  String get appProviderLabelLocalOpenCodeManaged => 'Local OpenCode (Managed)';
+  String get appProviderLabelLocalOpenCodeManaged => 'ローカル OpenCode (管理対象)';
 
   @override
-  String get appProviderLabelPrimaryServer => 'Primary server';
+  String get appProviderLabelPrimaryServer => 'プライマリサーバー';
 
   @override
-  String get appProviderLocalManaged => 'Local OpenCode (Managed)';
+  String get appProviderLocalManaged => 'ローカル OpenCode (管理対象)';
 
   @override
-  String get appProviderLocalServerStopped => 'Local server is stopped.';
+  String get appProviderLocalServerStopped => 'ローカルサーバーは停止しています。';
 
   @override
   String get appProviderNotDetectedInstall =>
-      'OpenCode command was not detected. Run installation from the wizard.';
+      'OpenCode コマンドが検出されませんでした。ウィザードからインストールを実行してください。';
 
   @override
   String appProviderNotDetectedRefresh(String appName) {
-    return 'OpenCode command was not detected. If you installed it moments ago, refresh checks or reopen $appName to reload PATH.';
+    return 'OpenCode コマンドが検出されませんでした。インストールしたばかりの場合は、チェックを更新するか $appName を再起動して PATH を再読み込みしてください。';
   }
 
   @override
   String get appProviderOAuthNotSupported =>
-      'Cloudflare Access OAuth is not supported on this platform';
+      'Cloudflare Access OAuth はこのプラットフォームではサポートされていません';
 
   @override
-  String get appProviderOpenCodeDetected => 'OpenCode detected';
+  String get appProviderOpenCodeDetected => 'OpenCode を検出しました';
 
   @override
-  String get appProviderOpenCodeNotDetected => 'OpenCode not detected';
+  String get appProviderOpenCodeNotDetected => 'OpenCode が検出されませんでした';
 
   @override
-  String get appProviderPrimaryServer => 'Primary server';
+  String get appProviderPrimaryServer => 'プライマリサーバー';
 
   @override
-  String get appProviderProfileNotFound => 'Server profile not found';
+  String get appProviderProfileNotFound => 'サーバープロファイルが見つかりません';
 
   @override
   String get appProviderRunDiagnostics =>
-      'Run diagnostics to verify local OpenCode requirements.';
+      'ローカルの OpenCode 要件を確認するために診断を実行してください。';
 
   @override
   String appProviderRunningAt(String url) {
-    return 'Running at $url';
+    return '$url で実行中';
   }
 
   @override
-  String get appProviderSetupDetectingOpenCode =>
-      'Detecting OpenCode command...';
+  String get appProviderSetupDetectingOpenCode => 'OpenCode コマンドを検出中...';
 
   @override
-  String get appProviderSetupInstallationSucceeded => 'Installation succeeded.';
+  String get appProviderSetupInstallationSucceeded => 'インストールが成功しました。';
 
   @override
   String appProviderSetupInstallationSucceededWithPath(String path) {
-    return 'Installation succeeded. OpenCode command available at $path.';
+    return 'インストールが成功しました。OpenCode コマンドは $path で利用可能です。';
   }
 
   @override
   String get appProviderSetupInstallingRequirements =>
-      'Installing OpenCode requirements...';
+      'OpenCode の要件をインストール中...';
 
   @override
-  String get appProviderSetupOpenCodeDetected => 'OpenCode detected';
+  String get appProviderSetupOpenCodeDetected => 'OpenCode を検出しました';
 
   @override
-  String get appProviderSetupOpenCodeNotDetected => 'OpenCode not detected';
+  String get appProviderSetupOpenCodeNotDetected => 'OpenCode が検出されませんでした';
 
   @override
   String get appProviderSetupOpenCodeNotDetectedInstall =>
-      'OpenCode command was not detected. Run installation from the wizard.';
+      'OpenCode コマンドが検出されませんでした。ウィザードからインストールを実行してください。';
 
   @override
   String get appProviderSetupOpenCodeNotDetectedRefresh =>
-      'OpenCode command was not detected. If you installed it moments ago, refresh checks or reopen CodeWalk to reload PATH.';
+      'OpenCode コマンドが検出されませんでした。インストールしたばかりの場合は、チェックを更新するか CodeWalk を再起動して PATH を再読み込みしてください。';
 
   @override
   String get appProviderSetupRequirementsInstalled =>
-      'OpenCode requirements installed successfully.';
+      'OpenCode の要件が正常にインストールされました。';
 
   @override
   String appProviderSetupUsingOpenCodeAt(String path) {
-    return 'Using OpenCode command at $path';
+    return '$path の OpenCode コマンドを使用中';
   }
 
   @override
-  String get appProviderStartingLocalServer => 'Starting local server...';
+  String get appProviderStartingLocalServer => 'ローカルサーバーを起動中...';
 
   @override
   String appProviderStatusLocalServerExitedWithCode(int code) {
-    return 'Local server exited with code $code.';
+    return 'ローカルサーバーがコード $code で終了しました。';
   }
 
   @override
-  String get appProviderStatusLocalServerStopped => 'Local server is stopped.';
+  String get appProviderStatusLocalServerStopped => 'ローカルサーバーは停止しています。';
 
   @override
   String appProviderStatusRunningAt(String url) {
-    return 'Running at $url';
+    return '$url で実行中';
   }
 
   @override
-  String get appProviderStatusStartingLocalServer => 'Starting local server...';
+  String get appProviderStatusStartingLocalServer => 'ローカルサーバーを起動中...';
 
   @override
-  String get appProviderStatusStoppingLocalServer => 'Stopping local server...';
+  String get appProviderStatusStoppingLocalServer => 'ローカルサーバーを停止中...';
 
   @override
-  String get appProviderStoppingLocalServer => 'Stopping local server...';
+  String get appProviderStoppingLocalServer => 'ローカルサーバーを停止中...';
 
   @override
   String get appProviderTailscaleNotSupported =>
-      'Tailscale is not supported on this platform';
+      'Tailscale はこのプラットフォームではサポートされていません';
 
   @override
   String appProviderUsingCommandAt(String path) {
-    return 'Using OpenCode command at $path';
+    return '$path の OpenCode コマンドを使用中';
   }
 
   @override
-  String get appShellDownloadingUpdate => 'Downloading update…';
+  String get appShellDownloadingUpdate => 'アップデートをダウンロード中';
 
   @override
-  String get appShellInstall => 'Install';
+  String get appShellInstall => 'インストール';
 
   @override
-  String get appShellInstallFailed => 'Install failed';
+  String get appShellInstallFailed => 'インストールに失敗しました';
 
   @override
-  String get appShellInstallingUpdate => 'Installing update...';
+  String get appShellInstallingUpdate => 'アップデートをインストール中...';
 
   @override
-  String get appShellRestart => 'Restart';
+  String get appShellRestart => '再起動';
 
   @override
   String appShellUpdateAvailableResult(String latestVersion) {
-    return 'Update available: v$latestVersion';
+    return 'アップデートあり: v$latestVersion';
   }
 
   @override
   String get appShellUpdateInstalledRestartApp =>
-      'Update installed. Restart the app to apply.';
+      'アップデートがインストールされました。アプリを再起動して適用してください。';
 
   @override
   String get appShellUpdateInstalledRestartRequired =>
-      'Update installed. Restart is required to apply the new version.';
+      'アップデートがインストールされました。新バージョンを適用するには再起動が必要です。';
 
   @override
-  String get attachmentCouldNotDecode =>
-      'Attachment data could not be decoded.';
+  String get attachmentCouldNotDecode => '添付ファイルデータをデコードできませんでした。';
 
   @override
-  String get attachmentCouldNotDownload =>
-      'Attachment could not be downloaded.';
+  String get attachmentCouldNotDownload => '添付ファイルをダウンロードできませんでした。';
 
   @override
-  String get attachmentCouldNotSave =>
-      'Attachment could not be saved on this device.';
+  String get attachmentCouldNotSave => '添付ファイルをこのデバイスに保存できませんでした。';
 
   @override
-  String get attachmentDownloadStarted => 'Attachment download started.';
+  String get attachmentDownloadStarted => '添付ファイルのダウンロードを開始しました。';
 
   @override
-  String get attachmentLocalNotFound =>
-      'Local attachment was not found on this device.';
+  String get attachmentLocalNotFound => 'ローカルの添付ファイルがこのデバイスで見つかりませんでした。';
 
   @override
-  String get attachmentNoValidLocation =>
-      'Attachment does not provide a valid location.';
+  String get attachmentNoValidLocation => '添付ファイルに有効な場所が指定されていません。';
 
   @override
   String get attachmentNotAvailableOnPlatform =>
-      'Attachment actions are not available on this platform.';
+      '添付ファイルのアクションはこのプラットフォームでは利用できません。';
 
   @override
-  String get attachmentPathEmpty => 'Attachment path is empty.';
+  String get attachmentPathEmpty => '添付ファイルのパスが空です。';
 
   @override
-  String get attachmentPayloadEmpty => 'Attachment payload is empty.';
+  String get attachmentPayloadEmpty => '添付ファイルのペイロードが空です。';
 
   @override
-  String get attachmentSaveCanceled => 'Save canceled.';
+  String get attachmentSaveCanceled => '保存がキャンセルされました。';
 
   @override
   String attachmentSavedAndOpened(String path) {
-    return 'Attachment saved to $path and opened.';
+    return '添付ファイルを $path に保存して開きました。';
   }
 
   @override
   String attachmentSavedPath(String path) {
-    return 'Attachment saved to $path.';
+    return '添付ファイルを $path に保存しました。';
   }
 
   @override
   String attachmentSavedTo(String path) {
-    return 'Attachment saved to $path.';
+    return '添付ファイルを $path に保存しました。';
   }
 
   @override
-  String get attachmentUnableToOpenLink =>
-      'Unable to open the attachment link.';
+  String get attachmentUnableToOpenLink => '添付ファイルのリンクを開けません。';
 
   @override
-  String get attachmentUnableToOpenLocal =>
-      'Unable to open the local attachment.';
+  String get attachmentUnableToOpenLocal => 'ローカルの添付ファイルを開けません。';
 
   @override
-  String get behaviorAdvancedPermissionRule =>
-      'Advanced permission rule editing stays out of Settings for now and is deferred to later parity work.';
+  String get behaviorAdvancedPermissionRule => '高度な権限ルール';
 
   @override
-  String get behaviorAutomatic => 'Automatic';
+  String get behaviorAutomatic => '自動';
 
   @override
-  String get behaviorAutomaticFallback => 'Automatic fallback';
+  String get behaviorAutomaticFallback => '自動フォールバック';
 
   @override
-  String get behaviorCellularDataSaver => 'Cellular data saver';
+  String get behaviorCellularDataSaver => 'モバイルデータセーバー';
 
   @override
-  String get behaviorCellularDataSaverActive =>
-      'Cellular data saver is active.';
+  String get behaviorCellularDataSaverActive => 'データセーバーが有効です。';
 
   @override
-  String get behaviorChatLevelShare =>
-      'Use the chat-level share action to publish one session now. This setting only changes OpenCode’s default sharing policy.';
+  String get behaviorChatLevelShare => 'チャットレベル共有';
 
   @override
-  String get behaviorCodeWalkReleaseChecks =>
-      'Use About for CodeWalk release checks. This setting only mirrors the official OpenCode `autoupdate` config.';
+  String get behaviorCodeWalkReleaseChecks => 'CodeWalkリリースチェック';
 
   @override
-  String get behaviorControlsOfficialGlobal =>
-      'Controls the official global `share` config, not the share button for an individual chat.';
+  String get behaviorControlsOfficialGlobal => 'OpenCodeの公式グローバル設定を制御';
 
   @override
-  String get behaviorControlsUpstreamOpenCode =>
-      'Controls upstream OpenCode runtime updates, not CodeWalk app update checks.';
+  String get behaviorControlsUpstreamOpenCode => 'アップストリームOpenCode設定を制御';
 
   @override
-  String get behaviorCustomDisplayName =>
-      'Custom display name shown in conversations instead of the system username.';
+  String get behaviorCustomDisplayName => 'カスタム表示名';
 
   @override
   String behaviorCutsAutomaticMobile(int inSeconds) {
-    return 'Cuts automatic mobile-data usage by stopping background downloads and throttling automatic foreground refreshes to one burst every $inSeconds seconds.';
+    return 'バックグラウンドダウンロードを停止し、フォアグラウンドの自動更新を$inSeconds秒ごとに1回のバーストに制限することで、自動モバイルデータ使用量を削減します。';
   }
 
   @override
@@ -363,17 +339,16 @@ class AppLocalizationsJa extends AppLocalizations {
       'Waiting for the next mobile-data sync window.';
 
   @override
-  String get behaviorDisabled => 'Disabled';
+  String get behaviorDisabled => '無効';
 
   @override
-  String get behaviorLightweightTasksLike =>
-      'Used for lightweight tasks like title generation.';
+  String get behaviorLightweightTasksLike => '次のような軽量タスク';
 
   @override
-  String get behaviorManual => 'Manual';
+  String get behaviorManual => '手動';
 
   @override
-  String get behaviorNotify => 'Notify only';
+  String get behaviorNotify => '通知';
 
   @override
   String get behaviorOfficialOpenCodePermission =>
@@ -406,23 +381,22 @@ class AppLocalizationsJa extends AppLocalizations {
       'These values write to `/config` on the active server and match official OpenCode shared config.';
 
   @override
-  String get cannedAddTitle => 'Add canned answer';
+  String get cannedAddTitle => '定型文を追加';
 
   @override
-  String get cannedAppendAtCursor => 'Append at cursor';
+  String get cannedAppendAtCursor => 'カーソル位置に追加';
 
   @override
-  String get cannedAppendAtCursorSubtitle =>
-      'Off means replace current composer text';
+  String get cannedAppendAtCursorSubtitle => 'オフ = 現在のテキストを置き換え';
 
   @override
   String get cannedAttachFiles => 'Attach files';
 
   @override
-  String get cannedEditTitle => 'Edit canned answer';
+  String get cannedEditTitle => '定型文を編集';
 
   @override
-  String get cannedNewQuickReply => 'New quick reply';
+  String get cannedNewQuickReply => '新しいクイック返信';
 
   @override
   String get cannedNoSuggestions => 'No suggestions';
@@ -434,35 +408,34 @@ class AppLocalizationsJa extends AppLocalizations {
   String get cannedQuickReply => 'New quick reply';
 
   @override
-  String get cannedReplace => 'Replace';
+  String get cannedReplace => '置き換え';
 
   @override
-  String get cannedScopeGlobalSubtitle => 'Disable for project-only item';
+  String get cannedScopeGlobalSubtitle => 'プロジェクト専用の場合は無効化';
 
   @override
   String get cannedScopeGlobalUnavailableSubtitle =>
-      'Project-only unavailable in current context';
+      '現在のコンテキストではプロジェクト専用は利用できません';
 
   @override
-  String get cannedSendAutomaticallySubtitle =>
-      'Send immediately after inserting this quick reply';
+  String get cannedSendAutomaticallySubtitle => '挿入後すぐに送信';
 
   @override
   String get cannedSendImmediatelyInserting =>
       'Send immediately after inserting this quick reply';
 
   @override
-  String get cannedTextLabel => 'Text';
+  String get cannedTextLabel => 'テキスト';
 
   @override
-  String get chatActionNext => 'Next';
+  String get chatActionNext => '次へ';
 
   @override
   String get chatActiveServerUnhealthy =>
       'Active server is unhealthy. Sends will try once and fail fast until recovery.';
 
   @override
-  String get chatActiveServerUnhealthyLabel => 'Active server is unhealthy';
+  String get chatActiveServerUnhealthyLabel => 'アクティブなサーバーが異常です';
 
   @override
   String get chatAddServerToStart => 'Add a server to start chatting.';
@@ -486,28 +459,27 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String chatBadgeConversationError(String title) {
-    return '\"$title\" has an error.';
+    return '「$title」にエラーがあります。';
   }
 
   @override
   String chatBadgeConversationNeedsInput(String title) {
-    return '\"$title\" needs your input.';
+    return '「$title」はあなたの入力を待っています。';
   }
 
   @override
   String chatBadgeConversationNewReply(String title) {
-    return '\"$title\" has a new reply.';
+    return '「$title」に新しい返信があります。';
   }
 
   @override
-  String get chatBadgeDataSaverActive => 'Cellular data saver is active.';
+  String get chatBadgeDataSaverActive => 'データ節約モードが有効です。';
 
   @override
-  String get chatBadgeServerNeedsAttention =>
-      'Server connection needs attention.';
+  String get chatBadgeServerNeedsAttention => 'サーバー接続に注意が必要です。';
 
   @override
-  String get chatBadgeSyncing => 'Syncing conversations...';
+  String get chatBadgeSyncing => '会話を同期中...';
 
   @override
   String get chatCachedConversationsYet => 'No cached conversations yet';
@@ -518,53 +490,53 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String chatChildrenChatProviderCurrentSessionChildren(int length) {
-    return 'Children: $length';
+    return '子: $length';
   }
 
   @override
-  String get chatChooseAgent => 'Select agent';
+  String get chatChooseAgent => 'エージェントを選択';
 
   @override
   String get chatChooseDirectory => 'Choose Directory';
 
   @override
-  String get chatChooseEffort => 'Choose effort';
+  String get chatChooseEffort => '努力レベルを選択';
 
   @override
   String get chatChooseFolderOpen =>
       'Choose a folder to open as project context.';
 
   @override
-  String get chatChooseModel => 'Choose model';
+  String get chatChooseModel => 'モデルを選択';
 
   @override
   String get chatClose => 'Close';
 
   @override
   String chatCloseProject(String project) {
-    return 'Close $project';
+    return '$project を閉じる';
   }
 
   @override
-  String get chatCollapseGroup => 'Collapse group';
+  String get chatCollapseGroup => 'グループを折りたたむ';
 
   @override
-  String get chatCommandDescriptionProject => 'Project command';
+  String get chatCommandDescriptionProject => 'プロジェクトコマンド';
 
   @override
-  String get chatCommandSourceGeneric => 'command';
+  String get chatCommandSourceGeneric => 'コマンド';
 
   @override
-  String get chatCommandSourceProject => 'project';
+  String get chatCommandSourceProject => 'プロジェクト';
 
   @override
   String get chatCompactContext => 'Compact Context';
 
   @override
-  String get chatComposerHintShell => 'Shell command (Esc to exit)';
+  String get chatComposerHintShell => 'シェルコマンド（Escで終了）';
 
   @override
-  String get chatComposerPlaceholder => 'Type your needs...';
+  String get chatComposerPlaceholder => '要件を入力...';
 
   @override
   String get chatConversation => 'Conversation';
@@ -577,79 +549,74 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String chatCostLabel(double cost) {
-    return 'Cost: \$$cost';
+    return 'コスト: \$$cost';
   }
 
   @override
-  String get chatCouldNotRefreshSession =>
-      'Could not refresh this conversation';
+  String get chatCouldNotRefreshSession => 'この会話を更新できませんでした';
 
   @override
   String get chatCurrent => 'Use current';
 
   @override
   String chatDescriptionChildren(int count) {
-    return 'Children: $count';
+    return '子要素: $count';
   }
 
   @override
-  String get chatDescriptionCloseApp =>
-      'Close app using platform close behavior';
+  String get chatDescriptionCloseApp => 'プラットフォームの終了動作を使用してアプリを閉じる';
 
   @override
-  String get chatDescriptionCycleModels => 'Cycle recent models';
+  String get chatDescriptionCycleModels => '最近のモデルを切り替える';
 
   @override
-  String get chatDescriptionCycleVariant => 'Cycle model variant';
+  String get chatDescriptionCycleVariant => 'モデルバリアントを切り替える';
 
   @override
-  String get chatDescriptionDiffFilesZero => 'Diff files: 0';
+  String get chatDescriptionDiffFilesZero => '差分ファイル: 0';
 
   @override
-  String get chatDescriptionFocusInput => 'Focus message input';
+  String get chatDescriptionFocusInput => 'メッセージ入力にフォーカス';
 
   @override
-  String get chatDescriptionFocusOrCloseDrawer =>
-      'Focus input (or close drawer when open)';
+  String get chatDescriptionFocusOrCloseDrawer => '入力にフォーカス（開いている場合はドロワーを閉じる）';
 
   @override
-  String get chatDescriptionForceExit => 'Force-exit the app';
+  String get chatDescriptionForceExit => 'アプリを強制終了する';
 
   @override
-  String get chatDescriptionNewConversation => 'New conversation';
+  String get chatDescriptionNewConversation => '新しい会話';
 
   @override
-  String get chatDescriptionNextAgent => 'Next agent';
+  String get chatDescriptionNextAgent => '次のエージェント';
 
   @override
-  String get chatDescriptionOpenProjects =>
-      'Use this button to open your projects and conversations.';
+  String get chatDescriptionOpenProjects => 'このボタンを使用してプロジェクトや会話を開きます。';
 
   @override
-  String get chatDescriptionOpenSettings => 'Open settings';
+  String get chatDescriptionOpenSettings => '設定を開く';
 
   @override
-  String get chatDescriptionPreviousAgent => 'Previous agent';
+  String get chatDescriptionPreviousAgent => '前のエージェント';
 
   @override
-  String get chatDescriptionProjectCommand => 'Project command';
+  String get chatDescriptionProjectCommand => 'プロジェクトコマンド';
 
   @override
-  String get chatDescriptionQuickOpen => 'Quick open files';
+  String get chatDescriptionQuickOpen => 'ファイルをクイックオープン';
 
   @override
-  String get chatDescriptionRefreshData => 'Refresh chat data';
+  String get chatDescriptionRefreshData => 'チャットデータを更新';
 
   @override
-  String get chatDescriptionStopResponse =>
-      'Stop active response (while responding)';
+  String get chatDescriptionStopResponse => 'アクティブな応答を停止（応答中）';
 
   @override
   String get chatDescriptionSwitchProject =>
-      'Use this button to switch project folders and context.';
+      'このボタンを使用してプロジェクトフォルダとコンテキストを切り替えます。';
 
   @override
-  String get chatDescriptionVoiceInput => 'Start or stop voice input';
+  String get chatDescriptionVoiceInput => '音声入力を開始または停止';
 
   @override
   String get chatDiffFiles => 'Diff files: 0';
@@ -661,40 +628,37 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatDisplayToggles => 'Display toggles';
 
   @override
-  String get chatDoubleESCStop => 'Double ESC to stop';
+  String get chatDoubleESCStop => 'ESCを2回押して停止';
 
   @override
-  String get chatEffortLockedSubConversation =>
-      'Effort locked in sub-conversation';
+  String get chatEffortLockedSubConversation => 'サブ会話で努力設定がロックされています';
 
   @override
-  String get chatExpandGroup => 'Expand group';
+  String get chatExpandGroup => 'グループを展開';
 
   @override
-  String get chatExportCanceled => 'Session export canceled';
+  String get chatExportCanceled => 'セッションのエクスポートがキャンセルされました';
 
   @override
-  String get chatFailedToLoadDirectories => 'Failed to load directories';
+  String get chatFailedToLoadDirectories => 'ディレクトリの読み込みに失敗しました';
 
   @override
-  String get chatFailedToLoadFile => 'Failed to load file';
+  String get chatFailedToLoadFile => 'ファイルの読み込みに失敗しました';
 
   @override
-  String get chatFailedToRefreshProviders =>
-      'Failed to refresh providers and models';
+  String get chatFailedToRefreshProviders => 'プロバイダーとモデルの更新に失敗しました';
 
   @override
-  String get chatFailedToRefreshSubConversations =>
-      'Failed to refresh sub-conversations. Please try again.';
+  String get chatFailedToRefreshSubConversations => 'サブ会話の更新に失敗しました。再試行してください。';
 
   @override
   String get chatFailedToStopResponse => 'Failed to stop current response';
 
   @override
-  String get chatFileExplorerContents => 'Contents';
+  String get chatFileExplorerContents => '内容';
 
   @override
-  String get chatFileExplorerNames => 'Names';
+  String get chatFileExplorerNames => '名前';
 
   @override
   String get chatFilterActive => 'Active';
@@ -712,10 +676,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatFilterSessions => 'Filter sessions';
 
   @override
-  String get chatForkFailed => 'Failed to fork conversation';
+  String get chatForkFailed => '会話のフォークに失敗しました';
 
   @override
-  String get chatForked => 'Conversation forked';
+  String get chatForked => '会話をフォークしました';
 
   @override
   String get chatGoToFirst => 'Go to first message';
@@ -728,7 +692,7 @@ class AppLocalizationsJa extends AppLocalizations {
     String compactionLabel,
     String messageCount,
   ) {
-    return '$messageCount messages hidden before $compactionLabel compaction';
+    return '$compactionLabel圧縮前に$messageCount件のメッセージが非表示';
   }
 
   @override
@@ -738,8 +702,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatHelp => 'How can I help you?';
 
   @override
-  String get chatHelpMessage =>
-      'Use @ for mentions, ! for shell, / for commands';
+  String get chatHelpMessage => '@ でメンション、! でシェル、/ でコマンドを使用します';
 
   @override
   String get chatHideConversationsSidebar => 'Hide Conversations sidebar';
@@ -766,7 +729,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get chatLargeContentSkipped =>
-      'Large or malformed content was skipped for stability.';
+      '安定性のため、サイズの大きいコンテンツまたは不正な形式のコンテンツはスキップされました。';
 
   @override
   String get chatLatestToolActivity =>
@@ -779,29 +742,28 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatLoadingProjectContext => 'Loading project context...';
 
   @override
-  String get chatMainConversationUnavailable =>
-      'Main conversation is not available yet.';
+  String get chatMainConversationUnavailable => 'メインの会話はまだ利用できません。';
 
   @override
-  String get chatMentionAgentSubtitle => 'agent';
+  String get chatMentionAgentSubtitle => 'エージェント';
 
   @override
-  String get chatMentionFileSubtitle => 'file';
+  String get chatMentionFileSubtitle => 'ファイル';
 
   @override
-  String get chatMentionSymbolSubtitle => 'symbol';
+  String get chatMentionSymbolSubtitle => '記号';
 
   @override
-  String get chatMessageAttachedFile => 'Attached file';
+  String get chatMessageAttachedFile => '添付ファイル';
 
   @override
-  String get chatMessageDetails => 'Details';
+  String get chatMessageDetails => '詳細';
 
   @override
-  String get chatMessageHide => 'Hide';
+  String get chatMessageHide => '非表示';
 
   @override
-  String get chatMessageLess => 'Less';
+  String get chatMessageLess => '閉じる';
 
   @override
   String get chatMessageMessagePartUnavailable => 'Message part unavailable';
@@ -811,18 +773,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String chatMessageModelMessageModelId(String modelId) {
-    return 'Model: $modelId';
+    return 'モデル: $modelId';
   }
 
   @override
-  String get chatMessageMore => 'More';
+  String get chatMessageMore => 'もっと見る';
 
   @override
   String get chatMessageOpenFile => 'Open file';
 
   @override
   String chatMessageProviderMessageProviderId(String providerId) {
-    return 'Provider: $providerId';
+    return 'プロバイダー: $providerId';
   }
 
   @override
@@ -835,22 +797,22 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatMessageSaveFile => 'Save file';
 
   @override
-  String get chatMessageShow => 'Show';
+  String get chatMessageShow => '表示';
 
   @override
-  String get chatMessageShowLess => 'Show less';
+  String get chatMessageShowLess => '表示を減らす';
 
   @override
-  String get chatMessageShowLessCompact => 'Less';
+  String get chatMessageShowLessCompact => '閉じる';
 
   @override
-  String get chatMessageShowMore => 'Show more';
+  String get chatMessageShowMore => 'もっと表示';
 
   @override
-  String get chatMessageShowMoreCompact => 'More';
+  String get chatMessageShowMoreCompact => 'もっと見る';
 
   @override
-  String get chatMessageThinking => 'Thinking';
+  String get chatMessageThinking => '思考中';
 
   @override
   String get chatMessageThinkingProcess => 'Thinking Process';
@@ -864,35 +826,31 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get chatMessageToolCommand => 'Command';
+  String get chatMessageToolCommand => 'コマンド';
 
   @override
-  String get chatMessageToolCommandTruncated =>
-      'Command preview truncated for stability.';
+  String get chatMessageToolCommandTruncated => '安定性のためコマンドを切り詰めました。';
 
   @override
-  String get chatMessageToolDiffOmitted =>
-      'Diff preview omitted: edit payload is too large to render safely on mobile.';
+  String get chatMessageToolDiffOmitted => '差分は省略されました。ペイロードが大きすぎます。';
 
   @override
-  String get chatMessageToolInput => 'Input';
+  String get chatMessageToolInput => '入力';
 
   @override
-  String get chatMessageToolInputTruncated =>
-      'Input preview truncated for stability.';
+  String get chatMessageToolInputTruncated => '安定性のため入力を切り詰めました。';
 
   @override
-  String get chatMessageToolOutputTruncated =>
-      'Large tool output preview truncated for app stability.';
+  String get chatMessageToolOutputTruncated => 'アプリ安定性のため大きな出力を切り詰めました。';
 
   @override
   String chatMessageToolQueuedCount(int count) {
-    return '$count queued';
+    return '$count キュー待ち';
   }
 
   @override
   String chatMessageToolRunningCount(int count) {
-    return '$count running';
+    return '$count 実行中';
   }
 
   @override
@@ -908,8 +866,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatMessageYou => 'You';
 
   @override
-  String get chatModelLockedSubConversation =>
-      'Model locked in sub-conversation';
+  String get chatModelLockedSubConversation => 'サブ会話でモデルがロックされています';
 
   @override
   String get chatNewChat => 'New Chat';
@@ -921,34 +878,31 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatNewChatTourTitle => 'New chat';
 
   @override
-  String get chatNoConversationsInProject =>
-      'No conversations in this project.';
+  String get chatNoConversationsInProject => 'このプロジェクトには会話がありません。';
 
   @override
   String get chatNoServerYet => 'No server configured yet';
 
   @override
-  String get chatNoSessionSelected =>
-      'Select or create a conversation to start chatting';
+  String get chatNoSessionSelected => '会話を選択または作成してください';
 
   @override
-  String get chatNoSubConversationFound =>
-      'No sub-conversation found for this task.';
+  String get chatNoSubConversationFound => 'このタスクのサブ会話は見つかりませんでした。';
 
   @override
   String get chatOpenFiles => 'Open Files';
 
   @override
-  String get chatOpenProject => 'Open project';
+  String get chatOpenProject => 'プロジェクトを開く';
 
   @override
   String get chatOpenProjectFolder => 'Open project folder...';
 
   @override
-  String get chatOpenProjectToLoad => 'Open project to load conversations.';
+  String get chatOpenProjectToLoad => 'プロジェクトを開いて会話を読み込んでください。';
 
   @override
-  String get chatOpenSidebar => 'Open sidebar';
+  String get chatOpenSidebar => 'サイドバーを開く';
 
   @override
   String get chatPageStatusAutomaticCompactionExplanation =>
@@ -967,35 +921,35 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatPageStatusContextCompacted => 'Context compacted';
 
   @override
-  String get chatPageStatusContextUsage => 'Context usage';
+  String get chatPageStatusContextUsage => 'コンテキスト使用量';
 
   @override
-  String get chatPageStatusCost => 'Cost';
+  String get chatPageStatusCost => 'コスト';
 
   @override
   String get chatPageStatusFailedToCompactContext =>
       'Failed to compact context';
 
   @override
-  String get chatPageStatusLimit => 'Limit';
+  String get chatPageStatusLimit => '制限';
 
   @override
-  String get chatPageStatusManageServers => 'Manage Servers';
+  String get chatPageStatusManageServers => 'サーバーを管理';
 
   @override
-  String get chatPageStatusSaver => 'Saver';
+  String get chatPageStatusSaver => 'セーバー';
 
   @override
   String get chatPageStatusServer => 'Server';
 
   @override
-  String get chatPageStatusSwitchServer => 'Switch Server';
+  String get chatPageStatusSwitchServer => 'サーバーを切り替え';
 
   @override
-  String get chatPageStatusTokens => 'Tokens';
+  String get chatPageStatusTokens => 'トークン';
 
   @override
-  String get chatPageStatusUsage => 'Usage';
+  String get chatPageStatusUsage => '使用量';
 
   @override
   String chatPageStatusUsagePercent(int usagePercent) {
@@ -1003,51 +957,50 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get chatPermissionAutoApproveOff => 'Permission auto-approve is off';
+  String get chatPermissionAutoApproveOff => '権限の自動承認がオフ';
 
   @override
-  String get chatPermissionAutoApproveOn => 'Permission auto-approve is on';
+  String get chatPermissionAutoApproveOn => '権限の自動承認がオン';
 
   @override
   String get chatProjectContext => 'Project Context';
 
   @override
-  String get chatProjectContext2 => 'Project context';
+  String get chatProjectContext2 => 'プロジェクトコンテキスト';
 
   @override
-  String get chatRealtimeGlobalEvent => 'global event';
+  String get chatRealtimeGlobalEvent => 'グローバルイベント';
 
   @override
   String chatRealtimeGlobalEventReason(String reason) {
-    return 'global event ($reason)';
+    return 'グローバルイベント ($reason)';
   }
 
   @override
-  String get chatRealtimeGlobalEventStale => 'global event (stale generation)';
+  String get chatRealtimeGlobalEventStale => 'グローバルイベント (古い世代)';
 
   @override
   String chatRealtimeMessageStreamReason(String reason) {
-    return 'message stream ($reason)';
+    return 'メッセージストリーム ($reason)';
   }
 
   @override
-  String get chatRealtimeRealtimeEvent => 'realtime event';
+  String get chatRealtimeRealtimeEvent => 'リアルタイムイベント';
 
   @override
   String chatRealtimeRealtimeEventReason(String reason) {
-    return 'realtime event ($reason)';
+    return 'リアルタイムイベント ($reason)';
   }
 
   @override
-  String get chatRealtimeRealtimeEventStale =>
-      'realtime event (stale generation)';
+  String get chatRealtimeRealtimeEventStale => 'リアルタイムイベント (古い世代)';
 
   @override
   String get chatRealtimeReconnectingServerTry =>
-      'Reconnecting to the server. Try again in a moment.';
+      'サーバーに再接続中。しばらくしてからもう一度お試しください。';
 
   @override
-  String get chatReasoning => 'Reasoning...';
+  String get chatReasoning => '推論中...';
 
   @override
   String get chatRecentSessions => 'Recent sessions';
@@ -1059,7 +1012,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatRedoLastTurn => 'Redo last undone turn';
 
   @override
-  String get chatRedoNothing => 'Nothing to redo in this session';
+  String get chatRedoNothing => 'このセッションでやり直す操作はありません';
 
   @override
   String get chatRefresh => 'Refresh';
@@ -1075,7 +1028,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String chatRemoveDisplayNameHistory(String displayName) {
-    return 'Remove $displayName from history';
+    return '履歴から$displayNameを削除';
   }
 
   @override
@@ -1127,19 +1080,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatSelectProjectBelow => 'Select a project below.';
 
   @override
-  String get chatServerSelectedModel => 'Server-selected model';
+  String get chatServerSelectedModel => 'サーバー選択モデル';
 
   @override
   String get chatSessionActions => 'Session actions';
 
   @override
   String chatSessionChatSessionSession(String title) {
-    return 'Chat session: $title';
+    return 'チャットセッション: $title';
   }
 
   @override
   String chatSessionConversationNextAction(String nextAction) {
-    return 'Conversation $nextAction';
+    return '会話 $nextAction';
   }
 
   @override
@@ -1161,51 +1114,50 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatSettings => 'Settings';
 
   @override
-  String get chatShortcutsCloseApp => 'Close app using platform close behavior';
+  String get chatShortcutsCloseApp => 'プラットフォームの終了動作を使用してアプリを閉じる';
 
   @override
-  String get chatShortcutsCycleModels => 'Cycle recent models';
+  String get chatShortcutsCycleModels => '最近のモデルを切り替える';
 
   @override
-  String get chatShortcutsCycleVariant => 'Cycle model variant';
+  String get chatShortcutsCycleVariant => 'モデルバリアントを切り替える';
 
   @override
-  String get chatShortcutsFocusInput => 'Focus message input';
+  String get chatShortcutsFocusInput => 'メッセージ入力にフォーカス';
 
   @override
   String get chatShortcutsFocusInputCloseDrawer =>
-      'Focus input (or close drawer when open)';
+      '入力にフォーカス（またはドロワーが開いている場合は閉じる）';
 
   @override
-  String get chatShortcutsForceExit => 'Force-exit the app';
+  String get chatShortcutsForceExit => 'アプリを強制終了';
 
   @override
-  String get chatShortcutsNewConversation => 'New conversation';
+  String get chatShortcutsNewConversation => '新しい会話';
 
   @override
-  String get chatShortcutsNextAgent => 'Next agent';
+  String get chatShortcutsNextAgent => '次のエージェント';
 
   @override
-  String get chatShortcutsOpenSettings => 'Open settings';
+  String get chatShortcutsOpenSettings => '設定を開く';
 
   @override
-  String get chatShortcutsPreviousAgent => 'Previous agent';
+  String get chatShortcutsPreviousAgent => '前のエージェント';
 
   @override
-  String get chatShortcutsQuickOpen => 'Quick open files';
+  String get chatShortcutsQuickOpen => 'ファイルを素早く開く';
 
   @override
-  String get chatShortcutsRefreshChat => 'Refresh chat data';
+  String get chatShortcutsRefreshChat => 'チャットデータを更新';
 
   @override
-  String get chatShortcutsStartStopVoice => 'Start or stop voice input';
+  String get chatShortcutsStartStopVoice => '音声入力の開始または停止';
 
   @override
-  String get chatShortcutsStopResponse =>
-      'Stop active response (while responding)';
+  String get chatShortcutsStopResponse => 'アクティブな応答を停止（応答中）';
 
   @override
-  String get chatSidebarAccess => 'Sidebar access';
+  String get chatSidebarAccess => 'サイドバーアクセス';
 
   @override
   String get chatSortMostRecent => 'Most Recent';
@@ -1223,45 +1175,45 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatSortTitle => 'Title';
 
   @override
-  String get chatStartVoiceInput => 'Start voice input';
+  String get chatStartVoiceInput => '音声入力を開始';
 
   @override
-  String get chatStartingVoiceInput => 'Starting voice input';
+  String get chatStartingVoiceInput => '音声入力を開始中';
 
   @override
-  String get chatStatusBusy => 'Status: Busy';
+  String get chatStatusBusy => '状態: 実行中';
 
   @override
-  String get chatStatusPatching => 'Patching';
+  String get chatStatusPatching => 'パッチ適用中';
 
   @override
   String chatStatusPatchingMultipleFiles(int count) {
-    return 'Patching $count files';
+    return '$count個のファイルをパッチ適用中';
   }
 
   @override
-  String get chatStatusPatchingOneFile => 'Patching 1 file';
+  String get chatStatusPatchingOneFile => '1つのファイルをパッチ適用中';
 
   @override
-  String get chatStatusRetry => 'Status: Retry';
+  String get chatStatusRetry => '状態: 再試行';
 
   @override
   String chatStatusRetryCount(int count) {
-    return 'Status: Retry #$count';
+    return '状態: 再試行 #$count';
   }
 
   @override
-  String get chatStatusSubsession => 'Subsession';
+  String get chatStatusSubsession => 'サブセッション';
 
   @override
-  String get chatStatusThinking => 'Thinking...';
+  String get chatStatusThinking => '思考中...';
 
   @override
-  String get chatStopVoiceInput => 'Stop voice input';
+  String get chatStopVoiceInput => '音声入力を停止';
 
   @override
   String chatSyncLabel(String label) {
-    return 'Sync: $label';
+    return '同期: $label';
   }
 
   @override
@@ -1272,80 +1224,70 @@ class AppLocalizationsJa extends AppLocalizations {
       'No tasks are available for this session.';
 
   @override
-  String get chatTipBeSpecific =>
-      'Tip: Be specific — shorter prompts get faster answers';
+  String get chatTipBeSpecific => 'ヒント: 具体的に — 短いプロンプトほど早く回答が得られます';
 
   @override
-  String get chatTipBreakTasks => 'Tip: Break large tasks into smaller prompts';
+  String get chatTipBreakTasks => 'ヒント: 大きなタスクを小さなプロンプトに分割します';
 
   @override
-  String get chatTipContextKnob =>
-      'Tip: Tap the context knob to see usage details';
+  String get chatTipContextKnob => 'ヒント: コンテキストノブをタップして使用状況の詳細を表示します';
 
   @override
-  String get chatTipLongPressSend => 'Tip: Long-press Send to insert a newline';
+  String get chatTipLongPressSend => 'ヒント: 送信を長押しして改行を挿入します';
 
   @override
-  String get chatTipMentionFiles =>
-      'Tip: Use @ to mention files in your prompt';
+  String get chatTipMentionFiles => 'ヒント: プロンプトで @ を使用してファイルに言及します';
 
   @override
-  String get chatTipProvideContext =>
-      'Tip: Provide context — paste error messages and logs';
+  String get chatTipProvideContext => 'ヒント: コンテキストを提供 — エラーメッセージやログを貼り付けます';
 
   @override
-  String get chatTipRenameConversation =>
-      'Tip: Tap the title to rename a conversation';
+  String get chatTipRenameConversation => 'ヒント: タイトルをタップして会話の名前を変更します';
 
   @override
-  String get chatTipShellCommands =>
-      'Tip: Use ! at the start to run shell commands';
+  String get chatTipShellCommands => 'ヒント: 行頭で ! を使用してシェルコマンドを実行します';
 
   @override
-  String get chatTipSlashCommands => 'Tip: Use / to access slash commands';
+  String get chatTipSlashCommands => 'ヒント: / を使用してスラッシュコマンドにアクセスします';
 
   @override
-  String get chatTipStepByStep =>
-      'Tip: Ask for step-by-step when debugging complex issues';
+  String get chatTipStepByStep => 'ヒント: 複雑な問題のデバッグ時はステップバイステップで依頼します';
 
   @override
   String get chatToggleSidebars => 'Toggle sidebars';
 
   @override
   String chatTokensLabel(int total) {
-    return 'Tokens: $total';
+    return 'トークン: $total';
   }
 
   @override
-  String get chatTourProjectsConversations =>
-      'Use this button to open your projects and conversations.';
+  String get chatTourProjectsConversations => 'このボタンを使用してプロジェクトや会話を開きます。';
 
   @override
   String get chatTourSidebarProjectTools =>
-      'Use this menu to show the conversations sidebar and project tools.';
+      'このメニューを使用して会話サイドバーやプロジェクトツールを表示します。';
 
   @override
-  String get chatTourSwitchFolders =>
-      'Use this button to switch project folders and context.';
+  String get chatTourSwitchFolders => 'このボタンを使用してプロジェクトフォルダやコンテキストを切り替えます。';
 
   @override
   String get chatUndoLastTurn => 'Undo last turn';
 
   @override
-  String get chatUndoNothing => 'Nothing to undo in this session';
+  String get chatUndoNothing => 'このセッションで元に戻す操作はありません';
 
   @override
   String get chatUseCurrent => 'Use current';
 
   @override
-  String get chatWaitingForNetworkConnection =>
-      'Waiting for network connection...';
+  String get chatWaitingForNetworkConnection => 'ネットワーク接続を待機中...';
 
   @override
-  String get chatWelcomeMessage => 'Hello! I am your AI assistant.';
+  String get chatWelcomeMessage => 'こんにちは！私はあなたのAIアシスタントです。';
 
   @override
-  String get chatWelcomeSubmessage => 'How can I help you today?';
+  String get chatWelcomeSubmessage => '今日はどのようなご用件ですか？';
 
   @override
   String get chatWorkBoundedPanelExplanation =>
@@ -1372,13 +1314,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get commonCancel => 'Cancel';
 
   @override
-  String get commonCopiedToClipboard => 'Copied to clipboard';
+  String get commonCopiedToClipboard => 'クリップボードにコピーしました';
 
   @override
   String get commonDelete => 'Delete';
 
   @override
-  String get commonFile => 'File';
+  String get commonFile => 'ファイル';
 
   @override
   String get commonReset => 'Reset';
@@ -1387,10 +1329,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get commonSave => 'Save';
 
   @override
-  String get compactionAutomatic => 'automatic';
+  String get compactionAutomatic => '自動';
 
   @override
-  String get compactionManual => 'manual';
+  String get compactionManual => '手動';
 
   @override
   String get composerAddAttachment => 'Add attachment';
@@ -1480,21 +1422,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get dialogVoiceInputSetup => 'Voice Input Setup';
 
   @override
-  String get errorAnErrorOccurred => 'An error occurred';
+  String get errorAnErrorOccurred => 'エラーが発生しました';
 
   @override
-  String get errorAuthRequired => 'Authentication required';
+  String get errorAuthRequired => '認証が必要です';
 
   @override
-  String get errorAuthRequiredDesc =>
-      'Authentication failed. Reconnect the provider and try again.';
+  String get errorAuthRequiredDesc => '認証に失敗しました。プロバイダーを再接続して、もう一度お試しください。';
 
   @override
-  String get errorConnectionFailed => 'Connection failed';
+  String get errorConnectionFailed => '接続に失敗しました';
 
   @override
-  String get errorConnectionFailedDesc =>
-      'Unable to reach the server. Check connection and server status.';
+  String get errorConnectionFailedDesc => 'サーバーに接続できません。接続とサーバーの状態を確認してください。';
 
   @override
   String get errorFormatAuthenticationFailedReconnect =>
@@ -1524,38 +1464,36 @@ class AppLocalizationsJa extends AppLocalizations {
       'Unable to reach the server. Check connection and server status.';
 
   @override
-  String get errorProviderUnavailable => 'Provider unavailable';
+  String get errorProviderUnavailable => 'プロバイダーを利用できません';
 
   @override
   String get errorProviderUnavailableDesc =>
-      'Provider temporarily unavailable. Try again shortly.';
+      'プロバイダーが一時的に利用できません。しばらくしてからもう一度お試しください。';
 
   @override
-  String get errorQuotaExceeded => 'Quota exceeded';
+  String get errorQuotaExceeded => 'クォータを超過しました';
 
   @override
-  String get errorQuotaExceededDesc =>
-      'Quota exceeded. Check your provider plan or billing.';
+  String get errorQuotaExceededDesc => 'クォータを超過しました。プロバイダーのプランまたは請求を確認してください。';
 
   @override
-  String get errorRateLimitExceeded => 'Rate limit exceeded';
+  String get errorRateLimitExceeded => 'レート制限を超過しました';
 
   @override
-  String get errorRateLimitExceededDesc =>
-      'Rate limit exceeded. Wait a moment and try again.';
+  String get errorRateLimitExceededDesc => 'レート制限を超過しました。しばらく待ってからもう一度お試しください。';
 
   @override
-  String get errorServerError => 'Server error';
+  String get errorServerError => 'サーバーエラー';
 
   @override
-  String get errorServerErrorDesc => 'Server error. Please try again.';
+  String get errorServerErrorDesc => 'サーバーエラーが発生しました。もう一度お試しください。';
 
   @override
-  String get errorServiceUnavailable => 'Service unavailable';
+  String get errorServiceUnavailable => 'サービスを利用できません';
 
   @override
   String get errorServiceUnavailableDesc =>
-      'Service temporarily unavailable. The server may be starting up — please try again shortly.';
+      'サービスは一時的に利用できません。サーバーが起動中の可能性があります。しばらくしてからもう一度お試しください。';
 
   @override
   String get fileActionAttachmentDataDecoded =>
@@ -1577,17 +1515,17 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String fileActionAttachmentSavedOutputFile(String path) {
-    return 'Attachment saved to $path and opened.';
+    return '添付ファイルを$pathに保存して開きました。';
   }
 
   @override
   String fileActionAttachmentSavedOutputFile2(String path) {
-    return 'Attachment saved to $path.';
+    return '添付ファイルを$pathに保存しました。';
   }
 
   @override
   String fileActionAttachmentSavedSavedPath(String savedPath) {
-    return 'Attachment saved to $savedPath.';
+    return '添付ファイルを$savedPathに保存しました。';
   }
 
   @override
@@ -1627,7 +1565,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String filesOpenFilesFileState(int length) {
-    return 'Open files ($length)';
+    return '開いているファイル ($length)';
   }
 
   @override
@@ -1658,30 +1596,30 @@ class AppLocalizationsJa extends AppLocalizations {
   String get logsCopyFiltered => 'Copy filtered logs';
 
   @override
-  String get logsFilterAll => 'All';
+  String get logsFilterAll => 'すべて';
 
   @override
   String get logsLevel => 'Level';
 
   @override
-  String get logsNoLogsYet => 'No logs captured yet.';
+  String get logsNoLogsYet => 'ログはまだ記録されていません。';
 
   @override
-  String get logsNoMatchingLogs => 'No logs match the current filters.';
+  String get logsNoMatchingLogs => '現在のフィルタに一致するログはありません。';
 
   @override
   String get logsSearch => 'Search logs';
 
   @override
   String logsShowingOrderedLength(int length, int length2) {
-    return 'Showing $length of $length2 entries';
+    return '$length2件中$length件のエントリを表示';
   }
 
   @override
   String get logsTimeRange => 'Time range';
 
   @override
-  String get mathExpressionLabel => 'Math';
+  String get mathExpressionLabel => '数式';
 
   @override
   String get mermaidCopySourceTooltip => 'Copy source';
@@ -1699,16 +1637,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get modelFavorites => 'Favorites';
 
   @override
-  String get modelLabelBaseEnglish => 'Base (English)';
+  String get modelLabelBaseEnglish => 'ベース (英語)';
 
   @override
-  String get modelLabelParakeet => 'Parakeet V3 (25 European languages)';
+  String get modelLabelParakeet => 'Parakeet V3 (欧州25言語)';
 
   @override
   String get modelLabelSenseVoice => 'SenseVoice (zh/en/ja/ko/yue)';
 
   @override
-  String get modelLabelTinyEnglish => 'Tiny (English)';
+  String get modelLabelTinyEnglish => 'Tiny (英語)';
 
   @override
   String get modelLoadingModels => 'Loading models';
@@ -1802,7 +1740,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String msgInfoSubtaskPartAgent(String agent) {
-    return 'Subtask ($agent)';
+    return 'サブタスク ($agent)';
   }
 
   @override
@@ -1877,26 +1815,23 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String notifSelectedSoundLabel(String soundLabel) {
-    return 'Selected: $soundLabel';
+    return '選択済み: $soundLabel';
   }
 
   @override
-  String get notificationAgentFinished =>
-      'Agent finished the current response.';
+  String get notificationAgentFinished => 'エージェントが現在の応答を完了しました。';
 
   @override
-  String get notificationConversationUpdates => 'Conversation updates';
+  String get notificationConversationUpdates => '会話の更新';
 
   @override
-  String get notificationOpenToClear =>
-      'Open this conversation to clear related notifications.';
+  String get notificationOpenToClear => '関連する通知を消去するには、この会話を開いてください。';
 
   @override
-  String get notificationSession => 'Session';
+  String get notificationSession => 'セッション';
 
   @override
-  String get notificationSoundLoadFailed =>
-      'Failed to load Android system sounds';
+  String get notificationSoundLoadFailed => 'Androidシステムサウンドの読み込みに失敗しました';
 
   @override
   String get onboardingAIGeneratedTitles => 'AI generated titles';
@@ -1907,7 +1842,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get onboardingAddedButHealthCheckFailed =>
-      'Server added but health check failed. It may still be starting up.';
+      'サーバーが追加されましたが、ヘルスチェックに失敗しました。まだ起動中の可能性があります。';
 
   @override
   String get onboardingAlmostInstallOpenCode =>
@@ -1915,35 +1850,34 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String onboardingAppProviderLocalSetupLogsLength(int length, int length2) {
-    return '$length setup log lines and $length2 setup events are available in the separate setup debug screen.';
+    return '$length件のセットアップログ行と$length2件のセットアップイベントが別のセットアップデバッグ画面で利用できます。';
   }
 
   @override
   String get onboardingAuthenticate => 'Authenticate';
 
   @override
-  String get onboardingAvailable => 'available';
+  String get onboardingAvailable => '利用可能';
 
   @override
   String get onboardingAvailableOnlyDesktop =>
-      'Available only on desktop (Linux/macOS/Windows).';
+      'デスクトップ（Linux/macOS/Windows）でのみ利用可能です。';
 
   @override
   String get onboardingBasicAuthTip =>
-      'Enable Basic Auth only if your OpenCode server is password-protected.';
+      'OpenCode サーバーがパスワードで保護されている場合のみ、基本認証を有効にしてください。';
 
   @override
   String get onboardingChooseAnotherPath => 'Choose another path';
 
   @override
-  String get onboardingChooseHowToSetup => 'Choose how to set up your server';
+  String get onboardingChooseHowToSetup => 'サーバーのセットアップ方法を選択してください';
 
   @override
   String get onboardingClear => 'Clear';
 
   @override
-  String get onboardingCloudflareAuthFailed =>
-      'Cloudflare Access authentication failed.';
+  String get onboardingCloudflareAuthFailed => 'Cloudflare Access の認証に失敗しました。';
 
   @override
   String get onboardingCodeWalkAppOpenCode =>
@@ -1956,18 +1890,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get onboardingConnectionIssue => 'Connection issue';
 
   @override
-  String get onboardingConnectionSaved =>
-      'Server connection saved successfully.';
+  String get onboardingConnectionSaved => 'サーバー接続が正常に保存されました。';
 
   @override
   String get onboardingConnectionTips => 'Connection tips';
 
   @override
-  String get onboardingConnectionUpdated =>
-      'Server connection updated successfully.';
+  String get onboardingConnectionUpdated => 'サーバー接続が正常に更新されました。';
 
   @override
-  String get onboardingContinue => 'Continue';
+  String get onboardingContinue => '続行';
 
   @override
   String get onboardingContinueServerURL => 'Continue to server URL';
@@ -1976,8 +1908,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get onboardingCopyLoginURL => 'Copy login URL';
 
   @override
-  String get onboardingCouldNotVerify =>
-      'Could not verify the server connection.';
+  String get onboardingCouldNotVerify => 'サーバー接続を確認できませんでした。';
 
   @override
   String get onboardingDefaultURLEmulator =>
@@ -1985,7 +1916,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String onboardingDesktopOnlyDiagnose(String appName) {
-    return 'Desktop only: $appName can diagnose, install, and run OpenCode for you.';
+    return 'デスクトップのみ: $appName は OpenCode の診断、インストール、実行を代行できます。';
   }
 
   @override
@@ -1996,20 +1927,20 @@ class AppLocalizationsJa extends AppLocalizations {
   String get onboardingDonShowAgain => 'Don\'t show again';
 
   @override
-  String get onboardingDone => 'Done';
+  String get onboardingDone => '完了';
 
   @override
-  String get onboardingEditServer => 'Edit server';
+  String get onboardingEditServer => 'サーバーを編集';
 
   @override
-  String get onboardingEditServerConnection => 'Edit server connection';
+  String get onboardingEditServerConnection => 'サーバー接続を編集';
 
   @override
   String get onboardingEmulatorRemap =>
-      'On Android emulator, localhost and 127.0.0.1 are remapped to 10.0.2.2 automatically.';
+      'Android エミュレーターでは、localhost と 127.0.0.1 は自動的に 10.0.2.2 にリマップされます。';
 
   @override
-  String get onboardingEnterServerUrl => 'Enter a server URL';
+  String get onboardingEnterServerUrl => 'サーバーの URL を入力';
 
   @override
   String get onboardingExisting => 'Use Existing';
@@ -2019,14 +1950,14 @@ class AppLocalizationsJa extends AppLocalizations {
       'Explain how to install OpenCode, start the server, and then connect from CodeWalk.';
 
   @override
-  String get onboardingFailed => 'Failed';
+  String get onboardingFailed => '失敗';
 
   @override
   String get onboardingGoodOptionDesktop => 'Good first option on desktop';
 
   @override
   String get onboardingHealthCheckFailedMayBeStarting =>
-      'Server health check failed. It may still be starting up.';
+      'サーバーのヘルスチェックに失敗しました。まだ起動中の可能性があります。';
 
   @override
   String get onboardingInstallBinary => 'Install Binary';
@@ -2045,7 +1976,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'Install and run OpenCode directly from CodeWalk on desktop.';
 
   @override
-  String get onboardingInvalidUrl => 'Invalid URL';
+  String get onboardingInvalidUrl => '無効な URL';
 
   @override
   String get onboardingLabel => 'Label (optional)';
@@ -2055,14 +1986,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String onboardingLatestOutputAppProvider(String localServerLastOutput) {
-    return 'Latest output: $localServerLastOutput';
+    return '最新の出力: $localServerLastOutput';
   }
 
   @override
   String get onboardingLetCodeWalkSet => 'Let CodeWalk set it up locally';
 
   @override
-  String get onboardingLocalServerSetup => 'Local server setup';
+  String get onboardingLocalServerSetup => 'ローカルサーバーのセットアップ';
 
   @override
   String get onboardingManagedLocalServer => 'Managed local server';
@@ -2073,14 +2004,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String onboardingNeedsOpenCodeServer(String appName) {
-    return '$appName needs an OpenCode server before it can help with your code.';
+    return '$appName がコードの支援を行うには、OpenCode サーバーが必要です。';
   }
 
   @override
-  String get onboardingNotAvailable => 'not available';
+  String get onboardingNotAvailable => '利用不可';
 
   @override
-  String get onboardingNotWritable => 'not writable';
+  String get onboardingNotWritable => '書き込み不可';
 
   @override
   String get onboardingOpenCode => 'What is OpenCode?';
@@ -2105,13 +2036,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get onboardingPickSetupPath =>
-      'Pick the setup path that matches your current OpenCode setup.';
+      '現在の OpenCode セットアップに一致するセットアップパスを選択してください。';
 
   @override
-  String get onboardingReachable => 'reachable';
+  String get onboardingReachable => '到達可能';
 
   @override
-  String get onboardingReady => 'Ready';
+  String get onboardingReady => '準備完了';
 
   @override
   String get onboardingRecommendedOrderTry =>
@@ -2122,36 +2053,34 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get onboardingRunDiagnosticsToVerify =>
-      'Run diagnostics to verify local OpenCode requirements.';
+      'ローカルの OpenCode 要件を確認するために診断を実行してください。';
 
   @override
-  String get onboardingSaveAndTest => 'Save and test';
+  String get onboardingSaveAndTest => '保存してテスト';
 
   @override
-  String get onboardingServerConnectedReady =>
-      'Your server is connected and ready to use.';
+  String get onboardingServerConnectedReady => 'サーバーが接続され、使用準備が整いました。';
 
   @override
-  String get onboardingServerConnection => 'Server connection';
+  String get onboardingServerConnection => 'サーバー接続';
 
   @override
-  String get onboardingServerSettingsSaved =>
-      'Your server settings were saved and health checks were refreshed.';
+  String get onboardingServerSettingsSaved => 'サーバー設定が保存され、ヘルスチェックが更新されました。';
 
   @override
-  String get onboardingServerSetup => 'Server setup';
+  String get onboardingServerSetup => 'サーバーセットアップ';
 
   @override
-  String get onboardingServerUpdated => 'Server updated';
+  String get onboardingServerUpdated => 'サーバーが更新されました';
 
   @override
   String get onboardingServerUrl => 'Server URL';
 
   @override
-  String get onboardingSetup => 'Setup';
+  String get onboardingSetup => 'セットアップ';
 
   @override
-  String get onboardingSetupWizard => 'Setup wizard';
+  String get onboardingSetupWizard => 'セットアップウィザード';
 
   @override
   String get onboardingShowSetupSteps => 'Show me the setup steps';
@@ -2170,67 +2099,64 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String onboardingStartUsing(String appName) {
-    return 'Start using $appName';
+    return '$appName を使い始める';
   }
 
   @override
-  String get onboardingStarting => 'Starting';
+  String get onboardingStarting => '起動中';
 
   @override
   String get onboardingStop => 'Stop';
 
   @override
-  String get onboardingStopped => 'Stopped';
+  String get onboardingStopped => '停止';
 
   @override
-  String get onboardingStopping => 'Stopping';
+  String get onboardingStopping => '停止中';
 
   @override
   String onboardingSuggestedUrl(String url) {
-    return 'Suggested local OpenCode server URL: $url';
+    return '推奨されるローカル OpenCode サーバー URL: $url';
   }
 
   @override
-  String get onboardingTailscaleAdminApproval =>
-      'Tailscale admin approval required';
+  String get onboardingTailscaleAdminApproval => 'Tailscale 管理者の承認が必要です';
 
   @override
-  String get onboardingTailscaleAuthAfterSave =>
-      'Tailscale will authenticate after saving';
+  String get onboardingTailscaleAuthAfterSave => '保存後に Tailscale の認証が行われます';
 
   @override
   String onboardingTailscaleAuthAfterSaveTest(String appName) {
-    return 'After you save and test this server, $appName will open Tailscale login if this device is not authenticated yet.';
+    return 'このサーバーを保存してテストした後、このデバイスがまだ認証されていない場合は、$appName が Tailscale のログイン画面を開きます。';
   }
 
   @override
-  String get onboardingTailscaleConnected => 'Tailscale connected';
+  String get onboardingTailscaleConnected => 'Tailscale 接続済み';
 
   @override
-  String get onboardingTailscaleConnecting => 'Tailscale connecting';
+  String get onboardingTailscaleConnecting => 'Tailscale 接続中';
 
   @override
-  String get onboardingTailscaleConnectionFailed =>
-      'Tailscale connection failed';
+  String get onboardingTailscaleConnectionFailed => 'Tailscale 接続失敗';
 
   @override
-  String get onboardingTailscaleLoginRequired => 'Tailscale login required';
+  String get onboardingTailscaleLoginRequired => 'Tailscale へのログインが必要です';
 
   @override
   String get onboardingTailscaleOpenLoginUrl =>
-      'Open the login URL to add this device to your tailnet. If the browser did not open, copy the URL below.';
+      'ログイン URL を開いて、このデバイスを tailnet に追加してください。ブラウザが開かなかった場合は、以下の URL をコピーしてください。';
 
   @override
-  String get onboardingTailscaleUnsupported => 'Tailscale unsupported';
+  String get onboardingTailscaleUnsupported => 'Tailscale 非サポート';
 
   @override
-  String get onboardingTestConnection => 'Test connection';
+  String get onboardingTestConnection => '接続をテスト';
 
   @override
-  String get onboardingTesting => 'Testing...';
+  String get onboardingTesting => 'テスト中...';
 
   @override
-  String get onboardingUnreachable => 'unreachable';
+  String get onboardingUnreachable => '到達不能';
 
   @override
   String get onboardingUseBasicAuth => 'Use Basic Auth';
@@ -2246,15 +2172,14 @@ class AppLocalizationsJa extends AppLocalizations {
       'Uses your server\'s title agent to name conversations';
 
   @override
-  String get onboardingUsingDetectedCommand =>
-      'Using detected OpenCode command.';
+  String get onboardingUsingDetectedCommand => '検出された OpenCode コマンドを使用しています。';
 
   @override
   String get onboardingViewSetupDebug => 'View setup debug';
 
   @override
   String onboardingWelcomeTo(String appName) {
-    return 'Welcome to $appName';
+    return '$appName へようこそ';
   }
 
   @override
@@ -2262,10 +2187,10 @@ class AppLocalizationsJa extends AppLocalizations {
       'Windows tip: after installing, click Refresh Checks. If detection still fails, reopen CodeWalk to reload PATH changes.';
 
   @override
-  String get onboardingWritable => 'writable';
+  String get onboardingWritable => '書き込み可能';
 
   @override
-  String get onboardingYoureAllSet => 'You\'re all set!';
+  String get onboardingYoureAllSet => '準備が整いました！';
 
   @override
   String get permissionAllowOnce => 'Allow Once';
@@ -2328,16 +2253,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get serverClearOAuth => 'Clear OAuth';
 
   @override
-  String get serverConnectionAttention => 'Server connection needs attention.';
+  String get serverConnectionAttention => 'サーバー接続に注意が必要です。';
 
   @override
-  String get serverHealthHealthy => 'Healthy';
+  String get serverHealthHealthy => '正常';
 
   @override
-  String get serverHealthUnhealthy => 'Unhealthy';
+  String get serverHealthUnhealthy => '異常';
 
   @override
-  String get serverHealthUnknown => 'Unknown';
+  String get serverHealthUnknown => '不明';
 
   @override
   String get serverOAuthAuthFailed => 'OAuth authentication failed';
@@ -2372,8 +2297,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get serversCancel => 'Cancel';
 
   @override
-  String get serversCannotActivateUnhealthy =>
-      'Cannot activate an unhealthy server';
+  String get serversCannotActivateUnhealthy => '異常なサーバーは有効にできません';
 
   @override
   String get serversCheckHealth => 'Check Health';
@@ -2385,7 +2309,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String serversCommandAppProviderLocalServerCommandPath(
     String localServerCommandPath,
   ) {
-    return 'Command: $localServerCommandPath';
+    return 'コマンド: $localServerCommandPath';
   }
 
   @override
@@ -2402,7 +2326,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get serversDesktopModeExplanation =>
-      'Desktop mode can launch and manage `opencode serve` directly from CodeWalk.';
+      'デスクトップモードでは、CodeWalk から直接 `opencode serve` を起動および管理できます。';
 
   @override
   String get serversEdit => 'Edit';
@@ -2415,18 +2339,18 @@ class AppLocalizationsJa extends AppLocalizations {
       'This managed mode is available only on desktop builds (Linux/macOS/Windows).';
 
   @override
-  String get serversNoServersFound => 'No servers found';
+  String get serversNoServersFound => 'サーバーが見つかりません';
 
   @override
   String get serversRefreshHealth => 'Refresh Health';
 
   @override
   String serversRemoveProfileDisplayName(String displayName) {
-    return 'Remove \"$displayName\"?';
+    return '\"$displayName\"を削除しますか？';
   }
 
   @override
-  String get serversSearchActiveHint => 'Search active server';
+  String get serversSearchActiveHint => 'アクティブサーバーを検索';
 
   @override
   String get serversServersConfigured => 'No servers configured';
@@ -2444,43 +2368,41 @@ class AppLocalizationsJa extends AppLocalizations {
   String get serversSetupWizard => 'Setup Wizard';
 
   @override
-  String get serversTailscaleAdminApprovalRequired =>
-      'Tailscale admin approval required';
+  String get serversTailscaleAdminApprovalRequired => 'Tailscale 管理者の承認が必要です';
 
   @override
-  String get serversTailscaleAuthRequired =>
-      'Tailscale authentication required';
+  String get serversTailscaleAuthRequired => 'Tailscale の認証が必要です';
 
   @override
   String get serversTailscaleConnectExplanation =>
-      'Tailscale will connect when this active profile is used.';
+      'このアクティブプロファイルが使用されると、Tailscale が接続します。';
 
   @override
-  String get serversTailscaleConnected => 'Tailscale connected';
+  String get serversTailscaleConnected => 'Tailscale 接続済み';
 
   @override
-  String get serversTailscaleConnecting => 'Tailscale connecting';
+  String get serversTailscaleConnecting => 'Tailscale 接続中';
 
   @override
-  String get serversTailscaleConnectionFailed => 'Tailscale connection failed';
+  String get serversTailscaleConnectionFailed => 'Tailscale 接続に失敗しました';
 
   @override
-  String get serversTailscaleDisconnected => 'Tailscale disconnected';
+  String get serversTailscaleDisconnected => 'Tailscale 切断済み';
 
   @override
   String get serversTailscaleLoginExplanation =>
-      'Open the Tailscale login URL to add this device to your tailnet.';
+      'Tailscale ログイン URL を開いて、このデバイスを tailnet に追加してください。';
 
   @override
   String get serversTailscaleTrafficExplanation =>
-      'OpenCode traffic for this active profile is routed through Tailscale.';
+      'このアクティブプロファイルの OpenCode トラフィックは Tailscale 経由でルーティングされます。';
 
   @override
-  String get serversTailscaleUnsupported => 'Tailscale unsupported';
+  String get serversTailscaleUnsupported => 'Tailscale はサポートされていません';
 
   @override
   String get serversUnhealthyActivateError =>
-      'This server is unhealthy. Use check health or edit settings before activating.';
+      'このサーバーは異常です。有効にする前にヘルスチェックを行うか、設定を編集してください。';
 
   @override
   String get sessionActionArchived => 'archived';
@@ -2499,14 +2421,14 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String sessionChildrenCount(int count) {
-    return 'Children: $count';
+    return 'サブ会話: $count';
   }
 
   @override
-  String get sessionCompactContext => 'Compact context';
+  String get sessionCompactContext => 'コンテキストを圧縮';
 
   @override
-  String get sessionCopyLink => 'Copy Link';
+  String get sessionCopyLink => 'リンクをコピー';
 
   @override
   String get sessionDelete => 'Delete';
@@ -2534,7 +2456,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String sessionDiffFilesCount(int count) {
-    return 'Diff files: $count';
+    return '差分ファイル: $count';
   }
 
   @override
@@ -2560,51 +2482,51 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sessionDiffUnified => 'Unified';
 
   @override
-  String get sessionExportAssistant => 'Assistant';
+  String get sessionExportAssistant => 'アシスタント';
 
   @override
-  String get sessionExportCanceled => 'Session export canceled';
+  String get sessionExportCanceled => 'エクスポートをキャンセルしました';
 
   @override
-  String get sessionExportDebugJson => 'Export debug JSON';
+  String get sessionExportDebugJson => 'デバッグJSONをエクスポート';
 
   @override
   String get sessionExportDebugJsonErrorClipboard =>
-      'Could not save file; debug JSON copied to clipboard';
+      'ファイルを保存できませんでした。デバッグJSONをクリップボードにコピーしました';
 
   @override
-  String get sessionExportDebugJsonSaved => 'Debug JSON export saved';
+  String get sessionExportDebugJsonSaved => 'デバッグJSONエクスポートを保存しました';
 
   @override
-  String get sessionExportDebugJsonTitle => 'Export session as debug JSON';
+  String get sessionExportDebugJsonTitle => 'セッションをデバッグJSONとしてエクスポート';
 
   @override
-  String get sessionExportError => 'Error:';
+  String get sessionExportError => 'エラー:';
 
   @override
-  String get sessionExportInput => 'Input:';
+  String get sessionExportInput => '入力:';
 
   @override
-  String get sessionExportMarkdown => 'Export Markdown';
+  String get sessionExportMarkdown => 'Markdownをエクスポート';
 
   @override
   String get sessionExportMarkdownErrorClipboard =>
-      'Could not save file; Markdown copied to clipboard';
+      'ファイルを保存できませんでした。Markdownをクリップボードにコピーしました';
 
   @override
-  String get sessionExportMarkdownSaved => 'Markdown export saved';
+  String get sessionExportMarkdownSaved => 'Markdownエクスポートを保存しました';
 
   @override
-  String get sessionExportMarkdownTitle => 'Export session as Markdown';
+  String get sessionExportMarkdownTitle => 'セッションをMarkdownとしてエクスポート';
 
   @override
-  String get sessionExportOutput => 'Output:';
+  String get sessionExportOutput => '出力:';
 
   @override
-  String get sessionExportUntitled => 'Untitled session';
+  String get sessionExportUntitled => '無題のセッション';
 
   @override
-  String get sessionExportUser => 'User';
+  String get sessionExportUser => 'ユーザー';
 
   @override
   String get sessionFailedRename => 'Failed to rename conversation';
@@ -2619,19 +2541,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sessionFork => 'Fork';
 
   @override
-  String get sessionForkFailed => 'Failed to fork conversation';
+  String get sessionForkFailed => '会話のフォークに失敗しました';
 
   @override
-  String get sessionForked => 'Conversation forked';
+  String get sessionForked => '会話をフォークしました';
 
   @override
   String sessionHasError(String title) {
-    return '\"$title\" has an error.';
+    return '「$title」にエラーがあります。';
   }
 
   @override
   String sessionHasNewReply(String title) {
-    return '\"$title\" has a new reply.';
+    return '「$title」に新しい返信があります。';
   }
 
   @override
@@ -2639,22 +2561,21 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String sessionNeedsInput(String title) {
-    return '\"$title\" needs your input.';
+    return '「$title」はあなたの入力を必要としています。';
   }
 
   @override
-  String get sessionNoCachedConversations => 'No cached conversations yet';
+  String get sessionNoCachedConversations => 'キャッシュされた会話はまだありません';
 
   @override
-  String get sessionNoConversationsInProject =>
-      'No conversations in this project.';
+  String get sessionNoConversationsInProject => 'このプロジェクトには会話がありません。';
 
   @override
   String get sessionNotAvailable =>
       'Conversation is not available for this project yet';
 
   @override
-  String get sessionOpenProjectToLoad => 'Open project to load conversations.';
+  String get sessionOpenProjectToLoad => 'プロジェクトを開いて会話を読み込んでください。';
 
   @override
   String get sessionRename => 'Rename';
@@ -2669,32 +2590,31 @@ class AppLocalizationsJa extends AppLocalizations {
   String get sessionSaveTitle => 'Save title';
 
   @override
-  String get sessionShare => 'Share session';
+  String get sessionShare => 'セッションを共有';
 
   @override
   String get sessionShareLinkCopied => 'Share link copied';
 
   @override
-  String get sessionShareLinkUnavailable =>
-      'Share link unavailable for this session';
+  String get sessionShareLinkUnavailable => 'このセッションの共有リンクは利用できません';
 
   @override
-  String get sessionShared => 'Conversation shared';
+  String get sessionShared => '会話を共有しました';
 
   @override
-  String get sessionSyncing => 'Syncing conversations...';
+  String get sessionSyncing => '会話を同期中...';
 
   @override
   String get sessionTitleHint => 'Conversation title';
 
   @override
-  String get sessionUnshare => 'Unshare session';
+  String get sessionUnshare => '共有を解除';
 
   @override
-  String get sessionUnshared => 'Conversation unshared';
+  String get sessionUnshared => '会話の共有を解除しました';
 
   @override
-  String get sessionViewTasks => 'View tasks';
+  String get sessionViewTasks => 'タスクを表示';
 
   @override
   String get settingsAboutCheckForUpdates => 'Check for updates';
@@ -2873,11 +2793,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsAppearanceLight => 'Light';
 
   @override
-  String get settingsAppearanceMathRendering => 'Math rendering';
+  String get settingsAppearanceMathRendering => '数式レンダリング';
 
   @override
   String get settingsAppearanceMathRenderingDescription =>
-      'Render LaTeX math expressions (\$…\$ and \$\$…\$\$) as typeset equations in chat messages.';
+      'チャットメッセージでLaTeX数式を組版済み方程式としてレンダリングします。';
 
   @override
   String get settingsAppearanceNoPresets => 'No preset palettes found';
@@ -3138,13 +3058,13 @@ class AppLocalizationsJa extends AppLocalizations {
       'CodeWalk will apply this OpenCode setting after the current response finishes.';
 
   @override
-  String get settingsConversationUsername => 'Conversation username';
+  String get settingsConversationUsername => '会話ユーザー名';
 
   @override
-  String get settingsDefaultAgent => 'Default agent';
+  String get settingsDefaultAgent => 'デフォルトエージェント';
 
   @override
-  String get settingsDefaultModel => 'Default model';
+  String get settingsDefaultModel => 'デフォルトモデル';
 
   @override
   String get settingsLanguageDescription =>
@@ -3174,10 +3094,10 @@ class AppLocalizationsJa extends AppLocalizations {
       'Runtime diagnostics and troubleshooting data';
 
   @override
-  String get settingsLogsTitle => 'Logs';
+  String get settingsLogsTitle => 'Registros';
 
   @override
-  String get settingsNoAgentsFound => 'No agents found';
+  String get settingsNoAgentsFound => 'エージェントが見つかりません';
 
   @override
   String get settingsNotificationsAgentSubtitle => 'When a response finishes';
@@ -3358,10 +3278,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsNotificationsWhenClosing => 'When closing the window';
 
   @override
-  String get settingsOpenCodeAutoUpdate => 'OpenCode auto-update';
+  String get settingsOpenCodeAutoUpdate => 'OpenCode 自動更新';
 
   @override
-  String get settingsOpenCodeSharingDefault => 'OpenCode sharing default';
+  String get settingsOpenCodeSharingDefault => 'OpenCode 共有デフォルト';
 
   @override
   String get settingsReadAloudEnabled => 'Read aloud';
@@ -3396,19 +3316,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsReadAloudVoiceHint => 'Select a voice for read-aloud.';
 
   @override
-  String get settingsSearchAutoUpdateMode => 'Search auto-update mode';
+  String get settingsSearchAutoUpdateMode => '自動更新モードを検索';
 
   @override
-  String get settingsSearchDefaultAgent => 'Search default agent';
+  String get settingsSearchDefaultAgent => 'デフォルトエージェントを検索';
 
   @override
-  String get settingsSearchDefaultModel => 'Search default model';
+  String get settingsSearchDefaultModel => 'デフォルトモデルを検索';
 
   @override
-  String get settingsSearchSharingMode => 'Search sharing mode';
+  String get settingsSearchSharingMode => '共有モードを検索';
 
   @override
-  String get settingsSearchSmallModel => 'Search small model';
+  String get settingsSearchSmallModel => 'スモールモデルを検索';
 
   @override
   String get settingsServersActive => 'Active';
@@ -3448,19 +3368,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsShortcutsTitle => 'Shortcuts';
 
   @override
-  String get settingsSmallModel => 'Small model';
+  String get settingsSmallModel => 'スモールモデル';
 
   @override
   String get settingsSmallModelResetExplanation =>
-      'Resetting `small_model` back to automatic fallback still requires editing config outside the app because `/config` patch updates cannot remove keys.';
+      '`/config` パッチ更新ではキーを削除できないため、`small_model` を自動フォールバックに戻すにはアプリ外で設定を編集する必要があります。';
 
   @override
   String get settingsSmallModelUnsetExplanation =>
-      'OpenCode automatic fallback is active because `small_model` is unset.';
+      '`small_model` が設定されていないため、OpenCode の自動フォールバックが有効です。';
 
   @override
   String get settingsSoundPickerNotAvailable =>
-      'System sound picker is not available on this platform.';
+      'システムサウンドピッカーはこのプラットフォームでは利用できません。';
 
   @override
   String get settingsSpeechDescription =>
@@ -3490,11 +3410,11 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settingsUsernameResetExplanation =>
-      'Resetting `username` back to the system default still requires editing config outside the app because `/config` patch updates cannot remove keys.';
+      '`/config` パッチ更新ではキーを削除できないため、`username` をシステムデフォルトに戻すにはアプリ外で設定を編集する必要があります。';
 
   @override
   String get settingsUsernameUnsetExplanation =>
-      'OpenCode uses the system username because `username` is unset.';
+      'OpenCode は `username` が設定されていないため、システムユーザー名を使用します。';
 
   @override
   String get setupDebugBun => 'Bun';
@@ -3634,118 +3554,114 @@ class AppLocalizationsJa extends AppLocalizations {
   String get setupDebugWsl => 'WSL';
 
   @override
-  String get shortcutCloseApp => 'Close application';
+  String get shortcutCloseApp => 'アプリを閉じる';
 
   @override
-  String get shortcutCloseAppDesc => 'Close app using platform close behavior';
+  String get shortcutCloseAppDesc => 'プラットフォームの終了動作を使用してアプリを閉じる';
 
   @override
-  String get shortcutFocusCloseDrawer => 'Focus/close drawer';
+  String get shortcutFocusCloseDrawer => 'フォーカス/ドロワーを閉じる';
 
   @override
   String get shortcutFocusCloseDrawerDesc =>
-      'Focus composer by default, or close drawer when open';
+      'デフォルトで入力にフォーカス、または開いている場合はドロワーを閉じる';
 
   @override
-  String get shortcutFocusInput => 'Focus input';
+  String get shortcutFocusInput => '入力にフォーカス';
 
   @override
-  String get shortcutFocusInputDesc => 'Move focus to the prompt input';
+  String get shortcutFocusInputDesc => 'テキスト入力にフォーカスを移動';
 
   @override
-  String get shortcutGroupApplication => 'Application';
+  String get shortcutGroupApplication => 'アプリケーション';
 
   @override
-  String get shortcutGroupGeneral => 'General';
+  String get shortcutGroupGeneral => '全般';
 
   @override
-  String get shortcutGroupModelAndAgent => 'Model and agent';
+  String get shortcutGroupModelAndAgent => 'モデルとエージェント';
 
   @override
-  String get shortcutGroupNavigation => 'Navigation';
+  String get shortcutGroupNavigation => 'ナビゲーション';
 
   @override
-  String get shortcutGroupPrompt => 'Prompt';
+  String get shortcutGroupPrompt => 'プロンプト';
 
   @override
-  String get shortcutGroupSession => 'Session';
+  String get shortcutGroupSession => 'セッション';
 
   @override
-  String get shortcutNewConversation => 'New conversation';
+  String get shortcutNewConversation => '新しい会話';
 
   @override
-  String get shortcutNewConversationDesc => 'Create a new chat session';
+  String get shortcutNewConversationDesc => '新しいチャットセッションを作成';
 
   @override
-  String get shortcutNextAgent => 'Next agent';
+  String get shortcutNextAgent => '次のエージェント';
 
   @override
-  String get shortcutNextAgentDesc => 'Cycle to next available agent';
+  String get shortcutNextAgentDesc => '次の利用可能なエージェントに切り替え';
 
   @override
-  String get shortcutNextRecentModel => 'Next recent model';
+  String get shortcutNextRecentModel => '次の最近のモデル';
 
   @override
-  String get shortcutNextRecentModelDesc =>
-      'Cycle through recently used models';
+  String get shortcutNextRecentModelDesc => '最近使用したモデルを切り替え';
 
   @override
-  String get shortcutNextVariant => 'Next variant';
+  String get shortcutNextVariant => '次のバリアント';
 
   @override
-  String get shortcutNextVariantDesc =>
-      'Cycle through available model variants';
+  String get shortcutNextVariantDesc => '利用可能なモデルバリアントを切り替え';
 
   @override
-  String get shortcutOpenSettings => 'Open settings';
+  String get shortcutOpenSettings => '設定を開く';
 
   @override
-  String get shortcutOpenSettingsDesc => 'Open settings page';
+  String get shortcutOpenSettingsDesc => '設定ページを開く';
 
   @override
-  String get shortcutPreviousAgent => 'Previous agent';
+  String get shortcutPreviousAgent => '前のエージェント';
 
   @override
-  String get shortcutPreviousAgentDesc => 'Cycle to previous available agent';
+  String get shortcutPreviousAgentDesc => '前の利用可能なエージェントに切り替え';
 
   @override
-  String get shortcutQuickOpenFiles => 'Quick open files';
+  String get shortcutQuickOpenFiles => 'ファイルをクイックオープン';
 
   @override
-  String get shortcutQuickOpenFilesDesc => 'Open file quick search';
+  String get shortcutQuickOpenFilesDesc => 'ファイルクイック検索を開く';
 
   @override
-  String get shortcutQuitApp => 'Quit application';
+  String get shortcutQuitApp => 'アプリを終了';
 
   @override
-  String get shortcutQuitAppDesc => 'Force-exit the app';
+  String get shortcutQuitAppDesc => 'アプリを強制終了';
 
   @override
-  String get shortcutRefreshData => 'Refresh data';
+  String get shortcutRefreshData => 'データを更新';
 
   @override
-  String get shortcutRefreshDataDesc => 'Refresh current chat data';
+  String get shortcutRefreshDataDesc => '現在のチャットデータを更新';
 
   @override
-  String get shortcutStopResponse => 'Stop active response';
+  String get shortcutStopResponse => '応答を停止';
 
   @override
-  String get shortcutStopResponseDesc =>
-      'Stop active response (while responding)';
+  String get shortcutStopResponseDesc => 'アクティブな応答を停止（応答中）';
 
   @override
-  String get shortcutToggleVoiceInput => 'Toggle voice input';
+  String get shortcutToggleVoiceInput => '音声入力を切り替え';
 
   @override
-  String get shortcutToggleVoiceInputDesc =>
-      'Start or stop speech-to-text in the composer';
+  String get shortcutToggleVoiceInputDesc => 'エディタで音声入力を開始または停止';
 
   @override
   String get shortcutsApply => 'Apply';
 
   @override
   String shortcutsConflictConflict(String conflict) {
-    return 'Conflict with $conflict';
+    return '$conflictと競合';
   }
 
   @override
@@ -3760,7 +3676,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String shortcutsSetShortcutWidget(String label) {
-    return 'Set shortcut: $label';
+    return 'ショートカットを設定: $label';
   }
 
   @override
@@ -3776,7 +3692,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String speechDesktopOnly(String service) {
-    return '$service is available on desktop only.';
+    return '$service はデスクトップでのみ利用可能です。';
   }
 
   @override
@@ -3793,12 +3709,11 @@ class AppLocalizationsJa extends AppLocalizations {
       'Listening stops automatically after this many seconds of silence.';
 
   @override
-  String get speechMicPermissionDisabled =>
-      'Microphone permission is disabled.';
+  String get speechMicPermissionDisabled => 'マイクの権限が無効です。';
 
   @override
   String speechModelFilesIncomplete(String service) {
-    return '$service model files are incomplete.';
+    return '$service のモデルファイルが不完全です。';
   }
 
   @override
@@ -3845,7 +3760,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String speechRuntimeFailed(String service) {
-    return '$service runtime failed to initialize.';
+    return '$service ランタイムの初期化に失敗しました。';
   }
 
   @override
@@ -3877,49 +3792,49 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String speechUnavailableOnPlatform(String service) {
-    return '$service speech is unavailable on this platform.';
+    return '$service 音声はこのプラットフォームでは利用できません。';
   }
 
   @override
-  String get statusConnected => 'Connected';
+  String get statusConnected => '接続済み';
 
   @override
-  String get statusDelayed => 'Delayed';
+  String get statusDelayed => '遅延';
 
   @override
-  String get statusFailed => 'Failed';
+  String get statusFailed => '失敗';
 
   @override
-  String get statusOffline => 'Offline';
+  String get statusOffline => 'オフライン';
 
   @override
-  String get statusOnline => 'Online';
+  String get statusOnline => 'オンライン';
 
   @override
-  String get statusReconnecting => 'Reconnecting';
+  String get statusReconnecting => '再接続中';
 
   @override
-  String get statusStarting => 'Starting';
+  String get statusStarting => '起動中';
 
   @override
-  String get statusStopped => 'Stopped';
+  String get statusStopped => '停止済み';
 
   @override
-  String get statusStopping => 'Stopping';
+  String get statusStopping => '停止中';
 
   @override
-  String get statusSyncDelayed => 'Sync delayed';
+  String get statusSyncDelayed => '同期遅延';
 
   @override
   String get tailscaleNoPeers => 'No peers found';
 
   @override
   String get tailscaleNotSupportedOnPlatform =>
-      'Tailscale is not supported on this platform.';
+      'Tailscale はこのプラットフォームではサポートされていません。';
 
   @override
   String get tailscaleNotSupportedOnWindows =>
-      'Tailscale is not supported on Windows.';
+      'Tailscale は Windows ではサポートされていません。';
 
   @override
   String get tailscalePeerOffline => 'offline';
@@ -3928,32 +3843,31 @@ class AppLocalizationsJa extends AppLocalizations {
   String get tailscaleSelectPeer => 'Select a Tailscale peer';
 
   @override
-  String get tailscaleWaitingAdminApproval =>
-      'This Tailscale node is waiting for admin approval.';
+  String get tailscaleWaitingAdminApproval => 'この Tailscale ノードは管理者の承認待ちです。';
 
   @override
   String get terminalClose => 'Close terminal';
 
   @override
   String terminalConnectingTo(String serverName) {
-    return 'Connecting to $serverName terminal...';
+    return '$serverName ターミナルに接続中...';
   }
 
   @override
   String terminalConnectionFailed(String error) {
-    return 'Terminal connection failed: $error';
+    return 'ターミナル接続に失敗しました: $error';
   }
 
   @override
-  String get terminalDisconnected => 'Terminal disconnected.';
+  String get terminalDisconnected => 'ターミナルが切断されました。';
 
   @override
   String terminalEmbeddedUnavailable(String serverName) {
-    return 'Embedded terminal is not available on this runtime yet. Keep using composer shell mode for one-shot commands or open the terminal from a supported CodeWalk app runtime for $serverName.';
+    return '組み込みターミナルはこのランタイムではまだ利用できません。単発コマンドにはコンポーザーのシェルモードを引き続き使用するか、サポートされている CodeWalk アアプリランタイムから $serverName のターミナルを開いてください。';
   }
 
   @override
-  String get terminalHide => 'Hide terminal';
+  String get terminalHide => 'ターミナルを隠す';
 
   @override
   String get terminalMaximize => 'Maximize';
@@ -3962,22 +3876,19 @@ class AppLocalizationsJa extends AppLocalizations {
   String get terminalMinimize => 'Minimize terminal';
 
   @override
-  String get terminalNotAvailableYet =>
-      'Embedded terminal is not available on this runtime yet.';
+  String get terminalNotAvailableYet => '埋め込みターミナルはこのランタイムではまだ利用できません。';
 
   @override
-  String get terminalOpen => 'Open terminal';
+  String get terminalOpen => 'ターミナルを開く';
 
   @override
-  String get terminalOpenInfo => 'Open terminal info';
+  String get terminalOpenInfo => 'ターミナル情報を開く';
 
   @override
-  String get terminalOpenProjectFirst =>
-      'Open a project folder before starting the server terminal.';
+  String get terminalOpenProjectFirst => 'サーバーターミナルを開始する前に、プロジェクトフォルダを開いてください。';
 
   @override
-  String get terminalOpenToConnect =>
-      'Open Terminal to connect to the server project terminal.';
+  String get terminalOpenToConnect => 'ターミナルを開いて、サーバープロジェクトターミナルに接続してください。';
 
   @override
   String get terminalReconnect => 'Reconnect terminal';
@@ -3986,17 +3897,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get terminalRestoreSize => 'Restore size';
 
   @override
-  String get terminalSelectServer =>
-      'Select an active server before opening Terminal.';
+  String get terminalSelectServer => 'ターミナルを開く前に、アクティブなサーバーを選択してください。';
 
   @override
-  String get terminalSessionClosed => 'Terminal session closed.';
+  String get terminalSessionClosed => 'ターミナルセッションが終了しました。';
 
   @override
   String get terminalTerminal => 'Terminal';
 
   @override
-  String get terminalTitle => 'Terminal';
+  String get terminalTitle => 'ターミナル';
 
   @override
   String get terminalTryAgain => 'Try again';
@@ -4045,7 +3955,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String toolPresentationRunningTool(String toolName) {
-    return 'Running $toolName';
+    return '$toolName を実行中';
   }
 
   @override
@@ -4058,7 +3968,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get toolPresentationSearchingWeb => 'Searching the web';
 
   @override
-  String get toolPresentationTool => 'Tool';
+  String get toolPresentationTool => 'ツール';
 
   @override
   String get toolPresentationUpdatingTaskList => 'Updating task list';
@@ -4149,7 +4059,7 @@ class AppLocalizationsJa extends AppLocalizations {
       'Tailscale is not supported on this platform.';
 
   @override
-  String get utilityTitle => 'Utility';
+  String get utilityTitle => 'ユーティリティ';
 
   @override
   String get workspaceBrowseDirs => 'Browse directories';
