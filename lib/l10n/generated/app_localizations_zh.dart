@@ -1970,6 +1970,37 @@ class AppLocalizationsZh extends AppLocalizations {
   String get onboardingPickSetupPath => '选择与您当前的 OpenCode 设置匹配的设置路径。';
 
   @override
+  String get onboardingPreconditionDirectoryNotWritable => '安装目录不可写。请检查用户权限。';
+
+  @override
+  String get onboardingPreconditionInstallViaBunRecommendation =>
+      'OpenCode 维护者推荐通过 Bun 安装。';
+
+  @override
+  String get onboardingPreconditionNetworkFailed =>
+      '网络访问失败。在安装 OpenCode 之前，请检查网络连接。';
+
+  @override
+  String get onboardingPreconditionNoRuntimeDetected =>
+      '未检测到运行环境。请直接安装 OpenCode 二进制文件，或者先引导安装 Bun。';
+
+  @override
+  String get onboardingPreconditionNodeNpmAvailable =>
+      'Node + npm 可用。通过 npm 安装 OpenCode，或者安装 Bun 以使用推荐流程。';
+
+  @override
+  String get onboardingPreconditionOpenCodeAlreadyAvailable =>
+      'OpenCode 已可用。您可以立即使用检测到的命令。';
+
+  @override
+  String get onboardingPreconditionWindowsPathLagHint =>
+      ' 在 Windows 上，安装后请重新检查，因为已打开的应用中 PATH 变量 of 更新可能会有延迟。';
+
+  @override
+  String get onboardingPreconditionWindowsWslRecommendation =>
+      '检测到 Windows 版本。OpenCode 文档推荐使用 WSL，但也可以使用 npm install 作为备用方案。';
+
+  @override
   String get onboardingReachable => '可达';
 
   @override
@@ -2340,6 +2371,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sessionActionUnarchived => '已取消归档';
 
   @override
+  String get sessionArchive => '归档';
+
+  @override
   String get sessionCancelRename => '取消重命名';
 
   @override
@@ -2497,6 +2531,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sessionOpenProjectToLoad => '打开项目以加载对话。';
 
   @override
+  String get sessionPin => '固定';
+
+  @override
   String get sessionRename => '重命名';
 
   @override
@@ -2510,6 +2547,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sessionShare => '共享会话';
+
+  @override
+  String get sessionShareAction => '分享';
 
   @override
   String get sessionShareLinkCopied => '共享链接已复制';
@@ -2527,7 +2567,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sessionTitleHint => '对话标题';
 
   @override
+  String get sessionUnarchive => '取消归档';
+
+  @override
+  String get sessionUnpin => '取消固定';
+
+  @override
   String get sessionUnshare => '取消共享会话';
+
+  @override
+  String get sessionUnshareAction => '取消分享';
 
   @override
   String get sessionUnshared => '对话已取消共享';
@@ -3129,7 +3178,25 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsNotificationsSound => '声音';
 
   @override
+  String get settingsNotificationsSoundBuiltInAlert => '内置警报声';
+
+  @override
+  String get settingsNotificationsSoundBuiltInClick => '内置咔哒声';
+
+  @override
+  String get settingsNotificationsSoundOff => '关闭';
+
+  @override
   String get settingsNotificationsSoundOnlyWhen => '仅当以下情况时播放声音';
+
+  @override
+  String get settingsNotificationsSoundPickAudioFile => '选择音频文件';
+
+  @override
+  String get settingsNotificationsSoundPickFromSystem => '从系统中选择';
+
+  @override
+  String get settingsNotificationsSoundSystemDefault => '系统默认';
 
   @override
   String get settingsNotificationsSoundType => '声音类型';
@@ -3929,6 +3996,14 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get workspaceClosedProjects => '关闭的项目';
+
+  @override
+  String workspaceCurrentDirectory(String path) {
+    return '当前目录：$path';
+  }
+
+  @override
   String get workspaceFilterDirs => '过滤目录';
 
   @override
@@ -3936,6 +4011,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get workspaceOpenProjectFolder => '打开项目文件夹';
+
+  @override
+  String get workspaceOpenProjects => '打开的项目';
 
   @override
   String get workspaceProjectDirectory => '项目目录';

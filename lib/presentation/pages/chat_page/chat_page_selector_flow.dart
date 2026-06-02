@@ -156,7 +156,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                 Text(
                   currentProject == null
                       ? 'No active context'
-                      : 'Current directory: $currentDirectoryFull',
+                      : context.l10n.workspaceCurrentDirectory(currentDirectoryFull),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -199,7 +199,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
               children: [
-                _buildSelectorSectionHeader(dialogContext, 'Open projects'),
+                _buildSelectorSectionHeader(dialogContext, context.l10n.workspaceOpenProjects),
                 for (final project in projectProvider.openProjects)
                   _buildOpenProjectTile(
                     dialogContext: dialogContext,
@@ -223,7 +223,7 @@ extension _ChatPageSelectorFlow on _ChatPageState {
                   ),
                 if (projectProvider.closedProjects.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  _buildSelectorSectionHeader(dialogContext, 'Closed projects'),
+                  _buildSelectorSectionHeader(dialogContext, context.l10n.workspaceClosedProjects),
                   for (final project in projectProvider.closedProjects)
                     Builder(
                       builder: (_) {

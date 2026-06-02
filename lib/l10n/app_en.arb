@@ -2615,6 +2615,38 @@
   "@onboardingPickSetupPath": {
     "description": "CodeWalk UI string — onboardingPickSetupPath"
   },
+  "onboardingPreconditionDirectoryNotWritable": "Install directory is not writable. Check user permissions.",
+  "@onboardingPreconditionDirectoryNotWritable": {
+    "description": "CodeWalk UI string — onboardingPreconditionDirectoryNotWritable"
+  },
+  "onboardingPreconditionInstallViaBunRecommendation": "Install via Bun is recommended by OpenCode maintainers.",
+  "@onboardingPreconditionInstallViaBunRecommendation": {
+    "description": "CodeWalk UI string — onboardingPreconditionInstallViaBunRecommendation"
+  },
+  "onboardingPreconditionNetworkFailed": "Network access failed. Check connectivity before installing OpenCode.",
+  "@onboardingPreconditionNetworkFailed": {
+    "description": "CodeWalk UI string — onboardingPreconditionNetworkFailed"
+  },
+  "onboardingPreconditionNoRuntimeDetected": "No runtime detected. Install OpenCode binary directly or bootstrap Bun first.",
+  "@onboardingPreconditionNoRuntimeDetected": {
+    "description": "CodeWalk UI string — onboardingPreconditionNoRuntimeDetected"
+  },
+  "onboardingPreconditionNodeNpmAvailable": "Node + npm are available. Install OpenCode via npm or install Bun for the recommended flow.",
+  "@onboardingPreconditionNodeNpmAvailable": {
+    "description": "CodeWalk UI string — onboardingPreconditionNodeNpmAvailable"
+  },
+  "onboardingPreconditionOpenCodeAlreadyAvailable": "OpenCode is already available. You can use the detected command immediately.",
+  "@onboardingPreconditionOpenCodeAlreadyAvailable": {
+    "description": "CodeWalk UI string — onboardingPreconditionOpenCodeAlreadyAvailable"
+  },
+  "onboardingPreconditionWindowsPathLagHint": " On Windows, refresh checks after install because PATH updates may lag in already-open apps.",
+  "@onboardingPreconditionWindowsPathLagHint": {
+    "description": "CodeWalk UI string — onboardingPreconditionWindowsPathLagHint"
+  },
+  "onboardingPreconditionWindowsWslRecommendation": "Windows build detected. WSL is recommended by OpenCode docs, but npm install can be used as fallback.",
+  "@onboardingPreconditionWindowsWslRecommendation": {
+    "description": "CodeWalk UI string — onboardingPreconditionWindowsWslRecommendation"
+  },
   "onboardingReachable": "reachable",
   "@onboardingReachable": {
     "description": "CodeWalk UI string — onboardingReachable"
@@ -3097,6 +3129,10 @@
   "@sessionActionUnarchived": {
     "description": "CodeWalk UI string — sessionActionUnarchived"
   },
+  "sessionArchive": "Archive",
+  "@sessionArchive": {
+    "description": "CodeWalk UI string — sessionArchive"
+  },
   "sessionCancelRename": "Cancel rename",
   "@sessionCancelRename": {
     "description": "CodeWalk UI string — sessionCancelRename"
@@ -3302,6 +3338,10 @@
   "@sessionOpenProjectToLoad": {
     "description": "CodeWalk UI string — sessionOpenProjectToLoad"
   },
+  "sessionPin": "Pin",
+  "@sessionPin": {
+    "description": "CodeWalk UI string — sessionPin"
+  },
   "sessionRename": "Rename",
   "@sessionRename": {
     "description": "CodeWalk UI string — sessionRename"
@@ -3321,6 +3361,10 @@
   "sessionShare": "Share session",
   "@sessionShare": {
     "description": "CodeWalk UI string — sessionShare"
+  },
+  "sessionShareAction": "Share",
+  "@sessionShareAction": {
+    "description": "CodeWalk UI string — sessionShareAction"
   },
   "sessionShareLinkCopied": "Share link copied",
   "@sessionShareLinkCopied": {
@@ -3342,9 +3386,21 @@
   "@sessionTitleHint": {
     "description": "CodeWalk UI string — sessionTitleHint"
   },
+  "sessionUnarchive": "Unarchive",
+  "@sessionUnarchive": {
+    "description": "CodeWalk UI string — sessionUnarchive"
+  },
+  "sessionUnpin": "Unpin",
+  "@sessionUnpin": {
+    "description": "CodeWalk UI string — sessionUnpin"
+  },
   "sessionUnshare": "Unshare session",
   "@sessionUnshare": {
     "description": "CodeWalk UI string — sessionUnshare"
+  },
+  "sessionUnshareAction": "Unshare",
+  "@sessionUnshareAction": {
+    "description": "CodeWalk UI string — sessionUnshareAction"
   },
   "sessionUnshared": "Conversation unshared",
   "@sessionUnshared": {
@@ -4105,9 +4161,33 @@
   "@settingsNotificationsSound": {
     "description": "CodeWalk UI string — settingsNotificationsSound"
   },
+  "settingsNotificationsSoundBuiltInAlert": "Built-in alert",
+  "@settingsNotificationsSoundBuiltInAlert": {
+    "description": "CodeWalk UI string — settingsNotificationsSoundBuiltInAlert"
+  },
+  "settingsNotificationsSoundBuiltInClick": "Built-in click",
+  "@settingsNotificationsSoundBuiltInClick": {
+    "description": "CodeWalk UI string — settingsNotificationsSoundBuiltInClick"
+  },
+  "settingsNotificationsSoundOff": "Off",
+  "@settingsNotificationsSoundOff": {
+    "description": "CodeWalk UI string — settingsNotificationsSoundOff"
+  },
   "settingsNotificationsSoundOnlyWhen": "Sound only when",
   "@settingsNotificationsSoundOnlyWhen": {
     "description": "CodeWalk UI string — settingsNotificationsSoundOnlyWhen"
+  },
+  "settingsNotificationsSoundPickAudioFile": "Pick audio file",
+  "@settingsNotificationsSoundPickAudioFile": {
+    "description": "CodeWalk UI string — settingsNotificationsSoundPickAudioFile"
+  },
+  "settingsNotificationsSoundPickFromSystem": "Pick from system",
+  "@settingsNotificationsSoundPickFromSystem": {
+    "description": "CodeWalk UI string — settingsNotificationsSoundPickFromSystem"
+  },
+  "settingsNotificationsSoundSystemDefault": "System default",
+  "@settingsNotificationsSoundSystemDefault": {
+    "description": "CodeWalk UI string — settingsNotificationsSoundSystemDefault"
   },
   "settingsNotificationsSoundType": "Sound type",
   "@settingsNotificationsSoundType": {
@@ -5153,6 +5233,17 @@
     "placeholders": {
       "project": { "type": "String" }
     }  },
+  "workspaceClosedProjects": "Closed projects",
+  "@workspaceClosedProjects": {
+    "description": "CodeWalk UI string — workspaceClosedProjects"
+  },
+  "workspaceCurrentDirectory": "Current directory: {path}",
+  "@workspaceCurrentDirectory": {
+    "description": "CodeWalk UI string — workspaceCurrentDirectory"
+,
+    "placeholders": {
+      "path": { "type": "String" }
+    }  },
   "workspaceFilterDirs": "Filter directories",
   "@workspaceFilterDirs": {
     "description": "CodeWalk UI string — workspaceFilterDirs"
@@ -5164,6 +5255,10 @@
   "workspaceOpenProjectFolder": "Open project folder",
   "@workspaceOpenProjectFolder": {
     "description": "CodeWalk UI string — workspaceOpenProjectFolder"
+  },
+  "workspaceOpenProjects": "Open projects",
+  "@workspaceOpenProjects": {
+    "description": "CodeWalk UI string — workspaceOpenProjects"
   },
   "workspaceProjectDirectory": "Project directory",
   "@workspaceProjectDirectory": {

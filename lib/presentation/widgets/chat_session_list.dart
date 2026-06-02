@@ -567,7 +567,11 @@ class _ChatSessionListState extends State<ChatSessionList> {
                         children: [
                           const Icon(Symbols.push_pin),
                           const SizedBox(width: 8),
-                          Text(isPinned ? 'Unpin' : 'Pin'),
+                          Text(
+                            isPinned
+                                ? context.l10n.sessionUnpin
+                                : context.l10n.sessionPin,
+                          ),
                         ],
                       ),
                     ),
@@ -589,7 +593,11 @@ class _ChatSessionListState extends State<ChatSessionList> {
                             session.shared ? Symbols.link_off : Symbols.link,
                           ),
                           const SizedBox(width: 8),
-                          Text(session.shared ? 'Unshare' : 'Share'),
+                          Text(
+                            session.shared
+                                ? context.l10n.sessionUnshareAction
+                                : context.l10n.sessionShareAction,
+                          ),
                         ],
                       ),
                     ),
@@ -615,7 +623,11 @@ class _ChatSessionListState extends State<ChatSessionList> {
                                 : Symbols.archive,
                           ),
                           const SizedBox(width: 8),
-                          Text(session.archived ? 'Unarchive' : 'Archive'),
+                          Text(
+                            session.archived
+                                ? context.l10n.sessionUnarchive
+                                : context.l10n.sessionArchive,
+                          ),
                         ],
                       ),
                     ),

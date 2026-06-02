@@ -2142,6 +2142,38 @@ class AppLocalizationsEs extends AppLocalizations {
       'Elija la ruta de configuración que coincida con su configuración actual de OpenCode.';
 
   @override
+  String get onboardingPreconditionDirectoryNotWritable =>
+      'El directorio de instalación no tiene permisos de escritura. Compruebe los permisos de usuario.';
+
+  @override
+  String get onboardingPreconditionInstallViaBunRecommendation =>
+      'Los mantenedores de OpenCode recomiendan la instalación a través de Bun.';
+
+  @override
+  String get onboardingPreconditionNetworkFailed =>
+      'Error de acceso a la red. Compruebe la conectividad antes de instalar OpenCode.';
+
+  @override
+  String get onboardingPreconditionNoRuntimeDetected =>
+      'No se detectó ningún entorno de ejecución. Instale el binario de OpenCode directamente o inicialice Bun primero.';
+
+  @override
+  String get onboardingPreconditionNodeNpmAvailable =>
+      'Node y npm están disponibles. Instale OpenCode a través de npm o instale Bun para el flujo recomendado.';
+
+  @override
+  String get onboardingPreconditionOpenCodeAlreadyAvailable =>
+      'OpenCode ya está disponible. Puede utilizar el comando detectado inmediatamente.';
+
+  @override
+  String get onboardingPreconditionWindowsPathLagHint =>
+      ' En Windows, actualice las comprobaciones después de la instalación porque las actualizaciones de PATH pueden tardar en aplicarse en las aplicaciones ya abiertas.';
+
+  @override
+  String get onboardingPreconditionWindowsWslRecommendation =>
+      'Se detectó una compilación de Windows. La documentación de OpenCode recomienda WSL, pero se puede usar npm install como alternativa.';
+
+  @override
   String get onboardingReachable => 'alcanzable';
 
   @override
@@ -2531,6 +2563,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sessionActionUnarchived => 'desarchivada';
 
   @override
+  String get sessionArchive => 'Archivar';
+
+  @override
   String get sessionCancelRename => 'Cancelar renombrado';
 
   @override
@@ -2698,6 +2733,9 @@ class AppLocalizationsEs extends AppLocalizations {
       'Abre el proyecto para cargar conversaciones.';
 
   @override
+  String get sessionPin => 'Fijar';
+
+  @override
   String get sessionRename => 'Renombrar';
 
   @override
@@ -2711,6 +2749,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get sessionShare => 'Compartir sesión';
+
+  @override
+  String get sessionShareAction => 'Compartir';
 
   @override
   String get sessionShareLinkCopied => 'Enlace de compartir copiado';
@@ -2729,7 +2770,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sessionTitleHint => 'Título de la conversación';
 
   @override
+  String get sessionUnarchive => 'Desarchivar';
+
+  @override
+  String get sessionUnpin => 'Desfijar';
+
+  @override
   String get sessionUnshare => 'Dejar de compartir sesión';
+
+  @override
+  String get sessionUnshareAction => 'Dejar de compartir';
 
   @override
   String get sessionUnshared => 'Conversación dejada de compartir';
@@ -3391,7 +3441,27 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsNotificationsSound => 'Sonido';
 
   @override
+  String get settingsNotificationsSoundBuiltInAlert => 'Alerta integrada';
+
+  @override
+  String get settingsNotificationsSoundBuiltInClick => 'Clic integrado';
+
+  @override
+  String get settingsNotificationsSoundOff => 'Desactivado';
+
+  @override
   String get settingsNotificationsSoundOnlyWhen => 'Sonido solo cuando';
+
+  @override
+  String get settingsNotificationsSoundPickAudioFile =>
+      'Elegir archivo de audio';
+
+  @override
+  String get settingsNotificationsSoundPickFromSystem => 'Elegir del sistema';
+
+  @override
+  String get settingsNotificationsSoundSystemDefault =>
+      'Predeterminado del sistema';
 
   @override
   String get settingsNotificationsSoundType => 'Tipo de sonido';
@@ -4240,6 +4310,14 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get workspaceClosedProjects => 'Proyectos cerrados';
+
+  @override
+  String workspaceCurrentDirectory(String path) {
+    return 'Directorio actual: $path';
+  }
+
+  @override
   String get workspaceFilterDirs => 'Filtrar directorios';
 
   @override
@@ -4247,6 +4325,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get workspaceOpenProjectFolder => 'Abrir carpeta del proyecto';
+
+  @override
+  String get workspaceOpenProjects => 'Proyectos abiertos';
 
   @override
   String get workspaceProjectDirectory => 'Directorio del proyecto';

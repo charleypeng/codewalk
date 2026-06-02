@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 
+import '../../core/i18n/l10n_bridge.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 
@@ -733,27 +734,40 @@ class _IoLocalOpencodeServerRuntime implements LocalOpencodeServerRuntime {
     required bool writable,
   }) {
     if (!networkOk) {
-      return 'Network access failed. Check connectivity before installing OpenCode.';
+      return L10nBridge.current?.onboardingPreconditionNetworkFailed ??
+          'Network access failed. Check connectivity before installing OpenCode.';
     }
     if (!writable) {
-      return 'Install directory is not writable. Check user permissions.';
+      return L10nBridge.current?.onboardingPreconditionDirectoryNotWritable ??
+          'Install directory is not writable. Check user permissions.';
     }
     if (opencode.available) {
-      return 'OpenCode is already available. You can use the detected command immediately.';
+      return L10nBridge.current
+              ?.onboardingPreconditionOpenCodeAlreadyAvailable ??
+          'OpenCode is already available. You can use the detected command immediately.';
     }
     if (defaultTargetPlatform == TargetPlatform.windows && !wsl.available) {
-      return 'Windows build detected. WSL is recommended by OpenCode docs, but npm install can be used as fallback.';
+      return L10nBridge.current
+              ?.onboardingPreconditionWindowsWslRecommendation ??
+          'Windows build detected. WSL is recommended by OpenCode docs, but npm install can be used as fallback.';
     }
     if (bun.available) {
-      return 'Install via Bun is recommended by OpenCode maintainers.';
+      return L10nBridge.current
+              ?.onboardingPreconditionInstallViaBunRecommendation ??
+          'Install via Bun is recommended by OpenCode maintainers.';
     }
     if (node.available && npm.available) {
       final windowsHint = defaultTargetPlatform == TargetPlatform.windows
-          ? ' On Windows, refresh checks after install because PATH updates may lag in already-open apps.'
+          ? (L10nBridge.current?.onboardingPreconditionWindowsPathLagHint ??
+              ' On Windows, refresh checks after install because PATH updates may lag in already-open apps.')
           : '';
-      return 'Node + npm are available. Install OpenCode via npm or install Bun for the recommended flow.$windowsHint';
+      final mainText = L10nBridge.current
+              ?.onboardingPreconditionNodeNpmAvailable ??
+          'Node + npm are available. Install OpenCode via npm or install Bun for the recommended flow.';
+      return '$mainText$windowsHint';
     }
-    return 'No runtime detected. Install OpenCode binary directly or bootstrap Bun first.';
+    return L10nBridge.current?.onboardingPreconditionNoRuntimeDetected ??
+        'No runtime detected. Install OpenCode binary directly or bootstrap Bun first.';
   }
 
   Future<_ProcessRunResult> _runProcessCollect(

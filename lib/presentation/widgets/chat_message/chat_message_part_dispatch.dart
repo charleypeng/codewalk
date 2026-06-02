@@ -610,7 +610,7 @@ class _CollapsibleToolChain extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  _expanded ? context.l10n.chatMessageHide : (compactLayout ? 'Show' : 'Details'),
+                  _expanded ? context.l10n.chatMessageHide : (compactLayout ? context.l10n.chatMessageShow : context.l10n.chatMessageDetails),
                 ),
               ),
             ],

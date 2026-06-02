@@ -9,7 +9,7 @@ class AppLocalizationsUr extends AppLocalizations {
   AppLocalizationsUr([String locale = 'ur']) : super(locale);
 
   @override
-  String get aboutGitHub => 'GitHub';
+  String get aboutGitHub => 'گٹ ہب';
 
   @override
   String get appProviderCannotActivateUnhealthy =>
@@ -348,15 +348,15 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get behaviorDataSaverActive => 'Active now on mobile data.';
+  String get behaviorDataSaverActive => 'اب موبائل ڈیٹا پر فعال ہے۔';
 
   @override
   String get behaviorDataSaverCellularOnly =>
-      'Only applies when the connection is cellular/mobile.';
+      'صرف اس وقت لاگو ہوتا ہے جب کنکشن سیلولر/موبائل ہو۔';
 
   @override
   String get behaviorDataSaverWaiting =>
-      'Waiting for the next mobile-data sync window.';
+      'اگلی موبائل ڈیٹا سنک ونڈو کا انتظار ہے۔';
 
   @override
   String get behaviorDisabled => 'غیر فعال';
@@ -372,33 +372,33 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get behaviorOfficialOpenCodePermission =>
-      'Official OpenCode permission policy is configured in `opencode.json` with allow/ask/deny rules per tool. CodeWalk keeps the official permission-request cards and adds one approved ADR-023 exception: the composer auto-approve toggle replies with `Always` and `remember: true` unconditionally to create durable session-scoped grants, and keeps the same thread-scoped continuity path active in the Android background worker.';
+      'آفیشل اوپن کوڈ کی اجازت کی پالیسی کو `opencode.json` میں اجازت/پوچھیں/منکر کے اصولوں کے ساتھ ترتیب دیا گیا ہے۔ CodeWalk سرکاری اجازت کی درخواست کے کارڈز کو رکھتا ہے اور ایک منظور شدہ ADR-023 استثناء شامل کرتا ہے: کمپوزر آٹو-منظوری ٹوگل جوابات کو \'ہمیشہ\' اور \'یاد رکھیں: سچ\' کے ساتھ غیر مشروط طور پر پائیدار سیشن کے دائرہ کار والے گرانٹس کو تخلیق کرتا ہے، اور بیک گراؤنڈ ورک کے اسی تھریڈ اسکوپڈ کنٹیوٹی پاتھ کو فعال رکھتا ہے۔';
 
   @override
-  String get behaviorOpenCodeBackedDefaults => 'OpenCode-backed defaults';
+  String get behaviorOpenCodeBackedDefaults =>
+      'اوپن کوڈ کی حمایت یافتہ ڈیفالٹس';
 
   @override
-  String get behaviorPermissionHandlingProvenance =>
-      'Permission handling provenance';
+  String get behaviorPermissionHandlingProvenance => 'اجازت ہینڈلنگ پروونانس';
 
   @override
   String get behaviorPermissionsVariantReasoning =>
-      'Permissions and variant/reasoning parity stay separate until their UI can preserve advanced config safely.';
+      'اجازتیں اور ویرینٹ/ریزننگ برابری اس وقت تک الگ رہتی ہیں جب تک کہ ان کا UI اعلی درجے کی تشکیل کو محفوظ طریقے سے محفوظ نہ کر سکے۔';
 
   @override
   String get behaviorPrimaryAgentAgent =>
-      'Primary agent used when no agent is explicitly chosen.';
+      'پرائمری ایجنٹ استعمال کیا جاتا ہے جب کوئی ایجنٹ واضح طور پر منتخب نہیں کیا جاتا ہے۔';
 
   @override
-  String get behaviorRefreshDefaults => 'Refresh defaults';
+  String get behaviorRefreshDefaults => 'ڈیفالٹس ریفریش کریں۔';
 
   @override
   String get behaviorSharedAcrossOpenCode =>
-      'Shared across OpenCode clients through config.';
+      'تشکیل کے ذریعے اوپن کوڈ کلائنٹس میں اشتراک کیا گیا۔';
 
   @override
   String get behaviorTheseValuesWrite =>
-      'These values write to `/config` on the active server and match official OpenCode shared config.';
+      'یہ قدریں فعال سرور پر `/config` پر لکھتی ہیں اور آفیشل اوپن کوڈ کی مشترکہ تشکیل سے ملتی ہیں۔';
 
   @override
   String get cannedAddTitle => 'فوری جواب شامل کریں';
@@ -411,7 +411,7 @@ class AppLocalizationsUr extends AppLocalizations {
       'بند = موجودہ کمپوزر متن تبدیل کریں';
 
   @override
-  String get cannedAttachFiles => 'Attach files';
+  String get cannedAttachFiles => 'فائلیں منسلک کریں۔';
 
   @override
   String get cannedEditTitle => 'فوری جواب میں ترمیم کریں';
@@ -420,13 +420,14 @@ class AppLocalizationsUr extends AppLocalizations {
   String get cannedNewQuickReply => 'نیا فوری جواب';
 
   @override
-  String get cannedNoSuggestions => 'No suggestions';
+  String get cannedNoSuggestions => 'کوئی تجویز نہیں۔';
 
   @override
-  String get cannedOffMeansReplace => 'Off means replace current composer text';
+  String get cannedOffMeansReplace =>
+      'آف کا مطلب موجودہ کمپوزر ٹیکسٹ کو تبدیل کرنا ہے۔';
 
   @override
-  String get cannedQuickReply => 'New quick reply';
+  String get cannedQuickReply => 'نیا فوری جواب';
 
   @override
   String get cannedReplace => 'تبدیل کریں';
@@ -445,7 +446,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get cannedSendImmediatelyInserting =>
-      'Send immediately after inserting this quick reply';
+      'یہ فوری جواب داخل کرنے کے فوراً بعد بھیجیں۔';
 
   @override
   String get cannedTextLabel => 'متن';
@@ -455,30 +456,29 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get chatActiveServerUnhealthy =>
-      'Active server is unhealthy. Sends will try once and fail fast until recovery.';
+      'فعال سرور غیر صحت بخش ہے۔ بھیجیں ایک بار کوشش کریں گے اور بازیابی تک تیزی سے ناکام ہوجائیں گے۔';
 
   @override
   String get chatActiveServerUnhealthyLabel => 'فعال سرور غیر صحت مند ہے';
 
   @override
-  String get chatAddServerToStart => 'Add a server to start chatting.';
+  String get chatAddServerToStart =>
+      'چیٹنگ شروع کرنے کے لیے ایک سرور شامل کریں۔';
 
   @override
-  String get chatAppBarMoreActions => 'More actions';
+  String get chatAppBarMoreActions => 'مزید کارروائیاں';
 
   @override
-  String get chatAppBarPinAction => 'Pin to app bar';
+  String get chatAppBarPinAction => 'ایپ بار پر پن کریں۔';
 
   @override
-  String get chatAppBarPinDescription =>
-      'This action will stay visible outside the menu.';
+  String get chatAppBarPinDescription => 'یہ عمل مینو سے باہر نظر آئے گا۔';
 
   @override
-  String get chatAppBarUnpinAction => 'Unpin from app bar';
+  String get chatAppBarUnpinAction => 'ایپ بار سے پن ہٹا دیں۔';
 
   @override
-  String get chatAppBarUnpinDescription =>
-      'This action will move back into the menu.';
+  String get chatAppBarUnpinDescription => 'یہ عمل مینو میں واپس چلا جائے گا۔';
 
   @override
   String chatBadgeConversationError(String title) {
@@ -505,11 +505,12 @@ class AppLocalizationsUr extends AppLocalizations {
   String get chatBadgeSyncing => 'گفتگو کی مطابقت پذیری ہو رہی ہے...';
 
   @override
-  String get chatCachedConversationsYet => 'No cached conversations yet';
+  String get chatCachedConversationsYet =>
+      'ابھی تک کوئی کیش شدہ گفتگو نہیں ہے۔';
 
   @override
   String get chatChangedFilesAvailable =>
-      'No changed files are available for this session.';
+      'اس سیشن کے لیے کوئی تبدیل شدہ فائل دستیاب نہیں ہے۔';
 
   @override
   String chatChildrenChatProviderCurrentSessionChildren(int length) {
@@ -520,20 +521,20 @@ class AppLocalizationsUr extends AppLocalizations {
   String get chatChooseAgent => 'ایجنٹ منتخب کریں';
 
   @override
-  String get chatChooseDirectory => 'Choose Directory';
+  String get chatChooseDirectory => 'ڈائرکٹری کا انتخاب کریں۔';
 
   @override
   String get chatChooseEffort => 'کوشش منتخب کریں';
 
   @override
   String get chatChooseFolderOpen =>
-      'Choose a folder to open as project context.';
+      'پروجیکٹ سیاق و سباق کے طور پر کھولنے کے لیے فولڈر کا انتخاب کریں۔';
 
   @override
   String get chatChooseModel => 'ماڈل منتخب کریں';
 
   @override
-  String get chatClose => 'Close';
+  String get chatClose => 'بند';
 
   @override
   String chatCloseProject(String project) {
@@ -553,7 +554,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get chatCommandSourceProject => 'پروجیکٹ';
 
   @override
-  String get chatCompactContext => 'Compact Context';
+  String get chatCompactContext => 'کومپیکٹ سیاق و سباق';
 
   @override
   String get chatComposerHintShell => 'شیل کمانڈ (باہر نکلنے کے لیے Esc)';
@@ -562,13 +563,13 @@ class AppLocalizationsUr extends AppLocalizations {
   String get chatComposerPlaceholder => 'اپنی ضروریات ٹائپ کریں...';
 
   @override
-  String get chatConversation => 'Conversation';
+  String get chatConversation => 'بات چیت';
 
   @override
-  String get chatConversations => 'Conversations';
+  String get chatConversations => 'بات چیت';
 
   @override
-  String get chatConversationsPane => 'Conversations';
+  String get chatConversationsPane => 'بات چیت';
 
   @override
   String chatCostLabel(double cost) {
@@ -579,7 +580,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get chatCouldNotRefreshSession => 'یہ گفتگو تازہ نہیں کی جا سکی';
 
   @override
-  String get chatCurrent => 'Use current';
+  String get chatCurrent => 'موجودہ استعمال کریں۔';
 
   @override
   String chatDescriptionChildren(int count) {
@@ -646,13 +647,13 @@ class AppLocalizationsUr extends AppLocalizations {
   String get chatDescriptionVoiceInput => 'صوتی ان پٹ شروع کریں یا روکیں';
 
   @override
-  String get chatDiffFiles => 'Diff files: 0';
+  String get chatDiffFiles => 'مختلف فائلیں: 0';
 
   @override
-  String get chatDisplay => 'Display';
+  String get chatDisplay => 'ڈسپلے';
 
   @override
-  String get chatDisplayToggles => 'Display toggles';
+  String get chatDisplayToggles => 'ڈسپلے ٹوگلز';
 
   @override
   String get chatDoubleESCStop => 'رکنے کے لیے دو بار ESC';
@@ -681,7 +682,7 @@ class AppLocalizationsUr extends AppLocalizations {
       'ذیلی گفتگو تازہ کرنے میں ناکامی۔ براہ کرم دوبارہ کوشش کریں۔';
 
   @override
-  String get chatFailedToStopResponse => 'Failed to stop current response';
+  String get chatFailedToStopResponse => 'موجودہ جواب کو روکنے میں ناکام';
 
   @override
   String get chatFileExplorerContents => 'مشمولات';
@@ -690,19 +691,19 @@ class AppLocalizationsUr extends AppLocalizations {
   String get chatFileExplorerNames => 'نام';
 
   @override
-  String get chatFilterActive => 'Active';
+  String get chatFilterActive => 'فعال';
 
   @override
-  String get chatFilterAll => 'All';
+  String get chatFilterAll => 'تمام';
 
   @override
-  String get chatFilterArchived => 'Archived';
+  String get chatFilterArchived => 'محفوظ شدہ';
 
   @override
-  String get chatFilterDirectories => 'Filter directories';
+  String get chatFilterDirectories => 'ڈائریکٹریز کو فلٹر کریں۔';
 
   @override
-  String get chatFilterSessions => 'Filter sessions';
+  String get chatFilterSessions => 'فلٹر سیشنز';
 
   @override
   String get chatForkFailed => 'گفتگو کو فورک کرنے میں ناکام';
@@ -711,10 +712,10 @@ class AppLocalizationsUr extends AppLocalizations {
   String get chatForked => 'گفتگو فورک کر دی گئی';
 
   @override
-  String get chatGoToFirst => 'Go to first message';
+  String get chatGoToFirst => 'پہلے پیغام پر جائیں۔';
 
   @override
-  String get chatGoToLatest => 'Go to latest message';
+  String get chatGoToLatest => 'تازہ ترین پیغام پر جائیں۔';
 
   @override
   String chatGroupMessageCountMessages(
@@ -725,37 +726,37 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get chatHelloAssistant => 'Hello! I am your AI assistant';
+  String get chatHelloAssistant => 'ہیلو! میں آپ کا AI اسسٹنٹ ہوں۔';
 
   @override
-  String get chatHelp => 'How can I help you?';
+  String get chatHelp => 'میں آپ کی مدد کیسے کر سکتا ہوں؟';
 
   @override
   String get chatHelpMessage =>
       'ذکر کے لیے @، شیل کے لیے !، کمانڈز کے لیے / استعمال کریں';
 
   @override
-  String get chatHideConversationsSidebar => 'Hide Conversations sidebar';
+  String get chatHideConversationsSidebar => 'گفتگو کا سائڈبار چھپائیں۔';
 
   @override
-  String get chatHideUtilitySidebar => 'Hide Utility sidebar';
+  String get chatHideUtilitySidebar => 'یوٹیلیٹی سائڈبار چھپائیں۔';
 
   @override
-  String get chatHistoryCollapsed => 'Previous history is collapsed';
+  String get chatHistoryCollapsed => 'پچھلی تاریخ کو منہدم کر دیا گیا ہے۔';
 
   @override
-  String get chatHistoryHideEarlier => 'Hide earlier messages';
+  String get chatHistoryHideEarlier => 'پہلے کے پیغامات چھپائیں۔';
 
   @override
   String chatHistoryMessagesHidden(int count, String label) {
-    return '$count messages hidden before $label compaction';
+    return '$count پیغامات $label کمپیکشن سے پہلے چھپے ہوئے ہیں۔';
   }
 
   @override
-  String get chatHistoryShowEarlier => 'Show earlier messages';
+  String get chatHistoryShowEarlier => 'پہلے کے پیغامات دکھائیں۔';
 
   @override
-  String get chatKeepWorking => 'Keep working';
+  String get chatKeepWorking => 'کام کرتے رہیں';
 
   @override
   String get chatLargeContentSkipped =>
@@ -763,13 +764,14 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get chatLatestToolActivity =>
-      'Latest tool activity stays inside this bounded panel to keep the chat viewport stable.';
+      'چیٹ ویو پورٹ کو مستحکم رکھنے کے لیے ٹول کی تازہ ترین سرگرمی اس باؤنڈڈ پینل کے اندر رہتی ہے۔';
 
   @override
-  String get chatLoadMore => 'Load more';
+  String get chatLoadMore => 'مزید لوڈ کریں۔';
 
   @override
-  String get chatLoadingProjectContext => 'Loading project context...';
+  String get chatLoadingProjectContext =>
+      'پروجیکٹ کا سیاق و سباق لوڈ ہو رہا ہے...';
 
   @override
   String get chatMainConversationUnavailable =>
@@ -797,10 +799,11 @@ class AppLocalizationsUr extends AppLocalizations {
   String get chatMessageLess => 'کم';
 
   @override
-  String get chatMessageMessagePartUnavailable => 'Message part unavailable';
+  String get chatMessageMessagePartUnavailable =>
+      'پیغام کا حصہ دستیاب نہیں ہے۔';
 
   @override
-  String get chatMessageMetadataAvailable => 'No metadata available';
+  String get chatMessageMetadataAvailable => 'کوئی میٹا ڈیٹا دستیاب نہیں ہے۔';
 
   @override
   String chatMessageModelMessageModelId(String modelId) {
@@ -811,7 +814,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get chatMessageMore => 'مزید';
 
   @override
-  String get chatMessageOpenFile => 'Open file';
+  String get chatMessageOpenFile => 'فائل کھولیں۔';
 
   @override
   String chatMessageProviderMessageProviderId(String providerId) {
@@ -819,13 +822,13 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get chatMessageRewindEdit => 'Rewind and edit from here';
+  String get chatMessageRewindEdit => 'ریوائنڈ اور یہاں سے ترمیم کریں۔';
 
   @override
-  String get chatMessageRunningTask => 'Running task';
+  String get chatMessageRunningTask => 'رننگ ٹاسک';
 
   @override
-  String get chatMessageSaveFile => 'Save file';
+  String get chatMessageSaveFile => 'فائل محفوظ کریں۔';
 
   @override
   String get chatMessageShow => 'دکھائیں';
@@ -846,14 +849,14 @@ class AppLocalizationsUr extends AppLocalizations {
   String get chatMessageThinking => 'سوچ رہا ہے';
 
   @override
-  String get chatMessageThinkingProcess => 'Thinking Process';
+  String get chatMessageThinkingProcess => 'سوچنے کا عمل';
 
   @override
-  String get chatMessageToolCall => '1 tool call';
+  String get chatMessageToolCall => '1 ٹول کال';
 
   @override
   String chatMessageToolCalls(int count) {
-    return '$count tool calls';
+    return '$count ٹول کالز';
   }
 
   @override
@@ -889,35 +892,35 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get chatMessageToolStatusInProgress => 'In progress';
+  String get chatMessageToolStatusInProgress => 'جاری ہے۔';
 
   @override
-  String get chatMessageToolStatusNeedsAttention => 'Needs attention';
+  String get chatMessageToolStatusNeedsAttention => 'توجہ کی ضرورت ہے۔';
 
   @override
-  String get chatMessageToolStatusQueued => 'Queued';
+  String get chatMessageToolStatusQueued => 'قطار میں لگ گیا۔';
 
   @override
-  String get chatMessageYou => 'You';
+  String get chatMessageYou => 'آپ';
 
   @override
   String get chatModelLockedSubConversation => 'ذیلی گفتگو میں ماڈل مقفل ہے';
 
   @override
-  String get chatNewChat => 'New Chat';
+  String get chatNewChat => 'نئی چیٹ';
 
   @override
-  String get chatNewChatTourDescription => 'Start a new conversation here.';
+  String get chatNewChatTourDescription => 'یہاں ایک نئی گفتگو شروع کریں۔';
 
   @override
-  String get chatNewChatTourTitle => 'New chat';
+  String get chatNewChatTourTitle => 'نئی چیٹ';
 
   @override
   String get chatNoConversationsInProject =>
       'اس پروجیکٹ میں کوئی گفتگو نہیں ہے۔';
 
   @override
-  String get chatNoServerYet => 'No server configured yet';
+  String get chatNoServerYet => 'ابھی تک کوئی سرور کنفیگر نہیں ہوا۔';
 
   @override
   String get chatNoSessionSelected =>
@@ -928,13 +931,13 @@ class AppLocalizationsUr extends AppLocalizations {
       'اس کام کے لیے کوئی ذیلی گفتگو نہیں ملی۔';
 
   @override
-  String get chatOpenFiles => 'Open Files';
+  String get chatOpenFiles => 'فائلیں کھولیں۔';
 
   @override
   String get chatOpenProject => 'پروجیکٹ کھولیں';
 
   @override
-  String get chatOpenProjectFolder => 'Open project folder...';
+  String get chatOpenProjectFolder => 'پروجیکٹ فولڈر کھولیں...';
 
   @override
   String get chatOpenProjectToLoad => 'گفتگو لوڈ کرنے کے لیے پروجیکٹ کھولیں۔';
@@ -944,19 +947,20 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get chatPageStatusAutomaticCompactionExplanation =>
-      'Automatic compaction happens as context usage grows.';
+      'سیاق و سباق کا استعمال بڑھنے کے ساتھ ہی خودکار کمپیکشن ہوتا ہے۔';
 
   @override
-  String get chatPageStatusCompactNow => 'Compact now';
+  String get chatPageStatusCompactNow => 'اب کمپیکٹ';
 
   @override
-  String get chatPageStatusCompacting => 'Compacting...';
+  String get chatPageStatusCompacting => 'کمپیکٹ ہو رہا ہے...';
 
   @override
-  String get chatPageStatusCompactingContextNow => 'Compacting context now...';
+  String get chatPageStatusCompactingContextNow =>
+      'سیاق و سباق کو اب کمپیکٹ کر رہا ہے...';
 
   @override
-  String get chatPageStatusContextCompacted => 'Context compacted';
+  String get chatPageStatusContextCompacted => 'سیاق و سباق کو کمپیکٹ کیا گیا۔';
 
   @override
   String get chatPageStatusContextUsage => 'سیاق استعمال';
@@ -966,7 +970,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get chatPageStatusFailedToCompactContext =>
-      'Failed to compact context';
+      'سیاق و سباق کو کمپیکٹ کرنے میں ناکام';
 
   @override
   String get chatPageStatusLimit => 'حد';
@@ -978,7 +982,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get chatPageStatusSaver => 'سیور';
 
   @override
-  String get chatPageStatusServer => 'Server';
+  String get chatPageStatusServer => 'سرور';
 
   @override
   String get chatPageStatusSwitchServer => 'سرور تبدیل کریں';
@@ -1001,7 +1005,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get chatPermissionAutoApproveOn => 'اجازت خودکار منظوری آن ہے';
 
   @override
-  String get chatProjectContext => 'Project Context';
+  String get chatProjectContext => 'پروجیکٹ کا سیاق و سباق';
 
   @override
   String get chatProjectContext2 => 'پروجیکٹ سیاق';
@@ -1041,28 +1045,28 @@ class AppLocalizationsUr extends AppLocalizations {
   String get chatReasoning => 'استدلال...';
 
   @override
-  String get chatRecentSessions => 'Recent sessions';
+  String get chatRecentSessions => 'حالیہ سیشنز';
 
   @override
-  String get chatRecentSessionsToggle => 'Recent sessions';
+  String get chatRecentSessionsToggle => 'حالیہ سیشنز';
 
   @override
-  String get chatRedoLastTurn => 'Redo last undone turn';
+  String get chatRedoLastTurn => 'آخری کالعدم موڑ کو دوبارہ کریں۔';
 
   @override
   String get chatRedoNothing => 'اس سیشن میں دوبارہ کرنے کے لیے کچھ نہیں ہے';
 
   @override
-  String get chatRefresh => 'Refresh';
+  String get chatRefresh => 'ریفریش کریں۔';
 
   @override
-  String get chatRefreshConversation => 'Could not refresh this conversation';
+  String get chatRefreshConversation => 'اس گفتگو کو ریفریش نہیں کیا جا سکا';
 
   @override
-  String get chatRefreshProjects => 'Refresh projects';
+  String get chatRefreshProjects => 'پروجیکٹس کو ریفریش کریں۔';
 
   @override
-  String get chatRefreshSessionDetails => 'Refresh session details';
+  String get chatRefreshSessionDetails => 'سیشن کی تفصیلات تازہ کریں۔';
 
   @override
   String chatRemoveDisplayNameHistory(String displayName) {
@@ -1070,58 +1074,59 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get chatRetry => 'Retry';
+  String get chatRetry => 'دوبارہ کوشش کریں۔';
 
   @override
-  String get chatRetry2 => 'Retry';
+  String get chatRetry2 => 'دوبارہ کوشش کریں۔';
 
   @override
-  String get chatRetryRefresh => 'Retry refresh';
+  String get chatRetryRefresh => 'دوبارہ ریفریش کرنے کی کوشش کریں۔';
 
   @override
-  String get chatRetryingModelRequest => 'Retrying model request...';
+  String get chatRetryingModelRequest =>
+      'ماڈل کی درخواست کی دوبارہ کوشش کی جا رہی ہے...';
 
   @override
-  String get chatReturnToMainConversation => 'Return to main conversation';
+  String get chatReturnToMainConversation => 'مرکزی گفتگو پر واپس جائیں۔';
 
   @override
-  String get chatReviewChanges => 'Review changes';
+  String get chatReviewChanges => 'تبدیلیوں کا جائزہ لیں۔';
 
   @override
-  String get chatSearchConversations => 'Search conversations';
+  String get chatSearchConversations => 'مکالمات تلاش کریں۔';
 
   @override
-  String get chatSearchNextResult => 'Next result';
+  String get chatSearchNextResult => 'اگلا نتیجہ';
 
   @override
-  String get chatSearchNoResults => 'No results';
+  String get chatSearchNoResults => 'کوئی نتیجہ نہیں۔';
 
   @override
-  String get chatSearchPreviousResult => 'Previous result';
+  String get chatSearchPreviousResult => 'پچھلا نتیجہ';
 
   @override
   String chatSearchResultCount(int current, int total) {
-    return 'Message $current of $total';
+    return 'پیغام $current از $total';
   }
 
   @override
-  String get chatSearchTimeline => 'Search timeline';
+  String get chatSearchTimeline => 'ٹائم لائن تلاش کریں۔';
 
   @override
-  String get chatSelectDirectory => 'Select directory';
+  String get chatSelectDirectory => 'ڈائریکٹری منتخب کریں۔';
 
   @override
   String get chatSelectOrCreate =>
-      'Select or create a conversation to start chatting';
+      'چیٹنگ شروع کرنے کے لیے ایک گفتگو کو منتخب کریں یا تخلیق کریں۔';
 
   @override
-  String get chatSelectProjectBelow => 'Select a project below.';
+  String get chatSelectProjectBelow => 'ذیل میں ایک پروجیکٹ منتخب کریں۔';
 
   @override
   String get chatServerSelectedModel => 'سرور کے ذریعے منتخب کردہ ماڈل';
 
   @override
-  String get chatSessionActions => 'Session actions';
+  String get chatSessionActions => 'سیشن کے اعمال';
 
   @override
   String chatSessionChatSessionSession(String title) {
@@ -1134,11 +1139,11 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get chatSessionConversations => 'No conversations';
+  String get chatSessionConversations => 'کوئی بات چیت نہیں۔';
 
   @override
   String get chatSessionCreateConversationStart =>
-      'Create a new conversation to start chatting';
+      'چیٹنگ شروع کرنے کے لیے ایک نئی گفتگو بنائیں';
 
   @override
   String chatSessionsLength(int length) {
@@ -1146,10 +1151,10 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get chatSetUpServer => 'Set up server';
+  String get chatSetUpServer => 'سرور مرتب کریں۔';
 
   @override
-  String get chatSettings => 'Settings';
+  String get chatSettings => 'ترتیبات';
 
   @override
   String get chatShortcutsCloseApp =>
@@ -1199,19 +1204,19 @@ class AppLocalizationsUr extends AppLocalizations {
   String get chatSidebarAccess => 'سائیڈ بار رسائی';
 
   @override
-  String get chatSortMostRecent => 'Most Recent';
+  String get chatSortMostRecent => 'تازہ ترین';
 
   @override
-  String get chatSortOldest => 'Oldest';
+  String get chatSortOldest => 'قدیم ترین';
 
   @override
-  String get chatSortRecent => 'Recent';
+  String get chatSortRecent => 'حالیہ';
 
   @override
-  String get chatSortSessions => 'Sort sessions';
+  String get chatSortSessions => 'سیشن ترتیب دیں۔';
 
   @override
-  String get chatSortTitle => 'Title';
+  String get chatSortTitle => 'عنوان';
 
   @override
   String get chatStartVoiceInput => 'صوتی ان پٹ شروع کریں';
@@ -1256,11 +1261,11 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get chatTasks => 'Tasks';
+  String get chatTasks => 'کام';
 
   @override
   String get chatTasksAvailableSession =>
-      'No tasks are available for this session.';
+      'اس سیشن کے لیے کوئی کام دستیاب نہیں ہیں۔';
 
   @override
   String get chatTipBeSpecific =>
@@ -1303,7 +1308,7 @@ class AppLocalizationsUr extends AppLocalizations {
       'مشورہ: پیچیدہ مسائل کو ڈیبگ کرتے وقت مرحلہ وار پوچھیں';
 
   @override
-  String get chatToggleSidebars => 'Toggle sidebars';
+  String get chatToggleSidebars => 'سائڈبارز کو ٹوگل کریں۔';
 
   @override
   String chatTokensLabel(int total) {
@@ -1323,13 +1328,13 @@ class AppLocalizationsUr extends AppLocalizations {
       'پروجیکٹ فولڈرز اور سیاق و سباق کو تبدیل کرنے کے لیے اس بٹن کا استعمال کریں۔';
 
   @override
-  String get chatUndoLastTurn => 'Undo last turn';
+  String get chatUndoLastTurn => 'آخری موڑ کو کالعدم کریں۔';
 
   @override
   String get chatUndoNothing => 'اس سیشن میں کالعدم کرنے کے لیے کچھ نہیں ہے';
 
   @override
-  String get chatUseCurrent => 'Use current';
+  String get chatUseCurrent => 'موجودہ استعمال کریں۔';
 
   @override
   String get chatWaitingForNetworkConnection => 'نیٹ ورک کنکشن کا انتظار...';
@@ -1342,42 +1347,42 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get chatWorkBoundedPanelExplanation =>
-      'Latest tool activity stays inside this bounded panel to keep the chat viewport stable.';
+      'چیٹ ویو پورٹ کو مستحکم رکھنے کے لیے ٹول کی تازہ ترین سرگرمی اس باؤنڈڈ پینل کے اندر رہتی ہے۔';
 
   @override
-  String get chatWorkExpand => 'Expand';
+  String get chatWorkExpand => 'پھیلائیں۔';
 
   @override
-  String get chatWorkHide => 'Hide';
+  String get chatWorkHide => 'چھپائیں';
 
   @override
-  String get chatWorkMessageOne => '1 work message';
+  String get chatWorkMessageOne => '1 کام کا پیغام';
 
   @override
   String chatWorkMessagesMultiple(int count) {
-    return '$count work messages';
+    return '$count کام کے پیغامات';
   }
 
   @override
-  String get chatWorkShow => 'Show';
+  String get chatWorkShow => 'دکھائیں۔';
 
   @override
-  String get commonCancel => 'Cancel';
+  String get commonCancel => 'منسوخ کریں۔';
 
   @override
   String get commonCopiedToClipboard => 'کلپ بورڈ پر کاپی ہو گیا';
 
   @override
-  String get commonDelete => 'Delete';
+  String get commonDelete => 'حذف کریں۔';
 
   @override
   String get commonFile => 'فائل';
 
   @override
-  String get commonReset => 'Reset';
+  String get commonReset => 'دوبارہ ترتیب دیں۔';
 
   @override
-  String get commonSave => 'Save';
+  String get commonSave => 'محفوظ کریں۔';
 
   @override
   String get compactionAutomatic => 'خودکار';
@@ -1386,91 +1391,91 @@ class AppLocalizationsUr extends AppLocalizations {
   String get compactionManual => 'دستی';
 
   @override
-  String get composerAddAttachment => 'Add attachment';
+  String get composerAddAttachment => 'منسلکہ شامل کریں۔';
 
   @override
-  String get composerAttachFiles => 'Attach files';
+  String get composerAttachFiles => 'فائلیں منسلک کریں۔';
 
   @override
-  String get composerCannedAppendAtCursor => 'Append at cursor';
+  String get composerCannedAppendAtCursor => 'کرسر پر شامل کریں۔';
 
   @override
-  String get composerCannedLabel => 'Label (optional)';
+  String get composerCannedLabel => 'لیبل (اختیاری)';
 
   @override
-  String get composerCannedNoReplies => 'No quick replies yet.';
+  String get composerCannedNoReplies => 'ابھی تک کوئی فوری جواب نہیں ہے۔';
 
   @override
-  String get composerCannedReplace => 'Replace';
+  String get composerCannedReplace => 'بدل دیں۔';
 
   @override
-  String get composerCannedSave => 'Save';
+  String get composerCannedSave => 'محفوظ کریں۔';
 
   @override
-  String get composerCannedScopeGlobal => 'Global';
+  String get composerCannedScopeGlobal => 'عالمی';
 
   @override
-  String get composerCannedScopeProject => 'Project-only';
+  String get composerCannedScopeProject => 'صرف پروجیکٹ';
 
   @override
-  String get composerCannedSendAutomatically => 'Send automatically';
+  String get composerCannedSendAutomatically => 'خود بخود بھیجیں۔';
 
   @override
-  String get composerCannedText => 'Text';
+  String get composerCannedText => 'متن';
 
   @override
-  String get composerChatInput => 'Chat input';
+  String get composerChatInput => 'چیٹ ان پٹ';
 
   @override
-  String get composerDeleteAction => 'Delete';
+  String get composerDeleteAction => 'حذف کریں۔';
 
   @override
-  String get composerEdit => 'Edit';
+  String get composerEdit => 'ترمیم کریں۔';
 
   @override
-  String get composerExtras => 'Extras';
+  String get composerExtras => 'اضافی';
 
   @override
-  String get composerNewQuickReply => 'New quick reply';
+  String get composerNewQuickReply => 'نیا فوری جواب';
 
   @override
-  String get composerSelectImages => 'Select Images';
+  String get composerSelectImages => 'امیجز کو منتخب کریں۔';
 
   @override
-  String get composerSelectPdf => 'Select PDF';
+  String get composerSelectPdf => 'پی ڈی ایف منتخب کریں۔';
 
   @override
-  String get composerSend => 'Send';
+  String get composerSend => 'بھیجیں۔';
 
   @override
-  String get composerShellMode => 'Shell mode';
+  String get composerShellMode => 'شیل موڈ';
 
   @override
-  String get dialogDownload => 'Download';
+  String get dialogDownload => 'ڈاؤن لوڈ کریں۔';
 
   @override
-  String get dialogLanguage => 'Language';
+  String get dialogLanguage => 'زبان';
 
   @override
-  String get dialogMoonshineModelSize => 'Model size';
+  String get dialogMoonshineModelSize => 'ماڈل کا سائز';
 
   @override
-  String get dialogMoonshineVoiceSetup => 'Moonshine Voice Setup';
+  String get dialogMoonshineVoiceSetup => 'مونشائن وائس سیٹ اپ';
 
   @override
-  String get dialogParakeetModel => 'Parakeet model';
+  String get dialogParakeetModel => 'پیراکیٹ ماڈل';
 
   @override
-  String get dialogParakeetVoiceSetup => 'Parakeet Voice Setup';
+  String get dialogParakeetVoiceSetup => 'پیراکیٹ وائس سیٹ اپ';
 
   @override
-  String get dialogSenseVoiceModel => 'SenseVoice model';
+  String get dialogSenseVoiceModel => 'SenseVoice ماڈل';
 
   @override
-  String get dialogSenseVoiceSetup => 'SenseVoice Setup';
+  String get dialogSenseVoiceSetup => 'SenseVoice سیٹ اپ';
 
   @override
-  String get dialogVoiceInputSetup => 'Voice Input Setup';
+  String get dialogVoiceInputSetup => 'وائس ان پٹ سیٹ اپ';
 
   @override
   String get errorAnErrorOccurred => 'ایک خرابی پیش آگئی';
@@ -1491,30 +1496,31 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get errorFormatAuthenticationFailedReconnect =>
-      'Authentication failed. Reconnect the provider and try again.';
+      'تصدیق ناکام ہوگئی۔ فراہم کنندہ کو دوبارہ جوڑیں اور دوبارہ کوشش کریں۔';
 
   @override
   String get errorFormatProviderTemporarilyUnavailable =>
-      'Provider temporarily unavailable. Try again shortly.';
+      'فراہم کنندہ عارضی طور پر دستیاب نہیں ہے۔ تھوڑی دیر میں دوبارہ کوشش کریں۔';
 
   @override
   String get errorFormatQuotaExceededCheck =>
-      'Quota exceeded. Check your provider plan or billing.';
+      'کوٹہ سے تجاوز کر گیا۔ اپنے فراہم کنندہ کا منصوبہ یا بلنگ چیک کریں۔';
 
   @override
   String get errorFormatRateLimitExceeded =>
-      'Rate limit exceeded. Wait a moment and try again.';
+      'شرح کی حد سے تجاوز کر گیا۔ ایک لمحہ انتظار کریں اور دوبارہ کوشش کریں۔';
 
   @override
-  String get errorFormatServerErrorPlease => 'Server error. Please try again.';
+  String get errorFormatServerErrorPlease =>
+      'سرور کی خرابی۔ براہ کرم دوبارہ کوشش کریں۔';
 
   @override
   String get errorFormatServiceTemporarilyUnavailable =>
-      'Service temporarily unavailable. The server may be starting up — please try again shortly.';
+      'سروس عارضی طور پر دستیاب نہیں ہے۔ ہو سکتا ہے سرور شروع ہو رہا ہو — براہ کرم جلد ہی دوبارہ کوشش کریں۔';
 
   @override
   String get errorFormatUnableReachServer =>
-      'Unable to reach the server. Check connection and server status.';
+      'سرور تک پہنچنے سے قاصر۔ کنکشن اور سرور کی حیثیت چیک کریں۔';
 
   @override
   String get errorProviderUnavailable => 'فراہم کنندہ دستیاب نہیں ہے';
@@ -1553,21 +1559,21 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get fileActionAttachmentDataDecoded =>
-      'Attachment data could not be decoded.';
+      'منسلکہ ڈیٹا کو ڈی کوڈ نہیں کیا جا سکا۔';
 
   @override
-  String get fileActionAttachmentPathEmpty => 'Attachment path is empty.';
+  String get fileActionAttachmentPathEmpty => 'منسلکہ راستہ خالی ہے۔';
 
   @override
-  String get fileActionAttachmentPayloadEmpty => 'Attachment payload is empty.';
+  String get fileActionAttachmentPayloadEmpty => 'اٹیچمنٹ پے لوڈ خالی ہے۔';
 
   @override
   String get fileActionAttachmentProvideValid =>
-      'Attachment does not provide a valid location.';
+      'منسلکہ درست مقام فراہم نہیں کرتا ہے۔';
 
   @override
   String get fileActionAttachmentSavedDevice =>
-      'Attachment could not be saved on this device.';
+      'اٹیچمنٹ کو اس ڈیوائس پر محفوظ نہیں کیا جا سکا۔';
 
   @override
   String fileActionAttachmentSavedOutputFile(String path) {
@@ -1586,38 +1592,38 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get fileActionLocalAttachmentFound =>
-      'Local attachment was not found on this device.';
+      'اس آلہ پر مقامی منسلکہ نہیں ملا۔';
 
   @override
-  String get fileActionSaveCanceled => 'Save canceled.';
+  String get fileActionSaveCanceled => 'محفوظ کرنا منسوخ ہو گیا۔';
 
   @override
-  String get fileActionUnableOpenLocal =>
-      'Unable to open the local attachment.';
+  String get fileActionUnableOpenLocal => 'مقامی منسلکہ کھولنے سے قاصر۔';
 
   @override
-  String get filesAddChat => 'Add to chat';
+  String get filesAddChat => 'چیٹ میں شامل کریں۔';
 
   @override
-  String get filesBinaryFilePreview => 'Binary file preview is not available.';
+  String get filesBinaryFilePreview =>
+      'بائنری فائل کا پیش نظارہ دستیاب نہیں ہے۔';
 
   @override
-  String get filesClear => 'Clear';
+  String get filesClear => 'صاف';
 
   @override
-  String get filesContents => 'Contents';
+  String get filesContents => 'مشمولات';
 
   @override
-  String get filesFileEmpty => 'File is empty.';
+  String get filesFileEmpty => 'فائل خالی ہے۔';
 
   @override
-  String get filesFilesFound => 'No files found';
+  String get filesFilesFound => 'کوئی فائل نہیں ملی';
 
   @override
-  String get filesHideSidebar => 'Hide Files sidebar';
+  String get filesHideSidebar => 'فائلوں کی سائڈبار کو چھپائیں۔';
 
   @override
-  String get filesNames => 'Names';
+  String get filesNames => 'نام';
 
   @override
   String filesOpenFilesFileState(int length) {
@@ -1625,37 +1631,37 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get filesQuickOpen => 'Quick Open';
+  String get filesQuickOpen => 'فوری کھولیں۔';
 
   @override
-  String get filesQuickOpenFile => 'Quick Open File';
+  String get filesQuickOpenFile => 'فوری کھولیں فائل';
 
   @override
-  String get filesRefresh => 'Refresh files';
+  String get filesRefresh => 'فائلوں کو ریفریش کریں۔';
 
   @override
-  String get filesSearchHint => 'Search files by name or path';
+  String get filesSearchHint => 'نام یا راستے سے فائلیں تلاش کریں۔';
 
   @override
-  String get filesTitle => 'Files';
+  String get filesTitle => 'فائلیں';
 
   @override
-  String get logsAppLogs => 'App Logs';
+  String get logsAppLogs => 'ایپ لاگز';
 
   @override
-  String get logsClear => 'Clear logs';
+  String get logsClear => 'نوشتہ جات صاف کریں۔';
 
   @override
-  String get logsCloseSearch => 'Close search';
+  String get logsCloseSearch => 'تلاش بند کریں۔';
 
   @override
-  String get logsCopyFiltered => 'Copy filtered logs';
+  String get logsCopyFiltered => 'فلٹر شدہ لاگز کو کاپی کریں۔';
 
   @override
   String get logsFilterAll => 'تمام';
 
   @override
-  String get logsLevel => 'Level';
+  String get logsLevel => 'سطح';
 
   @override
   String get logsNoLogsYet => 'ابھی تک کوئی لاگز جمع نہیں ہوئے۔';
@@ -1665,7 +1671,7 @@ class AppLocalizationsUr extends AppLocalizations {
       'موجودہ فلٹرز سے کوئی لاگز مطابقت نہیں رکھتے۔';
 
   @override
-  String get logsSearch => 'Search logs';
+  String get logsSearch => 'لاگز تلاش کریں۔';
 
   @override
   String logsShowingOrderedLength(int length, int length2) {
@@ -1673,25 +1679,25 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get logsTimeRange => 'Time range';
+  String get logsTimeRange => 'وقت کی حد';
 
   @override
   String get mathExpressionLabel => 'ریاضی';
 
   @override
-  String get mermaidCopySourceTooltip => 'Copy source';
+  String get mermaidCopySourceTooltip => 'ماخذ کاپی کریں۔';
 
   @override
-  String get mermaidDiagramLabel => 'Mermaid Diagram';
+  String get mermaidDiagramLabel => 'متسیستری خاکہ';
 
   @override
-  String get modelAuto => 'Auto';
+  String get modelAuto => 'آٹو';
 
   @override
-  String get modelChooseAgent => 'Choose agent';
+  String get modelChooseAgent => 'ایجنٹ کا انتخاب کریں۔';
 
   @override
-  String get modelFavorites => 'Favorites';
+  String get modelFavorites => 'پسندیدہ';
 
   @override
   String get modelLabelBaseEnglish => 'بنیادی (انگریزی)';
@@ -1706,94 +1712,95 @@ class AppLocalizationsUr extends AppLocalizations {
   String get modelLabelTinyEnglish => 'Tiny (انگریزی)';
 
   @override
-  String get modelLoadingModels => 'Loading models';
+  String get modelLoadingModels => 'ماڈلز لوڈ ہو رہے ہیں۔';
 
   @override
-  String get modelModelsFound => 'No models found';
+  String get modelModelsFound => 'کوئی ماڈل نہیں ملا';
 
   @override
-  String get modelRetryModels => 'Retry models';
+  String get modelRetryModels => 'ماڈلز کی دوبارہ کوشش کریں۔';
 
   @override
-  String get modelSearchHint => 'Search model or provider';
+  String get modelSearchHint => 'ماڈل یا فراہم کنندہ تلاش کریں۔';
 
   @override
   String get msgBatterySettingsFailed =>
-      'Could not open Android battery optimization settings.';
+      'اینڈرائیڈ بیٹری آپٹیمائزیشن سیٹنگز کو نہیں کھولا جا سکا۔';
 
   @override
   String get msgBatterySettingsOpened =>
-      'Android battery settings opened. Allow unrestricted battery for CodeWalk.';
+      'اینڈرائیڈ بیٹری کی سیٹنگز کھل گئیں۔ کوڈ واک کے لیے غیر محدود بیٹری کی اجازت دیں۔';
 
   @override
   String get msgClearUsernameNeedsConfigEdit =>
-      'Clearing the OpenCode conversation username still requires editing config outside the app.';
+      'اوپن کوڈ گفتگو کے صارف نام کو صاف کرنے کے لیے اب بھی ایپ کے باہر کنفیگریشن میں ترمیم کی ضرورت ہے۔';
 
   @override
-  String get msgCommandCopied => 'Command copied';
+  String get msgCommandCopied => 'کمانڈ کاپی ہو گیا۔';
 
   @override
-  String get msgCopiedToClipboard => 'Copied to clipboard';
+  String get msgCopiedToClipboard => 'کلپ بورڈ پر کاپی ہو گیا۔';
 
   @override
   String get msgEnterUsernameToSave =>
-      'Enter a username to save a custom OpenCode conversation name.';
+      'اپنی مرضی کے اوپن کوڈ گفتگو کا نام محفوظ کرنے کے لیے صارف نام درج کریں۔';
 
   @override
   String get msgFailedToSendMessage =>
-      'Failed to send message. Draft kept for retry.';
+      'پیغام بھیجنے میں ناکام۔ مسودہ دوبارہ کوشش کے لیے رکھا گیا۔';
 
   @override
-  String get msgFailedToStartVoiceInput => 'Failed to start voice input';
+  String get msgFailedToStartVoiceInput => 'صوتی ان پٹ شروع کرنے میں ناکام';
 
   @override
   String msgFilePathNotFound(String path) {
-    return 'File not found: $path';
+    return 'فائل نہیں ملی: $path';
   }
 
   @override
-  String get msgFilteredLogsCopied => 'Filtered logs copied to clipboard';
+  String get msgFilteredLogsCopied =>
+      'فلٹر شدہ لاگز کو کلپ بورڈ پر کاپی کیا گیا۔';
 
   @override
-  String get msgInfoAgent => 'Agent';
+  String get msgInfoAgent => 'ایجنٹ';
 
   @override
-  String get msgInfoCompaction => 'Compaction';
+  String get msgInfoCompaction => 'کومپیکشن';
 
   @override
   String msgInfoCost(double cost) {
-    return 'Cost: \$$cost';
+    return 'لاگت: \\\$ $cost';
   }
 
   @override
-  String get msgInfoMessageInfo => 'Message Info';
+  String get msgInfoMessageInfo => 'پیغام کی معلومات';
 
   @override
   String msgInfoModel(String modelId) {
-    return 'Model: $modelId';
+    return 'ماڈل: $modelId';
   }
 
   @override
-  String get msgInfoNoMetadata => 'No metadata available';
+  String get msgInfoNoMetadata => 'کوئی میٹا ڈیٹا دستیاب نہیں ہے۔';
 
   @override
   String msgInfoPartDescriptionModel(String description, String model) {
-    return '$description$model';
+    return '$description $model';
   }
 
   @override
-  String get msgInfoPatch => 'Patch';
+  String get msgInfoPatch => 'پیوند';
 
   @override
   String msgInfoProvider(String providerId) {
-    return 'Provider: $providerId';
+    return 'فراہم کنندہ: $providerId';
   }
 
   @override
-  String get msgInfoRetry => 'Retry';
+  String get msgInfoRetry => 'دوبارہ کوشش کریں۔';
 
   @override
-  String get msgInfoSnapshot => 'Snapshot';
+  String get msgInfoSnapshot => 'سنیپ شاٹ';
 
   @override
   String msgInfoSubtaskPartAgent(String agent) {
@@ -1802,73 +1809,73 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String msgInfoTokens(int total) {
-    return 'Tokens: $total';
+    return 'ٹوکنز: $total';
   }
 
   @override
-  String get msgInfoUndoThisTurn => 'Undo this turn';
+  String get msgInfoUndoThisTurn => 'اس موڑ کو کالعدم کریں۔';
 
   @override
-  String get msgInfoView => 'View';
+  String get msgInfoView => 'دیکھیں';
 
   @override
-  String get msgNoSystemSoundsFound =>
-      'No system sound was found on this device.';
+  String get msgNoSystemSoundsFound => 'اس ڈیوائس پر کوئی سسٹم ساؤنڈ نہیں ملا۔';
 
   @override
-  String get msgNoValidFilesSelected => 'No valid files were selected';
+  String get msgNoValidFilesSelected => 'کوئی درست فائلیں منتخب نہیں کی گئیں۔';
 
   @override
-  String get msgReadAloud => 'Read aloud';
+  String get msgReadAloud => 'بلند آواز سے پڑھیں';
 
   @override
   String get msgReadAloudNotAvailable =>
-      'Text-to-speech is not available on this device.';
+      'اس ڈیوائس پر ٹیکسٹ ٹو اسپیچ دستیاب نہیں ہے۔';
 
   @override
-  String get msgSetupDebugCopied => 'OpenCode setup debug copied to clipboard';
+  String get msgSetupDebugCopied =>
+      'اوپن کوڈ سیٹ اپ ڈیبگ کلپ بورڈ پر کاپی ہو گیا۔';
 
   @override
-  String get msgShareAsImage => 'Share as image';
+  String get msgShareAsImage => 'تصویر کے طور پر شیئر کریں۔';
 
   @override
-  String get msgShareAsImageFailed => 'Could not share message as image.';
+  String get msgShareAsImageFailed =>
+      'تصویر کے بطور پیغام کا اشتراک نہیں کیا جا سکا۔';
 
   @override
-  String get msgShareAsImageSubject => 'CodeWalk message';
+  String get msgShareAsImageSubject => 'کوڈ واک پیغام';
 
   @override
   String get msgShareAsImageTooTall =>
-      'Message is too long to share as an image.';
+      'پیغام تصویر کے بطور اشتراک کرنے کے لیے بہت لمبا ہے۔';
 
   @override
-  String get msgStopReadAloud => 'Stop reading';
+  String get msgStopReadAloud => 'پڑھنا بند کرو';
 
   @override
   String get msgSystemSoundPickerUnavailable =>
-      'System sound picker is not available on this platform.';
+      'سسٹم ساؤنڈ چننے والا اس پلیٹ فارم پر دستیاب نہیں ہے۔';
 
   @override
   String get msgUpdatedButRefreshFailed =>
-      'Updated the server setting, but could not refresh chat providers.';
+      'سرور کی ترتیب کو اپ ڈیٹ کیا، لیکن چیٹ فراہم کرنے والوں کو ریفریش نہیں کیا جا سکا۔';
 
   @override
-  String get msgVoiceInputUnavailable =>
-      'Voice input is unavailable on this device';
+  String get msgVoiceInputUnavailable => 'اس آلہ پر صوتی ان پٹ دستیاب نہیں ہے۔';
 
   @override
-  String get notifAndroidBatteryOptimization => 'Android battery optimization';
+  String get notifAndroidBatteryOptimization => 'اینڈرائیڈ بیٹری آپٹیمائزیشن';
 
   @override
-  String get notifConversationUpdates => 'Conversation updates';
+  String get notifConversationUpdates => 'بات چیت کی تازہ کاری';
 
   @override
   String get notifNotificationsArriveReopening =>
-      'If notifications only arrive when reopening the app, allow CodeWalk to run without optimization on this device.';
+      'اگر اطلاعات صرف ایپ کو دوبارہ کھولنے پر پہنچتی ہیں، تو CodeWalk کو اس ڈیوائس پر آپٹیمائزیشن کے بغیر چلنے دیں۔';
 
   @override
   String get notifResponseRunningKeep =>
-      'When a response is running, keep realtime active briefly after you leave the app.';
+      'جب کوئی جواب چل رہا ہو، ایپ چھوڑنے کے بعد مختصر وقت کے لیے ریئل ٹائم کو فعال رکھیں۔';
 
   @override
   String notifSelectedSoundLabel(String soundLabel) {
@@ -1894,11 +1901,11 @@ class AppLocalizationsUr extends AppLocalizations {
       'اینڈرائیڈ سسٹم کی آوازیں لوڈ کرنے میں ناکام';
 
   @override
-  String get onboardingAIGeneratedTitles => 'AI generated titles';
+  String get onboardingAIGeneratedTitles => 'AI نے عنوانات بنائے';
 
   @override
   String get onboardingAddServerLater =>
-      'You can add a server later in Settings > Servers.';
+      'آپ بعد میں ترتیبات > سرورز میں سرور شامل کر سکتے ہیں۔';
 
   @override
   String get onboardingAddedButHealthCheckFailed =>
@@ -1906,7 +1913,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get onboardingAlmostInstallOpenCode =>
-      'You are almost there. Install OpenCode first, then connect CodeWalk to the server URL.';
+      'آپ تقریباً وہاں پہنچ چکے ہیں۔ پہلے OpenCode انسٹال کریں، پھر CodeWalk کو سرور URL سے جوڑیں۔';
 
   @override
   String onboardingAppProviderLocalSetupLogsLength(int length, int length2) {
@@ -1914,7 +1921,7 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get onboardingAuthenticate => 'Authenticate';
+  String get onboardingAuthenticate => 'تصدیق کریں۔';
 
   @override
   String get onboardingAvailable => 'دستیاب';
@@ -1928,14 +1935,14 @@ class AppLocalizationsUr extends AppLocalizations {
       'بنیادی تصدیق صرف اس صورت میں فعال کریں جب آپ کا OpenCode سرور پاس ورڈ سے محفوظ ہو۔';
 
   @override
-  String get onboardingChooseAnotherPath => 'Choose another path';
+  String get onboardingChooseAnotherPath => 'کوئی اور راستہ چنیں۔';
 
   @override
   String get onboardingChooseHowToSetup =>
       'اپنا سرور سیٹ اپ کرنے کا طریقہ منتخب کریں';
 
   @override
-  String get onboardingClear => 'Clear';
+  String get onboardingClear => 'صاف';
 
   @override
   String get onboardingCloudflareAuthFailed =>
@@ -1943,19 +1950,19 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get onboardingCodeWalkAppOpenCode =>
-      'CodeWalk is the app. OpenCode is the engine it connects to.';
+      'کوڈ واک ایک ایپ ہے۔ اوپن کوڈ وہ انجن ہے جس سے یہ جڑتا ہے۔';
 
   @override
-  String get onboardingConnectRunningServer => 'Connect to a running server';
+  String get onboardingConnectRunningServer => 'چلتے ہوئے سرور سے جڑیں۔';
 
   @override
-  String get onboardingConnectionIssue => 'Connection issue';
+  String get onboardingConnectionIssue => 'کنکشن کا مسئلہ';
 
   @override
   String get onboardingConnectionSaved => 'سرور کنکشن کامیابی سے محفوظ ہو گیا۔';
 
   @override
-  String get onboardingConnectionTips => 'Connection tips';
+  String get onboardingConnectionTips => 'کنکشن کی تجاویز';
 
   @override
   String get onboardingConnectionUpdated =>
@@ -1965,17 +1972,17 @@ class AppLocalizationsUr extends AppLocalizations {
   String get onboardingContinue => 'جاری رکھیں';
 
   @override
-  String get onboardingContinueServerURL => 'Continue to server URL';
+  String get onboardingContinueServerURL => 'سرور URL پر جاری رکھیں';
 
   @override
-  String get onboardingCopyLoginURL => 'Copy login URL';
+  String get onboardingCopyLoginURL => 'لاگ ان URL کاپی کریں۔';
 
   @override
   String get onboardingCouldNotVerify => 'سرور کنکشن کی تصدیق نہیں ہو سکی۔';
 
   @override
   String get onboardingDefaultURLEmulator =>
-      'Default URL, emulator loopback, auth, and debug help.';
+      'ڈیفالٹ یو آر ایل، ایمولیٹر لوپ بیک، تصدیق، اور ڈیبگ مدد۔';
 
   @override
   String onboardingDesktopOnlyDiagnose(String appName) {
@@ -1984,10 +1991,10 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get onboardingDetailedSetupEvents =>
-      'Detailed setup events were captured for troubleshooting.';
+      'ٹربل شوٹنگ کے لیے تفصیلی سیٹ اپ ایونٹس کیپچر کیے گئے۔';
 
   @override
-  String get onboardingDonShowAgain => 'Don\'t show again';
+  String get onboardingDonShowAgain => 'دوبارہ مت دکھائیں۔';
 
   @override
   String get onboardingDone => 'مکمل';
@@ -2006,46 +2013,46 @@ class AppLocalizationsUr extends AppLocalizations {
   String get onboardingEnterServerUrl => 'سرور کا URL درج کریں';
 
   @override
-  String get onboardingExisting => 'Use Existing';
+  String get onboardingExisting => 'موجودہ استعمال کریں۔';
 
   @override
   String get onboardingExplainInstallOpenCode =>
-      'Explain how to install OpenCode, start the server, and then connect from CodeWalk.';
+      'اوپن کوڈ کو انسٹال کرنے، سرور کو شروع کرنے اور پھر CodeWalk سے جڑنے کا طریقہ بتائیں۔';
 
   @override
   String get onboardingFailed => 'ناکام';
 
   @override
-  String get onboardingGoodOptionDesktop => 'Good first option on desktop';
+  String get onboardingGoodOptionDesktop => 'ڈیسک ٹاپ پر پہلا اچھا آپشن';
 
   @override
   String get onboardingHealthCheckFailedMayBeStarting =>
       'سرور ہیلتھ چیک ناکام رہا۔ یہ ابھی شروع ہو رہا ہو سکتا ہے۔';
 
   @override
-  String get onboardingInstallBinary => 'Install Binary';
+  String get onboardingInstallBinary => 'بائنری انسٹال کریں۔';
 
   @override
-  String get onboardingInstallBun => 'Install via Bun';
+  String get onboardingInstallBun => 'بن کے ذریعے انسٹال کریں۔';
 
   @override
-  String get onboardingInstallBunOpenCode => 'Install Bun + OpenCode';
+  String get onboardingInstallBunOpenCode => 'بن + اوپن کوڈ انسٹال کریں۔';
 
   @override
-  String get onboardingInstallNpm => 'Install via npm';
+  String get onboardingInstallNpm => 'npm کے ذریعے انسٹال کریں۔';
 
   @override
   String get onboardingInstallRunOpenCode =>
-      'Install and run OpenCode directly from CodeWalk on desktop.';
+      'ڈیسک ٹاپ پر CodeWalk سے براہ راست OpenCode انسٹال اور چلائیں۔';
 
   @override
   String get onboardingInvalidUrl => 'غلط URL';
 
   @override
-  String get onboardingLabel => 'Label (optional)';
+  String get onboardingLabel => 'لیبل (اختیاری)';
 
   @override
-  String get onboardingLabelHint => 'My server';
+  String get onboardingLabelHint => 'میرا سرور';
 
   @override
   String onboardingLatestOutputAppProvider(String localServerLastOutput) {
@@ -2053,17 +2060,18 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get onboardingLetCodeWalkSet => 'Let CodeWalk set it up locally';
+  String get onboardingLetCodeWalkSet =>
+      'CodeWalk کو اسے مقامی طور پر ترتیب دینے دیں۔';
 
   @override
   String get onboardingLocalServerSetup => 'مقامی سرور سیٹ اپ';
 
   @override
-  String get onboardingManagedLocalServer => 'Managed local server';
+  String get onboardingManagedLocalServer => 'منظم مقامی سرور';
 
   @override
   String get onboardingManagedLocalServer2 =>
-      'Managed local server mode is available only on desktop builds (Linux/macOS/Windows).';
+      'مینیجڈ لوکل سرور موڈ صرف ڈیسک ٹاپ بلڈز (Linux/macOS/Windows) پر دستیاب ہے۔';
 
   @override
   String onboardingNeedsOpenCodeServer(String appName) {
@@ -2077,29 +2085,61 @@ class AppLocalizationsUr extends AppLocalizations {
   String get onboardingNotWritable => 'قابل تحریر نہیں';
 
   @override
-  String get onboardingOpenCode => 'What is OpenCode?';
+  String get onboardingOpenCode => 'اوپن کوڈ کیا ہے؟';
 
   @override
   String get onboardingOpenCodeRunningDevice =>
-      'I already have OpenCode running on this device or somewhere on my network.';
+      'میرے پاس پہلے سے ہی اس ڈیوائس پر یا میرے نیٹ ورک پر کہیں OpenCode چل رہا ہے۔';
 
   @override
   String get onboardingOpenCodeRunsLocally =>
-      'OpenCode runs locally or on a server and powers the AI coding features inside CodeWalk. If OpenCode is already running, connect to it. If not, pick one of the guided setup paths below.';
+      'OpenCode مقامی طور پر یا سرور پر چلتا ہے اور CodeWalk کے اندر AI کوڈنگ کی خصوصیات کو طاقت دیتا ہے۔ اگر اوپن کوڈ پہلے سے چل رہا ہے تو اس سے جڑیں۔ اگر نہیں، تو ذیل میں ہدایت یافتہ سیٹ اپ کے راستوں میں سے ایک کو منتخب کریں۔';
 
   @override
   String get onboardingOpenTailscaleLogin =>
-      'Could not open Tailscale login URL.';
+      'Tailscale لاگ ان URL نہیں کھول سکا۔';
 
   @override
-  String get onboardingPassword => 'Password';
+  String get onboardingPassword => 'پاس ورڈ';
 
   @override
-  String get onboardingPasswordRequired => 'Enter password';
+  String get onboardingPasswordRequired => 'پاس ورڈ درج کریں۔';
 
   @override
   String get onboardingPickSetupPath =>
       'وہ سیٹ اپ راستہ منتخب کریں جو آپ کے موجودہ OpenCode سیٹ اپ سے میل کھاتا ہو۔';
+
+  @override
+  String get onboardingPreconditionDirectoryNotWritable =>
+      'انسٹالیشن ڈائریکٹری لکھنے کے قابل نہیں ہے۔ صارف کی اجازتیں چیک کریں۔';
+
+  @override
+  String get onboardingPreconditionInstallViaBunRecommendation =>
+      'OpenCode کے نگہبانوں کی طرف سے Bun کے ذریعے انسٹالیشن تجویز کی گئی ہے۔';
+
+  @override
+  String get onboardingPreconditionNetworkFailed =>
+      'نیٹ ورک تک رسائی ناکام ہو گئی۔ OpenCode انسٹال کرنے سے پہلے رابطہ چیک کریں۔';
+
+  @override
+  String get onboardingPreconditionNoRuntimeDetected =>
+      'کوئی رن ٹائم نہیں ملا۔ براہ راست OpenCode بائنری انسٹال کریں یا پہلے Bun بوٹسٹریپ کریں۔';
+
+  @override
+  String get onboardingPreconditionNodeNpmAvailable =>
+      'Node اور npm دستیاب ہیں۔ OpenCode کو npm کے ذریعے انسٹال کریں یا تجویز کردہ طریقہ کار کے لیے Bun انسٹال کریں۔';
+
+  @override
+  String get onboardingPreconditionOpenCodeAlreadyAvailable =>
+      'OpenCode پہلے ہی دستیاب ہے۔ آپ دریافت شدہ کمانڈ کو فوری طور پر استعمال کر سکتے ہیں۔';
+
+  @override
+  String get onboardingPreconditionWindowsPathLagHint =>
+      ' ونڈوز پر، انسٹالیشن کے بعد چیک کو ریفریش کریں کیونکہ پہلے سے کھلی ایپس میں PATH اپ ڈیٹس میں تاخیر ہو سکتی ہے۔';
+
+  @override
+  String get onboardingPreconditionWindowsWslRecommendation =>
+      'ونڈوز بلڈ کا پتہ چلا ہے۔ OpenCode دستاویزات کی رو سے WSL تجویز کردہ ہے، لیکن متبادل کے طور پر npm install استعمال کیا جا سکتا ہے۔';
 
   @override
   String get onboardingReachable => 'قابل رسائی';
@@ -2109,10 +2149,10 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get onboardingRecommendedOrderTry =>
-      'Recommended order: try Install Bun + OpenCode if you want CodeWalk to bootstrap everything for you. Use Existing if OpenCode is already installed.';
+      'تجویز کردہ آرڈر: Bun + OpenCode انسٹال کرنے کی کوشش کریں اگر آپ چاہتے ہیں کہ CodeWalk آپ کے لیے ہر چیز کو بوٹسٹریپ کرے۔ اگر OpenCode پہلے سے انسٹال ہے تو Existing استعمال کریں۔';
 
   @override
-  String get onboardingRefreshChecks => 'Refresh Checks';
+  String get onboardingRefreshChecks => 'چیک ریفریش کریں۔';
 
   @override
   String get onboardingRunDiagnosticsToVerify =>
@@ -2139,7 +2179,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get onboardingServerUpdated => 'سرور اپ ڈیٹ ہو گیا';
 
   @override
-  String get onboardingServerUrl => 'Server URL';
+  String get onboardingServerUrl => 'سرور URL';
 
   @override
   String get onboardingSetup => 'سیٹ اپ';
@@ -2148,19 +2188,19 @@ class AppLocalizationsUr extends AppLocalizations {
   String get onboardingSetupWizard => 'سیٹ اپ وزرڈ';
 
   @override
-  String get onboardingShowSetupSteps => 'Show me the setup steps';
+  String get onboardingShowSetupSteps => 'مجھے سیٹ اپ کے اقدامات دکھائیں۔';
 
   @override
-  String get onboardingShowSetupSteps2 => 'Show setup steps';
+  String get onboardingShowSetupSteps2 => 'سیٹ اپ کے اقدامات دکھائیں۔';
 
   @override
-  String get onboardingSkip => 'Skip for now';
+  String get onboardingSkip => 'ابھی کے لیے چھوڑ دیں۔';
 
   @override
-  String get onboardingSkipSetup => 'Skip setup?';
+  String get onboardingSkipSetup => 'سیٹ اپ چھوڑ دیں؟';
 
   @override
-  String get onboardingStart => 'Start';
+  String get onboardingStart => 'شروع کریں۔';
 
   @override
   String onboardingStartUsing(String appName) {
@@ -2171,7 +2211,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get onboardingStarting => 'شروع ہو رہا ہے';
 
   @override
-  String get onboardingStop => 'Stop';
+  String get onboardingStop => 'رک جاؤ';
 
   @override
   String get onboardingStopped => 'روکا ہوا';
@@ -2226,24 +2266,24 @@ class AppLocalizationsUr extends AppLocalizations {
   String get onboardingUnreachable => 'ناقابل رسائی';
 
   @override
-  String get onboardingUseBasicAuth => 'Use Basic Auth';
+  String get onboardingUseBasicAuth => 'بنیادی سند استعمال کریں۔';
 
   @override
-  String get onboardingUsername => 'Username';
+  String get onboardingUsername => 'صارف نام';
 
   @override
-  String get onboardingUsernameRequired => 'Enter username';
+  String get onboardingUsernameRequired => 'صارف نام درج کریں۔';
 
   @override
   String get onboardingUsesServerTitle =>
-      'Uses your server\'s title agent to name conversations';
+      'بات چیت کو نام دینے کے لیے آپ کے سرور کے ٹائٹل ایجنٹ کا استعمال کرتا ہے۔';
 
   @override
   String get onboardingUsingDetectedCommand =>
       'پتہ لگائی گئی OpenCode کمانڈ کا استعمال کر رہا ہے۔';
 
   @override
-  String get onboardingViewSetupDebug => 'View setup debug';
+  String get onboardingViewSetupDebug => 'سیٹ اپ ڈیبگ دیکھیں';
 
   @override
   String onboardingWelcomeTo(String appName) {
@@ -2252,7 +2292,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get onboardingWindowsTipInstalling =>
-      'Windows tip: after installing, click Refresh Checks. If detection still fails, reopen CodeWalk to reload PATH changes.';
+      'ونڈوز ٹپ: انسٹال کرنے کے بعد، ریفریش چیکز پر کلک کریں۔ اگر پتہ لگانے میں اب بھی ناکام ہو جاتا ہے، تو PATH تبدیلیوں کو دوبارہ لوڈ کرنے کے لیے CodeWalk کو دوبارہ کھولیں۔';
 
   @override
   String get onboardingWritable => 'قابل تحریر';
@@ -2261,64 +2301,64 @@ class AppLocalizationsUr extends AppLocalizations {
   String get onboardingYoureAllSet => 'آپ بالکل تیار ہیں!';
 
   @override
-  String get permissionAllowOnce => 'Allow Once';
+  String get permissionAllowOnce => 'ایک بار اجازت دیں۔';
 
   @override
-  String get permissionAlways => 'Always';
+  String get permissionAlways => 'ہمیشہ';
 
   @override
-  String get permissionBack => 'Back';
+  String get permissionBack => 'پیچھے';
 
   @override
-  String get permissionConfirmReject => 'Confirm Reject';
+  String get permissionConfirmReject => 'مسترد کرنے کی تصدیق کریں۔';
 
   @override
-  String get permissionReject => 'Reject';
+  String get permissionReject => 'رد کرنا';
 
   @override
-  String get permissionReopen => 'Reopen';
+  String get permissionReopen => 'دوبارہ کھولیں۔';
 
   @override
-  String get questionAnswerSelected => 'No answer selected.';
+  String get questionAnswerSelected => 'کوئی جواب منتخب نہیں کیا گیا۔';
 
   @override
-  String get questionCommaSeparatedValues => 'Comma-separated values';
+  String get questionCommaSeparatedValues => 'کوما سے الگ کردہ اقدار';
 
   @override
   String get questionQuestionGroupMarked =>
-      'Question group marked as rejected. You can keep chatting and reopen this group anytime before confirming.';
+      'سوالیہ گروپ کو مسترد شدہ کے بطور نشان زد کیا گیا۔ تصدیق کرنے سے پہلے آپ کسی بھی وقت چیٹنگ جاری رکھ سکتے ہیں اور اس گروپ کو دوبارہ کھول سکتے ہیں۔';
 
   @override
-  String get questionQuestionRequest => 'Question request';
+  String get questionQuestionRequest => 'سوال کی درخواست';
 
   @override
   String get questionQuestionsProvidedSubmit =>
-      'No questions provided. You can submit an empty response.';
+      'کوئی سوالات فراہم نہیں کیے گئے۔ آپ خالی جواب جمع کرا سکتے ہیں۔';
 
   @override
   String get questionReviewAnswersSubmitting =>
-      'Review your answers before submitting.';
+      'جمع کرانے سے پہلے اپنے جوابات کا جائزہ لیں۔';
 
   @override
-  String get quotaAuthCookie => 'Auth cookie';
+  String get quotaAuthCookie => 'اوتھ کوکی';
 
   @override
-  String get quotaForget => 'Forget';
+  String get quotaForget => 'بھول جاؤ';
 
   @override
-  String get quotaOpenCodeGoUsage => 'OpenCode Go usage';
+  String get quotaOpenCodeGoUsage => 'اوپن کوڈ گو کا استعمال';
 
   @override
-  String get quotaOpenDashboard => 'Open OpenCode dashboard';
+  String get quotaOpenDashboard => 'اوپن کوڈ ڈیش بورڈ کھولیں۔';
 
   @override
-  String get quotaSaving => 'Saving...';
+  String get quotaSaving => 'محفوظ کر رہا ہے...';
 
   @override
-  String get quotaWorkspaceId => 'Workspace ID';
+  String get quotaWorkspaceId => 'ورک اسپیس ID';
 
   @override
-  String get serverClearOAuth => 'Clear OAuth';
+  String get serverClearOAuth => 'OAuth کو صاف کریں۔';
 
   @override
   String get serverConnectionAttention => 'سرور کنکشن پر توجہ درکار ہے۔';
@@ -2333,46 +2373,46 @@ class AppLocalizationsUr extends AppLocalizations {
   String get serverHealthUnknown => 'نامعلوم';
 
   @override
-  String get serverOAuthAuthFailed => 'OAuth authentication failed';
+  String get serverOAuthAuthFailed => 'OAuth کی توثیق ناکام ہوگئی';
 
   @override
   String get serverOAuthChip => 'OAuth';
 
   @override
   String get serverOAuthNotSupported =>
-      'Cloudflare Access OAuth is not supported on this platform';
+      'Cloudflare رسائی OAuth اس پلیٹ فارم پر تعاون یافتہ نہیں ہے۔';
 
   @override
-  String get serverReauthenticate => 'Re-authenticate';
+  String get serverReauthenticate => 'دوبارہ تصدیق کریں۔';
 
   @override
-  String get serverTailscaleChip => 'Tailscale';
+  String get serverTailscaleChip => 'دم کا پیمانہ';
 
   @override
-  String get serversActive => 'Active';
+  String get serversActive => 'فعال';
 
   @override
-  String get serversActiveServer => 'Active Server';
+  String get serversActiveServer => 'ایکٹو سرور';
 
   @override
   String get serversAddLeastOpenCode =>
-      'Add at least one OpenCode server to start using the app.';
+      'ایپ کا استعمال شروع کرنے کے لیے کم از کم ایک OpenCode سرور شامل کریں۔';
 
   @override
-  String get serversAddServer => 'Add Server';
+  String get serversAddServer => 'سرور شامل کریں۔';
 
   @override
-  String get serversCancel => 'Cancel';
+  String get serversCancel => 'منسوخ کریں۔';
 
   @override
   String get serversCannotActivateUnhealthy =>
       'غیر صحت مند سرور کو فعال نہیں کیا جا سکتا';
 
   @override
-  String get serversCheckHealth => 'Check Health';
+  String get serversCheckHealth => 'صحت کی جانچ کریں۔';
 
   @override
-  String get serversClearDefault => 'Clear Default';
+  String get serversClearDefault => 'ڈیفالٹ صاف کریں۔';
 
   @override
   String serversCommandAppProviderLocalServerCommandPath(
@@ -2382,36 +2422,36 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get serversCopy => 'Copy';
+  String get serversCopy => 'کاپی';
 
   @override
-  String get serversDefault => 'Default';
+  String get serversDefault => 'طے شدہ';
 
   @override
-  String get serversDelete => 'Delete';
+  String get serversDelete => 'حذف کریں۔';
 
   @override
-  String get serversDeleteServer => 'Delete server';
+  String get serversDeleteServer => 'سرور کو حذف کریں۔';
 
   @override
   String get serversDesktopModeExplanation =>
       'ڈیسک ٹاپ موڈ CodeWalk سے براہ راست `opencode serve` لانچ اور منظم کر سکتا ہے۔';
 
   @override
-  String get serversEdit => 'Edit';
+  String get serversEdit => 'ترمیم کریں۔';
 
   @override
-  String get serversLocalOpenCodeServer => 'Local OpenCode Server';
+  String get serversLocalOpenCodeServer => 'مقامی اوپن کوڈ سرور';
 
   @override
   String get serversManagedModeAvailable =>
-      'This managed mode is available only on desktop builds (Linux/macOS/Windows).';
+      'یہ نظم شدہ وضع صرف ڈیسک ٹاپ بلڈز (Linux/macOS/Windows) پر دستیاب ہے۔';
 
   @override
   String get serversNoServersFound => 'کوئی سرور نہیں ملا';
 
   @override
-  String get serversRefreshHealth => 'Refresh Health';
+  String get serversRefreshHealth => 'صحت کو تازہ کریں۔';
 
   @override
   String serversRemoveProfileDisplayName(String displayName) {
@@ -2422,19 +2462,19 @@ class AppLocalizationsUr extends AppLocalizations {
   String get serversSearchActiveHint => 'فعال سرور تلاش کریں';
 
   @override
-  String get serversServersConfigured => 'No servers configured';
+  String get serversServersConfigured => 'کوئی سرور کنفیگر نہیں ہے۔';
 
   @override
-  String get serversSetActive => 'Set Active';
+  String get serversSetActive => 'ایکٹو سیٹ کریں۔';
 
   @override
-  String get serversSetDefault => 'Set Default';
+  String get serversSetDefault => 'ڈیفالٹ سیٹ کریں۔';
 
   @override
-  String get serversSetupDebug => 'Setup Debug';
+  String get serversSetupDebug => 'ڈیبگ سیٹ اپ کریں۔';
 
   @override
-  String get serversSetupWizard => 'Setup Wizard';
+  String get serversSetupWizard => 'سیٹ اپ وزرڈ';
 
   @override
   String get serversTailscaleAdminApprovalRequired =>
@@ -2475,19 +2515,22 @@ class AppLocalizationsUr extends AppLocalizations {
       'یہ سرور غیر صحت مند ہے۔ فعال کرنے سے پہلے صحت چیک کریں یا ترتیبات میں ترمیم کریں۔';
 
   @override
-  String get sessionActionArchived => 'archived';
+  String get sessionActionArchived => 'محفوظ شدہ';
 
   @override
-  String get sessionActionDeleted => 'deleted';
+  String get sessionActionDeleted => 'حذف کر دیا گیا';
 
   @override
-  String get sessionActionForked => 'forked';
+  String get sessionActionForked => 'کانٹے دار';
 
   @override
-  String get sessionActionUnarchived => 'unarchived';
+  String get sessionActionUnarchived => 'غیر محفوظ شدہ';
 
   @override
-  String get sessionCancelRename => 'Cancel rename';
+  String get sessionArchive => 'آرکائیو کریں';
+
+  @override
+  String get sessionCancelRename => 'نام تبدیل کرنا منسوخ کریں۔';
 
   @override
   String sessionChildrenCount(int count) {
@@ -2501,25 +2544,25 @@ class AppLocalizationsUr extends AppLocalizations {
   String get sessionCopyLink => 'لنک کاپی کریں';
 
   @override
-  String get sessionDelete => 'Delete';
+  String get sessionDelete => 'حذف کریں۔';
 
   @override
-  String get sessionDeleteTitle => 'Delete Conversation';
+  String get sessionDeleteTitle => 'گفتگو کو حذف کریں۔';
 
   @override
-  String get sessionDiffChangedFile => 'Changed file';
+  String get sessionDiffChangedFile => 'فائل تبدیل کر دی گئی۔';
 
   @override
   String get sessionDiffContentNotCaptured =>
-      'File content not captured by the server';
+      'فائل کا مواد سرور کے ذریعے حاصل نہیں کیا گیا ہے۔';
 
   @override
   String sessionDiffFilesChanged(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count files changed',
-      one: '1 file changed',
+      other: '$count فائلیں تبدیل ہوئیں',
+      one: '1 فائل تبدیل ہوئی',
     );
     return '$_temp0';
   }
@@ -2531,25 +2574,25 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String sessionDiffLinesAddedRemoved(int added, int removed) {
-    return '+$added lines added -$removed lines removed';
+    return '+ $added لائنیں شامل کی گئیں - $removed لائنیں ہٹا دی گئیں۔';
   }
 
   @override
   String sessionDiffLinesCollapsed(int count) {
-    return '$count lines collapsed — tap to expand';
+    return '$count لائنیں سمٹ گئیں — پھیلانے کے لیے تھپتھپائیں۔';
   }
 
   @override
-  String get sessionDiffReview => 'Review changes';
+  String get sessionDiffReview => 'تبدیلیوں کا جائزہ لیں۔';
 
   @override
-  String get sessionDiffSplit => 'Split';
+  String get sessionDiffSplit => 'تقسیم';
 
   @override
-  String get sessionDiffSummary => 'Summary';
+  String get sessionDiffSummary => 'خلاصہ';
 
   @override
-  String get sessionDiffUnified => 'Unified';
+  String get sessionDiffUnified => 'متحد';
 
   @override
   String get sessionExportAssistant => 'اسسٹنٹ';
@@ -2601,16 +2644,18 @@ class AppLocalizationsUr extends AppLocalizations {
   String get sessionExportUser => 'صارف';
 
   @override
-  String get sessionFailedRename => 'Failed to rename conversation';
+  String get sessionFailedRename => 'گفتگو کا نام تبدیل کرنے میں ناکام';
 
   @override
-  String get sessionFailedUpdateArchive => 'Failed to update archive state';
+  String get sessionFailedUpdateArchive =>
+      'محفوظ شدہ دستاویزات کی حالت کو اپ ڈیٹ کرنے میں ناکام';
 
   @override
-  String get sessionFailedUpdateSharing => 'Failed to update sharing state';
+  String get sessionFailedUpdateSharing =>
+      'اشتراک کی حالت کو اپ ڈیٹ کرنے میں ناکام';
 
   @override
-  String get sessionFork => 'Fork';
+  String get sessionFork => 'کانٹا';
 
   @override
   String get sessionForkFailed => 'گفتگو کا فورک ناکام ہوا';
@@ -2629,7 +2674,7 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get sessionKeyboardShortcuts => 'Keyboard shortcuts';
+  String get sessionKeyboardShortcuts => 'کی بورڈ شارٹ کٹس';
 
   @override
   String sessionNeedsInput(String title) {
@@ -2646,29 +2691,35 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get sessionNotAvailable =>
-      'Conversation is not available for this project yet';
+      'اس پروجیکٹ کے لیے ابھی تک بات چیت دستیاب نہیں ہے۔';
 
   @override
   String get sessionOpenProjectToLoad =>
       'گفتگو لوڈ کرنے کے لیے پروجیکٹ کھولیں۔';
 
   @override
-  String get sessionRename => 'Rename';
+  String get sessionPin => 'پن کریں';
 
   @override
-  String get sessionRenameHint => 'Enter new conversation name';
+  String get sessionRename => 'نام تبدیل کریں۔';
 
   @override
-  String get sessionRenameTitle => 'Rename Conversation';
+  String get sessionRenameHint => 'گفتگو کا نیا نام درج کریں۔';
 
   @override
-  String get sessionSaveTitle => 'Save title';
+  String get sessionRenameTitle => 'بات چیت کا نام تبدیل کریں۔';
+
+  @override
+  String get sessionSaveTitle => 'عنوان محفوظ کریں۔';
 
   @override
   String get sessionShare => 'سیشن شیئر کریں';
 
   @override
-  String get sessionShareLinkCopied => 'Share link copied';
+  String get sessionShareAction => 'شیئر کریں';
+
+  @override
+  String get sessionShareLinkCopied => 'اشتراک کا لنک کاپی ہو گیا۔';
 
   @override
   String get sessionShareLinkUnavailable => 'اس سیشن کے لیے لنک دستیاب نہیں';
@@ -2680,10 +2731,19 @@ class AppLocalizationsUr extends AppLocalizations {
   String get sessionSyncing => 'گفتگو ہم آہنگ ہو رہی ہے...';
 
   @override
-  String get sessionTitleHint => 'Conversation title';
+  String get sessionTitleHint => 'گفتگو کا عنوان';
+
+  @override
+  String get sessionUnarchive => 'آرکائیو سے نکالیں';
+
+  @override
+  String get sessionUnpin => 'ان پن کریں';
 
   @override
   String get sessionUnshare => 'شیئرنگ ختم کریں';
+
+  @override
+  String get sessionUnshareAction => 'شیئرنگ بند کریں';
 
   @override
   String get sessionUnshared => 'گفتگو غیر مشترکہ ہو گئی';
@@ -2692,180 +2752,181 @@ class AppLocalizationsUr extends AppLocalizations {
   String get sessionViewTasks => 'کام دیکھیں';
 
   @override
-  String get settingsAboutCheckForUpdates => 'Check for updates';
+  String get settingsAboutCheckForUpdates => 'اپ ڈیٹس کے لیے چیک کریں۔';
 
   @override
-  String get settingsAboutCheckOnOpen => 'Check for updates on open';
+  String get settingsAboutCheckOnOpen => 'اوپن پر اپ ڈیٹس کی جانچ کریں۔';
 
   @override
   String get settingsAboutCheckOnOpenDescription =>
-      'Automatically check when the app starts';
+      'ایپ کب شروع ہوتی ہے خود بخود چیک کریں۔';
 
   @override
-  String get settingsAboutChecking => 'Checking...';
+  String get settingsAboutChecking => 'چیک کر رہا ہے...';
 
   @override
-  String get settingsAboutDescription => 'Version, updates and links';
+  String get settingsAboutDescription => 'ورژن، اپ ڈیٹس اور لنکس';
 
   @override
-  String get settingsAboutDismiss => 'Dismiss';
+  String get settingsAboutDismiss => 'برطرف کرنا';
 
   @override
   String settingsAboutDownloading(String percent) {
-    return 'Downloading... $percent%';
+    return 'ڈاؤن لوڈ ہو رہا ہے... $percent %';
   }
 
   @override
-  String get settingsAboutEraseAllData => 'Erase all data and restart';
+  String get settingsAboutEraseAllData =>
+      'تمام ڈیٹا مٹائیں اور دوبارہ شروع کریں۔';
 
   @override
-  String get settingsAboutInstallUpdate => 'Install update';
+  String get settingsAboutInstallUpdate => 'اپ ڈیٹ انسٹال کریں۔';
 
   @override
-  String get settingsAboutInstalling => 'Installing...';
+  String get settingsAboutInstalling => 'انسٹال ہو رہا ہے...';
 
   @override
   String settingsAboutLatestVersion(String version) {
-    return 'v$version is the latest version';
+    return 'v $version تازہ ترین ورژن ہے۔';
   }
 
   @override
-  String get settingsAboutLoading => 'Loading...';
+  String get settingsAboutLoading => 'لوڈ ہو رہا ہے...';
 
   @override
-  String get settingsAboutReplayChatTour => 'Replay chat tour';
+  String get settingsAboutReplayChatTour => 'چیٹ ٹور کو دوبارہ چلائیں۔';
 
   @override
   String get settingsAboutReplayChatTourDescription =>
-      'Close settings and show the guided chat walkthrough';
+      'سیٹنگز بند کریں اور گائیڈڈ چیٹ واک تھرو دکھائیں۔';
 
   @override
-  String get settingsAboutResetApp => 'Reset app';
+  String get settingsAboutResetApp => 'ایپ کو ری سیٹ کریں۔';
 
   @override
-  String get settingsAboutResetAppQuestion => 'Reset app?';
+  String get settingsAboutResetAppQuestion => 'ایپ کو ری سیٹ کریں؟';
 
   @override
   String get settingsAboutResetAppWarning =>
-      'This will erase all servers, settings, and cached data. This action cannot be undone.';
+      'یہ تمام سرورز، سیٹنگز اور کیشڈ ڈیٹا کو مٹا دے گا۔ اس کارروائی کو کالعدم نہیں کیا جا سکتا۔';
 
   @override
-  String get settingsAboutRetryInstall => 'Retry install';
+  String get settingsAboutRetryInstall => 'دوبارہ انسٹال کرنے کی کوشش کریں۔';
 
   @override
-  String get settingsAboutTapToCheck => 'Tap to check for new versions';
+  String get settingsAboutTapToCheck => 'نئے ورژن چیک کرنے کے لیے تھپتھپائیں۔';
 
   @override
-  String get settingsAboutTitle => 'About';
+  String get settingsAboutTitle => 'کے بارے میں';
 
   @override
-  String get settingsAboutUpToDate => 'You\'re up to date';
+  String get settingsAboutUpToDate => 'آپ اپ ٹو ڈیٹ ہیں۔';
 
   @override
   String settingsAboutUpdateAvailable(String version) {
-    return 'Update available: v$version';
+    return 'اپ ڈیٹ دستیاب ہے: v $version';
   }
 
   @override
   String get settingsAboutUpdateInstalled =>
-      'Update installed. Restart the app to apply.';
+      'اپ ڈیٹ انسٹال ہو گیا۔ درخواست دینے کے لیے ایپ کو دوبارہ شروع کریں۔';
 
   @override
-  String get settingsAboutVersion => 'Version';
+  String get settingsAboutVersion => 'ورژن';
 
   @override
   String settingsAboutVersionBuild(String buildNumber, String version) {
-    return '$version (build $buildNumber)';
+    return '$version (تعمیر $buildNumber )';
   }
 
   @override
-  String get settingsAppearanceAmoledDark => 'AMOLED dark mode';
+  String get settingsAppearanceAmoledDark => 'AMOLED ڈارک موڈ';
 
   @override
   String get settingsAppearanceAmoledDarkActive =>
-      'Use pure black surfaces while dark mode is active.';
+      'سیاہ موڈ فعال ہونے کے دوران خالص سیاہ سطحوں کا استعمال کریں۔';
 
   @override
   String get settingsAppearanceAmoledDarkInactive =>
-      'Switch to dark mode to enable AMOLED surfaces.';
+      'AMOLED سطحوں کو فعال کرنے کے لیے ڈارک موڈ پر سوئچ کریں۔';
 
   @override
-  String get settingsAppearanceBrandColor => 'Brand color';
+  String get settingsAppearanceBrandColor => 'برانڈ کا رنگ';
 
   @override
   String get settingsAppearanceBrandColorDynamicBlocked =>
-      'Disable wallpaper colors to pick a brand color.';
+      'برانڈ کا رنگ منتخب کرنے کے لیے وال پیپر کے رنگوں کو غیر فعال کریں۔';
 
   @override
   String get settingsAppearanceBrandColorNormal =>
-      'Pick a seed color for the app palette.';
+      'ایپ پیلیٹ کے لیے بیج کا رنگ چنیں۔';
 
   @override
   String get settingsAppearanceBrandColorPresetBlocked =>
-      'Switch to CodeWalk Classic to pick a brand color.';
+      'برانڈ کا رنگ منتخب کرنے کے لیے CodeWalk Classic پر جائیں۔';
 
   @override
-  String get settingsAppearanceCodeWalkClassic => 'CodeWalk Classic';
+  String get settingsAppearanceCodeWalkClassic => 'کوڈ واک کلاسک';
 
   @override
-  String get settingsAppearanceComposerTips => 'Composer tips';
+  String get settingsAppearanceComposerTips => 'کمپوزر ٹپس';
 
   @override
   String get settingsAppearanceComposerTipsDescription =>
-      'Show or hide rotating tips while the assistant is reasoning.';
+      'اسسٹنٹ کے استدلال کے دوران گھومنے والی تجاویز دکھائیں یا چھپائیں۔';
 
   @override
-  String get settingsAppearanceContrast => 'Contrast';
+  String get settingsAppearanceContrast => 'کنٹراسٹ';
 
   @override
   String get settingsAppearanceContrastDynamicBlocked =>
-      'Disable wallpaper colors to adjust contrast.';
+      'کنٹراسٹ کو ایڈجسٹ کرنے کے لیے وال پیپر کے رنگوں کو غیر فعال کریں۔';
 
   @override
-  String get settingsAppearanceContrastHigh => 'High';
+  String get settingsAppearanceContrastHigh => 'اعلی';
 
   @override
   String get settingsAppearanceContrastNormal =>
-      'Adjust the contrast level of the color scheme.';
+      'رنگ سکیم کے کنٹراسٹ لیول کو ایڈجسٹ کریں۔';
 
   @override
   String get settingsAppearanceContrastPresetBlocked =>
-      'Switch to CodeWalk Classic to adjust contrast.';
+      'کنٹراسٹ ایڈجسٹ کرنے کے لیے CodeWalk Classic پر جائیں۔';
 
   @override
-  String get settingsAppearanceContrastReduced => 'Reduced';
+  String get settingsAppearanceContrastReduced => 'کم کر دیا';
 
   @override
-  String get settingsAppearanceDark => 'Dark';
+  String get settingsAppearanceDark => 'اندھیرا';
 
   @override
-  String get settingsAppearanceDensity => 'Density';
+  String get settingsAppearanceDensity => 'کثافت';
 
   @override
-  String get settingsAppearanceDensityDense => 'Dense';
+  String get settingsAppearanceDensityDense => 'گھنا';
 
   @override
   String get settingsAppearanceDensityDescription =>
-      'Apply spacing and component density across the app.';
+      'پوری ایپ میں وقفہ کاری اور اجزاء کی کثافت کا اطلاق کریں۔';
 
   @override
-  String get settingsAppearanceDensityExtraDense => 'Extra Dense';
+  String get settingsAppearanceDensityExtraDense => 'اضافی گھنے';
 
   @override
-  String get settingsAppearanceDensityExtraSpacious => 'Extra Spacious';
+  String get settingsAppearanceDensityExtraSpacious => 'اضافی کشادہ';
 
   @override
-  String get settingsAppearanceDensityNormal => 'Normal';
+  String get settingsAppearanceDensityNormal => 'نارمل';
 
   @override
-  String get settingsAppearanceDensitySpacious => 'Spacious';
+  String get settingsAppearanceDensitySpacious => 'کشادہ';
 
   @override
   String get settingsAppearanceDescription =>
-      'Density and timeline bubble visibility';
+      'کثافت اور ٹائم لائن ببل کی مرئیت';
 
   @override
-  String get settingsAppearanceLight => 'Light';
+  String get settingsAppearanceLight => 'روشنی';
 
   @override
   String get settingsAppearanceMathRendering => 'ریاضی رینڈرنگ';
@@ -2875,262 +2936,264 @@ class AppLocalizationsUr extends AppLocalizations {
       'چیٹ پیغامات میں LaTeX ریاضی اظہار کو ٹائپ سیٹ مساوات کے طور پر رینڈر کریں۔';
 
   @override
-  String get settingsAppearanceNoPresets => 'No preset palettes found';
+  String get settingsAppearanceNoPresets => 'کوئی پیش سیٹ پیلیٹس نہیں ملے';
 
   @override
-  String get settingsAppearanceOpenCodePresets => 'OpenCode Presets';
+  String get settingsAppearanceOpenCodePresets => 'اوپن کوڈ پیش سیٹ';
 
   @override
   String get settingsAppearancePresetHelper =>
-      'Mirrors the official OpenCode Web built-in theme list.';
+      'آفیشل اوپن کوڈ ویب بلٹ ان تھیم لسٹ کا عکس دیتا ہے۔';
 
   @override
   String get settingsAppearancePresetNote =>
-      'Theme colors now follow the official OpenCode Web registry and drive markdown/code surfaces too.';
+      'تھیم کے رنگ اب آفیشل اوپن کوڈ ویب رجسٹری کی پیروی کرتے ہیں اور مارک ڈاؤن/کوڈ سطحوں کو بھی چلاتے ہیں۔';
 
   @override
-  String get settingsAppearancePresetPalette => 'Preset palette';
+  String get settingsAppearancePresetPalette => 'پیش سیٹ پیلیٹ';
 
   @override
-  String get settingsAppearanceSearchPreset => 'Search preset palette';
+  String get settingsAppearanceSearchPreset => 'پیش سیٹ پیلیٹ تلاش کریں۔';
 
   @override
   String get settingsAppearanceSectionDescription =>
-      'Tune visual density and message surfaces for your workflow.';
+      'اپنے ورک فلو کے لیے بصری کثافت اور پیغام کی سطحوں کو ٹیون کریں۔';
 
   @override
-  String get settingsAppearanceSectionTitle => 'Appearance';
+  String get settingsAppearanceSectionTitle => 'ظاہری شکل';
 
   @override
-  String get settingsAppearanceSystem => 'System';
+  String get settingsAppearanceSystem => 'سسٹم';
 
   @override
-  String get settingsAppearanceTaskList => 'Task list';
+  String get settingsAppearanceTaskList => 'ٹاسک لسٹ';
 
   @override
   String get settingsAppearanceTaskListDescription =>
-      'Show or hide the session task list widget.';
+      'سیشن ٹاسک لسٹ ویجیٹ دکھائیں یا چھپائیں۔';
 
   @override
-  String get settingsAppearanceTheme => 'Theme';
+  String get settingsAppearanceTheme => 'تھیم';
 
   @override
   String get settingsAppearanceThemeDescription =>
-      'Choose light, dark, or system mode, then keep the CodeWalk classic palette or switch to an OpenCode preset.';
+      'لائٹ، ڈارک، یا سسٹم موڈ کا انتخاب کریں، پھر CodeWalk کلاسک پیلیٹ رکھیں یا اوپن کوڈ پری سیٹ پر سوئچ کریں۔';
 
   @override
-  String get settingsAppearanceThinkingBubbles => 'Thinking bubbles';
+  String get settingsAppearanceThinkingBubbles => 'سوچنے والے بلبلے۔';
 
   @override
   String get settingsAppearanceThinkingBubblesDescription =>
-      'Show or hide reasoning blocks in assistant messages.';
+      'اسسٹنٹ پیغامات میں ریجننگ بلاکس دکھائیں یا چھپائیں۔';
 
   @override
-  String get settingsAppearanceTitle => 'Appearance';
+  String get settingsAppearanceTitle => 'ظاہری شکل';
 
   @override
-  String get settingsAppearanceToolCallBubbles => 'Tool call bubbles';
+  String get settingsAppearanceToolCallBubbles => 'ٹول کال بلبلے۔';
 
   @override
   String get settingsAppearanceToolCallBubblesDescription =>
-      'Show or hide tool execution cards in assistant messages.';
+      'معاون پیغامات میں ٹول ایگزیکیوشن کارڈز دکھائیں یا چھپائیں۔';
 
   @override
-  String get settingsAppearanceWallpaperColors => 'Use wallpaper colors';
+  String get settingsAppearanceWallpaperColors =>
+      'وال پیپر کے رنگ استعمال کریں۔';
 
   @override
   String get settingsAppearanceWallpaperNormal =>
-      'Extract color scheme from your device wallpaper.';
+      'اپنے آلے کے وال پیپر سے رنگ سکیم نکالیں۔';
 
   @override
   String get settingsAppearanceWallpaperPresetBlocked =>
-      'Switch to CodeWalk Classic to use wallpaper colors.';
+      'وال پیپر کے رنگ استعمال کرنے کے لیے CodeWalk Classic پر جائیں۔';
 
   @override
-  String get settingsBack => 'Back';
+  String get settingsBack => 'پیچھے';
 
   @override
   String get settingsBehaviorAutoupdateCaveat =>
-      'Use About for CodeWalk release checks. This setting only mirrors the official OpenCode `autoupdate` config.';
+      'CodeWalk ریلیز چیک کے لیے About استعمال کریں۔ یہ ترتیب صرف آفیشل اوپن کوڈ `آٹو اپ ڈیٹ` کنفیگریشن کی آئینہ دار ہے۔';
 
   @override
   String get settingsBehaviorAutoupdateHelp =>
-      'Controls upstream OpenCode runtime updates, not CodeWalk app update checks.';
+      'اپ اسٹریم اوپن کوڈ رن ٹائم اپ ڈیٹس کو کنٹرول کرتا ہے، کوڈ واک ایپ اپ ڈیٹ چیک کو نہیں۔';
 
   @override
-  String get settingsBehaviorCellularDataSaver => 'Cellular data saver';
+  String get settingsBehaviorCellularDataSaver => 'سیلولر ڈیٹا سیور';
 
   @override
   String get settingsBehaviorConfigDeferred =>
-      'CodeWalk will apply this OpenCode setting after the current response finishes.';
+      'CodeWalk موجودہ جواب کے ختم ہونے کے بعد اس OpenCode ترتیب کو لاگو کرے گا۔';
 
   @override
   String settingsBehaviorConfigUpdateFailed(String field) {
-    return 'Could not update the OpenCode $field.';
+    return 'اوپن کوڈ $field کو اپ ڈیٹ نہیں کیا جا سکا۔';
   }
 
   @override
-  String get settingsBehaviorConversationUsername => 'Conversation username';
+  String get settingsBehaviorConversationUsername => 'گفتگو کا صارف نام';
 
   @override
   String get settingsBehaviorConversationUsernameHelp =>
-      'Custom display name shown in conversations instead of the system username.';
+      'سسٹم کے صارف نام کے بجائے گفتگو میں دکھایا گیا حسب ضرورت ڈسپلے نام۔';
 
   @override
-  String get settingsBehaviorDataSaverActive => 'Active now on mobile data.';
+  String get settingsBehaviorDataSaverActive => 'اب موبائل ڈیٹا پر فعال ہے۔';
 
   @override
   String get settingsBehaviorDataSaverCellularOnly =>
-      'Only applies when the connection is cellular/mobile.';
+      'صرف اس وقت لاگو ہوتا ہے جب کنکشن سیلولر/موبائل ہو۔';
 
   @override
   String get settingsBehaviorDataSaverDescription =>
-      'Cuts automatic mobile-data usage by stopping background downloads and throttling automatic foreground refreshes.';
+      'پس منظر کے ڈاؤن لوڈز کو روک کر اور خودکار پیش منظر کی تازہ کاری کو تھروٹلنگ کرکے خودکار موبائل ڈیٹا کے استعمال کو کم کرتا ہے۔';
 
   @override
   String get settingsBehaviorDataSaverWaiting =>
-      'Waiting for the next mobile-data sync window.';
+      'اگلی موبائل ڈیٹا سنک ونڈو کا انتظار ہے۔';
 
   @override
-  String get settingsBehaviorDefaultAgent => 'Default agent';
+  String get settingsBehaviorDefaultAgent => 'پہلے سے طے شدہ ایجنٹ';
 
   @override
   String get settingsBehaviorDefaultAgentHelp =>
-      'Primary agent used when no agent is explicitly chosen.';
+      'پرائمری ایجنٹ استعمال کیا جاتا ہے جب کوئی ایجنٹ واضح طور پر منتخب نہیں کیا جاتا ہے۔';
 
   @override
-  String get settingsBehaviorDefaultModel => 'Default model';
+  String get settingsBehaviorDefaultModel => 'پہلے سے طے شدہ ماڈل';
 
   @override
   String get settingsBehaviorDefaultModelHelp =>
-      'Shared across OpenCode clients through config.';
+      'تشکیل کے ذریعے اوپن کوڈ کلائنٹس میں اشتراک کیا گیا۔';
 
   @override
   String get settingsBehaviorDescription =>
-      'OpenCode defaults, provenance, and composer sync safety';
+      'اوپن کوڈ ڈیفالٹس، پرووینس، اور کمپوزر سنک سیفٹی';
 
   @override
-  String get settingsBehaviorEnableDataSaver => 'Enable cellular data saver';
+  String get settingsBehaviorEnableDataSaver =>
+      'سیلولر ڈیٹا سیور کو فعال کریں۔';
 
   @override
   String get settingsBehaviorMultiDeviceSync =>
-      'Enable experimental multi-device sync';
+      'تجرباتی ملٹی ڈیوائس مطابقت پذیری کو فعال کریں۔';
 
   @override
   String get settingsBehaviorMultiDeviceSyncDescription =>
-      'Sync composer selection (agent/model/variant) with the active server config.';
+      'ایکٹو سرور کنفیگریشن کے ساتھ کمپوزر سلیکشن (ایجنٹ/ماڈل/ویرینٹ) کو سنک کریں۔';
 
   @override
   String get settingsBehaviorMultiDeviceSyncWarning =>
-      'Can abort ongoing sessions when working in more than one session at the same time.';
+      'ایک ہی وقت میں ایک سے زیادہ سیشن میں کام کرتے وقت جاری سیشنز کو روک سکتا ہے۔';
 
   @override
-  String get settingsBehaviorNoAgents => 'No agents found';
+  String get settingsBehaviorNoAgents => 'کوئی ایجنٹ نہیں ملا';
 
   @override
-  String get settingsBehaviorNoModels => 'No models found';
+  String get settingsBehaviorNoModels => 'کوئی ماڈل نہیں ملا';
 
   @override
-  String get settingsBehaviorOpenCodeAutoupdate => 'OpenCode auto-update';
+  String get settingsBehaviorOpenCodeAutoupdate => 'اوپن کوڈ آٹو اپ ڈیٹ';
 
   @override
-  String get settingsBehaviorOpenCodeDefaults => 'OpenCode-backed defaults';
+  String get settingsBehaviorOpenCodeDefaults =>
+      'اوپن کوڈ کی حمایت یافتہ ڈیفالٹس';
 
   @override
   String get settingsBehaviorOpenCodeDefaultsDescription =>
-      'These values write to `/config` on the active server and match official OpenCode shared config.';
+      'یہ قدریں فعال سرور پر `/config` پر لکھتی ہیں اور آفیشل اوپن کوڈ کی مشترکہ تشکیل سے ملتی ہیں۔';
 
   @override
-  String get settingsBehaviorOpenCodeSnapshots => 'OpenCode snapshots';
+  String get settingsBehaviorOpenCodeSnapshots => 'اوپن کوڈ سنیپ شاٹس';
 
   @override
   String get settingsBehaviorOpenCodeSnapshotsDescription =>
-      'Keep upstream git-backed snapshots enabled for undo/redo and recovery history.';
+      'اپ اسٹریم گٹ بیکڈ سنیپ شاٹس کو کالعدم/دوبارہ کرنے اور بازیافت کی تاریخ کے لیے فعال رکھیں۔';
 
   @override
   String get settingsBehaviorPermissionDeferred =>
-      'Advanced permission rule editing stays out of Settings for now and is deferred to later parity work.';
+      'اعلی درجے کی اجازت کے اصول میں ترمیم ابھی کے لیے ترتیبات سے باہر رہتی ہے اور بعد میں برابری کے کام کے لیے موخر کر دی جاتی ہے۔';
 
   @override
-  String get settingsBehaviorPermissionProvenance =>
-      'Permission handling provenance';
+  String get settingsBehaviorPermissionProvenance => 'اجازت ہینڈلنگ پروونانس';
 
   @override
   String get settingsBehaviorPermissionProvenanceDescription =>
-      'Official OpenCode permission policy is configured in `opencode.json` with allow/ask/deny rules per tool. CodeWalk keeps the official permission-request cards and adds one approved ADR-023 exception: the composer auto-approve toggle replies with `Always` and `remember: true` unconditionally to create durable session-scoped grants, and keeps the same thread-scoped continuity path active in the Android background worker.';
+      'آفیشل اوپن کوڈ کی اجازت کی پالیسی کو `opencode.json` میں اجازت/پوچھیں/منکر کے اصولوں کے ساتھ ترتیب دیا گیا ہے۔ CodeWalk سرکاری اجازت کی درخواست کے کارڈز کو رکھتا ہے اور ایک منظور شدہ ADR-023 استثناء شامل کرتا ہے: کمپوزر آٹو-منظوری ٹوگل جوابات کو \'ہمیشہ\' اور \'یاد رکھیں: سچ\' کے ساتھ غیر مشروط طور پر پائیدار سیشن کے دائرہ کار والے گرانٹس کو تخلیق کرتا ہے، اور بیک گراؤنڈ ورک کے اسی تھریڈ اسکوپڈ کنٹیوٹی پاتھ کو فعال رکھتا ہے۔';
 
   @override
-  String get settingsBehaviorRefreshDefaults => 'Refresh defaults';
+  String get settingsBehaviorRefreshDefaults => 'ڈیفالٹس ریفریش کریں۔';
 
   @override
-  String get settingsBehaviorSaveUsername => 'Save username';
+  String get settingsBehaviorSaveUsername => 'صارف نام محفوظ کریں۔';
 
   @override
-  String get settingsBehaviorSearchAutoupdate => 'Search auto-update mode';
+  String get settingsBehaviorSearchAutoupdate => 'خودکار اپ ڈیٹ موڈ تلاش کریں۔';
 
   @override
-  String get settingsBehaviorSearchDefaultAgent => 'Search default agent';
+  String get settingsBehaviorSearchDefaultAgent => 'ڈیفالٹ ایجنٹ تلاش کریں۔';
 
   @override
-  String get settingsBehaviorSearchDefaultModel => 'Search default model';
+  String get settingsBehaviorSearchDefaultModel => 'ڈیفالٹ ماڈل تلاش کریں۔';
 
   @override
-  String get settingsBehaviorSearchShareMode => 'Search sharing mode';
+  String get settingsBehaviorSearchShareMode => 'شیئرنگ موڈ تلاش کریں۔';
 
   @override
-  String get settingsBehaviorSearchSmallModel => 'Search small model';
+  String get settingsBehaviorSearchSmallModel => 'چھوٹا ماڈل تلاش کریں۔';
 
   @override
-  String get settingsBehaviorShareMode => 'OpenCode sharing default';
+  String get settingsBehaviorShareMode => 'اوپن کوڈ شیئرنگ ڈیفالٹ';
 
   @override
   String get settingsBehaviorShareModeCaveat =>
-      'Use the chat-level share action to publish one session now. This setting only changes OpenCode\'s default sharing policy.';
+      'ابھی ایک سیشن شائع کرنے کے لیے چیٹ لیول شیئر ایکشن کا استعمال کریں۔ یہ ترتیب صرف OpenCode کی ڈیفالٹ شیئرنگ پالیسی کو تبدیل کرتی ہے۔';
 
   @override
   String get settingsBehaviorShareModeHelp =>
-      'Controls the official global `share` config, not the share button for an individual chat.';
+      'آفیشل عالمی `شیئر` کنفیگریشن کو کنٹرول کرتا ہے، انفرادی چیٹ کے لیے شیئر بٹن کو نہیں۔';
 
   @override
-  String get settingsBehaviorSmallModel => 'Small model';
+  String get settingsBehaviorSmallModel => 'چھوٹا ماڈل';
 
   @override
-  String get settingsBehaviorSmallModelAutoFallback => 'Automatic fallback';
+  String get settingsBehaviorSmallModelAutoFallback => 'خودکار فال بیک';
 
   @override
   String get settingsBehaviorSmallModelFallbackActive =>
-      'OpenCode automatic fallback is active because `small_model` is unset.';
+      'OpenCode خودکار فال بیک فعال ہے کیونکہ `small_model` سیٹ نہیں ہے۔';
 
   @override
   String get settingsBehaviorSmallModelHelp =>
-      'Used for lightweight tasks like title generation.';
+      'ٹائٹل جنریشن جیسے ہلکے وزن کے کاموں کے لیے استعمال کیا جاتا ہے۔';
 
   @override
   String get settingsBehaviorSmallModelResetCaveat =>
-      'Resetting `small_model` back to automatic fallback still requires editing config outside the app because `/config` patch updates cannot remove keys.';
+      '`small_model` کو دوبارہ خودکار فال بیک پر دوبارہ ترتیب دینے کے لیے ابھی بھی ایپ سے باہر کنفیگریشن میں ترمیم کی ضرورت ہے کیونکہ `/config` پیچ اپ ڈیٹ کلیدوں کو نہیں ہٹا سکتے ہیں۔';
 
   @override
   String get settingsBehaviorSnapshotCaveat =>
-      'This controls OpenCode snapshot storage and undo/redo support, not CodeWalk local cache snapshots.';
+      'یہ اوپن کوڈ اسنیپ شاٹ سٹوریج کو کنٹرول کرتا ہے اور سپورٹ کو کالعدم/دوبارہ کرنا، نہ کہ CodeWalk مقامی کیش اسنیپ شاٹس کو۔';
 
   @override
-  String get settingsBehaviorTitle => 'Behavior';
+  String get settingsBehaviorTitle => 'رویہ';
 
   @override
   String get settingsBehaviorUsernameFallback =>
-      'OpenCode uses the system username because `username` is unset.';
+      'OpenCode سسٹم کا صارف نام استعمال کرتا ہے کیونکہ `صارف نام` سیٹ نہیں ہے۔';
 
   @override
   String get settingsBehaviorUsernamePatchCaveat =>
-      'Resetting `username` back to the system default still requires editing config outside the app because `/config` patch updates cannot remove keys.';
+      '\'صارف نام\' کو سسٹم ڈیفالٹ پر دوبارہ ترتیب دینے کے لیے اب بھی ایپ سے باہر کنفیگریشن میں ترمیم کی ضرورت ہوتی ہے کیونکہ `/config` پیچ اپ ڈیٹ کلیدوں کو نہیں ہٹا سکتے ہیں۔';
 
   @override
   String get settingsConfigRefreshFailed =>
-      'Updated the server setting, but could not refresh chat providers.';
+      'سرور کی ترتیب کو اپ ڈیٹ کیا، لیکن چیٹ فراہم کرنے والوں کو ریفریش نہیں کیا جا سکا۔';
 
   @override
   String get settingsConfigUpdateDeferred =>
-      'CodeWalk will apply this OpenCode setting after the current response finishes.';
+      'CodeWalk موجودہ جواب کے ختم ہونے کے بعد اس OpenCode ترتیب کو لاگو کرے گا۔';
 
   @override
   String get settingsConversationUsername => 'گفتگو کا صارف نام';
@@ -3143,30 +3206,30 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get settingsLanguageDescription =>
-      'Choose the language used by CodeWalk. System default follows your device language.';
+      'CodeWalk کے ذریعے استعمال ہونے والی زبان کا انتخاب کریں۔ سسٹم ڈیفالٹ آپ کے آلے کی زبان کی پیروی کرتا ہے۔';
 
   @override
-  String get settingsLanguageEmptyText => 'No languages found';
+  String get settingsLanguageEmptyText => 'کوئی زبانیں نہیں ملی';
 
   @override
   String get settingsLanguageFieldHelper =>
-      'Applies immediately and persists across restarts.';
+      'فوری طور پر لاگو ہوتا ہے اور دوبارہ شروع ہونے پر برقرار رہتا ہے۔';
 
   @override
-  String get settingsLanguageFieldLabel => 'App language';
+  String get settingsLanguageFieldLabel => 'ایپ کی زبان';
 
   @override
-  String get settingsLanguageSearchHint => 'Search languages';
+  String get settingsLanguageSearchHint => 'زبانیں تلاش کریں۔';
 
   @override
-  String get settingsLanguageSystemDefault => 'System default';
+  String get settingsLanguageSystemDefault => 'سسٹم ڈیفالٹ';
 
   @override
-  String get settingsLanguageTitle => 'Language';
+  String get settingsLanguageTitle => 'زبان';
 
   @override
   String get settingsLogsDescription =>
-      'Runtime diagnostics and troubleshooting data';
+      'رن ٹائم تشخیص اور خرابیوں کا سراغ لگانا ڈیٹا';
 
   @override
   String get settingsLogsTitle => 'Registros';
@@ -3175,182 +3238,204 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsNoAgentsFound => 'کوئی ایجنٹ نہیں ملا';
 
   @override
-  String get settingsNotificationsAgentSubtitle => 'When a response finishes';
+  String get settingsNotificationsAgentSubtitle => 'جب جواب ختم ہوتا ہے۔';
 
   @override
-  String get settingsNotificationsAgentUpdates => 'Agent updates';
+  String get settingsNotificationsAgentUpdates => 'ایجنٹ کی تازہ کاری';
 
   @override
-  String get settingsNotificationsAnotherConversation => 'Another conversation';
+  String get settingsNotificationsAnotherConversation => 'ایک اور گفتگو';
 
   @override
-  String get settingsNotificationsAppInBackground => 'App in background';
+  String get settingsNotificationsAppInBackground => 'پس منظر میں ایپ';
 
   @override
   String get settingsNotificationsBackgroundAlerts =>
-      'Android background alerts';
+      'Android پس منظر کے انتباہات';
 
   @override
-  String get settingsNotificationsBackgroundBehavior => 'Background behavior';
+  String get settingsNotificationsBackgroundBehavior => 'پس منظر کا رویہ';
 
   @override
   String get settingsNotificationsBackgroundBehaviorDescription =>
-      'Choose how CodeWalk behaves after the app leaves the foreground.';
+      'منتخب کریں کہ ایپ کے پیش منظر سے نکلنے کے بعد CodeWalk کیسا برتاؤ کرتا ہے۔';
 
   @override
   String get settingsNotificationsBackgroundDescription =>
-      'Use low-data background monitoring for response completions, permission requests, questions, and errors while the app is not on screen.';
+      'جب ایپ اسکرین پر نہ ہو تو جواب کی تکمیل، اجازت کی درخواستوں، سوالات اور غلطیوں کے لیے کم ڈیٹا والے پس منظر کی نگرانی کا استعمال کریں۔';
 
   @override
   String get settingsNotificationsBackgroundToggle =>
-      'Background alerts on Android';
+      'اینڈرائیڈ پر بیک گراؤنڈ الرٹس';
 
   @override
   String get settingsNotificationsBackgroundToggleDescription =>
-      'Turn off all Android background checks and hide the persistent monitor notification.';
+      'تمام اینڈرائیڈ بیک گراؤنڈ چیک کو آف کریں اور مسلسل مانیٹر کی اطلاع کو چھپائیں۔';
 
   @override
   String get settingsNotificationsBatteryDescription =>
-      'If notifications only arrive when reopening the app, allow CodeWalk to run without optimization on this device.';
+      'اگر اطلاعات صرف ایپ کو دوبارہ کھولنے پر پہنچتی ہیں، تو CodeWalk کو اس ڈیوائس پر آپٹیمائزیشن کے بغیر چلنے دیں۔';
 
   @override
   String get settingsNotificationsBatteryDisabled =>
-      'Battery optimization is disabled for CodeWalk.';
+      'کوڈ واک کے لیے بیٹری کی اصلاح کو غیر فعال کر دیا گیا ہے۔';
 
   @override
   String get settingsNotificationsBatteryEnabled =>
-      'Battery optimization is enabled. Some devices may delay background alerts.';
+      'بیٹری آپٹیمائزیشن فعال ہے۔ کچھ آلات پس منظر کے انتباہات میں تاخیر کر سکتے ہیں۔';
 
   @override
   String get settingsNotificationsBatteryOptimization =>
-      'Android battery optimization';
+      'اینڈرائیڈ بیٹری آپٹیمائزیشن';
 
   @override
   String get settingsNotificationsBatteryUnknown =>
-      'Could not read battery optimization status yet.';
+      'ابھی تک بیٹری کی اصلاح کی صورتحال کو نہیں پڑھ سکا۔';
 
   @override
-  String get settingsNotificationsChooseAudioFile => 'Choose audio file';
+  String get settingsNotificationsChooseAudioFile =>
+      'آڈیو فائل کا انتخاب کریں۔';
 
   @override
-  String get settingsNotificationsChooseSystemSound => 'Choose system sound';
+  String get settingsNotificationsChooseSystemSound =>
+      'سسٹم ساؤنڈ کا انتخاب کریں۔';
 
   @override
-  String get settingsNotificationsCloseToTray => 'Close to tray';
+  String get settingsNotificationsCloseToTray => 'ٹرے کے قریب';
 
   @override
   String get settingsNotificationsCloseToTrayDescription =>
-      'Hide window and keep running in system tray.';
+      'ونڈو کو چھپائیں اور سسٹم ٹرے میں چلتے رہیں۔';
 
   @override
   String get settingsNotificationsDescription =>
-      'Per-category notify and sound controls';
+      'فی زمرہ مطلع اور ساؤنڈ کنٹرولز';
 
   @override
-  String get settingsNotificationsDisableOptimization => 'Disable optimization';
+  String get settingsNotificationsDisableOptimization =>
+      'اصلاح کو غیر فعال کریں۔';
 
   @override
-  String get settingsNotificationsErrors => 'Errors';
+  String get settingsNotificationsErrors => 'غلطیاں';
 
   @override
   String get settingsNotificationsErrorsSubtitle =>
-      'When a session reports a failure';
+      'جب کوئی سیشن ناکامی کی اطلاع دیتا ہے۔';
 
   @override
-  String get settingsNotificationsJustClose => 'Just close';
+  String get settingsNotificationsJustClose => 'بس بند کرو';
 
   @override
   String get settingsNotificationsJustCloseDescription =>
-      'Exit the application completely.';
+      'ایپلیکیشن سے مکمل طور پر باہر نکلیں۔';
 
   @override
-  String get settingsNotificationsKeepLive => 'Keep alerts live for 3 min';
+  String get settingsNotificationsKeepLive => 'الرٹس کو 3 منٹ تک لائیو رکھیں';
 
   @override
   String get settingsNotificationsKeepLiveDescription =>
-      'When a response is already running, keep realtime active briefly after leaving the app.';
+      'جب کوئی جواب پہلے سے چل رہا ہو، تو ایپ چھوڑنے کے بعد مختصر وقت کے لیے ریئل ٹائم کو فعال رکھیں۔';
 
   @override
-  String get settingsNotificationsLocal => 'Local';
+  String get settingsNotificationsLocal => 'مقامی';
 
   @override
-  String get settingsNotificationsMinimizeWhenClose => 'Minimize when close';
+  String get settingsNotificationsMinimizeWhenClose =>
+      'بند ہونے پر کم سے کم کریں۔';
 
   @override
   String get settingsNotificationsMinimizeWhenCloseDescription =>
-      'Minimize to taskbar/dock and keep running.';
+      'ٹاسک بار/ڈاک کو کم سے کم کریں اور چلتے رہیں۔';
 
   @override
   String get settingsNotificationsNoCondition =>
-      'If no condition is selected, alerts are allowed in any context.';
+      'اگر کوئی شرط منتخب نہیں کی جاتی ہے، تو کسی بھی تناظر میں الرٹس کی اجازت ہے۔';
 
   @override
-  String get settingsNotificationsNotify => 'Notify';
+  String get settingsNotificationsNotify => 'اطلاع دیں۔';
 
   @override
-  String get settingsNotificationsNotifyOnlyWhen => 'Notify only when';
+  String get settingsNotificationsNotifyOnlyWhen => 'صرف اس وقت اطلاع دیں۔';
 
   @override
   String get settingsNotificationsOpenBatterySettings =>
-      'Open battery settings';
+      'بیٹری کی ترتیبات کھولیں۔';
 
   @override
-  String get settingsNotificationsPermissions => 'Permissions and questions';
+  String get settingsNotificationsPermissions => 'اجازتیں اور سوالات';
 
   @override
   String get settingsNotificationsPermissionsSubtitle =>
-      'When tools request your input';
+      'جب ٹولز آپ کے ان پٹ کی درخواست کرتے ہیں۔';
 
   @override
-  String get settingsNotificationsPreview => 'Preview';
+  String get settingsNotificationsPreview => 'پیش نظارہ';
 
   @override
-  String get settingsNotificationsRefreshStatus => 'Refresh status';
+  String get settingsNotificationsRefreshStatus => 'حالت تازہ کریں۔';
 
   @override
-  String get settingsNotificationsSearchSoundType => 'Search sound type';
+  String get settingsNotificationsSearchSoundType => 'آواز کی قسم تلاش کریں۔';
 
   @override
   String get settingsNotificationsSectionDescription =>
-      'Control when alerts appear and when they can play sound.';
+      'کنٹرول کریں کہ انتباہات کب ظاہر ہوتے ہیں اور کب وہ آواز چلا سکتے ہیں۔';
 
   @override
-  String get settingsNotificationsSectionTitle => 'Notifications';
+  String get settingsNotificationsSectionTitle => 'اطلاعات';
 
   @override
   String settingsNotificationsSelectedSound(String label) {
-    return 'Selected: $label';
+    return 'منتخب کردہ: $label';
   }
 
   @override
-  String get settingsNotificationsServer => 'Server';
+  String get settingsNotificationsServer => 'سرور';
 
   @override
-  String get settingsNotificationsSound => 'Sound';
+  String get settingsNotificationsSound => 'آواز';
 
   @override
-  String get settingsNotificationsSoundOnlyWhen => 'Sound only when';
+  String get settingsNotificationsSoundBuiltInAlert => 'بلٹ ان الرٹ';
 
   @override
-  String get settingsNotificationsSoundType => 'Sound type';
+  String get settingsNotificationsSoundBuiltInClick => 'بلٹ ان کلک';
+
+  @override
+  String get settingsNotificationsSoundOff => 'بند';
+
+  @override
+  String get settingsNotificationsSoundOnlyWhen => 'آواز صرف اس وقت';
+
+  @override
+  String get settingsNotificationsSoundPickAudioFile => 'آڈیو فائل منتخب کریں';
+
+  @override
+  String get settingsNotificationsSoundPickFromSystem => 'سسٹم سے منتخب کریں';
+
+  @override
+  String get settingsNotificationsSoundSystemDefault => 'سسٹم ڈیفالٹ';
+
+  @override
+  String get settingsNotificationsSoundType => 'آواز کی قسم';
 
   @override
   String get settingsNotificationsSyncInfo =>
-      'Some category on/off toggles are synced from /config on the active server.';
+      'کچھ زمرہ آن/آف ٹوگلز کو فعال سرور پر /config سے ہم آہنگ کیا جاتا ہے۔';
 
   @override
   String get settingsNotificationsSyncInfoLocal =>
-      'Current server does not expose notification toggles in /config; local values are active.';
+      'موجودہ سرور /config میں نوٹیفکیشن ٹوگلز کو ظاہر نہیں کرتا ہے۔ مقامی اقدار فعال ہیں۔';
 
   @override
   String get settingsNotificationsSystemSoundPickerTitle =>
-      'Choose system sound';
+      'سسٹم ساؤنڈ کا انتخاب کریں۔';
 
   @override
-  String get settingsNotificationsTitle => 'Notifications';
+  String get settingsNotificationsTitle => 'اطلاعات';
 
   @override
-  String get settingsNotificationsWhenClosing => 'When closing the window';
+  String get settingsNotificationsWhenClosing => 'کھڑکی بند کرتے وقت';
 
   @override
   String get settingsOpenCodeAutoUpdate => 'OpenCode خودکار اپ ڈیٹ';
@@ -3359,36 +3444,38 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsOpenCodeSharingDefault => 'OpenCode شیئرنگ ڈیفالٹ';
 
   @override
-  String get settingsReadAloudEnabled => 'Read aloud';
+  String get settingsReadAloudEnabled => 'بلند آواز سے پڑھیں';
 
   @override
   String get settingsReadAloudEnabledDescription =>
-      'Show a read-aloud button on assistant messages.';
+      'معاون پیغامات پر بلند آواز میں پڑھنے کا بٹن دکھائیں۔';
 
   @override
-  String get settingsReadAloudPitch => 'Pitch';
+  String get settingsReadAloudPitch => 'پچ';
 
   @override
-  String get settingsReadAloudPitchDescription => 'Adjust the voice pitch.';
+  String get settingsReadAloudPitchDescription => 'آواز کی پچ کو ایڈجسٹ کریں۔';
 
   @override
   String get settingsReadAloudSectionDescription =>
-      'Read assistant responses aloud. Configure speed, pitch, and voice.';
+      'معاون جوابات کو بلند آواز سے پڑھیں۔ رفتار، پچ اور آواز کو ترتیب دیں۔';
 
   @override
-  String get settingsReadAloudSectionTitle => 'Text to speech';
+  String get settingsReadAloudSectionTitle => 'متن سے تقریر';
 
   @override
-  String get settingsReadAloudSpeed => 'Speed';
+  String get settingsReadAloudSpeed => 'رفتار';
 
   @override
-  String get settingsReadAloudSpeedDescription => 'Adjust the speaking rate.';
+  String get settingsReadAloudSpeedDescription =>
+      'بولنے کی شرح کو ایڈجسٹ کریں۔';
 
   @override
-  String get settingsReadAloudVoice => 'Voice';
+  String get settingsReadAloudVoice => 'آواز';
 
   @override
-  String get settingsReadAloudVoiceHint => 'Select a voice for read-aloud.';
+  String get settingsReadAloudVoiceHint =>
+      'بلند آواز سے پڑھنے کے لیے آواز منتخب کریں۔';
 
   @override
   String get settingsSearchAutoUpdateMode => 'خودکار اپ ڈیٹ موڈ تلاش کریں';
@@ -3406,41 +3493,40 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsSearchSmallModel => 'چھوٹا ماڈل تلاش کریں';
 
   @override
-  String get settingsServersActive => 'Active';
+  String get settingsServersActive => 'فعال';
 
   @override
-  String get settingsServersChooseActive => 'Choose active server';
+  String get settingsServersChooseActive => 'فعال سرور کا انتخاب کریں۔';
 
   @override
-  String get settingsServersDefault => 'Default';
+  String get settingsServersDefault => 'طے شدہ';
 
   @override
-  String get settingsServersDescription =>
-      'OpenCode servers and health routing';
+  String get settingsServersDescription => 'اوپن کوڈ سرورز اور ہیلتھ روٹنگ';
 
   @override
-  String get settingsServersTitle => 'Servers';
+  String get settingsServersTitle => 'سرورز';
 
   @override
-  String get settingsSetupWizard => 'Setup Wizard';
+  String get settingsSetupWizard => 'سیٹ اپ وزرڈ';
 
   @override
-  String get settingsShortcutsDescription => 'Portable app key bindings';
+  String get settingsShortcutsDescription => 'پورٹ ایبل ایپ کلیدی پابندیاں';
 
   @override
-  String get settingsShortcutsEdit => 'Edit shortcut';
+  String get settingsShortcutsEdit => 'شارٹ کٹ میں ترمیم کریں۔';
 
   @override
-  String get settingsShortcutsKeyboard => 'Keyboard shortcuts';
+  String get settingsShortcutsKeyboard => 'کی بورڈ شارٹ کٹس';
 
   @override
-  String get settingsShortcutsReset => 'Reset shortcut';
+  String get settingsShortcutsReset => 'شارٹ کٹ کو دوبارہ ترتیب دیں۔';
 
   @override
-  String get settingsShortcutsSearch => 'Search shortcuts';
+  String get settingsShortcutsSearch => 'شارٹ کٹ تلاش کریں۔';
 
   @override
-  String get settingsShortcutsTitle => 'Shortcuts';
+  String get settingsShortcutsTitle => 'شارٹ کٹس';
 
   @override
   String get settingsSmallModel => 'چھوٹا ماڈل';
@@ -3459,29 +3545,29 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get settingsSpeechDescription =>
-      'Engine, silence timeout, and model options';
+      'انجن، خاموشی کا ٹائم آؤٹ، اور ماڈل کے اختیارات';
 
   @override
-  String get settingsSpeechRefreshStatus => 'Refresh status';
+  String get settingsSpeechRefreshStatus => 'حالت تازہ کریں۔';
 
   @override
   String settingsSpeechSilenceTimeout(String value) {
-    return 'Silence timeout: ${value}s';
+    return 'خاموشی کا ٹائم آؤٹ: $value s';
   }
 
   @override
-  String get settingsSpeechTitle => 'Speech to text';
+  String get settingsSpeechTitle => 'متن سے تقریر';
 
   @override
-  String get settingsTitle => 'Settings';
+  String get settingsTitle => 'ترتیبات';
 
   @override
   String get settingsUsernameClearHint =>
-      'Clearing the OpenCode conversation username still requires editing config outside the app.';
+      'اوپن کوڈ گفتگو کے صارف نام کو صاف کرنے کے لیے اب بھی ایپ کے باہر کنفیگریشن میں ترمیم کی ضرورت ہے۔';
 
   @override
   String get settingsUsernameEnterHint =>
-      'Enter a username to save a custom OpenCode conversation name.';
+      'اپنی مرضی کے اوپن کوڈ گفتگو کا نام محفوظ کرنے کے لیے صارف نام درج کریں۔';
 
   @override
   String get settingsUsernameResetExplanation =>
@@ -3492,80 +3578,83 @@ class AppLocalizationsUr extends AppLocalizations {
       'OpenCode سسٹم کا صارف نام استعمال کرتا ہے کیونکہ `username` سیٹ نہیں ہے۔';
 
   @override
-  String get setupDebugBun => 'Bun';
+  String get setupDebugBun => 'بن';
 
   @override
-  String get setupDebugBun2 => 'Bun';
+  String get setupDebugBun2 => 'بن';
 
   @override
-  String get setupDebugCapturedSetupDetails => 'No captured setup details yet';
+  String get setupDebugCapturedSetupDetails =>
+      'ابھی تک کوئی کیپچر سیٹ اپ تفصیلات نہیں ہیں۔';
 
   @override
-  String get setupDebugCapturedSetupLogs => 'Captured setup logs';
+  String get setupDebugCapturedSetupLogs => 'کیپچر کردہ سیٹ اپ لاگز';
 
   @override
-  String get setupDebugClear => 'Clear setup debug';
+  String get setupDebugClear => 'سیٹ اپ ڈیبگ صاف کریں۔';
 
   @override
-  String get setupDebugClearSetupDebug => 'Clear setup debug';
+  String get setupDebugClearSetupDebug => 'سیٹ اپ ڈیبگ صاف کریں۔';
 
   @override
   String get setupDebugCodeWalkCaptureEnough =>
-      'If CodeWalk did not capture enough context, check the official OpenCode logs and health endpoints directly:';
+      'اگر CodeWalk نے کافی سیاق و سباق کو حاصل نہیں کیا تو، آفیشل اوپن کوڈ لاگز اور ہیلتھ اینڈ پوائنٹس کو براہ راست چیک کریں:';
 
   @override
-  String get setupDebugCommandPath => 'Command path';
+  String get setupDebugCommandPath => 'کمانڈ کا راستہ';
 
   @override
-  String get setupDebugCommandPath2 => 'Command path';
+  String get setupDebugCommandPath2 => 'کمانڈ کا راستہ';
 
   @override
-  String get setupDebugCopy => 'Copy setup debug';
+  String get setupDebugCopy => 'سیٹ اپ ڈیبگ کاپی کریں۔';
 
   @override
-  String get setupDebugCopySetupDebug => 'Copy setup debug';
+  String get setupDebugCopySetupDebug => 'سیٹ اپ ڈیبگ کاپی کریں۔';
 
   @override
-  String get setupDebugCurrentStatus => 'Current status';
+  String get setupDebugCurrentStatus => 'موجودہ حیثیت';
 
   @override
-  String get setupDebugDiagnosticsLoading => 'Diagnostics are still loading.';
+  String get setupDebugDiagnosticsLoading => 'تشخیص اب بھی لوڈ ہو رہا ہے۔';
 
   @override
-  String get setupDebugEnvironment => 'Environment diagnostics';
+  String get setupDebugEnvironment => 'ماحولیاتی تشخیص';
 
   @override
-  String get setupDebugEnvironmentDiagnostics => 'Environment diagnostics';
+  String get setupDebugEnvironmentDiagnostics => 'ماحولیاتی تشخیص';
 
   @override
-  String get setupDebugFocusedOpenCodeSetup => 'Focused on OpenCode setup';
+  String get setupDebugFocusedOpenCodeSetup =>
+      'اوپن کوڈ سیٹ اپ پر فوکس کیا گیا۔';
 
   @override
-  String get setupDebugInstallDir => 'Install directory';
+  String get setupDebugInstallDir => 'ڈائرکٹری انسٹال کریں۔';
 
   @override
-  String get setupDebugInstallDirectory => 'Install directory';
+  String get setupDebugInstallDirectory => 'ڈائرکٹری انسٹال کریں۔';
 
   @override
-  String get setupDebugLatestLocalServer => 'Latest local server output';
+  String get setupDebugLatestLocalServer => 'تازہ ترین مقامی سرور آؤٹ پٹ';
 
   @override
-  String get setupDebugLogs => 'Captured setup logs';
+  String get setupDebugLogs => 'کیپچر کردہ سیٹ اپ لاگز';
 
   @override
-  String get setupDebugManual => 'Manual troubleshooting';
+  String get setupDebugManual => 'دستی خرابیوں کا سراغ لگانا';
 
   @override
-  String get setupDebugManualTroubleshooting => 'Manual troubleshooting';
+  String get setupDebugManualTroubleshooting => 'دستی خرابیوں کا سراغ لگانا';
 
   @override
-  String get setupDebugNetwork => 'Network';
+  String get setupDebugNetwork => 'نیٹ ورک';
 
   @override
-  String get setupDebugNetwork2 => 'Network';
+  String get setupDebugNetwork2 => 'نیٹ ورک';
 
   @override
-  String get setupDebugNoDetails => 'No captured setup details yet';
+  String get setupDebugNoDetails =>
+      'ابھی تک کوئی کیپچر سیٹ اپ تفصیلات نہیں ہیں۔';
 
   @override
   String get setupDebugNode => 'Node.js';
@@ -3574,39 +3663,39 @@ class AppLocalizationsUr extends AppLocalizations {
   String get setupDebugNodeJs => 'Node.js';
 
   @override
-  String get setupDebugNpm => 'npm';
+  String get setupDebugNpm => 'این پی ایم';
 
   @override
-  String get setupDebugNpm2 => 'npm';
+  String get setupDebugNpm2 => 'این پی ایم';
 
   @override
-  String get setupDebugOpenCode => 'OpenCode';
+  String get setupDebugOpenCode => 'اوپن کوڈ';
 
   @override
-  String get setupDebugOpenCode2 => 'OpenCode';
+  String get setupDebugOpenCode2 => 'اوپن کوڈ';
 
   @override
-  String get setupDebugOpenCodeSetupDebug => 'OpenCode Setup Debug';
+  String get setupDebugOpenCodeSetupDebug => 'اوپن کوڈ سیٹ اپ ڈیبگ';
 
   @override
-  String get setupDebugPlatform => 'Platform';
+  String get setupDebugPlatform => 'پلیٹ فارم';
 
   @override
-  String get setupDebugPlatform2 => 'Platform';
+  String get setupDebugPlatform2 => 'پلیٹ فارم';
 
   @override
   String get setupDebugRunDiagnosticsTry =>
-      'Run diagnostics, try an installation method, or attempt a setup flow to capture OpenCode-specific troubleshooting details here.';
+      'تشخیص چلائیں، انسٹالیشن کا طریقہ آزمائیں، یا OpenCode کے لیے مخصوص ٹربل شوٹنگ کی تفصیلات کو یہاں حاصل کرنے کے لیے سیٹ اپ فلو کی کوشش کریں۔';
 
   @override
   String get setupDebugScreenCoversOpenCode =>
-      'This screen only covers OpenCode installation, diagnostics, and local setup troubleshooting. Use App Logs for general CodeWalk runtime issues.';
+      'یہ اسکرین صرف اوپن کوڈ کی تنصیب، تشخیص، اور مقامی سیٹ اپ کی خرابیوں کا سراغ لگاتی ہے۔ عام CodeWalk رن ٹائم مسائل کے لیے App Logs استعمال کریں۔';
 
   @override
-  String get setupDebugServerOutput => 'Latest local server output';
+  String get setupDebugServerOutput => 'تازہ ترین مقامی سرور آؤٹ پٹ';
 
   @override
-  String get setupDebugStatus => 'Current status';
+  String get setupDebugStatus => 'موجودہ حیثیت';
 
   @override
   String setupDebugTimeEntrySource(String source, String time) {
@@ -3614,19 +3703,19 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get setupDebugTimeline => 'Timeline';
+  String get setupDebugTimeline => 'ٹائم لائن';
 
   @override
-  String get setupDebugTimeline2 => 'Timeline';
+  String get setupDebugTimeline2 => 'ٹائم لائن';
 
   @override
-  String get setupDebugTitle => 'Focused on OpenCode setup';
+  String get setupDebugTitle => 'اوپن کوڈ سیٹ اپ پر فوکس کیا گیا۔';
 
   @override
-  String get setupDebugWSL => 'WSL';
+  String get setupDebugWSL => 'ڈبلیو ایس ایل';
 
   @override
-  String get setupDebugWsl => 'WSL';
+  String get setupDebugWsl => 'ڈبلیو ایس ایل';
 
   @override
   String get shortcutCloseApp => 'ایپلیکیشن بند کریں';
@@ -3736,7 +3825,7 @@ class AppLocalizationsUr extends AppLocalizations {
       'ایڈیٹر میں صوتی ڈکٹیشن شروع کریں یا روکیں';
 
   @override
-  String get shortcutsApply => 'Apply';
+  String get shortcutsApply => 'لگائیں';
 
   @override
   String shortcutsConflictConflict(String conflict) {
@@ -3744,14 +3833,14 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get shortcutsKeyboardShortcuts => 'Keyboard shortcuts';
+  String get shortcutsKeyboardShortcuts => 'کی بورڈ شارٹ کٹس';
 
   @override
-  String get shortcutsReset => 'Reset all';
+  String get shortcutsReset => 'سب کو ری سیٹ کریں۔';
 
   @override
   String get shortcutsSearchEditBindings =>
-      'Search, edit bindings, and resolve conflicts before saving.';
+      'تلاش کریں، بائنڈنگز میں ترمیم کریں، اور محفوظ کرنے سے پہلے تنازعات کو حل کریں۔';
 
   @override
   String shortcutsSetShortcutWidget(String label) {
@@ -3760,14 +3849,14 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get shortcutsTheseBindingsStored =>
-      'These bindings are stored in CodeWalk for the current app runtime and do not edit OpenCode `tui.json` keybinds.';
+      'یہ بائنڈنگز موجودہ ایپ رن ٹائم کے لیے CodeWalk میں محفوظ ہیں اور OpenCode `tui.json` کی بائنڈز میں ترمیم نہیں کرتی ہیں۔';
 
   @override
-  String get speechAutoStopSilence => 'Auto-stop silence timeout';
+  String get speechAutoStopSilence => 'خود بخود خاموشی کا ٹائم آؤٹ';
 
   @override
   String get speechChooseRecognitionEngine =>
-      'Choose the recognition engine, silence timeout, and model options.';
+      'شناختی انجن، خاموشی کا ٹائم آؤٹ، اور ماڈل کے اختیارات کا انتخاب کریں۔';
 
   @override
   String speechDesktopOnly(String service) {
@@ -3775,17 +3864,17 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get speechDownload => 'Download';
+  String get speechDownload => 'ڈاؤن لوڈ کریں۔';
 
   @override
-  String get speechEngine => 'Engine';
+  String get speechEngine => 'انجن';
 
   @override
-  String get speechInstalledLanguages => 'Installed languages';
+  String get speechInstalledLanguages => 'انسٹال شدہ زبانیں۔';
 
   @override
   String get speechListeningStopsAutomatically =>
-      'Listening stops automatically after this many seconds of silence.';
+      'اس کئی سیکنڈ کی خاموشی کے بعد سننا خود بخود رک جاتا ہے۔';
 
   @override
   String get speechMicPermissionDisabled => 'مائیکروفون کی اجازت غیر فعال ہے۔';
@@ -3796,46 +3885,46 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get speechMoonshine => 'Moonshine';
+  String get speechMoonshine => 'چاندنی';
 
   @override
-  String get speechMoonshineModelsDesktop => 'Moonshine models (desktop)';
+  String get speechMoonshineModelsDesktop => 'مونشائن ماڈلز (ڈیسک ٹاپ)';
 
   @override
   String get speechMoonshineStaysDownloadable =>
-      'Moonshine stays downloadable and out of the app bundle. Pick one model for this desktop device and remove it later if you want the space back.';
+      'Moonshine ڈاؤن لوڈ کے قابل اور ایپ بنڈل سے باہر رہتی ہے۔ اس ڈیسک ٹاپ ڈیوائس کے لیے ایک ماڈل منتخب کریں اور اگر آپ جگہ واپس چاہتے ہیں تو اسے بعد میں ہٹا دیں۔';
 
   @override
-  String get speechNative => 'Native';
+  String get speechNative => 'مقامی';
 
   @override
   String get speechNativeSTTDisabled =>
-      'Native STT is disabled on Linux in this app. Parakeet is the default engine for new installs.';
+      'اس ایپ میں لینکس پر مقامی STT غیر فعال ہے۔ پیراکیٹ نئے انسٹالز کے لیے ڈیفالٹ انجن ہے۔';
 
   @override
   String get speechNativeSTTWorks =>
-      'Native STT works on Windows when OS speech services are enabled. If native initialization fails, CodeWalk automatically falls back to Sherpa. Check Windows microphone privacy, Online speech recognition, and installed speech language packs.';
+      'مقامی STT ونڈوز پر کام کرتا ہے جب OS اسپیچ سروسز کو فعال کیا جاتا ہے۔ اگر مقامی ابتداء ناکام ہوجاتی ہے، تو CodeWalk خود بخود واپس شیرپا کے پاس آجاتا ہے۔ ونڈوز مائکروفون پرائیویسی، آن لائن اسپیچ ریکگنیشن، اور انسٹال اسپیچ لینگویج پیک چیک کریں۔';
 
   @override
   String get speechNativeStartsFaster =>
-      'Native starts faster. Sherpa runs fully on-device with heavier setup and deeper model control.';
+      'مقامی تیزی سے شروع ہوتا ہے۔ شیرپا بھاری سیٹ اپ اور گہرے ماڈل کنٹرول کے ساتھ مکمل طور پر آن ڈیوائس چلاتا ہے۔';
 
   @override
-  String get speechParakeet => 'Parakeet';
+  String get speechParakeet => 'طوطا';
 
   @override
-  String get speechParakeetModelsDesktop => 'Parakeet models (desktop)';
+  String get speechParakeetModelsDesktop => 'پیراکیٹ ماڈل (ڈیسک ٹاپ)';
 
   @override
   String get speechParakeetStaysDownloadable =>
-      'Parakeet stays downloadable and out of the app bundle. It currently exposes one multilingual model optimized for 25 European languages.';
+      'پیراکیٹ ڈاؤن لوڈ کے قابل اور ایپ بنڈل سے باہر رہتا ہے۔ یہ فی الحال 25 یورپی زبانوں کے لیے موزوں ایک کثیر لسانی ماڈل کو بے نقاب کرتا ہے۔';
 
   @override
   String get speechPickLanguagePacks =>
-      'Pick language packs and download/remove models for on-device recognition.';
+      'زبان کے پیک کو منتخب کریں اور ڈیوائس پر شناخت کے لیے ماڈلز ڈاؤن لوڈ/ہٹائیں۔';
 
   @override
-  String get speechRemove => 'Remove';
+  String get speechRemove => 'ہٹا دیں۔';
 
   @override
   String speechRuntimeFailed(String service) {
@@ -3844,30 +3933,30 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get speechSelectSherpaAbove =>
-      'Select Sherpa above to manage language packs and download models.';
+      'لینگویج پیک کا نظم کرنے اور ماڈل ڈاؤن لوڈ کرنے کے لیے اوپر شیرپا کو منتخب کریں۔';
 
   @override
-  String get speechSenseVoice => 'SenseVoice';
+  String get speechSenseVoice => 'سینس وائس';
 
   @override
-  String get speechSenseVoiceModelsDesktop => 'SenseVoice models (desktop)';
+  String get speechSenseVoiceModelsDesktop => 'SenseVoice ماڈلز (ڈیسک ٹاپ)';
 
   @override
   String get speechSenseVoiceStaysDownloadable =>
-      'SenseVoice stays downloadable and out of the app bundle. It is the strongest desktop option here for Chinese, Cantonese, Japanese, Korean, and English.';
+      'SenseVoice ڈاؤن لوڈ کے قابل اور ایپ بنڈل سے باہر رہتا ہے۔ یہ چینی، کینٹونیز، جاپانی، کورین اور انگریزی کے لیے یہاں کا سب سے مضبوط ڈیسک ٹاپ آپشن ہے۔';
 
   @override
-  String get speechSherpa => 'Sherpa';
+  String get speechSherpa => 'شیرپا';
 
   @override
   String get speechSherpaExperimentalFail =>
-      'Sherpa is experimental and can fail on some devices. Prefer Native if you want the most stable behavior.';
+      'شیرپا تجرباتی ہے اور کچھ آلات پر ناکام ہو سکتا ہے۔ اگر آپ سب سے زیادہ مستحکم سلوک چاہتے ہیں تو مقامی کو ترجیح دیں۔';
 
   @override
-  String get speechSherpaModelsLinux => 'Sherpa models (Linux)';
+  String get speechSherpaModelsLinux => 'شیرپا ماڈلز (لینکس)';
 
   @override
-  String get speechSpeechText => 'Speech to text';
+  String get speechSpeechText => 'متن سے تقریر';
 
   @override
   String speechUnavailableOnPlatform(String service) {
@@ -3905,7 +3994,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get statusSyncDelayed => 'ہم آہنگی میں تاخیر';
 
   @override
-  String get tailscaleNoPeers => 'No peers found';
+  String get tailscaleNoPeers => 'کوئی ہم عمر نہیں ملا';
 
   @override
   String get tailscaleNotSupportedOnPlatform =>
@@ -3916,17 +4005,17 @@ class AppLocalizationsUr extends AppLocalizations {
       'ونڈوز پر Tailscale سپورٹ نہیں ہے۔';
 
   @override
-  String get tailscalePeerOffline => 'offline';
+  String get tailscalePeerOffline => 'آف لائن';
 
   @override
-  String get tailscaleSelectPeer => 'Select a Tailscale peer';
+  String get tailscaleSelectPeer => 'ٹیل اسکیل پیئر کو منتخب کریں۔';
 
   @override
   String get tailscaleWaitingAdminApproval =>
       'یہ Tailscale نوڈ ایڈمن کی منظوری کا منتظر ہے۔';
 
   @override
-  String get terminalClose => 'Close terminal';
+  String get terminalClose => 'ٹرمینل بند کریں۔';
 
   @override
   String terminalConnectingTo(String serverName) {
@@ -3950,10 +4039,10 @@ class AppLocalizationsUr extends AppLocalizations {
   String get terminalHide => 'ٹرمینل چھپائیں';
 
   @override
-  String get terminalMaximize => 'Maximize';
+  String get terminalMaximize => 'زیادہ سے زیادہ کرنا';
 
   @override
-  String get terminalMinimize => 'Minimize terminal';
+  String get terminalMinimize => 'ٹرمینل کو کم سے کم کریں۔';
 
   @override
   String get terminalNotAvailableYet =>
@@ -3974,10 +4063,10 @@ class AppLocalizationsUr extends AppLocalizations {
       'سرور پروجیکٹ ٹرمینل سے منسلک ہونے کے لیے ٹرمینل کھولیں۔';
 
   @override
-  String get terminalReconnect => 'Reconnect terminal';
+  String get terminalReconnect => 'ٹرمینل کو دوبارہ جوڑیں۔';
 
   @override
-  String get terminalRestoreSize => 'Restore size';
+  String get terminalRestoreSize => 'سائز کو بحال کریں۔';
 
   @override
   String get terminalSelectServer =>
@@ -3987,55 +4076,55 @@ class AppLocalizationsUr extends AppLocalizations {
   String get terminalSessionClosed => 'ٹرمینل سیشن بند کر دیا گیا۔';
 
   @override
-  String get terminalTerminal => 'Terminal';
+  String get terminalTerminal => 'ٹرمینل';
 
   @override
   String get terminalTitle => 'ٹرمینل';
 
   @override
-  String get terminalTryAgain => 'Try again';
+  String get terminalTryAgain => 'دوبارہ کوشش کریں۔';
 
   @override
-  String get toolAwaitingInput => 'Awaiting input';
+  String get toolAwaitingInput => 'ان پٹ کا انتظار ہے۔';
 
   @override
-  String get toolEditing => 'Editing';
+  String get toolEditing => 'ایڈیٹنگ';
 
   @override
-  String get toolEditingFiles => 'Editing files';
+  String get toolEditingFiles => 'فائلوں میں ترمیم کرنا';
 
   @override
-  String get toolFinding => 'Finding';
+  String get toolFinding => 'تلاش کرنا';
 
   @override
-  String get toolFindingFiles => 'Finding files';
+  String get toolFindingFiles => 'فائلیں تلاش کرنا';
 
   @override
-  String get toolPresentationAwaitingInput => 'Awaiting input';
+  String get toolPresentationAwaitingInput => 'ان پٹ کا انتظار ہے۔';
 
   @override
-  String get toolPresentationEditing => 'Editing';
+  String get toolPresentationEditing => 'ایڈیٹنگ';
 
   @override
-  String get toolPresentationEditingFiles => 'Editing files';
+  String get toolPresentationEditingFiles => 'فائلوں میں ترمیم کرنا';
 
   @override
-  String get toolPresentationFinding => 'Finding';
+  String get toolPresentationFinding => 'تلاش کرنا';
 
   @override
-  String get toolPresentationFindingFiles => 'Finding files';
+  String get toolPresentationFindingFiles => 'فائلیں تلاش کرنا';
 
   @override
-  String get toolPresentationReading => 'Reading';
+  String get toolPresentationReading => 'پڑھنا';
 
   @override
-  String get toolPresentationReadingFile => 'Reading file';
+  String get toolPresentationReadingFile => 'فائل پڑھنا';
 
   @override
-  String get toolPresentationRunning => 'Running';
+  String get toolPresentationRunning => 'چل رہا ہے۔';
 
   @override
-  String get toolPresentationRunningCommand => 'Running command';
+  String get toolPresentationRunningCommand => 'رننگ کمانڈ';
 
   @override
   String toolPresentationRunningTool(String toolName) {
@@ -4043,140 +4132,153 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get toolPresentationSearching => 'Searching';
+  String get toolPresentationSearching => 'تلاش کر رہا ہے۔';
 
   @override
-  String get toolPresentationSearchingCode => 'Searching code';
+  String get toolPresentationSearchingCode => 'تلاش کا کوڈ';
 
   @override
-  String get toolPresentationSearchingWeb => 'Searching the web';
+  String get toolPresentationSearchingWeb => 'ویب پر تلاش کر رہا ہے۔';
 
   @override
   String get toolPresentationTool => 'ٹول';
 
   @override
-  String get toolPresentationUpdatingTaskList => 'Updating task list';
+  String get toolPresentationUpdatingTaskList =>
+      'کام کی فہرست کو اپ ڈیٹ کیا جا رہا ہے۔';
 
   @override
-  String get toolPresentationUpdatingTasks => 'Updating tasks';
+  String get toolPresentationUpdatingTasks => 'کاموں کو اپ ڈیٹ کرنا';
 
   @override
-  String get toolPresentationWaitingInput => 'Waiting for your input';
+  String get toolPresentationWaitingInput => 'آپ کے ان پٹ کا انتظار ہے۔';
 
   @override
-  String get toolPresentationWriting => 'Writing';
+  String get toolPresentationWriting => 'تحریر';
 
   @override
-  String get toolPresentationWritingFile => 'Writing file';
+  String get toolPresentationWritingFile => 'تحریری فائل';
 
   @override
-  String get toolReading => 'Reading';
+  String get toolReading => 'پڑھنا';
 
   @override
-  String get toolReadingFile => 'Reading file';
+  String get toolReadingFile => 'فائل پڑھنا';
 
   @override
-  String get toolRunning => 'Running';
+  String get toolRunning => 'چل رہا ہے۔';
 
   @override
-  String get toolRunningCommand => 'Running command';
+  String get toolRunningCommand => 'رننگ کمانڈ';
 
   @override
-  String get toolRunningTask => 'Running task';
+  String get toolRunningTask => 'رننگ ٹاسک';
 
   @override
-  String get toolSearching => 'Searching';
+  String get toolSearching => 'تلاش کر رہا ہے۔';
 
   @override
-  String get toolSearchingCode => 'Searching code';
+  String get toolSearchingCode => 'تلاش کا کوڈ';
 
   @override
-  String get toolSearchingWeb => 'Searching the web';
+  String get toolSearchingWeb => 'ویب پر تلاش کر رہا ہے۔';
 
   @override
-  String get toolUpdatingTaskList => 'Updating task list';
+  String get toolUpdatingTaskList => 'کام کی فہرست کو اپ ڈیٹ کیا جا رہا ہے۔';
 
   @override
-  String get toolUpdatingTasks => 'Updating tasks';
+  String get toolUpdatingTasks => 'کاموں کو اپ ڈیٹ کرنا';
 
   @override
-  String get toolWaitingForInput => 'Waiting for your input';
+  String get toolWaitingForInput => 'آپ کے ان پٹ کا انتظار ہے۔';
 
   @override
-  String get toolWriting => 'Writing';
+  String get toolWriting => 'تحریر';
 
   @override
-  String get toolWritingFile => 'Writing file';
+  String get toolWritingFile => 'تحریری فائل';
 
   @override
-  String get tourBack => 'Back';
+  String get tourBack => 'پیچھے';
 
   @override
-  String get tourSkip => 'Skip';
+  String get tourSkip => 'چھوڑیں۔';
 
   @override
-  String get trayQuit => 'Quit';
+  String get trayQuit => 'چھوڑو';
 
   @override
-  String get trayShow => 'Show';
+  String get trayShow => 'دکھائیں۔';
 
   @override
-  String get useOAuthCloudflareAccess => 'Use OAuth (Cloudflare Access)';
+  String get useOAuthCloudflareAccess =>
+      'OAuth استعمال کریں (Cloudflare Access)';
 
   @override
   String get useOAuthCloudflareAccessSubtitle =>
-      'Opens a browser for Cloudflare Access Managed OAuth.';
+      'Cloudflare Access Managed OAuth کے لیے ایک براؤزر کھولتا ہے۔';
 
   @override
   String get useOAuthCloudflareAccessUnsupported =>
-      'Cloudflare Access OAuth is not available on this platform. Use Basic Auth instead.';
+      'Cloudflare Access OAuth اس پلیٹ فارم پر دستیاب نہیں ہے۔ اس کے بجائے Basic Auth استعمال کریں۔';
 
   @override
-  String get useTailscale => 'Use Tailscale';
+  String get useTailscale => 'ٹیل اسکیل کا استعمال کریں۔';
 
   @override
   String get useTailscaleSubtitle =>
-      'Routes traffic through the Tailscale network without a system VPN.';
+      'بغیر سسٹم VPN کے ٹیل اسکیل نیٹ ورک کے ذریعے ٹریفک کو روٹ کرتا ہے۔';
 
   @override
   String get useTailscaleUnsupported =>
-      'Tailscale is not supported on this platform.';
+      'ٹیل اسکیل اس پلیٹ فارم پر تعاون یافتہ نہیں ہے۔';
 
   @override
   String get utilityTitle => 'افادیت';
 
   @override
-  String get workspaceBrowseDirs => 'Browse directories';
+  String get workspaceBrowseDirs => 'ڈائریکٹریز کو براؤز کریں۔';
 
   @override
   String get workspaceChooseFolderOpen =>
-      'Choose any folder to open as project context.';
+      'پروجیکٹ سیاق و سباق کے طور پر کھولنے کے لیے کوئی بھی فولڈر منتخب کریں۔';
 
   @override
   String workspaceCloseProject(String project) {
-    return 'Close $project';
+    return 'بند کریں $project';
   }
 
   @override
-  String get workspaceFilterDirs => 'Filter directories';
+  String get workspaceClosedProjects => 'بند منصوبے';
 
   @override
-  String get workspaceOpenFolder => 'Open folder';
+  String workspaceCurrentDirectory(String path) {
+    return 'موجودہ ڈائریکٹری: $path';
+  }
 
   @override
-  String get workspaceOpenProjectFolder => 'Open project folder';
+  String get workspaceFilterDirs => 'ڈائریکٹریز کو فلٹر کریں۔';
 
   @override
-  String get workspaceProjectDirectory => 'Project directory';
+  String get workspaceOpenFolder => 'فولڈر کھولیں۔';
+
+  @override
+  String get workspaceOpenProjectFolder => 'پروجیکٹ فولڈر کھولیں۔';
+
+  @override
+  String get workspaceOpenProjects => 'کھلے منصوبے';
+
+  @override
+  String get workspaceProjectDirectory => 'پروجیکٹ ڈائرکٹری';
 
   @override
   String get workspaceProjectHint => '/repo/my-project';
 
   @override
   String workspaceRemoveFromHistory(String name) {
-    return 'Remove $name from history';
+    return 'تاریخ سے $name کو ہٹا دیں۔';
   }
 
   @override
-  String get workspaceSuggestions => 'Suggestions';
+  String get workspaceSuggestions => 'تجاویز';
 }

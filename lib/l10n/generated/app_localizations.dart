@@ -3773,6 +3773,54 @@ abstract class AppLocalizations {
   /// **'Pick the setup path that matches your current OpenCode setup.'**
   String get onboardingPickSetupPath;
 
+  /// CodeWalk UI string — onboardingPreconditionDirectoryNotWritable
+  ///
+  /// In en, this message translates to:
+  /// **'Install directory is not writable. Check user permissions.'**
+  String get onboardingPreconditionDirectoryNotWritable;
+
+  /// CodeWalk UI string — onboardingPreconditionInstallViaBunRecommendation
+  ///
+  /// In en, this message translates to:
+  /// **'Install via Bun is recommended by OpenCode maintainers.'**
+  String get onboardingPreconditionInstallViaBunRecommendation;
+
+  /// CodeWalk UI string — onboardingPreconditionNetworkFailed
+  ///
+  /// In en, this message translates to:
+  /// **'Network access failed. Check connectivity before installing OpenCode.'**
+  String get onboardingPreconditionNetworkFailed;
+
+  /// CodeWalk UI string — onboardingPreconditionNoRuntimeDetected
+  ///
+  /// In en, this message translates to:
+  /// **'No runtime detected. Install OpenCode binary directly or bootstrap Bun first.'**
+  String get onboardingPreconditionNoRuntimeDetected;
+
+  /// CodeWalk UI string — onboardingPreconditionNodeNpmAvailable
+  ///
+  /// In en, this message translates to:
+  /// **'Node + npm are available. Install OpenCode via npm or install Bun for the recommended flow.'**
+  String get onboardingPreconditionNodeNpmAvailable;
+
+  /// CodeWalk UI string — onboardingPreconditionOpenCodeAlreadyAvailable
+  ///
+  /// In en, this message translates to:
+  /// **'OpenCode is already available. You can use the detected command immediately.'**
+  String get onboardingPreconditionOpenCodeAlreadyAvailable;
+
+  /// CodeWalk UI string — onboardingPreconditionWindowsPathLagHint
+  ///
+  /// In en, this message translates to:
+  /// **' On Windows, refresh checks after install because PATH updates may lag in already-open apps.'**
+  String get onboardingPreconditionWindowsPathLagHint;
+
+  /// CodeWalk UI string — onboardingPreconditionWindowsWslRecommendation
+  ///
+  /// In en, this message translates to:
+  /// **'Windows build detected. WSL is recommended by OpenCode docs, but npm install can be used as fallback.'**
+  String get onboardingPreconditionWindowsWslRecommendation;
+
   /// CodeWalk UI string — onboardingReachable
   ///
   /// In en, this message translates to:
@@ -4471,6 +4519,12 @@ abstract class AppLocalizations {
   /// **'unarchived'**
   String get sessionActionUnarchived;
 
+  /// CodeWalk UI string — sessionArchive
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get sessionArchive;
+
   /// CodeWalk UI string — sessionCancelRename
   ///
   /// In en, this message translates to:
@@ -4741,6 +4795,12 @@ abstract class AppLocalizations {
   /// **'Open project to load conversations.'**
   String get sessionOpenProjectToLoad;
 
+  /// CodeWalk UI string — sessionPin
+  ///
+  /// In en, this message translates to:
+  /// **'Pin'**
+  String get sessionPin;
+
   /// CodeWalk UI string — sessionRename
   ///
   /// In en, this message translates to:
@@ -4770,6 +4830,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Share session'**
   String get sessionShare;
+
+  /// CodeWalk UI string — sessionShareAction
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get sessionShareAction;
 
   /// CodeWalk UI string — sessionShareLinkCopied
   ///
@@ -4801,11 +4867,29 @@ abstract class AppLocalizations {
   /// **'Conversation title'**
   String get sessionTitleHint;
 
+  /// CodeWalk UI string — sessionUnarchive
+  ///
+  /// In en, this message translates to:
+  /// **'Unarchive'**
+  String get sessionUnarchive;
+
+  /// CodeWalk UI string — sessionUnpin
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin'**
+  String get sessionUnpin;
+
   /// CodeWalk UI string — sessionUnshare
   ///
   /// In en, this message translates to:
   /// **'Unshare session'**
   String get sessionUnshare;
+
+  /// CodeWalk UI string — sessionUnshareAction
+  ///
+  /// In en, this message translates to:
+  /// **'Unshare'**
+  String get sessionUnshareAction;
 
   /// CodeWalk UI string — sessionUnshared
   ///
@@ -5917,11 +6001,47 @@ abstract class AppLocalizations {
   /// **'Sound'**
   String get settingsNotificationsSound;
 
+  /// CodeWalk UI string — settingsNotificationsSoundBuiltInAlert
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in alert'**
+  String get settingsNotificationsSoundBuiltInAlert;
+
+  /// CodeWalk UI string — settingsNotificationsSoundBuiltInClick
+  ///
+  /// In en, this message translates to:
+  /// **'Built-in click'**
+  String get settingsNotificationsSoundBuiltInClick;
+
+  /// CodeWalk UI string — settingsNotificationsSoundOff
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get settingsNotificationsSoundOff;
+
   /// CodeWalk UI string — settingsNotificationsSoundOnlyWhen
   ///
   /// In en, this message translates to:
   /// **'Sound only when'**
   String get settingsNotificationsSoundOnlyWhen;
+
+  /// CodeWalk UI string — settingsNotificationsSoundPickAudioFile
+  ///
+  /// In en, this message translates to:
+  /// **'Pick audio file'**
+  String get settingsNotificationsSoundPickAudioFile;
+
+  /// CodeWalk UI string — settingsNotificationsSoundPickFromSystem
+  ///
+  /// In en, this message translates to:
+  /// **'Pick from system'**
+  String get settingsNotificationsSoundPickFromSystem;
+
+  /// CodeWalk UI string — settingsNotificationsSoundSystemDefault
+  ///
+  /// In en, this message translates to:
+  /// **'System default'**
+  String get settingsNotificationsSoundSystemDefault;
 
   /// CodeWalk UI string — settingsNotificationsSoundType
   ///
@@ -7429,6 +7549,18 @@ abstract class AppLocalizations {
   /// **'Close {project}'**
   String workspaceCloseProject(String project);
 
+  /// CodeWalk UI string — workspaceClosedProjects
+  ///
+  /// In en, this message translates to:
+  /// **'Closed projects'**
+  String get workspaceClosedProjects;
+
+  /// CodeWalk UI string — workspaceCurrentDirectory
+  ///
+  /// In en, this message translates to:
+  /// **'Current directory: {path}'**
+  String workspaceCurrentDirectory(String path);
+
   /// CodeWalk UI string — workspaceFilterDirs
   ///
   /// In en, this message translates to:
@@ -7446,6 +7578,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open project folder'**
   String get workspaceOpenProjectFolder;
+
+  /// CodeWalk UI string — workspaceOpenProjects
+  ///
+  /// In en, this message translates to:
+  /// **'Open projects'**
+  String get workspaceOpenProjects;
 
   /// CodeWalk UI string — workspaceProjectDirectory
   ///

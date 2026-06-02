@@ -904,7 +904,7 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
     if (_mode == ChatComposerMode.shell) {
       return 'Shell command (Esc to exit)';
     }
-    return 'Type your needs...';
+    return context.l10n.chatComposerPlaceholder;
   }
 
   @override
@@ -1335,10 +1335,10 @@ class _ChatInputWidgetState extends State<ChatInputWidget> {
                                           ? () => unawaited(_toggleVoiceInput())
                                           : null,
                                       tooltip: _isStartingListening
-                                          ? 'Starting voice input'
+                                          ? context.l10n.chatStartingVoiceInput
                                           : _isListening
-                                          ? 'Stop voice input'
-                                          : 'Start voice input',
+                                          ? context.l10n.chatStopVoiceInput
+                                          : context.l10n.chatStartVoiceInput,
                                       style: IconButton.styleFrom(
                                         minimumSize: const Size(40, 40),
                                         maximumSize: const Size(40, 40),

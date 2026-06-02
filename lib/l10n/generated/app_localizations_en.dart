@@ -2108,6 +2108,38 @@ class AppLocalizationsEn extends AppLocalizations {
       'Pick the setup path that matches your current OpenCode setup.';
 
   @override
+  String get onboardingPreconditionDirectoryNotWritable =>
+      'Install directory is not writable. Check user permissions.';
+
+  @override
+  String get onboardingPreconditionInstallViaBunRecommendation =>
+      'Install via Bun is recommended by OpenCode maintainers.';
+
+  @override
+  String get onboardingPreconditionNetworkFailed =>
+      'Network access failed. Check connectivity before installing OpenCode.';
+
+  @override
+  String get onboardingPreconditionNoRuntimeDetected =>
+      'No runtime detected. Install OpenCode binary directly or bootstrap Bun first.';
+
+  @override
+  String get onboardingPreconditionNodeNpmAvailable =>
+      'Node + npm are available. Install OpenCode via npm or install Bun for the recommended flow.';
+
+  @override
+  String get onboardingPreconditionOpenCodeAlreadyAvailable =>
+      'OpenCode is already available. You can use the detected command immediately.';
+
+  @override
+  String get onboardingPreconditionWindowsPathLagHint =>
+      ' On Windows, refresh checks after install because PATH updates may lag in already-open apps.';
+
+  @override
+  String get onboardingPreconditionWindowsWslRecommendation =>
+      'Windows build detected. WSL is recommended by OpenCode docs, but npm install can be used as fallback.';
+
+  @override
   String get onboardingReachable => 'reachable';
 
   @override
@@ -2495,6 +2527,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessionActionUnarchived => 'unarchived';
 
   @override
+  String get sessionArchive => 'Archive';
+
+  @override
   String get sessionCancelRename => 'Cancel rename';
 
   @override
@@ -2657,6 +2692,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessionOpenProjectToLoad => 'Open project to load conversations.';
 
   @override
+  String get sessionPin => 'Pin';
+
+  @override
   String get sessionRename => 'Rename';
 
   @override
@@ -2670,6 +2708,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sessionShare => 'Share session';
+
+  @override
+  String get sessionShareAction => 'Share';
 
   @override
   String get sessionShareLinkCopied => 'Share link copied';
@@ -2688,7 +2729,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessionTitleHint => 'Conversation title';
 
   @override
+  String get sessionUnarchive => 'Unarchive';
+
+  @override
+  String get sessionUnpin => 'Unpin';
+
+  @override
   String get sessionUnshare => 'Unshare session';
+
+  @override
+  String get sessionUnshareAction => 'Unshare';
 
   @override
   String get sessionUnshared => 'Conversation unshared';
@@ -3334,7 +3384,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsNotificationsSound => 'Sound';
 
   @override
+  String get settingsNotificationsSoundBuiltInAlert => 'Built-in alert';
+
+  @override
+  String get settingsNotificationsSoundBuiltInClick => 'Built-in click';
+
+  @override
+  String get settingsNotificationsSoundOff => 'Off';
+
+  @override
   String get settingsNotificationsSoundOnlyWhen => 'Sound only when';
+
+  @override
+  String get settingsNotificationsSoundPickAudioFile => 'Pick audio file';
+
+  @override
+  String get settingsNotificationsSoundPickFromSystem => 'Pick from system';
+
+  @override
+  String get settingsNotificationsSoundSystemDefault => 'System default';
 
   @override
   String get settingsNotificationsSoundType => 'Sound type';
@@ -4164,6 +4232,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get workspaceClosedProjects => 'Closed projects';
+
+  @override
+  String workspaceCurrentDirectory(String path) {
+    return 'Current directory: $path';
+  }
+
+  @override
   String get workspaceFilterDirs => 'Filter directories';
 
   @override
@@ -4171,6 +4247,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workspaceOpenProjectFolder => 'Open project folder';
+
+  @override
+  String get workspaceOpenProjects => 'Open projects';
 
   @override
   String get workspaceProjectDirectory => 'Project directory';

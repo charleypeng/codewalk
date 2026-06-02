@@ -329,15 +329,13 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get behaviorDataSaverActive => 'Active now on mobile data.';
+  String get behaviorDataSaverActive => '현재 모바일 데이터에서 활성화되어 있습니다.';
 
   @override
-  String get behaviorDataSaverCellularOnly =>
-      'Only applies when the connection is cellular/mobile.';
+  String get behaviorDataSaverCellularOnly => '모바일/셀룰러 연결 시에만 적용됩니다.';
 
   @override
-  String get behaviorDataSaverWaiting =>
-      'Waiting for the next mobile-data sync window.';
+  String get behaviorDataSaverWaiting => '다음 모바일 데이터 동기화 주기를 대기 중입니다.';
 
   @override
   String get behaviorDisabled => '비활성화됨';
@@ -353,33 +351,31 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get behaviorOfficialOpenCodePermission =>
-      'Official OpenCode permission policy is configured in `opencode.json` with allow/ask/deny rules per tool. CodeWalk keeps the official permission-request cards and adds one approved ADR-023 exception: the composer auto-approve toggle replies with `Always` and `remember: true` unconditionally to create durable session-scoped grants, and keeps the same thread-scoped continuity path active in the Android background worker.';
+      '공식 OpenCode 권한 정책은 도구별 allow/ask/deny 규칙이 있는 `opencode.json`에서 구성됩니다. CodeWalk는 공식 권한 요청 카드를 유지하고 하나의 승인된 ADR-023 예외를 추가합니다: 컴포저 자동 승인 토글은 영구적인 세션 범위 권한을 생성하기 위해 무조건 `Always` 및 `remember: true`로 응답하며, Android 백그라운드 작업자에서도 동일한 스레드 범위 연속성 경로를 활성 상태로 유지합니다.';
 
   @override
-  String get behaviorOpenCodeBackedDefaults => 'OpenCode-backed defaults';
+  String get behaviorOpenCodeBackedDefaults => 'OpenCode 기반 기본값';
 
   @override
-  String get behaviorPermissionHandlingProvenance =>
-      'Permission handling provenance';
+  String get behaviorPermissionHandlingProvenance => '권한 처리 출처';
 
   @override
   String get behaviorPermissionsVariantReasoning =>
-      'Permissions and variant/reasoning parity stay separate until their UI can preserve advanced config safely.';
+      '권한 및 변형/추론 기능의 동등성은 고급 구성을 UI에서 안전하게 보존할 수 있을 때까지 분리되어 유지됩니다.';
 
   @override
   String get behaviorPrimaryAgentAgent =>
-      'Primary agent used when no agent is explicitly chosen.';
+      '에이전트가 명시적으로 선택되지 않았을 때 사용되는 기본 에이전트입니다.';
 
   @override
-  String get behaviorRefreshDefaults => 'Refresh defaults';
+  String get behaviorRefreshDefaults => '기본값 새로고침';
 
   @override
-  String get behaviorSharedAcrossOpenCode =>
-      'Shared across OpenCode clients through config.';
+  String get behaviorSharedAcrossOpenCode => '구성을 통해 OpenCode 클라이언트 간에 공유됩니다.';
 
   @override
   String get behaviorTheseValuesWrite =>
-      'These values write to `/config` on the active server and match official OpenCode shared config.';
+      '이 값은 활성 서버의 `/config`에 기록되며 공식 OpenCode 공유 구성과 일치합니다.';
 
   @override
   String get cannedAddTitle => '빠른 답변 추가';
@@ -391,7 +387,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get cannedAppendAtCursorSubtitle => '끄기 = 현재 작성기 텍스트 바꾸기';
 
   @override
-  String get cannedAttachFiles => 'Attach files';
+  String get cannedAttachFiles => '파일 첨부';
 
   @override
   String get cannedEditTitle => '빠른 답변 편집';
@@ -400,13 +396,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get cannedNewQuickReply => '새 빠른 답장';
 
   @override
-  String get cannedNoSuggestions => 'No suggestions';
+  String get cannedNoSuggestions => '제안 없음';
 
   @override
-  String get cannedOffMeansReplace => 'Off means replace current composer text';
+  String get cannedOffMeansReplace => '비활성화 시 현재 컴포저 텍스트를 대체합니다';
 
   @override
-  String get cannedQuickReply => 'New quick reply';
+  String get cannedQuickReply => '새 빠른 답장';
 
   @override
   String get cannedReplace => '바꾸기';
@@ -421,8 +417,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get cannedSendAutomaticallySubtitle => '삽입 후 즉시 보내기';
 
   @override
-  String get cannedSendImmediatelyInserting =>
-      'Send immediately after inserting this quick reply';
+  String get cannedSendImmediatelyInserting => '이 빠른 답장을 삽입한 후 즉시 전송';
 
   @override
   String get cannedTextLabel => '텍스트';
@@ -432,30 +427,28 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get chatActiveServerUnhealthy =>
-      'Active server is unhealthy. Sends will try once and fail fast until recovery.';
+      '활성 서버 상태가 비정상입니다. 복구될 때까지 메시지 전송은 한 번만 시도되고 즉시 실패 처리됩니다.';
 
   @override
   String get chatActiveServerUnhealthyLabel => '활성 서버가 비정상입니다';
 
   @override
-  String get chatAddServerToStart => 'Add a server to start chatting.';
+  String get chatAddServerToStart => '대화를 시작하려면 서버를 추가하세요.';
 
   @override
-  String get chatAppBarMoreActions => 'More actions';
+  String get chatAppBarMoreActions => '추가 작업';
 
   @override
-  String get chatAppBarPinAction => 'Pin to app bar';
+  String get chatAppBarPinAction => '앱 바에 고정';
 
   @override
-  String get chatAppBarPinDescription =>
-      'This action will stay visible outside the menu.';
+  String get chatAppBarPinDescription => '이 작업은 메뉴 외부에서 계속 표시됩니다.';
 
   @override
-  String get chatAppBarUnpinAction => 'Unpin from app bar';
+  String get chatAppBarUnpinAction => '앱 바에서 고정 해제';
 
   @override
-  String get chatAppBarUnpinDescription =>
-      'This action will move back into the menu.';
+  String get chatAppBarUnpinDescription => '이 작업은 메뉴 내부로 다시 이동합니다.';
 
   @override
   String chatBadgeConversationError(String title) {
@@ -482,11 +475,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatBadgeSyncing => '대화 동기화 중...';
 
   @override
-  String get chatCachedConversationsYet => 'No cached conversations yet';
+  String get chatCachedConversationsYet => '캐시된 대화가 없습니다';
 
   @override
-  String get chatChangedFilesAvailable =>
-      'No changed files are available for this session.';
+  String get chatChangedFilesAvailable => '이 세션에서 변경된 파일을 사용할 수 없습니다.';
 
   @override
   String chatChildrenChatProviderCurrentSessionChildren(int length) {
@@ -497,20 +489,19 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatChooseAgent => '에이전트 선택';
 
   @override
-  String get chatChooseDirectory => 'Choose Directory';
+  String get chatChooseDirectory => '디렉토리 선택';
 
   @override
   String get chatChooseEffort => '노력 수준 선택';
 
   @override
-  String get chatChooseFolderOpen =>
-      'Choose a folder to open as project context.';
+  String get chatChooseFolderOpen => '프로젝트 컨텍스트로 열 폴더를 선택하세요.';
 
   @override
   String get chatChooseModel => '모델 선택';
 
   @override
-  String get chatClose => 'Close';
+  String get chatClose => '닫기';
 
   @override
   String chatCloseProject(String project) {
@@ -530,7 +521,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatCommandSourceProject => '프로젝트';
 
   @override
-  String get chatCompactContext => 'Compact Context';
+  String get chatCompactContext => '컨텍스트 압축';
 
   @override
   String get chatComposerHintShell => '셸 명령어 (Esc 종료)';
@@ -539,13 +530,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatComposerPlaceholder => '필요한 사항을 입력하세요...';
 
   @override
-  String get chatConversation => 'Conversation';
+  String get chatConversation => '대화';
 
   @override
-  String get chatConversations => 'Conversations';
+  String get chatConversations => '대화 목록';
 
   @override
-  String get chatConversationsPane => 'Conversations';
+  String get chatConversationsPane => '대화';
 
   @override
   String chatCostLabel(double cost) {
@@ -556,7 +547,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatCouldNotRefreshSession => '이 대화를 새로고침할 수 없습니다';
 
   @override
-  String get chatCurrent => 'Use current';
+  String get chatCurrent => '현재 항목 사용';
 
   @override
   String chatDescriptionChildren(int count) {
@@ -619,13 +610,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatDescriptionVoiceInput => '음성 입력 시작 또는 중지';
 
   @override
-  String get chatDiffFiles => 'Diff files: 0';
+  String get chatDiffFiles => 'Diff 파일: 0';
 
   @override
-  String get chatDisplay => 'Display';
+  String get chatDisplay => '화면 표시';
 
   @override
-  String get chatDisplayToggles => 'Display toggles';
+  String get chatDisplayToggles => '화면 표시 토글';
 
   @override
   String get chatDoubleESCStop => 'ESC 두 번 눌러서 중지';
@@ -653,7 +644,7 @@ class AppLocalizationsKo extends AppLocalizations {
       '하위 대화를 새로고침하지 못했습니다. 다시 시도하세요.';
 
   @override
-  String get chatFailedToStopResponse => 'Failed to stop current response';
+  String get chatFailedToStopResponse => '현재 응답 중지에 실패했습니다';
 
   @override
   String get chatFileExplorerContents => '내용';
@@ -662,19 +653,19 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatFileExplorerNames => '이름';
 
   @override
-  String get chatFilterActive => 'Active';
+  String get chatFilterActive => '활성';
 
   @override
-  String get chatFilterAll => 'All';
+  String get chatFilterAll => '전체';
 
   @override
-  String get chatFilterArchived => 'Archived';
+  String get chatFilterArchived => '보관됨';
 
   @override
-  String get chatFilterDirectories => 'Filter directories';
+  String get chatFilterDirectories => '디렉토리 필터';
 
   @override
-  String get chatFilterSessions => 'Filter sessions';
+  String get chatFilterSessions => '세션 필터';
 
   @override
   String get chatForkFailed => '대화 포크 실패';
@@ -683,10 +674,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatForked => '대화 포크됨';
 
   @override
-  String get chatGoToFirst => 'Go to first message';
+  String get chatGoToFirst => '첫 메시지로 이동';
 
   @override
-  String get chatGoToLatest => 'Go to latest message';
+  String get chatGoToLatest => '최신 메시지로 이동';
 
   @override
   String chatGroupMessageCountMessages(
@@ -697,49 +688,49 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get chatHelloAssistant => 'Hello! I am your AI assistant';
+  String get chatHelloAssistant => '안녕하세요! 저는 AI 어시스턴트입니다';
 
   @override
-  String get chatHelp => 'How can I help you?';
+  String get chatHelp => '무엇을 도와드릴까요?';
 
   @override
   String get chatHelpMessage => '멘션은 @, 쉘은 !, 명령은 /를 사용하세요';
 
   @override
-  String get chatHideConversationsSidebar => 'Hide Conversations sidebar';
+  String get chatHideConversationsSidebar => '대화 사이드바 숨기기';
 
   @override
-  String get chatHideUtilitySidebar => 'Hide Utility sidebar';
+  String get chatHideUtilitySidebar => '유틸리티 사이드바 숨기기';
 
   @override
-  String get chatHistoryCollapsed => 'Previous history is collapsed';
+  String get chatHistoryCollapsed => '이전 기록이 접혀 있습니다';
 
   @override
-  String get chatHistoryHideEarlier => 'Hide earlier messages';
+  String get chatHistoryHideEarlier => '이전 메시지 숨기기';
 
   @override
   String chatHistoryMessagesHidden(int count, String label) {
-    return '$count messages hidden before $label compaction';
+    return '$label 압축 이전에 메시지 $count개 숨김';
   }
 
   @override
-  String get chatHistoryShowEarlier => 'Show earlier messages';
+  String get chatHistoryShowEarlier => '이전 메시지 보기';
 
   @override
-  String get chatKeepWorking => 'Keep working';
+  String get chatKeepWorking => '계속 진행';
 
   @override
   String get chatLargeContentSkipped => '안정성을 위해 크거나 잘못된 형식의 콘텐츠를 건너뛰었습니다.';
 
   @override
   String get chatLatestToolActivity =>
-      'Latest tool activity stays inside this bounded panel to keep the chat viewport stable.';
+      '채팅 뷰포트를 안정적으로 유지하기 위해 최신 도구 활동은 이 고정된 패널 내부에 유지됩니다.';
 
   @override
-  String get chatLoadMore => 'Load more';
+  String get chatLoadMore => '더 보기';
 
   @override
-  String get chatLoadingProjectContext => 'Loading project context...';
+  String get chatLoadingProjectContext => '프로젝트 컨텍스트 로드 중...';
 
   @override
   String get chatMainConversationUnavailable => '메인 대화를 아직 사용할 수 없습니다.';
@@ -766,10 +757,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatMessageLess => '접기';
 
   @override
-  String get chatMessageMessagePartUnavailable => 'Message part unavailable';
+  String get chatMessageMessagePartUnavailable => '메시지 일부를 사용할 수 없습니다';
 
   @override
-  String get chatMessageMetadataAvailable => 'No metadata available';
+  String get chatMessageMetadataAvailable => '사용 가능한 메타데이터가 없습니다';
 
   @override
   String chatMessageModelMessageModelId(String modelId) {
@@ -780,7 +771,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatMessageMore => '더보기';
 
   @override
-  String get chatMessageOpenFile => 'Open file';
+  String get chatMessageOpenFile => '파일 열기';
 
   @override
   String chatMessageProviderMessageProviderId(String providerId) {
@@ -788,13 +779,13 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get chatMessageRewindEdit => 'Rewind and edit from here';
+  String get chatMessageRewindEdit => '여기서부터 되돌려 편집하기';
 
   @override
-  String get chatMessageRunningTask => 'Running task';
+  String get chatMessageRunningTask => '작업 실행 중';
 
   @override
-  String get chatMessageSaveFile => 'Save file';
+  String get chatMessageSaveFile => '파일 저장';
 
   @override
   String get chatMessageShow => '보기';
@@ -815,14 +806,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatMessageThinking => '생각 중';
 
   @override
-  String get chatMessageThinkingProcess => 'Thinking Process';
+  String get chatMessageThinkingProcess => '생각 과정';
 
   @override
-  String get chatMessageToolCall => '1 tool call';
+  String get chatMessageToolCall => '도구 호출 1개';
 
   @override
   String chatMessageToolCalls(int count) {
-    return '$count tool calls';
+    return '도구 호출 $count개';
   }
 
   @override
@@ -855,34 +846,34 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get chatMessageToolStatusInProgress => 'In progress';
+  String get chatMessageToolStatusInProgress => '진행 중';
 
   @override
-  String get chatMessageToolStatusNeedsAttention => 'Needs attention';
+  String get chatMessageToolStatusNeedsAttention => '주의 필요';
 
   @override
-  String get chatMessageToolStatusQueued => 'Queued';
+  String get chatMessageToolStatusQueued => '대기 중';
 
   @override
-  String get chatMessageYou => 'You';
+  String get chatMessageYou => '나';
 
   @override
   String get chatModelLockedSubConversation => '하위 대화에서 모델 잠김';
 
   @override
-  String get chatNewChat => 'New Chat';
+  String get chatNewChat => '새 대화';
 
   @override
-  String get chatNewChatTourDescription => 'Start a new conversation here.';
+  String get chatNewChatTourDescription => '여기서 새 대화를 시작합니다.';
 
   @override
-  String get chatNewChatTourTitle => 'New chat';
+  String get chatNewChatTourTitle => '새 대화';
 
   @override
   String get chatNoConversationsInProject => '이 프로젝트에 대화가 없습니다.';
 
   @override
-  String get chatNoServerYet => 'No server configured yet';
+  String get chatNoServerYet => '아직 설정된 서버가 없습니다';
 
   @override
   String get chatNoSessionSelected => '대화를 선택하거나 생성하세요';
@@ -891,13 +882,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatNoSubConversationFound => '이 작업에 대한 하위 대화를 찾을 수 없습니다.';
 
   @override
-  String get chatOpenFiles => 'Open Files';
+  String get chatOpenFiles => '열린 파일';
 
   @override
   String get chatOpenProject => '프로젝트 열기';
 
   @override
-  String get chatOpenProjectFolder => 'Open project folder...';
+  String get chatOpenProjectFolder => '프로젝트 폴더 열기...';
 
   @override
   String get chatOpenProjectToLoad => '대화를 로드하려면 프로젝트를 여십시오.';
@@ -907,19 +898,19 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get chatPageStatusAutomaticCompactionExplanation =>
-      'Automatic compaction happens as context usage grows.';
+      '컨텍스트 사용량이 늘어나면 자동으로 압축이 수행됩니다.';
 
   @override
-  String get chatPageStatusCompactNow => 'Compact now';
+  String get chatPageStatusCompactNow => '지금 압축';
 
   @override
-  String get chatPageStatusCompacting => 'Compacting...';
+  String get chatPageStatusCompacting => '압축 중...';
 
   @override
-  String get chatPageStatusCompactingContextNow => 'Compacting context now...';
+  String get chatPageStatusCompactingContextNow => '현재 컨텍스트 압축 중...';
 
   @override
-  String get chatPageStatusContextCompacted => 'Context compacted';
+  String get chatPageStatusContextCompacted => '컨텍스트 압축됨';
 
   @override
   String get chatPageStatusContextUsage => '컨텍스트 사용량';
@@ -928,8 +919,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatPageStatusCost => '비용';
 
   @override
-  String get chatPageStatusFailedToCompactContext =>
-      'Failed to compact context';
+  String get chatPageStatusFailedToCompactContext => '컨텍스트 압축 실패';
 
   @override
   String get chatPageStatusLimit => '제한';
@@ -941,7 +931,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatPageStatusSaver => '절약';
 
   @override
-  String get chatPageStatusServer => 'Server';
+  String get chatPageStatusServer => '서버';
 
   @override
   String get chatPageStatusSwitchServer => '서버 전환';
@@ -964,7 +954,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatPermissionAutoApproveOn => '권한 자동 승인 켜짐';
 
   @override
-  String get chatProjectContext => 'Project Context';
+  String get chatProjectContext => '프로젝트 컨텍스트';
 
   @override
   String get chatProjectContext2 => '프로젝트 컨텍스트';
@@ -1003,28 +993,28 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatReasoning => '추론 중...';
 
   @override
-  String get chatRecentSessions => 'Recent sessions';
+  String get chatRecentSessions => '최근 세션';
 
   @override
-  String get chatRecentSessionsToggle => 'Recent sessions';
+  String get chatRecentSessionsToggle => '최근 세션';
 
   @override
-  String get chatRedoLastTurn => 'Redo last undone turn';
+  String get chatRedoLastTurn => '마지막 취소한 턴 다시 실행';
 
   @override
   String get chatRedoNothing => '이 세션에서 다시 실행할 작업이 없습니다';
 
   @override
-  String get chatRefresh => 'Refresh';
+  String get chatRefresh => '새로고침';
 
   @override
-  String get chatRefreshConversation => 'Could not refresh this conversation';
+  String get chatRefreshConversation => '이 대화를 새로고침할 수 없습니다';
 
   @override
-  String get chatRefreshProjects => 'Refresh projects';
+  String get chatRefreshProjects => '프로젝트 새로고침';
 
   @override
-  String get chatRefreshSessionDetails => 'Refresh session details';
+  String get chatRefreshSessionDetails => '세션 정보 새로고침';
 
   @override
   String chatRemoveDisplayNameHistory(String displayName) {
@@ -1032,58 +1022,57 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get chatRetry => 'Retry';
+  String get chatRetry => '재시도';
 
   @override
-  String get chatRetry2 => 'Retry';
+  String get chatRetry2 => '재시도';
 
   @override
-  String get chatRetryRefresh => 'Retry refresh';
+  String get chatRetryRefresh => '새로고침 재시도';
 
   @override
-  String get chatRetryingModelRequest => 'Retrying model request...';
+  String get chatRetryingModelRequest => '모델 요청 재시도 중...';
 
   @override
-  String get chatReturnToMainConversation => 'Return to main conversation';
+  String get chatReturnToMainConversation => '기본 대화로 돌아가기';
 
   @override
-  String get chatReviewChanges => 'Review changes';
+  String get chatReviewChanges => '변경 사항 검토';
 
   @override
-  String get chatSearchConversations => 'Search conversations';
+  String get chatSearchConversations => '대화 검색';
 
   @override
-  String get chatSearchNextResult => 'Next result';
+  String get chatSearchNextResult => '다음 결과';
 
   @override
-  String get chatSearchNoResults => 'No results';
+  String get chatSearchNoResults => '결과 없음';
 
   @override
-  String get chatSearchPreviousResult => 'Previous result';
+  String get chatSearchPreviousResult => '이전 결과';
 
   @override
   String chatSearchResultCount(int current, int total) {
-    return 'Message $current of $total';
+    return '메시지 $current / $total';
   }
 
   @override
-  String get chatSearchTimeline => 'Search timeline';
+  String get chatSearchTimeline => '타임라인 검색';
 
   @override
-  String get chatSelectDirectory => 'Select directory';
+  String get chatSelectDirectory => '디렉토리 선택';
 
   @override
-  String get chatSelectOrCreate =>
-      'Select or create a conversation to start chatting';
+  String get chatSelectOrCreate => '대화를 시작하려면 대화를 선택하거나 새로 만드세요';
 
   @override
-  String get chatSelectProjectBelow => 'Select a project below.';
+  String get chatSelectProjectBelow => '아래에서 프로젝트를 선택하세요.';
 
   @override
   String get chatServerSelectedModel => '서버 선택 모델';
 
   @override
-  String get chatSessionActions => 'Session actions';
+  String get chatSessionActions => '세션 동작';
 
   @override
   String chatSessionChatSessionSession(String title) {
@@ -1096,11 +1085,10 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get chatSessionConversations => 'No conversations';
+  String get chatSessionConversations => '대화 없음';
 
   @override
-  String get chatSessionCreateConversationStart =>
-      'Create a new conversation to start chatting';
+  String get chatSessionCreateConversationStart => '대화를 시작하려면 새 대화를 만드세요';
 
   @override
   String chatSessionsLength(int length) {
@@ -1108,10 +1096,10 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get chatSetUpServer => 'Set up server';
+  String get chatSetUpServer => '서버 설정';
 
   @override
-  String get chatSettings => 'Settings';
+  String get chatSettings => '설정';
 
   @override
   String get chatShortcutsCloseApp => '플랫폼 종료 동작을 사용하여 앱 닫기';
@@ -1160,19 +1148,19 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatSidebarAccess => '사이드바 액세스';
 
   @override
-  String get chatSortMostRecent => 'Most Recent';
+  String get chatSortMostRecent => '가장 최근 순';
 
   @override
-  String get chatSortOldest => 'Oldest';
+  String get chatSortOldest => '오래된 순';
 
   @override
-  String get chatSortRecent => 'Recent';
+  String get chatSortRecent => '최근 순';
 
   @override
-  String get chatSortSessions => 'Sort sessions';
+  String get chatSortSessions => '세션 정렬';
 
   @override
-  String get chatSortTitle => 'Title';
+  String get chatSortTitle => '제목 순';
 
   @override
   String get chatStartVoiceInput => '음성 입력 시작';
@@ -1217,11 +1205,10 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get chatTasks => 'Tasks';
+  String get chatTasks => '작업';
 
   @override
-  String get chatTasksAvailableSession =>
-      'No tasks are available for this session.';
+  String get chatTasksAvailableSession => '이 세션에서 사용할 수 있는 작업이 없습니다.';
 
   @override
   String get chatTipBeSpecific => '팁: 구체적으로 작성하세요 — 프롬프트가 짧을수록 답변이 빠릅니다';
@@ -1254,7 +1241,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatTipStepByStep => '팁: 복잡한 문제 디버깅 시 단계별 설명을 요청하세요';
 
   @override
-  String get chatToggleSidebars => 'Toggle sidebars';
+  String get chatToggleSidebars => '사이드바 토글';
 
   @override
   String chatTokensLabel(int total) {
@@ -1272,13 +1259,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatTourSwitchFolders => '이 버튼을 사용하여 프로젝트 폴더와 컨텍스트를 전환합니다.';
 
   @override
-  String get chatUndoLastTurn => 'Undo last turn';
+  String get chatUndoLastTurn => '마지막 턴 실행 취소';
 
   @override
   String get chatUndoNothing => '이 세션에서 취소할 작업이 없습니다';
 
   @override
-  String get chatUseCurrent => 'Use current';
+  String get chatUseCurrent => '현재 항목 사용';
 
   @override
   String get chatWaitingForNetworkConnection => '네트워크 연결 대기 중...';
@@ -1291,42 +1278,42 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get chatWorkBoundedPanelExplanation =>
-      'Latest tool activity stays inside this bounded panel to keep the chat viewport stable.';
+      '채팅 뷰포트를 안정적으로 유지하기 위해 최신 도구 활동은 이 고정된 패널 내부에 유지됩니다.';
 
   @override
-  String get chatWorkExpand => 'Expand';
+  String get chatWorkExpand => '펼치기';
 
   @override
-  String get chatWorkHide => 'Hide';
+  String get chatWorkHide => '숨기기';
 
   @override
-  String get chatWorkMessageOne => '1 work message';
+  String get chatWorkMessageOne => '작업 메시지 1개';
 
   @override
   String chatWorkMessagesMultiple(int count) {
-    return '$count work messages';
+    return '작업 메시지 $count개';
   }
 
   @override
-  String get chatWorkShow => 'Show';
+  String get chatWorkShow => '표시';
 
   @override
-  String get commonCancel => 'Cancel';
+  String get commonCancel => '취소';
 
   @override
   String get commonCopiedToClipboard => '클립보드에 복사됨';
 
   @override
-  String get commonDelete => 'Delete';
+  String get commonDelete => '삭제';
 
   @override
   String get commonFile => '파일';
 
   @override
-  String get commonReset => 'Reset';
+  String get commonReset => '초기화';
 
   @override
-  String get commonSave => 'Save';
+  String get commonSave => '저장';
 
   @override
   String get compactionAutomatic => '자동';
@@ -1335,91 +1322,91 @@ class AppLocalizationsKo extends AppLocalizations {
   String get compactionManual => '수동';
 
   @override
-  String get composerAddAttachment => 'Add attachment';
+  String get composerAddAttachment => '첨부파일 추가';
 
   @override
-  String get composerAttachFiles => 'Attach files';
+  String get composerAttachFiles => '파일 첨부';
 
   @override
-  String get composerCannedAppendAtCursor => 'Append at cursor';
+  String get composerCannedAppendAtCursor => '커서 위치에 추가';
 
   @override
-  String get composerCannedLabel => 'Label (optional)';
+  String get composerCannedLabel => '라벨 (선택 사항)';
 
   @override
-  String get composerCannedNoReplies => 'No quick replies yet.';
+  String get composerCannedNoReplies => '등록된 빠른 답장이 없습니다.';
 
   @override
-  String get composerCannedReplace => 'Replace';
+  String get composerCannedReplace => '대체';
 
   @override
-  String get composerCannedSave => 'Save';
+  String get composerCannedSave => '저장';
 
   @override
-  String get composerCannedScopeGlobal => 'Global';
+  String get composerCannedScopeGlobal => '글로벌';
 
   @override
-  String get composerCannedScopeProject => 'Project-only';
+  String get composerCannedScopeProject => '프로젝트 전용';
 
   @override
-  String get composerCannedSendAutomatically => 'Send automatically';
+  String get composerCannedSendAutomatically => '자동 전송';
 
   @override
-  String get composerCannedText => 'Text';
+  String get composerCannedText => '텍스트';
 
   @override
-  String get composerChatInput => 'Chat input';
+  String get composerChatInput => '채팅 입력';
 
   @override
-  String get composerDeleteAction => 'Delete';
+  String get composerDeleteAction => '삭제';
 
   @override
-  String get composerEdit => 'Edit';
+  String get composerEdit => '편집';
 
   @override
-  String get composerExtras => 'Extras';
+  String get composerExtras => '추가 기능';
 
   @override
-  String get composerNewQuickReply => 'New quick reply';
+  String get composerNewQuickReply => '새 빠른 답장';
 
   @override
-  String get composerSelectImages => 'Select Images';
+  String get composerSelectImages => '이미지 선택';
 
   @override
-  String get composerSelectPdf => 'Select PDF';
+  String get composerSelectPdf => 'PDF 선택';
 
   @override
-  String get composerSend => 'Send';
+  String get composerSend => '전송';
 
   @override
-  String get composerShellMode => 'Shell mode';
+  String get composerShellMode => '셸 모드';
 
   @override
-  String get dialogDownload => 'Download';
+  String get dialogDownload => '다운로드';
 
   @override
-  String get dialogLanguage => 'Language';
+  String get dialogLanguage => '언어';
 
   @override
-  String get dialogMoonshineModelSize => 'Model size';
+  String get dialogMoonshineModelSize => '모델 크기';
 
   @override
-  String get dialogMoonshineVoiceSetup => 'Moonshine Voice Setup';
+  String get dialogMoonshineVoiceSetup => 'Moonshine 음성 설정';
 
   @override
-  String get dialogParakeetModel => 'Parakeet model';
+  String get dialogParakeetModel => 'Parakeet 모델';
 
   @override
-  String get dialogParakeetVoiceSetup => 'Parakeet Voice Setup';
+  String get dialogParakeetVoiceSetup => 'Parakeet 음성 설정';
 
   @override
-  String get dialogSenseVoiceModel => 'SenseVoice model';
+  String get dialogSenseVoiceModel => 'SenseVoice 모델';
 
   @override
-  String get dialogSenseVoiceSetup => 'SenseVoice Setup';
+  String get dialogSenseVoiceSetup => 'SenseVoice 설정';
 
   @override
-  String get dialogVoiceInputSetup => 'Voice Input Setup';
+  String get dialogVoiceInputSetup => '음성 입력 설정';
 
   @override
   String get errorAnErrorOccurred => '오류가 발생했습니다';
@@ -1438,30 +1425,30 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get errorFormatAuthenticationFailedReconnect =>
-      'Authentication failed. Reconnect the provider and try again.';
+      '인증에 실패했습니다. 제공자를 다시 연결하고 시도해 주세요.';
 
   @override
   String get errorFormatProviderTemporarilyUnavailable =>
-      'Provider temporarily unavailable. Try again shortly.';
+      '제공자를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.';
 
   @override
   String get errorFormatQuotaExceededCheck =>
-      'Quota exceeded. Check your provider plan or billing.';
+      '사용량이 초과되었습니다. 제공자 플랜 또는 결제 상태를 확인해 주세요.';
 
   @override
   String get errorFormatRateLimitExceeded =>
-      'Rate limit exceeded. Wait a moment and try again.';
+      '요청 빈도 제한이 초과되었습니다. 잠시 후 다시 시도해 주세요.';
 
   @override
-  String get errorFormatServerErrorPlease => 'Server error. Please try again.';
+  String get errorFormatServerErrorPlease => '서버 오류가 발생했습니다. 다시 시도해 주세요.';
 
   @override
   String get errorFormatServiceTemporarilyUnavailable =>
-      'Service temporarily unavailable. The server may be starting up — please try again shortly.';
+      '서비스를 일시적으로 사용할 수 없습니다. 서버가 시작 중일 수 있으니 잠시 후 다시 시도해 주세요.';
 
   @override
   String get errorFormatUnableReachServer =>
-      'Unable to reach the server. Check connection and server status.';
+      '서버에 연결할 수 없습니다. 네트워크 연결 및 서버 상태를 확인해 주세요.';
 
   @override
   String get errorProviderUnavailable => '공급자 사용 불가';
@@ -1498,22 +1485,19 @@ class AppLocalizationsKo extends AppLocalizations {
       '서비스를 일시적으로 사용할 수 없습니다. 서버가 시작 중일 수 있습니다. 잠시 후 다시 시도하십시오.';
 
   @override
-  String get fileActionAttachmentDataDecoded =>
-      'Attachment data could not be decoded.';
+  String get fileActionAttachmentDataDecoded => '첨부파일 데이터를 디코딩할 수 없습니다.';
 
   @override
-  String get fileActionAttachmentPathEmpty => 'Attachment path is empty.';
+  String get fileActionAttachmentPathEmpty => '첨부파일 경로가 비어 있습니다.';
 
   @override
-  String get fileActionAttachmentPayloadEmpty => 'Attachment payload is empty.';
+  String get fileActionAttachmentPayloadEmpty => '첨부파일 데이터 페이로드가 비어 있습니다.';
 
   @override
-  String get fileActionAttachmentProvideValid =>
-      'Attachment does not provide a valid location.';
+  String get fileActionAttachmentProvideValid => '첨부파일이 유효한 위치를 제공하지 않습니다.';
 
   @override
-  String get fileActionAttachmentSavedDevice =>
-      'Attachment could not be saved on this device.';
+  String get fileActionAttachmentSavedDevice => '기기에 첨부파일을 저장할 수 없습니다.';
 
   @override
   String fileActionAttachmentSavedOutputFile(String path) {
@@ -1531,39 +1515,37 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get fileActionLocalAttachmentFound =>
-      'Local attachment was not found on this device.';
+  String get fileActionLocalAttachmentFound => '이 기기에서 로컬 첨부파일을 찾을 수 없습니다.';
 
   @override
-  String get fileActionSaveCanceled => 'Save canceled.';
+  String get fileActionSaveCanceled => '저장이 취소되었습니다.';
 
   @override
-  String get fileActionUnableOpenLocal =>
-      'Unable to open the local attachment.';
+  String get fileActionUnableOpenLocal => '로컬 첨부파일을 열 수 없습니다.';
 
   @override
-  String get filesAddChat => 'Add to chat';
+  String get filesAddChat => '채팅에 추가';
 
   @override
-  String get filesBinaryFilePreview => 'Binary file preview is not available.';
+  String get filesBinaryFilePreview => '바이너리 파일 미리보기는 지원되지 않습니다.';
 
   @override
-  String get filesClear => 'Clear';
+  String get filesClear => '지우기';
 
   @override
-  String get filesContents => 'Contents';
+  String get filesContents => '콘텐츠';
 
   @override
-  String get filesFileEmpty => 'File is empty.';
+  String get filesFileEmpty => '파일이 비어 있습니다.';
 
   @override
-  String get filesFilesFound => 'No files found';
+  String get filesFilesFound => '파일을 찾을 수 없음';
 
   @override
-  String get filesHideSidebar => 'Hide Files sidebar';
+  String get filesHideSidebar => '파일 사이드바 숨기기';
 
   @override
-  String get filesNames => 'Names';
+  String get filesNames => '이름';
 
   @override
   String filesOpenFilesFileState(int length) {
@@ -1571,37 +1553,37 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get filesQuickOpen => 'Quick Open';
+  String get filesQuickOpen => '빠른 열기';
 
   @override
-  String get filesQuickOpenFile => 'Quick Open File';
+  String get filesQuickOpenFile => '빠른 파일 열기';
 
   @override
-  String get filesRefresh => 'Refresh files';
+  String get filesRefresh => '파일 새로고침';
 
   @override
-  String get filesSearchHint => 'Search files by name or path';
+  String get filesSearchHint => '이름 또는 경로로 파일 검색';
 
   @override
-  String get filesTitle => 'Files';
+  String get filesTitle => '파일';
 
   @override
-  String get logsAppLogs => 'App Logs';
+  String get logsAppLogs => '앱 로그';
 
   @override
-  String get logsClear => 'Clear logs';
+  String get logsClear => '로그 지우기';
 
   @override
-  String get logsCloseSearch => 'Close search';
+  String get logsCloseSearch => '검색 닫기';
 
   @override
-  String get logsCopyFiltered => 'Copy filtered logs';
+  String get logsCopyFiltered => '필터링된 로그 복사';
 
   @override
   String get logsFilterAll => '전체';
 
   @override
-  String get logsLevel => 'Level';
+  String get logsLevel => '로그 레벨';
 
   @override
   String get logsNoLogsYet => '아직 캡처된 로그가 없습니다.';
@@ -1610,7 +1592,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get logsNoMatchingLogs => '현재 필터와 일치하는 로그가 없습니다.';
 
   @override
-  String get logsSearch => 'Search logs';
+  String get logsSearch => '로그 검색';
 
   @override
   String logsShowingOrderedLength(int length, int length2) {
@@ -1618,25 +1600,25 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get logsTimeRange => 'Time range';
+  String get logsTimeRange => '시간 범위';
 
   @override
   String get mathExpressionLabel => '수식';
 
   @override
-  String get mermaidCopySourceTooltip => 'Copy source';
+  String get mermaidCopySourceTooltip => '소스 복사';
 
   @override
-  String get mermaidDiagramLabel => 'Mermaid Diagram';
+  String get mermaidDiagramLabel => 'Mermaid 다이어그램';
 
   @override
-  String get modelAuto => 'Auto';
+  String get modelAuto => '자동';
 
   @override
-  String get modelChooseAgent => 'Choose agent';
+  String get modelChooseAgent => '에이전트 선택';
 
   @override
-  String get modelFavorites => 'Favorites';
+  String get modelFavorites => '즐겨찾기';
 
   @override
   String get modelLabelBaseEnglish => '기본 (영어)';
@@ -1651,75 +1633,73 @@ class AppLocalizationsKo extends AppLocalizations {
   String get modelLabelTinyEnglish => 'Tiny (영어)';
 
   @override
-  String get modelLoadingModels => 'Loading models';
+  String get modelLoadingModels => '모델 로드 중';
 
   @override
-  String get modelModelsFound => 'No models found';
+  String get modelModelsFound => '모델을 찾을 수 없음';
 
   @override
-  String get modelRetryModels => 'Retry models';
+  String get modelRetryModels => '모델 재시도';
 
   @override
-  String get modelSearchHint => 'Search model or provider';
+  String get modelSearchHint => '모델 또는 제공자 검색';
 
   @override
-  String get msgBatterySettingsFailed =>
-      'Could not open Android battery optimization settings.';
+  String get msgBatterySettingsFailed => 'Android 배터리 최적화 설정을 열 수 없습니다.';
 
   @override
   String get msgBatterySettingsOpened =>
-      'Android battery settings opened. Allow unrestricted battery for CodeWalk.';
+      'Android 배터리 설정이 열렸습니다. CodeWalk에 대해 배터리 사용량 제한 없음으로 허용해 주세요.';
 
   @override
   String get msgClearUsernameNeedsConfigEdit =>
-      'Clearing the OpenCode conversation username still requires editing config outside the app.';
+      'OpenCode 대화 사용자 이름을 지우려면 여전히 앱 외부에서 구성을 수정해야 합니다.';
 
   @override
-  String get msgCommandCopied => 'Command copied';
+  String get msgCommandCopied => '명령어가 복사되었습니다';
 
   @override
-  String get msgCopiedToClipboard => 'Copied to clipboard';
+  String get msgCopiedToClipboard => '클립보드에 복사되었습니다';
 
   @override
   String get msgEnterUsernameToSave =>
-      'Enter a username to save a custom OpenCode conversation name.';
+      '사용자 정의 OpenCode 대화 이름을 저장하려면 사용자 이름을 입력하세요.';
 
   @override
-  String get msgFailedToSendMessage =>
-      'Failed to send message. Draft kept for retry.';
+  String get msgFailedToSendMessage => '메시지 전송에 실패했습니다. 재시도를 위해 초안이 유지됩니다.';
 
   @override
-  String get msgFailedToStartVoiceInput => 'Failed to start voice input';
+  String get msgFailedToStartVoiceInput => '음성 입력을 시작하지 못했습니다';
 
   @override
   String msgFilePathNotFound(String path) {
-    return 'File not found: $path';
+    return '파일을 찾을 수 없음: $path';
   }
 
   @override
-  String get msgFilteredLogsCopied => 'Filtered logs copied to clipboard';
+  String get msgFilteredLogsCopied => '필터링된 로그가 클립보드에 복사되었습니다';
 
   @override
-  String get msgInfoAgent => 'Agent';
+  String get msgInfoAgent => '에이전트';
 
   @override
-  String get msgInfoCompaction => 'Compaction';
+  String get msgInfoCompaction => '압축';
 
   @override
   String msgInfoCost(double cost) {
-    return 'Cost: \$$cost';
+    return '비용: \\\$$cost';
   }
 
   @override
-  String get msgInfoMessageInfo => 'Message Info';
+  String get msgInfoMessageInfo => '메시지 정보';
 
   @override
   String msgInfoModel(String modelId) {
-    return 'Model: $modelId';
+    return '모델: $modelId';
   }
 
   @override
-  String get msgInfoNoMetadata => 'No metadata available';
+  String get msgInfoNoMetadata => '사용 가능한 메타데이터가 없습니다';
 
   @override
   String msgInfoPartDescriptionModel(String description, String model) {
@@ -1727,18 +1707,18 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get msgInfoPatch => 'Patch';
+  String get msgInfoPatch => '패치';
 
   @override
   String msgInfoProvider(String providerId) {
-    return 'Provider: $providerId';
+    return '제공자: $providerId';
   }
 
   @override
-  String get msgInfoRetry => 'Retry';
+  String get msgInfoRetry => '재시도';
 
   @override
-  String get msgInfoSnapshot => 'Snapshot';
+  String get msgInfoSnapshot => '스냅샷';
 
   @override
   String msgInfoSubtaskPartAgent(String agent) {
@@ -1747,73 +1727,69 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String msgInfoTokens(int total) {
-    return 'Tokens: $total';
+    return '토큰: $total';
   }
 
   @override
-  String get msgInfoUndoThisTurn => 'Undo this turn';
+  String get msgInfoUndoThisTurn => '이 턴 취소';
 
   @override
-  String get msgInfoView => 'View';
+  String get msgInfoView => '보기';
 
   @override
-  String get msgNoSystemSoundsFound =>
-      'No system sound was found on this device.';
+  String get msgNoSystemSoundsFound => '이 기기에서 발견된 시스템 소리가 없습니다.';
 
   @override
-  String get msgNoValidFilesSelected => 'No valid files were selected';
+  String get msgNoValidFilesSelected => '선택된 유효한 파일이 없습니다';
 
   @override
-  String get msgReadAloud => 'Read aloud';
+  String get msgReadAloud => '음성으로 읽기';
 
   @override
-  String get msgReadAloudNotAvailable =>
-      'Text-to-speech is not available on this device.';
+  String get msgReadAloudNotAvailable => '이 기기에서는 TTS(텍스트 음성 변환)를 사용할 수 없습니다.';
 
   @override
-  String get msgSetupDebugCopied => 'OpenCode setup debug copied to clipboard';
+  String get msgSetupDebugCopied => 'OpenCode 설정 디버그 정보가 클립보드에 복사되었습니다';
 
   @override
-  String get msgShareAsImage => 'Share as image';
+  String get msgShareAsImage => '이미지로 공유';
 
   @override
-  String get msgShareAsImageFailed => 'Could not share message as image.';
+  String get msgShareAsImageFailed => '메시지를 이미지로 공유할 수 없습니다.';
 
   @override
-  String get msgShareAsImageSubject => 'CodeWalk message';
+  String get msgShareAsImageSubject => 'CodeWalk 메시지';
 
   @override
-  String get msgShareAsImageTooTall =>
-      'Message is too long to share as an image.';
+  String get msgShareAsImageTooTall => '메시지가 너무 길어 이미지로 공유할 수 없습니다.';
 
   @override
-  String get msgStopReadAloud => 'Stop reading';
+  String get msgStopReadAloud => '읽기 중단';
 
   @override
   String get msgSystemSoundPickerUnavailable =>
-      'System sound picker is not available on this platform.';
+      '이 플랫폼에서는 시스템 소리 선택기를 사용할 수 없습니다.';
 
   @override
   String get msgUpdatedButRefreshFailed =>
-      'Updated the server setting, but could not refresh chat providers.';
+      '서버 설정을 업데이트했으나 채팅 제공자를 새로고침하지 못했습니다.';
 
   @override
-  String get msgVoiceInputUnavailable =>
-      'Voice input is unavailable on this device';
+  String get msgVoiceInputUnavailable => '이 기기에서는 음성 입력을 사용할 수 없습니다';
 
   @override
-  String get notifAndroidBatteryOptimization => 'Android battery optimization';
+  String get notifAndroidBatteryOptimization => 'Android 배터리 최적화';
 
   @override
-  String get notifConversationUpdates => 'Conversation updates';
+  String get notifConversationUpdates => '대화 업데이트';
 
   @override
   String get notifNotificationsArriveReopening =>
-      'If notifications only arrive when reopening the app, allow CodeWalk to run without optimization on this device.';
+      '앱을 다시 열 때만 알림이 도착하는 경우, 이 기기에서 CodeWalk가 최적화 없이 실행되도록 허용해 주세요.';
 
   @override
   String get notifResponseRunningKeep =>
-      'When a response is running, keep realtime active briefly after you leave the app.';
+      '응답이 진행 중일 때 앱을 벗어난 후에도 잠시 동안 실시간 활성 상태를 유지합니다.';
 
   @override
   String notifSelectedSoundLabel(String soundLabel) {
@@ -1836,11 +1812,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get notificationSoundLoadFailed => 'Android 시스템 사운드를 로드하지 못했습니다.';
 
   @override
-  String get onboardingAIGeneratedTitles => 'AI generated titles';
+  String get onboardingAIGeneratedTitles => 'AI 생성 제목';
 
   @override
-  String get onboardingAddServerLater =>
-      'You can add a server later in Settings > Servers.';
+  String get onboardingAddServerLater => '나중에 설정 > 서버에서 서버를 추가할 수 있습니다.';
 
   @override
   String get onboardingAddedButHealthCheckFailed =>
@@ -1848,7 +1823,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get onboardingAlmostInstallOpenCode =>
-      'You are almost there. Install OpenCode first, then connect CodeWalk to the server URL.';
+      '거의 완료되었습니다. 먼저 OpenCode를 설치한 다음 CodeWalk를 서버 URL에 연결하세요.';
 
   @override
   String onboardingAppProviderLocalSetupLogsLength(int length, int length2) {
@@ -1856,7 +1831,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get onboardingAuthenticate => 'Authenticate';
+  String get onboardingAuthenticate => '인증';
 
   @override
   String get onboardingAvailable => '사용 가능';
@@ -1870,32 +1845,32 @@ class AppLocalizationsKo extends AppLocalizations {
       'OpenCode 서버가 비밀번호로 보호되는 경우에만 기본 인증을 활성화하십시오.';
 
   @override
-  String get onboardingChooseAnotherPath => 'Choose another path';
+  String get onboardingChooseAnotherPath => '다른 경로 선택';
 
   @override
   String get onboardingChooseHowToSetup => '서버 설정 방법 선택';
 
   @override
-  String get onboardingClear => 'Clear';
+  String get onboardingClear => '지우기';
 
   @override
   String get onboardingCloudflareAuthFailed => 'Cloudflare Access 인증에 실패했습니다.';
 
   @override
   String get onboardingCodeWalkAppOpenCode =>
-      'CodeWalk is the app. OpenCode is the engine it connects to.';
+      'CodeWalk는 앱이며, OpenCode는 앱이 연결되는 엔진입니다.';
 
   @override
-  String get onboardingConnectRunningServer => 'Connect to a running server';
+  String get onboardingConnectRunningServer => '실행 중인 서버에 연결';
 
   @override
-  String get onboardingConnectionIssue => 'Connection issue';
+  String get onboardingConnectionIssue => '연결 문제';
 
   @override
   String get onboardingConnectionSaved => '서버 연결이 성공적으로 저장되었습니다.';
 
   @override
-  String get onboardingConnectionTips => 'Connection tips';
+  String get onboardingConnectionTips => '연결 팁';
 
   @override
   String get onboardingConnectionUpdated => '서버 연결이 성공적으로 업데이트되었습니다.';
@@ -1904,17 +1879,17 @@ class AppLocalizationsKo extends AppLocalizations {
   String get onboardingContinue => '계속';
 
   @override
-  String get onboardingContinueServerURL => 'Continue to server URL';
+  String get onboardingContinueServerURL => '서버 URL로 진행';
 
   @override
-  String get onboardingCopyLoginURL => 'Copy login URL';
+  String get onboardingCopyLoginURL => '로그인 URL 복사';
 
   @override
   String get onboardingCouldNotVerify => '서버 연결을 확인할 수 없습니다.';
 
   @override
   String get onboardingDefaultURLEmulator =>
-      'Default URL, emulator loopback, auth, and debug help.';
+      '기본 URL, 에뮬레이터 루프백, 인증 및 디버그 도움말입니다.';
 
   @override
   String onboardingDesktopOnlyDiagnose(String appName) {
@@ -1922,11 +1897,10 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get onboardingDetailedSetupEvents =>
-      'Detailed setup events were captured for troubleshooting.';
+  String get onboardingDetailedSetupEvents => '문제 해결을 위해 상세 설정 이벤트가 캡처되었습니다.';
 
   @override
-  String get onboardingDonShowAgain => 'Don\'t show again';
+  String get onboardingDonShowAgain => '다시 보지 않기';
 
   @override
   String get onboardingDone => '완료';
@@ -1945,46 +1919,46 @@ class AppLocalizationsKo extends AppLocalizations {
   String get onboardingEnterServerUrl => '서버 URL 입력';
 
   @override
-  String get onboardingExisting => 'Use Existing';
+  String get onboardingExisting => '기존 서버 사용';
 
   @override
   String get onboardingExplainInstallOpenCode =>
-      'Explain how to install OpenCode, start the server, and then connect from CodeWalk.';
+      'OpenCode 설치, 서버 시작, 그리고 CodeWalk에서 연결하는 방법에 대한 설명입니다.';
 
   @override
   String get onboardingFailed => '실패';
 
   @override
-  String get onboardingGoodOptionDesktop => 'Good first option on desktop';
+  String get onboardingGoodOptionDesktop => '데스크톱에서 유용한 첫 번째 옵션';
 
   @override
   String get onboardingHealthCheckFailedMayBeStarting =>
       '서버 상태 확인에 실패했습니다. 아직 시작 중일 수 있습니다.';
 
   @override
-  String get onboardingInstallBinary => 'Install Binary';
+  String get onboardingInstallBinary => '바이너리 설치';
 
   @override
-  String get onboardingInstallBun => 'Install via Bun';
+  String get onboardingInstallBun => 'Bun을 통해 설치';
 
   @override
-  String get onboardingInstallBunOpenCode => 'Install Bun + OpenCode';
+  String get onboardingInstallBunOpenCode => 'Bun + OpenCode 설치';
 
   @override
-  String get onboardingInstallNpm => 'Install via npm';
+  String get onboardingInstallNpm => 'npm을 통해 설치';
 
   @override
   String get onboardingInstallRunOpenCode =>
-      'Install and run OpenCode directly from CodeWalk on desktop.';
+      '데스크톱의 CodeWalk에서 직접 OpenCode를 설치하고 실행합니다.';
 
   @override
   String get onboardingInvalidUrl => '유효하지 않은 URL';
 
   @override
-  String get onboardingLabel => 'Label (optional)';
+  String get onboardingLabel => '라벨 (선택 사항)';
 
   @override
-  String get onboardingLabelHint => 'My server';
+  String get onboardingLabelHint => '내 서버';
 
   @override
   String onboardingLatestOutputAppProvider(String localServerLastOutput) {
@@ -1992,17 +1966,17 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get onboardingLetCodeWalkSet => 'Let CodeWalk set it up locally';
+  String get onboardingLetCodeWalkSet => 'CodeWalk가 로컬에 자동으로 설정하도록 허용';
 
   @override
   String get onboardingLocalServerSetup => '로컬 서버 설정';
 
   @override
-  String get onboardingManagedLocalServer => 'Managed local server';
+  String get onboardingManagedLocalServer => '관리형 로컬 서버';
 
   @override
   String get onboardingManagedLocalServer2 =>
-      'Managed local server mode is available only on desktop builds (Linux/macOS/Windows).';
+      '관리형 로컬 서버 모드는 데스크톱 빌드(Linux/macOS/Windows)에서만 사용할 수 있습니다.';
 
   @override
   String onboardingNeedsOpenCodeServer(String appName) {
@@ -2016,28 +1990,59 @@ class AppLocalizationsKo extends AppLocalizations {
   String get onboardingNotWritable => '쓰기 불가';
 
   @override
-  String get onboardingOpenCode => 'What is OpenCode?';
+  String get onboardingOpenCode => 'OpenCode란 무엇인가요?';
 
   @override
   String get onboardingOpenCodeRunningDevice =>
-      'I already have OpenCode running on this device or somewhere on my network.';
+      '이미 이 기기 또는 네트워크의 어딘가에서 OpenCode가 실행 중입니다.';
 
   @override
   String get onboardingOpenCodeRunsLocally =>
-      'OpenCode runs locally or on a server and powers the AI coding features inside CodeWalk. If OpenCode is already running, connect to it. If not, pick one of the guided setup paths below.';
+      'OpenCode는 로컬 또는 서버에서 실행되며 CodeWalk 내부의 AI 코딩 기능을 구동합니다. OpenCode가 이미 실행 중인 경우 연결하시고, 그렇지 않은 경우 아래 가이드 설정 경로 중 하나를 선택하세요.';
 
   @override
-  String get onboardingOpenTailscaleLogin =>
-      'Could not open Tailscale login URL.';
+  String get onboardingOpenTailscaleLogin => 'Tailscale 로그인 URL을 열 수 없습니다.';
 
   @override
-  String get onboardingPassword => 'Password';
+  String get onboardingPassword => '비밀번호';
 
   @override
-  String get onboardingPasswordRequired => 'Enter password';
+  String get onboardingPasswordRequired => '비밀번호 입력';
 
   @override
   String get onboardingPickSetupPath => '현재 OpenCode 설정과 일치하는 설정 경로를 선택하십시오.';
+
+  @override
+  String get onboardingPreconditionDirectoryNotWritable =>
+      '설치 디렉터리에 쓰기 권한이 없습니다. 사용자 권한을 확인하십시오.';
+
+  @override
+  String get onboardingPreconditionInstallViaBunRecommendation =>
+      'OpenCode 관리자는 Bun을 통한 설치를 권장합니다.';
+
+  @override
+  String get onboardingPreconditionNetworkFailed =>
+      '네트워크 액세스에 실패했습니다. OpenCode를 설치하기 전에 연결 상태를 확인하십시오.';
+
+  @override
+  String get onboardingPreconditionNoRuntimeDetected =>
+      '런타임이 감지되지 않았습니다. OpenCode 바이너리를 직접 설치하거나 먼저 Bun을 부트스트랩하십시오.';
+
+  @override
+  String get onboardingPreconditionNodeNpmAvailable =>
+      'Node 및 npm을 사용할 수 있습니다. npm을 통해 OpenCode를 설치하거나 권장하는 흐름에 따라 Bun을 설치하십시오.';
+
+  @override
+  String get onboardingPreconditionOpenCodeAlreadyAvailable =>
+      'OpenCode를 이미 사용할 수 있습니다. 감지된 명령을 즉시 사용할 수 있습니다.';
+
+  @override
+  String get onboardingPreconditionWindowsPathLagHint =>
+      ' Windows에서는 이미 열려 있는 앱에서 PATH 업데이트가 지연될 수 있으므로 설치 후 확인을 새로 고침하십시오.';
+
+  @override
+  String get onboardingPreconditionWindowsWslRecommendation =>
+      'Windows 빌드가 감지되었습니다. OpenCode 문서에서는 WSL을 권장하지만, 대체 방안으로 npm install을 사용할 수 있습니다.';
 
   @override
   String get onboardingReachable => '연결 가능';
@@ -2047,10 +2052,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get onboardingRecommendedOrderTry =>
-      'Recommended order: try Install Bun + OpenCode if you want CodeWalk to bootstrap everything for you. Use Existing if OpenCode is already installed.';
+      '권장 순서: CodeWalk가 모든 환경을 자동으로 구축하게 하려면 \'Bun + OpenCode 설치\'를 시도해 보세요. OpenCode가 이미 설치되어 있으면 \'기존 서버 사용\'을 선택하세요.';
 
   @override
-  String get onboardingRefreshChecks => 'Refresh Checks';
+  String get onboardingRefreshChecks => '검사 새로고침';
 
   @override
   String get onboardingRunDiagnosticsToVerify =>
@@ -2076,7 +2081,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get onboardingServerUpdated => '서버가 업데이트되었습니다.';
 
   @override
-  String get onboardingServerUrl => 'Server URL';
+  String get onboardingServerUrl => '서버 URL';
 
   @override
   String get onboardingSetup => '설정';
@@ -2085,19 +2090,19 @@ class AppLocalizationsKo extends AppLocalizations {
   String get onboardingSetupWizard => '설정 마법사';
 
   @override
-  String get onboardingShowSetupSteps => 'Show me the setup steps';
+  String get onboardingShowSetupSteps => '설정 단계 표시';
 
   @override
-  String get onboardingShowSetupSteps2 => 'Show setup steps';
+  String get onboardingShowSetupSteps2 => '설정 단계 표시';
 
   @override
-  String get onboardingSkip => 'Skip for now';
+  String get onboardingSkip => '지금은 건너뛰기';
 
   @override
-  String get onboardingSkipSetup => 'Skip setup?';
+  String get onboardingSkipSetup => '설정을 건너뛰시겠습니까?';
 
   @override
-  String get onboardingStart => 'Start';
+  String get onboardingStart => '시작';
 
   @override
   String onboardingStartUsing(String appName) {
@@ -2108,7 +2113,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get onboardingStarting => '시작 중';
 
   @override
-  String get onboardingStop => 'Stop';
+  String get onboardingStop => '중지';
 
   @override
   String get onboardingStopped => '중지됨';
@@ -2161,23 +2166,22 @@ class AppLocalizationsKo extends AppLocalizations {
   String get onboardingUnreachable => '연결 불가능';
 
   @override
-  String get onboardingUseBasicAuth => 'Use Basic Auth';
+  String get onboardingUseBasicAuth => '기본 인증 사용';
 
   @override
-  String get onboardingUsername => 'Username';
+  String get onboardingUsername => '사용자 이름';
 
   @override
-  String get onboardingUsernameRequired => 'Enter username';
+  String get onboardingUsernameRequired => '사용자 이름 입력';
 
   @override
-  String get onboardingUsesServerTitle =>
-      'Uses your server\'s title agent to name conversations';
+  String get onboardingUsesServerTitle => '대화 이름을 지정할 때 서버의 타이틀 에이전트를 사용합니다';
 
   @override
   String get onboardingUsingDetectedCommand => '감지된 OpenCode 명령을 사용합니다.';
 
   @override
-  String get onboardingViewSetupDebug => 'View setup debug';
+  String get onboardingViewSetupDebug => '설정 디버그 보기';
 
   @override
   String onboardingWelcomeTo(String appName) {
@@ -2186,7 +2190,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get onboardingWindowsTipInstalling =>
-      'Windows tip: after installing, click Refresh Checks. If detection still fails, reopen CodeWalk to reload PATH changes.';
+      'Windows 팁: 설치 후 \'검사 새로고침\'을 클릭하세요. 여전히 감지되지 않으면 CodeWalk를 다시 열어 PATH 변경 사항을 다시 로드하세요.';
 
   @override
   String get onboardingWritable => '쓰기 가능';
@@ -2195,64 +2199,63 @@ class AppLocalizationsKo extends AppLocalizations {
   String get onboardingYoureAllSet => '모든 준비가 완료되었습니다!';
 
   @override
-  String get permissionAllowOnce => 'Allow Once';
+  String get permissionAllowOnce => '한 번만 허용';
 
   @override
-  String get permissionAlways => 'Always';
+  String get permissionAlways => '항상 허용';
 
   @override
-  String get permissionBack => 'Back';
+  String get permissionBack => '뒤로';
 
   @override
-  String get permissionConfirmReject => 'Confirm Reject';
+  String get permissionConfirmReject => '거부 확인';
 
   @override
-  String get permissionReject => 'Reject';
+  String get permissionReject => '거부';
 
   @override
-  String get permissionReopen => 'Reopen';
+  String get permissionReopen => '다시 열기';
 
   @override
-  String get questionAnswerSelected => 'No answer selected.';
+  String get questionAnswerSelected => '선택된 대답이 없습니다.';
 
   @override
-  String get questionCommaSeparatedValues => 'Comma-separated values';
+  String get questionCommaSeparatedValues => '쉼표로 구분된 값';
 
   @override
   String get questionQuestionGroupMarked =>
-      'Question group marked as rejected. You can keep chatting and reopen this group anytime before confirming.';
+      '질문 그룹이 거부된 것으로 표시되었습니다. 대화를 계속 진행할 수 있으며, 확정하기 전에 언제든 이 질문 그룹을 다시 열 수 있습니다.';
 
   @override
-  String get questionQuestionRequest => 'Question request';
+  String get questionQuestionRequest => '질문 요청';
 
   @override
   String get questionQuestionsProvidedSubmit =>
-      'No questions provided. You can submit an empty response.';
+      '제공된 질문이 없습니다. 빈 응답을 제출할 수 있습니다.';
 
   @override
-  String get questionReviewAnswersSubmitting =>
-      'Review your answers before submitting.';
+  String get questionReviewAnswersSubmitting => '제출하기 전에 답변을 검토하세요.';
 
   @override
-  String get quotaAuthCookie => 'Auth cookie';
+  String get quotaAuthCookie => '인증 쿠키';
 
   @override
-  String get quotaForget => 'Forget';
+  String get quotaForget => '삭제';
 
   @override
-  String get quotaOpenCodeGoUsage => 'OpenCode Go usage';
+  String get quotaOpenCodeGoUsage => 'OpenCode Go 사용량';
 
   @override
-  String get quotaOpenDashboard => 'Open OpenCode dashboard';
+  String get quotaOpenDashboard => 'OpenCode 대시보드 열기';
 
   @override
-  String get quotaSaving => 'Saving...';
+  String get quotaSaving => '저장 중...';
 
   @override
-  String get quotaWorkspaceId => 'Workspace ID';
+  String get quotaWorkspaceId => '워크스페이스 ID';
 
   @override
-  String get serverClearOAuth => 'Clear OAuth';
+  String get serverClearOAuth => 'OAuth 정보 지우기';
 
   @override
   String get serverConnectionAttention => '서버 연결에 주의가 필요합니다.';
@@ -2267,45 +2270,45 @@ class AppLocalizationsKo extends AppLocalizations {
   String get serverHealthUnknown => '알 수 없음';
 
   @override
-  String get serverOAuthAuthFailed => 'OAuth authentication failed';
+  String get serverOAuthAuthFailed => 'OAuth 인증 실패';
 
   @override
   String get serverOAuthChip => 'OAuth';
 
   @override
   String get serverOAuthNotSupported =>
-      'Cloudflare Access OAuth is not supported on this platform';
+      '이 플랫폼에서는 Cloudflare Access OAuth가 지원되지 않습니다';
 
   @override
-  String get serverReauthenticate => 'Re-authenticate';
+  String get serverReauthenticate => '재인증';
 
   @override
   String get serverTailscaleChip => 'Tailscale';
 
   @override
-  String get serversActive => 'Active';
+  String get serversActive => '활성';
 
   @override
-  String get serversActiveServer => 'Active Server';
+  String get serversActiveServer => '활성 서버';
 
   @override
   String get serversAddLeastOpenCode =>
-      'Add at least one OpenCode server to start using the app.';
+      '앱 사용을 시작하려면 최소 하나의 OpenCode 서버를 추가하세요.';
 
   @override
-  String get serversAddServer => 'Add Server';
+  String get serversAddServer => '서버 추가';
 
   @override
-  String get serversCancel => 'Cancel';
+  String get serversCancel => '취소';
 
   @override
   String get serversCannotActivateUnhealthy => '상태가 좋지 않은 서버를 활성화할 수 없음';
 
   @override
-  String get serversCheckHealth => 'Check Health';
+  String get serversCheckHealth => '상태 확인';
 
   @override
-  String get serversClearDefault => 'Clear Default';
+  String get serversClearDefault => '기본값 지우기';
 
   @override
   String serversCommandAppProviderLocalServerCommandPath(
@@ -2315,36 +2318,36 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get serversCopy => 'Copy';
+  String get serversCopy => '복사';
 
   @override
-  String get serversDefault => 'Default';
+  String get serversDefault => '기본값';
 
   @override
-  String get serversDelete => 'Delete';
+  String get serversDelete => '삭제';
 
   @override
-  String get serversDeleteServer => 'Delete server';
+  String get serversDeleteServer => '서버 삭제';
 
   @override
   String get serversDesktopModeExplanation =>
       '데스크톱 모드는 CodeWalk에서 직접 `opencode serve`를 실행하고 관리할 수 있습니다.';
 
   @override
-  String get serversEdit => 'Edit';
+  String get serversEdit => '편집';
 
   @override
-  String get serversLocalOpenCodeServer => 'Local OpenCode Server';
+  String get serversLocalOpenCodeServer => '로컬 OpenCode 서버';
 
   @override
   String get serversManagedModeAvailable =>
-      'This managed mode is available only on desktop builds (Linux/macOS/Windows).';
+      '이 관리 모드는 데스크톱 빌드(Linux/macOS/Windows)에서만 사용할 수 있습니다.';
 
   @override
   String get serversNoServersFound => '서버를 찾을 수 없음';
 
   @override
-  String get serversRefreshHealth => 'Refresh Health';
+  String get serversRefreshHealth => '상태 새로고침';
 
   @override
   String serversRemoveProfileDisplayName(String displayName) {
@@ -2355,19 +2358,19 @@ class AppLocalizationsKo extends AppLocalizations {
   String get serversSearchActiveHint => '활성 서버 검색';
 
   @override
-  String get serversServersConfigured => 'No servers configured';
+  String get serversServersConfigured => '설정된 서버가 없습니다';
 
   @override
-  String get serversSetActive => 'Set Active';
+  String get serversSetActive => '활성으로 설정';
 
   @override
-  String get serversSetDefault => 'Set Default';
+  String get serversSetDefault => '기본값으로 설정';
 
   @override
-  String get serversSetupDebug => 'Setup Debug';
+  String get serversSetupDebug => '설정 디버그';
 
   @override
-  String get serversSetupWizard => 'Setup Wizard';
+  String get serversSetupWizard => '설정 마법사';
 
   @override
   String get serversTailscaleAdminApprovalRequired => 'Tailscale 관리자 승인 필요';
@@ -2407,19 +2410,22 @@ class AppLocalizationsKo extends AppLocalizations {
       '이 서버의 상태가 좋지 않습니다. 활성화하기 전에 상태 확인을 하거나 설정을 편집하세요.';
 
   @override
-  String get sessionActionArchived => 'archived';
+  String get sessionActionArchived => '보관됨';
 
   @override
-  String get sessionActionDeleted => 'deleted';
+  String get sessionActionDeleted => '삭제됨';
 
   @override
-  String get sessionActionForked => 'forked';
+  String get sessionActionForked => '포크됨';
 
   @override
-  String get sessionActionUnarchived => 'unarchived';
+  String get sessionActionUnarchived => '보관 취소됨';
 
   @override
-  String get sessionCancelRename => 'Cancel rename';
+  String get sessionArchive => '보관';
+
+  @override
+  String get sessionCancelRename => '이름 변경 취소';
 
   @override
   String sessionChildrenCount(int count) {
@@ -2433,25 +2439,24 @@ class AppLocalizationsKo extends AppLocalizations {
   String get sessionCopyLink => '공유 링크 복사';
 
   @override
-  String get sessionDelete => 'Delete';
+  String get sessionDelete => '삭제';
 
   @override
-  String get sessionDeleteTitle => 'Delete Conversation';
+  String get sessionDeleteTitle => '대화 삭제';
 
   @override
-  String get sessionDiffChangedFile => 'Changed file';
+  String get sessionDiffChangedFile => '변경된 파일';
 
   @override
-  String get sessionDiffContentNotCaptured =>
-      'File content not captured by the server';
+  String get sessionDiffContentNotCaptured => '서버에 의해 파일 내용이 캡처되지 않았습니다';
 
   @override
   String sessionDiffFilesChanged(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count files changed',
-      one: '1 file changed',
+      other: '$count개 파일 변경됨',
+      one: '1개 파일 변경됨',
     );
     return '$_temp0';
   }
@@ -2463,25 +2468,25 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String sessionDiffLinesAddedRemoved(int added, int removed) {
-    return '+$added lines added -$removed lines removed';
+    return '+$added줄 추가됨 -$removed줄 제거됨';
   }
 
   @override
   String sessionDiffLinesCollapsed(int count) {
-    return '$count lines collapsed — tap to expand';
+    return '$count줄이 접혀 있음 — 탭하여 펼치기';
   }
 
   @override
-  String get sessionDiffReview => 'Review changes';
+  String get sessionDiffReview => '변경 사항 검토';
 
   @override
-  String get sessionDiffSplit => 'Split';
+  String get sessionDiffSplit => '분할 보기';
 
   @override
-  String get sessionDiffSummary => 'Summary';
+  String get sessionDiffSummary => '요약';
 
   @override
-  String get sessionDiffUnified => 'Unified';
+  String get sessionDiffUnified => '통합 보기';
 
   @override
   String get sessionExportAssistant => '어시스턴트';
@@ -2531,16 +2536,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get sessionExportUser => '사용자';
 
   @override
-  String get sessionFailedRename => 'Failed to rename conversation';
+  String get sessionFailedRename => '대화 이름 변경에 실패했습니다';
 
   @override
-  String get sessionFailedUpdateArchive => 'Failed to update archive state';
+  String get sessionFailedUpdateArchive => '보관 상태 업데이트에 실패했습니다';
 
   @override
-  String get sessionFailedUpdateSharing => 'Failed to update sharing state';
+  String get sessionFailedUpdateSharing => '공유 상태 업데이트에 실패했습니다';
 
   @override
-  String get sessionFork => 'Fork';
+  String get sessionFork => '포크';
 
   @override
   String get sessionForkFailed => '대화 포크에 실패했습니다';
@@ -2559,7 +2564,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get sessionKeyboardShortcuts => 'Keyboard shortcuts';
+  String get sessionKeyboardShortcuts => '키보드 단축키';
 
   @override
   String sessionNeedsInput(String title) {
@@ -2573,29 +2578,34 @@ class AppLocalizationsKo extends AppLocalizations {
   String get sessionNoConversationsInProject => '이 프로젝트에 대화가 없습니다.';
 
   @override
-  String get sessionNotAvailable =>
-      'Conversation is not available for this project yet';
+  String get sessionNotAvailable => '이 프로젝트에 사용할 수 있는 대화가 아직 없습니다';
 
   @override
   String get sessionOpenProjectToLoad => '프로젝트를 열어 대화를 로드하세요.';
 
   @override
-  String get sessionRename => 'Rename';
+  String get sessionPin => '고정';
 
   @override
-  String get sessionRenameHint => 'Enter new conversation name';
+  String get sessionRename => '이름 변경';
 
   @override
-  String get sessionRenameTitle => 'Rename Conversation';
+  String get sessionRenameHint => '새 대화 이름을 입력하세요';
 
   @override
-  String get sessionSaveTitle => 'Save title';
+  String get sessionRenameTitle => '대화 이름 변경';
+
+  @override
+  String get sessionSaveTitle => '제목 저장';
 
   @override
   String get sessionShare => '세션 공유';
 
   @override
-  String get sessionShareLinkCopied => 'Share link copied';
+  String get sessionShareAction => '공유';
+
+  @override
+  String get sessionShareLinkCopied => '공유 링크가 복사되었습니다';
 
   @override
   String get sessionShareLinkUnavailable => '이 세션에 공유 링크를 사용할 수 없습니다';
@@ -2607,10 +2617,19 @@ class AppLocalizationsKo extends AppLocalizations {
   String get sessionSyncing => '대화 동기화 중...';
 
   @override
-  String get sessionTitleHint => 'Conversation title';
+  String get sessionTitleHint => '대화 제목';
+
+  @override
+  String get sessionUnarchive => '보관 해제';
+
+  @override
+  String get sessionUnpin => '고정 해제';
 
   @override
   String get sessionUnshare => '세션 공유 해제';
+
+  @override
+  String get sessionUnshareAction => '공유 중지';
 
   @override
   String get sessionUnshared => '대화 공유가 해제되었습니다';
@@ -2619,180 +2638,175 @@ class AppLocalizationsKo extends AppLocalizations {
   String get sessionViewTasks => '작업 보기';
 
   @override
-  String get settingsAboutCheckForUpdates => 'Check for updates';
+  String get settingsAboutCheckForUpdates => '업데이트 확인';
 
   @override
-  String get settingsAboutCheckOnOpen => 'Check for updates on open';
+  String get settingsAboutCheckOnOpen => '앱 실행 시 업데이트 확인';
 
   @override
-  String get settingsAboutCheckOnOpenDescription =>
-      'Automatically check when the app starts';
+  String get settingsAboutCheckOnOpenDescription => '앱이 시작될 때 업데이트를 자동으로 확인합니다';
 
   @override
-  String get settingsAboutChecking => 'Checking...';
+  String get settingsAboutChecking => '확인 중...';
 
   @override
-  String get settingsAboutDescription => 'Version, updates and links';
+  String get settingsAboutDescription => '버전, 업데이트 및 링크';
 
   @override
-  String get settingsAboutDismiss => 'Dismiss';
+  String get settingsAboutDismiss => '닫기';
 
   @override
   String settingsAboutDownloading(String percent) {
-    return 'Downloading... $percent%';
+    return '다운로드 중... $percent%';
   }
 
   @override
-  String get settingsAboutEraseAllData => 'Erase all data and restart';
+  String get settingsAboutEraseAllData => '모든 데이터 지우고 재시작';
 
   @override
-  String get settingsAboutInstallUpdate => 'Install update';
+  String get settingsAboutInstallUpdate => '업데이트 설치';
 
   @override
-  String get settingsAboutInstalling => 'Installing...';
+  String get settingsAboutInstalling => '설치 중...';
 
   @override
   String settingsAboutLatestVersion(String version) {
-    return 'v$version is the latest version';
+    return 'v$version이(가) 최신 버전입니다';
   }
 
   @override
-  String get settingsAboutLoading => 'Loading...';
+  String get settingsAboutLoading => '로드 중...';
 
   @override
-  String get settingsAboutReplayChatTour => 'Replay chat tour';
+  String get settingsAboutReplayChatTour => '채팅 둘러보기 다시 보기';
 
   @override
   String get settingsAboutReplayChatTourDescription =>
-      'Close settings and show the guided chat walkthrough';
+      '설정을 닫고 가이드 채팅 안내를 보여줍니다';
 
   @override
-  String get settingsAboutResetApp => 'Reset app';
+  String get settingsAboutResetApp => '앱 초기화';
 
   @override
-  String get settingsAboutResetAppQuestion => 'Reset app?';
+  String get settingsAboutResetAppQuestion => '앱을 초기화하시겠습니까?';
 
   @override
   String get settingsAboutResetAppWarning =>
-      'This will erase all servers, settings, and cached data. This action cannot be undone.';
+      '이렇게 하면 모든 서버, 설정 및 캐시된 데이터가 삭제됩니다. 이 작업은 되돌릴 수 없습니다.';
 
   @override
-  String get settingsAboutRetryInstall => 'Retry install';
+  String get settingsAboutRetryInstall => '설치 재시도';
 
   @override
-  String get settingsAboutTapToCheck => 'Tap to check for new versions';
+  String get settingsAboutTapToCheck => '새 버전을 확인하려면 탭하세요';
 
   @override
-  String get settingsAboutTitle => 'About';
+  String get settingsAboutTitle => '정보';
 
   @override
-  String get settingsAboutUpToDate => 'You\'re up to date';
+  String get settingsAboutUpToDate => '최신 버전 상태입니다';
 
   @override
   String settingsAboutUpdateAvailable(String version) {
-    return 'Update available: v$version';
+    return '업데이트 가능: v$version';
   }
 
   @override
-  String get settingsAboutUpdateInstalled =>
-      'Update installed. Restart the app to apply.';
+  String get settingsAboutUpdateInstalled => '업데이트가 설치되었습니다. 적용하려면 앱을 재시작하세요.';
 
   @override
-  String get settingsAboutVersion => 'Version';
+  String get settingsAboutVersion => '버전';
 
   @override
   String settingsAboutVersionBuild(String buildNumber, String version) {
-    return '$version (build $buildNumber)';
+    return '$version (빌드 $buildNumber)';
   }
 
   @override
-  String get settingsAppearanceAmoledDark => 'AMOLED dark mode';
+  String get settingsAppearanceAmoledDark => 'AMOLED 다크 모드';
 
   @override
   String get settingsAppearanceAmoledDarkActive =>
-      'Use pure black surfaces while dark mode is active.';
+      '다크 모드가 활성화된 동안 완전한 검은색 배경을 사용합니다.';
 
   @override
   String get settingsAppearanceAmoledDarkInactive =>
-      'Switch to dark mode to enable AMOLED surfaces.';
+      'AMOLED 배경을 활성화하려면 다크 모드로 전환하세요.';
 
   @override
-  String get settingsAppearanceBrandColor => 'Brand color';
+  String get settingsAppearanceBrandColor => '브랜드 색상';
 
   @override
   String get settingsAppearanceBrandColorDynamicBlocked =>
-      'Disable wallpaper colors to pick a brand color.';
+      '브랜드 색상을 선택하려면 배경화면 색상 사용을 비활성화하세요.';
 
   @override
-  String get settingsAppearanceBrandColorNormal =>
-      'Pick a seed color for the app palette.';
+  String get settingsAppearanceBrandColorNormal => '앱 팔레트의 기준 색상을 선택합니다.';
 
   @override
   String get settingsAppearanceBrandColorPresetBlocked =>
-      'Switch to CodeWalk Classic to pick a brand color.';
+      '브랜드 색상을 선택하려면 CodeWalk 클래식으로 전환하세요.';
 
   @override
-  String get settingsAppearanceCodeWalkClassic => 'CodeWalk Classic';
+  String get settingsAppearanceCodeWalkClassic => 'CodeWalk 클래식';
 
   @override
-  String get settingsAppearanceComposerTips => 'Composer tips';
+  String get settingsAppearanceComposerTips => '컴포저 팁';
 
   @override
   String get settingsAppearanceComposerTipsDescription =>
-      'Show or hide rotating tips while the assistant is reasoning.';
+      '어시스턴트가 생각하는 동안 순환되는 팁의 표시 여부를 설정합니다.';
 
   @override
-  String get settingsAppearanceContrast => 'Contrast';
+  String get settingsAppearanceContrast => '대비';
 
   @override
   String get settingsAppearanceContrastDynamicBlocked =>
-      'Disable wallpaper colors to adjust contrast.';
+      '대비를 조정하려면 배경화면 색상 사용을 비활성화하세요.';
 
   @override
-  String get settingsAppearanceContrastHigh => 'High';
+  String get settingsAppearanceContrastHigh => '높음';
 
   @override
-  String get settingsAppearanceContrastNormal =>
-      'Adjust the contrast level of the color scheme.';
+  String get settingsAppearanceContrastNormal => '색상 체계의 대비 수준을 조정합니다.';
 
   @override
   String get settingsAppearanceContrastPresetBlocked =>
-      'Switch to CodeWalk Classic to adjust contrast.';
+      '대비를 조정하려면 CodeWalk 클래식으로 전환하세요.';
 
   @override
-  String get settingsAppearanceContrastReduced => 'Reduced';
+  String get settingsAppearanceContrastReduced => '낮춤';
 
   @override
-  String get settingsAppearanceDark => 'Dark';
+  String get settingsAppearanceDark => '다크';
 
   @override
-  String get settingsAppearanceDensity => 'Density';
+  String get settingsAppearanceDensity => '조밀도';
 
   @override
-  String get settingsAppearanceDensityDense => 'Dense';
+  String get settingsAppearanceDensityDense => '조밀함';
 
   @override
   String get settingsAppearanceDensityDescription =>
-      'Apply spacing and component density across the app.';
+      '앱 전체에 걸쳐 간격 및 컴포넌트 조밀도를 적용합니다.';
 
   @override
-  String get settingsAppearanceDensityExtraDense => 'Extra Dense';
+  String get settingsAppearanceDensityExtraDense => '매우 조밀함';
 
   @override
-  String get settingsAppearanceDensityExtraSpacious => 'Extra Spacious';
+  String get settingsAppearanceDensityExtraSpacious => '매우 넓음';
 
   @override
-  String get settingsAppearanceDensityNormal => 'Normal';
+  String get settingsAppearanceDensityNormal => '보통';
 
   @override
-  String get settingsAppearanceDensitySpacious => 'Spacious';
+  String get settingsAppearanceDensitySpacious => '넓음';
 
   @override
-  String get settingsAppearanceDescription =>
-      'Density and timeline bubble visibility';
+  String get settingsAppearanceDescription => '간격 조밀도 및 타임라인 말풍선 표시 여부';
 
   @override
-  String get settingsAppearanceLight => 'Light';
+  String get settingsAppearanceLight => '라이트';
 
   @override
   String get settingsAppearanceMathRendering => '수식 렌더링';
@@ -2802,262 +2816,256 @@ class AppLocalizationsKo extends AppLocalizations {
       '채팅 메시지에서 LaTeX 수학 표현식을 조판된 방정식으로 렌더링합니다.';
 
   @override
-  String get settingsAppearanceNoPresets => 'No preset palettes found';
+  String get settingsAppearanceNoPresets => '프리셋 팔레트를 찾을 수 없음';
 
   @override
-  String get settingsAppearanceOpenCodePresets => 'OpenCode Presets';
+  String get settingsAppearanceOpenCodePresets => 'OpenCode 프리셋';
 
   @override
   String get settingsAppearancePresetHelper =>
-      'Mirrors the official OpenCode Web built-in theme list.';
+      '공식 OpenCode Web 기본 제공 테마 목록을 미러링합니다.';
 
   @override
   String get settingsAppearancePresetNote =>
-      'Theme colors now follow the official OpenCode Web registry and drive markdown/code surfaces too.';
+      '테마 색상은 이제 공식 OpenCode Web 레지스트리를 따르며 마크다운 및 코드 영역에도 적용됩니다.';
 
   @override
-  String get settingsAppearancePresetPalette => 'Preset palette';
+  String get settingsAppearancePresetPalette => '프리셋 팔레트';
 
   @override
-  String get settingsAppearanceSearchPreset => 'Search preset palette';
+  String get settingsAppearanceSearchPreset => '프리셋 팔레트 검색';
 
   @override
   String get settingsAppearanceSectionDescription =>
-      'Tune visual density and message surfaces for your workflow.';
+      '작업 흐름에 맞게 시각적 조밀도 및 메시지 영역을 조정합니다.';
 
   @override
-  String get settingsAppearanceSectionTitle => 'Appearance';
+  String get settingsAppearanceSectionTitle => '화면 표시';
 
   @override
-  String get settingsAppearanceSystem => 'System';
+  String get settingsAppearanceSystem => '시스템';
 
   @override
-  String get settingsAppearanceTaskList => 'Task list';
+  String get settingsAppearanceTaskList => '작업 목록';
 
   @override
   String get settingsAppearanceTaskListDescription =>
-      'Show or hide the session task list widget.';
+      '세션 작업 목록 위젯의 표시 여부를 설정합니다.';
 
   @override
-  String get settingsAppearanceTheme => 'Theme';
+  String get settingsAppearanceTheme => '테마';
 
   @override
   String get settingsAppearanceThemeDescription =>
-      'Choose light, dark, or system mode, then keep the CodeWalk classic palette or switch to an OpenCode preset.';
+      '라이트, 다크 또는 시스템 모드를 선택한 다음 CodeWalk 클래식 팔레트를 유지하거나 OpenCode 프리셋으로 전환합니다.';
 
   @override
-  String get settingsAppearanceThinkingBubbles => 'Thinking bubbles';
+  String get settingsAppearanceThinkingBubbles => '생각 과정 말풍선';
 
   @override
   String get settingsAppearanceThinkingBubblesDescription =>
-      'Show or hide reasoning blocks in assistant messages.';
+      '어시스턴트 메시지에서 생각 과정 블록의 표시 여부를 설정합니다.';
 
   @override
-  String get settingsAppearanceTitle => 'Appearance';
+  String get settingsAppearanceTitle => '화면 표시';
 
   @override
-  String get settingsAppearanceToolCallBubbles => 'Tool call bubbles';
+  String get settingsAppearanceToolCallBubbles => '도구 호출 말풍선';
 
   @override
   String get settingsAppearanceToolCallBubblesDescription =>
-      'Show or hide tool execution cards in assistant messages.';
+      '어시스턴트 메시지에서 도구 실행 카드의 표시 여부를 설정합니다.';
 
   @override
-  String get settingsAppearanceWallpaperColors => 'Use wallpaper colors';
+  String get settingsAppearanceWallpaperColors => '배경화면 색상 사용';
 
   @override
-  String get settingsAppearanceWallpaperNormal =>
-      'Extract color scheme from your device wallpaper.';
+  String get settingsAppearanceWallpaperNormal => '기기 배경화면에서 색상 체계를 추출합니다.';
 
   @override
   String get settingsAppearanceWallpaperPresetBlocked =>
-      'Switch to CodeWalk Classic to use wallpaper colors.';
+      '배경화면 색상을 사용하려면 CodeWalk 클래식으로 전환하세요.';
 
   @override
-  String get settingsBack => 'Back';
+  String get settingsBack => '뒤로';
 
   @override
   String get settingsBehaviorAutoupdateCaveat =>
-      'Use About for CodeWalk release checks. This setting only mirrors the official OpenCode `autoupdate` config.';
+      'CodeWalk 릴리스 확인은 \'정보\'를 사용하세요. 이 설정은 공식 OpenCode `autoupdate` 구성만 미러링합니다.';
 
   @override
   String get settingsBehaviorAutoupdateHelp =>
-      'Controls upstream OpenCode runtime updates, not CodeWalk app update checks.';
+      'CodeWalk 앱 업데이트 확인이 아닌 업스트림 OpenCode 런타임 업데이트를 제어합니다.';
 
   @override
-  String get settingsBehaviorCellularDataSaver => 'Cellular data saver';
+  String get settingsBehaviorCellularDataSaver => '데이터 절약 모드';
 
   @override
   String get settingsBehaviorConfigDeferred =>
-      'CodeWalk will apply this OpenCode setting after the current response finishes.';
+      'CodeWalk는 현재 응답이 완료된 후 이 OpenCode 설정을 적용합니다.';
 
   @override
   String settingsBehaviorConfigUpdateFailed(String field) {
-    return 'Could not update the OpenCode $field.';
+    return 'OpenCode $field을(를) 업데이트할 수 없습니다.';
   }
 
   @override
-  String get settingsBehaviorConversationUsername => 'Conversation username';
+  String get settingsBehaviorConversationUsername => '대화 사용자 이름';
 
   @override
   String get settingsBehaviorConversationUsernameHelp =>
-      'Custom display name shown in conversations instead of the system username.';
+      '대화에서 시스템 사용자 이름 대신 표시할 사용자 지정 표시 이름입니다.';
 
   @override
-  String get settingsBehaviorDataSaverActive => 'Active now on mobile data.';
+  String get settingsBehaviorDataSaverActive => '현재 모바일 데이터에서 활성화되어 있습니다.';
 
   @override
-  String get settingsBehaviorDataSaverCellularOnly =>
-      'Only applies when the connection is cellular/mobile.';
+  String get settingsBehaviorDataSaverCellularOnly => '모바일/셀룰러 연결 시에만 적용됩니다.';
 
   @override
   String get settingsBehaviorDataSaverDescription =>
-      'Cuts automatic mobile-data usage by stopping background downloads and throttling automatic foreground refreshes.';
+      '백그라운드 다운로드를 중지하고 자동 포그라운드 새로고침을 제한하여 모바일 데이터 자동 사용량을 줄입니다.';
 
   @override
-  String get settingsBehaviorDataSaverWaiting =>
-      'Waiting for the next mobile-data sync window.';
+  String get settingsBehaviorDataSaverWaiting => '다음 모바일 데이터 동기화 주기를 대기 중입니다.';
 
   @override
-  String get settingsBehaviorDefaultAgent => 'Default agent';
+  String get settingsBehaviorDefaultAgent => '기본 에이전트';
 
   @override
   String get settingsBehaviorDefaultAgentHelp =>
-      'Primary agent used when no agent is explicitly chosen.';
+      '에이전트가 명시적으로 선택되지 않았을 때 사용되는 기본 에이전트입니다.';
 
   @override
-  String get settingsBehaviorDefaultModel => 'Default model';
+  String get settingsBehaviorDefaultModel => '기본 모델';
 
   @override
   String get settingsBehaviorDefaultModelHelp =>
-      'Shared across OpenCode clients through config.';
+      '구성을 통해 OpenCode 클라이언트 간에 공유됩니다.';
 
   @override
   String get settingsBehaviorDescription =>
-      'OpenCode defaults, provenance, and composer sync safety';
+      'OpenCode 기본값, 출처(provenance) 및 컴포저 동기화 안정성';
 
   @override
-  String get settingsBehaviorEnableDataSaver => 'Enable cellular data saver';
+  String get settingsBehaviorEnableDataSaver => '데이터 절약 모드 활성화';
 
   @override
-  String get settingsBehaviorMultiDeviceSync =>
-      'Enable experimental multi-device sync';
+  String get settingsBehaviorMultiDeviceSync => '실험적 다중 기기 동기화 활성화';
 
   @override
   String get settingsBehaviorMultiDeviceSyncDescription =>
-      'Sync composer selection (agent/model/variant) with the active server config.';
+      '컴포저 선택 사항(에이전트/모델/변형)을 활성 서버 구성과 동기화합니다.';
 
   @override
   String get settingsBehaviorMultiDeviceSyncWarning =>
-      'Can abort ongoing sessions when working in more than one session at the same time.';
+      '동시에 둘 이상의 세션에서 작업할 때 진행 중인 세션이 중단될 수 있습니다.';
 
   @override
-  String get settingsBehaviorNoAgents => 'No agents found';
+  String get settingsBehaviorNoAgents => '에이전트를 찾을 수 없음';
 
   @override
-  String get settingsBehaviorNoModels => 'No models found';
+  String get settingsBehaviorNoModels => '모델을 찾을 수 없음';
 
   @override
-  String get settingsBehaviorOpenCodeAutoupdate => 'OpenCode auto-update';
+  String get settingsBehaviorOpenCodeAutoupdate => 'OpenCode 자동 업데이트';
 
   @override
-  String get settingsBehaviorOpenCodeDefaults => 'OpenCode-backed defaults';
+  String get settingsBehaviorOpenCodeDefaults => 'OpenCode 기반 기본값';
 
   @override
   String get settingsBehaviorOpenCodeDefaultsDescription =>
-      'These values write to `/config` on the active server and match official OpenCode shared config.';
+      '이 값은 활성 서버의 `/config`에 기록되며 공식 OpenCode 공유 구성과 일치합니다.';
 
   @override
-  String get settingsBehaviorOpenCodeSnapshots => 'OpenCode snapshots';
+  String get settingsBehaviorOpenCodeSnapshots => 'OpenCode 스냅샷';
 
   @override
   String get settingsBehaviorOpenCodeSnapshotsDescription =>
-      'Keep upstream git-backed snapshots enabled for undo/redo and recovery history.';
+      '실행 취소/다시 실행 및 복구 기록을 위해 업스트림 git 기반 스냅샷 활성 상태를 유지합니다.';
 
   @override
   String get settingsBehaviorPermissionDeferred =>
-      'Advanced permission rule editing stays out of Settings for now and is deferred to later parity work.';
+      '고급 권한 규칙 편집은 현재 설정에서 제외되며 이후의 동등성 작업으로 연기됩니다.';
 
   @override
-  String get settingsBehaviorPermissionProvenance =>
-      'Permission handling provenance';
+  String get settingsBehaviorPermissionProvenance => '권한 처리 출처';
 
   @override
   String get settingsBehaviorPermissionProvenanceDescription =>
-      'Official OpenCode permission policy is configured in `opencode.json` with allow/ask/deny rules per tool. CodeWalk keeps the official permission-request cards and adds one approved ADR-023 exception: the composer auto-approve toggle replies with `Always` and `remember: true` unconditionally to create durable session-scoped grants, and keeps the same thread-scoped continuity path active in the Android background worker.';
+      '공식 OpenCode 권한 정책은 도구별 allow/ask/deny 규칙이 있는 `opencode.json`에서 구성됩니다. CodeWalk는 공식 권한 요청 카드를 유지하고 하나의 승인된 ADR-023 예외를 추가합니다: 컴포저 자동 승인 토글은 영구적인 세션 범위 권한을 생성하기 위해 무조건 `Always` 및 `remember: true`로 응답하며, Android 백그라운드 작업자에서도 동일한 스레드 범위 연속성 경로를 활성 상태로 유지합니다.';
 
   @override
-  String get settingsBehaviorRefreshDefaults => 'Refresh defaults';
+  String get settingsBehaviorRefreshDefaults => '기본값 새로고침';
 
   @override
-  String get settingsBehaviorSaveUsername => 'Save username';
+  String get settingsBehaviorSaveUsername => '사용자 이름 저장';
 
   @override
-  String get settingsBehaviorSearchAutoupdate => 'Search auto-update mode';
+  String get settingsBehaviorSearchAutoupdate => '자동 업데이트 모드 검색';
 
   @override
-  String get settingsBehaviorSearchDefaultAgent => 'Search default agent';
+  String get settingsBehaviorSearchDefaultAgent => '기본 에이전트 검색';
 
   @override
-  String get settingsBehaviorSearchDefaultModel => 'Search default model';
+  String get settingsBehaviorSearchDefaultModel => '기본 모델 검색';
 
   @override
-  String get settingsBehaviorSearchShareMode => 'Search sharing mode';
+  String get settingsBehaviorSearchShareMode => '공유 모드 검색';
 
   @override
-  String get settingsBehaviorSearchSmallModel => 'Search small model';
+  String get settingsBehaviorSearchSmallModel => '소형 모델 검색';
 
   @override
-  String get settingsBehaviorShareMode => 'OpenCode sharing default';
+  String get settingsBehaviorShareMode => 'OpenCode 기본 공유 모드';
 
   @override
   String get settingsBehaviorShareModeCaveat =>
-      'Use the chat-level share action to publish one session now. This setting only changes OpenCode\'s default sharing policy.';
+      '지금 하나의 세션을 게시하려면 채팅 수준의 공유 작업을 사용하세요. 이 설정은 OpenCode의 기본 공유 정책만 변경합니다.';
 
   @override
   String get settingsBehaviorShareModeHelp =>
-      'Controls the official global `share` config, not the share button for an individual chat.';
+      '개별 채팅의 공유 버튼이 아닌 공식 글로벌 `share` 구성을 제어합니다.';
 
   @override
-  String get settingsBehaviorSmallModel => 'Small model';
+  String get settingsBehaviorSmallModel => '소형 모델';
 
   @override
-  String get settingsBehaviorSmallModelAutoFallback => 'Automatic fallback';
+  String get settingsBehaviorSmallModelAutoFallback => '자동 폴백';
 
   @override
   String get settingsBehaviorSmallModelFallbackActive =>
-      'OpenCode automatic fallback is active because `small_model` is unset.';
+      '`small_model`이 설정되지 않아 OpenCode 자동 폴백이 활성화되었습니다.';
 
   @override
-  String get settingsBehaviorSmallModelHelp =>
-      'Used for lightweight tasks like title generation.';
+  String get settingsBehaviorSmallModelHelp => '제목 생성과 같은 가벼운 작업에 사용됩니다.';
 
   @override
   String get settingsBehaviorSmallModelResetCaveat =>
-      'Resetting `small_model` back to automatic fallback still requires editing config outside the app because `/config` patch updates cannot remove keys.';
+      '`small_model`을 자동 폴백으로 재설정하려면 `/config` 패치 업데이트가 키를 삭제할 수 없기 때문에 앱 외부에서 구성을 수정해야 합니다.';
 
   @override
   String get settingsBehaviorSnapshotCaveat =>
-      'This controls OpenCode snapshot storage and undo/redo support, not CodeWalk local cache snapshots.';
+      '이것은 CodeWalk 로컬 캐시 스냅샷이 아닌 OpenCode 스냅샷 저장소 및 실행 취소/다시 실행 지원을 제어합니다.';
 
   @override
-  String get settingsBehaviorTitle => 'Behavior';
+  String get settingsBehaviorTitle => '동작';
 
   @override
   String get settingsBehaviorUsernameFallback =>
-      'OpenCode uses the system username because `username` is unset.';
+      '`username`이 설정되지 않아 OpenCode가 시스템 사용자 이름을 사용합니다.';
 
   @override
   String get settingsBehaviorUsernamePatchCaveat =>
-      'Resetting `username` back to the system default still requires editing config outside the app because `/config` patch updates cannot remove keys.';
+      '`username`을 시스템 기본값으로 재설정하려면 `/config` 패치 업데이트가 키를 삭제할 수 없기 때문에 앱 외부에서 구성을 수정해야 합니다.';
 
   @override
   String get settingsConfigRefreshFailed =>
-      'Updated the server setting, but could not refresh chat providers.';
+      '서버 설정을 업데이트했으나 채팅 제공자를 새로고침하지 못했습니다.';
 
   @override
   String get settingsConfigUpdateDeferred =>
-      'CodeWalk will apply this OpenCode setting after the current response finishes.';
+      'CodeWalk는 현재 응답이 완료된 후 이 OpenCode 설정을 적용합니다.';
 
   @override
   String get settingsConversationUsername => '대화 사용자 이름';
@@ -3070,30 +3078,28 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get settingsLanguageDescription =>
-      'Choose the language used by CodeWalk. System default follows your device language.';
+      'CodeWalk에서 사용할 언어를 선택하세요. 시스템 기본값은 기기 언어를 따릅니다.';
 
   @override
-  String get settingsLanguageEmptyText => 'No languages found';
+  String get settingsLanguageEmptyText => '검색된 언어가 없습니다';
 
   @override
-  String get settingsLanguageFieldHelper =>
-      'Applies immediately and persists across restarts.';
+  String get settingsLanguageFieldHelper => '즉시 적용되며 재시작 후에도 유지됩니다.';
 
   @override
-  String get settingsLanguageFieldLabel => 'App language';
+  String get settingsLanguageFieldLabel => '앱 언어';
 
   @override
-  String get settingsLanguageSearchHint => 'Search languages';
+  String get settingsLanguageSearchHint => '언어 검색';
 
   @override
-  String get settingsLanguageSystemDefault => 'System default';
+  String get settingsLanguageSystemDefault => '시스템 기본값';
 
   @override
-  String get settingsLanguageTitle => 'Language';
+  String get settingsLanguageTitle => '언어';
 
   @override
-  String get settingsLogsDescription =>
-      'Runtime diagnostics and troubleshooting data';
+  String get settingsLogsDescription => '런타임 진단 및 문제 해결 데이터';
 
   @override
   String get settingsLogsTitle => 'Registros';
@@ -3102,182 +3108,190 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsNoAgentsFound => '에이전트를 찾을 수 없음';
 
   @override
-  String get settingsNotificationsAgentSubtitle => 'When a response finishes';
+  String get settingsNotificationsAgentSubtitle => '응답이 완료되었을 때';
 
   @override
-  String get settingsNotificationsAgentUpdates => 'Agent updates';
+  String get settingsNotificationsAgentUpdates => '에이전트 업데이트';
 
   @override
-  String get settingsNotificationsAnotherConversation => 'Another conversation';
+  String get settingsNotificationsAnotherConversation => '다른 대화에 있을 때';
 
   @override
-  String get settingsNotificationsAppInBackground => 'App in background';
+  String get settingsNotificationsAppInBackground => '앱이 백그라운드에 있을 때';
 
   @override
-  String get settingsNotificationsBackgroundAlerts =>
-      'Android background alerts';
+  String get settingsNotificationsBackgroundAlerts => 'Android 백그라운드 알림';
 
   @override
-  String get settingsNotificationsBackgroundBehavior => 'Background behavior';
+  String get settingsNotificationsBackgroundBehavior => '백그라운드 동작';
 
   @override
   String get settingsNotificationsBackgroundBehaviorDescription =>
-      'Choose how CodeWalk behaves after the app leaves the foreground.';
+      '앱이 포그라운드를 벗어난 후 CodeWalk가 동작하는 방식을 선택하세요.';
 
   @override
   String get settingsNotificationsBackgroundDescription =>
-      'Use low-data background monitoring for response completions, permission requests, questions, and errors while the app is not on screen.';
+      '앱이 화면에 표시되지 않는 동안 낮은 데이터 백그라운드 모니터링을 사용하여 응답 완료, 권한 요청, 질문 및 오류를 확인합니다.';
 
   @override
-  String get settingsNotificationsBackgroundToggle =>
-      'Background alerts on Android';
+  String get settingsNotificationsBackgroundToggle => 'Android 백그라운드 알림';
 
   @override
   String get settingsNotificationsBackgroundToggleDescription =>
-      'Turn off all Android background checks and hide the persistent monitor notification.';
+      '모든 Android 백그라운드 확인을 끄고 지속적인 모니터링 알림을 숨깁니다.';
 
   @override
   String get settingsNotificationsBatteryDescription =>
-      'If notifications only arrive when reopening the app, allow CodeWalk to run without optimization on this device.';
+      '앱을 다시 열 때만 알림이 도착하는 경우, 이 기기에서 CodeWalk가 최적화 없이 실행되도록 허용해 주세요.';
 
   @override
   String get settingsNotificationsBatteryDisabled =>
-      'Battery optimization is disabled for CodeWalk.';
+      'CodeWalk에 대한 배터리 최적화가 비활성화되어 있습니다.';
 
   @override
   String get settingsNotificationsBatteryEnabled =>
-      'Battery optimization is enabled. Some devices may delay background alerts.';
+      '배터리 최적화가 활성화되어 있습니다. 일부 기기에서는 백그라운드 알림이 지연될 수 있습니다.';
 
   @override
-  String get settingsNotificationsBatteryOptimization =>
-      'Android battery optimization';
+  String get settingsNotificationsBatteryOptimization => 'Android 배터리 최적화';
 
   @override
-  String get settingsNotificationsBatteryUnknown =>
-      'Could not read battery optimization status yet.';
+  String get settingsNotificationsBatteryUnknown => '배터리 최적화 상태를 아직 읽을 수 없습니다.';
 
   @override
-  String get settingsNotificationsChooseAudioFile => 'Choose audio file';
+  String get settingsNotificationsChooseAudioFile => '오디오 파일 선택';
 
   @override
-  String get settingsNotificationsChooseSystemSound => 'Choose system sound';
+  String get settingsNotificationsChooseSystemSound => '시스템 소리 선택';
 
   @override
-  String get settingsNotificationsCloseToTray => 'Close to tray';
+  String get settingsNotificationsCloseToTray => '트레이로 닫기';
 
   @override
   String get settingsNotificationsCloseToTrayDescription =>
-      'Hide window and keep running in system tray.';
+      '창을 숨기고 시스템 트레이에서 계속 실행합니다.';
 
   @override
-  String get settingsNotificationsDescription =>
-      'Per-category notify and sound controls';
+  String get settingsNotificationsDescription => '카테고리별 알림 및 소리 제어';
 
   @override
-  String get settingsNotificationsDisableOptimization => 'Disable optimization';
+  String get settingsNotificationsDisableOptimization => '최적화 비활성화';
 
   @override
-  String get settingsNotificationsErrors => 'Errors';
+  String get settingsNotificationsErrors => '오류';
 
   @override
-  String get settingsNotificationsErrorsSubtitle =>
-      'When a session reports a failure';
+  String get settingsNotificationsErrorsSubtitle => '세션에 실패가 보고되었을 때';
 
   @override
-  String get settingsNotificationsJustClose => 'Just close';
+  String get settingsNotificationsJustClose => '그냥 닫기';
 
   @override
-  String get settingsNotificationsJustCloseDescription =>
-      'Exit the application completely.';
+  String get settingsNotificationsJustCloseDescription => '어플리케이션을 완전히 종료합니다.';
 
   @override
-  String get settingsNotificationsKeepLive => 'Keep alerts live for 3 min';
+  String get settingsNotificationsKeepLive => '3분 동안 알림 활성 유지';
 
   @override
   String get settingsNotificationsKeepLiveDescription =>
-      'When a response is already running, keep realtime active briefly after leaving the app.';
+      '응답이 이미 실행 중일 때 앱을 벗어난 후에도 잠시 동안 실시간 활성 상태를 유지합니다.';
 
   @override
-  String get settingsNotificationsLocal => 'Local';
+  String get settingsNotificationsLocal => '로컬';
 
   @override
-  String get settingsNotificationsMinimizeWhenClose => 'Minimize when close';
+  String get settingsNotificationsMinimizeWhenClose => '닫을 때 최소화';
 
   @override
   String get settingsNotificationsMinimizeWhenCloseDescription =>
-      'Minimize to taskbar/dock and keep running.';
+      '작업 표시줄/독으로 최소화하고 계속 실행합니다.';
 
   @override
   String get settingsNotificationsNoCondition =>
-      'If no condition is selected, alerts are allowed in any context.';
+      '선택된 조건이 없으면 모든 상황에서 알림이 허용됩니다.';
 
   @override
-  String get settingsNotificationsNotify => 'Notify';
+  String get settingsNotificationsNotify => '알림';
 
   @override
-  String get settingsNotificationsNotifyOnlyWhen => 'Notify only when';
+  String get settingsNotificationsNotifyOnlyWhen => '알림 조건';
 
   @override
-  String get settingsNotificationsOpenBatterySettings =>
-      'Open battery settings';
+  String get settingsNotificationsOpenBatterySettings => '배터리 설정 열기';
 
   @override
-  String get settingsNotificationsPermissions => 'Permissions and questions';
+  String get settingsNotificationsPermissions => '권한 및 질문';
 
   @override
-  String get settingsNotificationsPermissionsSubtitle =>
-      'When tools request your input';
+  String get settingsNotificationsPermissionsSubtitle => '도구가 입력을 요청할 때';
 
   @override
-  String get settingsNotificationsPreview => 'Preview';
+  String get settingsNotificationsPreview => '미리보기';
 
   @override
-  String get settingsNotificationsRefreshStatus => 'Refresh status';
+  String get settingsNotificationsRefreshStatus => '상태 새로고침';
 
   @override
-  String get settingsNotificationsSearchSoundType => 'Search sound type';
+  String get settingsNotificationsSearchSoundType => '소리 종류 검색';
 
   @override
   String get settingsNotificationsSectionDescription =>
-      'Control when alerts appear and when they can play sound.';
+      '알림이 표시되는 시점과 알림음 재생 여부를 제어합니다.';
 
   @override
-  String get settingsNotificationsSectionTitle => 'Notifications';
+  String get settingsNotificationsSectionTitle => '알림';
 
   @override
   String settingsNotificationsSelectedSound(String label) {
-    return 'Selected: $label';
+    return '선택됨: $label';
   }
 
   @override
-  String get settingsNotificationsServer => 'Server';
+  String get settingsNotificationsServer => '서버';
 
   @override
-  String get settingsNotificationsSound => 'Sound';
+  String get settingsNotificationsSound => '소리';
 
   @override
-  String get settingsNotificationsSoundOnlyWhen => 'Sound only when';
+  String get settingsNotificationsSoundBuiltInAlert => '내장 알림음';
 
   @override
-  String get settingsNotificationsSoundType => 'Sound type';
+  String get settingsNotificationsSoundBuiltInClick => '내장 클릭음';
+
+  @override
+  String get settingsNotificationsSoundOff => '꺼짐';
+
+  @override
+  String get settingsNotificationsSoundOnlyWhen => '알림음 조건';
+
+  @override
+  String get settingsNotificationsSoundPickAudioFile => '오디오 파일 선택';
+
+  @override
+  String get settingsNotificationsSoundPickFromSystem => '시스템에서 선택';
+
+  @override
+  String get settingsNotificationsSoundSystemDefault => '시스템 기본값';
+
+  @override
+  String get settingsNotificationsSoundType => '소리 종류';
 
   @override
   String get settingsNotificationsSyncInfo =>
-      'Some category on/off toggles are synced from /config on the active server.';
+      '일부 카테고리의 켜짐/꺼짐 토글은 활성 서버의 `/config`에서 동기화됩니다.';
 
   @override
   String get settingsNotificationsSyncInfoLocal =>
-      'Current server does not expose notification toggles in /config; local values are active.';
+      '현재 서버가 `/config`에서 알림 토글을 노출하지 않아 로컬 값이 활성화되어 있습니다.';
 
   @override
-  String get settingsNotificationsSystemSoundPickerTitle =>
-      'Choose system sound';
+  String get settingsNotificationsSystemSoundPickerTitle => '시스템 소리 선택';
 
   @override
-  String get settingsNotificationsTitle => 'Notifications';
+  String get settingsNotificationsTitle => '알림';
 
   @override
-  String get settingsNotificationsWhenClosing => 'When closing the window';
+  String get settingsNotificationsWhenClosing => '창을 닫을 때';
 
   @override
   String get settingsOpenCodeAutoUpdate => 'OpenCode 자동 업데이트';
@@ -3286,36 +3300,36 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsOpenCodeSharingDefault => 'OpenCode 공유 기본값';
 
   @override
-  String get settingsReadAloudEnabled => 'Read aloud';
+  String get settingsReadAloudEnabled => '음성으로 읽기';
 
   @override
   String get settingsReadAloudEnabledDescription =>
-      'Show a read-aloud button on assistant messages.';
+      '어시스턴트 메시지에 \'음성으로 읽기\' 버튼을 표시합니다.';
 
   @override
-  String get settingsReadAloudPitch => 'Pitch';
+  String get settingsReadAloudPitch => '음높이';
 
   @override
-  String get settingsReadAloudPitchDescription => 'Adjust the voice pitch.';
+  String get settingsReadAloudPitchDescription => '목소리의 높낮이를 조정합니다.';
 
   @override
   String get settingsReadAloudSectionDescription =>
-      'Read assistant responses aloud. Configure speed, pitch, and voice.';
+      '어시스턴트의 응답을 음성으로 읽습니다. 속도, 높낮이 및 목소리를 구성하세요.';
 
   @override
-  String get settingsReadAloudSectionTitle => 'Text to speech';
+  String get settingsReadAloudSectionTitle => '텍스트 음성 변환 (TTS)';
 
   @override
-  String get settingsReadAloudSpeed => 'Speed';
+  String get settingsReadAloudSpeed => '속도';
 
   @override
-  String get settingsReadAloudSpeedDescription => 'Adjust the speaking rate.';
+  String get settingsReadAloudSpeedDescription => '읽기 속도를 조정합니다.';
 
   @override
-  String get settingsReadAloudVoice => 'Voice';
+  String get settingsReadAloudVoice => '목소리';
 
   @override
-  String get settingsReadAloudVoiceHint => 'Select a voice for read-aloud.';
+  String get settingsReadAloudVoiceHint => '읽어주기에 사용할 목소리를 선택하세요.';
 
   @override
   String get settingsSearchAutoUpdateMode => '자동 업데이트 모드 검색';
@@ -3333,41 +3347,40 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsSearchSmallModel => '소형 모델 검색';
 
   @override
-  String get settingsServersActive => 'Active';
+  String get settingsServersActive => '활성';
 
   @override
-  String get settingsServersChooseActive => 'Choose active server';
+  String get settingsServersChooseActive => '활성 서버 선택';
 
   @override
-  String get settingsServersDefault => 'Default';
+  String get settingsServersDefault => '기본값';
 
   @override
-  String get settingsServersDescription =>
-      'OpenCode servers and health routing';
+  String get settingsServersDescription => 'OpenCode 서버 및 헬스 라우팅';
 
   @override
-  String get settingsServersTitle => 'Servers';
+  String get settingsServersTitle => '서버';
 
   @override
-  String get settingsSetupWizard => 'Setup Wizard';
+  String get settingsSetupWizard => '설정 마법사';
 
   @override
-  String get settingsShortcutsDescription => 'Portable app key bindings';
+  String get settingsShortcutsDescription => '이동식 앱 키 바인딩';
 
   @override
-  String get settingsShortcutsEdit => 'Edit shortcut';
+  String get settingsShortcutsEdit => '단축키 편집';
 
   @override
-  String get settingsShortcutsKeyboard => 'Keyboard shortcuts';
+  String get settingsShortcutsKeyboard => '키보드 단축키';
 
   @override
-  String get settingsShortcutsReset => 'Reset shortcut';
+  String get settingsShortcutsReset => '단축키 초기화';
 
   @override
-  String get settingsShortcutsSearch => 'Search shortcuts';
+  String get settingsShortcutsSearch => '단축키 검색';
 
   @override
-  String get settingsShortcutsTitle => 'Shortcuts';
+  String get settingsShortcutsTitle => '단축키';
 
   @override
   String get settingsSmallModel => '소형 모델';
@@ -3385,30 +3398,29 @@ class AppLocalizationsKo extends AppLocalizations {
       '시스템 사운드 선택기는 이 플랫폼에서 사용할 수 없습니다.';
 
   @override
-  String get settingsSpeechDescription =>
-      'Engine, silence timeout, and model options';
+  String get settingsSpeechDescription => '엔진, 무음 제한 시간 및 모델 옵션';
 
   @override
-  String get settingsSpeechRefreshStatus => 'Refresh status';
+  String get settingsSpeechRefreshStatus => '상태 새로고침';
 
   @override
   String settingsSpeechSilenceTimeout(String value) {
-    return 'Silence timeout: ${value}s';
+    return '무음 제한 시간: $value초';
   }
 
   @override
-  String get settingsSpeechTitle => 'Speech to text';
+  String get settingsSpeechTitle => '음성 인식 (STT)';
 
   @override
-  String get settingsTitle => 'Settings';
+  String get settingsTitle => '설정';
 
   @override
   String get settingsUsernameClearHint =>
-      'Clearing the OpenCode conversation username still requires editing config outside the app.';
+      'OpenCode 대화 사용자 이름을 지우려면 여전히 앱 외부에서 구성을 수정해야 합니다.';
 
   @override
   String get settingsUsernameEnterHint =>
-      'Enter a username to save a custom OpenCode conversation name.';
+      '사용자 정의 OpenCode 대화 이름을 저장하려면 사용자 이름을 입력하세요.';
 
   @override
   String get settingsUsernameResetExplanation =>
@@ -3425,74 +3437,74 @@ class AppLocalizationsKo extends AppLocalizations {
   String get setupDebugBun2 => 'Bun';
 
   @override
-  String get setupDebugCapturedSetupDetails => 'No captured setup details yet';
+  String get setupDebugCapturedSetupDetails => '캡처된 설정 상세 정보가 아직 없습니다';
 
   @override
-  String get setupDebugCapturedSetupLogs => 'Captured setup logs';
+  String get setupDebugCapturedSetupLogs => '캡처된 설정 로그';
 
   @override
-  String get setupDebugClear => 'Clear setup debug';
+  String get setupDebugClear => '설정 디버그 지우기';
 
   @override
-  String get setupDebugClearSetupDebug => 'Clear setup debug';
+  String get setupDebugClearSetupDebug => '설정 디버그 지우기';
 
   @override
   String get setupDebugCodeWalkCaptureEnough =>
-      'If CodeWalk did not capture enough context, check the official OpenCode logs and health endpoints directly:';
+      'CodeWalk가 충분한 정보를 캡처하지 못한 경우, 공식 OpenCode 로그 및 헬스 엔드포인트를 직접 확인하세요.';
 
   @override
-  String get setupDebugCommandPath => 'Command path';
+  String get setupDebugCommandPath => '명령어 경로';
 
   @override
-  String get setupDebugCommandPath2 => 'Command path';
+  String get setupDebugCommandPath2 => '명령어 경로';
 
   @override
-  String get setupDebugCopy => 'Copy setup debug';
+  String get setupDebugCopy => '설정 디버그 복사';
 
   @override
-  String get setupDebugCopySetupDebug => 'Copy setup debug';
+  String get setupDebugCopySetupDebug => '설정 디버그 복사';
 
   @override
-  String get setupDebugCurrentStatus => 'Current status';
+  String get setupDebugCurrentStatus => '현재 상태';
 
   @override
-  String get setupDebugDiagnosticsLoading => 'Diagnostics are still loading.';
+  String get setupDebugDiagnosticsLoading => '진단 정보를 아직 로드하는 중입니다.';
 
   @override
-  String get setupDebugEnvironment => 'Environment diagnostics';
+  String get setupDebugEnvironment => '환경 진단';
 
   @override
-  String get setupDebugEnvironmentDiagnostics => 'Environment diagnostics';
+  String get setupDebugEnvironmentDiagnostics => '환경 진단 정보';
 
   @override
-  String get setupDebugFocusedOpenCodeSetup => 'Focused on OpenCode setup';
+  String get setupDebugFocusedOpenCodeSetup => 'OpenCode 설정';
 
   @override
-  String get setupDebugInstallDir => 'Install directory';
+  String get setupDebugInstallDir => '설치 디렉토리';
 
   @override
-  String get setupDebugInstallDirectory => 'Install directory';
+  String get setupDebugInstallDirectory => '설치 디렉토리';
 
   @override
-  String get setupDebugLatestLocalServer => 'Latest local server output';
+  String get setupDebugLatestLocalServer => '최신 로컬 서버 출력';
 
   @override
-  String get setupDebugLogs => 'Captured setup logs';
+  String get setupDebugLogs => '캡처된 설정 로그';
 
   @override
-  String get setupDebugManual => 'Manual troubleshooting';
+  String get setupDebugManual => '수동 문제 해결';
 
   @override
-  String get setupDebugManualTroubleshooting => 'Manual troubleshooting';
+  String get setupDebugManualTroubleshooting => '수동 문제 해결';
 
   @override
-  String get setupDebugNetwork => 'Network';
+  String get setupDebugNetwork => '네트워크';
 
   @override
-  String get setupDebugNetwork2 => 'Network';
+  String get setupDebugNetwork2 => '네트워크';
 
   @override
-  String get setupDebugNoDetails => 'No captured setup details yet';
+  String get setupDebugNoDetails => '캡처된 설정 상세 정보가 아직 없습니다';
 
   @override
   String get setupDebugNode => 'Node.js';
@@ -3513,27 +3525,27 @@ class AppLocalizationsKo extends AppLocalizations {
   String get setupDebugOpenCode2 => 'OpenCode';
 
   @override
-  String get setupDebugOpenCodeSetupDebug => 'OpenCode Setup Debug';
+  String get setupDebugOpenCodeSetupDebug => 'OpenCode 설정 디버그';
 
   @override
-  String get setupDebugPlatform => 'Platform';
+  String get setupDebugPlatform => '플랫폼';
 
   @override
-  String get setupDebugPlatform2 => 'Platform';
+  String get setupDebugPlatform2 => '플랫폼';
 
   @override
   String get setupDebugRunDiagnosticsTry =>
-      'Run diagnostics, try an installation method, or attempt a setup flow to capture OpenCode-specific troubleshooting details here.';
+      '여기서 OpenCode에 특화된 문제 해결 세부 정보를 캡처하려면 진단을 실행하거나, 설치 방법을 시도하거나, 설정 흐름을 진행해 보세요.';
 
   @override
   String get setupDebugScreenCoversOpenCode =>
-      'This screen only covers OpenCode installation, diagnostics, and local setup troubleshooting. Use App Logs for general CodeWalk runtime issues.';
+      '이 화면은 OpenCode 설치, 진단 및 로컬 설정 문제 해결만 다룹니다. 일반적인 CodeWalk 런타임 오류는 앱 로그를 사용하세요.';
 
   @override
-  String get setupDebugServerOutput => 'Latest local server output';
+  String get setupDebugServerOutput => '최신 로컬 서버 출력';
 
   @override
-  String get setupDebugStatus => 'Current status';
+  String get setupDebugStatus => '현재 상태';
 
   @override
   String setupDebugTimeEntrySource(String source, String time) {
@@ -3541,13 +3553,13 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get setupDebugTimeline => 'Timeline';
+  String get setupDebugTimeline => '타임라인';
 
   @override
-  String get setupDebugTimeline2 => 'Timeline';
+  String get setupDebugTimeline2 => '타임라인';
 
   @override
-  String get setupDebugTitle => 'Focused on OpenCode setup';
+  String get setupDebugTitle => 'OpenCode 설정';
 
   @override
   String get setupDebugWSL => 'WSL';
@@ -3659,7 +3671,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get shortcutToggleVoiceInputDesc => '에디터에서 음성 받아쓰기 시작 또는 중지';
 
   @override
-  String get shortcutsApply => 'Apply';
+  String get shortcutsApply => '적용';
 
   @override
   String shortcutsConflictConflict(String conflict) {
@@ -3667,14 +3679,13 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get shortcutsKeyboardShortcuts => 'Keyboard shortcuts';
+  String get shortcutsKeyboardShortcuts => '키보드 단축키';
 
   @override
-  String get shortcutsReset => 'Reset all';
+  String get shortcutsReset => '모두 초기화';
 
   @override
-  String get shortcutsSearchEditBindings =>
-      'Search, edit bindings, and resolve conflicts before saving.';
+  String get shortcutsSearchEditBindings => '저장하기 전에 단축키를 검색 및 편집하고 충돌을 해결하세요.';
 
   @override
   String shortcutsSetShortcutWidget(String label) {
@@ -3683,14 +3694,14 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get shortcutsTheseBindingsStored =>
-      'These bindings are stored in CodeWalk for the current app runtime and do not edit OpenCode `tui.json` keybinds.';
+      '이 단축키 설정은 현재 앱 런타임의 CodeWalk에 저장되며, OpenCode `tui.json` 키 바인딩을 수정하지 않습니다.';
 
   @override
-  String get speechAutoStopSilence => 'Auto-stop silence timeout';
+  String get speechAutoStopSilence => '자동 정지 무음 시간 제한';
 
   @override
   String get speechChooseRecognitionEngine =>
-      'Choose the recognition engine, silence timeout, and model options.';
+      '음성 인식 엔진, 무음 시간 제한 및 모델 옵션을 선택하세요.';
 
   @override
   String speechDesktopOnly(String service) {
@@ -3698,17 +3709,17 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get speechDownload => 'Download';
+  String get speechDownload => '다운로드';
 
   @override
-  String get speechEngine => 'Engine';
+  String get speechEngine => '엔진';
 
   @override
-  String get speechInstalledLanguages => 'Installed languages';
+  String get speechInstalledLanguages => '설치된 언어';
 
   @override
   String get speechListeningStopsAutomatically =>
-      'Listening stops automatically after this many seconds of silence.';
+      '지정한 초 동안 무음 상태가 지속되면 음성 인식이 자동으로 정지됩니다.';
 
   @override
   String get speechMicPermissionDisabled => '마이크 권한이 비활성화되어 있습니다.';
@@ -3722,43 +3733,43 @@ class AppLocalizationsKo extends AppLocalizations {
   String get speechMoonshine => 'Moonshine';
 
   @override
-  String get speechMoonshineModelsDesktop => 'Moonshine models (desktop)';
+  String get speechMoonshineModelsDesktop => 'Moonshine 모델 (데스크톱)';
 
   @override
   String get speechMoonshineStaysDownloadable =>
-      'Moonshine stays downloadable and out of the app bundle. Pick one model for this desktop device and remove it later if you want the space back.';
+      'Moonshine은 앱 번들에 포함되지 않고 다운로드 가능한 상태로 유지됩니다. 이 데스크톱 기기에 맞게 하나의 모델을 선택하고, 공간을 확보하고 싶다면 나중에 제거하세요.';
 
   @override
-  String get speechNative => 'Native';
+  String get speechNative => '기본 제공 엔진';
 
   @override
   String get speechNativeSTTDisabled =>
-      'Native STT is disabled on Linux in this app. Parakeet is the default engine for new installs.';
+      '이 앱의 Linux 환경에서는 네이티브 STT 기능이 비활성화되어 있습니다. 신규 설치의 경우 Parakeet가 기본 엔진입니다.';
 
   @override
   String get speechNativeSTTWorks =>
-      'Native STT works on Windows when OS speech services are enabled. If native initialization fails, CodeWalk automatically falls back to Sherpa. Check Windows microphone privacy, Online speech recognition, and installed speech language packs.';
+      'OS 음성 서비스가 활성화된 경우 Windows에서 네이티브 STT가 작동합니다. 네이티브 초기화에 실패하면 CodeWalk는 자동으로 Sherpa로 폴백합니다. Windows 마이크 개인 정보 보호 설정, 온라인 음성 인식 및 설치된 음성 언어 팩을 확인하세요.';
 
   @override
   String get speechNativeStartsFaster =>
-      'Native starts faster. Sherpa runs fully on-device with heavier setup and deeper model control.';
+      '네이티브 방식이 더 빠르게 시작됩니다. Sherpa는 비교적 무거운 구성과 심층적인 모델 제어 기능을 통해 기기 자체에서 완전히 작동합니다.';
 
   @override
   String get speechParakeet => 'Parakeet';
 
   @override
-  String get speechParakeetModelsDesktop => 'Parakeet models (desktop)';
+  String get speechParakeetModelsDesktop => 'Parakeet 모델 (데스크톱)';
 
   @override
   String get speechParakeetStaysDownloadable =>
-      'Parakeet stays downloadable and out of the app bundle. It currently exposes one multilingual model optimized for 25 European languages.';
+      'Parakeet는 앱 번들에 포함되지 않고 다운로드 가능한 상태로 유지됩니다. 현재 25개 유럽 언어에 최적화된 다국어 모델 하나를 제공하고 있습니다.';
 
   @override
   String get speechPickLanguagePacks =>
-      'Pick language packs and download/remove models for on-device recognition.';
+      '기기 내 음성 인식을 위해 언어 팩을 선택하고 모델을 다운로드하거나 제거하세요.';
 
   @override
-  String get speechRemove => 'Remove';
+  String get speechRemove => '제거';
 
   @override
   String speechRuntimeFailed(String service) {
@@ -3767,30 +3778,30 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get speechSelectSherpaAbove =>
-      'Select Sherpa above to manage language packs and download models.';
+      '언어 팩을 관리하고 모델을 다운로드하려면 위에서 Sherpa를 선택하세요.';
 
   @override
   String get speechSenseVoice => 'SenseVoice';
 
   @override
-  String get speechSenseVoiceModelsDesktop => 'SenseVoice models (desktop)';
+  String get speechSenseVoiceModelsDesktop => 'SenseVoice 모델 (데스크톱)';
 
   @override
   String get speechSenseVoiceStaysDownloadable =>
-      'SenseVoice stays downloadable and out of the app bundle. It is the strongest desktop option here for Chinese, Cantonese, Japanese, Korean, and English.';
+      'SenseVoice는 앱 번들에 포함되지 않고 다운로드 가능한 상태로 유지됩니다. 중국어, 광둥어, 일본어, 한국어, 영어에 대한 데스크톱 기준 가장 강력한 옵션입니다.';
 
   @override
   String get speechSherpa => 'Sherpa';
 
   @override
   String get speechSherpaExperimentalFail =>
-      'Sherpa is experimental and can fail on some devices. Prefer Native if you want the most stable behavior.';
+      'Sherpa는 실험적 기능이며 일부 기기에서 작동하지 않을 수 있습니다. 가장 안정적인 동작을 원하시면 네이티브(Native) 방식을 권장합니다.';
 
   @override
-  String get speechSherpaModelsLinux => 'Sherpa models (Linux)';
+  String get speechSherpaModelsLinux => 'Sherpa 모델 (Linux)';
 
   @override
-  String get speechSpeechText => 'Speech to text';
+  String get speechSpeechText => '음성 인식 (STT)';
 
   @override
   String speechUnavailableOnPlatform(String service) {
@@ -3828,7 +3839,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get statusSyncDelayed => '동기화 지연됨';
 
   @override
-  String get tailscaleNoPeers => 'No peers found';
+  String get tailscaleNoPeers => '연결된 기기(Peer)를 찾을 수 없음';
 
   @override
   String get tailscaleNotSupportedOnPlatform =>
@@ -3839,17 +3850,17 @@ class AppLocalizationsKo extends AppLocalizations {
       'Windows에서는 Tailscale을 지원하지 않습니다.';
 
   @override
-  String get tailscalePeerOffline => 'offline';
+  String get tailscalePeerOffline => '오프라인';
 
   @override
-  String get tailscaleSelectPeer => 'Select a Tailscale peer';
+  String get tailscaleSelectPeer => 'Tailscale 기기(Peer) 선택';
 
   @override
   String get tailscaleWaitingAdminApproval =>
       '이 Tailscale 노드는 관리자 승인을 기다리고 있습니다.';
 
   @override
-  String get terminalClose => 'Close terminal';
+  String get terminalClose => '터미널 닫기';
 
   @override
   String terminalConnectingTo(String serverName) {
@@ -3873,10 +3884,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get terminalHide => '터미널 숨기기';
 
   @override
-  String get terminalMaximize => 'Maximize';
+  String get terminalMaximize => '최대화';
 
   @override
-  String get terminalMinimize => 'Minimize terminal';
+  String get terminalMinimize => '터미널 최소화';
 
   @override
   String get terminalNotAvailableYet => '이 런타임에서는 임베디드 터미널을 아직 사용할 수 없습니다.';
@@ -3894,10 +3905,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get terminalOpenToConnect => '터미널을 열어 서버 프로젝트 터미널에 연결하십시오.';
 
   @override
-  String get terminalReconnect => 'Reconnect terminal';
+  String get terminalReconnect => '터미널 재연결';
 
   @override
-  String get terminalRestoreSize => 'Restore size';
+  String get terminalRestoreSize => '크기 복원';
 
   @override
   String get terminalSelectServer => '터미널을 열기 전에 활성 서버를 선택하십시오.';
@@ -3906,55 +3917,55 @@ class AppLocalizationsKo extends AppLocalizations {
   String get terminalSessionClosed => '터미널 세션이 종료되었습니다.';
 
   @override
-  String get terminalTerminal => 'Terminal';
+  String get terminalTerminal => '터미널';
 
   @override
   String get terminalTitle => '터미널';
 
   @override
-  String get terminalTryAgain => 'Try again';
+  String get terminalTryAgain => '다시 시도';
 
   @override
-  String get toolAwaitingInput => 'Awaiting input';
+  String get toolAwaitingInput => '입력 대기 중';
 
   @override
-  String get toolEditing => 'Editing';
+  String get toolEditing => '편집 중';
 
   @override
-  String get toolEditingFiles => 'Editing files';
+  String get toolEditingFiles => '파일 편집 중';
 
   @override
-  String get toolFinding => 'Finding';
+  String get toolFinding => '찾는 중';
 
   @override
-  String get toolFindingFiles => 'Finding files';
+  String get toolFindingFiles => '파일 찾는 중';
 
   @override
-  String get toolPresentationAwaitingInput => 'Awaiting input';
+  String get toolPresentationAwaitingInput => '입력 대기 중';
 
   @override
-  String get toolPresentationEditing => 'Editing';
+  String get toolPresentationEditing => '편집 중';
 
   @override
-  String get toolPresentationEditingFiles => 'Editing files';
+  String get toolPresentationEditingFiles => '파일 편집 중';
 
   @override
-  String get toolPresentationFinding => 'Finding';
+  String get toolPresentationFinding => '찾는 중';
 
   @override
-  String get toolPresentationFindingFiles => 'Finding files';
+  String get toolPresentationFindingFiles => '파일 찾는 중';
 
   @override
-  String get toolPresentationReading => 'Reading';
+  String get toolPresentationReading => '읽는 중';
 
   @override
-  String get toolPresentationReadingFile => 'Reading file';
+  String get toolPresentationReadingFile => '파일 읽는 중';
 
   @override
-  String get toolPresentationRunning => 'Running';
+  String get toolPresentationRunning => '실행 중';
 
   @override
-  String get toolPresentationRunningCommand => 'Running command';
+  String get toolPresentationRunningCommand => '명령어 실행 중';
 
   @override
   String toolPresentationRunningTool(String toolName) {
@@ -3962,140 +3973,149 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get toolPresentationSearching => 'Searching';
+  String get toolPresentationSearching => '검색 중';
 
   @override
-  String get toolPresentationSearchingCode => 'Searching code';
+  String get toolPresentationSearchingCode => '코드 검색 중';
 
   @override
-  String get toolPresentationSearchingWeb => 'Searching the web';
+  String get toolPresentationSearchingWeb => '웹 검색 중';
 
   @override
   String get toolPresentationTool => '도구';
 
   @override
-  String get toolPresentationUpdatingTaskList => 'Updating task list';
+  String get toolPresentationUpdatingTaskList => '작업 목록 업데이트 중';
 
   @override
-  String get toolPresentationUpdatingTasks => 'Updating tasks';
+  String get toolPresentationUpdatingTasks => '작업 업데이트 중';
 
   @override
-  String get toolPresentationWaitingInput => 'Waiting for your input';
+  String get toolPresentationWaitingInput => '입력 대기 중';
 
   @override
-  String get toolPresentationWriting => 'Writing';
+  String get toolPresentationWriting => '기록 중';
 
   @override
-  String get toolPresentationWritingFile => 'Writing file';
+  String get toolPresentationWritingFile => '파일 기록 중';
 
   @override
-  String get toolReading => 'Reading';
+  String get toolReading => '읽는 중';
 
   @override
-  String get toolReadingFile => 'Reading file';
+  String get toolReadingFile => '파일 읽는 중';
 
   @override
-  String get toolRunning => 'Running';
+  String get toolRunning => '실행 중';
 
   @override
-  String get toolRunningCommand => 'Running command';
+  String get toolRunningCommand => '명령어 실행 중';
 
   @override
-  String get toolRunningTask => 'Running task';
+  String get toolRunningTask => '작업 실행 중';
 
   @override
-  String get toolSearching => 'Searching';
+  String get toolSearching => '검색 중';
 
   @override
-  String get toolSearchingCode => 'Searching code';
+  String get toolSearchingCode => '코드 검색 중';
 
   @override
-  String get toolSearchingWeb => 'Searching the web';
+  String get toolSearchingWeb => '웹 검색 중';
 
   @override
-  String get toolUpdatingTaskList => 'Updating task list';
+  String get toolUpdatingTaskList => '작업 목록 업데이트 중';
 
   @override
-  String get toolUpdatingTasks => 'Updating tasks';
+  String get toolUpdatingTasks => '작업 업데이트 중';
 
   @override
-  String get toolWaitingForInput => 'Waiting for your input';
+  String get toolWaitingForInput => '입력 대기 중';
 
   @override
-  String get toolWriting => 'Writing';
+  String get toolWriting => '기록 중';
 
   @override
-  String get toolWritingFile => 'Writing file';
+  String get toolWritingFile => '파일 기록 중';
 
   @override
-  String get tourBack => 'Back';
+  String get tourBack => '뒤로';
 
   @override
-  String get tourSkip => 'Skip';
+  String get tourSkip => '건너뛰기';
 
   @override
-  String get trayQuit => 'Quit';
+  String get trayQuit => '종료';
 
   @override
-  String get trayShow => 'Show';
+  String get trayShow => '보이기';
 
   @override
-  String get useOAuthCloudflareAccess => 'Use OAuth (Cloudflare Access)';
+  String get useOAuthCloudflareAccess => 'OAuth 사용 (Cloudflare Access)';
 
   @override
   String get useOAuthCloudflareAccessSubtitle =>
-      'Opens a browser for Cloudflare Access Managed OAuth.';
+      'Cloudflare Access 관리형 OAuth 인증을 위해 브라우저를 엽니다.';
 
   @override
   String get useOAuthCloudflareAccessUnsupported =>
-      'Cloudflare Access OAuth is not available on this platform. Use Basic Auth instead.';
+      '이 플랫폼에서는 Cloudflare Access OAuth를 사용할 수 없습니다. 대신 기본 인증을 사용하세요.';
 
   @override
-  String get useTailscale => 'Use Tailscale';
+  String get useTailscale => 'Tailscale 사용';
 
   @override
   String get useTailscaleSubtitle =>
-      'Routes traffic through the Tailscale network without a system VPN.';
+      '시스템 VPN 없이 Tailscale 네트워크를 통해 트래픽을 라우팅합니다.';
 
   @override
-  String get useTailscaleUnsupported =>
-      'Tailscale is not supported on this platform.';
+  String get useTailscaleUnsupported => '이 플랫폼에서는 Tailscale이 지원되지 않습니다.';
 
   @override
   String get utilityTitle => '유틸리티';
 
   @override
-  String get workspaceBrowseDirs => 'Browse directories';
+  String get workspaceBrowseDirs => '디렉토리 찾아보기';
 
   @override
-  String get workspaceChooseFolderOpen =>
-      'Choose any folder to open as project context.';
+  String get workspaceChooseFolderOpen => '프로젝트 컨텍스트로 열 폴더를 선택하세요.';
 
   @override
   String workspaceCloseProject(String project) {
-    return 'Close $project';
+    return '$project 닫기';
   }
 
   @override
-  String get workspaceFilterDirs => 'Filter directories';
+  String get workspaceClosedProjects => '닫힌 프로젝트';
 
   @override
-  String get workspaceOpenFolder => 'Open folder';
+  String workspaceCurrentDirectory(String path) {
+    return '현재 디렉터리: $path';
+  }
 
   @override
-  String get workspaceOpenProjectFolder => 'Open project folder';
+  String get workspaceFilterDirs => '디렉토리 필터';
 
   @override
-  String get workspaceProjectDirectory => 'Project directory';
+  String get workspaceOpenFolder => '폴더 열기';
+
+  @override
+  String get workspaceOpenProjectFolder => '프로젝트 폴더 열기';
+
+  @override
+  String get workspaceOpenProjects => '열린 프로젝트';
+
+  @override
+  String get workspaceProjectDirectory => '프로젝트 디렉토리';
 
   @override
   String get workspaceProjectHint => '/repo/my-project';
 
   @override
   String workspaceRemoveFromHistory(String name) {
-    return 'Remove $name from history';
+    return '기록에서 $name 제거';
   }
 
   @override
-  String get workspaceSuggestions => 'Suggestions';
+  String get workspaceSuggestions => '추천 프로젝트';
 }

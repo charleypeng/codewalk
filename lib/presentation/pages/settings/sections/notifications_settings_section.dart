@@ -630,7 +630,9 @@ class _NotificationsSettingsSectionState
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        serverBacked ? 'Server' : 'Local',
+        serverBacked
+            ? context.l10n.settingsNotificationsServer
+            : context.l10n.settingsNotificationsLocal,
         style: Theme.of(context).textTheme.labelSmall,
       ),
     );
@@ -907,12 +909,15 @@ class _NotificationsSettingsSectionState
 
   String _soundLabel(SoundOption option) {
     return switch (option) {
-      SoundOption.off => 'Off',
-      SoundOption.systemDefault => 'System default',
-      SoundOption.systemChoice => 'Pick from system',
-      SoundOption.customFile => 'Pick audio file',
-      SoundOption.click => 'Built-in click',
-      SoundOption.alert => 'Built-in alert',
+      SoundOption.off => context.l10n.settingsNotificationsSoundOff,
+      SoundOption.systemDefault =>
+          context.l10n.settingsNotificationsSoundSystemDefault,
+      SoundOption.systemChoice =>
+          context.l10n.settingsNotificationsSoundPickFromSystem,
+      SoundOption.customFile =>
+          context.l10n.settingsNotificationsSoundPickAudioFile,
+      SoundOption.click => context.l10n.settingsNotificationsSoundBuiltInClick,
+      SoundOption.alert => context.l10n.settingsNotificationsSoundBuiltInAlert,
     };
   }
 }
