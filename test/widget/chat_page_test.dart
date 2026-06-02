@@ -8125,7 +8125,7 @@ expect(repository.lastPermissionRequestId, 'perm_toggle_pending_1');
       find.text('Select or create a conversation to start chatting'),
       findsNothing,
     );
-    expect(find.text('How can I help you?'), findsOneWidget);
+    expect(find.text('How can I help you today?'), findsOneWidget);
   });
 
   testWidgets('keyboard shortcut focuses composer with mod+l on desktop', (

@@ -622,7 +622,7 @@ void main() {
       ),
     );
 
-    expect(find.byTooltip('Save File'), findsOneWidget);
+    expect(find.byTooltip('Save file'), findsOneWidget);
     expect(find.byIcon(Symbols.download_rounded), findsOneWidget);
     expect(find.text('preview.png'), findsOneWidget);
     expect(
@@ -663,7 +663,7 @@ void main() {
       ),
     );
 
-    expect(find.byTooltip('Open File'), findsOneWidget);
+    expect(find.byTooltip('Open file'), findsOneWidget);
     expect(find.byIcon(Symbols.open_in_new_rounded), findsOneWidget);
     expect(find.text('/tmp/report.pdf'), findsOneWidget);
     expect(
@@ -937,6 +937,64 @@ void main() {
           return false;
         }
         return decoration.color == themeTokens.codeBlockBackground;
+      }),
+      findsWidgets,
+    );
+  });
+
+  testWidgets('markdown blockquote uses themed decoration and text color', (
+    WidgetTester tester,
+  ) async {
+    final themeTokens = openCodeThemeTokensFor(
+      OpenCodeThemePreset.dracula,
+      Brightness.dark,
+    )!;
+
+    await tester.pumpWidget(
+      localizedMaterialApp(
+        theme: ThemeData(
+          brightness: Brightness.dark,
+          extensions: <ThemeExtension<dynamic>>[themeTokens],
+        ),
+        home: Scaffold(
+          body: ChatMessageWidget(
+            message: AssistantMessage(
+              id: 'msg_blockquote',
+              sessionId: 'ses_blockquote',
+              time: DateTime.fromMillisecondsSinceEpoch(1000),
+              parts: const <MessagePart>[
+                TextPart(
+                  id: 'part_blockquote',
+                  messageId: 'msg_blockquote',
+                  sessionId: 'ses_blockquote',
+                  text: '> This is a blockquote line',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byWidgetPredicate((widget) {
+        if (widget is! DecoratedBox) {
+          return false;
+        }
+        final decoration = widget.decoration;
+        if (decoration is! BoxDecoration) {
+          return false;
+        }
+        final border = decoration.border;
+        if (border is! Border) {
+          return false;
+        }
+        final leftSide = border.left;
+        return decoration.color == themeTokens.surfaceRaised &&
+            leftSide.color == themeTokens.markdownBlockQuote &&
+            leftSide.width == 4.0;
       }),
       findsWidgets,
     );

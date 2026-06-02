@@ -364,7 +364,21 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
       ),
       blockquote: Theme.of(
         context,
-      ).textTheme.bodyMedium?.copyWith(color: themeTokens.markdownBlockQuote),
+      ).textTheme.bodyMedium?.copyWith(color: themeTokens.textBase),
+      blockquotePadding: const EdgeInsets.symmetric(
+        horizontal: 16.0,
+        vertical: 8.0,
+      ),
+      blockquoteDecoration: BoxDecoration(
+        color: themeTokens.surfaceRaised,
+        borderRadius: AppShapes.borderExtraSmall,
+        border: Border(
+          left: BorderSide(
+            color: themeTokens.markdownBlockQuote,
+            width: 4.0,
+          ),
+        ),
+      ),
       em: Theme.of(
         context,
       ).textTheme.bodyMedium?.copyWith(color: themeTokens.markdownEmphasis),
